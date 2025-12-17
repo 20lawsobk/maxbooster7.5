@@ -14,6 +14,8 @@ import {
   pluginCatalog,
   distroReleases,
   distroTracks,
+  instantPayouts,
+  hyperFollowPages,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -551,9 +553,9 @@ export class DatabaseStorage implements IStorage {
     try {
       const payouts = await db
         .select()
-        .from(sql`instant_payouts`)
-        .where(sql`user_id = ${userId}`)
-        .orderBy(sql`created_at DESC`)
+        .from(instantPayouts)
+        .where(eq(instantPayouts.userId, userId))
+        .orderBy(desc(instantPayouts.createdAt))
         .limit(50);
       
       return payouts || [];
@@ -565,12 +567,12 @@ export class DatabaseStorage implements IStorage {
 
   async getHyperFollowPages(userId: string): Promise<any[]> {
     try {
-      const pages = await db.execute(sql`
-        SELECT * FROM hyperfollow_pages 
-        WHERE user_id = ${userId}
-        ORDER BY created_at DESC
-      `);
-      return pages.rows || [];
+      const pages = await db
+        .select()
+        .from(hyperFollowPages)
+        .where(eq(hyperFollowPages.userId, userId))
+        .orderBy(desc(hyperFollowPages.createdAt));
+      return pages || [];
     } catch (error) {
       console.error('Error fetching hyperfollow pages:', error);
       return [];
