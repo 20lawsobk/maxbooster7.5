@@ -424,14 +424,13 @@ export class DatabaseStorage implements IStorage {
         firstName: users.firstName,
         lastName: users.lastName,
         email: users.email,
-        artistName: users.artistName,
-        avatarUrl: users.avatarUrl,
+        username: users.username,
       }).from(users).limit(50);
       
       return allUsers.map(u => ({
         id: u.id,
-        name: u.artistName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Producer',
-        avatarUrl: u.avatarUrl,
+        name: u.username || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Producer',
+        avatarUrl: null,
         verified: false,
         followers: 0,
         sales: 0,
