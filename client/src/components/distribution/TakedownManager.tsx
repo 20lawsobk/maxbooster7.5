@@ -299,125 +299,6 @@ export function TakedownManager() {
     },
   });
 
-  const mockTakedowns: TakedownRequest[] = takedowns.length ? takedowns : [
-    {
-      id: '1',
-      releaseId: 'rel-1',
-      releaseTitle: 'Midnight Dreams',
-      artistName: 'John Doe',
-      reason: 'artist_request',
-      description: 'Removing from streaming to remaster and re-release',
-      platforms: ['spotify', 'apple-music', 'youtube-music', 'amazon-music'],
-      status: 'processing',
-      progress: 75,
-      platformStatuses: [
-        { platform: 'spotify', status: 'completed', completedAt: '2024-01-16T10:00:00Z' },
-        { platform: 'apple-music', status: 'completed', completedAt: '2024-01-16T12:00:00Z' },
-        { platform: 'youtube-music', status: 'pending' },
-        { platform: 'amazon-music', status: 'pending' },
-      ],
-      requestedAt: '2024-01-15T10:30:00Z',
-      estimatedCompletion: '2024-01-20T10:00:00Z',
-    },
-    {
-      id: '2',
-      releaseId: 'rel-2',
-      releaseTitle: 'Old Singles Collection',
-      artistName: 'John Doe',
-      reason: 'licensing',
-      description: 'Licensing agreement expired',
-      platforms: ['spotify', 'apple-music'],
-      status: 'completed',
-      progress: 100,
-      platformStatuses: [
-        { platform: 'spotify', status: 'completed', completedAt: '2024-01-10T10:00:00Z' },
-        { platform: 'apple-music', status: 'completed', completedAt: '2024-01-10T14:00:00Z' },
-      ],
-      requestedAt: '2024-01-08T09:00:00Z',
-      completedAt: '2024-01-10T14:00:00Z',
-    },
-  ];
-
-  const mockClaims: CopyrightClaim[] = claims.length ? claims : [
-    {
-      id: '1',
-      releaseId: 'rel-3',
-      releaseTitle: 'Summer Vibes',
-      trackTitle: 'Beach Party',
-      platform: 'youtube-music',
-      claimType: 'audio',
-      claimant: 'Universal Music Group',
-      claimantType: 'label',
-      status: 'active',
-      impact: 'monetized',
-      claimedAt: '2024-01-20T08:00:00Z',
-      disputeDeadline: '2024-02-20T08:00:00Z',
-      revenue: {
-        claimed: 245.5,
-        released: 0,
-      },
-    },
-    {
-      id: '2',
-      releaseId: 'rel-4',
-      releaseTitle: 'Hip Hop Classics',
-      trackTitle: 'Street Stories',
-      platform: 'spotify',
-      claimType: 'composition',
-      claimant: 'Sony Music Publishing',
-      claimantType: 'publisher',
-      status: 'disputed',
-      impact: 'tracked',
-      claimedAt: '2024-01-18T12:00:00Z',
-      disputeDeadline: '2024-02-18T12:00:00Z',
-    },
-    {
-      id: '3',
-      releaseId: 'rel-5',
-      releaseTitle: 'Rock Anthems',
-      trackTitle: 'Thunder Road',
-      platform: 'apple-music',
-      claimType: 'both',
-      claimant: 'Warner Chappell',
-      claimantType: 'publisher',
-      status: 'resolved',
-      impact: 'none',
-      claimedAt: '2024-01-10T10:00:00Z',
-      revenue: {
-        claimed: 120.0,
-        released: 120.0,
-      },
-    },
-  ];
-
-  const mockDisputes: Dispute[] = disputes.length ? disputes : [
-    {
-      id: '1',
-      claimId: '2',
-      releaseTitle: 'Hip Hop Classics',
-      trackTitle: 'Street Stories',
-      platform: 'spotify',
-      reason: 'original',
-      explanation: 'This is an original composition. We have all documentation.',
-      supportingDocs: ['license.pdf', 'production_agreement.pdf'],
-      status: 'under_review',
-      submittedAt: '2024-01-19T10:00:00Z',
-      lastUpdateAt: '2024-01-22T14:00:00Z',
-    },
-  ];
-
-  const mockReinstatements: ReinstatementRequest[] = reinstatements.length ? reinstatements : [
-    {
-      id: '1',
-      takedownId: '2',
-      releaseTitle: 'Old Singles Collection',
-      platforms: ['spotify', 'apple-music'],
-      reason: 'New licensing agreement secured',
-      status: 'approved',
-      requestedAt: '2024-01-25T10:00:00Z',
-      processedAt: '2024-01-26T09:00:00Z',
-    },
-  ];
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, { className: string; icon: React.ElementType }> = {
@@ -462,11 +343,11 @@ export function TakedownManager() {
     return <Badge className={styles[impact] || styles.none}>{impact}</Badge>;
   };
 
-  const pendingTakedowns = mockTakedowns.filter(
+  const pendingTakedowns = takedowns.filter(
     (t) => t.status === 'pending' || t.status === 'processing'
   ).length;
-  const activeClaims = mockClaims.filter((c) => c.status === 'active').length;
-  const pendingDisputes = mockDisputes.filter((d) => d.status !== 'approved' && d.status !== 'rejected').length;
+  const activeClaims = claims.filter((c) => c.status === 'active').length;
+  const pendingDisputes = disputes.filter((d) => d.status !== 'approved' && d.status !== 'rejected').length;
 
   return (
     <Card>
@@ -510,7 +391,7 @@ export function TakedownManager() {
           <Card className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-500">
-                {mockTakedowns.filter((t) => t.status === 'completed').length}
+                {takedowns.filter((t) => t.status === 'completed').length}
               </div>
               <p className="text-xs text-muted-foreground">Completed</p>
             </div>
@@ -548,7 +429,7 @@ export function TakedownManager() {
           </TabsList>
 
           <TabsContent value="takedowns" className="space-y-4">
-            {mockTakedowns.map((takedown) => (
+            {takedowns.map((takedown) => (
               <Card key={takedown.id} className="p-4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -630,7 +511,7 @@ export function TakedownManager() {
               </Card>
             ))}
 
-            {mockTakedowns.length === 0 && (
+            {takedowns.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <Trash2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No takedown requests</p>
@@ -653,7 +534,7 @@ export function TakedownManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockClaims.map((claim) => (
+                {claims.map((claim) => (
                   <TableRow key={claim.id}>
                     <TableCell>
                       <div>
@@ -715,7 +596,7 @@ export function TakedownManager() {
               </TableBody>
             </Table>
 
-            {mockClaims.length === 0 && (
+            {claims.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <Flag className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No copyright claims</p>
@@ -724,7 +605,7 @@ export function TakedownManager() {
           </TabsContent>
 
           <TabsContent value="disputes" className="space-y-4">
-            {mockDisputes.map((dispute) => (
+            {disputes.map((dispute) => (
               <Card key={dispute.id} className="p-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -770,7 +651,7 @@ export function TakedownManager() {
               </Card>
             ))}
 
-            {mockDisputes.length === 0 && (
+            {disputes.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <Scale className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No active disputes</p>
@@ -779,7 +660,7 @@ export function TakedownManager() {
           </TabsContent>
 
           <TabsContent value="reinstatements" className="space-y-4">
-            {mockReinstatements.map((reinstatement) => (
+            {reinstatements.map((reinstatement) => (
               <Card key={reinstatement.id} className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -804,7 +685,7 @@ export function TakedownManager() {
               </Card>
             ))}
 
-            {mockReinstatements.length === 0 && (
+            {reinstatements.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <RotateCcw className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No reinstatement requests</p>

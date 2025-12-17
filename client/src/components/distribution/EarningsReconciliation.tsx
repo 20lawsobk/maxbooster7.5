@@ -272,197 +272,32 @@ export function EarningsReconciliation() {
     },
   });
 
-  const mockStatements: RoyaltyStatement[] = statements.length ? statements : [
-    {
-      id: '1',
-      platform: 'spotify',
-      period: 'January 2024',
-      statementDate: '2024-02-01T00:00:00Z',
-      fileName: 'spotify_royalties_jan_2024.csv',
-      fileSize: 245678,
-      status: 'reconciled',
-      totalAmount: 4532.45,
-      totalStreams: 1245678,
-      trackCount: 45,
-      currency: 'USD',
-      importedAt: '2024-02-02T10:00:00Z',
-    },
-    {
-      id: '2',
-      platform: 'apple-music',
-      period: 'January 2024',
-      statementDate: '2024-02-05T00:00:00Z',
-      fileName: 'apple_music_statement_jan_2024.xlsx',
-      fileSize: 189234,
-      status: 'imported',
-      totalAmount: 2876.12,
-      totalStreams: 456789,
-      trackCount: 42,
-      currency: 'USD',
-      importedAt: '2024-02-06T14:00:00Z',
-    },
-    {
-      id: '3',
-      platform: 'youtube-music',
-      period: 'January 2024',
-      statementDate: '2024-02-10T00:00:00Z',
-      fileName: 'youtube_music_revenue_jan_2024.csv',
-      fileSize: 345123,
-      status: 'processing',
-      totalAmount: 1234.56,
-      totalStreams: 2345678,
-      trackCount: 38,
-      currency: 'USD',
-    },
-    {
-      id: '4',
-      platform: 'amazon-music',
-      period: 'December 2023',
-      statementDate: '2024-01-15T00:00:00Z',
-      fileName: 'amazon_music_dec_2023.csv',
-      fileSize: 156789,
-      status: 'error',
-      totalAmount: 0,
-      totalStreams: 0,
-      trackCount: 0,
-      currency: 'USD',
-      errors: ['Invalid CSV format', 'Missing required columns'],
-    },
-  ];
-
-  const mockEarnings: EarningsEntry[] = earnings.length ? earnings : [
-    {
-      id: '1',
-      releaseTitle: 'Midnight Dreams',
-      trackTitle: 'Starlight',
-      platform: 'spotify',
-      period: 'January 2024',
-      streams: 125678,
-      downloads: 0,
-      earnings: 457.82,
-      payRate: 0.00364,
-      currency: 'USD',
-      territory: 'United States',
-      type: 'stream',
-    },
-    {
-      id: '2',
-      releaseTitle: 'Midnight Dreams',
-      trackTitle: 'Moonrise',
-      platform: 'spotify',
-      period: 'January 2024',
-      streams: 98456,
-      downloads: 0,
-      earnings: 358.38,
-      payRate: 0.00364,
-      currency: 'USD',
-      territory: 'United States',
-      type: 'stream',
-    },
-    {
-      id: '3',
-      releaseTitle: 'Summer Vibes',
-      trackTitle: 'Beach Party',
-      platform: 'apple-music',
-      period: 'January 2024',
-      streams: 45678,
-      downloads: 234,
-      earnings: 287.77,
-      payRate: 0.0063,
-      currency: 'USD',
-      territory: 'United Kingdom',
-      type: 'stream',
-    },
-    {
-      id: '4',
-      releaseTitle: 'Urban Stories',
-      trackTitle: 'City Lights',
-      platform: 'youtube-music',
-      period: 'January 2024',
-      streams: 234567,
-      downloads: 0,
-      earnings: 124.32,
-      payRate: 0.00053,
-      currency: 'USD',
-      territory: 'Germany',
-      type: 'stream',
-    },
-  ];
-
-  const mockPayouts: PayoutRecord[] = payouts.length ? payouts : [
-    {
-      id: '1',
-      amount: 5432.10,
-      currency: 'USD',
-      method: 'bank',
-      status: 'completed',
-      scheduledDate: '2024-01-15T00:00:00Z',
-      processedDate: '2024-01-17T10:00:00Z',
-      platforms: ['spotify', 'apple-music', 'youtube-music'],
-      period: 'December 2023',
-      transactionId: 'TXN-2024-001234',
-      bankDetails: {
-        bankName: 'Chase Bank',
-        accountLast4: '4567',
-      },
-      fee: 2.50,
-    },
-    {
-      id: '2',
-      amount: 3210.45,
-      currency: 'USD',
-      method: 'paypal',
-      status: 'pending',
-      scheduledDate: '2024-02-15T00:00:00Z',
-      platforms: ['spotify', 'apple-music'],
-      period: 'January 2024',
-    },
-    {
-      id: '3',
-      amount: 1500.00,
-      currency: 'USD',
-      method: 'wise',
-      status: 'processing',
-      scheduledDate: '2024-02-10T00:00:00Z',
-      platforms: ['tidal', 'amazon-music'],
-      period: 'January 2024',
-    },
-  ];
-
-  const mockSummary: ReconciliationSummary = summary || {
-    totalEarnings: 10186.13,
-    totalStreams: 4328456,
-    totalDownloads: 1234,
-    pendingPayouts: 4710.45,
-    completedPayouts: 15678.90,
-    discrepancyAmount: 45.67,
-    discrepancyCount: 3,
-    averagePayRate: 0.00235,
+  const dormantSummary: ReconciliationSummary = summary || {
+    totalEarnings: 0,
+    totalStreams: 0,
+    totalDownloads: 0,
+    pendingPayouts: 0,
+    completedPayouts: 0,
+    discrepancyAmount: 0,
+    discrepancyCount: 0,
+    averagePayRate: 0,
   };
 
-  const mockTerritoryData: TerritoryBreakdown[] = territoryData.length ? territoryData : [
-    { territory: 'United States', earnings: 4532.45, streams: 1456789, percentage: 44.5 },
-    { territory: 'United Kingdom', earnings: 1876.32, streams: 567890, percentage: 18.4 },
-    { territory: 'Germany', earnings: 1234.56, streams: 456789, percentage: 12.1 },
-    { territory: 'Canada', earnings: 876.54, streams: 234567, percentage: 8.6 },
-    { territory: 'Australia', earnings: 654.32, streams: 198765, percentage: 6.4 },
-    { territory: 'Other', earnings: 1011.94, streams: 413656, percentage: 10.0 },
-  ];
+  const earningsTrendData = dormantSummary.totalEarnings > 0 ? [
+    { label: 'Current', value: dormantSummary.totalEarnings },
+  ] : [];
 
-  const earningsTrendData = [
-    { label: 'Oct', value: 7234 },
-    { label: 'Nov', value: 8456 },
-    { label: 'Dec', value: 9123 },
-    { label: 'Jan', value: mockSummary.totalEarnings },
-  ];
-
-  const platformDonutData = [
-    { label: 'Spotify', value: 4532.45, color: PLATFORM_COLORS.spotify },
-    { label: 'Apple Music', value: 2876.12, color: PLATFORM_COLORS['apple-music'] },
-    { label: 'YouTube Music', value: 1234.56, color: PLATFORM_COLORS['youtube-music'] },
-    { label: 'Amazon Music', value: 876.34, color: PLATFORM_COLORS['amazon-music'] },
-    { label: 'Other', value: 666.66, color: PLATFORM_COLORS.other },
-  ];
+  const platformDonutData = earnings.length > 0 ? 
+    Object.entries(
+      earnings.reduce((acc: Record<string, number>, e) => {
+        acc[e.platform] = (acc[e.platform] || 0) + e.earnings;
+        return acc;
+      }, {})
+    ).map(([platform, value]) => ({
+      label: platform,
+      value,
+      color: PLATFORM_COLORS[platform] || PLATFORM_COLORS.other,
+    })) : [];
 
   const formatCurrency = (amount: number, currency: string = 'USD'): string => {
     return new Intl.NumberFormat('en-US', {
@@ -529,7 +364,7 @@ export function EarningsReconciliation() {
     });
   };
 
-  const filteredEarnings = mockEarnings.filter((entry) => {
+  const filteredEarnings = earnings.filter((entry) => {
     const matchesSearch =
       entry.releaseTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       entry.trackTitle.toLowerCase().includes(searchQuery.toLowerCase());
@@ -537,7 +372,7 @@ export function EarningsReconciliation() {
     return matchesSearch && matchesPlatform;
   });
 
-  const availableBalance = mockSummary.totalEarnings - mockSummary.pendingPayouts;
+  const availableBalance = dormantSummary.totalEarnings - dormantSummary.pendingPayouts;
   const minimumPayout = 25;
 
   return (
@@ -583,7 +418,7 @@ export function EarningsReconciliation() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Earnings</p>
-                <p className="text-2xl font-bold">{formatCurrency(mockSummary.totalEarnings)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(dormantSummary.totalEarnings)}</p>
               </div>
               <div className="flex items-center gap-1 text-sm text-green-500">
                 <ArrowUpRight className="h-4 w-4" />
@@ -594,13 +429,13 @@ export function EarningsReconciliation() {
           <Card className="p-4">
             <div>
               <p className="text-sm text-muted-foreground">Total Streams</p>
-              <p className="text-2xl font-bold">{formatNumber(mockSummary.totalStreams)}</p>
+              <p className="text-2xl font-bold">{formatNumber(dormantSummary.totalStreams)}</p>
             </div>
           </Card>
           <Card className="p-4">
             <div>
               <p className="text-sm text-muted-foreground">Avg Pay Rate</p>
-              <p className="text-2xl font-bold">${mockSummary.averagePayRate.toFixed(5)}</p>
+              <p className="text-2xl font-bold">${dormantSummary.averagePayRate.toFixed(5)}</p>
               <p className="text-xs text-muted-foreground">per stream</p>
             </div>
           </Card>
@@ -614,16 +449,16 @@ export function EarningsReconciliation() {
             <div>
               <p className="text-sm text-muted-foreground">Pending Payouts</p>
               <p className="text-2xl font-bold text-yellow-500">
-                {formatCurrency(mockSummary.pendingPayouts)}
+                {formatCurrency(dormantSummary.pendingPayouts)}
               </p>
             </div>
           </Card>
           <Card className="p-4">
             <div>
               <p className="text-sm text-muted-foreground">Discrepancies</p>
-              <p className="text-2xl font-bold text-orange-500">{mockSummary.discrepancyCount}</p>
+              <p className="text-2xl font-bold text-orange-500">{dormantSummary.discrepancyCount}</p>
               <p className="text-xs text-muted-foreground">
-                {formatCurrency(mockSummary.discrepancyAmount)} unmatched
+                {formatCurrency(dormantSummary.discrepancyAmount)} unmatched
               </p>
             </div>
           </Card>
@@ -639,7 +474,7 @@ export function EarningsReconciliation() {
                 data={platformDonutData}
                 size={140}
                 thickness={20}
-                centerValue={`${((platformDonutData[0]?.value / mockSummary.totalEarnings) * 100).toFixed(0)}%`}
+                centerValue={`${((platformDonutData[0]?.value / dormantSummary.totalEarnings) * 100).toFixed(0)}%`}
                 centerLabel="Spotify"
               />
               <div className="flex-1 space-y-2">
@@ -717,7 +552,7 @@ export function EarningsReconciliation() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockStatements.map((statement) => (
+                {statements.map((statement) => (
                   <TableRow key={statement.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -782,7 +617,7 @@ export function EarningsReconciliation() {
               </TableBody>
             </Table>
 
-            {mockStatements.length === 0 && (
+            {statements.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p className="font-medium">No statements imported yet</p>
@@ -867,7 +702,7 @@ export function EarningsReconciliation() {
           </TabsContent>
 
           <TabsContent value="payouts" className="space-y-4">
-            {mockPayouts.map((payout) => (
+            {payouts.map((payout) => (
               <Card key={payout.id} className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
@@ -932,7 +767,7 @@ export function EarningsReconciliation() {
               </Card>
             ))}
 
-            {mockPayouts.length === 0 && (
+            {payouts.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <Banknote className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p className="font-medium">No payouts yet</p>
@@ -950,7 +785,7 @@ export function EarningsReconciliation() {
                   <CardTitle className="text-lg">Top Territories by Earnings</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockTerritoryData.map((territory, index) => (
+                  {territoryData.map((territory, index) => (
                     <div key={territory.territory} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -978,18 +813,18 @@ export function EarningsReconciliation() {
                 </CardHeader>
                 <CardContent>
                   <DonutChart
-                    data={mockTerritoryData.map((t) => ({
+                    data={territoryData.map((t) => ({
                       label: t.territory,
                       value: t.earnings,
-                      color: `hsl(${mockTerritoryData.indexOf(t) * 60}, 70%, 50%)`,
+                      color: `hsl(${territoryData.indexOf(t) * 60}, 70%, 50%)`,
                     }))}
                     size={200}
                     thickness={30}
-                    centerValue={mockTerritoryData.length.toString()}
+                    centerValue={territoryData.length.toString()}
                     centerLabel="Territories"
                   />
                   <div className="grid grid-cols-2 gap-2 mt-4">
-                    {mockTerritoryData.slice(0, 4).map((t, i) => (
+                    {territoryData.slice(0, 4).map((t, i) => (
                       <div key={t.territory} className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
@@ -1013,7 +848,7 @@ export function EarningsReconciliation() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockTerritoryData.map((territory) => (
+                {territoryData.map((territory) => (
                   <TableRow key={territory.territory}>
                     <TableCell className="font-medium">{territory.territory}</TableCell>
                     <TableCell className="text-right">{formatNumber(territory.streams)}</TableCell>

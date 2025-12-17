@@ -244,224 +244,19 @@ export function RoyaltyReconciliation() {
     },
   });
 
-  const mockPlatformEarnings: PlatformEarnings[] = platformEarnings.length ? platformEarnings : [
-    {
-      platform: 'spotify',
-      earnings: 4532.45,
-      streams: 1245678,
-      previousEarnings: 4012.32,
-      previousStreams: 1102345,
-      growth: 12.96,
-      payRate: 0.00364,
-      currency: 'USD',
-    },
-    {
-      platform: 'apple-music',
-      earnings: 2876.12,
-      streams: 456789,
-      previousEarnings: 2654.87,
-      previousStreams: 423456,
-      growth: 8.34,
-      payRate: 0.0063,
-      currency: 'USD',
-    },
-    {
-      platform: 'youtube-music',
-      earnings: 1234.56,
-      streams: 2345678,
-      previousEarnings: 1456.78,
-      previousStreams: 2567890,
-      growth: -15.25,
-      payRate: 0.00053,
-      currency: 'USD',
-    },
-    {
-      platform: 'amazon-music',
-      earnings: 876.34,
-      streams: 234567,
-      previousEarnings: 765.43,
-      previousStreams: 198765,
-      growth: 14.49,
-      payRate: 0.00374,
-      currency: 'USD',
-    },
-    {
-      platform: 'tidal',
-      earnings: 543.21,
-      streams: 45678,
-      previousEarnings: 498.76,
-      previousStreams: 42345,
-      growth: 8.91,
-      payRate: 0.0119,
-      currency: 'USD',
-    },
-    {
-      platform: 'soundcloud',
-      earnings: 123.45,
-      streams: 34567,
-      previousEarnings: 145.67,
-      previousStreams: 39876,
-      growth: -15.25,
-      payRate: 0.00357,
-      currency: 'USD',
-    },
-  ];
+  const totalEarnings = platformEarnings.reduce((sum, p) => sum + p.earnings, 0);
+  const totalStreams = platformEarnings.reduce((sum, p) => sum + p.streams, 0);
+  const totalPreviousEarnings = platformEarnings.reduce((sum, p) => sum + p.previousEarnings, 0);
+  const earningsGrowth = totalPreviousEarnings > 0 ? ((totalEarnings - totalPreviousEarnings) / totalPreviousEarnings) * 100 : 0;
+  const pendingDiscrepancies = discrepancies.filter((d) => d.status !== 'resolved').length;
+  const totalPendingSplits = splitPayments.reduce((sum, s) => sum + s.pendingAmount, 0);
+  const nextPayout = payoutSchedule.find((p) => p.status === 'scheduled');
 
-  const mockDiscrepancies: StreamDiscrepancy[] = discrepancies.length ? discrepancies : [
-    {
-      id: '1',
-      platform: 'spotify',
-      releaseTitle: 'Midnight Dreams',
-      trackTitle: 'Starlight',
-      reportedStreams: 45678,
-      expectedStreams: 52345,
-      difference: -6667,
-      differencePercent: -12.74,
-      potentialLoss: 24.27,
-      status: 'investigating',
-      reportedAt: '2024-01-15T10:00:00Z',
-    },
-    {
-      id: '2',
-      platform: 'apple-music',
-      releaseTitle: 'Summer Vibes',
-      trackTitle: 'Beach Party',
-      reportedStreams: 12345,
-      expectedStreams: 15678,
-      difference: -3333,
-      differencePercent: -21.26,
-      potentialLoss: 21.0,
-      status: 'pending',
-      reportedAt: '2024-01-20T14:00:00Z',
-    },
-    {
-      id: '3',
-      platform: 'youtube-music',
-      releaseTitle: 'Urban Stories',
-      trackTitle: 'City Lights',
-      reportedStreams: 234567,
-      expectedStreams: 234567,
-      difference: 0,
-      differencePercent: 0,
-      potentialLoss: 0,
-      status: 'resolved',
-      reportedAt: '2024-01-10T09:00:00Z',
-      resolvedAt: '2024-01-18T16:00:00Z',
-    },
-  ];
+  const earningsTrendData = totalEarnings > 0 ? [
+    { label: 'Current', value: totalEarnings },
+  ] : [];
 
-  const mockSplitPayments: SplitPayment[] = splitPayments.length ? splitPayments : [
-    {
-      id: '1',
-      collaboratorName: 'Jane Smith',
-      collaboratorEmail: 'jane@example.com',
-      role: 'Producer',
-      percentage: 25,
-      totalEarnings: 2546.53,
-      paidAmount: 2000.0,
-      pendingAmount: 546.53,
-      lastPayoutDate: '2024-01-01T00:00:00Z',
-      status: 'pending',
-    },
-    {
-      id: '2',
-      collaboratorName: 'Mike Johnson',
-      collaboratorEmail: 'mike@example.com',
-      role: 'Songwriter',
-      percentage: 15,
-      totalEarnings: 1527.92,
-      paidAmount: 1527.92,
-      pendingAmount: 0,
-      lastPayoutDate: '2024-01-15T00:00:00Z',
-      status: 'current',
-    },
-    {
-      id: '3',
-      collaboratorName: 'Sarah Williams',
-      collaboratorEmail: 'sarah@example.com',
-      role: 'Featured Artist',
-      percentage: 10,
-      totalEarnings: 1018.61,
-      paidAmount: 500.0,
-      pendingAmount: 518.61,
-      lastPayoutDate: '2023-12-01T00:00:00Z',
-      status: 'overdue',
-    },
-  ];
-
-  const mockTaxDocuments: TaxDocument[] = taxDocuments.length ? taxDocuments : [
-    {
-      id: '1',
-      type: '1099',
-      year: 2023,
-      status: 'available',
-      generatedAt: '2024-01-31T00:00:00Z',
-      downloadUrl: '/api/documents/1099-2023.pdf',
-    },
-    {
-      id: '2',
-      type: 'statement',
-      year: 2024,
-      period: 'January',
-      status: 'available',
-      generatedAt: '2024-02-01T00:00:00Z',
-      downloadUrl: '/api/documents/statement-2024-01.pdf',
-    },
-    {
-      id: '3',
-      type: 'W-9',
-      year: 2024,
-      status: 'pending',
-    },
-  ];
-
-  const mockPayoutSchedule: PayoutSchedule[] = payoutSchedule.length ? payoutSchedule : [
-    {
-      id: '1',
-      amount: 5432.10,
-      currency: 'USD',
-      scheduledDate: '2024-02-15T00:00:00Z',
-      method: 'bank',
-      status: 'scheduled',
-      platforms: ['spotify', 'apple-music', 'amazon-music'],
-      period: 'January 2024',
-    },
-    {
-      id: '2',
-      amount: 3210.45,
-      currency: 'USD',
-      scheduledDate: '2024-01-15T00:00:00Z',
-      method: 'bank',
-      status: 'completed',
-      platforms: ['spotify', 'apple-music', 'youtube-music'],
-      period: 'December 2023',
-    },
-  ];
-
-  const mockCurrencyRates: CurrencyRate[] = currencyRates.length ? currencyRates : [
-    { from: 'USD', to: 'EUR', rate: 0.92, updatedAt: new Date().toISOString() },
-    { from: 'USD', to: 'GBP', rate: 0.79, updatedAt: new Date().toISOString() },
-    { from: 'USD', to: 'CAD', rate: 1.35, updatedAt: new Date().toISOString() },
-    { from: 'USD', to: 'AUD', rate: 1.53, updatedAt: new Date().toISOString() },
-    { from: 'USD', to: 'JPY', rate: 148.5, updatedAt: new Date().toISOString() },
-  ];
-
-  const totalEarnings = mockPlatformEarnings.reduce((sum, p) => sum + p.earnings, 0);
-  const totalStreams = mockPlatformEarnings.reduce((sum, p) => sum + p.streams, 0);
-  const totalPreviousEarnings = mockPlatformEarnings.reduce((sum, p) => sum + p.previousEarnings, 0);
-  const earningsGrowth = ((totalEarnings - totalPreviousEarnings) / totalPreviousEarnings) * 100;
-  const pendingDiscrepancies = mockDiscrepancies.filter((d) => d.status !== 'resolved').length;
-  const totalPendingSplits = mockSplitPayments.reduce((sum, s) => sum + s.pendingAmount, 0);
-  const nextPayout = mockPayoutSchedule.find((p) => p.status === 'scheduled');
-
-  const earningsTrendData = [
-    { label: 'Oct', value: 7234 },
-    { label: 'Nov', value: 8456 },
-    { label: 'Dec', value: 9123 },
-    { label: 'Jan', value: totalEarnings },
-  ];
-
-  const platformDonutData = mockPlatformEarnings.map((p) => ({
+  const platformDonutData = platformEarnings.map((p) => ({
     label: p.platform,
     value: p.earnings,
     color: PLATFORM_COLORS[p.platform] || PLATFORM_COLORS.other,
@@ -469,7 +264,7 @@ export function RoyaltyReconciliation() {
 
   const convertCurrency = (amount: number, to: string): number => {
     if (to === 'USD') return amount;
-    const rate = mockCurrencyRates.find((r) => r.to === to)?.rate || 1;
+    const rate = currencyRates.find((r) => r.to === to)?.rate || 1;
     return amount * rate;
   };
 
@@ -627,11 +422,11 @@ export function RoyaltyReconciliation() {
                 data={platformDonutData}
                 size={140}
                 thickness={20}
-                centerValue={`${((mockPlatformEarnings[0]?.earnings / totalEarnings) * 100).toFixed(0)}%`}
+                centerValue={`${((platformEarnings[0]?.earnings / totalEarnings) * 100).toFixed(0)}%`}
                 centerLabel="Spotify"
               />
               <div className="flex-1 space-y-2">
-                {mockPlatformEarnings.slice(0, 4).map((p) => (
+                {platformEarnings.slice(0, 4).map((p) => (
                   <div key={p.platform} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
@@ -687,7 +482,7 @@ export function RoyaltyReconciliation() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockPlatformEarnings.map((platform) => (
+                {platformEarnings.map((platform) => (
                   <TableRow key={platform.platform}>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -737,7 +532,7 @@ export function RoyaltyReconciliation() {
                 <AlertDescription>
                   {pendingDiscrepancies} discrepanc{pendingDiscrepancies > 1 ? 'ies' : 'y'} detected.
                   Potential loss: {formatCurrency(
-                    mockDiscrepancies
+                    discrepancies
                       .filter((d) => d.status !== 'resolved')
                       .reduce((sum, d) => sum + d.potentialLoss, 0)
                   )}
@@ -759,7 +554,7 @@ export function RoyaltyReconciliation() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockDiscrepancies.map((discrepancy) => (
+                {discrepancies.map((discrepancy) => (
                   <TableRow key={discrepancy.id}>
                     <TableCell>
                       <div>
@@ -837,7 +632,7 @@ export function RoyaltyReconciliation() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockSplitPayments.map((split) => (
+                {splitPayments.map((split) => (
                   <TableRow key={split.id}>
                     <TableCell>
                       <div>
@@ -887,7 +682,7 @@ export function RoyaltyReconciliation() {
               </Button>
             </div>
 
-            {mockPayoutSchedule.map((payout) => (
+            {payoutSchedule.map((payout) => (
               <Card key={payout.id} className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -949,7 +744,7 @@ export function RoyaltyReconciliation() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockTaxDocuments.map((doc) => (
+              {taxDocuments.map((doc) => (
                 <Card key={doc.id} className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -996,7 +791,7 @@ export function RoyaltyReconciliation() {
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
-                {mockCurrencyRates.map((rate) => (
+                {currencyRates.map((rate) => (
                   <div key={rate.to} className="text-center p-2 bg-background rounded-lg">
                     <p className="text-lg font-bold">{rate.rate.toFixed(2)}</p>
                     <p className="text-xs text-muted-foreground">

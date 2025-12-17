@@ -210,115 +210,23 @@ export function ISRCManager({ releaseId, onCodeAssigned }: ISRCManagerProps) {
     },
   });
 
-  const mockISRCCodes: ISRCCode[] = isrcCodes.length ? isrcCodes : [
-    {
-      id: '1',
-      code: 'USRC12300001',
-      trackTitle: 'Midnight Dreams',
-      artistName: 'John Doe',
-      releaseId: 'rel-1',
-      releaseTitle: 'Nocturnal',
-      assignedAt: '2024-01-15T10:30:00Z',
-      status: 'active',
-      registrar: 'US',
-      countryCode: 'US',
-      year: '23',
-      designationCode: '00001',
-    },
-    {
-      id: '2',
-      code: 'USRC12300002',
-      trackTitle: 'Sunrise',
-      artistName: 'John Doe',
-      releaseId: 'rel-1',
-      releaseTitle: 'Nocturnal',
-      assignedAt: '2024-01-15T10:31:00Z',
-      status: 'active',
-      registrar: 'US',
-      countryCode: 'US',
-      year: '23',
-      designationCode: '00002',
-    },
-    {
-      id: '3',
-      code: 'USRC12300003',
-      trackTitle: '',
-      artistName: '',
-      assignedAt: '2024-01-20T14:00:00Z',
-      status: 'pending',
-      registrar: 'US',
-      countryCode: 'US',
-      year: '23',
-      designationCode: '00003',
-    },
-    {
-      id: '4',
-      code: 'GBAYE2300001',
-      trackTitle: 'London Calling',
-      artistName: 'Jane Smith',
-      releaseId: 'rel-2',
-      releaseTitle: 'Urban Stories',
-      assignedAt: '2024-02-01T09:00:00Z',
-      status: 'active',
-      registrar: 'GB',
-      countryCode: 'GB',
-      year: '23',
-      designationCode: '00001',
-    },
-  ];
-
-  const mockUPCCodes: UPCCode[] = upcCodes.length ? upcCodes : [
-    {
-      id: '1',
-      code: '012345678901',
-      releaseTitle: 'Nocturnal',
-      artistName: 'John Doe',
-      releaseId: 'rel-1',
-      releaseType: 'album',
-      assignedAt: '2024-01-15T10:30:00Z',
-      status: 'active',
-      trackCount: 12,
-    },
-    {
-      id: '2',
-      code: '012345678902',
-      releaseTitle: 'Urban Stories',
-      artistName: 'Jane Smith',
-      releaseId: 'rel-2',
-      releaseType: 'EP',
-      assignedAt: '2024-02-01T09:00:00Z',
-      status: 'active',
-      trackCount: 5,
-    },
-    {
-      id: '3',
-      code: '012345678903',
-      releaseTitle: '',
-      artistName: '',
-      releaseType: 'single',
-      assignedAt: '2024-02-15T11:00:00Z',
-      status: 'pending',
-      trackCount: 0,
-    },
-  ];
-
-  const mockStats = codeStats || {
-    totalISRC: 100,
-    usedISRC: 45,
-    availableISRC: 55,
-    totalUPC: 50,
-    usedUPC: 12,
-    availableUPC: 38,
+  const dormantStats = codeStats || {
+    totalISRC: 0,
+    usedISRC: 0,
+    availableISRC: 0,
+    totalUPC: 0,
+    usedUPC: 0,
+    availableUPC: 0,
   };
 
-  const filteredISRC = mockISRCCodes.filter(
+  const filteredISRC = isrcCodes.filter(
     (code) =>
       code.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       code.trackTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       code.artistName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredUPC = mockUPCCodes.filter(
+  const filteredUPC = upcCodes.filter(
     (code) =>
       code.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       code.releaseTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -427,7 +335,7 @@ export function ISRCManager({ releaseId, onCodeAssigned }: ISRCManagerProps) {
                       onChange={(e) => setGenerateCount(parseInt(e.target.value) || 1)}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Available: {generateType === 'isrc' ? mockStats.availableISRC : mockStats.availableUPC}
+                      Available: {generateType === 'isrc' ? dormantStats.availableISRC : dormantStats.availableUPC}
                     </p>
                   </div>
                 </div>
@@ -466,37 +374,37 @@ export function ISRCManager({ releaseId, onCodeAssigned }: ISRCManagerProps) {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{mockStats.totalISRC}</div>
+              <div className="text-2xl font-bold text-primary">{dormantStats.totalISRC}</div>
               <p className="text-xs text-muted-foreground">Total ISRC</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">{mockStats.usedISRC}</div>
+              <div className="text-2xl font-bold text-green-500">{dormantStats.usedISRC}</div>
               <p className="text-xs text-muted-foreground">Used ISRC</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-500">{mockStats.availableISRC}</div>
+              <div className="text-2xl font-bold text-blue-500">{dormantStats.availableISRC}</div>
               <p className="text-xs text-muted-foreground">Available ISRC</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{mockStats.totalUPC}</div>
+              <div className="text-2xl font-bold text-primary">{dormantStats.totalUPC}</div>
               <p className="text-xs text-muted-foreground">Total UPC</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">{mockStats.usedUPC}</div>
+              <div className="text-2xl font-bold text-green-500">{dormantStats.usedUPC}</div>
               <p className="text-xs text-muted-foreground">Used UPC</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-500">{mockStats.availableUPC}</div>
+              <div className="text-2xl font-bold text-blue-500">{dormantStats.availableUPC}</div>
               <p className="text-xs text-muted-foreground">Available UPC</p>
             </div>
           </Card>

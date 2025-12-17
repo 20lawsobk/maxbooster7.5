@@ -263,192 +263,15 @@ export function AutomatedQC({
     },
   });
 
-  const mockReport: QCReport = qcReport || {
-    id: 'mock-1',
-    releaseId: releaseId || 'new',
-    createdAt: new Date().toISOString(),
-    status: 'warning',
-    overallScore: 85,
-    checks: [
-      {
-        id: '1',
-        name: 'Audio Clipping Detection',
-        category: 'audio',
-        status: 'passed',
-        severity: 'critical',
-        message: 'No clipping detected',
-        details: 'Peak level: -0.3 dB, True Peak: -0.1 dB',
-        fixable: false,
-      },
-      {
-        id: '2',
-        name: 'Loudness (LUFS)',
-        category: 'audio',
-        status: 'warning',
-        severity: 'major',
-        message: 'Loudness is slightly below target',
-        details: 'Integrated loudness: -16.5 LUFS (target: -14 LUFS)',
-        value: -16.5,
-        expectedValue: -14,
-        fixable: true,
-        fixAction: 'normalize_loudness',
-      },
-      {
-        id: '3',
-        name: 'Silence Detection',
-        category: 'audio',
-        status: 'passed',
-        severity: 'minor',
-        message: 'No excessive silence detected',
-        details: 'Start silence: 0.02s, End silence: 0.5s',
-        fixable: false,
-      },
-      {
-        id: '4',
-        name: 'Sample Rate',
-        category: 'audio',
-        status: 'passed',
-        severity: 'critical',
-        message: 'Sample rate meets requirements',
-        value: 44100,
-        expectedValue: 44100,
-        fixable: false,
-      },
-      {
-        id: '5',
-        name: 'Title Format',
-        category: 'metadata',
-        status: 'passed',
-        severity: 'major',
-        message: 'Title format is valid',
-        fixable: false,
-      },
-      {
-        id: '6',
-        name: 'Required Fields',
-        category: 'metadata',
-        status: 'passed',
-        severity: 'critical',
-        message: 'All required fields are present',
-        fixable: false,
-      },
-      {
-        id: '7',
-        name: 'Special Characters',
-        category: 'metadata',
-        status: 'warning',
-        severity: 'minor',
-        message: 'Title contains special characters',
-        details: 'Consider removing emoji for wider compatibility',
-        fixable: true,
-        fixAction: 'remove_special_chars',
-      },
-      {
-        id: '8',
-        name: 'Artwork Dimensions',
-        category: 'artwork',
-        status: 'passed',
-        severity: 'critical',
-        message: 'Artwork meets size requirements',
-        details: '3000x3000 pixels (minimum: 3000x3000)',
-        fixable: false,
-      },
-      {
-        id: '9',
-        name: 'Artwork Format',
-        category: 'artwork',
-        status: 'passed',
-        severity: 'critical',
-        message: 'Artwork format is valid',
-        details: 'Format: JPEG, Color Space: sRGB',
-        fixable: false,
-      },
-      {
-        id: '10',
-        name: 'Text on Artwork',
-        category: 'artwork',
-        status: 'warning',
-        severity: 'info',
-        message: 'Text detected on artwork',
-        details: 'Some platforms may reject artwork with excessive text',
-        fixable: false,
-      },
-      {
-        id: '11',
-        name: 'ISRC Validation',
-        category: 'codes',
-        status: 'passed',
-        severity: 'critical',
-        message: 'ISRC code is valid',
-        value: 'USRC12345678',
-        fixable: false,
-      },
-      {
-        id: '12',
-        name: 'UPC Validation',
-        category: 'codes',
-        status: 'failed',
-        severity: 'critical',
-        message: 'UPC code is missing',
-        details: 'A valid UPC is required for distribution',
-        fixable: true,
-        fixAction: 'generate_upc',
-      },
-      {
-        id: '13',
-        name: 'Explicit Content Detection',
-        category: 'content',
-        status: 'warning',
-        severity: 'major',
-        message: 'Potential explicit content detected',
-        details: 'Review lyrics for explicit language',
-        fixable: false,
-      },
-      {
-        id: '14',
-        name: 'Copyright Compliance',
-        category: 'content',
-        status: 'passed',
-        severity: 'critical',
-        message: 'No copyright issues detected',
-        fixable: false,
-      },
-    ],
-    audioAnalysis: {
-      peakLevel: -0.3,
-      rmsLevel: -12.5,
-      lufs: -16.5,
-      truePeak: -0.1,
-      dynamicRange: 8.2,
-      hasClipping: false,
-      clippingInstances: 0,
-      silenceStart: 0.02,
-      silenceEnd: 0.5,
-      sampleRate: 44100,
-      bitDepth: 24,
-      duration: 213.5,
-    },
-    artworkAnalysis: {
-      width: 3000,
-      height: 3000,
-      format: 'JPEG',
-      colorSpace: 'sRGB',
-      resolution: 300,
-      fileSize: 2.4 * 1024 * 1024,
-      hasText: true,
-      hasBlur: false,
-      isSquare: true,
-      meetsMinSize: true,
-    },
-  };
+  const report = qcReport;
 
-  const passedCount = mockReport.checks.filter((c) => c.status === 'passed').length;
-  const failedCount = mockReport.checks.filter((c) => c.status === 'failed').length;
-  const warningCount = mockReport.checks.filter((c) => c.status === 'warning').length;
-  const fixableCount = mockReport.checks.filter((c) => c.fixable && c.status !== 'passed').length;
+  const passedCount = report?.checks.filter((c) => c.status === 'passed').length ?? 0;
+  const failedCount = report?.checks.filter((c) => c.status === 'failed').length ?? 0;
+  const warningCount = report?.checks.filter((c) => c.status === 'warning').length ?? 0;
+  const fixableCount = report?.checks.filter((c) => c.fixable && c.status !== 'passed').length ?? 0;
 
   const getCategoryChecks = (category: string) =>
-    mockReport.checks.filter((c) => c.category === category);
+    report?.checks.filter((c) => c.category === category) ?? [];
 
   const renderStatusIcon = (status: string) => {
     const config = STATUS_CONFIG[status];
@@ -509,12 +332,12 @@ export function AutomatedQC({
           </div>
         )}
 
-        {!isRunning && mockReport && (
+        {!isRunning && report && (
           <>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Card className="p-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-primary">{mockReport.overallScore}%</div>
+                  <div className="text-3xl font-bold text-primary">{report.overallScore}%</div>
                   <p className="text-xs text-muted-foreground mt-1">Overall Score</p>
                 </div>
               </Card>
@@ -596,7 +419,7 @@ export function AutomatedQC({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockReport.checks.map((check) => {
+                    {report.checks.map((check) => {
                       const CategoryIcon = CATEGORY_ICONS[check.category] || FileText;
                       return (
                         <TableRow key={check.id}>
@@ -647,44 +470,44 @@ export function AutomatedQC({
               </TabsContent>
 
               <TabsContent value="audio" className="space-y-4">
-                {mockReport.audioAnalysis && (
+                {report.audioAnalysis && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Peak Level</div>
-                      <div className="text-xl font-bold">{mockReport.audioAnalysis.peakLevel} dB</div>
+                      <div className="text-xl font-bold">{report.audioAnalysis.peakLevel} dB</div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Loudness (LUFS)</div>
-                      <div className="text-xl font-bold">{mockReport.audioAnalysis.lufs} LUFS</div>
+                      <div className="text-xl font-bold">{report.audioAnalysis.lufs} LUFS</div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Dynamic Range</div>
-                      <div className="text-xl font-bold">{mockReport.audioAnalysis.dynamicRange} dB</div>
+                      <div className="text-xl font-bold">{report.audioAnalysis.dynamicRange} dB</div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">True Peak</div>
-                      <div className="text-xl font-bold">{mockReport.audioAnalysis.truePeak} dB</div>
+                      <div className="text-xl font-bold">{report.audioAnalysis.truePeak} dB</div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Sample Rate</div>
-                      <div className="text-xl font-bold">{mockReport.audioAnalysis.sampleRate / 1000} kHz</div>
+                      <div className="text-xl font-bold">{report.audioAnalysis.sampleRate / 1000} kHz</div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Bit Depth</div>
-                      <div className="text-xl font-bold">{mockReport.audioAnalysis.bitDepth}-bit</div>
+                      <div className="text-xl font-bold">{report.audioAnalysis.bitDepth}-bit</div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Duration</div>
                       <div className="text-xl font-bold">
-                        {Math.floor(mockReport.audioAnalysis.duration / 60)}:
-                        {String(Math.floor(mockReport.audioAnalysis.duration % 60)).padStart(2, '0')}
+                        {Math.floor(report.audioAnalysis.duration / 60)}:
+                        {String(Math.floor(report.audioAnalysis.duration % 60)).padStart(2, '0')}
                       </div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Clipping</div>
                       <div className="text-xl font-bold">
-                        {mockReport.audioAnalysis.hasClipping ? (
-                          <span className="text-red-500">{mockReport.audioAnalysis.clippingInstances} instances</span>
+                        {report.audioAnalysis.hasClipping ? (
+                          <span className="text-red-500">{report.audioAnalysis.clippingInstances} instances</span>
                         ) : (
                           <span className="text-green-500">None</span>
                         )}
@@ -761,26 +584,26 @@ export function AutomatedQC({
               </TabsContent>
 
               <TabsContent value="artwork" className="space-y-4">
-                {mockReport.artworkAnalysis && (
+                {report.artworkAnalysis && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Dimensions</div>
                       <div className="text-xl font-bold">
-                        {mockReport.artworkAnalysis.width}x{mockReport.artworkAnalysis.height}
+                        {report.artworkAnalysis.width}x{report.artworkAnalysis.height}
                       </div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Format</div>
-                      <div className="text-xl font-bold">{mockReport.artworkAnalysis.format}</div>
+                      <div className="text-xl font-bold">{report.artworkAnalysis.format}</div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">Color Space</div>
-                      <div className="text-xl font-bold">{mockReport.artworkAnalysis.colorSpace}</div>
+                      <div className="text-xl font-bold">{report.artworkAnalysis.colorSpace}</div>
                     </Card>
                     <Card className="p-4">
                       <div className="text-sm text-muted-foreground">File Size</div>
                       <div className="text-xl font-bold">
-                        {(mockReport.artworkAnalysis.fileSize / (1024 * 1024)).toFixed(1)} MB
+                        {(report.artworkAnalysis.fileSize / (1024 * 1024)).toFixed(1)} MB
                       </div>
                     </Card>
                   </div>
@@ -883,7 +706,7 @@ export function AutomatedQC({
 
             <div className="flex items-center justify-between pt-4 border-t">
               <p className="text-sm text-muted-foreground">
-                Last checked: {new Date(mockReport.createdAt).toLocaleString()}
+                Last checked: {new Date(report.createdAt).toLocaleString()}
               </p>
               <Button variant="outline">
                 <Download className="h-4 w-4 mr-2" />
