@@ -578,6 +578,78 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  async getHyperFollowPage(id: string): Promise<any | null> {
+    try {
+      const pages = await db
+        .select()
+        .from(hyperFollowPages)
+        .where(eq(hyperFollowPages.id, id))
+        .limit(1);
+      return pages[0] || null;
+    } catch (error) {
+      console.error('Error fetching hyperfollow page:', error);
+      return null;
+    }
+  }
+
+  async getHyperFollowPageBySlug(slug: string): Promise<any | null> {
+    try {
+      const pages = await db
+        .select()
+        .from(hyperFollowPages)
+        .where(eq(hyperFollowPages.slug, slug))
+        .limit(1);
+      return pages[0] || null;
+    } catch (error) {
+      console.error('Error fetching hyperfollow page by slug:', error);
+      return null;
+    }
+  }
+
+  async getDSPProviders(): Promise<any[]> {
+    try {
+      const providers = await db
+        .select()
+        .from(dspProviders)
+        .orderBy(dspProviders.name);
+      return providers || [];
+    } catch (error) {
+      console.error('Error fetching DSP providers:', error);
+      return [];
+    }
+  }
+
+  async createHyperFollowPage(data: any): Promise<any | null> {
+    try {
+      const [page] = await db
+        .insert(hyperFollowPages)
+        .values({
+          ...data,
+          createdAt: data.createdAt || new Date(),
+          updatedAt: data.updatedAt || new Date(),
+        })
+        .returning();
+      return page;
+    } catch (error) {
+      console.error('Error creating hyperfollow page:', error);
+      return null;
+    }
+  }
+
+  async updateHyperFollowPage(id: string, data: any): Promise<any | null> {
+    try {
+      const [page] = await db
+        .update(hyperFollowPages)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(hyperFollowPages.id, id))
+        .returning();
+      return page || null;
+    } catch (error) {
+      console.error('Error updating hyperfollow page:', error);
+      return null;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
