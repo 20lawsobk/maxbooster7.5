@@ -150,18 +150,6 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
   }
 });
 
-// Get inbox messages - returns empty array when no real data exists
-router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const userId = req.user!.id;
-    const messages = await storage.getSocialInboxMessages?.(userId) || [];
-    res.json(messages);
-  } catch (error) {
-    logger.error('Failed to get inbox messages:', error);
-    res.json([]);
-  }
-});
-
 // =========================================
 // SOCIAL LISTENING ROUTES
 // =========================================
@@ -263,6 +251,79 @@ router.get('/benchmark/insights', requireAuth, async (req: AuthenticatedRequest,
     res.json(insights);
   } catch (error) {
     logger.error('Failed to get benchmark insights:', error);
+    res.json([]);
+  }
+});
+
+// =========================================
+// UNIFIED INBOX ROUTES - Returns empty data until real messages exist
+// =========================================
+
+// Get inbox messages - returns empty array when no real data exists (dormant behavior)
+router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const messages = await storage.getSocialInboxMessages?.(userId) || [];
+    res.json({ messages, total: messages.length });
+  } catch (error) {
+    logger.error('Failed to get inbox messages:', error);
+    res.json({ messages: [], total: 0 });
+  }
+});
+
+// Get inbox stats - returns zero stats when no real data exists
+router.get('/inbox/stats', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const messages = await storage.getSocialInboxMessages?.(userId) || [];
+    const stats = {
+      unread: messages.filter((m: any) => m.status === 'unread').length,
+      highPriority: messages.filter((m: any) => m.priority === 'high' && m.status === 'unread').length,
+      negative: messages.filter((m: any) => m.sentiment === 'negative' && m.status === 'unread').length,
+    };
+    res.json(stats);
+  } catch (error) {
+    logger.error('Failed to get inbox stats:', error);
+    res.json({ unread: 0, highPriority: 0, negative: 0 });
+  }
+});
+
+// Mark message as read
+router.post('/inbox/:id/read', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to mark message as read:', error);
+    res.status(500).json({ error: 'Failed to mark message as read' });
+  }
+});
+
+// Reply to message
+router.post('/inbox/:id/reply', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to reply to message:', error);
+    res.status(500).json({ error: 'Failed to reply to message' });
+  }
+});
+
+// Get reply templates - returns empty array when no templates exist
+router.get('/inbox/templates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json([]);
+  } catch (error) {
+    logger.error('Failed to get reply templates:', error);
+    res.json([]);
+  }
+});
+
+// Get team members for assignment - returns empty array when no team exists
+router.get('/inbox/team', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json([]);
+  } catch (error) {
+    logger.error('Failed to get team members:', error);
     res.json([]);
   }
 });

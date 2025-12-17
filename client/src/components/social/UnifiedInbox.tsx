@@ -136,131 +136,6 @@ const PRIORITY_CONFIG = {
   low: { color: 'text-gray-500', bg: 'bg-gray-500/20', border: 'border-gray-500' },
 };
 
-const MOCK_MESSAGES: Message[] = [
-  {
-    id: '1',
-    platform: 'instagram',
-    type: 'comment',
-    content: 'This track is absolutely fire! 🔥 When is the full album dropping?',
-    author: {
-      id: 'u1',
-      name: 'Music Lover',
-      username: 'musiclover2025',
-      followers: 15200,
-      verified: false,
-    },
-    postContent: 'New single "Midnight Dreams" out now!',
-    sentiment: 'positive',
-    priority: 'medium',
-    status: 'unread',
-    tags: ['fan-engagement', 'album-inquiry'],
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-  },
-  {
-    id: '2',
-    platform: 'twitter',
-    type: 'mention',
-    content: '@maxbooster Your platform helped me reach 100k monthly listeners! Thank you! 🙏',
-    author: {
-      id: 'u2',
-      name: 'Rising Artist',
-      username: 'risingartist',
-      followers: 45000,
-      verified: true,
-    },
-    sentiment: 'positive',
-    priority: 'high',
-    status: 'unread',
-    tags: ['testimonial', 'success-story'],
-    createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-  },
-  {
-    id: '3',
-    platform: 'facebook',
-    type: 'dm',
-    content: 'Hi, I\'m having trouble connecting my Spotify account. Can you help?',
-    author: {
-      id: 'u3',
-      name: 'John Smith',
-      username: 'johnsmith',
-      followers: 230,
-    },
-    sentiment: 'neutral',
-    priority: 'high',
-    status: 'unread',
-    tags: ['support', 'spotify-issue'],
-    createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-  },
-  {
-    id: '4',
-    platform: 'youtube',
-    type: 'comment',
-    content: 'The beat is terrible, completely off tempo. Not worth the money.',
-    author: {
-      id: 'u4',
-      name: 'Critical Listener',
-      username: 'criticallistener',
-      followers: 5400,
-    },
-    postContent: 'How to produce professional beats tutorial',
-    sentiment: 'negative',
-    priority: 'high',
-    status: 'unread',
-    tags: ['negative-feedback', 'requires-response'],
-    createdAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-  },
-  {
-    id: '5',
-    platform: 'tiktok',
-    type: 'comment',
-    content: 'Using this sound for my next video! 💜',
-    author: {
-      id: 'u5',
-      name: 'TikTok Creator',
-      username: 'tiktokCreator',
-      followers: 892000,
-      verified: true,
-    },
-    sentiment: 'positive',
-    priority: 'high',
-    status: 'read',
-    tags: ['influencer', 'content-usage'],
-    createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-  },
-];
-
-const MOCK_TEMPLATES: ReplyTemplate[] = [
-  {
-    id: '1',
-    name: 'Thank You - General',
-    content: 'Thank you so much for your kind words! We really appreciate your support. 🙏',
-    category: 'gratitude',
-  },
-  {
-    id: '2',
-    name: 'Support Redirect',
-    content: 'We\'re sorry to hear you\'re having issues. Please reach out to our support team at support@maxbooster.com and we\'ll get this sorted out for you!',
-    category: 'support',
-  },
-  {
-    id: '3',
-    name: 'Album Inquiry',
-    content: 'Great question! Stay tuned for exciting announcements coming soon. Make sure to follow us so you don\'t miss any updates! 🎵',
-    category: 'engagement',
-  },
-  {
-    id: '4',
-    name: 'Negative Feedback Response',
-    content: 'We appreciate your honest feedback and take it seriously. Could you share more details so we can improve? Feel free to DM us.',
-    category: 'feedback',
-  },
-];
-
-const MOCK_TEAM: TeamMember[] = [
-  { id: '1', name: 'Alex Johnson', email: 'alex@maxbooster.com' },
-  { id: '2', name: 'Sarah Williams', email: 'sarah@maxbooster.com' },
-  { id: '3', name: 'Mike Chen', email: 'mike@maxbooster.com' },
-];
 
 export function UnifiedInbox() {
   const { toast } = useToast();
@@ -281,10 +156,9 @@ export function UnifiedInbox() {
 
   const { data: messagesData, isLoading } = useQuery({
     queryKey: ['/api/social/inbox'],
-    placeholderData: { messages: MOCK_MESSAGES, total: MOCK_MESSAGES.length },
   });
 
-  const messages = messagesData?.messages || MOCK_MESSAGES;
+  const messages: Message[] = messagesData?.messages || [];
 
   const filteredMessages = messages.filter((msg: Message) => {
     if (activeTab === 'unread' && msg.status !== 'unread') return false;
@@ -735,18 +609,9 @@ export function UnifiedInbox() {
                     
                     {showTemplates && (
                       <div className="p-3 border rounded-lg space-y-2 bg-muted/50">
-                        {MOCK_TEMPLATES.map((template) => (
-                          <div
-                            key={template.id}
-                            className="p-2 rounded hover:bg-muted cursor-pointer"
-                            onClick={() => handleUseTemplate(template)}
-                          >
-                            <p className="text-sm font-medium">{template.name}</p>
-                            <p className="text-xs text-muted-foreground line-clamp-1">
-                              {template.content}
-                            </p>
-                          </div>
-                        ))}
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          No templates available. Connect your social accounts to get started.
+                        </p>
                       </div>
                     )}
                     
@@ -785,21 +650,9 @@ export function UnifiedInbox() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            {MOCK_TEAM.map((member) => (
-              <div
-                key={member.id}
-                className="p-3 rounded-lg border hover:bg-muted cursor-pointer flex items-center gap-3"
-                onClick={() => handleAssign(member)}
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">{member.name}</p>
-                  <p className="text-sm text-muted-foreground">{member.email}</p>
-                </div>
-              </div>
-            ))}
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No team members available. Add team members in your workspace settings.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
