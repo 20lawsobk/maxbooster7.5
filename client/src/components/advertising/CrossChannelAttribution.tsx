@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -120,225 +121,35 @@ interface ChannelComparison {
   direction: 'up' | 'down' | 'stable';
 }
 
-const mockChannelData: ChannelData[] = [
-  {
-    channel: 'Paid Social',
-    icon: <Megaphone className="w-4 h-4" />,
-    color: '#3b82f6',
-    firstTouch: 28,
-    lastTouch: 15,
-    linear: 22,
-    timeDecay: 20,
-    positionBased: 24,
-    dataDriven: 23,
-    conversions: 312,
-    revenue: 15680,
-    spend: 4200,
-    roas: 3.73,
-    assists: 456,
-    avgTouchpoints: 2.4,
-  },
-  {
-    channel: 'Organic Search',
-    icon: <Search className="w-4 h-4" />,
-    color: '#22c55e',
-    firstTouch: 22,
-    lastTouch: 32,
-    linear: 25,
-    timeDecay: 28,
-    positionBased: 26,
-    dataDriven: 27,
-    conversions: 428,
-    revenue: 21400,
-    spend: 0,
-    roas: Infinity,
-    assists: 234,
-    avgTouchpoints: 1.8,
-  },
-  {
-    channel: 'Email Marketing',
-    icon: <Mail className="w-4 h-4" />,
-    color: '#f59e0b',
-    firstTouch: 8,
-    lastTouch: 25,
-    linear: 18,
-    timeDecay: 22,
-    positionBased: 16,
-    dataDriven: 19,
-    conversions: 256,
-    revenue: 12800,
-    spend: 1200,
-    roas: 10.67,
-    assists: 389,
-    avgTouchpoints: 3.2,
-  },
-  {
-    channel: 'Paid Search',
-    icon: <Search className="w-4 h-4" />,
-    color: '#8b5cf6',
-    firstTouch: 18,
-    lastTouch: 12,
-    linear: 15,
-    timeDecay: 14,
-    positionBased: 16,
-    dataDriven: 15,
-    conversions: 198,
-    revenue: 9900,
-    spend: 3500,
-    roas: 2.83,
-    assists: 178,
-    avgTouchpoints: 1.5,
-  },
-  {
-    channel: 'Display Ads',
-    icon: <Monitor className="w-4 h-4" />,
-    color: '#06b6d4',
-    firstTouch: 15,
-    lastTouch: 5,
-    linear: 10,
-    timeDecay: 8,
-    positionBased: 11,
-    dataDriven: 9,
-    conversions: 89,
-    revenue: 4450,
-    spend: 2800,
-    roas: 1.59,
-    assists: 567,
-    avgTouchpoints: 4.1,
-  },
-  {
-    channel: 'Direct',
-    icon: <Globe className="w-4 h-4" />,
-    color: '#ef4444',
-    firstTouch: 5,
-    lastTouch: 8,
-    linear: 6,
-    timeDecay: 5,
-    positionBased: 5,
-    dataDriven: 5,
-    conversions: 67,
-    revenue: 3350,
-    spend: 0,
-    roas: Infinity,
-    assists: 45,
-    avgTouchpoints: 1.2,
-  },
-  {
-    channel: 'Referral',
-    icon: <Share2 className="w-4 h-4" />,
-    color: '#ec4899',
-    firstTouch: 4,
-    lastTouch: 3,
-    linear: 4,
-    timeDecay: 3,
-    positionBased: 2,
-    dataDriven: 2,
-    conversions: 45,
-    revenue: 2250,
-    spend: 500,
-    roas: 4.50,
-    assists: 123,
-    avgTouchpoints: 1.8,
-  },
-];
-
-const mockConversionPaths: ConversionPath[] = [
-  {
-    id: '1',
-    path: ['Paid Social', 'Email', 'Organic Search', 'Direct'],
-    conversions: 189,
-    revenue: 9450,
-    avgDaysToConvert: 8.5,
-    avgTouchpoints: 4,
-  },
-  {
-    id: '2',
-    path: ['Display', 'Paid Social', 'Email'],
-    conversions: 156,
-    revenue: 7800,
-    avgDaysToConvert: 6.2,
-    avgTouchpoints: 3,
-  },
-  {
-    id: '3',
-    path: ['Organic Search', 'Direct'],
-    conversions: 134,
-    revenue: 6700,
-    avgDaysToConvert: 2.1,
-    avgTouchpoints: 2,
-  },
-  {
-    id: '4',
-    path: ['Paid Search', 'Email', 'Direct'],
-    conversions: 98,
-    revenue: 4900,
-    avgDaysToConvert: 4.8,
-    avgTouchpoints: 3,
-  },
-  {
-    id: '5',
-    path: ['Display', 'Paid Social', 'Organic Search', 'Email', 'Direct'],
-    conversions: 67,
-    revenue: 3350,
-    avgDaysToConvert: 14.2,
-    avgTouchpoints: 5,
-  },
-];
-
-const touchpointDistributionData = [
-  { touchpoints: '1', conversions: 245, revenue: 12250, percentage: 18 },
-  { touchpoints: '2', conversions: 378, revenue: 18900, percentage: 28 },
-  { touchpoints: '3', conversions: 312, revenue: 15600, percentage: 23 },
-  { touchpoints: '4', conversions: 198, revenue: 9900, percentage: 15 },
-  { touchpoints: '5+', conversions: 212, revenue: 10600, percentage: 16 },
-];
-
-const timeToConversionData = [
-  { day: 'Same Day', conversions: 156, percentage: 12 },
-  { day: '1-3 Days', conversions: 312, percentage: 23 },
-  { day: '4-7 Days', conversions: 389, percentage: 29 },
-  { day: '8-14 Days', conversions: 267, percentage: 20 },
-  { day: '15-30 Days', conversions: 156, percentage: 12 },
-  { day: '30+ Days', conversions: 65, percentage: 5 },
-];
-
-const channelOverlapData = [
-  { name: 'Paid Social + Email', value: 234, color: '#3b82f6' },
-  { name: 'Organic + Direct', value: 189, color: '#22c55e' },
-  { name: 'Display + Paid Social', value: 156, color: '#f59e0b' },
-  { name: 'Email + Direct', value: 145, color: '#8b5cf6' },
-  { name: 'Paid Search + Organic', value: 123, color: '#06b6d4' },
-];
-
-const roasComparisonData = [
-  { channel: 'Email', roas: 10.67, spend: 1200 },
-  { channel: 'Referral', roas: 4.50, spend: 500 },
-  { channel: 'Paid Social', roas: 3.73, spend: 4200 },
-  { channel: 'Paid Search', roas: 2.83, spend: 3500 },
-  { channel: 'Display', roas: 1.59, spend: 2800 },
-];
-
-const weeklyTrendData = [
-  { week: 'W1', paidSocial: 22, organic: 28, email: 18, paidSearch: 15, display: 10, direct: 7 },
-  { week: 'W2', paidSocial: 24, organic: 26, email: 19, paidSearch: 14, display: 11, direct: 6 },
-  { week: 'W3', paidSocial: 23, organic: 27, email: 20, paidSearch: 15, display: 9, direct: 6 },
-  { week: 'W4', paidSocial: 25, organic: 25, email: 18, paidSearch: 16, display: 10, direct: 6 },
-];
-
-const deviceData = [
-  { device: 'Mobile', conversions: 534, percentage: 42 },
-  { device: 'Desktop', conversions: 512, percentage: 40 },
-  { device: 'Tablet', conversions: 178, percentage: 14 },
-  { device: 'Smart TV', conversions: 51, percentage: 4 },
-];
 
 const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+
+const CHANNEL_COLORS: Record<string, string> = {
+  'Paid Social': '#3b82f6',
+  'Organic Search': '#22c55e',
+  'Email Marketing': '#f59e0b',
+  'Paid Search': '#8b5cf6',
+  'Display Ads': '#06b6d4',
+  'Direct': '#ef4444',
+  'Referral': '#ec4899',
+};
 
 export function CrossChannelAttribution() {
   const [selectedModel, setSelectedModel] = useState<AttributionModel>('data-driven');
   const [comparisonModel, setComparisonModel] = useState<AttributionModel>('last-touch');
   const [attributionWindow, setAttributionWindow] = useState('30');
   const [showAssisted, setShowAssisted] = useState(true);
+
+  const { data: attributionData } = useQuery({
+    queryKey: ['/api/advertising/attribution/channels', attributionWindow],
+  });
+
+  const { data: pathsData } = useQuery({
+    queryKey: ['/api/advertising/attribution/paths', attributionWindow],
+  });
+
+  const channelData: ChannelData[] = attributionData?.channels || [];
+  const conversionPaths: ConversionPath[] = pathsData?.paths || [];
 
   const getModelValue = (channel: ChannelData) => {
     switch (selectedModel) {
@@ -374,17 +185,17 @@ export function CrossChannelAttribution() {
     }
   };
 
-  const totalConversions = mockChannelData.reduce((acc, c) => acc + c.conversions, 0);
-  const totalRevenue = mockChannelData.reduce((acc, c) => acc + c.revenue, 0);
-  const totalSpend = mockChannelData.reduce((acc, c) => acc + c.spend, 0);
-  const totalAssists = mockChannelData.reduce((acc, c) => acc + c.assists, 0);
-  const overallROAS = totalRevenue / totalSpend;
+  const totalConversions = channelData.reduce((acc, c) => acc + c.conversions, 0);
+  const totalRevenue = channelData.reduce((acc, c) => acc + c.revenue, 0);
+  const totalSpend = channelData.reduce((acc, c) => acc + c.spend, 0);
+  const totalAssists = channelData.reduce((acc, c) => acc + c.assists, 0);
+  const overallROAS = totalSpend > 0 ? totalRevenue / totalSpend : 0;
 
-  const chartData = mockChannelData.map((channel) => ({
+  const chartData = channelData.map((channel, index) => ({
     name: channel.channel,
-    value: getModelValue(channel),
-    comparison: getComparisonValue(channel),
-    fill: channel.color,
+    value: getModelValue(channel) || 0,
+    comparison: getComparisonValue(channel) || 0,
+    fill: channel.color || CHANNEL_COLORS[channel.channel] || COLORS[index % COLORS.length],
   }));
 
   const chartConfig = {
@@ -410,6 +221,29 @@ export function CrossChannelAttribution() {
     'position-based': 'Gives 40% to first touch, 40% to last, 20% distributed to middle',
     'data-driven': 'Uses machine learning to determine actual impact of each touchpoint',
   };
+
+  if (channelData.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Network className="w-6 h-6 text-blue-500" />
+            Cross-Channel Attribution
+          </CardTitle>
+          <CardDescription>
+            Multi-touch attribution modeling and channel performance comparison
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <GitBranch className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">No Attribution Data Available</h3>
+          <p className="text-muted-foreground text-center max-w-md">
+            Attribution data will appear here once you have tracked conversions across your marketing channels.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -650,7 +484,7 @@ export function CrossChannelAttribution() {
                     </tr>
                   </thead>
                   <tbody>
-                    {mockChannelData.map((channel, idx) => (
+                    {channelData.map((channel, idx) => (
                       <tr key={channel.channel} className="border-b hover:bg-muted/50">
                         <td className="py-3 px-4 font-medium">
                           <div className="flex items-center gap-2">
@@ -759,7 +593,7 @@ export function CrossChannelAttribution() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockConversionPaths.map((path, idx) => (
+                {conversionPaths.map((path, idx) => (
                   <div key={path.id} className="p-4 rounded-lg border hover:border-primary/30 transition-colors">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -785,7 +619,7 @@ export function CrossChannelAttribution() {
 
                     <div className="flex items-center gap-2 flex-wrap">
                       {path.path.map((step, stepIdx) => {
-                        const channelData = mockChannelData.find((c) => c.channel === step);
+                        const channelData = channelData.find((c) => c.channel === step);
                         return (
                           <div key={stepIdx} className="flex items-center gap-2">
                             <Badge
@@ -981,7 +815,7 @@ export function CrossChannelAttribution() {
             <CardContent>
               <ChartContainer config={chartConfig} className="h-[350px]">
                 <RadarChart
-                  data={mockChannelData.map((c) => ({
+                  data={channelData.map((c) => ({
                     channel: c.channel,
                     firstTouch: c.firstTouch,
                     middle: c.linear,
@@ -1029,7 +863,7 @@ export function CrossChannelAttribution() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {mockChannelData.slice(0, 5).map((channel, idx) => {
+                {channelData.slice(0, 5).map((channel, idx) => {
                   const primaryValue = getModelValue(channel);
                   const comparisonValue = getComparisonValue(channel);
                   const change = primaryValue - comparisonValue;

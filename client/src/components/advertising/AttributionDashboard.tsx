@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -82,129 +83,6 @@ interface ConversionPath {
   avgDaysToConvert: number;
 }
 
-const mockChannelData: ChannelAttribution[] = [
-  {
-    channel: 'Paid Social',
-    firstClick: 32,
-    lastClick: 18,
-    linear: 25,
-    timeDecay: 22,
-    positionBased: 27,
-    conversions: 245,
-    revenue: 12450,
-    assists: 189,
-  },
-  {
-    channel: 'Organic Search',
-    firstClick: 28,
-    lastClick: 35,
-    linear: 28,
-    timeDecay: 30,
-    positionBased: 30,
-    conversions: 312,
-    revenue: 15890,
-    assists: 156,
-  },
-  {
-    channel: 'Email Marketing',
-    firstClick: 8,
-    lastClick: 22,
-    linear: 18,
-    timeDecay: 20,
-    positionBased: 16,
-    conversions: 178,
-    revenue: 8920,
-    assists: 234,
-  },
-  {
-    channel: 'Direct',
-    firstClick: 15,
-    lastClick: 12,
-    linear: 12,
-    timeDecay: 13,
-    positionBased: 12,
-    conversions: 89,
-    revenue: 4560,
-    assists: 45,
-  },
-  {
-    channel: 'Referral',
-    firstClick: 12,
-    lastClick: 8,
-    linear: 10,
-    timeDecay: 9,
-    positionBased: 10,
-    conversions: 67,
-    revenue: 3450,
-    assists: 78,
-  },
-  {
-    channel: 'Display Ads',
-    firstClick: 5,
-    lastClick: 5,
-    linear: 7,
-    timeDecay: 6,
-    positionBased: 5,
-    conversions: 45,
-    revenue: 2280,
-    assists: 123,
-  },
-];
-
-const mockConversionPaths: ConversionPath[] = [
-  {
-    id: '1',
-    path: ['Paid Social', 'Email', 'Organic Search', 'Direct'],
-    conversions: 156,
-    revenue: 7890,
-    avgDaysToConvert: 8.5,
-  },
-  {
-    id: '2',
-    path: ['Organic Search', 'Direct'],
-    conversions: 134,
-    revenue: 6780,
-    avgDaysToConvert: 3.2,
-  },
-  {
-    id: '3',
-    path: ['Paid Social', 'Paid Social', 'Email'],
-    conversions: 98,
-    revenue: 4950,
-    avgDaysToConvert: 5.7,
-  },
-  {
-    id: '4',
-    path: ['Display', 'Paid Social', 'Organic Search', 'Email', 'Direct'],
-    conversions: 67,
-    revenue: 3450,
-    avgDaysToConvert: 14.2,
-  },
-  {
-    id: '5',
-    path: ['Referral', 'Direct'],
-    conversions: 45,
-    revenue: 2280,
-    avgDaysToConvert: 2.1,
-  },
-];
-
-const windowComparisonData = [
-  { window: '1 day', conversions: 234, value: 11780 },
-  { window: '7 days', conversions: 456, value: 23120 },
-  { window: '14 days', conversions: 578, value: 29340 },
-  { window: '30 days', conversions: 689, value: 35010 },
-  { window: '60 days', conversions: 745, value: 37890 },
-  { window: '90 days', conversions: 782, value: 39650 },
-];
-
-const journeyTimelineData = [
-  { touchpoint: 1, paidSocial: 35, organic: 25, email: 10, direct: 15, display: 15 },
-  { touchpoint: 2, paidSocial: 28, organic: 30, email: 18, direct: 12, display: 12 },
-  { touchpoint: 3, paidSocial: 22, organic: 28, email: 25, direct: 15, display: 10 },
-  { touchpoint: 4, paidSocial: 18, organic: 25, email: 28, direct: 20, display: 9 },
-  { touchpoint: 5, paidSocial: 15, organic: 20, email: 22, direct: 35, display: 8 },
-];
 
 const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -212,6 +90,17 @@ export function AttributionDashboard() {
   const [selectedModel, setSelectedModel] = useState<AttributionModel>('position-based');
   const [attributionWindow, setAttributionWindow] = useState('30');
   const [showAssisted, setShowAssisted] = useState(true);
+
+  const { data: attributionData } = useQuery({
+    queryKey: ['/api/advertising/dashboard/attribution', attributionWindow],
+  });
+
+  const { data: pathsData } = useQuery({
+    queryKey: ['/api/advertising/dashboard/paths', attributionWindow],
+  });
+
+  const channelData: ChannelAttribution[] = attributionData?.channels || [];
+  const conversionPaths: ConversionPath[] = pathsData?.paths || [];
 
   const getModelValue = (channel: ChannelAttribution) => {
     switch (selectedModel) {
@@ -228,11 +117,11 @@ export function AttributionDashboard() {
     }
   };
 
-  const totalConversions = mockChannelData.reduce((acc, c) => acc + c.conversions, 0);
-  const totalRevenue = mockChannelData.reduce((acc, c) => acc + c.revenue, 0);
-  const totalAssists = mockChannelData.reduce((acc, c) => acc + c.assists, 0);
+  const totalConversions = channelData.reduce((acc, c) => acc + c.conversions, 0);
+  const totalRevenue = channelData.reduce((acc, c) => acc + c.revenue, 0);
+  const totalAssists = channelData.reduce((acc, c) => acc + c.assists, 0);
 
-  const chartData = mockChannelData.map((channel) => ({
+  const chartData = channelData.map((channel) => ({
     name: channel.channel,
     value: getModelValue(channel),
   }));
@@ -254,6 +143,29 @@ export function AttributionDashboard() {
     'time-decay': 'Gives more credit to touchpoints closer to conversion',
     'position-based': 'Gives 40% to first, 40% to last, 20% distributed to middle',
   };
+
+  if (channelData.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GitBranch className="w-6 h-6 text-blue-500" />
+            Multi-Touch Attribution Dashboard
+          </CardTitle>
+          <CardDescription>
+            Understand the true impact of each marketing channel
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Target className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">No Attribution Data Available</h3>
+          <p className="text-muted-foreground text-center max-w-md">
+            Attribution data will appear here once you have tracked conversions across your marketing channels.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -383,7 +295,7 @@ export function AttributionDashboard() {
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ChartContainer config={chartConfig} className="h-[300px]">
-              <BarChart data={mockChannelData} layout="vertical">
+              <BarChart data={channelData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" className="text-xs" />
                 <YAxis dataKey="channel" type="category" className="text-xs" width={100} />
@@ -461,7 +373,7 @@ export function AttributionDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {mockChannelData.map((channel, idx) => (
+                    {channelData.map((channel, idx) => (
                       <tr key={channel.channel} className="border-b hover:bg-muted/50">
                         <td className="py-3 px-4 font-medium">
                           <div className="flex items-center gap-2">
@@ -501,7 +413,7 @@ export function AttributionDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockConversionPaths.map((path, idx) => (
+                {conversionPaths.map((path, idx) => (
                   <div key={path.id} className="p-4 rounded-lg border">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -791,7 +703,7 @@ export function AttributionDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockChannelData.slice(0, 4).map((channel, idx) => (
+                  {channelData.slice(0, 4).map((channel, idx) => (
                     <div key={channel.channel} className="space-y-1">
                       <div className="flex justify-between text-sm">
                         <span>{channel.channel}</span>
@@ -827,7 +739,7 @@ export function AttributionDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockChannelData.map((channel, idx) => {
+                {channelData.map((channel, idx) => {
                   const assistRatio = channel.assists / channel.conversions;
                   return (
                     <div key={channel.channel} className="p-4 rounded-lg border">

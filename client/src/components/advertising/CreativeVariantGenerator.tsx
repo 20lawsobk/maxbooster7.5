@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -92,87 +93,8 @@ interface ABTest {
   targetSampleSize: number;
 }
 
-const mockVariants: CreativeVariant[] = [
-  {
-    id: '1',
-    name: 'Variant A - Original',
-    headline: 'Stream Your Music Worldwide',
-    description: 'Get your tracks on Spotify, Apple Music & 150+ platforms',
-    cta: 'Start Free Trial',
-    status: 'testing',
-    impressions: 45230,
-    clicks: 2890,
-    conversions: 234,
-    ctr: 6.39,
-    conversionRate: 8.1,
-    confidence: 92,
-    predictionScore: 78,
-    createdAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    name: 'Variant B - Bold CTA',
-    headline: 'Your Music. Every Platform.',
-    description: 'Join 500K+ artists distributing globally',
-    cta: 'Go Live Now',
-    status: 'winner',
-    impressions: 44890,
-    clicks: 3456,
-    conversions: 312,
-    ctr: 7.7,
-    conversionRate: 9.03,
-    confidence: 96,
-    predictionScore: 89,
-    createdAt: '2024-01-15',
-  },
-  {
-    id: '3',
-    name: 'Variant C - Social Proof',
-    headline: 'Join 500,000+ Artists',
-    description: 'The #1 rated music distribution platform',
-    cta: 'Start Distributing',
-    status: 'testing',
-    impressions: 43120,
-    clicks: 2654,
-    conversions: 198,
-    ctr: 6.15,
-    conversionRate: 7.46,
-    confidence: 78,
-    predictionScore: 72,
-    createdAt: '2024-01-15',
-  },
-];
 
-const mockABTests: ABTest[] = [
-  {
-    id: '1',
-    name: 'Q1 Landing Page Test',
-    status: 'running',
-    startDate: '2024-01-15',
-    variants: mockVariants,
-    statisticalSignificance: 96,
-    sampleSize: 133240,
-    targetSampleSize: 150000,
-  },
-];
-
-const performanceData = [
-  { day: 'Mon', variantA: 6.2, variantB: 7.4, variantC: 5.9 },
-  { day: 'Tue', variantA: 6.5, variantB: 7.8, variantC: 6.1 },
-  { day: 'Wed', variantA: 6.1, variantB: 7.6, variantC: 6.3 },
-  { day: 'Thu', variantA: 6.8, variantB: 8.1, variantC: 6.0 },
-  { day: 'Fri', variantA: 6.4, variantB: 7.9, variantC: 6.2 },
-  { day: 'Sat', variantA: 5.9, variantB: 7.2, variantC: 5.8 },
-  { day: 'Sun', variantA: 6.0, variantB: 7.5, variantC: 5.7 },
-];
-
-const predictionDistribution = [
-  { name: 'High (80-100)', value: 35, color: '#22c55e' },
-  { name: 'Medium (50-79)', value: 45, color: '#eab308' },
-  { name: 'Low (0-49)', value: 20, color: '#ef4444' },
-];
-
-const headlines = [
+const HEADLINE_SUGGESTIONS = [
   'Stream Your Music Worldwide',
   'Your Music. Every Platform.',
   'Join 500,000+ Artists',
@@ -180,7 +102,7 @@ const headlines = [
   'Go Global With Your Sound',
 ];
 
-const ctas = [
+const CTA_SUGGESTIONS = [
   'Start Free Trial',
   'Go Live Now',
   'Start Distributing',
@@ -189,7 +111,18 @@ const ctas = [
 ];
 
 export function CreativeVariantGenerator() {
-  const [activeTest, setActiveTest] = useState<ABTest>(mockABTests[0]);
+  const { data: testsData } = useQuery({
+    queryKey: ['/api/advertising/ab-tests'],
+  });
+  
+  const { data: variantsData } = useQuery({
+    queryKey: ['/api/advertising/variants'],
+  });
+
+  const abTests: ABTest[] = testsData?.tests || [];
+  const variants: CreativeVariant[] = variantsData?.variants || [];
+
+  const [activeTest, setActiveTest] = useState<ABTest | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [autoOptimize, setAutoOptimize] = useState(true);
   const [bulkCount, setBulkCount] = useState(5);
@@ -279,7 +212,7 @@ export function CreativeVariantGenerator() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active Tests</p>
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{abTests.filter(t => t.status === 'running').length}</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
                 <Layers className="w-5 h-5 text-blue-500" />
@@ -293,7 +226,7 @@ export function CreativeVariantGenerator() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Variants</p>
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{variants.length}</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
                 <Copy className="w-5 h-5 text-purple-500" />
@@ -307,7 +240,11 @@ export function CreativeVariantGenerator() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Avg CTR Lift</p>
-                <p className="text-2xl font-bold text-muted-foreground">--</p>
+                <p className="text-2xl font-bold text-muted-foreground">
+                  {variants.length > 0 
+                    ? `${(variants.reduce((acc, v) => acc + v.ctr, 0) / variants.length).toFixed(1)}%` 
+                    : '--'}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-500" />
@@ -321,7 +258,7 @@ export function CreativeVariantGenerator() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Winners Found</p>
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{variants.filter(v => v.status === 'winner').length}</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center">
                 <Trophy className="w-5 h-5 text-yellow-500" />
@@ -340,6 +277,21 @@ export function CreativeVariantGenerator() {
         </TabsList>
 
         <TabsContent value="variants" className="space-y-4">
+          {!activeTest && abTests.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Layers className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No A/B Tests Available</h3>
+                <p className="text-muted-foreground text-center max-w-md">
+                  Create your first A/B test to start optimizing ad creatives with AI-powered variant generation.
+                </p>
+                <Button className="mt-4" onClick={handleGenerateVariants}>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Generate AI Variants
+                </Button>
+              </CardContent>
+            </Card>
+          ) : activeTest ? (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -475,6 +427,7 @@ export function CreativeVariantGenerator() {
               </div>
             </CardContent>
           </Card>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="generate" className="space-y-4">
@@ -506,7 +459,7 @@ export function CreativeVariantGenerator() {
                       onClick={() =>
                         setNewVariant({
                           ...newVariant,
-                          headline: headlines[Math.floor(Math.random() * headlines.length)],
+                          headline: HEADLINE_SUGGESTIONS[Math.floor(Math.random() * HEADLINE_SUGGESTIONS.length)],
                         })
                       }
                     >
@@ -698,7 +651,7 @@ export function CreativeVariantGenerator() {
           </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {mockVariants.map((variant) => (
+            {variants.map((variant) => (
               <Card key={variant.id}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
@@ -762,7 +715,7 @@ export function CreativeVariantGenerator() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockVariants.map((variant) => (
+                  {variants.map((variant) => (
                     <div key={variant.id} className="p-3 rounded-lg border">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium">{variant.name}</span>

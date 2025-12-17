@@ -139,65 +139,6 @@ const STATUS_CONFIG = {
   failed: { label: 'Failed', color: 'bg-red-500/20 text-red-500', icon: XCircle },
 };
 
-const MOCK_POSTS: ScheduledPost[] = [
-  {
-    id: '1',
-    title: 'New Single Release',
-    content: '🎵 Excited to announce our new single dropping this Friday! Pre-save now! #NewMusic #IndieArtist',
-    platforms: ['instagram', 'twitter', 'facebook'],
-    scheduledFor: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-    type: 'organic',
-    status: 'scheduled',
-    campaign: 'Summer Release',
-    hashtags: ['#NewMusic', '#IndieArtist'],
-    createdAt: new Date().toISOString(),
-    optimalTimeScore: 92,
-  },
-  {
-    id: '2',
-    title: 'Behind the Scenes',
-    content: 'Studio session vibes 🎧 Working on something special for you all...',
-    platforms: ['instagram', 'tiktok'],
-    scheduledFor: new Date(Date.now() + 1000 * 60 * 60 * 48).toISOString(),
-    type: 'story',
-    status: 'pending_approval',
-    createdAt: new Date().toISOString(),
-    optimalTimeScore: 85,
-  },
-  {
-    id: '3',
-    title: 'Sponsored Post',
-    content: 'Level up your music career with the best distribution platform. Start free today!',
-    platforms: ['facebook', 'instagram'],
-    scheduledFor: new Date(Date.now() + 1000 * 60 * 60 * 72).toISOString(),
-    type: 'paid',
-    status: 'approved',
-    campaign: 'Q4 Ads',
-    budget: 500,
-    createdAt: new Date().toISOString(),
-    optimalTimeScore: 78,
-  },
-];
-
-const MOCK_CAMPAIGNS: Campaign[] = [
-  { id: '1', name: 'Summer Release', color: '#f97316', startDate: '2025-06-01', endDate: '2025-06-30', posts: 15, budget: 2000 },
-  { id: '2', name: 'Q4 Ads', color: '#8b5cf6', startDate: '2025-10-01', endDate: '2025-12-31', posts: 45, budget: 15000 },
-  { id: '3', name: 'Album Launch', color: '#22c55e', startDate: '2025-09-01', endDate: '2025-09-30', posts: 30, budget: 5000 },
-];
-
-const MOCK_HOLIDAYS: Holiday[] = [
-  { date: '2025-12-25', name: 'Christmas', type: 'holiday' },
-  { date: '2025-12-31', name: 'New Year Eve', type: 'holiday' },
-  { date: '2025-01-01', name: 'New Year', type: 'holiday' },
-  { date: '2025-02-14', name: 'Valentine Day', type: 'event' },
-  { date: '2025-06-21', name: 'World Music Day', type: 'awareness' },
-];
-
-const MOCK_QUEUE: QueueItem[] = [
-  { id: '1', content: 'Check out our latest beat pack! Perfect for hip-hop producers.', platforms: ['instagram', 'twitter'], optimalTime: 'Today 6:00 PM', score: 95 },
-  { id: '2', content: 'Producer tip: Layer your 808s with a clean sub for maximum impact.', platforms: ['twitter', 'linkedin'], optimalTime: 'Tomorrow 12:00 PM', score: 88 },
-  { id: '3', content: 'New tutorial dropping soon! Subscribe to be notified.', platforms: ['youtube', 'tiktok'], optimalTime: 'Tomorrow 3:00 PM', score: 82 },
-];
 
 export function UnifiedCalendar() {
   const { toast } = useToast();
@@ -226,28 +167,24 @@ export function UnifiedCalendar() {
 
   const { data: postsData, isLoading: postsLoading } = useQuery({
     queryKey: ['/api/social/unified-calendar/posts'],
-    placeholderData: { posts: MOCK_POSTS },
   });
 
   const { data: campaignsData } = useQuery({
     queryKey: ['/api/social/unified-calendar/campaigns'],
-    placeholderData: { campaigns: MOCK_CAMPAIGNS },
   });
 
   const { data: holidaysData } = useQuery({
     queryKey: ['/api/social/unified-calendar/holidays'],
-    placeholderData: { holidays: MOCK_HOLIDAYS },
   });
 
   const { data: queueData } = useQuery({
     queryKey: ['/api/social/unified-calendar/queue'],
-    placeholderData: { queue: MOCK_QUEUE },
   });
 
-  const posts = postsData?.posts || MOCK_POSTS;
-  const campaigns = campaignsData?.campaigns || MOCK_CAMPAIGNS;
-  const holidays = holidaysData?.holidays || MOCK_HOLIDAYS;
-  const queue = queueData?.queue || MOCK_QUEUE;
+  const posts: ScheduledPost[] = postsData?.posts || [];
+  const campaigns: Campaign[] = campaignsData?.campaigns || [];
+  const holidays: Holiday[] = holidaysData?.holidays || [];
+  const queue: QueueItem[] = queueData?.queue || [];
 
   const filteredPosts = posts.filter((post: ScheduledPost) => {
     if (filterPlatform !== 'all' && !post.platforms.includes(filterPlatform)) return false;

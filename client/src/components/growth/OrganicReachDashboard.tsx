@@ -497,7 +497,7 @@ export function OrganicReachDashboard() {
                         const entry = data.heatmapData.find(
                           d => d.dayOfWeek === dayIndex && d.hour === hour
                         );
-                        const value = entry?.value || Math.floor(Math.random() * 60) + 20;
+                        const value = entry?.value || 0;
                         return (
                           <div
                             key={`${hour}-${dayIndex}`}

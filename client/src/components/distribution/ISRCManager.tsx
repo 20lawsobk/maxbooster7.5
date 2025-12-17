@@ -706,7 +706,7 @@ export function ISRCManager({ releaseId, onCodeAssigned }: ISRCManagerProps) {
 
           <TabsContent value="history" className="space-y-4">
             <div className="space-y-4">
-              {[...mockISRCCodes, ...mockUPCCodes]
+              {[...isrcCodes, ...upcCodes]
                 .sort(
                   (a, b) =>
                     new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime()
