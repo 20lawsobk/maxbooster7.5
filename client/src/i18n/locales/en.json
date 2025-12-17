@@ -1,0 +1,246 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "filter": "Filter",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "logout": "Logout",
+    "login": "Login",
+    "signup": "Sign Up",
+    "forgotPassword": "Forgot Password?",
+    "language": "Language"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "studio": "Studio",
+    "social": "Social Media",
+    "advertising": "Advertising",
+    "organicGrowth": "Organic Growth",
+    "marketplace": "Marketplace",
+    "distribution": "Distribution",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "help": "Help",
+    "helpCenter": "Help Center",
+    "status": "Status",
+    "desktopApp": "Desktop App"
+  },
+  "auth": {
+    "loginTitle": "Login to Max Booster",
+    "signupTitle": "Create Your Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "username": "Username",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "rememberMe": "Remember me",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginError": "Invalid email or password",
+    "signupSuccess": "Account created successfully!",
+    "signupError": "Failed to create account",
+    "resetPassword": "Reset Password",
+    "resetPasswordSuccess": "Password reset email sent",
+    "resetPasswordError": "Failed to send reset email"
+  },
+  "dashboard": {
+    "overview": "Overview",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions",
+    "stats": "Statistics",
+    "totalStreams": "Total Streams",
+    "revenue": "Revenue",
+    "followers": "Followers",
+    "engagement": "Engagement"
+  },
+  "studio": {
+    "title": "AI Studio",
+    "newProject": "New Project",
+    "openProject": "Open Project",
+    "saveProject": "Save Project",
+    "exportProject": "Export Project",
+    "tracks": "Tracks",
+    "effects": "Effects",
+    "mixer": "Mixer",
+    "mastering": "Mastering",
+    "aiAssist": "AI Assist",
+    "recordingMode": "Recording Mode",
+    "playback": "Playback",
+    "tempo": "Tempo",
+    "timeSignature": "Time Signature"
+  },
+  "social": {
+    "title": "Social Media Manager",
+    "createPost": "Create Post",
+    "schedule": "Schedule",
+    "posts": "Posts",
+    "campaigns": "Campaigns",
+    "analytics": "Analytics",
+    "platforms": "Platforms",
+    "autopilot": "AI Autopilot",
+    "engagement": "Engagement",
+    "insights": "Insights",
+    "contentCalendar": "Content Calendar"
+  },
+  "advertising": {
+    "title": "Advertising Campaigns",
+    "createCampaign": "Create Campaign",
+    "activeCampaigns": "Active Campaigns",
+    "budget": "Budget",
+    "targeting": "Targeting",
+    "performance": "Performance",
+    "optimization": "AI Optimization",
+    "organicReach": "Organic Reach",
+    "paidReach": "Paid Reach",
+    "conversions": "Conversions"
+  },
+  "marketplace": {
+    "title": "Marketplace",
+    "browse": "Browse",
+    "sell": "Sell",
+    "myListings": "My Listings",
+    "purchases": "Purchases",
+    "sales": "Sales",
+    "earnings": "Earnings",
+    "products": "Products",
+    "services": "Services",
+    "samples": "Samples",
+    "plugins": "Plugins"
+  },
+  "distribution": {
+    "title": "Music Distribution",
+    "uploadTrack": "Upload Track",
+    "releases": "Releases",
+    "platforms": "Platforms",
+    "royalties": "Royalties",
+    "territories": "Territories",
+    "metadata": "Metadata",
+    "lyrics": "Lyrics",
+    "artwork": "Artwork",
+    "releaseDate": "Release Date"
+  },
+  "analytics": {
+    "title": "Analytics & Insights",
+    "overview": "Overview",
+    "aiInsights": "AI Insights",
+    "certified": "Certified Analytics",
+    "predictions": "Predictions",
+    "trends": "Trends",
+    "reports": "Reports",
+    "metrics": "Metrics",
+    "growth": "Growth",
+    "forecast": "Forecast"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "profile": "Profile",
+    "billing": "Billing",
+    "subscription": "Subscription",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "security": "Security",
+    "apiKeys": "API Keys",
+    "integrations": "Integrations",
+    "preferences": "Preferences"
+  },
+  "subscription": {
+    "free": "Free",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "lifetime": "Lifetime",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade",
+    "currentPlan": "Current Plan",
+    "changePlan": "Change Plan",
+    "billingCycle": "Billing Cycle",
+    "nextPayment": "Next Payment"
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "networkError": "Network error occurred",
+    "unauthorized": "Unauthorized access",
+    "notFound": "Not found",
+    "serverError": "Server error",
+    "validationError": "Validation error",
+    "tryAgain": "Please try again"
+  },
+  "desktopApp": {
+    "title": "Max Booster Desktop App",
+    "subtitle": "Experience the full power of Max Booster with our native desktop application. Enhanced performance, offline capabilities, and seamless integration with your workflow.",
+    "downloadTitle": "Download for Your Platform",
+    "downloadButton": "Download for",
+    "version": "Version",
+    "features": {
+      "performance": {
+        "title": "Lightning Fast Performance",
+        "description": "Native desktop performance with optimized resource usage and instant load times."
+      },
+      "security": {
+        "title": "Enhanced Security",
+        "description": "Your data stays safe with local encryption and secure authentication protocols."
+      },
+      "offline": {
+        "title": "Offline Mode",
+        "description": "Work on your projects even without an internet connection. Sync automatically when online."
+      },
+      "native": {
+        "title": "Native Integration",
+        "description": "Seamless integration with your operating system's features and file system."
+      }
+    },
+    "requirements": {
+      "windows": "Windows 10 or later (64-bit)",
+      "mac": "macOS 10.15 Catalina or later",
+      "linux": "Ubuntu 20.04+ or equivalent"
+    },
+    "systemRequirements": {
+      "title": "System Requirements",
+      "windows": {
+        "os": "Windows 10 or later (64-bit)"
+      },
+      "mac": {
+        "os": "macOS 10.15 or later"
+      },
+      "linux": {
+        "os": "Ubuntu 20.04+ or equivalent"
+      },
+      "common": {
+        "ram": "4GB RAM minimum",
+        "disk": "500MB free disk space",
+        "internet": "Internet connection"
+      }
+    },
+    "webVersion": {
+      "title": "Prefer the Web Version?",
+      "description": "You can continue using Max Booster in your browser with all the same features. The desktop app offers enhanced performance and offline capabilities.",
+      "button": "Continue with Web Version"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "question1": "Is the desktop app free?",
+      "answer1": "Yes! The desktop app is included with your Max Booster subscription at no additional cost.",
+      "question2": "Will my projects sync between web and desktop?",
+      "answer2": "Absolutely! All your projects, settings, and data sync seamlessly between the web and desktop versions in real-time.",
+      "question3": "Can I use the desktop app offline?",
+      "answer3": "Yes! You can work on your projects offline, and all changes will automatically sync when you reconnect to the internet."
+    }
+  }
+}

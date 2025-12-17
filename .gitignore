@@ -1,0 +1,16 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+.local/
+logs/
+uploads/
+.replit
+*.log
+.env
+.env.local
+.env.*.local
+*.backup
+attached_assets/

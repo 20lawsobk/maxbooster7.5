@@ -1,0 +1,242 @@
+{
+  "common": {
+    "welcome": "Bienvenue",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "update": "Mettre à jour",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "submit": "Soumettre",
+    "confirm": "Confirmer",
+    "logout": "Déconnexion",
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "forgotPassword": "Mot de passe oublié?",
+    "language": "Langue"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "dashboard": "Tableau de bord",
+    "projects": "Projets",
+    "studio": "Studio",
+    "social": "Réseaux sociaux",
+    "advertising": "Publicité",
+    "marketplace": "Marché",
+    "distribution": "Distribution",
+    "analytics": "Analytique",
+    "settings": "Paramètres",
+    "help": "Aide",
+    "desktopApp": "Application de Bureau"
+  },
+  "auth": {
+    "loginTitle": "Connexion à Max Booster",
+    "signupTitle": "Créer votre compte",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "username": "Nom d'utilisateur",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "rememberMe": "Se souvenir de moi",
+    "noAccount": "Vous n'avez pas de compte?",
+    "hasAccount": "Vous avez déjà un compte?",
+    "loginError": "Email ou mot de passe invalide",
+    "signupSuccess": "Compte créé avec succès!",
+    "signupError": "Échec de création du compte",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "resetPasswordSuccess": "Email de réinitialisation envoyé",
+    "resetPasswordError": "Échec d'envoi de l'email"
+  },
+  "dashboard": {
+    "overview": "Vue d'ensemble",
+    "recentActivity": "Activité récente",
+    "quickActions": "Actions rapides",
+    "stats": "Statistiques",
+    "totalStreams": "Total des diffusions",
+    "revenue": "Revenus",
+    "followers": "Abonnés",
+    "engagement": "Engagement"
+  },
+  "studio": {
+    "title": "Studio IA",
+    "newProject": "Nouveau projet",
+    "openProject": "Ouvrir un projet",
+    "saveProject": "Enregistrer le projet",
+    "exportProject": "Exporter le projet",
+    "tracks": "Pistes",
+    "effects": "Effets",
+    "mixer": "Mixeur",
+    "mastering": "Mastering",
+    "aiAssist": "Assistant IA",
+    "recordingMode": "Mode enregistrement",
+    "playback": "Lecture",
+    "tempo": "Tempo",
+    "timeSignature": "Signature temporelle"
+  },
+  "social": {
+    "title": "Gestionnaire de réseaux sociaux",
+    "createPost": "Créer une publication",
+    "schedule": "Programmer",
+    "posts": "Publications",
+    "campaigns": "Campagnes",
+    "analytics": "Analytique",
+    "platforms": "Plateformes",
+    "autopilot": "Pilote automatique IA",
+    "engagement": "Engagement",
+    "insights": "Aperçus",
+    "contentCalendar": "Calendrier de contenu"
+  },
+  "advertising": {
+    "title": "Campagnes publicitaires",
+    "createCampaign": "Créer une campagne",
+    "activeCampaigns": "Campagnes actives",
+    "budget": "Budget",
+    "targeting": "Ciblage",
+    "performance": "Performance",
+    "optimization": "Optimisation IA",
+    "organicReach": "Portée organique",
+    "paidReach": "Portée payante",
+    "conversions": "Conversions"
+  },
+  "marketplace": {
+    "title": "Marché",
+    "browse": "Parcourir",
+    "sell": "Vendre",
+    "myListings": "Mes annonces",
+    "purchases": "Achats",
+    "sales": "Ventes",
+    "earnings": "Gains",
+    "products": "Produits",
+    "services": "Services",
+    "samples": "Échantillons",
+    "plugins": "Plugins"
+  },
+  "distribution": {
+    "title": "Distribution musicale",
+    "uploadTrack": "Télécharger une piste",
+    "releases": "Sorties",
+    "platforms": "Plateformes",
+    "royalties": "Redevances",
+    "territories": "Territoires",
+    "metadata": "Métadonnées",
+    "lyrics": "Paroles",
+    "artwork": "Pochette",
+    "releaseDate": "Date de sortie"
+  },
+  "analytics": {
+    "title": "Analytique et aperçus",
+    "overview": "Vue d'ensemble",
+    "aiInsights": "Aperçus IA",
+    "predictions": "Prédictions",
+    "trends": "Tendances",
+    "reports": "Rapports",
+    "metrics": "Métriques",
+    "growth": "Croissance",
+    "forecast": "Prévisions"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "account": "Compte",
+    "profile": "Profil",
+    "billing": "Facturation",
+    "subscription": "Abonnement",
+    "notifications": "Notifications",
+    "privacy": "Confidentialité",
+    "security": "Sécurité",
+    "apiKeys": "Clés API",
+    "integrations": "Intégrations",
+    "preferences": "Préférences"
+  },
+  "subscription": {
+    "free": "Gratuit",
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "lifetime": "À vie",
+    "upgrade": "Améliorer",
+    "downgrade": "Rétrograder",
+    "currentPlan": "Plan actuel",
+    "changePlan": "Changer de plan",
+    "billingCycle": "Cycle de facturation",
+    "nextPayment": "Prochain paiement"
+  },
+  "errors": {
+    "generic": "Quelque chose s'est mal passé",
+    "networkError": "Erreur réseau",
+    "unauthorized": "Accès non autorisé",
+    "notFound": "Non trouvé",
+    "serverError": "Erreur serveur",
+    "validationError": "Erreur de validation",
+    "tryAgain": "Veuillez réessayer"
+  },
+  "desktopApp": {
+    "title": "Application de Bureau Max Booster",
+    "subtitle": "Découvrez toute la puissance de Max Booster avec notre application de bureau native. Performances améliorées, capacités hors ligne et intégration transparente avec votre flux de travail.",
+    "downloadTitle": "Télécharger pour Votre Plateforme",
+    "downloadButton": "Télécharger pour",
+    "version": "Version",
+    "features": {
+      "performance": {
+        "title": "Performances Ultra-Rapides",
+        "description": "Performances natives de bureau avec utilisation optimisée des ressources et temps de chargement instantanés."
+      },
+      "security": {
+        "title": "Sécurité Renforcée",
+        "description": "Vos données restent sécurisées avec un chiffrement local et des protocoles d'authentification sécurisés."
+      },
+      "offline": {
+        "title": "Mode Hors Ligne",
+        "description": "Travaillez sur vos projets même sans connexion Internet. Synchronisez automatiquement lorsque vous êtes en ligne."
+      },
+      "native": {
+        "title": "Intégration Native",
+        "description": "Intégration transparente avec les fonctionnalités de votre système d'exploitation et le système de fichiers."
+      }
+    },
+    "requirements": {
+      "windows": "Windows 10 ou ultérieur (64 bits)",
+      "mac": "macOS 10.15 Catalina ou ultérieur",
+      "linux": "Ubuntu 20.04+ ou équivalent"
+    },
+    "systemRequirements": {
+      "title": "Configuration Requise",
+      "windows": {
+        "os": "Windows 10 ou ultérieur (64 bits)"
+      },
+      "mac": {
+        "os": "macOS 10.15 ou ultérieur"
+      },
+      "linux": {
+        "os": "Ubuntu 20.04+ ou équivalent"
+      },
+      "common": {
+        "ram": "4 Go de RAM minimum",
+        "disk": "500 Mo d'espace disque libre",
+        "internet": "Connexion Internet"
+      }
+    },
+    "webVersion": {
+      "title": "Vous Préférez la Version Web?",
+      "description": "Vous pouvez continuer à utiliser Max Booster dans votre navigateur avec toutes les mêmes fonctionnalités. L'application de bureau offre des performances améliorées et des capacités hors ligne.",
+      "button": "Continuer avec la Version Web"
+    },
+    "faq": {
+      "title": "Questions Fréquemment Posées",
+      "question1": "L'application de bureau est-elle gratuite?",
+      "answer1": "Oui! L'application de bureau est incluse avec votre abonnement Max Booster sans frais supplémentaires.",
+      "question2": "Mes projets se synchroniseront-ils entre le web et le bureau?",
+      "answer2": "Absolument! Tous vos projets, paramètres et données se synchronisent parfaitement entre les versions web et de bureau en temps réel.",
+      "question3": "Puis-je utiliser l'application de bureau hors ligne?",
+      "answer3": "Oui! Vous pouvez travailler sur vos projets hors ligne, et tous les changements se synchroniseront automatiquement lorsque vous vous reconnecterez à Internet."
+    }
+  }
+}
