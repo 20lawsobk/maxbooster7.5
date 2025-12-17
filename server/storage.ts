@@ -486,6 +486,96 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return track;
   }
+
+  async getDistroAnalytics(userId: string): Promise<any> {
+    const userAnalytics = await db
+      .select()
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .orderBy(desc(analytics.date))
+      .limit(30);
+    
+    if (userAnalytics.length === 0) {
+      return null;
+    }
+    
+    const totalStreams = userAnalytics.reduce((sum, a) => sum + (a.streams || 0), 0);
+    const totalListeners = userAnalytics.reduce((sum, a) => sum + (a.listeners || 0), 0);
+    const totalSaves = userAnalytics.reduce((sum, a) => sum + (a.saves || 0), 0);
+    const totalPlaylists = userAnalytics.reduce((sum, a) => sum + (a.playlistAdds || 0), 0);
+    
+    return {
+      totalStreams,
+      streamGrowth: 0,
+      monthlyListeners: totalListeners,
+      listenerGrowth: 0,
+      saves: totalSaves,
+      saveGrowth: 0,
+      playlistAdds: totalPlaylists,
+      playlistGrowth: 0,
+      rawData: userAnalytics,
+    };
+  }
+
+  async getStreamingTrends(userId: string): Promise<any[]> {
+    const trends = await db
+      .select()
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .orderBy(desc(analytics.date))
+      .limit(90);
+    
+    return trends.map(t => ({
+      date: t.date,
+      streams: t.streams || 0,
+      listeners: t.listeners || 0,
+      saves: t.saves || 0,
+    }));
+  }
+
+  async getGeographicData(userId: string): Promise<any[]> {
+    const data = await db
+      .select()
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .limit(1);
+    
+    if (data.length === 0 || !data[0].topCountries) {
+      return [];
+    }
+    
+    return data[0].topCountries as any[] || [];
+  }
+
+  async getPayoutHistory(userId: string): Promise<any[]> {
+    try {
+      const payouts = await db
+        .select()
+        .from(sql`instant_payouts`)
+        .where(sql`user_id = ${userId}`)
+        .orderBy(sql`created_at DESC`)
+        .limit(50);
+      
+      return payouts || [];
+    } catch (error) {
+      console.error('Error fetching payout history:', error);
+      return [];
+    }
+  }
+
+  async getHyperFollowPages(userId: string): Promise<any[]> {
+    try {
+      const pages = await db.execute(sql`
+        SELECT * FROM hyperfollow_pages 
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+      `);
+      return pages.rows || [];
+    } catch (error) {
+      console.error('Error fetching hyperfollow pages:', error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

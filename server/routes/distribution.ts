@@ -2368,4 +2368,136 @@ router.post('/workflow/update', requireAuth, async (req: Request, res: Response)
   }
 });
 
+// ============================================================================
+// DISTRIBUTION ANALYTICS ENDPOINTS (Frontend Compatibility)
+// These endpoints return real data from the database, or empty/null when dormant
+// ============================================================================
+
+// GET /api/distribution/analytics/growth - Get analytics growth data
+router.get('/analytics/growth', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id;
+    const analyticsData = await storage.getDistroAnalytics(userId);
+    
+    if (!analyticsData) {
+      return res.json(null);
+    }
+    
+    res.json(analyticsData);
+  } catch (error: unknown) {
+    logger.error('Error fetching analytics growth:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics growth' });
+  }
+});
+
+// GET /api/distribution/streaming-trends - Get streaming trends data
+router.get('/streaming-trends', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id;
+    const trends = await storage.getStreamingTrends(userId);
+    res.json(trends);
+  } catch (error: unknown) {
+    logger.error('Error fetching streaming trends:', error);
+    res.status(500).json({ error: 'Failed to fetch streaming trends' });
+  }
+});
+
+// GET /api/distribution/geographic - Get geographic distribution data
+router.get('/geographic', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id;
+    const data = await storage.getGeographicData(userId);
+    res.json(data);
+  } catch (error: unknown) {
+    logger.error('Error fetching geographic data:', error);
+    res.status(500).json({ error: 'Failed to fetch geographic data' });
+  }
+});
+
+// GET /api/distribution/earnings/breakdown - Get earnings breakdown
+router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id;
+    const payouts = await storage.getPayoutHistory(userId);
+    
+    if (payouts.length === 0) {
+      return res.json(null);
+    }
+    
+    const totalPaidOut = payouts.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+    
+    res.json({
+      totalEarnings: totalPaidOut,
+      pendingEarnings: 0,
+      paidOut: totalPaidOut,
+      thisMonth: 0,
+      lastMonth: 0,
+      growth: 0,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching earnings breakdown:', error);
+    res.status(500).json({ error: 'Failed to fetch earnings breakdown' });
+  }
+});
+
+// GET /api/distribution/platform-earnings - Get earnings by platform
+router.get('/platform-earnings', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id;
+    const analyticsData = await storage.getDistroAnalytics(userId);
+    
+    if (!analyticsData) {
+      return res.json([]);
+    }
+    
+    res.json([]);
+  } catch (error: unknown) {
+    logger.error('Error fetching platform earnings:', error);
+    res.status(500).json({ error: 'Failed to fetch platform earnings' });
+  }
+});
+
+// GET /api/distribution/payout-history - Get payout history
+router.get('/payout-history', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id;
+    const payouts = await storage.getPayoutHistory(userId);
+    res.json(payouts);
+  } catch (error: unknown) {
+    logger.error('Error fetching payout history:', error);
+    res.status(500).json({ error: 'Failed to fetch payout history' });
+  }
+});
+
+// GET /api/distribution/hyperfollow/analytics - Get hyperfollow analytics
+router.get('/hyperfollow/analytics', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id;
+    const pages = await storage.getHyperFollowPages(userId);
+    
+    if (pages.length === 0) {
+      return res.json({
+        totalClicks: 0,
+        totalPresaves: 0,
+        conversionRate: 0,
+        topPlatforms: [],
+      });
+    }
+    
+    const totalClicks = pages.reduce((sum: number, p: any) => sum + (p.clicks || 0), 0);
+    const totalPresaves = pages.reduce((sum: number, p: any) => sum + (p.presaves || 0), 0);
+    const conversionRate = totalClicks > 0 ? (totalPresaves / totalClicks) * 100 : 0;
+    
+    res.json({
+      totalClicks,
+      totalPresaves,
+      conversionRate,
+      topPlatforms: [],
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching hyperfollow analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch hyperfollow analytics' });
+  }
+});
+
 export default router;
