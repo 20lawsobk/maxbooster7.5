@@ -16,6 +16,7 @@ import {
   distroTracks,
   instantPayouts,
   hyperFollowPages,
+  listings,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -647,6 +648,88 @@ export class DatabaseStorage implements IStorage {
       return page || null;
     } catch (error) {
       console.error('Error updating hyperfollow page:', error);
+      return null;
+    }
+  }
+
+  async getBeatListings(filters?: {
+    genre?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    bpm?: number;
+    key?: string;
+    tags?: string[];
+    sortBy?: 'recent' | 'popular' | 'price_low' | 'price_high';
+    limit?: number;
+    offset?: number;
+    userId?: string;
+  }): Promise<any[]> {
+    try {
+      let query = db.select().from(listings).where(eq(listings.isPublished, true));
+      
+      if (filters?.userId) {
+        query = db.select().from(listings).where(eq(listings.userId, filters.userId));
+      }
+      
+      const results = await query.orderBy(desc(listings.createdAt)).limit(filters?.limit || 50);
+      
+      return results.map(listing => ({
+        id: listing.id,
+        userId: listing.userId,
+        title: listing.title,
+        description: listing.description,
+        price: (listing.priceCents || 0) / 100,
+        currency: listing.currency || 'usd',
+        category: listing.category,
+        audioUrl: listing.audioUrl,
+        artworkUrl: listing.artworkUrl,
+        previewUrl: listing.previewUrl,
+        isPublished: listing.isPublished,
+        metadata: listing.metadata,
+        createdAt: listing.createdAt,
+        licenses: [
+          { type: 'basic', price: (listing.priceCents || 0) / 100 },
+          { type: 'premium', price: ((listing.priceCents || 0) / 100) * 2 },
+          { type: 'exclusive', price: ((listing.priceCents || 0) / 100) * 5 },
+        ],
+      }));
+    } catch (error) {
+      console.error('Error fetching beat listings:', error);
+      return [];
+    }
+  }
+
+  async getBeatListing(id: string): Promise<any | null> {
+    try {
+      const [listing] = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, id));
+      
+      if (!listing) return null;
+      
+      return {
+        id: listing.id,
+        userId: listing.userId,
+        title: listing.title,
+        description: listing.description,
+        price: (listing.priceCents || 0) / 100,
+        currency: listing.currency || 'usd',
+        category: listing.category,
+        audioUrl: listing.audioUrl,
+        artworkUrl: listing.artworkUrl,
+        previewUrl: listing.previewUrl,
+        isPublished: listing.isPublished,
+        metadata: listing.metadata,
+        createdAt: listing.createdAt,
+        licenses: [
+          { type: 'basic', price: (listing.priceCents || 0) / 100 },
+          { type: 'premium', price: ((listing.priceCents || 0) / 100) * 2 },
+          { type: 'exclusive', price: ((listing.priceCents || 0) / 100) * 5 },
+        ],
+      };
+    } catch (error) {
+      console.error('Error fetching beat listing:', error);
       return null;
     }
   }
