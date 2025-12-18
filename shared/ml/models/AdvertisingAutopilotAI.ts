@@ -1,8 +1,22 @@
 /**
- * Custom Advertising Autopilot AI - HYBRID RULE-BASED + ML ARCHITECTURE
- * Rule Engine: Enforces budget limits, targeting constraints, compliance rules
- * Learning Layer: Learns from YOUR actual campaign data, adapts to YOUR performance
- * Coordination: Works with SocialMediaAutopilotAI through shared coordinator
+ * Custom Advertising Autopilot AI - PERSONAL AD NETWORK OPTIMIZER
+ * 
+ * ZERO AD SPEND PHILOSOPHY:
+ * Replicates peak performance of paid advertising WITHOUT actual ad spend.
+ * Uses connected social media accounts as "Personal Ad Networks" for organic reach.
+ * 
+ * How It Works:
+ * - Connected accounts become organic ad distribution channels
+ * - AI optimizes content for each platform's algorithm  
+ * - Posts are strategically timed for maximum organic reach
+ * - The artist's following becomes their advertising audience
+ * - Saves artists $500-5000+/month in typical ad spend
+ * 
+ * HYBRID RULE-BASED + ML ARCHITECTURE:
+ * - Rule Engine: Enforces posting frequency, content optimization, timing constraints
+ * - Learning Layer: Learns from YOUR engagement data, adapts to YOUR audience
+ * - Coordination: Works with SocialMediaAutopilotAI through shared coordinator
+ * 
  * 100% custom implementation - no external APIs
  */
 

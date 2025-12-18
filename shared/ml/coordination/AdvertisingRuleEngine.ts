@@ -1,7 +1,22 @@
 /**
- * Advertising Rule Engine
- * Deterministic rule-based decision making for advertising management
- * Works with learning components for optimization while enforcing hard constraints
+ * Advertising Rule Engine - Personal Ad Network Optimizer
+ * 
+ * ZERO AD SPEND PHILOSOPHY:
+ * This engine replicates the results of paid advertising WITHOUT actual ad spend.
+ * Instead of buying ads, we use the artist's connected social media accounts as
+ * "Personal Ad Networks" - organic distribution channels optimized for maximum reach.
+ * 
+ * The "budget" concepts here represent TIME/EFFORT investment, not money spent.
+ * The "reach" metrics represent organic impressions through strategic posting.
+ * 
+ * Key Principles:
+ * - Connected accounts become organic ad distribution channels
+ * - AI optimizes content for each platform's algorithm
+ * - Posts are strategically timed and formatted for maximum organic reach
+ * - The artist's own following becomes their advertising audience
+ * - No actual money is spent on ads - all reach is organic
+ * 
+ * Works with learning components for optimization while enforcing hard constraints.
  */
 
 export interface BudgetConstraints {

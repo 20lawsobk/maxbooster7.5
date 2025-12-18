@@ -159,7 +159,7 @@ export const DEFAULT_CONTENT_GUIDELINES: ContentGuideline[] = [
     type: 'prohibited',
     description: 'Avoid spam-like patterns',
     validator: (content) => {
-      const spamPatterns = /(.)\1{4,}|!!!+|???\+|\$\$\$|free money|click here now/i;
+      const spamPatterns = /(.)\1{4,}|!{3,}|\?{3,}|\${3,}|free money|click here now/i;
       return !spamPatterns.test(content);
     },
     severity: 'block',
