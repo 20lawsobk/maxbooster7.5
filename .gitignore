@@ -14,3 +14,23 @@ uploads/
 .env.*.local
 *.backup
 attached_assets/
+
+# Electron / Desktop builds
+electron/
+.cache/electron/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+*.snap
+*.msi
+out/
+release/
+electron-out/
+scripts/build-desktop.sh
+.github/workflows/build-desktop.yml
+
+# Build outputs
+*.zip
+*.tar.gz
