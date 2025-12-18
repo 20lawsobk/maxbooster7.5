@@ -3,7 +3,6 @@ dist
 .DS_Store
 server/public
 vite.config.ts.*
-*.tar.gz
 .local/
 logs/
 uploads/
@@ -15,9 +14,10 @@ uploads/
 *.backup
 attached_assets/
 
-# Electron / Desktop builds
-electron/
+# Electron build cache (not source files)
 .cache/electron/
+
+# Desktop installer outputs (built by GitHub Actions)
 *.exe
 *.dmg
 *.AppImage
@@ -25,12 +25,10 @@ electron/
 *.rpm
 *.snap
 *.msi
+*.zip
+*.tar.gz
 out/
 release/
 electron-out/
-scripts/build-desktop.sh
-.github/workflows/build-desktop.yml
-
-# Build outputs
-*.zip
-*.tar.gz
+dist-installers/
+dist-portable/
