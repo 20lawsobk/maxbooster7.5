@@ -92,6 +92,31 @@ registerWebhookHandler('payment_intent.payment_failed', async (event) => {
   return { success: true, message: 'Payment failure recorded' };
 });
 
+// Stripe Connect webhook handlers for payouts
+registerWebhookHandler('account.updated', async (event) => {
+  const account = event.data.object as Stripe.Account;
+  logger.info(`[Stripe Connect] Account updated: ${account.id} - Charges enabled: ${account.charges_enabled}`);
+  return { success: true, message: 'Account updated' };
+});
+
+registerWebhookHandler('transfer.created', async (event) => {
+  const transfer = event.data.object as Stripe.Transfer;
+  logger.info(`[Stripe Connect] Transfer created: ${transfer.id} - Amount: $${(transfer.amount / 100).toFixed(2)}`);
+  return { success: true, message: 'Transfer created' };
+});
+
+registerWebhookHandler('payout.paid', async (event) => {
+  const payout = event.data.object as Stripe.Payout;
+  logger.info(`[Stripe Connect] Payout completed: ${payout.id} - Amount: $${(payout.amount / 100).toFixed(2)}`);
+  return { success: true, message: 'Payout completed' };
+});
+
+registerWebhookHandler('payout.failed', async (event) => {
+  const payout = event.data.object as Stripe.Payout;
+  logger.warn(`[Stripe Connect] Payout failed: ${payout.id} - Reason: ${payout.failure_message}`);
+  return { success: true, message: 'Payout failure recorded' };
+});
+
 /**
  * POST /api/webhooks/stripe
  * Main webhook endpoint with signature verification
