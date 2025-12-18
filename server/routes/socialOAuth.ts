@@ -43,6 +43,14 @@ const PLATFORMS = {
     clientId: process.env.INSTAGRAM_APP_ID,
     clientSecret: process.env.INSTAGRAM_APP_SECRET,
   },
+  threads: {
+    name: 'Threads',
+    authUrl: 'https://threads.net/oauth/authorize',
+    tokenUrl: 'https://graph.threads.net/oauth/access_token',
+    scope: 'threads_basic,threads_content_publish,threads_manage_insights',
+    clientId: process.env.THREADS_APP_ID || process.env.INSTAGRAM_APP_ID,
+    clientSecret: process.env.THREADS_APP_SECRET || process.env.INSTAGRAM_APP_SECRET,
+  },
   tiktok: {
     name: 'TikTok',
     authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
@@ -66,6 +74,14 @@ const PLATFORMS = {
     scope: 'r_liteprofile w_member_social',
     clientId: process.env.LINKEDIN_CLIENT_ID,
     clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+  },
+  googlebusiness: {
+    name: 'Google Business Profile',
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    scope: 'https://www.googleapis.com/auth/business.manage',
+    clientId: process.env.GOOGLE_BUSINESS_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_BUSINESS_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
   },
 };
 
