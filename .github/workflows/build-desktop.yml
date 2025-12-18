@@ -1,0 +1,149 @@
+name: Build Desktop Apps
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Build Linux installer
+        run: |
+          npx electron-packager . MaxBooster \
+            --platform=linux \
+            --arch=x64 \
+            --out=dist-portable \
+            --overwrite \
+            --asar \
+            --prune=true \
+            --ignore="node_modules/@tensorflow|node_modules/sharp|node_modules/bullmq|tests|scripts|server|shared|client|migrations|docs|logs|uploads|attached_assets"
+
+      - name: Create Linux archive
+        run: |
+          cd dist-portable
+          tar -czf Max-Booster-${{ github.event.inputs.version || '1.0.0' }}-Linux-x64.tar.gz MaxBooster-linux-x64
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Max-Booster-Linux-x64
+          path: dist-portable/Max-Booster-*-Linux-x64.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Build Windows installer
+        run: |
+          npx electron-packager . MaxBooster --platform=win32 --arch=x64 --out=dist-portable --overwrite --asar --prune=true --ignore="node_modules/@tensorflow|node_modules/sharp|node_modules/bullmq|tests|scripts|server|shared|client|migrations|docs|logs|uploads|attached_assets"
+
+      - name: Create Windows archive
+        run: |
+          cd dist-portable
+          Compress-Archive -Path MaxBooster-win32-x64 -DestinationPath Max-Booster-${{ github.event.inputs.version || '1.0.0' }}-Windows-x64.zip
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Max-Booster-Windows-x64
+          path: dist-portable/Max-Booster-*-Windows-x64.zip
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Build macOS installer
+        run: |
+          npx electron-packager . MaxBooster \
+            --platform=darwin \
+            --arch=x64 \
+            --out=dist-portable \
+            --overwrite \
+            --asar \
+            --prune=true \
+            --ignore="node_modules/@tensorflow|node_modules/sharp|node_modules/bullmq|tests|scripts|server|shared|client|migrations|docs|logs|uploads|attached_assets"
+
+      - name: Create macOS archive
+        run: |
+          cd dist-portable
+          zip -r Max-Booster-${{ github.event.inputs.version || '1.0.0' }}-macOS-x64.zip MaxBooster-darwin-x64
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Max-Booster-macOS-x64
+          path: dist-portable/Max-Booster-*-macOS-x64.zip
+
+  create-release:
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/Max-Booster-Linux-x64/*
+            artifacts/Max-Booster-Windows-x64/*
+            artifacts/Max-Booster-macOS-x64/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
