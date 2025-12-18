@@ -14,10 +14,10 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-lg hover:scale-105 active:scale-100',
         outline:
-          'border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:border-primary/30 active:scale-95',
+          'border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:border-primary/50 active:scale-95 dark:border-muted-foreground/40 dark:hover:border-primary dark:hover:bg-accent/20',
         secondary:
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md hover:scale-105 active:scale-100',
-        ghost: 'hover:bg-accent hover:text-accent-foreground hover:shadow-sm active:scale-95',
+          'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md hover:scale-105 active:scale-100 dark:bg-muted dark:text-foreground dark:hover:bg-muted/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground hover:shadow-sm active:scale-95 dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-muted/50',
         link: 'text-primary underline-offset-4 hover:underline hover:text-primary/80 active:text-primary/60',
         premium:
           'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 active:scale-100',
