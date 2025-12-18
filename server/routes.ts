@@ -452,10 +452,8 @@ export async function registerRoutes(
       (req.session as any).googleOAuthState = state;
     }
     
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : (process.env.APP_URL || 'https://maxbooster.replit.app');
-    
+    // Always use production URL for OAuth callbacks (must match Google Console registration)
+    const baseUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
     
     const params = new URLSearchParams({
@@ -493,10 +491,8 @@ export async function registerRoutes(
       return res.redirect('/login?error=google_not_configured');
     }
     
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : (process.env.APP_URL || 'https://maxbooster.replit.app');
-    
+    // Always use production URL for OAuth callbacks (must match Google Console registration)
+    const baseUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
     
     try {

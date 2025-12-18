@@ -97,12 +97,7 @@ setInterval(() => {
 }, 60000);
 
 function getBaseUrl(): string {
-  if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-    return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-  }
-  if (process.env.REPLIT_DEV_DOMAIN) {
-    return `https://${process.env.REPLIT_DEV_DOMAIN}`;
-  }
+  // Always use production URL for OAuth callbacks (must match platform console registrations)
   return process.env.APP_URL || 'https://maxbooster.replit.app';
 }
 
