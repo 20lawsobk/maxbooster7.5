@@ -11,6 +11,9 @@ on:
         required: true
         default: '1.0.0'
 
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
@@ -30,27 +33,19 @@ jobs:
       - name: Build web app
         run: npm run build
 
-      - name: Build Linux installer
-        run: |
-          npx electron-packager . MaxBooster \
-            --platform=linux \
-            --arch=x64 \
-            --out=dist-portable \
-            --overwrite \
-            --asar \
-            --prune=true \
-            --ignore="node_modules/@tensorflow|node_modules/sharp|node_modules/bullmq|tests|scripts|server|shared|client|migrations|docs|logs|uploads|attached_assets"
+      - name: Build Linux installers
+        run: npx electron-builder --linux AppImage deb tar.gz
+        env:
+          USE_HARD_LINKS: false
 
-      - name: Create Linux archive
-        run: |
-          cd dist-portable
-          tar -czf Max-Booster-${{ github.event.inputs.version || '1.0.0' }}-Linux-x64.tar.gz MaxBooster-linux-x64
-
-      - name: Upload Linux artifact
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Max-Booster-Linux-x64
-          path: dist-portable/Max-Booster-*-Linux-x64.tar.gz
+          name: Max-Booster-Linux
+          path: |
+            dist-installers/*.AppImage
+            dist-installers/*.deb
+            dist-installers/*.tar.gz
 
   build-windows:
     runs-on: windows-latest
@@ -70,20 +65,15 @@ jobs:
       - name: Build web app
         run: npm run build
 
-      - name: Build Windows installer
-        run: |
-          npx electron-packager . MaxBooster --platform=win32 --arch=x64 --out=dist-portable --overwrite --asar --prune=true --ignore="node_modules/@tensorflow|node_modules/sharp|node_modules/bullmq|tests|scripts|server|shared|client|migrations|docs|logs|uploads|attached_assets"
+      - name: Build Windows installers
+        run: npx electron-builder --win nsis portable
 
-      - name: Create Windows archive
-        run: |
-          cd dist-portable
-          Compress-Archive -Path MaxBooster-win32-x64 -DestinationPath Max-Booster-${{ github.event.inputs.version || '1.0.0' }}-Windows-x64.zip
-
-      - name: Upload Windows artifact
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Max-Booster-Windows-x64
-          path: dist-portable/Max-Booster-*-Windows-x64.zip
+          name: Max-Booster-Windows
+          path: |
+            dist-installers/*.exe
 
   build-macos:
     runs-on: macos-latest
@@ -103,45 +93,39 @@ jobs:
       - name: Build web app
         run: npm run build
 
-      - name: Build macOS installer
-        run: |
-          npx electron-packager . MaxBooster \
-            --platform=darwin \
-            --arch=x64 \
-            --out=dist-portable \
-            --overwrite \
-            --asar \
-            --prune=true \
-            --ignore="node_modules/@tensorflow|node_modules/sharp|node_modules/bullmq|tests|scripts|server|shared|client|migrations|docs|logs|uploads|attached_assets"
+      - name: Build macOS installers
+        run: npx electron-builder --mac dmg zip
 
-      - name: Create macOS archive
-        run: |
-          cd dist-portable
-          zip -r Max-Booster-${{ github.event.inputs.version || '1.0.0' }}-macOS-x64.zip MaxBooster-darwin-x64
-
-      - name: Upload macOS artifact
+      - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Max-Booster-macOS-x64
-          path: dist-portable/Max-Booster-*-macOS-x64.zip
+          name: Max-Booster-macOS
+          path: |
+            dist-installers/*.dmg
+            dist-installers/*.zip
 
   create-release:
     needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
+      - name: List artifacts
+        run: find artifacts -type f
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/Max-Booster-Linux-x64/*
-            artifacts/Max-Booster-Windows-x64/*
-            artifacts/Max-Booster-macOS-x64/*
+            artifacts/Max-Booster-Linux/*
+            artifacts/Max-Booster-Windows/*
+            artifacts/Max-Booster-macOS/*
           draft: false
           prerelease: false
           generate_release_notes: true
