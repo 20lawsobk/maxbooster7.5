@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction, Router } from "express";
 import { type Server } from "http";
+import crypto from "crypto";
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf";
@@ -435,10 +436,135 @@ export async function registerRoutes(
     return res.json({ success: true });
   });
 
-  // Auth: Google OAuth callback
+  // Auth: Google OAuth - Start login flow
   app.get("/api/auth/google", (req: Request, res: Response) => {
-    // Redirect to login with error since Google OAuth isn't fully configured
-    return res.redirect("/login?error=google_not_configured");
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    
+    if (!clientId || !clientSecret) {
+      return res.redirect("/login?error=google_not_configured");
+    }
+    
+    const state = crypto.randomBytes(32).toString('hex');
+    
+    // Store state in session
+    if (req.session) {
+      (req.session as any).googleOAuthState = state;
+    }
+    
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : (process.env.APP_URL || 'https://maxbooster.replit.app');
+    
+    const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      state,
+      access_type: 'offline',
+      prompt: 'consent',
+    });
+    
+    res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+  });
+
+  // Auth: Google OAuth callback
+  app.get("/api/auth/google/callback", async (req: Request, res: Response) => {
+    const { code, state, error } = req.query;
+    
+    if (error) {
+      return res.redirect(`/login?error=google_denied`);
+    }
+    
+    // Verify state
+    const savedState = (req.session as any)?.googleOAuthState;
+    if (!state || state !== savedState) {
+      return res.redirect('/login?error=invalid_state');
+    }
+    delete (req.session as any).googleOAuthState;
+    
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    
+    if (!clientId || !clientSecret) {
+      return res.redirect('/login?error=google_not_configured');
+    }
+    
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : (process.env.APP_URL || 'https://maxbooster.replit.app');
+    
+    const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    
+    try {
+      // Exchange code for tokens
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code: code as string,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+        }),
+      });
+      
+      const tokens = await tokenResponse.json();
+      
+      if (!tokenResponse.ok || tokens.error) {
+        console.error('[Google OAuth] Token exchange failed:', tokens);
+        return res.redirect('/login?error=token_exchange_failed');
+      }
+      
+      // Get user info
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      
+      const googleUser = await userInfoResponse.json();
+      
+      if (!googleUser.email) {
+        return res.redirect('/login?error=no_email');
+      }
+      
+      // Check if user exists
+      let user = await storage.getUserByEmail(googleUser.email);
+      
+      if (!user) {
+        // Create new user from Google account
+        const username = googleUser.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.random().toString(36).substring(2, 6);
+        
+        user = await storage.createUser({
+          email: googleUser.email,
+          username,
+          password: '', // No password for OAuth users
+          firstName: googleUser.given_name || null,
+          lastName: googleUser.family_name || null,
+          role: 'user',
+          subscriptionTier: 'free',
+          subscriptionStatus: 'inactive',
+        });
+        
+        console.log(`[Google OAuth] Created new user: ${user.email}`);
+      }
+      
+      // Log the user in
+      req.login(user, (err: Error | null) => {
+        if (err) {
+          console.error('[Google OAuth] Login failed:', err);
+          return res.redirect('/login?error=login_failed');
+        }
+        console.log(`[Google OAuth] User logged in: ${user!.email}`);
+        return res.redirect('/dashboard');
+      });
+    } catch (err) {
+      console.error('[Google OAuth] Error:', err);
+      return res.redirect('/login?error=oauth_error');
+    }
   });
 
   // Auth: Delete Google connection
