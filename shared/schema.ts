@@ -1473,6 +1473,33 @@ export const ssoConfigs = pgTable("sso_configs", {
 export type SsoConfig = typeof ssoConfigs.$inferSelect;
 
 // ============================================================================
+// PLATFORM API CONFIGS
+// ============================================================================
+export const platformApiConfigs = pgTable("platform_api_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  platform: text("platform").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  category: text("category").notNull(),
+  authType: text("auth_type").notNull(),
+  callbackUrl: text("callback_url"),
+  authorizationUrl: text("authorization_url"),
+  tokenUrl: text("token_url"),
+  scopes: text("scopes").array(),
+  requiredEnvVars: text("required_env_vars").array(),
+  consoleUrl: text("console_url"),
+  setupInstructions: text("setup_instructions"),
+  webhookUrl: text("webhook_url"),
+  webhookEvents: text("webhook_events").array(),
+  isConfigured: boolean("is_configured").default(false),
+  isActive: boolean("is_active").default(true),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export type PlatformApiConfig = typeof platformApiConfigs.$inferSelect;
+
+// ============================================================================
 // AD CAMPAIGNS (Advertising)
 // ============================================================================
 export const adCampaigns = pgTable("ad_campaigns", {
