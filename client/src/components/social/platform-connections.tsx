@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle } from 'lucide-react';
-import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon } from '@/components/ui/brand-icons';
+import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon } from '@/components/ui/brand-icons';
 
 interface Platform {
   id: string;
@@ -101,6 +101,15 @@ export function PlatformConnections() {
       oauth: true,
     },
     {
+      id: 'facebook',
+      name: 'Facebook',
+      icon: FacebookIcon,
+      color: 'text-blue-500',
+      connected: connections.some((c: unknown) => c.platform === 'facebook'),
+      username: connections.find((c: unknown) => c.platform === 'facebook')?.username,
+      oauth: true,
+    },
+    {
       id: 'instagram',
       name: 'Instagram',
       icon: InstagramIcon,
@@ -110,21 +119,21 @@ export function PlatformConnections() {
       oauth: true,
     },
     {
-      id: 'linkedin',
-      name: 'LinkedIn',
-      icon: LinkedInIcon,
-      color: 'text-blue-600',
-      connected: connections.some((c: unknown) => c.platform === 'linkedin'),
-      username: connections.find((c: unknown) => c.platform === 'linkedin')?.username,
+      id: 'threads',
+      name: 'Threads',
+      icon: ThreadsIcon,
+      color: 'text-black dark:text-white',
+      connected: connections.some((c: unknown) => c.platform === 'threads'),
+      username: connections.find((c: unknown) => c.platform === 'threads')?.username,
       oauth: true,
     },
     {
-      id: 'facebook',
-      name: 'Facebook',
-      icon: FacebookIcon,
-      color: 'text-blue-500',
-      connected: connections.some((c: unknown) => c.platform === 'facebook'),
-      username: connections.find((c: unknown) => c.platform === 'facebook')?.username,
+      id: 'tiktok',
+      name: 'TikTok',
+      icon: TikTokIcon,
+      color: 'text-black dark:text-white',
+      connected: connections.some((c: unknown) => c.platform === 'tiktok'),
+      username: connections.find((c: unknown) => c.platform === 'tiktok')?.username,
       oauth: true,
     },
     {
@@ -137,12 +146,21 @@ export function PlatformConnections() {
       oauth: true,
     },
     {
-      id: 'tiktok',
-      name: 'TikTok',
-      icon: TikTokIcon,
-      color: 'text-black dark:text-white',
-      connected: connections.some((c: unknown) => c.platform === 'tiktok'),
-      username: connections.find((c: unknown) => c.platform === 'tiktok')?.username,
+      id: 'linkedin',
+      name: 'LinkedIn',
+      icon: LinkedInIcon,
+      color: 'text-blue-600',
+      connected: connections.some((c: unknown) => c.platform === 'linkedin'),
+      username: connections.find((c: unknown) => c.platform === 'linkedin')?.username,
+      oauth: true,
+    },
+    {
+      id: 'googlebusiness',
+      name: 'Google Business',
+      icon: GoogleIcon,
+      color: 'text-blue-500',
+      connected: connections.some((c: unknown) => c.platform === 'googlebusiness'),
+      username: connections.find((c: unknown) => c.platform === 'googlebusiness')?.username,
       oauth: true,
     },
   ];

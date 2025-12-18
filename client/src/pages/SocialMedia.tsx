@@ -216,7 +216,7 @@ const SOCIAL_PLATFORMS: SocialPlatform[] = [
     status: 'inactive',
   },
   {
-    id: 'google-business',
+    id: 'googlebusiness',
     name: 'Google Business',
     icon: GoogleIcon,
     color: '#4285F4',

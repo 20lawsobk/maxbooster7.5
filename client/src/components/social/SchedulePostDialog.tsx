@@ -58,7 +58,7 @@ const PLATFORMS = [
   { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, color: '#000000' },
   { id: 'linkedin', name: 'LinkedIn', icon: LinkedInIcon, color: '#0077B5' },
   { id: 'threads', name: 'Threads', icon: ThreadsIcon, color: '#000000' },
-  { id: 'google-business', name: 'Google Business', icon: GoogleIcon, color: '#4285F4' },
+  { id: 'googlebusiness', name: 'Google Business', icon: GoogleIcon, color: '#4285F4' },
 ];
 
 const POST_TYPES = [

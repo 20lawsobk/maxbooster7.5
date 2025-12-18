@@ -37,7 +37,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   tiktok: '#000000',
   linkedin: '#0077B5',
   threads: '#000000',
-  'google-business': '#4285F4',
+  googlebusiness: '#4285F4',
 };
 
 const PLATFORM_ICONS: Record<string, any> = {
@@ -48,7 +48,7 @@ const PLATFORM_ICONS: Record<string, any> = {
   tiktok: TikTokIcon,
   linkedin: LinkedInIcon,
   threads: ThreadsIcon,
-  'google-business': GoogleIcon,
+  googlebusiness: GoogleIcon,
 };
 
 /**
