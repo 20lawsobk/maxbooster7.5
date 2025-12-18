@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   subscriptionTier: text("subscription_tier"),
   subscriptionStatus: text("subscription_status"),
   stripeCustomerId: text("stripe_customer_id"),
+  stripeConnectedAccountId: text("stripe_connected_account_id"),
   subscriptionEndsAt: timestamp("subscription_ends_at"),
   trialEndsAt: timestamp("trial_ends_at"),
   createdAt: timestamp("created_at").defaultNow(),
