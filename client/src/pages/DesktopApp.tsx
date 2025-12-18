@@ -43,29 +43,29 @@ export default function DesktopApp() {
     },
   ];
 
-  const GITHUB_RELEASES_URL = 'https://github.com/blawzmusic/max-booster/releases/latest/download';
+  const GITHUB_RELEASES_URL = 'https://github.com/20lawsobk/maxbooster7.5/releases/latest/download';
   
   const platforms = [
     {
       name: 'Windows',
-      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-Setup-1.0.0.exe`,
-      fallbackUrl: '/downloads/Max-Booster-1.0.0-Windows-x64.zip',
+      downloadUrl: `${GITHUB_RELEASES_URL}/Max.Booster.Setup.1.0.0.exe`,
+      fallbackUrl: `${GITHUB_RELEASES_URL}/Max.Booster.1.0.0.exe`,
       icon: '🪟',
       requirements: t('desktopApp.requirements.windows'),
       available: true,
     },
     {
       name: 'macOS',
-      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-1.0.0.dmg`,
-      fallbackUrl: '/downloads/Max-Booster-1.0.0-macOS-x64.zip',
+      downloadUrl: `${GITHUB_RELEASES_URL}/Max.Booster-1.0.0.dmg`,
+      fallbackUrl: `${GITHUB_RELEASES_URL}/Max.Booster-1.0.0-mac.zip`,
       icon: '🍎',
       requirements: t('desktopApp.requirements.mac'),
       available: true,
     },
     {
       name: 'Linux',
-      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-1.0.0.AppImage`,
-      fallbackUrl: '/downloads/Max-Booster-1.0.0-Linux-x64.tar.gz',
+      downloadUrl: `${GITHUB_RELEASES_URL}/Max.Booster-1.0.0.AppImage`,
+      fallbackUrl: `${GITHUB_RELEASES_URL}/max-booster_1.0.0_amd64.deb`,
       icon: '🐧',
       requirements: t('desktopApp.requirements.linux'),
       available: true,
