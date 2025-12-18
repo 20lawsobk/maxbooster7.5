@@ -614,6 +614,7 @@ export async function registerRoutes(
     { path: "/api/backup", name: "backup", loader: () => import("./routes/backup") },
     
     // Payments & Payouts
+    { path: "/api/billing", name: "billing", loader: () => import("./routes/billing") },
     { path: "/api/payouts", name: "payouts", loader: () => import("./routes/payouts") },
     { path: "/api/kyc", name: "kyc", loader: () => import("./routes/kyc") },
     
