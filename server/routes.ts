@@ -755,6 +755,7 @@ export async function registerRoutes(
     { path: "/api/studio/plugins", name: "studioPlugins", loader: () => import("./routes/studioPlugins") },
     { path: "/api/studio/stems", name: "studioStems", loader: () => import("./routes/studioStems") },
     { path: "/api/studio/warping", name: "studioWarping", loader: () => import("./routes/studioWarping") },
+    { path: "/api/studio/generation", name: "studioGeneration", loader: () => import("./routes/studioGeneration") },
     
     // Workspace & Developer
     { path: "/api/workspace", name: "workspace", loader: () => import("./routes/workspace") },

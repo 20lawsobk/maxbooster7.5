@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +20,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAIWorkflow } from '@/hooks/useAIWorkflow';
 import { apiRequest } from '@/lib/queryClient';
@@ -40,10 +43,43 @@ import {
   AlertCircle,
   Clock,
   Zap,
+  Drum,
+  Piano,
+  Guitar,
+  Settings2,
 } from 'lucide-react';
 
+const INSTRUMENT_TYPES = [
+  { id: 'drums', name: 'Drums', icon: '🥁' },
+  { id: 'bass', name: 'Bass', icon: '🎸' },
+  { id: 'synth', name: 'Synth Lead', icon: '🎹' },
+  { id: 'pad', name: 'Pad', icon: '🌊' },
+  { id: 'pluck', name: 'Pluck', icon: '✨' },
+  { id: 'arp', name: 'Arpeggio', icon: '🎶' },
+  { id: 'melody', name: 'Melody', icon: '🎵' },
+  { id: 'full_beat', name: 'Full Beat', icon: '🔊' },
+];
+
+const GENRES = [
+  { id: 'trap', name: 'Trap', tempo: 140 },
+  { id: 'house', name: 'House', tempo: 125 },
+  { id: 'hiphop', name: 'Hip Hop', tempo: 90 },
+  { id: 'dnb', name: 'Drum & Bass', tempo: 174 },
+  { id: 'techno', name: 'Techno', tempo: 130 },
+  { id: 'lofi', name: 'Lo-Fi', tempo: 80 },
+  { id: 'dubstep', name: 'Dubstep', tempo: 140 },
+  { id: 'pop', name: 'Pop', tempo: 120 },
+  { id: 'rock', name: 'Rock', tempo: 120 },
+  { id: 'jazz', name: 'Jazz', tempo: 110 },
+  { id: 'rnb', name: 'R&B', tempo: 85 },
+  { id: 'ambient', name: 'Ambient', tempo: 70 },
+];
+
+const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const SCALES = ['major', 'minor', 'dorian', 'phrygian', 'lydian', 'mixolydian'];
+
 const textToMusicSchema = z.object({
-  text: z.string().min(3, 'Description must be at least 3 characters'),
+  text: z.string().optional().default(''),
 });
 
 interface AIGeneratorDialogProps {
@@ -105,6 +141,14 @@ export function AIGeneratorDialog({
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [instrumentType, setInstrumentType] = useState<string>('drums');
+  const [genre, setGenre] = useState<string>('trap');
+  const [tempo, setTempo] = useState<number>(140);
+  const [musicalKey, setMusicalKey] = useState<string>('C');
+  const [scale, setScale] = useState<string>('minor');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [targetType, setTargetType] = useState<string>('drums');
 
   // Use the AI workflow hook
   const { startWorkflow, cancel, retry, reset, integrate, textToMusic, audioToMusic } =
@@ -142,6 +186,11 @@ export function AIGeneratorDialog({
         body: JSON.stringify({
           projectId,
           text: data.text,
+          instrumentType,
+          genre,
+          tempo,
+          key: musicalKey,
+          scale,
         }),
         signal,
       });
@@ -180,6 +229,7 @@ export function AIGeneratorDialog({
     const apiCall = async (signal?: AbortSignal) => {
       const formData = new FormData();
       formData.append('audio', audioFile);
+      formData.append('targetType', targetType);
       if (projectId) {
         formData.append('projectId', projectId);
       }
@@ -265,12 +315,21 @@ export function AIGeneratorDialog({
   }, [open, reset, form]);
 
   const exampleTexts = [
-    'upbeat jazz in C major with walking bass',
-    'slow sad ballad in A minor',
-    'energetic rock in E major',
-    'calm pop melody in G major',
-    'dark mysterious blues in D minor',
+    'dark trap hi-hats with bounce',
+    'punchy 808 bass pattern',
+    'dreamy synth pad with reverb',
+    'aggressive dubstep wobble bass',
+    'chill lofi drum loop',
+    'melodic house lead synth',
   ];
+  
+  const handleGenreChange = (newGenre: string) => {
+    setGenre(newGenre);
+    const genreData = GENRES.find(g => g.id === newGenre);
+    if (genreData) {
+      setTempo(genreData.tempo);
+    }
+  };
 
   const isProcessing =
     activeWorkflow.currentState === 'requesting' || activeWorkflow.currentState === 'processing';
@@ -301,8 +360,8 @@ export function AIGeneratorDialog({
             )}
           </div>
           <DialogDescription data-testid="dialog-description">
-            Generate melodies and chords from text descriptions or analyze audio to create
-            complementary music.
+            Generate drums, bass, synths, and melodies using AI synthesis. Describe what you want 
+            or upload a reference audio for style transfer.
           </DialogDescription>
         </DialogHeader>
 
@@ -368,14 +427,98 @@ export function AIGeneratorDialog({
           </TabsList>
 
           <TabsContent value="text" className="space-y-4" data-testid="text-to-music-content">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Instrument Type</Label>
+                <Select value={instrumentType} onValueChange={setInstrumentType} disabled={isProcessing}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select instrument" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INSTRUMENT_TYPES.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        <span className="flex items-center gap-2">
+                          <span>{type.icon}</span>
+                          <span>{type.name}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Genre</Label>
+                <Select value={genre} onValueChange={handleGenreChange} disabled={isProcessing}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENRES.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.name} ({g.tempo} BPM)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Tempo: {tempo} BPM</Label>
+              </div>
+              <Slider
+                value={[tempo]}
+                onValueChange={(v) => setTempo(v[0])}
+                min={40}
+                max={240}
+                step={1}
+                disabled={isProcessing}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Key</Label>
+                <Select value={musicalKey} onValueChange={setMusicalKey} disabled={isProcessing}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select key" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KEYS.map((k) => (
+                      <SelectItem key={k} value={k}>{k}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Scale</Label>
+                <Select value={scale} onValueChange={setScale} disabled={isProcessing}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select scale" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SCALES.map((s) => (
+                      <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <Separator />
+            
             <div className="space-y-2">
               <Label htmlFor="description" data-testid="label-description">
-                Music Description
+                Additional Description (optional)
               </Label>
               <Textarea
                 id="description"
-                placeholder="Describe the music you want to create..."
-                className="min-h-[120px]"
+                placeholder="Add details like 'punchy', 'dark', 'atmospheric', 'aggressive'..."
+                className="min-h-[80px]"
                 disabled={isProcessing}
                 data-testid="textarea-description"
                 {...form.register('text')}
@@ -388,7 +531,7 @@ export function AIGeneratorDialog({
             </div>
 
             <div className="space-y-2">
-              <Label data-testid="label-examples">Examples:</Label>
+              <Label data-testid="label-examples">Quick Presets:</Label>
               <div className="flex flex-wrap gap-2">
                 {exampleTexts.map((example, index) => (
                   <Badge
@@ -481,9 +624,22 @@ export function AIGeneratorDialog({
           </TabsContent>
 
           <TabsContent value="audio" className="space-y-4" data-testid="audio-to-music-content">
+            <Card className="p-4 bg-primary/5 border-primary/20">
+              <div className="flex items-start gap-3">
+                <Zap className="w-5 h-5 text-primary mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-sm">Style Transfer</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Upload a reference audio file. The AI will analyze its characteristics (tempo, 
+                    brightness, energy) and generate new sounds matching that style.
+                  </p>
+                </div>
+              </div>
+            </Card>
+            
             <div className="space-y-2">
               <Label htmlFor="audio-file" data-testid="label-audio-file">
-                Upload Audio File
+                Upload Reference Audio
               </Label>
               <div className="flex gap-2">
                 <input
@@ -507,8 +663,27 @@ export function AIGeneratorDialog({
                   {audioFile ? audioFile.name : 'Choose Audio File'}
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground" data-testid="text-audio-help">
-                Upload an audio file to analyze and generate complementary music
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Generate As</Label>
+              <Select value={targetType} onValueChange={setTargetType} disabled={isProcessing}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select output type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INSTRUMENT_TYPES.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      <span className="flex items-center gap-2">
+                        <span>{type.icon}</span>
+                        <span>{type.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                The AI will generate this type of sound using the style from your reference audio.
               </p>
             </div>
 

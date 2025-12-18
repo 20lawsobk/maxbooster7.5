@@ -130,8 +130,8 @@ const MOOD_KEYWORDS: Record<string, { brightness: number; energy: number; attack
   gritty: { brightness: 0.4, energy: 0.7, attack: 0.2 },
   clean: { brightness: 0.6, energy: 0.5, attack: 0.3 },
   dirty: { brightness: 0.3, energy: 0.6, attack: 0.2 },
-  lo-fi: { brightness: 0.25, energy: 0.35, attack: 0.5 },
-  hi-fi: { brightness: 0.8, energy: 0.6, attack: 0.3 },
+  'lo-fi': { brightness: 0.25, energy: 0.35, attack: 0.5 },
+  'hi-fi': { brightness: 0.8, energy: 0.6, attack: 0.3 },
 };
 
 const GENRE_TEMPLATES: Record<string, Partial<ExtractedParameters>> = {
