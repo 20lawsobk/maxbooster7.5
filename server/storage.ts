@@ -68,6 +68,16 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values(insertUser)
       .returning();
+    
+    // Initialize Pocket Dimension storage for new user
+    try {
+      const { userPocketService } = await import('./services/userPocketDimensionService.js');
+      await userPocketService.initializeUserStorage(user.id, user.email);
+    } catch (error) {
+      console.error(`[Storage] Failed to initialize pocket dimension for user ${user.id}:`, error);
+      // Don't fail user creation if storage init fails
+    }
+    
     return user;
   }
 

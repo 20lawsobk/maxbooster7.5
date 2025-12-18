@@ -1749,6 +1749,45 @@ export type BeatInteraction = typeof beatInteractions.$inferSelect;
 export const insertBeatInteractionSchema = createInsertSchema(beatInteractions).omit({ id: true, createdAt: true });
 
 // ============================================================================
+// USER STORAGE (Pocket Dimension - Per-user cloud storage space)
+// ============================================================================
+export const userStorage = pgTable("user_storage", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  storagePrefix: text("storage_prefix").notNull(),
+  totalBytes: bigint("total_bytes", { mode: "number" }).default(0),
+  fileCount: integer("file_count").default(0),
+  quotaBytes: bigint("quota_bytes", { mode: "number" }).default(5368709120),
+  isActive: boolean("is_active").default(true),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type UserStorage = typeof userStorage.$inferSelect;
+export const insertUserStorageSchema = createInsertSchema(userStorage).omit({ id: true, createdAt: true });
+
+// ============================================================================
+// USER STORAGE FILES (Individual files in pocket dimension)
+// ============================================================================
+export const userStorageFiles = pgTable("user_storage_files", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  storageId: varchar("storage_id").notNull(),
+  fileName: text("file_name").notNull(),
+  fileKey: text("file_key").notNull().unique(),
+  mimeType: text("mime_type"),
+  sizeBytes: bigint("size_bytes", { mode: "number" }).default(0),
+  folder: text("folder").default("/"),
+  isPublic: boolean("is_public").default(false),
+  metadata: jsonb("metadata"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type UserStorageFile = typeof userStorageFiles.$inferSelect;
+export const insertUserStorageFileSchema = createInsertSchema(userStorageFiles).omit({ id: true, createdAt: true });
+
+// ============================================================================
 // BEAT DISCOVERY SCORES (Pre-calculated scores for fast discovery)
 // ============================================================================
 export const beatDiscoveryScores = pgTable("beat_discovery_scores", {
