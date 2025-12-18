@@ -1,12 +1,25 @@
 /**
- * Custom Social Media Autopilot AI - REAL ML TRAINING
- * Learns from YOUR actual engagement data, adapts to YOUR specific audience
- * Trains neural networks, improves over time with data
+ * Custom Social Media Autopilot AI - HYBRID RULE-BASED + ML ARCHITECTURE
+ * Rule Engine: Enforces platform limits, content guidelines, scheduling constraints
+ * Learning Layer: Learns from YOUR actual engagement data, adapts to YOUR specific audience
+ * Coordination: Works with AdvertisingAutopilotAI through shared coordinator
  * 100% custom implementation - no external APIs
  */
 
 import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
+import { 
+  socialMediaRuleEngine, 
+  type SchedulingContext, 
+  type RuleEvaluationResult,
+  PLATFORM_LIMITS 
+} from '../coordination/SocialMediaRuleEngine.js';
+import { 
+  autopilotCoordinator, 
+  type ExecutionIntent, 
+  type CoordinationDecision 
+} from '../coordination/AutopilotCoordinator.js';
+import { featureStore } from '../coordination/FeatureStore.js';
 
 export interface SocialPost {
   postId: string;
@@ -471,6 +484,196 @@ export class SocialMediaAutopilotAI extends BaseModel {
     if (this.trainingHistory.length % 50 === 0) {
       await this.trainOnUserEngagementData(this.trainingHistory);
     }
+
+    featureStore.recordLearningEvent({
+      eventType: 'post',
+      source: 'social',
+      platform: newPost.platform,
+      input: {
+        contentLength: newPost.contentLength,
+        mediaType: newPost.mediaType,
+        hashtagCount: newPost.hashtagCount,
+        postedAt: newPost.postedAt,
+      },
+      output: {
+        engagement: newPost.engagement,
+        reach: newPost.reach,
+        likes: newPost.likes,
+        comments: newPost.comments,
+        shares: newPost.shares,
+      },
+    });
+  }
+
+  public evaluateContentWithRules(content: string, platform: string): RuleEvaluationResult {
+    return socialMediaRuleEngine.evaluateContent(content, platform);
+  }
+
+  public evaluateSchedulingWithRules(context: SchedulingContext): RuleEvaluationResult {
+    return socialMediaRuleEngine.evaluateScheduling(context);
+  }
+
+  public async schedulePostWithCoordination(
+    content: string,
+    platform: string,
+    scheduledTime: Date,
+    audienceCohort?: string
+  ): Promise<{
+    approved: boolean;
+    scheduledTime: Date;
+    adjustments: string[];
+    conflictWarnings: string[];
+  }> {
+    const contentEval = this.evaluateContentWithRules(content, platform);
+    
+    const adjustments: string[] = [];
+    const conflictWarnings: string[] = [];
+
+    if (!contentEval.allowed) {
+      return {
+        approved: false,
+        scheduledTime,
+        adjustments: contentEval.violations.map(v => v.message),
+        conflictWarnings: [],
+      };
+    }
+
+    adjustments.push(...contentEval.recommendations);
+
+    const recentPosts = this.trainingHistory.filter(p => 
+      p.platform === platform && 
+      new Date().getTime() - p.postedAt.getTime() < 24 * 60 * 60 * 1000
+    );
+
+    const schedulingContext: SchedulingContext = {
+      platform,
+      scheduledTime,
+      postsSentToday: recentPosts.length,
+      lastPostTime: recentPosts.length > 0 ? recentPosts[recentPosts.length - 1].postedAt : undefined,
+      audienceFatigue: this.calculateAudienceFatigue(platform),
+      isReleaseCampaign: false,
+      isTourPromotion: false,
+      hasActiveAds: false,
+      organicEngagementRate: this.calculateRecentEngagementRate(platform),
+    };
+
+    const scheduleEval = this.evaluateSchedulingWithRules(schedulingContext);
+    adjustments.push(...scheduleEval.recommendations);
+
+    let finalScheduledTime = scheduleEval.adjustedScheduleTime || scheduledTime;
+
+    const intent: ExecutionIntent = {
+      source: 'social',
+      action: 'schedule',
+      platform,
+      audienceCohort,
+      scheduledTime: finalScheduledTime,
+      expectedOutcome: {
+        reach: this.estimateReach(platform),
+        engagement: this.estimateEngagement(platform),
+      },
+      conflictRisk: scheduleEval.violations.length > 0 ? 0.5 : 0.2,
+    };
+
+    const coordination = autopilotCoordinator.submitIntent(intent);
+
+    if (!coordination.approved) {
+      conflictWarnings.push(coordination.reason);
+      if (coordination.alternativeRecommendation?.scheduledTime) {
+        finalScheduledTime = coordination.alternativeRecommendation.scheduledTime;
+        adjustments.push(`Rescheduled to ${finalScheduledTime.toLocaleTimeString()} to avoid conflicts`);
+      }
+    }
+
+    if (coordination.conflictsWith) {
+      for (const conflict of coordination.conflictsWith) {
+        conflictWarnings.push(`Conflicts with ${conflict.source} ${conflict.action} on ${conflict.platform}`);
+      }
+    }
+
+    return {
+      approved: scheduleEval.allowed && (coordination.approved || coordination.alternativeRecommendation !== undefined),
+      scheduledTime: finalScheduledTime,
+      adjustments,
+      conflictWarnings,
+    };
+  }
+
+  private calculateAudienceFatigue(platform: string): number {
+    const recentPosts = this.trainingHistory.filter(p => 
+      p.platform === platform && 
+      new Date().getTime() - p.postedAt.getTime() < 7 * 24 * 60 * 60 * 1000
+    );
+
+    if (recentPosts.length === 0) return 0;
+
+    const limits = PLATFORM_LIMITS[platform];
+    const maxWeeklyPosts = limits ? limits.maxDailyPosts * 7 : 35;
+    
+    return Math.min(1, recentPosts.length / maxWeeklyPosts);
+  }
+
+  private calculateRecentEngagementRate(platform: string): number {
+    const recentPosts = this.trainingHistory.filter(p => 
+      p.platform === platform && 
+      new Date().getTime() - p.postedAt.getTime() < 30 * 24 * 60 * 60 * 1000
+    );
+
+    if (recentPosts.length === 0) return 0;
+
+    const avgEngagement = recentPosts.reduce((sum, p) => sum + p.engagement, 0) / recentPosts.length;
+    const avgReach = recentPosts.reduce((sum, p) => sum + p.reach, 0) / recentPosts.length;
+
+    return avgReach > 0 ? avgEngagement / avgReach : 0;
+  }
+
+  private estimateReach(platform: string): number {
+    const recentPosts = this.trainingHistory.filter(p => p.platform === platform).slice(-20);
+    if (recentPosts.length === 0) return 500;
+    return Math.round(recentPosts.reduce((sum, p) => sum + p.reach, 0) / recentPosts.length);
+  }
+
+  private estimateEngagement(platform: string): number {
+    const recentPosts = this.trainingHistory.filter(p => p.platform === platform).slice(-20);
+    if (recentPosts.length === 0) return 50;
+    return Math.round(recentPosts.reduce((sum, p) => sum + p.engagement, 0) / recentPosts.length);
+  }
+
+  public reportPostOutcome(
+    platform: string,
+    scheduledTime: Date,
+    outcome: { reach: number; engagement: number }
+  ): void {
+    const intent: ExecutionIntent = {
+      source: 'social',
+      action: 'post',
+      platform,
+      scheduledTime,
+      expectedOutcome: outcome,
+      conflictRisk: 0,
+    };
+
+    autopilotCoordinator.learnFromOutcome(intent, outcome);
+
+    const quality = outcome.engagement / Math.max(this.estimateEngagement(platform), 1);
+    featureStore.addFeedbackToEvent(`social_${platform}_${scheduledTime.getTime()}`, {
+      actual: outcome,
+      quality: Math.min(1, quality),
+    });
+  }
+
+  public getOptimalPostingWindows(platform: string): Array<{ hourStart: number; hourEnd: number; quality: string }> {
+    return socialMediaRuleEngine.getOptimalPostingWindows(platform);
+  }
+
+  public getCoordinationStatus(): {
+    activeCampaigns: number;
+    pendingIntents: number;
+    audienceInsightsCount: number;
+    recentExecutions: number;
+    currentStrategy: string;
+  } {
+    return autopilotCoordinator.getCoordinationStatus();
   }
 
   private extractFeaturesFromPost(post: SocialPost): number[] {

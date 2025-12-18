@@ -1,12 +1,26 @@
 /**
- * Custom Advertising Autopilot AI - REAL ML TRAINING
- * Learns from YOUR actual campaign data, adapts to YOUR performance
- * Trains neural networks, improves over time with data
+ * Custom Advertising Autopilot AI - HYBRID RULE-BASED + ML ARCHITECTURE
+ * Rule Engine: Enforces budget limits, targeting constraints, compliance rules
+ * Learning Layer: Learns from YOUR actual campaign data, adapts to YOUR performance
+ * Coordination: Works with SocialMediaAutopilotAI through shared coordinator
  * 100% custom implementation - no external APIs
  */
 
 import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
+import { 
+  advertisingRuleEngine, 
+  type AdContext, 
+  type AdRuleEvaluationResult,
+  MUSIC_CAMPAIGN_BENCHMARKS 
+} from '../coordination/AdvertisingRuleEngine.js';
+import { 
+  autopilotCoordinator, 
+  type ExecutionIntent, 
+  type CoordinationDecision,
+  type CampaignState 
+} from '../coordination/AutopilotCoordinator.js';
+import { featureStore } from '../coordination/FeatureStore.js';
 
 export interface CampaignData {
   campaignId: string;
@@ -629,6 +643,283 @@ export class AdvertisingAutopilotAI extends BaseModel {
     if (this.campaignHistory.length % 30 === 0) {
       await this.trainOnCampaignData(this.campaignHistory);
     }
+
+    featureStore.recordLearningEvent({
+      eventType: 'campaign',
+      source: 'advertising',
+      platform: newCampaign.platform,
+      input: {
+        budget: newCampaign.budget,
+        bidAmount: newCampaign.bidAmount,
+        objective: newCampaign.objective,
+        audienceSize: newCampaign.audienceSize,
+      },
+      output: {
+        roi: newCampaign.roi,
+        conversions: newCampaign.conversions,
+        ctr: newCampaign.ctr,
+        cvr: newCampaign.cvr,
+        spend: newCampaign.spend,
+      },
+    });
+  }
+
+  public evaluateAdRequestWithRules(context: AdContext): AdRuleEvaluationResult {
+    return advertisingRuleEngine.evaluateAdRequest(context);
+  }
+
+  public async submitAdWithCoordination(
+    platform: string,
+    budget: number,
+    bidAmount: number,
+    objective: 'awareness' | 'engagement' | 'conversions',
+    creativeText: string,
+    audienceCohort?: string
+  ): Promise<{
+    approved: boolean;
+    adjustedBudget: number;
+    adjustedBid: number;
+    adjustments: string[];
+    conflictWarnings: string[];
+    paceRecommendation: string;
+  }> {
+    const adjustments: string[] = [];
+    const conflictWarnings: string[] = [];
+
+    const dailySpend = this.calculateDailySpend(platform);
+    const weeklySpend = this.calculateWeeklySpend(platform);
+    const monthlySpend = this.calculateMonthlySpend(platform);
+    const organicEngagementRate = this.getOrganicEngagementRate(platform);
+
+    const adContext: AdContext = {
+      platform,
+      campaignType: objective === 'conversions' ? 'conversions' : objective === 'engagement' ? 'engagement' : 'awareness',
+      objective,
+      budget,
+      dailySpend,
+      weeklySpend,
+      monthlySpend,
+      bidAmount,
+      targetAgeMin: 18,
+      targetAgeMax: 55,
+      targetGeos: [],
+      placements: [],
+      creativeText,
+      hasAudioContent: false,
+      isRetargeting: false,
+      organicEngagementRate,
+      competitorActivityLevel: 0.5,
+      audienceSaturation: this.calculateAudienceSaturation(platform),
+    };
+
+    const ruleEval = this.evaluateAdRequestWithRules(adContext);
+    adjustments.push(...ruleEval.recommendations);
+
+    if (!ruleEval.allowed) {
+      return {
+        approved: false,
+        adjustedBudget: ruleEval.adjustedBudget || budget,
+        adjustedBid: ruleEval.adjustedBid || bidAmount,
+        adjustments: ruleEval.violations.map(v => v.message),
+        conflictWarnings: [],
+        paceRecommendation: ruleEval.paceRecommendation || 'pause',
+      };
+    }
+
+    const intent: ExecutionIntent = {
+      source: 'advertising',
+      action: 'boost',
+      platform,
+      audienceCohort,
+      budgetImpact: ruleEval.adjustedBudget || budget,
+      expectedOutcome: {
+        reach: this.estimateReach(platform, budget),
+        engagement: this.estimateEngagement(platform, budget),
+        conversions: this.estimateConversions(platform, budget, objective),
+      },
+      conflictRisk: ruleEval.violations.length > 0 ? 0.4 : 0.2,
+    };
+
+    const coordination = autopilotCoordinator.submitIntent(intent);
+
+    if (!coordination.approved) {
+      conflictWarnings.push(coordination.reason);
+      
+      if (coordination.adjustments?.budgetImpact) {
+        adjustments.push(`Budget adjusted to ${coordination.adjustments.budgetImpact} based on coordination`);
+      }
+    }
+
+    if (coordination.conflictsWith) {
+      for (const conflict of coordination.conflictsWith) {
+        conflictWarnings.push(`Conflicts with ${conflict.source} ${conflict.action} on ${conflict.platform}`);
+      }
+    }
+
+    const pauseCheck = advertisingRuleEngine.shouldPauseForOrganicPerformance(
+      organicEngagementRate,
+      budget,
+      intent.expectedOutcome.conversions || intent.expectedOutcome.engagement
+    );
+
+    if (pauseCheck.shouldPause) {
+      conflictWarnings.push(pauseCheck.reason);
+      adjustments.push(pauseCheck.recommendation);
+    }
+
+    return {
+      approved: ruleEval.allowed && (coordination.approved || !pauseCheck.shouldPause),
+      adjustedBudget: ruleEval.adjustedBudget || budget,
+      adjustedBid: ruleEval.adjustedBid || bidAmount,
+      adjustments,
+      conflictWarnings,
+      paceRecommendation: ruleEval.paceRecommendation || 'maintain',
+    };
+  }
+
+  public registerCampaignWithCoordinator(
+    campaignId: string,
+    campaignType: CampaignState['campaignType'],
+    priority: CampaignState['priority'],
+    budgetAllocated: number
+  ): void {
+    const campaignState: CampaignState = {
+      campaignId,
+      campaignType,
+      priority,
+      startDate: new Date(),
+      budgetAllocated,
+      budgetSpent: 0,
+      organicPostsScheduled: 0,
+      paidAdsActive: 1,
+      performanceScore: 0.5,
+    };
+
+    autopilotCoordinator.registerCampaign(campaignState);
+  }
+
+  public reportCampaignOutcome(
+    platform: string,
+    outcome: { reach: number; engagement: number; conversions: number; spend: number; roi: number }
+  ): void {
+    const intent: ExecutionIntent = {
+      source: 'advertising',
+      action: 'boost',
+      platform,
+      expectedOutcome: { reach: outcome.reach, engagement: outcome.engagement, conversions: outcome.conversions },
+      conflictRisk: 0,
+    };
+
+    autopilotCoordinator.learnFromOutcome(intent, outcome);
+
+    featureStore.recordCampaignInsight({
+      campaignId: `campaign_${Date.now()}`,
+      campaignType: 'awareness',
+      totalSpend: outcome.spend,
+      totalReach: outcome.reach,
+      totalEngagement: outcome.engagement,
+      totalConversions: outcome.conversions,
+      roi: outcome.roi,
+      organicLift: 0,
+      paidLift: outcome.roi,
+      synergyEffect: 1.0,
+      lessonsLearned: [],
+      endDate: new Date(),
+    });
+  }
+
+  public getOptimalBidStrategy(
+    platform: string,
+    objective: string,
+    competitionLevel: number
+  ): { strategy: string; suggestedBid: number; reasoning: string } {
+    return advertisingRuleEngine.getOptimalBidStrategy(platform, objective, competitionLevel);
+  }
+
+  public getRecommendedBudgetAllocation(
+    totalBudget: number,
+    campaignType: CampaignState['campaignType']
+  ): { organic: number; paid: number; reserve: number } {
+    return autopilotCoordinator.getRecommendedBudgetAllocation(totalBudget, campaignType);
+  }
+
+  public getBudgetDistribution(
+    totalBudget: number,
+    campaignDuration: number,
+    releaseDate?: Date
+  ): Array<{ day: number; budgetPercentage: number; reasoning: string }> {
+    return advertisingRuleEngine.calculateBudgetDistribution(totalBudget, campaignDuration, releaseDate);
+  }
+
+  private calculateDailySpend(platform: string): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return this.campaignHistory
+      .filter(c => c.platform === platform)
+      .reduce((sum, c) => sum + c.spend / 30, 0);
+  }
+
+  private calculateWeeklySpend(platform: string): number {
+    return this.calculateDailySpend(platform) * 7;
+  }
+
+  private calculateMonthlySpend(platform: string): number {
+    return this.campaignHistory
+      .filter(c => c.platform === platform)
+      .reduce((sum, c) => sum + c.spend, 0);
+  }
+
+  private getOrganicEngagementRate(platform: string): number {
+    const cohort = featureStore.getAudienceCohort(`main_${platform}`);
+    return cohort?.performance.avgEngagementRate || 0.05;
+  }
+
+  private calculateAudienceSaturation(platform: string): number {
+    const recentCampaigns = this.campaignHistory
+      .filter(c => c.platform === platform)
+      .slice(-10);
+    
+    if (recentCampaigns.length === 0) return 0;
+
+    const avgFrequency = recentCampaigns.reduce((sum, c) => 
+      sum + (c.impressions / c.audienceSize), 0
+    ) / recentCampaigns.length;
+
+    return Math.min(1, avgFrequency / 5);
+  }
+
+  private estimateReach(platform: string, budget: number): number {
+    const stats = this.platformStats.get(platform);
+    if (!stats) return Math.round(budget * 100);
+    
+    const cpm = stats.avgCPC * 1000 / (stats.avgCTR || 0.01);
+    return Math.round((budget / cpm) * 1000);
+  }
+
+  private estimateEngagement(platform: string, budget: number): number {
+    const reach = this.estimateReach(platform, budget);
+    const stats = this.platformStats.get(platform);
+    const engagementRate = stats?.avgCTR || 0.02;
+    return Math.round(reach * engagementRate);
+  }
+
+  private estimateConversions(platform: string, budget: number, objective: string): number {
+    if (objective === 'awareness') return 0;
+    const stats = this.platformStats.get(platform);
+    const cvr = stats?.avgCVR || 0.01;
+    const clicks = this.estimateEngagement(platform, budget);
+    return Math.round(clicks * cvr);
+  }
+
+  public getCoordinationStatus(): {
+    activeCampaigns: number;
+    pendingIntents: number;
+    audienceInsightsCount: number;
+    recentExecutions: number;
+    currentStrategy: string;
+  } {
+    return autopilotCoordinator.getCoordinationStatus();
   }
 
   private calculatePlatformStatistics(campaigns: CampaignData[]): void {

@@ -25,7 +25,44 @@ export interface ContentFeatures {
   engagementRateLast30d: number;
   postingFrequency: number;
   trendingHashtagsUsed: number;
+  isNewRelease?: boolean;
+  isTourAnnouncement?: boolean;
+  isCollaboration?: boolean;
+  isBehindTheScenes?: boolean;
+  isLivePerformance?: boolean;
+  hasMusicAudio?: boolean;
+  daysSinceRelease?: number;
+  genre?: string;
 }
+
+export const MUSIC_CONTENT_MULTIPLIERS = {
+  newRelease: { multiplier: 2.5, decayDays: 14 },
+  tourAnnouncement: { multiplier: 2.2, decayDays: 7 },
+  collaboration: { multiplier: 1.8, crossPromotion: true },
+  behindTheScenes: { multiplier: 1.6, authenticityBonus: true },
+  livePerformance: { multiplier: 2.0, urgencyFactor: true },
+  musicAudio: { multiplier: 1.4, platformBonus: { tiktok: 1.8, instagram: 1.5 } }
+} as const;
+
+export const PLATFORM_PEAK_HOURS: Record<string, number[]> = {
+  twitter: [9, 12, 17, 20],
+  instagram: [11, 14, 19, 21],
+  tiktok: [7, 10, 15, 19, 22],
+  youtube: [12, 16, 20],
+  facebook: [9, 13, 16, 19],
+  linkedin: [8, 10, 12, 17],
+};
+
+export const WEEKLY_MULTIPLIERS: Record<string, number> = {
+  monday: 0.85, tuesday: 0.95, wednesday: 1.0, thursday: 0.98,
+  friday: 1.05, saturday: 0.75, sunday: 0.70
+};
+
+export const SEASONAL_MULTIPLIERS: Record<string, number> = {
+  january: 0.85, february: 0.88, march: 0.92, april: 0.95,
+  may: 1.0, june: 1.05, july: 1.10, august: 1.08,
+  september: 0.95, october: 0.92, november: 0.98, december: 1.15
+};
 
 export interface EngagementTargets {
   likes: number;
@@ -36,15 +73,20 @@ export interface EngagementTargets {
 export class EngagementPredictionModel extends BaseModel {
   private scaler: { mean: number[]; std: number[] } | null = null;
   private targetScaler: { mean: number[]; std: number[] } | null = null;
+  private platform: string = 'instagram';
 
   constructor() {
     super({
       name: 'EngagementPredictionGradientBoosting',
       type: 'regression',
-      version: '1.0.0',
-      inputShape: [16],
+      version: '2.0.0',
+      inputShape: [24],
       outputShape: [3],
     });
+  }
+
+  public setPlatform(platform: string): void {
+    this.platform = platform.toLowerCase();
   }
 
   protected buildModel(): tf.LayersModel {
@@ -53,7 +95,7 @@ export class EngagementPredictionModel extends BaseModel {
         tf.layers.dense({
           units: 128,
           activation: 'relu',
-          inputShape: [16],
+          inputShape: [24],
           kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
         }),
         tf.layers.batchNormalization(),
@@ -170,6 +212,17 @@ export class EngagementPredictionModel extends BaseModel {
   }
 
   private featuresToVector(features: ContentFeatures): number[] {
+    const releaseDecay = features.daysSinceRelease !== undefined
+      ? Math.max(0, 1 - (features.daysSinceRelease / 14))
+      : 0;
+      
+    const peakHours = PLATFORM_PEAK_HOURS[this.platform] || [12, 17, 20];
+    const isPeakHour = peakHours.includes(features.hourOfDay) ? 1 : 0;
+    
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = days[features.dayOfWeek] || 'monday';
+    const weekdayMultiplier = WEEKLY_MULTIPLIERS[dayName] || 1.0;
+    
     return [
       features.postLength,
       features.sentimentScore,
@@ -187,7 +240,50 @@ export class EngagementPredictionModel extends BaseModel {
       features.engagementRateLast30d,
       features.postingFrequency,
       features.trendingHashtagsUsed,
+      features.isNewRelease ? 1 : 0,
+      features.isTourAnnouncement ? 1 : 0,
+      features.isCollaboration ? 1 : 0,
+      features.isBehindTheScenes ? 1 : 0,
+      features.isLivePerformance ? 1 : 0,
+      features.hasMusicAudio ? 1 : 0,
+      releaseDecay,
+      isPeakHour * weekdayMultiplier,
     ];
+  }
+
+  public calculateMusicContentMultiplier(features: ContentFeatures): number {
+    let multiplier = 1.0;
+    
+    if (features.isNewRelease) {
+      const decay = features.daysSinceRelease !== undefined
+        ? Math.pow(0.85, features.daysSinceRelease / 7)
+        : 1.0;
+      multiplier *= MUSIC_CONTENT_MULTIPLIERS.newRelease.multiplier * decay;
+    }
+    
+    if (features.isTourAnnouncement) {
+      multiplier *= MUSIC_CONTENT_MULTIPLIERS.tourAnnouncement.multiplier;
+    }
+    
+    if (features.isCollaboration) {
+      multiplier *= MUSIC_CONTENT_MULTIPLIERS.collaboration.multiplier;
+    }
+    
+    if (features.isBehindTheScenes) {
+      multiplier *= MUSIC_CONTENT_MULTIPLIERS.behindTheScenes.multiplier;
+    }
+    
+    if (features.isLivePerformance) {
+      multiplier *= MUSIC_CONTENT_MULTIPLIERS.livePerformance.multiplier;
+    }
+    
+    if (features.hasMusicAudio) {
+      const platformBonus = MUSIC_CONTENT_MULTIPLIERS.musicAudio.platformBonus;
+      const bonus = platformBonus[this.platform as keyof typeof platformBonus] || 1.0;
+      multiplier *= MUSIC_CONTENT_MULTIPLIERS.musicAudio.multiplier * bonus;
+    }
+    
+    return multiplier;
   }
 
   private calculateScaler(vectors: number[][]): { mean: number[]; std: number[] } {
