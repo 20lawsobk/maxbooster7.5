@@ -767,9 +767,21 @@ export class AdvertisingAutopilotAI extends BaseModel {
       adjustments.push(pauseCheck.recommendation);
     }
 
+    const coordinatorAcceptsWithAlternative = 
+      !coordination.approved && 
+      coordination.alternativeRecommendation !== undefined &&
+      coordination.alternativeRecommendation.budgetImpact !== undefined;
+
+    const finalApproval = 
+      ruleEval.allowed && 
+      (coordination.approved || coordinatorAcceptsWithAlternative) && 
+      !pauseCheck.shouldPause;
+
     return {
-      approved: ruleEval.allowed && (coordination.approved || !pauseCheck.shouldPause),
-      adjustedBudget: ruleEval.adjustedBudget || budget,
+      approved: finalApproval,
+      adjustedBudget: coordinatorAcceptsWithAlternative 
+        ? (coordination.alternativeRecommendation?.budgetImpact || ruleEval.adjustedBudget || budget)
+        : (ruleEval.adjustedBudget || budget),
       adjustedBid: ruleEval.adjustedBid || bidAmount,
       adjustments,
       conflictWarnings,
