@@ -564,9 +564,29 @@ export default function SocialMedia() {
   });
 
   // Handler Functions
-  const handleConnectPlatform = (platformId: string) => {
-    // Redirect to OAuth endpoint (GET request via browser)
-    window.location.href = `/api/social/connect/${platformId}`;
+  const handleConnectPlatform = async (platformId: string) => {
+    try {
+      const response = await fetch(`/api/social/connect/${platformId}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else if (data.message) {
+        toast({
+          title: 'Connection Issue',
+          description: data.message,
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Connection Failed',
+        description: 'Failed to connect to platform. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleGenerateContent = () => {

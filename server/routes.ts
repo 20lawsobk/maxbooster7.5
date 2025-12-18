@@ -618,6 +618,7 @@ export async function registerRoutes(
     { path: "/api/kyc", name: "kyc", loader: () => import("./routes/kyc") },
     
     // Social & Advertising
+    { path: "/api/social", name: "socialOAuth", loader: () => import("./routes/socialOAuth") },
     { path: "/api/social", name: "socialMedia", loader: () => import("./routes/socialMedia") },
     { path: "/api/social/approvals", name: "socialApprovals", loader: () => import("./routes/socialApprovals") },
     { path: "/api/social/bulk", name: "socialBulk", loader: () => import("./routes/socialBulk") },
