@@ -59,33 +59,4 @@ jobs:
         with:
           name: macos-installers
           path: dist-installers/*.dmg
-          if-no-files-found: warn          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-
-      - name: Upload Linux artifacts
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-installers
-          path: |
-            dist-installers/*.AppImage
-            dist-installers/*.deb
-          retention-days: 30
-
-      - name: Upload Windows artifacts
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-installers
-          path: |
-            dist-installers/*.exe
-          retention-days: 30
-
-      - name: Upload macOS artifacts
-        if: matrix.os == 'macos-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-installers
-          path: |
-            dist-installers/*.dmg
-          retention-days: 30
+          if-no-files-found: warn
