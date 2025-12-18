@@ -1,13 +1,64 @@
 /**
- * Dedicated Brand Voice Analyzer
+ * Dedicated Brand Voice Analyzer for Music Artists
  * Extracts and analyzes brand voice characteristics from content
+ * Enhanced with music artist persona detection and consistency scoring
  * Separate from ContentPatternLearner as per research architecture
  */
 
 import type { BrandVoiceProfile } from '../types.js';
 
+export const ARTIST_ARCHETYPES = {
+  authenticStoryteller: {
+    traits: ['genuine', 'vulnerable', 'narrative-driven', 'personal'],
+    contentStyle: ['behind-the-scenes', 'songwriting-process', 'personal-stories'],
+    indicators: ['share', 'story', 'journey', 'heart', 'soul', 'real', 'honest', 'truth'],
+    emojiProfile: 'moderate',
+    toneProfile: 'casual'
+  },
+  mysteriousArtist: {
+    traits: ['enigmatic', 'visual-focused', 'cryptic', 'artistic'],
+    contentStyle: ['artistic-visuals', 'cryptic-teasers', 'minimal-text'],
+    indicators: ['soon', '...', 'silence', 'listen', 'watch', 'coming'],
+    emojiProfile: 'none',
+    toneProfile: 'formal'
+  },
+  communityBuilder: {
+    traits: ['interactive', 'fan-focused', 'grateful', 'accessible'],
+    contentStyle: ['fan-shoutouts', 'q&a', 'polls', 'fan-content-shares'],
+    indicators: ['you', 'love', 'family', 'thank', 'appreciate', 'together', 'we', 'community'],
+    emojiProfile: 'heavy',
+    toneProfile: 'casual'
+  },
+  industryProfessional: {
+    traits: ['polished', 'business-savvy', 'collaborative', 'networked'],
+    contentStyle: ['collaborations', 'industry-insights', 'professional-updates'],
+    indicators: ['excited', 'announce', 'partnership', 'collab', 'project', 'team', 'release'],
+    emojiProfile: 'light',
+    toneProfile: 'mixed'
+  },
+  entertainmentPersonality: {
+    traits: ['humorous', 'entertaining', 'viral-focused', 'trend-aware'],
+    contentStyle: ['trends', 'memes', 'challenges', 'entertainment'],
+    indicators: ['lol', 'haha', 'dead', 'literally', 'vibe', 'mood', 'energy', 'let\'s go'],
+    emojiProfile: 'heavy',
+    toneProfile: 'casual'
+  }
+} as const;
+
+export type ArtistArchetype = keyof typeof ARTIST_ARCHETYPES;
+
+export interface MusicArtistPersona {
+  primaryArchetype: ArtistArchetype;
+  secondaryArchetype: ArtistArchetype | null;
+  archetypeConfidences: Record<ArtistArchetype, number>;
+  brandStrength: number;
+  consistencyScore: number;
+  recommendations: string[];
+}
+
 export class BrandVoiceAnalyzer {
   private brandVoice: BrandVoiceProfile | null = null;
+  private artistPersona: MusicArtistPersona | null = null;
 
   constructor() {}
 
@@ -155,5 +206,167 @@ export class BrandVoiceAnalyzer {
 
   public getProfile(): BrandVoiceProfile | null {
     return this.brandVoice;
+  }
+
+  public detectMusicArtistPersona(posts: string[]): MusicArtistPersona {
+    const allText = posts.join(' ').toLowerCase();
+    const tokens = this.tokenize(allText);
+    
+    const archetypeScores: Record<ArtistArchetype, number> = {
+      authenticStoryteller: 0,
+      mysteriousArtist: 0,
+      communityBuilder: 0,
+      industryProfessional: 0,
+      entertainmentPersonality: 0
+    };
+
+    for (const [archetype, config] of Object.entries(ARTIST_ARCHETYPES)) {
+      let score = 0;
+      
+      for (const indicator of config.indicators) {
+        const count = tokens.filter(t => t.includes(indicator.toLowerCase())).length;
+        score += count * 0.15;
+      }
+      
+      const emojiCount = (allText.match(/[\p{Emoji}]/gu) || []).length / posts.length;
+      if (config.emojiProfile === 'heavy' && emojiCount > 2) score += 0.3;
+      else if (config.emojiProfile === 'moderate' && emojiCount >= 1 && emojiCount <= 2) score += 0.3;
+      else if (config.emojiProfile === 'light' && emojiCount > 0 && emojiCount < 1) score += 0.3;
+      else if (config.emojiProfile === 'none' && emojiCount === 0) score += 0.3;
+      
+      archetypeScores[archetype as ArtistArchetype] = Math.min(1, score);
+    }
+
+    const sortedArchetypes = Object.entries(archetypeScores)
+      .sort(([, a], [, b]) => b - a);
+    
+    const primaryArchetype = sortedArchetypes[0][0] as ArtistArchetype;
+    const secondaryArchetype = sortedArchetypes[1][1] > 0.3 
+      ? sortedArchetypes[1][0] as ArtistArchetype 
+      : null;
+
+    const brandStrength = this.calculateBrandStrength(posts, primaryArchetype);
+    const consistencyScore = this.calculateConsistencyScore(posts, archetypeScores);
+    const recommendations = this.generatePersonaRecommendations(
+      primaryArchetype, 
+      brandStrength, 
+      consistencyScore
+    );
+
+    this.artistPersona = {
+      primaryArchetype,
+      secondaryArchetype,
+      archetypeConfidences: archetypeScores,
+      brandStrength,
+      consistencyScore,
+      recommendations
+    };
+
+    return this.artistPersona;
+  }
+
+  private calculateBrandStrength(posts: string[], archetype: ArtistArchetype): number {
+    const config = ARTIST_ARCHETYPES[archetype];
+    let strength = 0;
+    
+    const indicatorCoverage = config.indicators.filter(indicator =>
+      posts.some(post => post.toLowerCase().includes(indicator))
+    ).length / config.indicators.length;
+    strength += indicatorCoverage * 0.4;
+    
+    const avgPostLength = posts.reduce((sum, p) => sum + p.length, 0) / posts.length;
+    if (avgPostLength > 50) strength += 0.2;
+    if (avgPostLength > 100) strength += 0.1;
+    
+    if (posts.length >= 20) strength += 0.3;
+    else if (posts.length >= 10) strength += 0.2;
+    else if (posts.length >= 5) strength += 0.1;
+
+    return Math.min(1, strength);
+  }
+
+  private calculateConsistencyScore(
+    posts: string[], 
+    scores: Record<ArtistArchetype, number>
+  ): number {
+    const maxScore = Math.max(...Object.values(scores));
+    const avgScore = Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length;
+    
+    const dominance = maxScore - avgScore;
+    
+    const variance = Object.values(scores)
+      .map(s => Math.pow(s - avgScore, 2))
+      .reduce((a, b) => a + b, 0) / Object.values(scores).length;
+    
+    const consistencyFromDominance = Math.min(1, dominance * 2);
+    const consistencyFromVariance = Math.max(0, 1 - Math.sqrt(variance));
+    
+    return (consistencyFromDominance * 0.6 + consistencyFromVariance * 0.4);
+  }
+
+  private generatePersonaRecommendations(
+    archetype: ArtistArchetype,
+    brandStrength: number,
+    consistencyScore: number
+  ): string[] {
+    const recommendations: string[] = [];
+    const config = ARTIST_ARCHETYPES[archetype];
+
+    if (brandStrength < 0.5) {
+      recommendations.push(`Strengthen your ${archetype.replace(/([A-Z])/g, ' $1').toLowerCase()} persona by using more phrases like: ${config.indicators.slice(0, 3).join(', ')}`);
+    }
+
+    if (consistencyScore < 0.6) {
+      recommendations.push('Your content voice varies significantly. Try to maintain a more consistent tone across posts for stronger brand recognition.');
+    }
+
+    if (archetype === 'communityBuilder') {
+      recommendations.push('Continue engaging with fans through Q&As, polls, and shoutouts to strengthen community bonds.');
+    } else if (archetype === 'mysteriousArtist') {
+      recommendations.push('Maintain your enigmatic presence with cryptic teasers and minimal but impactful posts.');
+    } else if (archetype === 'authenticStoryteller') {
+      recommendations.push('Share more personal stories and behind-the-scenes content to deepen fan connection.');
+    } else if (archetype === 'industryProfessional') {
+      recommendations.push('Highlight collaborations and industry partnerships to reinforce your professional brand.');
+    } else if (archetype === 'entertainmentPersonality') {
+      recommendations.push('Stay on top of trends and continue creating entertaining, viral-worthy content.');
+    }
+
+    if (config.emojiProfile === 'heavy' && brandStrength > 0.5) {
+      recommendations.push('Your emoji usage aligns well with your personality. Keep it up!');
+    }
+
+    return recommendations;
+  }
+
+  public getArtistPersona(): MusicArtistPersona | null {
+    return this.artistPersona;
+  }
+
+  public getMusicContentSuggestions(genre: string, archetype: ArtistArchetype): string[] {
+    const suggestions: string[] = [];
+    const config = ARTIST_ARCHETYPES[archetype];
+
+    const genreHashtags: Record<string, string[]> = {
+      'hip-hop': ['#hiphop', '#rap', '#newmusic', '#trapmusic'],
+      'electronic': ['#edm', '#electronicmusic', '#dj', '#producer'],
+      'rock': ['#rock', '#rockmusic', '#livemusic', '#guitar'],
+      'pop': ['#pop', '#popmusic', '#newpop', '#mainstream'],
+      'r&b': ['#rnb', '#rnbmusic', '#soulsinger', '#newrnb'],
+      'indie': ['#indiemusic', '#indieartist', '#underground'],
+    };
+
+    const hashtags = genreHashtags[genre.toLowerCase()] || ['#music', '#newmusic', '#artist'];
+    
+    suggestions.push(`Use genre-relevant hashtags: ${hashtags.slice(0, 3).join(', ')}`);
+    suggestions.push(`Content style focus: ${config.contentStyle.slice(0, 2).join(', ')}`);
+    
+    if (archetype === 'communityBuilder') {
+      suggestions.push(`Ask fans: "What's your favorite track from the new project?" to boost engagement`);
+    } else if (archetype === 'mysteriousArtist') {
+      suggestions.push(`Tease with cryptic visuals and minimal captions like "..." or "soon"`);
+    }
+
+    return suggestions;
   }
 }

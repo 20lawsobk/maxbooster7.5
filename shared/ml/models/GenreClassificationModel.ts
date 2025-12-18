@@ -19,7 +19,53 @@ export const GENRES = [
   'r&b',
   'indie',
   'folk',
+  'metal',
+  'punk',
+  'reggae',
+  'latin',
+  'trap',
+  'lo-fi',
+  'house',
+  'techno',
+  'dubstep',
+  'ambient',
 ] as const;
+
+export const SUBGENRES: Record<string, string[]> = {
+  'hip-hop': ['trap', 'boom-bap', 'drill', 'conscious', 'mumble', 'cloud-rap', 'emo-rap', 'old-school'],
+  'electronic': ['house', 'techno', 'dubstep', 'trance', 'ambient', 'drum-and-bass', 'edm', 'synthwave', 'lo-fi'],
+  'rock': ['alternative', 'indie-rock', 'hard-rock', 'progressive', 'grunge', 'punk-rock', 'post-rock'],
+  'pop': ['synth-pop', 'dance-pop', 'electropop', 'indie-pop', 'art-pop', 'k-pop', 'j-pop'],
+  'r&b': ['neo-soul', 'contemporary-r&b', 'alternative-r&b', 'quiet-storm', 'new-jack-swing'],
+  'metal': ['heavy-metal', 'thrash', 'death-metal', 'black-metal', 'nu-metal', 'metalcore', 'djent'],
+  'jazz': ['bebop', 'fusion', 'smooth-jazz', 'free-jazz', 'swing', 'nu-jazz'],
+  'country': ['outlaw', 'country-pop', 'bluegrass', 'americana', 'bro-country', 'alt-country'],
+  'latin': ['reggaeton', 'bachata', 'salsa', 'cumbia', 'latin-pop', 'urbano'],
+  'reggae': ['roots', 'dancehall', 'dub', 'ska', 'lovers-rock'],
+};
+
+export const GENRE_AUDIO_PROFILES: Record<string, { bpmRange: [number, number]; bassWeight: number; vocalWeight: number; rhythmWeight: number }> = {
+  'hip-hop': { bpmRange: [80, 110], bassWeight: 0.85, vocalWeight: 0.90, rhythmWeight: 0.80 },
+  'electronic': { bpmRange: [120, 150], bassWeight: 0.80, vocalWeight: 0.40, rhythmWeight: 0.95 },
+  'rock': { bpmRange: [100, 140], bassWeight: 0.60, vocalWeight: 0.85, rhythmWeight: 0.75 },
+  'pop': { bpmRange: [100, 130], bassWeight: 0.55, vocalWeight: 0.95, rhythmWeight: 0.70 },
+  'r&b': { bpmRange: [70, 110], bassWeight: 0.75, vocalWeight: 0.95, rhythmWeight: 0.65 },
+  'jazz': { bpmRange: [80, 200], bassWeight: 0.50, vocalWeight: 0.60, rhythmWeight: 0.40 },
+  'classical': { bpmRange: [40, 180], bassWeight: 0.35, vocalWeight: 0.30, rhythmWeight: 0.25 },
+  'country': { bpmRange: [90, 130], bassWeight: 0.55, vocalWeight: 0.90, rhythmWeight: 0.65 },
+  'metal': { bpmRange: [100, 220], bassWeight: 0.80, vocalWeight: 0.75, rhythmWeight: 0.90 },
+  'indie': { bpmRange: [90, 140], bassWeight: 0.50, vocalWeight: 0.80, rhythmWeight: 0.60 },
+  'folk': { bpmRange: [60, 120], bassWeight: 0.40, vocalWeight: 0.85, rhythmWeight: 0.50 },
+  'trap': { bpmRange: [130, 170], bassWeight: 0.95, vocalWeight: 0.85, rhythmWeight: 0.90 },
+  'lo-fi': { bpmRange: [70, 95], bassWeight: 0.65, vocalWeight: 0.35, rhythmWeight: 0.55 },
+  'house': { bpmRange: [118, 130], bassWeight: 0.85, vocalWeight: 0.50, rhythmWeight: 0.95 },
+  'techno': { bpmRange: [125, 150], bassWeight: 0.80, vocalWeight: 0.20, rhythmWeight: 0.98 },
+  'dubstep': { bpmRange: [138, 142], bassWeight: 0.95, vocalWeight: 0.40, rhythmWeight: 0.85 },
+  'ambient': { bpmRange: [60, 100], bassWeight: 0.30, vocalWeight: 0.15, rhythmWeight: 0.20 },
+  'punk': { bpmRange: [150, 200], bassWeight: 0.65, vocalWeight: 0.85, rhythmWeight: 0.90 },
+  'reggae': { bpmRange: [60, 90], bassWeight: 0.90, vocalWeight: 0.80, rhythmWeight: 0.75 },
+  'latin': { bpmRange: [90, 130], bassWeight: 0.70, vocalWeight: 0.85, rhythmWeight: 0.85 },
+};
 
 export type Genre = typeof GENRES[number];
 
