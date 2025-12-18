@@ -22,24 +22,34 @@ export default function DesktopApp() {
 
   const features = [
     {
+      icon: Globe,
+      title: 'Full Online Access',
+      description: 'Connect directly to Max Booster servers with your internet connection. All your data syncs in real-time.',
+    },
+    {
       icon: Zap,
-      title: t('desktopApp.features.performance.title'),
-      description: t('desktopApp.features.performance.description'),
+      title: 'Native Performance',
+      description: 'Faster processing with direct hardware access. Upload files instantly from your computer.',
     },
     {
       icon: Shield,
-      title: t('desktopApp.features.security.title'),
-      description: t('desktopApp.features.security.description'),
+      title: 'Enhanced Security',
+      description: 'Secure connection to your account with native system integration and encrypted local storage.',
+    },
+    {
+      icon: HardDrive,
+      title: 'Local File Access',
+      description: 'Browse and upload audio files directly from your computer with native file dialogs.',
     },
     {
       icon: Monitor,
-      title: t('desktopApp.features.offline.title'),
-      description: t('desktopApp.features.offline.description'),
+      title: 'System Tray',
+      description: 'Quick access from your system tray. Get notifications for distribution updates and analytics.',
     },
     {
       icon: Cpu,
-      title: t('desktopApp.features.native.title'),
-      description: t('desktopApp.features.native.description'),
+      title: 'Desktop Shortcuts',
+      description: 'Keyboard shortcuts, menu bar access, and native OS integration for power users.',
     },
   ];
 
@@ -91,7 +101,7 @@ export default function DesktopApp() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {features.map((feature) => {
           const Icon = feature.icon;
           return (
