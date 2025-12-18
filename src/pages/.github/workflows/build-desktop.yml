@@ -15,16 +15,16 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run build
-      - run: npx electron-builder --linux AppImage deb --publish never
+      - run: npx electron-builder --linux --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
-          name: MaxBooster-Linux
-          path: dist-installers/*
-          retention-days: 30
+          name: linux-installers
+          path: dist-installers/
+          if-no-files-found: warn
 
   build-windows:
     runs-on: windows-latest
@@ -34,16 +34,16 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run build
-      - run: npx electron-builder --win nsis portable --publish never
+      - run: npx electron-builder --win --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
-          name: MaxBooster-Windows
-          path: dist-installers/*
-          retention-days: 30
+          name: windows-installers
+          path: dist-installers/
+          if-no-files-found: warn
 
   build-macos:
     runs-on: macos-latest
@@ -53,16 +53,16 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run build
-      - run: npx electron-builder --mac dmg zip --publish never
+      - run: npx electron-builder --mac --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
-          name: MaxBooster-macOS
-          path: dist-installers/*
-          retention-days: 30
+          name: macos-installers
+          path: dist-installers/
+          if-no-files-found: warn
 
   release:
     needs: [build-linux, build-windows, build-macos]
@@ -72,7 +72,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: installers
-      - uses: softprops/action-gh-release@v1
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
         with:
           files: installers/**/*
         env:
