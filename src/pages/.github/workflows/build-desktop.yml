@@ -16,13 +16,15 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+      - name: Install Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot
       - run: npm ci
       - run: npm run build
-      - run: npx electron-builder --linux --publish never
+      - run: npx electron-builder --linux AppImage --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: linux-installers
-          path: dist-installers/
+          path: dist-installers/*.AppImage
           if-no-files-found: warn
 
   build-windows:
@@ -39,7 +41,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installers
-          path: dist-installers/
+          path: dist-installers/*.exe
           if-no-files-found: warn
 
   build-macos:
@@ -56,5 +58,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: macos-installers
-          path: dist-installers/
+          path: dist-installers/*.dmg
           if-no-files-found: warn
