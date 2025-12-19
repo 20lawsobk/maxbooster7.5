@@ -548,13 +548,14 @@ export async function registerRoutes(
         console.log(`[Google OAuth] Created new user: ${user.email}`);
       }
       
-      // Log the user in
-      req.login(user, (err: Error | null) => {
+      // Log the user in using session
+      req.session.userId = user.id;
+      req.session.save((err) => {
         if (err) {
-          console.error('[Google OAuth] Login failed:', err);
+          console.error('[Google OAuth] Session save failed:', err);
           return res.redirect('/login?error=login_failed');
         }
-        console.log(`[Google OAuth] User logged in: ${user!.email}`);
+        console.log(`[Google OAuth] User logged in: ${user.email}`);
         return res.redirect('/dashboard');
       });
     } catch (err) {
