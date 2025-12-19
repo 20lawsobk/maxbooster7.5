@@ -1,6 +1,9 @@
 import bcrypt from 'bcrypt';
 import { storage } from './storage';
 import { logger } from './logger.js';
+import { db } from './db';
+import { users } from '../shared/schema';
+import { eq } from 'drizzle-orm';
 
 /**
  * Admin Account Initialization
@@ -28,6 +31,12 @@ export async function initializeAdmin() {
     
     if (existingAdmin) {
       logger.info(`✅ Admin account exists: ${adminEmail}`);
+      
+      // Update password to match current ADMIN_PASSWORD
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      await db.update(users).set({ password: hashedPassword }).where(eq(users.id, existingAdmin.id));
+      logger.info('✅ Admin password synced with ADMIN_PASSWORD');
+      
       await seedPluginCatalog();
       return existingAdmin;
     }
