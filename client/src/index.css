@@ -168,20 +168,20 @@
   /* Dark Mode: Deep Navy with Gold/Purple B-Lawz Music Branding */
   --background: hsl(230, 25%, 8%);
   --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(230, 20%, 14%);
-  --muted-foreground: hsl(230, 10%, 65%);
+  --muted: hsl(230, 20%, 16%);
+  --muted-foreground: hsl(230, 10%, 72%);
   --popover: hsl(230, 25%, 6%);
   --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(230, 22%, 12%);
+  --card: hsl(230, 22%, 14%);
   --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(230, 20%, 22%);
-  --input: hsl(230, 20%, 18%);
+  --border: hsl(230, 20%, 28%);
+  --input: hsl(230, 20%, 22%);
   --primary: hsl(43, 96%, 58%);
   --primary-foreground: hsl(230, 25%, 8%);
-  --secondary: hsl(265, 50%, 50%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(265, 45%, 40%);
-  --accent-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(265, 55%, 55%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(265, 50%, 45%);
+  --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
   --ring: hsl(43, 96%, 58%);
@@ -799,44 +799,81 @@
 @media (max-width: 640px) {
   /* Increase touch targets on mobile */
   button, [role="button"], a {
-    min-height: 44px;
+    min-height: 48px;
   }
   
   /* Better card padding on mobile */
   .card-content, [class*="CardContent"] {
-    padding: 1rem !important;
+    padding: 1.25rem !important;
   }
   
   /* More breathing room between sections */
-  .space-y-4 {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(1.25rem * var(--tw-space-y-reverse));
+  .space-y-4 > * + * {
+    margin-top: 1.25rem;
   }
   
-  .space-y-6 {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(1.75rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(1.75rem * var(--tw-space-y-reverse));
+  .space-y-6 > * + * {
+    margin-top: 2rem;
+  }
+  
+  .space-y-8 > * + * {
+    margin-top: 2.5rem;
   }
   
   /* Better grid gaps on mobile */
   .gap-4 {
-    gap: 1rem;
+    gap: 1.25rem;
   }
   
   .gap-6 {
-    gap: 1.25rem;
+    gap: 1.5rem;
+  }
+  
+  .gap-8 {
+    gap: 2rem;
+  }
+  
+  /* Increased container padding on mobile */
+  .px-4 {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+  
+  .py-8 {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+  
+  .py-12 {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+  
+  .py-16 {
+    padding-top: 4.5rem;
+    padding-bottom: 4.5rem;
+  }
+  
+  /* Section margin spacing */
+  .my-8 {
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+  }
+  
+  .my-12 {
+    margin-top: 3.5rem;
+    margin-bottom: 3.5rem;
   }
   
   /* Form element spacing */
   input, select, textarea {
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1rem;
+    font-size: 16px; /* Prevents zoom on iOS */
   }
   
   /* Tab triggers more touchable */
   [role="tablist"] button {
-    padding: 0.625rem 1rem;
+    padding: 0.75rem 1.25rem;
     font-size: 0.875rem;
   }
   
