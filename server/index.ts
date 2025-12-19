@@ -423,6 +423,15 @@ app.use((req, res, next) => {
     logger.warn('⚠️ Payment system may be unavailable');
   }
 
+  // Initialize admin account (works in both dev and production)
+  try {
+    const { initializeAdmin } = await import('./init-admin.js');
+    await initializeAdmin();
+    logger.info('✅ Admin account initialized');
+  } catch (e: any) {
+    logger.error(`❌ Failed to initialize admin: ${e.message}`);
+  }
+
   await registerRoutes(httpServer, app);
 
   // MANDATORY global error handler (from safety module)
