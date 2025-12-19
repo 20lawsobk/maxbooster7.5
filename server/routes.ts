@@ -791,6 +791,9 @@ export async function registerRoutes(
     
     // Marketplace with Discovery Algorithm
     { path: "/api/marketplace", name: "marketplace", loader: () => import("./routes/marketplace") },
+    
+    // AI Services
+    { path: "/api/ai", name: "ai", loader: () => import("./routes/ai") },
   ];
 
   for (const { path, name, loader } of routeModules) {

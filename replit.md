@@ -33,6 +33,71 @@ Max Booster employs a hybrid rule-based and ML autopilot architecture for its so
 -   `shared/`: Shared code including Drizzle database schema.
 -   `uploads/`: User file uploads.
 
+## AI Services API
+
+Max Booster includes a comprehensive suite of 100% in-house AI services with no external API dependencies. All AI endpoints require authentication.
+
+### API Endpoints
+
+**Content Generation**
+- `POST /api/ai/content/generate` - Generate AI-powered content
+  - Body: `{ tone, platform, maxLength, genre, mood, audience, style, keywords, customPrompt, projectId }`
+  - Returns: Generated caption with tone match confidence
+
+**Sentiment Analysis**
+- `POST /api/ai/sentiment/analyze` - Analyze text sentiment
+  - Body: `{ text, includeEmotions?, includeToxicity?, includeAspects?, aspects? }`
+  - Returns: Sentiment score, emotions, toxicity analysis
+
+**Recommendations**
+- `POST /api/ai/recommendations/get` - Get personalized recommendations
+  - Body: `{ type: 'tracks'|'artists'|'similar', seedIds?, limit?, hybridWeight? }`
+  - Returns: Recommended items with confidence scores
+
+**Ad Optimization**
+- `POST /api/ai/ads/optimize` - Optimize advertising campaigns
+  - Body: `{ campaign, action: 'score'|'optimize_budget'|'predict_creative'|'forecast_roi', campaigns?, totalBudget?, forecastPeriod? }`
+  - Returns: Campaign scores, budget allocations, or ROI forecasts
+
+**Social Media Predictions**
+- `POST /api/ai/social/predict` - Predict social media engagement
+  - Body: `{ platform, content, action: 'predict_engagement'|'viral_potential'|'best_time'|'recommend_type'|'optimize_schedule', postsPerWeek? }`
+  - Returns: Engagement predictions, optimal posting times
+
+**Time Series Forecasting**
+- `POST /api/ai/forecast` - Forecast metrics
+  - Body: `{ metric: 'streams'|'revenue'|'followers'|'engagement', horizon: 7|30|90, historicalData[], timestamps? }`
+  - Returns: Forecasted values with accuracy metrics
+
+**Health & Monitoring**
+- `GET /api/ai/health` - AI services health check
+- `GET /api/ai/stats` - AI service statistics
+- `GET /api/ai/models` - List registered ML models
+- `GET /api/ai/models/:modelId/performance` - Model performance metrics
+
+**Analytics Intelligence**
+- `POST /api/ai/analytics/predict` - Predict analytics metrics
+- `GET /api/ai/insights` - Generate AI insights
+- `GET /api/ai/anomalies` - Detect anomalies
+- `POST /api/ai/churn/predict` - Predict user churn
+- `POST /api/ai/revenue/forecast` - Forecast revenue
+
+**Utility Endpoints**
+- `POST /api/ai/hashtags/generate` - Generate relevant hashtags
+- `POST /api/ai/toxicity/analyze` - Analyze content toxicity
+- `POST /api/ai/emotions/detect` - Detect emotions in text
+- `GET /api/ai/trends` - Detect current trends
+- `POST /api/ai/content/adapt` - Adapt content for different platforms
+
+### AI Service Components
+- **ContentGenerator**: NLP-based caption and content generation
+- **SentimentAnalyzer**: Multi-aspect sentiment analysis with emotion detection
+- **RecommendationEngine**: Hybrid collaborative/content-based recommendations
+- **AdOptimizationEngine**: Campaign scoring and budget optimization
+- **SocialAutopilotEngine**: Engagement prediction and scheduling optimization
+- **AdvancedTimeSeriesModel**: TensorFlow-based forecasting models
+- **MLModelRegistry**: Centralized model management and versioning
+
 ## External Dependencies
 -   **Payments:** Stripe
 -   **Email:** SendGrid

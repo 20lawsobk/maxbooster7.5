@@ -1803,7 +1803,7 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private countEmojis(text: string): number {
-    const emojiRegex = /[\u{1F300}-\\u{1F9FF}]|[\\u{2600}-\u{26FF}]|[\\u{2700}-\\u{27BF}]/gu;
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu;
     return (text.match(emojiRegex) || []).length;
   }
 

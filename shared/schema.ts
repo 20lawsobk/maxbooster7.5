@@ -34,6 +34,24 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // ============================================================================
+// SESSIONS
+// ============================================================================
+export const sessions = pgTable("sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  sessionToken: text("session_token").unique(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  lastActivity: timestamp("last_activity").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSessionSchema = createInsertSchema(sessions).omit({ id: true, createdAt: true });
+export type InsertSession = z.infer<typeof insertSessionSchema>;
+export type Session = typeof sessions.$inferSelect;
+
+// ============================================================================
 // ANALYTICS
 // ============================================================================
 export const analytics = pgTable("analytics", {
