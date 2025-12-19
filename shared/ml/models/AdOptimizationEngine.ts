@@ -1,15 +1,24 @@
 /**
- * Ad Optimization Engine - Enhanced Advertising AI for Max Booster
+ * Ad Optimization Engine - Organic Growth AI for Max Booster
+ * 
+ * CORE PHILOSOPHY: Personal Ad Network
+ * Replicate peak paid advertising performance through organic means,
+ * eliminating the need for ad spend by leveraging connected social profiles.
  * 
  * Features:
- * 1. Campaign performance scoring based on multiple factors
- * 2. Budget allocation optimization using gradient-based methods
- * 3. Audience targeting with interest clustering
- * 4. Creative effectiveness prediction
- * 5. ROI forecasting for campaigns
- * 6. A/B test recommendations
+ * 1. Personal Ad Network - Use connected profiles as organic ad distribution
+ * 2. Organic Growth Optimization - Achieve paid-ad-level results organically
+ * 3. Zero-Spend ROI - Measure organic reach equivalent ad value
+ * 4. Cross-Platform Amplification - Maximize reach across all connected profiles
+ * 5. Creative effectiveness prediction for organic content
+ * 6. Viral potential optimization
  * 
- * Uses reinforcement learning concepts for budget optimization
+ * SECONDARY (Traditional Advertising Support):
+ * - Campaign performance scoring
+ * - Budget allocation optimization
+ * - Audience targeting with interest clustering
+ * - ROI forecasting for paid campaigns
+ * 
  * 100% in-house implementation - no external APIs
  */
 
@@ -228,6 +237,156 @@ export interface ABTestRecommendation {
   reasoning: string;
   implementationSteps: string[];
   confidence: number;
+}
+
+// ============================================================================
+// PERSONAL AD NETWORK - ORGANIC GROWTH INTERFACES
+// ============================================================================
+
+export interface SocialProfile {
+  id: string;
+  platform: string;
+  username: string;
+  followers: number;
+  engagementRate?: number;
+  isActive: boolean;
+  lastPostDate?: Date;
+}
+
+export interface OrganicContent {
+  id: string;
+  text: string;
+  hashtags?: string[];
+  platforms?: string[];
+  hasMedia: boolean;
+  mediaType?: 'image' | 'video' | 'carousel';
+  scheduledTime?: Date;
+}
+
+export interface OrganicGoals {
+  targetReach?: number;
+  targetEngagement?: number;
+  targetConversions?: number;
+  targetPlatforms?: string[];
+  timeframe?: string;
+}
+
+export interface PersonalAdNetworkResult {
+  networkAnalysis: NetworkAnalysis;
+  contentScore: OrganicContentScore;
+  distributionStrategy: DistributionStrategy;
+  projectedResults: ProjectedOrganicResults;
+  equivalentAdValue: EquivalentAdValue;
+  recommendations: string[];
+  processingTimeMs: number;
+}
+
+export interface NetworkAnalysis {
+  totalFollowers: number;
+  estimatedReach: number;
+  platformReach: Record<string, number>;
+  activeProfiles: number;
+  networkStrength: number;
+  reachPotential: number;
+  equivalentMonthlyAdBudget: number;
+}
+
+export interface OrganicContentScore {
+  overall: number;
+  textQuality: number;
+  hashtagEffectiveness: number;
+  mediaImpact: number;
+  timingOptimization: number;
+  viralFactors: string[];
+  improvements: string[];
+}
+
+export interface DistributionStrategy {
+  primaryPlatforms: string[];
+  secondaryPlatforms: string[];
+  crossPostOrder: string[];
+  postingCadence: PostingCadence;
+  amplificationTactics: string[];
+  engagementStrategy: EngagementStrategy;
+}
+
+export interface PostingCadence {
+  postsPerDay: number;
+  bestDays: string[];
+  restDays: string[];
+  peakHours: number[];
+}
+
+export interface EngagementStrategy {
+  responseTimeTarget: string;
+  engagementActions: string[];
+  communityBuilding: string[];
+  collaborationOpportunities: string[];
+}
+
+export interface ProjectedOrganicResults {
+  projectedReach: number;
+  projectedEngagements: number;
+  projectedConversions: number;
+  confidence: number;
+  timeframe: string;
+  viralProbability: number;
+}
+
+export interface EquivalentAdValue {
+  totalEquivalentValue: number;
+  impressionValue: number;
+  engagementValue: number;
+  conversionValue: number;
+  monthlySavings: number;
+  yearlySavings: number;
+  comparisonNote: string;
+}
+
+export interface OrganicResults {
+  platformResults: Record<string, { impressions: number; engagements: number }>;
+  totalReach: number;
+  totalEngagements: number;
+}
+
+export interface OrganicROIAnalysis {
+  totalEquivalentSpend: number;
+  totalImpressions: number;
+  totalEngagements: number;
+  platformBreakdown: PlatformOrganicValue[];
+  savingsVsPaidAds: number;
+  monthlyProjectedSavings: number;
+  yearlyProjectedSavings: number;
+  effectiveROAS: number;
+  message: string;
+}
+
+export interface PlatformOrganicValue {
+  platform: string;
+  impressions: number;
+  engagements: number;
+  equivalentSpend: number;
+  cpmSaved: number;
+  cpcSaved: number;
+}
+
+export interface OrganicSchedule {
+  posts: ScheduledOrganicPost[];
+  totalProjectedReach: number;
+  totalProjectedEngagement: number;
+  equivalentAdSpend: number;
+  optimizationScore: number;
+}
+
+export interface ScheduledOrganicPost {
+  contentId: string;
+  platform: string;
+  profileId: string;
+  scheduledTime: Date;
+  predictedReach: number;
+  predictedEngagement: number;
+  viralScore: number;
+  priority: 'high' | 'medium' | 'low';
 }
 
 interface ReinforcementState {
@@ -1876,6 +2035,534 @@ export class AdOptimizationEngine extends BaseModel {
 
   private hasUrl(text: string): boolean {
     return /https?:\/\//.test(text);
+  }
+
+  // ============================================================================
+  // PERSONAL AD NETWORK - ORGANIC GROWTH OPTIMIZATION
+  // Achieve paid-ad-level results without ad spend
+  // ============================================================================
+
+  /**
+   * Optimize organic reach using the Personal Ad Network strategy
+   * Leverages connected social profiles as organic distribution channels
+   */
+  public async optimizePersonalAdNetwork(
+    profiles: SocialProfile[],
+    content: OrganicContent,
+    goals: OrganicGoals
+  ): Promise<PersonalAdNetworkResult> {
+    const startTime = Date.now();
+
+    const networkAnalysis = this.analyzeNetworkReach(profiles);
+    const contentScore = this.scoreOrganicContent(content);
+    const distributionStrategy = this.generateDistributionStrategy(profiles, content, goals);
+    const projectedResults = this.projectOrganicResults(profiles, content, goals);
+    const equivalentAdValue = this.calculateEquivalentAdValue(projectedResults);
+
+    return {
+      networkAnalysis,
+      contentScore,
+      distributionStrategy,
+      projectedResults,
+      equivalentAdValue,
+      recommendations: this.generateOrganicRecommendations(networkAnalysis, contentScore, goals),
+      processingTimeMs: Date.now() - startTime,
+    };
+  }
+
+  /**
+   * Calculate the equivalent advertising value of organic reach
+   * Shows what would need to be spent in ads to achieve the same results
+   */
+  public calculateOrganicROI(results: OrganicResults): OrganicROIAnalysis {
+    const cpmByPlatform: Record<string, number> = {
+      instagram: 7.50,
+      facebook: 5.50,
+      twitter: 6.00,
+      tiktok: 10.00,
+      youtube: 15.00,
+      linkedin: 25.00,
+      threads: 4.00,
+    };
+
+    const cpcByPlatform: Record<string, number> = {
+      instagram: 0.80,
+      facebook: 0.50,
+      twitter: 0.40,
+      tiktok: 1.00,
+      youtube: 2.00,
+      linkedin: 5.00,
+      threads: 0.30,
+    };
+
+    let totalEquivalentSpend = 0;
+    let totalImpressions = 0;
+    let totalEngagements = 0;
+    const platformBreakdown: PlatformOrganicValue[] = [];
+
+    for (const platform of Object.keys(results.platformResults)) {
+      const platformData = results.platformResults[platform];
+      const cpm = cpmByPlatform[platform] || 5.00;
+      const cpc = cpcByPlatform[platform] || 0.50;
+
+      const impressionValue = (platformData.impressions / 1000) * cpm;
+      const engagementValue = platformData.engagements * cpc;
+      const totalValue = impressionValue + engagementValue;
+
+      totalEquivalentSpend += totalValue;
+      totalImpressions += platformData.impressions;
+      totalEngagements += platformData.engagements;
+
+      platformBreakdown.push({
+        platform,
+        impressions: platformData.impressions,
+        engagements: platformData.engagements,
+        equivalentSpend: totalValue,
+        cpmSaved: impressionValue,
+        cpcSaved: engagementValue,
+      });
+    }
+
+    const monthlyProjection = totalEquivalentSpend * 30;
+    const yearlyProjection = totalEquivalentSpend * 365;
+
+    return {
+      totalEquivalentSpend,
+      totalImpressions,
+      totalEngagements,
+      platformBreakdown,
+      savingsVsPaidAds: totalEquivalentSpend,
+      monthlyProjectedSavings: monthlyProjection,
+      yearlyProjectedSavings: yearlyProjection,
+      effectiveROAS: totalEngagements > 0 ? (totalEquivalentSpend / totalEngagements) : 0,
+      message: `Your organic reach is equivalent to $${totalEquivalentSpend.toFixed(2)} in paid advertising. ` +
+               `Over a year, this saves approximately $${yearlyProjection.toFixed(2)} in ad spend.`,
+    };
+  }
+
+  /**
+   * Generate optimal posting schedule to maximize organic reach
+   * without any ad spend
+   */
+  public generateOrganicSchedule(
+    profiles: SocialProfile[],
+    contentQueue: OrganicContent[],
+    goals: OrganicGoals
+  ): OrganicSchedule {
+    const schedule: ScheduledOrganicPost[] = [];
+    const platformOptimalTimes = this.getOptimalPostingTimes();
+
+    for (const content of contentQueue) {
+      const targetPlatforms = content.platforms || profiles.map(p => p.platform);
+      
+      for (const platform of targetPlatforms) {
+        const profile = profiles.find(p => p.platform === platform);
+        if (!profile) continue;
+
+        const optimalTime = this.findBestSlot(platform, platformOptimalTimes, schedule);
+        const viralScore = this.predictViralPotential(content, platform);
+        const reachEstimate = this.estimateOrganicReach(profile, content);
+
+        schedule.push({
+          contentId: content.id,
+          platform,
+          profileId: profile.id,
+          scheduledTime: optimalTime,
+          predictedReach: reachEstimate,
+          predictedEngagement: reachEstimate * 0.05, // 5% engagement rate estimate
+          viralScore,
+          priority: viralScore > 0.7 ? 'high' : viralScore > 0.4 ? 'medium' : 'low',
+        });
+      }
+    }
+
+    // Sort by optimal timing and viral potential
+    schedule.sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority === 'high' ? -1 : b.priority === 'high' ? 1 : 0;
+      }
+      return a.scheduledTime.getTime() - b.scheduledTime.getTime();
+    });
+
+    const totalProjectedReach = schedule.reduce((sum, s) => sum + s.predictedReach, 0);
+    const equivalentAdSpend = (totalProjectedReach / 1000) * 7.50; // Average CPM
+
+    return {
+      posts: schedule,
+      totalProjectedReach,
+      totalProjectedEngagement: schedule.reduce((sum, s) => sum + s.predictedEngagement, 0),
+      equivalentAdSpend,
+      optimizationScore: Math.min(1, totalProjectedReach / (goals.targetReach || 10000)),
+    };
+  }
+
+  /**
+   * Analyze the reach potential of the Personal Ad Network
+   */
+  private analyzeNetworkReach(profiles: SocialProfile[]): NetworkAnalysis {
+    let totalFollowers = 0;
+    let totalReach = 0;
+    const platformReach: Record<string, number> = {};
+    const activeProfiles: string[] = [];
+
+    for (const profile of profiles) {
+      const reachMultiplier = this.getPlatformReachMultiplier(profile.platform);
+      const estimatedReach = profile.followers * reachMultiplier * (profile.engagementRate || 0.05);
+      
+      totalFollowers += profile.followers;
+      totalReach += estimatedReach;
+      platformReach[profile.platform] = (platformReach[profile.platform] || 0) + estimatedReach;
+      
+      if (profile.isActive) {
+        activeProfiles.push(profile.id);
+      }
+    }
+
+    const networkStrength = Math.min(1, profiles.length / 5) * Math.min(1, totalFollowers / 100000);
+
+    return {
+      totalFollowers,
+      estimatedReach: totalReach,
+      platformReach,
+      activeProfiles: activeProfiles.length,
+      networkStrength,
+      reachPotential: totalReach * 30, // Monthly potential
+      equivalentMonthlyAdBudget: (totalReach / 1000) * 7.50 * 30,
+    };
+  }
+
+  private scoreOrganicContent(content: OrganicContent): OrganicContentScore {
+    const textScore = this.analyzeContentText(content.text);
+    const hashtagScore = this.scoreHashtags(content.hashtags || []);
+    const mediaScore = content.hasMedia ? 0.8 : 0.4;
+    const timingScore = content.scheduledTime ? this.scorePostingTime(content.scheduledTime) : 0.5;
+    const viralFactors = this.identifyViralFactors(content);
+
+    const overallScore = (textScore * 0.3 + hashtagScore * 0.2 + mediaScore * 0.25 + timingScore * 0.25);
+
+    return {
+      overall: overallScore,
+      textQuality: textScore,
+      hashtagEffectiveness: hashtagScore,
+      mediaImpact: mediaScore,
+      timingOptimization: timingScore,
+      viralFactors,
+      improvements: this.suggestContentImprovements(content, overallScore),
+    };
+  }
+
+  private generateDistributionStrategy(
+    profiles: SocialProfile[],
+    content: OrganicContent,
+    goals: OrganicGoals
+  ): DistributionStrategy {
+    const primaryPlatforms: string[] = [];
+    const secondaryPlatforms: string[] = [];
+    const crossPostOrder: string[] = [];
+
+    // Rank platforms by their potential contribution to goals
+    const rankedProfiles = profiles
+      .map(p => ({
+        profile: p,
+        score: this.calculateProfileGoalAlignment(p, goals),
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    for (let i = 0; i < rankedProfiles.length; i++) {
+      const platform = rankedProfiles[i].profile.platform;
+      if (i < 2) {
+        primaryPlatforms.push(platform);
+      } else {
+        secondaryPlatforms.push(platform);
+      }
+      crossPostOrder.push(platform);
+    }
+
+    return {
+      primaryPlatforms,
+      secondaryPlatforms,
+      crossPostOrder,
+      postingCadence: this.recommendPostingCadence(goals),
+      amplificationTactics: this.generateAmplificationTactics(profiles, content),
+      engagementStrategy: this.generateEngagementStrategy(goals),
+    };
+  }
+
+  private projectOrganicResults(
+    profiles: SocialProfile[],
+    content: OrganicContent,
+    goals: OrganicGoals
+  ): ProjectedOrganicResults {
+    const networkAnalysis = this.analyzeNetworkReach(profiles);
+    const contentScore = this.scoreOrganicContent(content);
+
+    const baseReach = networkAnalysis.estimatedReach;
+    const viralMultiplier = 1 + (contentScore.viralFactors.length * 0.2);
+    const projectedReach = baseReach * viralMultiplier * contentScore.overall;
+
+    const engagementRate = 0.05 * contentScore.overall;
+    const projectedEngagements = projectedReach * engagementRate;
+
+    const conversionRate = 0.02;
+    const projectedConversions = projectedEngagements * conversionRate;
+
+    return {
+      projectedReach: Math.round(projectedReach),
+      projectedEngagements: Math.round(projectedEngagements),
+      projectedConversions: Math.round(projectedConversions),
+      confidence: contentScore.overall,
+      timeframe: '7 days',
+      viralProbability: Math.min(0.95, contentScore.viralFactors.length * 0.15),
+    };
+  }
+
+  private calculateEquivalentAdValue(results: ProjectedOrganicResults): EquivalentAdValue {
+    const avgCPM = 7.50;
+    const avgCPC = 0.65;
+    const avgCPA = 15.00;
+
+    const impressionValue = (results.projectedReach / 1000) * avgCPM;
+    const engagementValue = results.projectedEngagements * avgCPC;
+    const conversionValue = results.projectedConversions * avgCPA;
+
+    const totalValue = impressionValue + engagementValue + conversionValue;
+
+    return {
+      totalEquivalentValue: totalValue,
+      impressionValue,
+      engagementValue,
+      conversionValue,
+      monthlySavings: totalValue * 4,
+      yearlySavings: totalValue * 52,
+      comparisonNote: `This organic strategy delivers results equivalent to a $${totalValue.toFixed(2)} ad campaign`,
+    };
+  }
+
+  private generateOrganicRecommendations(
+    network: NetworkAnalysis,
+    content: OrganicContentScore,
+    goals: OrganicGoals
+  ): string[] {
+    const recommendations: string[] = [];
+
+    if (network.activeProfiles < 3) {
+      recommendations.push('Connect more social profiles to expand your Personal Ad Network reach');
+    }
+
+    if (network.networkStrength < 0.5) {
+      recommendations.push('Focus on growing your follower base across connected platforms');
+    }
+
+    if (content.hashtagEffectiveness < 0.6) {
+      recommendations.push('Use more trending and niche-specific hashtags to boost discoverability');
+    }
+
+    if (content.mediaImpact < 0.7) {
+      recommendations.push('Include high-quality visual content to increase engagement rates');
+    }
+
+    if (content.viralFactors.length < 2) {
+      recommendations.push('Add viral elements like questions, controversy, or emotional hooks');
+    }
+
+    if (goals.targetEngagement && network.estimatedReach * 0.05 < goals.targetEngagement) {
+      recommendations.push('Increase posting frequency or improve content quality to hit engagement goals');
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('Your organic strategy is well-optimized! Continue current approach.');
+    }
+
+    return recommendations;
+  }
+
+  private getPlatformReachMultiplier(platform: string): number {
+    const multipliers: Record<string, number> = {
+      instagram: 0.15,
+      facebook: 0.08,
+      twitter: 0.12,
+      tiktok: 0.25,
+      youtube: 0.10,
+      linkedin: 0.20,
+      threads: 0.18,
+    };
+    return multipliers[platform] || 0.10;
+  }
+
+  private getOptimalPostingTimes(): Record<string, Date[]> {
+    const now = new Date();
+    const times: Record<string, Date[]> = {};
+    
+    const optimalHours: Record<string, number[]> = {
+      instagram: [9, 12, 17, 20],
+      facebook: [9, 13, 16, 19],
+      twitter: [8, 12, 17, 21],
+      tiktok: [7, 10, 15, 19, 22],
+      youtube: [14, 15, 16, 17],
+      linkedin: [7, 8, 12, 17],
+      threads: [9, 13, 18, 21],
+    };
+
+    for (const [platform, hours] of Object.entries(optimalHours)) {
+      times[platform] = hours.map(hour => {
+        const date = new Date(now);
+        date.setHours(hour, 0, 0, 0);
+        if (date < now) {
+          date.setDate(date.getDate() + 1);
+        }
+        return date;
+      });
+    }
+
+    return times;
+  }
+
+  private findBestSlot(
+    platform: string,
+    optimalTimes: Record<string, Date[]>,
+    existingSchedule: ScheduledOrganicPost[]
+  ): Date {
+    const platformTimes = optimalTimes[platform] || [];
+    const scheduledTimes = existingSchedule
+      .filter(s => s.platform === platform)
+      .map(s => s.scheduledTime.getTime());
+
+    for (const time of platformTimes) {
+      const isConflict = scheduledTimes.some(
+        scheduled => Math.abs(scheduled - time.getTime()) < 3600000 // 1 hour buffer
+      );
+      if (!isConflict) {
+        return time;
+      }
+    }
+
+    // If all optimal times taken, find next available slot
+    const lastScheduled = Math.max(...scheduledTimes, Date.now());
+    return new Date(lastScheduled + 3600000);
+  }
+
+  private predictViralPotential(content: OrganicContent, platform: string): number {
+    let score = 0.3;
+
+    if (content.hasMedia) score += 0.15;
+    if ((content.hashtags?.length || 0) >= 3 && (content.hashtags?.length || 0) <= 10) score += 0.1;
+    if (content.text.includes('?')) score += 0.1;
+    if (this.hasCTA(content.text)) score += 0.1;
+    if (this.countEmojis(content.text) > 0 && this.countEmojis(content.text) <= 5) score += 0.05;
+    
+    const platformBonus: Record<string, number> = {
+      tiktok: 0.15,
+      instagram: 0.1,
+      twitter: 0.08,
+    };
+    score += platformBonus[platform] || 0;
+
+    return Math.min(1, score);
+  }
+
+  private estimateOrganicReach(profile: SocialProfile, content: OrganicContent): number {
+    const baseReach = profile.followers * this.getPlatformReachMultiplier(profile.platform);
+    const contentMultiplier = content.hasMedia ? 1.5 : 1.0;
+    const engagementBonus = (profile.engagementRate || 0.05) * 2;
+    
+    return Math.round(baseReach * contentMultiplier * (1 + engagementBonus));
+  }
+
+  private analyzeContentText(text: string): number {
+    let score = 0.5;
+    
+    const wordCount = this.getWordCount(text);
+    if (wordCount >= 10 && wordCount <= 150) score += 0.1;
+    if (this.hasQuestion(text)) score += 0.1;
+    if (this.hasCTA(text)) score += 0.1;
+    if (this.calculateEmotionalScore(text) > 0.5) score += 0.1;
+    if (this.calculateReadabilityScore(text) > 0.7) score += 0.1;
+    
+    return Math.min(1, score);
+  }
+
+  private scoreHashtags(hashtags: string[]): number {
+    if (hashtags.length === 0) return 0.3;
+    if (hashtags.length >= 3 && hashtags.length <= 10) return 0.8;
+    if (hashtags.length > 20) return 0.4;
+    return 0.6;
+  }
+
+  private scorePostingTime(time: Date): number {
+    const hour = time.getHours();
+    if ((hour >= 9 && hour <= 11) || (hour >= 17 && hour <= 20)) return 0.9;
+    if ((hour >= 12 && hour <= 14) || (hour >= 21 && hour <= 22)) return 0.7;
+    return 0.4;
+  }
+
+  private identifyViralFactors(content: OrganicContent): string[] {
+    const factors: string[] = [];
+    
+    if (content.hasMedia) factors.push('visual_content');
+    if (content.text.includes('?')) factors.push('question_hook');
+    if (this.hasCTA(content.text)) factors.push('call_to_action');
+    if (this.calculateEmotionalScore(content.text) > 0.6) factors.push('emotional_resonance');
+    if (this.calculateUrgencyScore(content.text) > 0.5) factors.push('urgency_trigger');
+    if ((content.hashtags?.length || 0) >= 3) factors.push('hashtag_discoverability');
+    
+    return factors;
+  }
+
+  private suggestContentImprovements(content: OrganicContent, currentScore: number): string[] {
+    const improvements: string[] = [];
+    
+    if (!content.hasMedia) improvements.push('Add visual content (image or video)');
+    if (!content.text.includes('?')) improvements.push('Add an engaging question');
+    if (!this.hasCTA(content.text)) improvements.push('Include a clear call-to-action');
+    if ((content.hashtags?.length || 0) < 3) improvements.push('Use 3-10 relevant hashtags');
+    if (this.countEmojis(content.text) === 0) improvements.push('Add 2-3 relevant emojis');
+    
+    return improvements;
+  }
+
+  private calculateProfileGoalAlignment(profile: SocialProfile, goals: OrganicGoals): number {
+    let score = 0.5;
+    
+    if (goals.targetPlatforms?.includes(profile.platform)) score += 0.3;
+    if (profile.followers > 10000) score += 0.2;
+    if ((profile.engagementRate || 0) > 0.05) score += 0.2;
+    if (profile.isActive) score += 0.1;
+    
+    return Math.min(1, score);
+  }
+
+  private recommendPostingCadence(goals: OrganicGoals): PostingCadence {
+    const baseFrequency = goals.targetReach && goals.targetReach > 50000 ? 3 : 2;
+    
+    return {
+      postsPerDay: baseFrequency,
+      bestDays: ['tuesday', 'wednesday', 'thursday'],
+      restDays: ['sunday'],
+      peakHours: [9, 12, 17, 20],
+    };
+  }
+
+  private generateAmplificationTactics(profiles: SocialProfile[], content: OrganicContent): string[] {
+    const tactics: string[] = [
+      'Cross-post content across all connected platforms with platform-specific formatting',
+      'Engage with comments within the first hour of posting',
+      'Use Stories/Reels to drive traffic to main posts',
+    ];
+    
+    if (profiles.length >= 3) {
+      tactics.push('Stagger posts across platforms to maintain momentum');
+    }
+    
+    return tactics;
+  }
+
+  private generateEngagementStrategy(goals: OrganicGoals): EngagementStrategy {
+    return {
+      responseTimeTarget: '30 minutes',
+      engagementActions: ['reply_to_comments', 'like_mentions', 'share_ugc'],
+      communityBuilding: ['ask_questions', 'run_polls', 'feature_fans'],
+      collaborationOpportunities: ['duets', 'stitches', 'features'],
+    };
   }
 
   public dispose(): void {

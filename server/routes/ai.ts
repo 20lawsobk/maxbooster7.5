@@ -498,4 +498,109 @@ router.post('/revenue/forecast', requireAuth, async (req: Request, res: Response
   }
 });
 
+// ============================================================================
+// PERSONAL AD NETWORK - ORGANIC GROWTH ENDPOINTS
+// Achieve paid-ad-level results without ad spend
+// ============================================================================
+
+router.post('/organic/optimize', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { profiles, content, goals } = req.body;
+
+    if (!profiles || !Array.isArray(profiles)) {
+      return res.status(400).json({ error: 'Social profiles array is required' });
+    }
+
+    if (!content || !content.text) {
+      return res.status(400).json({ error: 'Content with text is required' });
+    }
+
+    const result = await unifiedAIController.optimizeOrganicGrowth({
+      profiles,
+      content,
+      goals: goals || {},
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Personal Ad Network optimization complete',
+    });
+  } catch (error) {
+    logger.error('Organic optimization route error:', error);
+    res.status(500).json({ error: 'Failed to optimize organic growth' });
+  }
+});
+
+router.post('/organic/roi', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { platformResults } = req.body;
+
+    if (!platformResults) {
+      return res.status(400).json({ error: 'Platform results data is required' });
+    }
+
+    const result = await unifiedAIController.calculateOrganicROI({
+      platformResults,
+      totalReach: Object.values(platformResults as Record<string, { impressions: number }>)
+        .reduce((sum: number, p: { impressions: number }) => sum + p.impressions, 0),
+      totalEngagements: Object.values(platformResults as Record<string, { engagements: number }>)
+        .reduce((sum: number, p: { engagements: number }) => sum + p.engagements, 0),
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Organic ROI calculated - see equivalent ad spend savings',
+    });
+  } catch (error) {
+    logger.error('Organic ROI route error:', error);
+    res.status(500).json({ error: 'Failed to calculate organic ROI' });
+  }
+});
+
+router.post('/organic/schedule', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { profiles, contentQueue, goals } = req.body;
+
+    if (!profiles || !Array.isArray(profiles)) {
+      return res.status(400).json({ error: 'Social profiles array is required' });
+    }
+
+    if (!contentQueue || !Array.isArray(contentQueue)) {
+      return res.status(400).json({ error: 'Content queue array is required' });
+    }
+
+    const result = await unifiedAIController.generateOrganicSchedule({
+      profiles,
+      contentQueue,
+      goals: goals || {},
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Optimal organic posting schedule generated',
+    });
+  } catch (error) {
+    logger.error('Organic schedule route error:', error);
+    res.status(500).json({ error: 'Failed to generate organic schedule' });
+  }
+});
+
+router.get('/organic/network-analysis', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const networkAnalysis = await unifiedAIController.analyzePersonalAdNetwork(req.user?.id);
+
+    res.json({
+      success: true,
+      data: networkAnalysis,
+      message: 'Personal Ad Network analysis complete',
+    });
+  } catch (error) {
+    logger.error('Network analysis route error:', error);
+    res.status(500).json({ error: 'Failed to analyze personal ad network' });
+  }
+});
+
 export default router;

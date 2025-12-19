@@ -805,6 +805,126 @@ export class UnifiedAIController {
       lastHealthCheck: this.lastHealthCheck,
     };
   }
+
+  // ============================================================================
+  // PERSONAL AD NETWORK - ORGANIC GROWTH METHODS
+  // ============================================================================
+
+  public async optimizeOrganicGrowth(options: {
+    profiles: any[];
+    content: any;
+    goals: any;
+  }): Promise<UnifiedAIResult<any>> {
+    const startTime = Date.now();
+    try {
+      const result = await this.adEngine.optimizePersonalAdNetwork(
+        options.profiles,
+        options.content,
+        options.goals
+      );
+      return {
+        success: true,
+        data: result,
+        processingTimeMs: Date.now() - startTime,
+        source: 'AdOptimizationEngine.optimizePersonalAdNetwork',
+      };
+    } catch (error) {
+      logger.error('Organic growth optimization error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Organic optimization failed',
+        processingTimeMs: Date.now() - startTime,
+        source: 'AdOptimizationEngine.optimizePersonalAdNetwork',
+      };
+    }
+  }
+
+  public async calculateOrganicROI(results: any): Promise<UnifiedAIResult<any>> {
+    const startTime = Date.now();
+    try {
+      const analysis = this.adEngine.calculateOrganicROI(results);
+      return {
+        success: true,
+        data: analysis,
+        processingTimeMs: Date.now() - startTime,
+        source: 'AdOptimizationEngine.calculateOrganicROI',
+      };
+    } catch (error) {
+      logger.error('Organic ROI calculation error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Organic ROI calculation failed',
+        processingTimeMs: Date.now() - startTime,
+        source: 'AdOptimizationEngine.calculateOrganicROI',
+      };
+    }
+  }
+
+  public async generateOrganicSchedule(options: {
+    profiles: any[];
+    contentQueue: any[];
+    goals: any;
+  }): Promise<UnifiedAIResult<any>> {
+    const startTime = Date.now();
+    try {
+      const schedule = this.adEngine.generateOrganicSchedule(
+        options.profiles,
+        options.contentQueue,
+        options.goals
+      );
+      return {
+        success: true,
+        data: schedule,
+        processingTimeMs: Date.now() - startTime,
+        source: 'AdOptimizationEngine.generateOrganicSchedule',
+      };
+    } catch (error) {
+      logger.error('Organic schedule generation error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Schedule generation failed',
+        processingTimeMs: Date.now() - startTime,
+        source: 'AdOptimizationEngine.generateOrganicSchedule',
+      };
+    }
+  }
+
+  public async analyzePersonalAdNetwork(userId?: string): Promise<UnifiedAIResult<any>> {
+    const startTime = Date.now();
+    try {
+      // Mock profiles for demo - in production, fetch from database
+      const mockProfiles = [
+        { id: '1', platform: 'instagram', username: 'demo', followers: 5000, engagementRate: 0.05, isActive: true },
+        { id: '2', platform: 'twitter', username: 'demo', followers: 3000, engagementRate: 0.03, isActive: true },
+        { id: '3', platform: 'tiktok', username: 'demo', followers: 10000, engagementRate: 0.08, isActive: true },
+      ];
+      
+      const result = await this.adEngine.optimizePersonalAdNetwork(
+        mockProfiles,
+        { id: 'demo', text: 'Sample content for analysis', hasMedia: true },
+        { targetReach: 10000 }
+      );
+      
+      return {
+        success: true,
+        data: {
+          networkAnalysis: result.networkAnalysis,
+          equivalentAdValue: result.equivalentAdValue,
+          recommendations: result.recommendations,
+        },
+        processingTimeMs: Date.now() - startTime,
+        source: 'AdOptimizationEngine.analyzePersonalAdNetwork',
+      };
+    } catch (error) {
+      logger.error('Personal Ad Network analysis error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network analysis failed',
+        processingTimeMs: Date.now() - startTime,
+        source: 'AdOptimizationEngine.analyzePersonalAdNetwork',
+      };
+    }
+  }
 }
 
 // ============================================================================
