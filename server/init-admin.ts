@@ -35,9 +35,15 @@ export async function initializeAdmin() {
     if (admin) {
       logger.info(`✅ Admin account exists: ${adminEmail}`);
       
+      // Sync password, role, and subscription on every startup
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
-      await db.update(users).set({ password: hashedPassword }).where(eq(users.id, admin.id));
-      logger.info('✅ Admin password synced');
+      await db.update(users).set({ 
+        password: hashedPassword,
+        role: 'admin',
+        subscriptionTier: 'lifetime',
+        subscriptionStatus: 'active',
+      }).where(eq(users.id, admin.id));
+      logger.info('✅ Admin credentials and subscription synced');
     } else {
       logger.info('🔐 Creating admin account...');
       
@@ -48,7 +54,7 @@ export async function initializeAdmin() {
         email: adminEmail,
         password: hashedPassword,
         role: 'admin',
-        subscriptionPlan: 'lifetime',
+        subscriptionTier: 'lifetime',
         subscriptionStatus: 'active',
         trialEndsAt: null,
         firstName: 'B-Lawz',
