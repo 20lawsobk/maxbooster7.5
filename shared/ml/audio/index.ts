@@ -18,3 +18,19 @@ export type { DrumPattern, BassPattern, MelodicPattern, GenerationConfig, Patter
 
 export { AIAudioGenerator } from './AIAudioGenerator.js';
 export type { GenerationType, TextGenerationInput, AudioReferenceInput, GenerationOutput, StyleTransferInput } from './AIAudioGenerator.js';
+
+export { IntelligentMasteringEngine } from './IntelligentMasteringEngine.js';
+export type {
+  MasteringGenre,
+  EQBand,
+  MultibandCompressorBand,
+  LimiterSettings,
+  StereoSettings,
+  LoudnessSettings,
+  MasteringChainConfig,
+  GenrePreset,
+  MasteringAnalysis,
+  MasteringIssue,
+  ReferenceMatchResult,
+  SuggestedSettings,
+} from './IntelligentMasteringEngine.js';
