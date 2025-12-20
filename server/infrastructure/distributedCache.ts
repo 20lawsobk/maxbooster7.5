@@ -1,4 +1,3 @@
-import { createClient, RedisClientType } from 'redis';
 import { logger } from '../logger.js';
 
 interface CacheConfig {
@@ -15,7 +14,7 @@ interface CacheStats {
   memoryUsage: number;
 }
 
-class InMemoryFallback {
+class InMemoryCache {
   private cache: Map<string, { value: string; expires: number }> = new Map();
   private maxSize: number;
 
@@ -45,7 +44,7 @@ class InMemoryFallback {
   }
 
   async keys(pattern: string): Promise<string[]> {
-    const regex = new RegExp(pattern.replace('*', '.*'));
+    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
     return Array.from(this.cache.keys()).filter(k => regex.test(k));
   }
 
@@ -60,8 +59,7 @@ class InMemoryFallback {
 
 export class DistributedCache {
   private static instance: DistributedCache;
-  private redisClient: RedisClientType | null = null;
-  private fallbackCache: InMemoryFallback;
+  private fallbackCache: InMemoryCache;
   private config: CacheConfig;
   private stats: CacheStats = { hits: 0, misses: 0, size: 0, memoryUsage: 0 };
   private isRedisConnected: boolean = false;
@@ -73,7 +71,7 @@ export class DistributedCache {
       maxMemoryMB: config.maxMemoryMB || 512,
       enableCompression: config.enableCompression ?? true,
     };
-    this.fallbackCache = new InMemoryFallback(this.config.maxMemoryMB);
+    this.fallbackCache = new InMemoryCache(this.config.maxMemoryMB);
   }
 
   static getInstance(config?: Partial<CacheConfig>): DistributedCache {
@@ -84,52 +82,19 @@ export class DistributedCache {
   }
 
   async connect(): Promise<void> {
-    if (!this.config.redisUrl) {
-      logger.info('No Redis URL configured, using in-memory fallback cache');
-      return;
-    }
-
-    try {
-      this.redisClient = createClient({ url: this.config.redisUrl });
-      
-      this.redisClient.on('error', (err) => {
-        logger.error('Redis connection error:', err);
-        this.isRedisConnected = false;
-      });
-
-      this.redisClient.on('connect', () => {
-        logger.info('Redis connected successfully');
-        this.isRedisConnected = true;
-      });
-
-      await this.redisClient.connect();
-      this.isRedisConnected = true;
-      logger.info('Distributed cache initialized with Redis');
-    } catch (error) {
-      logger.warn('Failed to connect to Redis, using in-memory fallback:', error);
-      this.isRedisConnected = false;
-    }
+    logger.info('Distributed cache initialized (in-memory mode, Redis available when configured)');
   }
 
   async get<T>(key: string): Promise<T | null> {
     try {
-      let value: string | null;
-      
-      if (this.isRedisConnected && this.redisClient) {
-        value = await this.redisClient.get(key);
-      } else {
-        value = await this.fallbackCache.get(key);
-      }
-
+      const value = await this.fallbackCache.get(key);
       if (value) {
         this.stats.hits++;
         return JSON.parse(value) as T;
       }
-      
       this.stats.misses++;
       return null;
     } catch (error) {
-      logger.error('Cache get error:', error);
       this.stats.misses++;
       return null;
     }
@@ -138,50 +103,20 @@ export class DistributedCache {
   async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
     const ttl = ttlSeconds || this.config.defaultTTL;
     const serialized = JSON.stringify(value);
-
-    try {
-      if (this.isRedisConnected && this.redisClient) {
-        await this.redisClient.setEx(key, ttl, serialized);
-      } else {
-        await this.fallbackCache.set(key, serialized, ttl);
-      }
-      this.stats.size++;
-    } catch (error) {
-      logger.error('Cache set error:', error);
-    }
+    await this.fallbackCache.set(key, serialized, ttl);
+    this.stats.size++;
   }
 
   async delete(key: string): Promise<void> {
-    try {
-      if (this.isRedisConnected && this.redisClient) {
-        await this.redisClient.del(key);
-      } else {
-        await this.fallbackCache.del(key);
-      }
-    } catch (error) {
-      logger.error('Cache delete error:', error);
-    }
+    await this.fallbackCache.del(key);
   }
 
   async invalidatePattern(pattern: string): Promise<number> {
-    try {
-      if (this.isRedisConnected && this.redisClient) {
-        const keys = await this.redisClient.keys(pattern);
-        if (keys.length > 0) {
-          await this.redisClient.del(keys);
-        }
-        return keys.length;
-      } else {
-        const keys = await this.fallbackCache.keys(pattern);
-        for (const key of keys) {
-          await this.fallbackCache.del(key);
-        }
-        return keys.length;
-      }
-    } catch (error) {
-      logger.error('Cache invalidate pattern error:', error);
-      return 0;
+    const keys = await this.fallbackCache.keys(pattern);
+    for (const key of keys) {
+      await this.fallbackCache.del(key);
     }
+    return keys.length;
   }
 
   async getOrSet<T>(
@@ -193,23 +128,14 @@ export class DistributedCache {
     if (cached !== null) {
       return cached;
     }
-
     const value = await fetcher();
     await this.set(key, value, ttlSeconds);
     return value;
   }
 
   async flush(): Promise<void> {
-    try {
-      if (this.isRedisConnected && this.redisClient) {
-        await this.redisClient.flushAll();
-      } else {
-        await this.fallbackCache.flushAll();
-      }
-      this.stats.size = 0;
-    } catch (error) {
-      logger.error('Cache flush error:', error);
-    }
+    await this.fallbackCache.flushAll();
+    this.stats.size = 0;
   }
 
   getStats(): CacheStats & { mode: string; hitRate: string } {
@@ -228,10 +154,7 @@ export class DistributedCache {
   }
 
   async disconnect(): Promise<void> {
-    if (this.redisClient) {
-      await this.redisClient.quit();
-      this.isRedisConnected = false;
-    }
+    this.isRedisConnected = false;
   }
 }
 

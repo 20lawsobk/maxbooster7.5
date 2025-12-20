@@ -1,5 +1,4 @@
 export { distributedCache, DistributedCache } from './distributedCache.js';
-export { readReplicaPool, ReadReplicaPool, ReadReplicaPoolConfig, ReplicaConfig } from './readReplicaPool.js';
 export { CircuitBreaker, circuitBreakerRegistry } from './circuitBreaker.js';
 export { cdnManager, cdnCacheMiddleware, cdnAssetUrlHelper } from './cdnConfig.js';
 export { autoScalingManager, scalingMetricsRouter } from './autoScaling.js';
