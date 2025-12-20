@@ -963,5 +963,22 @@ export async function registerRoutes(
     }
   });
 
+  // Infrastructure scaling routes
+  try {
+    const { scalingMetricsRouter, getInfrastructureStatus } = await import('./infrastructure/index.js');
+    app.use('/api/infrastructure', scalingMetricsRouter);
+    app.get('/api/infrastructure/status', (req, res) => {
+      try {
+        const status = getInfrastructureStatus();
+        res.json({ success: true, ...status });
+      } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+    log('Infrastructure scaling routes registered');
+  } catch (error: any) {
+    log(`Warning: Could not load infrastructure routes - ${error.message}`);
+  }
+
   return httpServer;
 }
