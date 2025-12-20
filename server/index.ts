@@ -402,13 +402,13 @@ app.use((req, res, next) => {
   logger.info('🤖 ═══════════════════════════════════════════════════════════');
   logger.info('');
 
-  // Apply global rate limiter
+  // Apply scalable rate limiter for high-load scenarios
   try {
-    if (typeof globalRateLimiter === 'function') {
-      app.use('/api', globalRateLimiter);
-    }
-  } catch (e) {
-    // Rate limiter not available
+    const { globalScalableRateLimiter } = await import('./middleware/scalableRateLimiter.js');
+    app.use('/api', globalScalableRateLimiter);
+    logger.info('✅ Scalable rate limiter applied');
+  } catch (e: any) {
+    logger.warn(`⚠️ Rate limiter not available: ${e.message}`);
   }
 
   // Initialize Stripe products and prices before routes
