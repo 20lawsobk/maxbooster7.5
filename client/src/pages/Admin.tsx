@@ -264,7 +264,13 @@ export default function Admin() {
   };
 
   const handleViewUser = (userId: string) => {
-    setLocation(`/admin/users/${userId}`);
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      toast({
+        title: `User: ${user.username || user.email}`,
+        description: `Plan: ${user.subscriptionPlan || 'None'} | Status: ${user.subscriptionStatus || 'Unknown'} | Role: ${user.role || 'user'}`,
+      });
+    }
   };
 
   const handleToggleNotifications = () => {

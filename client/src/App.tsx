@@ -56,6 +56,9 @@ const DeveloperApi = lazy(() => import('@/pages/DeveloperApi'));
 const SimplifiedDashboard = lazy(() => import('@/pages/SimplifiedDashboard'));
 const DesktopApp = lazy(() => import('@/pages/DesktopApp'));
 const ShowPage = lazy(() => import('@/pages/ShowPage'));
+const Help = lazy(() => import('@/pages/Help'));
+const Storefront = lazy(() => import('@/pages/Storefront'));
+const AdminAutonomy = lazy(() => import('@/pages/AdminAutonomy'));
 
 /**
  * TODO: Add function documentation
@@ -102,6 +105,9 @@ function Router() {
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/help" component={Help} />
+      <Route path="/storefront" component={Storefront} />
+      <Route path="/admin/autonomy" component={AdminAutonomy} />
       <Route component={NotFound} />
     </Switch>
   );
