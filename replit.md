@@ -178,11 +178,48 @@ The platform now includes 40+ built-in audio plugins:
 - Modulation: Chorus, Flanger, Phaser, Auto Filter
 - Utility: Stereo Imager, Pitch Shifter, De-Esser, Vocoder
 
+## P2P Marketplace Payments API
+
+Full peer-to-peer payment processing via Stripe Connect:
+
+**Seller Onboarding**
+- `POST /api/payouts/setup` - Create Stripe Connect Express onboarding link
+- `GET /api/payouts/verify` - Verify Stripe Connect account status
+- `GET /api/payouts/dashboard` - Get Stripe Express Dashboard link
+
+**Balance & Earnings**
+- `GET /api/payouts/balance` - Get available/pending balance
+- `GET /api/payouts/earnings` - Get comprehensive earnings summary
+  - Returns: totalEarnings, thisMonthEarnings, pendingPayouts, availableBalance, totalSales, averageOrderValue
+
+**Payouts**
+- `POST /api/payouts/instant` - Request instant payout (T+0 settlement)
+- `GET /api/payouts/history` - Get payout history
+- `GET /api/payouts/status/:payoutId` - Check payout status
+
+**Split Payments**
+- `POST /api/payouts/split` - Create split payment to multiple collaborators
+  - Body: `{ orderId, totalAmount, splits: [{ userId, percentage }], platformFeePercentage? }`
+
+**Payment Flows:**
+- **Destination Charges:** Payment goes directly to seller with automatic platform fee
+- **Instant Transfers:** Automatic transfer to seller on purchase completion
+- **Split Payments:** Distribute payments among multiple collaborators
+- **Manual Withdrawals:** Sellers can withdraw accumulated balance
+
+**Features:**
+- 10% default platform fee (configurable)
+- Instant payouts to connected bank accounts
+- License document generation on purchase
+- Webhook handling for payment events
+
 ## External Dependencies
--   **Payments:** Stripe
+-   **Payments:** Stripe (Connect for P2P marketplace)
 -   **Email:** SendGrid
 -   **Storage:** Replit Object Storage, AWS S3
 -   **Queue Management:** BullMQ (for Auto-Posting Service V2)
 -   **Image Processing:** Sharp
--   **Social Media Integrations:** Twitter, Facebook, Instagram APIs (for various social media features)
+-   **Social Media Integrations:** Twitter, Facebook, Instagram, TikTok, YouTube, LinkedIn, Threads APIs
 -   **Monitoring:** Redis (for session persistence and job queues)
+-   **Distribution:** LabelGrid API
+-   **Error Tracking:** Sentry

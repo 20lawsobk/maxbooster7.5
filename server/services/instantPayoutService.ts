@@ -906,6 +906,189 @@ export class InstantPayoutService {
       throw error;
     }
   }
+
+  /**
+   * Create a destination charge - payment goes directly to seller with platform fee
+   * This is an alternative to separate transfers, collecting payment and paying seller in one step
+   */
+  async createDestinationCharge(
+    sellerId: string,
+    amount: number,
+    orderId: string,
+    platformFeePercentage: number = 10,
+    currency: string = 'usd'
+  ): Promise<{ success: boolean; paymentIntentId?: string; error?: string }> {
+    try {
+      if (!stripe) {
+        return { success: false, error: 'Stripe not configured' };
+      }
+
+      const accountVerification = await this.verifyStripeAccount(sellerId);
+      if (!accountVerification.verified || !accountVerification.accountId) {
+        return { success: false, error: 'Seller must complete Stripe Connect onboarding' };
+      }
+
+      const platformFee = Math.round(amount * 100 * (platformFeePercentage / 100));
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100),
+        currency,
+        application_fee_amount: platformFee,
+        transfer_data: {
+          destination: accountVerification.accountId,
+        },
+        metadata: {
+          orderId,
+          sellerId,
+          platformFeePercentage: platformFeePercentage.toString(),
+        },
+      });
+
+      logger.info('Destination charge created:', { orderId, sellerId, amount, platformFee });
+
+      return {
+        success: true,
+        paymentIntentId: paymentIntent.id,
+      };
+    } catch (error: unknown) {
+      logger.error('Error creating destination charge:', error);
+      return { success: false, error: error.message || 'Failed to create destination charge' };
+    }
+  }
+
+  /**
+   * Create split payment to multiple collaborators
+   * Distributes payment among multiple sellers with different percentages
+   */
+  async createSplitPayment(
+    orderId: string,
+    totalAmount: number,
+    splits: Array<{ userId: string; percentage: number }>,
+    platformFeePercentage: number = 10,
+    currency: string = 'usd'
+  ): Promise<{ success: boolean; transfers?: string[]; errors?: string[] }> {
+    try {
+      if (!stripe) {
+        return { success: false, errors: ['Stripe not configured'] };
+      }
+
+      const platformFee = totalAmount * (platformFeePercentage / 100);
+      const distributableAmount = totalAmount - platformFee;
+
+      const transfers: string[] = [];
+      const errors: string[] = [];
+
+      for (const split of splits) {
+        const accountVerification = await this.verifyStripeAccount(split.userId);
+        
+        if (!accountVerification.verified || !accountVerification.accountId) {
+          errors.push(`User ${split.userId} not onboarded to Stripe Connect`);
+          continue;
+        }
+
+        const splitAmount = distributableAmount * (split.percentage / 100);
+
+        try {
+          const transfer = await stripe.transfers.create({
+            amount: Math.round(splitAmount * 100),
+            currency,
+            destination: accountVerification.accountId,
+            description: `Split payment for Order #${orderId}`,
+            metadata: {
+              orderId,
+              userId: split.userId,
+              percentage: split.percentage.toString(),
+              type: 'split_payment',
+            },
+          });
+
+          transfers.push(transfer.id);
+          logger.info('Split transfer created:', { orderId, userId: split.userId, amount: splitAmount });
+        } catch (transferError: unknown) {
+          errors.push(`Failed to transfer to ${split.userId}: ${transferError.message}`);
+        }
+      }
+
+      return {
+        success: transfers.length > 0,
+        transfers,
+        errors: errors.length > 0 ? errors : undefined,
+      };
+    } catch (error: unknown) {
+      logger.error('Error creating split payment:', error);
+      return { success: false, errors: [error.message || 'Failed to create split payment'] };
+    }
+  }
+
+  /**
+   * Get Stripe Express Dashboard link for seller to view their account
+   */
+  async getExpressDashboardLink(userId: string): Promise<{ url?: string; error?: string }> {
+    try {
+      if (!stripe) {
+        return { error: 'Stripe not configured' };
+      }
+
+      const accountVerification = await this.verifyStripeAccount(userId);
+      if (!accountVerification.verified || !accountVerification.accountId) {
+        return { error: 'No verified Stripe account found' };
+      }
+
+      const loginLink = await stripe.accounts.createLoginLink(accountVerification.accountId);
+      
+      return { url: loginLink.url };
+    } catch (error: unknown) {
+      logger.error('Error creating dashboard link:', error);
+      return { error: error.message || 'Failed to create dashboard link' };
+    }
+  }
+
+  /**
+   * Get seller earnings summary
+   */
+  async getEarningsSummary(userId: string): Promise<{
+    totalEarnings: number;
+    thisMonthEarnings: number;
+    pendingPayouts: number;
+    availableBalance: number;
+    totalSales: number;
+    averageOrderValue: number;
+  }> {
+    try {
+      const balance = await this.calculateAvailableBalance(userId);
+      
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const monthlyEarningsResult = await db.execute(
+        sql`SELECT COALESCE(SUM(amount), 0) as monthly_earnings, COUNT(*) as monthly_sales
+            FROM orders 
+            WHERE seller_id = ${userId} AND status = 'completed'
+            AND created_at >= ${startOfMonth.toISOString()}`
+      );
+      
+      const thisMonthEarnings = Number(monthlyEarningsResult.rows?.[0]?.monthly_earnings || 0);
+      const monthlyCount = Number(monthlyEarningsResult.rows?.[0]?.monthly_sales || 0);
+
+      const totalSalesResult = await db.execute(
+        sql`SELECT COUNT(*) as total_sales FROM orders 
+            WHERE seller_id = ${userId} AND status = 'completed'`
+      );
+      const totalSales = Number(totalSalesResult.rows?.[0]?.total_sales || 0);
+
+      return {
+        totalEarnings: balance.totalEarnings,
+        thisMonthEarnings,
+        pendingPayouts: balance.pendingBalance,
+        availableBalance: balance.availableBalance,
+        totalSales,
+        averageOrderValue: totalSales > 0 ? balance.totalEarnings / totalSales : 0,
+      };
+    } catch (error: unknown) {
+      logger.error('Error getting earnings summary:', error);
+      throw new Error('Failed to get earnings summary');
+    }
+  }
 }
 
 export const instantPayoutService = new InstantPayoutService();

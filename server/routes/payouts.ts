@@ -178,4 +178,83 @@ router.get('/verify', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/payouts/dashboard
+ * Get Stripe Express dashboard link for seller
+ */
+router.get('/dashboard', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const result = await instantPayoutService.getExpressDashboardLink(req.user.id);
+
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({ url: result.url });
+  } catch (error: unknown) {
+    logger.error('Error getting dashboard link:', error);
+    res.status(500).json({ error: error.message || 'Failed to get dashboard link' });
+  }
+});
+
+/**
+ * GET /api/payouts/earnings
+ * Get seller earnings summary
+ */
+router.get('/earnings', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const earnings = await instantPayoutService.getEarningsSummary(req.user.id);
+    res.json(earnings);
+  } catch (error: unknown) {
+    logger.error('Error getting earnings summary:', error);
+    res.status(500).json({ error: error.message || 'Failed to get earnings summary' });
+  }
+});
+
+/**
+ * POST /api/payouts/split
+ * Create split payment to multiple collaborators
+ */
+router.post('/split', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { orderId, totalAmount, splits, platformFeePercentage } = req.body;
+
+    if (!orderId || !totalAmount || !splits || !Array.isArray(splits)) {
+      return res.status(400).json({ error: 'orderId, totalAmount, and splits array required' });
+    }
+
+    const result = await instantPayoutService.createSplitPayment(
+      orderId,
+      totalAmount,
+      splits,
+      platformFeePercentage
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: 'Split payment failed', errors: result.errors });
+    }
+
+    res.json({
+      success: true,
+      transfers: result.transfers,
+      errors: result.errors,
+    });
+  } catch (error: unknown) {
+    logger.error('Error creating split payment:', error);
+    res.status(500).json({ error: error.message || 'Failed to create split payment' });
+  }
+});
+
 export default router;
