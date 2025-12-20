@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
 import { logger } from '../logger.js';
+import { paymentBypassService } from '../services/paymentBypassService';
 
 const GRACE_PERIOD_DAYS = 7;
 
@@ -15,6 +16,12 @@ export const requirePremium = async (req: Request, res: Response, next: NextFunc
   const userId = req.user.id;
 
   try {
+    const isBypassed = await paymentBypassService.isPaymentBypassed();
+    if (isBypassed) {
+      res.setHeader('X-Payment-Bypass', 'active');
+      return next();
+    }
+
     const user = await storage.getUser(userId);
 
     if (!user) {

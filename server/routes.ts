@@ -809,6 +809,7 @@ export async function registerRoutes(
     
     // Safety & Admin Controls
     { path: "/api/kill-switch", name: "killSwitch", loader: () => import("./routes/killSwitch") },
+    { path: "/api/admin/payment-bypass", name: "paymentBypass", loader: () => import("./routes/paymentBypass") },
     
     // Self-Healing Security System
     { path: "/api/security/self-healing", name: "selfHealingApi", loader: () => import("./routes/selfHealingApi") },

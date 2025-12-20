@@ -213,6 +213,31 @@ Full peer-to-peer payment processing via Stripe Connect:
 - License document generation on purchase
 - Webhook handling for payment events
 
+## Admin Controls API
+
+Platform administration tools for managing system-wide settings.
+
+**Payment Bypass (Time-Limited)**
+Temporarily disable payment requirements platform-wide with automatic re-enablement:
+
+- `GET /api/admin/payment-bypass/status` - Check current bypass status
+  - Returns: `{ bypassed, config, timeRemaining, timeRemainingMs }`
+- `POST /api/admin/payment-bypass/activate` - Activate payment bypass
+  - Body: `{ durationHours?: 2, reason?: string }`
+  - Default: 2 hours
+  - Returns: Activation confirmation with expiration time
+- `POST /api/admin/payment-bypass/deactivate` - Manually deactivate bypass
+  - Body: `{ reason?: string }`
+- `POST /api/admin/payment-bypass/extend` - Extend active bypass
+  - Body: `{ additionalHours: number }`
+
+**How It Works:**
+- When activated, all premium feature checks are bypassed for all users
+- Automatically re-enables payment requirements when timer expires
+- Stored in database (system_settings table) for persistence
+- Admin-only access (requires role: "admin")
+- Response header `X-Payment-Bypass: active` indicates bypass is active
+
 ## External Dependencies
 -   **Payments:** Stripe (Connect for P2P marketplace)
 -   **Email:** SendGrid

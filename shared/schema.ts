@@ -2314,6 +2314,23 @@ export const insertBeatPromotionSchema = createInsertSchema(beatPromotions).omit
 export type InsertBeatPromotion = typeof beatPromotions.$inferInsert;
 
 // ============================================================================
+// SYSTEM SETTINGS (for platform-wide configurations)
+// ============================================================================
+export const systemSettings = pgTable("system_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: jsonb("value"),
+  description: text("description"),
+  updatedBy: varchar("updated_by"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({ id: true, createdAt: true });
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });
