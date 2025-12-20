@@ -167,12 +167,13 @@ router.post('/social/predict', requireAuth, async (req: Request, res: Response) 
 
     const options: EngagementPredictionOptions = {
       platform,
-      content: content ?? {
-        text: '',
-        contentType: 'text',
-        hashtags: [],
-        topics: [],
-        hasEmoji: false,
+      content: {
+        text: content?.text ?? '',
+        contentType: content?.contentType ?? 'text',
+        hashtags: content?.hashtags ?? [],
+        topics: content?.topics ?? [],
+        hasEmoji: content?.hasEmoji ?? false,
+        scheduledTime: content?.scheduledTime,
       },
       action,
       postsPerWeek,
