@@ -1852,6 +1852,269 @@ export type BeatDiscoveryScore = typeof beatDiscoveryScores.$inferSelect;
 export const insertBeatDiscoveryScoreSchema = createInsertSchema(beatDiscoveryScores).omit({ id: true, createdAt: true });
 
 // ============================================================================
+// PLAYLIST JOURNEYS (Track playlist progression over time)
+// ============================================================================
+export const playlistJourneys = pgTable("playlist_journeys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackId: varchar("track_id").notNull(),
+  playlistId: text("playlist_id").notNull(),
+  playlistName: text("playlist_name").notNull(),
+  platform: text("platform").notNull(),
+  playlistType: text("playlist_type").default("editorial"),
+  followerCount: integer("follower_count").default(0),
+  position: integer("position"),
+  previousPosition: integer("previous_position"),
+  addedAt: timestamp("added_at").notNull(),
+  removedAt: timestamp("removed_at"),
+  streamsFromPlaylist: integer("streams_from_playlist").default(0),
+  revenueFromPlaylist: real("revenue_from_playlist").default(0),
+  daysOnPlaylist: integer("days_on_playlist").default(0),
+  peakPosition: integer("peak_position"),
+  curatorName: text("curator_name"),
+  curatorId: text("curator_id"),
+  isActive: boolean("is_active").default(true),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type PlaylistJourney = typeof playlistJourneys.$inferSelect;
+export const insertPlaylistJourneySchema = createInsertSchema(playlistJourneys).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertPlaylistJourney = typeof playlistJourneys.$inferInsert;
+
+// ============================================================================
+// SYNC PLACEMENTS (TV/Movie/Ads sync tracking)
+// ============================================================================
+export const syncPlacements = pgTable("sync_placements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackId: varchar("track_id").notNull(),
+  trackTitle: text("track_title").notNull(),
+  placementType: text("placement_type").notNull(),
+  mediaTitle: text("media_title").notNull(),
+  mediaType: text("media_type").notNull(),
+  network: text("network"),
+  season: integer("season"),
+  episode: integer("episode"),
+  airDate: timestamp("air_date"),
+  duration: integer("duration"),
+  placement: text("placement"),
+  licenseFee: real("license_fee"),
+  territory: text("territory").default("worldwide"),
+  exclusivity: text("exclusivity"),
+  streamsBefore: integer("streams_before").default(0),
+  streamsAfter: integer("streams_after").default(0),
+  streamLift: real("stream_lift").default(0),
+  revenueBefore: real("revenue_before").default(0),
+  revenueAfter: real("revenue_after").default(0),
+  revenueLift: real("revenue_lift").default(0),
+  shazamsBefore: integer("shazams_before").default(0),
+  shazamsAfter: integer("shazams_after").default(0),
+  impactScore: real("impact_score").default(0),
+  licensingAgency: text("licensing_agency"),
+  musicSupervisor: text("music_supervisor"),
+  verificationStatus: text("verification_status").default("pending"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SyncPlacement = typeof syncPlacements.$inferSelect;
+export const insertSyncPlacementSchema = createInsertSchema(syncPlacements).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSyncPlacement = typeof syncPlacements.$inferInsert;
+
+// ============================================================================
+// HISTORICAL ANALYTICS (Long-term data storage for YoY comparisons)
+// ============================================================================
+export const historicalAnalytics = pgTable("historical_analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackId: varchar("track_id"),
+  releaseId: varchar("release_id"),
+  date: date("date").notNull(),
+  period: text("period").notNull(),
+  platform: text("platform"),
+  streams: bigint("streams", { mode: "number" }).default(0),
+  listeners: integer("listeners").default(0),
+  followers: integer("followers").default(0),
+  revenue: real("revenue").default(0),
+  saves: integer("saves").default(0),
+  shares: integer("shares").default(0),
+  playlistAdds: integer("playlist_adds").default(0),
+  playlistReach: integer("playlist_reach").default(0),
+  shazams: integer("shazams").default(0),
+  radioSpins: integer("radio_spins").default(0),
+  youtubeViews: integer("youtube_views").default(0),
+  socialMentions: integer("social_mentions").default(0),
+  globalRank: integer("global_rank"),
+  genreRank: integer("genre_rank"),
+  countryRank: integer("country_rank"),
+  maxScore: real("max_score"),
+  milestones: jsonb("milestones"),
+  demographicsSnapshot: jsonb("demographics_snapshot"),
+  geographySnapshot: jsonb("geography_snapshot"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type HistoricalAnalytic = typeof historicalAnalytics.$inferSelect;
+export const insertHistoricalAnalyticSchema = createInsertSchema(historicalAnalytics).omit({ id: true, createdAt: true });
+export type InsertHistoricalAnalytic = typeof historicalAnalytics.$inferInsert;
+
+// ============================================================================
+// A&R DISCOVERIES (AI-powered talent discovery and scoring)
+// ============================================================================
+export const arDiscoveries = pgTable("ar_discoveries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistId: varchar("artist_id").notNull(),
+  artistName: text("artist_name").notNull(),
+  discoveredByUserId: varchar("discovered_by_user_id"),
+  discoveryDate: timestamp("discovery_date").defaultNow(),
+  genre: text("genre"),
+  subGenres: text("sub_genres").array(),
+  location: text("location"),
+  country: text("country"),
+  overallScore: real("overall_score").default(0),
+  growthScore: real("growth_score").default(0),
+  engagementScore: real("engagement_score").default(0),
+  virality: real("virality_score").default(0),
+  audienceQualityScore: real("audience_quality_score").default(0),
+  playlistPotentialScore: real("playlist_potential_score").default(0),
+  syncPotentialScore: real("sync_potential_score").default(0),
+  signingPotentialScore: real("signing_potential_score").default(0),
+  monthlyListeners: integer("monthly_listeners").default(0),
+  monthlyListenersGrowth: real("monthly_listeners_growth").default(0),
+  followerCount: integer("follower_count").default(0),
+  followerGrowth: real("follower_growth").default(0),
+  totalStreams: bigint("total_streams", { mode: "number" }).default(0),
+  avgStreamsPerTrack: integer("avg_streams_per_track").default(0),
+  playlistCount: integer("playlist_count").default(0),
+  editorialPlaylistCount: integer("editorial_playlist_count").default(0),
+  socialFollowers: integer("social_followers").default(0),
+  socialEngagementRate: real("social_engagement_rate").default(0),
+  topMarkets: jsonb("top_markets"),
+  audienceDemographics: jsonb("audience_demographics"),
+  similarArtists: text("similar_artists").array(),
+  breakoutTracks: jsonb("breakout_tracks"),
+  growthTrajectory: text("growth_trajectory"),
+  predictedPeakDate: timestamp("predicted_peak_date"),
+  riskFactors: jsonb("risk_factors"),
+  strengthFactors: jsonb("strength_factors"),
+  recommendedActions: jsonb("recommended_actions"),
+  isWatching: boolean("is_watching").default(false),
+  isSigned: boolean("is_signed").default(false),
+  notes: text("notes"),
+  status: text("status").default("discovered"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type ArDiscovery = typeof arDiscoveries.$inferSelect;
+export const insertArDiscoverySchema = createInsertSchema(arDiscoveries).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertArDiscovery = typeof arDiscoveries.$inferInsert;
+
+// ============================================================================
+// PLATFORM DATA SOURCES (25+ platforms tracking)
+// ============================================================================
+export const platformDataSources = pgTable("platform_data_sources", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackId: varchar("track_id"),
+  date: timestamp("date").notNull().defaultNow(),
+  platform: text("platform").notNull(),
+  shazamCount: integer("shazam_count").default(0),
+  shazamRank: integer("shazam_rank"),
+  radioSpins: integer("radio_spins").default(0),
+  radioAudience: integer("radio_audience").default(0),
+  radioStations: integer("radio_stations").default(0),
+  wikipediaPageViews: integer("wikipedia_page_views").default(0),
+  beatportRank: integer("beatport_rank"),
+  beatportSales: integer("beatport_sales").default(0),
+  bandsinTownFollowers: integer("bandsintown_followers").default(0),
+  upcomingShows: integer("upcoming_shows").default(0),
+  songkickFollowers: integer("songkick_followers").default(0),
+  qqMusicPlays: integer("qq_music_plays").default(0),
+  qqMusicFans: integer("qq_music_fans").default(0),
+  tidalStreams: integer("tidal_streams").default(0),
+  tidalFavorites: integer("tidal_favorites").default(0),
+  pandoraSpins: integer("pandora_spins").default(0),
+  pandoraStations: integer("pandora_stations").default(0),
+  deezerStreams: integer("deezer_streams").default(0),
+  deezerFans: integer("deezer_fans").default(0),
+  soundcloudPlays: integer("soundcloud_plays").default(0),
+  soundcloudLikes: integer("soundcloud_likes").default(0),
+  soundcloudReposts: integer("soundcloud_reposts").default(0),
+  audiomackPlays: integer("audiomack_plays").default(0),
+  napsterStreams: integer("napster_streams").default(0),
+  amazonMusicStreams: integer("amazon_music_streams").default(0),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PlatformDataSource = typeof platformDataSources.$inferSelect;
+export const insertPlatformDataSourceSchema = createInsertSchema(platformDataSources).omit({ id: true, createdAt: true });
+export type InsertPlatformDataSource = typeof platformDataSources.$inferInsert;
+
+// ============================================================================
+// GLOBAL RANKINGS (Unified ranking system)
+// ============================================================================
+export const globalRankings = pgTable("global_rankings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  artistId: varchar("artist_id"),
+  trackId: varchar("track_id"),
+  date: date("date").notNull(),
+  maxScore: real("max_score").default(0),
+  globalRank: integer("global_rank"),
+  genreRank: integer("genre_rank"),
+  countryRank: integer("country_rank"),
+  genre: text("genre"),
+  country: text("country"),
+  platformScores: jsonb("platform_scores"),
+  streamingScore: real("streaming_score").default(0),
+  socialScore: real("social_score").default(0),
+  playlistScore: real("playlist_score").default(0),
+  shazamScore: real("shazam_score").default(0),
+  radioScore: real("radio_score").default(0),
+  viralScore: real("viral_score").default(0),
+  growthRate: real("growth_rate").default(0),
+  previousRank: integer("previous_rank"),
+  rankChange: integer("rank_change").default(0),
+  peakRank: integer("peak_rank"),
+  weeksOnChart: integer("weeks_on_chart").default(0),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type GlobalRanking = typeof globalRankings.$inferSelect;
+export const insertGlobalRankingSchema = createInsertSchema(globalRankings).omit({ id: true, createdAt: true });
+export type InsertGlobalRanking = typeof globalRankings.$inferInsert;
+
+// ============================================================================
+// NLP QUERY LOGS (Track natural language queries)
+// ============================================================================
+export const nlpQueryLogs = pgTable("nlp_query_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  query: text("query").notNull(),
+  parsedIntent: text("parsed_intent"),
+  parsedEntities: jsonb("parsed_entities"),
+  responseType: text("response_type"),
+  responseData: jsonb("response_data"),
+  executionTimeMs: integer("execution_time_ms"),
+  wasSuccessful: boolean("was_successful").default(true),
+  errorMessage: text("error_message"),
+  feedback: text("feedback"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type NlpQueryLog = typeof nlpQueryLogs.$inferSelect;
+export const insertNlpQueryLogSchema = createInsertSchema(nlpQueryLogs).omit({ id: true, createdAt: true });
+export type InsertNlpQueryLog = typeof nlpQueryLogs.$inferInsert;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });

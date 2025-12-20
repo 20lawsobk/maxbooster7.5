@@ -746,6 +746,7 @@ export async function registerRoutes(
     { path: "/api/social", name: "socialMedia", loader: () => import("./routes/socialMedia") },
     { path: "/api/social/approvals", name: "socialApprovals", loader: () => import("./routes/socialApprovals") },
     { path: "/api/social/bulk", name: "socialBulk", loader: () => import("./routes/socialBulk") },
+    { path: "/api/social", name: "socialAI", loader: () => import("./routes/socialAI") },
     { path: "/api/organic", name: "organic", loader: () => import("./routes/organic") },
     { path: "/api/advertising", name: "advertisingAutopilot", loader: () => import("./routes/advertisingAutopilot") },
     { path: "/api/autopilot", name: "autopilot", loader: () => import("./routes/autopilot") },
@@ -757,6 +758,7 @@ export async function registerRoutes(
     { path: "/api/studio/stems", name: "studioStems", loader: () => import("./routes/studioStems") },
     { path: "/api/studio/warping", name: "studioWarping", loader: () => import("./routes/studioWarping") },
     { path: "/api/studio/generation", name: "studioGeneration", loader: () => import("./routes/studioGeneration") },
+    { path: "/api/studio/midi", name: "studioMidi", loader: () => import("./routes/studioMidi") },
     
     // Workspace & Developer
     { path: "/api/workspace", name: "workspace", loader: () => import("./routes/workspace") },
@@ -792,6 +794,9 @@ export async function registerRoutes(
     
     // Marketplace with Discovery Algorithm
     { path: "/api/marketplace", name: "marketplace", loader: () => import("./routes/marketplace") },
+    
+    // Contracts, Invoices, Tax Forms & Split Sheets
+    { path: "/api/contracts", name: "contracts", loader: () => import("./routes/contracts") },
     
     // AI Services
     { path: "/api/ai", name: "ai", loader: () => import("./routes/ai") },

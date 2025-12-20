@@ -4,6 +4,7 @@ import { analytics, projects, releases, users } from '@shared/schema';
 import { eq, and, desc, sql, gte, lte, between } from 'drizzle-orm';
 import { apiKeyService, ApiKeyRequest } from '../../../services/apiKeyService';
 import { logger } from '../../../logger.js';
+import { advancedAnalyticsService } from '../../../services/advancedAnalyticsService';
 
 const router = Router();
 
@@ -496,6 +497,374 @@ router.get('/summary/:artistId?', async (req: ApiKeyRequest, res) => {
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch analytics summary' });
+  }
+});
+
+/**
+ * POST /api/v1/analytics/playlist-journeys
+ * Track playlist progression
+ */
+router.post('/playlist-journeys', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const { trackId, playlistId, playlistName, platform, playlistType, action, position, previousPosition, followerCount, curatorName } = req.body;
+
+    if (!trackId || !playlistId || !playlistName || !platform || !playlistType || !action) {
+      return res.status(400).json({ error: 'Bad Request', message: 'Missing required fields: trackId, playlistId, playlistName, platform, playlistType, action' });
+    }
+
+    await advancedAnalyticsService.trackPlaylistJourney(userId, {
+      trackId,
+      playlistId,
+      playlistName,
+      platform,
+      playlistType,
+      action,
+      position,
+      previousPosition,
+      followerCount,
+      curatorName,
+    });
+
+    const journeys = await advancedAnalyticsService.getPlaylistJourneys(userId, trackId);
+
+    return res.json({
+      success: true,
+      message: 'Playlist journey tracked successfully',
+      journeys,
+    });
+  } catch (error: unknown) {
+    logger.error('Error tracking playlist journey:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to track playlist journey' });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/global-ranking/:artistId?
+ * Unified ranking with Max Score
+ */
+router.get('/global-ranking/:artistId?', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { days = '30' } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const ranking = await advancedAnalyticsService.calculateGlobalRanking(artistId as string);
+    const history = await advancedAnalyticsService.getGlobalRankingHistory(artistId as string, parseInt(days as string));
+
+    return res.json({
+      success: true,
+      ranking,
+      history,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching global ranking:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to fetch global ranking' });
+  }
+});
+
+/**
+ * POST /api/v1/analytics/ar-discovery
+ * A&R talent discovery
+ */
+router.post('/ar-discovery', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const { artistId, genre, country, minGrowthScore, minOverallScore, limit } = req.body;
+
+    if (artistId) {
+      const analysis = await advancedAnalyticsService.analyzeArtistForAR(artistId);
+      return res.json({
+        success: true,
+        analysis,
+      });
+    }
+
+    const discoveries = await advancedAnalyticsService.discoverArtists({
+      genre,
+      country,
+      minGrowthScore,
+      minOverallScore,
+      limit,
+    });
+
+    return res.json({
+      success: true,
+      discoveries,
+      total: discoveries.length,
+    });
+  } catch (error: unknown) {
+    logger.error('Error performing A&R discovery:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to perform A&R discovery' });
+  }
+});
+
+/**
+ * POST /api/v1/analytics/nlp-query
+ * Natural language analytics queries
+ */
+router.post('/nlp-query', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const { query } = req.body;
+
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: 'Bad Request', message: 'Query is required and must be a string' });
+    }
+
+    const result = await advancedAnalyticsService.processNlpQuery(userId, query);
+
+    return res.json({
+      success: true,
+      result,
+    });
+  } catch (error: unknown) {
+    logger.error('Error processing NLP query:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to process NLP query' });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/historical/:artistId?
+ * Historical data with YoY comparisons
+ */
+router.get('/historical/:artistId?', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, period, trackId } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const options: {
+      trackId?: string;
+      startDate?: Date;
+      endDate?: Date;
+      period?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    } = {};
+
+    if (trackId) options.trackId = trackId as string;
+    if (startDate) options.startDate = new Date(startDate as string);
+    if (endDate) options.endDate = new Date(endDate as string);
+    if (period && ['daily', 'weekly', 'monthly', 'yearly'].includes(period as string)) {
+      options.period = period as 'daily' | 'weekly' | 'monthly' | 'yearly';
+    }
+
+    const historicalData = await advancedAnalyticsService.getHistoricalData(artistId as string, options);
+
+    return res.json({
+      success: true,
+      ...historicalData,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching historical data:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to fetch historical data' });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/sync-impact/:artistId?
+ * Sync placement tracking
+ */
+router.get('/sync-impact/:artistId?', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { trackId } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const syncImpact = await advancedAnalyticsService.getSyncImpact(artistId as string, trackId as string | undefined);
+
+    const totalStreamLift = syncImpact.reduce((sum, s) => sum + s.totalStreamLift, 0);
+    const totalRevenueLift = syncImpact.reduce((sum, s) => sum + s.totalRevenueLift, 0);
+
+    return res.json({
+      success: true,
+      summary: {
+        totalTracks: syncImpact.length,
+        totalPlacements: syncImpact.reduce((sum, s) => sum + s.placements.length, 0),
+        totalStreamLift,
+        totalRevenueLift,
+      },
+      tracks: syncImpact,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching sync impact:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to fetch sync impact' });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/cross-platform/:artistId?
+ * Cross-platform performance
+ */
+router.get('/cross-platform/:artistId?', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, timeRange = '30d' } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const end = endDate ? new Date(endDate as string) : new Date();
+    const start = startDate
+      ? new Date(startDate as string)
+      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
+
+    const crossPlatform = await advancedAnalyticsService.getCrossPlatformAnalysis(artistId as string, start, end);
+
+    return res.json({
+      success: true,
+      timeRange: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      },
+      ...crossPlatform,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching cross-platform data:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to fetch cross-platform data' });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/data-sources/shazam/:artistId?
+ * Shazam data
+ */
+router.get('/data-sources/shazam/:artistId?', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, timeRange = '30d' } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const end = endDate ? new Date(endDate as string) : new Date();
+    const start = startDate
+      ? new Date(startDate as string)
+      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
+
+    const shazamData = await advancedAnalyticsService.getShazamData(artistId as string, start, end);
+
+    return res.json({
+      success: true,
+      timeRange: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      },
+      ...shazamData,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching Shazam data:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to fetch Shazam data' });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/data-sources/radio/:artistId?
+ * Radio airplay data
+ */
+router.get('/data-sources/radio/:artistId?', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, timeRange = '30d' } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const end = endDate ? new Date(endDate as string) : new Date();
+    const start = startDate
+      ? new Date(startDate as string)
+      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
+
+    const radioData = await advancedAnalyticsService.getRadioAirplayData(artistId as string, start, end);
+
+    return res.json({
+      success: true,
+      timeRange: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      },
+      ...radioData,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching radio data:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to fetch radio data' });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/data-sources/tour/:artistId?
+ * Tour/concert data
+ */
+router.get('/data-sources/tour/:artistId?', async (req: ApiKeyRequest, res) => {
+  try {
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+    }
+
+    const tourData = await advancedAnalyticsService.getTourData(artistId as string);
+
+    return res.json({
+      success: true,
+      ...tourData,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching tour data:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', message: 'Failed to fetch tour data' });
   }
 });
 
