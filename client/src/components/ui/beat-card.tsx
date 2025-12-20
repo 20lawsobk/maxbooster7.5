@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { Play, Pause, ShoppingCart, Heart } from 'lucide-react';
+import { Play, Pause, ShoppingCart, Heart, Settings2 } from 'lucide-react';
+import { BeatPreviewControls, BeatPreviewBadges } from '@/components/marketplace/BeatPreviewControls';
+import { useState } from 'react';
 
 interface BeatCardProps {
   id: string;
@@ -13,6 +15,7 @@ interface BeatCardProps {
   bpm?: number;
   key?: string;
   genre?: string;
+  audioUrl?: string;
   waveformColor?: string;
   isPlaying?: boolean;
   isLiked?: boolean;
@@ -20,6 +23,7 @@ interface BeatCardProps {
   onAddToCart?: () => void;
   onLike?: () => void;
   className?: string;
+  showPreviewControls?: boolean;
 }
 
 const waveformColors = {
@@ -41,6 +45,7 @@ export function BeatCard({
   bpm,
   key: musicalKey,
   genre,
+  audioUrl,
   waveformColor = 'cyan',
   isPlaying = false,
   isLiked = false,
@@ -48,8 +53,18 @@ export function BeatCard({
   onAddToCart,
   onLike,
   className,
+  showPreviewControls = true,
 }: BeatCardProps) {
   const colorClass = waveformColors[waveformColor as keyof typeof waveformColors] || waveformColors.cyan;
+  const [showControls, setShowControls] = useState(false);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+
+  const handlePlayClick = () => {
+    if (audioUrl && showPreviewControls) {
+      setShowControls(!showControls);
+    }
+    onPlay?.();
+  };
 
   return (
     <Card
@@ -60,20 +75,42 @@ export function BeatCard({
     >
       <CardContent className="p-4 space-y-4">
         <div className="relative h-24 flex items-center justify-center">
-          <WaveformVisualization colorClass={colorClass} />
+          <WaveformVisualization colorClass={colorClass} isPlaying={isPreviewPlaying} />
           <button
-            onClick={onPlay}
+            onClick={handlePlayClick}
             className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors">
-              {isPlaying ? (
+              {isPlaying || isPreviewPlaying ? (
                 <Pause className="h-6 w-6 text-white" />
               ) : (
                 <Play className="h-6 w-6 text-white ml-1" />
               )}
             </div>
           </button>
+          {audioUrl && showPreviewControls && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowControls(!showControls);
+              }}
+              className="absolute top-1 right-1 p-1.5 rounded-md bg-white/10 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/20"
+              title="Speed/Pitch Controls"
+            >
+              <Settings2 className="h-4 w-4 text-white" />
+            </button>
+          )}
         </div>
+
+        {showControls && audioUrl && bpm && musicalKey && (
+          <BeatPreviewControls
+            beatId={id}
+            audioUrl={audioUrl}
+            originalBpm={bpm}
+            originalKey={musicalKey}
+            onPlayStateChange={setIsPreviewPlaying}
+          />
+        )}
 
         <div className="space-y-2">
           <div className="flex items-start justify-between">
@@ -99,6 +136,9 @@ export function BeatCard({
               <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-400 text-xs">
                 {genre}
               </Badge>
+            )}
+            {bpm && musicalKey && (
+              <BeatPreviewBadges originalBpm={bpm} originalKey={musicalKey} />
             )}
           </div>
         </div>
@@ -136,23 +176,28 @@ export function BeatCard({
   );
 }
 
-function WaveformVisualization({ colorClass }: { colorClass: string }) {
+function WaveformVisualization({ colorClass, isPlaying = false }: { colorClass: string; isPlaying?: boolean }) {
   const bars = 32;
 
   return (
     <div className="w-full h-full flex items-center justify-center gap-[2px]">
       {Array.from({ length: bars }).map((_, i) => {
-        const height = Math.random() * 60 + 20;
-        const delay = i * 0.02;
+        const baseHeight = 20 + (Math.sin(i * 0.5) * 30 + 30);
+        const delay = i * 0.05;
 
         return (
           <div
             key={i}
-            className={cn('w-1 rounded-full bg-gradient-to-t', colorClass)}
+            className={cn(
+              'w-1 rounded-full bg-gradient-to-t transition-all duration-150',
+              colorClass,
+              isPlaying && 'animate-pulse'
+            )}
             style={{
-              height: `${height}%`,
-              opacity: 0.6 + Math.random() * 0.4,
+              height: `${baseHeight}%`,
+              opacity: isPlaying ? 0.8 + Math.sin(Date.now() / 200 + i) * 0.2 : 0.6 + (i % 3) * 0.1,
               animationDelay: `${delay}s`,
+              transform: isPlaying ? `scaleY(${0.8 + Math.random() * 0.4})` : 'scaleY(1)',
             }}
           />
         );

@@ -122,6 +122,85 @@ router.post('/interaction', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/for-you', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { limit, offset, genre, mood } = req.query;
+    const userId = req.user!.id;
+
+    const personalizedBeats = await discoveryAlgorithmService.getPersonalizedFeed(userId, {
+      limit: parseInt(limit as string) || 20,
+      offset: parseInt(offset as string) || 0,
+      genre: genre as string,
+      mood: mood as string,
+    });
+
+    const insights = await discoveryAlgorithmService.getTasteInsights(userId);
+
+    const sections = [
+      {
+        id: 'for-you',
+        title: 'For You',
+        description: 'Beats curated based on your listening history',
+        beats: personalizedBeats.filter(b => b.discoveryScore > 0.5).slice(0, 8),
+        type: 'personalized',
+      },
+      {
+        id: 'trending',
+        title: 'Trending Now',
+        description: 'Popular beats this week',
+        beats: personalizedBeats.filter(b => b.isHot).slice(0, 8),
+        type: 'trending',
+      },
+      {
+        id: 'new-releases',
+        title: 'New Releases',
+        description: 'Fresh beats just uploaded',
+        beats: personalizedBeats.filter(b => b.isNew).slice(0, 8),
+        type: 'new',
+      },
+    ];
+
+    if (insights.topGenres.length > 0) {
+      const topGenre = insights.topGenres[0];
+      sections.push({
+        id: `genre-${topGenre.genre.toLowerCase()}`,
+        title: `Because You Like ${topGenre.genre}`,
+        description: `More ${topGenre.genre} beats for you`,
+        beats: personalizedBeats.filter(b => b.genre === topGenre.genre).slice(0, 8),
+        type: 'genre_match',
+      });
+    }
+
+    if (insights.topMoods.length > 0) {
+      const topMood = insights.topMoods[0];
+      sections.push({
+        id: `mood-${topMood.mood.toLowerCase()}`,
+        title: `${topMood.mood} Vibes`,
+        description: `Beats matching your ${topMood.mood.toLowerCase()} mood`,
+        beats: personalizedBeats.filter(b => b.mood === topMood.mood).slice(0, 8),
+        type: 'mood_match',
+      });
+    }
+
+    res.json({
+      sections: sections.filter(s => s.beats.length > 0),
+      tasteProfile: {
+        topGenres: insights.topGenres.slice(0, 3),
+        topMoods: insights.topMoods.slice(0, 3),
+        totalInteractions: insights.totalInteractions,
+      },
+      allBeats: personalizedBeats,
+    });
+  } catch (error: any) {
+    logger.error('Error fetching For You feed:', error);
+    res.status(500).json({ error: 'Failed to fetch personalized feed' });
+  }
+});
+
 router.get('/ai-recommendations', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
