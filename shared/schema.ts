@@ -20,6 +20,9 @@ export const users = pgTable("users", {
   stripeConnectedAccountId: text("stripe_connected_account_id"),
   subscriptionEndsAt: timestamp("subscription_ends_at"),
   trialEndsAt: timestamp("trial_ends_at"),
+  onboardingCompleted: boolean("onboarding_completed").default(false),
+  onboardingStep: integer("onboarding_step").default(0),
+  onboardingData: jsonb("onboarding_data"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -188,11 +188,27 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { step, completed, ...data } = req.body;
-      await storage.updateUser(req.user.id, {
-        onboardingStep: step ?? req.user.onboardingStep,
-        onboardingCompleted: completed ?? req.user.onboardingCompleted,
-      });
+      const { step, completed, hasCompletedOnboarding, onboardingData } = req.body;
+      
+      // Support both legacy format (step/completed) and new format (hasCompletedOnboarding/onboardingData)
+      const updateData: Record<string, any> = {};
+      
+      if (hasCompletedOnboarding !== undefined) {
+        updateData.onboardingCompleted = hasCompletedOnboarding;
+      } else if (completed !== undefined) {
+        updateData.onboardingCompleted = completed;
+      }
+      
+      if (step !== undefined) {
+        updateData.onboardingStep = step;
+      }
+      
+      // Store onboarding preferences if provided
+      if (onboardingData) {
+        updateData.onboardingData = onboardingData;
+      }
+      
+      await storage.updateUser(req.user.id, updateData);
       return res.json({ success: true });
     } catch (error) {
       console.error("Update onboarding error:", error);
