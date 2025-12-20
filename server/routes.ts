@@ -791,7 +791,12 @@ export async function registerRoutes(
     
     // Executive & Admin
     { path: "/api/executive", name: "executiveDashboard", loader: () => import("./routes/executiveDashboard") },
+    { path: "/api/admin", name: "admin", loader: () => import("./routes/admin/index") },
     { path: "/api/admin/metrics", name: "adminMetrics", loader: () => import("./routes/admin/metrics") },
+    { path: "/api/audit", name: "audit", loader: () => import("./routes/audit") },
+    { path: "/api/testing", name: "testing", loader: () => import("./routes/testing") },
+    { path: "/api/webhooks", name: "webhooksAdmin", loader: () => import("./routes/webhooks-admin") },
+    { path: "/api/logs", name: "logs", loader: () => import("./routes/logs") },
     
     // Analytics API
     { path: "/api/v1/analytics", name: "v1Analytics", loader: () => import("./routes/api/v1/analytics") },
