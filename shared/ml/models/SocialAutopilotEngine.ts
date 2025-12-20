@@ -1092,13 +1092,13 @@ export class SocialAutopilotEngine extends BaseModel {
     return 'negative';
   }
 
-  private calculateShareability(text: string, contentType: ContentType, platform: Platform): number {
+  private calculateShareability(text: string | undefined, contentType: ContentType, platform: Platform): number {
     let score = 0.5;
     
     if (contentType === 'video' || contentType === 'reel') score += 0.2;
-    if (text.includes('?')) score += 0.1;
-    if (text.length > 50 && text.length < 150) score += 0.1;
-    if (/\b(share|retweet|tag|comment)\b/i.test(text)) score += 0.1;
+    if (text && text.includes('?')) score += 0.1;
+    if (text && text.length > 50 && text.length < 150) score += 0.1;
+    if (text && /\b(share|retweet|tag|comment)\b/i.test(text)) score += 0.1;
     
     return Math.min(1, score);
   }
