@@ -759,6 +759,10 @@ export async function registerRoutes(
     { path: "/api/studio/warping", name: "studioWarping", loader: () => import("./routes/studioWarping") },
     { path: "/api/studio/generation", name: "studioGeneration", loader: () => import("./routes/studioGeneration") },
     { path: "/api/studio/midi", name: "studioMidi", loader: () => import("./routes/studioMidi") },
+    { path: "/api/studio/vst", name: "vstBridge", loader: () => import("./routes/vstBridge") },
+    
+    // Offline Mode
+    { path: "/api/offline", name: "offline", loader: () => import("./routes/offline") },
     
     // Workspace & Developer
     { path: "/api/workspace", name: "workspace", loader: () => import("./routes/workspace") },

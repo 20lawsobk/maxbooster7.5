@@ -98,6 +98,86 @@ Max Booster includes a comprehensive suite of 100% in-house AI services with no 
 - **AdvancedTimeSeriesModel**: TensorFlow-based forecasting models
 - **MLModelRegistry**: Centralized model management and versioning
 
+## VST/AU Plugin Bridge API
+
+The platform supports external VST/AU plugins through a desktop app bridge:
+
+**Bridge Management**
+- `GET /api/studio/vst/status` - Get bridge status and statistics
+- `POST /api/studio/vst/initialize` - Initialize the VST bridge
+- `POST /api/studio/vst/connect-desktop` - Connect desktop app for native plugin support
+- `POST /api/studio/vst/disconnect-desktop` - Disconnect desktop app
+
+**Plugin Scanning & Discovery**
+- `POST /api/studio/vst/scan` - Scan for VST/AU/VST3/AAX plugins
+- `GET /api/studio/vst/plugins` - List scanned plugins
+- `GET /api/studio/vst/plugins/:id` - Get plugin details
+- `GET /api/studio/vst/formats` - Get supported plugin formats
+
+**Plugin Instances**
+- `POST /api/studio/vst/instances` - Create plugin instance
+- `GET /api/studio/vst/instances` - List instances by project/track
+- `PUT /api/studio/vst/instances/:id/parameters` - Update parameters
+- `PUT /api/studio/vst/instances/:id/bypass` - Set bypass state
+- `POST /api/studio/vst/instances/:id/program` - Load program/preset
+- `POST /api/studio/vst/instances/:id/editor/open` - Open plugin GUI
+- `DELETE /api/studio/vst/instances/:id` - Delete instance
+
+**Supported Formats:** VST2, VST3, Audio Units (AU), AAX
+
+## Offline Mode API
+
+Full offline support with project caching and sync:
+
+**Status & Capabilities**
+- `GET /api/offline/status` - Get online status and cache stats
+- `GET /api/offline/capabilities` - Get available offline features
+
+**Project Caching**
+- `POST /api/offline/cache` - Cache project for offline use
+- `GET /api/offline/cache` - List cached projects
+- `GET /api/offline/cache/:projectId` - Get cached project details
+- `GET /api/offline/cache/:projectId/check` - Check if project is cached
+- `DELETE /api/offline/cache/:projectId` - Remove project from cache
+- `DELETE /api/offline/cache` - Clear all cache
+
+**Synchronization**
+- `POST /api/offline/sync/:projectId` - Sync single project
+- `POST /api/offline/sync-all` - Sync all cached projects
+
+**Settings & Management**
+- `GET /api/offline/settings` - Get offline settings
+- `PUT /api/offline/settings` - Update offline settings
+- `POST /api/offline/cleanup` - Clean up old cached data
+- `POST /api/offline/export/:projectId` - Export project for offline
+- `POST /api/offline/import` - Import offline project
+
+**Offline Capabilities:**
+- Project editing, MIDI editing, audio playback
+- Mixing (volume, pan, effects)
+- Plugin processing with built-in plugins
+- Local project storage with automatic sync on reconnect
+
+## Expanded Plugin Collection
+
+The platform now includes 40+ built-in audio plugins:
+
+**Instruments (20+):**
+- Piano, Strings, Drums, Bass, Synth Pad
+- Analog Polysynth, Supersaw Lead, Acid Bass
+- FM Electric Piano, Granular Synth, Tonewheel Organ
+- FM Synth, Wavetable Synth, Sampler
+- Plus additional variations per category
+
+**Effects (20+):**
+- Reverb: Spring, Shimmer, Room, Hall, Plate
+- Delay: Ping Pong, Tape, Digital, Modulated
+- Compression: Multiband, Bus Compressor, Transient Shaper, Vintage Limiter
+- EQ: Parametric, Vintage Pultec-style, Dynamic EQ
+- Distortion: Tape Saturation, Harmonic Exciter, Bitcrusher, Vinyl Simulator
+- Modulation: Chorus, Flanger, Phaser, Auto Filter
+- Utility: Stereo Imager, Pitch Shifter, De-Esser, Vocoder
+
 ## External Dependencies
 -   **Payments:** Stripe
 -   **Email:** SendGrid
