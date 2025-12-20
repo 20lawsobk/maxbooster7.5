@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -60,6 +67,9 @@ import {
   RefreshCw,
   PartyPopper,
   Star,
+  CalendarDays,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import {
   FacebookIcon,
@@ -145,7 +155,7 @@ export function UnifiedCalendar() {
   const queryClient = useQueryClient();
   
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
   const [showPostDialog, setShowPostDialog] = useState(false);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
@@ -154,6 +164,7 @@ export function UnifiedCalendar() {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterCampaign, setFilterCampaign] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('calendar');
+  const [hoveredCell, setHoveredCell] = useState<string | null>(null);
   
   const [newPost, setNewPost] = useState({
     title: '',
@@ -202,6 +213,39 @@ export function UnifiedCalendar() {
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const hourSlots = Array.from({ length: 24 }, (_, i) => i);
+
+  const cellVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1 },
+    hover: { scale: 1.02, transition: { duration: 0.2 } }
+  };
+
+  const postVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.15 } },
+    hover: { scale: 1.03, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
+  };
+
+  const getWeekDays = () => {
+    const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+    return eachDayOfInterval({ start, end: endOfWeek(start, { weekStartsOn: 0 }) });
+  };
+
+  const getPostsForDateTime = (date: Date, hour: number) => {
+    return filteredPosts.filter((post: ScheduledPost) => {
+      const postDate = new Date(post.scheduledFor);
+      return isSameDay(postDate, date) && postDate.getHours() === hour;
+    });
+  };
+
+  const getPostsForDay = (date: Date) => {
+    return filteredPosts.filter((post: ScheduledPost) => {
+      const postDate = new Date(post.scheduledFor);
+      return isSameDay(postDate, date);
+    });
+  };
 
   const getDaysInMonth = () => {
     const year = currentDate.getFullYear();
@@ -306,6 +350,248 @@ export function UnifiedCalendar() {
       title: 'Added to Schedule',
       description: `Post scheduled for ${item.optimalTime}`,
     });
+  };
+
+  const renderWeekView = () => {
+    const weekDays = getWeekDays();
+    const displayHours = hourSlots.filter(h => h >= 6 && h <= 23);
+    
+    return (
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="grid grid-cols-8 bg-muted/50">
+          <div className="p-2 text-center text-xs font-medium border-r border-border">
+            Time
+          </div>
+          {weekDays.map((day) => (
+            <div
+              key={day.toISOString()}
+              className={`p-2 text-center border-r border-border last:border-r-0 ${
+                isToday(day) ? 'bg-primary/10' : ''
+              }`}
+            >
+              <div className="text-xs text-muted-foreground">{format(day, 'EEE')}</div>
+              <div className={`text-lg font-semibold ${isToday(day) ? 'text-primary' : ''}`}>
+                {format(day, 'd')}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <ScrollArea className="h-[600px]">
+          <div className="grid grid-cols-8">
+            {displayHours.map((hour) => (
+              <>
+                <div 
+                  key={`time-${hour}`}
+                  className="p-2 text-xs text-muted-foreground border-r border-b border-border text-right pr-3 bg-muted/30"
+                >
+                  {format(new Date().setHours(hour, 0), 'h:mm a')}
+                </div>
+                {weekDays.map((day) => {
+                  const cellId = `${day.toISOString()}-${hour}`;
+                  const cellPosts = getPostsForDateTime(day, hour);
+                  const isCurrentHour = isToday(day) && new Date().getHours() === hour;
+                  
+                  return (
+                    <motion.div
+                      key={cellId}
+                      className={`min-h-16 p-1 border-r border-b border-border last:border-r-0 transition-colors ${
+                        isCurrentHour ? 'bg-primary/5 border-l-2 border-l-primary' : ''
+                      } ${hoveredCell === cellId ? 'bg-muted/50' : ''}`}
+                      onMouseEnter={() => setHoveredCell(cellId)}
+                      onMouseLeave={() => setHoveredCell(null)}
+                      onDragOver={handleDragOver}
+                      onDrop={() => {
+                        if (draggedPost) {
+                          const newDate = new Date(day);
+                          newDate.setHours(hour, 0, 0, 0);
+                          toast({
+                            title: 'Post Rescheduled',
+                            description: `Moved to ${format(newDate, 'MMM d, h:mm a')}`,
+                          });
+                          setDraggedPost(null);
+                        }
+                      }}
+                    >
+                      <AnimatePresence mode="popLayout">
+                        {cellPosts.map((post: ScheduledPost) => {
+                          const TypeConfig = POST_TYPE_CONFIG[post.type];
+                          return (
+                            <TooltipProvider key={post.id}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <motion.div
+                                    variants={postVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
+                                    whileHover="hover"
+                                    className={`text-[10px] p-1.5 rounded mb-1 cursor-pointer ${TypeConfig.color}`}
+                                    draggable
+                                    onDragStart={() => handleDragStart(post)}
+                                    onClick={() => {
+                                      setSelectedPost(post);
+                                      if (post.status === 'pending_approval') {
+                                        setShowApprovalDialog(true);
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-0.5 mb-0.5">
+                                      {post.platforms.slice(0, 2).map((platform) => {
+                                        const PlatformIcon = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.icon;
+                                        return PlatformIcon ? (
+                                          <PlatformIcon
+                                            key={platform}
+                                            className="w-2.5 h-2.5"
+                                            style={{ color: PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.color }}
+                                          />
+                                        ) : null;
+                                      })}
+                                    </div>
+                                    <p className="truncate leading-tight">{post.title}</p>
+                                  </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="max-w-xs">
+                                  <div className="space-y-1">
+                                    <p className="font-medium">{post.title}</p>
+                                    <p className="text-xs text-muted-foreground">{post.content.slice(0, 100)}...</p>
+                                    <div className="flex items-center gap-2 text-xs">
+                                      <Clock className="w-3 h-3" />
+                                      {format(new Date(post.scheduledFor), 'h:mm a')}
+                                    </div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        })}
+                      </AnimatePresence>
+                      
+                      {hoveredCell === cellId && cellPosts.length === 0 && (
+                        <motion.button
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="w-full h-full flex items-center justify-center text-muted-foreground hover:text-primary"
+                          onClick={() => {
+                            const postDate = new Date(day);
+                            postDate.setHours(hour, 0, 0, 0);
+                            setNewPost({
+                              ...newPost,
+                              scheduledFor: format(postDate, "yyyy-MM-dd'T'HH:mm"),
+                            });
+                            setShowPostDialog(true);
+                          }}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </motion.button>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  };
+
+  const renderDayView = () => {
+    const displayHours = hourSlots.filter(h => h >= 6 && h <= 23);
+    const dayPosts = getPostsForDay(currentDate);
+    
+    return (
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="bg-muted/50 p-4 border-b border-border">
+          <div className={`text-center ${isToday(currentDate) ? 'text-primary' : ''}`}>
+            <div className="text-sm text-muted-foreground">{format(currentDate, 'EEEE')}</div>
+            <div className="text-3xl font-bold">{format(currentDate, 'd')}</div>
+            <div className="text-sm text-muted-foreground">{format(currentDate, 'MMMM yyyy')}</div>
+          </div>
+        </div>
+        
+        <ScrollArea className="h-[600px]">
+          <div className="divide-y divide-border">
+            {displayHours.map((hour) => {
+              const hourPosts = getPostsForDateTime(currentDate, hour);
+              const isCurrentHour = isToday(currentDate) && new Date().getHours() === hour;
+              
+              return (
+                <motion.div
+                  key={hour}
+                  className={`flex min-h-20 ${isCurrentHour ? 'bg-primary/5' : ''}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: hour * 0.02 }}
+                >
+                  <div className="w-20 p-3 text-sm text-muted-foreground border-r border-border bg-muted/30 flex-shrink-0">
+                    {format(new Date().setHours(hour, 0), 'h:mm a')}
+                  </div>
+                  
+                  <div className="flex-1 p-2">
+                    <AnimatePresence mode="popLayout">
+                      {hourPosts.map((post: ScheduledPost) => {
+                        const TypeConfig = POST_TYPE_CONFIG[post.type];
+                        return (
+                          <motion.div
+                            key={post.id}
+                            variants={postVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            whileHover="hover"
+                            className={`p-3 rounded-lg mb-2 cursor-pointer ${TypeConfig.color}`}
+                            draggable
+                            onDragStart={() => handleDragStart(post)}
+                            onClick={() => {
+                              setSelectedPost(post);
+                              if (post.status === 'pending_approval') {
+                                setShowApprovalDialog(true);
+                              }
+                            }}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  {post.platforms.map((platform) => {
+                                    const PlatformIcon = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.icon;
+                                    return PlatformIcon ? (
+                                      <PlatformIcon
+                                        key={platform}
+                                        className="w-4 h-4"
+                                        style={{ color: PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.color }}
+                                      />
+                                    ) : null;
+                                  })}
+                                  <span className="text-xs text-muted-foreground">
+                                    {format(new Date(post.scheduledFor), 'h:mm a')}
+                                  </span>
+                                </div>
+                                <h4 className="font-medium text-sm">{post.title}</h4>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{post.content}</p>
+                              </div>
+                              <Badge variant="outline" className="text-[10px]">
+                                {STATUS_CONFIG[post.status].label}
+                              </Badge>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+        
+        <div className="p-4 border-t border-border bg-muted/30">
+          <div className="text-center text-sm text-muted-foreground">
+            {dayPosts.length} posts scheduled for this day
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderCalendarDays = () => {
@@ -554,33 +840,83 @@ export function UnifiedCalendar() {
                 <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
                   Today
                 </Button>
-                <div className="flex items-center border rounded-lg">
-                  <Button
-                    variant={viewMode === 'month' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('month')}
-                  >
-                    Month
-                  </Button>
-                  <Button
-                    variant={viewMode === 'week' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('week')}
-                  >
-                    Week
-                  </Button>
+                <div className="flex items-center border rounded-lg overflow-hidden">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={viewMode === 'month' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setViewMode('month')}
+                          className="rounded-none"
+                        >
+                          <LayoutGrid className="w-4 h-4 mr-1" />
+                          Month
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Monthly overview</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={viewMode === 'week' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setViewMode('week')}
+                          className="rounded-none border-x"
+                        >
+                          <CalendarDays className="w-4 h-4 mr-1" />
+                          Week
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Weekly schedule with time slots</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={viewMode === 'day' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setViewMode('day')}
+                          className="rounded-none"
+                        >
+                          <List className="w-4 h-4 mr-1" />
+                          Day
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Detailed daily agenda</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-7 gap-0">
-              {dayNames.map((day) => (
-                <div key={day} className="p-2 text-center text-sm font-semibold border-b border-border bg-muted">
-                  {day}
-                </div>
-              ))}
-              {renderCalendarDays()}
-            </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={viewMode}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {viewMode === 'month' && (
+                  <div className="grid grid-cols-7 gap-0">
+                    {dayNames.map((day) => (
+                      <div key={day} className="p-2 text-center text-sm font-semibold border-b border-border bg-muted">
+                        {day}
+                      </div>
+                    ))}
+                    {renderCalendarDays()}
+                  </div>
+                )}
+                
+                {viewMode === 'week' && renderWeekView()}
+                
+                {viewMode === 'day' && renderDayView()}
+              </motion.div>
+            </AnimatePresence>
             
             <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t">
               {Object.entries(POST_TYPE_CONFIG).map(([key, config]) => (
