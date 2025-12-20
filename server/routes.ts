@@ -760,6 +760,7 @@ export async function registerRoutes(
     { path: "/api/studio/generation", name: "studioGeneration", loader: () => import("./routes/studioGeneration") },
     { path: "/api/studio/midi", name: "studioMidi", loader: () => import("./routes/studioMidi") },
     { path: "/api/studio/vst", name: "vstBridge", loader: () => import("./routes/vstBridge") },
+    { path: "/api/distribution/promo", name: "promotionalTools", loader: () => import("./routes/promotionalTools") },
     
     // Offline Mode
     { path: "/api/offline", name: "offline", loader: () => import("./routes/offline") },

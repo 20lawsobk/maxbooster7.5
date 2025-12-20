@@ -2115,6 +2115,202 @@ export const insertNlpQueryLogSchema = createInsertSchema(nlpQueryLogs).omit({ i
 export type InsertNlpQueryLog = typeof nlpQueryLogs.$inferInsert;
 
 // ============================================================================
+// PROMOTIONAL TOOLS (Pre-save pages, Promo Cards, Spotify Canvas, Lyrics Sync)
+// ============================================================================
+export const preSavePages = pgTable("pre_save_pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  slug: text("slug").unique().notNull(),
+  title: text("title").notNull(),
+  artistName: text("artist_name").notNull(),
+  coverArtUrl: text("cover_art_url"),
+  releaseDate: timestamp("release_date"),
+  description: text("description"),
+  backgroundColor: text("background_color").default("#1a1a2e"),
+  textColor: text("text_color").default("#ffffff"),
+  buttonColor: text("button_color").default("#4ecdc4"),
+  spotifyPreSaveUrl: text("spotify_presave_url"),
+  appleMusicPreAddUrl: text("apple_music_preadd_url"),
+  deezerPreSaveUrl: text("deezer_presave_url"),
+  amazonMusicUrl: text("amazon_music_url"),
+  youtubeUrl: text("youtube_url"),
+  tidalUrl: text("tidal_url"),
+  socialLinks: jsonb("social_links"),
+  customLinks: jsonb("custom_links"),
+  emailCapture: boolean("email_capture").default(true),
+  emailList: jsonb("email_list").default([]),
+  views: integer("views").default(0),
+  preSaves: integer("pre_saves").default(0),
+  emailSignups: integer("email_signups").default(0),
+  clicksByPlatform: jsonb("clicks_by_platform").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type PreSavePage = typeof preSavePages.$inferSelect;
+export const insertPreSavePageSchema = createInsertSchema(preSavePages).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertPreSavePage = typeof preSavePages.$inferInsert;
+
+export const promoCards = pgTable("promo_cards", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull(),
+  template: text("template").default("minimal"),
+  coverArtUrl: text("cover_art_url"),
+  artistName: text("artist_name").notNull(),
+  trackTitle: text("track_title").notNull(),
+  releaseDate: text("release_date"),
+  customText: text("custom_text"),
+  backgroundColor: text("background_color").default("#1a1a2e"),
+  textColor: text("text_color").default("#ffffff"),
+  accentColor: text("accent_color").default("#4ecdc4"),
+  fontFamily: text("font_family").default("Inter"),
+  generatedImageUrl: text("generated_image_url"),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PromoCard = typeof promoCards.$inferSelect;
+export const insertPromoCardSchema = createInsertSchema(promoCards).omit({ id: true, createdAt: true });
+export type InsertPromoCard = typeof promoCards.$inferInsert;
+
+export const miniVideos = pgTable("mini_videos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull(),
+  duration: integer("duration").default(15),
+  aspectRatio: text("aspect_ratio").notNull(),
+  coverArtUrl: text("cover_art_url"),
+  audioPreviewUrl: text("audio_preview_url"),
+  audioStartTime: real("audio_start_time").default(0),
+  backgroundColor: text("background_color").default("#1a1a2e"),
+  accentColor: text("accent_color").default("#4ecdc4"),
+  textOverlay: text("text_overlay"),
+  animationStyle: text("animation_style").default("wave"),
+  generatedVideoUrl: text("generated_video_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type MiniVideo = typeof miniVideos.$inferSelect;
+export const insertMiniVideoSchema = createInsertSchema(miniVideos).omit({ id: true, createdAt: true });
+export type InsertMiniVideo = typeof miniVideos.$inferInsert;
+
+export const spotifyCanvases = pgTable("spotify_canvases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").notNull(),
+  trackId: varchar("track_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull(),
+  sourceUrl: text("source_url").notNull(),
+  duration: integer("duration").default(8),
+  loopPoint: real("loop_point").default(0),
+  generatedCanvasUrl: text("generated_canvas_url"),
+  status: text("status").default("draft"),
+  submittedAt: timestamp("submitted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SpotifyCanvas = typeof spotifyCanvases.$inferSelect;
+export const insertSpotifyCanvasSchema = createInsertSchema(spotifyCanvases).omit({ id: true, createdAt: true });
+export type InsertSpotifyCanvas = typeof spotifyCanvases.$inferInsert;
+
+export const lyricsSyncs = pgTable("lyrics_syncs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  trackId: varchar("track_id").notNull(),
+  releaseId: varchar("release_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  language: text("language").notNull(),
+  lyrics: jsonb("lyrics").default([]),
+  plainText: text("plain_text").notNull(),
+  syncMethod: text("sync_method").default("manual"),
+  status: text("status").default("draft"),
+  platforms: jsonb("platforms").default(["spotify", "apple_music", "amazon_music", "youtube_music"]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type LyricsSync = typeof lyricsSyncs.$inferSelect;
+export const insertLyricsSyncSchema = createInsertSchema(lyricsSyncs).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertLyricsSync = typeof lyricsSyncs.$inferInsert;
+
+// ============================================================================
+// ADVANCED ANALYTICS (Chartmetric-matching)
+// ============================================================================
+export const artistScores = pgTable("artist_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  date: date("date").notNull(),
+  artistScore: real("artist_score").default(0),
+  careerStage: text("career_stage").default("undiscovered"),
+  streamingScore: real("streaming_score").default(0),
+  socialScore: real("social_score").default(0),
+  playlistScore: real("playlist_score").default(0),
+  radioScore: real("radio_score").default(0),
+  growthVelocity: real("growth_velocity").default(0),
+  momentumScore: real("momentum_score").default(0),
+  triggerCities: jsonb("trigger_cities"),
+  breakoutMarkets: jsonb("breakout_markets"),
+  audienceDemographics: jsonb("audience_demographics"),
+  competitorBenchmark: jsonb("competitor_benchmark"),
+  milestones: jsonb("milestones"),
+  predictions: jsonb("predictions"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ArtistScore = typeof artistScores.$inferSelect;
+export const insertArtistScoreSchema = createInsertSchema(artistScores).omit({ id: true, createdAt: true });
+export type InsertArtistScore = typeof artistScores.$inferInsert;
+
+// ============================================================================
+// MARKETPLACE ENHANCEMENTS (BeatStars-matching)
+// ============================================================================
+export const marketplaceRecommendations = pgTable("marketplace_recommendations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  listingId: varchar("listing_id"),
+  recommendationType: text("recommendation_type").notNull(),
+  score: real("score").default(0),
+  reason: text("reason"),
+  metadata: jsonb("metadata"),
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  conversions: integer("conversions").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
+export type MarketplaceRecommendation = typeof marketplaceRecommendations.$inferSelect;
+export const insertMarketplaceRecommendationSchema = createInsertSchema(marketplaceRecommendations).omit({ id: true, createdAt: true });
+export type InsertMarketplaceRecommendation = typeof marketplaceRecommendations.$inferInsert;
+
+export const beatPromotions = pgTable("beat_promotions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  listingId: varchar("listing_id").notNull(),
+  campaignType: text("campaign_type").notNull(),
+  budget: real("budget").default(0),
+  spent: real("spent").default(0),
+  targetGenres: jsonb("target_genres"),
+  targetCountries: jsonb("target_countries"),
+  placement: text("placement"),
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  conversions: integer("conversions").default(0),
+  status: text("status").default("draft"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type BeatPromotion = typeof beatPromotions.$inferSelect;
+export const insertBeatPromotionSchema = createInsertSchema(beatPromotions).omit({ id: true, createdAt: true });
+export type InsertBeatPromotion = typeof beatPromotions.$inferInsert;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });
