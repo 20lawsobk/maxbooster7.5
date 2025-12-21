@@ -106,7 +106,7 @@ interface SimulatedUser {
   id: string;
   archetype: UserArchetype;
   createdAt: Date;
-  subscriptionTier: 'standard' | 'pro' | 'enterprise' | 'lifetime';
+  subscriptionTier: 'monthly' | 'yearly' | 'lifetime';
   monthlyRevenue: number;
   totalStreams: number;
   releases: number;
@@ -352,7 +352,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
         active: 0,
         newToday: 0,
         churnedToday: 0,
-        byTier: { free: 0, basic: 0, pro: 0, enterprise: 0 },
+        byTier: { monthly: 0, yearly: 0, lifetime: 0 },
         byArchetype: { hobbyist: 0, emerging_artist: 0, established_artist: 0, label: 0, enterprise: 0 },
       },
       revenue: {
@@ -547,22 +547,21 @@ export class RealLifeSimulationEngine extends EventEmitter {
   private getSubscriptionTier(archetype: UserArchetype): SimulatedUser['subscriptionTier'] {
     // Max Booster has NO free tier - all users are paying customers
     const tiers: Record<UserArchetype, () => SimulatedUser['subscriptionTier']> = {
-      hobbyist: () => Math.random() < 0.7 ? 'standard' : Math.random() < 0.9 ? 'pro' : 'lifetime',
-      emerging_artist: () => Math.random() < 0.5 ? 'standard' : Math.random() < 0.85 ? 'pro' : 'lifetime',
-      established_artist: () => Math.random() < 0.2 ? 'standard' : Math.random() < 0.6 ? 'pro' : 'enterprise',
-      label: () => Math.random() < 0.2 ? 'pro' : 'enterprise',
-      enterprise: () => 'enterprise',
+      hobbyist: () => Math.random() < 0.7 ? 'monthly' : Math.random() < 0.9 ? 'yearly' : 'lifetime',
+      emerging_artist: () => Math.random() < 0.5 ? 'monthly' : Math.random() < 0.85 ? 'yearly' : 'lifetime',
+      established_artist: () => Math.random() < 0.2 ? 'monthly' : Math.random() < 0.6 ? 'yearly' : 'lifetime',
+      label: () => Math.random() < 0.2 ? 'yearly' : 'lifetime',
+      enterprise: () => 'lifetime',
     };
     return tiers[archetype]();
   }
 
   private getMonthlyRevenue(tier: SimulatedUser['subscriptionTier']): number {
-    // Max Booster pricing: $49/month standard, $39/month (annual), $699 lifetime
+    // Max Booster pricing: $49/month monthly, $39/month (yearly), $699 lifetime
     // NO FREE TIER - all users pay
     const prices = { 
-      standard: 49,     // $49/month standard
-      pro: 39,          // $39/month billed yearly ($468/year)
-      enterprise: 99,   // Enterprise tier
+      monthly: 49,      // $49/month monthly
+      yearly: 39,       // $39/month billed yearly ($468/year)
       lifetime: 58      // Lifetime $699 amortized over 12 months
     };
     return prices[tier];
@@ -744,9 +743,9 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
     // User upgrades
     for (const user of this.users.values()) {
-      if (user.subscriptionTier !== 'enterprise' && Math.random() < prob.userUpgrade) {
+      if (user.subscriptionTier !== 'lifetime' && Math.random() < prob.userUpgrade) {
         const oldTier = user.subscriptionTier;
-        const tierOrder = ['standard', 'pro', 'enterprise', 'lifetime'];
+        const tierOrder = ['monthly', 'yearly', 'lifetime'];
         const currentIndex = tierOrder.indexOf(oldTier);
         if (currentIndex >= tierOrder.length - 1) continue;
         const newTier = tierOrder[currentIndex + 1] as SimulatedUser['subscriptionTier'];
@@ -1182,9 +1181,9 @@ export class RealLifeSimulationEngine extends EventEmitter {
     this.metrics.users.newToday = usersNeededToday;
     
     // Distribute new users across tiers based on pricing model
-    // $49/mo standard, $39/mo annual (pro), $99/mo enterprise, $699 lifetime
+    // $49/mo monthly, $39/mo annual (yearly), $699 lifetime
     // NO FREE TIER - all users are paying customers
-    const tierDistribution = { standard: 0.50, pro: 0.30, enterprise: 0.15, lifetime: 0.05 };
+    const tierDistribution = { monthly: 0.50, yearly: 0.35, lifetime: 0.15 };
     const archetypeDistribution = { hobbyist: 0.50, emerging_artist: 0.25, established_artist: 0.15, label: 0.07, enterprise: 0.03 };
     
     for (const [tier, pct] of Object.entries(tierDistribution)) {
@@ -1210,9 +1209,9 @@ export class RealLifeSimulationEngine extends EventEmitter {
     let upgradedCount = 0;
     for (const user of this.users.values()) {
       if (upgradedCount >= usersToUpgrade) break;
-      if (user.subscriptionTier !== 'enterprise' && Math.random() < 0.1) {
+      if (user.subscriptionTier !== 'lifetime' && Math.random() < 0.1) {
         const oldTier = user.subscriptionTier;
-        const tierOrder = ['standard', 'pro', 'enterprise', 'lifetime'];
+        const tierOrder = ['monthly', 'yearly', 'lifetime'];
         const currentIndex = tierOrder.indexOf(oldTier);
         if (currentIndex >= tierOrder.length - 1) continue;
         const newTier = tierOrder[currentIndex + 1] as SimulatedUser['subscriptionTier'];

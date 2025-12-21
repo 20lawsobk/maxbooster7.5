@@ -20,10 +20,9 @@ import { logger } from '../logger.js';
 export interface AggregateUserData {
   total: number;
   byTier: {
-    free: number;
-    basic: number;
-    pro: number;
-    enterprise: number;
+    monthly: number;
+    yearly: number;
+    lifetime: number;
   };
   byArchetype: {
     hobbyist: number;
@@ -64,7 +63,7 @@ export class PocketSimulationStorage {
   // In-memory aggregates (tiny footprint for millions of users)
   private aggregateUsers: AggregateUserData = {
     total: 0,
-    byTier: { free: 0, basic: 0, pro: 0, enterprise: 0 },
+    byTier: { monthly: 0, yearly: 0, lifetime: 0 },
     byArchetype: { hobbyist: 0, emerging_artist: 0, established_artist: 0, label: 0, enterprise: 0 },
     avgRevenue: 0,
     avgStreams: 0,
@@ -107,7 +106,7 @@ export class PocketSimulationStorage {
   // ============================================================================
 
   addUsers(count: number, distribution: {
-    tier: 'standard' | 'pro' | 'enterprise' | 'lifetime';
+    tier: 'monthly' | 'yearly' | 'lifetime';
     archetype: 'hobbyist' | 'emerging_artist' | 'established_artist' | 'label' | 'enterprise';
     revenue: number;
     streams: number;

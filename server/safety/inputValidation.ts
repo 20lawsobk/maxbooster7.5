@@ -247,7 +247,7 @@ export const routeSchemas = {
 
   // Subscription routes
   subscribe: z.object({
-    tier: z.enum(['standard', 'pro', 'enterprise', 'lifetime']),
+    tier: z.enum(['monthly', 'yearly', 'lifetime']),
     interval: z.enum(['monthly', 'annual']).optional(),
     couponCode: z.string().max(64).optional(),
   }),

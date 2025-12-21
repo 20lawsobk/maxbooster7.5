@@ -89,8 +89,8 @@ class RequestQueue {
   private determinePriority(req: Request): number {
     const user = (req as any).user;
     
-    if (user?.subscriptionTier === 'enterprise') return 0;
-    if (user?.subscriptionTier === 'pro') return 1;
+    if (user?.subscriptionTier === 'lifetime') return 0;
+    if (user?.subscriptionTier === 'yearly') return 1;
     
     if (req.path.includes('/health') || req.path.includes('/status')) return 0;
     
@@ -246,7 +246,7 @@ export class LoadShedder {
     if (!this.shedding) return false;
 
     const user = (req as any).user;
-    if (user?.subscriptionTier === 'enterprise') return false;
+    if (user?.subscriptionTier === 'lifetime') return false;
     if (req.path.includes('/health') || req.path.includes('/critical')) return false;
 
     return Math.random() > 0.5;

@@ -200,10 +200,10 @@ export class EventGenerator extends EventEmitter {
     const weights = [0.50, 0.25, 0.15, 0.07, 0.03];
     const archetype = this.weightedChoice(archetypes, weights);
 
-    const tiers = ['standard', 'pro', 'enterprise', 'lifetime'];
-    const tierWeights = archetype === 'hobbyist' ? [0.65, 0.25, 0.05, 0.05] :
-                       archetype === 'enterprise' ? [0.10, 0.25, 0.60, 0.05] :
-                       [0.50, 0.35, 0.12, 0.03];
+    const tiers = ['monthly', 'yearly', 'lifetime'];
+    const tierWeights = archetype === 'hobbyist' ? [0.65, 0.30, 0.05] :
+                       archetype === 'enterprise' ? [0.10, 0.30, 0.60] :
+                       [0.50, 0.35, 0.15];
     const tier = this.weightedChoice(tiers, tierWeights);
 
     const genres = Object.keys(GENRE_MULTIPLIERS);
@@ -222,18 +222,18 @@ export class EventGenerator extends EventEmitter {
           ['organic', 'referral', 'paid_ad', 'social', 'press'],
           [0.4, 0.25, 0.2, 0.1, 0.05]
         ),
-        expectedLTV: tier === 'standard' ? 588 : tier === 'pro' ? 1200 : tier === 'lifetime' ? 699 : 2400,
+        expectedLTV: tier === 'monthly' ? 588 : tier === 'yearly' ? 1200 : 699,
       },
       probability: finalProb,
       triggered,
-      impact: tier === 'enterprise' ? 'high' : tier === 'pro' ? 'medium' : 'low',
+      impact: tier === 'lifetime' ? 'high' : tier === 'yearly' ? 'medium' : 'low',
     };
   }
 
   public generateChurnEvent(user: { churnRisk: number; daysSinceActive: number; tier: string }): GeneratedEvent {
     const baseProbDaily = INDUSTRY_BENCHMARKS.avgMonthlyChurnRate / 30;
     const riskMultiplier = user.churnRisk * (1 + user.daysSinceActive * 0.1);
-    const tierMultiplier = user.tier === 'standard' ? 1.0 : user.tier === 'pro' ? 0.7 : 0.5;
+    const tierMultiplier = user.tier === 'monthly' ? 1.0 : user.tier === 'yearly' ? 0.7 : 0.5;
     
     const finalProb = Math.min(0.5, baseProbDaily * riskMultiplier * tierMultiplier);
     const triggered = this.random() < finalProb;
@@ -254,7 +254,7 @@ export class EventGenerator extends EventEmitter {
       },
       probability: finalProb,
       triggered,
-      impact: user.tier === 'enterprise' ? 'critical' : user.tier === 'pro' ? 'high' : 'medium',
+      impact: user.tier === 'lifetime' ? 'critical' : user.tier === 'yearly' ? 'high' : 'medium',
     };
   }
 

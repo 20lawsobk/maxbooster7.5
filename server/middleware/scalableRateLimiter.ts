@@ -261,12 +261,12 @@ export class DistributedRateLimiter {
 }
 
 export const createHighScaleRateLimiter = (
-  tier: 'free' | 'pro' | 'enterprise' | 'unlimited'
+  tier: 'monthly' | 'yearly' | 'lifetime' | 'unlimited'
 ): RequestHandler => {
   const limits = {
-    free: { windowMs: 60000, maxRequests: 100 },
-    pro: { windowMs: 60000, maxRequests: 1000 },
-    enterprise: { windowMs: 60000, maxRequests: 10000 },
+    monthly: { windowMs: 60000, maxRequests: 100 },
+    yearly: { windowMs: 60000, maxRequests: 1000 },
+    lifetime: { windowMs: 60000, maxRequests: 10000 },
     unlimited: { windowMs: 60000, maxRequests: Number.MAX_SAFE_INTEGER },
   };
 
