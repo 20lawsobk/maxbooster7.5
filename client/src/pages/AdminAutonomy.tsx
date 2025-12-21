@@ -14,7 +14,7 @@ export default function AdminAutonomy() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const autopilotKey = ['/api/autopilot/social/status'];
+  const autopilotKey = ['/api/autopilot/status'];
   const autonomousKey = ['/api/auto/social/status'];
   const updatesKey = ['/api/auto-updates/status'];
   const securityMetricsKey = ['/api/security/metrics'];
@@ -47,11 +47,11 @@ export default function AdminAutonomy() {
   } = useQuery({ queryKey: securityThreatsKey });
 
   const startAutopilot = useMutation({
-    mutationFn: async () => (await apiRequest('POST', '/api/autopilot/social/start')).json(),
+    mutationFn: async () => (await apiRequest('POST', '/api/autopilot/start')).json(),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: autopilotKey }),
   });
   const stopAutopilot = useMutation({
-    mutationFn: async () => (await apiRequest('POST', '/api/autopilot/social/stop')).json(),
+    mutationFn: async () => (await apiRequest('POST', '/api/autopilot/stop')).json(),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: autopilotKey }),
   });
 

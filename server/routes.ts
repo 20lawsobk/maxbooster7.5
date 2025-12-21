@@ -766,6 +766,8 @@ export async function registerRoutes(
     { path: "/api/organic", name: "organic", loader: () => import("./routes/organic") },
     { path: "/api/advertising", name: "advertisingAutopilot", loader: () => import("./routes/advertisingAutopilot") },
     { path: "/api/autopilot", name: "autopilot", loader: () => import("./routes/autopilot") },
+    { path: "/api/auto/social", name: "autonomousSocial", loader: () => import("./routes/autonomousSocial") },
+    { path: "/api/auto-updates", name: "autoUpdates", loader: () => import("./routes/autoUpdates") },
     
     // Studio/DAW Routes
     { path: "/api/studio/comping", name: "studioComping", loader: () => import("./routes/studioComping") },
@@ -819,6 +821,9 @@ export async function registerRoutes(
     
     // Self-Healing Security System
     { path: "/api/security/self-healing", name: "selfHealingApi", loader: () => import("./routes/selfHealingApi") },
+    
+    // Security Dashboard API
+    { path: "/api/security", name: "security", loader: () => import("./routes/security") },
     
     // Marketplace with Discovery Algorithm
     { path: "/api/marketplace", name: "marketplace", loader: () => import("./routes/marketplace") },
