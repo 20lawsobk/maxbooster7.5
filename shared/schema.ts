@@ -659,6 +659,30 @@ export const notifications = pgTable("notifications", {
 });
 
 // ============================================================================
+// SUPPORT TICKETS
+// ============================================================================
+export const supportTickets = pgTable("support_tickets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  subject: text("subject").notNull(),
+  description: text("description"),
+  status: text("status").default("open"),
+  priority: text("priority").default("medium"),
+  category: text("category").default("general"),
+  assignedTo: varchar("assigned_to"),
+  responseTimeMinutes: integer("response_time_minutes"),
+  satisfactionRating: integer("satisfaction_rating"),
+  metadata: jsonb("metadata"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = typeof supportTickets.$inferInsert;
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({ id: true, createdAt: true, updatedAt: true });
+
+// ============================================================================
 // SECURITY THREATS (Self-Healing Security)
 // ============================================================================
 export const securityThreats = pgTable("security_threats", {

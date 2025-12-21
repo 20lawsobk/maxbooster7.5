@@ -788,6 +788,7 @@ export async function registerRoutes(
     
     // Help & Support
     { path: "/api/helpdesk", name: "helpDesk", loader: () => import("./routes/helpDesk") },
+    { path: "/api/support", name: "support", loader: () => import("./routes/support") },
     
     // Executive & Admin
     { path: "/api/executive", name: "executiveDashboard", loader: () => import("./routes/executiveDashboard") },
