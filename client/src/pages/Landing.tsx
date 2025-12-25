@@ -29,27 +29,32 @@ const demoSlides = [
   {
     title: 'AI-Powered Studio',
     description: 'Professional DAW with AI mixing, mastering, and 1000+ plugins. Create studio-quality music in your browser.',
-    image: '/images/demo/ai_studio_daw_interface.png',
+    icon: Sparkles,
+    gradient: 'from-blue-600 to-cyan-500',
   },
   {
     title: 'Analytics Dashboard',
     description: 'Track streams, revenue, and fan growth across all platforms. AI-powered insights to grow your career.',
-    image: '/images/demo/analytics_dashboard_interface.png',
+    icon: BarChart3,
+    gradient: 'from-purple-600 to-pink-500',
   },
   {
     title: 'Social Media Autopilot',
     description: 'AI schedules and creates content across all platforms. Grow your audience on autopilot 24/7.',
-    image: '/images/demo/social_media_management_dashboard.png',
+    icon: Share2,
+    gradient: 'from-green-600 to-teal-500',
   },
   {
     title: 'Music Distribution',
     description: 'Release to Spotify, Apple Music, and 150+ platforms. Keep 100% of your royalties.',
-    image: '/images/demo/music_distribution_interface.png',
+    icon: Music,
+    gradient: 'from-orange-600 to-red-500',
   },
   {
     title: 'Beat Marketplace',
     description: 'Sell beats and samples directly to artists. Built-in licensing and secure payments.',
-    image: '/images/demo/beat_marketplace_interface.png',
+    icon: DollarSign,
+    gradient: 'from-indigo-600 to-blue-500',
   },
 ];
 
@@ -507,12 +512,13 @@ export default function Landing() {
             <DialogDescription>{demoSlides[currentSlide].description}</DialogDescription>
           </DialogHeader>
           <div className="relative">
-            <div className="aspect-video w-full bg-gray-900 overflow-hidden">
-              <img
-                src={demoSlides[currentSlide].image}
-                alt={demoSlides[currentSlide].title}
-                className="w-full h-full object-cover"
-              />
+            <div className={`aspect-video w-full bg-gradient-to-br ${demoSlides[currentSlide].gradient} overflow-hidden flex flex-col items-center justify-center text-white`}>
+              {(() => {
+                const IconComponent = demoSlides[currentSlide].icon;
+                return <IconComponent className="h-24 w-24 mb-4 opacity-90" />;
+              })()}
+              <h3 className="text-2xl font-bold mb-2">{demoSlides[currentSlide].title}</h3>
+              <p className="text-lg opacity-90 max-w-md text-center px-4">{demoSlides[currentSlide].description}</p>
             </div>
             <Button
               variant="ghost"
