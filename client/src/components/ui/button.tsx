@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:scale-105 active:scale-100 dark:shadow-md dark:shadow-primary/20',
+          'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:scale-105 active:scale-100 dark:bg-primary dark:text-primary-foreground dark:shadow-md dark:shadow-primary/30 dark:hover:bg-primary/85',
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-lg hover:scale-105 active:scale-100',
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-lg hover:scale-105 active:scale-100 dark:bg-destructive dark:text-white',
         outline:
-          'border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:border-primary/50 active:scale-95 dark:border-muted-foreground/60 dark:text-foreground dark:hover:border-primary dark:hover:bg-accent/30 dark:hover:text-white',
+          'border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:border-primary/50 active:scale-95 dark:border-primary/50 dark:bg-muted/30 dark:text-white dark:hover:border-primary dark:hover:bg-primary/20 dark:hover:text-white',
         secondary:
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md hover:scale-105 active:scale-100 dark:bg-secondary dark:text-white dark:hover:bg-secondary/80 dark:shadow-sm',
-        ghost: 'hover:bg-accent hover:text-accent-foreground hover:shadow-sm active:scale-95 dark:text-foreground dark:hover:text-white dark:hover:bg-muted/60',
-        link: 'text-primary underline-offset-4 hover:underline hover:text-primary/80 active:text-primary/60 dark:text-primary dark:hover:text-primary/90',
+          'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md hover:scale-105 active:scale-100 dark:bg-secondary dark:text-white dark:hover:bg-secondary/70 dark:shadow-sm',
+        ghost: 'hover:bg-accent hover:text-accent-foreground hover:shadow-sm active:scale-95 dark:text-white dark:hover:text-white dark:hover:bg-muted/50',
+        link: 'text-primary underline-offset-4 hover:underline hover:text-primary/80 active:text-primary/60 dark:text-primary dark:hover:text-primary/80',
         premium:
           'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 active:scale-100 dark:shadow-lg dark:shadow-purple-500/30',
       },
