@@ -63,15 +63,23 @@ declare global {
 
 // Middleware to attach user to request
 async function attachUser(req: Request, res: Response, next: NextFunction) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isApiRoute = req.path.startsWith('/api/');
+  
   if (req.session?.userId) {
     try {
       const user = await storage.getUser(req.session.userId);
       if (user) {
         req.user = user;
+      } else if (isProduction && isApiRoute) {
+        console.warn(`[Session] User not found for userId: ${req.session.userId}, path: ${req.path}`);
       }
     } catch (error) {
       console.error("Error fetching user for request:", error);
     }
+  } else if (isProduction && isApiRoute && req.path !== '/api/auth/me' && req.path !== '/api/csrf-token' && req.path !== '/api/health') {
+    const sessionCookie = req.cookies?.sessionId || req.headers.cookie?.includes('sessionId');
+    console.warn(`[Session] No userId in session for ${req.path}, cookie present: ${!!sessionCookie}, session exists: ${!!req.session}`);
   }
   
   // Add isAuthenticated method
