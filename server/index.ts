@@ -256,152 +256,8 @@ app.use((req, res, next) => {
     logger.warn('Workers not available');
   }
 
-  // ========================================
-  // AUTONOMOUS SYSTEMS INITIALIZATION
-  // ========================================
-  logger.info('');
-  logger.info('🤖 ═══════════════════════════════════════════════════════════');
-  logger.info('🤖 INITIALIZING AUTONOMOUS SYSTEMS');
-  logger.info('🤖 ═══════════════════════════════════════════════════════════');
-
-  // 1. Autonomous Service (Core)
-  try {
-    const mod = await import('./services/autonomousService.js');
-    const svc = mod.autonomousService || mod.default;
-    if (svc && typeof svc.getStatus === 'function') {
-      const status = svc.getStatus();
-      logger.info(`✅ [Autonomy] Autonomous Service initialized - Running: ${status.isRunning}`);
-      logger.info(`   └─ Config: Social=${status.config?.socialPosting}, Ads=${status.config?.advertising}, Distribution=${status.config?.distribution}`);
-      logger.info(`   └─ Active users: ${status.activeUsers || 0}, Operations: ${status.activeOperations || 0}`);
-    } else {
-      logger.info('✅ [Autonomy] Autonomous Service module loaded');
-    }
-  } catch (e: any) {
-    logger.warn(`⚠️ [Autonomy] Autonomous Service: ${e.message}`);
-  }
-
-  // 2. Automation System
-  try {
-    const mod = await import('./automation-system.js');
-    const AutomationSystem = mod.AutomationSystem || mod.default;
-    if (AutomationSystem && typeof AutomationSystem.getInstance === 'function') {
-      const system = AutomationSystem.getInstance();
-      if (typeof system.initialize === 'function') {
-        await system.initialize();
-      }
-      logger.info('✅ [Autonomy] Automation System initialized');
-      logger.info('   └─ Social posting, campaign management, content scheduling active');
-    }
-  } catch (e: any) {
-    logger.warn(`⚠️ [Autonomy] Automation System: ${e.message}`);
-  }
-
-  // 3. Autonomous Updates Orchestrator (Self-Upgrading System - Keeps Max Booster ahead of competitors)
-  try {
-    const mod = await import('./autonomous-updates.js');
-    const orchestrator = mod.autonomousUpdates || mod.autonomousUpdatesOrchestrator || mod.default;
-    if (orchestrator) {
-      // Enable and start the self-upgrading system
-      if (typeof orchestrator.configure === 'function') {
-        await orchestrator.configure({
-          enabled: true,
-          frequency: 'hourly', // Check for competitive advantages every hour
-          industryMonitoringEnabled: true,  // Monitor DistroKid, TuneCore, BeatStars, etc.
-          aiTuningEnabled: true,            // Auto-tune AI models for better performance
-          platformOptimizationEnabled: true, // Optimize user experience
-          studioDAWEnabled: true,           // Keep DAW features ahead of FL Studio, Ableton
-          distributionEnabled: true,        // Improve distribution vs DistroKid
-          marketplaceEnabled: true,         // Enhance marketplace vs BeatStars
-          analyticsEnabled: true,           // Better analytics than Spotify for Artists
-          securityEnabled: true,            // Stay ahead of security threats
-          performanceInfraEnabled: true,    // Keep infrastructure optimized
-        });
-      } else if (typeof orchestrator.start === 'function') {
-        await orchestrator.start();
-      }
-      
-      const status = orchestrator.getStatus?.() || { isRunning: true, runsCompleted: 0 };
-      logger.info(`✅ [Autonomy] Auto-Upgrade System ENABLED - Keeping Max Booster ahead of competitors`);
-      logger.info(`   └─ Status: ${status.isRunning ? 'ACTIVE' : 'Standby'}, Update cycles: ${status.runsCompleted || 0}`);
-      logger.info(`   └─ Monitoring: DistroKid, TuneCore, BeatStars, Splice, Spotify for Artists`);
-      logger.info(`   └─ Auto-tuning: AI models, DAW features, distribution, marketplace, analytics`);
-    } else {
-      logger.info('✅ [Autonomy] Autonomous Updates module loaded');
-    }
-  } catch (e: any) {
-    logger.warn(`⚠️ [Autonomy] Autonomous Updates: ${e.message}`);
-  }
-
-  // 4. Autonomous Autopilot
-  try {
-    const mod = await import('./autonomous-autopilot.js');
-    const autopilot = mod.autonomousAutopilot || mod.default;
-    if (autopilot) {
-      logger.info('✅ [Autonomy] Autonomous Autopilot loaded');
-      logger.info('   └─ Content generation, performance analysis, adaptive learning ready');
-    }
-  } catch (e: any) {
-    logger.warn(`⚠️ [Autonomy] Autonomous Autopilot: ${e.message}`);
-  }
-
-  // 5. Autopilot Engine
-  try {
-    const mod = await import('./autopilot-engine.js');
-    const engine = mod.autopilotEngine || mod.AutopilotEngine || mod.default;
-    if (engine) {
-      logger.info('✅ [Autonomy] Autopilot Engine loaded');
-      logger.info('   └─ Social/Ads, Security/IT, Updates personas available');
-    }
-  } catch (e: any) {
-    logger.warn(`⚠️ [Autonomy] Autopilot Engine: ${e.message}`);
-  }
-
-  // 6. Auto-Posting Services
-  try {
-    const mod = await import('./services/autoPostingService.js');
-    if (mod.autoPostingService || mod.default) {
-      logger.info('✅ [Autonomy] Auto-Posting Service V1 initialized');
-    }
-  } catch (e: any) {
-    logger.warn(`⚠️ [Autonomy] Auto-Posting Service V1: ${e.message}`);
-  }
-
-  try {
-    const mod = await import('./services/autoPostingServiceV2.js');
-    if (mod.autoPostingServiceV2 || mod.default) {
-      logger.info('✅ [Autonomy] Auto-Posting Service V2 initialized');
-      logger.info('   └─ Platform-specific scheduling, queue management active');
-    }
-  } catch (e: any) {
-    logger.warn(`⚠️ [Autonomy] Auto-Posting Service V2: ${e.message}`);
-  }
-
-  // 7. Auto Post Generator
-  try {
-    const mod = await import('./services/autoPostGenerator.js');
-    if (mod.autoPostGenerator || mod.default) {
-      logger.info('✅ [Autonomy] Auto Post Generator initialized');
-      logger.info('   └─ AI content generation, trend analysis, viral optimization ready');
-    }
-  } catch (e: any) {
-    logger.warn(`⚠️ [Autonomy] Auto Post Generator: ${e.message}`);
-  }
-
-  // 8. Autopilot Publisher
-  try {
-    const mod = await import('./services/autopilotPublisher.js');
-    if (mod.autopilotPublisher || mod.default) {
-      logger.info('✅ [Autonomy] Autopilot Publisher initialized');
-      logger.info('   └─ Cross-platform publishing, scheduling, analytics tracking active');
-    }
-  } catch (e: any) {
-    logger.warn(`⚠️ [Autonomy] Autopilot Publisher: ${e.message}`);
-  }
-
-  logger.info('🤖 ═══════════════════════════════════════════════════════════');
-  logger.info('🤖 AUTONOMOUS SYSTEMS READY');
-  logger.info('🤖 ═══════════════════════════════════════════════════════════');
-  logger.info('');
+  // Autonomous systems initialization is deferred to after server starts
+  // to ensure fast cold start times for landing page loading
 
   // Apply scalable rate limiter for high-load scenarios
   try {
@@ -461,6 +317,90 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      
+      // Defer heavy autonomous systems initialization to background after server is listening
+      // This allows the landing page to load immediately during cold starts
+      setImmediate(async () => {
+        logger.info('');
+        logger.info('🤖 ═══════════════════════════════════════════════════════════');
+        logger.info('🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)');
+        logger.info('🤖 ═══════════════════════════════════════════════════════════');
+        
+        // 1. Autonomous Service (Core)
+        try {
+          const mod = await import('./services/autonomousService.js');
+          const svc = mod.autonomousService || mod.default;
+          if (svc && typeof svc.getStatus === 'function') {
+            const status = svc.getStatus();
+            logger.info(`✅ [Autonomy] Autonomous Service initialized - Running: ${status.isRunning}`);
+          }
+        } catch (e: any) {
+          logger.warn(`⚠️ [Autonomy] Autonomous Service: ${e.message}`);
+        }
+
+        // 2. Automation System
+        try {
+          const mod = await import('./automation-system.js');
+          const AutomationSystem = mod.AutomationSystem || mod.default;
+          if (AutomationSystem && typeof AutomationSystem.getInstance === 'function') {
+            const system = AutomationSystem.getInstance();
+            if (typeof system.initialize === 'function') {
+              await system.initialize();
+            }
+            logger.info('✅ [Autonomy] Automation System initialized');
+          }
+        } catch (e: any) {
+          logger.warn(`⚠️ [Autonomy] Automation System: ${e.message}`);
+        }
+
+        // 3. Autonomous Updates Orchestrator
+        try {
+          const mod = await import('./autonomous-updates.js');
+          const orchestrator = mod.autonomousUpdates || mod.autonomousUpdatesOrchestrator || mod.default;
+          if (orchestrator) {
+            if (typeof orchestrator.configure === 'function') {
+              await orchestrator.configure({
+                enabled: true,
+                frequency: 'hourly',
+                industryMonitoringEnabled: true,
+                aiTuningEnabled: true,
+                platformOptimizationEnabled: true,
+              });
+            } else if (typeof orchestrator.start === 'function') {
+              await orchestrator.start();
+            }
+            logger.info('✅ [Autonomy] Auto-Upgrade System ENABLED');
+          }
+        } catch (e: any) {
+          logger.warn(`⚠️ [Autonomy] Autonomous Updates: ${e.message}`);
+        }
+
+        // 4-8. Other autonomous modules (load in parallel for speed)
+        await Promise.allSettled([
+          import('./autonomous-autopilot.js').then(mod => {
+            if (mod.autonomousAutopilot || mod.default) logger.info('✅ [Autonomy] Autonomous Autopilot loaded');
+          }),
+          import('./autopilot-engine.js').then(mod => {
+            if (mod.autopilotEngine || mod.AutopilotEngine || mod.default) logger.info('✅ [Autonomy] Autopilot Engine loaded');
+          }),
+          import('./services/autoPostingService.js').then(mod => {
+            if (mod.autoPostingService || mod.default) logger.info('✅ [Autonomy] Auto-Posting Service V1 initialized');
+          }),
+          import('./services/autoPostingServiceV2.js').then(mod => {
+            if (mod.autoPostingServiceV2 || mod.default) logger.info('✅ [Autonomy] Auto-Posting Service V2 initialized');
+          }),
+          import('./services/autoPostGenerator.js').then(mod => {
+            if (mod.autoPostGenerator || mod.default) logger.info('✅ [Autonomy] Auto Post Generator initialized');
+          }),
+          import('./services/autopilotPublisher.js').then(mod => {
+            if (mod.autopilotPublisher || mod.default) logger.info('✅ [Autonomy] Autopilot Publisher initialized');
+          }),
+        ]);
+
+        logger.info('🤖 ═══════════════════════════════════════════════════════════');
+        logger.info('🤖 AUTONOMOUS SYSTEMS READY');
+        logger.info('🤖 ═══════════════════════════════════════════════════════════');
+      });
     },
   );
 })();
