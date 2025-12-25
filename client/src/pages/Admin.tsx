@@ -50,6 +50,9 @@ import {
   Edit,
   Trash2,
   Eye,
+  Ban,
+  Shield,
+  CreditCard,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -140,6 +143,12 @@ export default function Admin() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [showRateLimitDialog, setShowRateLimitDialog] = useState(false);
   const [showWebhookDialog, setShowWebhookDialog] = useState(false);
+  const [showEditUserDialog, setShowEditUserDialog] = useState(false);
+  const [showDeleteUserDialog, setShowDeleteUserDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [editUserRole, setEditUserRole] = useState('user');
+  const [editUserPlan, setEditUserPlan] = useState('free');
+  const [editUserStatus, setEditUserStatus] = useState('active');
 
   const { data: platformSettings } = useQuery<AdminSettings>({
     queryKey: ['/api/admin/settings'],
@@ -254,6 +263,85 @@ export default function Admin() {
     },
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, role, subscriptionTier, subscriptionStatus }: { userId: string; role?: string; subscriptionTier?: string; subscriptionStatus?: string }) => {
+      const response = await apiRequest('PUT', `/api/admin/users/${userId}`, { role, subscriptionTier, subscriptionStatus });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setShowEditUserDialog(false);
+      setSelectedUser(null);
+      toast({
+        title: 'User Updated',
+        description: 'User details have been updated successfully.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Update Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest('DELETE', `/api/admin/users/${userId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setShowDeleteUserDialog(false);
+      setSelectedUser(null);
+      toast({
+        title: 'User Deleted',
+        description: 'User has been deleted from the platform.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Delete Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const { data: paymentBypassStatus } = useQuery<{ isActive: boolean; expiresAt?: string; activatedBy?: string }>({
+    queryKey: ['/api/payment-bypass/status'],
+    enabled: !!user,
+  });
+
+  const activatePaymentBypassMutation = useMutation({
+    mutationFn: async ({ durationHours, reason }: { durationHours: number; reason: string }) => {
+      const response = await apiRequest('POST', '/api/payment-bypass/activate', { durationHours, reason });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/payment-bypass/status'] });
+      toast({
+        title: 'Payment Bypass Activated',
+        description: 'Payment requirements have been temporarily bypassed.',
+      });
+    },
+  });
+
+  const deactivatePaymentBypassMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/payment-bypass/deactivate', { reason: 'Admin deactivation' });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/payment-bypass/status'] });
+      toast({
+        title: 'Payment Bypass Deactivated',
+        description: 'Payment requirements are now enforced.',
+      });
+    },
+  });
+
   // Handlers
   const handleExportUsers = () => {
     exportUsersMutation.mutate();
@@ -264,12 +352,59 @@ export default function Admin() {
   };
 
   const handleViewUser = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
+    const foundUser = users.find(u => u.id === userId);
+    if (foundUser) {
       toast({
-        title: `User: ${user.username || user.email}`,
-        description: `Plan: ${user.subscriptionPlan || 'None'} | Status: ${user.subscriptionStatus || 'Unknown'} | Role: ${user.role || 'user'}`,
+        title: `User: ${foundUser.username || foundUser.email}`,
+        description: `Plan: ${foundUser.subscriptionPlan || 'None'} | Status: ${foundUser.subscriptionStatus || 'Unknown'} | Role: ${foundUser.role || 'user'}`,
       });
+    }
+  };
+
+  const handleEditUser = (userId: string) => {
+    const foundUser = users.find(u => u.id === userId);
+    if (foundUser) {
+      setSelectedUser(foundUser);
+      setEditUserRole(foundUser.role || 'user');
+      setEditUserPlan(foundUser.subscriptionPlan || 'free');
+      setEditUserStatus(foundUser.subscriptionStatus || 'active');
+      setShowEditUserDialog(true);
+    }
+  };
+
+  const handleBanUser = (userId: string) => {
+    const foundUser = users.find(u => u.id === userId);
+    if (foundUser) {
+      if (foundUser.subscriptionStatus === 'banned') {
+        updateUserMutation.mutate({ userId, subscriptionStatus: 'inactive' });
+      } else {
+        updateUserMutation.mutate({ userId, subscriptionStatus: 'banned' });
+      }
+    }
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    const foundUser = users.find(u => u.id === userId);
+    if (foundUser) {
+      setSelectedUser(foundUser);
+      setShowDeleteUserDialog(true);
+    }
+  };
+
+  const handleSaveUserEdit = () => {
+    if (selectedUser) {
+      updateUserMutation.mutate({
+        userId: selectedUser.id,
+        role: editUserRole,
+        subscriptionTier: editUserPlan,
+        subscriptionStatus: editUserStatus,
+      });
+    }
+  };
+
+  const handleConfirmDeleteUser = () => {
+    if (selectedUser) {
+      deleteUserMutation.mutate(selectedUser.id);
     }
   };
 
@@ -358,6 +493,8 @@ export default function Admin() {
         return 'bg-red-100 text-red-800 border-red-200';
       case 'past_due':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'banned':
+        return 'bg-red-200 text-red-900 border-red-400';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -487,6 +624,9 @@ export default function Admin() {
                       <SelectItem value="past_due" data-testid="select-status-past-due">
                         Past Due
                       </SelectItem>
+                      <SelectItem value="banned" data-testid="select-status-banned">
+                        Banned
+                      </SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -586,23 +726,55 @@ export default function Admin() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleViewUser(user.id)}
+                                  data-testid={`button-view-${user.id}`}
+                                  title="View user details"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditUser(user.id)}
+                                  data-testid={`button-edit-${user.id}`}
+                                  title="Edit user"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleSendEmail(user.id)}
                                   disabled={sendEmailMutation.isPending}
                                   data-testid={`button-email-${user.id}`}
+                                  title="Send email"
                                 >
                                   <Mail className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleViewUser(user.id)}
-                                  data-testid={`button-view-${user.id}`}
+                                  onClick={() => handleBanUser(user.id)}
+                                  disabled={updateUserMutation.isPending}
+                                  data-testid={`button-ban-${user.id}`}
+                                  title={user.subscriptionStatus === 'banned' ? 'Unban user' : 'Ban user'}
+                                  className={user.subscriptionStatus === 'banned' ? 'text-green-600' : 'text-orange-600'}
                                 >
-                                  View
+                                  <Ban className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  data-testid={`button-delete-${user.id}`}
+                                  title="Delete user"
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -782,6 +954,49 @@ export default function Admin() {
                   </div>
 
                   <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Bypass Controls</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-3 rounded-full ${paymentBypassStatus?.isActive ? 'bg-yellow-200' : 'bg-green-200'}`}>
+                            <CreditCard className={`h-5 w-5 ${paymentBypassStatus?.isActive ? 'text-yellow-700' : 'text-green-700'}`} />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">Payment Requirements</h4>
+                            <p className="text-sm text-gray-500">
+                              {paymentBypassStatus?.isActive 
+                                ? `Bypassed until ${paymentBypassStatus.expiresAt ? new Date(paymentBypassStatus.expiresAt).toLocaleString() : 'manually disabled'}`
+                                : 'Payment requirements are enforced'}
+                            </p>
+                          </div>
+                        </div>
+                        {paymentBypassStatus?.isActive ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deactivatePaymentBypassMutation.mutate()}
+                            disabled={deactivatePaymentBypassMutation.isPending}
+                            data-testid="button-deactivate-payment-bypass"
+                          >
+                            Re-enable Payments
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => activatePaymentBypassMutation.mutate({ durationHours: 2, reason: 'Admin bypass' })}
+                            disabled={activatePaymentBypassMutation.isPending}
+                            className="text-yellow-700 border-yellow-400 hover:bg-yellow-50"
+                            data-testid="button-activate-payment-bypass"
+                          >
+                            Bypass for 2 Hours
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">API Settings</h3>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
@@ -892,6 +1107,93 @@ export default function Admin() {
               }}
             >
               Save Webhook
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit User Dialog */}
+      <AlertDialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Update user role and subscription settings for {selectedUser?.username || selectedUser?.email}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label>Role</Label>
+              <Select value={editUserRole} onValueChange={setEditUserRole}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Subscription Plan</Label>
+              <Select value={editUserPlan} onValueChange={setEditUserPlan}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                  <SelectItem value="lifetime">Lifetime</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Subscription Status</Label>
+              <Select value={editUserStatus} onValueChange={setEditUserStatus}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="past_due">Past Due</SelectItem>
+                  <SelectItem value="banned">Banned</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedUser(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSaveUserEdit}
+              disabled={updateUserMutation.isPending}
+            >
+              {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={showDeleteUserDialog} onOpenChange={setShowDeleteUserDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the user "{selectedUser?.username || selectedUser?.email}"? 
+              This action cannot be undone and will permanently remove all user data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedUser(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteUser}
+              disabled={deleteUserMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteUserMutation.isPending ? 'Deleting...' : 'Delete User'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

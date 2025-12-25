@@ -84,19 +84,8 @@ export default function AdminDashboard() {
     return () => clearTimeout(timer);
   }, [usersSearch]);
 
-  // Loading state
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  // Access denied - useRequireAdmin handles redirect for non-admin users
-  if (!user || user.role !== 'admin') {
-    return null;
-  }
+  // All hooks must be called before any conditional returns (React Rules of Hooks)
+  const isAdmin = !!user && user.role === 'admin';
 
   // Fetch audit results
   const {
@@ -105,7 +94,7 @@ export default function AdminDashboard() {
     refetch: refetchAudit,
   } = useQuery({
     queryKey: ['/api/audit/results'],
-    enabled: !!user && user.role === 'admin',
+    enabled: isAdmin,
     refetchInterval: 30000,
   });
 
@@ -116,7 +105,7 @@ export default function AdminDashboard() {
     refetch: refetchTests,
   } = useQuery({
     queryKey: ['/api/testing/results'],
-    enabled: !!user && user.role === 'admin',
+    enabled: isAdmin,
     refetchInterval: 60000,
   });
 
@@ -127,7 +116,7 @@ export default function AdminDashboard() {
     refetch: refetchMetrics,
   } = useQuery({
     queryKey: ['/api/admin/metrics'],
-    enabled: !!user && user.role === 'admin',
+    enabled: isAdmin,
     refetchInterval: 10000,
   });
 
@@ -138,7 +127,7 @@ export default function AdminDashboard() {
     refetch: refetchAnalytics,
   } = useQuery({
     queryKey: ['/api/admin/analytics'],
-    enabled: !!user && user.role === 'admin',
+    enabled: isAdmin,
   });
 
   // Fetch recent activity
@@ -148,7 +137,7 @@ export default function AdminDashboard() {
     refetch: refetchActivity,
   } = useQuery({
     queryKey: ['/api/admin/activity'],
-    enabled: !!user && user.role === 'admin',
+    enabled: isAdmin,
   });
 
   // Fetch users list with pagination and search
@@ -159,7 +148,7 @@ export default function AdminDashboard() {
     refetch: refetchUsers,
   } = useQuery({
     queryKey: ['/api/admin/users', usersPage, debouncedSearch],
-    enabled: !!user && user.role === 'admin',
+    enabled: isAdmin,
     queryFn: async () => {
       const params = new URLSearchParams({
         page: usersPage.toString(),
@@ -194,12 +183,18 @@ export default function AdminDashboard() {
     }
   };
 
+  // Loading state - conditional return AFTER all hooks
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  // Access denied - useRequireAdmin handles redirect for non-admin users
+  if (!user || user.role !== 'admin') {
+    return null;
   }
 
   // Direct data assignment - no fallbacks

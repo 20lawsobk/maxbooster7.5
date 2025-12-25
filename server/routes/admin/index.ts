@@ -144,7 +144,7 @@ router.put('/users/:userId', async (req, res) => {
 
     const allowedRoles = ['user', 'admin'];
     const allowedTiers = ['free', 'monthly', 'yearly', 'lifetime', null];
-    const allowedStatuses = ['active', 'inactive', 'cancelled', 'past_due', null];
+    const allowedStatuses = ['active', 'inactive', 'cancelled', 'past_due', 'banned', null];
 
     if (role && !allowedRoles.includes(role)) {
       return res.status(400).json({ error: `Invalid role. Allowed: ${allowedRoles.join(', ')}` });
