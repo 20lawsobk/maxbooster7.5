@@ -59,8 +59,8 @@ const app = express();
 const httpServer = createServer(app);
 
 // Trust proxy - REQUIRED for secure cookies and rate limiting behind Replit's reverse proxy
-// Set to 2 to handle Replit's multi-layer proxy infrastructure
-app.set('trust proxy', 2);
+// Use 'true' to trust all proxies in the chain (required for Replit's production environment)
+app.set('trust proxy', true);
 
 // ========================================
 // MANDATORY SAFETY MIDDLEWARE (MUST LOAD)
