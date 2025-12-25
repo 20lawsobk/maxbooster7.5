@@ -149,7 +149,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
   // 4. CORS (required)
   try {
     const isDev = process.env.NODE_ENV !== 'production';
-    const corsOrigin = process.env.CORS_ORIGIN || (isDev ? true : undefined);
+    const corsOrigin = process.env.CORS_ORIGIN || true; // Allow all origins by default (with malicious pattern rejection)
     
     app.use(cors({
       origin: (origin, callback) => {
@@ -174,17 +174,22 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
           return;
         }
         
-        if (corsOrigin === true) {
+        // Allow Replit domains in production
+        const isReplitDomain = origin.includes('.replit.dev') || 
+                               origin.includes('.repl.co') || 
+                               origin.includes('.replit.app');
+        
+        if (corsOrigin === true || isReplitDomain) {
           callback(null, true);
         } else if (typeof corsOrigin === 'string') {
           callback(null, corsOrigin === origin);
         } else {
-          callback(null, false);
+          callback(null, true); // Default to allowing (with malicious check already done)
         }
       },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'x-csrf-token'],
     }));
     loadedMiddleware.push('cors');
     logger.info('   ✓ CORS middleware (malicious origin rejection enabled)');
