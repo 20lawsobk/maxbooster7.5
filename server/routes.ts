@@ -205,8 +205,16 @@ export async function registerRoutes(
       }
 
       req.session.userId = user.id;
-      const { password: _, ...userWithoutPassword } = user;
-      return res.json(userWithoutPassword);
+      
+      // Explicitly save session for Redis persistence in production
+      req.session.save((err) => {
+        if (err) {
+          console.error('[Login] Session save failed:', err);
+          return res.status(500).json({ message: "Login failed - session error" });
+        }
+        const { password: _, ...userWithoutPassword } = user;
+        return res.json(userWithoutPassword);
+      });
     } catch (error) {
       console.error("Login error:", error);
       return res.status(500).json({ message: "Login failed" });
