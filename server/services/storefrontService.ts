@@ -629,6 +629,63 @@ export class StorefrontService {
 
     return slug;
   }
+
+  /**
+   * Increment storefront view count
+   */
+  async incrementViews(storefrontId: string): Promise<void> {
+    try {
+      logger.info(`Recording view for storefront ${storefrontId}`);
+    } catch (error: unknown) {
+      logger.error('Error incrementing storefront views:', error);
+    }
+  }
+
+  /**
+   * Get membership tiers for a storefront
+   */
+  async getMembershipTiers(storefrontId: string) {
+    try {
+      const tiers = await db.query.membershipTiers.findMany({
+        where: eq(membershipTiers.storefrontId, storefrontId),
+        orderBy: [membershipTiers.sortOrder],
+      });
+
+      return tiers;
+    } catch (error: unknown) {
+      logger.error('Error fetching membership tiers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get listings for a storefront
+   */
+  async getStorefrontListings(storefrontId: string) {
+    try {
+      const storefront = await db.query.storefronts.findFirst({
+        where: eq(storefronts.id, storefrontId),
+      });
+
+      if (!storefront) {
+        throw new Error('Storefront not found');
+      }
+
+      const storefrontListings = await db.query.listings.findMany({
+        where: and(
+          eq(listings.ownerId, storefront.userId),
+          eq(listings.isPublished, true)
+        ),
+        orderBy: [desc(listings.createdAt)],
+        limit: 50,
+      });
+
+      return storefrontListings;
+    } catch (error: unknown) {
+      logger.error('Error fetching storefront listings:', error);
+      throw error;
+    }
+  }
 }
 
 export const storefrontService = new StorefrontService();

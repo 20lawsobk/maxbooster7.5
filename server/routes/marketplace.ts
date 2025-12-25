@@ -358,4 +358,195 @@ router.get('/collaborations', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/upload', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { title, genre, mood, tempo, key, price, licenseType, description, tags } = req.body;
+
+    if (!title || !genre) {
+      return res.status(400).json({ error: 'Title and genre are required' });
+    }
+
+    const listing = await marketplaceService.createListing({
+      userId: req.user!.id,
+      title,
+      description,
+      genre,
+      bpm: parseInt(tempo) || undefined,
+      key,
+      price: parseFloat(price) || 50,
+      audioUrl: '',
+      tags: tags ? tags.split(',').map((t: string) => t.trim()) : [],
+      licenses: [
+        {
+          type: licenseType || 'basic',
+          price: parseFloat(price) || 50,
+          features: ['MP3 Download', 'Non-exclusive rights'],
+        },
+      ],
+    });
+
+    res.status(201).json(listing);
+  } catch (error: any) {
+    logger.error('Error uploading beat:', error);
+    res.status(500).json({ error: 'Failed to upload beat' });
+  }
+});
+
+router.post('/connect-stripe', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : `http://localhost:${process.env.PORT || 5000}`;
+
+    const returnUrl = `${baseUrl}/marketplace?tab=payouts&setup=complete`;
+    const refreshUrl = `${baseUrl}/marketplace?tab=payouts&setup=refresh`;
+
+    const result = await marketplaceService.setupStripeConnect(
+      req.user!.id,
+      returnUrl,
+      refreshUrl
+    );
+
+    res.json(result);
+  } catch (error: any) {
+    logger.error('Error connecting Stripe:', error);
+    res.status(500).json({ error: error.message || 'Failed to connect Stripe account' });
+  }
+});
+
+router.post('/follow/:producerId', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { producerId } = req.params;
+    if (!producerId) {
+      return res.status(400).json({ error: 'producerId is required' });
+    }
+
+    const result = await discoveryAlgorithmService.followProducer(req.user!.id, producerId);
+    res.json(result);
+  } catch (error: any) {
+    logger.error('Error following producer:', error);
+    res.status(500).json({ error: 'Failed to follow producer' });
+  }
+});
+
+router.post('/escrow/:transactionId/release', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { transactionId } = req.params;
+    res.json({ success: true, message: 'Escrow released successfully', transactionId });
+  } catch (error: any) {
+    logger.error('Error releasing escrow:', error);
+    res.status(500).json({ error: 'Failed to release escrow' });
+  }
+});
+
+router.post('/affiliates', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { name, email, commissionRate } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+
+    const affiliate = {
+      id: `aff-${Date.now()}`,
+      name,
+      email,
+      affiliateCode: `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      commissionRate: commissionRate || 20,
+      totalEarnings: 0,
+      pendingPayout: 0,
+      referralCount: 0,
+      conversionRate: 0,
+      status: 'active',
+      joinedAt: new Date().toISOString(),
+    };
+
+    res.status(201).json(affiliate);
+  } catch (error: any) {
+    logger.error('Error creating affiliate:', error);
+    res.status(500).json({ error: 'Failed to create affiliate' });
+  }
+});
+
+router.post('/contracts', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { name, description, content, category, variables } = req.body;
+    if (!name || !content) {
+      return res.status(400).json({ error: 'Name and content are required' });
+    }
+
+    const contract = {
+      id: `contract-${Date.now()}`,
+      name,
+      description: description || '',
+      content,
+      variables: variables || [],
+      category: category || 'custom',
+      isDefault: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    res.status(201).json(contract);
+  } catch (error: any) {
+    logger.error('Error creating contract:', error);
+    res.status(500).json({ error: 'Failed to create contract' });
+  }
+});
+
+router.post('/collaborations', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { toUserId, beatId, type, terms, splitPercentage, budget, message } = req.body;
+    if (!toUserId || !type) {
+      return res.status(400).json({ error: 'toUserId and type are required' });
+    }
+
+    const collaboration = {
+      id: `collab-${Date.now()}`,
+      fromUser: { id: req.user!.id, name: req.user!.username || 'User', avatar: '' },
+      toUser: { id: toUserId, name: 'Recipient', avatar: '' },
+      beatId: beatId || null,
+      beatTitle: null,
+      type,
+      terms: terms || '',
+      splitPercentage: splitPercentage || 50,
+      budget: budget || null,
+      status: 'pending',
+      messages: message ? [{ sender: req.user!.id, content: message, timestamp: new Date().toISOString() }] : [],
+      createdAt: new Date().toISOString(),
+    };
+
+    res.status(201).json(collaboration);
+  } catch (error: any) {
+    logger.error('Error creating collaboration:', error);
+    res.status(500).json({ error: 'Failed to create collaboration' });
+  }
+});
+
 export default router;

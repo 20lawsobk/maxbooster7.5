@@ -1359,6 +1359,7 @@ export async function registerRoutes(
     { path: "/api/auto-updates", name: "autoUpdates", loader: () => import("./routes/autoUpdates") },
     
     // Studio/DAW Routes
+    { path: "/api/studio", name: "studio", loader: () => import("./routes/studio") },
     { path: "/api/studio/comping", name: "studioComping", loader: () => import("./routes/studioComping") },
     { path: "/api/studio/markers", name: "studioMarkers", loader: () => import("./routes/studioMarkers") },
     { path: "/api/studio/plugins", name: "studioPlugins", loader: () => import("./routes/studioPlugins") },

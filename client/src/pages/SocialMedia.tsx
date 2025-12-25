@@ -351,6 +351,14 @@ export default function SocialMedia() {
       });
       setIsGeneratingContent(false);
     },
+    onError: () => {
+      toast({
+        title: 'Generation Failed',
+        description: 'Failed to generate content. Please try again.',
+        variant: 'destructive',
+      });
+      setIsGeneratingContent(false);
+    },
   });
 
   const schedulePostMutation = useMutation({
@@ -367,6 +375,13 @@ export default function SocialMedia() {
       setScheduledTime('');
       setSelectedPlatforms([]);
       queryClient.invalidateQueries({ queryKey: ['/api/social/posts'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Scheduling Failed',
+        description: 'Failed to schedule post. Please try again.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -465,6 +480,13 @@ export default function SocialMedia() {
       setScheduleDialogOpen(false);
       setEditingCalendarPost(null);
     },
+    onError: () => {
+      toast({
+        title: 'Scheduling Failed',
+        description: 'Failed to schedule post to calendar. Please try again.',
+        variant: 'destructive',
+      });
+    },
   });
 
   const updateCalendarPostMutation = useMutation({
@@ -482,6 +504,13 @@ export default function SocialMedia() {
       setScheduleDialogOpen(false);
       setEditingCalendarPost(null);
     },
+    onError: () => {
+      toast({
+        title: 'Update Failed',
+        description: 'Failed to update scheduled post. Please try again.',
+        variant: 'destructive',
+      });
+    },
   });
 
   const deleteCalendarPostMutation = useMutation({
@@ -497,6 +526,13 @@ export default function SocialMedia() {
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar/stats'] });
     },
+    onError: () => {
+      toast({
+        title: 'Delete Failed',
+        description: 'Failed to delete scheduled post. Please try again.',
+        variant: 'destructive',
+      });
+    },
   });
 
   const publishCalendarPostMutation = useMutation({
@@ -511,6 +547,13 @@ export default function SocialMedia() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar/stats'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Publish Failed',
+        description: 'Failed to publish post. Please try again.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -533,6 +576,13 @@ export default function SocialMedia() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/autopilot/status'] });
     },
+    onError: () => {
+      toast({
+        title: 'Configuration Failed',
+        description: 'Failed to configure autopilot. Please try again.',
+        variant: 'destructive',
+      });
+    },
   });
 
   const startAutopilotMutation = useMutation({
@@ -547,6 +597,13 @@ export default function SocialMedia() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/autopilot/status'] });
     },
+    onError: () => {
+      toast({
+        title: 'Start Failed',
+        description: 'Failed to start autopilot. Please try again.',
+        variant: 'destructive',
+      });
+    },
   });
 
   const stopAutopilotMutation = useMutation({
@@ -560,6 +617,13 @@ export default function SocialMedia() {
         description: 'Autopilot has been stopped.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/autopilot/status'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Stop Failed',
+        description: 'Failed to stop autopilot. Please try again.',
+        variant: 'destructive',
+      });
     },
   });
 

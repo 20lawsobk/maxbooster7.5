@@ -89,15 +89,17 @@ export function PayoutDashboard() {
       const response = await apiRequest('POST', '/api/payouts/setup', {});
       return response.json();
     },
-    onSuccess: (data: unknown) => {
-      if (data.url) {
-        window.location.href = data.url;
+    onSuccess: (data) => {
+      const responseData = data as { url?: string };
+      if (responseData.url) {
+        window.location.href = responseData.url;
       }
     },
     onError: (error: unknown) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to setup payout account';
       toast({
         title: 'Setup Failed',
-        description: error.message || 'Failed to setup payout account',
+        description: errorMessage,
         variant: 'destructive',
       });
     },
@@ -112,19 +114,21 @@ export function PayoutDashboard() {
       });
       return response.json();
     },
-    onSuccess: (data: unknown) => {
+    onSuccess: (data) => {
+      const responseData = data as { message?: string };
       toast({
         title: 'Payout Initiated!',
-        description: data.message || 'Your payout has been initiated successfully.',
+        description: responseData.message || 'Your payout has been initiated successfully.',
       });
       setPayoutAmount('');
       queryClient.invalidateQueries({ queryKey: ['/api/payouts/balance'] });
       queryClient.invalidateQueries({ queryKey: ['/api/payouts/history'] });
     },
     onError: (error: unknown) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process payout request';
       toast({
         title: 'Payout Failed',
-        description: error.message || 'Failed to process payout request',
+        description: errorMessage,
         variant: 'destructive',
       });
     },

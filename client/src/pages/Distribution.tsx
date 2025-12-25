@@ -592,10 +592,10 @@ export default function Distribution() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Upload failed',
-        description: error.message || 'Please try again.',
+        description: error?.message || 'Please try again.',
         variant: 'destructive',
       });
     },
@@ -634,7 +634,7 @@ export default function Distribution() {
   });
 
   const uploadChunkMutation = useMutation({
-    mutationFn: async ({ sessionId, chunkIndex, chunkData, chunkHash }: unknown) => {
+    mutationFn: async ({ sessionId, chunkIndex, chunkData, chunkHash }: { sessionId: string; chunkIndex: number; chunkData: ArrayBuffer; chunkHash: string }) => {
       const formData = new FormData();
       formData.append('chunk', new Blob([chunkData]));
       formData.append('chunkIndex', chunkIndex.toString());
@@ -711,7 +711,7 @@ export default function Distribution() {
   });
 
   const submitToSpotifyMutation = useMutation({
-    mutationFn: async ({ releaseId, credentials }: unknown) => {
+    mutationFn: async ({ releaseId, credentials }: { releaseId: string; credentials?: Record<string, string> }) => {
       const response = await apiRequest('POST', '/api/distribution/platform/spotify', {
         releaseId,
         credentials,
@@ -728,7 +728,7 @@ export default function Distribution() {
   });
 
   const submitToAppleMutation = useMutation({
-    mutationFn: async ({ releaseId, credentials }: unknown) => {
+    mutationFn: async ({ releaseId, credentials }: { releaseId: string; credentials?: Record<string, string> }) => {
       const response = await apiRequest('POST', '/api/distribution/platform/apple', {
         releaseId,
         credentials,
@@ -745,7 +745,7 @@ export default function Distribution() {
   });
 
   const submitToYouTubeMutation = useMutation({
-    mutationFn: async ({ releaseId, credentials }: unknown) => {
+    mutationFn: async ({ releaseId, credentials }: { releaseId: string; credentials?: Record<string, string> }) => {
       const response = await apiRequest('POST', '/api/distribution/platform/youtube', {
         releaseId,
         credentials,

@@ -589,6 +589,53 @@ Generated: ${new Date().toISOString()}
       throw new Error("Failed to get package tracks");
     }
   }
+
+  /**
+   * Refresh release status from LabelGrid or demo mode
+   */
+  async refreshReleaseStatus(releaseId: string): Promise<{
+    status: string;
+    platforms: Array<{ platform: string; status: string; liveDate?: Date }>;
+    lastChecked: Date;
+  }> {
+    try {
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release) {
+        throw new Error("Release not found");
+      }
+
+      if (labelGridService.isConfigured()) {
+        try {
+          const status = await labelGridService.getDeliveryStatus(releaseId);
+          return {
+            status: status.status || 'pending',
+            platforms: status.platforms?.map((p: any) => ({
+              platform: p.platform,
+              status: p.status,
+              liveDate: p.liveDate ? new Date(p.liveDate) : undefined,
+            })) || [],
+            lastChecked: new Date(),
+          };
+        } catch (error: unknown) {
+          logger.error("Error fetching status from LabelGrid:", error);
+        }
+      }
+
+      const currentPlatforms = (release.platforms as any[]) || [];
+      return {
+        status: release.status || 'draft',
+        platforms: currentPlatforms.map((p: any) => ({
+          platform: typeof p === 'string' ? p : p.platform || p.name,
+          status: p.status || 'pending',
+          liveDate: p.liveDate ? new Date(p.liveDate) : undefined,
+        })),
+        lastChecked: new Date(),
+      };
+    } catch (error: unknown) {
+      logger.error("Error refreshing release status:", error);
+      throw new Error("Failed to refresh release status");
+    }
+  }
 }
 
 export const distributionService = new DistributionService();

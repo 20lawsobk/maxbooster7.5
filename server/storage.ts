@@ -554,6 +554,113 @@ export class DatabaseStorage implements IStorage {
     return track;
   }
 
+  async getDistroTracks(releaseId: string): Promise<DistroTrack[]> {
+    return this.getDistroTracksByRelease(releaseId);
+  }
+
+  async updateDistroTrack(trackId: string, data: any): Promise<DistroTrack | undefined> {
+    const [track] = await db
+      .update(distroTracks)
+      .set(data)
+      .where(eq(distroTracks.id, trackId))
+      .returning();
+    return track || undefined;
+  }
+
+  async deleteDistroTrack(trackId: string): Promise<boolean> {
+    try {
+      await db.delete(distroTracks).where(eq(distroTracks.id, trackId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting distro track:', error);
+      return false;
+    }
+  }
+
+  async deleteDistroRelease(id: string): Promise<boolean> {
+    try {
+      await db.delete(distroTracks).where(eq(distroTracks.releaseId, id));
+      await db.delete(distroReleases).where(eq(distroReleases.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting distro release:', error);
+      return false;
+    }
+  }
+
+  async getDSPProviderBySlug(slug: string): Promise<any | null> {
+    try {
+      const [provider] = await db
+        .select()
+        .from(dspProviders)
+        .where(eq(dspProviders.slug, slug));
+      return provider || null;
+    } catch (error) {
+      console.error('Error fetching DSP provider by slug:', error);
+      return null;
+    }
+  }
+
+  async deleteHyperFollowPage(id: string): Promise<boolean> {
+    try {
+      await db.delete(hyperFollowPages).where(eq(hyperFollowPages.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting hyperfollow page:', error);
+      return false;
+    }
+  }
+
+  private distroDispatchStore: Map<string, any[]> = new Map();
+
+  async createDistroDispatch(data: any): Promise<any> {
+    const dispatch = {
+      id: `dispatch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const releaseDispatches = this.distroDispatchStore.get(data.releaseId) || [];
+    releaseDispatches.push(dispatch);
+    this.distroDispatchStore.set(data.releaseId, releaseDispatches);
+    return dispatch;
+  }
+
+  async getDistroDispatchStatuses(releaseId: string): Promise<any[]> {
+    return this.distroDispatchStore.get(releaseId) || [];
+  }
+
+  async updateDistroDispatchStatus(releaseId: string, data: any): Promise<any | null> {
+    const dispatches = this.distroDispatchStore.get(releaseId) || [];
+    if (data.platform) {
+      const dispatch = dispatches.find((d: any) => d.platform === data.platform);
+      if (dispatch) {
+        Object.assign(dispatch, data, { updatedAt: new Date() });
+        return dispatch;
+      }
+    }
+    return null;
+  }
+
+  async updateDistroDispatch(dispatchId: string, data: any): Promise<any | null> {
+    for (const [releaseId, dispatches] of this.distroDispatchStore.entries()) {
+      const dispatch = dispatches.find((d: any) => d.id === dispatchId);
+      if (dispatch) {
+        Object.assign(dispatch, data, { updatedAt: new Date() });
+        return dispatch;
+      }
+    }
+    return null;
+  }
+
+  async createAuditLog(data: any): Promise<any> {
+    return {
+      id: `audit_${Date.now()}`,
+      ...data,
+      createdAt: new Date(),
+    };
+  }
+
   async getDistroAnalytics(userId: string): Promise<any> {
     const userAnalytics = await db
       .select()

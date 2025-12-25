@@ -397,7 +397,8 @@ router.get('/memberships/my', async (req, res) => {
     res.json(memberships);
   } catch (error: unknown) {
     logger.error('Error fetching customer memberships:', error);
-    res.status(500).json({ error: error.message || 'Failed to fetch memberships' });
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch memberships';
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -421,7 +422,74 @@ router.post('/generate-slug', async (req, res) => {
     res.json({ slug });
   } catch (error: unknown) {
     logger.error('Error generating slug:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate slug' });
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate slug';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
+ * GET /api/storefront/public/:slug
+ * Get public storefront by slug (unauthenticated access)
+ */
+router.get('/public/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const storefront = await storefrontService.getStorefrontBySlug(slug);
+    
+    if (!storefront.isActive || !storefront.isPublic) {
+      return res.status(404).json({ error: 'Storefront not found' });
+    }
+
+    await storefrontService.incrementViews(storefront.id);
+
+    res.json(storefront);
+  } catch (error: unknown) {
+    logger.error('Error fetching public storefront:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch storefront';
+    if (errorMessage === 'Storefront not found') {
+      return res.status(404).json({ error: errorMessage });
+    }
+
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
+ * GET /api/storefront/:storefrontId/membership-tiers/public
+ * Get public membership tiers for a storefront
+ */
+router.get('/:storefrontId/membership-tiers/public', async (req, res) => {
+  try {
+    const { storefrontId } = req.params;
+
+    const tiers = await storefrontService.getMembershipTiers(storefrontId);
+    const publicTiers = tiers.filter(tier => tier.isActive);
+    
+    res.json(publicTiers);
+  } catch (error: unknown) {
+    logger.error('Error fetching public membership tiers:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch membership tiers';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
+ * GET /api/storefront/:storefrontId/listings
+ * Get marketplace listings for a storefront
+ */
+router.get('/:storefrontId/listings', async (req, res) => {
+  try {
+    const { storefrontId } = req.params;
+
+    const listings = await storefrontService.getStorefrontListings(storefrontId);
+    
+    res.json(listings);
+  } catch (error: unknown) {
+    logger.error('Error fetching storefront listings:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch listings';
+    res.status(500).json({ error: errorMessage });
   }
 });
 

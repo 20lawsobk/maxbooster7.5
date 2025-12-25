@@ -173,9 +173,10 @@ export default function Storefront() {
       }
     },
     onError: (error: unknown) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process subscription';
       toast({
         title: 'Subscription Failed',
-        description: error.message || 'Failed to process subscription',
+        description: errorMessage,
         variant: 'destructive',
       });
     },
