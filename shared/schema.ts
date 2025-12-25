@@ -2355,6 +2355,185 @@ export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
 
 // ============================================================================
+// MODEL A - SOCIAL MEDIA AUTOPILOT TABLES
+// ============================================================================
+
+// Social Autopilot Content - Content posts with performance metrics
+export const socialAutopilotContent = pgTable("social_autopilot_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull(), // snippet, performance, bts, meme, story, lyric, reaction, educational
+  format: text("format").notNull(), // text, image, short_video, long_video, audio
+  trackUsed: varchar("track_used"),
+  hookType: text("hook_type").notNull(), // emotional, controversial, pov, storytelling, flex, transformation, process
+  tone: text("tone").notNull(), // sad, hype, romantic, angry, nostalgic, inspirational
+  platform: text("platform").notNull(), // tiktok, instagram, youtube, twitter, facebook, threads
+  postingTime: timestamp("posting_time"),
+  lengthSeconds: integer("length_seconds"),
+  performance: jsonb("performance"), // {views, likes, comments, shares, saves, profile_visits, follower_gain, music_actions}
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SocialAutopilotContent = typeof socialAutopilotContent.$inferSelect;
+export const insertSocialAutopilotContentSchema = createInsertSchema(socialAutopilotContent).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSocialAutopilotContent = z.infer<typeof insertSocialAutopilotContentSchema>;
+
+// Fan Segments - Fan audience segments
+export const fanSegments = pgTable("fan_segments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  tasteVector: jsonb("taste_vector"), // {artists: [], genres: [], moods: []}
+  behavioralSignals: jsonb("behavioral_signals"), // {avg_watch_time, comment_frequency, save_rate, dm_intent_score}
+  preferredContentPatterns: jsonb("preferred_content_patterns"), // array of pattern objects
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type FanSegment = typeof fanSegments.$inferSelect;
+export const insertFanSegmentSchema = createInsertSchema(fanSegments).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertFanSegment = z.infer<typeof insertFanSegmentSchema>;
+
+// Music Impact Metrics - MusicImpact scores per content
+export const musicImpactMetrics = pgTable("music_impact_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  contentId: varchar("content_id").notNull(), // FK to socialAutopilotContent
+  savesWeighted: real("saves_weighted").default(0),
+  playlistAddsWeighted: real("playlist_adds_weighted").default(0),
+  profileVisitsWeighted: real("profile_visits_weighted").default(0),
+  followerGrowthWeighted: real("follower_growth_weighted").default(0),
+  highIntentDmsWeighted: real("high_intent_dms_weighted").default(0),
+  totalScore: real("total_score").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type MusicImpactMetric = typeof musicImpactMetrics.$inferSelect;
+export const insertMusicImpactMetricSchema = createInsertSchema(musicImpactMetrics).omit({ id: true, createdAt: true });
+export type InsertMusicImpactMetric = z.infer<typeof insertMusicImpactMetricSchema>;
+
+// Social Pattern Aggregates - Long-term pattern memory
+export const socialPatternAggregates = pgTable("social_pattern_aggregates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  patternHash: text("pattern_hash").notNull(), // hash of hook_type, tone, format, track_used
+  hookType: text("hook_type").notNull(),
+  tone: text("tone").notNull(),
+  format: text("format").notNull(),
+  trackUsed: varchar("track_used"),
+  totalPosts: integer("total_posts").default(0),
+  totalImpact: real("total_impact").default(0),
+  avgImpact: real("avg_impact").default(0),
+  impactStd: real("impact_std").default(0),
+  timeDecayFactor: real("time_decay_factor").default(1),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SocialPatternAggregate = typeof socialPatternAggregates.$inferSelect;
+export const insertSocialPatternAggregateSchema = createInsertSchema(socialPatternAggregates).omit({ id: true, createdAt: true });
+export type InsertSocialPatternAggregate = z.infer<typeof insertSocialPatternAggregateSchema>;
+
+// ============================================================================
+// MODEL B - ORGANIC ADVERTISING AUTOPILOT TABLES
+// ============================================================================
+
+// Organic Assets - Organic marketing assets
+export const organicAssets = pgTable("organic_assets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull(), // seo_article, youtube_video, playlist, creator_placement, ugc_challenge, blog_post, mini_app, tool
+  topic: text("topic").notNull(),
+  trackUsed: varchar("track_used"),
+  intent: text("intent").notNull(), // discovery, education, emotional, niche, search
+  creationCostHours: real("creation_cost_hours").default(0),
+  distributionCost: real("distribution_cost").default(0),
+  performance: jsonb("performance"), // {monthly_views, monthly_clickthrough, streaming_conversions, playlist_adds, email_signups, revenue_generated}
+  decayCurve: jsonb("decay_curve"), // {half_life_days, stability_score}
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type OrganicAsset = typeof organicAssets.$inferSelect;
+export const insertOrganicAssetSchema = createInsertSchema(organicAssets).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertOrganicAsset = z.infer<typeof insertOrganicAssetSchema>;
+
+// Organic Channels - Distribution channels
+export const organicChannels = pgTable("organic_channels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // search, community, creator, playlist, blog, social
+  estimatedMonthlyReach: integer("estimated_monthly_reach").default(0),
+  audienceQualityScore: real("audience_quality_score").default(0),
+  efficiencyScore: real("efficiency_score").default(0),
+  historicalPerformance: jsonb("historical_performance"), // {avg_streams_generated, avg_revenue_generated, avg_ltv_of_users}
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type OrganicChannel = typeof organicChannels.$inferSelect;
+export const insertOrganicChannelSchema = createInsertSchema(organicChannels).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertOrganicChannel = z.infer<typeof insertOrganicChannelSchema>;
+
+// Organic ROI Snapshots - ROI tracking per asset
+export const organicRoiSnapshots = pgTable("organic_roi_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  assetId: varchar("asset_id").notNull(), // FK to organicAssets
+  revenueOverPeriod: real("revenue_over_period").default(0),
+  creationCost: real("creation_cost").default(0),
+  distributionCost: real("distribution_cost").default(0),
+  effectiveRoi: real("effective_roi").default(0),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type OrganicRoiSnapshot = typeof organicRoiSnapshots.$inferSelect;
+export const insertOrganicRoiSnapshotSchema = createInsertSchema(organicRoiSnapshots).omit({ id: true, createdAt: true });
+export type InsertOrganicRoiSnapshot = z.infer<typeof insertOrganicRoiSnapshotSchema>;
+
+// Organic Asset Lifetime - Long-term asset memory
+export const organicAssetLifetime = pgTable("organic_asset_lifetime", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  assetId: varchar("asset_id").notNull(), // FK to organicAssets
+  lifetimeStreams: integer("lifetime_streams").default(0),
+  lifetimeRevenue: real("lifetime_revenue").default(0),
+  totalCreationCostHours: real("total_creation_cost_hours").default(0),
+  totalDistributionCost: real("total_distribution_cost").default(0),
+  effectiveRoi: real("effective_roi").default(0),
+  firstSeen: timestamp("first_seen").defaultNow(),
+  lastSeen: timestamp("last_seen").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type OrganicAssetLifetimeRecord = typeof organicAssetLifetime.$inferSelect;
+export const insertOrganicAssetLifetimeSchema = createInsertSchema(organicAssetLifetime).omit({ id: true, createdAt: true });
+export type InsertOrganicAssetLifetime = z.infer<typeof insertOrganicAssetLifetimeSchema>;
+
+// ============================================================================
+// BRIDGE LAYER - AUTOPILOT CROSS-INSIGHTS
+// ============================================================================
+
+// Autopilot Cross Insights - Cross-learning between autopilots
+export const autopilotCrossInsights = pgTable("autopilot_cross_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  insightType: text("insight_type").notNull(), // social_to_organic, organic_to_social
+  topHooks: jsonb("top_hooks"), // array of hook patterns with avg_music_impact
+  topTracksByImpact: jsonb("top_tracks_by_impact"), // array of track_id with avg_impact
+  generatedAt: timestamp("generated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type AutopilotCrossInsight = typeof autopilotCrossInsights.$inferSelect;
+export const insertAutopilotCrossInsightSchema = createInsertSchema(autopilotCrossInsights).omit({ id: true, createdAt: true });
+export type InsertAutopilotCrossInsight = z.infer<typeof insertAutopilotCrossInsightSchema>;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });
