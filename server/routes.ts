@@ -766,6 +766,7 @@ export async function registerRoutes(
     { path: "/api/organic", name: "organic", loader: () => import("./routes/organic") },
     { path: "/api/advertising", name: "advertisingAutopilot", loader: () => import("./routes/advertisingAutopilot") },
     { path: "/api/autopilot", name: "autopilot", loader: () => import("./routes/autopilot") },
+    { path: "/api/autopilot", name: "dualAutopilot", loader: () => import("./routes/dualAutopilot") },
     { path: "/api/auto/social", name: "autonomousSocial", loader: () => import("./routes/autonomousSocial") },
     { path: "/api/auto-updates", name: "autoUpdates", loader: () => import("./routes/autoUpdates") },
     
