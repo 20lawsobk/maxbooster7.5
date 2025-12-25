@@ -79,6 +79,7 @@ export function getSessionConfig(store: unknown) {
     saveUninitialized: false,
     rolling: true, // Reset expiration on activity
     name: 'sessionId', // Don't use default 'connect.sid' (security)
+    proxy: isProduction, // CRITICAL: Trust X-Forwarded-Proto header in production for secure cookies behind reverse proxy
     cookie: {
       secure: isProduction, // HTTPS only in production
       httpOnly: true, // Prevent XSS access to session cookie
