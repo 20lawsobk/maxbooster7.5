@@ -123,11 +123,11 @@ export default function RegisterSuccess() {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Verifying Payment...</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Verifying Payment...</h2>
             <p className="text-gray-600">Please wait while we confirm your payment.</p>
           </CardContent>
         </Card>
@@ -137,10 +137,10 @@ export default function RegisterSuccess() {
 
   if (!paymentValid) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Payment Verification Failed</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Payment Verification Failed</h1>
             <p className="text-gray-600 mb-6">
               We couldn't verify your payment. Please try again.
             </p>
@@ -154,9 +154,9 @@ export default function RegisterSuccess() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 backdrop-blur-lg bg-white/80 border-b border-gray-200">
+      <nav className="sticky top-0 z-50 backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
