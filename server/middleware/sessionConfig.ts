@@ -83,7 +83,7 @@ export function getSessionConfig(store: unknown) {
       secure: isProduction, // HTTPS only in production
       httpOnly: true, // Prevent XSS access to session cookie
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'strict' as const, // Strict CSRF protection - no cross-site cookie sending
+      sameSite: isProduction ? 'none' as const : 'lax' as const, // 'none' for production (cross-origin), 'lax' for development
       path: '/',
     },
     // Enhanced session security
