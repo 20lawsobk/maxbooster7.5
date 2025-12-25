@@ -15,6 +15,7 @@
 
 import { logger } from '../logger.js';
 import { MLModelRegistry } from './mlModelRegistry.js';
+import { storage } from '../storage.js';
 import { AIService } from './aiService.js';
 import * as aiAnalyticsService from './aiAnalyticsService.js';
 import { ContentGenerator, type GenerationOptions, type CaptionResult } from '../../shared/ml/nlp/ContentGenerator.js';
@@ -892,16 +893,34 @@ export class UnifiedAIController {
   public async analyzePersonalAdNetwork(userId?: string): Promise<UnifiedAIResult<any>> {
     const startTime = Date.now();
     try {
-      // Mock profiles for demo - in production, fetch from database
-      const mockProfiles = [
-        { id: '1', platform: 'instagram', username: 'demo', followers: 5000, engagementRate: 0.05, isActive: true },
-        { id: '2', platform: 'twitter', username: 'demo', followers: 3000, engagementRate: 0.03, isActive: true },
-        { id: '3', platform: 'tiktok', username: 'demo', followers: 10000, engagementRate: 0.08, isActive: true },
-      ];
+      let profiles: any[] = [];
+      
+      if (userId) {
+        const socialAccounts = await storage.getUserSocialAccounts(userId);
+        if (socialAccounts && socialAccounts.length > 0) {
+          profiles = socialAccounts.map((account: any) => ({
+            id: account.id?.toString() || account.platformUserId || '',
+            platform: account.platform,
+            username: account.username || account.profileName || 'user',
+            followers: account.followers || account.metrics?.followers || 0,
+            engagementRate: account.engagementRate || account.metrics?.engagementRate || 0.03,
+            isActive: account.isActive !== false,
+          }));
+        }
+      }
+      
+      if (profiles.length === 0) {
+        profiles = [
+          { id: '1', platform: 'instagram', username: 'demo', followers: 5000, engagementRate: 0.05, isActive: true },
+          { id: '2', platform: 'twitter', username: 'demo', followers: 3000, engagementRate: 0.03, isActive: true },
+          { id: '3', platform: 'tiktok', username: 'demo', followers: 10000, engagementRate: 0.08, isActive: true },
+        ];
+        logger.debug('No connected social accounts found, using demo profiles for analysis');
+      }
       
       const result = await this.adEngine.optimizePersonalAdNetwork(
-        mockProfiles,
-        { id: 'demo', text: 'Sample content for analysis', hasMedia: true },
+        profiles,
+        { id: userId || 'demo', text: 'Sample content for analysis', hasMedia: true },
         { targetReach: 10000 }
       );
       

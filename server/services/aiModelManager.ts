@@ -406,24 +406,82 @@ class AIModelManager {
 
   /**
    * Extract model weights for persistence
-   * TODO: Implement actual weight extraction when TensorFlow.js models are used
+   * Implements actual weight extraction using TensorFlow.js serialization
    */
   private async extractModelWeights(model: any): Promise<any> {
-    // Placeholder: In production, this would extract actual TensorFlow.js weights
-    return {
-      version: '1.0',
-      timestamp: new Date().toISOString(),
-      // weights: await model.getWeights(), // TensorFlow.js method
-    };
+    try {
+      const weights: any = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+      };
+
+      if (model.getWeights && typeof model.getWeights === 'function') {
+        const tensorWeights = await model.getWeights();
+        if (tensorWeights && Array.isArray(tensorWeights)) {
+          weights.tensors = await Promise.all(
+            tensorWeights.map(async (tensor: any) => ({
+              shape: tensor.shape,
+              dtype: tensor.dtype,
+              data: Array.from(await tensor.data()),
+            }))
+          );
+        }
+      }
+
+      if (model.serializeState && typeof model.serializeState === 'function') {
+        weights.modelState = model.serializeState();
+      }
+
+      if (model.getConfig && typeof model.getConfig === 'function') {
+        weights.config = model.getConfig();
+      }
+
+      return weights;
+    } catch (error) {
+      logger.warn('Could not extract full model weights, using fallback:', error);
+      return {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        modelState: model.serializeState ? model.serializeState() : null,
+      };
+    }
   }
 
   /**
    * Load model weights from persisted data
-   * TODO: Implement actual weight loading when TensorFlow.js models are used
+   * Implements actual weight loading using TensorFlow.js deserialization
    */
   private async loadModelWeights(model: any, weights: any): Promise<void> {
-    // Placeholder: In production, this would load actual TensorFlow.js weights
-    // await model.setWeights(weights.weights); // TensorFlow.js method
+    try {
+      if (weights.tensors && model.setWeights && typeof model.setWeights === 'function') {
+        const tf = await import('@tensorflow/tfjs');
+        const tensorWeights = weights.tensors.map((w: any) => 
+          tf.tensor(w.data, w.shape, w.dtype)
+        );
+        await model.setWeights(tensorWeights);
+        tensorWeights.forEach((t: any) => t.dispose());
+        logger.debug('Loaded TensorFlow.js tensor weights');
+      }
+
+      if (weights.modelState && model.deserializeState && typeof model.deserializeState === 'function') {
+        model.deserializeState(weights.modelState);
+        logger.debug('Loaded model state from persistence');
+      }
+
+      if (weights.config && model.setConfig && typeof model.setConfig === 'function') {
+        model.setConfig(weights.config);
+        logger.debug('Loaded model config from persistence');
+      }
+    } catch (error) {
+      logger.warn('Could not fully restore model weights:', error);
+      if (weights.modelState && model.deserializeState) {
+        try {
+          model.deserializeState(weights.modelState);
+        } catch (e) {
+          logger.warn('Fallback state restoration failed:', e);
+        }
+      }
+    }
   }
 
   /**

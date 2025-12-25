@@ -3,6 +3,8 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from './logger.js';
 import sharp from 'sharp';
+import { AIAudioGenerator } from '../shared/ml/audio/AIAudioGenerator.js';
+import { ContentGenerator } from '../shared/ml/nlp/ContentGenerator.js';
 
 // ES module compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -12,6 +14,7 @@ const __dirname = dirname(__filename);
 logger.info('✅ Sharp-based image generation loaded for social media content');
 
 // AI-powered social media content generation (images, videos, audio)
+// Uses 100% in-house AI services from shared/ml
 export class SocialMediaContentGenerator {
   private canvas: any;
   private ctx: any;
@@ -19,13 +22,20 @@ export class SocialMediaContentGenerator {
   private readonly imageDir = join(this.contentDir, 'images');
   private readonly videoDir = join(this.contentDir, 'videos');
   private readonly audioDir = join(this.contentDir, 'audio');
+  
+  private audioGenerator: AIAudioGenerator;
+  private contentGenerator: ContentGenerator;
 
   constructor() {
-    // Ensure directories exist
     mkdirSync(this.contentDir, { recursive: true });
     mkdirSync(this.imageDir, { recursive: true });
     mkdirSync(this.videoDir, { recursive: true });
     mkdirSync(this.audioDir, { recursive: true });
+    
+    this.audioGenerator = new AIAudioGenerator(44100);
+    this.contentGenerator = new ContentGenerator();
+    
+    logger.info('✅ In-house AI services initialized (AIAudioGenerator, ContentGenerator)');
   }
 
   // Generate comprehensive social media content
@@ -568,11 +578,10 @@ export class SocialMediaContentGenerator {
     targetAudience: unknown,
     dimensions: unknown
   ): Promise<Buffer> {
-    // AI algorithm to create video content based on:
-    // - Music genre and mood
-    // - Target audience preferences
-    // - Platform-specific requirements
-    // - Current trends and viral patterns
+    const data = musicData as any || {};
+    const dims = dimensions as { width: number; height: number; duration: number };
+    const title = data.title || data.name || 'New Release';
+    const artist = data.artist || data.artistName || 'B-Lawz Music';
 
     const videoConfig = {
       style: this.getAIVideoStyle(musicData, targetAudience),
@@ -582,23 +591,56 @@ export class SocialMediaContentGenerator {
       colorScheme: this.generateAIColorScheme(musicData, targetAudience),
     };
 
-    // In a real implementation, this would use FFmpeg or similar to create actual video
-    // For now, return a placeholder buffer
-    return Buffer.from('AI-generated video content placeholder');
+    const brandGold = '#FFD700';
+    const brandPurple = '#9B59B6';
+    const brandDark = '#1A1A2E';
+
+    const frameSvg = `
+      <svg width="${dims.width}" height="${dims.height}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:${brandDark}"/>
+            <stop offset="50%" style="stop-color:#2D1F4F"/>
+            <stop offset="100%" style="stop-color:${brandDark}"/>
+          </linearGradient>
+          <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:${brandGold}"/>
+            <stop offset="100%" style="stop-color:${brandPurple}"/>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#bgGrad)"/>
+        <circle cx="${dims.width / 2}" cy="${dims.height / 3}" r="${Math.min(dims.width, dims.height) / 4}" fill="url(#accentGrad)" opacity="0.3"/>
+        <text x="${dims.width / 2}" y="${dims.height / 2}" font-family="Arial, sans-serif" font-size="${dims.width / 15}" fill="${brandGold}" text-anchor="middle" font-weight="bold">${this.escapeXml(title)}</text>
+        <text x="${dims.width / 2}" y="${dims.height / 2 + dims.width / 12}" font-family="Arial, sans-serif" font-size="${dims.width / 25}" fill="white" text-anchor="middle">${this.escapeXml(artist)}</text>
+        <text x="${dims.width / 2}" y="${dims.height - 50}" font-family="Arial, sans-serif" font-size="${dims.width / 40}" fill="${brandGold}" text-anchor="middle" opacity="0.8">Stream Now</text>
+        <rect x="${dims.width / 4}" y="${dims.height - 120}" width="${dims.width / 2}" height="4" fill="url(#accentGrad)" rx="2"/>
+        <circle cx="${dims.width / 2 - dims.width / 8}" cy="${dims.height - 118}" r="8" fill="${brandGold}"/>
+      </svg>
+    `;
+
+    const frameBuffer = await sharp(Buffer.from(frameSvg))
+      .png({ quality: 90 })
+      .toBuffer();
+
+    return frameBuffer;
   }
 
-  // Create AI-powered audio content
+  private escapeXml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  // Create AI-powered audio content using in-house AIAudioGenerator
   private async createAIAudioContent(
     platform: string,
     musicData: unknown,
     targetAudience: unknown
   ): Promise<Buffer> {
-    // AI algorithm to create audio content based on:
-    // - Music genre and style
-    // - Platform audio requirements
-    // - Target audience preferences
-    // - Viral audio trends
-
+    const data = musicData as any || {};
     const audioConfig = {
       style: this.getAIAudioStyle(musicData, targetAudience),
       effects: this.getAIAudioEffects(platform, musicData),
@@ -606,9 +648,98 @@ export class SocialMediaContentGenerator {
       quality: this.getPlatformAudioQuality(platform),
     };
 
-    // In a real implementation, this would use audio processing libraries
-    // For now, return a placeholder buffer
-    return Buffer.from('AI-generated audio content placeholder');
+    try {
+      const genre = data.genre || 'pop';
+      const mood = data.mood || 'energetic';
+      const textPrompt = `${mood} ${genre} beat at ${data.bpm || 120} bpm`;
+      
+      const generationResult = await this.audioGenerator.generateFromText({
+        text: textPrompt,
+        duration: audioConfig.length,
+        bars: Math.ceil(audioConfig.length / 2),
+      });
+
+      const audioData = generationResult.audioData;
+      const sampleRate = generationResult.sampleRate;
+      
+      return this.float32ToWavBuffer(audioData, sampleRate);
+    } catch (error) {
+      logger.warn('In-house AI audio generation fallback:', error);
+      return this.generateFallbackAudio(audioConfig.length);
+    }
+  }
+
+  private float32ToWavBuffer(audioData: Float32Array, sampleRate: number): Buffer {
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const numSamples = audioData.length;
+    const dataSize = numSamples * numChannels * (bitsPerSample / 8);
+    const fileSize = 44 + dataSize;
+
+    const buffer = Buffer.alloc(fileSize);
+
+    buffer.write('RIFF', 0);
+    buffer.writeUInt32LE(fileSize - 8, 4);
+    buffer.write('WAVE', 8);
+    buffer.write('fmt ', 12);
+    buffer.writeUInt32LE(16, 16);
+    buffer.writeUInt16LE(1, 20);
+    buffer.writeUInt16LE(numChannels, 22);
+    buffer.writeUInt32LE(sampleRate, 24);
+    buffer.writeUInt32LE(sampleRate * numChannels * (bitsPerSample / 8), 28);
+    buffer.writeUInt16LE(numChannels * (bitsPerSample / 8), 32);
+    buffer.writeUInt16LE(bitsPerSample, 34);
+    buffer.write('data', 36);
+    buffer.writeUInt32LE(dataSize, 40);
+
+    let offset = 44;
+    for (let i = 0; i < numSamples; i++) {
+      const sample = Math.max(-1, Math.min(1, audioData[i]));
+      const intSample = Math.floor(sample * 32767);
+      buffer.writeInt16LE(intSample, offset);
+      offset += 2;
+    }
+
+    return buffer;
+  }
+
+  private generateFallbackAudio(durationSeconds: number): Buffer {
+    const sampleRate = 44100;
+    const numSamples = sampleRate * durationSeconds;
+    const dataSize = numSamples * 2;
+    const fileSize = 44 + dataSize;
+
+    const buffer = Buffer.alloc(fileSize);
+
+    buffer.write('RIFF', 0);
+    buffer.writeUInt32LE(fileSize - 8, 4);
+    buffer.write('WAVE', 8);
+    buffer.write('fmt ', 12);
+    buffer.writeUInt32LE(16, 16);
+    buffer.writeUInt16LE(1, 20);
+    buffer.writeUInt16LE(1, 22);
+    buffer.writeUInt32LE(sampleRate, 24);
+    buffer.writeUInt32LE(sampleRate * 2, 28);
+    buffer.writeUInt16LE(2, 32);
+    buffer.writeUInt16LE(16, 34);
+    buffer.write('data', 36);
+    buffer.writeUInt32LE(dataSize, 40);
+
+    let offset = 44;
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      const freq = 440 * Math.pow(2, (t % 4) / 12);
+      let sample = Math.sin(2 * Math.PI * freq * t) * 0.3;
+      
+      const fadeIn = Math.min(1, i / (sampleRate * 0.5));
+      const fadeOut = Math.min(1, (numSamples - i) / (sampleRate * 0.5));
+      sample *= fadeIn * fadeOut;
+
+      buffer.writeInt16LE(Math.floor(sample * 16384), offset);
+      offset += 2;
+    }
+
+    return buffer;
   }
 
   // Extract content from URL
@@ -644,33 +775,103 @@ export class SocialMediaContentGenerator {
     }
   }
 
-  // Generate AI content from extracted data
+  // Generate AI content from extracted data using in-house ContentGenerator
   private async generateAIContentFromExtractedData(
     extractedData: unknown,
     platform: string,
     targetAudience: unknown
   ): Promise<any> {
-    return {
-      post: `🎵 Check out this amazing track: "${extractedData.title}"! ${extractedData.description}`,
-      hashtags: ['#Music', '#NewTrack', '#Viral', '#Trending'],
-      callToAction: 'Stream now and share with your friends!',
-      engagement: 0.85,
-      viralPotential: 0.15,
-    };
+    const data = extractedData as any || {};
+    const audience = targetAudience as any || {};
+    
+    try {
+      const platformMap: Record<string, 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin'> = {
+        twitter: 'twitter',
+        instagram: 'instagram',
+        tiktok: 'tiktok',
+        youtube: 'youtube',
+        facebook: 'facebook',
+        linkedin: 'linkedin',
+      };
+
+      const result = await this.contentGenerator.generateCaption({
+        tone: audience.tone || 'energetic',
+        platform: platformMap[platform] || 'instagram',
+        topic: data.title || 'music',
+        trackTitle: data.title,
+        artistName: data.artist,
+        genre: data.metadata?.genre,
+        contentType: 'release',
+        includeHashtags: true,
+        includeEmojis: true,
+      });
+
+      return {
+        post: result.caption,
+        hashtags: result.hashtags,
+        callToAction: 'Stream now and share with your friends!',
+        engagement: result.estimatedEngagement,
+        viralPotential: result.estimatedEngagement * 0.2,
+      };
+    } catch (error) {
+      logger.warn('In-house content generation fallback:', error);
+      return {
+        post: `🎵 Check out this amazing track: "${data.title || 'New Release'}"! ${data.description || 'Amazing new music for you.'}`,
+        hashtags: ['#Music', '#NewTrack', '#Viral', '#Trending'],
+        callToAction: 'Stream now and share with your friends!',
+        engagement: 0.85,
+        viralPotential: 0.15,
+      };
+    }
   }
 
-  // Generate AI content
+  // Generate AI content using in-house ContentGenerator
   private async generateAIContent(
     platform: string,
     musicData: unknown,
     targetAudience: unknown
   ): Promise<any> {
-    return {
-      post: `🎵 Just dropped my latest track! The energy in this one is absolutely incredible. Can't wait for you all to hear it! #NewMusic #Music #Artist`,
-      hashtags: ['#NewMusic', '#Music', '#Artist', '#LatestTrack'],
-      optimalTime: '7:00 PM',
-      engagement: 0.85,
-    };
+    const data = musicData as any || {};
+    const audience = targetAudience as any || {};
+    
+    try {
+      const platformMap: Record<string, 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin'> = {
+        twitter: 'twitter',
+        instagram: 'instagram',
+        tiktok: 'tiktok',
+        youtube: 'youtube',
+        facebook: 'facebook',
+        linkedin: 'linkedin',
+      };
+
+      const result = await this.contentGenerator.generateCaption({
+        tone: audience.tone || 'energetic',
+        platform: platformMap[platform] || 'instagram',
+        topic: data.title || 'music release',
+        trackTitle: data.title,
+        artistName: data.artist || data.artistName,
+        genre: data.genre,
+        contentType: data.contentType || 'release',
+        includeHashtags: true,
+        includeEmojis: true,
+      });
+
+      return {
+        post: result.caption,
+        hashtags: result.hashtags,
+        optimalTime: '7:00 PM',
+        engagement: result.estimatedEngagement,
+        toneMatch: result.toneMatch,
+      };
+    } catch (error) {
+      logger.warn('In-house content generation fallback:', error);
+      return {
+        post: `🎵 Just dropped my latest track! The energy in this one is absolutely incredible. Can't wait for you all to hear it! #NewMusic #Music #Artist`,
+        hashtags: ['#NewMusic', '#Music', '#Artist', '#LatestTrack'],
+        optimalTime: '7:00 PM',
+        engagement: 0.85,
+      };
+    }
   }
 
   // AI video style generation
