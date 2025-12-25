@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:scale-105 active:scale-100 dark:bg-primary dark:text-primary-foreground dark:shadow-md dark:shadow-primary/30 dark:hover:bg-primary/85',
+          'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:scale-105 active:scale-100 dark:bg-blue-600 dark:text-white dark:shadow-md dark:shadow-blue-500/40 dark:hover:bg-blue-500 dark:hover:shadow-lg',
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-lg hover:scale-105 active:scale-100 dark:bg-destructive dark:text-white',
         outline:
-          'border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:border-primary/50 active:scale-95 dark:border-primary/50 dark:bg-muted/30 dark:text-white dark:hover:border-primary dark:hover:bg-primary/20 dark:hover:text-white',
+          'border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:border-primary/50 active:scale-95 dark:border-blue-500 dark:bg-blue-500/10 dark:text-white dark:hover:border-blue-400 dark:hover:bg-blue-500/20 dark:hover:text-white',
         secondary:
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md hover:scale-105 active:scale-100 dark:bg-secondary dark:text-white dark:hover:bg-secondary/70 dark:shadow-sm',
+          'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md hover:scale-105 active:scale-100 dark:bg-purple-600 dark:text-white dark:hover:bg-purple-500 dark:shadow-sm dark:shadow-purple-500/30',
         ghost: 'hover:bg-accent hover:text-accent-foreground hover:shadow-sm active:scale-95 dark:text-white dark:hover:text-white dark:hover:bg-muted/50',
-        link: 'text-primary underline-offset-4 hover:underline hover:text-primary/80 active:text-primary/60 dark:text-primary dark:hover:text-primary/80',
+        link: 'text-primary underline-offset-4 hover:underline hover:text-primary/80 active:text-primary/60 dark:text-blue-400 dark:hover:text-blue-300',
         premium:
           'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 active:scale-100 dark:shadow-lg dark:shadow-purple-500/30',
       },
