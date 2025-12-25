@@ -16,6 +16,7 @@ export const users = pgTable("users", {
   bio: text("bio"),
   website: text("website"),
   location: text("location"),
+  avatarUrl: text("avatar_url"),
   socialLinks: jsonb("social_links"),
   role: text("role").default("user"),
   subscriptionTier: text("subscription_tier"),
@@ -29,6 +30,11 @@ export const users = pgTable("users", {
   onboardingData: jsonb("onboarding_data"),
   preferences: jsonb("preferences"),
   notificationSettings: jsonb("notification_settings"),
+  twoFactorSecret: text("two_factor_secret"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
+  googleId: text("google_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -6,6 +6,9 @@ import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf";
 import Stripe from "stripe";
 import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.js";
+import { authenticator } from "otplib";
+import QRCode from "qrcode";
+import { emailService } from "./services/emailService.js";
 
 // Simple logger fallback for startup
 const log = (msg: string) => console.log(`[routes] ${msg}`);
@@ -350,7 +353,48 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true });
+    try {
+      const { sessionId } = req.body;
+      
+      if (!sessionId) {
+        return res.status(400).json({ message: "Session ID is required" });
+      }
+
+      // Direct lookup of session by ID and verify ownership
+      const session = await storage.getSessionById(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      
+      if (session.userId !== req.user.id) {
+        console.warn(`[Security] Session termination denied: User ${req.user.id} tried to terminate session ${sessionId} belonging to user ${session.userId}`);
+        return res.status(403).json({ message: "Session does not belong to this user" });
+      }
+
+      // Delete session from database
+      const deleted = await storage.deleteSession(sessionId);
+      
+      if (!deleted) {
+        return res.status(500).json({ message: "Failed to delete session" });
+      }
+      
+      // Also try to delete from Redis if available
+      try {
+        const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
+        const redisClient = await getRedisClient();
+        if (redisClient) {
+          await redisClient.del(`maxbooster:sess:${sessionId}`);
+        }
+      } catch (redisError) {
+        console.log("Redis session deletion skipped:", redisError);
+      }
+      
+      return res.json({ success: true, message: "Session terminated successfully" });
+    } catch (error) {
+      console.error("Session termination error:", error);
+      return res.status(500).json({ message: "Failed to terminate session" });
+    }
   });
 
   // Auth: Change password
@@ -406,7 +450,38 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true });
+    try {
+      const currentAvatarUrl = req.user.avatarUrl;
+      
+      // If user has an avatar, try to delete the file
+      if (currentAvatarUrl) {
+        try {
+          const fs = await import('fs/promises');
+          const path = await import('path');
+          
+          // Extract the file path from the URL (assuming it's stored locally)
+          // Avatar URLs are typically like /uploads/avatars/filename.ext
+          if (currentAvatarUrl.startsWith('/uploads/') || currentAvatarUrl.startsWith('uploads/')) {
+            const filePath = path.join(process.cwd(), currentAvatarUrl.replace(/^\//, ''));
+            await fs.unlink(filePath).catch(() => {
+              // File might not exist, that's ok
+              console.log("Avatar file not found or already deleted:", filePath);
+            });
+          }
+        } catch (fsError) {
+          // File deletion is best-effort, continue even if it fails
+          console.log("Avatar file deletion skipped:", fsError);
+        }
+      }
+      
+      // Clear the avatar URL from user record
+      await storage.updateUser(req.user.id, { avatarUrl: null });
+      
+      return res.json({ success: true, message: "Avatar deleted successfully" });
+    } catch (error) {
+      console.error("Delete avatar error:", error);
+      return res.status(500).json({ message: "Failed to delete avatar" });
+    }
   });
 
   // Auth: Export user data
@@ -421,23 +496,124 @@ export async function registerRoutes(
     });
   });
 
-  // Auth: 2FA setup
+  // Auth: 2FA setup - Generate TOTP secret and QR code
   app.post("/api/auth/2fa/setup", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({
-      secret: "MOCK2FASECRET",
-      qrCode: "data:image/png;base64,mock",
-    });
+    
+    try {
+      const secret = authenticator.generateSecret();
+      const appName = "MaxBooster";
+      const accountName = req.user.email;
+      const otpauthUrl = authenticator.keyuri(accountName, appName, secret);
+      
+      await storage.updateUser(req.user.id, { twoFactorSecret: secret });
+      
+      const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: "#000000",
+          light: "#ffffff",
+        },
+      });
+      
+      return res.json({
+        secret,
+        qrCode: qrCodeDataUrl,
+        otpauthUrl,
+      });
+    } catch (error) {
+      console.error("2FA setup error:", error);
+      return res.status(500).json({ message: "Failed to setup 2FA" });
+    }
   });
 
-  // Auth: 2FA verify
+  // Auth: 2FA verify - Verify TOTP code and enable 2FA
   app.post("/api/auth/2fa/verify", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true });
+    
+    try {
+      const { code } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: "Verification code is required" });
+      }
+      
+      const secret = req.user.twoFactorSecret;
+      if (!secret) {
+        return res.status(400).json({ message: "2FA not set up. Please run setup first." });
+      }
+      
+      const isValid = authenticator.verify({ token: code, secret });
+      
+      if (!isValid) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+      
+      await storage.updateUser(req.user.id, { twoFactorEnabled: true });
+      
+      return res.json({ success: true, message: "2FA enabled successfully" });
+    } catch (error) {
+      console.error("2FA verify error:", error);
+      return res.status(500).json({ message: "Failed to verify 2FA code" });
+    }
+  });
+
+  // Auth: 2FA disable - Disable 2FA on account
+  app.post("/api/auth/2fa/disable", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const { password, code } = req.body;
+      
+      if (!password) {
+        return res.status(400).json({ message: "Password is required" });
+      }
+      
+      const isPasswordValid = await bcrypt.compare(password, req.user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ message: "Invalid password" });
+      }
+      
+      if (req.user.twoFactorEnabled && req.user.twoFactorSecret) {
+        if (!code) {
+          return res.status(400).json({ message: "2FA code is required" });
+        }
+        
+        const isCodeValid = authenticator.verify({ token: code, secret: req.user.twoFactorSecret });
+        if (!isCodeValid) {
+          return res.status(400).json({ message: "Invalid 2FA code" });
+        }
+      }
+      
+      await storage.updateUser(req.user.id, { 
+        twoFactorEnabled: false, 
+        twoFactorSecret: null 
+      });
+      
+      return res.json({ success: true, message: "2FA disabled successfully" });
+    } catch (error) {
+      console.error("2FA disable error:", error);
+      return res.status(500).json({ message: "Failed to disable 2FA" });
+    }
+  });
+
+  // Auth: 2FA status - Get current 2FA status
+  app.get("/api/auth/2fa/status", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    return res.json({
+      enabled: req.user.twoFactorEnabled || false,
+      hasSecret: !!req.user.twoFactorSecret,
+    });
   });
 
   // Auth: Demo login
@@ -465,9 +641,82 @@ export async function registerRoutes(
 
   // Auth: Forgot password
   app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
-    const { email } = req.body;
-    // In production, send a reset email
-    return res.json({ success: true, message: "If the email exists, a reset link has been sent." });
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      if (user) {
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const expires = new Date(Date.now() + 60 * 60 * 1000);
+
+        await storage.updateUser(user.id, {
+          passwordResetToken: hashedToken,
+          passwordResetExpires: expires,
+        });
+
+        const baseUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
+        const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+
+        await emailService.sendPasswordResetEmail(
+          {
+            firstName: user.firstName || 'User',
+            resetLink,
+            expiresIn: '1 hour',
+          },
+          user.email
+        );
+      }
+
+      return res.json({ success: true, message: "If the email exists, a reset link has been sent." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      return res.json({ success: true, message: "If the email exists, a reset link has been sent." });
+    }
+  });
+
+  // Auth: Reset password
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token and password are required" });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+      const user = await storage.getUserByPasswordResetToken(hashedToken);
+
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      if (!user.passwordResetExpires || new Date(user.passwordResetExpires) < new Date()) {
+        return res.status(400).json({ message: "Reset token has expired" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await storage.updateUser(user.id, {
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      });
+
+      return res.json({ success: true, message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      return res.status(500).json({ message: "Failed to reset password" });
+    }
   });
 
   // Auth: Token management (admin)
@@ -622,7 +871,30 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true });
+    try {
+      // Check if user has a Google connection
+      if (!req.user.googleId) {
+        return res.status(400).json({ message: "No Google connection to remove" });
+      }
+      
+      // Ensure user has a password set before disconnecting OAuth
+      // Users who signed up via Google have empty passwords
+      if (!req.user.password || req.user.password === '') {
+        return res.status(400).json({ 
+          message: "Please set a password before disconnecting Google. You won't be able to log in otherwise." 
+        });
+      }
+      
+      // Clear Google connection fields from user record
+      await storage.updateUser(req.user.id, { 
+        googleId: null 
+      });
+      
+      return res.json({ success: true, message: "Google connection removed successfully" });
+    } catch (error) {
+      console.error("Delete Google connection error:", error);
+      return res.status(500).json({ message: "Failed to remove Google connection" });
+    }
   });
 
   // Dashboard: Comprehensive data
@@ -680,7 +952,26 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true });
+    try {
+      const { id } = req.params;
+      
+      // Verify the notification belongs to this user
+      const notification = await storage.getNotificationById(id);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      if (notification.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to mark this notification" });
+      }
+      
+      // Mark as read
+      await storage.markNotificationRead(id);
+      
+      return res.json({ success: true, message: "Notification marked as read" });
+    } catch (error) {
+      console.error("Mark notification read error:", error);
+      return res.status(500).json({ message: "Failed to mark notification as read" });
+    }
   });
 
   // Notifications: Mark all as read
@@ -688,7 +979,13 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true });
+    try {
+      await storage.markAllNotificationsRead(req.user.id);
+      return res.json({ success: true, message: "All notifications marked as read" });
+    } catch (error) {
+      console.error("Mark all notifications read error:", error);
+      return res.status(500).json({ message: "Failed to mark all notifications as read" });
+    }
   });
 
   // Notifications: Get preferences

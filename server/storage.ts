@@ -17,6 +17,7 @@ import {
   instantPayouts,
   hyperFollowPages,
   listings,
+  sessions,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -38,6 +39,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByPasswordResetToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
@@ -60,6 +62,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.passwordResetToken, token));
     return user || undefined;
   }
 
@@ -403,6 +410,54 @@ export class DatabaseStorage implements IStorage {
       .update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.id, id));
+  }
+
+  async markAllNotificationsRead(userId: string): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.userId, userId));
+  }
+
+  async getNotificationById(id: string): Promise<Notification | undefined> {
+    const [notification] = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.id, id));
+    return notification || undefined;
+  }
+
+  async deleteSession(sessionId: string): Promise<boolean> {
+    const result = await db
+      .delete(sessions)
+      .where(eq(sessions.id, sessionId))
+      .returning({ id: sessions.id });
+    return result.length > 0;
+  }
+
+  async deleteSessionByToken(sessionToken: string): Promise<boolean> {
+    const result = await db
+      .delete(sessions)
+      .where(eq(sessions.sessionToken, sessionToken))
+      .returning({ id: sessions.id });
+    return result.length > 0;
+  }
+
+  async getSessionById(sessionId: string): Promise<{ id: string; userId: string } | undefined> {
+    const [session] = await db
+      .select({ id: sessions.id, userId: sessions.userId })
+      .from(sessions)
+      .where(eq(sessions.id, sessionId));
+    return session || undefined;
+  }
+
+  async getSessionsByUserId(userId: string): Promise<any[]> {
+    return await db
+      .select({ id: sessions.id, lastActivity: sessions.lastActivity, userAgent: sessions.userAgent })
+      .from(sessions)
+      .where(eq(sessions.userId, userId))
+      .orderBy(desc(sessions.lastActivity))
+      .limit(20);
   }
 
   async getAnalytics(userId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
