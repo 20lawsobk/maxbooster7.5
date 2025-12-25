@@ -1058,7 +1058,7 @@ class PluginHostService {
     return processor.process(inputBuffer, params, context);
   }
 
-  async renderInstrument(
+  async renderInstrumentAdvanced(
     pluginId: string,
     notes: Array<{ frequency: number; velocity: number; durationMs: number }>,
     context: { sampleRate: number; tempo: number }

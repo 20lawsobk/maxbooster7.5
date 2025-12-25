@@ -3,11 +3,9 @@ import { build as viteBuild } from "vite";
 import { rm, readFile } from "fs/promises";
 
 // server deps to bundle to reduce openat(2) syscalls
-// which helps cold start times
+// which helps cold start times - keep this list small!
 const allowlist = [
-  "@google/generative-ai",
   "axios",
-  "connect-pg-simple",
   "cors",
   "date-fns",
   "drizzle-orm",
@@ -17,19 +15,40 @@ const allowlist = [
   "express-session",
   "jsonwebtoken",
   "memorystore",
-  "multer",
   "nanoid",
-  "nodemailer",
-  "openai",
   "passport",
   "passport-local",
-  "pg",
-  "stripe",
-  "uuid",
-  "ws",
-  "xlsx",
   "zod",
   "zod-validation-error",
+];
+
+// Heavy native/large packages that must ALWAYS be external
+// These cause bundle size bloat and initialization timeouts
+const forceExternal = [
+  "@tensorflow/tfjs",
+  "@tensorflow/tfjs-node",
+  "sharp",
+  "bcrypt",
+  "pg",
+  "ioredis",
+  "redis",
+  "bullmq",
+  "stripe",
+  "multer",
+  "archiver",
+  "@neondatabase/serverless",
+  "@sendgrid/mail",
+  "googleapis",
+  "@aws-sdk/client-s3",
+  "@aws-sdk/s3-request-presigner",
+  "@replit/object-storage",
+  "connect-pg-simple",
+  "music-metadata",
+  "node-wav",
+  "wavefile",
+  "twitter-api-v2",
+  "openid-client",
+  "helmet",
 ];
 
 async function buildAll() {
@@ -44,7 +63,17 @@ async function buildAll() {
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
   ];
-  const externals = allDeps.filter((dep) => !allowlist.includes(dep));
+  
+  // Externalize everything not in allowlist, plus force-external heavy packages
+  const externals = [
+    ...allDeps.filter((dep) => !allowlist.includes(dep)),
+    ...forceExternal,
+  ];
+  
+  // Dedupe the externals list
+  const uniqueExternals = [...new Set(externals)];
+
+  console.log(`Externalizing ${uniqueExternals.length} packages to reduce bundle size`);
 
   await esbuild({
     entryPoints: ["server/index.ts"],
@@ -56,8 +85,9 @@ async function buildAll() {
       "process.env.NODE_ENV": '"production"',
     },
     minify: true,
-    external: externals,
+    external: uniqueExternals,
     logLevel: "info",
+    treeShaking: true,
   });
 }
 
