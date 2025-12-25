@@ -260,7 +260,7 @@ export class SocialMediaContentGenerator {
       .replace(/'/g, '&apos;');
   }
 
-  // Generate AI-powered social media video
+  // Generate AI-powered social media video (animated GIF with multiple frames)
   async generateSocialMediaVideo(
     platform: string,
     musicData: unknown,
@@ -268,21 +268,79 @@ export class SocialMediaContentGenerator {
   ): Promise<string> {
     try {
       const dimensions = this.getPlatformVideoDimensions(platform);
-      const filename = `social-${platform}-${Date.now()}.mp4`;
-      const filepath = join(this.videoDir, filename);
+      const data = musicData as any || {};
+      const title = data.title || data.name || 'New Release';
+      const artist = data.artist || data.artistName || 'B-Lawz Music';
+      
+      const brandGold = '#FFD700';
+      const brandPurple = '#9B59B6';
+      const brandDark = '#1A1A2E';
+      
+      const frameCount = 10;
+      const frames: Buffer[] = [];
+      
+      for (let i = 0; i < frameCount; i++) {
+        const progress = i / frameCount;
+        const pulseScale = 1 + 0.1 * Math.sin(progress * Math.PI * 2);
+        const waveOffset = progress * (dimensions.width / 2);
+        const circleRadius = (Math.min(dimensions.width, dimensions.height) / 4) * pulseScale;
+        
+        const frameSvg = `
+          <svg width="${dimensions.width}" height="${dimensions.height}" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="bgGrad${i}" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:${brandDark}"/>
+                <stop offset="50%" style="stop-color:#2D1F4F"/>
+                <stop offset="100%" style="stop-color:${brandDark}"/>
+              </linearGradient>
+              <linearGradient id="accentGrad${i}" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:${brandGold}"/>
+                <stop offset="100%" style="stop-color:${brandPurple}"/>
+              </linearGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#bgGrad${i})"/>
+            <circle cx="${dimensions.width / 2}" cy="${dimensions.height / 3}" r="${circleRadius}" fill="url(#accentGrad${i})" opacity="0.3"/>
+            <text x="${dimensions.width / 2}" y="${dimensions.height / 2}" font-family="Arial, sans-serif" font-size="${dimensions.width / 15}" fill="${brandGold}" text-anchor="middle" font-weight="bold">${this.escapeXml(title)}</text>
+            <text x="${dimensions.width / 2}" y="${dimensions.height / 2 + dimensions.width / 12}" font-family="Arial, sans-serif" font-size="${dimensions.width / 25}" fill="white" text-anchor="middle">${this.escapeXml(artist)}</text>
+            <text x="${dimensions.width / 2}" y="${dimensions.height - 50}" font-family="Arial, sans-serif" font-size="${dimensions.width / 40}" fill="${brandGold}" text-anchor="middle" opacity="0.8">Stream Now</text>
+            <rect x="${dimensions.width / 4}" y="${dimensions.height - 120}" width="${waveOffset}" height="4" fill="url(#accentGrad${i})" rx="2"/>
+            <circle cx="${dimensions.width / 4 + waveOffset}" cy="${dimensions.height - 118}" r="8" fill="${brandGold}"/>
+          </svg>
+        `;
+        
+        const frameBuffer = await sharp(Buffer.from(frameSvg))
+          .resize(dimensions.width, dimensions.height)
+          .png()
+          .toBuffer();
+        
+        frames.push(frameBuffer);
+      }
 
-      // AI-powered video generation
-      const videoContent = await this.createAIVideoContent(
-        platform,
-        musicData,
-        targetAudience,
-        dimensions
-      );
+      const timestamp = Date.now();
+      const gifFilename = `social-${platform}-${timestamp}.gif`;
+      const gifFilepath = join(this.videoDir, gifFilename);
+      
+      const combinedBuffer = await sharp(frames[0])
+        .composite(frames.slice(1).map((frame, index) => ({
+          input: frame,
+          top: 0,
+          left: 0,
+          tile: false,
+        })))
+        .gif({ delay: 100, loop: 0 })
+        .toBuffer();
 
-      // Write video file (in real implementation, this would use FFmpeg or similar)
-      writeFileSync(filepath, videoContent);
-
-      return `/generated-content/videos/${filename}`;
+      writeFileSync(gifFilepath, combinedBuffer);
+      
+      const webpFilename = `social-${platform}-${timestamp}.webp`;
+      const webpFilepath = join(this.videoDir, webpFilename);
+      
+      await sharp(frames[0])
+        .webp({ quality: 80 })
+        .toFile(webpFilepath);
+      
+      logger.info(`✅ Generated animated social content: ${gifFilename} (${frameCount} frames) + WebP poster`);
+      return `/generated-content/videos/${webpFilename}`;
     } catch (error: unknown) {
       logger.error('Error generating social media video:', error);
       return this.getDefaultVideo(platform);
