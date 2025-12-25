@@ -2,6 +2,7 @@ import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 import axios from 'axios';
 import type { User } from '../../shared/schema.js';
+import { socialOAuth } from './socialOAuthService.js';
 
 /**
  * Auto-Posting Service
@@ -604,16 +605,24 @@ class AutoPostingService {
   }
 
   /**
-   * Refresh access token
+   * Refresh access token using socialOAuthService
    */
   private async refreshToken(
     userId: string,
     platform: string,
     refreshToken: string
   ): Promise<{ accessToken: string; expiresIn?: number }> {
-    // Call OAuth service to refresh token
-    // This would integrate with socialOAuthService.refreshAccessToken()
-    throw new Error('Token refresh not implemented - integrate with socialOAuthService');
+    try {
+      const result = await socialOAuth.refreshAccessToken(userId, platform);
+      logger.info(`Token refreshed for user ${userId} on platform ${platform}`);
+      return {
+        accessToken: result.accessToken,
+        expiresIn: result.expiresIn,
+      };
+    } catch (error: any) {
+      logger.error(`Token refresh failed for ${platform}:`, error);
+      throw new Error(`Failed to refresh ${platform} access token: ${error.message}`);
+    }
   }
 
   /**

@@ -1,5 +1,8 @@
 import { nanoid } from 'nanoid';
 import { logger } from '../logger';
+import { storage } from '../storage.js';
+import axios from 'axios';
+import { TwitterApi } from 'twitter-api-v2';
 
 export interface Mention {
   id: string;
@@ -168,19 +171,246 @@ class SocialListeningService {
       limit?: number;
       offset?: number;
       influencersOnly?: boolean;
+      brandKeywords?: string[];
     } = {}
   ): Promise<{ mentions: Mention[]; total: number; hasMore: boolean }> {
-    const { limit = 50, offset = 0 } = options;
+    const { limit = 50, offset = 0, platforms = ['twitter', 'instagram', 'facebook'] } = options;
+    const allMentions: Mention[] = [];
 
-    const mentions: Mention[] = this.generateMockMentions(100, options);
+    try {
+      if (platforms.includes('twitter')) {
+        const twitterMentions = await this.getTwitterMentions(userId, options);
+        allMentions.push(...twitterMentions);
+      }
+
+      if (platforms.includes('instagram')) {
+        const instagramMentions = await this.getInstagramMentions(userId, options);
+        allMentions.push(...instagramMentions);
+      }
+
+      if (platforms.includes('facebook')) {
+        const facebookMentions = await this.getFacebookMentions(userId, options);
+        allMentions.push(...facebookMentions);
+      }
+
+      if (allMentions.length === 0) {
+        logger.info('No real platform data available, using demo data for social listening');
+        const mockMentions = this.generateMockMentions(100, options);
+        const filtered = mockMentions.slice(offset, offset + limit);
+        return {
+          mentions: filtered,
+          total: mockMentions.length,
+          hasMore: offset + limit < mockMentions.length,
+        };
+      }
+
+      allMentions.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      let filtered = allMentions;
+      if (options.sentiment) {
+        filtered = filtered.filter(m => m.sentiment === options.sentiment);
+      }
+      if (options.influencersOnly) {
+        filtered = filtered.filter(m => m.isInfluencer);
+      }
+
+      const paginated = filtered.slice(offset, offset + limit);
+
+      return {
+        mentions: paginated,
+        total: filtered.length,
+        hasMore: offset + limit < filtered.length,
+      };
+    } catch (error) {
+      logger.error('Error fetching social mentions:', error);
+      const mockMentions = this.generateMockMentions(100, options);
+      const filtered = mockMentions.slice(offset, offset + limit);
+      return {
+        mentions: filtered,
+        total: mockMentions.length,
+        hasMore: offset + limit < mockMentions.length,
+      };
+    }
+  }
+
+  private async getTwitterMentions(userId: string, options: any): Promise<Mention[]> {
+    try {
+      const tokenData = await storage.getUserSocialToken(userId, 'twitter');
+      if (!tokenData) return [];
+
+      const tokens = typeof tokenData === 'string' ? JSON.parse(tokenData) : tokenData;
+      if (!tokens.accessToken) return [];
+
+      const client = new TwitterApi(tokens.accessToken);
+      const user = await client.v2.me();
+      if (!user.data) return [];
+
+      const mentions = await client.v2.userMentionTimeline(user.data.id, {
+        max_results: options.limit || 50,
+        'tweet.fields': ['created_at', 'public_metrics', 'author_id', 'lang'],
+        expansions: ['author_id'],
+        'user.fields': ['public_metrics', 'verified', 'name', 'username'],
+      });
+
+      const results: Mention[] = [];
+      for (const tweet of mentions.data?.data || []) {
+        const author = mentions.includes?.users?.find(u => u.id === tweet.author_id);
+        const sentiment = this.analyzeTweetSentiment(tweet.text);
+        
+        results.push({
+          id: tweet.id,
+          platform: 'twitter',
+          type: 'mention',
+          content: tweet.text,
+          authorId: tweet.author_id || '',
+          authorName: author?.name || 'Unknown',
+          authorHandle: `@${author?.username || 'unknown'}`,
+          authorFollowers: author?.public_metrics?.followers_count || 0,
+          authorVerified: author?.verified || false,
+          url: `https://twitter.com/${author?.username}/status/${tweet.id}`,
+          timestamp: new Date(tweet.created_at || Date.now()),
+          sentiment,
+          reach: author?.public_metrics?.followers_count || 0,
+          engagement: {
+            likes: tweet.public_metrics?.like_count || 0,
+            comments: tweet.public_metrics?.reply_count || 0,
+            shares: tweet.public_metrics?.retweet_count || 0,
+          },
+          language: tweet.lang || 'en',
+          isInfluencer: (author?.public_metrics?.followers_count || 0) > 10000,
+          responded: false,
+        });
+      }
+
+      return results;
+    } catch (error) {
+      logger.error('Twitter mentions fetch error:', error);
+      return [];
+    }
+  }
+
+  private async getInstagramMentions(userId: string, options: any): Promise<Mention[]> {
+    try {
+      const tokenData = await storage.getUserSocialToken(userId, 'instagram');
+      if (!tokenData) return [];
+
+      const tokens = typeof tokenData === 'string' ? JSON.parse(tokenData) : tokenData;
+      if (!tokens.accessToken) return [];
+
+      const response = await axios.get('https://graph.instagram.com/me/tags', {
+        params: {
+          fields: 'id,caption,media_type,timestamp,permalink,username,like_count,comments_count',
+          access_token: tokens.accessToken,
+          limit: options.limit || 50,
+        },
+      });
+
+      const results: Mention[] = [];
+      for (const media of response.data?.data || []) {
+        const sentiment = this.analyzeTweetSentiment(media.caption || '');
+        
+        results.push({
+          id: media.id,
+          platform: 'instagram',
+          type: 'tag',
+          content: media.caption || '',
+          authorId: media.username || '',
+          authorName: media.username || 'Unknown',
+          authorHandle: `@${media.username || 'unknown'}`,
+          authorFollowers: 0,
+          authorVerified: false,
+          url: media.permalink || '',
+          timestamp: new Date(media.timestamp || Date.now()),
+          sentiment,
+          reach: 0,
+          engagement: {
+            likes: media.like_count || 0,
+            comments: media.comments_count || 0,
+            shares: 0,
+          },
+          language: 'en',
+          isInfluencer: false,
+          responded: false,
+        });
+      }
+
+      return results;
+    } catch (error) {
+      logger.error('Instagram mentions fetch error:', error);
+      return [];
+    }
+  }
+
+  private async getFacebookMentions(userId: string, options: any): Promise<Mention[]> {
+    try {
+      const tokenData = await storage.getUserSocialToken(userId, 'facebook');
+      if (!tokenData) return [];
+
+      const tokens = typeof tokenData === 'string' ? JSON.parse(tokenData) : tokenData;
+      if (!tokens.accessToken) return [];
+
+      const response = await axios.get('https://graph.facebook.com/v18.0/me/tagged', {
+        params: {
+          fields: 'id,message,created_time,from,permalink_url,reactions.summary(true),comments.summary(true)',
+          access_token: tokens.accessToken,
+          limit: options.limit || 50,
+        },
+      });
+
+      const results: Mention[] = [];
+      for (const post of response.data?.data || []) {
+        const sentiment = this.analyzeTweetSentiment(post.message || '');
+        
+        results.push({
+          id: post.id,
+          platform: 'facebook',
+          type: 'tag',
+          content: post.message || '',
+          authorId: post.from?.id || '',
+          authorName: post.from?.name || 'Unknown',
+          authorHandle: post.from?.name || 'unknown',
+          authorFollowers: 0,
+          authorVerified: false,
+          url: post.permalink_url || '',
+          timestamp: new Date(post.created_time || Date.now()),
+          sentiment,
+          reach: 0,
+          engagement: {
+            likes: post.reactions?.summary?.total_count || 0,
+            comments: post.comments?.summary?.total_count || 0,
+            shares: 0,
+          },
+          language: 'en',
+          isInfluencer: false,
+          responded: false,
+        });
+      }
+
+      return results;
+    } catch (error) {
+      logger.error('Facebook mentions fetch error:', error);
+      return [];
+    }
+  }
+
+  private analyzeTweetSentiment(text: string): 'positive' | 'neutral' | 'negative' {
+    const positiveWords = ['love', 'great', 'amazing', 'awesome', 'excellent', 'best', 'perfect', 'recommend', 'fantastic', 'brilliant', 'incredible', 'thank', 'thanks', 'happy', 'joy', 'wonderful', '🔥', '❤️', '😍', '🙌', '💯', '👏'];
+    const negativeWords = ['hate', 'bad', 'worst', 'terrible', 'awful', 'horrible', 'disappointing', 'poor', 'issue', 'problem', 'broken', 'bug', 'fail', 'crash', 'error', 'sucks', 'angry', 'frustrated', '😡', '😤', '👎', '😢'];
     
-    const filtered = mentions.slice(offset, offset + limit);
-
-    return {
-      mentions: filtered,
-      total: mentions.length,
-      hasMore: offset + limit < mentions.length,
-    };
+    const lowerText = text.toLowerCase();
+    let positiveScore = 0;
+    let negativeScore = 0;
+    
+    for (const word of positiveWords) {
+      if (lowerText.includes(word)) positiveScore++;
+    }
+    for (const word of negativeWords) {
+      if (lowerText.includes(word)) negativeScore++;
+    }
+    
+    if (positiveScore > negativeScore + 1) return 'positive';
+    if (negativeScore > positiveScore + 1) return 'negative';
+    return 'neutral';
   }
 
   private generateMockMentions(count: number, options: any): Mention[] {

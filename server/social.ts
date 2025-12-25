@@ -138,21 +138,51 @@ export class SocialMediaService {
   }
 
   // TikTok API Integration
-  async getTikTokMetrics(): Promise<Partial<SocialMediaMetrics> | null> {
+  async getTikTokMetrics(accessToken?: string): Promise<Partial<SocialMediaMetrics> | null> {
     try {
       if (!process.env.TIKTOK_CLIENT_KEY || !process.env.TIKTOK_CLIENT_SECRET) {
         logger.warn('TikTok API credentials not configured');
         return null;
       }
 
-      // TikTok Creator API integration would require OAuth flow
-      // For now, return placeholder that indicates API is configured
+      if (!accessToken) {
+        logger.warn('TikTok access token required for user metrics');
+        return {
+          platform: 'TikTok',
+          followers: 0,
+          posts: 0,
+          engagement: 0,
+          reach: 0,
+          lastUpdated: new Date(),
+        };
+      }
+
+      const response = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
+        params: {
+          fields: 'follower_count,following_count,likes_count,video_count,display_name,avatar_url',
+        },
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const userData = response.data?.data?.user;
+      if (!userData) {
+        logger.warn('TikTok API returned empty user data');
+        return null;
+      }
+
+      const totalEngagement = userData.likes_count || 0;
+      const followerCount = userData.follower_count || 0;
+      const engagementRate = followerCount > 0 ? (totalEngagement / followerCount) * 100 : 0;
+
       return {
         platform: 'TikTok',
-        followers: 0,
-        posts: 0,
-        engagement: 0,
-        reach: 0,
+        followers: followerCount,
+        posts: userData.video_count || 0,
+        engagement: engagementRate,
+        reach: userData.following_count || 0,
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
@@ -162,21 +192,56 @@ export class SocialMediaService {
   }
 
   // LinkedIn API Integration
-  async getLinkedInMetrics(): Promise<Partial<SocialMediaMetrics> | null> {
+  async getLinkedInMetrics(accessToken?: string): Promise<Partial<SocialMediaMetrics> | null> {
     try {
       if (!process.env.LINKEDIN_CLIENT_ID || !process.env.LINKEDIN_CLIENT_SECRET) {
         logger.warn('LinkedIn API credentials not configured');
         return null;
       }
 
-      // LinkedIn API would require OAuth flow for user tokens
-      // For now, return placeholder that indicates API is configured
+      if (!accessToken) {
+        logger.warn('LinkedIn access token required for user metrics');
+        return {
+          platform: 'LinkedIn',
+          followers: 0,
+          posts: 0,
+          engagement: 0,
+          reach: 0,
+          lastUpdated: new Date(),
+        };
+      }
+
+      const profileResponse = await axios.get('https://api.linkedin.com/v2/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const networkInfoResponse = await axios.get(
+        'https://api.linkedin.com/v2/networkSizes/urn:li:person:' + profileResponse.data.id + '?edgeType=CompanyFollowedByMember',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      ).catch(() => ({ data: { firstDegreeSize: 0 } }));
+
+      const connectionsResponse = await axios.get(
+        'https://api.linkedin.com/v2/connections?q=viewer&start=0&count=0',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      ).catch(() => ({ data: { _total: 0 } }));
+
       return {
         platform: 'LinkedIn',
-        followers: 0,
+        followers: connectionsResponse.data?._total || networkInfoResponse.data?.firstDegreeSize || 0,
         posts: 0,
         engagement: 0,
-        reach: 0,
+        reach: networkInfoResponse.data?.firstDegreeSize || 0,
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
