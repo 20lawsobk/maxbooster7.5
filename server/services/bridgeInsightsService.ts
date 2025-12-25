@@ -12,8 +12,6 @@ import {
 import { eq, desc, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { nanoid } from 'nanoid';
-import { socialFanbaseService } from './socialFanbaseService.js';
-import { organicCompoundingService } from './organicCompoundingService.js';
 
 interface TopHook {
   hookType: string;
@@ -154,14 +152,21 @@ class BridgeInsightsService {
 
       const assetTypeRoiMap = new Map<string, { totalRoi: number; count: number }>();
       for (const asset of assets) {
-        const roiData = await organicCompoundingService.computeOrganicRoi(asset);
+        // Compute ROI inline to avoid circular dependency
+        const performance = asset.performance as AssetPerformance | null;
+        const revenue = performance?.revenueGenerated ?? 0;
+        const creationCost = (asset.creationCostHours ?? 0) * 50; // $50/hour estimate
+        const distributionCost = asset.distributionCost ?? 0;
+        const totalCost = creationCost + distributionCost;
+        const effectiveRoi = totalCost > 0 ? ((revenue - totalCost) / totalCost) * 100 : 0;
+        
         const existing = assetTypeRoiMap.get(asset.type);
         if (existing) {
-          existing.totalRoi += roiData.effectiveRoi;
+          existing.totalRoi += effectiveRoi;
           existing.count += 1;
         } else {
           assetTypeRoiMap.set(asset.type, {
-            totalRoi: roiData.effectiveRoi,
+            totalRoi: effectiveRoi,
             count: 1,
           });
         }

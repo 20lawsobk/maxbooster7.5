@@ -462,21 +462,68 @@ class SocialFanbaseService {
     try {
       logger.info('Starting daily social loop', { userId, date: date.toISOString() });
 
+      // Step 1: Ingest yesterday's performance
       const yesterday = new Date(date);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayContents = await this.getContents(userId, yesterday);
 
-      const topPatterns = await this.derivePatterns(yesterdayContents, userId);
+      // Step 2: Compute MusicImpact for yesterday's content
+      for (const content of yesterdayContents) {
+        const performance = (content.performance as PerformanceData) || {};
+        const impact = this.computeMusicImpact(performance);
+        await this.saveMusicImpact(userId, content.id, impact);
+      }
 
-      await this.applyTimeDecay(userId);
-
+      // Step 3: Update fan segments from behavioral data
       const segments = await this.getFanSegments(userId);
       const primarySegment = segments.length > 0 ? segments[0] : null;
 
+      // Step 4: Derive top patterns from high-performing content
+      const topPatterns = await this.derivePatterns(yesterdayContents, userId);
+
+      // Step 5: Apply time decay to old patterns
+      await this.applyTimeDecay(userId);
+
+      // Step 6: Generate content candidates based on segments and patterns
       const candidates = await this.generateContentCandidates(userId, primarySegment, topPatterns);
 
+      // Step 7: Score & rank candidates, build schedule with explore/exploit balance
       const schedule = await this.buildDailySchedule(userId, candidates);
 
+      // Step 8: Persist scheduled content to database for autopilot publishing
+      const persistedContentIds: string[] = [];
+      const platforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'threads'];
+      
+      for (let i = 0; i < schedule.candidates.length; i++) {
+        const candidate = schedule.candidates[i];
+        const postingTime = new Date(date);
+        postingTime.setHours(9 + Math.floor(i * 2), 0, 0, 0); // Space posts 2 hours apart starting at 9am
+        
+        const platform = candidate.platform || platforms[i % platforms.length];
+        
+        const [inserted] = await db
+          .insert(socialAutopilotContent)
+          .values({
+            id: candidate.id,
+            userId,
+            type: candidate.type as any,
+            format: candidate.format as any,
+            hookType: candidate.hookType as any,
+            tone: candidate.tone as any,
+            platform: platform as any,
+            trackUsed: candidate.trackUsed || null,
+            postingTime,
+            lengthSeconds: null,
+            performance: {},
+          })
+          .returning();
+        
+        if (inserted) {
+          persistedContentIds.push(inserted.id);
+        }
+      }
+
+      // Step 9: Compress old content to long-term memory
       await this.compressToLongTermMemory(userId);
 
       logger.info('Completed daily social loop', {
@@ -484,6 +531,7 @@ class SocialFanbaseService {
         scheduleSize: schedule.candidates.length,
         explore: schedule.exploreCount,
         exploit: schedule.exploitCount,
+        persistedContent: persistedContentIds.length,
       });
 
       return schedule;
