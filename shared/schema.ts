@@ -13,6 +13,10 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
+  bio: text("bio"),
+  website: text("website"),
+  location: text("location"),
+  socialLinks: jsonb("social_links"),
   role: text("role").default("user"),
   subscriptionTier: text("subscription_tier"),
   subscriptionStatus: text("subscription_status"),
@@ -23,6 +27,8 @@ export const users = pgTable("users", {
   onboardingCompleted: boolean("onboarding_completed").default(false),
   onboardingStep: integer("onboarding_step").default(0),
   onboardingData: jsonb("onboarding_data"),
+  preferences: jsonb("preferences"),
+  notificationSettings: jsonb("notification_settings"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

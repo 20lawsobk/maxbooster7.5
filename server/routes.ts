@@ -247,49 +247,86 @@ export async function registerRoutes(
     }
   });
 
-  // Auth: Get notification settings
-  app.get("/api/auth/notifications", (req: Request, res: Response) => {
+  // Auth: Get notification settings (persisted to database)
+  app.get("/api/auth/notifications", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({
+    const defaultSettings = {
       emailNotifications: true,
       pushNotifications: true,
       marketingEmails: false,
       releaseAlerts: true,
       paymentAlerts: true,
       securityAlerts: true,
-    });
+    };
+    const userSettings = req.user.notificationSettings as Record<string, any> | null;
+    return res.json({ ...defaultSettings, ...userSettings });
   });
 
-  // Auth: Update notification settings
+  // Auth: Update notification settings (persisted to database)
   app.put("/api/auth/notifications", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true });
+    try {
+      const { emailNotifications, pushNotifications, marketingEmails, releaseAlerts, paymentAlerts, securityAlerts } = req.body;
+      const currentSettings = (req.user.notificationSettings as Record<string, any>) || {};
+      const updatedSettings = {
+        ...currentSettings,
+        ...(emailNotifications !== undefined && { emailNotifications }),
+        ...(pushNotifications !== undefined && { pushNotifications }),
+        ...(marketingEmails !== undefined && { marketingEmails }),
+        ...(releaseAlerts !== undefined && { releaseAlerts }),
+        ...(paymentAlerts !== undefined && { paymentAlerts }),
+        ...(securityAlerts !== undefined && { securityAlerts }),
+      };
+      await storage.updateUser(req.user.id, { notificationSettings: updatedSettings });
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Update notification settings error:", error);
+      return res.status(500).json({ message: "Failed to update notification settings" });
+    }
   });
 
-  // Auth: Get preferences
-  app.get("/api/auth/preferences", (req: Request, res: Response) => {
+  // Auth: Get preferences (persisted to database)
+  app.get("/api/auth/preferences", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({
+    const defaultPreferences = {
       theme: "dark",
       language: "en",
       timezone: "America/New_York",
       dateFormat: "MM/DD/YYYY",
       currency: "USD",
-    });
+    };
+    const userPreferences = req.user.preferences as Record<string, any> | null;
+    return res.json({ ...defaultPreferences, ...userPreferences });
   });
 
-  // Auth: Update preferences
+  // Auth: Update preferences (persisted to database)
   app.put("/api/auth/preferences", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true });
+    try {
+      const { theme, language, timezone, dateFormat, currency } = req.body;
+      const currentPreferences = (req.user.preferences as Record<string, any>) || {};
+      const updatedPreferences = {
+        ...currentPreferences,
+        ...(theme !== undefined && { theme }),
+        ...(language !== undefined && { language }),
+        ...(timezone !== undefined && { timezone }),
+        ...(dateFormat !== undefined && { dateFormat }),
+        ...(currency !== undefined && { currency }),
+      };
+      await storage.updateUser(req.user.id, { preferences: updatedPreferences });
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Update preferences error:", error);
+      return res.status(500).json({ message: "Failed to update preferences" });
+    }
   });
 
   // Auth: Get sessions
