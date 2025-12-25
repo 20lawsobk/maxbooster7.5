@@ -86,8 +86,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50/30 via-white to-purple-50/30 dark:from-background dark:via-background dark:to-card flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-card/90 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50/30 via-white to-purple-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-gray-800 dark:border dark:border-gray-700 backdrop-blur-sm">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <Logo size="lg" />
