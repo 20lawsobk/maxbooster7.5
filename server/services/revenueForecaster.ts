@@ -432,16 +432,21 @@ class RevenueForecaster {
       .orderBy(asc(dspAnalytics.date));
 
     if (data.length < 7) {
-      const mockData: TimeSeriesDataPoint[] = [];
+      logger.warn(`Insufficient historical data for user ${userId}: ${data.length} days found, need at least 7`);
+      // Return actual data with zeros for missing days to maintain data integrity
+      const filledData: TimeSeriesDataPoint[] = [];
+      const dataMap = new Map(data.map(d => [d.date.toISOString().split('T')[0], Number(d.revenue)]));
+      
       for (let i = days; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
-        mockData.push({
+        const dateKey = date.toISOString().split('T')[0];
+        filledData.push({
           date,
-          value: 50 + Math.random() * 100 + Math.sin(i / 7) * 20,
+          value: dataMap.get(dateKey) || 0,
         });
       }
-      return mockData;
+      return filledData;
     }
 
     return data.map(d => ({ date: d.date, value: Number(d.revenue) }));

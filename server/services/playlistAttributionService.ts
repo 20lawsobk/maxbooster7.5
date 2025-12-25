@@ -3,6 +3,7 @@ import {
   playlistAttributions,
   InsertPlaylistAttribution,
   PlaylistAttribution,
+  dspAnalytics,
 } from '@shared/schema';
 import { eq, and, gte, lte, desc, sql, asc } from 'drizzle-orm';
 import { logger } from '../logger.js';
@@ -502,62 +503,78 @@ class PlaylistAttributionService {
     platform: DSPPlatform,
     trackId?: string
   ): Promise<PlaylistAttribution[]> {
-    const mockPlaylists: Omit<InsertPlaylistAttribution, 'userId'>[] = [
-      {
-        playlistId: `${platform}-editorial-1`,
-        playlistName: `Today's Top Hits`,
-        playlistType: 'editorial',
-        platform,
-        curatorName: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Music`,
-        followerCount: 35000000,
-        position: 42,
-        addedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        isActive: true,
-        streams: Math.floor(Math.random() * 50000) + 10000,
-        listeners: Math.floor(Math.random() * 25000) + 5000,
-        saves: Math.floor(Math.random() * 2000) + 500,
-        trackId: trackId as any,
-      },
-      {
-        playlistId: `${platform}-algorithmic-1`,
-        playlistName: 'Discover Weekly',
-        playlistType: 'algorithmic',
-        platform,
-        curatorName: 'Algorithm',
-        followerCount: 0,
-        addedDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        isActive: true,
-        streams: Math.floor(Math.random() * 20000) + 5000,
-        listeners: Math.floor(Math.random() * 10000) + 2500,
-        saves: Math.floor(Math.random() * 1000) + 200,
-        trackId: trackId as any,
-      },
-      {
-        playlistId: `${platform}-user-1`,
-        playlistName: 'Best New Music 2025',
-        playlistType: 'user',
-        platform,
-        curatorName: 'music_curator_123',
-        curatorId: 'user_123456',
-        followerCount: 150000,
-        position: 5,
-        addedDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-        isActive: true,
-        streams: Math.floor(Math.random() * 15000) + 3000,
-        listeners: Math.floor(Math.random() * 8000) + 1500,
-        saves: Math.floor(Math.random() * 800) + 150,
-        trackId: trackId as any,
-      },
-    ];
+    try {
+      // Build conditions array properly - only include defined conditions
+      const conditions = [
+        eq(playlistAttributions.userId, userId),
+        eq(playlistAttributions.platform, platform),
+      ];
+      
+      if (trackId) {
+        conditions.push(eq(playlistAttributions.trackId, trackId));
+      }
 
-    const results: PlaylistAttribution[] = [];
-    for (const playlist of mockPlaylists) {
-      const result = await this.trackPlaylistAdd(userId, playlist);
-      results.push(result);
+      // Fetch existing playlist attributions from database for this user and platform
+      const existingPlaylists = await db
+        .select()
+        .from(playlistAttributions)
+        .where(and(...conditions));
+
+      if (existingPlaylists.length > 0) {
+        logger.info(`Found ${existingPlaylists.length} existing playlists for ${platform}`);
+        
+        // Update streams/listeners counts from DSP analytics for each playlist
+        const updatedPlaylists: PlaylistAttribution[] = [];
+        for (const playlist of existingPlaylists) {
+          // Build analytics filter for this specific playlist based on its track
+          const analyticsConditions = [
+            eq(dspAnalytics.userId, userId),
+            eq(dspAnalytics.platform, platform),
+          ];
+          
+          if (playlist.trackId) {
+            analyticsConditions.push(eq(dspAnalytics.releaseId, playlist.trackId));
+          }
+          
+          // Get latest analytics for this playlist's track from dspAnalytics
+          const analytics = await db
+            .select({
+              streams: sql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+              listeners: sql<number>`COALESCE(COUNT(DISTINCT ${dspAnalytics.date}), 0)`,
+            })
+            .from(dspAnalytics)
+            .where(and(...analyticsConditions));
+
+          const newStreams = Number(analytics[0]?.streams) || 0;
+          
+          // Only update if we have new data
+          if (newStreams > 0 && newStreams !== playlist.streams) {
+            const [updated] = await db
+              .update(playlistAttributions)
+              .set({
+                streams: newStreams,
+                updatedAt: new Date(),
+              })
+              .where(eq(playlistAttributions.id, playlist.id))
+              .returning();
+            
+            updatedPlaylists.push(updated || playlist);
+          } else {
+            updatedPlaylists.push(playlist);
+          }
+        }
+        
+        return updatedPlaylists;
+      }
+
+      // No existing playlists found - return empty array
+      // User needs to add playlist attributions via trackPlaylistAdd or connect DSP for automatic tracking
+      logger.info(`No playlist data found for ${platform} user ${userId}. Add playlists via trackPlaylistAdd.`);
+      return [];
+    } catch (error: unknown) {
+      logger.error(`Error syncing playlists from ${platform}:`, error);
+      throw new Error(`Failed to sync playlists from ${platform}`);
     }
-
-    logger.info(`Synced ${results.length} playlists from ${platform} for user ${userId}`);
-    return results;
   }
 }
 

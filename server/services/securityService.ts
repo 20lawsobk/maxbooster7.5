@@ -293,15 +293,50 @@ export class SecurityService {
    */
   async checkRBAC(userId: string, permission: string): Promise<boolean> {
     try {
-      // In production:
-      // 1. Fetch user's roles from database
-      // 2. Check if roles have required permission
-      // 3. Return access decision
+      // Fetch user from database to check their role
+      const [user] = await db
+        .select({ role: users.role, subscriptionTier: users.subscriptionTier })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
 
-      // For now, simple admin check
-      // In real implementation, use a proper RBAC system
+      if (!user) {
+        logger.warn(`RBAC check failed: User ${userId} not found`);
+        return false;
+      }
 
-      return true; // Placeholder
+      // Define permission hierarchy based on roles and subscription tiers
+      const rolePermissions: Record<string, string[]> = {
+        admin: ['*'], // Admin has all permissions
+        moderator: ['read', 'write', 'moderate', 'view_analytics', 'manage_content'],
+        user: ['read', 'write', 'view_own_analytics'],
+      };
+
+      const tierPermissions: Record<string, string[]> = {
+        enterprise: ['distribution', 'marketplace', 'analytics', 'social_automation', 'ai_features', 'priority_support'],
+        professional: ['distribution', 'marketplace', 'analytics', 'social_automation', 'ai_features'],
+        starter: ['distribution', 'marketplace', 'analytics'],
+        free: ['marketplace'],
+      };
+
+      // Check if user's role grants the permission
+      const userRole = user.role || 'user';
+      const userRolePermissions = rolePermissions[userRole] || rolePermissions.user;
+      
+      if (userRolePermissions.includes('*') || userRolePermissions.includes(permission)) {
+        return true;
+      }
+
+      // Check if user's subscription tier grants the permission
+      const userTier = user.subscriptionTier || 'free';
+      const userTierPermissions = tierPermissions[userTier] || tierPermissions.free;
+      
+      if (userTierPermissions.includes(permission)) {
+        return true;
+      }
+
+      logger.info(`RBAC denied: User ${userId} (role: ${userRole}, tier: ${userTier}) lacks permission: ${permission}`);
+      return false;
     } catch (error: unknown) {
       logger.error('Error checking RBAC:', error);
       throw new Error('Failed to check permissions');

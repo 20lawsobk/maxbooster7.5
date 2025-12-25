@@ -112,7 +112,7 @@ export class S3StorageService {
   }
 
   /**
-   * Upload cover art
+   * Upload cover art with automatic thumbnail generation
    */
   async uploadCoverArt(
     buffer: Buffer,
@@ -125,10 +125,30 @@ export class S3StorageService {
       // Upload original
       const result = await this.uploadFile(buffer, fileName, 'image/jpeg', folder);
 
-      // TODO: Generate and upload thumbnail version
-      // This would use Sharp or similar library to resize
+      // Generate and upload thumbnail version using Sharp
+      try {
+        const sharp = (await import('sharp')).default;
+        const thumbnailBuffer = await sharp(buffer)
+          .resize(300, 300, { fit: 'cover', position: 'center' })
+          .jpeg({ quality: 80 })
+          .toBuffer();
 
-      return result;
+        const thumbFileName = `thumb_${fileName}`;
+        const thumbResult = await this.uploadFile(
+          thumbnailBuffer,
+          thumbFileName,
+          'image/jpeg',
+          `${folder}/thumbnails`
+        );
+
+        return {
+          ...result,
+          thumbnailUrl: thumbResult.url,
+        };
+      } catch (thumbError: unknown) {
+        logger.warn('Thumbnail generation failed, returning original only:', thumbError);
+        return result;
+      }
     } catch (error: unknown) {
       logger.error('Cover art upload failed:', error);
       throw error;
