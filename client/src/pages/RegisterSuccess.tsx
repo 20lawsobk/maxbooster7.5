@@ -51,7 +51,7 @@ export default function RegisterSuccess() {
         // We'll verify the session exists and payment was successful on form submit
         setPaymentValid(true);
         setIsVerifying(false);
-      } catch (error: unknown) {
+      } catch (error) {
         setIsVerifying(false);
         toast({
           title: 'Payment Verification Failed',
@@ -109,10 +109,11 @@ export default function RegisterSuccess() {
       } else {
         throw new Error(data.error || 'Account creation failed');
       }
-    } catch (error: unknown) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
       toast({
         title: 'Account Creation Failed',
-        description: error.message || 'Something went wrong. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

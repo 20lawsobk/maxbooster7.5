@@ -156,10 +156,11 @@ export default function RegisterPayment() {
       } else {
         throw new Error('Failed to create checkout session');
       }
-    } catch (error: unknown) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
       toast({
         title: 'Error',
-        description: error.message || 'Something went wrong. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
       setIsLoading(false);

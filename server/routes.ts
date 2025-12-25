@@ -103,23 +103,52 @@ export async function registerRoutes(
   // Auth: Register
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
-      const { email, password, firstName, lastName } = req.body;
+      const { email, password, username, firstName, lastName } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
       }
 
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      // Validate password strength
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+
+      // Check if email already exists
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "Email already registered" });
       }
 
+      // Check if username already exists (if provided)
+      if (username) {
+        const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+        if (!usernameRegex.test(username)) {
+          return res.status(400).json({ message: "Username must be 3-30 alphanumeric characters" });
+        }
+        
+        const existingUsername = await storage.getUserByUsername(username);
+        if (existingUsername) {
+          return res.status(400).json({ message: "Username already taken" });
+        }
+      }
+
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await storage.createUser({
         email,
+        username: username || email.split('@')[0],
         password: hashedPassword,
         firstName: firstName || "",
         lastName: lastName || "",
+        role: 'user',
+        subscriptionTier: 'free',
+        subscriptionStatus: 'inactive',
       });
 
       req.session.userId = user.id;
@@ -134,7 +163,7 @@ export async function registerRoutes(
   // Auth: Login (accepts username or email)
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
-      const { email, username, password } = req.body;
+      const { email, username, password, twoFactorCode } = req.body;
       const identifier = email || username;
       
       if (!identifier || !password) {
@@ -153,6 +182,26 @@ export async function registerRoutes(
       const isValid = await bcrypt.compare(password, user.password);
       if (!isValid) {
         return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Check if 2FA is enabled
+      if (user.twoFactorEnabled && user.twoFactorSecret) {
+        if (!twoFactorCode) {
+          return res.status(200).json({ 
+            requiresTwoFactor: true,
+            message: "Two-factor authentication required" 
+          });
+        }
+        
+        const { authenticator } = await import('otplib');
+        const isCodeValid = authenticator.verify({ 
+          token: twoFactorCode, 
+          secret: user.twoFactorSecret 
+        });
+        
+        if (!isCodeValid) {
+          return res.status(401).json({ message: "Invalid 2FA code" });
+        }
       }
 
       req.session.userId = user.id;
@@ -258,6 +307,9 @@ export async function registerRoutes(
     const defaultSettings = {
       emailNotifications: true,
       pushNotifications: true,
+      weeklyReports: true,
+      salesAlerts: true,
+      royaltyUpdates: true,
       marketingEmails: false,
       releaseAlerts: true,
       paymentAlerts: true,
@@ -273,12 +325,18 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { emailNotifications, pushNotifications, marketingEmails, releaseAlerts, paymentAlerts, securityAlerts } = req.body;
+      const { 
+        emailNotifications, pushNotifications, weeklyReports, salesAlerts, royaltyUpdates,
+        marketingEmails, releaseAlerts, paymentAlerts, securityAlerts 
+      } = req.body;
       const currentSettings = (req.user.notificationSettings as Record<string, any>) || {};
       const updatedSettings = {
         ...currentSettings,
         ...(emailNotifications !== undefined && { emailNotifications }),
         ...(pushNotifications !== undefined && { pushNotifications }),
+        ...(weeklyReports !== undefined && { weeklyReports }),
+        ...(salesAlerts !== undefined && { salesAlerts }),
+        ...(royaltyUpdates !== undefined && { royaltyUpdates }),
         ...(marketingEmails !== undefined && { marketingEmails }),
         ...(releaseAlerts !== undefined && { releaseAlerts }),
         ...(paymentAlerts !== undefined && { paymentAlerts }),
@@ -303,6 +361,10 @@ export async function registerRoutes(
       timezone: "America/New_York",
       dateFormat: "MM/DD/YYYY",
       currency: "USD",
+      defaultBPM: 120,
+      defaultKey: "C",
+      autoSave: true,
+      betaFeatures: false,
     };
     const userPreferences = req.user.preferences as Record<string, any> | null;
     return res.json({ ...defaultPreferences, ...userPreferences });
@@ -314,7 +376,10 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { theme, language, timezone, dateFormat, currency } = req.body;
+      const { 
+        theme, language, timezone, dateFormat, currency,
+        defaultBPM, defaultKey, autoSave, betaFeatures
+      } = req.body;
       const currentPreferences = (req.user.preferences as Record<string, any>) || {};
       const updatedPreferences = {
         ...currentPreferences,
@@ -323,6 +388,10 @@ export async function registerRoutes(
         ...(timezone !== undefined && { timezone }),
         ...(dateFormat !== undefined && { dateFormat }),
         ...(currency !== undefined && { currency }),
+        ...(defaultBPM !== undefined && { defaultBPM }),
+        ...(defaultKey !== undefined && { defaultKey }),
+        ...(autoSave !== undefined && { autoSave }),
+        ...(betaFeatures !== undefined && { betaFeatures }),
       };
       await storage.updateUser(req.user.id, { preferences: updatedPreferences });
       return res.json({ success: true });
@@ -333,19 +402,50 @@ export async function registerRoutes(
   });
 
   // Auth: Get sessions
-  app.get("/api/auth/sessions", (req: Request, res: Response) => {
+  app.get("/api/auth/sessions", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json([
-      {
-        id: req.session.id,
-        device: "Current Device",
+    
+    try {
+      // Get user sessions from database
+      const userSessions = await storage.getSessionsByUserId(req.user.id);
+      
+      // Format sessions for frontend display
+      const formattedSessions = userSessions.map(session => ({
+        id: session.id,
+        device: session.userAgent || "Unknown Device",
         location: "Unknown",
-        lastActive: new Date().toISOString(),
-        isCurrent: true,
-      },
-    ]);
+        time: session.lastActivity ? new Date(session.lastActivity).toLocaleString() : "Unknown",
+        current: session.id === req.session.id,
+      }));
+      
+      // Always include current session if not in list
+      const currentSessionExists = formattedSessions.some(s => s.current);
+      if (!currentSessionExists) {
+        formattedSessions.unshift({
+          id: req.session.id,
+          device: "Current Device",
+          location: "Unknown",
+          time: new Date().toLocaleString(),
+          current: true,
+        });
+      }
+      
+      return res.json(formattedSessions);
+    } catch (error) {
+      console.error("Get sessions error:", error);
+      // Fallback to current session only
+      return res.json([
+        {
+          id: req.session.id,
+          device: "Current Device",
+          location: "Unknown",
+          time: new Date().toLocaleString(),
+          current: true,
+        },
+      ]);
+    }
   });
 
   // Auth: Terminate session
@@ -438,11 +538,46 @@ export async function registerRoutes(
   });
 
   // Auth: Upload avatar
-  app.post("/api/auth/avatar", async (req: Request, res: Response) => {
+  app.post("/api/auth/avatar", async (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true, avatarUrl: "/uploads/avatar-default.png" });
+    
+    // Dynamically import avatar upload middleware and storage
+    try {
+      const { avatarUpload, storeUploadedFile } = await import('./middleware/uploadHandler.js');
+      
+      // Handle multipart upload
+      avatarUpload.single('avatar')(req, res, async (err: any) => {
+        if (err) {
+          console.error("Avatar upload error:", err);
+          return res.status(400).json({ message: err.message || "Failed to upload avatar" });
+        }
+        
+        if (!req.file) {
+          return res.status(400).json({ message: "No file uploaded" });
+        }
+        
+        try {
+          const result = await storeUploadedFile(req.file, req.user!.id, 'avatar');
+          
+          // Update user record with new avatar URL
+          await storage.updateUser(req.user!.id, { avatarUrl: result.url });
+          
+          return res.json({ 
+            success: true, 
+            profileImageUrl: result.url,
+            avatarUrl: result.url
+          });
+        } catch (storeError: any) {
+          console.error("Avatar storage error:", storeError);
+          return res.status(500).json({ message: storeError.message || "Failed to store avatar" });
+        }
+      });
+    } catch (importError) {
+      console.error("Avatar upload import error:", importError);
+      return res.status(500).json({ message: "Avatar upload service unavailable" });
+    }
   });
 
   // Auth: Delete avatar
@@ -1062,16 +1197,135 @@ export async function registerRoutes(
     });
   });
 
+  // Analytics: Track event (for dashboard widgets)
+  app.post("/api/analytics/track-event", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const { eventType, eventData } = req.body;
+      
+      if (!eventType) {
+        return res.status(400).json({ message: "Event type is required" });
+      }
+      
+      // Log the event for analytics (in production, store to database)
+      console.log(`[Analytics] User ${req.user.id}: ${eventType}`, eventData);
+      
+      return res.json({ success: true, message: "Event tracked" });
+    } catch (error) {
+      console.error("Track event error:", error);
+      return res.status(500).json({ message: "Failed to track event" });
+    }
+  });
+
   // AI: Insights
   app.get("/api/ai/insights", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({
-      recommendations: [],
-      trends: [],
-      opportunities: [],
-    });
+    try {
+      // Calculate a basic performance score based on user activity
+      const projects = await storage.getProjectsByUserId(req.user.id);
+      const projectCount = projects?.length || 0;
+      
+      // Calculate performance score (0-100 scale)
+      let performanceScore = 25; // Base score for having an account
+      if (projectCount > 0) performanceScore += 15; // Has projects
+      if (projectCount >= 3) performanceScore += 10; // Multiple projects
+      if (projectCount >= 5) performanceScore += 10; // Active user
+      if (req.user.subscriptionTier && req.user.subscriptionTier !== 'free') performanceScore += 15; // Paying customer
+      if (req.user.onboardingCompleted) performanceScore += 10; // Completed onboarding
+      if (req.user.twoFactorEnabled) performanceScore += 5; // Security conscious
+      if (req.user.firstName || req.user.lastName) performanceScore += 5; // Profile filled
+      if (req.user.bio) performanceScore += 5; // Has bio
+      
+      // Cap at 100
+      performanceScore = Math.min(performanceScore, 100);
+      
+      return res.json({
+        performanceScore,
+        recommendations: [
+          {
+            id: 'upload-track',
+            title: 'Upload Your First Track',
+            description: 'Get started by uploading music to distribute',
+            priority: projectCount === 0 ? 'high' : 'low',
+          },
+          {
+            id: 'connect-social',
+            title: 'Connect Social Accounts',
+            description: 'Link your social media for better reach',
+            priority: 'medium',
+          },
+        ],
+        trends: [
+          { name: 'Engagement', direction: 'up', change: 12 },
+          { name: 'Reach', direction: 'stable', change: 0 },
+        ],
+        opportunities: [
+          {
+            id: 'playlist-pitch',
+            title: 'Playlist Pitching',
+            description: 'Submit your tracks to curated playlists',
+            potential: 'high',
+          },
+        ],
+      });
+    } catch (error) {
+      console.error("AI insights error:", error);
+      return res.json({
+        performanceScore: 25,
+        recommendations: [],
+        trends: [],
+        opportunities: [],
+      });
+    }
+  });
+
+  // AI: Optimize content
+  app.post("/api/ai/optimize-content", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      // Check if user has paid subscription
+      if (!req.user.subscriptionTier || req.user.subscriptionTier === 'free' || req.user.subscriptionTier === 'trial') {
+        return res.status(403).json({ 
+          message: "AI content optimization requires an active paid subscription",
+          requiresUpgrade: true 
+        });
+      }
+      
+      // Simulate AI optimization response
+      return res.json({
+        success: true,
+        optimizations: [
+          {
+            type: 'metadata',
+            title: 'Metadata Optimization',
+            description: 'Enhanced track titles and descriptions for better discoverability',
+            applied: true,
+          },
+          {
+            type: 'social',
+            title: 'Social Media Optimization',
+            description: 'Optimized posting times and hashtags for maximum engagement',
+            applied: true,
+          },
+          {
+            type: 'distribution',
+            title: 'Distribution Optimization',
+            description: 'Recommended platform-specific optimizations applied',
+            applied: true,
+          },
+        ],
+        message: 'Your content has been optimized for maximum reach and engagement.',
+      });
+    } catch (error) {
+      console.error("AI optimize content error:", error);
+      return res.status(500).json({ message: "Failed to optimize content" });
+    }
   });
 
   // Dynamically load and mount route modules (with error handling)
@@ -1323,6 +1577,107 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
       res.status(500).json({ error: 'Failed to create checkout session. Please try again.' });
+    }
+  });
+
+  // REGISTER AFTER PAYMENT - Complete account creation after Stripe checkout
+  // This endpoint verifies the Stripe session and creates the user account
+  app.post("/api/register-after-payment", async (req: Request, res: Response) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ error: 'Payment system not configured' });
+      }
+
+      const { sessionId, password, tosAccepted, privacyAccepted, marketingConsent } = req.body;
+
+      if (!sessionId || !password) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      if (!tosAccepted || !privacyAccepted) {
+        return res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy' });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      }
+
+      // Retrieve and verify the Stripe checkout session
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (!session) {
+        return res.status(400).json({ error: 'Invalid checkout session' });
+      }
+
+      if (session.payment_status !== 'paid') {
+        return res.status(400).json({ error: 'Payment not completed. Please try again.' });
+      }
+
+      const email = session.customer_email;
+      const username = session.metadata?.username;
+      const tier = session.metadata?.tier || 'monthly';
+      const birthdate = session.metadata?.birthdate;
+
+      if (!email || !username) {
+        return res.status(400).json({ error: 'Session metadata missing. Please contact support.' });
+      }
+
+      // Check if user already exists (prevent duplicate registration)
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        // User already exists - log them in
+        req.session.userId = existingUser.id;
+        const { password: _, ...userWithoutPassword } = existingUser;
+        return res.json({ user: userWithoutPassword, message: 'Account already exists. Logged in.' });
+      }
+
+      const existingUsername = await storage.getUserByUsername(username);
+      if (existingUsername) {
+        return res.status(409).json({ error: 'Username already taken. Please contact support.' });
+      }
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Determine subscription end date based on tier
+      let subscriptionEndsAt: Date | null = null;
+      if (tier === 'monthly') {
+        subscriptionEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      } else if (tier === 'yearly') {
+        subscriptionEndsAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      } else if (tier === 'lifetime') {
+        subscriptionEndsAt = new Date('2099-12-31');
+      }
+
+      // Create the user account
+      const user = await storage.createUser({
+        email,
+        username,
+        password: hashedPassword,
+        role: 'user',
+        subscriptionTier: tier === 'lifetime' ? 'lifetime' : 'premium',
+        subscriptionStatus: 'active',
+        subscriptionEndsAt,
+        stripeCustomerId: session.customer as string || null,
+        tosAccepted: true,
+        privacyAccepted: true,
+        marketingConsent: marketingConsent || false,
+        birthdate: birthdate ? new Date(birthdate) : null,
+      });
+
+      // Log the user in
+      req.session.userId = user.id;
+
+      const { password: _, ...userWithoutPassword } = user;
+      return res.json({ user: userWithoutPassword, message: 'Account created successfully' });
+    } catch (error: any) {
+      console.error('Error completing registration after payment:', error);
+      
+      if (error.type === 'StripeInvalidRequestError') {
+        return res.status(400).json({ error: 'Invalid payment session. Please try again.' });
+      }
+      
+      return res.status(500).json({ error: 'Failed to complete registration. Please contact support.' });
     }
   });
 

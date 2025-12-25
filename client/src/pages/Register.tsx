@@ -65,8 +65,9 @@ export default function Register() {
         description: "Welcome to Max Booster! Let's get started.",
       });
       navigate('/dashboard');
-    } catch (error: unknown) {
-      setError(error.message || 'Failed to create account. Please try again.');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create account. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

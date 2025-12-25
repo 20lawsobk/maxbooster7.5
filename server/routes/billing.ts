@@ -291,7 +291,8 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
     }
     
     if (invoice.invoice_pdf) {
-      return res.json({ pdfUrl: invoice.invoice_pdf });
+      // Redirect to Stripe's PDF URL so frontend can download it as a blob
+      return res.redirect(invoice.invoice_pdf);
     }
     
     res.status(404).json({ message: 'Invoice PDF not available' });

@@ -18,6 +18,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
   const { login } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -36,16 +38,42 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await login({ username, password });
-      // Navigation will be handled by useRedirectIfAuthenticated hook
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          username, 
+          password,
+          twoFactorCode: requiresTwoFactor ? twoFactorCode : undefined
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.requiresTwoFactor) {
+        setRequiresTwoFactor(true);
+        toast({
+          title: '2FA Required',
+          description: 'Please enter your authenticator code.',
+        });
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+      
       toast({
         title: 'Welcome back!',
         description: "You've successfully signed in.",
       });
+      window.location.href = '/dashboard';
     } catch (error: unknown) {
+      const err = error as Error;
       toast({
         title: 'Login Failed',
-        description: error.message || 'Invalid credentials. Please try again.',
+        description: err.message || 'Invalid credentials. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -81,6 +109,7 @@ export default function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                disabled={requiresTwoFactor}
               />
             </div>
             <div className="space-y-2">
@@ -94,6 +123,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={requiresTwoFactor}
                 />
                 <Button
                   type="button"
@@ -102,11 +132,28 @@ export default function Login() {
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                   data-testid="button-toggle-password"
+                  disabled={requiresTwoFactor}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
+            {requiresTwoFactor && (
+              <div className="space-y-2">
+                <Label htmlFor="twoFactorCode">Authenticator Code</Label>
+                <Input
+                  id="twoFactorCode"
+                  data-testid="input-2fa-code"
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  maxLength={6}
+                  required
+                  autoFocus
+                />
+              </div>
+            )}
             <Button
               type="submit"
               className="w-full"
