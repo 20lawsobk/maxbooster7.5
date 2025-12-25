@@ -31,7 +31,9 @@ export async function initializeAdmin() {
     
     logger.info('🔐 Checking for admin account...');
     
-    let admin = await storage.getUserByEmail(adminEmail);
+    // Check by email using direct DB query to avoid any caching/case issues
+    const [existingAdmin] = await db.select().from(users).where(eq(users.email, adminEmail));
+    let admin = existingAdmin;
     let isNewAdmin = false;
     
     if (admin) {
