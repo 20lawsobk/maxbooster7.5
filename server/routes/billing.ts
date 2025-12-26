@@ -302,7 +302,7 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
   }
 });
 
-router.post('/update-payment-method', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/update-payment', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
     const customerId = await getOrCreateStripeCustomer(req.user);
