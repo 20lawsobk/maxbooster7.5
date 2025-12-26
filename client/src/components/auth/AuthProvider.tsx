@@ -25,18 +25,23 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
 
-  const { data: userData, isLoading, isFetched } = useQuery({
+  const { data: userData, isLoading: queryLoading, isFetching, isFetched } = useQuery({
     queryKey: ['/api/auth/me'],
     queryFn: getQueryFn({ on401: 'returnNull' }),
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    refetchOnReconnect: false,
     staleTime: Infinity,
     gcTime: Infinity, // Keep data in cache indefinitely to prevent null flashes
   });
 
   // Derive user directly from query data to avoid state synchronization issues
   const user = (userData && userData.id) ? userData : null;
+  
+  // Consider loading only during initial fetch, not during background refetches
+  // This prevents flashing when cached data exists
+  const isLoading = queryLoading && !isFetched;
 
   const login = async (credentials: { username: string; password: string }) => {
     const response = await apiRequest('POST', '/api/auth/login', credentials);
