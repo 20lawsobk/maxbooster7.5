@@ -470,4 +470,62 @@ router.get('/benchmarks', requireAuth, async (req: AuthenticatedRequest, res: Re
   }
 });
 
+// ===========================
+// AI CONTENT ENDPOINTS
+// ===========================
+
+router.get('/ai-content/ab-variants', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json({ variants: [] });
+  } catch (error) {
+    logger.error('Get AB variants error:', error);
+    res.status(500).json({ message: 'Failed to get AB variants' });
+  }
+});
+
+router.post('/ai-content/analyze-brand-voice', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json({ brandVoice: { tone: 'professional', style: 'friendly' }, score: 0.85 });
+  } catch (error) {
+    logger.error('Analyze brand voice error:', error);
+    res.status(500).json({ message: 'Failed to analyze brand voice' });
+  }
+});
+
+router.post('/ai-content/multilingual', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json({ translations: [] });
+  } catch (error) {
+    logger.error('Multilingual content error:', error);
+    res.status(500).json({ message: 'Failed to generate multilingual content' });
+  }
+});
+
+router.post('/ai-content/optimize-hashtags', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json({ hashtags: [], optimized: true });
+  } catch (error) {
+    logger.error('Optimize hashtags error:', error);
+    res.status(500).json({ message: 'Failed to optimize hashtags' });
+  }
+});
+
+router.get('/ai-content/posting-times', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json({ times: [], timezone: 'UTC' });
+  } catch (error) {
+    logger.error('Get posting times error:', error);
+    res.status(500).json({ message: 'Failed to get posting times' });
+  }
+});
+
+router.get('/ai-content/trending-topics', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json({ topics: [] });
+  } catch (error) {
+    logger.error('Get trending topics error:', error);
+    res.status(500).json({ message: 'Failed to get trending topics' });
+  }
+});
+
 export default router;

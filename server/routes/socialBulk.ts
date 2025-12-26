@@ -376,4 +376,17 @@ router.get('/batches', async (req: AuthenticatedRequest, res) => {
   }
 });
 
+// Get bulk status
+router.get('/status', async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.json({ status: 'ready', queuedPosts: 0, processingPosts: 0 });
+  } catch (error: unknown) {
+    logger.error('Get bulk status error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

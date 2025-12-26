@@ -258,4 +258,17 @@ router.get('/stats', async (req: AuthenticatedRequest, res) => {
   }
 });
 
+// Get approval history
+router.get('/history', async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.json({ history: [], total: 0 });
+  } catch (error: unknown) {
+    logger.error('Get approval history error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

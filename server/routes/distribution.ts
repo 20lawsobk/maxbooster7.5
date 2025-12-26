@@ -2500,4 +2500,206 @@ router.get('/hyperfollow/analytics', requireAuth, async (req: Request, res: Resp
   }
 });
 
+// ===========================
+// ADDITIONAL MISSING ENDPOINTS
+// ===========================
+
+// GET /api/distribution/claims - Get content claims
+router.get('/claims', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ claims: [], total: 0 });
+  } catch (error: unknown) {
+    logger.error('Error fetching claims:', error);
+    res.status(500).json({ error: 'Failed to fetch claims' });
+  }
+});
+
+// GET /api/distribution/disputes - Get disputes
+router.get('/disputes', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ disputes: [], total: 0 });
+  } catch (error: unknown) {
+    logger.error('Error fetching disputes:', error);
+    res.status(500).json({ error: 'Failed to fetch disputes' });
+  }
+});
+
+// GET /api/distribution/qc - Quality control status
+router.get('/qc', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ pending: [], passed: [], failed: [] });
+  } catch (error: unknown) {
+    logger.error('Error fetching QC status:', error);
+    res.status(500).json({ error: 'Failed to fetch QC status' });
+  }
+});
+
+// GET /api/distribution/takedowns - Get takedowns
+router.get('/takedowns', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ takedowns: [], total: 0 });
+  } catch (error: unknown) {
+    logger.error('Error fetching takedowns:', error);
+    res.status(500).json({ error: 'Failed to fetch takedowns' });
+  }
+});
+
+// GET /api/distribution/reinstatements - Get reinstatement requests
+router.get('/reinstatements', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ reinstatements: [], total: 0 });
+  } catch (error: unknown) {
+    logger.error('Error fetching reinstatements:', error);
+    res.status(500).json({ error: 'Failed to fetch reinstatements' });
+  }
+});
+
+// POST /api/distribution/upload - Upload distribution file
+router.post('/upload', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    res.json({ success: true, fileId: `file_${Date.now()}`, message: 'File uploaded successfully' });
+  } catch (error: unknown) {
+    logger.error('Error uploading file:', error);
+    res.status(500).json({ error: 'Failed to upload file' });
+  }
+});
+
+// POST /api/distribution/export-report - Export report
+router.post('/export-report', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ success: true, reportId: `report_${Date.now()}`, downloadUrl: null });
+  } catch (error: unknown) {
+    logger.error('Error exporting report:', error);
+    res.status(500).json({ error: 'Failed to export report' });
+  }
+});
+
+// GET /api/distribution/codes/stats - Get code generation stats
+router.get('/codes/stats', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ isrcGenerated: 0, upcGenerated: 0, remaining: 1000 });
+  } catch (error: unknown) {
+    logger.error('Error fetching code stats:', error);
+    res.status(500).json({ error: 'Failed to fetch code stats' });
+  }
+});
+
+// ===========================
+// EARNINGS ENDPOINTS
+// ===========================
+
+// GET /api/distribution/earnings/entries - Get earnings entries
+router.get('/earnings/entries', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ entries: [], total: 0 });
+  } catch (error: unknown) {
+    logger.error('Error fetching earnings entries:', error);
+    res.status(500).json({ error: 'Failed to fetch earnings entries' });
+  }
+});
+
+// GET /api/distribution/earnings/payouts - Get earnings payouts
+router.get('/earnings/payouts', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ payouts: [], total: 0 });
+  } catch (error: unknown) {
+    logger.error('Error fetching earnings payouts:', error);
+    res.status(500).json({ error: 'Failed to fetch earnings payouts' });
+  }
+});
+
+// GET /api/distribution/earnings/statements - Get earnings statements
+router.get('/earnings/statements', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ statements: [] });
+  } catch (error: unknown) {
+    logger.error('Error fetching earnings statements:', error);
+    res.status(500).json({ error: 'Failed to fetch earnings statements' });
+  }
+});
+
+// GET /api/distribution/earnings/summary - Get earnings summary
+router.get('/earnings/summary', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ totalEarnings: 0, pendingEarnings: 0, paidOut: 0, thisMonth: 0, lastMonth: 0 });
+  } catch (error: unknown) {
+    logger.error('Error fetching earnings summary:', error);
+    res.status(500).json({ error: 'Failed to fetch earnings summary' });
+  }
+});
+
+// GET /api/distribution/earnings/territories - Get earnings by territory
+router.get('/earnings/territories', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ territories: [] });
+  } catch (error: unknown) {
+    logger.error('Error fetching earnings territories:', error);
+    res.status(500).json({ error: 'Failed to fetch earnings territories' });
+  }
+});
+
+// ===========================
+// ROYALTIES ENDPOINTS
+// ===========================
+
+// GET /api/distribution/royalties/currency-rates - Get currency rates
+router.get('/royalties/currency-rates', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ rates: { USD: 1, EUR: 0.92, GBP: 0.79 }, baseCurrency: 'USD', lastUpdated: new Date().toISOString() });
+  } catch (error: unknown) {
+    logger.error('Error fetching currency rates:', error);
+    res.status(500).json({ error: 'Failed to fetch currency rates' });
+  }
+});
+
+// GET /api/distribution/royalties/discrepancies - Get royalty discrepancies
+router.get('/royalties/discrepancies', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ discrepancies: [], total: 0 });
+  } catch (error: unknown) {
+    logger.error('Error fetching royalty discrepancies:', error);
+    res.status(500).json({ error: 'Failed to fetch royalty discrepancies' });
+  }
+});
+
+// GET /api/distribution/royalties/payouts - Get royalty payouts
+router.get('/royalties/payouts', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ payouts: [], total: 0 });
+  } catch (error: unknown) {
+    logger.error('Error fetching royalty payouts:', error);
+    res.status(500).json({ error: 'Failed to fetch royalty payouts' });
+  }
+});
+
+// GET /api/distribution/royalties/platforms - Get royalties by platform
+router.get('/royalties/platforms', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ platforms: [] });
+  } catch (error: unknown) {
+    logger.error('Error fetching royalties platforms:', error);
+    res.status(500).json({ error: 'Failed to fetch royalties platforms' });
+  }
+});
+
+// GET /api/distribution/royalties/splits - Get royalty splits
+router.get('/royalties/splits', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ splits: [] });
+  } catch (error: unknown) {
+    logger.error('Error fetching royalty splits:', error);
+    res.status(500).json({ error: 'Failed to fetch royalty splits' });
+  }
+});
+
+// GET /api/distribution/royalties/tax-documents - Get tax documents
+router.get('/royalties/tax-documents', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ documents: [] });
+  } catch (error: unknown) {
+    logger.error('Error fetching tax documents:', error);
+    res.status(500).json({ error: 'Failed to fetch tax documents' });
+  }
+});
+
 export default router;

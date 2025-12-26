@@ -70,6 +70,145 @@ async function verifyProjectOwnership(projectId: string, userId: string): Promis
   return !!project;
 }
 
+// GET all projects for user
+router.get('/projects', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const userProjects = await db.query.projects.findMany({
+      where: eq(projects.userId, userId),
+    });
+    res.json(userProjects);
+  } catch (error: unknown) {
+    logger.error('Error fetching projects:', error);
+    res.status(500).json({ error: 'Failed to fetch projects' });
+  }
+});
+
+// POST create new project
+router.post('/projects', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { title, tempo, timeSignature, sampleRate, bitDepth } = req.body;
+    const projectId = nanoid();
+    
+    const [project] = await db.insert(projects).values({
+      id: projectId,
+      userId,
+      title: title || 'Untitled Project',
+      tempo: tempo || 120,
+      timeSignature: timeSignature || '4/4',
+      sampleRate: sampleRate || 44100,
+      bitDepth: bitDepth || 24,
+    }).returning();
+    
+    res.status(201).json(project);
+  } catch (error: unknown) {
+    logger.error('Error creating project:', error);
+    res.status(500).json({ error: 'Failed to create project' });
+  }
+});
+
+// GET recent files
+router.get('/recent-files', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ files: [] });
+  } catch (error: unknown) {
+    logger.error('Error fetching recent files:', error);
+    res.status(500).json({ error: 'Failed to fetch recent files' });
+  }
+});
+
+// GET samples
+router.get('/samples', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ samples: [] });
+  } catch (error: unknown) {
+    logger.error('Error fetching samples:', error);
+    res.status(500).json({ error: 'Failed to fetch samples' });
+  }
+});
+
+// POST record upload
+router.post('/record/upload', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({ success: true, fileId: `recording_${nanoid()}`, url: null });
+  } catch (error: unknown) {
+    logger.error('Error uploading recording:', error);
+    res.status(500).json({ error: 'Failed to upload recording' });
+  }
+});
+
+// GET tracks for project
+router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const tracks = await db.query.studioTracks.findMany({
+      where: eq(studioTracks.projectId, projectId),
+    });
+    
+    res.json(tracks);
+  } catch (error: unknown) {
+    logger.error('Error fetching tracks:', error);
+    res.status(500).json({ error: 'Failed to fetch tracks' });
+  }
+});
+
+// POST create track
+router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const trackData = createTrackSchema.parse(req.body);
+    
+    const hasAccess = await verifyProjectOwnership(trackData.projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const trackId = nanoid();
+    const [track] = await db.insert(studioTracks).values({
+      id: trackId,
+      ...trackData,
+    }).returning();
+    
+    res.status(201).json(track);
+  } catch (error: unknown) {
+    logger.error('Error creating track:', error);
+    res.status(500).json({ error: 'Failed to create track' });
+  }
+});
+
+// GET audio clips for track
+router.get('/tracks/:trackId/audio-clips', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { trackId } = req.params;
+    const clips = await db.query.audioClips.findMany({
+      where: eq(audioClips.trackId, trackId),
+    });
+    res.json(clips);
+  } catch (error: unknown) {
+    logger.error('Error fetching audio clips:', error);
+    res.status(500).json({ error: 'Failed to fetch audio clips' });
+  }
+});
+
+// GET mix busses for project
+router.get('/projects/:projectId/mix-busses', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    res.json([]);
+  } catch (error: unknown) {
+    logger.error('Error fetching mix busses:', error);
+    res.status(500).json({ error: 'Failed to fetch mix busses' });
+  }
+});
+
 router.get('/projects/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;

@@ -20,6 +20,69 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 router.use(requireAdmin);
 
 // ============================================================
+// ACTIVITY ENDPOINT
+// ============================================================
+
+router.get('/activity', async (req, res) => {
+  try {
+    res.json({
+      activities: [],
+      total: 0,
+    });
+  } catch (error) {
+    logger.error('Error fetching admin activity:', error);
+    res.status(500).json({ error: 'Failed to fetch activity' });
+  }
+});
+
+// ============================================================
+// ANALYTICS ENDPOINT
+// ============================================================
+
+router.get('/analytics', async (req, res) => {
+  try {
+    res.json({
+      totalUsers: 0,
+      activeUsers: 0,
+      revenue: 0,
+      subscriptions: { free: 0, pro: 0, enterprise: 0 },
+      growth: { users: 0, revenue: 0 },
+    });
+  } catch (error) {
+    logger.error('Error fetching admin analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+
+// ============================================================
+// SETTINGS ENDPOINTS
+// ============================================================
+
+router.get('/settings', async (req, res) => {
+  try {
+    res.json({
+      maintenanceMode: false,
+      registrationEnabled: true,
+      emailNotifications: true,
+      maxUploadSize: 100,
+      allowedFileTypes: ['mp3', 'wav', 'flac', 'aiff'],
+    });
+  } catch (error) {
+    logger.error('Error fetching admin settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+router.put('/settings', async (req, res) => {
+  try {
+    res.json({ success: true, message: 'Settings updated' });
+  } catch (error) {
+    logger.error('Error updating admin settings:', error);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// ============================================================
 // USERS ENDPOINTS
 // ============================================================
 

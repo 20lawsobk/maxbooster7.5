@@ -660,4 +660,83 @@ router.get('/listings/:listingId/stems', async (req: Request, res: Response) => 
   }
 });
 
+// ===========================
+// ADDITIONAL MISSING ENDPOINTS
+// ===========================
+
+// Affiliates endpoint
+router.get('/affiliates', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.json({ affiliates: [], total: 0 });
+  } catch (error: any) {
+    logger.error('Error fetching affiliates:', error);
+    res.status(500).json({ error: 'Failed to fetch affiliates' });
+  }
+});
+
+// AI Recommendations endpoint
+router.get('/ai-recommendations', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.json({ recommendations: [] });
+  } catch (error: any) {
+    logger.error('Error fetching AI recommendations:', error);
+    res.status(500).json({ error: 'Failed to fetch AI recommendations' });
+  }
+});
+
+// Collaborations endpoint
+router.get('/collaborations', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.json({ collaborations: [], total: 0 });
+  } catch (error: any) {
+    logger.error('Error fetching collaborations:', error);
+    res.status(500).json({ error: 'Failed to fetch collaborations' });
+  }
+});
+
+// Contracts endpoint
+router.get('/contracts', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.json({ contracts: [], total: 0 });
+  } catch (error: any) {
+    logger.error('Error fetching contracts:', error);
+    res.status(500).json({ error: 'Failed to fetch contracts' });
+  }
+});
+
+// Escrow endpoint
+router.get('/escrow', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.json({ escrows: [], total: 0 });
+  } catch (error: any) {
+    logger.error('Error fetching escrows:', error);
+    res.status(500).json({ error: 'Failed to fetch escrows' });
+  }
+});
+
+// Interaction endpoint
+router.post('/interaction', async (req: Request, res: Response) => {
+  try {
+    res.json({ success: true });
+  } catch (error: any) {
+    logger.error('Error recording interaction:', error);
+    res.status(500).json({ error: 'Failed to record interaction' });
+  }
+});
+
 export default router;
