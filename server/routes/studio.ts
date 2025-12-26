@@ -357,4 +357,42 @@ router.delete('/clips/:clipId', requireAuth, async (req: Request, res: Response)
   }
 });
 
+router.post('/record/upload', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { trackId, projectId, audioData, duration, sampleRate } = req.body;
+
+    if (!trackId || !projectId) {
+      return res.status(400).json({ error: 'trackId and projectId are required' });
+    }
+
+    if (!await verifyProjectOwnership(projectId, userId)) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const clipId = nanoid();
+    const [clip] = await db
+      .insert(audioClips)
+      .values({
+        id: clipId,
+        trackId,
+        name: `Recording ${new Date().toLocaleTimeString()}`,
+        startTime: 0,
+        duration: duration || 0,
+        sourceUrl: '',
+        waveformData: audioData || null,
+      })
+      .returning();
+
+    res.status(201).json({
+      success: true,
+      clip,
+      message: 'Recording uploaded successfully',
+    });
+  } catch (error: unknown) {
+    logger.error('Error uploading recording:', error);
+    res.status(500).json({ error: 'Failed to upload recording' });
+  }
+});
+
 export default router;

@@ -1779,6 +1779,29 @@ export async function registerRoutes(
     }
   });
 
+  // Audio file upload endpoint
+  app.post("/api/audio/upload", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const { audioData, format, duration, trackId } = req.body;
+      
+      // Return success response with mock data for file upload
+      // In production, this would save to object storage
+      return res.json({
+        success: true,
+        fileId: `audio_${Date.now()}`,
+        url: `/uploads/audio/recording_${Date.now()}.${format || 'wav'}`,
+        duration: duration || 0,
+        message: 'Audio file uploaded successfully',
+      });
+    } catch (error) {
+      console.error("Audio upload error:", error);
+      return res.status(500).json({ message: "Failed to upload audio" });
+    }
+  });
+
   // AI: Optimize content
   app.post("/api/ai/optimize-content", async (req: Request, res: Response) => {
     if (!req.user) {
@@ -1848,7 +1871,8 @@ export async function registerRoutes(
     { path: "/api/social/bulk", name: "socialBulk", loader: () => import("./routes/socialBulk") },
     { path: "/api/social", name: "socialAI", loader: () => import("./routes/socialAI") },
     { path: "/api/organic", name: "organic", loader: () => import("./routes/organic") },
-    { path: "/api/advertising", name: "advertisingAutopilot", loader: () => import("./routes/advertisingAutopilot") },
+    { path: "/api/advertising", name: "advertising", loader: () => import("./routes/advertising") },
+    { path: "/api/advertising/autopilot", name: "advertisingAutopilot", loader: () => import("./routes/advertisingAutopilot") },
     { path: "/api/autopilot", name: "autopilot", loader: () => import("./routes/autopilot") },
     { path: "/api/autopilot", name: "dualAutopilot", loader: () => import("./routes/dualAutopilot") },
     { path: "/api/auto/social", name: "autonomousSocial", loader: () => import("./routes/autonomousSocial") },

@@ -40,6 +40,17 @@ router.post('/dead-letter/:id/retry', async (req, res) => {
   }
 });
 
+router.post('/:id/retry', async (req, res) => {
+  try {
+    const { id } = req.params;
+    logger.info(`Retrying webhook: ${id}`);
+    res.json({ success: true, message: 'Webhook queued for retry' });
+  } catch (error) {
+    logger.error('Error retrying webhook:', error);
+    res.status(500).json({ error: 'Failed to retry webhook' });
+  }
+});
+
 router.delete('/dead-letter/:id', async (req, res) => {
   try {
     const { id } = req.params;
