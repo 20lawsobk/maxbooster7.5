@@ -89,22 +89,10 @@ export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Early return for loading state to prevent hooks order issues
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  // Early return if no user (useRequireSubscription should handle redirect)
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+  // Show nothing during initial auth load to prevent flashing
+  // The redirect logic is handled in useRequireSubscription
+  if (authLoading || !user) {
+    return null;
   }
 
   return <DashboardContent user={user} />;
