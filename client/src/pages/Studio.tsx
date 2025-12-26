@@ -375,10 +375,11 @@ export default function Studio() {
     queryKey: ['/api/studio/samples'],
     enabled: !!user,
   });
-  const { data: recentFiles = [] } = useQuery<any[]>({
+  const { data: recentFilesData } = useQuery<any>({
     queryKey: ['/api/studio/recent-files'],
     enabled: !!user,
   });
+  const recentFiles = Array.isArray(recentFilesData) ? recentFilesData : (recentFilesData?.data || recentFilesData?.files || []);
   const { data: projectLyrics } = useQuery<any>({
     queryKey: [`/api/studio/lyrics?projectId=${selectedProject?.id}`],
     enabled: !!selectedProject,
@@ -2595,10 +2596,10 @@ export default function Studio() {
             open={showConversionDialog}
             onOpenChange={setShowConversionDialog}
             projectId={selectedProject?.id || null}
-            availableFiles={recentFiles.map((f: unknown) => ({
-              path: f.path || f.filePath || '',
-              name: f.name || '',
-              size: f.size || f.fileSize || 0,
+            availableFiles={(Array.isArray(recentFiles) ? recentFiles : []).map((f: any) => ({
+              path: f?.path || f?.filePath || '',
+              name: f?.name || '',
+              size: f?.size || f?.fileSize || 0,
             }))}
           />
 
