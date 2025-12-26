@@ -145,6 +145,30 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = 'returnNull' | 'throw';
+
+// Helper to build URL from queryKey, handling objects as query parameters
+function buildUrlFromQueryKey(queryKey: readonly unknown[]): string {
+  const urlParts: string[] = [];
+  const queryParams: URLSearchParams = new URLSearchParams();
+  
+  for (const part of queryKey) {
+    if (typeof part === 'string') {
+      urlParts.push(part);
+    } else if (part && typeof part === 'object' && !Array.isArray(part)) {
+      // Object - convert to query parameters
+      for (const [key, value] of Object.entries(part)) {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      }
+    }
+  }
+  
+  const baseUrl = urlParts.join('/');
+  const queryString = queryParams.toString();
+  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+}
+
 export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey, signal }) => {
@@ -152,11 +176,13 @@ export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryF
     const abortSignal = signal || controller?.signal;
 
     try {
+      const url = buildUrlFromQueryKey(queryKey);
+      
       errorService.addBreadcrumb('query-fetch', {
-        queryKey: queryKey.join('/'),
+        queryKey: url,
       });
 
-      const res = await fetch(queryKey.join('/') as string, {
+      const res = await fetch(url, {
         credentials: 'include',
         signal: abortSignal,
       });
@@ -168,12 +194,14 @@ export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryF
       await throwIfResNotOk(res);
       return await res.json();
     } catch (error: unknown) {
+      const url = buildUrlFromQueryKey(queryKey);
+      
       // Handle timeout errors
       if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-        const timeoutError = new Error(`Query ${queryKey.join('/')} timed out`);
+        const timeoutError = new Error(`Query ${url} timed out`);
         captureException(timeoutError, {
           action: 'query-timeout',
-          metadata: { queryKey: queryKey.join('/') },
+          metadata: { queryKey: url },
         });
         throw timeoutError;
       }
@@ -181,7 +209,7 @@ export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryF
       // Capture other errors
       captureException(error, {
         action: 'query-error',
-        metadata: { queryKey: queryKey.join('/') },
+        metadata: { queryKey: url },
       });
 
       throw error;
