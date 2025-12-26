@@ -76,7 +76,8 @@ export class ReplitStorageService {
       }
 
       logger.info(`✅ File downloaded from Replit App Storage: ${key}`);
-      return result.value;
+      // Ensure we return a proper Node.js Buffer (Replit returns Uint8Array)
+      return Buffer.from(result.value);
     } catch (error: unknown) {
       logger.error('❌ Failed to download file from Replit App Storage:', error);
       throw new Error(
