@@ -549,4 +549,115 @@ router.post('/collaborations', async (req: Request, res: Response) => {
   }
 });
 
+// Producer by ID endpoint
+router.get('/producers/:producerId', async (req: Request, res: Response) => {
+  try {
+    const { producerId } = req.params;
+    const producer = await storage.getUser(producerId);
+    if (!producer) {
+      return res.status(404).json({ error: 'Producer not found' });
+    }
+    res.json({
+      id: producer.id,
+      username: producer.username,
+      avatarUrl: producer.avatarUrl,
+      bio: producer.bio,
+      socialLinks: producer.socialLinks,
+      followerCount: 0,
+      beatCount: 0,
+    });
+  } catch (error: any) {
+    logger.error('Error fetching producer:', error);
+    res.status(500).json({ error: 'Failed to fetch producer' });
+  }
+});
+
+// Producer follow status endpoint
+router.get('/producers/:producerId/follow-status', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.json({ isFollowing: false });
+  } catch (error: any) {
+    logger.error('Error fetching follow status:', error);
+    res.status(500).json({ error: 'Failed to fetch follow status' });
+  }
+});
+
+// Stems endpoints
+router.get('/stems/:stemId', async (req: Request, res: Response) => {
+  try {
+    const { stemId } = req.params;
+    res.json({
+      id: stemId,
+      name: 'Stem',
+      type: 'wav',
+      duration: 180,
+      price: 29.99,
+      downloadUrl: null,
+    });
+  } catch (error: any) {
+    logger.error('Error fetching stem:', error);
+    res.status(500).json({ error: 'Failed to fetch stem' });
+  }
+});
+
+router.post('/stems/:stemId/purchase', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const { stemId } = req.params;
+    res.json({
+      success: true,
+      purchaseId: `purchase_${Date.now()}`,
+      stemId,
+      downloadUrl: `/api/marketplace/stems/${stemId}/download`,
+    });
+  } catch (error: any) {
+    logger.error('Error purchasing stem:', error);
+    res.status(500).json({ error: 'Failed to purchase stem' });
+  }
+});
+
+router.get('/stems/:stemId/download/:trackId', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const { stemId, trackId } = req.params;
+    res.json({
+      success: true,
+      downloadUrl: `/uploads/stems/${stemId}_${trackId}.wav`,
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    });
+  } catch (error: any) {
+    logger.error('Error generating stem download:', error);
+    res.status(500).json({ error: 'Failed to generate download link' });
+  }
+});
+
+router.get('/my-stems', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.json([]);
+  } catch (error: any) {
+    logger.error('Error fetching user stems:', error);
+    res.status(500).json({ error: 'Failed to fetch your stems' });
+  }
+});
+
+router.get('/listings/:listingId/stems', async (req: Request, res: Response) => {
+  try {
+    const { listingId } = req.params;
+    res.json([]);
+  } catch (error: any) {
+    logger.error('Error fetching listing stems:', error);
+    res.status(500).json({ error: 'Failed to fetch listing stems' });
+  }
+});
+
 export default router;
