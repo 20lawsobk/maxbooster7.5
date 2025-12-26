@@ -385,8 +385,8 @@ router.post('/upload', upload.fields([
     if (files?.audioFile?.[0]) {
       const audioFile = files.audioFile[0];
       const ext = path.extname(audioFile.originalname) || '.mp3';
-      const audioKey = `beats/${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-      await storageService.uploadFile(audioFile.buffer, audioKey, audioFile.mimetype);
+      const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
+      const audioKey = await storageService.uploadFile(audioFile.buffer, 'beats', filename, audioFile.mimetype);
       audioUrl = `/api/marketplace/audio/${audioKey}`;
       logger.info(`Audio file saved: ${audioKey}`);
     }
@@ -394,8 +394,8 @@ router.post('/upload', upload.fields([
     if (files?.coverArt?.[0]) {
       const coverFile = files.coverArt[0];
       const ext = path.extname(coverFile.originalname) || '.jpg';
-      const coverKey = `covers/${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-      await storageService.uploadFile(coverFile.buffer, coverKey, coverFile.mimetype);
+      const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
+      const coverKey = await storageService.uploadFile(coverFile.buffer, 'covers', filename, coverFile.mimetype);
       artworkUrl = `/api/marketplace/cover/${coverKey}`;
       logger.info(`Cover art saved: ${coverKey}`);
     }
