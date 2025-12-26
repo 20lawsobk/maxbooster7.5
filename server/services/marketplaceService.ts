@@ -138,6 +138,7 @@ export class MarketplaceService {
         price: createdListing.priceCents / 100,
         audioUrl: createdListing.audioUrl || createdListing.previewUrl || '',
         artworkUrl: createdListing.artworkUrl || undefined,
+        coverArt: createdListing.artworkUrl || undefined,
         tags: metadata.tags || [],
         licenses: metadata.licenses || data.licenses,
         status: createdListing.isPublished ? 'active' : 'inactive',
