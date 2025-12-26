@@ -433,6 +433,7 @@ router.get('/audio/:path(*)', async (req: Request, res: Response) => {
     
     const exists = await storageService.fileExists(fileKey);
     if (!exists) {
+      logger.warn(`Audio file not found: ${fileKey}`);
       return res.status(404).json({ error: 'Audio file not found' });
     }
 
@@ -443,15 +444,42 @@ router.get('/audio/:path(*)', async (req: Request, res: Response) => {
       '.flac': 'audio/flac',
       '.aiff': 'audio/aiff',
       '.m4a': 'audio/mp4',
+      '.ogg': 'audio/ogg',
+      '.aac': 'audio/aac',
     };
 
     const fileBuffer = await storageService.downloadFile(fileKey);
-    
-    res.setHeader('Content-Type', mimeTypes[ext] || 'audio/mpeg');
-    res.setHeader('Content-Length', fileBuffer.length);
-    res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send(fileBuffer);
+    const contentType = mimeTypes[ext] || 'audio/mpeg';
+    const fileSize = fileBuffer.length;
+
+    // CORS headers for audio playback
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+
+    // Handle Range requests for audio seeking
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunkSize = end - start + 1;
+
+      res.status(206);
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+      res.setHeader('Content-Length', chunkSize);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(fileBuffer.slice(start, end + 1));
+    } else {
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', fileSize);
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(fileBuffer);
+    }
   } catch (error: any) {
     logger.error('Error serving audio file:', error);
     res.status(500).json({ error: 'Failed to load audio file' });
