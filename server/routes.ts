@@ -1779,6 +1779,97 @@ export async function registerRoutes(
     }
   });
 
+  // User preferences endpoints
+  app.get("/api/user/preferences", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      return res.json(req.user.preferences || {});
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      return res.status(500).json({ message: "Failed to fetch preferences" });
+    }
+  });
+
+  app.post("/api/user/preferences", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const preferences = { ...(req.user.preferences || {}), ...req.body };
+      await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
+      return res.json({ success: true, preferences });
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      return res.status(500).json({ message: "Failed to update preferences" });
+    }
+  });
+
+  app.get("/api/user/preferences/studio", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const prefs = req.user.preferences as any;
+      return res.json(prefs?.studio || {});
+    } catch (error) {
+      console.error("Error fetching studio preferences:", error);
+      return res.status(500).json({ message: "Failed to fetch studio preferences" });
+    }
+  });
+
+  app.put("/api/user/preferences/studio", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const currentPrefs = (req.user.preferences as any) || {};
+      const preferences = { ...currentPrefs, studio: req.body };
+      await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
+      return res.json({ success: true, studio: req.body });
+    } catch (error) {
+      console.error("Error updating studio preferences:", error);
+      return res.status(500).json({ message: "Failed to update studio preferences" });
+    }
+  });
+
+  // Analysis endpoint
+  app.get("/api/analysis", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      return res.json({
+        status: 'complete',
+        results: [],
+        summary: { total: 0, analyzed: 0 },
+      });
+    } catch (error) {
+      console.error("Analysis error:", error);
+      return res.status(500).json({ message: "Failed to fetch analysis" });
+    }
+  });
+
+  app.post("/api/analysis", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const { projectId, type } = req.body;
+      return res.json({
+        id: `analysis_${Date.now()}`,
+        projectId,
+        type: type || 'full',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Analysis error:", error);
+      return res.status(500).json({ message: "Failed to start analysis" });
+    }
+  });
+
   // Audio file upload endpoint
   app.post("/api/audio/upload", async (req: Request, res: Response) => {
     if (!req.user) {

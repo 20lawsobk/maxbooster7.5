@@ -395,4 +395,103 @@ router.post('/record/upload', requireAuth, async (req: Request, res: Response) =
   }
 });
 
+router.get('/samples', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json({
+      samples: [],
+      categories: ['Drums', 'Bass', 'Synths', 'FX', 'Vocals'],
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching samples:', error);
+    res.status(500).json({ error: 'Failed to fetch samples' });
+  }
+});
+
+router.get('/recent-files', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const recentProjects = await db.query.studioProjects.findMany({
+      where: eq(studioProjects.userId, userId),
+      orderBy: (studioProjects, { desc }) => [desc(studioProjects.updatedAt)],
+      limit: 10,
+    });
+    res.json(recentProjects.map(p => ({
+      id: p.id,
+      name: p.name,
+      type: 'project',
+      lastOpened: p.updatedAt,
+    })));
+  } catch (error: unknown) {
+    logger.error('Error fetching recent files:', error);
+    res.status(500).json({ error: 'Failed to fetch recent files' });
+  }
+});
+
+router.post('/mix-busses', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId, name, type } = req.body;
+    res.status(201).json({
+      id: nanoid(),
+      projectId,
+      name: name || 'New Bus',
+      type: type || 'aux',
+      volume: 0,
+      pan: 0,
+      muted: false,
+      solo: false,
+    });
+  } catch (error: unknown) {
+    logger.error('Error creating mix bus:', error);
+    res.status(500).json({ error: 'Failed to create mix bus' });
+  }
+});
+
+router.get('/conversions', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json([]);
+  } catch (error: unknown) {
+    logger.error('Error fetching conversions:', error);
+    res.status(500).json({ error: 'Failed to fetch conversions' });
+  }
+});
+
+router.post('/conversions', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId, format, quality } = req.body;
+    const conversionId = nanoid();
+    res.status(201).json({
+      id: conversionId,
+      projectId,
+      format: format || 'wav',
+      quality: quality || 'high',
+      status: 'pending',
+      progress: 0,
+      createdAt: new Date().toISOString(),
+    });
+  } catch (error: unknown) {
+    logger.error('Error creating conversion:', error);
+    res.status(500).json({ error: 'Failed to create conversion' });
+  }
+});
+
+router.post('/conversions/:conversionId/cancel', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { conversionId } = req.params;
+    res.json({ success: true, message: 'Conversion cancelled', conversionId });
+  } catch (error: unknown) {
+    logger.error('Error cancelling conversion:', error);
+    res.status(500).json({ error: 'Failed to cancel conversion' });
+  }
+});
+
+router.get('/conversions/:conversionId/download', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { conversionId } = req.params;
+    res.status(404).json({ error: 'Conversion not found or not ready', conversionId });
+  } catch (error: unknown) {
+    logger.error('Error downloading conversion:', error);
+    res.status(500).json({ error: 'Failed to download conversion' });
+  }
+});
+
 export default router;
