@@ -89,9 +89,25 @@ export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Show nothing during initial auth load to prevent flashing
-  // The redirect logic is handled in useRequireSubscription
-  if (authLoading || !user) {
+  // Show loading skeleton during auth check to prevent flickering
+  if (authLoading) {
+    return (
+      <AppLayout>
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <SkeletonCard key={i} className="h-32" />
+            ))}
+          </div>
+          <SkeletonChart />
+          <SkeletonList />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Redirect is handled by useRequireSubscription - wait for user
+  if (!user) {
     return null;
   }
 

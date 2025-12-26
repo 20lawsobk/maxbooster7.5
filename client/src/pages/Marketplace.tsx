@@ -926,12 +926,23 @@ export default function Marketplace() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          <p className="text-muted-foreground">Loading Marketplace...</p>
+      <AppLayout>
+        <div className="max-w-7xl mx-auto p-6 space-y-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
