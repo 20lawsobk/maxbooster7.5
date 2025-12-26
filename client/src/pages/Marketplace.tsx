@@ -27,6 +27,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -457,6 +467,15 @@ export default function Marketplace() {
   const [showLicenseModal, setShowLicenseModal] = useState(false);
   const [showAffiliateModal, setShowAffiliateModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [showEditContract, setShowEditContract] = useState(false);
+  const [showDeleteContract, setShowDeleteContract] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<ContractTemplate | null>(null);
+  const [editContractForm, setEditContractForm] = useState({
+    name: '',
+    description: '',
+    content: '',
+    category: 'custom',
+  });
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
 
@@ -762,6 +781,38 @@ export default function Marketplace() {
       toast({ title: 'Contract Saved', description: 'Your contract template has been saved.' });
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/contracts'] });
       setShowContractModal(false);
+    },
+  });
+
+  const updateContractMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest('PATCH', `/api/marketplace/contracts/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Contract Updated', description: 'Your contract template has been updated.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/contracts'] });
+      setShowEditContract(false);
+      setSelectedContract(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Update Failed', description: error?.message || 'Failed to update contract.', variant: 'destructive' });
+    },
+  });
+
+  const deleteContractMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/marketplace/contracts/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Contract Deleted', description: 'Your contract template has been removed.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/contracts'] });
+      setShowDeleteContract(false);
+      setSelectedContract(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Delete Failed', description: error?.message || 'Failed to delete contract.', variant: 'destructive' });
     },
   });
 
@@ -2013,9 +2064,22 @@ export default function Marketplace() {
                 contractTemplates.map((contract) => (
                   <Card key={contract.id}>
                     <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <ScrollText className="w-5 h-5 mr-2" />
-                        {contract.name}
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <ScrollText className="w-5 h-5 mr-2" />
+                          {contract.name}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedContract(contract);
+                            setShowDeleteContract(true);
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -2026,7 +2090,21 @@ export default function Marketplace() {
                           <Eye className="w-4 h-4 mr-1" />
                           Preview
                         </Button>
-                        <Button size="sm" variant="outline" className="flex-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => {
+                            setSelectedContract(contract);
+                            setEditContractForm({
+                              name: contract.name,
+                              description: contract.description || '',
+                              content: contract.content || '',
+                              category: contract.category || 'custom',
+                            });
+                            setShowEditContract(true);
+                          }}
+                        >
                           <Edit className="w-4 h-4 mr-1" />
                           Edit
                         </Button>
@@ -2857,6 +2935,110 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Contract Dialog */}
+      <Dialog open={showEditContract} onOpenChange={setShowEditContract}>
+        <DialogContent className="sm:max-w-lg bg-white dark:bg-gray-800">
+          <DialogHeader>
+            <DialogTitle>Edit Contract Template</DialogTitle>
+            <DialogDescription>
+              Update your contract template details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-contract-name">Contract Name</Label>
+              <Input
+                id="edit-contract-name"
+                value={editContractForm.name}
+                onChange={(e) => setEditContractForm({ ...editContractForm, name: e.target.value })}
+                placeholder="e.g., Exclusive License Agreement"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-contract-description">Description</Label>
+              <Textarea
+                id="edit-contract-description"
+                value={editContractForm.description}
+                onChange={(e) => setEditContractForm({ ...editContractForm, description: e.target.value })}
+                placeholder="Brief description of this contract template"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-contract-category">Category</Label>
+              <Select
+                value={editContractForm.category}
+                onValueChange={(value) => setEditContractForm({ ...editContractForm, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="exclusive">Exclusive License</SelectItem>
+                  <SelectItem value="non_exclusive">Non-Exclusive License</SelectItem>
+                  <SelectItem value="lease">Lease Agreement</SelectItem>
+                  <SelectItem value="buyout">Buyout Agreement</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-contract-content">Contract Content</Label>
+              <Textarea
+                id="edit-contract-content"
+                value={editContractForm.content}
+                onChange={(e) => setEditContractForm({ ...editContractForm, content: e.target.value })}
+                placeholder="Enter your contract terms and conditions..."
+                rows={6}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditContract(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedContract) {
+                  updateContractMutation.mutate({
+                    id: selectedContract.id,
+                    data: editContractForm,
+                  });
+                }
+              }}
+              disabled={updateContractMutation.isPending}
+            >
+              {updateContractMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Contract Confirmation */}
+      <AlertDialog open={showDeleteContract} onOpenChange={setShowDeleteContract}>
+        <AlertDialogContent className="bg-white dark:bg-gray-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Contract Template</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedContract?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedContract) {
+                  deleteContractMutation.mutate(selectedContract.id);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteContractMutation.isPending ? 'Deleting...' : 'Delete Contract'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

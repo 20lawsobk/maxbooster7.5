@@ -423,6 +423,28 @@ export const insertListingSchema = createInsertSchema(listings).omit({
 });
 
 // ============================================================================
+// CONTRACT TEMPLATES (Marketplace)
+// ============================================================================
+export const contractTemplates = pgTable("contract_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  content: text("content").notNull(),
+  category: text("category").default("custom"),
+  variables: jsonb("variables").default([]),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertContractTemplateSchema = createInsertSchema(contractTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// ============================================================================
 // STATUS PAGE INCIDENT UPDATES
 // ============================================================================
 export const statusPageIncidentUpdates = pgTable("status_page_incident_updates", {

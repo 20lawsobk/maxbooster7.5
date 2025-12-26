@@ -343,10 +343,85 @@ router.get('/contracts', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    res.json([]);
+    const userId = (req.user as any).id;
+    const contracts = await storage.getContractTemplates(userId);
+    res.json(contracts);
   } catch (error: any) {
     logger.error('Error fetching contracts:', error);
     res.status(500).json({ error: 'Failed to fetch contracts' });
+  }
+});
+
+router.get('/contracts/:id', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = (req.user as any).id;
+    const { id } = req.params;
+    const contract = await storage.getContractTemplateByUser(id, userId);
+    
+    if (!contract) {
+      return res.status(404).json({ error: 'Contract not found' });
+    }
+    
+    res.json(contract);
+  } catch (error: any) {
+    logger.error('Error fetching contract:', error);
+    res.status(500).json({ error: 'Failed to fetch contract' });
+  }
+});
+
+router.patch('/contracts/:id', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = (req.user as any).id;
+    const { id } = req.params;
+    const { name, description, content, category, variables } = req.body;
+
+    const contract = await storage.getContractTemplateByUser(id, userId);
+    if (!contract) {
+      return res.status(404).json({ error: 'Contract not found' });
+    }
+
+    const updatedContract = await storage.updateContractTemplate(id, {
+      name,
+      description,
+      content,
+      category,
+      variables,
+    });
+
+    res.json(updatedContract);
+  } catch (error: any) {
+    logger.error('Error updating contract:', error);
+    res.status(500).json({ error: 'Failed to update contract' });
+  }
+});
+
+router.delete('/contracts/:id', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = (req.user as any).id;
+    const { id } = req.params;
+
+    const contract = await storage.getContractTemplateByUser(id, userId);
+    if (!contract) {
+      return res.status(404).json({ error: 'Contract not found' });
+    }
+
+    await storage.deleteContractTemplate(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    logger.error('Error deleting contract:', error);
+    res.status(500).json({ error: 'Failed to delete contract' });
   }
 });
 
@@ -687,21 +762,20 @@ router.post('/contracts', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const userId = (req.user as any).id;
     const { name, description, content, category, variables } = req.body;
     if (!name || !content) {
       return res.status(400).json({ error: 'Name and content are required' });
     }
 
-    const contract = {
-      id: `contract-${Date.now()}`,
+    const contract = await storage.createContractTemplate({
+      userId,
       name,
       description: description || '',
       content,
-      variables: variables || [],
       category: category || 'custom',
-      isDefault: false,
-      createdAt: new Date().toISOString(),
-    };
+      variables: variables || [],
+    });
 
     res.status(201).json(contract);
   } catch (error: any) {
@@ -894,19 +968,6 @@ router.get('/collaborations', async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Error fetching collaborations:', error);
     res.status(500).json({ error: 'Failed to fetch collaborations' });
-  }
-});
-
-// Contracts endpoint
-router.get('/contracts', async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    res.json({ contracts: [], total: 0 });
-  } catch (error: any) {
-    logger.error('Error fetching contracts:', error);
-    res.status(500).json({ error: 'Failed to fetch contracts' });
   }
 });
 

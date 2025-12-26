@@ -987,6 +987,107 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getContractTemplates(userId: string): Promise<any[]> {
+    try {
+      const { contractTemplates } = await import("@shared/schema");
+      const results = await db
+        .select()
+        .from(contractTemplates)
+        .where(eq(contractTemplates.userId, userId))
+        .orderBy(desc(contractTemplates.createdAt));
+      return results;
+    } catch (error) {
+      console.error('Error fetching contract templates:', error);
+      return [];
+    }
+  }
+
+  async getContractTemplate(id: string): Promise<any | null> {
+    try {
+      const { contractTemplates } = await import("@shared/schema");
+      const [template] = await db
+        .select()
+        .from(contractTemplates)
+        .where(eq(contractTemplates.id, id))
+        .limit(1);
+      return template || null;
+    } catch (error) {
+      console.error('Error fetching contract template:', error);
+      return null;
+    }
+  }
+
+  async getContractTemplateByUser(id: string, userId: string): Promise<any | null> {
+    try {
+      const { contractTemplates } = await import("@shared/schema");
+      const { and } = await import("drizzle-orm");
+      const [template] = await db
+        .select()
+        .from(contractTemplates)
+        .where(and(eq(contractTemplates.id, id), eq(contractTemplates.userId, userId)))
+        .limit(1);
+      return template || null;
+    } catch (error) {
+      console.error('Error fetching contract template by user:', error);
+      return null;
+    }
+  }
+
+  async createContractTemplate(data: {
+    userId: string;
+    name: string;
+    description?: string;
+    content: string;
+    category?: string;
+    variables?: any[];
+  }): Promise<any> {
+    try {
+      const { contractTemplates } = await import("@shared/schema");
+      const [template] = await db
+        .insert(contractTemplates)
+        .values({
+          userId: data.userId,
+          name: data.name,
+          description: data.description || '',
+          content: data.content,
+          category: data.category || 'custom',
+          variables: data.variables || [],
+          isDefault: false,
+        })
+        .returning();
+      return template;
+    } catch (error) {
+      console.error('Error creating contract template:', error);
+      throw error;
+    }
+  }
+
+  async updateContractTemplate(id: string, data: any): Promise<any | null> {
+    try {
+      const { contractTemplates } = await import("@shared/schema");
+      const [template] = await db
+        .update(contractTemplates)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(contractTemplates.id, id))
+        .returning();
+      return template || null;
+    } catch (error) {
+      console.error('Error updating contract template:', error);
+      throw error;
+    }
+  }
+
+  async deleteContractTemplate(id: string): Promise<boolean> {
+    try {
+      const { contractTemplates } = await import("@shared/schema");
+      await db.delete(contractTemplates).where(eq(contractTemplates.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting contract template:', error);
+      throw error;
+    }
+  }
+
   async getUserOrders(userId: string): Promise<any[]> {
     try {
       const { orders } = await import("@shared/schema");
