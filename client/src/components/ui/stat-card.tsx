@@ -48,9 +48,9 @@ export function StatCard({
         className
       )}
     >
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
+      <CardContent className="p-6 sm:p-7">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-3">
             <p className="text-sm font-medium text-[var(--stat-card-muted)] uppercase tracking-wider">
               {title}
             </p>
