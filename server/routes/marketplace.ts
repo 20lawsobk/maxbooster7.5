@@ -544,16 +544,16 @@ router.get('/audio/:path(*)', async (req: Request, res: Response) => {
       res.status(206);
       res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
       res.setHeader('Content-Length', chunkSize);
-      res.setHeader('Content-Type', contentType);
+      res.type(contentType);
       res.setHeader('Accept-Ranges', 'bytes');
       res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.send(fileBuffer.slice(start, end + 1));
+      res.end(Buffer.from(fileBuffer.subarray(start, end + 1)));
     } else {
-      res.setHeader('Content-Type', contentType);
+      res.type(contentType);
       res.setHeader('Content-Length', fileSize);
       res.setHeader('Accept-Ranges', 'bytes');
       res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.send(fileBuffer);
+      res.end(Buffer.from(fileBuffer));
     }
   } catch (error: any) {
     logger.error('Error serving audio file:', error);
