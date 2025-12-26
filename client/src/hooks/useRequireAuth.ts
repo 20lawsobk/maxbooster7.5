@@ -19,23 +19,34 @@ export function useRequireAuth() {
 }
 
 /**
- * TODO: Add function documentation
+ * Hook to require authenticated user with active subscription.
+ * Admins are always allowed regardless of subscription status.
  */
 export function useRequireSubscription() {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        navigate('/login');
-      } else if (
-        user.subscriptionStatus !== 'active' &&
-        user.subscriptionStatus !== 'trialing' &&
-        user.role !== 'admin'
-      ) {
-        navigate('/pricing');
-      }
+    // Only redirect after auth loading is complete
+    if (isLoading) return;
+    
+    // Admin users are always allowed - check this FIRST
+    if (user?.role === 'admin') {
+      return; // No redirect needed for admins
+    }
+    
+    // No user - redirect to login
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    // Check subscription status for non-admin users
+    if (
+      user.subscriptionStatus !== 'active' &&
+      user.subscriptionStatus !== 'trialing'
+    ) {
+      navigate('/pricing');
     }
   }, [user, isLoading, navigate]);
 

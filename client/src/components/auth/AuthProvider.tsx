@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest, getQueryFn } from '@/lib/queryClient';
 import type { User } from '@shared/schema';
@@ -19,34 +19,30 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 /**
- * TODO: Add function documentation
+ * AuthProvider manages authentication state for the application.
+ * Uses React Query with stable caching to prevent race conditions during navigation.
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<User | null>(null);
 
-  const { data: userData, isLoading } = useQuery({
+  const { data: userData, isLoading, isFetched } = useQuery({
     queryKey: ['/api/auth/me'],
     queryFn: getQueryFn({ on401: 'returnNull' }),
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     staleTime: Infinity,
+    gcTime: Infinity, // Keep data in cache indefinitely to prevent null flashes
   });
 
-  useEffect(() => {
-    if (userData && userData.id) {
-      setUser(userData);
-    } else if (userData === null) {
-      setUser(null);
-    }
-  }, [userData]);
+  // Derive user directly from query data to avoid state synchronization issues
+  const user = (userData && userData.id) ? userData : null;
 
   const login = async (credentials: { username: string; password: string }) => {
     const response = await apiRequest('POST', '/api/auth/login', credentials);
     const data = await response.json();
-    setUser(data);
-    queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    // Update cache directly to avoid flash of unauthenticated state
+    queryClient.setQueryData(['/api/auth/me'], data);
   };
 
   const register = async (data: {
@@ -57,13 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     const response = await apiRequest('POST', '/api/auth/register', data);
     const result = await response.json();
-    setUser(result);
-    queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    // Update cache directly to avoid flash of unauthenticated state
+    queryClient.setQueryData(['/api/auth/me'], result);
   };
 
   const logout = async () => {
     await apiRequest('POST', '/api/auth/logout', {});
-    setUser(null);
+    // Clear the auth cache and all other queries
+    queryClient.setQueryData(['/api/auth/me'], null);
     queryClient.clear();
   };
 
