@@ -246,6 +246,7 @@ export class DiscoveryAlgorithmService {
           audioUrl: beat.audioUrl,
           previewUrl: beat.previewUrl,
           artworkUrl: beat.artworkUrl,
+          coverArt: beat.artworkUrl,
           plays: metadata.plays || 0,
           likes: metadata.likes || 0,
           isHot: discoveryScore > 0.7,
