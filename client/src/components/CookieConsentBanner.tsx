@@ -46,10 +46,9 @@ export function CookieConsentBanner() {
               id="cookie-banner-description"
               className="text-sm text-zinc-300"
             >
-              We use essential cookies to provide our services and improve your experience. 
-              By clicking "Accept", you consent to the use of cookies for authentication, 
-              session management, and platform functionality. You can reject non-essential cookies, 
-              though some features may be limited.{' '}
+              We use essential cookies for authentication and session management - these are required for login and cannot be disabled. 
+              By clicking "Accept All", you also consent to optional analytics cookies.
+              Clicking "Essential Only" allows only the cookies necessary for the platform to function.{' '}
               <a
                 href="/privacy"
                 className="text-blue-400 hover:text-blue-300 underline"
@@ -71,9 +70,9 @@ export function CookieConsentBanner() {
                 onClick={handleReject}
                 variant="outline"
                 className="border-zinc-700 text-white hover:bg-zinc-800"
-                aria-label="Reject non-essential cookies"
+                aria-label="Accept essential cookies only"
               >
-                Reject Non-Essential
+                Essential Only
               </Button>
             </div>
           </div>
