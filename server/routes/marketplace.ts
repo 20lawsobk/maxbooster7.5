@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import path from 'path';
+import crypto from 'crypto';
 import { discoveryAlgorithmService } from '../services/discoveryAlgorithmService';
 import { marketplaceService } from '../services/marketplaceService';
 import { storage } from '../storage';
+import { storageService } from '../services/storageService';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -370,9 +373,31 @@ router.post('/upload', upload.fields([
     }
 
     const { title, genre, mood, tempo, key, price, licenseType, description, tags } = req.body;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     if (!title || !genre) {
       return res.status(400).json({ error: 'Title and genre are required' });
+    }
+
+    let audioUrl = '';
+    let artworkUrl = '';
+
+    if (files?.audioFile?.[0]) {
+      const audioFile = files.audioFile[0];
+      const ext = path.extname(audioFile.originalname) || '.mp3';
+      const audioKey = `beats/${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
+      await storageService.uploadFile(audioFile.buffer, audioKey, audioFile.mimetype);
+      audioUrl = `/api/marketplace/audio/${audioKey}`;
+      logger.info(`Audio file saved: ${audioKey}`);
+    }
+
+    if (files?.coverArt?.[0]) {
+      const coverFile = files.coverArt[0];
+      const ext = path.extname(coverFile.originalname) || '.jpg';
+      const coverKey = `covers/${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
+      await storageService.uploadFile(coverFile.buffer, coverKey, coverFile.mimetype);
+      artworkUrl = `/api/marketplace/cover/${coverKey}`;
+      logger.info(`Cover art saved: ${coverKey}`);
     }
 
     const listing = await marketplaceService.createListing({
@@ -383,7 +408,8 @@ router.post('/upload', upload.fields([
       bpm: parseInt(tempo) || undefined,
       key,
       price: parseFloat(price) || 50,
-      audioUrl: '',
+      audioUrl,
+      artworkUrl,
       tags: tags ? tags.split(',').map((t: string) => t.trim()) : [],
       licenses: [
         {
@@ -398,6 +424,67 @@ router.post('/upload', upload.fields([
   } catch (error: any) {
     logger.error('Error uploading beat:', error);
     res.status(500).json({ error: 'Failed to upload beat' });
+  }
+});
+
+router.get('/audio/:path(*)', async (req: Request, res: Response) => {
+  try {
+    const fileKey = req.params.path;
+    
+    const exists = await storageService.fileExists(fileKey);
+    if (!exists) {
+      return res.status(404).json({ error: 'Audio file not found' });
+    }
+
+    const ext = path.extname(fileKey).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.mp3': 'audio/mpeg',
+      '.wav': 'audio/wav',
+      '.flac': 'audio/flac',
+      '.aiff': 'audio/aiff',
+      '.m4a': 'audio/mp4',
+    };
+
+    const fileBuffer = await storageService.downloadFile(fileKey);
+    
+    res.setHeader('Content-Type', mimeTypes[ext] || 'audio/mpeg');
+    res.setHeader('Content-Length', fileBuffer.length);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(fileBuffer);
+  } catch (error: any) {
+    logger.error('Error serving audio file:', error);
+    res.status(500).json({ error: 'Failed to load audio file' });
+  }
+});
+
+router.get('/cover/:path(*)', async (req: Request, res: Response) => {
+  try {
+    const fileKey = req.params.path;
+    
+    const exists = await storageService.fileExists(fileKey);
+    if (!exists) {
+      return res.status(404).json({ error: 'Cover image not found' });
+    }
+
+    const ext = path.extname(fileKey).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+    };
+
+    const fileBuffer = await storageService.downloadFile(fileKey);
+    
+    res.setHeader('Content-Type', mimeTypes[ext] || 'image/jpeg');
+    res.setHeader('Content-Length', fileBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(fileBuffer);
+  } catch (error: any) {
+    logger.error('Error serving cover image:', error);
+    res.status(500).json({ error: 'Failed to load cover image' });
   }
 });
 
