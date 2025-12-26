@@ -601,7 +601,9 @@ export default function Marketplace() {
 
   const uploadBeatMutation = useMutation({
     mutationFn: async (beatData: FormData) => {
-      const response = await apiRequest('POST', '/api/marketplace/upload', beatData);
+      const response = await apiRequest('POST', '/api/marketplace/upload', beatData, {
+        timeout: 300000, // 5 minutes for large audio file uploads
+      });
       return response.json();
     },
     onSuccess: () => {
