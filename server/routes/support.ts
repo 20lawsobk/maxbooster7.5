@@ -23,6 +23,28 @@ const requireAdmin: RequestHandler = (req, res, next) => {
   next();
 };
 
+// Get user's own tickets
+router.get('/tickets', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const tickets = await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.userId, userId))
+      .orderBy(desc(supportTickets.createdAt));
+
+    res.json({ tickets, total: tickets.length });
+  } catch (error) {
+    logger.error('Error fetching user tickets:', error);
+    res.status(500).json({ error: 'Failed to fetch tickets' });
+  }
+});
+
+// Get all tickets (admin only)
 router.get('/tickets/all', requireAdmin, async (req, res) => {
   try {
     const { status, priority, search } = req.query;
