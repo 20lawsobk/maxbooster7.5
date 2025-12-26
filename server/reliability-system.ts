@@ -84,7 +84,19 @@ class MaxBooster247System extends EventEmitter {
       this.attemptRestart('uncaught-exception', error.message);
     });
 
-    process.on('unhandledRejection', (reason) => {
+    process.on('unhandledRejection', (reason: any) => {
+      // Don't restart on temporary connection errors - let services reconnect
+      const isConnectionError = reason?.message?.includes('ECONNREFUSED') ||
+                                reason?.message?.includes('ECONNRESET') ||
+                                reason?.message?.includes('Connection') ||
+                                reason?.code === 'ECONNREFUSED' ||
+                                reason?.code === 'ECONNRESET';
+      
+      if (isConnectionError) {
+        logger.warn('⚠️ Connection error detected (will retry automatically):', String(reason));
+        return; // Don't restart for connection errors
+      }
+      
       logger.error('🚨 CRITICAL: Unhandled Rejection:', reason);
       this.metrics.errorCount++;
       this.attemptRestart('unhandled-rejection', String(reason));

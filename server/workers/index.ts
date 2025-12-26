@@ -345,8 +345,28 @@ process.on('uncaughtException', (error) => {
   gracefulShutdown('uncaughtException');
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('❌ Unhandled rejection at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (reason: any, promise) => {
+  // Log the actual error for debugging
+  const reasonStr = String(reason);
+  const errorMessage = reason?.message || reason?.toString?.() || reasonStr;
+  
+  // Don't crash on temporary connection errors - let Redis reconnect
+  const isConnectionError = errorMessage?.includes('ECONNREFUSED') ||
+                            errorMessage?.includes('ECONNRESET') ||
+                            errorMessage?.includes('Connection') ||
+                            errorMessage?.includes('socket') ||
+                            reason?.code === 'ECONNREFUSED' ||
+                            reason?.code === 'ECONNRESET';
+  
+  if (isConnectionError) {
+    logger.warn('⚠️ Connection error (will retry):', errorMessage);
+    return; // Don't shutdown for connection errors
+  }
+  
+  // Log full error details for debugging
+  logger.error('❌ Unhandled rejection:', errorMessage);
+  logger.error('   Reason type:', typeof reason);
+  logger.error('   Reason:', JSON.stringify(reason, Object.getOwnPropertyNames(reason || {})));
   gracefulShutdown('unhandledRejection');
 });
 
