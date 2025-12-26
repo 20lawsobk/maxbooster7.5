@@ -1,10 +1,12 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import { discoveryAlgorithmService } from '../services/discoveryAlgorithmService';
 import { marketplaceService } from '../services/marketplaceService';
 import { storage } from '../storage';
 import { logger } from '../logger.js';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/beats', async (req: Request, res: Response) => {
   try {
@@ -358,7 +360,10 @@ router.get('/collaborations', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/upload', async (req: Request, res: Response) => {
+router.post('/upload', upload.fields([
+  { name: 'audioFile', maxCount: 1 },
+  { name: 'coverArt', maxCount: 1 }
+]), async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Unauthorized' });
