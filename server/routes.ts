@@ -101,6 +101,22 @@ export async function registerRoutes(
   
   // Auth: Get current user
   app.get("/api/auth/me", async (req: Request, res: Response) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Production debugging for session issues
+    if (isProduction && !req.user) {
+      const hasCookie = req.headers.cookie?.includes('sessionId');
+      const hasSession = !!req.session;
+      const hasUserId = !!req.session?.userId;
+      const sessionId = req.session?.id?.substring(0, 8) || 'none';
+      
+      console.log(`[Auth/me] Debug: cookie=${hasCookie}, session=${hasSession}, userId=${hasUserId}, sessId=${sessionId}`);
+      
+      if (hasCookie && !hasUserId) {
+        console.warn('[Auth/me] Cookie present but no userId - session may have expired or Redis issue');
+      }
+    }
+    
     if (req.user) {
       const { password, ...userWithoutPassword } = req.user;
       return res.json(userWithoutPassword);
