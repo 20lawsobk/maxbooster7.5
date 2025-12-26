@@ -1010,7 +1010,7 @@ export default function Marketplace() {
           </div>
         </div>
 
-        {aiRecommendations.length > 0 && (
+        {aiRecommendations.length > 0 && aiRecommendations.some(rec => rec.beat) && (
           <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800">
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -1020,25 +1020,25 @@ export default function Marketplace() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 overflow-x-auto pb-2">
-                {aiRecommendations.slice(0, 5).map((rec) => (
+                {aiRecommendations.slice(0, 5).filter(rec => rec.beat).map((rec) => (
                   <Card
                     key={rec.id}
                     className="min-w-[200px] hover:shadow-lg transition cursor-pointer"
-                    onClick={() => handlePlayPause(rec.beat.id)}
+                    onClick={() => rec.beat && handlePlayPause(rec.beat.id)}
                   >
                     <CardContent className="p-4">
                       <div className="w-full h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg mb-3 flex items-center justify-center">
                         <Music className="w-8 h-8 text-white opacity-70" />
                       </div>
-                      <h4 className="font-semibold text-sm truncate">{rec.beat.title}</h4>
-                      <p className="text-xs text-muted-foreground">{rec.beat.producer}</p>
+                      <h4 className="font-semibold text-sm truncate">{rec.beat?.title || 'Unknown Beat'}</h4>
+                      <p className="text-xs text-muted-foreground">{rec.beat?.producer || 'Unknown Producer'}</p>
                       <div className="flex items-center mt-2">
                         <Badge variant="secondary" className="text-xs">
-                          {rec.matchScore}% Match
+                          {rec.matchScore || 0}% Match
                         </Badge>
                       </div>
                       <div className="mt-2">
-                        {rec.reasons.slice(0, 2).map((reason, i) => (
+                        {(rec.reasons || []).slice(0, 2).map((reason, i) => (
                           <p key={i} className="text-xs text-muted-foreground flex items-center">
                             <Lightbulb className="w-3 h-3 mr-1 text-yellow-500" />
                             {reason}

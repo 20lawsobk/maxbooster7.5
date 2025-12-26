@@ -909,6 +909,36 @@ export class DatabaseStorage implements IStorage {
       return null;
     }
   }
+
+  async getUserOrders(userId: string): Promise<any[]> {
+    try {
+      const { orders } = await import("@shared/schema");
+      const results = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.userId, userId))
+        .orderBy(desc(orders.createdAt));
+      return results;
+    } catch (error) {
+      console.error('Error fetching user orders:', error);
+      return [];
+    }
+  }
+
+  async getSellerOrders(sellerId: string): Promise<any[]> {
+    try {
+      const { orders } = await import("@shared/schema");
+      const results = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.sellerId, sellerId))
+        .orderBy(desc(orders.createdAt));
+      return results;
+    } catch (error) {
+      console.error('Error fetching seller orders:', error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
