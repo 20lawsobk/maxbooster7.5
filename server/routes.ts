@@ -230,12 +230,21 @@ export async function registerRoutes(
 
       req.session.userId = user.id;
       
+      const isProduction = process.env.NODE_ENV === 'production';
+      
       // Explicitly save session for Redis persistence in production
       req.session.save((err) => {
         if (err) {
           console.error('[Login] Session save failed:', err);
           return res.status(500).json({ message: "Login failed - session error" });
         }
+        
+        // Production debugging: log session and cookie info
+        if (isProduction) {
+          console.log(`[Login] SUCCESS: userId=${user.id}, sessionId=${req.session.id?.substring(0, 8)}`);
+          console.log(`[Login] Cookie settings: secure=${req.session.cookie.secure}, sameSite=${req.session.cookie.sameSite}, domain=${req.session.cookie.domain || 'not set'}`);
+        }
+        
         const { password: _, ...userWithoutPassword } = user;
         return res.json(userWithoutPassword);
       });

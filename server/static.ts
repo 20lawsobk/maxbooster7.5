@@ -11,15 +11,21 @@ export function serveStatic(app: Express) {
   }
 
   app.use(express.static(distPath, {
-    maxAge: '1y',
     etag: true,
     lastModified: true,
     setHeaders: (res, filePath) => {
       if (filePath.endsWith('.html')) {
+        // HTML should never be cached
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      } else if (filePath.match(/\.(js|css|woff2?|ttf|eot)$/)) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      } else if (filePath.match(/\.(js|css)$/)) {
+        // Short cache for JS/CSS to ensure updates are picked up after deploy
+        // Vite adds content hashes but Replit edge cache can still serve stale files
+        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      } else if (filePath.match(/\.(woff2?|ttf|eot)$/)) {
+        // Fonts can be cached longer as they rarely change
+        res.setHeader('Cache-Control', 'public, max-age=604800');
       } else if (filePath.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/)) {
+        // Images cache for 1 day
         res.setHeader('Cache-Control', 'public, max-age=86400');
       }
     },
