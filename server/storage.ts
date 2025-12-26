@@ -946,6 +946,47 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateListing(id: string, data: any): Promise<any | null> {
+    try {
+      const [listing] = await db
+        .update(listings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(listings.id, id))
+        .returning();
+      
+      if (!listing) return null;
+      
+      return {
+        id: listing.id,
+        userId: listing.userId,
+        title: listing.title,
+        description: listing.description,
+        priceCents: listing.priceCents,
+        currency: listing.currency || 'usd',
+        category: listing.category,
+        audioUrl: listing.audioUrl,
+        artworkUrl: listing.artworkUrl,
+        previewUrl: listing.previewUrl,
+        isPublished: listing.isPublished,
+        metadata: listing.metadata,
+        createdAt: listing.createdAt,
+      };
+    } catch (error) {
+      console.error('Error updating listing:', error);
+      throw error;
+    }
+  }
+
+  async deleteListing(id: string): Promise<boolean> {
+    try {
+      await db.delete(listings).where(eq(listings.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      throw error;
+    }
+  }
+
   async getUserOrders(userId: string): Promise<any[]> {
     try {
       const { orders } = await import("@shared/schema");

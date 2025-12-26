@@ -516,6 +516,80 @@ router.get('/cover/:path(*)', async (req: Request, res: Response) => {
   }
 });
 
+router.put('/listings/:id', upload.fields([
+  { name: 'audio', maxCount: 1 },
+  { name: 'artwork', maxCount: 1 }
+]), async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    const { title, description, genre, tempo, key, price, tags } = req.body;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+    const updateData: any = {};
+    if (title) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (genre) updateData.genre = genre;
+    if (tempo) updateData.bpm = parseInt(tempo);
+    if (key) updateData.key = key;
+    if (price) updateData.price = parseFloat(price);
+    if (tags) updateData.tags = tags.split(',').map((t: string) => t.trim());
+
+    if (files?.audio?.[0]) {
+      const audioFile = files.audio[0];
+      const ext = path.extname(audioFile.originalname).toLowerCase();
+      const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
+      const audioKey = await storageService.uploadFile(audioFile.buffer, 'beats', filename, audioFile.mimetype);
+      updateData.audioUrl = `/api/marketplace/audio/${audioKey}`;
+    }
+
+    if (files?.artwork?.[0]) {
+      const artworkFile = files.artwork[0];
+      const ext = path.extname(artworkFile.originalname).toLowerCase();
+      const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
+      const artworkKey = await storageService.uploadFile(artworkFile.buffer, 'covers', filename, artworkFile.mimetype);
+      updateData.artworkUrl = `/api/marketplace/cover/${artworkKey}`;
+    }
+
+    const updatedListing = await marketplaceService.updateListing(id, req.user!.id, updateData);
+    if (!updatedListing) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+
+    res.json(updatedListing);
+  } catch (error: any) {
+    logger.error('Error updating listing:', error);
+    if (error.message === 'Not authorized to update this listing') {
+      return res.status(403).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message || 'Failed to update beat' });
+  }
+});
+
+router.delete('/listings/:id', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    await marketplaceService.deleteListing(id, req.user!.id);
+    res.json({ success: true, message: 'Beat deleted successfully' });
+  } catch (error: any) {
+    logger.error('Error deleting listing:', error);
+    if (error.message === 'Not authorized to delete this listing') {
+      return res.status(403).json({ error: error.message });
+    }
+    if (error.message === 'Listing not found') {
+      return res.status(404).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message || 'Failed to delete beat' });
+  }
+});
+
 router.post('/connect-stripe', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {

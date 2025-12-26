@@ -477,6 +477,20 @@ export default function Marketplace() {
     message: '',
   });
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editingBeat, setEditingBeat] = useState<Beat | null>(null);
+  const [deletingBeatId, setDeletingBeatId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    genre: '',
+    tempo: 120,
+    key: 'C',
+    price: 50,
+    description: '',
+    tags: '',
+  });
+
   const { data: beats = [], isLoading: beatsLoading } = useQuery<Beat[]>({
     queryKey: ['/api/marketplace/beats', searchQuery, selectedGenre, selectedMood, sortBy],
     queryFn: async () => {
@@ -615,6 +629,92 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
     },
   });
+
+  const updateBeatMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: FormData }) => {
+      const response = await apiRequest('PUT', `/api/marketplace/listings/${id}`, data, {
+        timeout: 300000,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Beat Updated!',
+        description: 'Your beat has been updated successfully.',
+      });
+      setShowEditModal(false);
+      setEditingBeat(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Update Failed',
+        description: error.message || 'Failed to update beat',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteBeatMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/marketplace/listings/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Beat Deleted',
+        description: 'Your beat has been removed from the marketplace.',
+      });
+      setShowDeleteConfirm(false);
+      setDeletingBeatId(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Delete Failed',
+        description: error.message || 'Failed to delete beat',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleEditBeat = (beat: Beat) => {
+    setEditingBeat(beat);
+    setEditForm({
+      title: beat.title,
+      genre: beat.genre || '',
+      tempo: beat.bpm || 120,
+      key: beat.key || 'C',
+      price: beat.price || 50,
+      description: beat.description || '',
+      tags: beat.tags?.join(', ') || '',
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateBeat = () => {
+    if (!editingBeat) return;
+    const formData = new FormData();
+    formData.append('title', editForm.title);
+    formData.append('genre', editForm.genre);
+    formData.append('tempo', String(editForm.tempo));
+    formData.append('key', editForm.key);
+    formData.append('price', String(editForm.price));
+    formData.append('description', editForm.description);
+    formData.append('tags', editForm.tags);
+    updateBeatMutation.mutate({ id: editingBeat.id, data: formData });
+  };
+
+  const handleDeleteBeat = (beatId: string) => {
+    setDeletingBeatId(beatId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteBeat = () => {
+    if (deletingBeatId) {
+      deleteBeatMutation.mutate(deletingBeatId);
+    }
+  };
 
   const followProducerMutation = useMutation({
     mutationFn: async (producerId: string) => {
@@ -1416,10 +1516,10 @@ export default function Marketplace() {
                         <div className="flex items-center justify-between">
                           <span className="text-lg font-bold">${beat.price}</span>
                           <div className="flex space-x-1">
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => handleEditBeat(beat)}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => handleDeleteBeat(beat.id)} className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20">
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -2598,6 +2698,161 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
             >
               <Handshake className="w-4 h-4 mr-2" />
               Send Offer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="bg-background">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Edit className="w-5 h-5 mr-2" />
+              Edit Beat
+            </DialogTitle>
+            <DialogDescription>Update your beat details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                placeholder="Beat title"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Genre</Label>
+                <Select
+                  value={editForm.genre}
+                  onValueChange={(value) => setEditForm({ ...editForm, genre: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hip-hop">Hip-Hop</SelectItem>
+                    <SelectItem value="rnb">R&B</SelectItem>
+                    <SelectItem value="pop">Pop</SelectItem>
+                    <SelectItem value="trap">Trap</SelectItem>
+                    <SelectItem value="drill">Drill</SelectItem>
+                    <SelectItem value="afrobeats">Afrobeats</SelectItem>
+                    <SelectItem value="reggaeton">Reggaeton</SelectItem>
+                    <SelectItem value="rock">Rock</SelectItem>
+                    <SelectItem value="electronic">Electronic</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Key</Label>
+                <Select
+                  value={editForm.key}
+                  onValueChange={(value) => setEditForm({ ...editForm, key: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'].map((key) => (
+                      <SelectItem key={key} value={key}>{key}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>BPM</Label>
+                <Input
+                  type="number"
+                  value={editForm.tempo}
+                  onChange={(e) => setEditForm({ ...editForm, tempo: parseInt(e.target.value) || 120 })}
+                  min={60}
+                  max={200}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Price ($)</Label>
+                <Input
+                  type="number"
+                  value={editForm.price}
+                  onChange={(e) => setEditForm({ ...editForm, price: parseFloat(e.target.value) || 0 })}
+                  min={0}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="Describe your beat..."
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tags (comma-separated)</Label>
+              <Input
+                value={editForm.tags}
+                onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
+                placeholder="dark, melodic, emotional"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditModal(false)}>Cancel</Button>
+            <Button
+              onClick={handleUpdateBeat}
+              disabled={updateBeatMutation.isPending}
+              className="bg-gradient-to-r from-blue-600 to-purple-600"
+            >
+              {updateBeatMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="bg-background">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-red-600">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              Delete Beat
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this beat? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteBeat}
+              disabled={deleteBeatMutation.isPending}
+            >
+              {deleteBeatMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Beat
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

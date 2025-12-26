@@ -487,6 +487,91 @@ export class MarketplaceService {
     }
   }
 
+  async updateListing(
+    listingId: string,
+    userId: string,
+    data: {
+      title?: string;
+      description?: string;
+      genre?: string;
+      bpm?: number;
+      key?: string;
+      price?: number;
+      tags?: string[];
+      audioUrl?: string;
+      artworkUrl?: string;
+    }
+  ): Promise<BeatListing | null> {
+    try {
+      const listing = await storage.getBeatListing(listingId);
+      if (!listing) {
+        throw new Error('Listing not found');
+      }
+      if (listing.userId !== userId) {
+        throw new Error('Not authorized to update this listing');
+      }
+
+      const updateData: any = {};
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.price !== undefined) updateData.priceCents = Math.round(data.price * 100);
+      if (data.genre !== undefined) updateData.category = data.genre;
+      if (data.audioUrl !== undefined) updateData.audioUrl = data.audioUrl;
+      if (data.artworkUrl !== undefined) updateData.artworkUrl = data.artworkUrl;
+
+      const existingMetadata = (listing as any).metadata || {};
+      updateData.metadata = {
+        ...existingMetadata,
+        genre: data.genre ?? existingMetadata.genre,
+        bpm: data.bpm ?? existingMetadata.bpm,
+        key: data.key ?? existingMetadata.key,
+        tags: data.tags ?? existingMetadata.tags ?? [],
+      };
+
+      const updatedListing = await storage.updateListing(listingId, updateData);
+      if (!updatedListing) return null;
+
+      const metadata = (updatedListing.metadata as any) || {};
+      return {
+        id: updatedListing.id,
+        userId: updatedListing.userId,
+        title: updatedListing.title,
+        description: updatedListing.description || undefined,
+        genre: metadata.genre || updatedListing.category,
+        bpm: metadata.bpm,
+        key: metadata.key,
+        price: updatedListing.priceCents / 100,
+        audioUrl: updatedListing.audioUrl || updatedListing.previewUrl || '',
+        artworkUrl: updatedListing.artworkUrl || undefined,
+        tags: metadata.tags || [],
+        licenses: metadata.licenses || [],
+        status: updatedListing.isPublished ? 'active' : 'inactive',
+        createdAt: updatedListing.createdAt || new Date(),
+      };
+    } catch (error: unknown) {
+      logger.error('Error updating listing:', error);
+      throw error;
+    }
+  }
+
+  async deleteListing(listingId: string, userId: string): Promise<boolean> {
+    try {
+      const listing = await storage.getBeatListing(listingId);
+      if (!listing) {
+        throw new Error('Listing not found');
+      }
+      if (listing.userId !== userId) {
+        throw new Error('Not authorized to delete this listing');
+      }
+
+      await storage.deleteListing(listingId);
+      return true;
+    } catch (error: unknown) {
+      logger.error('Error deleting listing:', error);
+      throw error;
+    }
+  }
+
   async getUserPurchases(userId: string): Promise<any[]> {
     try {
       const orders = await storage.getUserOrders(userId);
