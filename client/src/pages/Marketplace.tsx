@@ -1348,10 +1348,10 @@ export default function Marketplace() {
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-4 h-4 ${i < Math.floor(producer.rating) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
+                              className={`w-4 h-4 ${i < Math.floor(producer.rating ?? 0) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
                             />
                           ))}
-                          <span className="text-sm font-semibold ml-2">{producer.rating.toFixed(1)}</span>
+                          <span className="text-sm font-semibold ml-2">{(producer.rating ?? 0).toFixed(1)}</span>
                         </div>
                         <div className="flex space-x-2 w-full">
                           <Button
@@ -1687,7 +1687,7 @@ export default function Marketplace() {
                         </div>
                         <div className="flex items-center space-x-4">
                           <div className="text-right">
-                            <p className="font-semibold">${transaction.amount.toFixed(2)}</p>
+                            <p className="font-semibold">${(transaction.amount ?? 0).toFixed(2)}</p>
                             <Badge variant={
                               transaction.status === 'held' ? 'secondary' :
                               transaction.status === 'released' ? 'default' :
@@ -1750,11 +1750,11 @@ export default function Marketplace() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Streams</span>
-                        <span className="font-medium">{license.streams === 'unlimited' ? '∞' : license.streams.toLocaleString()}</span>
+                        <span className="font-medium">{license.streams === 'unlimited' ? '∞' : (license.streams ?? 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Copies</span>
-                        <span className="font-medium">{license.copies === 'unlimited' ? '∞' : license.copies.toLocaleString()}</span>
+                        <span className="font-medium">{license.copies === 'unlimited' ? '∞' : (license.copies ?? 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Music Videos</span>
@@ -1803,7 +1803,7 @@ export default function Marketplace() {
               />
               <StatCard
                 title="Total Referrals"
-                value={affiliates.reduce((sum, a) => sum + a.referralCount, 0)}
+                value={affiliates.reduce((sum, a) => sum + (a.referralCount ?? 0), 0)}
                 change={0}
                 trend="up"
                 sparklineData={[]}
@@ -1811,7 +1811,7 @@ export default function Marketplace() {
               />
               <StatCard
                 title="Total Payouts"
-                value={affiliates.reduce((sum, a) => sum + a.totalEarnings, 0)}
+                value={affiliates.reduce((sum, a) => sum + (a.totalEarnings ?? 0), 0)}
                 change={0}
                 trend="neutral"
                 prefix="$"
@@ -1820,7 +1820,7 @@ export default function Marketplace() {
               />
               <StatCard
                 title="Avg. Conversion"
-                value={affiliates.length > 0 ? (affiliates.reduce((sum, a) => sum + a.conversionRate, 0) / affiliates.length).toFixed(1) : 0}
+                value={affiliates.length > 0 ? (affiliates.reduce((sum, a) => sum + (a.conversionRate ?? 0), 0) / affiliates.length).toFixed(1) : 0}
                 change={0}
                 trend="neutral"
                 suffix="%"
@@ -1866,7 +1866,7 @@ export default function Marketplace() {
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">Earnings</p>
-                            <p className="font-semibold text-green-600">${affiliate.totalEarnings.toFixed(2)}</p>
+                            <p className="font-semibold text-green-600">${(affiliate.totalEarnings ?? 0).toFixed(2)}</p>
                           </div>
                         </div>
                         <div className="flex space-x-2">
