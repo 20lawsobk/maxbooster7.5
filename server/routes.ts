@@ -1266,14 +1266,15 @@ export async function registerRoutes(
     }
   });
 
-  // Analytics: Dashboard summary with real data
-  app.get("/api/analytics/dashboard", async (req: Request, res: Response) => {
+  // Analytics: Dashboard summary with real data (with optional period path parameter)
+  app.get("/api/analytics/dashboard/:period?", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { timeRange = '30d' } = req.query;
-      const days = parseInt((timeRange as string).replace('d', '').replace('y', '365')) || 30;
+      const periodParam = req.params.period;
+      const timeRange = periodParam || (req.query.timeRange as string) || '30d';
+      const days = parseInt(timeRange.replace('d', '').replace('y', '365')) || 30;
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
