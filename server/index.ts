@@ -291,6 +291,20 @@ app.use((req, res, next) => {
 
   await registerRoutes(httpServer, app);
 
+  // JSON 404 handler for unmatched API routes (must be after all API routes)
+  // This prevents the SPA fallback from returning HTML for missing API endpoints
+  // Uses path-agnostic approach to respect multi-handler pipelines
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (!res.headersSent && req.originalUrl.startsWith('/api/')) {
+      return res.status(404).json({ 
+        error: 'Not found', 
+        message: `API endpoint ${req.originalUrl} does not exist`,
+        status: 404 
+      });
+    }
+    return next();
+  });
+
   // MANDATORY global error handler (from safety module)
   app.use(safetyErrorHandler);
 
