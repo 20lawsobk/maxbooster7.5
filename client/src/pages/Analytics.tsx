@@ -1396,25 +1396,9 @@ export default function Analytics() {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                 📊 Analytics Dashboard
               </h1>
-              <Badge
-                variant="outline"
-                className={`${
-                  isConnected
-                    ? 'bg-green-50 dark:bg-green-950/20 text-green-600 border-green-200 dark:border-green-800'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 border-gray-200 dark:border-gray-700'
-                } flex items-center gap-1.5`}
-                data-testid={isConnected ? 'badge-live' : 'badge-offline'}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}
-                ></span>
-                {isConnected ? 'Live' : 'Offline'}
-              </Badge>
             </div>
             <p className="text-muted-foreground mt-1">
-              {isConnected
-                ? `Real-time updates • Updated ${getTimeSinceUpdate()}`
-                : 'Start creating to see your comprehensive insights'}
+              Real-time updates • Updated {getTimeSinceUpdate()}
             </p>
           </div>
           <div className="flex items-center space-x-3">
