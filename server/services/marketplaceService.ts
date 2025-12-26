@@ -104,22 +104,22 @@ export class MarketplaceService {
     try {
       // Map service data to database schema
       const dbListing = {
-        ownerId: data.userId,
+        userId: data.userId,
         title: data.title,
         description: data.description,
         priceCents: Math.round(data.price * 100), // Convert to cents
-        licenseType: data.licenses[0]?.type || 'basic', // Store first license as primary
-        isPublished: true, // Maps to 'active' status
-        tags: data.tags || [],
+        category: data.genre,
+        audioUrl: data.audioUrl,
+        artworkUrl: data.artworkUrl,
+        previewUrl: data.audioUrl,
+        isPublished: true,
         metadata: {
           genre: data.genre,
           bpm: data.bpm,
           key: data.key,
-          licenses: data.licenses, // Store full license array in metadata
+          licenses: data.licenses,
+          tags: data.tags || [],
         },
-        previewUrl: data.audioUrl,
-        downloadUrl: data.audioUrl,
-        coverArtUrl: data.artworkUrl,
       };
 
       // Create listing in database (UUID generated automatically)
@@ -129,16 +129,16 @@ export class MarketplaceService {
       const metadata = (createdListing.metadata as any) || {};
       return {
         id: createdListing.id,
-        userId: createdListing.ownerId,
+        userId: createdListing.userId,
         title: createdListing.title,
         description: createdListing.description || undefined,
-        genre: metadata.genre,
+        genre: metadata.genre || createdListing.category,
         bpm: metadata.bpm,
         key: metadata.key,
         price: createdListing.priceCents / 100,
-        audioUrl: createdListing.previewUrl || createdListing.downloadUrl || '',
-        artworkUrl: createdListing.coverArtUrl || undefined,
-        tags: Array.isArray(createdListing.tags) ? (createdListing.tags as string[]) : [],
+        audioUrl: createdListing.audioUrl || createdListing.previewUrl || '',
+        artworkUrl: createdListing.artworkUrl || undefined,
+        tags: metadata.tags || [],
         licenses: metadata.licenses || data.licenses,
         status: createdListing.isPublished ? 'active' : 'inactive',
         createdAt: createdListing.createdAt || new Date(),

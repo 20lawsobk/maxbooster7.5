@@ -828,6 +828,42 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async createListing(data: {
+    userId: string;
+    title: string;
+    description?: string;
+    priceCents: number;
+    category?: string;
+    audioUrl?: string;
+    artworkUrl?: string;
+    previewUrl?: string;
+    isPublished?: boolean;
+    metadata?: any;
+    tags?: string[];
+  }): Promise<any> {
+    try {
+      const [listing] = await db
+        .insert(listings)
+        .values({
+          userId: data.userId,
+          title: data.title,
+          description: data.description,
+          priceCents: data.priceCents,
+          category: data.category,
+          audioUrl: data.audioUrl,
+          artworkUrl: data.artworkUrl,
+          previewUrl: data.previewUrl,
+          isPublished: data.isPublished ?? true,
+          metadata: data.metadata,
+        })
+        .returning();
+      return listing;
+    } catch (error) {
+      console.error('Error creating listing:', error);
+      throw error;
+    }
+  }
+
   async getBeatListings(filters?: {
     genre?: string;
     minPrice?: number;
