@@ -27,7 +27,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
@@ -470,7 +481,14 @@ export default function Distribution() {
   const [isHyperFollowOpen, setIsHyperFollowOpen] = useState(false);
   const [showReleaseDetails, setShowReleaseDetails] = useState(false);
   const [showEditRelease, setShowEditRelease] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedRelease, setSelectedRelease] = useState<Release | null>(null);
+  const [editReleaseForm, setEditReleaseForm] = useState({
+    title: '',
+    artistName: '',
+    releaseDate: '',
+    primaryGenre: '',
+  });
 
   // Upload Form State
   const [uploadForm, setUploadForm] = useState<UploadForm>({
@@ -644,6 +662,52 @@ export default function Distribution() {
       toast({
         title: 'Upload failed',
         description: error?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateReleaseMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest('PATCH', `/api/distribution/releases/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Release Updated',
+        description: 'Your release has been updated successfully.',
+      });
+      setShowEditRelease(false);
+      setSelectedRelease(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Update Failed',
+        description: error?.message || 'Failed to update release.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteReleaseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/distribution/releases/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Release Deleted',
+        description: 'Your release has been removed.',
+      });
+      setShowDeleteConfirm(false);
+      setSelectedRelease(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Delete Failed',
+        description: error?.message || 'Failed to delete release.',
         variant: 'destructive',
       });
     },
@@ -1540,11 +1604,29 @@ export default function Distribution() {
                             size="sm"
                             onClick={() => {
                               setSelectedRelease(release);
+                              setEditReleaseForm({
+                                title: release.title,
+                                artistName: release.artistName || '',
+                                releaseDate: release.releaseDate ? new Date(release.releaseDate).toISOString().split('T')[0] : '',
+                                primaryGenre: (release.metadata as any)?.primaryGenre || '',
+                              });
                               setShowEditRelease(true);
                             }}
                             data-testid={`button-edit-release-${release.id}`}
                           >
                             <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedRelease(release);
+                              setShowDeleteConfirm(true);
+                            }}
+                            data-testid={`button-delete-release-${release.id}`}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                           <Button
                             variant="outline"
@@ -3468,6 +3550,119 @@ export default function Distribution() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Release Dialog */}
+        <Dialog open={showEditRelease} onOpenChange={setShowEditRelease}>
+          <DialogContent className="sm:max-w-md bg-white dark:bg-gray-800">
+            <DialogHeader>
+              <DialogTitle>Edit Release</DialogTitle>
+              <DialogDescription>
+                Update your release details below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">Title</Label>
+                <Input
+                  id="edit-title"
+                  value={editReleaseForm.title}
+                  onChange={(e) => setEditReleaseForm({ ...editReleaseForm, title: e.target.value })}
+                  placeholder="Release title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-artist">Artist Name</Label>
+                <Input
+                  id="edit-artist"
+                  value={editReleaseForm.artistName}
+                  onChange={(e) => setEditReleaseForm({ ...editReleaseForm, artistName: e.target.value })}
+                  placeholder="Artist name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-date">Release Date</Label>
+                <Input
+                  id="edit-date"
+                  type="date"
+                  value={editReleaseForm.releaseDate}
+                  onChange={(e) => setEditReleaseForm({ ...editReleaseForm, releaseDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-genre">Primary Genre</Label>
+                <Select
+                  value={editReleaseForm.primaryGenre}
+                  onValueChange={(value) => setEditReleaseForm({ ...editReleaseForm, primaryGenre: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hip-hop">Hip-Hop/Rap</SelectItem>
+                    <SelectItem value="pop">Pop</SelectItem>
+                    <SelectItem value="rnb">R&B/Soul</SelectItem>
+                    <SelectItem value="rock">Rock</SelectItem>
+                    <SelectItem value="electronic">Electronic</SelectItem>
+                    <SelectItem value="country">Country</SelectItem>
+                    <SelectItem value="jazz">Jazz</SelectItem>
+                    <SelectItem value="classical">Classical</SelectItem>
+                    <SelectItem value="latin">Latin</SelectItem>
+                    <SelectItem value="alternative">Alternative</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEditRelease(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (selectedRelease) {
+                    updateReleaseMutation.mutate({
+                      id: selectedRelease.id,
+                      data: {
+                        title: editReleaseForm.title,
+                        artistName: editReleaseForm.artistName,
+                        releaseDate: editReleaseForm.releaseDate,
+                        primaryGenre: editReleaseForm.primaryGenre,
+                      },
+                    });
+                  }
+                }}
+                disabled={updateReleaseMutation.isPending}
+              >
+                {updateReleaseMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Release Confirmation */}
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent className="bg-white dark:bg-gray-800">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Release</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{selectedRelease?.title}"? This action cannot be undone
+                and will initiate a takedown from all platforms if the release is already live.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (selectedRelease) {
+                    deleteReleaseMutation.mutate(selectedRelease.id);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deleteReleaseMutation.isPending ? 'Deleting...' : 'Delete Release'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
