@@ -260,7 +260,8 @@ class ReplitStorageProvider implements StorageProvider {
       throw new Error(`Replit storage download failed: ${result.error}`);
     }
 
-    return result.value;
+    // Ensure we return a proper Node.js Buffer (Replit returns Uint8Array)
+    return Buffer.from(result.value);
   }
 
   async deleteFile(key: string): Promise<void> {
