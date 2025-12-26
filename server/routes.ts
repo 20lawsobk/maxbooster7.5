@@ -104,16 +104,24 @@ export async function registerRoutes(
     const isProduction = process.env.NODE_ENV === 'production';
     
     // Production debugging for session issues
-    if (isProduction && !req.user) {
+    if (isProduction) {
       const hasCookie = req.headers.cookie?.includes('sessionId');
       const hasSession = !!req.session;
       const hasUserId = !!req.session?.userId;
       const sessionId = req.session?.id?.substring(0, 8) || 'none';
+      const origin = req.headers.origin || 'none';
+      const host = req.headers.host || 'none';
       
-      console.log(`[Auth/me] Debug: cookie=${hasCookie}, session=${hasSession}, userId=${hasUserId}, sessId=${sessionId}`);
+      console.log(`[Auth/me] Request: origin=${origin}, host=${host}`);
+      console.log(`[Auth/me] Cookies raw: ${req.headers.cookie?.substring(0, 100) || 'none'}`);
+      console.log(`[Auth/me] Session: exists=${hasSession}, userId=${hasUserId}, sessId=${sessionId}`);
       
-      if (hasCookie && !hasUserId) {
-        console.warn('[Auth/me] Cookie present but no userId - session may have expired or Redis issue');
+      if (!req.user) {
+        if (hasCookie && !hasUserId) {
+          console.warn('[Auth/me] Cookie present but no userId - session may have expired or Redis issue');
+        } else if (!hasCookie) {
+          console.warn('[Auth/me] No sessionId cookie present in request');
+        }
       }
     }
     
@@ -241,8 +249,11 @@ export async function registerRoutes(
         
         // Production debugging: log session and cookie info
         if (isProduction) {
+          const setCookieHeader = res.getHeader('Set-Cookie');
           console.log(`[Login] SUCCESS: userId=${user.id}, sessionId=${req.session.id?.substring(0, 8)}`);
-          console.log(`[Login] Cookie settings: secure=${req.session.cookie.secure}, sameSite=${req.session.cookie.sameSite}, domain=${req.session.cookie.domain || 'not set'}`);
+          console.log(`[Login] Cookie config: secure=${req.session.cookie.secure}, sameSite=${req.session.cookie.sameSite}, domain=${req.session.cookie.domain || 'not set'}, path=${req.session.cookie.path}`);
+          console.log(`[Login] Set-Cookie header present: ${!!setCookieHeader}`);
+          console.log(`[Login] Response headers:`, JSON.stringify(Object.fromEntries(res.getHeaderNames().map(n => [n, res.getHeader(n)]))));
         }
         
         const { password: _, ...userWithoutPassword } = user;
