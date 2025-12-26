@@ -2753,6 +2753,17 @@ export async function registerRoutes(
     }
   });
 
+  // Public payment-bypass status endpoint (separate from admin-only management endpoints)
+  app.get("/api/payment-bypass/status", async (req: Request, res: Response) => {
+    try {
+      const { paymentBypassService } = await import('./services/paymentBypassService');
+      const status = await paymentBypassService.getStatus();
+      return res.json({ bypassed: status.bypassed, reason: status.config?.reason || null });
+    } catch (error) {
+      return res.json({ bypassed: false, reason: null });
+    }
+  });
+
   // Infrastructure scaling routes
   try {
     const { scalingMetricsRouter, getInfrastructureStatus } = await import('./infrastructure/index.js');
