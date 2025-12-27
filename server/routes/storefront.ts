@@ -49,8 +49,37 @@ router.get('/my', async (req, res) => {
 });
 
 /**
+ * GET /api/storefront/public/:slug
+ * Get public storefront by slug (unauthenticated access) - MUST be before /:slug
+ */
+router.get('/public/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const storefront = await storefrontService.getStorefrontBySlug(slug);
+    
+    if (!storefront.isActive || !storefront.isPublic) {
+      return res.status(404).json({ error: 'Storefront not found' });
+    }
+
+    await storefrontService.incrementViews(storefront.id);
+
+    res.json(storefront);
+  } catch (error: unknown) {
+    logger.error('Error fetching public storefront:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch storefront';
+    if (errorMessage === 'Storefront not found') {
+      return res.status(404).json({ error: errorMessage });
+    }
+
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
  * GET /api/storefront/:slug
- * Get public storefront by slug
+ * Get storefront by slug (for authenticated access)
  */
 router.get('/:slug', async (req, res) => {
   try {
@@ -437,35 +466,6 @@ router.post('/generate-slug', async (req, res) => {
   } catch (error: unknown) {
     logger.error('Error generating slug:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to generate slug';
-    res.status(500).json({ error: errorMessage });
-  }
-});
-
-/**
- * GET /api/storefront/public/:slug
- * Get public storefront by slug (unauthenticated access)
- */
-router.get('/public/:slug', async (req, res) => {
-  try {
-    const { slug } = req.params;
-
-    const storefront = await storefrontService.getStorefrontBySlug(slug);
-    
-    if (!storefront.isActive || !storefront.isPublic) {
-      return res.status(404).json({ error: 'Storefront not found' });
-    }
-
-    await storefrontService.incrementViews(storefront.id);
-
-    res.json(storefront);
-  } catch (error: unknown) {
-    logger.error('Error fetching public storefront:', error);
-
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch storefront';
-    if (errorMessage === 'Storefront not found') {
-      return res.status(404).json({ error: errorMessage });
-    }
-
     res.status(500).json({ error: errorMessage });
   }
 });

@@ -306,6 +306,8 @@ export default function StorefrontBuilder() {
 
     updateStorefrontMutation.mutate({
       customization,
+      subdomain: selectedStorefront.subdomain,
+      isSubdomainActive: selectedStorefront.isSubdomainActive,
     });
   };
 
