@@ -444,7 +444,11 @@ export default function Marketplace() {
   const [hasStems, setHasStems] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioBlobUrlRef = useRef<string | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [useWebAudio, setUseWebAudio] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     title: '',
     genre: '',
@@ -952,6 +956,11 @@ export default function Marketplace() {
 
   const handlePlayPause = async (beatId: string, beatUrl?: string) => {
     if (isPlaying === beatId) {
+      // Stop current playback
+      if (useWebAudio && audioSourceRef.current) {
+        try { audioSourceRef.current.stop(); } catch {}
+        audioSourceRef.current = null;
+      }
       if (audioRef.current) {
         audioRef.current.pause();
       }
@@ -960,6 +969,11 @@ export default function Marketplace() {
       return;
     }
 
+    // Stop any existing playback
+    if (useWebAudio && audioSourceRef.current) {
+      try { audioSourceRef.current.stop(); } catch {}
+      audioSourceRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -989,7 +1003,6 @@ export default function Marketplace() {
     setShowPreviewPlayer(true);
 
     try {
-      // Fetch audio and preserve MIME type for mobile compatibility
       const response = await fetch(audioUrl, { 
         mode: 'cors',
         credentials: 'include'
@@ -999,11 +1012,64 @@ export default function Marketplace() {
         throw new Error(`Failed to load audio: ${response.statusText}`);
       }
       
-      // Get the Content-Type from server - critical for mobile playback
-      const contentType = response.headers.get('Content-Type') || 'audio/mpeg';
       const arrayBuffer = await response.arrayBuffer();
-      
-      // Create blob with explicit MIME type (industry standard for mobile audio)
+
+      // Try Web Audio API first (industry standard for mobile compatibility)
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        try {
+          if (!audioContextRef.current) {
+            audioContextRef.current = new AudioContextClass();
+            gainNodeRef.current = audioContextRef.current.createGain();
+            gainNodeRef.current.connect(audioContextRef.current.destination);
+          }
+          
+          // Resume context if suspended (required for mobile)
+          if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          
+          const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer.slice(0));
+          
+          const source = audioContextRef.current.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(gainNodeRef.current!);
+          
+          gainNodeRef.current!.gain.value = volume / 100;
+          
+          source.onended = () => {
+            setIsPlaying(null);
+            setShowPreviewPlayer(false);
+          };
+          
+          audioSourceRef.current = source;
+          setDuration(audioBuffer.duration);
+          setUseWebAudio(true);
+          setIsLoadingAudio(false);
+          source.start(0);
+          
+          // Track time updates for Web Audio
+          const startTime = audioContextRef.current.currentTime;
+          const updateTime = () => {
+            if (audioContextRef.current && isPlaying === beatId) {
+              const elapsed = audioContextRef.current.currentTime - startTime;
+              setCurrentTime(Math.min(elapsed, audioBuffer.duration));
+              if (elapsed < audioBuffer.duration) {
+                requestAnimationFrame(updateTime);
+              }
+            }
+          };
+          requestAnimationFrame(updateTime);
+          
+          return; // Success with Web Audio API
+        } catch (webAudioError) {
+          console.warn('Web Audio API failed, falling back to HTMLAudioElement:', webAudioError);
+        }
+      }
+
+      // Fallback: HTMLAudioElement with proper MIME type
+      setUseWebAudio(false);
+      const contentType = response.headers?.get?.('Content-Type') || 'audio/mpeg';
       const blob = new Blob([arrayBuffer], { type: contentType });
       const blobUrl = URL.createObjectURL(blob);
       audioBlobUrlRef.current = blobUrl;
@@ -1064,7 +1130,7 @@ export default function Marketplace() {
           toast({
             title: 'Playback Error',
             description: err.name === 'NotAllowedError' 
-              ? 'Click the play button again to start playback'
+              ? 'Tap the play button again to start playback'
               : 'Failed to play audio. Please try again.',
             variant: 'destructive',
           });
