@@ -463,6 +463,7 @@ export default function Marketplace() {
   const [isDraggingAudio, setIsDraggingAudio] = useState(false);
   const [fileValidationError, setFileValidationError] = useState<string | null>(null);
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+  const isPickingFileRef = useRef(false);
 
   const MAX_AUDIO_SIZE_MB = 100;
   const MAX_COVER_SIZE_MB = 10;
@@ -2491,7 +2492,12 @@ export default function Marketplace() {
         </div>
       )}
 
-      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+      <Dialog open={showUploadModal} onOpenChange={(open) => {
+        if (!open && isPickingFileRef.current) {
+          return;
+        }
+        setShowUploadModal(open);
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Upload Your Beat</DialogTitle>
@@ -2655,7 +2661,12 @@ export default function Marketplace() {
                     id="audio-upload"
                     type="file"
                     accept="audio/*,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
-                    onChange={(e) => e.target.files?.[0] && handleAudioFileSelect(e.target.files[0])}
+                    onClick={() => { isPickingFileRef.current = true; }}
+                    onBlur={() => { setTimeout(() => { isPickingFileRef.current = false; }, 500); }}
+                    onChange={(e) => {
+                      isPickingFileRef.current = false;
+                      e.target.files?.[0] && handleAudioFileSelect(e.target.files[0]);
+                    }}
                     className="sr-only"
                   />
                   <UploadCloud className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
@@ -2685,7 +2696,12 @@ export default function Marketplace() {
                 id="coverArt"
                 type="file"
                 accept="image/jpeg,image/png,image/jpg"
-                onChange={(e) => e.target.files?.[0] && handleCoverFileSelect(e.target.files[0])}
+                onClick={() => { isPickingFileRef.current = true; }}
+                onBlur={() => { setTimeout(() => { isPickingFileRef.current = false; }, 500); }}
+                onChange={(e) => {
+                  isPickingFileRef.current = false;
+                  e.target.files?.[0] && handleCoverFileSelect(e.target.files[0]);
+                }}
               />
               {coverArtFile && (
                 <p className="text-sm text-green-600">{coverArtFile.name} ({(coverArtFile.size / (1024 * 1024)).toFixed(2)} MB)</p>
