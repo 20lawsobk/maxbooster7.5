@@ -1012,8 +1012,8 @@ export default function Marketplace() {
       // Use Howler.js with blob URL - universal cross-browser solution
       const howl = new Howl({
         src: [blobUrl],
-        format: ['mp3', 'wav', 'flac', 'aac', 'ogg'],
-        html5: false, // Use Web Audio API with blob
+        format: ['mp3'],
+        html5: true, // Use HTML5 Audio - better Chrome compatibility
         volume: volume / 100,
         onload: () => {
           setIsLoadingAudio(false);
