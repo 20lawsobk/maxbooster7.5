@@ -46,7 +46,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { StemsManager } from '@/components/StemsManager';
 import { PayoutDashboard } from '@/components/marketplace/PayoutDashboard';
-import { StorefrontBuilder } from '@/components/marketplace/StorefrontBuilder';
+import StorefrontBuilder from '@/components/marketplace/StorefrontBuilder';
 import {
   Music,
   Play,
