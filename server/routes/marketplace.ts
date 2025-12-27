@@ -854,7 +854,7 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       socialLinks: producer.socialLinks,
       followerCount: 0,
       beatCount: beatCount,
-      rating: beatCount > 0 ? 4.5 + Math.random() * 0.5 : 0,
+      rating: 0,
       verified: producer.role === 'admin' || producer.subscriptionTier === 'lifetime',
     });
   } catch (error: any) {

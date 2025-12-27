@@ -518,7 +518,7 @@ export class DatabaseStorage implements IStorage {
           followers: 0,
           sales: 0,
           beats: beatsCount,
-          rating: beatsCount > 0 ? 4.5 + Math.random() * 0.5 : 0,
+          rating: 0,
         };
       }));
       
