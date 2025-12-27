@@ -546,13 +546,13 @@ router.get('/audio/:path(*)', async (req: Request, res: Response) => {
       res.setHeader('Content-Length', chunkSize);
       res.setHeader('Content-Type', contentType);
       res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.send(fileBuffer.subarray(start, end + 1));
     } else {
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', fileSize);
       res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.send(fileBuffer);
     }
   } catch (error: any) {
@@ -567,6 +567,7 @@ router.get('/cover/:path(*)', async (req: Request, res: Response) => {
     
     const exists = await storageService.fileExists(fileKey);
     if (!exists) {
+      logger.warn(`Cover image not found: ${fileKey}`);
       return res.status(404).json({ error: 'Cover image not found' });
     }
 
@@ -581,9 +582,12 @@ router.get('/cover/:path(*)', async (req: Request, res: Response) => {
 
     const fileBuffer = await storageService.downloadFile(fileKey);
     
+    // CORS headers for image loading
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     res.setHeader('Content-Type', mimeTypes[ext] || 'image/jpeg');
     res.setHeader('Content-Length', fileBuffer.length);
-    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(fileBuffer);
   } catch (error: any) {
     logger.error('Error serving cover image:', error);
