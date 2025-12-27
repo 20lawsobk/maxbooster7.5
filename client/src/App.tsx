@@ -59,6 +59,7 @@ const ShowPage = lazy(() => import('@/pages/ShowPage'));
 const Help = lazy(() => import('@/pages/Help'));
 const Storefront = lazy(() => import('@/pages/Storefront'));
 const AdminAutonomy = lazy(() => import('@/pages/AdminAutonomy'));
+const ProducerProfilePage = lazy(() => import('@/pages/ProducerProfilePage'));
 
 /**
  * TODO: Add function documentation
@@ -82,6 +83,7 @@ function Router() {
       <Route path="/social-media" component={SocialMedia} />
       <Route path="/advertising" component={Advertisement} />
       <Route path="/marketplace" component={Marketplace} />
+      <Route path="/marketplace/producer/:producerId" component={ProducerProfilePage} />
       <Route path="/royalties" component={Royalties} />
       <Route path="/studio/:projectId" component={Studio} />
       <Route path="/studio" component={Studio} />
