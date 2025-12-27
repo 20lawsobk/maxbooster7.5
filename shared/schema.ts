@@ -492,6 +492,13 @@ export const storefrontTemplates = pgTable("storefront_templates", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const storefrontsRelations = relations(storefronts, ({ one }) => ({
+  template: one(storefrontTemplates, {
+    fields: [storefronts.templateId],
+    references: [storefrontTemplates.id],
+  }),
+}));
+
 // ============================================================================
 // LEGAL HOLDS
 // ============================================================================
