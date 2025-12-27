@@ -972,7 +972,7 @@ export default function Marketplace() {
     }
 
     const beat = beats.find((b) => b.id === beatId) || myBeats.find((b) => b.id === beatId);
-    const audioUrl = beatUrl || beat?.audioUrl || beat?.previewUrl || beat?.fullUrl;
+    let audioUrl = beatUrl || beat?.audioUrl || beat?.previewUrl || beat?.fullUrl;
 
     if (!audioUrl) {
       toast({
@@ -981,6 +981,11 @@ export default function Marketplace() {
         variant: 'destructive',
       });
       return;
+    }
+
+    // Convert relative URL to absolute URL for mobile browser compatibility
+    if (audioUrl.startsWith('/')) {
+      audioUrl = `${window.location.origin}${audioUrl}`;
     }
 
     setIsLoadingAudio(true);
