@@ -444,6 +444,7 @@ export default function Marketplace() {
   const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
   const [hasStems, setHasStems] = useState(false);
   const howlRef = useRef<Howl | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     title: '',
@@ -961,11 +962,15 @@ export default function Marketplace() {
       return;
     }
 
-    // Stop any existing playback
+    // Stop any existing playback and cleanup
     if (howlRef.current) {
       howlRef.current.stop();
       howlRef.current.unload();
       howlRef.current = null;
+    }
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
     }
 
     const beat = beats.find((b) => b.id === beatId) || myBeats.find((b) => b.id === beatId);
@@ -990,53 +995,79 @@ export default function Marketplace() {
     setCurrentBeat(beat || null);
     setShowPreviewPlayer(true);
 
-    // Use Howler.js - universal cross-browser audio solution
-    const howl = new Howl({
-      src: [audioUrl],
-      html5: true, // Use HTML5 Audio for streaming support
-      volume: volume / 100,
-      onload: () => {
-        setIsLoadingAudio(false);
-        setDuration(howl.duration());
-      },
-      onplay: () => {
-        setIsLoadingAudio(false);
-        // Update current time periodically
-        const updateTime = () => {
-          if (howlRef.current && howlRef.current.playing()) {
-            setCurrentTime(howlRef.current.seek() as number);
-            requestAnimationFrame(updateTime);
-          }
-        };
-        requestAnimationFrame(updateTime);
-      },
-      onend: () => {
-        setIsPlaying(null);
-        setShowPreviewPlayer(false);
-        setCurrentTime(0);
-      },
-      onloaderror: (_id, error) => {
-        console.error('Howler load error:', error);
-        toast({
-          title: 'Playback Error',
-          description: 'Failed to load audio file',
-          variant: 'destructive',
-        });
-        setIsPlaying(null);
-        setIsLoadingAudio(false);
-        setShowPreviewPlayer(false);
-      },
-      onplayerror: (_id, error) => {
-        console.error('Howler play error:', error);
-        // Try to unlock and play again
-        howl.once('unlock', () => {
-          howl.play();
-        });
-      },
-    });
+    try {
+      // Fetch audio as blob first - works better on mobile browsers
+      const response = await fetch(audioUrl, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audio: ${response.status}`);
+      }
+      
+      const audioBlob = await response.blob();
+      const blobUrl = URL.createObjectURL(audioBlob);
+      blobUrlRef.current = blobUrl;
 
-    howlRef.current = howl;
-    howl.play();
+      // Use Howler.js with blob URL - universal cross-browser solution
+      const howl = new Howl({
+        src: [blobUrl],
+        format: ['mp3', 'wav', 'flac', 'aac', 'ogg'],
+        html5: false, // Use Web Audio API with blob
+        volume: volume / 100,
+        onload: () => {
+          setIsLoadingAudio(false);
+          setDuration(howl.duration());
+        },
+        onplay: () => {
+          setIsLoadingAudio(false);
+          // Update current time periodically
+          const updateTime = () => {
+            if (howlRef.current && howlRef.current.playing()) {
+              setCurrentTime(howlRef.current.seek() as number);
+              requestAnimationFrame(updateTime);
+            }
+          };
+          requestAnimationFrame(updateTime);
+        },
+        onend: () => {
+          setIsPlaying(null);
+          setShowPreviewPlayer(false);
+          setCurrentTime(0);
+        },
+        onloaderror: (_id, error) => {
+          console.error('Howler load error:', error);
+          toast({
+            title: 'Playback Error',
+            description: 'Failed to load audio file',
+            variant: 'destructive',
+          });
+          setIsPlaying(null);
+          setIsLoadingAudio(false);
+          setShowPreviewPlayer(false);
+        },
+        onplayerror: (_id, error) => {
+          console.error('Howler play error:', error);
+          // Try to unlock and play again
+          howl.once('unlock', () => {
+            howl.play();
+          });
+        },
+      });
+
+      howlRef.current = howl;
+      howl.play();
+    } catch (error) {
+      console.error('Audio fetch error:', error);
+      setIsLoadingAudio(false);
+      setIsPlaying(null);
+      setShowPreviewPlayer(false);
+      toast({
+        title: 'Playback Error',
+        description: error instanceof Error ? error.message : 'Failed to load audio',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleSeek = (value: number[]) => {
