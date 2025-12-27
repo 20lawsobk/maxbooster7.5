@@ -989,7 +989,7 @@ export default function Marketplace() {
     setShowPreviewPlayer(true);
 
     try {
-      // Fetch audio as blob to ensure cross-browser/mobile compatibility
+      // Fetch audio and preserve MIME type for mobile compatibility
       const response = await fetch(audioUrl, { 
         mode: 'cors',
         credentials: 'include'
@@ -999,7 +999,12 @@ export default function Marketplace() {
         throw new Error(`Failed to load audio: ${response.statusText}`);
       }
       
-      const blob = await response.blob();
+      // Get the Content-Type from server - critical for mobile playback
+      const contentType = response.headers.get('Content-Type') || 'audio/mpeg';
+      const arrayBuffer = await response.arrayBuffer();
+      
+      // Create blob with explicit MIME type (industry standard for mobile audio)
+      const blob = new Blob([arrayBuffer], { type: contentType });
       const blobUrl = URL.createObjectURL(blob);
       audioBlobUrlRef.current = blobUrl;
 
