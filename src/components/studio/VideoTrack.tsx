@@ -109,7 +109,7 @@ export function VideoTrack({
   isPlaying = false,
   onPlayPause,
 }: VideoTrackProps) {
-  const { zoom, snapEnabled, snapResolution, currentTime, setCurrentTime } = useStudioStore();
+  const { zoom, setZoom, snapEnabled, snapResolution, currentTime, setCurrentTime } = useStudioStore();
 
   const [clips, setClips] = useState<VideoClip[]>(initialClips);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
@@ -929,7 +929,7 @@ export function VideoTrack({
                 variant="ghost"
                 size="sm"
                 className="h-5 w-5 p-0"
-                onClick={() => {}}
+                onClick={() => setZoom(zoom * 0.8)}
                 title="Zoom Out"
               >
                 <ZoomOut className="h-3 w-3" style={{ color: 'var(--studio-text-muted)' }} />
@@ -941,7 +941,7 @@ export function VideoTrack({
                 variant="ghost"
                 size="sm"
                 className="h-5 w-5 p-0"
-                onClick={() => {}}
+                onClick={() => setZoom(zoom * 1.25)}
                 title="Zoom In"
               >
                 <ZoomIn className="h-3 w-3" style={{ color: 'var(--studio-text-muted)' }} />

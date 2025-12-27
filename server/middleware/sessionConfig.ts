@@ -35,7 +35,8 @@ export async function createSessionStore() {
 
       return store;
     } catch (error: unknown) {
-      logger.error('❌ Failed to create Redis session store:', error.message);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      logger.error('❌ Failed to create Redis session store:', errMsg);
       throw new Error(
         'Session storage initialization failed - cannot start in production without Redis'
       );
