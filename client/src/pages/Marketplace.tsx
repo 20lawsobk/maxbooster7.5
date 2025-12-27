@@ -965,10 +965,15 @@ export default function Marketplace() {
       return;
     }
 
-    // Stop any existing playback
+    // Stop any existing playback and cleanup
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+    }
+    // Revoke previous blob URL to free memory
+    if (audioBlobUrlRef.current) {
+      URL.revokeObjectURL(audioBlobUrlRef.current);
+      audioBlobUrlRef.current = null;
     }
 
     const beat = beats.find((b) => b.id === beatId) || myBeats.find((b) => b.id === beatId);
@@ -994,25 +999,45 @@ export default function Marketplace() {
     setShowPreviewPlayer(true);
 
     try {
-      // Direct URL streaming - most reliable for mobile browsers
-      // Create fresh audio element for each playback to avoid stale state
+      // Fetch audio as blob - more reliable on mobile browsers
+      // This downloads the file first, then plays from local blob
+      const response = await fetch(audioUrl, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'audio/*',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load audio: ${response.status}`);
+      }
+      
+      const audioBlob = await response.blob();
+      const blobUrl = URL.createObjectURL(audioBlob);
+      audioBlobUrlRef.current = blobUrl;
+      
+      // Create fresh audio element for each playback
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = '';
-        audioRef.current.load();
       }
       
-      audioRef.current = new Audio();
-      audioRef.current.preload = 'auto';
+      // Create audio element with mobile-friendly attributes
+      const audio = new Audio();
+      audio.preload = 'auto';
+      // Mobile Safari/Chrome specific attributes
+      (audio as any).playsInline = true;
+      (audio as any).webkitPlaysinline = true;
+      audioRef.current = audio;
       
       // Set up event listeners before setting src
-      audioRef.current.addEventListener('ended', () => {
+      audio.addEventListener('ended', () => {
         setIsPlaying(null);
         setShowPreviewPlayer(false);
       });
       
-      audioRef.current.addEventListener('error', () => {
-        const error = audioRef.current?.error;
+      audio.addEventListener('error', () => {
+        const error = audio.error;
         let errorMessage = 'Failed to load audio file';
         if (error) {
           switch (error.code) {
@@ -1023,10 +1048,10 @@ export default function Marketplace() {
               errorMessage = 'Network error while loading audio';
               break;
             case MediaError.MEDIA_ERR_DECODE:
-              errorMessage = 'Audio format not supported by your browser';
+              errorMessage = 'Audio decoding failed - try a different file';
               break;
             case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-              errorMessage = 'Audio format not supported by your browser';
+              errorMessage = 'Audio format not supported';
               break;
           }
         }
@@ -1039,46 +1064,50 @@ export default function Marketplace() {
         setIsLoadingAudio(false);
       });
       
-      audioRef.current.addEventListener('timeupdate', () => {
-        if (audioRef.current) {
-          setCurrentTime(audioRef.current.currentTime);
-        }
+      audio.addEventListener('timeupdate', () => {
+        setCurrentTime(audio.currentTime);
       });
       
-      audioRef.current.addEventListener('loadedmetadata', () => {
-        if (audioRef.current) {
-          setDuration(audioRef.current.duration);
-        }
+      audio.addEventListener('loadedmetadata', () => {
+        setDuration(audio.duration);
       });
       
-      // Use direct URL - browser handles streaming natively
-      audioRef.current.src = audioUrl;
-      audioRef.current.volume = volume / 100;
+      // Use blob URL - browser treats as local file
+      audio.src = blobUrl;
+      audio.volume = volume / 100;
       
-      const playAudio = async () => {
-        setIsLoadingAudio(false);
-        try {
-          await audioRef.current?.play();
-        } catch (err: any) {
-          if (err.name === 'NotAllowedError') {
-            toast({
-              title: 'Tap to Play',
-              description: 'Tap the play button again to start playback',
-            });
-          } else {
-            toast({
-              title: 'Playback Error',
-              description: 'Failed to play audio. Please try again.',
-              variant: 'destructive',
-            });
-          }
-          setIsPlaying(null);
+      // Wait for audio to be ready
+      await new Promise<void>((resolve, reject) => {
+        const onCanPlay = () => {
+          audio.removeEventListener('canplay', onCanPlay);
+          audio.removeEventListener('error', onError);
+          resolve();
+        };
+        const onError = () => {
+          audio.removeEventListener('canplay', onCanPlay);
+          audio.removeEventListener('error', onError);
+          reject(new Error('Audio failed to load'));
+        };
+        audio.addEventListener('canplay', onCanPlay);
+        audio.addEventListener('error', onError);
+        audio.load();
+      });
+      
+      setIsLoadingAudio(false);
+      
+      try {
+        await audio.play();
+      } catch (err: any) {
+        if (err.name === 'NotAllowedError') {
+          toast({
+            title: 'Tap to Play',
+            description: 'Tap the play button again to start playback',
+          });
+        } else {
+          throw err;
         }
-      };
-      
-      // Wait for enough data to play
-      audioRef.current.addEventListener('canplay', playAudio, { once: true });
-      audioRef.current.load();
+        setIsPlaying(null);
+      }
       
     } catch (error) {
       setIsLoadingAudio(false);
