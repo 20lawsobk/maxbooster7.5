@@ -189,7 +189,8 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
       },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'x-csrf-token'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'x-csrf-token', 'Range'],
+      exposedHeaders: ['Content-Length', 'Content-Range', 'Accept-Ranges', 'Content-Type'],
     }));
     loadedMiddleware.push('cors');
     logger.info('   ✓ CORS middleware (malicious origin rejection enabled)');
