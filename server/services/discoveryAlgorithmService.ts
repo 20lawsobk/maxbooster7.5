@@ -154,8 +154,10 @@ export class DiscoveryAlgorithmService {
         previewUrl: listings.previewUrl,
         metadata: listings.metadata,
         createdAt: listings.createdAt,
+        producerName: users.username,
       })
         .from(listings)
+        .leftJoin(users, eq(listings.userId, users.id))
         .where(eq(listings.isPublished, true))
         .orderBy(desc(listings.createdAt))
         .limit(200);
@@ -234,7 +236,7 @@ export class DiscoveryAlgorithmService {
         return {
           id: beat.id,
           title: beat.title,
-          producer: 'Producer',
+          producer: beat.producerName || 'Producer',
           producerId: beat.userId,
           price: (beat.priceCents || 0) / 100,
           currency: beat.currency || 'usd',
