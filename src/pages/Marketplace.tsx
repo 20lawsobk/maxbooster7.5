@@ -36,6 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { StemsManager } from '@/components/StemsManager';
 import { PayoutDashboard } from '@/components/marketplace/PayoutDashboard';
+import StorefrontBuilder from '@/components/marketplace/StorefrontBuilder';
 import {
   Music,
   Play,
@@ -156,6 +157,7 @@ import {
   Receipt,
   Scale,
   ScrollText,
+  Store,
 } from 'lucide-react';
 
 // BeatStars Clone Interfaces
@@ -1131,7 +1133,7 @@ export default function Marketplace() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-11 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <TabsTrigger value="browse" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
               Browse
             </TabsTrigger>
@@ -1140,6 +1142,9 @@ export default function Marketplace() {
             </TabsTrigger>
             <TabsTrigger value="my-beats" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
               My Beats
+            </TabsTrigger>
+            <TabsTrigger value="my-store" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+              My Store
             </TabsTrigger>
             <TabsTrigger value="purchases" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
               Purchases
@@ -1477,6 +1482,10 @@ export default function Marketplace() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="my-store" className="space-y-6">
+            <StorefrontBuilder />
           </TabsContent>
 
           <TabsContent value="purchases">
