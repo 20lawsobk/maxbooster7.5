@@ -39,8 +39,10 @@ interface Producer {
   website?: string;
   verified?: boolean;
   followers?: number;
+  followerCount?: number;
   sales?: number;
   beats?: number;
+  beatCount?: number;
   rating?: number;
 }
 
@@ -73,7 +75,7 @@ export default function ProducerProfilePage() {
     enabled: !!producerId,
   });
 
-  const { data: beatsData, isLoading: beatsLoading } = useQuery<{ beats: Beat[] }>({
+  const { data: beatsData, isLoading: beatsLoading } = useQuery<Beat[]>({
     queryKey: ['producer-beats', producerId],
     queryFn: async () => {
       const res = await apiRequest('GET', `/api/marketplace/beats?producerId=${producerId}`);
@@ -82,7 +84,7 @@ export default function ProducerProfilePage() {
     enabled: !!producerId,
   });
 
-  const beats = beatsData?.beats || [];
+  const beats = Array.isArray(beatsData) ? beatsData : [];
 
   const handlePlayBeat = (beat: Beat) => {
     if (playingBeatId === beat.id) {
@@ -210,7 +212,7 @@ export default function ProducerProfilePage() {
           <Card>
             <CardContent className="p-4 text-center">
               <Music className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl font-bold">{producer.beats || beats.length || 0}</p>
+              <p className="text-2xl font-bold">{producer.beatCount || producer.beats || beats.length || 0}</p>
               <p className="text-sm text-muted-foreground">Beats</p>
             </CardContent>
           </Card>
