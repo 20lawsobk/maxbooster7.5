@@ -527,11 +527,13 @@ router.get('/audio/:path(*)', async (req: Request, res: Response) => {
     const contentType = mimeTypes[ext] || 'audio/mpeg';
     const fileSize = fileBuffer.length;
 
-    // CORS headers for audio playback
+    // CORS headers for audio playback - override Helmet restrictions
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
     res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
 
     // Handle Range requests for audio seeking
     const range = req.headers.range;
@@ -582,9 +584,11 @@ router.get('/cover/:path(*)', async (req: Request, res: Response) => {
 
     const fileBuffer = await storageService.downloadFile(fileKey);
     
-    // CORS headers for image loading
+    // CORS headers for image loading - override Helmet restrictions
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
     res.setHeader('Content-Type', mimeTypes[ext] || 'image/jpeg');
     res.setHeader('Content-Length', fileBuffer.length);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
