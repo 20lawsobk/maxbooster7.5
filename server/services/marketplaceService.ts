@@ -478,10 +478,39 @@ export class MarketplaceService {
   async getUserListings(userId: string): Promise<any[]> {
     try {
       const listings = await storage.getBeatListings({ userId });
-      return listings.map(listing => ({
-        ...listing,
-        price: listing.price,
-      }));
+      const user = await storage.getUser(userId);
+      
+      return listings.map(listing => {
+        const metadata = (listing as any).metadata || {};
+        return {
+          id: listing.id,
+          title: listing.title,
+          producer: user?.username || 'Producer',
+          producerId: listing.userId,
+          price: listing.price,
+          currency: listing.currency || 'usd',
+          genre: listing.category || metadata.genre || 'Hip-Hop',
+          mood: metadata.mood || 'Chill',
+          tempo: metadata.bpm || 120,
+          key: metadata.key || 'C',
+          duration: metadata.duration || 180,
+          audioUrl: listing.audioUrl,
+          previewUrl: listing.previewUrl || listing.audioUrl,
+          artworkUrl: listing.artworkUrl,
+          coverArt: listing.artworkUrl || (listing as any).coverArt,
+          tags: metadata.tags || [],
+          description: listing.description || '',
+          isExclusive: false,
+          isLease: true,
+          licenseType: 'basic',
+          downloads: 0,
+          likes: 0,
+          plays: 0,
+          createdAt: listing.createdAt,
+          updatedAt: listing.updatedAt || listing.createdAt,
+          status: listing.isPublished ? 'active' : 'inactive',
+        };
+      });
     } catch (error: unknown) {
       logger.error('Error fetching user listings:', error);
       return [];
