@@ -1468,9 +1468,17 @@ export default function Marketplace() {
                     <CardContent className="p-6">
                       <div className="flex flex-col items-center space-y-4">
                         <div className="relative">
-                          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold group-hover:scale-110 transition">
-                            {producer.displayName?.substring(0, 2)?.toUpperCase() || 'PR'}
-                          </div>
+                          {producer.avatarUrl ? (
+                            <img 
+                              src={producer.avatarUrl} 
+                              alt={producer.name || producer.displayName || 'Producer'} 
+                              className="w-24 h-24 rounded-full object-cover group-hover:scale-110 transition border-4 border-purple-500/30"
+                            />
+                          ) : (
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold group-hover:scale-110 transition">
+                              {(producer.name || producer.displayName)?.substring(0, 2)?.toUpperCase() || 'PR'}
+                            </div>
+                          )}
                           {producer.verified && (
                             <div className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white">
                               <CheckCircle className="w-5 h-5 text-white" />
@@ -1478,8 +1486,10 @@ export default function Marketplace() {
                           )}
                         </div>
                         <div className="text-center w-full">
-                          <h4 className="font-bold text-lg group-hover:text-blue-600 transition">{producer.displayName}</h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">@{producer.username}</p>
+                          <h4 className="font-bold text-lg group-hover:text-blue-600 transition">{producer.name || producer.displayName}</h4>
+                          {producer.bio && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{producer.bio}</p>
+                          )}
                           {producer.location && (
                             <div className="flex items-center justify-center space-x-1 text-xs text-gray-500 mt-1">
                               <MapPin className="w-3 h-3" />
