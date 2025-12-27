@@ -998,7 +998,6 @@ export default function Marketplace() {
       }
       
       audioRef.current = new Audio();
-      audioRef.current.crossOrigin = 'anonymous';
       audioRef.current.preload = 'auto';
       
       // Set up event listeners before setting src
