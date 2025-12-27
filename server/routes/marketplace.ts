@@ -14,7 +14,13 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/beats', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { search, genre, mood, sortBy, limit, offset } = req.query;
+    const { search, genre, mood, sortBy, limit, offset, producerId } = req.query;
+
+    // If filtering by producer, get their beats directly
+    if (producerId) {
+      const producerBeats = await marketplaceService.getListingsByProducer(producerId as string);
+      return res.json(producerBeats);
+    }
 
     if (userId) {
       const personalizedBeats = await discoveryAlgorithmService.getPersonalizedFeed(userId, {
@@ -833,14 +839,22 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
     if (!producer) {
       return res.status(404).json({ error: 'Producer not found' });
     }
+    
+    // Get actual beat count
+    const producerBeats = await marketplaceService.getListingsByProducer(producerId);
+    const beatCount = producerBeats.length;
+    
     res.json({
       id: producer.id,
       username: producer.username,
       avatarUrl: producer.avatarUrl,
       bio: producer.bio,
+      location: producer.location,
+      website: producer.website,
       socialLinks: producer.socialLinks,
       followerCount: 0,
-      beatCount: 0,
+      beatCount: beatCount,
+      verified: producer.role === 'admin' || producer.subscriptionTier === 'lifetime',
     });
   } catch (error: any) {
     logger.error('Error fetching producer:', error);

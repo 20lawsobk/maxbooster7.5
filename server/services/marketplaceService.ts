@@ -488,6 +488,44 @@ export class MarketplaceService {
     }
   }
 
+  async getListingsByProducer(producerId: string): Promise<any[]> {
+    try {
+      const listings = await storage.getBeatListings({ userId: producerId });
+      const producer = await storage.getUser(producerId);
+      
+      return listings.map(listing => {
+        const metadata = (listing as any).metadata || {};
+        return {
+          id: listing.id,
+          title: listing.title,
+          producer: producer?.username || 'Producer',
+          producerId: listing.userId,
+          price: listing.price,
+          currency: listing.currency || 'usd',
+          genre: listing.category || metadata.genre || 'Hip-Hop',
+          mood: metadata.mood || 'Chill',
+          tempo: metadata.bpm || 120,
+          key: metadata.key || 'C',
+          duration: metadata.duration || 180,
+          audioUrl: listing.audioUrl,
+          previewUrl: listing.previewUrl || listing.audioUrl,
+          artworkUrl: listing.artworkUrl,
+          coverArt: listing.artworkUrl || (listing as any).coverArt,
+          plays: 0,
+          likes: 0,
+          isHot: false,
+          isNew: true,
+          licenseOptions: metadata.licenses || [
+            { type: 'basic', price: listing.price, features: ['MP3 Download', 'Non-exclusive rights'] }
+          ],
+        };
+      });
+    } catch (error: unknown) {
+      logger.error('Error fetching producer listings:', error);
+      return [];
+    }
+  }
+
   async updateListing(
     listingId: string,
     userId: string,
