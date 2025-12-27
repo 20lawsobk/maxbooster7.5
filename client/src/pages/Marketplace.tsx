@@ -2492,13 +2492,8 @@ export default function Marketplace() {
         </div>
       )}
 
-      <Dialog open={showUploadModal} onOpenChange={(open) => {
-        if (!open && isPickingFileRef.current) {
-          return;
-        }
-        setShowUploadModal(open);
-      }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Upload Your Beat</DialogTitle>
             <DialogDescription>Fill in the details below to upload your beat to the marketplace</DialogDescription>
