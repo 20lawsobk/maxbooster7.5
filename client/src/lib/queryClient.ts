@@ -144,6 +144,102 @@ export async function apiRequest(
   }
 }
 
+/**
+ * Upload FormData with progress tracking using the same auth/CSRF handling as apiRequest.
+ * Uses XMLHttpRequest internally to support progress events.
+ */
+export async function uploadWithProgress(
+  url: string,
+  data: FormData,
+  options?: {
+    onProgress?: (percent: number) => void;
+    timeout?: number;
+  }
+): Promise<unknown> {
+  const csrfToken = await ensureCsrfToken();
+  const timeoutMs = options?.timeout || 300000; // 5 minutes default for uploads
+  
+  errorService.addBreadcrumb('upload-request', {
+    url,
+    hasData: true,
+  });
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.withCredentials = true;
+    xhr.timeout = timeoutMs;
+    
+    if (csrfToken) {
+      xhr.setRequestHeader(CSRF_HEADER, csrfToken);
+    }
+    
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && options?.onProgress) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        options.onProgress(percentComplete);
+      }
+    });
+    
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch {
+          resolve({ success: true });
+        }
+      } else {
+        let errorMessage = `Upload failed with status ${xhr.status}`;
+        
+        if (xhr.status === 401) {
+          errorMessage = 'Please log in to upload files';
+        } else if (xhr.status === 403) {
+          errorMessage = 'You do not have permission to upload files';
+        } else {
+          try {
+            const errorData = JSON.parse(xhr.responseText);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // Use default error message
+          }
+        }
+        
+        const error = new Error(errorMessage);
+        captureException(error, {
+          action: 'upload-response-error',
+          metadata: { status: xhr.status, url },
+        });
+        reject(error);
+      }
+    });
+    
+    xhr.addEventListener('error', () => {
+      const error = new Error('Network error during upload. Please check your connection.');
+      captureException(error, {
+        action: 'upload-network-error',
+        metadata: { url },
+      });
+      reject(error);
+    });
+    
+    xhr.addEventListener('timeout', () => {
+      const error = new Error('Upload timed out. Try a smaller file or check your connection.');
+      captureException(error, {
+        action: 'upload-timeout',
+        metadata: { url, timeoutMs },
+      });
+      reject(error);
+    });
+    
+    xhr.addEventListener('abort', () => {
+      const error = new Error('Upload was cancelled');
+      reject(error);
+    });
+    
+    xhr.send(data);
+  });
+}
+
 type UnauthorizedBehavior = 'returnNull' | 'throw';
 
 // Helper to build URL from queryKey, handling objects as query parameters

@@ -43,7 +43,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import { StemsManager } from '@/components/StemsManager';
 import { PayoutDashboard } from '@/components/marketplace/PayoutDashboard';
 import StorefrontBuilder from '@/components/marketplace/StorefrontBuilder';
@@ -456,6 +456,101 @@ export default function Marketplace() {
   });
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverArtFile, setCoverArtFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
+  const [isDraggingAudio, setIsDraggingAudio] = useState(false);
+  const [fileValidationError, setFileValidationError] = useState<string | null>(null);
+  const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+
+  const MAX_AUDIO_SIZE_MB = 100;
+  const MAX_COVER_SIZE_MB = 10;
+  const ALLOWED_AUDIO_FORMATS = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/aac', 'audio/ogg', 'audio/mp4', 'audio/x-m4a', 'audio/aiff', 'audio/webm'];
+  const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/png', 'image/jpg'];
+
+  const validateAudioFile = (file: File): string | null => {
+    if (!ALLOWED_AUDIO_FORMATS.includes(file.type) && !file.name.match(/\.(mp3|wav|flac|aac|ogg|m4a|aiff|aif|webm)$/i)) {
+      return 'Invalid audio format. Please use MP3, WAV, FLAC, AAC, OGG, M4A, or AIFF.';
+    }
+    if (file.size > MAX_AUDIO_SIZE_MB * 1024 * 1024) {
+      return `Audio file too large. Maximum size is ${MAX_AUDIO_SIZE_MB}MB.`;
+    }
+    return null;
+  };
+
+  const validateCoverFile = (file: File): string | null => {
+    if (!ALLOWED_IMAGE_FORMATS.includes(file.type)) {
+      return 'Invalid image format. Please use JPG or PNG.';
+    }
+    if (file.size > MAX_COVER_SIZE_MB * 1024 * 1024) {
+      return `Cover art too large. Maximum size is ${MAX_COVER_SIZE_MB}MB.`;
+    }
+    return null;
+  };
+
+  const handleAudioFileSelect = (file: File) => {
+    const error = validateAudioFile(file);
+    if (error) {
+      setFileValidationError(error);
+      toast({ title: 'Invalid File', description: error, variant: 'destructive' });
+      return;
+    }
+    setFileValidationError(null);
+    setAudioFile(file);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    setAudioPreviewUrl(URL.createObjectURL(file));
+    const filenameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+    if (!uploadForm.title) {
+      setUploadForm(prev => ({ ...prev, title: filenameWithoutExt }));
+    }
+  };
+
+  const handleCoverFileSelect = (file: File) => {
+    const error = validateCoverFile(file);
+    if (error) {
+      toast({ title: 'Invalid File', description: error, variant: 'destructive' });
+      return;
+    }
+    setCoverArtFile(file);
+  };
+
+  const handleAudioDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingAudio(true);
+  };
+
+  const handleAudioDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingAudio(false);
+  };
+
+  const handleAudioDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingAudio(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleAudioFileSelect(file);
+  };
+
+  const resetUploadForm = () => {
+    setUploadForm({
+      title: '',
+      genre: '',
+      mood: '',
+      tempo: 120,
+      key: 'C',
+      price: 50,
+      licenseType: 'basic',
+      description: '',
+      tags: '',
+    });
+    setAudioFile(null);
+    setCoverArtFile(null);
+    setUploadProgress(0);
+    setFileValidationError(null);
+    if (audioPreviewUrl) {
+      URL.revokeObjectURL(audioPreviewUrl);
+      setAudioPreviewUrl(null);
+    }
+  };
 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -635,18 +730,28 @@ export default function Marketplace() {
 
   const uploadBeatMutation = useMutation({
     mutationFn: async (beatData: FormData) => {
-      const response = await apiRequest('POST', '/api/marketplace/upload', beatData, {
-        timeout: 300000, // 5 minutes for large audio file uploads
+      return uploadWithProgress('/api/marketplace/upload', beatData, {
+        onProgress: (percent) => setUploadProgress(percent),
+        timeout: 300000, // 5 minutes
       });
-      return response.json();
     },
     onSuccess: () => {
       toast({
         title: 'Beat Uploaded!',
-        description: 'Your beat has been uploaded and is pending approval.',
+        description: 'Your beat has been uploaded successfully and is now live.',
       });
+      resetUploadForm();
       setShowUploadModal(false);
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+    },
+    onError: (error: Error) => {
+      setUploadProgress(0);
+      toast({
+        title: 'Upload Failed',
+        description: error.message || 'Failed to upload beat',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -2463,26 +2568,102 @@ export default function Marketplace() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="audio">Audio File (MP3, WAV, FLAC, AAC, OGG, M4A, AIFF) *</Label>
-              <Input
-                id="audio"
-                type="file"
-                accept="audio/mpeg,audio/wav,audio/flac,audio/aac,audio/ogg,audio/mp4,audio/x-m4a,audio/aiff,audio/webm,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
-                onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-              />
+              <Label>Audio File (MP3, WAV, FLAC, AAC, OGG, M4A, AIFF) * <span className="text-xs text-muted-foreground">Max {MAX_AUDIO_SIZE_MB}MB</span></Label>
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                  isDraggingAudio 
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
+                    : audioFile 
+                      ? 'border-green-500 bg-green-50 dark:bg-green-950' 
+                      : fileValidationError 
+                        ? 'border-red-500 bg-red-50 dark:bg-red-950'
+                        : 'border-gray-300 hover:border-gray-400'
+                }`}
+                onDragOver={handleAudioDragOver}
+                onDragLeave={handleAudioDragLeave}
+                onDrop={handleAudioDrop}
+                onClick={() => document.getElementById('audio-upload')?.click()}
+              >
+                <Input
+                  id="audio-upload"
+                  type="file"
+                  accept="audio/mpeg,audio/wav,audio/flac,audio/aac,audio/ogg,audio/mp4,audio/x-m4a,audio/aiff,audio/webm,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
+                  onChange={(e) => e.target.files?.[0] && handleAudioFileSelect(e.target.files[0])}
+                  className="hidden"
+                />
+                {audioFile ? (
+                  <div className="space-y-2">
+                    <FileAudio className="w-10 h-10 mx-auto text-green-500" />
+                    <p className="font-medium text-green-700 dark:text-green-400">{audioFile.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(audioFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAudioFile(null);
+                        if (audioPreviewUrl) {
+                          URL.revokeObjectURL(audioPreviewUrl);
+                          setAudioPreviewUrl(null);
+                        }
+                      }}
+                    >
+                      <X className="w-4 h-4 mr-1" /> Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <UploadCloud className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+                    <p className="font-medium">Drag & drop your audio file here</p>
+                    <p className="text-sm text-muted-foreground">or click to browse</p>
+                  </div>
+                )}
+              </div>
+              {fileValidationError && (
+                <p className="text-sm text-red-500">{fileValidationError}</p>
+              )}
+              {audioPreviewUrl && (
+                <div className="flex items-center space-x-2 p-2 bg-muted rounded-lg">
+                  <Play className="w-4 h-4 text-muted-foreground" />
+                  <audio
+                    ref={audioPreviewRef}
+                    src={audioPreviewUrl}
+                    controls
+                    className="flex-1 h-8"
+                    preload="metadata"
+                  />
+                </div>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="coverArt">Cover Art (JPG/PNG)</Label>
+              <Label htmlFor="coverArt">Cover Art (JPG/PNG) <span className="text-xs text-muted-foreground">Max {MAX_COVER_SIZE_MB}MB</span></Label>
               <Input
                 id="coverArt"
                 type="file"
                 accept="image/jpeg,image/png,image/jpg"
-                onChange={(e) => setCoverArtFile(e.target.files?.[0] || null)}
+                onChange={(e) => e.target.files?.[0] && handleCoverFileSelect(e.target.files[0])}
               />
+              {coverArtFile && (
+                <p className="text-sm text-green-600">{coverArtFile.name} ({(coverArtFile.size / (1024 * 1024)).toFixed(2)} MB)</p>
+              )}
             </div>
           </div>
+          {uploadBeatMutation.isPending && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Uploading...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="h-2" />
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUploadModal(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => { resetUploadForm(); setShowUploadModal(false); }} disabled={uploadBeatMutation.isPending}>
+              Cancel
+            </Button>
             <Button
               onClick={() => {
                 if (!uploadForm.title || !uploadForm.genre || !audioFile) {
@@ -2493,6 +2674,7 @@ export default function Marketplace() {
                   });
                   return;
                 }
+                setUploadProgress(0);
                 const formData = new FormData();
                 formData.append('title', uploadForm.title);
                 formData.append('genre', uploadForm.genre);
@@ -2507,10 +2689,10 @@ export default function Marketplace() {
                 if (coverArtFile) formData.append('coverArt', coverArtFile);
                 uploadBeatMutation.mutate(formData);
               }}
-              disabled={uploadBeatMutation.isPending}
+              disabled={uploadBeatMutation.isPending || !audioFile || !uploadForm.title || !uploadForm.genre}
               className="bg-gradient-to-r from-blue-600 to-purple-600"
             >
-              {uploadBeatMutation.isPending ? 'Uploading...' : 'Upload Beat'}
+              {uploadBeatMutation.isPending ? `Uploading ${uploadProgress}%` : 'Upload Beat'}
             </Button>
           </DialogFooter>
         </DialogContent>
