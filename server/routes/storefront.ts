@@ -507,4 +507,133 @@ router.get('/:storefrontId/listings', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/storefront/generate-subdomain
+ * Generate a unique subdomain from a name
+ */
+router.post('/generate-subdomain', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const subdomain = await storefrontService.generateSubdomain(name);
+    res.json({ subdomain });
+  } catch (error: unknown) {
+    logger.error('Error generating subdomain:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate subdomain';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
+ * GET /api/storefront/check-subdomain/:subdomain
+ * Check if a subdomain is available
+ */
+router.get('/check-subdomain/:subdomain', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { subdomain } = req.params;
+    const { excludeStorefrontId } = req.query;
+
+    const isValid = storefrontService.validateSubdomain(subdomain);
+    if (!isValid) {
+      return res.json({ 
+        available: false, 
+        reason: 'Invalid subdomain format. Use 3-30 lowercase letters, numbers, and hyphens.' 
+      });
+    }
+
+    const isAvailable = await storefrontService.isSubdomainAvailable(
+      subdomain, 
+      excludeStorefrontId as string | undefined
+    );
+
+    res.json({ 
+      available: isAvailable,
+      reason: isAvailable ? null : 'Subdomain is already taken'
+    });
+  } catch (error: unknown) {
+    logger.error('Error checking subdomain:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to check subdomain';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
+ * GET /api/storefront/subdomain/:subdomain
+ * Get public storefront by subdomain (for subdomain-based routing)
+ */
+router.get('/subdomain/:subdomain', async (req, res) => {
+  try {
+    const { subdomain } = req.params;
+
+    const storefront = await storefrontService.getStorefrontBySubdomain(subdomain);
+    
+    if (!storefront) {
+      return res.status(404).json({ error: 'Storefront not found' });
+    }
+
+    await storefrontService.incrementViews(storefront.id);
+
+    res.json(storefront);
+  } catch (error: unknown) {
+    logger.error('Error fetching storefront by subdomain:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch storefront';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
+ * PUT /api/storefront/:storefrontId/subdomain
+ * Update storefront subdomain settings
+ */
+router.put('/:storefrontId/subdomain', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { storefrontId } = req.params;
+    const { subdomain, isSubdomainActive } = req.body;
+
+    if (subdomain && !storefrontService.validateSubdomain(subdomain)) {
+      return res.status(400).json({ 
+        error: 'Invalid subdomain format. Use 3-30 lowercase letters, numbers, and hyphens.' 
+      });
+    }
+
+    if (subdomain) {
+      const isAvailable = await storefrontService.isSubdomainAvailable(subdomain, storefrontId);
+      if (!isAvailable) {
+        return res.status(400).json({ error: 'Subdomain is already taken' });
+      }
+    }
+
+    const updatedStorefront = await storefrontService.updateStorefront(
+      storefrontId,
+      req.user!.id,
+      { subdomain, isSubdomainActive }
+    );
+
+    res.json(updatedStorefront);
+  } catch (error: unknown) {
+    logger.error('Error updating subdomain:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update subdomain';
+    if (errorMessage === 'Unauthorized') {
+      return res.status(403).json({ error: errorMessage });
+    }
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
 export default router;

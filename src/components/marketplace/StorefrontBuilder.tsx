@@ -40,6 +40,11 @@ import {
   DollarSign,
   Users,
   Crown,
+  Globe,
+  Link,
+  Copy,
+  ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 
 interface StorefrontTemplate {
@@ -58,6 +63,10 @@ interface Storefront {
   userId: string;
   name: string;
   slug: string;
+  subdomain: string | null;
+  customDomain: string | null;
+  isSubdomainActive: boolean;
+  isCustomDomainActive: boolean;
   templateId: string | null;
   customization: {
     colors?: {
@@ -414,8 +423,9 @@ export default function StorefrontBuilder() {
               </CardHeader>
               <CardContent>
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="domain">Domain</TabsTrigger>
                     <TabsTrigger value="branding">Branding</TabsTrigger>
                     <TabsTrigger value="colors">Colors & Fonts</TabsTrigger>
                     <TabsTrigger value="membership">Membership Tiers</TabsTrigger>
@@ -530,6 +540,151 @@ export default function StorefrontBuilder() {
                       <Save className="w-4 h-4 mr-2" />
                       Save Changes
                     </Button>
+                  </TabsContent>
+
+                  <TabsContent value="domain" className="space-y-6 mt-4">
+                    <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Globe className="w-5 h-5 text-blue-600" />
+                          Custom Subdomain
+                        </CardTitle>
+                        <CardDescription>
+                          Get a memorable URL for your store: yourname.maxbooster.app
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Subdomain</Label>
+                          <div className="flex gap-2 mt-1">
+                            <div className="flex-1 flex items-center gap-1">
+                              <Input
+                                value={selectedStorefront.subdomain || ''}
+                                onChange={(e) => {
+                                  const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                                  setSelectedStorefront({
+                                    ...selectedStorefront,
+                                    subdomain: value || null,
+                                  });
+                                }}
+                                placeholder="your-artist-name"
+                                className="flex-1"
+                              />
+                              <span className="text-muted-foreground whitespace-nowrap">.maxbooster.app</span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Use 3-30 lowercase letters, numbers, and hyphens
+                          </p>
+                        </div>
+
+                        {selectedStorefront.subdomain && (
+                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
+                            <div className="flex items-center gap-2">
+                              <Link className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm font-mono">
+                                {selectedStorefront.subdomain}.maxbooster.app
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`https://${selectedStorefront.subdomain}.maxbooster.app`);
+                                  toast({ title: 'URL copied to clipboard' });
+                                }}
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(`/store/${selectedStorefront.slug}`, '_blank')}
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label>Enable Subdomain</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Make your store accessible via your custom subdomain
+                            </p>
+                          </div>
+                          <Button
+                            variant={selectedStorefront.isSubdomainActive ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                              setSelectedStorefront({
+                                ...selectedStorefront,
+                                isSubdomainActive: !selectedStorefront.isSubdomainActive,
+                              });
+                            }}
+                            disabled={!selectedStorefront.subdomain}
+                          >
+                            {selectedStorefront.isSubdomainActive ? (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Active
+                              </>
+                            ) : (
+                              'Enable'
+                            )}
+                          </Button>
+                        </div>
+
+                        <Button 
+                          onClick={handleSaveCustomization} 
+                          className="w-full"
+                          disabled={updateStorefrontMutation.isPending}
+                        >
+                          {updateStorefrontMutation.isPending ? (
+                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4 mr-2" />
+                          )}
+                          Save Domain Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Store className="w-5 h-5" />
+                          Store URLs
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div>
+                            <p className="text-sm font-medium">Default URL</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              /store/{selectedStorefront.slug}
+                            </p>
+                          </div>
+                          <Badge variant="secondary">Always Active</Badge>
+                        </div>
+                        
+                        {selectedStorefront.subdomain && (
+                          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                            <div>
+                              <p className="text-sm font-medium">Subdomain URL</p>
+                              <p className="text-xs text-muted-foreground font-mono">
+                                {selectedStorefront.subdomain}.maxbooster.app
+                              </p>
+                            </div>
+                            <Badge variant={selectedStorefront.isSubdomainActive ? 'default' : 'secondary'}>
+                              {selectedStorefront.isSubdomainActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </TabsContent>
 
                   <TabsContent value="branding" className="space-y-4 mt-4">

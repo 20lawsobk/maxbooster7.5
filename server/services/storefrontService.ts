@@ -27,6 +27,10 @@ export interface CreateStorefrontInput {
 export interface UpdateStorefrontInput {
   name?: string;
   slug?: string;
+  subdomain?: string;
+  customDomain?: string;
+  isSubdomainActive?: boolean;
+  isCustomDomainActive?: boolean;
   templateId?: string;
   customization?: any;
   seo?: any;
@@ -685,6 +689,160 @@ export class StorefrontService {
       logger.error('Error fetching storefront listings:', error);
       throw error;
     }
+  }
+
+  /**
+   * Validate subdomain format
+   * Subdomains must be 3-30 characters, lowercase alphanumeric with hyphens
+   * Cannot start or end with hyphen, no consecutive hyphens
+   */
+  validateSubdomain(subdomain: string): boolean {
+    const subdomainRegex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+    return (
+      subdomainRegex.test(subdomain) &&
+      subdomain.length >= 3 &&
+      subdomain.length <= 30 &&
+      !subdomain.includes('--') &&
+      !this.isReservedSubdomain(subdomain)
+    );
+  }
+
+  /**
+   * Check if subdomain is reserved
+   */
+  isReservedSubdomain(subdomain: string): boolean {
+    const reserved = [
+      'www', 'api', 'app', 'admin', 'dashboard', 'help', 'support',
+      'blog', 'mail', 'email', 'ftp', 'cdn', 'static', 'assets',
+      'dev', 'staging', 'test', 'demo', 'beta', 'alpha',
+      'store', 'shop', 'marketplace', 'studio', 'music',
+      'maxbooster', 'blawz', 'b-lawz', 'blawzmusic'
+    ];
+    return reserved.includes(subdomain.toLowerCase());
+  }
+
+  /**
+   * Generate a unique subdomain from a name
+   */
+  async generateSubdomain(name: string): Promise<string> {
+    const baseSubdomain = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .substring(0, 25);
+
+    let subdomain = baseSubdomain;
+    let counter = 1;
+
+    while (true) {
+      if (!this.validateSubdomain(subdomain)) {
+        subdomain = `artist-${baseSubdomain}`.substring(0, 30);
+      }
+
+      const existing = await db.query.storefronts.findFirst({
+        where: eq(storefronts.subdomain, subdomain),
+      });
+
+      if (!existing) {
+        break;
+      }
+
+      subdomain = `${baseSubdomain}-${counter}`.substring(0, 30);
+      counter++;
+    }
+
+    return subdomain;
+  }
+
+  /**
+   * Check if subdomain is available
+   */
+  async isSubdomainAvailable(subdomain: string, excludeStorefrontId?: string): Promise<boolean> {
+    if (!this.validateSubdomain(subdomain)) {
+      return false;
+    }
+
+    const existing = await db.query.storefronts.findFirst({
+      where: eq(storefronts.subdomain, subdomain),
+    });
+
+    if (!existing) {
+      return true;
+    }
+
+    return excludeStorefrontId ? existing.id === excludeStorefrontId : false;
+  }
+
+  /**
+   * Get storefront by subdomain
+   */
+  async getStorefrontBySubdomain(subdomain: string) {
+    try {
+      const storefront = await db.query.storefronts.findFirst({
+        where: and(
+          eq(storefronts.subdomain, subdomain),
+          eq(storefronts.isSubdomainActive, true),
+          eq(storefronts.isActive, true)
+        ),
+      });
+
+      if (!storefront) {
+        return null;
+      }
+
+      const [storefrontUser, userListings, tiers, template] = await Promise.all([
+        db.query.users.findFirst({
+          where: eq(users.id, storefront.userId),
+          columns: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        }),
+        db.query.listings.findMany({
+          where: and(eq(listings.ownerId, storefront.userId), eq(listings.isPublished, true)),
+          orderBy: [desc(listings.createdAt)],
+          limit: 50,
+        }),
+        db.query.membershipTiers.findMany({
+          where: and(
+            eq(membershipTiers.storefrontId, storefront.id),
+            eq(membershipTiers.isActive, true)
+          ),
+        }),
+        storefront.templateId
+          ? db.query.storefrontTemplates.findFirst({
+              where: eq(storefrontTemplates.id, storefront.templateId),
+            })
+          : null,
+      ]);
+
+      return {
+        ...storefront,
+        user: storefrontUser,
+        listings: userListings,
+        membershipTiers: tiers,
+        template,
+      };
+    } catch (error: unknown) {
+      logger.error('Error fetching storefront by subdomain:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the public URL for a storefront
+   */
+  getStorefrontUrl(storefront: { subdomain?: string | null; slug: string; isSubdomainActive?: boolean }): string {
+    const baseDomain = process.env.REPLIT_DEV_DOMAIN || 'maxbooster.app';
+    
+    if (storefront.subdomain && storefront.isSubdomainActive) {
+      return `https://${storefront.subdomain}.${baseDomain}`;
+    }
+    
+    return `https://${baseDomain}/store/${storefront.slug}`;
   }
 }
 

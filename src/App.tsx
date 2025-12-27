@@ -56,6 +56,7 @@ const DeveloperApi = lazy(() => import('@/pages/DeveloperApi'));
 const SimplifiedDashboard = lazy(() => import('@/pages/SimplifiedDashboard'));
 const DesktopApp = lazy(() => import('@/pages/DesktopApp'));
 const ShowPage = lazy(() => import('@/pages/ShowPage'));
+const PublicStore = lazy(() => import('@/pages/PublicStore'));
 
 /**
  * TODO: Add function documentation
@@ -79,6 +80,7 @@ function Router() {
       <Route path="/social-media" component={SocialMedia} />
       <Route path="/advertising" component={Advertisement} />
       <Route path="/marketplace" component={Marketplace} />
+      <Route path="/store/:slug" component={PublicStore} />
       <Route path="/royalties" component={Royalties} />
       <Route path="/studio/:projectId" component={Studio} />
       <Route path="/studio" component={Studio} />
