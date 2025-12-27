@@ -504,7 +504,7 @@ export class DatabaseStorage implements IStorage {
       }).from(users).limit(50);
       
       const producerData = await Promise.all(allUsers.map(async (u) => {
-        const userBeats = await db.select().from(marketplaceListings).where(eq(marketplaceListings.userId, u.id));
+        const userBeats = await db.select().from(listings).where(eq(listings.userId, u.id));
         const beatsCount = userBeats.length;
         
         return {
