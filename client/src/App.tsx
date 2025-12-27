@@ -208,6 +208,32 @@ function AppWithKeyboardShortcuts() {
     };
   }, []);
 
+  // Prevent browser default file drop behavior (navigating to the file)
+  // This stops accidental file drops from redirecting away from the page
+  useEffect(() => {
+    const preventDefaultDrop = (e: DragEvent) => {
+      // Only prevent default if this is a file drop and not handled by a component
+      if (e.dataTransfer?.types.includes('Files')) {
+        e.preventDefault();
+      }
+    };
+
+    const preventDragOver = (e: DragEvent) => {
+      // Prevent default to allow drop (required for drop event to fire)
+      if (e.dataTransfer?.types.includes('Files')) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('dragover', preventDragOver);
+    window.addEventListener('drop', preventDefaultDrop);
+
+    return () => {
+      window.removeEventListener('dragover', preventDragOver);
+      window.removeEventListener('drop', preventDefaultDrop);
+    };
+  }, []);
+
   return (
     <>
       <SkipLinks />

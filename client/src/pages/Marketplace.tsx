@@ -2569,29 +2569,13 @@ export default function Marketplace() {
             </div>
             <div className="space-y-2">
               <Label>Audio File (MP3, WAV, FLAC, AAC, OGG, M4A, AIFF) * <span className="text-xs text-muted-foreground">Max {MAX_AUDIO_SIZE_MB}MB</span></Label>
-              <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
-                  isDraggingAudio 
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
-                    : audioFile 
-                      ? 'border-green-500 bg-green-50 dark:bg-green-950' 
-                      : fileValidationError 
-                        ? 'border-red-500 bg-red-50 dark:bg-red-950'
-                        : 'border-gray-300 hover:border-gray-400'
-                }`}
-                onDragOver={handleAudioDragOver}
-                onDragLeave={handleAudioDragLeave}
-                onDrop={handleAudioDrop}
-                onClick={() => document.getElementById('audio-upload')?.click()}
-              >
-                <Input
-                  id="audio-upload"
-                  type="file"
-                  accept="audio/mpeg,audio/wav,audio/flac,audio/aac,audio/ogg,audio/mp4,audio/x-m4a,audio/aiff,audio/webm,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
-                  onChange={(e) => e.target.files?.[0] && handleAudioFileSelect(e.target.files[0])}
-                  className="hidden"
-                />
-                {audioFile ? (
+              {audioFile ? (
+                <div
+                  className="border-2 border-dashed rounded-lg p-6 text-center border-green-500 bg-green-50 dark:bg-green-950"
+                  onDragOver={handleAudioDragOver}
+                  onDragLeave={handleAudioDragLeave}
+                  onDrop={handleAudioDrop}
+                >
                   <div className="space-y-2">
                     <FileAudio className="w-10 h-10 mx-auto text-green-500" />
                     <p className="font-medium text-green-700 dark:text-green-400">{audioFile.name}</p>
@@ -2602,8 +2586,7 @@ export default function Marketplace() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         setAudioFile(null);
                         if (audioPreviewUrl) {
                           URL.revokeObjectURL(audioPreviewUrl);
@@ -2614,14 +2597,33 @@ export default function Marketplace() {
                       <X className="w-4 h-4 mr-1" /> Remove
                     </Button>
                   </div>
-                ) : (
-                  <div>
-                    <UploadCloud className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
-                    <p className="font-medium">Drag & drop your audio file here</p>
-                    <p className="text-sm text-muted-foreground">or click to browse</p>
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <label
+                  htmlFor="audio-upload"
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer block ${
+                    isDraggingAudio 
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
+                      : fileValidationError 
+                        ? 'border-red-500 bg-red-50 dark:bg-red-950'
+                        : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onDragOver={handleAudioDragOver}
+                  onDragLeave={handleAudioDragLeave}
+                  onDrop={handleAudioDrop}
+                >
+                  <input
+                    id="audio-upload"
+                    type="file"
+                    accept="audio/*,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
+                    onChange={(e) => e.target.files?.[0] && handleAudioFileSelect(e.target.files[0])}
+                    className="sr-only"
+                  />
+                  <UploadCloud className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+                  <p className="font-medium">Tap to select audio file</p>
+                  <p className="text-sm text-muted-foreground">or drag & drop on desktop</p>
+                </label>
+              )}
               {fileValidationError && (
                 <p className="text-sm text-red-500">{fileValidationError}</p>
               )}
