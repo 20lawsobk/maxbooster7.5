@@ -611,8 +611,37 @@ export default function Marketplace() {
       });
       setShowUploadModal(false);
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
     },
   });
+
+  const deleteBeatMutation = useMutation({
+    mutationFn: async (beatId: string) => {
+      const response = await apiRequest('DELETE', `/api/marketplace/listings/${beatId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Beat Deleted',
+        description: 'Your beat has been removed from the marketplace.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Delete Failed',
+        description: error.message || 'Failed to delete beat',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleDeleteBeat = (beatId: string, beatTitle: string) => {
+    if (window.confirm(`Are you sure you want to delete "${beatTitle}"? This action cannot be undone.`)) {
+      deleteBeatMutation.mutate(beatId);
+    }
+  };
 
   const followProducerMutation = useMutation({
     mutationFn: async (producerId: string) => {
@@ -1183,7 +1212,15 @@ export default function Marketplace() {
                       <div className="relative">
                         <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg flex items-center justify-center">
                           {beat.coverArt ? (
-                            <img src={beat.coverArt} alt={beat.title} className="w-full h-full object-cover rounded-t-lg" />
+                            <img 
+                              src={beat.coverArt} 
+                              alt={beat.title} 
+                              className="w-full h-full object-cover rounded-t-lg"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
+                              }}
+                            />
                           ) : (
                             <Music className="w-16 h-16 text-white opacity-50" />
                           )}
@@ -1377,12 +1414,27 @@ export default function Marketplace() {
                     <CardContent className="p-0">
                       <div className="relative aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg overflow-hidden">
                         {beat.coverArt ? (
-                          <img src={beat.coverArt} alt={beat.title} className="w-full h-full object-cover" />
+                          <img 
+                            src={beat.coverArt} 
+                            alt={beat.title} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
+                            }}
+                          />
                         ) : (
                           <div className="flex items-center justify-center h-full">
                             <Music className="w-16 h-16 text-white opacity-50" />
                           </div>
                         )}
+                        <Button
+                          onClick={() => handlePlayPause(beat.id)}
+                          className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 hover:bg-white/30 text-white"
+                          size="sm"
+                        >
+                          {isPlaying === beat.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        </Button>
                       </div>
                       <div className="p-4">
                         <h3 className="font-semibold text-lg mb-1">{beat.title}</h3>
@@ -1390,10 +1442,19 @@ export default function Marketplace() {
                         <div className="flex items-center justify-between">
                           <span className="text-lg font-bold">${beat.price}</span>
                           <div className="flex space-x-1">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => toast({ title: 'Edit Coming Soon', description: 'Beat editing will be available in the next update.' })}
+                            >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleDeleteBeat(beat.id, beat.title)}
+                              disabled={deleteBeatMutation.isPending}
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -2039,7 +2100,14 @@ export default function Marketplace() {
           <div className="max-w-7xl mx-auto flex items-center space-x-4">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
               {currentBeat.coverArt ? (
-                <img src={currentBeat.coverArt} alt={currentBeat.title} className="w-full h-full object-cover rounded-lg" />
+                <img 
+                  src={currentBeat.coverArt} 
+                  alt={currentBeat.title} 
+                  className="w-full h-full object-cover rounded-lg"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
               ) : (
                 <Music className="w-8 h-8 text-white" />
               )}

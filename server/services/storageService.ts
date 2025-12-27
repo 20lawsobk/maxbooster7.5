@@ -96,7 +96,8 @@ class LocalStorageProvider implements StorageProvider {
     try {
       await fs.unlink(fullPath);
     } catch (error: unknown) {
-      if (error.code !== 'ENOENT') throw error;
+      const nodeError = error as NodeJS.ErrnoException;
+      if (nodeError.code !== 'ENOENT') throw error;
     }
   }
 
