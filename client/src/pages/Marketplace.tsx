@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Howl } from 'howler';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 
@@ -442,13 +443,8 @@ export default function Marketplace() {
   const [showCartModal, setShowCartModal] = useState(false);
   const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
   const [hasStems, setHasStems] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioBlobUrlRef = useRef<string | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
+  const howlRef = useRef<Howl | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
-  const [useWebAudio, setUseWebAudio] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     title: '',
     genre: '',
@@ -957,23 +953,19 @@ export default function Marketplace() {
   const handlePlayPause = async (beatId: string, beatUrl?: string) => {
     if (isPlaying === beatId) {
       // Stop current playback
-      if (audioRef.current) {
-        audioRef.current.pause();
+      if (howlRef.current) {
+        howlRef.current.stop();
       }
       setIsPlaying(null);
       setShowPreviewPlayer(false);
       return;
     }
 
-    // Stop any existing playback and cleanup
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    // Revoke previous blob URL to free memory
-    if (audioBlobUrlRef.current) {
-      URL.revokeObjectURL(audioBlobUrlRef.current);
-      audioBlobUrlRef.current = null;
+    // Stop any existing playback
+    if (howlRef.current) {
+      howlRef.current.stop();
+      howlRef.current.unload();
+      howlRef.current = null;
     }
 
     const beat = beats.find((b) => b.id === beatId) || myBeats.find((b) => b.id === beatId);
@@ -988,7 +980,7 @@ export default function Marketplace() {
       return;
     }
 
-    // Convert relative URL to absolute URL for mobile browser compatibility
+    // Convert relative URL to absolute URL
     if (audioUrl.startsWith('/')) {
       audioUrl = `${window.location.origin}${audioUrl}`;
     }
@@ -998,132 +990,58 @@ export default function Marketplace() {
     setCurrentBeat(beat || null);
     setShowPreviewPlayer(true);
 
-    try {
-      // Fetch audio as blob - more reliable on mobile browsers
-      // This downloads the file first, then plays from local blob
-      const response = await fetch(audioUrl, {
-        credentials: 'include',
-        headers: {
-          'Accept': 'audio/*',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to load audio: ${response.status}`);
-      }
-      
-      const audioBlob = await response.blob();
-      const blobUrl = URL.createObjectURL(audioBlob);
-      audioBlobUrlRef.current = blobUrl;
-      
-      // Create fresh audio element for each playback
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
-      
-      // Create audio element with mobile-friendly attributes
-      const audio = new Audio();
-      audio.preload = 'auto';
-      // Mobile Safari/Chrome specific attributes
-      (audio as any).playsInline = true;
-      (audio as any).webkitPlaysinline = true;
-      audioRef.current = audio;
-      
-      // Set up event listeners before setting src
-      audio.addEventListener('ended', () => {
+    // Use Howler.js - universal cross-browser audio solution
+    const howl = new Howl({
+      src: [audioUrl],
+      html5: true, // Use HTML5 Audio for streaming support
+      volume: volume / 100,
+      onload: () => {
+        setIsLoadingAudio(false);
+        setDuration(howl.duration());
+      },
+      onplay: () => {
+        setIsLoadingAudio(false);
+        // Update current time periodically
+        const updateTime = () => {
+          if (howlRef.current && howlRef.current.playing()) {
+            setCurrentTime(howlRef.current.seek() as number);
+            requestAnimationFrame(updateTime);
+          }
+        };
+        requestAnimationFrame(updateTime);
+      },
+      onend: () => {
         setIsPlaying(null);
         setShowPreviewPlayer(false);
-      });
-      
-      audio.addEventListener('error', () => {
-        const error = audio.error;
-        let errorMessage = 'Failed to load audio file';
-        if (error) {
-          switch (error.code) {
-            case MediaError.MEDIA_ERR_ABORTED:
-              errorMessage = 'Audio loading was aborted';
-              break;
-            case MediaError.MEDIA_ERR_NETWORK:
-              errorMessage = 'Network error while loading audio';
-              break;
-            case MediaError.MEDIA_ERR_DECODE:
-              errorMessage = 'Audio decoding failed - try a different file';
-              break;
-            case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-              errorMessage = 'Audio format not supported';
-              break;
-          }
-        }
+        setCurrentTime(0);
+      },
+      onloaderror: (_id, error) => {
+        console.error('Howler load error:', error);
         toast({
           title: 'Playback Error',
-          description: errorMessage,
+          description: 'Failed to load audio file',
           variant: 'destructive',
         });
         setIsPlaying(null);
         setIsLoadingAudio(false);
-      });
-      
-      audio.addEventListener('timeupdate', () => {
-        setCurrentTime(audio.currentTime);
-      });
-      
-      audio.addEventListener('loadedmetadata', () => {
-        setDuration(audio.duration);
-      });
-      
-      // Use blob URL - browser treats as local file
-      audio.src = blobUrl;
-      audio.volume = volume / 100;
-      
-      // Wait for audio to be ready
-      await new Promise<void>((resolve, reject) => {
-        const onCanPlay = () => {
-          audio.removeEventListener('canplay', onCanPlay);
-          audio.removeEventListener('error', onError);
-          resolve();
-        };
-        const onError = () => {
-          audio.removeEventListener('canplay', onCanPlay);
-          audio.removeEventListener('error', onError);
-          reject(new Error('Audio failed to load'));
-        };
-        audio.addEventListener('canplay', onCanPlay);
-        audio.addEventListener('error', onError);
-        audio.load();
-      });
-      
-      setIsLoadingAudio(false);
-      
-      try {
-        await audio.play();
-      } catch (err: any) {
-        if (err.name === 'NotAllowedError') {
-          toast({
-            title: 'Tap to Play',
-            description: 'Tap the play button again to start playback',
-          });
-        } else {
-          throw err;
-        }
-        setIsPlaying(null);
-      }
-      
-    } catch (error) {
-      setIsLoadingAudio(false);
-      setIsPlaying(null);
-      setShowPreviewPlayer(false);
-      toast({
-        title: 'Playback Error',
-        description: error instanceof Error ? error.message : 'Failed to load audio file',
-        variant: 'destructive',
-      });
-    }
+        setShowPreviewPlayer(false);
+      },
+      onplayerror: (_id, error) => {
+        console.error('Howler play error:', error);
+        // Try to unlock and play again
+        howl.once('unlock', () => {
+          howl.play();
+        });
+      },
+    });
+
+    howlRef.current = howl;
+    howl.play();
   };
 
   const handleSeek = (value: number[]) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = value[0];
+    if (howlRef.current) {
+      howlRef.current.seek(value[0]);
       setCurrentTime(value[0]);
     }
   };
@@ -1131,15 +1049,15 @@ export default function Marketplace() {
   const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume / 100;
+    if (howlRef.current) {
+      howlRef.current.volume(newVolume / 100);
     }
     if (newVolume > 0) setIsMuted(false);
   };
 
   const toggleMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isMuted;
+    if (howlRef.current) {
+      howlRef.current.mute(!isMuted);
       setIsMuted(!isMuted);
     }
   };
@@ -1152,13 +1070,10 @@ export default function Marketplace() {
 
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      if (audioBlobUrlRef.current) {
-        URL.revokeObjectURL(audioBlobUrlRef.current);
-        audioBlobUrlRef.current = null;
+      if (howlRef.current) {
+        howlRef.current.stop();
+        howlRef.current.unload();
+        howlRef.current = null;
       }
     };
   }, []);
