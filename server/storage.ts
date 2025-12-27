@@ -495,13 +495,22 @@ export class DatabaseStorage implements IStorage {
         lastName: users.lastName,
         email: users.email,
         username: users.username,
+        avatarUrl: users.avatarUrl,
+        bio: users.bio,
+        location: users.location,
+        website: users.website,
+        role: users.role,
+        subscriptionTier: users.subscriptionTier,
       }).from(users).limit(50);
       
       return allUsers.map(u => ({
         id: u.id,
         name: u.username || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Producer',
-        avatarUrl: null,
-        verified: false,
+        avatarUrl: u.avatarUrl || '/logo.png',
+        bio: u.bio || null,
+        location: u.location || null,
+        website: u.website || null,
+        verified: u.role === 'admin' || u.subscriptionTier === 'lifetime',
         followers: 0,
         sales: 0,
       }));
