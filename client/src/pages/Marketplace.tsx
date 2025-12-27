@@ -443,6 +443,8 @@ export default function Marketplace() {
   const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
   const [hasStems, setHasStems] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioBlobUrlRef = useRef<string | null>(null);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     title: '',
     genre: '',
@@ -947,7 +949,7 @@ export default function Marketplace() {
     }
   };
 
-  const handlePlayPause = (beatId: string, beatUrl?: string) => {
+  const handlePlayPause = async (beatId: string, beatUrl?: string) => {
     if (isPlaying === beatId) {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -974,78 +976,111 @@ export default function Marketplace() {
       return;
     }
 
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.crossOrigin = 'anonymous';
-      audioRef.current.preload = 'auto';
-      audioRef.current.addEventListener('ended', () => {
-        setIsPlaying(null);
-        setShowPreviewPlayer(false);
-      });
-      audioRef.current.addEventListener('error', (e) => {
-        const error = audioRef.current?.error;
-        let errorMessage = 'Failed to load audio file';
-        if (error) {
-          switch (error.code) {
-            case MediaError.MEDIA_ERR_ABORTED:
-              errorMessage = 'Audio loading was aborted';
-              break;
-            case MediaError.MEDIA_ERR_NETWORK:
-              errorMessage = 'Network error while loading audio';
-              break;
-            case MediaError.MEDIA_ERR_DECODE:
-              errorMessage = 'Audio format not supported';
-              break;
-            case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-              errorMessage = 'Audio source not supported';
-              break;
-          }
-        }
-        toast({
-          title: 'Playback Error',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-        setIsPlaying(null);
-      });
-      audioRef.current.addEventListener('timeupdate', () => {
-        if (audioRef.current) {
-          setCurrentTime(audioRef.current.currentTime);
-        }
-      });
-      audioRef.current.addEventListener('loadedmetadata', () => {
-        if (audioRef.current) {
-          setDuration(audioRef.current.duration);
-        }
-      });
+    // Clean up previous blob URL
+    if (audioBlobUrlRef.current) {
+      URL.revokeObjectURL(audioBlobUrlRef.current);
+      audioBlobUrlRef.current = null;
     }
 
-    audioRef.current.src = audioUrl;
-    audioRef.current.volume = volume / 100;
-    audioRef.current.load();
-    
-    const playAudio = () => {
-      audioRef.current?.play().catch((err) => {
-        toast({
-          title: 'Playback Error',
-          description: err.name === 'NotAllowedError' 
-            ? 'Click the play button again to start playback'
-            : 'Failed to play audio. Please try again.',
-          variant: 'destructive',
-        });
-        setIsPlaying(null);
-      });
-    };
-    
-    if (audioRef.current.readyState >= 2) {
-      playAudio();
-    } else {
-      audioRef.current.addEventListener('canplay', playAudio, { once: true });
-    }
-
+    setIsLoadingAudio(true);
     setIsPlaying(beatId);
     setCurrentBeat(beat || null);
     setShowPreviewPlayer(true);
+
+    try {
+      // Fetch audio as blob to ensure cross-browser/mobile compatibility
+      const response = await fetch(audioUrl, { 
+        mode: 'cors',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load audio: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      audioBlobUrlRef.current = blobUrl;
+
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+        audioRef.current.preload = 'auto';
+        audioRef.current.addEventListener('ended', () => {
+          setIsPlaying(null);
+          setShowPreviewPlayer(false);
+        });
+        audioRef.current.addEventListener('error', () => {
+          const error = audioRef.current?.error;
+          let errorMessage = 'Failed to load audio file';
+          if (error) {
+            switch (error.code) {
+              case MediaError.MEDIA_ERR_ABORTED:
+                errorMessage = 'Audio loading was aborted';
+                break;
+              case MediaError.MEDIA_ERR_NETWORK:
+                errorMessage = 'Network error while loading audio';
+                break;
+              case MediaError.MEDIA_ERR_DECODE:
+                errorMessage = 'Audio format not supported';
+                break;
+              case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                errorMessage = 'Audio source not supported';
+                break;
+            }
+          }
+          toast({
+            title: 'Playback Error',
+            description: errorMessage,
+            variant: 'destructive',
+          });
+          setIsPlaying(null);
+          setIsLoadingAudio(false);
+        });
+        audioRef.current.addEventListener('timeupdate', () => {
+          if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime);
+          }
+        });
+        audioRef.current.addEventListener('loadedmetadata', () => {
+          if (audioRef.current) {
+            setDuration(audioRef.current.duration);
+          }
+        });
+      }
+
+      audioRef.current.src = blobUrl;
+      audioRef.current.volume = volume / 100;
+      audioRef.current.load();
+      
+      const playAudio = () => {
+        setIsLoadingAudio(false);
+        audioRef.current?.play().catch((err) => {
+          toast({
+            title: 'Playback Error',
+            description: err.name === 'NotAllowedError' 
+              ? 'Click the play button again to start playback'
+              : 'Failed to play audio. Please try again.',
+            variant: 'destructive',
+          });
+          setIsPlaying(null);
+        });
+      };
+      
+      if (audioRef.current.readyState >= 2) {
+        playAudio();
+      } else {
+        audioRef.current.addEventListener('canplay', playAudio, { once: true });
+      }
+    } catch (error) {
+      setIsLoadingAudio(false);
+      setIsPlaying(null);
+      setShowPreviewPlayer(false);
+      toast({
+        title: 'Playback Error',
+        description: error instanceof Error ? error.message : 'Failed to load audio file',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleSeek = (value: number[]) => {
@@ -1082,6 +1117,10 @@ export default function Marketplace() {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
+      }
+      if (audioBlobUrlRef.current) {
+        URL.revokeObjectURL(audioBlobUrlRef.current);
+        audioBlobUrlRef.current = null;
       }
     };
   }, []);
