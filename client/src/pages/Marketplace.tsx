@@ -871,14 +871,34 @@ export default function Marketplace() {
 
     if (!audioRef.current) {
       audioRef.current = new Audio();
+      audioRef.current.crossOrigin = 'anonymous';
+      audioRef.current.preload = 'auto';
       audioRef.current.addEventListener('ended', () => {
         setIsPlaying(null);
         setShowPreviewPlayer(false);
       });
-      audioRef.current.addEventListener('error', () => {
+      audioRef.current.addEventListener('error', (e) => {
+        const error = audioRef.current?.error;
+        let errorMessage = 'Failed to load audio file';
+        if (error) {
+          switch (error.code) {
+            case MediaError.MEDIA_ERR_ABORTED:
+              errorMessage = 'Audio loading was aborted';
+              break;
+            case MediaError.MEDIA_ERR_NETWORK:
+              errorMessage = 'Network error while loading audio';
+              break;
+            case MediaError.MEDIA_ERR_DECODE:
+              errorMessage = 'Audio format not supported';
+              break;
+            case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+              errorMessage = 'Audio source not supported';
+              break;
+          }
+        }
         toast({
           title: 'Playback Error',
-          description: 'Failed to load audio file',
+          description: errorMessage,
           variant: 'destructive',
         });
         setIsPlaying(null);
@@ -897,14 +917,26 @@ export default function Marketplace() {
 
     audioRef.current.src = audioUrl;
     audioRef.current.volume = volume / 100;
-    audioRef.current.play().catch(() => {
-      toast({
-        title: 'Playback Error',
-        description: 'Failed to play audio. Please try again.',
-        variant: 'destructive',
+    audioRef.current.load();
+    
+    const playAudio = () => {
+      audioRef.current?.play().catch((err) => {
+        toast({
+          title: 'Playback Error',
+          description: err.name === 'NotAllowedError' 
+            ? 'Click the play button again to start playback'
+            : 'Failed to play audio. Please try again.',
+          variant: 'destructive',
+        });
+        setIsPlaying(null);
       });
-      setIsPlaying(null);
-    });
+    };
+    
+    if (audioRef.current.readyState >= 2) {
+      playAudio();
+    } else {
+      audioRef.current.addEventListener('canplay', playAudio, { once: true });
+    }
 
     setIsPlaying(beatId);
     setCurrentBeat(beat || null);
