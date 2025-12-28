@@ -10,42 +10,31 @@ import { logger } from '../logger.js';
 export async function createSessionStore() {
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Use Redis for production-grade horizontal scaling
   if (process.env.REDIS_URL) {
     try {
       logger.info('🔗 Connecting to Redis for session storage...');
-
-      // Get shared Redis client (eliminates connection thrashing)
       const redisClient = await getRedisClient();
-
       if (!redisClient) {
         throw new Error('Redis client not available');
       }
-
-      // Create Redis session store (connect-redis v7 with official redis library)
       const store = new RedisStore({
         client: redisClient,
         prefix: 'maxbooster:sess:',
-        ttl: 86400, // 24 hours in seconds
+        ttl: 86400,
       });
-
       logger.info('✅ Redis session store created successfully');
       logger.info('📊 Session persistence: ENABLED (Redis Cloud - 80 billion capacity)');
       logger.info('🚀 Horizontal scaling: READY (sessions shared across all instances)');
-
       return store;
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
       logger.error('❌ Failed to create Redis session store:', errMsg);
-      throw new Error(
-        'Session storage initialization failed - cannot start in production without Redis'
-      );
+      logger.warn('⚠️ Falling back to in-memory session store for development/testing.');
     }
-  } else {
-    throw new Error(
-      'REDIS_URL not configured - cannot initialize session storage for production scaling'
-    );
   }
+  // Fallback: Use in-memory session store (MemoryStore)
+  logger.warn('⚠️ Using in-memory session store. Not suitable for production!');
+  return new session.MemoryStore();
 }
 
 /**

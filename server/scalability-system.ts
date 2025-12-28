@@ -123,7 +123,7 @@ export class ScalabilitySystem {
 
       logger.info(
         '🚀 Scalability system initialized' +
-          (this.redisAvailable ? ' with Redis' : ' (degraded mode)')
+        (this.redisAvailable ? ' with Redis' : ' (degraded mode)')
       );
     } catch (error: unknown) {
       logger.error('❌ Failed to initialize scalability system:', error);

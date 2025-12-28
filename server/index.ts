@@ -1,24 +1,24 @@
 // Import console error filter FIRST to suppress non-critical localhost Redis errors
-import "./lib/consoleErrorFilter.js";
+import "./lib/consoleErrorFilter.ts";
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import { registerRoutes } from "./routes";
-import { serveStatic } from "./static";
+import { registerRoutes } from "./routes.ts";
+import { serveStatic } from "./static.ts";
 import { createServer } from "http";
-import { logger } from "./logger.js";
-import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.js";
-import { ensureStripeProductsAndPrices } from "./services/stripeSetup.js";
+import { logger } from "./logger.ts";
+import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
+import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
 
 // MANDATORY safety imports - these MUST load successfully
-import { 
+import {
   initializeSafetyystems,
   applyMandatoryMiddleware,
   globalErrorHandler as safetyErrorHandler,
   sanitizationMiddleware,
   killSwitch,
   stripeRawBodyParser,
-} from "./safety/index.js";
+} from "./safety/index.ts";
 
 // Dynamic imports for monitoring services (optional)
 let metricsCollector: any = null;
@@ -33,22 +33,22 @@ async function loadOptionalModules() {
     const metrics = await import("./monitoring/metricsCollector.js");
     metricsCollector = metrics.metricsCollector;
   } catch (e) { /* Optional module */ }
-  
+
   try {
     const alerting = await import("./monitoring/alertingService.js");
     alertingService = alerting.alertingService;
   } catch (e) { /* Optional module */ }
-  
+
   try {
     const capacity = await import("./monitoring/capacityMonitor.js");
     capacityMonitor = capacity.capacityMonitor;
   } catch (e) { /* Optional module */ }
-  
+
   try {
     const realtime = await import("./realtime/index.js");
     initializeRealtimeServer = realtime.initializeRealtimeServer;
   } catch (e) { /* Optional module */ }
-  
+
   try {
     const workers = await import("./workers/index.js");
     initializeWorkers = workers.initializeWorkers;
@@ -145,12 +145,12 @@ app.use((req, res, next) => {
 (async () => {
   // Load optional modules first
   await loadOptionalModules();
-  
+
   // ========================================
   // SESSION STORE INITIALIZATION (PRODUCTION-READY)
   // ========================================
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   // Validate SESSION_SECRET in production - abort if missing or weak
   if (isProduction) {
     const sessionSecret = process.env.SESSION_SECRET;
@@ -164,7 +164,7 @@ app.use((req, res, next) => {
       process.exit(1);
     }
   }
-  
+
   try {
     // Try to create Redis session store for production-grade horizontal scaling
     const sessionStore = await createSessionStore();
@@ -178,11 +178,11 @@ app.use((req, res, next) => {
       logger.error(`   └─ Error: ${error.message}`);
       process.exit(1);
     }
-    
+
     // Development fallback: use memory store with warnings
     logger.warn('⚠️  Using in-memory session store (development only)');
     logger.warn('⚠️  Sessions will be lost on server restart');
-    
+
     const devSessionConfig = {
       secret: process.env.SESSION_SECRET || require('crypto').randomBytes(32).toString('hex'),
       resave: false,
@@ -195,7 +195,7 @@ app.use((req, res, next) => {
     };
     app.use(session(devSessionConfig));
   }
-  
+
   // ========================================
   // INITIALIZE PRODUCTION SAFETY SYSTEMS
   // ========================================
@@ -207,7 +207,7 @@ app.use((req, res, next) => {
   } catch (error: any) {
     logger.error('⚠️ Safety systems initialization error:', error.message);
   }
-  
+
   // Initialize monitoring services
   try {
     if (metricsCollector?.start) {
@@ -296,10 +296,10 @@ app.use((req, res, next) => {
   // Uses path-agnostic approach to respect multi-handler pipelines
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (!res.headersSent && req.originalUrl.startsWith('/api/')) {
-      return res.status(404).json({ 
-        error: 'Not found', 
+      return res.status(404).json({
+        error: 'Not found',
         message: `API endpoint ${req.originalUrl} does not exist`,
-        status: 404 
+        status: 404
       });
     }
     return next();
@@ -331,7 +331,7 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
-      
+
       // Defer heavy autonomous systems initialization to background after server is listening
       // This allows the landing page to load immediately during cold starts
       setImmediate(async () => {
@@ -339,7 +339,7 @@ app.use((req, res, next) => {
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
         logger.info('🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)');
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
-        
+
         // 1. Autonomous Service (Core)
         try {
           const mod = await import('./services/autonomousService.js');

@@ -1,4 +1,4 @@
-import { logger } from '../../server/logger.js';
+import { logger } from '../../server/logger.ts';
 import { FeatureValidators } from './feature-validators.js';
 
 interface FeatureValidationSnapshot {
@@ -59,7 +59,7 @@ class BurnInTest {
   async waitForServer(maxWaitMs = 30000): Promise<void> {
     const startTime = Date.now();
     let attempt = 0;
-    
+
     while (Date.now() - startTime < maxWaitMs) {
       try {
         const response = await fetch(`${this.baseUrl}/api/monitoring/system-health`);
@@ -69,23 +69,23 @@ class BurnInTest {
       } catch (error) {
         // Server not ready yet
       }
-      
+
       attempt++;
       const delay = Math.min(1000 * Math.pow(1.5, attempt), 5000); // Exponential backoff, max 5s
       logger.info(`⏳ Server not ready, retrying in ${Math.round(delay)}ms (attempt ${attempt})`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
-    
+
     logger.warn('⚠️ Server may not be fully ready, proceeding with tests anyway');
   }
 
   async makeRequest(url: string, description: string, retries = 3): Promise<boolean> {
     this.metrics.totalRequests++;
-    
+
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const response = await fetch(url);
-        
+
         if (response.status === 429) {
           if (attempt < retries) {
             const retryAfter = response.headers.get('retry-after');
@@ -96,11 +96,11 @@ class BurnInTest {
           }
           throw new Error(`HTTP 429 (Rate Limited after ${retries} retries)`);
         }
-        
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
-        
+
         this.metrics.successfulRequests++;
         logger.info(`✅ Burn-in test: ${description} - OK`);
         return true;
@@ -114,7 +114,7 @@ class BurnInTest {
         }
       }
     }
-    
+
     return false;
   }
 
@@ -137,7 +137,7 @@ class BurnInTest {
             waiting: queueData.waiting || 0,
             failed: queueData.failed || 0,
           });
-          
+
           if (this.metrics.queueMetrics.length > 150) {
             this.metrics.queueMetrics = this.metrics.queueMetrics.slice(-150);
           }
@@ -171,7 +171,7 @@ class BurnInTest {
       heapUsed: memUsage.heapUsed,
       rss: memUsage.rss,
     });
-    
+
     if (this.metrics.memorySnapshots.length > 150) {
       this.metrics.memorySnapshots = this.metrics.memorySnapshots.slice(-150);
     }
@@ -240,7 +240,7 @@ class BurnInTest {
   async runHealthCheckCycle(): Promise<void> {
     this.cycleCount++;
     logger.info(`🔄 Running burn-in test cycle #${this.cycleCount}...`);
-    
+
     await Promise.all([
       this.checkQueueHealth(),
       this.checkAIModels(),

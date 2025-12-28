@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 import { getRedisClient } from '../../server/lib/redisConnectionFactory.js';
-import { logger } from '../../server/logger.js';
+import { logger } from '../../server/logger.ts';
 import { storage } from '../../server/storage.js';
 
 /**
@@ -211,7 +211,7 @@ class WorkerCrashTest {
       logger.info(`✅ Scheduled test job with retry: ${testJobId}`);
 
       const job = await this.queue.getJob(testJobId);
-      
+
       if (!job) {
         return {
           passed: false,
@@ -296,7 +296,7 @@ class WorkerCrashTest {
 
     try {
       const axios = await import('axios');
-      
+
       // Test system health endpoint
       const healthResponse = await axios.default.get('http://localhost:5000/api/monitoring/system-health');
       const queueHealthResponse = await axios.default.get('http://localhost:5000/api/monitoring/queue-health');
@@ -346,7 +346,7 @@ class WorkerCrashTest {
 
     // Print results
     logger.info('\n📊 CHAOS TEST RESULTS:\n');
-    
+
     let passedCount = 0;
     this.testResults.forEach((result, index) => {
       const status = result.passed ? '✅ PASS' : '❌ FAIL';
@@ -359,7 +359,7 @@ class WorkerCrashTest {
         logger.info(`   Jobs Recovered: ${result.jobsRecovered}`);
       }
       logger.info('');
-      
+
       if (result.passed) passedCount++;
     });
 
