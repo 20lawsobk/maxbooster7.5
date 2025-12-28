@@ -10,7 +10,7 @@
  */
 
 import { Router } from 'express';
-import { requireAuth } from '../auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 import { stemExportService } from '../services/stemExportService.js';

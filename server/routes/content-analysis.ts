@@ -5,10 +5,10 @@
  */
 
 import { Router } from 'express';
-import { contentAnalysisService } from '../services/contentAnalysisService';
-import { requireAuth } from '../middleware/auth';
-import { requirePremium } from '../middleware/requirePremium';
-import { logger } from '../logger';
+import { contentAnalysisService } from '../services/contentAnalysisService.js';
+import { requireAuth } from '../middleware/auth.js';
+import { requirePremium } from '../middleware/requirePremium.js';
+import { logger } from '../logger.js';
 import rateLimit from 'express-rate-limit';
 
 const router = Router();
