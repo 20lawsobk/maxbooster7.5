@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
-import { platformAPI } from './platform-apis.ts';
-import { customAI } from './custom-ai-engine.ts';
+import { platformAPI } from './platform-apis.js';
+import { customAI } from './custom-ai-engine.js';
 import { logger } from './logger.js';
 
 interface AutonomousConfig {

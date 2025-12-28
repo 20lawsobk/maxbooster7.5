@@ -1,4 +1,4 @@
-import { requestContext } from './requestContext.ts';
+import { requestContext } from './requestContext.js';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 

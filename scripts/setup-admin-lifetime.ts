@@ -1,8 +1,8 @@
 // Admin account setup utility for Max Booster
 // Run this script once to ensure the admin account has a lifetime subscription
 
-import { users } from '../shared/schema.ts';
-import { db } from '../server/db.ts';
+import { users } from '../shared/schema.js';
+import { db } from '../server/db.js';
 import bcrypt from 'bcrypt';
 
 async function setupAdminAccount() {

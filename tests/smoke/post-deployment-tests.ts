@@ -1,4 +1,4 @@
-import { logger } from '../../server/logger.ts';
+import { logger } from '../../server/logger.js';
 
 interface SmokeTest {
   name: string;
