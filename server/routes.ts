@@ -2454,10 +2454,13 @@ export async function registerRoutes(
     { path: "/api/helpdesk", name: "helpDesk", loader: () => import("./routes/helpDesk") },
     { path: "/api/support", name: "support", loader: () => import("./routes/support") },
     
-    // Executive & Admin
+    // Executive & Admin Routes (all require admin role)
     { path: "/api/executive", name: "executiveDashboard", loader: () => import("./routes/executiveDashboard") },
     { path: "/api/admin", name: "admin", loader: () => import("./routes/admin/index") },
     { path: "/api/admin/metrics", name: "adminMetrics", loader: () => import("./routes/admin/metrics") },
+    { path: "/api/admin/payment-bypass", name: "paymentBypass", loader: () => import("./routes/paymentBypass") },
+    { path: "/api/kill-switch", name: "killSwitch", loader: () => import("./routes/killSwitch") },
+    { path: "/api/security", name: "security", loader: () => import("./routes/security") },
     { path: "/api/audit", name: "audit", loader: () => import("./routes/audit") },
     { path: "/api/testing", name: "testing", loader: () => import("./routes/testing") },
     { path: "/api/webhooks", name: "webhooksAdmin", loader: () => import("./routes/webhooks-admin") },
@@ -2477,15 +2480,8 @@ export async function registerRoutes(
     // Simulation (pre-launch testing)
     { path: "/api/simulation", name: "simulation", loader: () => import("./routes/simulation") },
     
-    // Safety & Admin Controls
-    { path: "/api/kill-switch", name: "killSwitch", loader: () => import("./routes/killSwitch") },
-    { path: "/api/admin/payment-bypass", name: "paymentBypass", loader: () => import("./routes/paymentBypass") },
-    
-    // Self-Healing Security System
+    // Self-Healing Security System (admin-only)
     { path: "/api/security/self-healing", name: "selfHealingApi", loader: () => import("./routes/selfHealingApi") },
-    
-    // Security Dashboard API
-    { path: "/api/security", name: "security", loader: () => import("./routes/security") },
     
     // Marketplace with Discovery Algorithm
     { path: "/api/marketplace", name: "marketplace", loader: () => import("./routes/marketplace") },

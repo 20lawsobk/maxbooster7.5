@@ -7,11 +7,9 @@
 import { Router } from 'express';
 import { contentAnalysisService } from '../services/contentAnalysisService';
 import { requireAuth } from '../middleware/auth';
+import { requirePremium } from '../middleware/requirePremium';
 import { logger } from '../logger';
 import rateLimit from 'express-rate-limit';
-import { db } from '../db';
-import { users } from '@shared/schema';
-import { eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -23,39 +21,6 @@ const contentAnalysisLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-// Middleware to check if user has a paid subscription (required for content analysis)
-// Note: There is no free tier - all content analysis requires a paid subscription
-const requirePremium = async (req: any, res: any, next: any) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, req.user.id),
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Only paid subscribers (monthly/yearly/lifetime) and admins can access
-    const paidTiers = ['monthly', 'yearly', 'lifetime'];
-    if (user.subscriptionTier && paidTiers.includes(user.subscriptionTier) || user.role === 'admin' || user.isAdmin) {
-      return next();
-    }
-
-    return res.status(403).json({
-      error: 'Paid subscription required',
-      message: 'Content analysis features require a paid subscription. Upgrade to access multimodal AI analysis.',
-      upgradeUrl: '/pricing',
-    });
-  } catch (error) {
-    logger.error('Premium check error:', error);
-    res.status(500).json({ error: 'Failed to verify subscription' });
-  }
-};
 
 // Apply rate limiting, authentication, and premium requirement to all routes
 router.use(contentAnalysisLimiter);

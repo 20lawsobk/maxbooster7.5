@@ -5,24 +5,18 @@
  * Requires admin role and audit logging.
  */
 
+/**
+ * Kill Switch Admin Routes
+ * 
+ * Admin-only endpoints for emergency control of autonomous systems.
+ */
+
 import { Router, Request, Response } from 'express';
+import { requireAdmin } from '../middleware/auth';
 import { killSwitch, AutonomousSystemName } from '../safety/killSwitch';
 import { logger } from '../logger.js';
 
 const router = Router();
-
-// Middleware to require admin role
-const requireAdmin = (req: Request, res: Response, next: Function) => {
-  const user = req.user as any;
-  if (!user || user.role !== 'admin') {
-    logger.warn(`[KillSwitch] Unauthorized access attempt by user: ${user?.id || 'anonymous'}`);
-    return res.status(403).json({ 
-      success: false, 
-      error: 'Admin access required for kill switch operations' 
-    });
-  }
-  next();
-};
 
 /**
  * GET /api/kill-switch/status

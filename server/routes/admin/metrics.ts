@@ -1,22 +1,18 @@
-import { Router, type RequestHandler } from 'express';
+/**
+ * Admin Metrics Routes
+ * 
+ * System metrics and monitoring endpoints for admin dashboard.
+ */
+
+import { Router } from 'express';
+import { requireAdmin } from '../../middleware/auth.js';
 import { metricsService } from '../../services/metricsService.js';
 import { emailTrackingService } from '../../services/emailTrackingService.js';
 import { logger } from '../../logger.js';
 
 const router = Router();
 
-const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-
-  next();
-};
-
+// Apply admin middleware to all routes
 router.use(requireAdmin);
 
 /**

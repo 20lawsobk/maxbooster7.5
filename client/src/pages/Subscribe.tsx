@@ -40,10 +40,9 @@ const plans = {
   yearly: {
     id: 'yearly',
     name: 'Yearly Plan',
-    price: 39,
-    originalPrice: 49,
-    period: 'month',
-    priceId: 'price_yearly_468', // This would be set from Stripe dashboard (39*12)
+    price: 468,
+    period: 'year',
+    priceId: 'price_yearly_468', // This would be set from Stripe dashboard
     description: 'Best value for serious artists',
     features: [
       'Everything in Monthly',

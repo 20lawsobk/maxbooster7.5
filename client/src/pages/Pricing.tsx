@@ -37,9 +37,8 @@ export default function Pricing() {
     {
       id: 'yearly',
       name: 'Yearly',
-      price: 39,
-      originalPrice: 49,
-      period: 'month',
+      price: 468,
+      period: 'year',
       billedAnnually: true,
       description: 'Save $120/year with annual billing',
       popular: true,

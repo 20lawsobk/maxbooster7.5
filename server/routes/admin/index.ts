@@ -1,4 +1,12 @@
-import { Router, type RequestHandler } from 'express';
+/**
+ * Admin Routes Module
+ * 
+ * Centralized admin routes with consistent authentication and authorization.
+ * All routes in this module require admin role.
+ */
+
+import { Router } from 'express';
+import { requireAdmin } from '../../middleware/auth.js';
 import { db } from '../../db.js';
 import { users, projects, releases, analytics, posts, orders, systemSettings } from '../../../shared/schema.js';
 import { eq, desc, asc, like, or, sql, count, sum, and, gte, lte } from 'drizzle-orm';
@@ -7,16 +15,7 @@ import bcrypt from 'bcrypt';
 
 const router = Router();
 
-const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
-
+// Apply admin middleware to all routes
 router.use(requireAdmin);
 
 // ============================================================

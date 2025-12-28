@@ -1,4 +1,11 @@
+/**
+ * Payment Bypass Admin Routes
+ * 
+ * Admin-only endpoints for managing payment bypass (development/testing).
+ */
+
 import { Router, Request, Response } from 'express';
+import { requireAdmin } from '../middleware/auth';
 import { paymentBypassService } from '../services/paymentBypassService';
 import { logger } from '../logger';
 
@@ -11,16 +18,6 @@ interface AuthenticatedRequest extends Request {
     role?: string;
   };
 }
-
-const requireAdmin = (req: AuthenticatedRequest, res: Response, next: any) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
 
 router.get('/status', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {

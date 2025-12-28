@@ -1,4 +1,11 @@
-import { Router, type RequestHandler } from 'express';
+/**
+ * Audit Admin Routes
+ * 
+ * Admin-only audit and compliance endpoints.
+ */
+
+import { Router } from 'express';
+import { requireAdmin } from '../middleware/auth';
 import { db } from '../db.js';
 import { users, projects, releases, securityThreats } from '../../shared/schema.js';
 import { count, eq, gte, desc } from 'drizzle-orm';
@@ -6,16 +13,7 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
-const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
-
+// Apply admin middleware to all routes
 router.use(requireAdmin);
 
 router.get('/results', async (req, res) => {

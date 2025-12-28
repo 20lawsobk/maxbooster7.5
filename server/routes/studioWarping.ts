@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../auth';
+import { requireAuth } from '../middleware/auth';
 import { db } from '../db';
 import { audioClips, warpMarkers, studioTracks, projects } from '@shared/schema';
 import { insertWarpMarkerSchema, updateWarpMarkerSchema } from '@shared/schema';

@@ -1,6 +1,12 @@
+/**
+ * Backup Admin Routes
+ * 
+ * Admin-only database backup management endpoints.
+ */
+
 import { Router } from 'express';
+import { requireAdmin } from '../middleware/auth';
 import { databaseBackupService } from '../services/backup/databaseBackupService.js';
-import { requireAdmin } from '../auth.js';
 
 const router = Router();
 

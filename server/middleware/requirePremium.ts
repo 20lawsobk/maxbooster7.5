@@ -33,7 +33,8 @@ export const requirePremium = async (req: Request, res: Response, next: NextFunc
 
     const now = new Date();
 
-    if (user.isAdmin) {
+    // Admin users always have access to premium features
+    if (user.isAdmin || user.role === 'admin') {
       return next();
     }
 

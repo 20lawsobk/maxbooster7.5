@@ -6,22 +6,7 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
-const requireAuth: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
-
-const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
+import { requireAuth, requireAdmin } from '../middleware/auth';
 
 // Get user's own tickets
 router.get('/tickets', requireAuth, async (req, res) => {

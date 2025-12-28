@@ -1,4 +1,11 @@
-import { Router, Request, Response, RequestHandler } from 'express';
+/**
+ * Security Dashboard Admin Routes
+ * 
+ * Admin-only security monitoring and threat management endpoints.
+ */
+
+import { Router, Request, Response } from 'express';
+import { requireAdmin } from '../middleware/auth';
 import { db } from '../db.js';
 import { users, sessions, securityThreats } from '../../shared/schema.js';
 import { eq, desc, count, and, gte, sql } from 'drizzle-orm';
@@ -6,16 +13,7 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
-const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
-
+// Apply admin middleware to all routes
 router.use(requireAdmin);
 
 const processStartTime = Date.now();
