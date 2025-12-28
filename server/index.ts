@@ -1,14 +1,14 @@
 // Import console error filter FIRST to suppress non-critical localhost Redis errors
-import "./lib/consoleErrorFilter.ts";
+import "./lib/consoleErrorFilter.js";
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import { registerRoutes } from "./routes.ts";
-import { serveStatic } from "./static.ts";
+import { registerRoutes } from "./routes.js";
+import { serveStatic } from "./static.js";
 import { createServer } from "http";
-import { logger } from "./logger.ts";
-import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
-import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
+import { logger } from "./logger.js";
+import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.js";
+import { ensureStripeProductsAndPrices } from "./services/stripeSetup.js";
 
 // MANDATORY safety imports - these MUST load successfully
 import {
@@ -18,7 +18,7 @@ import {
   sanitizationMiddleware,
   killSwitch,
   stripeRawBodyParser,
-} from "./safety/index.ts";
+} from "./safety/index.js";
 
 // Dynamic imports for monitoring services (optional)
 let metricsCollector: any = null;

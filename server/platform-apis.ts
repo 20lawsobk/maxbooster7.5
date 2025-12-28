@@ -1,7 +1,7 @@
 // Real platform API implementation with OAuth token integration
 import axios from 'axios';
 import { TwitterApi } from 'twitter-api-v2';
-import { storage } from './storage.ts';
+import { storage } from './storage.js';
 import { logger } from './logger.js';
 import {
   executeSocialApiOperation,

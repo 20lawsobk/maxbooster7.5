@@ -1,17 +1,17 @@
 import type { Express, Request, Response, NextFunction, Router } from "express";
 import { type Server } from "http";
 import crypto from "crypto";
-import { storage } from "./storage.ts";
-import { db } from "./db.ts";
+import { storage } from "./storage.js";
+import { db } from "./db.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles } from "../shared/schema.ts";
+import { analytics, userStorage, userStorageFiles } from "../shared/schema.js";
 import bcrypt from "bcrypt";
-import { getCsrfToken } from "./middleware/csrf.ts";
+import { getCsrfToken } from "./middleware/csrf.js";
 import Stripe from "stripe";
-import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
+import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.js";
 import { authenticator } from "otplib";
 import QRCode from "qrcode";
-import { emailService } from "./services/emailService.ts";
+import { emailService } from "./services/emailService.js";
 
 // Simple logger fallback for startup
 const log = (msg: string) => console.log(`[routes] ${msg}`);
@@ -2355,8 +2355,8 @@ export async function registerRoutes(
   });
 
   // Mount modular admin and paid routers
-  const { default: adminRouter } = await import("./routes/admin.ts");
-  const { default: paidRouter } = await import("./routes/paid.ts");
+  const { default: adminRouter } = await import("./routes/admin.js");
+  const { default: paidRouter } = await import("./routes/paid.js");
   app.use("/api/admin", adminRouter);
   app.use("/api/paid", paidRouter);
 

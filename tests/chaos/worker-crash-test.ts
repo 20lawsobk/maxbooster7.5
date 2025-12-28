@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 import { getRedisClient } from '../../server/lib/redisConnectionFactory.js';
-import { logger } from '../../server/logger.ts';
+import { logger } from '../../server/logger.js';
 import { storage } from '../../server/storage.js';
 
 /**

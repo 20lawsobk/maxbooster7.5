@@ -1,4 +1,4 @@
-import { logger } from '../../server/logger.ts';
+import { logger } from '../../server/logger.js';
 import { spawn } from 'child_process';
 
 function getMillisecondsUntil730AM(): number {

@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { wrapper } from 'axios-cookiejar-support';
 import { CookieJar } from 'tough-cookie';
-import { logger } from '../../server/logger.ts';
+import { logger } from '../../server/logger.js';
 
 interface ValidationResult {
   category: string;

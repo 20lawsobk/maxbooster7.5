@@ -1,4 +1,4 @@
-import { logger } from '../../server/logger.ts';
+import { logger } from '../../server/logger.js';
 import { FeatureValidators } from './feature-validators.js';
 
 interface FeatureValidationSnapshot {
