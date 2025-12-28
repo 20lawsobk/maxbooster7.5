@@ -33,7 +33,7 @@ class DatabaseResilience extends EventEmitter {
     this.pool = {
       connections: [],
       activeConnections: 0,
-      maxConnections: 20, // Limit for reliability
+      maxConnections: 80000000000, // 80 billion for extreme scale
       totalRequests: 0,
       failedRequests: 0,
       avgResponseTime: 0,
@@ -41,10 +41,10 @@ class DatabaseResilience extends EventEmitter {
     };
 
     this.circuitBreaker = {
-      failureThreshold: 5, // Open circuit after 5 failures
-      timeout: 30000, // 30 seconds
-      retryAttempts: 3,
-      retryDelay: 1000, // 1 second between retries
+      failureThreshold: 1000000, // Allow more failures before opening circuit for scale
+      timeout: 1000, // Shorter timeout for fast recovery
+      retryAttempts: 10,
+      retryDelay: 100, // Fast retry for high concurrency
     };
 
     this.setupHealthChecks();
