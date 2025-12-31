@@ -359,7 +359,7 @@ export default function Studio() {
     queryKey: ['/api/studio/projects'],
     enabled: !!user,
   });
-  const projects = (projectsData as any)?.data || [];
+  const projects = Array.isArray(projectsData) ? projectsData : [];
 
   const { data: tracks = [], isLoading: isLoadingTracks } = useQuery<StudioTrack[]>({
     queryKey: ['/api/studio/projects', selectedProject?.id, 'tracks'],

@@ -99,6 +99,7 @@ router.post('/projects', requireAuth, async (req: Request, res: Response) => {
       timeSignature: timeSignature || '4/4',
       sampleRate: sampleRate || 44100,
       bitDepth: bitDepth || 24,
+      isStudioProject: true,
     }).returning();
     
     res.status(201).json(project);
