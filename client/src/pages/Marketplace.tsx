@@ -1009,10 +1009,25 @@ export default function Marketplace() {
       const blobUrl = URL.createObjectURL(audioBlob);
       blobUrlRef.current = blobUrl;
 
+      // Detect audio format from URL extension
+      const urlLower = audioUrl.toLowerCase();
+      let formats: string[] = ['mp3']; // default
+      if (urlLower.endsWith('.wav')) {
+        formats = ['wav'];
+      } else if (urlLower.endsWith('.ogg')) {
+        formats = ['ogg'];
+      } else if (urlLower.endsWith('.webm')) {
+        formats = ['webm'];
+      } else if (urlLower.endsWith('.flac')) {
+        formats = ['flac'];
+      } else if (urlLower.endsWith('.m4a') || urlLower.endsWith('.aac')) {
+        formats = ['m4a', 'aac'];
+      }
+
       // Use Howler.js with blob URL - universal cross-browser solution
       const howl = new Howl({
         src: [blobUrl],
-        format: ['mp3'],
+        format: formats,
         html5: true, // Use HTML5 Audio - better Chrome compatibility
         volume: volume / 100,
         onload: () => {
