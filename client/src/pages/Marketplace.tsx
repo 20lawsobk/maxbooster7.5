@@ -954,9 +954,9 @@ export default function Marketplace() {
 
   const handlePlayPause = async (beatId: string, beatUrl?: string) => {
     if (isPlaying === beatId) {
-      // Stop current playback
+      // Pause/stop current playback immediately
       if (howlRef.current) {
-        howlRef.current.stop();
+        howlRef.current.pause();
       }
       setIsPlaying(null);
       setShowPreviewPlayer(false);
@@ -992,98 +992,75 @@ export default function Marketplace() {
     }
 
     setIsLoadingAudio(true);
-    setIsPlaying(beatId);
     setCurrentBeat(beat || null);
     setShowPreviewPlayer(true);
 
-    try {
-      // Fetch audio as blob first - works better on mobile browsers
-      const response = await fetch(audioUrl, {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch audio: ${response.status}`);
-      }
-      
-      const audioBlob = await response.blob();
-      const blobUrl = URL.createObjectURL(audioBlob);
-      blobUrlRef.current = blobUrl;
-
-      // Detect audio format from URL extension
-      const urlLower = audioUrl.toLowerCase();
-      let formats: string[] = ['mp3']; // default
-      if (urlLower.endsWith('.wav')) {
-        formats = ['wav'];
-      } else if (urlLower.endsWith('.ogg')) {
-        formats = ['ogg'];
-      } else if (urlLower.endsWith('.webm')) {
-        formats = ['webm'];
-      } else if (urlLower.endsWith('.flac')) {
-        formats = ['flac'];
-      } else if (urlLower.endsWith('.m4a') || urlLower.endsWith('.aac')) {
-        formats = ['m4a', 'aac'];
-      }
-
-      // Use Howler.js with blob URL - universal cross-browser solution
-      const howl = new Howl({
-        src: [blobUrl],
-        format: formats,
-        html5: true, // Use HTML5 Audio - better Chrome compatibility
-        volume: volume / 100,
-        onload: () => {
-          setIsLoadingAudio(false);
-          setDuration(howl.duration());
-        },
-        onplay: () => {
-          setIsLoadingAudio(false);
-          // Update current time periodically
-          const updateTime = () => {
-            if (howlRef.current && howlRef.current.playing()) {
-              setCurrentTime(howlRef.current.seek() as number);
-              requestAnimationFrame(updateTime);
-            }
-          };
-          requestAnimationFrame(updateTime);
-        },
-        onend: () => {
-          setIsPlaying(null);
-          setShowPreviewPlayer(false);
-          setCurrentTime(0);
-        },
-        onloaderror: (_id, error) => {
-          console.error('Howler load error:', error);
-          toast({
-            title: 'Playback Error',
-            description: 'Failed to load audio file',
-            variant: 'destructive',
-          });
-          setIsPlaying(null);
-          setIsLoadingAudio(false);
-          setShowPreviewPlayer(false);
-        },
-        onplayerror: (_id, error) => {
-          console.error('Howler play error:', error);
-          // Try to unlock and play again
-          howl.once('unlock', () => {
-            howl.play();
-          });
-        },
-      });
-
-      howlRef.current = howl;
-      howl.play();
-    } catch (error) {
-      console.error('Audio fetch error:', error);
-      setIsLoadingAudio(false);
-      setIsPlaying(null);
-      setShowPreviewPlayer(false);
-      toast({
-        title: 'Playback Error',
-        description: error instanceof Error ? error.message : 'Failed to load audio',
-        variant: 'destructive',
-      });
+    // Detect audio format from URL extension
+    const urlLower = audioUrl.toLowerCase();
+    let formats: string[] = ['mp3']; // default
+    if (urlLower.endsWith('.wav')) {
+      formats = ['wav'];
+    } else if (urlLower.endsWith('.ogg')) {
+      formats = ['ogg'];
+    } else if (urlLower.endsWith('.webm')) {
+      formats = ['webm'];
+    } else if (urlLower.endsWith('.flac')) {
+      formats = ['flac'];
+    } else if (urlLower.endsWith('.m4a') || urlLower.endsWith('.aac')) {
+      formats = ['m4a', 'aac'];
     }
+
+    // Use Howler.js with streaming - starts playing immediately without downloading entire file
+    const howl = new Howl({
+      src: [audioUrl],
+      format: formats,
+      html5: true, // Required for streaming - uses HTML5 Audio element
+      volume: volume / 100,
+      xhr: {
+        withCredentials: true, // Send cookies for authenticated requests
+      },
+      onload: () => {
+        setDuration(howl.duration());
+      },
+      onplay: () => {
+        setIsLoadingAudio(false);
+        setIsPlaying(beatId);
+        // Update current time periodically
+        const updateTime = () => {
+          if (howlRef.current && howlRef.current.playing()) {
+            setCurrentTime(howlRef.current.seek() as number);
+            requestAnimationFrame(updateTime);
+          }
+        };
+        requestAnimationFrame(updateTime);
+      },
+      onend: () => {
+        setIsPlaying(null);
+        setShowPreviewPlayer(false);
+        setCurrentTime(0);
+      },
+      onloaderror: (_id, error) => {
+        console.error('Howler load error:', error);
+        toast({
+          title: 'Playback Error',
+          description: 'Failed to load audio file',
+          variant: 'destructive',
+        });
+        setIsPlaying(null);
+        setIsLoadingAudio(false);
+        setShowPreviewPlayer(false);
+      },
+      onplayerror: (_id, error) => {
+        console.error('Howler play error:', error);
+        // Try to unlock and play again (needed for mobile browsers)
+        howl.once('unlock', () => {
+          howl.play();
+        });
+      },
+    });
+
+    howlRef.current = howl;
+    howl.play();
   };
 
   const handleSeek = (value: number[]) => {
