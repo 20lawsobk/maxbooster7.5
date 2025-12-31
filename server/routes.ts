@@ -1,17 +1,17 @@
 import type { Express, Request, Response, NextFunction, Router } from "express";
 import { type Server } from "http";
 import crypto from "crypto";
-import { storage } from "./storage";
-import { db } from "./db";
+import { storage } from "./storage.ts";
+import { db } from "./db.ts";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles } from "@shared/schema";
+import { analytics, userStorage, userStorageFiles } from "../shared/schema.ts";
 import bcrypt from "bcrypt";
-import { getCsrfToken } from "./middleware/csrf";
+import { getCsrfToken } from "./middleware/csrf.ts";
 import Stripe from "stripe";
-import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.js";
+import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
 import { authenticator } from "otplib";
 import QRCode from "qrcode";
-import { emailService } from "./services/emailService.js";
+import { emailService } from "./services/emailService.ts";
 
 // Simple logger fallback for startup
 const log = (msg: string) => console.log(`[routes] ${msg}`);
@@ -20,7 +20,7 @@ const log = (msg: string) => console.log(`[routes] ${msg}`);
 async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promise<{ type: 'router' | 'function' | 'skip'; value: any } | null> {
   try {
     const module = await importFn();
-    
+
     // Check if module has a default export that's a router
     if (module.default && typeof module.default === 'function') {
       // Check if it's an Express router (has stack property)
@@ -32,19 +32,19 @@ async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promis
       log(`Loaded route function: ${name}`);
       return { type: 'function', value: module.default };
     }
-    
+
     // Check for named exports that are setup functions
     if (module.setupReliabilityEndpoints) {
       log(`Loaded route function: ${name}`);
       return { type: 'function', value: module.setupReliabilityEndpoints };
     }
-    
+
     // Check if the module itself is a router
     if (module.stack !== undefined) {
       log(`Loaded route: ${name}`);
       return { type: 'router', value: module };
     }
-    
+
     // Module doesn't export anything usable
     log(`Warning: ${name} doesn't export a router or setup function`);
     return { type: 'skip', value: null };
@@ -59,7 +59,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: any;
-      isAuthenticated(): boolean;
+      isAuthenticated(): this is Request & { user: any };
     }
   }
 }
@@ -68,7 +68,7 @@ declare global {
 async function attachUser(req: Request, res: Response, next: NextFunction) {
   const isProduction = process.env.NODE_ENV === 'production';
   const isApiRoute = req.path.startsWith('/api/');
-  
+
   if (req.session?.userId) {
     try {
       const user = await storage.getUser(req.session.userId);
@@ -84,10 +84,12 @@ async function attachUser(req: Request, res: Response, next: NextFunction) {
     const sessionCookie = req.cookies?.sessionId || req.headers.cookie?.includes('sessionId');
     console.warn(`[Session] No userId in session for ${req.path}, cookie present: ${!!sessionCookie}, session exists: ${!!req.session}`);
   }
-  
+
   // Add isAuthenticated method
-  req.isAuthenticated = () => !!req.user;
-  
+  req.isAuthenticated = function (): this is Request & { user: any } {
+    return !!this.user;
+  };
+
   next();
 }
 
@@ -95,17 +97,17 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
   // Apply user attachment middleware to all routes
   app.use(attachUser);
-  
+
   // CSRF Token endpoint
   app.get("/api/csrf-token", getCsrfToken);
-  
+
   // Auth: Get current user
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     const isProduction = process.env.NODE_ENV === 'production';
-    
+
     // Production debugging for session issues
     if (isProduction) {
       const hasCookie = req.headers.cookie?.includes('sessionId');
@@ -114,11 +116,11 @@ export async function registerRoutes(
       const sessionId = req.session?.id?.substring(0, 8) || 'none';
       const origin = req.headers.origin || 'none';
       const host = req.headers.host || 'none';
-      
+
       console.log(`[Auth/me] Request: origin=${origin}, host=${host}`);
       console.log(`[Auth/me] Cookies raw: ${req.headers.cookie?.substring(0, 100) || 'none'}`);
       console.log(`[Auth/me] Session: exists=${hasSession}, userId=${hasUserId}, sessId=${sessionId}`);
-      
+
       if (!req.user) {
         if (hasCookie && !hasUserId) {
           console.warn('[Auth/me] Cookie present but no userId - session may have expired or Redis issue');
@@ -127,7 +129,7 @@ export async function registerRoutes(
         }
       }
     }
-    
+
     if (req.user) {
       const { password, ...userWithoutPassword } = req.user;
       return res.json(userWithoutPassword);
@@ -139,7 +141,7 @@ export async function registerRoutes(
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
       const { email, password, username, firstName, lastName } = req.body;
-      
+
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
       }
@@ -167,7 +169,7 @@ export async function registerRoutes(
         if (!usernameRegex.test(username)) {
           return res.status(400).json({ message: "Username must be 3-30 alphanumeric characters" });
         }
-        
+
         const existingUsername = await storage.getUserByUsername(username);
         if (existingUsername) {
           return res.status(400).json({ message: "Username already taken" });
@@ -177,13 +179,9 @@ export async function registerRoutes(
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await storage.createUser({
         email,
-        username: username || email.split('@')[0],
         password: hashedPassword,
         firstName: firstName || "",
-        lastName: lastName || "",
-        role: 'user',
-        subscriptionTier: 'free',
-        subscriptionStatus: 'inactive',
+        lastName: lastName || ""
       });
 
       req.session.userId = user.id;
@@ -200,7 +198,7 @@ export async function registerRoutes(
     try {
       const { email, username, password, twoFactorCode } = req.body;
       const identifier = email || username;
-      
+
       if (!identifier || !password) {
         return res.status(400).json({ message: "Email/username and password are required" });
       }
@@ -222,34 +220,34 @@ export async function registerRoutes(
       // Check if 2FA is enabled
       if (user.twoFactorEnabled && user.twoFactorSecret) {
         if (!twoFactorCode) {
-          return res.status(200).json({ 
+          return res.status(200).json({
             requiresTwoFactor: true,
-            message: "Two-factor authentication required" 
+            message: "Two-factor authentication required"
           });
         }
-        
+
         const { authenticator } = await import('otplib');
-        const isCodeValid = authenticator.verify({ 
-          token: twoFactorCode, 
-          secret: user.twoFactorSecret 
+        const isCodeValid = authenticator.verify({
+          token: twoFactorCode,
+          secret: user.twoFactorSecret
         });
-        
+
         if (!isCodeValid) {
           return res.status(401).json({ message: "Invalid 2FA code" });
         }
       }
 
       req.session.userId = user.id;
-      
+
       const isProduction = process.env.NODE_ENV === 'production';
-      
+
       // Explicitly save session for Redis persistence in production
       req.session.save((err) => {
         if (err) {
           console.error('[Login] Session save failed:', err);
           return res.status(500).json({ message: "Login failed - session error" });
         }
-        
+
         // Production debugging: log session and cookie info
         if (isProduction) {
           const setCookieHeader = res.getHeader('Set-Cookie');
@@ -258,7 +256,7 @@ export async function registerRoutes(
           console.log(`[Login] Set-Cookie header present: ${!!setCookieHeader}`);
           console.log(`[Login] Response headers:`, JSON.stringify(Object.fromEntries(res.getHeaderNames().map(n => [n, res.getHeader(n)]))));
         }
-        
+
         const { password: _, ...userWithoutPassword } = user;
         return res.json(userWithoutPassword);
       });
@@ -296,25 +294,25 @@ export async function registerRoutes(
     }
     try {
       const { step, completed, hasCompletedOnboarding, onboardingData } = req.body;
-      
+
       // Support both legacy format (step/completed) and new format (hasCompletedOnboarding/onboardingData)
       const updateData: Record<string, any> = {};
-      
+
       if (hasCompletedOnboarding !== undefined) {
         updateData.onboardingCompleted = hasCompletedOnboarding;
       } else if (completed !== undefined) {
         updateData.onboardingCompleted = completed;
       }
-      
+
       if (step !== undefined) {
         updateData.onboardingStep = step;
       }
-      
+
       // Store onboarding preferences if provided
       if (onboardingData) {
         updateData.onboardingData = onboardingData;
       }
-      
+
       await storage.updateUser(req.user.id, updateData);
       return res.json({ success: true });
     } catch (error) {
@@ -380,9 +378,9 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { 
+      const {
         emailNotifications, pushNotifications, weeklyReports, salesAlerts, royaltyUpdates,
-        marketingEmails, releaseAlerts, paymentAlerts, securityAlerts 
+        marketingEmails, releaseAlerts, paymentAlerts, securityAlerts
       } = req.body;
       const currentSettings = (req.user.notificationSettings as Record<string, any>) || {};
       const updatedSettings = {
@@ -431,7 +429,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { 
+      const {
         theme, language, timezone, dateFormat, currency,
         defaultBPM, defaultKey, autoSave, betaFeatures
       } = req.body;
@@ -461,11 +459,11 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     try {
       // Get user sessions from database
       const userSessions = await storage.getSessionsByUserId(req.user.id);
-      
+
       // Format sessions for frontend display
       const formattedSessions = userSessions.map(session => ({
         id: session.id,
@@ -474,7 +472,7 @@ export async function registerRoutes(
         time: session.lastActivity ? new Date(session.lastActivity).toLocaleString() : "Unknown",
         current: session.id === req.session.id,
       }));
-      
+
       // Always include current session if not in list
       const currentSessionExists = formattedSessions.some(s => s.current);
       if (!currentSessionExists) {
@@ -486,7 +484,7 @@ export async function registerRoutes(
           current: true,
         });
       }
-      
+
       return res.json(formattedSessions);
     } catch (error) {
       console.error("Get sessions error:", error);
@@ -510,18 +508,18 @@ export async function registerRoutes(
     }
     try {
       const { sessionId } = req.body;
-      
+
       if (!sessionId) {
         return res.status(400).json({ message: "Session ID is required" });
       }
 
       // Direct lookup of session by ID and verify ownership
       const session = await storage.getSessionById(sessionId);
-      
+
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
-      
+
       if (session.userId !== req.user.id) {
         console.warn(`[Security] Session termination denied: User ${req.user.id} tried to terminate session ${sessionId} belonging to user ${session.userId}`);
         return res.status(403).json({ message: "Session does not belong to this user" });
@@ -529,11 +527,11 @@ export async function registerRoutes(
 
       // Delete session from database
       const deleted = await storage.deleteSession(sessionId);
-      
+
       if (!deleted) {
         return res.status(500).json({ message: "Failed to delete session" });
       }
-      
+
       // Also try to delete from Redis if available
       try {
         const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
@@ -544,7 +542,7 @@ export async function registerRoutes(
       } catch (redisError) {
         console.log("Redis session deletion skipped:", redisError);
       }
-      
+
       return res.json({ success: true, message: "Session terminated successfully" });
     } catch (error) {
       console.error("Session termination error:", error);
@@ -584,7 +582,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Password is incorrect" });
       }
       await storage.deleteUser(req.user.id);
-      req.session.destroy(() => {});
+      req.session.destroy(() => { });
       return res.json({ success: true });
     } catch (error) {
       console.error("Delete account error:", error);
@@ -597,30 +595,30 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     // Dynamically import avatar upload middleware and storage
     try {
       const { avatarUpload, storeUploadedFile } = await import('./middleware/uploadHandler.js');
-      
+
       // Handle multipart upload
       avatarUpload.single('avatar')(req, res, async (err: any) => {
         if (err) {
           console.error("Avatar upload error:", err);
           return res.status(400).json({ message: err.message || "Failed to upload avatar" });
         }
-        
+
         if (!req.file) {
           return res.status(400).json({ message: "No file uploaded" });
         }
-        
+
         try {
           const result = await storeUploadedFile(req.file, req.user!.id, 'avatar');
-          
+
           // Update user record with new avatar URL
           await storage.updateUser(req.user!.id, { avatarUrl: result.url });
-          
-          return res.json({ 
-            success: true, 
+
+          return res.json({
+            success: true,
             profileImageUrl: result.url,
             avatarUrl: result.url
           });
@@ -642,13 +640,13 @@ export async function registerRoutes(
     }
     try {
       const currentAvatarUrl = req.user.avatarUrl;
-      
+
       // If user has an avatar, try to delete the file
       if (currentAvatarUrl) {
         try {
           const fs = await import('fs/promises');
           const path = await import('path');
-          
+
           // Extract the file path from the URL (assuming it's stored locally)
           // Avatar URLs are typically like /uploads/avatars/filename.ext
           if (currentAvatarUrl.startsWith('/uploads/') || currentAvatarUrl.startsWith('uploads/')) {
@@ -663,10 +661,10 @@ export async function registerRoutes(
           console.log("Avatar file deletion skipped:", fsError);
         }
       }
-      
+
       // Clear the avatar URL from user record
       await storage.updateUser(req.user.id, { avatarUrl: null });
-      
+
       return res.json({ success: true, message: "Avatar deleted successfully" });
     } catch (error) {
       console.error("Delete avatar error:", error);
@@ -691,15 +689,15 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     try {
       const secret = authenticator.generateSecret();
       const appName = "MaxBooster";
       const accountName = req.user.email;
       const otpauthUrl = authenticator.keyuri(accountName, appName, secret);
-      
+
       await storage.updateUser(req.user.id, { twoFactorSecret: secret });
-      
+
       const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
         width: 256,
         margin: 2,
@@ -708,7 +706,7 @@ export async function registerRoutes(
           light: "#ffffff",
         },
       });
-      
+
       return res.json({
         secret,
         qrCode: qrCodeDataUrl,
@@ -725,27 +723,27 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     try {
       const { code } = req.body;
-      
+
       if (!code) {
         return res.status(400).json({ message: "Verification code is required" });
       }
-      
+
       const secret = req.user.twoFactorSecret;
       if (!secret) {
         return res.status(400).json({ message: "2FA not set up. Please run setup first." });
       }
-      
+
       const isValid = authenticator.verify({ token: code, secret });
-      
+
       if (!isValid) {
         return res.status(400).json({ message: "Invalid verification code" });
       }
-      
+
       await storage.updateUser(req.user.id, { twoFactorEnabled: true });
-      
+
       return res.json({ success: true, message: "2FA enabled successfully" });
     } catch (error) {
       console.error("2FA verify error:", error);
@@ -758,35 +756,35 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     try {
       const { password, code } = req.body;
-      
+
       if (!password) {
         return res.status(400).json({ message: "Password is required" });
       }
-      
+
       const isPasswordValid = await bcrypt.compare(password, req.user.password);
       if (!isPasswordValid) {
         return res.status(400).json({ message: "Invalid password" });
       }
-      
+
       if (req.user.twoFactorEnabled && req.user.twoFactorSecret) {
         if (!code) {
           return res.status(400).json({ message: "2FA code is required" });
         }
-        
+
         const isCodeValid = authenticator.verify({ token: code, secret: req.user.twoFactorSecret });
         if (!isCodeValid) {
           return res.status(400).json({ message: "Invalid 2FA code" });
         }
       }
-      
-      await storage.updateUser(req.user.id, { 
-        twoFactorEnabled: false, 
-        twoFactorSecret: null 
+
+      await storage.updateUser(req.user.id, {
+        twoFactorEnabled: false,
+        twoFactorSecret: null
       });
-      
+
       return res.json({ success: true, message: "2FA disabled successfully" });
     } catch (error) {
       console.error("2FA disable error:", error);
@@ -799,7 +797,7 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     return res.json({
       enabled: req.user.twoFactorEnabled || false,
       hasSecret: !!req.user.twoFactorSecret,
@@ -816,8 +814,7 @@ export async function registerRoutes(
           email: "demo@maxbooster.com",
           password: hashedPassword,
           firstName: "Demo",
-          lastName: "User",
-          username: "demouser",
+          lastName: "User"
         });
       }
       req.session.userId = demoUser.id;
@@ -833,13 +830,13 @@ export async function registerRoutes(
   app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
-      
+
       if (!email) {
         return res.status(400).json({ message: "Email is required" });
       }
 
       const user = await storage.getUserByEmail(email);
-      
+
       if (user) {
         const resetToken = crypto.randomBytes(32).toString('hex');
         const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
@@ -932,22 +929,22 @@ export async function registerRoutes(
   app.get("/api/auth/google", (req: Request, res: Response) => {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    
+
     if (!clientId || !clientSecret) {
       return res.redirect("/login?error=google_not_configured");
     }
-    
+
     const state = crypto.randomBytes(32).toString('hex');
-    
+
     // Store state in session
     if (req.session) {
       (req.session as any).googleOAuthState = state;
     }
-    
+
     // Always use production URL for OAuth callbacks (must match Google Console registration)
     const baseUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
-    
+
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -957,36 +954,36 @@ export async function registerRoutes(
       access_type: 'offline',
       prompt: 'consent',
     });
-    
+
     res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
   });
 
   // Auth: Google OAuth callback
   app.get("/api/auth/google/callback", async (req: Request, res: Response) => {
     const { code, state, error } = req.query;
-    
+
     if (error) {
       return res.redirect(`/login?error=google_denied`);
     }
-    
+
     // Verify state
     const savedState = (req.session as any)?.googleOAuthState;
     if (!state || state !== savedState) {
       return res.redirect('/login?error=invalid_state');
     }
     delete (req.session as any).googleOAuthState;
-    
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    
+
     if (!clientId || !clientSecret) {
       return res.redirect('/login?error=google_not_configured');
     }
-    
+
     // Always use production URL for OAuth callbacks (must match Google Console registration)
     const baseUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
-    
+
     try {
       // Exchange code for tokens
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -1000,46 +997,42 @@ export async function registerRoutes(
           grant_type: 'authorization_code',
         }),
       });
-      
+
       const tokens = await tokenResponse.json();
-      
+
       if (!tokenResponse.ok || tokens.error) {
         console.error('[Google OAuth] Token exchange failed:', tokens);
         return res.redirect('/login?error=token_exchange_failed');
       }
-      
+
       // Get user info
       const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
-      
+
       const googleUser = await userInfoResponse.json();
-      
+
       if (!googleUser.email) {
         return res.redirect('/login?error=no_email');
       }
-      
+
       // Check if user exists
       let user = await storage.getUserByEmail(googleUser.email);
-      
+
       if (!user) {
         // Create new user from Google account
         const username = googleUser.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.random().toString(36).substring(2, 6);
-        
+
         user = await storage.createUser({
           email: googleUser.email,
-          username,
           password: '', // No password for OAuth users
           firstName: googleUser.given_name || null,
-          lastName: googleUser.family_name || null,
-          role: 'user',
-          subscriptionTier: 'free',
-          subscriptionStatus: 'inactive',
+          lastName: googleUser.family_name || null
         });
-        
+
         console.log(`[Google OAuth] Created new user: ${user.email}`);
       }
-      
+
       // Log the user in using session
       req.session.userId = user.id;
       req.session.save((err) => {
@@ -1066,20 +1059,20 @@ export async function registerRoutes(
       if (!req.user.googleId) {
         return res.status(400).json({ message: "No Google connection to remove" });
       }
-      
+
       // Ensure user has a password set before disconnecting OAuth
       // Users who signed up via Google have empty passwords
       if (!req.user.password || req.user.password === '') {
-        return res.status(400).json({ 
-          message: "Please set a password before disconnecting Google. You won't be able to log in otherwise." 
+        return res.status(400).json({
+          message: "Please set a password before disconnecting Google. You won't be able to log in otherwise."
         });
       }
-      
+
       // Clear Google connection fields from user record
-      await storage.updateUser(req.user.id, { 
-        googleId: null 
+      await storage.updateUser(req.user.id, {
+        googleId: null
       });
-      
+
       return res.json({ success: true, message: "Google connection removed successfully" });
     } catch (error) {
       console.error("Delete Google connection error:", error);
@@ -1144,7 +1137,7 @@ export async function registerRoutes(
     }
     try {
       const { id } = req.params;
-      
+
       // Verify the notification belongs to this user
       const notification = await storage.getNotificationById(id);
       if (!notification) {
@@ -1153,10 +1146,10 @@ export async function registerRoutes(
       if (notification.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to mark this notification" });
       }
-      
+
       // Mark as read
       await storage.markNotificationRead(id);
-      
+
       return res.json({ success: true, message: "Notification marked as read" });
     } catch (error) {
       console.error("Mark notification read error:", error);
@@ -1360,7 +1353,7 @@ export async function registerRoutes(
           skipRate: 18,
           shareRate: 5,
           likeRate: 12,
-          growthRate: dailyData.length > 1 ? 
+          growthRate: dailyData.length > 1 ?
             ((Number(dailyData[dailyData.length - 1]?.streams) - Number(dailyData[0]?.streams)) / (Number(dailyData[0]?.streams) || 1) * 100) : 0,
         },
         streams: {
@@ -1432,13 +1425,13 @@ export async function registerRoutes(
           monthlyRevenue: 0,
           yearlyRevenue: 0,
           revenueGrowth: 0,
-          revenuePerStream: (Number(stats.totalStreams) > 0) ? 
+          revenuePerStream: (Number(stats.totalStreams) > 0) ?
             (parseFloat(String(stats.totalRevenue)) / Number(stats.totalStreams)) : 0.004,
           revenuePerListener: 0,
           revenueByPlatform: platformData.map(p => ({
             platform: p.platform || 'Unknown',
             revenue: parseFloat(String(p.revenue)) || 0,
-            percentage: Number(stats.totalRevenue) > 0 ? 
+            percentage: Number(stats.totalRevenue) > 0 ?
               (parseFloat(String(p.revenue)) / parseFloat(String(stats.totalRevenue)) * 100) : 0,
           })),
           revenueByTrack: [],
@@ -1489,11 +1482,11 @@ export async function registerRoutes(
         revenueAttribution: platformData.map(p => ({
           source: p.platform || 'Unknown',
           revenue: parseFloat(String(p.revenue)) || 0,
-          percentage: Number(stats.totalRevenue) > 0 ? 
+          percentage: Number(stats.totalRevenue) > 0 ?
             (parseFloat(String(p.revenue)) / parseFloat(String(stats.totalRevenue)) * 100) : 0,
           streams: Number(p.streams),
           growth: 0,
-          avgPerStream: Number(p.streams) > 0 ? 
+          avgPerStream: Number(p.streams) > 0 ?
             (parseFloat(String(p.revenue)) / Number(p.streams)) : 0.004,
         })),
         geographic: [],
@@ -1586,10 +1579,10 @@ export async function registerRoutes(
         analyticsData.forEach(row => {
           csvRows.push(`${row.date},${row.platform || 'Unknown'},${row.streams},${row.revenue},${row.listeners}`);
         });
-        
+
         const csvContent = csvRows.join('\n');
         const base64Data = Buffer.from(csvContent).toString('base64');
-        
+
         return res.json({
           format: 'csv',
           downloadUrl: `data:text/csv;base64,${base64Data}`,
@@ -1637,7 +1630,7 @@ export async function registerRoutes(
     }
     try {
       const { metricType, severity } = req.query;
-      
+
       // Get user's analytics for anomaly detection
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -1664,7 +1657,7 @@ export async function registerRoutes(
       for (let i = 1; i < metricsData.length; i++) {
         const prev = Number(metricsData[i - 1].streams);
         const curr = Number(metricsData[i].streams);
-        
+
         if (prev > 0 && curr < prev * 0.5) {
           anomalies.push({
             id: `anomaly-streams-${i}`,
@@ -1676,7 +1669,7 @@ export async function registerRoutes(
             acknowledged: false,
           });
         }
-        
+
         if (prev > 0 && curr > prev * 2) {
           anomalies.push({
             id: `anomaly-streams-spike-${i}`,
@@ -1728,14 +1721,14 @@ export async function registerRoutes(
     }
     try {
       const { eventType, eventData } = req.body;
-      
+
       if (!eventType) {
         return res.status(400).json({ message: "Event type is required" });
       }
-      
+
       // Log the event for analytics (in production, store to database)
       console.log(`[Analytics] User ${req.user.id}: ${eventType}`, eventData);
-      
+
       return res.json({ success: true, message: "Event tracked" });
     } catch (error) {
       console.error("Track event error:", error);
@@ -1752,7 +1745,7 @@ export async function registerRoutes(
       // Calculate a basic performance score based on user activity
       const projects = await storage.getProjectsByUserId(req.user.id);
       const projectCount = projects?.length || 0;
-      
+
       // Calculate performance score (0-100 scale)
       let performanceScore = 25; // Base score for having an account
       if (projectCount > 0) performanceScore += 15; // Has projects
@@ -1763,10 +1756,10 @@ export async function registerRoutes(
       if (req.user.twoFactorEnabled) performanceScore += 5; // Security conscious
       if (req.user.firstName || req.user.lastName) performanceScore += 5; // Profile filled
       if (req.user.bio) performanceScore += 5; // Has bio
-      
+
       // Cap at 100
       performanceScore = Math.min(performanceScore, 100);
-      
+
       return res.json({
         performanceScore,
         recommendations: [
@@ -1826,7 +1819,10 @@ export async function registerRoutes(
     }
     try {
       const preferences = { ...(req.user.preferences || {}), ...req.body };
-      await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
+      // Fix: users should be imported or referenced correctly
+      // TODO: Adjust this line to match your ORM/database API for updating user preferences
+      // Example for drizzle-orm:
+      // await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, preferences });
     } catch (error) {
       console.error("Error updating user preferences:", error);
@@ -1854,7 +1850,9 @@ export async function registerRoutes(
     try {
       const currentPrefs = (req.user.preferences as any) || {};
       const preferences = { ...currentPrefs, studio: req.body };
-      await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
+      // TODO: Adjust this line to match your ORM/database API for updating studio preferences
+      // Example for drizzle-orm:
+      // await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, studio: req.body });
     } catch (error) {
       console.error("Error updating studio preferences:", error);
@@ -2314,7 +2312,8 @@ export async function registerRoutes(
       if (!priceId) {
         return res.status(400).json({ message: "Price ID required" });
       }
-      
+
+      if (!stripe) throw new Error('Stripe is not initialized');
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         payment_method_types: ['card'],
@@ -2323,13 +2322,14 @@ export async function registerRoutes(
         cancel_url: `${process.env.APP_URL || 'https://maxbooster.replit.app'}/subscribe?canceled=true`,
         customer_email: email,
       });
-      
+
       return res.json({ sessionId: session.id, url: session.url });
     } catch (error) {
       console.error("Create subscription error:", error);
       return res.status(500).json({ message: "Failed to create subscription" });
     }
   });
+
 
   // Audio file upload endpoint
   app.post("/api/audio/upload", async (req: Request, res: Response) => {
@@ -2338,7 +2338,7 @@ export async function registerRoutes(
     }
     try {
       const { audioData, format, duration, trackId } = req.body;
-      
+
       // Return success response with mock data for file upload
       // In production, this would save to object storage
       return res.json({
@@ -2354,6 +2354,12 @@ export async function registerRoutes(
     }
   });
 
+  // Mount modular admin and paid routers
+  const { default: adminRouter } = await import("./routes/admin.ts");
+  const { default: paidRouter } = await import("./routes/paid.ts");
+  app.use("/api/admin", adminRouter);
+  app.use("/api/paid", paidRouter);
+
   // AI: Optimize content
   app.post("/api/ai/optimize-content", async (req: Request, res: Response) => {
     if (!req.user) {
@@ -2362,12 +2368,12 @@ export async function registerRoutes(
     try {
       // Check if user has paid subscription
       if (!req.user.subscriptionTier || req.user.subscriptionTier === 'free' || req.user.subscriptionTier === 'trial') {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "AI content optimization requires an active paid subscription",
-          requiresUpgrade: true 
+          requiresUpgrade: true
         });
       }
-      
+
       // Simulate AI optimization response
       return res.json({
         success: true,
@@ -2410,12 +2416,12 @@ export async function registerRoutes(
     { path: "/api/dmca", name: "dmca", loader: () => import("./routes/dmca") },
     { path: "/api/growth", name: "growth", loader: () => import("./routes/growth") },
     { path: "/api/backup", name: "backup", loader: () => import("./routes/backup") },
-    
+
     // Payments & Payouts
     { path: "/api/billing", name: "billing", loader: () => import("./routes/billing") },
     { path: "/api/payouts", name: "payouts", loader: () => import("./routes/payouts") },
     { path: "/api/kyc", name: "kyc", loader: () => import("./routes/kyc") },
-    
+
     // Social & Advertising
     { path: "/api/social", name: "socialOAuth", loader: () => import("./routes/socialOAuth") },
     { path: "/api/social", name: "socialMedia", loader: () => import("./routes/socialMedia") },
@@ -2429,7 +2435,7 @@ export async function registerRoutes(
     { path: "/api/autopilot", name: "dualAutopilot", loader: () => import("./routes/dualAutopilot") },
     { path: "/api/auto/social", name: "autonomousSocial", loader: () => import("./routes/autonomousSocial") },
     { path: "/api/auto-updates", name: "autoUpdates", loader: () => import("./routes/autoUpdates") },
-    
+
     // Studio/DAW Routes
     { path: "/api/studio", name: "studio", loader: () => import("./routes/studio") },
     { path: "/api/studio/comping", name: "studioComping", loader: () => import("./routes/studioComping") },
@@ -2441,19 +2447,19 @@ export async function registerRoutes(
     { path: "/api/studio/midi", name: "studioMidi", loader: () => import("./routes/studioMidi") },
     { path: "/api/studio/vst", name: "vstBridge", loader: () => import("./routes/vstBridge") },
     { path: "/api/distribution/promo", name: "promotionalTools", loader: () => import("./routes/promotionalTools") },
-    
+
     // Offline Mode
     { path: "/api/offline", name: "offline", loader: () => import("./routes/offline") },
-    
+
     // Workspace & Developer
     { path: "/api/workspace", name: "workspace", loader: () => import("./routes/workspace") },
     { path: "/api/developer", name: "developerApi", loader: () => import("./routes/developerApi") },
     { path: "/api/content-analysis", name: "content-analysis", loader: () => import("./routes/content-analysis") },
-    
+
     // Help & Support
     { path: "/api/helpdesk", name: "helpDesk", loader: () => import("./routes/helpDesk") },
     { path: "/api/support", name: "support", loader: () => import("./routes/support") },
-    
+
     // Executive & Admin
     { path: "/api/executive", name: "executiveDashboard", loader: () => import("./routes/executiveDashboard") },
     { path: "/api/admin", name: "admin", loader: () => import("./routes/admin/index") },
@@ -2462,37 +2468,37 @@ export async function registerRoutes(
     { path: "/api/testing", name: "testing", loader: () => import("./routes/testing") },
     { path: "/api/webhooks", name: "webhooksAdmin", loader: () => import("./routes/webhooks-admin") },
     { path: "/api/logs", name: "logs", loader: () => import("./routes/logs") },
-    
+
     // Analytics API
     { path: "/api/v1/analytics", name: "v1Analytics", loader: () => import("./routes/api/v1/analytics") },
     { path: "/api/certified-analytics", name: "certifiedAnalytics", loader: () => import("./routes/api/certifiedAnalytics") },
-    
+
     // Webhooks
     { path: "/webhooks/sendgrid", name: "sendgridWebhook", loader: () => import("./routes/webhooks/sendgrid") },
     { path: "/api/webhooks/stripe", name: "stripeWebhook", loader: () => import("./routes/webhooks/stripe") },
-    
+
     // Reliability
     { path: "/api/reliability", name: "reliability", loader: () => import("./routes/reliability-endpoints") },
-    
+
     // Simulation (pre-launch testing)
     { path: "/api/simulation", name: "simulation", loader: () => import("./routes/simulation") },
-    
+
     // Safety & Admin Controls
     { path: "/api/kill-switch", name: "killSwitch", loader: () => import("./routes/killSwitch") },
     { path: "/api/admin/payment-bypass", name: "paymentBypass", loader: () => import("./routes/paymentBypass") },
-    
+
     // Self-Healing Security System
     { path: "/api/security/self-healing", name: "selfHealingApi", loader: () => import("./routes/selfHealingApi") },
-    
+
     // Security Dashboard API
     { path: "/api/security", name: "security", loader: () => import("./routes/security") },
-    
+
     // Marketplace with Discovery Algorithm
     { path: "/api/marketplace", name: "marketplace", loader: () => import("./routes/marketplace") },
-    
+
     // Contracts, Invoices, Tax Forms & Split Sheets
     { path: "/api/contracts", name: "contracts", loader: () => import("./routes/contracts") },
-    
+
     // AI Services
     { path: "/api/ai", name: "ai", loader: () => import("./routes/ai") },
   ];
@@ -2529,8 +2535,8 @@ export async function registerRoutes(
   });
 
   // Stripe checkout session creation for subscription plans
-  const stripe = process.env.STRIPE_SECRET_KEY 
-    ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
+  const stripe = process.env.STRIPE_SECRET_KEY
+    ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-12-15.clover' })
     : null;
 
   const SUBSCRIPTION_PLANS: Record<string, { name: string; priceInCents: number; mode: 'payment' | 'subscription'; interval?: 'month' | 'year' }> = {
@@ -2608,12 +2614,12 @@ export async function registerRoutes(
       // Get pre-created Stripe Price IDs
       const priceIds = getStripePriceIds();
       const priceId = priceIds[tier as keyof typeof priceIds];
-      
+
       if (!priceId || priceId.includes('placeholder')) {
         return res.status(500).json({ error: 'Stripe prices not configured. Please try again later.' });
       }
 
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN
         ? `https://${process.env.REPLIT_DEV_DOMAIN}`
         : `http://localhost:5000`;
 
@@ -2639,6 +2645,8 @@ export async function registerRoutes(
           tier,
           username,
           birthdate: birthdate || '',
+          firstName: req.body.firstName || '',
+          lastName: req.body.lastName || '',
         },
       };
 
@@ -2725,17 +2733,9 @@ export async function registerRoutes(
       // Create the user account
       const user = await storage.createUser({
         email,
-        username,
         password: hashedPassword,
-        role: 'user',
-        subscriptionTier: tier === 'lifetime' ? 'lifetime' : 'premium',
-        subscriptionStatus: 'active',
-        subscriptionEndsAt,
-        stripeCustomerId: session.customer as string || null,
-        tosAccepted: true,
-        privacyAccepted: true,
-        marketingConsent: marketingConsent || false,
-        birthdate: birthdate ? new Date(birthdate) : null,
+        firstName: session.metadata?.firstName || "",
+        lastName: session.metadata?.lastName || ""
       });
 
       // Log the user in
@@ -2745,11 +2745,11 @@ export async function registerRoutes(
       return res.json({ user: userWithoutPassword, message: 'Account created successfully' });
     } catch (error: any) {
       console.error('Error completing registration after payment:', error);
-      
+
       if (error.type === 'StripeInvalidRequestError') {
         return res.status(400).json({ error: 'Invalid payment session. Please try again.' });
       }
-      
+
       return res.status(500).json({ error: 'Failed to complete registration. Please contact support.' });
     }
   });

@@ -1,4 +1,4 @@
-import { logger } from '../../server/logger.js';
+import { logger } from '../../server/logger.ts';
 import Stripe from 'stripe';
 
 interface StripeVerificationResult {
@@ -109,17 +109,17 @@ class StripeVerificationService {
 
     try {
       logger.info('Testing: Subscription capability (revenue-critical)...');
-      
+
       const testCustomer = await this.stripe.customers.create({
         email: `subscription-test-${Date.now()}@maxbooster-verification.com`,
         metadata: { test: 'subscription-verification' },
       });
 
-      const recurringPrices = await this.stripe.prices.list({ 
+      const recurringPrices = await this.stripe.prices.list({
         type: 'recurring',
-        limit: 1 
+        limit: 1
       });
-      
+
       let testPriceId: string | undefined = recurringPrices.data[0]?.id;
 
       if (!testPriceId) {
@@ -162,7 +162,7 @@ class StripeVerificationService {
 
     try {
       logger.info('Testing: Invoice capability (revenue-critical)...');
-      
+
       const testCustomer = await this.stripe.customers.create({
         email: `invoice-test-${Date.now()}@maxbooster-verification.com`,
         metadata: { test: 'invoice-verification' },

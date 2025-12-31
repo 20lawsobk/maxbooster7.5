@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { wrapper } from 'axios-cookiejar-support';
 import { CookieJar } from 'tough-cookie';
-import { logger } from '../../server/logger.js';
+import { logger } from '../../server/logger.ts';
 
 interface ValidationResult {
   category: string;
@@ -22,7 +22,7 @@ export class FeatureValidators {
 
   constructor() {
     this.cookieJar = new CookieJar();
-    
+
     const client = axios.create({
       baseURL: this.baseUrl,
       withCredentials: true,
@@ -30,7 +30,7 @@ export class FeatureValidators {
       validateStatus: (status) => status < 500,
       jar: this.cookieJar,
     });
-    
+
     this.axiosClient = wrapper(client);
   }
 

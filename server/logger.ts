@@ -1,4 +1,4 @@
-import { structuredLogger, createLogger, StructuredLogger } from './services/structuredLogger.js';
+import { structuredLogger, createLogger, StructuredLogger } from './services/structuredLogger.ts';
 
 export const logger = {
   info: (message: string, ...args: unknown[]) => {
