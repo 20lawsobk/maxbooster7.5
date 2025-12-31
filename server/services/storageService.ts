@@ -243,26 +243,45 @@ class ReplitStorageProvider implements StorageProvider {
   }
 
   async uploadFile(file: Buffer, key: string, contentType?: string): Promise<string> {
-    const result = await this.client.uploadFromBytes(key, file, {
-      contentType: contentType,
-    });
+    // Write buffer to temp file first (workaround for Replit SDK bug with uploadFromBytes)
+    const tempPath = `/tmp/upload-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const fs = await import('fs/promises');
+    await fs.writeFile(tempPath, file);
+    
+    try {
+      const result = await this.client.uploadFromFilename(key, tempPath, {
+        contentType: contentType,
+      });
 
-    if (!result.ok) {
-      throw new Error(`Replit storage upload failed: ${result.error}`);
+      if (!result.ok) {
+        throw new Error(`Replit storage upload failed: ${result.error}`);
+      }
+
+      return key;
+    } finally {
+      // Clean up temp file
+      await fs.unlink(tempPath).catch(() => {});
     }
-
-    return key;
   }
 
   async downloadFile(key: string): Promise<Buffer> {
-    const result = await this.client.downloadAsBytes(key);
+    // Use downloadToFilename instead of downloadAsBytes (workaround for Replit SDK bug)
+    const tempPath = `/tmp/download-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const fs = await import('fs/promises');
+    
+    try {
+      const result = await this.client.downloadToFilename(key, tempPath);
 
-    if (!result.ok) {
-      throw new Error(`Replit storage download failed: ${result.error}`);
+      if (!result.ok) {
+        throw new Error(`Replit storage download failed: ${result.error}`);
+      }
+
+      // Read the file into a buffer
+      return await fs.readFile(tempPath);
+    } finally {
+      // Clean up temp file
+      await fs.unlink(tempPath).catch(() => {});
     }
-
-    // Ensure we return a proper Node.js Buffer (Replit returns Uint8Array)
-    return Buffer.from(result.value);
   }
 
   async deleteFile(key: string): Promise<void> {
