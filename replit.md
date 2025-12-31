@@ -261,3 +261,8 @@ Temporarily disable payment requirements platform-wide with automatic re-enablem
   - Google OAuth (authentication)
 - PostgreSQL database provisioned and schema deployed
 - Deployment configured for autoscaling
+- Fixed Replit Object Storage SDK bug affecting audio file uploads/downloads
+  - `uploadFromBytes()` and `downloadAsBytes()` only handle 1 byte
+  - Workaround: Use `uploadFromFilename()` and `downloadToFilename()` with temp files
+- Fixed Studio page runtime error (missing logger imports in useAudioContext.ts and useAudioDevices.ts)
+- Improved marketplace audio player button/loading state sync (loading spinner during audio fetch)

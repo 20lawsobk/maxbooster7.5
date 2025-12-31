@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 
 export interface AudioDeviceInfo {
   deviceId: string;

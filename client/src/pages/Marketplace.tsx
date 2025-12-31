@@ -102,6 +102,7 @@ import {
   TrendingDown,
   Minus,
   PlusCircle,
+  Loader2,
   MinusCircle,
   X,
   Check,
@@ -1549,8 +1550,15 @@ export default function Marketplace() {
                             onClick={() => handlePlayPause(beat.id)}
                             className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/20 hover:bg-white/30 text-white border-white/30"
                             size="sm"
+                            disabled={isLoadingAudio && isPlaying === beat.id}
                           >
-                            {isPlaying === beat.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                            {isLoadingAudio && isPlaying === beat.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : isPlaying === beat.id ? (
+                              <Pause className="w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
                           </Button>
                         </div>
                         <div className="absolute top-3 right-3">
@@ -2453,8 +2461,15 @@ export default function Marketplace() {
                 size="icon"
                 className="bg-gradient-to-r from-blue-600 to-purple-600"
                 onClick={() => handlePlayPause(currentBeat.id)}
+                disabled={isLoadingAudio}
               >
-                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                {isLoadingAudio ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : isPlaying ? (
+                  <Pause className="w-5 h-5" />
+                ) : (
+                  <Play className="w-5 h-5" />
+                )}
               </Button>
               <Button size="icon" variant="ghost">
                 <SkipForward className="w-4 h-4" />
