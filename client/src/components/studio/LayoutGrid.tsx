@@ -28,8 +28,8 @@ export function LayoutGrid({
   if (isMobile) {
     return (
       <div
-        className="h-screen w-full flex flex-col"
-        style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+        className="w-full flex flex-col"
+        style={{ backgroundColor: 'var(--studio-bg-deep)', height: '100dvh' }}
         data-testid="layout-grid-container-mobile"
       >
         <div
@@ -123,7 +123,7 @@ export function LayoutGrid({
 
   return (
     <div
-      className="h-screen w-full grid"
+      className="w-full grid"
       style={{
         gridTemplateAreas: `
           "topbar topbar topbar"
@@ -133,6 +133,7 @@ export function LayoutGrid({
         gridTemplateColumns: `${inspectorCollapsed ? '48px' : '280px'} 1fr ${browserCollapsed ? '48px' : '320px'}`,
         gridTemplateRows: 'auto 1fr auto',
         backgroundColor: 'var(--studio-bg-deep)',
+        height: '100dvh',
       }}
       data-testid="layout-grid-container"
     >
