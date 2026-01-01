@@ -1,7 +1,7 @@
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Layers, FolderOpen } from 'lucide-react';
+import { Layers, FolderOpen, Music } from 'lucide-react';
 
 interface LayoutGridProps {
   topBar: React.ReactNode;
@@ -50,6 +50,7 @@ export function LayoutGrid({
             className="flex-1 rounded-none h-10"
             onClick={() => setMobilePanel('timeline')}
           >
+            <Music className="h-4 w-4 mr-1" />
             Timeline
           </Button>
           <Button

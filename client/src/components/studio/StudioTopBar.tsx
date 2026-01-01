@@ -17,13 +17,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -43,7 +36,6 @@ import {
   Plus,
   FolderOpen,
   HelpCircle,
-  MoreVertical,
 } from 'lucide-react';
 
 interface Project {
