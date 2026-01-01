@@ -1,7 +1,7 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Layers, FolderOpen, Music } from 'lucide-react';
+import { Layers, FolderOpen, Music, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface LayoutGridProps {
   topBar: React.ReactNode;
@@ -24,12 +24,29 @@ export function LayoutGrid({
 }: LayoutGridProps) {
   const isMobile = useIsMobile();
   const [mobilePanel, setMobilePanel] = useState<'timeline' | 'inspector' | 'browser'>('timeline');
+  const [dockCollapsed, setDockCollapsed] = useState(false);
+  const [topBarCollapsed, setTopBarCollapsed] = useState(false);
+  const [isVerySmallScreen, setIsVerySmallScreen] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsVerySmallScreen(window.innerHeight < 500);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   if (isMobile) {
     return (
       <div
         className="w-full flex flex-col"
-        style={{ backgroundColor: 'var(--studio-bg-deep)', height: '100dvh' }}
+        style={{ 
+          backgroundColor: 'var(--studio-bg-deep)', 
+          minHeight: '100dvh',
+          height: isVerySmallScreen ? 'auto' : '100dvh',
+          overflowY: isVerySmallScreen ? 'auto' : 'hidden',
+        }}
         data-testid="layout-grid-container-mobile"
       >
         <div
@@ -40,7 +57,20 @@ export function LayoutGrid({
             boxShadow: 'var(--studio-shadow-md)',
           }}
         >
-          {topBar}
+          <div className="flex items-center justify-between">
+            <div className={`flex-1 ${topBarCollapsed ? 'hidden' : ''}`}>
+              {topBar}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 shrink-0"
+              onClick={() => setTopBarCollapsed(!topBarCollapsed)}
+              title={topBarCollapsed ? 'Show toolbar' : 'Hide toolbar'}
+            >
+              {topBarCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
 
         <div className="flex shrink-0 border-b" style={{ borderColor: 'var(--studio-border)', background: 'var(--studio-bg-medium)' }}>
@@ -73,7 +103,7 @@ export function LayoutGrid({
           </Button>
         </div>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden" style={{ minHeight: isVerySmallScreen ? '300px' : undefined }}>
           {mobilePanel === 'timeline' && (
             <div
               className="h-full flex flex-col overflow-hidden"
@@ -115,7 +145,19 @@ export function LayoutGrid({
             boxShadow: 'var(--studio-shadow-lg), inset 0 1px 0 rgba(255,255,255,0.05)',
           }}
         >
-          {dock}
+          <div className="flex items-center justify-between px-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => setDockCollapsed(!dockCollapsed)}
+              title={dockCollapsed ? 'Show transport' : 'Hide transport'}
+            >
+              {dockCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+            <span className="text-xs text-gray-400">Transport</span>
+          </div>
+          {!dockCollapsed && dock}
         </div>
       </div>
     );
