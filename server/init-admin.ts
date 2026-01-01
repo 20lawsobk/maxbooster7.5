@@ -162,6 +162,209 @@ async function seedPluginCatalog() {
   } catch (error) {
     logger.warn('Plugin catalog seeding skipped');
   }
+  
+  try {
+    await seedStudioTemplates();
+  } catch (error) {
+    logger.warn('Template seeding skipped');
+  }
+}
+
+async function seedStudioTemplates() {
+  const { studioTemplates } = await import('../shared/schema');
+  const { nanoid } = await import('nanoid');
+  
+  // Check if templates already exist
+  const existingTemplates = await db.select().from(studioTemplates).limit(1);
+  if (existingTemplates.length > 0) {
+    logger.info('   ✓ Studio templates already seeded');
+    return;
+  }
+  
+  logger.info('📋 Seeding studio templates...');
+  
+  const builtInTemplates = [
+    {
+      id: nanoid(),
+      name: 'Empty Song',
+      description: 'Start with a blank canvas',
+      category: 'recording',
+      genre: null,
+      bpm: 120,
+      timeSignature: '4/4',
+      trackCount: 0,
+      templateData: { tracks: [] },
+      isBuiltIn: true,
+    },
+    {
+      id: nanoid(),
+      name: 'Hip Hop Beat',
+      description: 'Pre-configured for hip hop production',
+      category: 'production',
+      genre: 'Hip Hop',
+      bpm: 90,
+      timeSignature: '4/4',
+      trackCount: 8,
+      templateData: { 
+        tracks: [
+          { name: 'Kick', type: 'audio' },
+          { name: 'Snare', type: 'audio' },
+          { name: 'Hi-Hats', type: 'audio' },
+          { name: 'Bass', type: 'midi' },
+          { name: 'Keys', type: 'midi' },
+          { name: 'Melody', type: 'midi' },
+          { name: 'Vocals', type: 'audio' },
+          { name: 'FX', type: 'audio' },
+        ]
+      },
+      isBuiltIn: true,
+    },
+    {
+      id: nanoid(),
+      name: 'Pop Production',
+      description: 'Modern pop production setup',
+      category: 'production',
+      genre: 'Pop',
+      bpm: 120,
+      timeSignature: '4/4',
+      trackCount: 10,
+      templateData: { 
+        tracks: [
+          { name: 'Drums', type: 'audio' },
+          { name: 'Bass', type: 'midi' },
+          { name: 'Piano', type: 'midi' },
+          { name: 'Synth Lead', type: 'midi' },
+          { name: 'Synth Pad', type: 'midi' },
+          { name: 'Guitar', type: 'audio' },
+          { name: 'Lead Vocal', type: 'audio' },
+          { name: 'Harmony 1', type: 'audio' },
+          { name: 'Harmony 2', type: 'audio' },
+          { name: 'FX', type: 'audio' },
+        ]
+      },
+      isBuiltIn: true,
+    },
+    {
+      id: nanoid(),
+      name: 'Electronic/EDM',
+      description: 'Electronic dance music production',
+      category: 'production',
+      genre: 'Electronic',
+      bpm: 128,
+      timeSignature: '4/4',
+      trackCount: 12,
+      templateData: { 
+        tracks: [
+          { name: 'Kick', type: 'audio' },
+          { name: 'Clap/Snare', type: 'audio' },
+          { name: 'Hi-Hats', type: 'audio' },
+          { name: 'Percussion', type: 'audio' },
+          { name: 'Sub Bass', type: 'midi' },
+          { name: 'Bass', type: 'midi' },
+          { name: 'Lead Synth', type: 'midi' },
+          { name: 'Pad', type: 'midi' },
+          { name: 'Pluck', type: 'midi' },
+          { name: 'Arp', type: 'midi' },
+          { name: 'Riser/FX', type: 'audio' },
+          { name: 'Vocal Chops', type: 'audio' },
+        ]
+      },
+      isBuiltIn: true,
+    },
+    {
+      id: nanoid(),
+      name: 'R&B Soul',
+      description: 'Smooth R&B production',
+      category: 'production',
+      genre: 'R&B',
+      bpm: 85,
+      timeSignature: '4/4',
+      trackCount: 8,
+      templateData: { 
+        tracks: [
+          { name: 'Drums', type: 'audio' },
+          { name: 'Bass', type: 'midi' },
+          { name: 'Electric Piano', type: 'midi' },
+          { name: 'Strings', type: 'midi' },
+          { name: 'Guitar', type: 'audio' },
+          { name: 'Lead Vocal', type: 'audio' },
+          { name: 'Background Vocals', type: 'audio' },
+          { name: 'FX', type: 'audio' },
+        ]
+      },
+      isBuiltIn: true,
+    },
+    {
+      id: nanoid(),
+      name: 'Podcast/Voice Recording',
+      description: 'Optimized for voice recording and podcasts',
+      category: 'recording',
+      genre: null,
+      bpm: 120,
+      timeSignature: '4/4',
+      trackCount: 4,
+      templateData: { 
+        tracks: [
+          { name: 'Host', type: 'audio' },
+          { name: 'Guest 1', type: 'audio' },
+          { name: 'Guest 2', type: 'audio' },
+          { name: 'Music/SFX', type: 'audio' },
+        ]
+      },
+      isBuiltIn: true,
+    },
+    {
+      id: nanoid(),
+      name: 'Mastering Session',
+      description: 'Setup for mastering your tracks',
+      category: 'mastering',
+      genre: null,
+      bpm: 120,
+      timeSignature: '4/4',
+      trackCount: 1,
+      templateData: { 
+        tracks: [
+          { name: 'Master', type: 'audio' },
+        ],
+        mastering: true,
+      },
+      isBuiltIn: true,
+    },
+    {
+      id: nanoid(),
+      name: 'Album Mastering',
+      description: 'Multi-track mastering for albums',
+      category: 'mastering',
+      genre: null,
+      bpm: 120,
+      timeSignature: '4/4',
+      trackCount: 12,
+      templateData: { 
+        tracks: [
+          { name: 'Track 01', type: 'audio' },
+          { name: 'Track 02', type: 'audio' },
+          { name: 'Track 03', type: 'audio' },
+          { name: 'Track 04', type: 'audio' },
+          { name: 'Track 05', type: 'audio' },
+          { name: 'Track 06', type: 'audio' },
+          { name: 'Track 07', type: 'audio' },
+          { name: 'Track 08', type: 'audio' },
+          { name: 'Track 09', type: 'audio' },
+          { name: 'Track 10', type: 'audio' },
+          { name: 'Track 11', type: 'audio' },
+          { name: 'Track 12', type: 'audio' },
+        ],
+        mastering: true,
+      },
+      isBuiltIn: true,
+    },
+  ];
+  
+  for (const template of builtInTemplates) {
+    await db.insert(studioTemplates).values(template);
+  }
+  
+  logger.info(`   ✓ Seeded ${builtInTemplates.length} built-in templates`);
 }
 
 export async function bootstrapAdmin() {

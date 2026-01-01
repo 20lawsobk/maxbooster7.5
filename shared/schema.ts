@@ -117,12 +117,79 @@ export const projects = pgTable("projects", {
   status: text("status").default("draft"),
   isStudioProject: boolean("is_studio_project").default(false),
   metadata: jsonb("metadata"),
+  favorite: boolean("favorite").default(false),
+  lastOpenedAt: timestamp("last_opened_at"),
+  coverImageUrl: text("cover_image_url"),
+  tags: jsonb("tags").$type<string[]>(),
+  timeSignature: text("time_signature").default("4/4"),
+  sampleRate: integer("sample_rate").default(44100),
+  bitDepth: integer("bit_depth").default(24),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type Project = typeof projects.$inferSelect;
+
+// ============================================================================
+// STUDIO TEMPLATES
+// ============================================================================
+export const studioTemplates = pgTable("studio_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").default("user"),
+  genre: text("genre"),
+  bpm: integer("bpm").default(120),
+  timeSignature: text("time_signature").default("4/4"),
+  trackCount: integer("track_count").default(0),
+  templateData: jsonb("template_data"),
+  coverImageUrl: text("cover_image_url"),
+  isBuiltIn: boolean("is_built_in").default(false),
+  usageCount: integer("usage_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertStudioTemplateSchema = createInsertSchema(studioTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertStudioTemplate = z.infer<typeof insertStudioTemplateSchema>;
+export type StudioTemplate = typeof studioTemplates.$inferSelect;
+
+// ============================================================================
+// STUDIO RECENT FILES
+// ============================================================================
+export const studioRecentFiles = pgTable("studio_recent_files", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  projectId: varchar("project_id"),
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileType: text("file_type").default("audio"),
+  accessedAt: timestamp("accessed_at").defaultNow(),
+  metadata: jsonb("metadata"),
+});
+
+export const insertStudioRecentFileSchema = createInsertSchema(studioRecentFiles).omit({ id: true, accessedAt: true });
+export type InsertStudioRecentFile = z.infer<typeof insertStudioRecentFileSchema>;
+export type StudioRecentFile = typeof studioRecentFiles.$inferSelect;
+
+// ============================================================================
+// STUDIO PINNED FOLDERS
+// ============================================================================
+export const studioPinnedFolders = pgTable("studio_pinned_folders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  path: text("path").notNull(),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertStudioPinnedFolderSchema = createInsertSchema(studioPinnedFolders).omit({ id: true, createdAt: true });
+export type InsertStudioPinnedFolder = z.infer<typeof insertStudioPinnedFolderSchema>;
+export type StudioPinnedFolder = typeof studioPinnedFolders.$inferSelect;
 
 // ============================================================================
 // RELEASES (Distribution)

@@ -96,6 +96,7 @@ import { MetronomeControl } from '@/components/studio/MetronomeControl';
 import { PunchRecordingMarkers } from '@/components/studio/PunchRecordingMarkers';
 import { TakeCompingLanes } from '@/components/studio/TakeCompingLanes';
 import { AudioEngineMonitor } from '@/components/studio/AudioEngineMonitor';
+import { StudioStartHub } from '@/components/studio/StudioStartHub';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useMIDIDevices } from '@/hooks/useMIDIDevices';
 import { useMetronome } from '@/hooks/useMetronome';
@@ -1651,8 +1652,20 @@ export default function Studio() {
 
   const isDataLoading = isLoading || !user || (selectedProject && isLoadingTracks);
 
+  const handleStartHubProjectSelect = useCallback((projectId: string) => {
+    const project = projects.find((p: Project) => p.id === projectId);
+    if (project) {
+      setSelectedProject(project);
+      setLocation(`/studio/${projectId}`);
+    }
+  }, [projects, setLocation]);
+
+  const handleStartHubCreateProject = useCallback((title: string, templateId?: string) => {
+    createProjectMutation.mutate(title);
+  }, [createProjectMutation]);
+
   return (
-    <AppLayout noPadding={!isDataLoading}>
+    <AppLayout noPadding={!isDataLoading && !!selectedProject}>
       {isDataLoading ? (
         <div
           className="flex items-center justify-center h-full"
@@ -1662,6 +1675,11 @@ export default function Studio() {
           <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           <span className="sr-only">Loading studio components...</span>
         </div>
+      ) : !selectedProject ? (
+        <StudioStartHub 
+          onProjectSelect={handleStartHubProjectSelect}
+          onCreateProject={handleStartHubCreateProject}
+        />
       ) : (
         <div
           ref={dawContainerRef}

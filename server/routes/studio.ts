@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../auth';
 import { db } from '../db';
-import { projects, studioTracks, audioClips } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { projects, studioTracks, audioClips, studioTemplates } from '@shared/schema';
+import { eq, and, or, desc, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { studioService } from '../services/studioService';
 import { logger } from '../logger.js';
@@ -1075,6 +1075,403 @@ router.post('/projects/:projectId/export-stems', requireAuth, async (req: Reques
   } catch (error: unknown) {
     logger.error('Error starting stem export:', error);
     res.status(500).json({ error: 'Failed to start stem export' });
+  }
+});
+
+// ============================================================================
+// START HUB API ENDPOINTS (Studio One-inspired project management)
+// ============================================================================
+
+import { studioRecentFiles, studioPinnedFolders } from '@shared/schema';
+import { sql as drizzleSql } from 'drizzle-orm';
+
+// GET Start Hub summary - main data for the start page
+router.get('/start-hub/summary', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    
+    // Get recent projects (last 10, ordered by lastOpenedAt)
+    const recentProjects = await db.query.projects.findMany({
+      where: and(eq(projects.userId, userId), eq(projects.isStudioProject, true)),
+      orderBy: [desc(projects.lastOpenedAt), desc(projects.updatedAt)],
+      limit: 10,
+    });
+    
+    // Get favorite projects
+    const favoriteProjects = await db.query.projects.findMany({
+      where: and(
+        eq(projects.userId, userId), 
+        eq(projects.isStudioProject, true),
+        eq(projects.favorite, true)
+      ),
+      orderBy: [desc(projects.updatedAt)],
+      limit: 5,
+    });
+    
+    // Get project count
+    const projectCount = await db.select({ count: drizzleSql<number>`count(*)` })
+      .from(projects)
+      .where(and(eq(projects.userId, userId), eq(projects.isStudioProject, true)));
+    
+    // Get available templates (built-in + user's)
+    const templates = await db.query.studioTemplates.findMany({
+      where: or(
+        eq(studioTemplates.userId, userId),
+        eq(studioTemplates.isBuiltIn, true)
+      ),
+      orderBy: [desc(studioTemplates.usageCount)],
+      limit: 20,
+    });
+    
+    res.json({
+      recentProjects,
+      favoriteProjects,
+      projectCount: Number(projectCount[0]?.count || 0),
+      templates,
+      user: {
+        id: userId,
+        name: (req as any).user.username || (req as any).user.email,
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching start hub summary:', error);
+    res.status(500).json({ error: 'Failed to fetch start hub data' });
+  }
+});
+
+// GET recent projects for start hub
+router.get('/start-hub/recent', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const limit = parseInt(req.query.limit as string) || 20;
+    
+    const recentProjects = await db.query.projects.findMany({
+      where: and(eq(projects.userId, userId), eq(projects.isStudioProject, true)),
+      orderBy: [desc(projects.lastOpenedAt), desc(projects.updatedAt)],
+      limit,
+    });
+    
+    res.json({ projects: recentProjects });
+  } catch (error: unknown) {
+    logger.error('Error fetching recent projects:', error);
+    res.status(500).json({ error: 'Failed to fetch recent projects' });
+  }
+});
+
+// PATCH toggle project favorite
+router.patch('/projects/:projectId/favorite', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    const { favorite } = req.body;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const [updated] = await db.update(projects)
+      .set({ 
+        favorite: favorite ?? true,
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, projectId))
+      .returning();
+    
+    res.json(updated);
+  } catch (error: unknown) {
+    logger.error('Error updating project favorite:', error);
+    res.status(500).json({ error: 'Failed to update favorite status' });
+  }
+});
+
+// PATCH update project lastOpenedAt
+router.patch('/projects/:projectId/opened', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const [updated] = await db.update(projects)
+      .set({ lastOpenedAt: new Date() })
+      .where(eq(projects.id, projectId))
+      .returning();
+    
+    res.json(updated);
+  } catch (error: unknown) {
+    logger.error('Error updating project opened time:', error);
+    res.status(500).json({ error: 'Failed to update project' });
+  }
+});
+
+// ============================================================================
+// TEMPLATES API
+// ============================================================================
+
+// GET all templates
+router.get('/templates', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const category = req.query.category as string;
+    
+    // Build the where clause for user's templates OR built-in templates
+    const baseCondition = or(
+      eq(studioTemplates.userId, userId),
+      eq(studioTemplates.isBuiltIn, true)
+    );
+    
+    const whereCondition = category 
+      ? and(baseCondition, eq(studioTemplates.category, category))
+      : baseCondition;
+    
+    const templates = await db.query.studioTemplates.findMany({
+      where: whereCondition,
+      orderBy: [desc(studioTemplates.usageCount), desc(studioTemplates.createdAt)],
+    });
+    
+    res.json({ templates });
+  } catch (error: unknown) {
+    logger.error('Error fetching templates:', error);
+    res.status(500).json({ error: 'Failed to fetch templates' });
+  }
+});
+
+// POST create template from project
+router.post('/templates', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { name, description, category, genre, bpm, timeSignature, templateData, coverImageUrl } = req.body;
+    
+    const templateId = nanoid();
+    const [template] = await db.insert(studioTemplates).values({
+      id: templateId,
+      userId,
+      name: name || 'Untitled Template',
+      description,
+      category: category || 'user',
+      genre,
+      bpm: bpm || 120,
+      timeSignature: timeSignature || '4/4',
+      templateData,
+      coverImageUrl,
+      isBuiltIn: false,
+    }).returning();
+    
+    res.status(201).json(template);
+  } catch (error: unknown) {
+    logger.error('Error creating template:', error);
+    res.status(500).json({ error: 'Failed to create template' });
+  }
+});
+
+// POST create project from template
+router.post('/templates/:templateId/create-project', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { templateId } = req.params;
+    const userId = (req as any).user.id;
+    const { title } = req.body;
+    
+    // Get template
+    const template = await db.query.studioTemplates.findFirst({
+      where: eq(studioTemplates.id, templateId),
+    });
+    
+    if (!template) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+    
+    // Create project from template
+    const projectId = nanoid();
+    const [project] = await db.insert(projects).values({
+      id: projectId,
+      userId,
+      title: title || `New ${template.name} Project`,
+      genre: template.genre,
+      bpm: template.bpm,
+      isStudioProject: true,
+      metadata: template.templateData,
+      lastOpenedAt: new Date(),
+    }).returning();
+    
+    // Increment template usage count
+    await db.update(studioTemplates)
+      .set({ usageCount: drizzleSql`${studioTemplates.usageCount} + 1` })
+      .where(eq(studioTemplates.id, templateId));
+    
+    res.status(201).json(project);
+  } catch (error: unknown) {
+    logger.error('Error creating project from template:', error);
+    res.status(500).json({ error: 'Failed to create project' });
+  }
+});
+
+// DELETE template
+router.delete('/templates/:templateId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { templateId } = req.params;
+    const userId = (req as any).user.id;
+    
+    // Verify ownership (can't delete built-in templates)
+    const template = await db.query.studioTemplates.findFirst({
+      where: and(eq(studioTemplates.id, templateId), eq(studioTemplates.userId, userId)),
+    });
+    
+    if (!template) {
+      return res.status(404).json({ error: 'Template not found or access denied' });
+    }
+    
+    if (template.isBuiltIn) {
+      return res.status(403).json({ error: 'Cannot delete built-in templates' });
+    }
+    
+    await db.delete(studioTemplates).where(eq(studioTemplates.id, templateId));
+    
+    res.json({ success: true });
+  } catch (error: unknown) {
+    logger.error('Error deleting template:', error);
+    res.status(500).json({ error: 'Failed to delete template' });
+  }
+});
+
+// ============================================================================
+// PINNED FOLDERS API
+// ============================================================================
+
+// GET pinned folders
+router.get('/pinned-folders', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    
+    const folders = await db.query.studioPinnedFolders.findMany({
+      where: eq(studioPinnedFolders.userId, userId),
+      orderBy: [studioPinnedFolders.sortOrder],
+    });
+    
+    res.json({ folders });
+  } catch (error: unknown) {
+    logger.error('Error fetching pinned folders:', error);
+    res.status(500).json({ error: 'Failed to fetch pinned folders' });
+  }
+});
+
+// POST create pinned folder
+router.post('/pinned-folders', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { name, path } = req.body;
+    
+    if (!name || !path) {
+      return res.status(400).json({ error: 'Name and path are required' });
+    }
+    
+    // Get max sort order
+    const maxSort = await db.select({ max: drizzleSql<number>`COALESCE(MAX(${studioPinnedFolders.sortOrder}), 0)` })
+      .from(studioPinnedFolders)
+      .where(eq(studioPinnedFolders.userId, userId));
+    
+    const folderId = nanoid();
+    const [folder] = await db.insert(studioPinnedFolders).values({
+      id: folderId,
+      userId,
+      name,
+      path,
+      sortOrder: (maxSort[0]?.max || 0) + 1,
+    }).returning();
+    
+    res.status(201).json(folder);
+  } catch (error: unknown) {
+    logger.error('Error creating pinned folder:', error);
+    res.status(500).json({ error: 'Failed to create pinned folder' });
+  }
+});
+
+// DELETE pinned folder
+router.delete('/pinned-folders/:folderId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { folderId } = req.params;
+    const userId = (req as any).user.id;
+    
+    await db.delete(studioPinnedFolders)
+      .where(and(eq(studioPinnedFolders.id, folderId), eq(studioPinnedFolders.userId, userId)));
+    
+    res.json({ success: true });
+  } catch (error: unknown) {
+    logger.error('Error deleting pinned folder:', error);
+    res.status(500).json({ error: 'Failed to delete pinned folder' });
+  }
+});
+
+// ============================================================================
+// PROJECT POOL API (session files)
+// ============================================================================
+
+// GET project pool (all audio/samples in current session)
+router.get('/projects/:projectId/pool', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    // Get all audio clips for this project
+    const clips = await db.query.audioClips.findMany({
+      where: eq(audioClips.projectId, projectId),
+    });
+    
+    // Get recent files used in this project
+    const recentFiles = await db.query.studioRecentFiles.findMany({
+      where: and(
+        eq(studioRecentFiles.userId, userId),
+        eq(studioRecentFiles.projectId, projectId)
+      ),
+      orderBy: [desc(studioRecentFiles.accessedAt)],
+    });
+    
+    res.json({
+      clips,
+      recentFiles,
+      projectId,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching project pool:', error);
+    res.status(500).json({ error: 'Failed to fetch project pool' });
+  }
+});
+
+// POST add file to project pool
+router.post('/projects/:projectId/pool', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    const { fileName, filePath, fileType, metadata } = req.body;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const fileId = nanoid();
+    const [recentFile] = await db.insert(studioRecentFiles).values({
+      id: fileId,
+      userId,
+      projectId,
+      fileName,
+      filePath,
+      fileType: fileType || 'audio',
+      metadata,
+    }).returning();
+    
+    res.status(201).json(recentFile);
+  } catch (error: unknown) {
+    logger.error('Error adding file to pool:', error);
+    res.status(500).json({ error: 'Failed to add file to pool' });
   }
 });
 
