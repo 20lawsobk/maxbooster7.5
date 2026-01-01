@@ -7,7 +7,7 @@ export interface ModelMetadata {
   id: string;
   name: string;
   version: string;
-  type: 'timeseries' | 'classification' | 'regression' | 'clustering' | 'anomaly';
+  type: 'timeseries' | 'classification' | 'regression' | 'clustering' | 'anomaly' | 'multimodal' | 'reinforcement';
   inputShape: number[];
   outputShape: number[];
   createdAt: Date;

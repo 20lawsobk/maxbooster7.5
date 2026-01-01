@@ -2299,4 +2299,23 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     };
     return placements[platform] || ['Feed'];
   }
+
+  protected preprocessInput(input: OrganicCampaign | OrganicCampaign[]): tf.Tensor {
+    const campaigns = Array.isArray(input) ? input : [input];
+    const features = campaigns.map(campaign => this.extractCampaignFeatures(campaign));
+    return tf.tensor2d(features);
+  }
+
+  protected postprocessOutput(output: tf.Tensor): OrganicPrediction[] {
+    const data = output.arraySync() as number[][];
+    return data.map(row => ({
+      expectedReach: Math.round(row[0] * 10000),
+      expectedEngagement: row[1],
+      viralityScore: row[2],
+      expectedConversions: Math.round(row[3] * 100),
+      trustScore: row[4],
+      confidence: 0.85,
+      recommendations: [],
+    }));
+  }
 }
