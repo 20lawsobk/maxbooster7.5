@@ -184,7 +184,9 @@ export function BrowserPanel() {
     queryFn: async () => {
       const response = await fetch('/api/assets?assetType=sample');
       if (!response.ok) throw new Error('Failed to fetch samples');
-      return response.json();
+      const data = await response.json();
+      // API returns { assets: [], type, total } - extract the array
+      return Array.isArray(data) ? data : (data.assets || []);
     },
     enabled: browserActiveTab === 'samples',
   });
@@ -195,7 +197,9 @@ export function BrowserPanel() {
     queryFn: async () => {
       const response = await fetch('/api/assets?assetType=plugin');
       if (!response.ok) throw new Error('Failed to fetch plugins');
-      return response.json();
+      const data = await response.json();
+      // API returns { assets: [], type, total } - extract the array
+      return Array.isArray(data) ? data : (data.assets || []);
     },
     enabled: browserActiveTab === 'plugins',
   });
