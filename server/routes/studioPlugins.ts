@@ -44,7 +44,7 @@ const savePresetSchema = z.object({
   isPublic: z.boolean().optional(),
 });
 
-router.get('/plugins', requireAuth, async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const category = req.query.category as PluginCategory | undefined;
     
@@ -71,29 +71,7 @@ router.get('/plugins', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/plugins/:id', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const plugin = pluginHostService.getPluginById(id);
-
-    if (!plugin) {
-      return res.status(404).json({ error: 'Plugin not found' });
-    }
-
-    const factoryPresets = pluginHostService.getFactoryPresets(id);
-
-    res.json({
-      success: true,
-      plugin,
-      factoryPresets,
-    });
-  } catch (error: unknown) {
-    logger.error('Error fetching plugin details:', error);
-    res.status(500).json({ error: 'Failed to fetch plugin details' });
-  }
-});
-
-router.post('/plugins/:id/instantiate', requireAuth, async (req, res) => {
+router.post('/instantiate/:id', requireAuth, async (req, res) => {
   try {
     const { id: pluginId } = req.params;
     const { projectId } = req.query;
@@ -488,7 +466,7 @@ router.delete('/presets/:presetId', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/plugins/:id/factory-presets', requireAuth, async (req, res) => {
+router.get('/factory-presets/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const plugin = pluginHostService.getPluginById(id);
@@ -920,6 +898,28 @@ router.delete('/modulation-matrix/:projectId/:routingId', requireAuth, async (re
   } catch (error: unknown) {
     logger.error('Error deleting modulation routing:', error);
     res.status(500).json({ error: 'Failed to delete modulation routing' });
+  }
+});
+
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const plugin = pluginHostService.getPluginById(id);
+
+    if (!plugin) {
+      return res.status(404).json({ error: 'Plugin not found' });
+    }
+
+    const factoryPresets = pluginHostService.getFactoryPresets(id);
+
+    res.json({
+      success: true,
+      plugin,
+      factoryPresets,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching plugin details:', error);
+    res.status(500).json({ error: 'Failed to fetch plugin details' });
   }
 });
 
