@@ -543,6 +543,25 @@ export default function Studio() {
   const { data: trackAnalysisData } = useQuery<TrackAnalysis | null>({
     queryKey: ['/api/analysis', selectedProject?.id],
     enabled: !!selectedProject?.id,
+    retry: false,
+    staleTime: Infinity,
+    queryFn: async () => {
+      if (!selectedProject?.id) return null;
+      try {
+        const response = await fetch(`/api/analysis/${selectedProject.id}`, {
+          credentials: 'include',
+        });
+        if (response.status === 404) {
+          return null;
+        }
+        if (!response.ok) {
+          throw new Error('Failed to fetch analysis');
+        }
+        return response.json();
+      } catch {
+        return null;
+      }
+    },
   });
 
   const updateTrackMutation = useMutation({
