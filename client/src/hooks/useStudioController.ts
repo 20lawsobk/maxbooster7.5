@@ -99,16 +99,35 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     clickEnabled: metronomeEnabled,
   };
 
-  // Initialize AudioEngine on mount
+  // Initialize AudioEngine on mount (with mobile-safe guards)
   useEffect(() => {
-    audioEngineRef.current = AudioEngine.getInstance();
+    try {
+      // Check if Web Audio API is supported before creating instance
+      if (!AudioEngine.isSupported()) {
+        logger.warn('Web Audio API not supported in this browser');
+        if (onError) {
+          onError(new Error('Web Audio API is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.'));
+        }
+        return;
+      }
+      audioEngineRef.current = AudioEngine.getInstance();
+    } catch (error) {
+      logger.error('Failed to get AudioEngine instance:', error);
+      if (onError) {
+        onError(error instanceof Error ? error : new Error('Failed to initialize audio engine'));
+      }
+    }
     return () => {
       // Cleanup on unmount - stop playback if active
-      if (audioEngineRef.current) {
-        audioEngineRef.current.stop();
+      try {
+        if (audioEngineRef.current) {
+          audioEngineRef.current.stop();
+        }
+      } catch (cleanupError) {
+        logger.warn('Error during AudioEngine cleanup:', cleanupError);
       }
     };
-  }, []);
+  }, [onError]);
 
   // Update transport current time from audio engine
   useEffect(() => {

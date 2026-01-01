@@ -314,6 +314,35 @@ class AudioEngine {
   }
 
   /**
+   * Check if Web Audio API is supported in the current browser
+   */
+  static isSupported(): boolean {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      return !!AudioContextClass;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check if AudioContext can be created (may require user gesture on mobile)
+   */
+  static canCreateContext(): boolean {
+    try {
+      if (!AudioEngine.isSupported()) return false;
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const testContext = new AudioContextClass();
+      const canCreate = testContext.state !== 'suspended' || true;
+      testContext.close().catch(() => {});
+      return canCreate;
+    } catch (e) {
+      logger.warn('AudioContext creation blocked (likely needs user gesture):', e);
+      return false;
+    }
+  }
+
+  /**
    * Initialize AudioContext with professional audio quality settings
    * Supports 32-bit float processing, high sample rates, and optimized buffer sizes
    *
@@ -327,24 +356,39 @@ class AudioEngine {
   async initialize(config?: AudioEngineConfig): Promise<void> {
     if (this.initialized && this.context) {
       if (this.context.state === 'suspended') {
-        await this.context.resume();
+        try {
+          await this.context.resume();
+        } catch (resumeError) {
+          logger.warn('Failed to resume AudioContext (may need user gesture):', resumeError);
+        }
       }
       return;
     }
 
     try {
+      // Check if Web Audio API is supported
+      if (!AudioEngine.isSupported()) {
+        throw new Error('Web Audio API is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.');
+      }
+
       // Merge configuration with defaults
       if (config) {
         this.config = { ...this.config, ...config };
       }
 
-      // Create AudioContext with professional settings
+      // Create AudioContext with professional settings (with webkit prefix for Safari)
       // Note: Web Audio API always processes internally at 32-bit float
       // The format setting is used for export and display purposes
-      this.context = new AudioContext({
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      this.context = new AudioContextClass({
         latencyHint: this.config.latencyHint,
         sampleRate: this.config.sampleRate,
       });
+
+      // On iOS Safari, AudioContext starts in suspended state and requires user interaction
+      if (this.context.state === 'suspended') {
+        logger.info('AudioContext is suspended - will resume on user interaction');
+      }
 
       // Calculate actual latency
       this.actualLatencyMs = calculateLatencyMs(this.config.bufferSize!, this.config.sampleRate!);

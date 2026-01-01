@@ -1470,8 +1470,17 @@ export default function Studio() {
 
   useEffect(() => {
     if (!audioContextRef.current) {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContextClass) audioContextRef.current = new AudioContextClass();
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          audioContextRef.current = new AudioContextClass();
+          logger.info('Metronome AudioContext created successfully');
+        } else {
+          logger.warn('AudioContext not available in this browser');
+        }
+      } catch (error) {
+        logger.warn('Failed to create AudioContext for metronome (may require user gesture):', error);
+      }
     }
   }, []);
 
