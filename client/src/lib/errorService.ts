@@ -72,6 +72,10 @@ class ErrorService {
   private setupGlobalHandlers() {
     // Handle unhandled errors
     window.addEventListener('error', (event) => {
+      const message = event.message || '';
+      if (message.includes('ResizeObserver loop')) {
+        return;
+      }
       this.handleError(event.error || new Error(event.message), {
         component: 'window',
         action: 'unhandled-error',
