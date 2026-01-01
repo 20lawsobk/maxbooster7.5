@@ -100,6 +100,7 @@ import { StudioStartHub } from '@/components/studio/StudioStartHub';
 import { ProjectSetupConsole } from '@/components/studio/ProjectSetupConsole';
 import { WorkflowStateBar, type WorkflowState } from '@/components/studio/WorkflowStateBar';
 import { SessionManager } from '@/components/studio/SessionManager';
+import { MasteringDeliveryPanel } from '@/components/studio/MasteringDeliveryPanel';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useMIDIDevices } from '@/hooks/useMIDIDevices';
 import { useMetronome } from '@/hooks/useMetronome';
@@ -325,6 +326,7 @@ export default function Studio() {
   const [completedWorkflowSteps, setCompletedWorkflowSteps] = useState<WorkflowState[]>([]);
   const [showProjectSetup, setShowProjectSetup] = useState(false);
   const [showSessionManager, setShowSessionManager] = useState(false);
+  const [showMasteringDelivery, setShowMasteringDelivery] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dawContainerRef = useRef<HTMLDivElement>(null);
@@ -1748,6 +1750,8 @@ export default function Studio() {
                     setWorkflowState(state);
                     if (state === 'setup') {
                       setShowProjectSetup(true);
+                    } else if (state === 'mastering' || state === 'delivery') {
+                      setShowMasteringDelivery(true);
                     }
                   }}
                   completedSteps={completedWorkflowSteps}
@@ -2746,6 +2750,27 @@ export default function Studio() {
             }}
             onDeleteScratchPad={(padId) => {
               toast({ title: 'Scratch pad deleted' });
+            }}
+          />
+
+          <MasteringDeliveryPanel
+            isOpen={showMasteringDelivery}
+            onClose={() => setShowMasteringDelivery(false)}
+            project={selectedProject ? {
+              id: selectedProject.id,
+              title: selectedProject.title || selectedProject.name || 'Untitled',
+              bpm: selectedProject.bpm,
+              key: selectedProject.key,
+            } : null}
+            onExport={(settings) => {
+              toast({ title: 'Export started', description: `Exporting ${settings.filename}.${settings.format}` });
+            }}
+            onDistribute={() => {
+              if (!completedWorkflowSteps.includes('mastering')) {
+                setCompletedWorkflowSteps(prev => [...prev, 'mastering']);
+              }
+              setWorkflowState('delivery');
+              toast({ title: 'Ready for distribution', description: 'Your track is ready to distribute' });
             }}
           />
 
