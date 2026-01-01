@@ -1,4 +1,4 @@
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobileOrTablet } from '@/hooks/use-mobile';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Layers, FolderOpen, Music, ChevronUp, ChevronDown } from 'lucide-react';
@@ -22,7 +22,7 @@ export function LayoutGrid({
   inspectorCollapsed,
   browserCollapsed,
 }: LayoutGridProps) {
-  const isMobile = useIsMobile();
+  const isMobileOrTablet = useIsMobileOrTablet();
   const [mobilePanel, setMobilePanel] = useState<'timeline' | 'inspector' | 'browser'>('timeline');
   const [dockCollapsed, setDockCollapsed] = useState(false);
   const [topBarCollapsed, setTopBarCollapsed] = useState(false);
@@ -37,7 +37,7 @@ export function LayoutGrid({
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  if (isMobile) {
+  if (isMobileOrTablet) {
     return (
       <div
         className="w-full flex flex-col"
@@ -165,17 +165,18 @@ export function LayoutGrid({
 
   return (
     <div
-      className="w-full grid"
+      className="w-full grid overflow-hidden"
       style={{
         gridTemplateAreas: `
           "topbar topbar topbar"
           "inspector timeline browser"
           "dock dock dock"
         `,
-        gridTemplateColumns: `${inspectorCollapsed ? '48px' : '280px'} 1fr ${browserCollapsed ? '48px' : '320px'}`,
+        gridTemplateColumns: `${inspectorCollapsed ? '48px' : 'minmax(180px, 280px)'} 1fr ${browserCollapsed ? '48px' : 'minmax(200px, 320px)'}`,
         gridTemplateRows: 'auto 1fr auto',
         backgroundColor: 'var(--studio-bg-deep)',
         height: '100dvh',
+        maxWidth: '100vw',
       }}
       data-testid="layout-grid-container"
     >
