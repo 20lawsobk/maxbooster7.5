@@ -359,6 +359,35 @@ export function BrowserPanel() {
 
   const getContentForTab = () => {
     switch (browserActiveTab) {
+      case 'pool': {
+        const poolItems: BrowserItem[] = [
+          {
+            id: 'recordings',
+            name: 'Recordings',
+            type: 'folder',
+            children: [],
+          },
+          {
+            id: 'takes',
+            name: 'Takes',
+            type: 'folder',
+            children: [],
+          },
+          {
+            id: 'bounces',
+            name: 'Bounces',
+            type: 'folder',
+            children: [],
+          },
+          {
+            id: 'imported',
+            name: 'Imported Media',
+            type: 'folder',
+            children: [],
+          },
+        ];
+        return filterItems(poolItems, localSearch);
+      }
       case 'presets':
         return filterItems(convertPresetsToBrowserItems(), localSearch);
       case 'samples': {
@@ -467,12 +496,19 @@ export function BrowserPanel() {
         className="flex-1 flex flex-col min-h-0"
       >
         <TabsList
-          className="w-full h-10 grid grid-cols-4 rounded-none border-b"
+          className="w-full h-10 grid grid-cols-5 rounded-none border-b"
           style={{
             background: 'var(--studio-bg-deep)',
             borderColor: 'var(--studio-border)',
           }}
         >
+          <TabsTrigger
+            value="pool"
+            className="text-xs data-[state=active]:bg-white/10"
+            style={{ color: 'var(--studio-text-muted)' }}
+          >
+            Pool
+          </TabsTrigger>
           <TabsTrigger
             value="presets"
             className="text-xs data-[state=active]:bg-white/10"

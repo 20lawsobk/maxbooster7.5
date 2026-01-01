@@ -97,6 +97,9 @@ import { PunchRecordingMarkers } from '@/components/studio/PunchRecordingMarkers
 import { TakeCompingLanes } from '@/components/studio/TakeCompingLanes';
 import { AudioEngineMonitor } from '@/components/studio/AudioEngineMonitor';
 import { StudioStartHub } from '@/components/studio/StudioStartHub';
+import { ProjectSetupConsole } from '@/components/studio/ProjectSetupConsole';
+import { WorkflowStateBar, type WorkflowState } from '@/components/studio/WorkflowStateBar';
+import { SessionManager } from '@/components/studio/SessionManager';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useMIDIDevices } from '@/hooks/useMIDIDevices';
 import { useMetronome } from '@/hooks/useMetronome';
@@ -318,6 +321,10 @@ export default function Studio() {
   const [visualizerMode, setVisualizerMode] = useState<'waveform' | 'spectrum'>('waveform');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [workflowState, setWorkflowState] = useState<WorkflowState>('setup');
+  const [completedWorkflowSteps, setCompletedWorkflowSteps] = useState<WorkflowState[]>([]);
+  const [showProjectSetup, setShowProjectSetup] = useState(false);
+  const [showSessionManager, setShowSessionManager] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dawContainerRef = useRef<HTMLDivElement>(null);
@@ -402,9 +409,32 @@ export default function Studio() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
       setSelectedProject(data);
-      // Navigate to the new project URL
       setLocation(`/studio/${data.id}`);
       toast({ title: 'Project created successfully' });
+    },
+  });
+
+  const updateProjectMutation = useMutation({
+    mutationFn: async (updates: {
+      id: string;
+      title?: string;
+      bpm?: number;
+      key?: string;
+      timeSignature?: string;
+      sampleRate?: number;
+      bitDepth?: number;
+    }) => {
+      const { id, ...data } = updates;
+      const res = await apiRequest('PATCH', `/api/studio/projects/${id}`, data);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      setSelectedProject(data);
+      toast({ title: 'Project settings saved' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to save', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -1689,28 +1719,40 @@ export default function Studio() {
         >
           <LayoutGrid
             topBar={
-              <StudioTopBar
-                tempo={controller.transport.tempo}
-                timeSignature={selectedProject?.timeSignature || '4/4'}
-                cpuUsage={cpuUsage}
-                zoom={zoom}
-                selectedTool={undefined}
-                selectedProject={selectedProject}
-                projects={projects}
-                onToolSelect={() => {}}
-                onZoomIn={() => setZoom((z) => Math.min(z * 1.2, 5))}
-                onZoomOut={() => setZoom((z) => Math.max(z / 1.2, 0.1))}
-                onShowTutorial={() => setShowTutorial(true)}
-                onZoomReset={() => setZoom(1)}
-                onProjectChange={(projectId) => {
-                  const project = projects.find((p: unknown) => p.id === projectId);
-                  if (project) setSelectedProject(project);
-                }}
-                onCreateProject={(title) => createProjectMutation.mutate(title)}
-                onUploadFile={() => fileInputRef.current?.click()}
-                onSaveProject={handleSaveProject}
-                isSaving={isSaving}
-              />
+              <div className="flex flex-col">
+                <StudioTopBar
+                  tempo={controller.transport.tempo}
+                  timeSignature={selectedProject?.timeSignature || '4/4'}
+                  cpuUsage={cpuUsage}
+                  zoom={zoom}
+                  selectedTool={undefined}
+                  selectedProject={selectedProject}
+                  projects={projects}
+                  onToolSelect={() => {}}
+                  onZoomIn={() => setZoom((z) => Math.min(z * 1.2, 5))}
+                  onZoomOut={() => setZoom((z) => Math.max(z / 1.2, 0.1))}
+                  onShowTutorial={() => setShowTutorial(true)}
+                  onZoomReset={() => setZoom(1)}
+                  onProjectChange={(projectId) => {
+                    const project = projects.find((p: unknown) => p.id === projectId);
+                    if (project) setSelectedProject(project);
+                  }}
+                  onCreateProject={(title) => createProjectMutation.mutate(title)}
+                  onUploadFile={() => fileInputRef.current?.click()}
+                  onSaveProject={handleSaveProject}
+                  isSaving={isSaving}
+                />
+                <WorkflowStateBar
+                  currentState={workflowState}
+                  onStateChange={(state) => {
+                    setWorkflowState(state);
+                    if (state === 'setup') {
+                      setShowProjectSetup(true);
+                    }
+                  }}
+                  completedSteps={completedWorkflowSteps}
+                />
+              </div>
             }
             inspector={
               inspectorVisible ? (
@@ -2647,6 +2689,64 @@ export default function Studio() {
               name: f?.name || '',
               size: f?.size || f?.fileSize || 0,
             }))}
+          />
+
+          <ProjectSetupConsole
+            isOpen={showProjectSetup}
+            onClose={() => setShowProjectSetup(false)}
+            project={selectedProject ? {
+              id: selectedProject.id,
+              title: selectedProject.title || selectedProject.name || 'Untitled',
+              bpm: selectedProject.bpm,
+              key: selectedProject.key,
+              timeSignature: selectedProject.timeSignature,
+              sampleRate: selectedProject.sampleRate,
+              bitDepth: selectedProject.bitDepth,
+            } : null}
+            onSave={(settings) => {
+              if (selectedProject) {
+                updateProjectMutation.mutate({
+                  id: selectedProject.id,
+                  title: settings.title,
+                  bpm: settings.bpm,
+                  key: settings.key,
+                  timeSignature: settings.timeSignature,
+                  sampleRate: settings.sampleRate,
+                  bitDepth: settings.bitDepth,
+                });
+                if (!completedWorkflowSteps.includes('setup')) {
+                  setCompletedWorkflowSteps(prev => [...prev, 'setup']);
+                }
+                setWorkflowState('recording');
+              }
+            }}
+          />
+
+          <SessionManager
+            isOpen={showSessionManager}
+            onClose={() => setShowSessionManager(false)}
+            projectId={selectedProject?.id || ''}
+            onSaveVersion={(name, description) => {
+              toast({ title: 'Version saved', description: `Saved version: ${name}` });
+            }}
+            onLoadVersion={(versionId) => {
+              toast({ title: 'Loading version...', description: 'Version will be loaded shortly' });
+            }}
+            onDeleteVersion={(versionId) => {
+              toast({ title: 'Version deleted' });
+            }}
+            onCreateSnapshot={(name, type) => {
+              toast({ title: 'Snapshot created', description: `${type} snapshot: ${name}` });
+            }}
+            onLoadSnapshot={(snapshotId) => {
+              toast({ title: 'Loading snapshot...' });
+            }}
+            onCreateScratchPad={(name, notes) => {
+              toast({ title: 'Scratch pad created', description: name });
+            }}
+            onDeleteScratchPad={(padId) => {
+              toast({ title: 'Scratch pad deleted' });
+            }}
           />
 
           {routingMatrixVisible && (

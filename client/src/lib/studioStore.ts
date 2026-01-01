@@ -126,7 +126,7 @@ export interface StudioState {
   // Browser State
   browserVisible: boolean;
   browserSearchQuery: string;
-  browserActiveTab: 'presets' | 'samples' | 'plugins' | 'files';
+  browserActiveTab: 'pool' | 'presets' | 'samples' | 'plugins' | 'files';
   browserSelectedItem: string | null;
 
   // Inspector State
@@ -198,7 +198,7 @@ export interface StudioState {
   // Browser Actions
   toggleBrowser: () => void;
   setBrowserSearchQuery: (query: string) => void;
-  setBrowserActiveTab: (tab: 'presets' | 'samples' | 'plugins' | 'files') => void;
+  setBrowserActiveTab: (tab: 'pool' | 'presets' | 'samples' | 'plugins' | 'files') => void;
   setBrowserSelectedItem: (itemId: string | null) => void;
 
   // Inspector Actions
@@ -287,7 +287,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Browser State
   browserVisible: true,
   browserSearchQuery: '',
-  browserActiveTab: 'files',
+  browserActiveTab: 'pool',
   browserSelectedItem: null,
 
   // Inspector State
