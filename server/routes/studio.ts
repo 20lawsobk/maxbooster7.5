@@ -57,10 +57,16 @@ const updateClipSchema = z.object({
 
 const updateProjectSchema = z.object({
   title: z.string().min(1).max(255).optional(),
+  description: z.string().optional(),
+  genre: z.string().optional(),
   tempo: z.number().min(20).max(999).optional(),
+  bpm: z.number().min(20).max(999).optional(),
+  key: z.string().optional(),
   timeSignature: z.string().optional(),
   sampleRate: z.number().optional(),
   bitDepth: z.number().optional(),
+  workflowStage: z.string().optional(),
+  status: z.string().optional(),
 });
 
 async function verifyProjectOwnership(projectId: string, userId: string): Promise<boolean> {
@@ -967,22 +973,6 @@ router.delete('/markers/:markerId', requireAuth, async (req: Request, res: Respo
   } catch (error: unknown) {
     logger.error('Error deleting marker:', error);
     res.status(500).json({ error: 'Failed to delete marker' });
-  }
-});
-
-// Project update endpoint
-router.patch('/projects/:projectId', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { projectId } = req.params;
-    res.json({
-      success: true,
-      id: projectId,
-      ...req.body,
-      updatedAt: new Date().toISOString(),
-    });
-  } catch (error: unknown) {
-    logger.error('Error updating project:', error);
-    res.status(500).json({ error: 'Failed to update project' });
   }
 });
 
