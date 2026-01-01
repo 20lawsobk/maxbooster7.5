@@ -405,6 +405,29 @@ export class DatabaseStorage implements IStorage {
       .limit(50);
   }
 
+  async createNotification(data: {
+    userId: string;
+    type: string;
+    title: string;
+    message?: string;
+    actionUrl?: string;
+    metadata?: any;
+  }): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values({
+        userId: data.userId,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        actionUrl: data.actionUrl,
+        metadata: data.metadata,
+        isRead: false,
+      })
+      .returning();
+    return notification;
+  }
+
   async markNotificationRead(id: string): Promise<void> {
     await db
       .update(notifications)
@@ -425,6 +448,12 @@ export class DatabaseStorage implements IStorage {
       .from(notifications)
       .where(eq(notifications.id, id));
     return notification || undefined;
+  }
+
+  async deleteNotification(id: string): Promise<void> {
+    await db
+      .delete(notifications)
+      .where(eq(notifications.id, id));
   }
 
   async deleteSession(sessionId: string): Promise<boolean> {

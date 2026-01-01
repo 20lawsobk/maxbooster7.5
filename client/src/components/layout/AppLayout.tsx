@@ -24,12 +24,12 @@ export function AppLayout({ title, subtitle, children, noPadding = false }: AppL
         <TopBar title={title} subtitle={subtitle} onMenuClick={() => setIsMobileMenuOpen(true)} />
 
         <main
-          className={`flex-1 ${noPadding ? 'overflow-hidden' : 'overflow-y-auto p-6 sm:p-8 lg:p-10'}`}
+          className={`flex-1 ${noPadding ? 'overflow-hidden' : 'overflow-y-auto p-4 sm:p-6 lg:p-8 pb-safe-bottom'}`}
         >
-          <div className="mb-4">
+          <div className="mb-3 sm:mb-4">
             <BreadcrumbTrail />
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {children}
           </div>
         </main>

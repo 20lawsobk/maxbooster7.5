@@ -7,6 +7,7 @@ interface WebSocketMessage {
 }
 
 interface UseWebSocketOptions {
+  userId?: string;
   onMessage?: (message: WebSocketMessage) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
@@ -20,6 +21,7 @@ interface UseWebSocketOptions {
  */
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const {
+    userId,
     onMessage,
     onConnect,
     onDisconnect,
@@ -53,6 +55,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         setIsConnected(true);
         setConnectionStatus('connected');
         reconnectAttemptsRef.current = 0;
+        // Authentication is now handled server-side via session cookies
+        // No need to send userId from client
         onConnect?.();
       };
 

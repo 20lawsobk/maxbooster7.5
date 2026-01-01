@@ -166,10 +166,13 @@ app.use((req, res, next) => {
     }
   }
 
+  // Store reference to session store for WebSocket authentication
+  let activeSessionStore: any = null;
+
   try {
     // Try to create Redis session store for production-grade horizontal scaling
-    const sessionStore = await createSessionStore();
-    const sessionConfig = getSessionConfig(sessionStore);
+    activeSessionStore = await createSessionStore();
+    const sessionConfig = getSessionConfig(activeSessionStore);
     app.use(session(sessionConfig));
     logger.info('✅ Production session store initialized (Redis)');
   } catch (error: any) {
@@ -184,10 +187,16 @@ app.use((req, res, next) => {
     logger.warn('⚠️  Using in-memory session store (development only)');
     logger.warn('⚠️  Sessions will be lost on server restart');
 
+    // Create MemoryStore and store reference for WebSocket auth
+    const MemoryStore = session.MemoryStore;
+    activeSessionStore = new MemoryStore();
+    
     const devSessionConfig = {
+      store: activeSessionStore,
       secret: process.env.SESSION_SECRET || require('crypto').randomBytes(32).toString('hex'),
       resave: false,
       saveUninitialized: false,
+      name: 'sessionId',
       cookie: {
         secure: false,
         httpOnly: true,
@@ -196,6 +205,9 @@ app.use((req, res, next) => {
     };
     app.use(session(devSessionConfig));
   }
+  
+  // Export session store for WebSocket authentication
+  (global as any).__activeSessionStore = activeSessionStore;
 
   // ========================================
   // INITIALIZE PRODUCTION SAFETY SYSTEMS
@@ -240,6 +252,11 @@ app.use((req, res, next) => {
   // Initialize realtime WebSocket server for studio collaboration
   try {
     if (typeof initializeRealtimeServer === 'function') {
+      // Pass the already-initialized session store to WebSocket for secure authentication
+      const { setSessionStore } = await import('./realtime/index.js');
+      if (typeof setSessionStore === 'function' && activeSessionStore) {
+        setSessionStore(activeSessionStore);
+      }
       initializeRealtimeServer(httpServer);
       logger.info('Realtime collaboration server initialized');
     }

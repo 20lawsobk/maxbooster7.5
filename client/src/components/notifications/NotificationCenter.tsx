@@ -53,8 +53,8 @@ export function NotificationCenter() {
   const { user } = useAuth();
 
   // WebSocket connection for real-time notifications
-  // Authentication is now handled server-side via session cookie
   const { isConnected, connectionStatus } = useWebSocket({
+    userId: user?.id,
     onMessage: (message) => {
       // Handle incoming WebSocket messages
       if (message.type === 'notification') {

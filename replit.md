@@ -249,7 +249,22 @@ Temporarily disable payment requirements platform-wide with automatic re-enablem
 -   **Distribution:** LabelGrid API
 -   **Error Tracking:** Sentry
 
-## Recent Changes (December 31, 2025)
+## Recent Changes (January 1, 2026)
+- **WebSocket Security Fix**: Implemented server-side session validation for WebSocket authentication
+  - Authentication now happens during WebSocket upgrade using session cookies
+  - Session store is reused between Express and WebSocket (works in both Redis and MemoryStore modes)
+  - Client-side auth attempts are rejected - prevents session spoofing attacks
+  - User connections tracked securely via `userConnections` Map
+- **PWA Configuration**: Full Progressive Web App setup
+  - Service worker with caching strategies (network-first for API, cache-first for static assets)
+  - Manifest.json with app icons (72-512px) and theme colors
+  - Offline.html fallback page
+- **Mobile Optimization**: Responsive design system
+  - Touch-friendly sizing (min 44px touch targets)
+  - Mobile-first breakpoints (xs-2xl)
+  - Safe area insets support
+
+## Changes (December 31, 2025)
 - Configured all API credentials for production-ready deployment
 - All 18 required environment variables validated and active:
   - Stripe (payments, subscriptions, webhooks)

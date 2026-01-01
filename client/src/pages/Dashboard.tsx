@@ -457,7 +457,7 @@ function DashboardContent({ user }: { user: any }) {
 
         {/* Stats Grid */}
         <section
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
           role="region"
           aria-label="Performance statistics"
         >
@@ -474,35 +474,35 @@ function DashboardContent({ user }: { user: any }) {
                 role="article"
                 aria-label={`${stat.title} statistic`}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
                       <p
-                        className="text-sm font-medium text-muted-foreground mb-1"
+                        className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 truncate"
                         id={`stat-label-${index}`}
                       >
                         {stat.title}
                       </p>
                       <p
-                        className={`text-2xl font-bold ${stat.color}`}
+                        className={`text-lg sm:text-xl lg:text-2xl font-bold ${stat.color}`}
                         aria-labelledby={`stat-label-${index}`}
                         aria-describedby={`stat-change-${index}`}
                       >
                         {stat.value}
                       </p>
                       <p
-                        className="text-xs text-green-600 flex items-center mt-1"
+                        className="text-[10px] sm:text-xs text-green-600 flex items-center mt-1"
                         id={`stat-change-${index}`}
                       >
-                        <ArrowUp className="w-3 h-3 mr-1" aria-label="Increase" />
-                        {stat.change} from last month
+                        <ArrowUp className="w-3 h-3 mr-1 flex-shrink-0" aria-label="Increase" />
+                        <span className="truncate">{stat.change} from last month</span>
                       </p>
                     </div>
                     <div
-                      className={`p-3 rounded-full ${stat.bgColor} ${stat.borderColor} border-2`}
+                      className={`p-2 sm:p-3 rounded-full ${stat.bgColor} ${stat.borderColor} border-2 flex-shrink-0`}
                       aria-hidden="true"
                     >
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
+                      <Icon className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 ${stat.color}`} />
                     </div>
                   </div>
                 </CardContent>

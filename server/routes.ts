@@ -1127,7 +1127,77 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json([]);
+    try {
+      const userNotifications = await storage.getNotifications(req.user.id);
+      // Map isRead to read for frontend compatibility
+      const mappedNotifications = (userNotifications || []).map(n => ({
+        ...n,
+        read: n.isRead,
+        link: n.actionUrl,
+      }));
+      return res.json(mappedNotifications);
+    } catch (error) {
+      console.error("Get notifications error:", error);
+      return res.json([]);
+    }
+  });
+
+  // Notifications: Mark as read (PUT for frontend compatibility)
+  app.put("/api/notifications/:id/read", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const { id } = req.params;
+      const notification = await storage.getNotificationById(id);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      if (notification.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      await storage.markNotificationRead(id);
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Mark notification read error:", error);
+      return res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  // Notifications: Mark all as read (PUT for frontend compatibility)
+  app.put("/api/notifications/mark-all-read", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      await storage.markAllNotificationsRead(req.user.id);
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Mark all read error:", error);
+      return res.status(500).json({ message: "Failed to mark all as read" });
+    }
+  });
+
+  // Notifications: Delete notification
+  app.delete("/api/notifications/:id", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const { id } = req.params;
+      const notification = await storage.getNotificationById(id);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      if (notification.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      await storage.deleteNotification(id);
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Delete notification error:", error);
+      return res.status(500).json({ message: "Failed to delete notification" });
+    }
   });
 
   // Notifications: Mark as read
@@ -1191,7 +1261,25 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({ success: true, message: "Test notification sent" });
+      // Create a test notification in the database
+      const notification = await storage.createNotification({
+        userId: req.user.id,
+        type: 'system',
+        title: 'Test Notification',
+        message: 'This is a test notification to verify the system is working correctly.',
+        actionUrl: '/dashboard',
+      });
+
+      // Broadcast via WebSocket if available
+      if (typeof (global as any).broadcastNotification === 'function') {
+        (global as any).broadcastNotification(req.user.id, {
+          ...notification,
+          read: notification.isRead,
+          link: notification.actionUrl,
+        });
+      }
+
+      return res.json({ success: true, message: "Test notification sent", notification });
     } catch (error) {
       console.error("Test notification error:", error);
       return res.status(500).json({ message: "Failed to send test notification" });
@@ -1203,14 +1291,31 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({
-      email: true,
-      push: true,
-      sms: false,
-      releaseAlerts: true,
-      paymentAlerts: true,
-      marketingEmails: false,
-    });
+    try {
+      const user = await storage.getUser(req.user.id);
+      const defaultPrefs = {
+        email: true,
+        browser: true,
+        releases: true,
+        earnings: true,
+        sales: true,
+        marketing: false,
+        system: true,
+      };
+      const prefs = user?.notificationSettings || defaultPrefs;
+      return res.json(prefs);
+    } catch (error) {
+      console.error("Get notification preferences error:", error);
+      return res.json({
+        email: true,
+        browser: true,
+        releases: true,
+        earnings: true,
+        sales: true,
+        marketing: false,
+        system: true,
+      });
+    }
   });
 
   // Notifications: Update preferences
@@ -1218,7 +1323,15 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({ success: true });
+    try {
+      await storage.updateUser(req.user.id, {
+        notificationSettings: req.body,
+      });
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Update notification preferences error:", error);
+      return res.status(500).json({ message: "Failed to update preferences" });
+    }
   });
 
   // Projects: Get all projects for user
