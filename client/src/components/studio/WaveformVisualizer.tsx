@@ -250,7 +250,7 @@ export function WaveformVisualizer({
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        // Set canvas resolution to match display size
+        if (width <= 0 || height <= 0) return;
         canvas.width = width * window.devicePixelRatio;
         canvas.height = height * window.devicePixelRatio;
         canvas.style.width = `${width}px`;
