@@ -235,33 +235,47 @@ export default function Projects() {
     setIsUploading(false);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
+  const getWorkflowStageLabel = (stage: string) => {
+    const labels: Record<string, string> = {
+      setup: 'SETUP',
+      recording: 'RECORDING',
+      editing: 'EDITING',
+      mixing: 'MIXING',
+      mastering: 'MASTERING',
+      delivery: 'DELIVERY',
+    };
+    return labels[stage] || stage?.toUpperCase() || 'DRAFT';
+  };
+
+  const getStatusColor = (stage: string) => {
+    switch (stage) {
+      case 'delivery':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'mastering':
         return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'draft':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'mixing':
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case 'editing':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'recording':
+        return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+      case 'setup':
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getProgressValue = (status: string, progress?: number) => {
+  const getProgressValue = (stage: string, progress?: number) => {
     if (progress) return progress;
-    switch (status) {
-      case 'completed':
-        return 100;
-      case 'mastering':
-        return 90;
-      case 'in_progress':
-        return 50;
-      default:
-        return 25;
-    }
+    const stageProgress: Record<string, number> = {
+      setup: 10,
+      recording: 25,
+      editing: 45,
+      mixing: 65,
+      mastering: 85,
+      delivery: 100,
+    };
+    return stageProgress[stage] || 10;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -530,11 +544,18 @@ export default function Projects() {
                           {currentlyPlaying === project.id ? 'Pause' : 'Play'}
                         </DropdownMenuItem>
                         <DropdownMenuItem
+                          onClick={() => setLocation(`/studio/${project.id}`)}
+                          data-testid={`button-open-studio-${project.id}`}
+                        >
+                          <Music className="h-4 w-4 mr-2" />
+                          Open in Studio
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
                           onClick={() => handleEdit(project)}
                           data-testid={`button-edit-${project.id}`}
                         >
                           <Edit className="h-4 w-4 mr-2" />
-                          Edit
+                          Edit Details
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setLocation(`/analytics?project=${project.id}`)}
@@ -559,15 +580,15 @@ export default function Projects() {
                   {/* Project Status & Progress */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <Badge variant="secondary" className={getStatusColor(project.status)}>
-                        {project.status?.replace('_', ' ')?.toUpperCase() || 'UNKNOWN'}
+                      <Badge variant="secondary" className={getStatusColor(project.workflowStage || project.status)}>
+                        {getWorkflowStageLabel(project.workflowStage || project.status)}
                       </Badge>
                       <span className="text-sm text-gray-500">
-                        {getProgressValue(project.status, project.progress)}% Complete
+                        {getProgressValue(project.workflowStage || project.status, project.progress)}% Complete
                       </span>
                     </div>
                     <Progress
-                      value={getProgressValue(project.status, project.progress)}
+                      value={getProgressValue(project.workflowStage || project.status, project.progress)}
                       className="h-2"
                     />
                   </div>
@@ -615,7 +636,7 @@ export default function Projects() {
                       )}
                       {currentlyPlaying === project.id ? 'Pause' : 'Play'}
                     </Button>
-                    {project.status === 'completed' ? (
+                    {project.workflowStage === 'delivery' || project.status === 'completed' ? (
                       <Button
                         size="sm"
                         className="flex-1"
@@ -629,9 +650,10 @@ export default function Projects() {
                       <Button
                         size="sm"
                         className="flex-1"
-                        onClick={() => handleEdit(project)}
+                        onClick={() => setLocation(`/studio/${project.id}`)}
                         data-testid={`button-continue-${project.id}`}
                       >
+                        <Music className="h-4 w-4 mr-2" />
                         Continue
                       </Button>
                     )}

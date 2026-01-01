@@ -115,6 +115,7 @@ export const projects = pgTable("projects", {
   bpm: integer("bpm"),
   key: text("key"),
   status: text("status").default("draft"),
+  workflowStage: text("workflow_stage").default("setup"),
   isStudioProject: boolean("is_studio_project").default(false),
   metadata: jsonb("metadata"),
   favorite: boolean("favorite").default(false),

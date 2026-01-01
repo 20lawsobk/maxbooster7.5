@@ -425,6 +425,7 @@ export default function Studio() {
       timeSignature?: string;
       sampleRate?: number;
       bitDepth?: number;
+      workflowStage?: string;
     }) => {
       const { id, ...data } = updates;
       const res = await apiRequest('PATCH', `/api/studio/projects/${id}`, data);
@@ -1006,6 +1007,15 @@ export default function Studio() {
       setLocation('/studio');
     }
   }, [selectedProject, params.projectId, setLocation]);
+
+  // Initialize workflow state from project when selected
+  useEffect(() => {
+    if (selectedProject?.workflowStage) {
+      setWorkflowState(selectedProject.workflowStage as WorkflowState);
+    } else if (selectedProject) {
+      setWorkflowState('setup');
+    }
+  }, [selectedProject?.id, selectedProject?.workflowStage]);
 
   useEffect(() => {
     if (!selectedProject || !tracks.length || isLoadingTracks) return;
@@ -1748,6 +1758,12 @@ export default function Studio() {
                   currentState={workflowState}
                   onStateChange={(state) => {
                     setWorkflowState(state);
+                    if (selectedProject) {
+                      updateProjectMutation.mutate({
+                        id: selectedProject.id,
+                        workflowStage: state,
+                      });
+                    }
                     if (state === 'setup') {
                       setShowProjectSetup(true);
                     } else if (state === 'mastering' || state === 'delivery') {
