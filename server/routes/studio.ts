@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { studioService } from '../services/studioService';
 import { logger } from '../logger.js';
 import { nanoid } from 'nanoid';
+import { audioUpload, storeUploadedFile, handleUploadError } from '../middleware/uploadHandler.js';
 
 const router = Router();
 
@@ -790,13 +791,35 @@ router.post('/ai-music/match-reference', requireAuth, async (req: Request, res: 
   }
 });
 
-// Studio upload endpoint
-router.post('/upload', requireAuth, async (req: Request, res: Response) => {
+// Studio upload endpoint with proper file handling
+router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploadError, async (req: Request, res: Response) => {
   try {
+    const userId = (req as any).user?.id;
+    const file = req.file;
+    
+    if (!file) {
+      return res.status(400).json({ error: 'No audio file provided' });
+    }
+    
+    const fileId = `file_${nanoid()}`;
+    
+    const storedFile = await storeUploadedFile(file, userId, 'audio');
+    
+    logger.info('Audio file uploaded to studio', { 
+      fileId, 
+      originalName: file.originalname,
+      size: file.size,
+      mimeType: file.mimetype,
+      url: storedFile.url,
+    });
+    
     res.json({
       success: true,
-      fileId: `file_${nanoid()}`,
-      url: `/uploads/audio/file_${Date.now()}.wav`,
+      fileId,
+      url: storedFile.url,
+      originalName: file.originalname,
+      size: file.size,
+      mimeType: file.mimetype,
       message: 'File uploaded successfully',
     });
   } catch (error: unknown) {

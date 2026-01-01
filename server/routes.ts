@@ -2027,15 +2027,43 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/assets/upload", async (req: Request, res: Response) => {
+  app.post("/api/assets/upload", async (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
-        success: true,
-        assetId: `asset_${Date.now()}`,
-        message: 'Asset uploaded successfully',
+      const { audioUpload, storeUploadedFile, handleUploadError } = await import('./middleware/uploadHandler.js');
+      
+      audioUpload.single('assetFile')(req, res, async (err: any) => {
+        if (err) {
+          return handleUploadError(err, req, res, next);
+        }
+        
+        try {
+          const file = req.file;
+          if (!file) {
+            return res.status(400).json({ message: "No file provided" });
+          }
+          
+          const { name, assetType, description, tags } = req.body;
+          const userId = req.user!.id;
+          
+          const storedFile = await storeUploadedFile(file, userId, 'audio');
+          
+          return res.json({
+            success: true,
+            assetId: `asset_${Date.now()}`,
+            name: name || file.originalname,
+            assetType: assetType || 'sample',
+            fileUrl: storedFile.url,
+            fileSize: file.size,
+            mimeType: file.mimetype,
+            message: 'Asset uploaded successfully',
+          });
+        } catch (uploadError) {
+          console.error("Asset storage error:", uploadError);
+          return res.status(500).json({ message: "Failed to store asset" });
+        }
       });
     } catch (error) {
       console.error("Asset upload error:", error);
