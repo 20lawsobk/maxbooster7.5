@@ -17,8 +17,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   MousePointer2,
   Scissors,
@@ -35,6 +43,7 @@ import {
   Plus,
   FolderOpen,
   HelpCircle,
+  MoreVertical,
 } from 'lucide-react';
 
 interface Project {
@@ -89,6 +98,7 @@ export function StudioTopBar({
 }: StudioTopBarProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newProjectTitle, setNewProjectTitle] = useState('');
+  const isMobile = useIsMobile();
 
   const handleCreateProject = () => {
     if (newProjectTitle.trim() && onCreateProject) {
@@ -100,12 +110,12 @@ export function StudioTopBar({
 
   return (
     <>
-      <div className="h-full px-6 flex items-center justify-between gap-6">
+      <div className={`h-full ${isMobile ? 'px-2 py-1' : 'px-6'} flex items-center justify-between gap-2 md:gap-6`}>
         {/* Left: Project Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 md:gap-3 flex-1 min-w-0">
           <Select value={selectedProject?.id || ''} onValueChange={onProjectChange}>
             <SelectTrigger
-              className="w-[220px] h-9 text-sm font-medium"
+              className={`${isMobile ? 'w-[120px]' : 'w-[220px]'} h-9 text-sm font-medium`}
               style={{
                 background: 'var(--studio-surface)',
                 borderColor: 'var(--studio-border-subtle)',
