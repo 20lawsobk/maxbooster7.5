@@ -322,6 +322,7 @@ export default function Studio() {
   const [visualizerMode, setVisualizerMode] = useState<'waveform' | 'spectrum'>('waveform');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const tutorialShownRef = useRef(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('setup');
   const [completedWorkflowSteps, setCompletedWorkflowSteps] = useState<WorkflowState[]>([]);
   const [showProjectSetup, setShowProjectSetup] = useState(false);
@@ -956,9 +957,10 @@ export default function Studio() {
   }, [projectLyrics]);
 
   useEffect(() => {
-    if (userPreferences && selectedProject) {
+    if (userPreferences && selectedProject && !tutorialShownRef.current) {
       const tutorialCompleted = userPreferences.tutorialCompleted?.studio;
       if (!tutorialCompleted) {
+        tutorialShownRef.current = true;
         const timer = setTimeout(() => {
           setShowTutorial(true);
         }, 1000);
