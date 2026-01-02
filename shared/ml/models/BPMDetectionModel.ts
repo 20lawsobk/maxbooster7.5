@@ -18,17 +18,26 @@ export interface KeyDetectionResult {
   confidence: number;
 }
 
+interface EssentiaInstance {
+  initialize(): Promise<void>;
+  shutdown(): void;
+  RhythmExtractor2013(...args: unknown[]): { bpm: number; confidence: number; beats: number[] };
+  KeyExtractor(...args: unknown[]): { key: string; scale: string; strength: number };
+  OnsetDetection(...args: unknown[]): { onsets: Float32Array };
+  MFCC(...args: unknown[]): { mfcc: Float32Array; bands: Float32Array };
+}
+
 export class BPMDetectionModel {
-  private essentia: any = null;
+  private essentia: EssentiaInstance | null = null;
 
   constructor() {
   }
 
   public async initialize(): Promise<void> {
     if (typeof window !== 'undefined') {
-      const Essentia = (await import('essentia.js')).default;
-      // @ts-ignore
-      this.essentia = new Essentia.EssentiaWASM();
+      const EssentiaModule = await import('essentia.js');
+      const Essentia = EssentiaModule.default || EssentiaModule;
+      this.essentia = new (Essentia as { EssentiaWASM: new () => EssentiaInstance }).EssentiaWASM();
       await this.essentia.initialize();
     } else {
       throw new Error('Essentia.js only works in browser environment');

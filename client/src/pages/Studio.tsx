@@ -263,12 +263,12 @@ export default function Studio() {
     volume: metronomeVolume,
   });
 
-  // Sync device selection between hook and store
+  // Sync device selection between hook and store (one-way sync from hook to store)
   useEffect(() => {
-    if (audioDevices.selectedInput !== selectedInputDevice) {
+    if (audioDevices.selectedInput && audioDevices.selectedInput !== selectedInputDevice) {
       setSelectedInputDevice(audioDevices.selectedInput);
     }
-  }, [audioDevices.selectedInput, selectedInputDevice, setSelectedInputDevice]);
+  }, [audioDevices.selectedInput, setSelectedInputDevice]);
 
   // Marker persistence with React Query
   const markerService = useMarkers(selectedProject?.id || null);
@@ -974,19 +974,31 @@ export default function Studio() {
     }
   }, [userPreferences, selectedProject]);
 
+  // Track if URL change is in progress to prevent loops
+  const urlChangeInProgressRef = useRef(false);
+  const lastUrlProjectIdRef = useRef<string | undefined>(params.projectId);
+
   // Load project from URL parameter on mount
   useEffect(() => {
     const projectIdFromUrl = params.projectId;
 
+    // Only process if URL actually changed
+    if (projectIdFromUrl === lastUrlProjectIdRef.current && selectedProject?.id === projectIdFromUrl) {
+      return;
+    }
+    lastUrlProjectIdRef.current = projectIdFromUrl;
+
     if (projectIdFromUrl && projects.length > 0) {
       const project = projects.find(
-        (p: unknown) => p.id === projectIdFromUrl || p.id.toString() === projectIdFromUrl
+        (p: Project) => p.id === projectIdFromUrl || p.id.toString() === projectIdFromUrl
       );
 
       if (project) {
-        // Valid project found - load it
+        // Valid project found - load it only if different
         if (!selectedProject || selectedProject.id !== project.id) {
+          urlChangeInProgressRef.current = true;
           setSelectedProject(project);
+          setTimeout(() => { urlChangeInProgressRef.current = false; }, 100);
         }
       } else {
         // Invalid project ID - show error and redirect
@@ -997,23 +1009,24 @@ export default function Studio() {
         });
         setLocation('/studio');
       }
-    } else if (!projectIdFromUrl && selectedProject) {
-      // No projectId in URL but we have a selected project - this is a mismatch
-      // This can happen if user manually navigates to /studio while viewing a project
-      // We'll keep the selected project but won't update the URL to avoid navigation loops
     }
   }, [params.projectId, projects, selectedProject, setLocation, toast]);
 
-  // Sync URL when selected project changes (but not from URL changes)
+  // Sync URL when selected project changes via UI (not from URL changes)
   useEffect(() => {
+    // Skip if this change originated from URL navigation
+    if (urlChangeInProgressRef.current) return;
+
     if (selectedProject && selectedProject.id !== params.projectId) {
       // Project was changed via UI, update URL
+      lastUrlProjectIdRef.current = selectedProject.id;
       setLocation(`/studio/${selectedProject.id}`);
     } else if (!selectedProject && params.projectId) {
       // Project was cleared, navigate to /studio
+      lastUrlProjectIdRef.current = undefined;
       setLocation('/studio');
     }
-  }, [selectedProject, params.projectId, setLocation]);
+  }, [selectedProject?.id, params.projectId, setLocation]);
 
   // Initialize workflow state from project when selected
   useEffect(() => {
