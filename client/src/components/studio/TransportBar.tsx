@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useStudioStore } from '@/lib/studioStore';
 import {
@@ -19,6 +20,8 @@ import {
   Activity,
   Sparkles,
   Volume2,
+  VolumeX,
+  Volume1,
 } from 'lucide-react';
 import { AIMixer } from '@/lib/audio/AIMixer';
 import { AIMastering } from '@/lib/audio/AIMastering';
@@ -36,6 +39,9 @@ interface TransportBarProps {
   onStop?: () => void;
   onRecord?: () => void;
   onSeek?: (time: number) => void;
+  duration?: number;
+  masterVolume?: number;
+  onMasterVolumeChange?: (volume: number) => void;
 }
 
 /**
@@ -52,6 +58,9 @@ export function TransportBar({
   onStop,
   onRecord,
   onSeek,
+  duration = 300,
+  masterVolume = 80,
+  onMasterVolumeChange,
 }: TransportBarProps) {
   const {
     currentTime,
@@ -71,6 +80,12 @@ export function TransportBar({
   } = useStudioStore();
 
   const [tapTempoTimes, setTapTempoTimes] = useState<number[]>([]);
+  const [isMuted, setIsMuted] = useState(masterVolume === 0);
+  const [previousVolume, setPreviousVolume] = useState(masterVolume > 0 ? masterVolume : 80);
+
+  useEffect(() => {
+    setIsMuted(masterVolume === 0);
+  }, [masterVolume]);
 
   const formatSMPTE = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -144,6 +159,53 @@ export function TransportBar({
 
     setTimeout(() => setTapTempoTimes([]), 3000);
   }, [tapTempoTimes, setTempo]);
+
+  const handleVolumeChange = useCallback((value: number[]) => {
+    const newVolume = value[0];
+    if (onMasterVolumeChange) {
+      onMasterVolumeChange(newVolume);
+    }
+    if (newVolume > 0) {
+      setIsMuted(false);
+    }
+  }, [onMasterVolumeChange]);
+
+  const toggleMute = useCallback(() => {
+    if (isMuted) {
+      if (onMasterVolumeChange) {
+        onMasterVolumeChange(previousVolume);
+      }
+      setIsMuted(false);
+    } else {
+      setPreviousVolume(masterVolume);
+      if (onMasterVolumeChange) {
+        onMasterVolumeChange(0);
+      }
+      setIsMuted(true);
+    }
+  }, [isMuted, previousVolume, masterVolume, onMasterVolumeChange]);
+
+  const handleSeekChange = useCallback((value: number[]) => {
+    if (onSeek) {
+      onSeek(value[0]);
+    }
+  }, [onSeek]);
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getVolumeIcon = () => {
+    if (isMuted || masterVolume === 0) {
+      return <VolumeX className="h-4 w-4" />;
+    } else if (masterVolume < 50) {
+      return <Volume1 className="h-4 w-4" />;
+    } else {
+      return <Volume2 className="h-4 w-4" />;
+    }
+  };
 
   return (
     <div
@@ -397,6 +459,61 @@ export function TransportBar({
             }}
           >
             {timeSignature}
+          </div>
+
+          <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+
+          {/* Progress Bar - Marketplace-style */}
+          <div className="flex items-center gap-2 min-w-[180px]">
+            <span
+              className="text-xs font-mono w-12 text-right"
+              style={{ color: 'var(--studio-text-subtle)' }}
+            >
+              {formatTime(currentTime)}
+            </span>
+            <Slider
+              value={[currentTime]}
+              max={duration}
+              step={0.1}
+              onValueChange={handleSeekChange}
+              className="flex-1 min-w-[80px]"
+            />
+            <span
+              className="text-xs font-mono w-12"
+              style={{ color: 'var(--studio-text-subtle)' }}
+            >
+              {formatTime(duration)}
+            </span>
+          </div>
+
+          <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+
+          {/* Master Volume - Marketplace-style */}
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="studio-btn h-8 w-8 rounded flex items-center justify-center"
+                  onClick={toggleMute}
+                >
+                  {getVolumeIcon()}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{isMuted ? 'Unmute' : 'Mute'}</TooltipContent>
+            </Tooltip>
+            <Slider
+              value={[isMuted ? 0 : masterVolume]}
+              max={100}
+              step={1}
+              onValueChange={handleVolumeChange}
+              className="w-20"
+            />
+            <span
+              className="text-xs font-mono w-8"
+              style={{ color: 'var(--studio-text-subtle)' }}
+            >
+              {isMuted ? 0 : masterVolume}%
+            </span>
           </div>
 
           <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />

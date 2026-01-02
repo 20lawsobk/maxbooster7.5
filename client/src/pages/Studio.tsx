@@ -322,6 +322,7 @@ export default function Studio() {
   const [visualizerMode, setVisualizerMode] = useState<'waveform' | 'spectrum'>('waveform');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [masterVolume, setMasterVolume] = useState(80);
   const tutorialShownRef = useRef(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('setup');
   const [completedWorkflowSteps, setCompletedWorkflowSteps] = useState<WorkflowState[]>([]);
@@ -1222,12 +1223,13 @@ export default function Studio() {
   const handleMasterVolumeChange = useCallback(
     (volume: number) => {
       try {
-        controller.setMasterVolume(volume);
+        setMasterVolume(volume);
+        controller.setMasterVolume(volume / 100);
       } catch (error: unknown) {
         logger.error('Error changing master volume:', error);
       }
     },
-    [controller]
+    [controller, setMasterVolume]
   );
 
   const handleTrackNameChange = useCallback(
@@ -2268,6 +2270,9 @@ export default function Studio() {
                       : controller.startRecording()
                   }
                   onSeek={(time) => controller.seek(time)}
+                  duration={projectDuration}
+                  masterVolume={masterVolume}
+                  onMasterVolumeChange={handleMasterVolumeChange}
                 />
               </div>
             }
