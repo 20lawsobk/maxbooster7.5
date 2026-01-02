@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, NextFunction } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
@@ -14,6 +14,66 @@ import { logger } from '../logger';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+
+interface AuthenticatedUser {
+  id: string;
+  email?: string;
+  username?: string;
+  role?: string;
+}
+
+interface DispatchStatus {
+  id: string;
+  providerId: string;
+  providerName?: string;
+  status: string;
+  logs?: string;
+}
+
+interface TakedownStatus {
+  platform: string;
+  platformName?: string;
+  status: string;
+  requestedAt?: string;
+  completedAt?: string;
+  reason?: string;
+  explanation?: string;
+}
+
+interface HyperFollowLinks {
+  platforms?: Array<{ id: string; name: string; enabled: boolean; url?: string }>;
+  socialLinks?: Array<{ platform: string; url: string }>;
+  artistName?: string;
+  description?: string;
+  releaseId?: string;
+  collectEmails?: boolean;
+  theme?: { primaryColor: string; backgroundColor: string; textColor: string; buttonStyle: string };
+  analytics?: {
+    pageViews: number;
+    preSaves: number;
+    emailSignups: number;
+    platformClicks: Record<string, number>;
+  };
+  emailList?: string[];
+}
+
+interface HyperFollowPage {
+  id: string;
+  userId: string;
+  title: string;
+  slug: string;
+  imageUrl?: string | null;
+  links: HyperFollowLinks;
+  clicks?: number;
+  presaves?: number;
+}
+
+interface PayoutRecord {
+  id: string;
+  amount: number;
+  status?: string;
+  createdAt?: Date;
+}
 
 const router = Router();
 
@@ -82,9 +142,10 @@ const createRoyaltySplitSchema = z.object({
 });
 
 // Middleware to ensure user is authenticated
-const requireAuth = (req: Request, res: Response, next: Function) => {
+const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
+    res.status(401).json({ error: 'Authentication required' });
+    return;
   }
   next();
 };
@@ -96,7 +157,7 @@ const requireAuth = (req: Request, res: Response, next: Function) => {
 // GET /api/distribution/releases - List user's releases
 router.get('/releases', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const releases = await storage.getReleasesByUserId(userId);
     res.json(releases);
   } catch (error: unknown) {
@@ -108,7 +169,7 @@ router.get('/releases', requireAuth, async (req: Request, res: Response) => {
 // POST /api/distribution/releases - Create new release draft
 router.post('/releases', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const data = createReleaseSchema.parse(req.body);
 
     const release = await storage.createDistroRelease({
@@ -146,7 +207,7 @@ router.post('/releases', requireAuth, async (req: Request, res: Response) => {
 // GET /api/distribution/releases/:id - Get single release
 router.get('/releases/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -164,7 +225,7 @@ router.get('/releases/:id', requireAuth, async (req: Request, res: Response) => 
 // PATCH /api/distribution/releases/:id - Update release metadata
 router.patch('/releases/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
     const updates = updateReleaseSchema.parse(req.body);
 
@@ -195,7 +256,7 @@ router.patch('/releases/:id', requireAuth, async (req: Request, res: Response) =
 // DELETE /api/distribution/releases/:id - Delete/takedown release
 router.delete('/releases/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -235,7 +296,7 @@ router.post(
   upload.single('audio'),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const { id: releaseId } = req.params;
       const file = req.file;
 
@@ -279,7 +340,7 @@ router.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const { releaseId, trackId } = req.params;
 
       const release = await storage.getDistroRelease(releaseId);
@@ -307,7 +368,7 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const { releaseId, trackId } = req.params;
 
       const release = await storage.getDistroRelease(releaseId);
@@ -331,7 +392,7 @@ router.delete(
 // POST /api/distribution/codes/isrc - Generate ISRC code
 router.post('/codes/isrc', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { trackId, artist, title } = generateCodeSchema.parse(req.body);
 
     // Use LabelGrid API to generate ISRC
@@ -355,7 +416,7 @@ router.post('/codes/isrc', requireAuth, async (req: Request, res: Response) => {
 // POST /api/distribution/codes/upc - Generate UPC code
 router.post('/codes/upc', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { releaseId, title } = generateCodeSchema.parse(req.body);
 
     // Use LabelGrid API to generate UPC
@@ -421,7 +482,7 @@ router.get('/platforms', async (_req: Request, res: Response) => {
 // POST /api/distribution/releases/:id/schedule - Schedule release date
 router.post('/releases/:id/schedule', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
     const { releaseDate } = z
       .object({
@@ -495,7 +556,7 @@ router.post(
   upload.single('headerImage'),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const file = req.file;
 
       const data = hyperFollowSchema.parse(JSON.parse(req.body.data));
@@ -539,7 +600,7 @@ router.post(
 // GET /api/distribution/hyperfollow - List user campaigns
 router.get('/hyperfollow', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const campaigns = await storage.getHyperFollowPages(userId);
     res.json(campaigns);
   } catch (error: unknown) {
@@ -572,7 +633,7 @@ router.patch(
   upload.single('headerImage'),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const { id } = req.params;
       const file = req.file;
 
@@ -587,22 +648,23 @@ router.patch(
         ? `/uploads/distribution/${file.filename}`
         : data.headerImage || campaign.imageUrl;
 
+      const existingLinks = campaign.links as HyperFollowLinks;
       const updatedCampaign = await storage.updateHyperFollowPage(id, {
         title: data.title || campaign.title,
         slug: data.slug || campaign.slug,
         imageUrl: headerImageUrl,
         links: {
-          ...(campaign.links as any),
-          platforms: data.platforms || (campaign.links as any).platforms,
-          socialLinks: data.socialLinks || (campaign.links as any).socialLinks,
-          artistName: data.artistName || (campaign.links as any).artistName,
+          ...existingLinks,
+          platforms: data.platforms || existingLinks.platforms,
+          socialLinks: data.socialLinks || existingLinks.socialLinks,
+          artistName: data.artistName || existingLinks.artistName,
           description:
-            data.description !== undefined ? data.description : (campaign.links as any).description,
+            data.description !== undefined ? data.description : existingLinks.description,
           collectEmails:
             data.collectEmails !== undefined
               ? data.collectEmails
-              : (campaign.links as any).collectEmails,
-          theme: data.theme || (campaign.links as any).theme,
+              : existingLinks.collectEmails,
+          theme: data.theme || existingLinks.theme,
         },
       });
 
@@ -620,7 +682,7 @@ router.patch(
 // DELETE /api/distribution/hyperfollow/:id - Delete campaign
 router.delete('/hyperfollow/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const campaign = await storage.getHyperFollowPage(id);
@@ -653,12 +715,12 @@ router.post('/hyperfollow/:slug/track', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    const links = campaign.links as any;
+    const links = campaign.links as HyperFollowLinks;
     const analytics = links.analytics || {
       pageViews: 0,
       preSaves: 0,
       emailSignups: 0,
-      platformClicks: {},
+      platformClicks: {} as Record<string, number>,
     };
 
     // Update analytics
@@ -703,7 +765,7 @@ router.post('/hyperfollow/:slug/track', async (req: Request, res: Response) => {
 // GET /api/distribution/releases/:id/status - Get delivery status per DSP
 router.get('/releases/:id/status', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -775,7 +837,7 @@ router.get('/releases/:id/status', requireAuth, async (req: Request, res: Respon
 // POST /api/distribution/releases/:id/check-status - Force status refresh
 router.post('/releases/:id/check-status', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -805,7 +867,7 @@ import { logger } from '../logger.js';
 // POST /api/distribution/releases/:id/ddex/preview - Generate and preview XML
 router.post('/releases/:id/ddex/preview', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -866,7 +928,7 @@ router.post('/releases/:id/ddex/preview', requireAuth, async (req: Request, res:
 // GET /api/distribution/releases/:id/ddex/download - Download DDEX package (.zip)
 router.get('/releases/:id/ddex/download', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -930,7 +992,7 @@ router.get('/releases/:id/ddex/download', requireAuth, async (req: Request, res:
 // POST /api/distribution/releases/:id/submit - Submit release for distribution
 router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -979,7 +1041,7 @@ const takedownSchema = z.object({
 // POST /api/distribution/releases/:id/takedown - Request takedown
 router.post('/releases/:id/takedown', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -990,9 +1052,9 @@ router.post('/releases/:id/takedown', requireAuth, async (req: Request, res: Res
     const data = takedownSchema.parse(req.body);
 
     // Update dispatch statuses for takedown
-    const statuses = await storage.getDistroDispatchStatuses(id);
+    const statuses = await storage.getDistroDispatchStatuses(id) as DispatchStatus[];
     const platformsToTakedown = data.allPlatforms
-      ? statuses.map((s: unknown) => s.providerId)
+      ? statuses.map((s: DispatchStatus) => s.providerId)
       : data.platforms || [];
 
     for (const status of statuses) {
@@ -1038,7 +1100,7 @@ router.post('/releases/:id/takedown', requireAuth, async (req: Request, res: Res
 // GET /api/distribution/releases/:id/takedown-status - Check takedown progress
 router.get('/releases/:id/takedown-status', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -1046,10 +1108,10 @@ router.get('/releases/:id/takedown-status', requireAuth, async (req: Request, re
       return res.status(404).json({ error: 'Release not found' });
     }
 
-    const statuses = await storage.getDistroDispatchStatuses(id);
-    const takedownStatuses = statuses
-      .filter((s: unknown) => s.status === 'takedown_requested' || s.status === 'removed')
-      .map((s: unknown) => {
+    const statuses = await storage.getDistroDispatchStatuses(id) as DispatchStatus[];
+    const takedownStatuses: TakedownStatus[] = statuses
+      .filter((s: DispatchStatus) => s.status === 'takedown_requested' || s.status === 'removed')
+      .map((s: DispatchStatus) => {
         const logs = s.logs ? JSON.parse(s.logs) : {};
         return {
           platform: s.providerId,
@@ -1062,9 +1124,9 @@ router.get('/releases/:id/takedown-status', requireAuth, async (req: Request, re
         };
       });
 
-    const allCompleted = takedownStatuses.every((s: unknown) => s.status === 'removed');
+    const allCompleted = takedownStatuses.every((s: TakedownStatus) => s.status === 'removed');
     const totalRequested = takedownStatuses.length;
-    const totalCompleted = takedownStatuses.filter((s: unknown) => s.status === 'removed').length;
+    const totalCompleted = takedownStatuses.filter((s: TakedownStatus) => s.status === 'removed').length;
 
     res.json({
       statuses: takedownStatuses,
@@ -1088,7 +1150,7 @@ router.get('/releases/:id/takedown-status', requireAuth, async (req: Request, re
 // GET /api/distribution/releases/:id/analytics - Get release analytics from LabelGrid
 router.get('/releases/:id/analytics', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { id } = req.params;
 
     const release = await storage.getDistroRelease(id);
@@ -1349,7 +1411,7 @@ router.post('/validate', requireAuth, async (req: Request, res: Response) => {
 // POST /api/distribution/generate-codes - Generate UPC/ISRC codes
 router.post('/generate-codes', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const data = generateCodesSchema.parse(req.body);
     
     const results: {
@@ -1544,7 +1606,7 @@ router.get('/policies', async (_req: Request, res: Response) => {
 // POST /api/distribution/workflow/takedown - Request release takedown via workflow
 router.post('/workflow/takedown', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const data = workflowTakedownSchema.parse(req.body);
     
     const release = await storage.getDistroRelease(data.releaseId);
@@ -1587,7 +1649,7 @@ router.post('/workflow/takedown', requireAuth, async (req: Request, res: Respons
 // POST /api/distribution/workflow/update - Request release update via workflow
 router.post('/workflow/update', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const data = updateRequestSchema.parse(req.body);
     
     const release = await storage.getDistroRelease(data.releaseId);
@@ -1624,7 +1686,7 @@ router.post('/workflow/update', requireAuth, async (req: Request, res: Response)
 // GET /api/distribution/workflow/:releaseId/history - Get release workflow history
 router.get('/workflow/:releaseId/history', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { releaseId } = req.params;
     
     const release = await storage.getDistroRelease(releaseId);
@@ -1666,7 +1728,7 @@ router.get('/workflow/takedown-reasons', async (_req: Request, res: Response) =>
 // POST /api/distribution/fingerprint/check - Check for duplicate audio content
 router.post('/fingerprint/check', requireAuth, upload.single('audio'), async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const file = req.file;
     
     let data;
@@ -1799,7 +1861,7 @@ router.get('/country-codes', async (_req: Request, res: Response) => {
 // POST /api/distribution/register-codes - Register custom ISRC/UPC prefixes
 router.post('/register-codes', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { isrcRegistrantCode, upcCompanyPrefix } = z.object({
       isrcRegistrantCode: z.string().length(3).optional(),
       upcCompanyPrefix: z.string().min(6).max(10).optional(),
@@ -1849,7 +1911,7 @@ const catalogUpload = multer({
 // POST /api/distribution/catalog/import - Start catalog import from file
 router.post('/catalog/import', requireAuth, catalogUpload.single('file'), async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const file = req.file;
     
     if (!file) {
@@ -1902,7 +1964,7 @@ router.post('/catalog/import', requireAuth, catalogUpload.single('file'), async 
 // GET /api/distribution/catalog/jobs - Get import jobs for user
 router.get('/catalog/jobs', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const jobs = await catalogImporter.getImportJobs(userId);
     res.json({ jobs });
   } catch (error: unknown) {
@@ -1963,7 +2025,7 @@ import { releaseScheduler } from '../services/releaseScheduler';
 // POST /api/distribution/schedule - Schedule a release
 router.post('/schedule', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { releaseId, scheduledDate, timezone, platforms, optimizeForFriday } = z.object({
       releaseId: z.string().uuid(),
       scheduledDate: z.string().transform(s => new Date(s)),
@@ -1994,7 +2056,7 @@ router.post('/schedule', requireAuth, async (req: Request, res: Response) => {
 // GET /api/distribution/schedule/upcoming - Get upcoming scheduled releases
 router.get('/schedule/upcoming', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const limit = parseInt(req.query.limit as string) || 10;
     const releases = await releaseScheduler.getUpcomingReleases(userId, limit);
     res.json({ releases });
@@ -2089,7 +2151,7 @@ router.get('/schedule/timezones', async (_req: Request, res: Response) => {
 // POST /api/distribution/presave - Create pre-save campaign
 router.post('/presave', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { releaseId, name, startDate, platforms, artwork } = z.object({
       releaseId: z.string().uuid(),
       name: z.string().min(1),
@@ -2126,7 +2188,7 @@ import { identifierService } from '../services/identifierService';
 // POST /api/distribution/identifiers/upc/generate - Generate UPC
 router.post('/identifiers/upc/generate', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { releaseId } = req.body;
     
     const upc = await identifierService.generateUPC({ userId, releaseId });
@@ -2155,7 +2217,7 @@ router.post('/identifiers/upc/validate', async (req: Request, res: Response) => 
 // POST /api/distribution/identifiers/isrc/generate - Generate ISRC
 router.post('/identifiers/isrc/generate', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { countryCode, registrantCode, trackId } = z.object({
       countryCode: z.string().length(2).default('US'),
       registrantCode: z.string().min(3).max(5).default('MXB'),
@@ -2191,7 +2253,7 @@ router.post('/identifiers/isrc/validate', async (req: Request, res: Response) =>
 // POST /api/distribution/identifiers/isrc/batch - Reserve batch of ISRCs
 router.post('/identifiers/isrc/batch', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { count, countryCode, registrantCode } = z.object({
       count: z.number().int().min(1).max(100),
       countryCode: z.string().length(2).default('US'),
@@ -2240,7 +2302,7 @@ import { releaseWorkflowService as enhancedWorkflowService } from '../services/r
 // POST /api/distribution/workflow/transition - Transition release status
 router.post('/workflow/transition', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { releaseId, targetStatus, requestType, reason, metadata } = z.object({
       releaseId: z.string().uuid(),
       targetStatus: z.string(),
@@ -2311,7 +2373,7 @@ router.get('/workflow/transitions/:status', async (req: Request, res: Response) 
 // POST /api/distribution/workflow/takedown - Request takedown
 router.post('/workflow/takedown', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { releaseId, reason, platforms, effectiveDate } = z.object({
       releaseId: z.string().uuid(),
       reason: z.string().min(1),
@@ -2340,7 +2402,7 @@ router.post('/workflow/takedown', requireAuth, async (req: Request, res: Respons
 // POST /api/distribution/workflow/update - Request metadata update
 router.post('/workflow/update', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const { releaseId, changes, reason } = z.object({
       releaseId: z.string().uuid(),
       changes: z.array(z.object({
@@ -2376,7 +2438,7 @@ router.post('/workflow/update', requireAuth, async (req: Request, res: Response)
 // GET /api/distribution/analytics/growth - Get analytics growth data
 router.get('/analytics/growth', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const analyticsData = await storage.getDistroAnalytics(userId);
     
     if (!analyticsData) {
@@ -2393,7 +2455,7 @@ router.get('/analytics/growth', requireAuth, async (req: Request, res: Response)
 // GET /api/distribution/streaming-trends - Get streaming trends data
 router.get('/streaming-trends', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const trends = await storage.getStreamingTrends(userId);
     res.json(trends);
   } catch (error: unknown) {
@@ -2405,7 +2467,7 @@ router.get('/streaming-trends', requireAuth, async (req: Request, res: Response)
 // GET /api/distribution/geographic - Get geographic distribution data
 router.get('/geographic', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const data = await storage.getGeographicData(userId);
     res.json(data);
   } catch (error: unknown) {
@@ -2417,14 +2479,14 @@ router.get('/geographic', requireAuth, async (req: Request, res: Response) => {
 // GET /api/distribution/earnings/breakdown - Get earnings breakdown
 router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
-    const payouts = await storage.getPayoutHistory(userId);
+    const userId = (req.user as AuthenticatedUser).id;
+    const payouts = await storage.getPayoutHistory(userId) as PayoutRecord[];
     
     if (payouts.length === 0) {
       return res.json(null);
     }
     
-    const totalPaidOut = payouts.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+    const totalPaidOut = payouts.reduce((sum: number, p: PayoutRecord) => sum + (p.amount || 0), 0);
     
     res.json({
       totalEarnings: totalPaidOut,
@@ -2443,7 +2505,7 @@ router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Respons
 // GET /api/distribution/platform-earnings - Get earnings by platform
 router.get('/platform-earnings', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const analyticsData = await storage.getDistroAnalytics(userId);
     
     if (!analyticsData) {
@@ -2460,7 +2522,7 @@ router.get('/platform-earnings', requireAuth, async (req: Request, res: Response
 // GET /api/distribution/payout-history - Get payout history
 router.get('/payout-history', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const payouts = await storage.getPayoutHistory(userId);
     res.json(payouts);
   } catch (error: unknown) {
@@ -2472,8 +2534,8 @@ router.get('/payout-history', requireAuth, async (req: Request, res: Response) =
 // GET /api/distribution/hyperfollow/analytics - Get hyperfollow analytics
 router.get('/hyperfollow/analytics', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
-    const pages = await storage.getHyperFollowPages(userId);
+    const userId = (req.user as AuthenticatedUser).id;
+    const pages = await storage.getHyperFollowPages(userId) as HyperFollowPage[];
     
     if (pages.length === 0) {
       return res.json({
@@ -2484,8 +2546,8 @@ router.get('/hyperfollow/analytics', requireAuth, async (req: Request, res: Resp
       });
     }
     
-    const totalClicks = pages.reduce((sum: number, p: any) => sum + (p.clicks || 0), 0);
-    const totalPresaves = pages.reduce((sum: number, p: any) => sum + (p.presaves || 0), 0);
+    const totalClicks = pages.reduce((sum: number, p: HyperFollowPage) => sum + (p.clicks || 0), 0);
+    const totalPresaves = pages.reduce((sum: number, p: HyperFollowPage) => sum + (p.presaves || 0), 0);
     const conversionRate = totalClicks > 0 ? (totalPresaves / totalClicks) * 100 : 0;
     
     res.json({

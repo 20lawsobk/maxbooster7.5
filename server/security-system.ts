@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -10,30 +10,93 @@ import {
   ipBlacklist,
   securityThreats,
   notifications,
-  securityBehaviorProfiles,
-  securityAnomalies,
-  securityZeroDayAlerts,
-  securityPenTestResults,
-  securityComplianceReports,
   aiModels,
   aiModelVersions,
   inferenceRuns,
   explanationLogs,
-  type InsertIpBlacklist,
   type InsertSecurityThreat,
-  type InsertNotification,
-  type InsertSecurityBehaviorProfile,
-  type InsertSecurityAnomaly,
-  type InsertSecurityZeroDayAlert,
-  type InsertSecurityPenTestResult,
-  type InsertSecurityComplianceReport,
-  type InsertAIModel,
-  type InsertAIModelVersion,
-  type InsertInferenceRun,
-  type InsertExplanationLog,
 } from '@shared/schema';
 import { eq, and, gte, or, desc, lte, sql } from 'drizzle-orm';
 import { logger } from './logger.js';
+
+// Local type definitions for schema items that may not be exported
+interface SecurityBehaviorProfile {
+  id: string;
+  userId: string;
+  sessionId?: string;
+  loginTimes: number[];
+  locations: string[];
+  devices: Array<{ userAgent: string; fingerprint: string }>;
+  actionSequences: unknown[];
+  typingPatterns: Record<string, unknown>;
+  riskScore: number;
+  baselineEstablished: boolean;
+  profileVersion: number;
+  lastUpdated?: Date;
+  createdAt?: Date;
+}
+
+interface SecurityAnomaly {
+  id: string;
+  userId: string;
+  sessionId?: string;
+  actionType: string;
+  features: Record<string, unknown>;
+  anomalyScore: number;
+  anomalyType: string;
+  explanation?: string;
+  featureImportance: Record<string, number>;
+  autoBlocked: boolean;
+  modelVersion: string;
+  detectedAt: Date;
+  createdAt?: Date;
+}
+
+interface SecurityZeroDayAlert {
+  id: string;
+  payload: unknown;
+  source: string;
+  threatLevel: string;
+  threatSignatures: string[];
+  heuristicAnalysis: Record<string, unknown>;
+  obfuscationDetected: boolean;
+  responseRecommendation: string;
+  autoResponse: string;
+  patternMatchScore: number;
+  modelVersion: string;
+  createdAt?: Date;
+}
+
+interface SecurityPenTestResult {
+  id: string;
+  testId: string;
+  targetEndpoint?: string;
+  testType: string;
+  payload: string;
+  vulnerable: boolean;
+  severity: string;
+  remediation: string;
+  executedAt: Date;
+  createdAt?: Date;
+}
+
+interface SecurityComplianceReport {
+  id: string;
+  framework: string;
+  overallScore: number;
+  controls: Record<string, unknown>;
+  gaps: unknown[];
+  remediationPlan: string;
+  auditedAt: Date;
+  createdAt?: Date;
+}
+
+// Local storage for security data (in-memory until schema tables are added)
+const securityBehaviorProfilesStore = new Map<string, SecurityBehaviorProfile>();
+const securityAnomaliesStore: SecurityAnomaly[] = [];
+const securityZeroDayAlertsStore: SecurityZeroDayAlert[] = [];
+const securityPenTestResultsStore: SecurityPenTestResult[] = [];
+const securityComplianceReportsStore: SecurityComplianceReport[] = [];
 
 const execAsync = promisify(exec);
 
@@ -49,6 +112,8 @@ export class SelfHealingSecuritySystem {
     lastSecurityScan: Date.now(),
     activeThreats: 0,
     securityScore: 100,
+    suspiciousActivities: 0,
+    lastScan: Date.now(),
   };
   private healingProcesses: Map<string, HealingProcess> = new Map();
   private securityRules: SecurityRule[] = [];
@@ -56,6 +121,8 @@ export class SelfHealingSecuritySystem {
   private autoHealer: AutoHealer;
   private ipTracker: Map<string, IPThreatInfo> = new Map();
   private currentRequestContext: RequestContext | null = null;
+  private recentThreats: Array<{ type: string; timestamp: number }> = [];
+  private threatPatterns: SecurityRule[] = [];
 
   private config = {
     severityThresholds: {
@@ -686,7 +753,7 @@ export class SelfHealingSecuritySystem {
           healingProcess.healingSteps[healingProcess.healingSteps.length - 1].status = 'completed';
         } catch (error: unknown) {
           healingProcess.healingSteps[healingProcess.healingSteps.length - 1].status = 'failed';
-          healingProcess.healingSteps[healingProcess.healingSteps.length - 1].error = error.message;
+          healingProcess.healingSteps[healingProcess.healingSteps.length - 1].error = error instanceof Error ? error.message : String(error);
         }
       }
 
@@ -980,24 +1047,24 @@ export class SelfHealingSecuritySystem {
     if (!ipAddress || ipAddress === '::1' || ipAddress === '127.0.0.1') return;
 
     try {
-      const duration = this.config.severityThresholds.ipBlockDuration[severity];
+      const severityKey = severity as keyof typeof this.config.severityThresholds.ipBlockDuration;
+      const duration = this.config.severityThresholds.ipBlockDuration[severityKey] || this.config.severityThresholds.ipBlockDuration.medium;
       const expiresAt = permanent ? null : new Date(Date.now() + duration);
 
       const existingBlock = await db
         .select()
         .from(ipBlacklist)
-        .where(eq(ipBlacklist.ipAddress, ipAddress))
+        .where(eq(ipBlacklist.ip, ipAddress))
         .limit(1);
 
       if (existingBlock.length === 0) {
         await db.insert(ipBlacklist).values({
-          ipAddress,
+          ip: ipAddress,
           reason: `Blocked for ${threatType}`,
-          threatType,
           severity,
           expiresAt,
-          permanent,
-          metadata: { blockedBy: 'auto-healer', timestamp: Date.now() },
+          isActive: true,
+          metadata: { blockedBy: 'auto-healer', timestamp: Date.now(), threatType, permanent },
         });
 
         logger.info(
@@ -1009,24 +1076,36 @@ export class SelfHealingSecuritySystem {
     }
   }
 
-  private async trackThreatInDatabase(threat: Partial<InsertSecurityThreat>): Promise<void> {
+  private async trackThreatInDatabase(threat: {
+    threatType: string;
+    severity: string;
+    sourceIp?: string;
+    userId?: string;
+    path?: string;
+    method?: string;
+    details?: string;
+    blocked?: boolean;
+    healed?: boolean;
+    healingStatus?: string;
+    healingDuration?: number;
+    metadata?: Record<string, unknown>;
+  }): Promise<void> {
     try {
       const startTime = Date.now();
 
-      const result = await db.insert(securityThreats).values({
+      await db.insert(securityThreats).values({
         threatType: threat.threatType || 'unknown',
         severity: threat.severity || 'medium',
-        source: threat.source,
-        ipAddress: threat.ipAddress,
+        sourceIp: threat.sourceIp,
         userId: threat.userId,
-        requestPath: threat.requestPath,
-        requestMethod: threat.requestMethod,
-        details: threat.details || 'Security threat detected',
-        blocked: threat.blocked || false,
-        healed: threat.healed || false,
-        healingStatus: threat.healingStatus || 'pending',
-        healingDuration: threat.healingDuration,
-        metadata: threat.metadata || {},
+        path: threat.path,
+        method: threat.method,
+        status: threat.blocked ? 'blocked' : threat.healed ? 'healed' : threat.healingStatus || 'detected',
+        metadata: {
+          ...(threat.metadata || {}),
+          details: threat.details || 'Security threat detected',
+          healingDuration: threat.healingDuration,
+        },
       });
 
       const healingDuration = Date.now() - startTime;
@@ -1041,10 +1120,15 @@ export class SelfHealingSecuritySystem {
     }
   }
 
-  private async sendAdminNotification(threat: Partial<InsertSecurityThreat>): Promise<void> {
+  private async sendAdminNotification(threat: {
+    threatType: string;
+    severity: string;
+    sourceIp?: string;
+    details?: string;
+  }): Promise<void> {
     try {
       const admins = await db.query.users.findMany({
-        where: (users, { eq }) => eq(users.isAdmin, true),
+        where: (users, { eq }) => eq(users.role, 'admin'),
       });
 
       for (const admin of admins) {
@@ -1052,11 +1136,11 @@ export class SelfHealingSecuritySystem {
           userId: admin.id,
           type: 'security-alert',
           title: `🚨 ${threat.severity?.toUpperCase()} Security Threat Detected`,
-          message: `${threat.threatType}: ${threat.details}${threat.ipAddress ? ` from IP ${threat.ipAddress}` : ''}`,
+          message: `${threat.threatType}: ${threat.details || 'Security event'}${threat.sourceIp ? ` from IP ${threat.sourceIp}` : ''}`,
           metadata: {
             threatType: threat.threatType,
             severity: threat.severity,
-            ipAddress: threat.ipAddress,
+            sourceIp: threat.sourceIp,
             timestamp: Date.now(),
           },
         });
@@ -1092,8 +1176,9 @@ export class SelfHealingSecuritySystem {
         .from(ipBlacklist)
         .where(
           and(
-            eq(ipBlacklist.ipAddress, ipAddress),
-            or(eq(ipBlacklist.permanent, true), gte(ipBlacklist.expiresAt, now))
+            eq(ipBlacklist.ip, ipAddress),
+            eq(ipBlacklist.isActive, true),
+            or(gte(ipBlacklist.expiresAt, now), sql`${ipBlacklist.expiresAt} IS NULL`)
           )
         )
         .limit(1);
@@ -1129,13 +1214,13 @@ export class SelfHealingSecuritySystem {
   // Heal detected threats
   private healDetectedThreats(): void {
     // Process active healing processes
-    for (const [threatId, process] of this.healingProcesses) {
+    Array.from(this.healingProcesses.entries()).forEach(([threatId, process]) => {
       if (process.status === 'active' && Date.now() - process.startTime > 30000) {
         // Timeout healing process
         process.status = 'timeout';
         process.endTime = Date.now();
       }
-    }
+    });
   }
 
   // Optimize security rules
@@ -1259,7 +1344,7 @@ export class SelfHealingSecuritySystem {
         }
 
         // Check device fingerprint
-        const knownDevice = devices.some((d: unknown) => d.userAgent === currentDevice);
+        const knownDevice = devices.some((d: { userAgent?: string }) => d.userAgent === currentDevice);
         if (!knownDevice) {
           deviations.push('New device detected');
           riskScore += 30;
@@ -1323,10 +1408,10 @@ export class SelfHealingSecuritySystem {
             inferenceId,
             explanationType: 'feature_importance',
             featureImportance: {
-              login_time_deviation: timeDeviation > 6 ? 0.6 : 0,
+              login_time_deviation: deviations.some(d => d.includes('Unusual login time')) ? 0.6 : 0,
               new_device:
                 !profile ||
-                (profile.devices as any[])?.some((d: unknown) => d.userAgent === currentDevice)
+                (profile.devices as Array<{ userAgent?: string }>)?.some((d) => d.userAgent === currentDevice)
                   ? 0
                   : 0.4,
             },
@@ -2070,6 +2155,8 @@ interface SecurityMetrics {
   lastSecurityScan: number;
   activeThreats: number;
   securityScore: number;
+  suspiciousActivities: number;
+  lastScan: number;
 }
 
 interface HealingProcess {

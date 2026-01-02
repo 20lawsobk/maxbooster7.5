@@ -10,6 +10,95 @@ import {
 } from '@shared/schema';
 import { eq, and, gte, desc, sql } from 'drizzle-orm';
 
+interface CampaignInput {
+  budget?: number;
+  objective?: string;
+}
+
+interface TargetAudienceInput {
+  id?: string;
+}
+
+interface BudgetGoals {
+  duration?: number;
+  objective?: string;
+}
+
+interface Touchpoint {
+  creativeId?: string;
+  timestamp?: string;
+  platform?: string;
+  interaction?: string;
+}
+
+interface CampaignSettings {
+  campaignId?: number;
+  budget?: number;
+  platforms?: string[];
+  objective?: string;
+}
+
+interface AudienceSegment {
+  campaignId: number;
+  segmentName: string;
+  segmentIndex: number;
+  size: number;
+  predictedValue: string;
+  targetingRecommendations: {
+    platforms: string[];
+    contentTypes: string[];
+    messagingTone: string;
+    callToAction: string;
+  };
+  demographics: Record<string, unknown>;
+  interests: string[];
+  behaviors: Record<string, unknown>;
+  engagementHistory: {
+    avgSessionDuration: number;
+    pageViews: number;
+    interactions: number;
+  };
+  characteristics: string[];
+}
+
+interface PlatformAllocation {
+  budget: number;
+  expectedReach: number;
+  expectedConversions: number;
+  expectedROI: number;
+  bidStrategy: string;
+}
+
+interface PlatformMetrics {
+  estimatedReach: number;
+  estimatedEngagement: number;
+  estimatedShares: number;
+  estimatedClicks: number;
+  estimatedSaves: number;
+  confidence: number;
+  costSavings: number;
+}
+
+interface CreativeFeatures {
+  visualElements: string[];
+  copyLength: number;
+  ctaPlacement: string;
+  emotionalTone: string;
+  colorScheme: string;
+  hasHashtags: boolean;
+  hasEmojis: boolean;
+  hasQuestions: boolean;
+  hasMentions: boolean;
+}
+
+interface OrganicBaselineMetrics {
+  avgFollowerReach: number;
+  engagementRate: number;
+  avgShares: number;
+  avgClicks: number;
+  avgSaves: number;
+}
+
 /**
  * Advertisement AI Amplification Service - Phase 2A Professional Edition
  *
@@ -39,9 +128,9 @@ export class AdvertisingAIService {
    */
   async amplifyCreative(
     creative: AdCreative,
-    campaign: unknown,
+    campaign: CampaignInput,
     platforms: string[]
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     // Calculate organic amplification potential (100%+ boost vs paid ads)
@@ -84,7 +173,7 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #1: Competitor Intelligence System
    * Analyzes competitor content and strategies with deterministic simulation
    */
-  async analyzeCompetitor(competitorName: string, platform: string, userId: string): Promise<any> {
+  async analyzeCompetitor(competitorName: string, platform: string, userId: string): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     // Deterministic simulation based on industry benchmarks
@@ -219,7 +308,7 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #2: Audience Clustering (Deterministic AI)
    * Segments audience into 5-10 clusters based on demographics, behavior, interests
    */
-  async clusterAudience(campaignId: number): Promise<any> {
+  async clusterAudience(campaignId: number): Promise<{ segments: AudienceSegment[]; summary: Record<string, unknown> }> {
     const startTime = Date.now();
 
     // Deterministic k-means style clustering with fixed seed
@@ -227,7 +316,7 @@ export class AdvertisingAIService {
     const seed = campaignId * 12345; // Deterministic seed
     const random = this.seededRandom(seed);
 
-    const segments = [];
+    const segments: AudienceSegment[] = [];
 
     // Generate deterministic audience segments
     const segmentTemplates = [
@@ -448,7 +537,7 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #3: Creative Performance Prediction
    * Predicts CTR, engagement, conversion rates with confidence intervals
    */
-  async predictCreativePerformance(creative: AdCreative, targetAudience?: unknown): Promise<any> {
+  async predictCreativePerformance(creative: AdCreative, targetAudience?: TargetAudienceInput): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     // Feature extraction from creative
@@ -546,7 +635,7 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #4: Budget Optimizer
    * Allocates budget across platforms, segments, and time to maximize ROI
    */
-  async optimizeBudget(campaignId: number, totalBudget: number, goals: unknown): Promise<any> {
+  async optimizeBudget(campaignId: number, totalBudget: number, goals: BudgetGoals): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     // Get campaign data
@@ -573,7 +662,7 @@ export class AdvertisingAIService {
     const random = this.seededRandom(seed);
 
     // Platform allocation (based on ROI potential)
-    const platformAllocations: any = {};
+    const platformAllocations: Record<string, PlatformAllocation> = {};
     const platformROI: Record<string, number> = {
       facebook: 2.5,
       instagram: 3.2,
@@ -605,9 +694,9 @@ export class AdvertisingAIService {
     }
 
     // Audience segment allocation
-    const segmentAllocations: any = {};
+    const segmentAllocations: Record<string, { budget: number; size: number; expectedConversions: number; platforms: string[] }> = {};
     const totalSegmentValue = segments.reduce(
-      (sum: number, s: unknown) => sum + parseFloat(s.predictedValue || '0') * s.size,
+      (sum: number, s: { predictedValue?: string; size: number }) => sum + parseFloat(s.predictedValue || '0') * s.size,
       0
     );
 
@@ -638,18 +727,18 @@ export class AdvertisingAIService {
     // Expected results
     const expectedResults = {
       totalReach: Object.values(platformAllocations).reduce(
-        (sum: number, p: unknown) => sum + p.expectedReach,
+        (sum: number, p: PlatformAllocation) => sum + p.expectedReach,
         0
       ),
       totalConversions: Object.values(platformAllocations).reduce(
-        (sum: number, p: unknown) => sum + p.expectedConversions,
+        (sum: number, p: PlatformAllocation) => sum + p.expectedConversions,
         0
       ),
       expectedROI:
         totalBudget > 0
           ? (
               Object.values(platformAllocations).reduce(
-                (sum: number, p: unknown) => sum + p.expectedConversions * 50,
+                (sum: number, p: PlatformAllocation) => sum + p.expectedConversions * 50,
                 0
               ) / totalBudget
             ).toFixed(2)
@@ -693,9 +782,9 @@ export class AdvertisingAIService {
     userId: string | null,
     conversionType: string,
     conversionValue: number,
-    touchpoints: unknown[] = [],
+    touchpoints: Touchpoint[] = [],
     attributionModel: 'last_click' | 'first_click' | 'linear' = 'last_click'
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     // Determine attribution
@@ -802,10 +891,10 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #6: Campaign Performance Forecasting
    * Predicts campaign metrics over time with confidence bands
    */
-  async forecastCampaignPerformance(campaignSettings: unknown, duration: number): Promise<any> {
+  async forecastCampaignPerformance(campaignSettings: CampaignSettings, duration: number): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
-    const { campaignId, budget, platforms, objective } = campaignSettings;
+    const { campaignId, budget = 0, platforms, objective } = campaignSettings;
 
     // Deterministic forecasting
     const seed = (campaignId || 1) * 11111;
@@ -1019,8 +1108,8 @@ export class AdvertisingAIService {
   private predictPlatformPerformance(
     creative: AdCreative,
     platforms: string[]
-  ): Record<string, any> {
-    const predictions: Record<string, any> = {};
+  ): Record<string, PlatformMetrics> {
+    const predictions: Record<string, PlatformMetrics> = {};
 
     for (const platform of platforms) {
       const baselineMetrics = this.getOrganicBaselineMetrics(platform);
@@ -1043,8 +1132,8 @@ export class AdvertisingAIService {
   /**
    * Get organic baseline metrics per platform
    */
-  private getOrganicBaselineMetrics(platform: string): any {
-    const organicMetrics: Record<string, any> = {
+  private getOrganicBaselineMetrics(platform: string): OrganicBaselineMetrics {
+    const organicMetrics: Record<string, OrganicBaselineMetrics> = {
       facebook: {
         avgFollowerReach: 500,
         engagementRate: 0.064,
@@ -1136,7 +1225,7 @@ export class AdvertisingAIService {
    * Calculate ad spend savings
    */
   private calculateAdSpendSavings(
-    platformPerformance: Record<string, any>,
+    platformPerformance: Record<string, PlatformMetrics>,
     suggestedBudget: number
   ): number {
     let totalSavings = 0;
@@ -1178,7 +1267,7 @@ export class AdvertisingAIService {
    */
   private generateEngagementOptimizations(
     creative: AdCreative,
-    platformPerformance: Record<string, any>
+    platformPerformance: Record<string, PlatformMetrics>
   ): string[] {
     const optimizations: string[] = [];
     const text = creative.normalizedContent || creative.rawContent || '';
@@ -1234,9 +1323,9 @@ export class AdvertisingAIService {
   /**
    * Calculate expected organic reach
    */
-  private calculateExpectedOrganicReach(platformPerformance: Record<string, any>): number {
+  private calculateExpectedOrganicReach(platformPerformance: Record<string, PlatformMetrics>): number {
     return Object.values(platformPerformance).reduce(
-      (sum: number, metrics: unknown) => sum + metrics.estimatedReach,
+      (sum: number, metrics: PlatformMetrics) => sum + metrics.estimatedReach,
       0
     );
   }
@@ -1244,7 +1333,7 @@ export class AdvertisingAIService {
   /**
    * Extract creative features for AI analysis
    */
-  private extractCreativeFeatures(creative: AdCreative): any {
+  private extractCreativeFeatures(creative: AdCreative): CreativeFeatures {
     const text = creative.normalizedContent || creative.rawContent || '';
 
     return {
@@ -1286,8 +1375,8 @@ export class AdvertisingAIService {
   /**
    * Generate explanation for predictions
    */
-  private generatePredictionExplanation(features: unknown, viralityScore: number): string {
-    const factors = [];
+  private generatePredictionExplanation(features: CreativeFeatures, viralityScore: number): string {
+    const factors: string[] = [];
 
     if (viralityScore > 70) factors.push('High virality score (+20% CTR)');
     if (features.hasHashtags) factors.push('Hashtags improve discoverability (+15% reach)');
@@ -1303,7 +1392,7 @@ export class AdvertisingAIService {
   /**
    * Get bid strategy for platform and goals
    */
-  private getBidStrategy(platform: string, goals: unknown): string {
+  private getBidStrategy(platform: string, goals: BudgetGoals): string {
     const objective = goals?.objective || 'engagement';
 
     const strategies: Record<string, Record<string, string>> = {

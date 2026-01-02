@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   website: text("website"),
   location: text("location"),
   avatarUrl: text("avatar_url"),
+  profileImageUrl: text("profile_image_url"),
   socialLinks: jsonb("social_links"),
   role: text("role").default("user"),
   subscriptionTier: text("subscription_tier"),
@@ -932,10 +933,16 @@ export const workspaceAuditLog = pgTable("workspace_audit_log", {
   resourceType: text("resource_type"),
   resourceId: varchar("resource_id"),
   details: jsonb("details"),
+  changes: jsonb("changes"),
+  previousValues: jsonb("previous_values"),
+  newValues: jsonb("new_values"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const insertWorkspaceAuditLogSchema = createInsertSchema(workspaceAuditLog).omit({ id: true, createdAt: true });
+export type InsertWorkspaceAuditLog = z.infer<typeof insertWorkspaceAuditLogSchema>;
 
 // ============================================================================
 // API KEYS (Developer)
@@ -959,6 +966,7 @@ export const apiKeys = pgTable("api_keys", {
 // ============================================================================
 export const dspAnalytics = pgTable("dsp_analytics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
   releaseId: varchar("release_id").notNull(),
   trackId: varchar("track_id"),
   platform: text("platform").notNull(),
@@ -977,7 +985,7 @@ export const dspAnalytics = pgTable("dsp_analytics", {
 // ============================================================================
 export type Analytics = typeof analytics.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
-export type Project = typeof projects.$inferSelect;
+// Note: Project type is already exported near projects table definition
 export type Release = typeof releases.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
 export type SocialCampaign = typeof socialCampaigns.$inferSelect;
@@ -1147,10 +1155,15 @@ export const workspaceCatalogs = pgTable("workspace_catalogs", {
   workspaceId: varchar("workspace_id").notNull(),
   name: text("name").notNull(),
   type: text("type").notNull(),
+  projectId: varchar("project_id"),
   items: jsonb("items"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const insertWorkspaceCatalogSchema = createInsertSchema(workspaceCatalogs).omit({ id: true, createdAt: true });
+export type InsertWorkspaceCatalog = z.infer<typeof insertWorkspaceCatalogSchema>;
+export type WorkspaceCatalog = typeof workspaceCatalogs.$inferSelect;
 
 // ============================================================================
 // API USAGE
@@ -1313,13 +1326,19 @@ export const workspaceInvitations = pgTable("workspace_invitations", {
   workspaceId: varchar("workspace_id").notNull(),
   email: text("email").notNull(),
   role: text("role").default("member"),
+  roleId: varchar("role_id"),
   invitedBy: varchar("invited_by").notNull(),
   status: text("status").default("pending"),
   token: text("token").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   acceptedAt: timestamp("accepted_at"),
+  acceptedByUserId: varchar("accepted_by_user_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const insertWorkspaceInvitationSchema = createInsertSchema(workspaceInvitations).omit({ id: true, createdAt: true });
+export type InsertWorkspaceInvitation = z.infer<typeof insertWorkspaceInvitationSchema>;
+export type WorkspaceInvitation = typeof workspaceInvitations.$inferSelect;
 
 // ============================================================================
 // ALERT RULES
@@ -1341,17 +1360,34 @@ export const alertRules = pgTable("alert_rules", {
 // ============================================================================
 export const playlistAttributions = pgTable("playlist_attributions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  releaseId: varchar("release_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  releaseId: varchar("release_id"),
   trackId: varchar("track_id"),
   playlistId: text("playlist_id").notNull(),
-  playlistName: text("playlist_name"),
+  playlistName: text("playlist_name").notNull(),
+  playlistType: text("playlist_type").notNull(),
   platform: text("platform").notNull(),
-  addedAt: timestamp("added_at"),
-  removedAt: timestamp("removed_at"),
-  streamCount: integer("stream_count").default(0),
+  addedDate: timestamp("added_date"),
+  removedDate: timestamp("removed_date"),
+  streams: integer("streams").default(0),
+  listeners: integer("listeners").default(0),
+  saves: integer("saves").default(0),
+  revenue: text("revenue"),
+  position: integer("position"),
+  followerCount: integer("follower_count").default(0),
+  curatorName: text("curator_name"),
+  isActive: boolean("is_active").default(true),
+  pitchStatus: text("pitch_status"),
+  pitchDate: timestamp("pitch_date"),
+  pitchResponse: text("pitch_response"),
+  lastUpdated: timestamp("last_updated"),
+  updatedAt: timestamp("updated_at"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const insertPlaylistAttributionSchema = createInsertSchema(playlistAttributions).omit({ id: true, createdAt: true });
+export type InsertPlaylistAttribution = z.infer<typeof insertPlaylistAttributionSchema>;
 
 // ============================================================================
 // EMAIL MESSAGES
@@ -1425,9 +1461,15 @@ export const workspaceMembers = pgTable("workspace_members", {
   workspaceId: varchar("workspace_id").notNull(),
   userId: varchar("user_id").notNull(),
   role: text("role").default("member"),
+  roleId: varchar("role_id"),
+  status: text("status").default("active"),
+  lastActiveAt: timestamp("last_active_at"),
   joinedAt: timestamp("joined_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const insertWorkspaceMemberSchema = createInsertSchema(workspaceMembers).omit({ id: true, createdAt: true });
+export type InsertWorkspaceMember = z.infer<typeof insertWorkspaceMemberSchema>;
 
 // ============================================================================
 // SYSTEM METRICS
@@ -1552,6 +1594,7 @@ export type RevenueForecast = typeof revenueForecasts.$inferSelect;
 export const workspaces = pgTable("workspaces", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  slug: text("slug").unique(),
   ownerId: varchar("owner_id").notNull(),
   description: text("description"),
   logoUrl: text("logo_url"),
@@ -1561,6 +1604,8 @@ export const workspaces = pgTable("workspaces", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const insertWorkspaceSchema = createInsertSchema(workspaces).omit({ id: true, createdAt: true });
+export type InsertWorkspace = z.infer<typeof insertWorkspaceSchema>;
 export type Workspace = typeof workspaces.$inferSelect;
 
 // ============================================================================
@@ -2654,19 +2699,15 @@ export type InsertAutopilotCrossInsight = z.infer<typeof insertAutopilotCrossIns
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });
 export const insertPluginPresetSchema = createInsertSchema(pluginPresets).omit({ id: true, createdAt: true });
 export const insertStudioTrackSchema = createInsertSchema(studioTracks).omit({ id: true, createdAt: true });
-export const insertWorkspaceInvitationSchema = createInsertSchema(workspaceInvitations).omit({ id: true, createdAt: true });
 export const insertAlertRuleSchema = createInsertSchema(alertRules).omit({ id: true, createdAt: true });
-export const insertPlaylistAttributionSchema = createInsertSchema(playlistAttributions).omit({ id: true, createdAt: true });
 export const insertEmailMessageSchema = createInsertSchema(emailMessages).omit({ id: true, createdAt: true });
 export const insertTakeLaneSchema = createInsertSchema(takeLanes).omit({ id: true, createdAt: true });
-export const insertWorkspaceMemberSchema = createInsertSchema(workspaceMembers).omit({ id: true, createdAt: true });
 export const insertSystemMetricSchema = createInsertSchema(systemMetrics).omit({ id: true, createdAt: true });
 export const insertListenerCohortSchema = createInsertSchema(listenerCohorts).omit({ id: true, createdAt: true });
 export const insertSocialAccountSchema = createInsertSchema(socialAccounts).omit({ id: true, createdAt: true });
 export const insertTakeSegmentSchema = createInsertSchema(takeSegments).omit({ id: true, createdAt: true });
 export const insertWorkspaceRoleSchema = createInsertSchema(workspaceRoles).omit({ id: true, createdAt: true });
 export const insertRevenueForecastSchema = createInsertSchema(revenueForecasts).omit({ id: true, createdAt: true });
-export const insertWorkspaceSchema = createInsertSchema(workspaces).omit({ id: true, createdAt: true });
 export const insertApprovalRequestSchema = createInsertSchema(approvalRequests).omit({ id: true, createdAt: true });
 export const insertApprovalStepSchema = createInsertSchema(approvalSteps).omit({ id: true, createdAt: true });
 export const insertApprovalWorkflowSchema = createInsertSchema(approvalWorkflows).omit({ id: true, createdAt: true });

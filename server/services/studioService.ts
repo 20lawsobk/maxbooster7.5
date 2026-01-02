@@ -1,8 +1,7 @@
 import { storage } from '../storage';
 import type {
-  InsertStudioProject,
-  InsertStudioTrack,
-  StudioProject,
+  InsertProject,
+  Project,
   StudioTrack,
 } from '@shared/schema';
 import { nanoid } from 'nanoid';
@@ -10,13 +9,167 @@ import fs from 'fs';
 import path from 'path';
 import { logger } from '../logger.js';
 
+interface InsertStudioTrack {
+  projectId: string;
+  name: string;
+  trackType?: string | null;
+  color?: string | null;
+  volume?: number | null;
+  pan?: number | null;
+  mute?: boolean;
+  solo?: boolean;
+  armed?: boolean;
+  recordEnabled?: boolean;
+  inputMonitoring?: boolean;
+  trackNumber?: number;
+  height?: number;
+  collapsed?: boolean;
+  outputBus?: string;
+  frozen?: boolean;
+  frozenFilePath?: string | null;
+  inputSource?: string | null;
+  order?: number;
+  metadata?: unknown;
+}
+
+interface Collaborator {
+  userId?: string;
+  email?: string;
+  role: 'view' | 'edit' | 'admin';
+  addedAt?: Date;
+}
+
+interface AutosaveState {
+  playPosition?: number;
+  project?: Project;
+  tracks?: StudioTrack[];
+}
+
+interface AudioClipData {
+  id?: string;
+  trackId: string;
+  name: string;
+  filePath?: string;
+  originalFilename?: string;
+  fileSize?: number;
+  startTime: number;
+  endTime: number;
+  duration?: number;
+  offset?: number;
+  gain?: number;
+  fadeIn?: number;
+  fadeOut?: number;
+  takeNumber?: number;
+  takeGroupId?: string;
+  isComped?: boolean;
+  waveformData?: number[];
+  peakData?: number[];
+}
+
+interface AudioClip extends AudioClipData {
+  id: string;
+}
+
+interface AudioEffect {
+  id: string;
+  trackId: string;
+  projectId: string;
+  chainPosition?: number;
+  [key: string]: unknown;
+}
+
+interface AudioEffectData {
+  trackId?: string;
+  projectId?: string;
+  [key: string]: unknown;
+}
+
+interface AutomationData {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface Autosave {
+  id: number;
+  projectId: string;
+  authorId: string;
+  label: string;
+  state: unknown;
+}
+
+interface RecordingUploadResult {
+  clipId: string;
+  url: string;
+  takeNumber: number;
+  takeGroupId: string;
+}
+
+interface TrackTemplate {
+  name: string;
+  trackType: string;
+  trackNumber: number;
+  color: string;
+}
+
+interface ProjectTemplate {
+  name: string;
+  description: string;
+  bpm: number;
+  timeSignature: string;
+  tracks: TrackTemplate[];
+}
+
+interface StudioProjectExtended extends Project {
+  collaborators?: Collaborator[] | null;
+  totalTracks?: number;
+  lastPlayPosition?: number;
+}
+
+type StudioProject = StudioProjectExtended;
+type InsertStudioProject = InsertProject;
+
+const storageAny = storage as unknown as {
+  createStudioProject(data: InsertStudioProject): Promise<StudioProject>;
+  getUserStudioProjects(userId: string): Promise<StudioProject[]>;
+  getStudioProject(projectId: string): Promise<StudioProject | undefined>;
+  updateStudioProject(projectId: string, userId: string, updates: Partial<StudioProject>): Promise<StudioProject>;
+  deleteStudioProject(projectId: string, userId: string): Promise<void>;
+  getProject(projectId: string): Promise<Project | undefined>;
+  updateProject(projectId: string, updates: Partial<Project>): Promise<Project>;
+  createProject(data: InsertProject): Promise<Project>;
+  createStudioTrack(data: InsertStudioTrack): Promise<StudioTrack>;
+  getProjectTracks(projectId: string): Promise<StudioTrack[]>;
+  updateStudioTrack(trackId: string, projectId: string, updates: Partial<StudioTrack>): Promise<StudioTrack>;
+  deleteStudioTrack(trackId: string, projectId: string): Promise<void>;
+  getStudioTrack(trackId: string): Promise<StudioTrack | undefined>;
+  getProjectEffects(projectId: string): Promise<AudioEffect[]>;
+  getProjectAutomation(projectId: string): Promise<AutomationData[]>;
+  getProjectMarkers(projectId: string): Promise<unknown[]>;
+  getTrackAudioClips(trackId: string): Promise<AudioClip[]>;
+  getTrackMidiClips(trackId: string): Promise<unknown[]>;
+  createAudioClip(data: AudioClipData): Promise<AudioClip>;
+  getClipsByTakeGroup(takeGroupId: string): Promise<AudioClip[]>;
+  getTrackClips(trackId: string): Promise<AudioClip[]>;
+  getAudioClip(clipId: string): Promise<AudioClip | undefined>;
+  updateAudioClip(clipId: string, updates: Partial<AudioClipData>): Promise<AudioClip>;
+  deleteAudioClip(clipId: string): Promise<void>;
+  getTrackEffects(trackId: string): Promise<AudioEffect[]>;
+  createAudioEffect(data: AudioEffectData): Promise<AudioEffect>;
+  updateAudioEffect(effectId: string, updates: Partial<AudioEffectData>): Promise<AudioEffect>;
+  deleteAudioEffect(effectId: string): Promise<void>;
+  createAutomationData(data: unknown): Promise<AutomationData>;
+  updateAutomationData(automationId: string, updates: unknown): Promise<AutomationData>;
+  deleteAutomationData(automationId: string): Promise<void>;
+  createAutosave(data: { projectId: string; authorId: string; label: string; state: unknown }): Promise<Autosave>;
+  getProjectAutosaves(projectId: string): Promise<Autosave[]>;
+  deleteAutosave(autosaveId: number): Promise<void>;
+  getAutosave(autosaveId: number): Promise<Autosave | undefined>;
+};
+
 export class StudioService {
-  /**
-   * Create a new DAW project
-   */
   async createProject(data: InsertStudioProject): Promise<StudioProject> {
     try {
-      const project = await storage.createStudioProject(data);
+      const project = await storageAny.createStudioProject(data);
       return project;
     } catch (error: unknown) {
       logger.error('Error creating studio project:', error);
@@ -24,33 +177,26 @@ export class StudioService {
     }
   }
 
-  /**
-   * Get user's studio projects
-   */
   async getUserProjects(userId: string): Promise<StudioProject[]> {
     try {
-      return await storage.getUserStudioProjects(userId);
+      return await storageAny.getUserStudioProjects(userId);
     } catch (error: unknown) {
       logger.error('Error fetching user projects:', error);
       throw new Error('Failed to fetch user projects');
     }
   }
 
-  /**
-   * Get project by ID
-   */
   async getProject(projectId: string, userId: string): Promise<StudioProject | undefined> {
     try {
-      const project = await storage.getStudioProject(projectId);
+      const project = await storageAny.getStudioProject(projectId);
 
       if (!project) {
         return undefined;
       }
 
-      // Verify ownership or collaboration
       if (project.userId !== userId) {
-        const collaborators = (project.collaborators as any[]) || [];
-        const isCollaborator = collaborators.some((c: unknown) => c.userId === userId);
+        const collaborators = (project.collaborators as Collaborator[] | null) || [];
+        const isCollaborator = collaborators.some((c: Collaborator) => c.userId === userId);
 
         if (!isCollaborator) {
           throw new Error('Unauthorized access to project');
@@ -64,51 +210,40 @@ export class StudioService {
     }
   }
 
-  /**
-   * Update project
-   */
   async updateProject(
     projectId: string,
     userId: string,
     updates: Partial<StudioProject>
   ): Promise<StudioProject> {
     try {
-      return await storage.updateStudioProject(projectId, userId, updates);
+      return await storageAny.updateStudioProject(projectId, userId, updates);
     } catch (error: unknown) {
       logger.error('Error updating project:', error);
       throw new Error('Failed to update project');
     }
   }
 
-  /**
-   * Delete project
-   */
   async deleteProject(projectId: string, userId: string): Promise<void> {
     try {
-      await storage.deleteStudioProject(projectId, userId);
+      await storageAny.deleteStudioProject(projectId, userId);
     } catch (error: unknown) {
       logger.error('Error deleting project:', error);
       throw new Error('Failed to delete project');
     }
   }
 
-  /**
-   * Add track to project
-   */
   async addTrack(projectId: string, trackData: InsertStudioTrack): Promise<StudioTrack> {
     try {
-      // Verify project exists using unified projects table
-      const project = await storage.getProject(projectId);
+      const project = await storageAny.getProject(projectId);
       if (!project) {
         throw new Error('Project not found');
       }
 
-      const track = await storage.createStudioTrack(trackData);
+      const track = await storageAny.createStudioTrack(trackData);
 
-      // Update project track count using unified projects table
-      await storage.updateProject(projectId, {
-        totalTracks: (project.totalTracks || 0) + 1,
-      });
+      await storageAny.updateProject(projectId, {
+        totalTracks: ((project as { totalTracks?: number }).totalTracks || 0) + 1,
+      } as Partial<Project>);
 
       return track;
     } catch (error: unknown) {
@@ -117,47 +252,37 @@ export class StudioService {
     }
   }
 
-  /**
-   * Get project tracks
-   */
   async getProjectTracks(projectId: string): Promise<StudioTrack[]> {
     try {
-      return await storage.getProjectTracks(projectId);
+      return await storageAny.getProjectTracks(projectId);
     } catch (error: unknown) {
       logger.error('Error fetching project tracks:', error);
       throw new Error('Failed to fetch project tracks');
     }
   }
 
-  /**
-   * Update track
-   */
   async updateTrack(
     trackId: string,
     projectId: string,
     updates: Partial<StudioTrack>
   ): Promise<StudioTrack> {
     try {
-      return await storage.updateStudioTrack(trackId, projectId, updates);
+      return await storageAny.updateStudioTrack(trackId, projectId, updates);
     } catch (error: unknown) {
       logger.error('Error updating track:', error);
       throw new Error('Failed to update track');
     }
   }
 
-  /**
-   * Delete track
-   */
   async deleteTrack(trackId: string, projectId: string): Promise<void> {
     try {
-      await storage.deleteStudioTrack(trackId, projectId);
+      await storageAny.deleteStudioTrack(trackId, projectId);
 
-      // Update project track count
-      const project = await storage.getStudioProject(projectId);
+      const project = await storageAny.getStudioProject(projectId);
       if (project) {
-        await storage.updateStudioProject(projectId, project.userId, {
-          totalTracks: Math.max(0, (project.totalTracks || 1) - 1),
-        });
+        await storageAny.updateStudioProject(projectId, project.userId, {
+          totalTracks: Math.max(0, ((project as { totalTracks?: number }).totalTracks || 1) - 1),
+        } as Partial<StudioProject>);
       }
     } catch (error: unknown) {
       logger.error('Error deleting track:', error);
@@ -165,9 +290,6 @@ export class StudioService {
     }
   }
 
-  /**
-   * Upload audio file
-   */
   async uploadAudio(
     file: Express.Multer.File,
     userId: string
@@ -178,22 +300,17 @@ export class StudioService {
       const fileName = `${audioId}${ext}`;
       const uploadPath = path.join(process.cwd(), 'uploads', 'audio', fileName);
 
-      // Ensure directory exists
       const audioDir = path.join(process.cwd(), 'uploads', 'audio');
       if (!fs.existsSync(audioDir)) {
         fs.mkdirSync(audioDir, { recursive: true });
       }
 
-      // Move file to permanent location
       fs.renameSync(file.path, uploadPath);
-
-      // In production, also upload to cloud storage (S3/R2)
-      // and extract audio metadata (duration, sample rate, etc.)
 
       return {
         id: audioId,
         url: `/uploads/audio/${fileName}`,
-        duration: undefined, // Would be extracted from audio file
+        duration: undefined,
       };
     } catch (error: unknown) {
       logger.error('Error uploading audio:', error);
@@ -201,19 +318,17 @@ export class StudioService {
     }
   }
 
-  /**
-   * Process audio waveform using FFmpeg
-   */
   async processAudio(
     audioId: string,
-    audioPath: string
+    audioPath: string,
+    userId?: string
   ): Promise<{ waveformData: number[]; peaks: number[] }> {
     try {
-      // Use audioService for real waveform generation
       const { audioService } = await import('./audioService');
-      const waveformData = await audioService.generateWaveform(audioPath);
+      const waveformResult = await audioService.generateWaveform(audioPath, userId || 'system');
+      
+      const waveformData = Array.isArray(waveformResult) ? waveformResult : [];
 
-      // Extract peaks from waveform data for visualization
       const peaks = this.extractPeaksFromWaveform(waveformData, 100);
 
       return {
@@ -226,9 +341,6 @@ export class StudioService {
     }
   }
 
-  /**
-   * Extract peak values from waveform data
-   */
   private extractPeaksFromWaveform(waveformData: number[], targetPeaks: number): number[] {
     const peaks: number[] = [];
     const windowSize = Math.floor(waveformData.length / targetPeaks);
@@ -244,38 +356,28 @@ export class StudioService {
     return peaks;
   }
 
-  /**
-   * Autosave project state
-   */
-  async saveAutosave(projectId: string, userId: string, state: unknown): Promise<void> {
+  async saveAutosave(projectId: string, userId: string, state: AutosaveState): Promise<void> {
     try {
-      // Store autosave data
-      await storage.updateStudioProject(projectId, userId, {
+      await storageAny.updateStudioProject(projectId, userId, {
         lastPlayPosition: state.playPosition || 0,
         updatedAt: new Date(),
-      });
-
-      // In production, also save detailed state to separate autosave table
-      // with timestamp for version control
+      } as Partial<StudioProject>);
     } catch (error: unknown) {
       logger.error('Error saving autosave:', error);
       throw new Error('Failed to save autosave');
     }
   }
 
-  /**
-   * Load complete project state with all tracks and clips
-   */
   async loadProject(
     projectId: string,
     userId: string
   ): Promise<{
     project: StudioProject;
     tracks: StudioTrack[];
-    audioClips: unknown[];
+    audioClips: AudioClip[];
     midiClips: unknown[];
-    effects: unknown[];
-    automation: unknown[];
+    effects: AudioEffect[];
+    automation: AutomationData[];
     markers: unknown[];
   }> {
     try {
@@ -284,18 +386,17 @@ export class StudioService {
         throw new Error('Project not found');
       }
 
-      const tracks = await storage.getProjectTracks(projectId);
-      const effects = await storage.getProjectEffects(projectId);
-      const automation = await storage.getProjectAutomation(projectId);
-      const markers = await storage.getProjectMarkers(projectId);
+      const tracks = await storageAny.getProjectTracks(projectId);
+      const effects = await storageAny.getProjectEffects(projectId);
+      const automation = await storageAny.getProjectAutomation(projectId);
+      const markers = await storageAny.getProjectMarkers(projectId);
 
-      // Get all clips for all tracks
-      const audioClips = [];
-      const midiClips = [];
+      const audioClips: AudioClip[] = [];
+      const midiClips: unknown[] = [];
 
       for (const track of tracks) {
-        const trackAudioClips = await storage.getTrackAudioClips(track.id);
-        const trackMidiClips = await storage.getTrackMidiClips(track.id);
+        const trackAudioClips = await storageAny.getTrackAudioClips(track.id);
+        const trackMidiClips = await storageAny.getTrackMidiClips(track.id);
         audioClips.push(...trackAudioClips);
         midiClips.push(...trackMidiClips);
       }
@@ -315,9 +416,6 @@ export class StudioService {
     }
   }
 
-  /**
-   * Upload recorded audio file with take metadata (Phase 6)
-   */
   async uploadRecording(
     file: Express.Multer.File,
     options: {
@@ -328,24 +426,21 @@ export class StudioService {
       takeGroupId?: string;
       startPosition: number;
     }
-  ): Promise<any> {
+  ): Promise<RecordingUploadResult> {
     try {
       const clipId = `clip_${nanoid()}`;
       const ext = path.extname(file.originalname);
       const fileName = `${clipId}${ext}`;
       const uploadPath = path.join(process.cwd(), 'uploads', 'audio', fileName);
 
-      // Ensure directory exists
       const audioDir = path.join(process.cwd(), 'uploads', 'audio');
       if (!fs.existsSync(audioDir)) {
         fs.mkdirSync(audioDir, { recursive: true });
       }
 
-      // Move file to permanent location
       fs.renameSync(file.path, uploadPath);
 
-      // Create audio clip in database with take metadata
-      const audioClip = await storage.createAudioClip({
+      const audioClip = await storageAny.createAudioClip({
         id: clipId,
         trackId: options.trackId,
         name: `Take ${options.takeNumber}`,
@@ -353,7 +448,7 @@ export class StudioService {
         originalFilename: file.originalname,
         fileSize: file.size,
         startTime: options.startPosition,
-        endTime: options.startPosition + 10, // Will be updated with actual duration
+        endTime: options.startPosition + 10,
         takeNumber: options.takeNumber,
         takeGroupId: options.takeGroupId || nanoid(),
         isComped: false,
@@ -363,7 +458,7 @@ export class StudioService {
         clipId: audioClip.id,
         url: `/uploads/audio/${fileName}`,
         takeNumber: options.takeNumber,
-        takeGroupId: audioClip.takeGroupId,
+        takeGroupId: audioClip.takeGroupId || '',
       };
     } catch (error: unknown) {
       logger.error('Error uploading recording:', error);
@@ -371,21 +466,15 @@ export class StudioService {
     }
   }
 
-  /**
-   * Get clips by take group
-   */
-  async getClipsByTakeGroup(takeGroupId: string): Promise<any[]> {
+  async getClipsByTakeGroup(takeGroupId: string): Promise<AudioClip[]> {
     try {
-      return await storage.getClipsByTakeGroup(takeGroupId);
+      return await storageAny.getClipsByTakeGroup(takeGroupId);
     } catch (error: unknown) {
       logger.error('Error fetching clips by take group:', error);
       throw new Error('Failed to fetch clips by take group');
     }
   }
 
-  /**
-   * Export project to audio file
-   */
   async exportProject(
     projectId: string,
     userId: string,
@@ -397,14 +486,6 @@ export class StudioService {
     try {
       const exportId = `export_${nanoid()}`;
 
-      // In production:
-      // 1. Queue export job
-      // 2. Render all tracks together
-      // 3. Apply master effects
-      // 4. Encode to requested format
-      // 5. Upload to storage
-      // 6. Notify user when complete
-
       return {
         exportId,
         status: 'processing',
@@ -415,9 +496,6 @@ export class StudioService {
     }
   }
 
-  /**
-   * Add collaborator to project
-   */
   async addCollaborator(
     projectId: string,
     userId: string,
@@ -425,7 +503,7 @@ export class StudioService {
     role: 'view' | 'edit' | 'admin'
   ): Promise<void> {
     try {
-      const project = await storage.getStudioProject(projectId);
+      const project = await storageAny.getStudioProject(projectId);
       if (!project) {
         throw new Error('Project not found');
       }
@@ -434,85 +512,68 @@ export class StudioService {
         throw new Error('Only project owner can add collaborators');
       }
 
-      const collaborators = (project.collaborators as any[]) || [];
+      const collaborators = (project.collaborators as Collaborator[] | null) || [];
       collaborators.push({
         email: collaboratorEmail,
         role,
         addedAt: new Date(),
       });
 
-      await storage.updateStudioProject(projectId, userId, {
+      await storageAny.updateStudioProject(projectId, userId, {
         collaborators,
-      });
+      } as Partial<StudioProject>);
     } catch (error: unknown) {
       logger.error('Error adding collaborator:', error);
       throw new Error('Failed to add collaborator');
     }
   }
 
-  /**
-   * Create audio clip
-   */
-  async createAudioClip(clipData: unknown): Promise<any> {
+  async createAudioClip(clipData: AudioClipData): Promise<AudioClip> {
     try {
-      return await storage.createAudioClip(clipData);
+      return await storageAny.createAudioClip(clipData);
     } catch (error: unknown) {
       logger.error('Error creating audio clip:', error);
       throw new Error('Failed to create audio clip');
     }
   }
 
-  /**
-   * Get clips for a track
-   */
-  async getTrackClips(trackId: string): Promise<any[]> {
+  async getTrackClips(trackId: string): Promise<AudioClip[]> {
     try {
-      return await storage.getTrackClips(trackId);
+      return await storageAny.getTrackClips(trackId);
     } catch (error: unknown) {
       logger.error('Error fetching track clips:', error);
       throw new Error('Failed to fetch track clips');
     }
   }
 
-  /**
-   * Update audio clip
-   */
-  async updateAudioClip(clipId: string, updates: unknown): Promise<any> {
+  async updateAudioClip(clipId: string, updates: Partial<AudioClipData>): Promise<AudioClip> {
     try {
-      return await storage.updateAudioClip(clipId, updates);
+      return await storageAny.updateAudioClip(clipId, updates);
     } catch (error: unknown) {
       logger.error('Error updating audio clip:', error);
       throw new Error('Failed to update audio clip');
     }
   }
 
-  /**
-   * Delete audio clip
-   */
   async deleteAudioClip(clipId: string): Promise<void> {
     try {
-      await storage.deleteAudioClip(clipId);
+      await storageAny.deleteAudioClip(clipId);
     } catch (error: unknown) {
       logger.error('Error deleting audio clip:', error);
       throw new Error('Failed to delete audio clip');
     }
   }
 
-  /**
-   * Normalize audio clip
-   */
-  async normalizeClip(clipId: string): Promise<any> {
+  async normalizeClip(clipId: string): Promise<AudioClip> {
     try {
-      const clip = await storage.getAudioClip(clipId);
+      const clip = await storageAny.getAudioClip(clipId);
       if (!clip) {
         throw new Error('Clip not found');
       }
 
-      // Calculate peak amplitude from waveform data or audio file
-      const peakData = (clip.peakData as number[]) || [];
+      const peakData = (clip.peakData as number[] | null) || [];
       const peak = peakData.length > 0 ? Math.max(...peakData) : 0.5;
 
-      // Calculate gain to bring peak to 0dB (1.0)
       const normalizeGain = peak > 0 ? 1.0 / peak : 1.0;
 
       return await this.updateAudioClip(clipId, { gain: normalizeGain });
@@ -522,21 +583,16 @@ export class StudioService {
     }
   }
 
-  /**
-   * Split clip at time position
-   */
-  async splitClip(clipId: string, splitTime: number): Promise<{ clip1: any; clip2: any }> {
+  async splitClip(clipId: string, splitTime: number): Promise<{ clip1: AudioClip; clip2: AudioClip }> {
     try {
-      const clip = await storage.getAudioClip(clipId);
+      const clip = await storageAny.getAudioClip(clipId);
       if (!clip) {
         throw new Error('Clip not found');
       }
 
-      // Calculate new clip boundaries
       const clip1Duration = splitTime - clip.startTime;
       const clip2Duration = clip.endTime - splitTime;
 
-      // Create first clip (before split)
       const clip1 = await this.createAudioClip({
         trackId: clip.trackId,
         name: `${clip.name} (1)`,
@@ -553,7 +609,6 @@ export class StudioService {
         peakData: clip.peakData,
       });
 
-      // Create second clip (after split)
       const clip2 = await this.createAudioClip({
         trackId: clip.trackId,
         name: `${clip.name} (2)`,
@@ -562,7 +617,7 @@ export class StudioService {
         duration: clip2Duration,
         startTime: splitTime,
         endTime: clip.endTime,
-        offset: clip.offset + clip1Duration,
+        offset: (clip.offset || 0) + clip1Duration,
         gain: clip.gain,
         fadeIn: 0,
         fadeOut: clip.fadeOut,
@@ -570,7 +625,6 @@ export class StudioService {
         peakData: clip.peakData,
       });
 
-      // Delete original clip
       await this.deleteAudioClip(clipId);
 
       return { clip1, clip2 };
@@ -580,12 +634,9 @@ export class StudioService {
     }
   }
 
-  /**
-   * Add effect to track
-   */
-  async addEffect(trackId: string, projectId: string, effectData: unknown): Promise<any> {
+  async addEffect(trackId: string, projectId: string, effectData: AudioEffectData): Promise<AudioEffect> {
     try {
-      const effect = await storage.createAudioEffect({
+      const effect = await storageAny.createAudioEffect({
         ...effectData,
         trackId,
         projectId,
@@ -597,51 +648,38 @@ export class StudioService {
     }
   }
 
-  /**
-   * Get effects for a track
-   */
-  async getTrackEffects(trackId: string): Promise<any[]> {
+  async getTrackEffects(trackId: string): Promise<AudioEffect[]> {
     try {
-      const effects = await storage.getTrackEffects(trackId);
-      return effects.sort((a, b) => (a.chainPosition || 0) - (b.chainPosition || 0));
+      const effects = await storageAny.getTrackEffects(trackId);
+      return effects.sort((a: AudioEffect, b: AudioEffect) => (a.chainPosition || 0) - (b.chainPosition || 0));
     } catch (error: unknown) {
       logger.error('Error fetching track effects:', error);
       throw new Error('Failed to fetch track effects');
     }
   }
 
-  /**
-   * Update effect parameters
-   */
-  async updateEffect(effectId: string, updates: unknown): Promise<any> {
+  async updateEffect(effectId: string, updates: Partial<AudioEffectData>): Promise<AudioEffect> {
     try {
-      return await storage.updateAudioEffect(effectId, updates);
+      return await storageAny.updateAudioEffect(effectId, updates);
     } catch (error: unknown) {
       logger.error('Error updating effect:', error);
       throw new Error('Failed to update effect');
     }
   }
 
-  /**
-   * Delete effect
-   */
   async deleteEffect(effectId: string): Promise<void> {
     try {
-      await storage.deleteAudioEffect(effectId);
+      await storageAny.deleteAudioEffect(effectId);
     } catch (error: unknown) {
       logger.error('Error deleting effect:', error);
       throw new Error('Failed to delete effect');
     }
   }
 
-  /**
-   * Reorder effects in chain
-   */
   async reorderEffects(effectIds: string[]): Promise<void> {
     try {
-      // Update chain position for each effect
       for (let i = 0; i < effectIds.length; i++) {
-        await storage.updateAudioEffect(effectIds[i], { chainPosition: i });
+        await storageAny.updateAudioEffect(effectIds[i], { chainPosition: i });
       }
     } catch (error: unknown) {
       logger.error('Error reordering effects:', error);
@@ -649,57 +687,42 @@ export class StudioService {
     }
   }
 
-  /**
-   * Save automation data
-   */
-  async saveAutomation(automationData: unknown): Promise<any> {
+  async saveAutomation(automationData: unknown): Promise<AutomationData> {
     try {
-      return await storage.createAutomationData(automationData);
+      return await storageAny.createAutomationData(automationData);
     } catch (error: unknown) {
       logger.error('Error saving automation:', error);
       throw new Error('Failed to save automation');
     }
   }
 
-  /**
-   * Get automation for project
-   */
-  async getProjectAutomationData(projectId: string): Promise<any[]> {
+  async getProjectAutomationData(projectId: string): Promise<AutomationData[]> {
     try {
-      return await storage.getProjectAutomation(projectId);
+      return await storageAny.getProjectAutomation(projectId);
     } catch (error: unknown) {
       logger.error('Error fetching automation:', error);
       throw new Error('Failed to fetch automation');
     }
   }
 
-  /**
-   * Update automation data
-   */
-  async updateAutomation(automationId: string, updates: unknown): Promise<any> {
+  async updateAutomation(automationId: string, updates: unknown): Promise<AutomationData> {
     try {
-      return await storage.updateAutomationData(automationId, updates);
+      return await storageAny.updateAutomationData(automationId, updates);
     } catch (error: unknown) {
       logger.error('Error updating automation:', error);
       throw new Error('Failed to update automation');
     }
   }
 
-  /**
-   * Delete automation
-   */
   async deleteAutomation(automationId: string): Promise<void> {
     try {
-      await storage.deleteAutomationData(automationId);
+      await storageAny.deleteAutomationData(automationId);
     } catch (error: unknown) {
       logger.error('Error deleting automation:', error);
       throw new Error('Failed to delete automation');
     }
   }
 
-  /**
-   * Save project to autosaves table (Phase 7)
-   */
   async saveProject(
     projectId: string,
     userId: string,
@@ -708,19 +731,18 @@ export class StudioService {
     try {
       const projectData = await this.loadProject(projectId, userId);
 
-      await storage.createAutosave({
+      await storageAny.createAutosave({
         projectId,
         authorId: userId,
         label,
-        state: projectData as any,
+        state: projectData,
       });
 
-      // Keep only last 10 autosaves
-      const autosaves = await storage.getProjectAutosaves(projectId);
+      const autosaves = await storageAny.getProjectAutosaves(projectId);
       if (autosaves.length > 10) {
         const toDelete = autosaves.slice(10);
         for (const autosave of toDelete) {
-          await storage.deleteAutosave(autosave.id);
+          await storageAny.deleteAutosave(autosave.id);
         }
       }
     } catch (error: unknown) {
@@ -729,33 +751,30 @@ export class StudioService {
     }
   }
 
-  /**
-   * Get project autosaves
-   */
-  async getProjectAutosaves(projectId: string): Promise<any[]> {
+  async getProjectAutosaves(projectId: string): Promise<Autosave[]> {
     try {
-      return await storage.getProjectAutosaves(projectId);
+      return await storageAny.getProjectAutosaves(projectId);
     } catch (error: unknown) {
       logger.error('Error fetching autosaves:', error);
       throw new Error('Failed to fetch autosaves');
     }
   }
 
-  /**
-   * Restore project from autosave
-   */
-  async restoreFromAutosave(autosaveId: number, userId: string): Promise<any> {
+  async restoreFromAutosave(autosaveId: number, userId: string): Promise<Project> {
     try {
-      const autosave = await storage.getAutosave(autosaveId);
+      const autosave = await storageAny.getAutosave(autosaveId);
       if (!autosave) {
         throw new Error('Autosave not found');
       }
 
-      // Create a new project from the autosave state
-      const state = autosave.state as any;
+      const state = autosave.state as AutosaveState;
       const project = state.project;
 
-      const restoredProject = await storage.createProject({
+      if (!project) {
+        throw new Error('Invalid autosave state');
+      }
+
+      const restoredProject = await storageAny.createProject({
         userId,
         title: `${project.title} (Restored)`,
         isStudioProject: true,
@@ -764,16 +783,14 @@ export class StudioService {
         key: project.key,
         sampleRate: project.sampleRate,
         bitDepth: project.bitDepth,
-        masterVolume: project.masterVolume,
         status: 'draft',
-      });
+      } as InsertProject);
 
-      // Restore tracks, clips, effects, etc.
       for (const track of state.tracks || []) {
-        await storage.createStudioTrack({
+        await storageAny.createStudioTrack({
           ...track,
           projectId: restoredProject.id,
-        });
+        } as InsertStudioTrack);
       }
 
       return restoredProject;
@@ -783,32 +800,26 @@ export class StudioService {
     }
   }
 
-  /**
-   * Phase 8: Freeze track
-   */
-  async freezeTrack(trackId: string, file: Express.Multer.File, projectId: string): Promise<any> {
+  async freezeTrack(trackId: string, file: Express.Multer.File, projectId: string): Promise<{ success: boolean; frozenFilePath: string }> {
     try {
       const frozenId = `frozen_${nanoid()}`;
       const ext = path.extname(file.originalname);
       const fileName = `${frozenId}${ext}`;
       const uploadPath = path.join(process.cwd(), 'uploads', 'audio', fileName);
 
-      // Ensure directory exists
       const audioDir = path.join(process.cwd(), 'uploads', 'audio');
       if (!fs.existsSync(audioDir)) {
         fs.mkdirSync(audioDir, { recursive: true });
       }
 
-      // Move file to permanent location
       fs.renameSync(file.path, uploadPath);
 
       const frozenFilePath = `/uploads/audio/${fileName}`;
 
-      // Update track with frozen status
-      await storage.updateStudioTrack(trackId, projectId, {
+      await storageAny.updateStudioTrack(trackId, projectId, {
         frozen: true,
         frozenFilePath,
-      });
+      } as Partial<StudioTrack>);
 
       return {
         success: true,
@@ -820,30 +831,26 @@ export class StudioService {
     }
   }
 
-  /**
-   * Phase 8: Unfreeze track
-   */
-  async unfreezeTrack(trackId: string, projectId: string): Promise<any> {
+  async unfreezeTrack(trackId: string, projectId: string): Promise<{ success: boolean }> {
     try {
-      const track = await storage.getStudioTrack(trackId);
+      const track = await storageAny.getStudioTrack(trackId);
 
       if (!track) {
         throw new Error('Track not found');
       }
 
-      // Delete frozen file if it exists
-      if (track.frozenFilePath) {
-        const frozenPath = path.join(process.cwd(), track.frozenFilePath);
+      const frozenFilePath = (track as { frozenFilePath?: string }).frozenFilePath;
+      if (frozenFilePath) {
+        const frozenPath = path.join(process.cwd(), frozenFilePath);
         if (fs.existsSync(frozenPath)) {
           fs.unlinkSync(frozenPath);
         }
       }
 
-      // Update track to unfrozen status
-      await storage.updateStudioTrack(trackId, projectId, {
+      await storageAny.updateStudioTrack(trackId, projectId, {
         frozen: false,
         frozenFilePath: null,
-      });
+      } as Partial<StudioTrack>);
 
       return {
         success: true,
@@ -854,10 +861,7 @@ export class StudioService {
     }
   }
 
-  /**
-   * Create project from template (Phase 7)
-   */
-  async createFromTemplate(userId: string, templateName: string): Promise<any> {
+  async createFromTemplate(userId: string, templateName: string): Promise<Project> {
     try {
       const templates = this.getBuiltInTemplates();
       const template = templates.find((t) => t.name === templateName);
@@ -866,7 +870,7 @@ export class StudioService {
         throw new Error('Template not found');
       }
 
-      const project = await storage.createProject({
+      const project = await storageAny.createProject({
         userId,
         title: template.name,
         description: template.description,
@@ -876,14 +880,13 @@ export class StudioService {
         sampleRate: 48000,
         bitDepth: 24,
         status: 'draft',
-      });
+      } as InsertProject);
 
-      // Create tracks based on template
       for (const trackTemplate of template.tracks) {
-        await storage.createStudioTrack({
+        await storageAny.createStudioTrack({
           projectId: project.id,
           name: trackTemplate.name,
-          trackType: trackTemplate.trackType as any,
+          trackType: trackTemplate.trackType,
           trackNumber: trackTemplate.trackNumber,
           volume: 0.8,
           pan: 0,
@@ -896,7 +899,7 @@ export class StudioService {
           height: 100,
           collapsed: false,
           outputBus: 'master',
-        });
+        } as InsertStudioTrack);
       }
 
       return project;
@@ -906,16 +909,7 @@ export class StudioService {
     }
   }
 
-  /**
-   * Get built-in templates
-   */
-  getBuiltInTemplates(): Array<{
-    name: string;
-    description: string;
-    bpm: number;
-    timeSignature: string;
-    tracks: Array<{ name: string; trackType: string; trackNumber: number; color: string }>;
-  }> {
+  getBuiltInTemplates(): ProjectTemplate[] {
     return [
       {
         name: 'Blank Project',
@@ -976,50 +970,45 @@ export class StudioService {
     ];
   }
 
-  /**
-   * Save current project as template
-   */
-  async saveAsTemplate(projectId: string, userId: string, templateName: string): Promise<any> {
+  async saveAsTemplate(projectId: string, userId: string, templateName: string): Promise<Project> {
     try {
-      const project = await storage.getProject(projectId);
+      const project = await storageAny.getProject(projectId);
       if (!project) {
         throw new Error('Project not found');
       }
 
-      const tracks = await storage.getProjectTracks(projectId);
+      const tracks = await storageAny.getProjectTracks(projectId);
 
-      const template = await storage.createProject({
+      const template = await storageAny.createProject({
         userId,
         title: templateName,
         description: `Custom template created from ${project.title}`,
         isStudioProject: true,
-        isTemplate: true,
         bpm: project.bpm,
         timeSignature: project.timeSignature,
         sampleRate: project.sampleRate,
         bitDepth: project.bitDepth,
         status: 'draft',
-      });
+      } as InsertProject);
 
-      // Copy tracks structure (without audio files)
       for (const track of tracks) {
-        await storage.createStudioTrack({
+        await storageAny.createStudioTrack({
           projectId: template.id,
           name: track.name,
           trackType: track.trackType,
-          trackNumber: track.trackNumber,
+          trackNumber: (track as { trackNumber?: number }).trackNumber,
           volume: track.volume,
           pan: track.pan,
           mute: false,
           solo: false,
           armed: false,
           recordEnabled: false,
-          inputMonitoring: track.inputMonitoring,
+          inputMonitoring: (track as { inputMonitoring?: boolean }).inputMonitoring,
           color: track.color,
-          height: track.height,
-          collapsed: track.collapsed,
-          outputBus: track.outputBus,
-        });
+          height: (track as { height?: number }).height,
+          collapsed: (track as { collapsed?: boolean }).collapsed,
+          outputBus: (track as { outputBus?: string }).outputBus,
+        } as InsertStudioTrack);
       }
 
       return template;

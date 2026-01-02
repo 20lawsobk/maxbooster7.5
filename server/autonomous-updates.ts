@@ -28,6 +28,89 @@ interface AutoUpdatesStatus {
   lastResult?: Record<string, any>;
 }
 
+interface TrendEvent {
+  source: string;
+  eventType: string;
+  description: string;
+  impact: 'high' | 'medium' | 'low';
+  metadata?: Record<string, unknown>;
+}
+
+interface TuningResult {
+  modelType: string;
+  updated: boolean;
+  version?: string;
+  improvement?: string;
+  activated?: boolean;
+  reason?: string;
+  trendsIncorporated?: number;
+  platformsOptimized?: number;
+}
+
+interface OptimizationResult {
+  type: string;
+  executed: boolean;
+  taskId?: string;
+  improvement?: string;
+  reason?: string;
+  featuresIdentified?: number;
+}
+
+interface AutopilotEventData {
+  id?: string;
+  contentId?: string;
+  engagement?: number;
+}
+
+interface PerformanceMetrics {
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1Score: number;
+  latencyMs: number;
+  throughput: number;
+}
+
+interface RetrainingRun {
+  id: string;
+  scheduleId: string;
+  modelId: string;
+  status: string;
+  triggerReason: string;
+  datasetInfo: Record<string, unknown>;
+  trainingMetrics: Record<string, unknown>;
+  validationMetrics: Record<string, unknown>;
+  qualityChecksPassed: boolean;
+}
+
+interface RollbackData {
+  modelId: string;
+  targetVersionId: string;
+  reason: string;
+  impactAnalysis: {
+    affectedUsers: number;
+    estimatedDowntime: number;
+    dataLoss: boolean;
+    requiresRetraining: boolean;
+    performanceChange: Record<string, string>;
+    risks: string[];
+    mitigations: string[];
+  };
+  status: string;
+  rollbackStartedAt: Date;
+  rollbackCompletedAt?: Date;
+  verificationResults?: {
+    healthCheckPassed: boolean;
+    performanceWithinExpected: boolean;
+    noErrorSpikes: boolean;
+  };
+}
+
+interface AutopilotEmitter {
+  on(event: 'contentPublished', callback: (data: AutopilotEventData) => void): void;
+  on(event: 'performanceAnalyzed', callback: (data: AutopilotEventData) => void): void;
+}
+
 export class AutonomousUpdatesOrchestrator extends EventEmitter {
   private config: AutoUpdatesConfig;
   private timer: NodeJS.Timeout | null = null;
@@ -159,13 +242,15 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   }
 
   private estimateLatencyFromParams(params: unknown): number {
-    const paramCount = Object.keys(params).length;
+    const paramObj = params as Record<string, unknown>;
+    const paramCount = Object.keys(paramObj).length;
     const hash = this.hashObject(params);
     return 50 + paramCount * 10 + (hash % 100);
   }
 
   private estimateThroughputFromParams(params: unknown): number {
-    const paramCount = Object.keys(params).length;
+    const paramObj = params as Record<string, unknown>;
+    const paramCount = Object.keys(paramObj).length;
     const hash = this.hashObject(params);
     return 100 + paramCount * 20 + (hash % 400);
   }
@@ -289,9 +374,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   // MODULE 1: INDUSTRY MONITORING
   // ==========================================
 
-  private async runIndustryMonitoring(): Promise<any> {
+  private async runIndustryMonitoring(): Promise<Record<string, unknown>> {
     this.silentLog('📊 Running industry monitoring module...');
-    const trends: unknown[] = [];
+    const trends: TrendEvent[] = [];
 
     trends.push(await this.detectMusicIndustryTrends());
     trends.push(await this.detectSocialPlatformChanges());
@@ -311,7 +396,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async detectMusicIndustryTrends(): Promise<any> {
+  private async detectMusicIndustryTrends(): Promise<TrendEvent> {
     const genres = ['Hip-Hop', 'Pop', 'EDM', 'R&B', 'Rock', 'Country'];
     const timestamp = Date.now();
     const randomGenre = genres[this.selectDeterministicIndex(timestamp, genres.length)];
@@ -340,7 +425,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async detectSocialPlatformChanges(): Promise<any> {
+  private async detectSocialPlatformChanges(): Promise<TrendEvent> {
     const platforms = ['Instagram', 'TikTok', 'Twitter', 'YouTube', 'Facebook'];
     const timestamp = Date.now();
     const platform = platforms[this.selectDeterministicIndex(timestamp, platforms.length)];
@@ -371,7 +456,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async detectAlgorithmChanges(): Promise<any> {
+  private async detectAlgorithmChanges(): Promise<TrendEvent> {
     const recentMetrics = this.autopilotMetrics;
     const avgEngagement = this.performanceBaseline.get('avg_engagement_rate') || 0.05;
 
@@ -401,7 +486,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async analyzeCompetitorPerformance(): Promise<any> {
+  private async analyzeCompetitorPerformance(): Promise<TrendEvent> {
     const competitorInsights = [
       'viral_content_pattern',
       'posting_schedule_optimization',
@@ -431,9 +516,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   // MODULE 2: AI TUNING
   // ==========================================
 
-  private async runAITuning(): Promise<any> {
+  private async runAITuning(): Promise<Record<string, unknown>> {
     this.silentLog('🤖 Running AI tuning module...');
-    const tuningResults: unknown[] = [];
+    const tuningResults: TuningResult[] = [];
 
     tuningResults.push(await this.tuneContentGeneration());
     tuningResults.push(await this.tuneMusicAnalysis());
@@ -446,7 +531,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async tuneContentGeneration(): Promise<any> {
+  private async tuneContentGeneration(): Promise<TuningResult> {
     const recentTrends = await storage.getRecentTrendEvents(7);
     const currentVersion = await storage.getActiveModelVersion('content_generation');
 
@@ -505,7 +590,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async tuneMusicAnalysis(): Promise<any> {
+  private async tuneMusicAnalysis(): Promise<TuningResult> {
     const currentVersion = await storage.getActiveModelVersion('music_analysis');
 
     const baseParams = currentVersion?.parameters || {
@@ -559,7 +644,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async tuneSocialPosting(): Promise<any> {
+  private async tuneSocialPosting(): Promise<TuningResult> {
     const platformChanges = await storage.getTrendEvents(10);
     const algorithmChanges = platformChanges.filter(
       (t) => t.eventType === 'algorithm_update' || t.eventType === 'engagement_pattern_shift'
@@ -633,9 +718,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   // MODULE 3: PLATFORM OPTIMIZATION
   // ==========================================
 
-  private async runPlatformOptimization(): Promise<any> {
+  private async runPlatformOptimization(): Promise<Record<string, unknown>> {
     this.silentLog('⚡ Running platform optimization module...');
-    const optimizations: unknown[] = [];
+    const optimizations: OptimizationResult[] = [];
 
     optimizations.push(await this.optimizeDatabaseQueries());
     optimizations.push(await this.optimizeAIParameters());
@@ -648,7 +733,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async optimizeDatabaseQueries(): Promise<any> {
+  private async optimizeDatabaseQueries(): Promise<OptimizationResult> {
     const avgQueryTime = this.performanceBaseline.get('avg_db_query_time') || 100;
     const seed = `db_query_${Date.now()}`;
     const currentQueryTime = this.deterministicValue(seed, 80, 120);
@@ -690,7 +775,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async optimizeAIParameters(): Promise<any> {
+  private async optimizeAIParameters(): Promise<OptimizationResult> {
     const avgResponseTime = this.performanceBaseline.get('avg_ai_response_time') || 500;
     const seed = `ai_response_${Date.now()}`;
     const currentResponseTime = this.deterministicValue(seed, 400, 600);
@@ -729,7 +814,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async optimizeFeatureUsage(): Promise<any> {
+  private async optimizeFeatureUsage(): Promise<OptimizationResult> {
     const features = ['studio', 'distribution', 'social', 'analytics', 'marketplace'];
     const seed = Date.now();
     const underutilizedFeatures = features.filter((feature, idx) => {
@@ -772,13 +857,13 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   }
 
   // Integration methods for AutonomousAutopilot
-  subscribeToAutopilotMetrics(autopilot: unknown): void {
-    autopilot.on('contentPublished', (data: unknown) => {
+  subscribeToAutopilotMetrics(autopilot: AutopilotEmitter): void {
+    autopilot.on('contentPublished', (data: AutopilotEventData) => {
       this.autopilotMetrics.set(`content_${data.id}`, data);
       this.updateEngagementBaseline(data);
     });
 
-    autopilot.on('performanceAnalyzed', (data: unknown) => {
+    autopilot.on('performanceAnalyzed', (data: AutopilotEventData) => {
       this.autopilotMetrics.set(`performance_${data.contentId}`, data);
       this.updateEngagementBaseline(data);
     });
@@ -786,7 +871,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     this.silentLog('✅ Subscribed to AutonomousAutopilot performance metrics');
   }
 
-  private updateEngagementBaseline(data: unknown): void {
+  private updateEngagementBaseline(data: AutopilotEventData): void {
     if (data.engagement) {
       const current = this.performanceBaseline.get('avg_engagement_rate') || 0.05;
       const newAvg = current * 0.9 + data.engagement * 0.1;
@@ -881,8 +966,8 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
   private generateChangelog(
     changes: string,
-    parameters: Record<string, any>,
-    metrics: unknown
+    parameters: Record<string, unknown>,
+    metrics: PerformanceMetrics
   ): string {
     const lines = [
       `## Changes`,
@@ -1131,7 +1216,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return run;
   }
 
-  private async completeRetraining(run: unknown, modelId: string): Promise<void> {
+  private async completeRetraining(run: RetrainingRun, modelId: string): Promise<void> {
     const trainingMetrics = {
       finalLoss: this.deterministicValue(`${modelId}_loss`, 0.08, 0.12),
       finalAccuracy: this.deterministicValue(`${modelId}_train_acc`, 0.88, 0.96),
@@ -1460,7 +1545,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async executeRollback(rollback: unknown): Promise<void> {
+  private async executeRollback(rollback: RollbackData): Promise<void> {
     this.silentLog(`⚙️ Executing rollback for model ${rollback.modelId}...`);
 
     await this.runPreDeploymentChecks(rollback.modelId, rollback.targetVersionId);
@@ -1486,9 +1571,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     });
   }
 
-  private async notifyStakeholders(eventType: string, data: unknown): Promise<void> {
+  private async notifyStakeholders(eventType: string, data: Record<string, unknown>): Promise<void> {
     this.silentLog(`📧 Notifying stakeholders: ${eventType}`);
-    this.silentLog(`   Data:`, JSON.stringify(data, null, 2));
+    this.silentLog(`   Data: ${JSON.stringify(data, null, 2)}`);
   }
 
   async getDeploymentHistory(modelId: string, limit: number = 10): Promise<any[]> {
