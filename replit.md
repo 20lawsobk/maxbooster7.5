@@ -52,6 +52,27 @@ Supports external VST/AU plugins through a desktop app bridge with APIs for brid
 **Expanded Plugin Collection:**
 Includes 40+ built-in audio plugins (20+ instruments and 20+ effects like Reverb, Delay, Compression, EQ, Distortion, Modulation, Utility).
 
+## Development Setup
+
+**Commands:**
+- `npm run dev` - Start development server on port 5000
+- `npm run build` - Build for production
+- `npm run start` - Run production build
+- `npx drizzle-kit push` - Push database schema changes
+
+**Required Environment Variables:**
+- `DATABASE_URL` - PostgreSQL connection string (auto-configured)
+- `STRIPE_SECRET_KEY` - Stripe secret API key
+- `STRIPE_PUBLISHABLE_KEY` - Stripe publishable API key  
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret
+- `SENDGRID_API_KEY` - SendGrid API key for emails
+
+**Optional Environment Variables:**
+- `SESSION_SECRET` - Session encryption (auto-generated in dev)
+- `REDIS_URL` - Redis for session store and queues
+- `ADMIN_PASSWORD` - Bootstrap admin account password
+- Social media API keys for platform integrations
+
 ## External Dependencies
 -   **Payments:** Stripe (Connect for P2P marketplace)
 -   **Email:** SendGrid
