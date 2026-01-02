@@ -2,8 +2,25 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useLocation } from 'wouter';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
-import { useAIWorkflow } from '@/hooks/useAIWorkflow';
-import type { Project, TrackAnalysis } from '@shared/schema';
+import { useAIWorkflow, type AIWorkflowState } from '@/hooks/useAIWorkflow';
+import type { Project } from '@shared/schema';
+
+interface TrackAnalysis {
+  id: string;
+  projectId: string;
+  trackId?: string;
+  bpm?: string;
+  musicalKey?: string;
+  scale?: string;
+  energy?: number;
+  danceability?: number;
+  valence?: number;
+  loudnessLufs?: number;
+  spectralCentroid?: number;
+  durationSeconds?: number;
+  beatPositions?: number[];
+  analyzedAt: Date | string;
+}
 import { getCPUUsage } from '@/hooks/useAudioPlayer';
 import { useMultiTrackRecorder } from '@/hooks/useMultiTrackRecorder';
 import { useStudioController } from '@/hooks/useStudioController';
@@ -799,7 +816,16 @@ export default function Studio() {
       );
 
       // Prepare tracks for export
-      const exportTracks = tracksWithClips
+      const exportTracks: Array<{
+        id: string;
+        name: string;
+        audioUrl: string;
+        gain: number;
+        pan: number;
+        isMuted: boolean;
+        isSolo: boolean;
+        effects?: StudioTrack['effects'];
+      }> = tracksWithClips
         .map(({ track, clips }) => {
           let audioUrl = '';
           if (clips.length > 0) {
@@ -830,7 +856,7 @@ export default function Studio() {
 
       const exportResult = await exportAudio(
         {
-          tracks: exportTracks,
+          tracks: exportTracks as any,
           exportType: exportType === 'stems' ? 'stems' : 'mixdown',
           sampleRate: exportSampleRate,
           bitDepth: exportBitDepth,
@@ -938,7 +964,7 @@ export default function Studio() {
     const checkInterval = setInterval(() => {
       const engineContext = controller.getAudioContext();
       if (engineContext) {
-        const usage = getCPUUsage(engineContext);
+        const usage = getCPUUsage();
         setCpuUsage(usage);
         setShowCPUWarning(usage > 80);
       } else {
@@ -1324,16 +1350,22 @@ export default function Studio() {
   }, [controller, projectDuration]);
 
   const handleTimelineClick = useCallback(
+    (time: number) => {
+      controller.seek(time);
+    },
+    [controller]
+  );
+
+  const handleTimelineMouseClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const timelineWidth = rect.width;
-      // Use a safe default duration of 300 seconds (5 minutes)
-      const estimatedDuration = selectedProject?.duration || 300;
+      const estimatedDuration = projectDuration || 300;
       const newTime = (clickX / timelineWidth) * estimatedDuration;
       controller.seek(newTime);
     },
-    [controller, selectedProject]
+    [controller, projectDuration]
   );
 
   const handleClipUpdate = useCallback(
@@ -1361,7 +1393,7 @@ export default function Studio() {
         logger.error('Failed to update clip:', error);
         toast({
           title: 'Failed to update clip',
-          description: error.message,
+          description: error instanceof Error ? error.message : 'An error occurred',
           variant: 'destructive',
         });
       }
@@ -1426,7 +1458,7 @@ export default function Studio() {
       controller.stopRecording();
       toast({
         title: 'Failed to start recording',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
     }
@@ -1453,7 +1485,7 @@ export default function Studio() {
       controller.stopRecording();
       toast({
         title: 'Failed to stop recording',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
     }
@@ -1523,7 +1555,7 @@ export default function Studio() {
       ctrl: true,
       handler: async () => {
         if (selectedProject) {
-          await saveProjectMutation.mutateAsync({ projectId: selectedProject.id.toString() });
+          await handleSaveProject();
           announce('Project saved');
         }
       },
@@ -1561,7 +1593,7 @@ export default function Studio() {
       key: '=',
       ctrl: true,
       handler: () => {
-        setZoom((prev) => Math.min(prev * 1.2, 5));
+        setZoom(Math.min(zoom * 1.2, 5));
         announce('Zoom in');
       },
       description: 'Zoom in',
@@ -1570,7 +1602,7 @@ export default function Studio() {
       key: '-',
       ctrl: true,
       handler: () => {
-        setZoom((prev) => Math.max(prev / 1.2, 0.5));
+        setZoom(Math.max(zoom / 1.2, 0.5));
         announce('Zoom out');
       },
       description: 'Zoom out',
@@ -1736,7 +1768,7 @@ export default function Studio() {
     onError: (error: unknown) => {
       toast({
         title: 'Failed to add track',
-        description: error.message || 'Could not add generated audio to project',
+        description: error instanceof Error ? error.message : 'Could not add generated audio to project',
         variant: 'destructive',
       });
     },
@@ -1793,7 +1825,7 @@ export default function Studio() {
           {(isGlobalDragging || globalDroppedFiles) && (
             <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
               <FileUploadZone
-                projectId={selectedProject?.id ?? null}
+                projectId={selectedProject?.id as any ?? null}
                 onUploadComplete={() => {
                   setIsGlobalDragging(false);
                   setGlobalDroppedFiles(null);
@@ -1816,12 +1848,12 @@ export default function Studio() {
                   selectedProject={selectedProject}
                   projects={projects}
                   onToolSelect={() => {}}
-                  onZoomIn={() => setZoom((z) => Math.min(z * 1.2, 5))}
-                  onZoomOut={() => setZoom((z) => Math.max(z / 1.2, 0.1))}
+                  onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
+                  onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
                   onShowTutorial={() => setShowTutorial(true)}
                   onZoomReset={() => setZoom(1)}
                   onProjectChange={(projectId) => {
-                    const project = projects.find((p: unknown) => p.id === projectId);
+                    const project = projects.find((p: Project) => p.id === projectId);
                     if (project) setSelectedProject(project);
                   }}
                   onCreateProject={(title) => createProjectMutation.mutate(title)}
@@ -1856,8 +1888,8 @@ export default function Studio() {
                     selectedTrack ? displayTracks.find((t) => t.id === selectedTrack) || null : null
                   }
                   selectedClip={null}
-                  onTrackUpdate={handleTrackUpdate}
-                  onClipUpdate={(clipId, updates) => logger.info('Clip update:', clipId, updates)}
+                  onTrackUpdate={handleTrackUpdate as (trackId: string, updates: unknown) => void}
+                  onClipUpdate={(clipId: string, updates: unknown) => logger.info('Clip update:', clipId, String(updates))}
                 />
               ) : null
             }
@@ -2207,7 +2239,7 @@ export default function Studio() {
                                     color: t.color || TRACK_COLORS[0],
                                   }))}
                                   trackClips={controller.trackClips}
-                                  onTimelineClick={handleTimelineClick}
+                                  onTimelineClick={handleTimelineMouseClick}
                                   onClipUpdate={handleClipUpdate}
                                   snapEnabled={true}
                                   snapInterval={0.25}
@@ -2320,7 +2352,7 @@ export default function Studio() {
             browser={
               browserVisible ? (
                 <div className="browser-panel h-full">
-                  <BrowserPanel projectId={selectedProject?.id ?? null} />
+                  <BrowserPanel projectId={selectedProject?.id as any ?? null} />
                 </div>
               ) : null
             }
@@ -2374,14 +2406,14 @@ export default function Studio() {
                   className="w-full bg-purple-600 hover:bg-purple-700"
                   onClick={() => handleAIMix()}
                   disabled={
-                    aiMix.currentState === 'requesting' || aiMix.currentState === 'processing'
+                    (aiMix.currentState as AIWorkflowState) === 'requesting' || (aiMix.currentState as AIWorkflowState) === 'processing'
                   }
                   data-testid="button-start-ai-mix"
                 >
-                  {aiMix.currentState === 'requesting' || aiMix.currentState === 'processing' ? (
+                  {(aiMix.currentState as AIWorkflowState) === 'requesting' || (aiMix.currentState as AIWorkflowState) === 'processing' ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {aiMix.currentState === 'requesting' ? 'Requesting...' : 'Mixing...'}
+                      {(aiMix.currentState as AIWorkflowState) === 'requesting' ? 'Requesting...' : 'Mixing...'}
                     </>
                   ) : aiMix.currentState === 'success' ? (
                     'Mix Complete!'
@@ -2396,7 +2428,7 @@ export default function Studio() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => retry('ai-mix', () => handleAIMix())}
+                    onClick={() => { retry('ai-mix', async () => handleAIMix()); }}
                     className="mt-2"
                   >
                     <RotateCw className="w-3 h-3 mr-1" />
@@ -2429,15 +2461,15 @@ export default function Studio() {
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   onClick={() => handleAIMaster()}
                   disabled={
-                    aiMaster.currentState === 'requesting' || aiMaster.currentState === 'processing'
+                    (aiMaster.currentState as AIWorkflowState) === 'requesting' || (aiMaster.currentState as AIWorkflowState) === 'processing'
                   }
                   data-testid="button-start-ai-master"
                 >
-                  {aiMaster.currentState === 'requesting' ||
-                  aiMaster.currentState === 'processing' ? (
+                  {(aiMaster.currentState as AIWorkflowState) === 'requesting' ||
+                  (aiMaster.currentState as AIWorkflowState) === 'processing' ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {aiMaster.currentState === 'requesting' ? 'Requesting...' : 'Mastering...'}
+                      {(aiMaster.currentState as AIWorkflowState) === 'requesting' ? 'Requesting...' : 'Mastering...'}
                     </>
                   ) : aiMaster.currentState === 'success' ? (
                     'Master Complete!'
@@ -2452,7 +2484,7 @@ export default function Studio() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => retry('ai-master', () => handleAIMaster())}
+                    onClick={() => { retry('ai-master', async () => handleAIMaster()); }}
                     className="mt-2"
                   >
                     <RotateCw className="w-3 h-3 mr-1" />
@@ -2493,8 +2525,8 @@ export default function Studio() {
                 </DialogTitle>
               </DialogHeader>
 
-              {audioAnalysis.currentState === 'requesting' ||
-              audioAnalysis.currentState === 'processing' ? (
+              {(audioAnalysis.currentState as AIWorkflowState) === 'requesting' ||
+              (audioAnalysis.currentState as AIWorkflowState) === 'processing' ? (
                 <div className="flex flex-col items-center justify-center py-12 space-y-4">
                   <Loader2 className="h-12 w-12 text-green-400 animate-spin" />
                   <p className="text-sm text-gray-400">Analyzing audio features...</p>
@@ -2511,8 +2543,8 @@ export default function Studio() {
                       variant="outline"
                       onClick={() => handleAnalyzeAudio()}
                       disabled={
-                        audioAnalysis.currentState === 'requesting' ||
-                        audioAnalysis.currentState === 'processing'
+                        (audioAnalysis.currentState as AIWorkflowState) === 'requesting' ||
+                        (audioAnalysis.currentState as AIWorkflowState) === 'processing'
                       }
                       data-testid="button-retry-analysis"
                     >
@@ -2655,16 +2687,16 @@ export default function Studio() {
                     disabled={
                       !selectedProject ||
                       tracks.length === 0 ||
-                      audioAnalysis.currentState === 'requesting' ||
-                      audioAnalysis.currentState === 'processing'
+                      (audioAnalysis.currentState as AIWorkflowState) === 'requesting' ||
+                      (audioAnalysis.currentState as AIWorkflowState) === 'processing'
                     }
                     data-testid="button-start-analysis"
                   >
-                    {audioAnalysis.currentState === 'requesting' ||
-                    audioAnalysis.currentState === 'processing' ? (
+                    {(audioAnalysis.currentState as AIWorkflowState) === 'requesting' ||
+                    (audioAnalysis.currentState as AIWorkflowState) === 'processing' ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {audioAnalysis.currentState === 'requesting'
+                        {(audioAnalysis.currentState as AIWorkflowState) === 'requesting'
                           ? 'Requesting...'
                           : 'Analyzing...'}
                       </>
@@ -2740,8 +2772,8 @@ export default function Studio() {
             open={showDistributionDialog}
             onOpenChange={setShowDistributionDialog}
             projectId={selectedProject?.id || ''}
-            projectName={selectedProject?.name || 'Untitled'}
-            tracks={tracks}
+            projectName={selectedProject?.title || 'Untitled'}
+            tracks={tracks as any}
           />
 
           <ExportDialog
@@ -2794,12 +2826,12 @@ export default function Studio() {
             onClose={() => setShowProjectSetup(false)}
             project={selectedProject ? {
               id: selectedProject.id,
-              title: selectedProject.title || selectedProject.name || 'Untitled',
-              bpm: selectedProject.bpm,
-              key: selectedProject.key,
-              timeSignature: selectedProject.timeSignature,
-              sampleRate: selectedProject.sampleRate,
-              bitDepth: selectedProject.bitDepth,
+              title: selectedProject.title || 'Untitled',
+              bpm: selectedProject.bpm ?? undefined,
+              key: selectedProject.key ?? undefined,
+              timeSignature: selectedProject.timeSignature ?? undefined,
+              sampleRate: selectedProject.sampleRate ?? undefined,
+              bitDepth: selectedProject.bitDepth ?? undefined,
             } : null}
             onSave={(settings) => {
               if (selectedProject) {
@@ -2852,9 +2884,9 @@ export default function Studio() {
             onClose={() => setShowMasteringDelivery(false)}
             project={selectedProject ? {
               id: selectedProject.id,
-              title: selectedProject.title || selectedProject.name || 'Untitled',
-              bpm: selectedProject.bpm,
-              key: selectedProject.key,
+              title: selectedProject.title || 'Untitled',
+              bpm: selectedProject.bpm ?? undefined,
+              key: selectedProject.key ?? undefined,
             } : null}
             onExport={(settings) => {
               toast({ title: 'Export started', description: `Exporting ${settings.filename}.${settings.format}` });
@@ -2876,7 +2908,7 @@ export default function Studio() {
                 color: t.color,
                 type: t.trackType,
               }))}
-              buses={mixBuses.map((b) => ({
+              buses={mixBusses.map((b: MixBus) => ({
                 id: b.id,
                 name: b.name,
                 color: b.color,

@@ -136,6 +136,164 @@ interface AIContent {
   virality: number;
 }
 
+interface GeneratedContent {
+  platform: string;
+  content: string;
+  hashtags?: string[];
+  mediaUrl?: string;
+  format?: string;
+}
+
+interface PlatformPerformance {
+  id?: string;
+  name: string;
+  growth: number;
+  reach: string | number;
+  engagement: number;
+}
+
+interface FollowersGrowth {
+  thisWeek?: number;
+  weeklyChange?: number;
+  thisMonth?: number;
+  monthlyChange?: number;
+  rate?: number;
+  projected?: number;
+}
+
+interface PlatformGrowthData {
+  growth?: number;
+  percentage?: number;
+}
+
+interface ContentPerformanceData {
+  engagement?: number;
+  reach?: string;
+}
+
+interface EngagementBreakdown {
+  likes?: number;
+  likesChange?: number;
+  comments?: number;
+  commentsChange?: number;
+  shares?: number;
+  sharesChange?: number;
+}
+
+interface TrendingTopic {
+  tag: string;
+  volume: number;
+  relevance: number;
+  platforms?: string[];
+}
+
+interface SocialMetrics {
+  totalFollowers?: number;
+  followerGrowth?: { percentChange?: number };
+  totalEngagement?: number;
+  engagementRate?: number;
+  avgEngagementRate?: number;
+  engagementGrowth?: { percentChange?: number };
+  totalReach?: number;
+  reachGrowth?: { percentChange?: number };
+  platformPerformance?: PlatformPerformance[];
+  followersGrowth?: FollowersGrowth;
+  platformGrowth?: Record<string, PlatformGrowthData>;
+  contentPerformance?: {
+    images?: ContentPerformanceData;
+    videos?: ContentPerformanceData;
+    carousels?: ContentPerformanceData;
+    text?: ContentPerformanceData;
+  };
+  aiRecommendation?: string;
+  heatmapData?: Record<string, Record<string, number>>;
+  engagementBreakdown?: EngagementBreakdown;
+  trendingTopics?: TrendingTopic[];
+}
+
+interface AIInsight {
+  id: string;
+  title: string;
+  description: string;
+  impact: string;
+  category: string;
+  actionType?: string;
+  timeframe?: string;
+}
+
+interface AIRecommendation {
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+  action?: string;
+  actionLabel?: string;
+}
+
+interface ContentIdea {
+  idea: string;
+  platform: string;
+  score: number;
+}
+
+interface AIInsightsData {
+  insights?: AIInsight[];
+  recommendations?: AIRecommendation[];
+  contentIdeas?: ContentIdea[];
+  summary?: {
+    totalInsights?: number;
+    highImpact?: number;
+    mediumImpact?: number;
+    lowImpact?: number;
+  };
+}
+
+interface ActivityItem {
+  id: string;
+  type: string;
+  platform: string;
+  user?: string;
+  content: string;
+  time: string;
+  action?: string;
+  engagement?: string;
+}
+
+interface WeeklyStats {
+  totalReach?: number;
+  engagementRate?: number;
+  postsThisWeek?: number;
+  dailyEngagement?: Array<{ date: string; engagement: number }>;
+}
+
+interface CalendarPost {
+  id: string;
+  title: string;
+  content?: string;
+  scheduledFor: string;
+  platforms?: string[];
+  postType?: string;
+  mediaUrls?: string[];
+  hashtags?: string[];
+  mentions?: string[];
+  location?: string;
+  status?: string;
+}
+
+interface CalendarStats {
+  upcomingThisWeek?: number;
+  totalScheduled?: number;
+  totalPublished?: number;
+}
+
+interface AutopilotStatus {
+  isRunning?: boolean;
+  postsGenerated?: number;
+  postsPublished?: number;
+  engagement?: number;
+  lastActivity?: string;
+}
+
 // Social Media Platforms
 const SOCIAL_PLATFORMS: SocialPlatform[] = [
   {
@@ -240,7 +398,7 @@ export default function SocialMedia() {
   const [selectedTone, setSelectedTone] = useState('professional');
   const [contentUrl, setContentUrl] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
-  const [urlGeneratedContent, setUrlGeneratedContent] = useState<any[]>([]);
+  const [urlGeneratedContent, setUrlGeneratedContent] = useState<GeneratedContent[]>([]);
   const [isGeneratingFromUrl, setIsGeneratingFromUrl] = useState(false);
   const [contentFormat, setContentFormat] = useState('text');
   const [regularContentFormat, setRegularContentFormat] = useState('text');
@@ -252,7 +410,7 @@ export default function SocialMedia() {
   // Calendar state
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [editingCalendarPost, setEditingCalendarPost] = useState<any>(null);
+  const [editingCalendarPost, setEditingCalendarPost] = useState<CalendarPost | null>(null);
 
   // Helper function to format numbers with K/M suffix
   const formatNumber = (num: number): string => {
@@ -288,33 +446,33 @@ export default function SocialMedia() {
     enabled: !!user,
   });
 
-  const { data: metrics, isLoading: metricsLoading } = useQuery({
+  const { data: metrics, isLoading: metricsLoading } = useQuery<SocialMetrics>({
     queryKey: ['/api/social/metrics'],
     enabled: !!user,
   });
 
-  const { data: aiInsights, isLoading: aiInsightsLoading } = useQuery({
+  const { data: aiInsights, isLoading: aiInsightsLoading } = useQuery<AIInsightsData>({
     queryKey: ['/api/social/ai-insights'],
     enabled: !!user,
   });
 
-  const { data: activity = [], isLoading: activityLoading } = useQuery({
+  const { data: activity = [], isLoading: activityLoading } = useQuery<ActivityItem[]>({
     queryKey: ['/api/social/activity'],
     enabled: !!user,
   });
 
-  const { data: weeklyStats, isLoading: weeklyStatsLoading } = useQuery({
+  const { data: weeklyStats, isLoading: weeklyStatsLoading } = useQuery<WeeklyStats>({
     queryKey: ['/api/social/weekly-stats'],
     enabled: !!user,
   });
 
   // Calendar queries
-  const { data: calendarPosts = [], isLoading: calendarLoading } = useQuery({
+  const { data: calendarPosts = [], isLoading: calendarLoading } = useQuery<CalendarPost[] | { posts: CalendarPost[] }>({
     queryKey: ['/api/social/calendar'],
     enabled: !!user,
   });
 
-  const { data: calendarStats, isLoading: calendarStatsLoading } = useQuery({
+  const { data: calendarStats, isLoading: calendarStatsLoading } = useQuery<CalendarStats>({
     queryKey: ['/api/social/calendar/stats'],
     enabled: !!user,
   });
@@ -558,7 +716,7 @@ export default function SocialMedia() {
   });
 
   // Autopilot Queries and Mutations
-  const { data: autopilotStatus, isLoading: autopilotLoading } = useQuery({
+  const { data: autopilotStatus, isLoading: autopilotLoading } = useQuery<AutopilotStatus>({
     queryKey: ['/api/autopilot/status'],
     enabled: !!user,
     refetchInterval: 30000, // Refetch every 30 seconds
@@ -811,7 +969,7 @@ export default function SocialMedia() {
   };
 
   const handleEditPost = (postId: string) => {
-    const post = posts.find((p: unknown) => p.id === postId);
+    const post = posts.find((p: SocialPost) => p.id === postId);
     if (post) {
       setPostContent(post.content);
       setSelectedPlatforms(post.platforms);
@@ -849,15 +1007,15 @@ export default function SocialMedia() {
     }
   };
 
-  const handleDateClick = (date: Date, posts: unknown[]) => {
+  const handleDateClick = (date: Date, datePosts: CalendarPost[]) => {
     setSelectedDate(date);
     toast({
       title: 'Posts on this date',
-      description: `${posts.length} post(s) scheduled for ${date.toLocaleDateString()}`,
+      description: `${datePosts.length} post(s) scheduled for ${date.toLocaleDateString()}`,
     });
   };
 
-  const handleEditCalendarPost = (post: unknown) => {
+  const handleEditCalendarPost = (post: CalendarPost) => {
     setEditingCalendarPost(post);
     setScheduleDialogOpen(true);
   };
@@ -1677,7 +1835,7 @@ export default function SocialMedia() {
             {/* Calendar View */}
             <ContentCalendarView
               posts={
-                Array.isArray(calendarPosts) ? calendarPosts : (calendarPosts as any)?.posts || []
+                Array.isArray(calendarPosts) ? calendarPosts : (calendarPosts as { posts: CalendarPost[] })?.posts || []
               }
               onDateClick={handleDateClick}
             />
@@ -1685,7 +1843,7 @@ export default function SocialMedia() {
             {/* Timeline View */}
             <PostTimelineView
               posts={
-                Array.isArray(calendarPosts) ? calendarPosts : (calendarPosts as any)?.posts || []
+                Array.isArray(calendarPosts) ? calendarPosts : (calendarPosts as { posts: CalendarPost[] })?.posts || []
               }
               onEdit={handleEditCalendarPost}
               onDelete={handleDeleteCalendarPost}
@@ -1830,7 +1988,7 @@ export default function SocialMedia() {
               <CardContent>
                 <div className="space-y-4">
                   {activity && activity.length > 0 ? (
-                    activity.slice(0, 4).map((act: unknown, idx: number) => (
+                    activity.slice(0, 4).map((act: ActivityItem, idx: number) => (
                       <div
                         key={idx}
                         className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
@@ -1880,10 +2038,10 @@ export default function SocialMedia() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {posts.filter((post: unknown) => post.status === 'scheduled').length > 0 ? (
+                  {posts.filter((post: SocialPost) => post.status === 'scheduled').length > 0 ? (
                     posts
-                      .filter((post: unknown) => post.status === 'scheduled')
-                      .map((post: unknown) => (
+                      .filter((post: SocialPost) => post.status === 'scheduled')
+                      .map((post: SocialPost) => (
                         <Card key={post.id} data-testid={`card-scheduled-post-${post.id}`}>
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
@@ -2046,7 +2204,7 @@ export default function SocialMedia() {
               <CardContent>
                 <div className="space-y-4">
                   {metrics?.platformPerformance && metrics.platformPerformance.length > 0 ? (
-                    metrics.platformPerformance.map((platform: unknown) => (
+                    metrics.platformPerformance.map((platform: PlatformPerformance) => (
                       <div
                         key={platform.name}
                         className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
@@ -2090,13 +2248,13 @@ export default function SocialMedia() {
                 <div className="space-y-3">
                   {posts && posts.length > 0 ? (
                     posts
-                      .filter((post: unknown) => post.status === 'published')
+                      .filter((post: SocialPost) => post.status === 'published')
                       .sort(
-                        (a: unknown, b: unknown) =>
+                        (a: SocialPost, b: SocialPost) =>
                           (b.metrics?.engagement || 0) - (a.metrics?.engagement || 0)
                       )
                       .slice(0, 3)
-                      .map((post: unknown) => (
+                      .map((post: SocialPost) => (
                         <div
                           key={post.id}
                           className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
@@ -2443,7 +2601,7 @@ export default function SocialMedia() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {aiInsights?.recommendations && aiInsights.recommendations.length > 0 ? (
-                  aiInsights.recommendations.map((insight: unknown, idx: number) => (
+                  aiInsights.recommendations.map((insight: AIRecommendation, idx: number) => (
                     <div
                       key={idx}
                       className={`p-4 rounded-lg border-l-4 ${
@@ -2513,7 +2671,7 @@ export default function SocialMedia() {
               <CardContent>
                 <div className="space-y-3">
                   {metrics?.trendingTopics && metrics.trendingTopics.length > 0 ? (
-                    metrics.trendingTopics.map((trend: unknown, idx: number) => (
+                    metrics.trendingTopics.map((trend: TrendingTopic, idx: number) => (
                       <div
                         key={idx}
                         className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
@@ -2560,7 +2718,7 @@ export default function SocialMedia() {
               <CardContent>
                 <div className="space-y-3">
                   {aiInsights?.contentIdeas && aiInsights.contentIdeas.length > 0 ? (
-                    aiInsights.contentIdeas.map((suggestion: unknown, idx: number) => (
+                    aiInsights.contentIdeas.map((suggestion: ContentIdea, idx: number) => (
                       <div
                         key={idx}
                         className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
