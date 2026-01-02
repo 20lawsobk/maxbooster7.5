@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { useStudioStore } from '@/lib/studioStore';
 import { AssetUploadDialog } from './AssetUploadDialog';
+import { FileUploadZone } from './FileUploadZone';
 import {
   Search,
   Folder,
@@ -157,10 +158,11 @@ function BrowserTreeItem({ item, level, onSelect, selectedId }: BrowserTreeItemP
   );
 }
 
-/**
- * TODO: Add function documentation
- */
-export function BrowserPanel() {
+interface BrowserPanelProps {
+  projectId?: number | null;
+}
+
+export function BrowserPanel({ projectId = null }: BrowserPanelProps) {
   const {
     browserSearchQuery,
     browserActiveTab,
@@ -586,6 +588,15 @@ export function BrowserPanel() {
           </ScrollArea>
         </TabsContent>
       </Tabs>
+
+      {(browserActiveTab === 'pool' || browserActiveTab === 'files') && projectId && (
+        <div
+          className="p-3 border-t"
+          style={{ borderColor: 'var(--studio-border)' }}
+        >
+          <FileUploadZone projectId={projectId} compact />
+        </div>
+      )}
 
       <AssetUploadDialog
         open={uploadDialogOpen}

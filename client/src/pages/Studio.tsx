@@ -88,6 +88,7 @@ import { useMarkers } from '@/hooks/useMarkers';
 import { useStudioStore } from '@/lib/studioStore';
 import { TransportBar } from '@/components/studio/TransportBar';
 import { BrowserPanel } from '@/components/studio/BrowserPanel';
+import { FileUploadZone } from '@/components/studio/FileUploadZone';
 import { InspectorPanel } from '@/components/studio/InspectorPanel';
 import { RoutingMatrix } from '@/components/studio/RoutingMatrix';
 import StudioTutorial from '@/components/studio/StudioTutorial';
@@ -285,6 +286,9 @@ export default function Studio() {
   const [isAIMixing, setIsAIMixing] = useState(false);
   const [isAIMastering, setIsAIMastering] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
+  const [globalDroppedFiles, setGlobalDroppedFiles] = useState<FileList | null>(null);
+  const globalDragCounterRef = useRef(0);
   const [showLyricsPanel, setShowLyricsPanel] = useState(false);
   const [lyricsContent, setLyricsContent] = useState('');
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -1142,6 +1146,42 @@ export default function Studio() {
     [uploadFileMutation]
   );
 
+  const handleGlobalDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes('Files')) {
+      globalDragCounterRef.current++;
+      if (globalDragCounterRef.current === 1) {
+        setIsGlobalDragging(true);
+      }
+    }
+  }, []);
+
+  const handleGlobalDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    globalDragCounterRef.current--;
+    if (globalDragCounterRef.current === 0) {
+      setIsGlobalDragging(false);
+    }
+  }, []);
+
+  const handleGlobalDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleGlobalDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    globalDragCounterRef.current = 0;
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      setGlobalDroppedFiles(files);
+    }
+    setIsGlobalDragging(false);
+  }, []);
+
   const handleSaveProject = useCallback(async () => {
     if (!selectedProject) return;
 
@@ -1729,10 +1769,28 @@ export default function Studio() {
       ) : (
         <div
           ref={dawContainerRef}
-          className="h-full flex flex-col studio-container"
+          className="h-full flex flex-col studio-container relative"
           role="application"
           aria-label="Digital Audio Workstation"
+          onDragEnter={handleGlobalDragEnter}
+          onDragLeave={handleGlobalDragLeave}
+          onDragOver={handleGlobalDragOver}
+          onDrop={handleGlobalDrop}
         >
+          {(isGlobalDragging || globalDroppedFiles) && (
+            <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+              <FileUploadZone
+                projectId={selectedProject?.id ?? null}
+                onUploadComplete={() => {
+                  setIsGlobalDragging(false);
+                  setGlobalDroppedFiles(null);
+                }}
+                externalFiles={globalDroppedFiles}
+                onExternalFilesProcessed={() => setGlobalDroppedFiles(null)}
+                className="max-w-md w-full mx-4"
+              />
+            </div>
+          )}
           <LayoutGrid
             topBar={
               <div className="flex flex-col">
@@ -2249,7 +2307,7 @@ export default function Studio() {
             browser={
               browserVisible ? (
                 <div className="browser-panel h-full">
-                  <BrowserPanel />
+                  <BrowserPanel projectId={selectedProject?.id ?? null} />
                 </div>
               ) : null
             }
