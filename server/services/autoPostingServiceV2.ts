@@ -402,55 +402,438 @@ class AutoPostingServiceV2 {
 
   private async postToTikTok(user: User, accessToken: string | undefined, content: PostContent): Promise<PostResult> {
     if (!accessToken) throw new Error('TikTok not connected');
+
+    const caption = `${content.headline ? content.headline + '\n\n' : ''}${content.text}${content.hashtags ? '\n\n' + content.hashtags.join(' ') : ''}`;
+
+    if (!content.mediaUrl || content.mediaType !== 'video') {
+      throw new Error('TikTok requires video content');
+    }
+
+    const initResponse = await axios.post(
+      'https://open.tiktokapis.com/v2/post/publish/video/init/',
+      {
+        post_info: {
+          title: caption.slice(0, 150),
+          privacy_level: 'PUBLIC_TO_EVERYONE',
+          disable_duet: false,
+          disable_comment: false,
+          disable_stitch: false,
+        },
+        source_info: {
+          source: 'PULL_FROM_URL',
+          video_url: content.mediaUrl,
+        },
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      }
+    );
+
+    const publishId = initResponse.data.data?.publish_id;
+    const uploadUrl = initResponse.data.data?.upload_url;
     
+    if (!publishId) {
+      throw new Error('TikTok video init failed: no publish_id returned');
+    }
+
+    if (uploadUrl) {
+      const videoResponse = await axios.get(content.mediaUrl, { responseType: 'arraybuffer' });
+      const videoBuffer = videoResponse.data;
+
+      await axios.put(uploadUrl, videoBuffer, {
+        headers: {
+          'Content-Type': 'video/mp4',
+          'Content-Range': `bytes 0-${videoBuffer.length - 1}/${videoBuffer.length}`,
+        },
+      });
+    }
+
+    await axios.post(
+      'https://open.tiktokapis.com/v2/post/publish/video/complete/',
+      { publish_id: publishId },
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      }
+    );
+
+    let videoId: string | undefined;
+    const maxAttempts = 60;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      const statusResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
+        { publish_id: publishId },
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+        }
+      );
+
+      const status = statusResponse.data.data?.status;
+      if (status === 'PUBLISH_COMPLETE') {
+        videoId = statusResponse.data.data?.publicly_available_post_id?.[0]?.id;
+        break;
+      } else if (status === 'FAILED') {
+        throw new Error(`TikTok publish failed: ${statusResponse.data.data?.fail_reason || 'unknown'}`);
+      }
+    }
+
+    if (!videoId) {
+      throw new Error('TikTok video publish timed out - video may still be processing');
+    }
+
     return {
       platform: 'tiktok',
       success: true,
-      postId: `tiktok_${Date.now()}`,
+      postId: videoId,
+      postUrl: `https://www.tiktok.com/@${user.username}/video/${videoId}`,
       postedAt: new Date(),
     };
   }
 
   private async postToYouTube(user: User, accessToken: string | undefined, content: PostContent): Promise<PostResult> {
     if (!accessToken) throw new Error('YouTube not connected');
-    
-    return {
-      platform: 'youtube',
-      success: true,
-      postId: `youtube_${Date.now()}`,
-      postedAt: new Date(),
-    };
+
+    const description = `${content.headline ? content.headline + '\n\n' : ''}${content.text}${content.hashtags ? '\n\n' + content.hashtags.join(' ') : ''}`;
+
+    if (content.mediaType === 'video' && content.mediaUrl) {
+      const initResponse = await axios.post(
+        'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
+        {
+          snippet: {
+            title: content.headline || content.text.slice(0, 100),
+            description: description,
+            tags: content.hashtags?.map(h => h.replace('#', '')) || [],
+            categoryId: '10',
+          },
+          status: {
+            privacyStatus: 'public',
+            selfDeclaredMadeForKids: false,
+          },
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'X-Upload-Content-Type': 'video/*',
+          },
+        }
+      );
+
+      const uploadUrl = initResponse.headers.location;
+      if (!uploadUrl) {
+        throw new Error('YouTube upload session failed: no upload URL returned');
+      }
+
+      const videoResponse = await axios.get(content.mediaUrl, { responseType: 'arraybuffer' });
+      const videoBuffer = videoResponse.data;
+
+      const uploadResponse = await axios.put(uploadUrl, videoBuffer, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'video/*',
+          'Content-Length': videoBuffer.length.toString(),
+        },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+      });
+
+      const videoId = uploadResponse.data.id;
+
+      return {
+        platform: 'youtube',
+        success: true,
+        postId: videoId || `youtube_${Date.now()}`,
+        postUrl: videoId ? `https://youtube.com/watch?v=${videoId}` : undefined,
+        postedAt: new Date(),
+      };
+    } else {
+      const channelResponse = await axios.get(
+        'https://www.googleapis.com/youtube/v3/channels?part=id&mine=true',
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+      );
+      const channelId = channelResponse.data.items?.[0]?.id;
+      
+      if (!channelId) {
+        throw new Error('YouTube channel not found');
+      }
+
+      const postResponse = await axios.post(
+        'https://www.googleapis.com/youtube/v3/activities?part=snippet,contentDetails',
+        {
+          snippet: {
+            channelId: channelId,
+            description: description.slice(0, 5000),
+            type: 'bulletin',
+          },
+          contentDetails: {
+            bulletin: {
+              resourceId: { kind: 'youtube#channel', channelId: channelId },
+            },
+          },
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      return {
+        platform: 'youtube',
+        success: true,
+        postId: postResponse.data.id || `youtube_${Date.now()}`,
+        postedAt: new Date(),
+      };
+    }
   }
 
   private async postToLinkedIn(user: User, accessToken: string | undefined, content: PostContent): Promise<PostResult> {
     if (!accessToken) throw new Error('LinkedIn not connected');
+
+    const postText = `${content.headline ? content.headline + '\n\n' : ''}${content.text}${content.hashtags ? '\n\n' + content.hashtags.join(' ') : ''}`;
+
+    const profileResponse = await axios.get(
+      'https://api.linkedin.com/v2/userinfo',
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+    const personUrn = `urn:li:person:${profileResponse.data.sub}`;
+
+    let mediaAssets: any[] = [];
     
+    if (content.mediaUrl && content.mediaType === 'image') {
+      const registerResponse = await axios.post(
+        'https://api.linkedin.com/v2/assets?action=registerUpload',
+        {
+          registerUploadRequest: {
+            recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+            owner: personUrn,
+            serviceRelationships: [{
+              relationshipType: 'OWNER',
+              identifier: 'urn:li:userGeneratedContent',
+            }],
+          },
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        }
+      );
+
+      const uploadUrl = registerResponse.data.value?.uploadMechanism?.['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']?.uploadUrl;
+      const assetUrn = registerResponse.data.value?.asset;
+
+      if (uploadUrl && assetUrn) {
+        const imageResponse = await axios.get(content.mediaUrl, { responseType: 'arraybuffer' });
+        
+        await axios.put(uploadUrl, imageResponse.data, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'image/*',
+          },
+        });
+
+        mediaAssets.push({
+          status: 'READY',
+          media: assetUrn,
+        });
+      }
+    }
+
+    const postData: any = {
+      author: personUrn,
+      lifecycleState: 'PUBLISHED',
+      specificContent: {
+        'com.linkedin.ugc.ShareContent': {
+          shareCommentary: {
+            text: postText,
+          },
+          shareMediaCategory: mediaAssets.length > 0 ? 'IMAGE' : 'NONE',
+        },
+      },
+      visibility: {
+        'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
+      },
+    };
+
+    if (mediaAssets.length > 0) {
+      postData.specificContent['com.linkedin.ugc.ShareContent'].media = mediaAssets;
+    }
+
+    const response = await axios.post(
+      'https://api.linkedin.com/v2/ugcPosts',
+      postData,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'X-Restli-Protocol-Version': '2.0.0',
+        },
+      }
+    );
+
+    const postId = response.data.id;
+
     return {
       platform: 'linkedin',
       success: true,
-      postId: `linkedin_${Date.now()}`,
+      postId: postId || `linkedin_${Date.now()}`,
+      postUrl: postId ? `https://www.linkedin.com/feed/update/${postId}` : undefined,
       postedAt: new Date(),
     };
   }
 
   private async postToThreads(user: User, accessToken: string | undefined, content: PostContent): Promise<PostResult> {
     if (!accessToken) throw new Error('Threads not connected');
-    
+
+    const caption = `${content.headline ? content.headline + '\n\n' : ''}${content.text}${content.hashtags ? '\n\n' + content.hashtags.join(' ') : ''}`;
+
+    const userResponse = await axios.get(
+      `https://graph.threads.net/v1.0/me?access_token=${accessToken}&fields=id,username`
+    );
+    const threadsUserId = userResponse.data.id;
+    const threadsUsername = userResponse.data.username;
+
+    let mediaType = 'TEXT';
+    const containerData: any = {
+      text: caption.slice(0, 500),
+    };
+
+    if (content.mediaUrl && content.mediaType === 'image') {
+      mediaType = 'IMAGE';
+      containerData.image_url = content.mediaUrl;
+    } else if (content.mediaUrl && content.mediaType === 'video') {
+      mediaType = 'VIDEO';
+      containerData.video_url = content.mediaUrl;
+    }
+
+    const createUrl = new URL(`https://graph.threads.net/v1.0/${threadsUserId}/threads`);
+    createUrl.searchParams.set('access_token', accessToken);
+    createUrl.searchParams.set('media_type', mediaType);
+    createUrl.searchParams.set('text', containerData.text);
+    if (containerData.image_url) {
+      createUrl.searchParams.set('image_url', containerData.image_url);
+    }
+    if (containerData.video_url) {
+      createUrl.searchParams.set('video_url', containerData.video_url);
+    }
+
+    const createResponse = await axios.post(createUrl.toString());
+    const creationId = createResponse.data.id;
+
+    if (!creationId) {
+      throw new Error('Threads container creation failed');
+    }
+
+    if (mediaType === 'VIDEO') {
+      const maxAttempts = 30;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const statusResponse = await axios.get(
+          `https://graph.threads.net/v1.0/${creationId}?access_token=${accessToken}&fields=status`
+        );
+        
+        if (statusResponse.data.status === 'FINISHED') {
+          break;
+        } else if (statusResponse.data.status === 'ERROR') {
+          throw new Error('Threads video processing failed');
+        }
+      }
+    }
+
+    const publishUrl = new URL(`https://graph.threads.net/v1.0/${threadsUserId}/threads_publish`);
+    publishUrl.searchParams.set('access_token', accessToken);
+    publishUrl.searchParams.set('creation_id', creationId);
+
+    const publishResponse = await axios.post(publishUrl.toString());
+    const postId = publishResponse.data.id;
+
     return {
       platform: 'threads',
       success: true,
-      postId: `threads_${Date.now()}`,
+      postId: postId || `threads_${Date.now()}`,
+      postUrl: postId ? `https://www.threads.net/@${threadsUsername}/post/${postId}` : undefined,
       postedAt: new Date(),
     };
   }
 
   private async postToGoogleBusiness(user: User, accessToken: string | undefined, content: PostContent): Promise<PostResult> {
     if (!accessToken) throw new Error('Google Business not connected');
-    
+
+    const postText = `${content.headline ? content.headline + '\n\n' : ''}${content.text}${content.hashtags ? '\n\n' + content.hashtags.join(' ') : ''}`;
+
+    const accountsResponse = await axios.get(
+      'https://mybusinessbusinessinformation.googleapis.com/v1/accounts',
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+    const accountName = accountsResponse.data.accounts?.[0]?.name;
+
+    if (!accountName) {
+      throw new Error('No Google Business account found');
+    }
+
+    const locationsResponse = await axios.get(
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations`,
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+    const locationName = locationsResponse.data.locations?.[0]?.name;
+
+    if (!locationName) {
+      throw new Error('No Google Business location found');
+    }
+
+    const postData: any = {
+      languageCode: 'en-US',
+      summary: postText.slice(0, 1500),
+      topicType: 'STANDARD',
+    };
+
+    if (content.mediaUrl) {
+      postData.media = [{
+        mediaFormat: content.mediaType === 'video' ? 'VIDEO' : 'PHOTO',
+        sourceUrl: content.mediaUrl,
+      }];
+    }
+
+    if (content.link) {
+      postData.callToAction = {
+        actionType: 'LEARN_MORE',
+        url: content.link,
+      };
+    }
+
+    const response = await axios.post(
+      `https://mybusiness.googleapis.com/v4/${locationName}/localPosts`,
+      postData,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const postId = response.data.name?.split('/').pop();
+
     return {
       platform: 'google_business',
       success: true,
-      postId: `google_${Date.now()}`,
+      postId: postId || `google_${Date.now()}`,
+      postUrl: response.data.searchUrl || undefined,
       postedAt: new Date(),
     };
   }
