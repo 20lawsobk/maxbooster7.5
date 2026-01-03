@@ -1567,7 +1567,7 @@ export default function Analytics() {
         </StatCardRow>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-10 h-auto">
+          <TabsList className={`grid w-full h-auto ${user?.role === 'admin' ? 'grid-cols-10' : 'grid-cols-7'}`}>
             <TabsTrigger value="overview" data-testid="tab-overview" className="text-xs px-2">
               Overview
             </TabsTrigger>
@@ -1577,12 +1577,16 @@ export default function Analytics() {
             <TabsTrigger value="forecasting" data-testid="tab-forecasting" className="text-xs px-2">
               Forecasting
             </TabsTrigger>
-            <TabsTrigger value="cohorts" data-testid="tab-cohorts" className="text-xs px-2">
-              Cohorts
-            </TabsTrigger>
-            <TabsTrigger value="churn" data-testid="tab-churn" className="text-xs px-2">
-              Churn
-            </TabsTrigger>
+            {user?.role === 'admin' && (
+              <TabsTrigger value="cohorts" data-testid="tab-cohorts" className="text-xs px-2">
+                Cohorts
+              </TabsTrigger>
+            )}
+            {user?.role === 'admin' && (
+              <TabsTrigger value="churn" data-testid="tab-churn" className="text-xs px-2">
+                Churn
+              </TabsTrigger>
+            )}
             <TabsTrigger value="geographic" data-testid="tab-geographic" className="text-xs px-2">
               Geographic
             </TabsTrigger>
@@ -1595,14 +1599,16 @@ export default function Analytics() {
             <TabsTrigger value="revenue" data-testid="tab-revenue" className="text-xs px-2">
               Revenue
             </TabsTrigger>
-            <TabsTrigger value="anomalies" data-testid="tab-anomalies" className="text-xs px-2 relative">
-              Anomalies
-              {(anomalyData?.summary?.unacknowledged ?? 0) > 0 && (
-                <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
-                  {anomalyData?.summary?.unacknowledged}
-                </Badge>
-              )}
-            </TabsTrigger>
+            {user?.role === 'admin' && (
+              <TabsTrigger value="anomalies" data-testid="tab-anomalies" className="text-xs px-2 relative">
+                Anomalies
+                {(anomalyData?.summary?.unacknowledged ?? 0) > 0 && (
+                  <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
+                    {anomalyData?.summary?.unacknowledged}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
