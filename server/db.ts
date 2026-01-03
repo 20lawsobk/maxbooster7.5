@@ -187,4 +187,4 @@ export const pool = new InstrumentedPool({
   connectionTimeoutMillis: config.database.connectionTimeout,
 });
 
-export const db = drizzle({ client: pool, schema });
+export const db = drizzle(pool, { schema });
