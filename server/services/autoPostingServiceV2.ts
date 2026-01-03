@@ -441,18 +441,19 @@ class AutoPostingServiceV2 {
 
     if (uploadUrl) {
       const videoResponse = await axios.get(content.mediaUrl, { responseType: 'arraybuffer' });
-      const videoBuffer = videoResponse.data;
+      const videoBuffer = Buffer.from(videoResponse.data);
 
       await axios.put(uploadUrl, videoBuffer, {
         headers: {
           'Content-Type': 'video/mp4',
-          'Content-Range': `bytes 0-${videoBuffer.length - 1}/${videoBuffer.length}`,
+          'Content-Length': videoBuffer.byteLength.toString(),
+          'Content-Range': `bytes 0-${videoBuffer.byteLength - 1}/${videoBuffer.byteLength}`,
         },
       });
     }
 
     await axios.post(
-      'https://open.tiktokapis.com/v2/post/publish/video/complete/',
+      'https://open.tiktokapis.com/v2/post/publish/video/submit/',
       { publish_id: publishId },
       {
         headers: {
@@ -480,7 +481,8 @@ class AutoPostingServiceV2 {
 
       const status = statusResponse.data.data?.status;
       if (status === 'PUBLISH_COMPLETE') {
-        videoId = statusResponse.data.data?.publicly_available_post_id?.[0]?.id;
+        const postIds = statusResponse.data.data?.publicly_available_post_ids;
+        videoId = postIds?.[0]?.id || postIds?.[0];
         break;
       } else if (status === 'FAILED') {
         throw new Error(`TikTok publish failed: ${statusResponse.data.data?.fail_reason || 'unknown'}`);
@@ -535,13 +537,13 @@ class AutoPostingServiceV2 {
       }
 
       const videoResponse = await axios.get(content.mediaUrl, { responseType: 'arraybuffer' });
-      const videoBuffer = videoResponse.data;
+      const videoBuffer = Buffer.from(videoResponse.data);
 
       const uploadResponse = await axios.put(uploadUrl, videoBuffer, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'video/*',
-          'Content-Length': videoBuffer.length.toString(),
+          'Content-Length': videoBuffer.byteLength.toString(),
         },
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
