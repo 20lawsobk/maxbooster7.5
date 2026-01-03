@@ -436,7 +436,12 @@ class ErrorService {
   }
 
   private showUserFeedback(errorReport: ErrorReport) {
-    const { severity, userMessage } = errorReport;
+    const { severity, userMessage, category } = errorReport;
+
+    // Suppress timeout errors - they're transient and often resolve on retry
+    if (category === 'timeout') {
+      return;
+    }
 
     // Use toast for non-critical errors
     if (severity === 'warning' || severity === 'info') {
