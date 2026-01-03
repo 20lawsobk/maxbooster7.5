@@ -436,7 +436,7 @@ class ErrorService {
   }
 
   private showUserFeedback(errorReport: ErrorReport) {
-    const { severity, userMessage, recoveryActions } = errorReport;
+    const { severity, userMessage } = errorReport;
 
     // Use toast for non-critical errors
     if (severity === 'warning' || severity === 'info') {
@@ -449,7 +449,6 @@ class ErrorService {
     }
 
     // For errors and critical issues, show toast without actions
-    // (actions are better handled in the error boundary or custom UI)
     toast({
       title: severity === 'critical' ? 'Critical Error' : 'Error',
       description: userMessage,

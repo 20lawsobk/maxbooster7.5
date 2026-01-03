@@ -35,21 +35,21 @@ async function ensureCsrfToken(): Promise<string | null> {
   return token;
 }
 
-// Create an AbortController with timeout
-function createAbortControllerWithTimeout(timeoutMs: number = DEFAULT_TIMEOUT_MS): AbortController {
+// Create an AbortController with timeout - returns controller and cleanup function
+function createAbortControllerWithTimeout(timeoutMs: number = DEFAULT_TIMEOUT_MS): { 
+  controller: AbortController; 
+  cleanup: () => void;
+} {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
     controller.abort(new Error(`Request timeout after ${timeoutMs}ms`));
   }, timeoutMs);
 
-  // Clear timeout if request completes
-  const originalAbort = controller.abort.bind(controller);
-  controller.abort = function (reason?: unknown) {
+  const cleanup = () => {
     clearTimeout(timeoutId);
-    originalAbort(reason);
   };
 
-  return controller;
+  return { controller, cleanup };
 }
 
 /**
@@ -89,8 +89,8 @@ export async function apiRequest(
   }
 ): Promise<Response> {
   const isFormData = data instanceof FormData;
-  const controller = options?.signal ? null : createAbortControllerWithTimeout(options?.timeout);
-  const signal = options?.signal || controller?.signal;
+  const controllerWithCleanup = options?.signal ? null : createAbortControllerWithTimeout(options?.timeout);
+  const signal = options?.signal || controllerWithCleanup?.controller.signal;
 
   try {
     errorService.addBreadcrumb('api-request', {
@@ -121,10 +121,13 @@ export async function apiRequest(
       signal,
     });
 
+    controllerWithCleanup?.cleanup();
     await throwIfResNotOk(res);
     return res;
   } catch (error: unknown) {
-    if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+    controllerWithCleanup?.cleanup();
+    const err = error as Error;
+    if (err?.name === 'AbortError' || err?.message?.includes('timeout')) {
       const timeoutError = new Error(`Request to ${url} timed out`);
       captureException(timeoutError, {
         action: 'api-timeout',
@@ -133,7 +136,7 @@ export async function apiRequest(
       throw timeoutError;
     }
 
-    if (error.message?.includes('NetworkError') || error.message?.includes('fetch')) {
+    if (err?.message?.includes('NetworkError') || err?.message?.includes('fetch')) {
       captureException(error, {
         action: 'api-network-error',
         metadata: { method, url },
@@ -268,8 +271,8 @@ function buildUrlFromQueryKey(queryKey: readonly unknown[]): string {
 export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey, signal }) => {
-    const controller = signal ? null : createAbortControllerWithTimeout();
-    const abortSignal = signal || controller?.signal;
+    const controllerWithCleanup = signal ? null : createAbortControllerWithTimeout();
+    const abortSignal = signal || controllerWithCleanup?.controller.signal;
 
     try {
       const url = buildUrlFromQueryKey(queryKey);
@@ -283,6 +286,8 @@ export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryF
         signal: abortSignal,
       });
 
+      controllerWithCleanup?.cleanup();
+
       if (unauthorizedBehavior === 'returnNull' && res.status === 401) {
         return null;
       }
@@ -290,10 +295,12 @@ export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryF
       await throwIfResNotOk(res);
       return await res.json();
     } catch (error: unknown) {
+      controllerWithCleanup?.cleanup();
       const url = buildUrlFromQueryKey(queryKey);
+      const err = error as Error;
       
       // Handle timeout errors
-      if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+      if (err?.name === 'AbortError' || err?.message?.includes('timeout')) {
         const timeoutError = new Error(`Query ${url} timed out`);
         captureException(timeoutError, {
           action: 'query-timeout',
@@ -321,26 +328,27 @@ function retryDelayWithJitter(attemptIndex: number): number {
 
 // Determine if error is retryable
 function shouldRetry(error: unknown): boolean {
+  const err = error as Error;
   // Don't retry on client errors (4xx)
-  if (error.message?.includes('401') || error.message?.includes('403')) {
+  if (err?.message?.includes('401') || err?.message?.includes('403')) {
     return false;
   }
-  if (error.message?.match(/4\d{2}/)) {
+  if (err?.message?.match(/4\d{2}/)) {
     return false;
   }
 
   // Don't retry on server errors (5xx) to prevent loading loops
-  if (error.message?.match(/5\d{2}/)) {
+  if (err?.message?.match(/5\d{2}/)) {
     return false;
   }
 
   // Only retry on network errors and timeouts
   return (
-    error.message?.includes('NetworkError') ||
-    error.message?.includes('fetch') ||
-    error.message?.includes('timeout') ||
-    error.name === 'NetworkError' ||
-    error.name === 'TimeoutError'
+    err?.message?.includes('NetworkError') ||
+    err?.message?.includes('fetch') ||
+    err?.message?.includes('timeout') ||
+    err?.name === 'NetworkError' ||
+    err?.name === 'TimeoutError'
   );
 }
 
