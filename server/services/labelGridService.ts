@@ -63,12 +63,21 @@ export class LabelGridService {
   private authToken?: string;
 
   constructor() {
+    // Support both JWT token (preferred) and API key/secret authentication
+    const apiToken = process.env.LABELGRID_API_TOKEN;
+    
     this.config = {
       apiKey: process.env.LABELGRID_API_KEY || '',
       apiSecret: process.env.LABELGRID_API_SECRET || '',
       webhookUrl: process.env.LABELGRID_WEBHOOK_URL,
-      environment: (process.env.LABELGRID_ENV as 'sandbox' | 'production') || 'sandbox',
+      environment: (process.env.LABELGRID_ENV as 'sandbox' | 'production') || 'production',
     };
+
+    // If JWT token is provided, use it directly (no authentication needed)
+    if (apiToken) {
+      this.authToken = apiToken;
+      logger.info('[LABELGRID] Using pre-configured JWT token for authentication');
+    }
 
     this.apiBaseUrl =
       this.config.environment === 'production'
@@ -78,8 +87,20 @@ export class LabelGridService {
 
   /**
    * Authenticate with LabelGrid API
+   * If JWT token is already set from environment, this is a no-op
    */
   async authenticate(): Promise<void> {
+    // If we already have a token from environment, we're authenticated
+    if (this.authToken) {
+      logger.info('[LABELGRID] Already authenticated with JWT token');
+      return;
+    }
+
+    // Fall back to API key/secret authentication
+    if (!this.config.apiKey || !this.config.apiSecret) {
+      throw new Error('LabelGrid authentication requires either LABELGRID_API_TOKEN or LABELGRID_API_KEY/SECRET');
+    }
+
     try {
       const response = await axios.post(`${this.apiBaseUrl}/auth/token`, {
         apiKey: this.config.apiKey,
@@ -87,15 +108,24 @@ export class LabelGridService {
       });
 
       this.authToken = response.data.token;
-
-      // Set default auth header for all requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${this.authToken}`;
-
-      logger.info('[LABELGRID] Authentication successful');
-    } catch (error: unknown) {
+      logger.info('[LABELGRID] Authentication successful via API key/secret');
+    } catch (error: any) {
       logger.error('[LABELGRID] Authentication failed:', error.response?.data || error.message);
       throw new Error('Failed to authenticate with LabelGrid');
     }
+  }
+
+  /**
+   * Get authorization headers for API requests
+   */
+  private getAuthHeaders(): Record<string, string> {
+    if (!this.authToken) {
+      throw new Error('Not authenticated with LabelGrid');
+    }
+    return {
+      'Authorization': `Bearer ${this.authToken}`,
+      'Content-Type': 'application/json',
+    };
   }
 
   /**
@@ -128,11 +158,11 @@ export class LabelGridService {
         },
       };
 
-      // Submit to LabelGrid
+      // Submit to LabelGrid with authentication
       const response = await axios.post(`${this.apiBaseUrl}/releases`, labelGridRelease, {
         headers: {
-          'Content-Type': 'application/json',
-          'X-Webhook-URL': this.config.webhookUrl,
+          ...this.getAuthHeaders(),
+          'X-Webhook-URL': this.config.webhookUrl || '',
         },
       });
 
@@ -198,7 +228,9 @@ export class LabelGridService {
         await this.authenticate();
       }
 
-      const response = await axios.get(`${this.apiBaseUrl}/releases/${labelGridId}/status`);
+      const response = await axios.get(`${this.apiBaseUrl}/releases/${labelGridId}/status`, {
+        headers: this.getAuthHeaders(),
+      });
 
       const statuses: DistributionStatus[] = response.data.platforms.map((p: unknown) => ({
         platform: p.name,
@@ -224,7 +256,9 @@ export class LabelGridService {
         await this.authenticate();
       }
 
-      await axios.patch(`${this.apiBaseUrl}/releases/${labelGridId}`, updates);
+      await axios.patch(`${this.apiBaseUrl}/releases/${labelGridId}`, updates, {
+        headers: this.getAuthHeaders(),
+      });
 
       logger.info(`[LABELGRID] Release ${labelGridId} updated successfully`);
     } catch (error: unknown) {
@@ -245,6 +279,8 @@ export class LabelGridService {
       await axios.post(`${this.apiBaseUrl}/releases/${labelGridId}/takedown`, {
         platforms: platforms || 'all',
         reason: 'Artist request',
+      }, {
+        headers: this.getAuthHeaders(),
       });
 
       logger.info(`[LABELGRID] Takedown requested for release ${labelGridId}`);
@@ -267,6 +303,7 @@ export class LabelGridService {
       }
 
       const response = await axios.get(`${this.apiBaseUrl}/earnings`, {
+        headers: this.getAuthHeaders(),
         params: {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),

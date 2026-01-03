@@ -159,6 +159,19 @@ export class DatabaseStorage implements IStorage {
     return config;
   }
 
+  async getAllEnabledAutopilotConfigs(): Promise<any[]> {
+    const allUsers = await db.select().from(users);
+    return allUsers
+      .filter((user: any) => {
+        const config = user.advertisingAutopilotConfig;
+        return config && config.enabled === true;
+      })
+      .map((user: any) => ({
+        userId: user.id,
+        ...user.advertisingAutopilotConfig,
+      }));
+  }
+
   async getUserAIModel(userId: string, modelType: string): Promise<any | undefined> {
     const [model] = await db
       .select()

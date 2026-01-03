@@ -1,3 +1,4 @@
+import cron from 'node-cron';
 import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 import { aiModelManager } from './aiModelManager.js';
@@ -16,6 +17,7 @@ import { aiContentService } from './aiContentService.js';
  * - Advertising Auto-Publishing: Creates and launches ad campaigns
  * - Multimodal Analysis Integration: Uses analyzed content features for better predictions
  * - Confidence-based Publishing: Only publishes when confidence exceeds user threshold
+ * - Scheduled Execution: Runs every 15 minutes to check for autopilot tasks
  */
 
 interface AutoPublishResult {
@@ -28,6 +30,27 @@ interface AutoPublishResult {
 class AutopilotPublisher {
   private isRunning: boolean = false;
   private lastRun: Date | null = null;
+  private cronJob: cron.ScheduledTask | null = null;
+
+  constructor() {
+    this.startScheduler();
+  }
+
+  private startScheduler(): void {
+    this.cronJob = cron.schedule('*/15 * * * *', async () => {
+      logger.info('⏰ Autopilot scheduler triggered');
+      await this.publishForAllUsers();
+    });
+    logger.info('✅ Autopilot scheduler started (every 15 minutes)');
+  }
+
+  public stopScheduler(): void {
+    if (this.cronJob) {
+      this.cronJob.stop();
+      this.cronJob = null;
+      logger.info('⏹️ Autopilot scheduler stopped');
+    }
+  }
 
   /**
    * Main entry point: Run autopilot publishing for all eligible users
