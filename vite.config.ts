@@ -25,8 +25,11 @@ export default defineConfig({
       "@assets": path.resolve(import.meta.dirname, "attached_assets"),
       "react": path.resolve(import.meta.dirname, "node_modules/react"),
       "react-dom": path.resolve(import.meta.dirname, "node_modules/react-dom"),
+      "react-dom/client": path.resolve(import.meta.dirname, "node_modules/react-dom/client"),
+      "react/jsx-runtime": path.resolve(import.meta.dirname, "node_modules/react/jsx-runtime"),
+      "react/jsx-dev-runtime": path.resolve(import.meta.dirname, "node_modules/react/jsx-dev-runtime"),
     },
-    dedupe: ["react", "react-dom"],
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
@@ -63,6 +66,5 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "wouter", "@tanstack/react-query"],
-    force: true,
   },
 });
