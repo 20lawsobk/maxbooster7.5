@@ -1,12 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { Switch, Route, useLocation } from 'wouter';
-import { queryClient } from './lib/queryClient';
-import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { AuthProvider } from '@/components/auth/AuthProvider';
-import { ThemeProvider } from '@/contexts/ThemeContext';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { KeyboardShortcutsDialog } from '@/components/dialogs/KeyboardShortcutsDialog';
 import { SkipLinks } from '@/components/SkipLinks';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
@@ -33,7 +27,6 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import NotFound from '@/pages/not-found';
 
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
-
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Studio = lazy(() => import('@/pages/Studio'));
 const Marketplace = lazy(() => import('@/pages/Marketplace'));
@@ -235,34 +228,26 @@ function AIAssistantManager() {
 
 function App() {
   return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <CookieConsentBanner />
-              <AIAssistantManager />
-              <div id="main-content" role="main" tabIndex={-1}>
-                <Suspense
-                  fallback={
-                    <div
-                      className="min-h-screen flex items-center justify-center"
-                      role="status"
-                      aria-label="Loading application"
-                    >
-                      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-                    </div>
-                  }
-                >
-                  <AppWithKeyboardShortcuts />
-                </Suspense>
-              </div>
-            </TooltipProvider>
-          </AuthProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+    <>
+      <Toaster />
+      <CookieConsentBanner />
+      <AIAssistantManager />
+      <div id="main-content" role="main" tabIndex={-1}>
+        <Suspense
+          fallback={
+            <div
+              className="min-h-screen flex items-center justify-center"
+              role="status"
+              aria-label="Loading application"
+            >
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          }
+        >
+          <AppWithKeyboardShortcuts />
+        </Suspense>
+      </div>
+    </>
   );
 }
 
