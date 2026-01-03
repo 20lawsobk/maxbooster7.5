@@ -337,6 +337,36 @@ router.get('/algorithm-insights/:platform', requireAuth, asyncHandler(async (req
   });
 }));
 
+router.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
+  const userId = req.user!.id;
+  
+  res.json({
+    overview: {
+      totalReach: 0,
+      totalImpressions: 0,
+      totalEngagement: 0,
+      viralScore: 0,
+    },
+    platformHealth: {},
+    recommendations: [],
+    moneySaved: { monthly: 0, yearly: 0 },
+    growthVelocity: { daily: 0, weekly: 0, monthly: 0 },
+    viralScoreTrends: [],
+    alerts: [],
+  });
+}));
+
+router.get('/stats', requireAuth, asyncHandler(async (req, res) => {
+  const userId = req.user!.id;
+  
+  res.json({
+    totalPosts: 0,
+    totalReach: 0,
+    avgEngagement: 0,
+    viralPosts: 0,
+  });
+}));
+
 router.get('/metrics', requireAuth, asyncHandler(async (req, res) => {
   const userId = req.user!.id;
   
