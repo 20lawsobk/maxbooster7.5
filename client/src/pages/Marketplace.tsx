@@ -134,7 +134,6 @@ import {
   Save,
   Copy,
   Scissors,
-  Paste,
   Undo,
   Redo,
   RefreshCw,
@@ -351,6 +350,18 @@ interface CollaborationOffer {
   status: 'pending' | 'accepted' | 'rejected' | 'negotiating' | 'completed';
   messages: { sender: string; content: string; timestamp: string }[];
   createdAt: string;
+}
+
+interface SalesAnalytics {
+  totalRevenue: number;
+  totalSales: number;
+  avgSalePrice: number;
+  conversionRate: number;
+  revenueChangePercent: number;
+  salesChangePercent: number;
+  weeklyData: { week: string; revenue: number; sales: number }[];
+  topBeats: { title: string; sales: number; revenue: number }[];
+  licenseDistribution: Record<string, number>;
 }
 
 const BEAT_GENRES = [
@@ -647,7 +658,7 @@ export default function Marketplace() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: salesAnalytics, isLoading: salesAnalyticsLoading } = useQuery({
+  const { data: salesAnalytics, isLoading: salesAnalyticsLoading } = useQuery<SalesAnalytics>({
     queryKey: ['/api/marketplace/sales-analytics'],
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
@@ -813,7 +824,7 @@ export default function Marketplace() {
     setEditForm({
       title: beat.title,
       genre: beat.genre || '',
-      tempo: beat.bpm || 120,
+      tempo: beat.tempo || 120,
       key: beat.key || 'C',
       price: beat.price || 50,
       description: beat.description || '',
@@ -1628,15 +1639,15 @@ export default function Marketplace() {
                     <CardContent className="p-6">
                       <div className="flex flex-col items-center space-y-4">
                         <div className="relative">
-                          {producer.avatarUrl ? (
+                          {producer.avatar ? (
                             <img 
-                              src={producer.avatarUrl} 
-                              alt={producer.name || producer.displayName || 'Producer'} 
+                              src={producer.avatar} 
+                              alt={producer.displayName || 'Producer'} 
                               className="w-24 h-24 rounded-full object-cover group-hover:scale-110 transition border-4 border-purple-500/30"
                             />
                           ) : (
                             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold group-hover:scale-110 transition">
-                              {(producer.name || producer.displayName)?.substring(0, 2)?.toUpperCase() || 'PR'}
+                              {producer.displayName?.substring(0, 2)?.toUpperCase() || 'PR'}
                             </div>
                           )}
                           {producer.verified && (
@@ -1646,7 +1657,7 @@ export default function Marketplace() {
                           )}
                         </div>
                         <div className="text-center w-full">
-                          <h4 className="font-bold text-lg group-hover:text-blue-600 transition">{producer.name || producer.displayName}</h4>
+                          <h4 className="font-bold text-lg group-hover:text-blue-600 transition">{producer.displayName}</h4>
                           {producer.bio && (
                             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{producer.bio}</p>
                           )}
@@ -1828,7 +1839,7 @@ export default function Marketplace() {
                 title="Total Revenue"
                 value={salesAnalytics?.totalRevenue || 0}
                 change={parseFloat(String(salesAnalytics?.revenueChangePercent || 0))}
-                trend={salesAnalytics?.revenueChangePercent > 0 ? 'up' : 'neutral'}
+                trend={(salesAnalytics?.revenueChangePercent ?? 0) > 0 ? 'up' : 'neutral'}
                 prefix="$"
                 sparklineData={salesAnalytics?.weeklyData?.map((w: { revenue: number }) => w.revenue) ?? []}
                 icon={<DollarSign className="h-5 w-5" />}
@@ -1837,7 +1848,7 @@ export default function Marketplace() {
                 title="Total Sales"
                 value={salesAnalytics?.totalSales || 0}
                 change={parseFloat(String(salesAnalytics?.salesChangePercent || 0))}
-                trend={salesAnalytics?.salesChangePercent > 0 ? 'up' : 'neutral'}
+                trend={(salesAnalytics?.salesChangePercent ?? 0) > 0 ? 'up' : 'neutral'}
                 sparklineData={salesAnalytics?.weeklyData?.map((w: { sales: number }) => w.sales) ?? []}
                 icon={<ShoppingCart className="h-5 w-5" />}
               />
@@ -1864,7 +1875,6 @@ export default function Marketplace() {
             <ChartCard
               title="Revenue Performance"
               subtitle="Weekly earnings over the last 30 days"
-              icon={<BarChart3 className="h-5 w-5 text-blue-500" />}
             >
               {salesAnalytics?.weeklyData && salesAnalytics.weeklyData.length > 0 ? (
                 <SimpleAreaChart
@@ -1894,8 +1904,8 @@ export default function Marketplace() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {salesAnalytics?.topBeats?.length > 0 ? (
-                      salesAnalytics.topBeats.map((beat: { title: string; sales: number; revenue: number }, index: number) => (
+                    {(salesAnalytics?.topBeats?.length ?? 0) > 0 ? (
+                      salesAnalytics?.topBeats?.map((beat: { title: string; sales: number; revenue: number }, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">

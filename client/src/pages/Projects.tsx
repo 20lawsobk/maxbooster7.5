@@ -51,6 +51,42 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+interface Project {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string | null;
+  genre?: string | null;
+  bpm?: number | null;
+  key?: string | null;
+  status?: string | null;
+  workflowStage?: string | null;
+  isStudioProject?: boolean | null;
+  metadata?: Record<string, unknown> | null;
+  favorite?: boolean | null;
+  lastOpenedAt?: string | null;
+  coverImageUrl?: string | null;
+  tags?: string[] | null;
+  timeSignature?: string | null;
+  sampleRate?: number | null;
+  bitDepth?: number | null;
+  createdAt: string;
+  updatedAt?: string | null;
+  audioUrl?: string | null;
+  duration?: number | null;
+  fileSize?: number | null;
+  streams?: number | null;
+  progress?: number | null;
+}
+
+interface ProjectsApiResponse {
+  data: Project[];
+}
+
+interface ApiError {
+  message?: string;
+}
+
 export default function Projects() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const [location, setLocation] = useLocation();
@@ -62,10 +98,10 @@ export default function Projects() {
     file: null as File | null,
   });
   const [isUploading, setIsUploading] = useState(false);
-  const [currentlyPlaying, setCurrentlyPlaying] = useState<number | null>(null);
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<any>(null);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
@@ -74,12 +110,12 @@ export default function Projects() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: projectsData, isLoading: projectsLoading } = useQuery({
+  const { data: projectsData, isLoading: projectsLoading } = useQuery<ProjectsApiResponse>({
     queryKey: ['/api/projects'],
     enabled: !!user,
   });
 
-  const projects = (projectsData as any)?.data || [];
+  const projects: Project[] = projectsData?.data || [];
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -96,9 +132,10 @@ export default function Projects() {
       setUploadForm({ title: '', description: '', genre: '', file: null });
     },
     onError: (error: unknown) => {
+      const apiError = error as ApiError;
       toast({
         title: 'Upload Failed',
-        description: error.message || 'Failed to upload project. Please try again.',
+        description: apiError.message || 'Failed to upload project. Please try again.',
         variant: 'destructive',
       });
     },
@@ -116,9 +153,10 @@ export default function Projects() {
       });
     },
     onError: (error: unknown) => {
+      const apiError = error as ApiError;
       toast({
         title: 'Delete Failed',
-        description: error.message || 'Failed to delete project. Please try again.',
+        description: apiError.message || 'Failed to delete project. Please try again.',
         variant: 'destructive',
       });
     },
@@ -139,15 +177,16 @@ export default function Projects() {
       setEditingProject(null);
     },
     onError: (error: unknown) => {
+      const apiError = error as ApiError;
       toast({
         title: 'Update Failed',
-        description: error.message || 'Failed to update project.',
+        description: apiError.message || 'Failed to update project.',
         variant: 'destructive',
       });
     },
   });
 
-  const handlePlayProject = (project: unknown) => {
+  const handlePlayProject = (project: Project) => {
     // If already playing this project, pause it
     if (currentlyPlaying === project.id && audioElement) {
       audioElement.pause();
@@ -179,7 +218,7 @@ export default function Projects() {
     }
   };
 
-  const handleEdit = (project: unknown) => {
+  const handleEdit = (project: Project) => {
     setEditingProject(project);
     setEditForm({
       title: project.title || '',
@@ -307,8 +346,8 @@ export default function Projects() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Your Projects</h1>
             <p className="text-gray-500" role="status" aria-live="polite">
-              {(projects as any)?.length || 0} project
-              {((projects as any)?.length || 0) !== 1 ? 's' : ''} total
+              {projects.length} project
+              {projects.length !== 1 ? 's' : ''} total
             </p>
           </div>
 
@@ -488,7 +527,7 @@ export default function Projects() {
               <SkeletonProjectCard key={i} />
             ))}
           </section>
-        ) : ((projects as any)?.length || 0) === 0 ? (
+        ) : projects.length === 0 ? (
           <EmptyState
             icon={Sparkles}
             title="No projects yet. Create your first masterpiece!"
@@ -506,7 +545,7 @@ export default function Projects() {
             role="region"
             aria-label="Projects grid"
           >
-            {(projects as any)?.map((project: unknown) => (
+            {projects.map((project: Project) => (
               <Card key={project.id} className="hover:shadow-lg transition-shadow duration-200">
                 <CardContent className="p-6">
                   {/* Project Header */}

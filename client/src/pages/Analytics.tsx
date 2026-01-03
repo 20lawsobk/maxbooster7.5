@@ -119,6 +119,18 @@ import {
   Percent,
 } from 'lucide-react';
 
+interface AnalyticsWebSocketMessage {
+  type: string;
+  data: any;
+  timestamp?: number;
+}
+
+interface AnomalySummary {
+  total?: number;
+  unacknowledged?: number;
+  bySeverity?: Record<string, number>;
+}
+
 interface FanJourneyStage {
   stage: string;
   count: number;
@@ -1211,15 +1223,16 @@ export default function Analytics() {
 
   const { isConnected, sendMessage, connectionStatus } = useWebSocket({
     onMessage: (message) => {
-      if (message.type === 'analytics_update') {
-        setRealtimeData(message.data);
-        setLastUpdate(message.timestamp);
+      const msg = message as AnalyticsWebSocketMessage;
+      if (msg.type === 'analytics_update') {
+        setRealtimeData(msg.data);
+        setLastUpdate(msg.timestamp || Date.now());
         setConnectionLostTime(null);
       }
     },
     onConnect: () => {
       console.info('📊 Analytics WebSocket connected');
-      sendMessage({ type: 'subscribe_analytics' });
+      sendMessage({ type: 'subscribe_analytics', data: null });
       setConnectionLostTime(null);
     },
     onDisconnect: () => {
@@ -1265,7 +1278,7 @@ export default function Analytics() {
   const [anomalyMetricFilter, setAnomalyMetricFilter] = useState<string>('all');
   const [anomalySeverityFilter, setAnomalySeverityFilter] = useState<string>('all');
 
-  const { data: anomalySummary } = useQuery({
+  const { data: anomalySummary } = useQuery<AnomalySummary>({
     queryKey: ['/api/analytics/anomalies/summary'],
     enabled: !!user,
     refetchInterval: autoRefresh ? 30000 : false,
@@ -1275,7 +1288,7 @@ export default function Analytics() {
     data: anomalyData,
     isLoading: anomaliesLoading,
     refetch: refetchAnomalies,
-  } = useQuery({
+  } = useQuery<{ anomalies: any[]; summary: AnomalySummary | undefined }>({
     queryKey: ['/api/analytics/anomalies', anomalyMetricFilter, anomalySeverityFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -1293,9 +1306,7 @@ export default function Analytics() {
 
   const acknowledgeMutation = useMutation({
     mutationFn: async (anomalyId: string) => {
-      return await apiRequest(`/api/analytics/anomalies/${anomalyId}/acknowledge`, {
-        method: 'POST',
-      });
+      return await apiRequest('POST', `/api/analytics/anomalies/${anomalyId}/acknowledge`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/analytics/anomalies'] });
@@ -1331,7 +1342,7 @@ export default function Analytics() {
 
   useEffect(() => {
     return () => {
-      sendMessage({ type: 'unsubscribe_analytics' });
+      sendMessage({ type: 'unsubscribe_analytics', data: null });
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
       }
@@ -1586,7 +1597,7 @@ export default function Analytics() {
             </TabsTrigger>
             <TabsTrigger value="anomalies" data-testid="tab-anomalies" className="text-xs px-2 relative">
               Anomalies
-              {anomalyData?.summary?.unacknowledged > 0 && (
+              {(anomalyData?.summary?.unacknowledged ?? 0) > 0 && (
                 <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
                   {anomalyData?.summary?.unacknowledged}
                 </Badge>
@@ -1599,7 +1610,7 @@ export default function Analytics() {
               <ChartCard
                 title="Streaming Revenue"
                 subtitle="Last 30 days performance"
-                icon={<TrendingUp className="h-5 w-5 text-blue-500" />}
+                headerAction={<TrendingUp className="h-5 w-5 text-blue-500" />}
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
@@ -1625,7 +1636,7 @@ export default function Analytics() {
               <ChartCard
                 title="Platform Breakdown"
                 subtitle="Streams by platform"
-                icon={<Globe className="h-5 w-5 text-blue-500" />}
+                headerAction={<Globe className="h-5 w-5 text-blue-500" />}
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
@@ -1665,7 +1676,7 @@ export default function Analytics() {
               <ChartCard
                 title="Follower Growth"
                 subtitle="Social media audience growth"
-                icon={<Users className="h-5 w-5 text-blue-500" />}
+                headerAction={<Users className="h-5 w-5 text-blue-500" />}
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
@@ -1691,7 +1702,7 @@ export default function Analytics() {
               <ChartCard
                 title="Engagement Metrics"
                 subtitle="Listener interaction rates"
-                icon={<Activity className="h-5 w-5 text-blue-500" />}
+                headerAction={<Activity className="h-5 w-5 text-blue-500" />}
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
