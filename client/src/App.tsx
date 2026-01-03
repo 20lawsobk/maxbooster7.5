@@ -34,7 +34,6 @@ import NotFound from '@/pages/not-found';
 
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
 
-// Lazy load heavy pages for code splitting
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Studio = lazy(() => import('@/pages/Studio'));
 const Marketplace = lazy(() => import('@/pages/Marketplace'));
@@ -61,9 +60,6 @@ const Storefront = lazy(() => import('@/pages/Storefront'));
 const AdminAutonomy = lazy(() => import('@/pages/AdminAutonomy'));
 const ProducerProfilePage = lazy(() => import('@/pages/ProducerProfilePage'));
 
-/**
- * TODO: Add function documentation
- */
 function Router() {
   return (
     <Switch>
@@ -115,14 +111,10 @@ function Router() {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 function AppWithKeyboardShortcuts() {
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
   const [location, setLocation] = useLocation();
 
-  // Global keyboard shortcuts
   const shortcuts = [
     {
       key: '?',
@@ -177,17 +169,14 @@ function AppWithKeyboardShortcuts() {
     },
   ];
 
-  // Use keyboard shortcuts hook
   useKeyboardShortcuts(shortcuts, true);
 
-  // Announce page changes for screen readers
   useEffect(() => {
     const path = location.split('/')[1] || 'home';
     const pageName = path.charAt(0).toUpperCase() + path.slice(1);
     announce(`Navigated to ${pageName} page`);
   }, [location]);
 
-  // Add keyboard navigation class to body
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
@@ -208,18 +197,14 @@ function AppWithKeyboardShortcuts() {
     };
   }, []);
 
-  // Prevent browser default file drop behavior (navigating to the file)
-  // This stops accidental file drops from redirecting away from the page
   useEffect(() => {
     const preventDefaultDrop = (e: DragEvent) => {
-      // Only prevent default if this is a file drop and not handled by a component
       if (e.dataTransfer?.types.includes('Files')) {
         e.preventDefault();
       }
     };
 
     const preventDragOver = (e: DragEvent) => {
-      // Prevent default to allow drop (required for drop event to fire)
       if (e.dataTransfer?.types.includes('Files')) {
         e.preventDefault();
       }
@@ -248,9 +233,6 @@ function AIAssistantManager() {
   return user ? <AIAssistantPersonalized /> : <AIAssistantPublic />;
 }
 
-/**
- * TODO: Add function documentation
- */
 function App() {
   return (
     <ErrorBoundary>
