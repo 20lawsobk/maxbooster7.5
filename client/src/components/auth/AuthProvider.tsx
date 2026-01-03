@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest, getQueryFn } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 import type { User } from '@shared/schema';
 
 interface AuthContextType {
@@ -18,13 +18,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Silent auth check that doesn't throw errors on timeout
+async function silentAuthCheck(): Promise<User | null> {
+  try {
+    const response = await fetch('/api/auth/me', {
+      credentials: 'include',
+    });
+    if (response.status === 401) {
+      return null;
+    }
+    if (!response.ok) {
+      return null;
+    }
+    return await response.json();
+  } catch {
+    // Silent fail - return null on any error (timeout, network, etc.)
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const { data: userData, isLoading: queryLoading, isFetched } = useQuery({
     queryKey: ['/api/auth/me'],
-    queryFn: getQueryFn({ on401: 'returnNull' }),
-    retry: false,
+    queryFn: silentAuthCheck,
+    retry: 2,
+    retryDelay: 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
