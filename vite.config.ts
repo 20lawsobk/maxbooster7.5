@@ -51,6 +51,15 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ["wouter", "@tanstack/react-query"],
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "wouter",
+      "@tanstack/react-query",
+    ],
+    force: true,
   },
 });
