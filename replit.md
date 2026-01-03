@@ -9,23 +9,28 @@ Max Booster is an enterprise-level AI-powered music career management platform t
 - Professional enterprise UI design
 - All dialog menus must have solid, non-transparent backgrounds
 
+## Recent Changes (January 2026)
+- **Auth System Rebuilt**: Completely rebuilt authentication system using React Context + React Query best practices
+- **Analytics Role-Based Access**: Added role-based tab access - paid users see career-focused tabs (Overview, Fan Journey, Forecasting, Geographic, Demographics, Playlists, Revenue), admins see additional tabs (Cohorts, Churn, Anomalies)
+- **Coming Soon Pages**: Distribution, Royalties, and Advertisement pages show "Coming Soon - February 1st" cover for non-admin users
+
 ## System Architecture
 Max Booster utilizes a hybrid rule-based and ML autopilot architecture for social media and advertising, combining deterministic rules with machine learning. It features 9 operational autonomous systems for 24/7 operations, content generation, and updates, along with a self-healing security system. The Advertisement Autopilot creates a "Personal Ad Network" from connected social media profiles for organic advertising. The platform includes a simulation environment for comprehensive testing across various scenarios.
 
 **Key Features:**
--   **Authentication:** Session-based with bcrypt.
+-   **Authentication:** Session-based with bcrypt, React Context + React Query for state management.
 -   **Distribution:** DDEX packaging, ISRC/UPC generation, catalog imports.
 -   **Storefront:** Marketplace listings, membership tiers, payment processing.
--   **Analytics:** AI-powered predictions, streaming/revenue tracking.
+-   **Analytics:** AI-powered predictions, streaming/revenue tracking with role-based access.
 -   **Social Media:** Approval workflows, bulk scheduling, organic growth.
 -   **Studio:** Browser-based DAW with comping, markers, plugins, stems, warping.
 -   **Workspace:** Team collaboration, RBAC, SSO integration.
--   **Offline Mode:** Full offline support with project caching and sync for project editing, MIDI editing, audio playback, mixing, and plugin processing.
--   **P2P Marketplace Payments:** Peer-to-peer payment processing via Stripe Connect for seller onboarding, balance/earnings tracking, instant payouts, and split payments.
--   **Admin Controls:** Platform administration tools for system-wide settings, including a time-limited payment bypass.
+-   **Offline Mode:** Full offline support with project caching and sync.
+-   **P2P Marketplace Payments:** Peer-to-peer payment processing via Stripe Connect.
+-   **Admin Controls:** Platform administration tools for system-wide settings.
 
 **Technology Stack:**
--   **Frontend:** React, Vite, TailwindCSS, shadcn/ui.
+-   **Frontend:** React 18, Vite, TailwindCSS, shadcn/ui, React Query.
 -   **Backend:** Express.js with TypeScript.
 -   **Database:** PostgreSQL with Drizzle ORM.
 
@@ -35,22 +40,10 @@ Max Booster utilizes a hybrid rule-based and ML autopilot architecture for socia
 -   `shared/`: Shared code including Drizzle database schema.
 -   `uploads/`: User file uploads.
 
-**AI Services API (100% in-house, no external API dependencies):**
--   **Content Generation:** `POST /api/ai/content/generate`
--   **Sentiment Analysis:** `POST /api/ai/sentiment/analyze`
--   **Recommendations:** `POST /api/ai/recommendations/get`
--   **Ad Optimization:** `POST /api/ai/ads/optimize`
--   **Social Media Predictions:** `POST /api/ai/social/predict`
--   **Time Series Forecasting:** `POST /api/ai/forecast`
--   **Analytics Intelligence:** `POST /api/ai/analytics/predict`, `GET /api/ai/insights`, `GET /api/ai/anomalies`, `POST /api/ai/churn/predict`, `POST /api/ai/revenue/forecast`
--   **Utility:** `POST /api/ai/hashtags/generate`, `POST /api/ai/toxicity/analyze`, `POST /api/ai/emotions/detect`, `GET /api/ai/trends`, `POST /api/ai/content/adapt`
--   **Monitoring:** `GET /api/ai/health`, `GET /api/ai/stats`, `GET /api/ai/models`, `GET /api/ai/models/:modelId/performance`
-
-**VST/AU Plugin Bridge API:**
-Supports external VST/AU plugins through a desktop app bridge with APIs for bridge management, plugin scanning & discovery, and plugin instance control (VST2, VST3, AU, AAX formats).
-
-**Expanded Plugin Collection:**
-Includes 40+ built-in audio plugins (20+ instruments and 20+ effects like Reverb, Delay, Compression, EQ, Distortion, Modulation, Utility).
+**Auth System Files:**
+-   `client/src/components/auth/AuthProvider.tsx` - Main auth context and provider
+-   `client/src/hooks/useAuth.ts` - Re-export of useAuth hook
+-   `client/src/hooks/useRequireAuth.ts` - Auth requirement hooks for protected routes
 
 ## Development Setup
 
@@ -72,6 +65,10 @@ Includes 40+ built-in audio plugins (20+ instruments and 20+ effects like Reverb
 - `REDIS_URL` - Redis for session store and queues
 - `ADMIN_PASSWORD` - Bootstrap admin account password
 - Social media API keys for platform integrations
+
+## Admin Account
+- Email: blawzmusic@gmail.com
+- Default password configured via ADMIN_PASSWORD environment variable
 
 ## External Dependencies
 -   **Payments:** Stripe (Connect for P2P marketplace)
