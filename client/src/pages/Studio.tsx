@@ -351,6 +351,9 @@ export default function Studio() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullscreenUpload, setShowFullscreenUpload] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  // Keep track of the dialog container at the moment the upload dialog opens
+  // This prevents container changes when fullscreen exits (file picker opens)
+  const [uploadDialogContainer, setUploadDialogContainer] = useState<HTMLElement | null>(null);
   const [masterVolume, setMasterVolume] = useState(80);
   const tutorialShownRef = useRef(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('setup');
@@ -1567,6 +1570,8 @@ export default function Studio() {
       key: 'u',
       ctrl: true,
       handler: () => {
+        // Capture the current container when opening the dialog
+        setUploadDialogContainer(isFullscreen ? dawContainerRef.current : null);
         setShowFullscreenUpload(true);
         announce('Upload dialog opened');
       },
@@ -1868,7 +1873,11 @@ export default function Studio() {
                     if (project) setSelectedProject(project);
                   }}
                   onCreateProject={(title) => createProjectMutation.mutate(title)}
-                  onUploadFile={() => setShowFullscreenUpload(true)}
+                  onUploadFile={() => {
+                    // Capture the current container when opening the dialog
+                    setUploadDialogContainer(isFullscreen ? dawContainerRef.current : null);
+                    setShowFullscreenUpload(true);
+                  }}
                   onSaveProject={handleSaveProject}
                   isSaving={isSaving}
                 />
@@ -2093,7 +2102,11 @@ export default function Studio() {
                               size="sm"
                               variant="ghost"
                               className="h-8"
-                              onClick={() => setShowFullscreenUpload(true)}
+                              onClick={() => {
+                                // Capture the current container when opening the dialog
+                                setUploadDialogContainer(isFullscreen ? dawContainerRef.current : null);
+                                setShowFullscreenUpload(true);
+                              }}
                               data-testid="button-upload-audio"
                             >
                               <Upload className="h-4 w-4 mr-1" />
@@ -2414,22 +2427,39 @@ export default function Studio() {
             browserCollapsed={!browserVisible}
           />
 
+          {/* Upload dialog uses a stable container captured when it opens to prevent issues when fullscreen exits */}
+          <Dialog 
+            open={showFullscreenUpload} 
+            onOpenChange={(open) => {
+              setShowFullscreenUpload(open);
+              if (!open) {
+                // Clear the container when dialog closes
+                setUploadDialogContainer(null);
+              }
+            }}
+          >
+            <DialogContent 
+              className="bg-[#252525] border-gray-700 text-white sm:max-w-lg"
+              container={uploadDialogContainer}
+            >
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5 text-primary" />
+                  Upload Audio Files
+                </DialogTitle>
+              </DialogHeader>
+              <FileUploadZone
+                projectId={selectedProject?.id ?? null}
+                onUploadComplete={() => {
+                  setShowFullscreenUpload(false);
+                  setUploadDialogContainer(null);
+                }}
+                className="min-h-[200px]"
+              />
+            </DialogContent>
+          </Dialog>
+
           <DialogContainerProvider value={isFullscreen ? dawContainerRef.current : null}>
-            <Dialog open={showFullscreenUpload} onOpenChange={setShowFullscreenUpload}>
-              <DialogContent className="bg-[#252525] border-gray-700 text-white sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Upload className="h-5 w-5 text-primary" />
-                    Upload Audio Files
-                  </DialogTitle>
-                </DialogHeader>
-                <FileUploadZone
-                  projectId={selectedProject?.id ?? null}
-                  onUploadComplete={() => setShowFullscreenUpload(false)}
-                  className="min-h-[200px]"
-                />
-              </DialogContent>
-            </Dialog>
 
             <Dialog open={isAIMixing} onOpenChange={setIsAIMixing}>
             <DialogContent className="bg-[#252525] border-gray-700 text-white">
