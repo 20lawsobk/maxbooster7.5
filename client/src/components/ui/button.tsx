@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:scale-105 active:scale-100 dark:bg-blue-600 dark:text-white dark:shadow-md dark:shadow-blue-500/40 dark:hover:bg-blue-500 dark:hover:shadow-lg',
+          'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:scale-105 active:scale-100 dark:bg-blue-600 dark:text-white dark:shadow-md dark:shadow-blue-500/40 dark:hover:bg-blue-500 dark:hover:shadow-lg',
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-lg hover:scale-105 active:scale-100 dark:bg-destructive dark:text-white',
+          'bg-red-600 text-white hover:bg-red-700 hover:shadow-lg hover:scale-105 active:scale-100 dark:bg-red-600 dark:text-white dark:hover:bg-red-500',
         outline:
-          'border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:border-primary/50 active:scale-95 dark:border-blue-500 dark:bg-blue-500/10 dark:text-white dark:hover:border-blue-400 dark:hover:bg-blue-500/20 dark:hover:text-white',
+          'border-2 border-blue-500 bg-transparent text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:shadow-md active:scale-95 dark:border-blue-400 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:border-blue-300 dark:hover:bg-blue-500/20 dark:hover:text-blue-200',
         secondary:
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md hover:scale-105 active:scale-100 dark:bg-purple-600 dark:text-white dark:hover:bg-purple-500 dark:shadow-sm dark:shadow-purple-500/30',
-        ghost: 'hover:bg-accent hover:text-accent-foreground hover:shadow-sm active:scale-95 dark:text-white dark:hover:text-white dark:hover:bg-muted/50',
-        link: 'text-primary underline-offset-4 hover:underline hover:text-primary/80 active:text-primary/60 dark:text-blue-400 dark:hover:text-blue-300',
+          'bg-gray-100 text-gray-900 hover:bg-gray-200 hover:shadow-md hover:scale-105 active:scale-100 dark:bg-purple-600 dark:text-white dark:hover:bg-purple-500 dark:shadow-sm dark:shadow-purple-500/30',
+        ghost: 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 hover:shadow-sm active:scale-95 dark:text-gray-200 dark:hover:text-white dark:hover:bg-white/10',
+        link: 'text-blue-600 underline-offset-4 hover:underline hover:text-blue-700 active:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300',
         premium:
           'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 active:scale-100 dark:shadow-lg dark:shadow-purple-500/30',
       },

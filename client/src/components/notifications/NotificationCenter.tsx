@@ -445,8 +445,8 @@ export function NotificationCenter() {
                 </div>
               </div>
 
-              {/* Only show test notification button for non-paid users */}
-              {(!user?.subscriptionTier || user.subscriptionTier === 'free') && (
+              {/* Only show test notification button for admins */}
+              {user?.role === 'admin' && (
                 <>
                   <Separator />
                   <div>

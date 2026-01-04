@@ -248,6 +248,27 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+
+  /* High contrast links for both light and dark themes */
+  a:not([class*="btn"]):not([class*="Button"]) {
+    color: hsl(214, 100%, 45%);
+    text-decoration-color: hsl(214, 100%, 45%);
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  }
+  
+  a:not([class*="btn"]):not([class*="Button"]):hover {
+    color: hsl(214, 100%, 35%);
+    text-decoration: underline;
+  }
+  
+  .dark a:not([class*="btn"]):not([class*="Button"]) {
+    color: hsl(207, 100%, 65%);
+    text-decoration-color: hsl(207, 100%, 65%);
+  }
+  
+  .dark a:not([class*="btn"]):not([class*="Button"]):hover {
+    color: hsl(207, 100%, 75%);
+  }
 }
 
 @layer utilities {
