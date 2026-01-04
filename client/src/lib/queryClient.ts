@@ -35,21 +35,27 @@ async function ensureCsrfToken(): Promise<string | null> {
   return token;
 }
 
-// Create an AbortController with timeout - returns controller and cleanup function
+// Create an AbortController with timeout - returns controller, cleanup, and timeout flag
 function createAbortControllerWithTimeout(timeoutMs: number = DEFAULT_TIMEOUT_MS): { 
   controller: AbortController; 
   cleanup: () => void;
+  wasTimeout: () => boolean;
 } {
   const controller = new AbortController();
+  let timedOut = false;
+  
   const timeoutId = setTimeout(() => {
+    timedOut = true;
     controller.abort(new Error(`Request timeout after ${timeoutMs}ms`));
   }, timeoutMs);
 
   const cleanup = () => {
     clearTimeout(timeoutId);
   };
+  
+  const wasTimeout = () => timedOut;
 
-  return { controller, cleanup };
+  return { controller, cleanup, wasTimeout };
 }
 
 /**
@@ -299,8 +305,24 @@ export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryF
       const url = buildUrlFromQueryKey(queryKey);
       const err = error as Error;
       
-      // Handle timeout errors
-      if (err?.name === 'AbortError' || err?.message?.includes('timeout')) {
+      // Check if this was an AbortError
+      if (err?.name === 'AbortError') {
+        // Only treat as timeout if our timeout actually fired
+        // Otherwise this is a normal React Query cancellation (component unmount, refetch, etc.)
+        if (controllerWithCleanup?.wasTimeout()) {
+          const timeoutError = new Error(`Query ${url} timed out`);
+          captureException(timeoutError, {
+            action: 'query-timeout',
+            metadata: { queryKey: url },
+          });
+          throw timeoutError;
+        }
+        // Normal cancellation - don't log as error, just silently cancel
+        throw error;
+      }
+      
+      // Handle explicit timeout message in error
+      if (err?.message?.includes('timeout')) {
         const timeoutError = new Error(`Query ${url} timed out`);
         captureException(timeoutError, {
           action: 'query-timeout',
