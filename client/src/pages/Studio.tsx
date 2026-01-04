@@ -1059,17 +1059,30 @@ export default function Studio() {
     // Skip if we're in a fullscreen transition (e.g., file picker just opened)
     // This prevents unwanted navigation when fullscreen exits unexpectedly
     if (fullscreenTransitionRef.current) return;
+    
+    // Skip if projects haven't loaded yet - the first effect will handle loading
+    // the project from URL once projects are available
+    if (projects.length === 0) return;
 
     if (selectedProject && selectedProject.id !== params.projectId) {
       // Project was changed via UI, update URL
       lastUrlProjectIdRef.current = selectedProject.id;
       setLocation(`/studio/${selectedProject.id}`);
     } else if (!selectedProject && params.projectId) {
-      // Project was cleared, navigate to /studio
-      lastUrlProjectIdRef.current = undefined;
-      setLocation('/studio');
+      // Only navigate away if the project genuinely doesn't exist
+      // Check if the project exists in the loaded projects list
+      const projectExists = projects.some(
+        (p: Project) => p.id === params.projectId || p.id.toString() === params.projectId
+      );
+      
+      // If project exists but isn't selected, the first effect should handle it
+      // If project doesn't exist, then navigate away
+      if (!projectExists) {
+        lastUrlProjectIdRef.current = undefined;
+        setLocation('/studio');
+      }
     }
-  }, [selectedProject?.id, params.projectId, setLocation]);
+  }, [selectedProject?.id, params.projectId, projects, setLocation]);
 
   // Initialize workflow state from project when selected
   useEffect(() => {
