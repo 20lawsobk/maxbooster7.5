@@ -1103,28 +1103,27 @@ router.get('/start-hub/summary', requireAuth, async (req: Request, res: Response
   try {
     const userId = (req as any).user.id;
     
-    // Get recent projects (last 10, ordered by lastOpenedAt)
+    // Get recent projects (last 10, ordered by lastOpenedAt) - include ALL user projects
     const recentProjects = await db.query.projects.findMany({
-      where: and(eq(projects.userId, userId), eq(projects.isStudioProject, true)),
+      where: eq(projects.userId, userId),
       orderBy: [desc(projects.lastOpenedAt), desc(projects.updatedAt)],
       limit: 10,
     });
     
-    // Get favorite projects
+    // Get favorite projects - include ALL user favorites
     const favoriteProjects = await db.query.projects.findMany({
       where: and(
         eq(projects.userId, userId), 
-        eq(projects.isStudioProject, true),
         eq(projects.favorite, true)
       ),
       orderBy: [desc(projects.updatedAt)],
       limit: 5,
     });
     
-    // Get project count
+    // Get project count - count ALL user projects
     const projectCount = await db.select({ count: drizzleSql<number>`count(*)` })
       .from(projects)
-      .where(and(eq(projects.userId, userId), eq(projects.isStudioProject, true)));
+      .where(eq(projects.userId, userId));
     
     // Get available templates (built-in + user's)
     const templates = await db.query.studioTemplates.findMany({
@@ -1158,8 +1157,9 @@ router.get('/start-hub/recent', requireAuth, async (req: Request, res: Response)
     const userId = (req as any).user.id;
     const limit = parseInt(req.query.limit as string) || 20;
     
+    // Include ALL user projects, not just studio-specific ones
     const recentProjects = await db.query.projects.findMany({
-      where: and(eq(projects.userId, userId), eq(projects.isStudioProject, true)),
+      where: eq(projects.userId, userId),
       orderBy: [desc(projects.lastOpenedAt), desc(projects.updatedAt)],
       limit,
     });
