@@ -349,6 +349,7 @@ export default function Studio() {
   const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
   const [visualizerMode, setVisualizerMode] = useState<'waveform' | 'spectrum'>('waveform');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFullscreenUpload, setShowFullscreenUpload] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [masterVolume, setMasterVolume] = useState(80);
   const tutorialShownRef = useRef(false);
@@ -1571,6 +1572,15 @@ export default function Studio() {
       description: 'Save project',
     },
     {
+      key: 'u',
+      ctrl: true,
+      handler: () => {
+        setShowFullscreenUpload(true);
+        announce('Upload dialog opened');
+      },
+      description: 'Upload audio files',
+    },
+    {
       key: 'z',
       ctrl: true,
       handler: () => announce('Undo'),
@@ -2091,6 +2101,25 @@ export default function Studio() {
                               size="sm"
                               variant="ghost"
                               className="h-8"
+                              onClick={() => setShowFullscreenUpload(true)}
+                              data-testid="button-upload-audio"
+                            >
+                              <Upload className="h-4 w-4 mr-1" />
+                              Upload
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Upload audio files (Ctrl+U)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8"
                               onClick={toggleFullscreen}
                               data-testid="button-toggle-fullscreen"
                             >
@@ -2394,6 +2423,22 @@ export default function Studio() {
           />
 
           <DialogContainerProvider value={isFullscreen ? dawContainerRef.current : null}>
+            <Dialog open={showFullscreenUpload} onOpenChange={setShowFullscreenUpload}>
+              <DialogContent className="bg-[#252525] border-gray-700 text-white sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5 text-primary" />
+                    Upload Audio Files
+                  </DialogTitle>
+                </DialogHeader>
+                <FileUploadZone
+                  projectId={selectedProject?.id ?? null}
+                  onUploadComplete={() => setShowFullscreenUpload(false)}
+                  className="min-h-[200px]"
+                />
+              </DialogContent>
+            </Dialog>
+
             <Dialog open={isAIMixing} onOpenChange={setIsAIMixing}>
             <DialogContent className="bg-[#252525] border-gray-700 text-white">
               <DialogHeader>
