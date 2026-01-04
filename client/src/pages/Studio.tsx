@@ -353,6 +353,9 @@ export default function Studio() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [masterVolume, setMasterVolume] = useState(80);
   const tutorialShownRef = useRef(false);
+  // Track if we're in a fullscreen transition (e.g., file picker opening)
+  // This prevents navigation when fullscreen exits unexpectedly
+  const fullscreenTransitionRef = useRef(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('setup');
   const [completedWorkflowSteps, setCompletedWorkflowSteps] = useState<WorkflowState[]>([]);
   const [showProjectSetup, setShowProjectSetup] = useState(false);
@@ -1052,6 +1055,10 @@ export default function Studio() {
   useEffect(() => {
     // Skip if this change originated from URL navigation
     if (urlChangeInProgressRef.current) return;
+    
+    // Skip if we're in a fullscreen transition (e.g., file picker just opened)
+    // This prevents unwanted navigation when fullscreen exits unexpectedly
+    if (fullscreenTransitionRef.current) return;
 
     if (selectedProject && selectedProject.id !== params.projectId) {
       // Project was changed via UI, update URL
@@ -1130,7 +1137,19 @@ export default function Studio() {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const wasFullscreen = isFullscreen;
+      const nowFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(nowFullscreen);
+      
+      // If we just exited fullscreen (e.g., due to file picker opening),
+      // set a flag to prevent URL sync from navigating away
+      if (wasFullscreen && !nowFullscreen) {
+        fullscreenTransitionRef.current = true;
+        // Clear the flag after a short delay to allow normal behavior to resume
+        setTimeout(() => {
+          fullscreenTransitionRef.current = false;
+        }, 500);
+      }
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -1138,7 +1157,7 @@ export default function Studio() {
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
-  }, []);
+  }, [isFullscreen]);
 
   // Input monitoring management for armed tracks
   useEffect(() => {
