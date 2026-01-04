@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 
 interface KeyboardShortcut {
   key: string;
@@ -8,12 +8,10 @@ interface KeyboardShortcut {
   meta?: boolean;
   handler: () => void;
   description?: string;
+  category?: string;
   preventDefault?: boolean;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[], enabled = true) {
   const shortcutsRef = useRef(shortcuts);
 
@@ -25,7 +23,6 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[], enabled = tr
     (e: KeyboardEvent) => {
       if (!enabled) return;
 
-      // Don't handle shortcuts when typing in input fields
       const target = e.target as HTMLElement;
       if (
         target.tagName === 'INPUT' ||
@@ -64,10 +61,39 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[], enabled = tr
   return shortcuts.map((s) => ({
     key: s.key,
     description: s.description || '',
+    category: s.category || 'General',
     modifiers: [s.ctrl && 'Ctrl', s.shift && 'Shift', s.alt && 'Alt', s.meta && 'Cmd']
       .filter(Boolean)
       .join('+'),
   }));
+}
+
+export function useShortcutOverlay() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '?' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName !== 'INPUT' &&
+          target.tagName !== 'TEXTAREA' &&
+          target.contentEditable !== 'true'
+        ) {
+          e.preventDefault();
+          setIsOpen((prev) => !prev);
+        }
+      }
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  return { isOpen, setIsOpen, toggle: () => setIsOpen((prev) => !prev) };
 }
 
 // Studio DAW specific shortcuts

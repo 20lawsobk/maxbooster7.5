@@ -48,7 +48,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { logger } from '@/lib/logger';
-import { useKeyboardShortcuts, STUDIO_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
+import { useKeyboardShortcuts, STUDIO_SHORTCUTS, useShortcutOverlay } from '@/hooks/useKeyboardShortcuts';
 import { announce } from '@/lib/accessibility';
 import {
   Upload,
@@ -119,6 +119,13 @@ import { ProjectSetupConsole } from '@/components/studio/ProjectSetupConsole';
 import { WorkflowStateBar, type WorkflowState } from '@/components/studio/WorkflowStateBar';
 import { SessionManager } from '@/components/studio/SessionManager';
 import { MasteringDeliveryPanel } from '@/components/studio/MasteringDeliveryPanel';
+import { KeyboardShortcutsOverlay } from '@/components/studio/KeyboardShortcutsOverlay';
+import { LEDMeter, LoudnessMeter, ClipIndicator } from '@/components/studio/LEDMeter';
+import { EnhancedZoomControls } from '@/components/studio/EnhancedZoomControls';
+import { TimeDisplay, TempoDisplay } from '@/components/studio/TimeDisplay';
+import { PluginRack, type PluginInstance } from '@/components/studio/PluginRack';
+import { WaveformClip, MIDIClip } from '@/components/studio/WaveformClip';
+import { SnapGridOverlay, Playhead, LoopRegion } from '@/components/studio/SnapGridOverlay';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useMIDIDevices } from '@/hooks/useMIDIDevices';
 import { useMetronome } from '@/hooks/useMetronome';
@@ -350,6 +357,8 @@ export default function Studio() {
   const [showProjectSetup, setShowProjectSetup] = useState(false);
   const [showSessionManager, setShowSessionManager] = useState(false);
   const [showMasteringDelivery, setShowMasteringDelivery] = useState(false);
+
+  const shortcutOverlay = useShortcutOverlay();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dawContainerRef = useRef<HTMLDivElement>(null);
@@ -3064,6 +3073,11 @@ export default function Studio() {
               onSkip={() => setShowTutorial(false)}
             />
           )}
+
+          <KeyboardShortcutsOverlay
+            isOpen={shortcutOverlay.isOpen}
+            onClose={() => shortcutOverlay.setIsOpen(false)}
+          />
         </div>
       )}
     </AppLayout>
