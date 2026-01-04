@@ -25,9 +25,48 @@ router.use(requireAdmin);
 
 router.get('/activity', async (req, res) => {
   try {
+    const { limit = '50' } = req.query;
+    const limitNum = Math.min(parseInt(limit as string) || 50, 100);
+    
+    const recentUsers = await db.select({
+      id: users.id,
+      email: users.email,
+      username: users.username,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .orderBy(desc(users.createdAt))
+    .limit(limitNum);
+    
+    const recentProjects = await db.select({
+      id: projects.id,
+      title: projects.title,
+      userId: projects.userId,
+      createdAt: projects.createdAt,
+    })
+    .from(projects)
+    .orderBy(desc(projects.createdAt))
+    .limit(limitNum);
+
+    const activities = [
+      ...recentUsers.map(u => ({
+        type: 'user_registered',
+        userId: u.id,
+        description: `New user registered: ${u.email}`,
+        timestamp: u.createdAt,
+      })),
+      ...recentProjects.map(p => ({
+        type: 'project_created',
+        userId: p.userId,
+        description: `Project created: ${p.title}`,
+        timestamp: p.createdAt,
+      })),
+    ].sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
+    .slice(0, limitNum);
+    
     res.json({
-      activities: [],
-      total: 0,
+      activities,
+      total: activities.length,
     });
   } catch (error) {
     logger.error('Error fetching admin activity:', error);
@@ -41,12 +80,77 @@ router.get('/activity', async (req, res) => {
 
 router.get('/analytics', async (req, res) => {
   try {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    
+    const [totalUsersResult] = await db.select({ count: count() }).from(users);
+    const totalUsers = totalUsersResult?.count || 0;
+    
+    const [activeUsersResult] = await db.select({ count: count() })
+      .from(users)
+      .where(gte(users.createdAt, thirtyDaysAgo));
+    const activeUsers = activeUsersResult?.count || 0;
+    
+    const [previousActiveResult] = await db.select({ count: count() })
+      .from(users)
+      .where(and(gte(users.createdAt, sixtyDaysAgo), lte(users.createdAt, thirtyDaysAgo)));
+    const previousActiveUsers = previousActiveResult?.count || 0;
+    
+    const [revenueResult] = await db.select({ 
+      total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` 
+    }).from(analytics).where(gte(analytics.date, thirtyDaysAgo));
+    const revenue = revenueResult?.total || 0;
+    
+    const [previousRevenueResult] = await db.select({ 
+      total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` 
+    }).from(analytics).where(and(gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo)));
+    const previousRevenue = previousRevenueResult?.total || 0;
+    
+    const subscriptionCounts = await db.select({
+      tier: users.subscriptionTier,
+      count: count(),
+    })
+    .from(users)
+    .groupBy(users.subscriptionTier);
+    
+    const subscriptions = {
+      free: 0,
+      pro: 0,
+      enterprise: 0,
+    };
+    
+    subscriptionCounts.forEach(row => {
+      const tier = row.tier?.toLowerCase() || '';
+      const paidTiers = ['pro', 'premium', 'monthly', 'yearly', 'annual'];
+      const enterpriseTiers = ['enterprise', 'lifetime', 'unlimited'];
+      
+      if (enterpriseTiers.includes(tier)) {
+        subscriptions.enterprise += row.count;
+      } else if (paidTiers.includes(tier)) {
+        subscriptions.pro += row.count;
+      } else {
+        subscriptions.free += row.count;
+      }
+    });
+    
+    const userGrowth = previousActiveUsers > 0 
+      ? Math.round(((activeUsers - previousActiveUsers) / previousActiveUsers) * 100)
+      : activeUsers > 0 ? 100 : 0;
+    
+    const revenueGrowth = previousRevenue > 0 
+      ? Math.round(((revenue - previousRevenue) / previousRevenue) * 100)
+      : revenue > 0 ? 100 : 0;
+    
     res.json({
-      totalUsers: 0,
-      activeUsers: 0,
-      revenue: 0,
-      subscriptions: { free: 0, pro: 0, enterprise: 0 },
-      growth: { users: 0, revenue: 0 },
+      totalUsers,
+      activeUsers,
+      revenue,
+      subscriptions,
+      growth: { 
+        users: userGrowth, 
+        revenue: revenueGrowth 
+      },
     });
   } catch (error) {
     logger.error('Error fetching admin analytics:', error);
