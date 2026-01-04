@@ -1133,18 +1133,10 @@ export default function Studio() {
       setIsFullscreen(!!document.fullscreenElement);
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && document.fullscreenElement) {
-        setIsFullscreen(false);
-      }
-    };
-
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -1876,7 +1868,7 @@ export default function Studio() {
                     if (project) setSelectedProject(project);
                   }}
                   onCreateProject={(title) => createProjectMutation.mutate(title)}
-                  onUploadFile={() => fileInputRef.current?.click()}
+                  onUploadFile={() => setShowFullscreenUpload(true)}
                   onSaveProject={handleSaveProject}
                   isSaving={isSaving}
                 />
