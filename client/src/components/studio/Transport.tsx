@@ -76,54 +76,54 @@ export function Transport({
 
   return (
     <div
-      className="h-full flex items-center justify-between px-6"
+      className="h-full flex items-center justify-center md:justify-between px-2 md:px-6 gap-2 md:gap-4"
       style={{
         background: 'var(--studio-transport)',
         borderColor: 'var(--studio-border)',
       }}
     >
-      {/* Transport Controls */}
-      <div className="flex items-center gap-2">
+      {/* Transport Controls - Touch-friendly on mobile */}
+      <div className="flex items-center gap-1 md:gap-2">
         <button
-          className="studio-btn h-9 w-9 rounded-md flex items-center justify-center"
+          className="studio-btn h-11 w-11 md:h-9 md:w-9 rounded-md flex items-center justify-center touch-manipulation"
           onClick={onSkipBack}
           data-testid="button-skip-back"
           title="Skip Back (,)"
         >
-          <SkipBack className="h-4 w-4" />
+          <SkipBack className="h-5 w-5 md:h-4 md:w-4" />
         </button>
 
         <button
-          className="studio-btn h-9 w-9 rounded-md flex items-center justify-center"
+          className="studio-btn h-11 w-11 md:h-9 md:w-9 rounded-md flex items-center justify-center touch-manipulation"
           onClick={onStop}
           data-testid="button-transport-stop"
           title="Stop (Enter)"
         >
-          <Square className="h-4 w-4" />
+          <Square className="h-5 w-5 md:h-4 md:w-4" />
         </button>
 
         <button
-          className={`studio-btn-play h-12 w-12 rounded-lg flex items-center justify-center ml-1 ${isPlaying ? 'playing' : ''}`}
+          className={`studio-btn-play h-14 w-14 md:h-12 md:w-12 rounded-lg flex items-center justify-center ml-1 touch-manipulation ${isPlaying ? 'playing' : ''}`}
           style={{ color: isPlaying ? 'white' : 'var(--studio-text)' }}
           onClick={() => (isPlaying ? onPause() : onPlay())}
           data-testid="button-transport-play"
           title="Play/Pause (Space)"
         >
-          {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-0.5" />}
+          {isPlaying ? <Pause className="h-7 w-7 md:h-6 md:w-6" /> : <Play className="h-7 w-7 md:h-6 md:w-6 ml-0.5" />}
         </button>
 
         <button
-          className={`studio-btn-record h-9 w-9 rounded-md flex items-center justify-center ml-1 ${isRecording ? 'recording animate-pulse' : ''}`}
+          className={`studio-btn-record h-11 w-11 md:h-9 md:w-9 rounded-md flex items-center justify-center ml-1 touch-manipulation ${isRecording ? 'recording animate-pulse' : ''}`}
           onClick={() => (isRecording ? onStopRecording() : onRecord())}
           data-testid="button-transport-record"
           title={`Record (R) - ${armedTracksCount} armed`}
         >
-          <Circle className="h-4 w-4" fill={isRecording ? 'currentColor' : 'none'} />
+          <Circle className="h-5 w-5 md:h-4 md:w-4" fill={isRecording ? 'currentColor' : 'none'} />
         </button>
 
         {armedTracksCount > 0 && (
           <div
-            className="ml-2 px-2 h-6 rounded flex items-center gap-1.5 text-xs font-medium"
+            className="hidden md:flex ml-2 px-2 h-6 rounded items-center gap-1.5 text-xs font-medium"
             style={{
               background: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)',
               color: '#fca5a5',
@@ -138,19 +138,19 @@ export function Transport({
         )}
 
         <button
-          className="studio-btn h-9 w-9 rounded-md flex items-center justify-center"
+          className="studio-btn h-11 w-11 md:h-9 md:w-9 rounded-md flex items-center justify-center touch-manipulation"
           onClick={onSkipForward}
           data-testid="button-skip-forward"
           title="Skip Forward (.)"
         >
-          <SkipForward className="h-4 w-4" />
+          <SkipForward className="h-5 w-5 md:h-4 md:w-4" />
         </button>
       </div>
 
-      {/* Time Display */}
-      <div className="flex items-center gap-6">
+      {/* Time Display - Hidden on mobile, visible on larger screens */}
+      <div className="hidden md:flex items-center gap-4 lg:gap-6">
         <div
-          className="flex flex-col items-end px-4 py-2 rounded-md"
+          className="flex flex-col items-end px-3 lg:px-4 py-1.5 lg:py-2 rounded-md"
           style={{
             background: 'var(--studio-surface)',
             border: '1px solid var(--studio-border-subtle)',
@@ -158,14 +158,14 @@ export function Transport({
           }}
         >
           <div
-            className="text-base font-mono font-semibold tracking-wider"
+            className="text-sm lg:text-base font-mono font-semibold tracking-wider"
             style={{ color: 'var(--studio-text)' }}
             data-testid="text-current-time"
           >
             {formatTimeDetailed(currentTime)}
           </div>
           <div
-            className="text-xs font-mono tracking-wide"
+            className="text-[10px] lg:text-xs font-mono tracking-wide"
             style={{ color: 'var(--studio-text-subtle)' }}
             data-testid="text-musical-time"
           >
@@ -173,11 +173,11 @@ export function Transport({
           </div>
         </div>
 
-        <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+        <div className="hidden lg:block h-8 w-px" style={{ background: 'var(--studio-border)' }} />
 
         {/* Loop Control */}
         <button
-          className={`studio-btn h-8 px-4 rounded-md text-xs font-medium ${loopEnabled ? 'studio-btn-accent' : ''}`}
+          className={`studio-btn h-8 px-3 lg:px-4 rounded-md text-xs font-medium touch-manipulation ${loopEnabled ? 'studio-btn-accent' : ''}`}
           onClick={onToggleLoop}
           data-testid="button-transport-loop"
           title="Toggle Loop (L)"
@@ -187,7 +187,7 @@ export function Transport({
 
         {/* Metronome Control */}
         <button
-          className={`studio-btn h-8 px-4 rounded-md text-xs font-medium ${metronomeEnabled ? 'studio-btn-metronome active' : ''}`}
+          className={`studio-btn h-8 px-3 lg:px-4 rounded-md text-xs font-medium touch-manipulation ${metronomeEnabled ? 'studio-btn-metronome active' : ''}`}
           onClick={onToggleMetronome}
           data-testid="button-transport-metronome"
           title="Toggle Metronome (M)"
@@ -195,12 +195,12 @@ export function Transport({
           CLICK
         </button>
 
-        <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+        <div className="hidden lg:block h-8 w-px" style={{ background: 'var(--studio-border)' }} />
 
-        {/* Tempo Controls */}
-        <div className="flex items-center gap-2">
+        {/* Tempo Controls - Hidden on smaller tablets */}
+        <div className="hidden lg:flex items-center gap-2">
           <button
-            className="studio-btn h-7 w-7 rounded flex items-center justify-center"
+            className="studio-btn h-7 w-7 rounded flex items-center justify-center touch-manipulation"
             onClick={onDecrementTempo}
             data-testid="button-tempo-decrease"
           >
@@ -237,7 +237,7 @@ export function Transport({
           </div>
 
           <button
-            className="studio-btn h-7 w-7 rounded flex items-center justify-center"
+            className="studio-btn h-7 w-7 rounded flex items-center justify-center touch-manipulation"
             onClick={onIncrementTempo}
             data-testid="button-tempo-increase"
           >
@@ -245,7 +245,7 @@ export function Transport({
           </button>
 
           <button
-            className="studio-btn h-7 px-3 rounded text-[10px] font-bold tracking-wider"
+            className="studio-btn h-7 px-3 rounded text-[10px] font-bold tracking-wider touch-manipulation"
             onClick={onTapTempo}
             data-testid="button-tap-tempo"
             title="Tap Tempo"
@@ -254,9 +254,9 @@ export function Transport({
           </button>
         </div>
 
-        {/* Time Signature */}
+        {/* Time Signature - Hidden on smaller tablets */}
         <div
-          className="px-3 py-1 rounded-md font-mono text-sm font-semibold"
+          className="hidden lg:block px-3 py-1 rounded-md font-mono text-sm font-semibold"
           style={{
             background: 'var(--studio-surface)',
             color: 'var(--studio-text)',
@@ -269,8 +269,8 @@ export function Transport({
         </div>
       </div>
 
-      {/* Right side placeholder */}
-      <div className="w-48" />
+      {/* Right side placeholder - Hidden on mobile */}
+      <div className="hidden md:block w-48" />
     </div>
   );
 }

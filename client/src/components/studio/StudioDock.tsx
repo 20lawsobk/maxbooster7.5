@@ -59,11 +59,11 @@ export function StudioDock({
 }: StudioDockProps) {
   return (
     <div
-      className="h-full flex items-center justify-between px-4"
+      className="h-full flex items-center justify-between px-2 md:px-4"
       style={{ backgroundColor: 'var(--studio-transport)' }}
     >
-      {/* Left: Performance Monitors */}
-      <div className="flex items-center gap-4 min-w-[180px]">
+      {/* Left: Performance Monitors - Hidden on mobile */}
+      <div className="hidden md:flex items-center gap-4 min-w-[180px]">
         <div className="flex items-center gap-2">
           <Activity className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
           <div className="flex flex-col gap-0.5">
@@ -109,7 +109,7 @@ export function StudioDock({
         </div>
       </div>
 
-      {/* Center: Transport Controls */}
+      {/* Center: Transport Controls - Full width on mobile */}
       <div className="flex-1 flex justify-center">
         <Transport
           isPlaying={isPlaying}
@@ -136,8 +136,8 @@ export function StudioDock({
         />
       </div>
 
-      {/* Right: Additional Info */}
-      <div className="min-w-[180px] flex justify-end">
+      {/* Right: Additional Info - Responsive */}
+      <div className="hidden md:flex min-w-[180px] justify-end">
         {isRecording && (
           <Badge
             variant="destructive"
@@ -148,6 +148,18 @@ export function StudioDock({
           </Badge>
         )}
       </div>
+      {/* Mobile recording indicator */}
+      {isRecording && (
+        <div className="flex md:hidden items-center">
+          <Badge
+            variant="destructive"
+            className="h-6 px-2 animate-pulse text-xs"
+            data-testid="badge-recording-status-mobile"
+          >
+            ● REC
+          </Badge>
+        </div>
+      )}
     </div>
   );
 }

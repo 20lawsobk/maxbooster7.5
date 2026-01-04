@@ -99,8 +99,8 @@ export function WorkflowStateBar({
   return (
     <TooltipProvider>
       <div className={`bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 ${className}`}>
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between px-2 md:px-4 py-2 gap-2">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent pb-1 md:pb-0 flex-1 min-w-0">
             {WORKFLOW_STEPS.map((step, index) => {
               const status = getStepStatus(step, index);
               const Icon = step.icon;
@@ -113,7 +113,8 @@ export function WorkflowStateBar({
                       <button
                         onClick={() => onStateChange(step.id)}
                         className={`
-                          flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
+                          flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-2 md:py-1.5 rounded-md transition-all shrink-0
+                          min-h-[44px] md:min-h-0 touch-manipulation
                           ${status === 'current' 
                             ? 'bg-purple-600 text-white' 
                             : status === 'completed'
@@ -125,11 +126,11 @@ export function WorkflowStateBar({
                         `}
                       >
                         {status === 'completed' ? (
-                          <Check className="h-4 w-4" />
+                          <Check className="h-4 w-4 md:h-4 md:w-4" />
                         ) : (
-                          <Icon className="h-4 w-4" />
+                          <Icon className="h-4 w-4 md:h-4 md:w-4" />
                         )}
-                        <span className="text-sm font-medium hidden md:inline">{step.label}</span>
+                        <span className="text-xs md:text-sm font-medium hidden sm:inline">{step.label}</span>
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="bg-zinc-800 border-zinc-700">
@@ -185,8 +186,8 @@ export function WorkflowStateBar({
         </div>
 
         {showDetails && (
-          <div className="px-4 pb-4 pt-2 border-t border-zinc-800">
-            <div className="grid grid-cols-6 gap-4">
+          <div className="px-2 md:px-4 pb-4 pt-2 border-t border-zinc-800 overflow-x-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-4 min-w-0">
               {WORKFLOW_STEPS.map((step, index) => {
                 const status = getStepStatus(step, index);
                 const Icon = step.icon;
