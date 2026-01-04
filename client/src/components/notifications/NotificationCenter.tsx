@@ -445,19 +445,23 @@ export function NotificationCenter() {
                 </div>
               </div>
 
-              <Separator />
-
-              <div>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => testNotificationMutation.mutate()}
-                  disabled={testNotificationMutation.isPending}
-                  data-testid="button-test-notification"
-                >
-                  {testNotificationMutation.isPending ? 'Sending...' : 'Send Test Notification'}
-                </Button>
-              </div>
+              {/* Only show test notification button for non-paid users */}
+              {(!user?.subscriptionTier || user.subscriptionTier === 'free') && (
+                <>
+                  <Separator />
+                  <div>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => testNotificationMutation.mutate()}
+                      disabled={testNotificationMutation.isPending}
+                      data-testid="button-test-notification"
+                    >
+                      {testNotificationMutation.isPending ? 'Sending...' : 'Send Test Notification'}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </DialogContent>
