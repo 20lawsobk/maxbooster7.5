@@ -233,7 +233,8 @@ export default function Studio() {
     });
 
   const [view, setView] = useState<'arrangement' | 'mixer'>('arrangement');
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  // selectedProject is now derived from URL params and query data to survive component remounts
+  // This prevents the bug where fullscreen exit causes component remount and state loss
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
   const [showAutomation, setShowAutomation] = useState(false);
   const [automationParameter, setAutomationParameter] = useState<'volume' | 'pan' | 'effect-param'>(
@@ -353,9 +354,6 @@ export default function Studio() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [masterVolume, setMasterVolume] = useState(80);
   const tutorialShownRef = useRef(false);
-  // Track if we're in a fullscreen transition (e.g., file picker opening)
-  // This prevents navigation when fullscreen exits unexpectedly
-  const fullscreenTransitionRef = useRef(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('setup');
   const [completedWorkflowSteps, setCompletedWorkflowSteps] = useState<WorkflowState[]>([]);
   const [showProjectSetup, setShowProjectSetup] = useState(false);
@@ -404,9 +402,20 @@ export default function Studio() {
   const { data: projectsData } = useQuery({
     queryKey: ['/api/studio/projects'],
     enabled: !!user,
+    staleTime: Infinity, // Keep project data fresh to survive fullscreen transitions
   });
   const projects = Array.isArray(projectsData) ? projectsData : [];
-
+  
+  // Derive selectedProject from URL params and query data to survive component remounts
+  // This fixes the bug where fullscreen exit (from file picker) causes the component to remount
+  // and lose local state, triggering unwanted navigation to /studio
+  const selectedProject = useMemo(() => {
+    if (!params.projectId || projects.length === 0) return null;
+    return projects.find(
+      (p: Project) => p.id === params.projectId || p.id.toString() === params.projectId
+    ) || null;
+  }, [params.projectId, projects]);
+  
   const { data: tracks = [], isLoading: isLoadingTracks } = useQuery<StudioTrack[]>({
     queryKey: ['/api/studio/projects', selectedProject?.id, 'tracks'],
     enabled: !!selectedProject,
@@ -446,7 +455,7 @@ export default function Studio() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
-      setSelectedProject(data);
+      // Navigate to the new project - selectedProject will be derived from URL + query data
       setLocation(`/studio/${data.id}`);
       toast({ title: 'Project created successfully' });
     },
@@ -467,9 +476,9 @@ export default function Studio() {
       const res = await apiRequest('PATCH', `/api/studio/projects/${id}`, data);
       return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
+      // Invalidate to refresh - selectedProject will update automatically from derived state
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
-      setSelectedProject(data);
       toast({ title: 'Project settings saved' });
     },
     onError: (error: Error) => {
@@ -1013,76 +1022,29 @@ export default function Studio() {
     }
   }, [userPreferences, selectedProject]);
 
-  // Track if URL change is in progress to prevent loops
-  const urlChangeInProgressRef = useRef(false);
-  const lastUrlProjectIdRef = useRef<string | undefined>(params.projectId);
-
-  // Load project from URL parameter on mount
+  // Handle invalid project ID in URL - only redirect if project genuinely doesn't exist
+  // and projects have fully loaded
+  const invalidProjectToastShownRef = useRef<string | null>(null);
   useEffect(() => {
-    const projectIdFromUrl = params.projectId;
-
-    // Only process if URL actually changed
-    if (projectIdFromUrl === lastUrlProjectIdRef.current && selectedProject?.id === projectIdFromUrl) {
-      return;
-    }
-    lastUrlProjectIdRef.current = projectIdFromUrl;
-
-    if (projectIdFromUrl && projects.length > 0) {
-      const project = projects.find(
-        (p: Project) => p.id === projectIdFromUrl || p.id.toString() === projectIdFromUrl
-      );
-
-      if (project) {
-        // Valid project found - load it only if different
-        if (!selectedProject || selectedProject.id !== project.id) {
-          urlChangeInProgressRef.current = true;
-          setSelectedProject(project);
-          setTimeout(() => { urlChangeInProgressRef.current = false; }, 100);
-        }
-      } else {
-        // Invalid project ID - show error and redirect
-        toast({
-          title: 'Project not found',
-          description: 'The requested project does not exist or you do not have access to it.',
-          variant: 'destructive',
-        });
-        setLocation('/studio');
-      }
-    }
-  }, [params.projectId, projects, selectedProject, setLocation, toast]);
-
-  // Sync URL when selected project changes via UI (not from URL changes)
-  useEffect(() => {
-    // Skip if this change originated from URL navigation
-    if (urlChangeInProgressRef.current) return;
+    // Only check if we have a project ID in URL and projects have loaded
+    if (!params.projectId || projects.length === 0) return;
     
-    // Skip if we're in a fullscreen transition (e.g., file picker just opened)
-    // This prevents unwanted navigation when fullscreen exits unexpectedly
-    if (fullscreenTransitionRef.current) return;
+    // Check if project exists
+    const projectExists = projects.some(
+      (p: Project) => p.id === params.projectId || p.id.toString() === params.projectId
+    );
     
-    // Skip if projects haven't loaded yet - the first effect will handle loading
-    // the project from URL once projects are available
-    if (projects.length === 0) return;
-
-    if (selectedProject && selectedProject.id !== params.projectId) {
-      // Project was changed via UI, update URL
-      lastUrlProjectIdRef.current = selectedProject.id;
-      setLocation(`/studio/${selectedProject.id}`);
-    } else if (!selectedProject && params.projectId) {
-      // Only navigate away if the project genuinely doesn't exist
-      // Check if the project exists in the loaded projects list
-      const projectExists = projects.some(
-        (p: Project) => p.id === params.projectId || p.id.toString() === params.projectId
-      );
-      
-      // If project exists but isn't selected, the first effect should handle it
-      // If project doesn't exist, then navigate away
-      if (!projectExists) {
-        lastUrlProjectIdRef.current = undefined;
-        setLocation('/studio');
-      }
+    // If project doesn't exist and we haven't shown the toast for this ID, show error
+    if (!projectExists && invalidProjectToastShownRef.current !== params.projectId) {
+      invalidProjectToastShownRef.current = params.projectId;
+      toast({
+        title: 'Project not found',
+        description: 'The requested project does not exist or you do not have access to it.',
+        variant: 'destructive',
+      });
+      setLocation('/studio');
     }
-  }, [selectedProject?.id, params.projectId, projects, setLocation]);
+  }, [params.projectId, projects, setLocation, toast]);
 
   // Initialize workflow state from project when selected
   useEffect(() => {
@@ -1150,19 +1112,7 @@ export default function Studio() {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      const wasFullscreen = isFullscreen;
-      const nowFullscreen = !!document.fullscreenElement;
-      setIsFullscreen(nowFullscreen);
-      
-      // If we just exited fullscreen (e.g., due to file picker opening),
-      // set a flag to prevent URL sync from navigating away
-      if (wasFullscreen && !nowFullscreen) {
-        fullscreenTransitionRef.current = true;
-        // Clear the flag after a short delay to allow normal behavior to resume
-        setTimeout(() => {
-          fullscreenTransitionRef.current = false;
-        }, 500);
-      }
+      setIsFullscreen(!!document.fullscreenElement);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -1170,7 +1120,7 @@ export default function Studio() {
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
-  }, [isFullscreen]);
+  }, []);
 
   // Input monitoring management for armed tracks
   useEffect(() => {
@@ -1827,12 +1777,9 @@ export default function Studio() {
   const isDataLoading = isLoading || !user || (selectedProject && isLoadingTracks);
 
   const handleStartHubProjectSelect = useCallback((projectId: string) => {
-    const project = projects.find((p: Project) => p.id === projectId);
-    if (project) {
-      setSelectedProject(project);
-      setLocation(`/studio/${projectId}`);
-    }
-  }, [projects, setLocation]);
+    // Just navigate - selectedProject is derived from URL + query data
+    setLocation(`/studio/${projectId}`);
+  }, [setLocation]);
 
   const handleStartHubCreateProject = useCallback((title: string, templateId?: string) => {
     createProjectMutation.mutate(title);
@@ -1896,8 +1843,8 @@ export default function Studio() {
                   onShowTutorial={() => setShowTutorial(true)}
                   onZoomReset={() => setZoom(1)}
                   onProjectChange={(projectId) => {
-                    const project = projects.find((p: Project) => p.id === projectId);
-                    if (project) setSelectedProject(project);
+                    // Just navigate - selectedProject is derived from URL + query data
+                    setLocation(`/studio/${projectId}`);
                   }}
                   onCreateProject={(title) => createProjectMutation.mutate(title)}
                   onUploadFile={() => setShowFullscreenUpload(true)}
