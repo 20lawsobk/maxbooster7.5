@@ -290,7 +290,8 @@ export function FileUploadZone({
             accept={ACCEPTED_EXTENSIONS.join(',')}
             multiple
             onChange={handleFileSelect}
-            className="hidden"
+            className="sr-only"
+            tabIndex={-1}
           />
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-full bg-primary/10">
@@ -361,7 +362,8 @@ export function FileUploadZone({
           accept={ACCEPTED_EXTENSIONS.join(',')}
           multiple
           onChange={handleFileSelect}
-          className="hidden"
+          className="sr-only"
+          tabIndex={-1}
         />
 
         <div className="flex flex-col items-center justify-center text-center gap-3 sm:gap-4">

@@ -2344,8 +2344,9 @@ export default function Studio() {
                   ref={fileInputRef}
                   type="file"
                   accept="audio/*"
-                  className="hidden"
+                  className="sr-only"
                   onChange={handleFileUpload}
+                  tabIndex={-1}
                 />
               </>
             }
