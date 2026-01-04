@@ -2164,8 +2164,8 @@ export default function Studio() {
 
                             {/* Time Ruler */}
                             <div className="flex">
-                              <div className="w-64 bg-[#252525] border-r border-gray-700" />
-                              <div className="flex-1">
+                              <div className="w-32 sm:w-48 md:w-56 lg:w-64 bg-[#252525] border-r border-gray-700 shrink-0" />
+                              <div className="flex-1 min-w-0">
                                 <TimeRuler
                                   duration={projectDuration}
                                   tempo={controller.transport.tempo}
@@ -2180,8 +2180,8 @@ export default function Studio() {
 
                             {/* Marker Lane */}
                             <div className="flex">
-                              <div className="w-64 bg-[#252525] border-r border-gray-700" />
-                              <div className="flex-1">
+                              <div className="w-32 sm:w-48 md:w-56 lg:w-64 bg-[#252525] border-r border-gray-700 shrink-0" />
+                              <div className="flex-1 min-w-0">
                                 <MarkerLane
                                   duration={projectDuration}
                                   onTimelineClick={handleTimelineClick}
@@ -2190,38 +2190,38 @@ export default function Studio() {
                             </div>
 
                             <div className="flex border-b border-gray-700">
-                              <div className="w-64 bg-[#252525] border-r border-gray-700 p-2 flex items-center justify-between">
-                                <div className="text-xs font-semibold text-gray-400">TRACKS</div>
-                                <div className="flex gap-1">
+                              <div className="w-32 sm:w-48 md:w-56 lg:w-64 bg-[#252525] border-r border-gray-700 p-1 sm:p-2 flex items-center justify-between shrink-0">
+                                <div className="text-[10px] sm:text-xs font-semibold text-gray-400 hidden sm:block">TRACKS</div>
+                                <div className="flex gap-0.5 sm:gap-1 flex-wrap">
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 px-2 text-xs"
+                                    className="h-7 sm:h-6 px-1.5 sm:px-2 text-[10px] sm:text-xs touch-manipulation"
                                     onClick={() => setShowAddTrackDialog(true)}
                                     data-testid="button-add-track"
                                   >
-                                    <Plus className="h-3 w-3 mr-1" />
-                                    Add
+                                    <Plus className="h-3 w-3 sm:mr-1" />
+                                    <span className="hidden sm:inline">Add</span>
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 px-2 text-xs"
+                                    className="h-7 sm:h-6 px-1.5 sm:px-2 text-[10px] sm:text-xs touch-manipulation"
                                     onClick={() => setShowAddBusDialog(true)}
                                     data-testid="button-add-bus"
                                   >
-                                    <MonitorSpeaker className="h-3 w-3 mr-1" />
-                                    Bus
+                                    <MonitorSpeaker className="h-3 w-3 sm:mr-1" />
+                                    <span className="hidden sm:inline">Bus</span>
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant={showAutomation ? 'secondary' : 'ghost'}
-                                    className="h-6 px-2 text-xs"
+                                    className="h-7 sm:h-6 px-1.5 sm:px-2 text-[10px] sm:text-xs touch-manipulation"
                                     onClick={() => setShowAutomation(!showAutomation)}
                                     data-testid="button-toggle-automation"
                                   >
-                                    <Activity className="h-3 w-3 mr-1" />
-                                    Auto
+                                    <Activity className="h-3 w-3 sm:mr-1" />
+                                    <span className="hidden sm:inline">Auto</span>
                                   </Button>
                                 </div>
                               </div>
@@ -2250,8 +2250,8 @@ export default function Studio() {
                             {/* Automation Lanes */}
                             {showAutomation && selectedTrack && (
                               <div className="flex">
-                                <div className="w-64 bg-[#252525] border-r border-gray-700" />
-                                <div className="flex-1">
+                                <div className="w-32 sm:w-48 md:w-56 lg:w-64 bg-[#252525] border-r border-gray-700 shrink-0" />
+                                <div className="flex-1 min-w-0">
                                   <AutomationLane
                                     trackId={selectedTrack}
                                     parameter={automationParameter}

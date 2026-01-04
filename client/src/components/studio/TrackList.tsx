@@ -306,7 +306,7 @@ const SortableTrackRow = memo(function SortableTrackRow({
         >
           {/* Professional Track Header with Depth */}
           <motion.div
-            className="w-48 sm:w-56 md:w-64 border-r flex flex-col overflow-hidden"
+            className="w-32 sm:w-48 md:w-56 lg:w-64 border-r flex flex-col overflow-hidden shrink-0"
             style={{
               height: isExpanded ? `${track.height || 100}px` : '40px',
               background: isDragOver ? 'var(--studio-accent-muted)' : 'var(--track-header-bg)',
@@ -403,7 +403,7 @@ const SortableTrackRow = memo(function SortableTrackRow({
                       <Button
                         size="sm"
                         variant={track.mute ? 'destructive' : 'ghost'}
-                        className={`h-6 px-2 text-xs font-medium transition-all ${
+                        className={`h-8 w-8 sm:h-6 sm:w-auto sm:px-2 text-xs font-medium transition-all touch-manipulation ${
                           track.mute
                             ? 'bg-red-600/90 hover:bg-red-600 shadow-lg shadow-red-600/20'
                             : 'hover:bg-white/10'
@@ -420,7 +420,7 @@ const SortableTrackRow = memo(function SortableTrackRow({
                       <Button
                         size="sm"
                         variant={track.solo ? 'default' : 'ghost'}
-                        className={`h-6 px-2 text-xs font-medium transition-all ${
+                        className={`h-8 w-8 sm:h-6 sm:w-auto sm:px-2 text-xs font-medium transition-all touch-manipulation ${
                           track.solo
                             ? 'bg-yellow-500/90 hover:bg-yellow-500 shadow-lg shadow-yellow-500/20'
                             : 'hover:bg-white/10'
@@ -437,7 +437,7 @@ const SortableTrackRow = memo(function SortableTrackRow({
                       <Button
                         size="sm"
                         variant={track.armed ? 'destructive' : 'ghost'}
-                        className={`h-6 px-2 text-xs font-medium transition-all ${
+                        className={`h-8 w-8 sm:h-6 sm:w-auto sm:px-2 text-xs font-medium transition-all touch-manipulation ${
                           track.armed
                             ? 'bg-red-500 hover:bg-red-400 shadow-lg shadow-red-500/30 animate-pulse'
                             : 'hover:bg-white/10'
@@ -450,11 +450,11 @@ const SortableTrackRow = memo(function SortableTrackRow({
                       </Button>
                     </motion.div>
 
-                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="hidden sm:block">
                       <Button
                         size="sm"
                         variant={track.inputMonitoring ? 'default' : 'ghost'}
-                        className={`h-6 w-6 p-0 transition-all ${
+                        className={`h-6 w-6 p-0 transition-all touch-manipulation ${
                           track.inputMonitoring
                             ? 'bg-blue-500/90 hover:bg-blue-500 shadow-lg shadow-blue-500/20'
                             : 'hover:bg-white/10'

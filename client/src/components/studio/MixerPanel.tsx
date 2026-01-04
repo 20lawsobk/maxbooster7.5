@@ -336,7 +336,7 @@ export function MixerPanel({
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1">
         <motion.div
-          className="p-4 flex gap-3"
+          className="p-2 sm:p-4 flex gap-2 sm:gap-3 overflow-x-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
@@ -353,7 +353,7 @@ export function MixerPanel({
                 transition={{ delay: index * 0.05, duration: 0.3 }}
               >
                 <Card
-                  className="w-72 border-gray-700 overflow-hidden group"
+                  className="w-44 sm:w-56 md:w-72 border-gray-700 overflow-hidden group shrink-0"
                   style={{
                     background: 'var(--studio-panel)',
                     borderColor: 'var(--studio-border)',
@@ -362,7 +362,7 @@ export function MixerPanel({
                   {/* Track Color Strip */}
                   <div className="h-1 w-full" style={{ background: track.color }} />
 
-                  <CardContent className="p-4 flex flex-col gap-4">
+                  <CardContent className="p-2 sm:p-4 flex flex-col gap-2 sm:gap-4">
                     {/* Track Header */}
                     <motion.div
                       className="flex items-center justify-between"
@@ -433,12 +433,12 @@ export function MixerPanel({
                     </div>
 
                     {/* Mute/Solo Buttons with Animation */}
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex gap-1 sm:gap-2 justify-center">
                       <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                         <Button
                           size="sm"
                           variant={track.mute ? 'destructive' : 'ghost'}
-                          className="h-8 px-3 transition-all"
+                          className="h-9 sm:h-8 px-2 sm:px-3 transition-all touch-manipulation"
                           onClick={() => onMuteToggle(track.id)}
                           data-testid={`button-mixer-mute-${track.id}`}
                           style={{
@@ -446,15 +446,15 @@ export function MixerPanel({
                             borderColor: track.mute ? '#ef4444' : 'var(--studio-border)',
                           }}
                         >
-                          <VolumeX className="h-3 w-3 mr-1" />
-                          <span className="text-xs">MUTE</span>
+                          <VolumeX className="h-3 w-3 sm:mr-1" />
+                          <span className="text-[10px] sm:text-xs hidden sm:inline">MUTE</span>
                         </Button>
                       </motion.div>
                       <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                         <Button
                           size="sm"
                           variant={track.solo ? 'default' : 'ghost'}
-                          className="h-8 px-3 transition-all"
+                          className="h-9 sm:h-8 px-2 sm:px-3 transition-all touch-manipulation"
                           onClick={() => onSoloToggle(track.id)}
                           data-testid={`button-mixer-solo-${track.id}`}
                           style={{
@@ -463,8 +463,8 @@ export function MixerPanel({
                             color: track.solo ? '#000' : 'var(--studio-text)',
                           }}
                         >
-                          <Headphones className="h-3 w-3 mr-1" />
-                          <span className="text-xs">SOLO</span>
+                          <Headphones className="h-3 w-3 sm:mr-1" />
+                          <span className="text-[10px] sm:text-xs hidden sm:inline">SOLO</span>
                         </Button>
                       </motion.div>
                     </div>
