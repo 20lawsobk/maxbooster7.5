@@ -51,7 +51,7 @@ class NotificationService {
         return;
       }
 
-      const preferences = (user.notificationPreferences as any) || {
+      const preferences = (user.notificationSettings as any) || {
         email: true,
         browser: true,
         releases: true,
@@ -71,28 +71,18 @@ class NotificationService {
           type,
           title,
           message,
-          link,
+          actionUrl: link,
           metadata,
-          read: false,
-          emailSent: false,
-          browserSent: false,
+          isRead: false,
         })
         .returning();
 
       if (shouldSendEmail) {
         await this.sendEmail(user, type, title, message, link);
-        await db
-          .update(notifications)
-          .set({ emailSent: true })
-          .where(eq(notifications.id, notification.id));
       }
 
-      if (shouldSendBrowser && user.pushSubscription) {
+      if (shouldSendBrowser && (user as any).pushSubscription) {
         await this.sendBrowserNotification(user, title, message, link);
-        await db
-          .update(notifications)
-          .set({ browserSent: true })
-          .where(eq(notifications.id, notification.id));
       }
 
       // Broadcast notification via WebSocket for real-time updates
