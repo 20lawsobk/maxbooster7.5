@@ -3110,7 +3110,6 @@ export default function Studio() {
               </div>
             </DialogContent>
           </Dialog>
-          </DialogContainerProvider>
 
           {showTutorial && (
             <StudioTutorial
@@ -3123,6 +3122,7 @@ export default function Studio() {
             isOpen={shortcutOverlay.isOpen}
             onClose={() => shortcutOverlay.setIsOpen(false)}
           />
+          </DialogContainerProvider>
         </div>
       )}
     </AppLayout>

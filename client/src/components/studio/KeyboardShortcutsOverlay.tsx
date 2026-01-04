@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Command, Keyboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useDialogContainer } from '@/components/ui/dialog';
 
 interface ShortcutCategory {
   name: string;
@@ -94,6 +96,8 @@ interface KeyboardShortcutsOverlayProps {
 }
 
 export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsOverlayProps) {
+  const container = useDialogContainer();
+  
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -108,11 +112,11 @@ export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsO
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  return (
+  const overlayContent = (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-[9998] flex items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -259,6 +263,12 @@ export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsO
       )}
     </AnimatePresence>
   );
+
+  if (container) {
+    return createPortal(overlayContent, container);
+  }
+
+  return overlayContent;
 }
 
 export function KeyboardShortcutHint({ keys, className = '' }: { keys: string[]; className?: string }) {

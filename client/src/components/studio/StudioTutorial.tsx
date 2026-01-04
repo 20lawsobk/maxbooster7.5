@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
@@ -6,6 +7,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { announce } from '@/lib/accessibility';
 import { useToast } from '@/hooks/use-toast';
+import { useDialogContainer } from '@/components/ui/dialog';
 
 interface TutorialStep {
   id: number;
@@ -77,6 +79,7 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
   const containerRef = useFocusTrap(true);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const dialogContainer = useDialogContainer();
 
   const saveTutorialMutation = useMutation({
     mutationFn: async () => {
@@ -302,7 +305,7 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
     };
   };
 
-  return (
+  const tutorialContent = (
     <div
       ref={containerRef}
       className={`fixed inset-0 z-[10000] transition-opacity duration-300 ${
@@ -449,4 +452,10 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
       </div>
     </div>
   );
+
+  if (dialogContainer) {
+    return createPortal(tutorialContent, dialogContainer);
+  }
+
+  return tutorialContent;
 }
