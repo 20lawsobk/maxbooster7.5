@@ -805,7 +805,97 @@ router.post('/generate-content', requireAuth, async (req: AuthenticatedRequest, 
   }
 });
 
-// Generate content from URL (Spotify, YouTube, etc.)
+// Helper function to fetch and extract metadata from any URL
+async function extractUrlMetadata(url: string): Promise<{
+  title: string;
+  description: string;
+  type: string;
+  contentType: string;
+}> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    const html = await response.text();
+    
+    // Extract Open Graph and meta tags
+    const ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
+    const ogDescMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i);
+    const ogTypeMatch = html.match(/<meta[^>]*property=["']og:type["'][^>]*content=["']([^"']+)["']/i);
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+    
+    const title = ogTitleMatch?.[1] || titleMatch?.[1] || '';
+    const description = ogDescMatch?.[1] || descMatch?.[1] || '';
+    const ogType = ogTypeMatch?.[1] || '';
+    
+    // Determine content type based on URL patterns and og:type
+    let type = 'website';
+    let contentType = 'promotional';
+    
+    const urlLower = url.toLowerCase();
+    
+    // Music platforms
+    if (urlLower.includes('spotify') || urlLower.includes('apple.com/music') || 
+        urlLower.includes('soundcloud') || urlLower.includes('tidal') ||
+        urlLower.includes('deezer') || urlLower.includes('bandcamp')) {
+      type = 'music';
+      contentType = 'release';
+    }
+    // Video platforms
+    else if (urlLower.includes('youtube') || urlLower.includes('youtu.be') || 
+             urlLower.includes('vimeo') || urlLower.includes('tiktok')) {
+      type = 'video';
+      contentType = 'release';
+    }
+    // News/articles
+    else if (ogType.includes('article') || urlLower.includes('/blog') || 
+             urlLower.includes('/news') || urlLower.includes('/article')) {
+      type = 'article';
+      contentType = 'announcement';
+    }
+    // E-commerce/products
+    else if (ogType.includes('product') || urlLower.includes('/product') || 
+             urlLower.includes('/shop') || urlLower.includes('/store')) {
+      type = 'product';
+      contentType = 'promotional';
+    }
+    // Events
+    else if (urlLower.includes('event') || urlLower.includes('ticket') || 
+             urlLower.includes('concert') || urlLower.includes('tour')) {
+      type = 'event';
+      contentType = 'announcement';
+    }
+    // Social profiles
+    else if (urlLower.includes('instagram.com') || urlLower.includes('twitter.com') ||
+             urlLower.includes('facebook.com') || urlLower.includes('linkedin.com')) {
+      type = 'social';
+      contentType = 'engagement';
+    }
+    
+    return {
+      title: title.trim().substring(0, 200),
+      description: description.trim().substring(0, 500),
+      type,
+      contentType,
+    };
+  } catch (error) {
+    logger.warn('Failed to fetch URL metadata:', error);
+    return {
+      title: '',
+      description: '',
+      type: 'website',
+      contentType: 'promotional',
+    };
+  }
+}
+
+// Generate content from any URL (websites, music, videos, articles, products, etc.)
 router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { url, platforms = ['instagram'], tone = 'energetic' } = req.body;
@@ -814,23 +904,24 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
       return res.status(400).json({ message: 'URL is required' });
     }
 
-    // Extract content info from URL
-    let topic = 'new release';
-    let contentType = 'release';
+    // Fetch and analyze the URL
+    const metadata = await extractUrlMetadata(url);
     
-    if (url.includes('spotify')) {
-      topic = 'Spotify release - stream now';
-      contentType = 'release';
-    } else if (url.includes('youtube')) {
-      topic = 'new video out now';
-      contentType = 'release';
-    } else if (url.includes('soundcloud')) {
-      topic = 'new track on SoundCloud';
-      contentType = 'release';
-    } else if (url.includes('apple')) {
-      topic = 'Apple Music release';
-      contentType = 'release';
-    }
+    // Build topic from extracted metadata
+    let topic = metadata.title || metadata.description || 'check this out';
+    
+    // Enhance topic based on content type
+    const typeMessages: Record<string, string> = {
+      'music': `${topic} - stream now`,
+      'video': `${topic} - watch now`,
+      'article': `${topic} - read more`,
+      'product': `${topic} - shop now`,
+      'event': `${topic} - get tickets`,
+      'social': `${topic} - follow for more`,
+      'website': topic,
+    };
+    
+    topic = typeMessages[metadata.type] || topic;
 
     const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin'];
     const validTones = ['professional', 'casual', 'energetic', 'promotional'];
@@ -842,8 +933,8 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
       const result = await unifiedAIController.generateContent({
         tone: validTones.includes(tone) ? tone : 'energetic',
         platform,
-        topic,
-        contentType,
+        topic: topic.substring(0, 150),
+        contentType: metadata.contentType,
         includeHashtags: true,
         includeEmojis: true,
       });
@@ -857,6 +948,8 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
           characterCount: result.data.characterCount,
           estimatedEngagement: result.data.estimatedEngagement,
           sourceUrl: url,
+          extractedTitle: metadata.title,
+          contentType: metadata.type,
         });
       }
     }
@@ -866,6 +959,11 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
       generatedContent,
       url,
       platforms,
+      metadata: {
+        title: metadata.title,
+        description: metadata.description?.substring(0, 200),
+        type: metadata.type,
+      },
     });
   } catch (error) {
     logger.error('Failed to generate content from URL:', error);
