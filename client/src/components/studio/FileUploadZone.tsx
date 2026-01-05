@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { uploadWithProgress } from '@/lib/queryClient';
 import {
   Upload,
   FileAudio,
@@ -83,56 +84,34 @@ export function FileUploadZone({
         formData.append('projectId', projectId.toString());
       }
 
-      return new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
+      try {
+        setUploadingFiles((prev) =>
+          prev.map((f) => (f.id === uploadingFile.id ? { ...f, status: 'uploading' } : f))
+        );
 
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const progress = Math.round((e.loaded / e.total) * 100);
+        await uploadWithProgress('/api/studio/upload', formData, {
+          onProgress: (percent) => {
             setUploadingFiles((prev) =>
-              prev.map((f) => (f.id === uploadingFile.id ? { ...f, progress } : f))
+              prev.map((f) => (f.id === uploadingFile.id ? { ...f, progress: percent } : f))
             );
-          }
+          },
+          timeout: 300000, // 5 minutes
         });
 
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            setUploadingFiles((prev) =>
-              prev.map((f) =>
-                f.id === uploadingFile.id ? { ...f, status: 'success', progress: 100 } : f
-              )
-            );
-            resolve();
-          } else {
-            let errorMessage = 'Upload failed';
-            try {
-              const response = JSON.parse(xhr.responseText);
-              errorMessage = response.message || response.error || errorMessage;
-            } catch {
-              errorMessage = xhr.statusText || errorMessage;
-            }
-            setUploadingFiles((prev) =>
-              prev.map((f) =>
-                f.id === uploadingFile.id ? { ...f, status: 'error', error: errorMessage } : f
-              )
-            );
-            reject(new Error(errorMessage));
-          }
-        });
-
-        xhr.addEventListener('error', () => {
-          setUploadingFiles((prev) =>
-            prev.map((f) =>
-              f.id === uploadingFile.id ? { ...f, status: 'error', error: 'Network error' } : f
-            )
-          );
-          reject(new Error('Network error'));
-        });
-
-        xhr.open('POST', '/api/studio/upload');
-        xhr.withCredentials = true;
-        xhr.send(formData);
-      });
+        setUploadingFiles((prev) =>
+          prev.map((f) =>
+            f.id === uploadingFile.id ? { ...f, status: 'success', progress: 100 } : f
+          )
+        );
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+        setUploadingFiles((prev) =>
+          prev.map((f) =>
+            f.id === uploadingFile.id ? { ...f, status: 'error', error: errorMessage } : f
+          )
+        );
+        throw error;
+      }
     },
     [projectId]
   );

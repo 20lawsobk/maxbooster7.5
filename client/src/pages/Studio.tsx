@@ -46,7 +46,7 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import { logger } from '@/lib/logger';
 import { useKeyboardShortcuts, STUDIO_SHORTCUTS, useShortcutOverlay } from '@/hooks/useKeyboardShortcuts';
 import { announce } from '@/lib/accessibility';
@@ -492,7 +492,9 @@ export default function Studio() {
       const formData = new FormData();
       formData.append('audioFile', file);
       if (selectedProject) formData.append('projectId', selectedProject.id.toString());
-      return await apiRequest('POST', '/api/studio/upload', formData);
+      return uploadWithProgress('/api/studio/upload', formData, {
+        timeout: 300000, // 5 minutes
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -500,6 +502,13 @@ export default function Studio() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/recent-files'] });
       toast({ title: 'File uploaded successfully' });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Upload Failed',
+        description: error.message || 'Failed to upload file. Please try again.',
+        variant: 'destructive',
+      });
     },
   });
 

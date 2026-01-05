@@ -28,7 +28,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SkeletonProjectCard } from '@/components/ui/skeleton-loader';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import {
   Music,
   Upload,
@@ -98,6 +98,7 @@ export default function Projects() {
     file: null as File | null,
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -119,8 +120,10 @@ export default function Projects() {
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await apiRequest('POST', '/api/projects', formData);
-      return response.json();
+      return uploadWithProgress('/api/projects', formData, {
+        onProgress: (percent) => setUploadProgress(percent),
+        timeout: 300000, // 5 minutes
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
@@ -131,6 +134,7 @@ export default function Projects() {
       setIsUploadOpen(false);
       setUploadForm({ title: '', description: '', genre: '', file: null });
       setIsUploading(false);
+      setUploadProgress(0);
     },
     onError: (error: unknown) => {
       const apiError = error as ApiError;
@@ -140,6 +144,7 @@ export default function Projects() {
         variant: 'destructive',
       });
       setIsUploading(false);
+      setUploadProgress(0);
     },
   });
 
@@ -446,8 +451,8 @@ export default function Projects() {
                   <Button type="button" variant="outline" onClick={() => setIsUploadOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isUploading}>
-                    {isUploading ? 'Uploading...' : 'Upload Project'}
+                  <Button type="submit" disabled={isUploading || uploadMutation.isPending}>
+                    {uploadMutation.isPending ? `Uploading ${uploadProgress}%` : 'Upload Project'}
                   </Button>
                 </div>
               </form>
