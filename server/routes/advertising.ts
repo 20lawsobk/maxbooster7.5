@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
+import { unifiedAIController } from '../services/unifiedAIController.js';
 
 const router = Router();
 
@@ -223,6 +224,106 @@ router.get('/roas/forecast', requireAuth, async (req, res) => {
   } catch (error) {
     logger.error('Failed to get ROAS forecast:', error);
     res.status(500).json({ error: 'Failed to get ROAS forecast' });
+  }
+});
+
+// AI-powered campaign optimization
+router.post('/optimize-campaign', requireAuth, async (req, res) => {
+  try {
+    const { campaignId, performance } = req.body;
+
+    if (!campaignId) {
+      return res.status(400).json({ error: 'Campaign ID is required' });
+    }
+
+    // Build campaign object for AI optimization
+    const campaign = {
+      id: campaignId,
+      name: performance?.name || 'Campaign',
+      platform: performance?.platform || 'instagram',
+      objective: performance?.objective || 'engagement',
+      status: 'active' as const,
+      budget: performance?.budget || 500,
+      dailyBudget: performance?.dailyBudget || 50,
+      startDate: new Date(),
+      targeting: {
+        ageMin: 18,
+        ageMax: 44,
+        genders: ['male', 'female'] as ('male' | 'female')[],
+        locations: ['US'],
+        interests: ['music'],
+        behaviors: [],
+        customAudiences: [],
+        lookalikes: [],
+        excludedAudiences: [],
+      },
+      creatives: [{
+        id: 'c1',
+        type: 'image' as const,
+        headline: 'Check it out',
+        body: 'New content',
+        callToAction: 'Learn More',
+      }],
+      metrics: {
+        impressions: performance?.impressions || 1000,
+        clicks: performance?.clicks || 50,
+        conversions: performance?.conversions || 5,
+        spend: performance?.spend || 100,
+        revenue: performance?.revenue || 150,
+        ctr: performance?.ctr || 0.05,
+        cvr: performance?.cvr || 0.1,
+        cpc: performance?.cpc || 2,
+        cpa: performance?.cpa || 20,
+        roas: performance?.roas || 1.5,
+      },
+    };
+
+    const result = await unifiedAIController.optimizeAd({
+      campaign,
+      action: 'score',
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    res.json({
+      success: true,
+      campaignId,
+      optimization: result.data,
+      recommendations: result.data?.recommendations || [],
+    });
+  } catch (error) {
+    logger.error('Failed to optimize campaign:', error);
+    res.status(500).json({ error: 'Failed to optimize campaign' });
+  }
+});
+
+// AI-powered content generation for ads
+router.post('/generate-content', requireAuth, async (req, res) => {
+  try {
+    const { campaignId, contentType = 'ad_copy', platform = 'instagram' } = req.body;
+
+    const result = await unifiedAIController.generateContent({
+      type: contentType,
+      platform,
+      context: {
+        campaignId,
+        targetAudience: 'music fans',
+      },
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    res.json({
+      success: true,
+      content: result.data,
+    });
+  } catch (error) {
+    logger.error('Failed to generate ad content:', error);
+    res.status(500).json({ error: 'Failed to generate content' });
   }
 });
 
