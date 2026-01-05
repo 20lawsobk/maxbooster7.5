@@ -302,7 +302,7 @@ export class UnifiedAIController {
       let result: FullAnalysisResult | SentimentResult;
       
       if (options.includeEmotions || options.includeToxicity || options.includeAspects) {
-        result = this.sentimentAnalyzer.analyzeComplete(options.text, options.aspects);
+        result = this.sentimentAnalyzer.analyze(options.text);
       } else {
         result = this.sentimentAnalyzer.analyzeSentiment(options.text);
       }

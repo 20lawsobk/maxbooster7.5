@@ -1015,48 +1015,8 @@ router.post('/projects/:projectId/tracks/reorder', requireAuth, async (req: Requ
   }
 });
 
-// Generation endpoints
-router.post('/generation/text', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { prompt, type } = req.body;
-    res.json({
-      success: true,
-      generatedText: 'AI generated content based on your prompt',
-      type: type || 'lyrics',
-    });
-  } catch (error: unknown) {
-    logger.error('Error generating text:', error);
-    res.status(500).json({ error: 'Failed to generate text' });
-  }
-});
-
-router.post('/generation/audio', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { prompt, duration, genre } = req.body;
-    res.json({
-      success: true,
-      jobId: `gen_${nanoid()}`,
-      status: 'processing',
-      message: 'Audio generation started',
-    });
-  } catch (error: unknown) {
-    logger.error('Error generating audio:', error);
-    res.status(500).json({ error: 'Failed to generate audio' });
-  }
-});
-
-router.get('/generation', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { projectId } = req.query;
-    res.json({
-      generations: [],
-      projectId,
-    });
-  } catch (error: unknown) {
-    logger.error('Error fetching generations:', error);
-    res.status(500).json({ error: 'Failed to fetch generations' });
-  }
-});
+// Note: AI audio generation endpoints are in studioGeneration.ts mounted at /api/studio/generation
+// The following are legacy placeholder endpoints - audio generation is handled by the dedicated route
 
 // Stem exports endpoint
 router.get('/stem-exports/:projectId', requireAuth, async (req: Request, res: Response) => {
