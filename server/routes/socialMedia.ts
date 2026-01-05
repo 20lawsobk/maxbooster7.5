@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
 import { logger } from '../logger';
 import { competitorBenchmarkService } from '../services/competitorBenchmarkService';
+import { unifiedAIController } from '../services/unifiedAIController';
 import { db } from '../db';
 import { socialInboxMessages, socialMentions, socialKeywords } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
@@ -744,6 +745,131 @@ router.get('/unified-calendar/queue', requireAuth, async (req: AuthenticatedRequ
   } catch (error) {
     logger.error('Failed to get unified calendar queue:', error);
     res.json({ queue: [] });
+  }
+});
+
+// =========================================
+// AI CONTENT GENERATION
+// =========================================
+
+// Generate AI content for multiple platforms
+router.post('/generate-content', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { platforms = ['instagram'], contentType = 'post', topic = 'new music', tone = 'energetic' } = req.body;
+
+    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin'];
+    const validTones = ['professional', 'casual', 'energetic', 'promotional'];
+    const contentTypeMap: Record<string, string> = {
+      'post': 'engagement',
+      'announcement': 'announcement',
+      'behind-the-scenes': 'behind-the-scenes',
+      'promotional': 'promotional',
+      'release': 'release',
+    };
+
+    const generatedContent = [];
+
+    for (const platform of platforms) {
+      if (!validPlatforms.includes(platform)) continue;
+
+      const result = await unifiedAIController.generateContent({
+        tone: validTones.includes(tone) ? tone : 'energetic',
+        platform,
+        topic: topic || 'music',
+        contentType: contentTypeMap[contentType] || 'engagement',
+        includeHashtags: true,
+        includeEmojis: true,
+      });
+
+      if (result.success && result.data) {
+        generatedContent.push({
+          platform,
+          caption: result.data.caption,
+          hashtags: result.data.hashtags,
+          emojis: result.data.emojis,
+          characterCount: result.data.characterCount,
+          estimatedEngagement: result.data.estimatedEngagement,
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      generatedContent,
+      platforms,
+      contentType,
+    });
+  } catch (error) {
+    logger.error('Failed to generate social content:', error);
+    res.status(500).json({ message: 'Failed to generate content' });
+  }
+});
+
+// Generate content from URL (Spotify, YouTube, etc.)
+router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { url, platforms = ['instagram'], tone = 'energetic' } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ message: 'URL is required' });
+    }
+
+    // Extract content info from URL
+    let topic = 'new release';
+    let contentType = 'release';
+    
+    if (url.includes('spotify')) {
+      topic = 'Spotify release - stream now';
+      contentType = 'release';
+    } else if (url.includes('youtube')) {
+      topic = 'new video out now';
+      contentType = 'release';
+    } else if (url.includes('soundcloud')) {
+      topic = 'new track on SoundCloud';
+      contentType = 'release';
+    } else if (url.includes('apple')) {
+      topic = 'Apple Music release';
+      contentType = 'release';
+    }
+
+    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin'];
+    const validTones = ['professional', 'casual', 'energetic', 'promotional'];
+    const generatedContent = [];
+
+    for (const platform of platforms) {
+      if (!validPlatforms.includes(platform)) continue;
+
+      const result = await unifiedAIController.generateContent({
+        tone: validTones.includes(tone) ? tone : 'energetic',
+        platform,
+        topic,
+        contentType,
+        includeHashtags: true,
+        includeEmojis: true,
+      });
+
+      if (result.success && result.data) {
+        generatedContent.push({
+          platform,
+          caption: result.data.caption + `\n\n🔗 ${url}`,
+          hashtags: result.data.hashtags,
+          emojis: result.data.emojis,
+          characterCount: result.data.characterCount,
+          estimatedEngagement: result.data.estimatedEngagement,
+          sourceUrl: url,
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      generatedContent,
+      url,
+      platforms,
+    });
+  } catch (error) {
+    logger.error('Failed to generate content from URL:', error);
+    res.status(500).json({ message: 'Failed to generate content from URL' });
   }
 });
 
