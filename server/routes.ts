@@ -12,6 +12,7 @@ import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/str
 import { authenticator } from "otplib";
 import QRCode from "qrcode";
 import { emailService } from "./services/emailService.ts";
+import { upload } from "./middleware/uploadHandler.ts";
 
 // Simple logger fallback for startup
 const log = (msg: string) => console.log(`[routes] ${msg}`);
@@ -1348,8 +1349,8 @@ export async function registerRoutes(
     }
   });
 
-  // Projects: Create new project
-  app.post("/api/projects", async (req: Request, res: Response) => {
+  // Projects: Create new project (supports both JSON and FormData)
+  app.post("/api/projects", upload.single('audio'), async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
