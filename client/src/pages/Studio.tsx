@@ -209,29 +209,6 @@ export default function Studio() {
   const params = useParams<{ projectId?: string }>();
   const [location, setLocation] = useLocation();
 
-  // Initialize AI workflow hook
-  const { startWorkflow, cancel, retry, reset, integrate, aiMix, aiMaster, audioAnalysis } =
-    useAIWorkflow({
-      onStateChange: (type, state) => {
-        logger.info(`[Studio] ${type} state changed to: ${state}`);
-      },
-      onError: (type, error) => {
-        logger.error(`[Studio] ${type} error:`, error);
-      },
-      onSuccess: (type, data) => {
-        logger.info(`[Studio] ${type} success:`, data);
-        if (type === 'ai-mix' || type === 'ai-master') {
-          queryClient.invalidateQueries({
-            queryKey: ['/api/studio/projects', selectedProject?.id, 'tracks'],
-          });
-        }
-        if (type === 'audio-analysis') {
-          queryClient.invalidateQueries({ queryKey: ['/api/analysis', selectedProject?.id] });
-          setShowAnalysisPanel(true);
-        }
-      },
-    });
-
   const [view, setView] = useState<'arrangement' | 'mixer'>('arrangement');
   // selectedProject is now derived from URL params and query data to survive component remounts
   // This prevents the bug where fullscreen exit causes component remount and state loss
@@ -394,6 +371,29 @@ export default function Studio() {
       (p: Project) => p.id === params.projectId || p.id.toString() === params.projectId
     ) || null;
   }, [params.projectId, projects]);
+
+  // Initialize AI workflow hook (must be after selectedProject is defined)
+  const { startWorkflow, cancel, retry, reset, integrate, aiMix, aiMaster, audioAnalysis } =
+    useAIWorkflow({
+      onStateChange: (type, state) => {
+        logger.info(`[Studio] ${type} state changed to: ${state}`);
+      },
+      onError: (type, error) => {
+        logger.error(`[Studio] ${type} error:`, error);
+      },
+      onSuccess: (type, data) => {
+        logger.info(`[Studio] ${type} success:`, data);
+        if (type === 'ai-mix' || type === 'ai-master') {
+          queryClient.invalidateQueries({
+            queryKey: ['/api/studio/projects', selectedProject?.id, 'tracks'],
+          });
+        }
+        if (type === 'audio-analysis') {
+          queryClient.invalidateQueries({ queryKey: ['/api/analysis', selectedProject?.id] });
+          setShowAnalysisPanel(true);
+        }
+      },
+    });
 
   // Memoize the onError callback to prevent audio engine re-initialization
   const handleStudioError = useCallback(
