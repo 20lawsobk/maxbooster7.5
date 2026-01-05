@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { AutonomousDashboard } from '@/components/autonomous/autonomous-dashboard';
 import { ContentAnalyzer } from '@/components/content/ContentAnalyzer';
+import { VideoContentGenerator, type Platform as VideoPlatform } from '@/components/content/VideoContentGenerator';
 import {
   CreativeVariantGenerator,
   CrossChannelAttribution,
@@ -369,6 +370,8 @@ export default function Advertisement() {
 
   const [isCreateCampaignOpen, setIsCreateCampaignOpen] = useState(false);
   const [activeEnterpriseTab, setActiveEnterpriseTab] = useState('creative-automation');
+  const [videoPlatform, setVideoPlatform] = useState<VideoPlatform>('instagram');
+  const [generatedVideos, setGeneratedVideos] = useState<Array<{ url: string; blob: Blob; createdAt: Date }>>([]);
   const [campaignForm, setCampaignForm] = useState({
     name: '',
     objective: '',
@@ -507,6 +510,31 @@ export default function Advertisement() {
 
   const totalImpressions = campaigns.reduce((acc: number, campaign: AdCampaign) => acc + campaign.impressions, 0);
   const totalClicks = campaigns.reduce((acc: number, campaign: AdCampaign) => acc + campaign.clicks, 0);
+
+  const handleVideoGenerated = (url: string, blob: Blob) => {
+    setGeneratedVideos(prev => [...prev, { url, blob, createdAt: new Date() }]);
+    toast({
+      title: 'Video Creative Generated',
+      description: 'Your video creative has been saved and is ready for campaign use.',
+    });
+  };
+
+  const getSelectedCampaignPlatform = (): VideoPlatform => {
+    const platformMap: Record<string, VideoPlatform> = {
+      instagram: 'instagram',
+      facebook: 'facebook',
+      tiktok: 'tiktok',
+      youtube: 'youtube',
+      twitter: 'twitter',
+      linkedin: 'linkedin',
+    };
+    const selectedPlatforms = campaignForm.targetAudience.platforms;
+    if (selectedPlatforms.length > 0) {
+      const platform = selectedPlatforms[0].toLowerCase();
+      return platformMap[platform] || videoPlatform;
+    }
+    return videoPlatform;
+  };
 
   const getFatigueColor = (level: CreativeFatigueData['fatigueLevel']) => {
     const colors = { low: 'bg-green-500', medium: 'bg-yellow-500', high: 'bg-orange-500', critical: 'bg-red-500' };
@@ -838,6 +866,70 @@ export default function Advertisement() {
 
           <TabsContent value="creative" className="space-y-6">
             <CreativeVariantGenerator />
+            
+            <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Play className="w-6 h-6 text-purple-500" />
+                  Generate Video Creative
+                </CardTitle>
+                <CardDescription>
+                  Create AI-powered video content for your ad campaigns. Generate platform-optimized video creatives for social media advertising.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <Label className="mb-2 block">Target Platform</Label>
+                  <Select value={videoPlatform} onValueChange={(value) => setVideoPlatform(value as VideoPlatform)}>
+                    <SelectTrigger className="w-full md:w-64">
+                      <SelectValue placeholder="Select platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="instagram">Instagram Feed</SelectItem>
+                      <SelectItem value="instagram_reels">Instagram Reels</SelectItem>
+                      <SelectItem value="tiktok">TikTok</SelectItem>
+                      <SelectItem value="youtube">YouTube</SelectItem>
+                      <SelectItem value="youtube_shorts">YouTube Shorts</SelectItem>
+                      <SelectItem value="facebook">Facebook</SelectItem>
+                      <SelectItem value="twitter">Twitter/X</SelectItem>
+                      <SelectItem value="linkedin">LinkedIn</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <VideoContentGenerator
+                  platform={getSelectedCampaignPlatform()}
+                  contentText={campaignForm.name || campaignForm.objective || 'New music release'}
+                  artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
+                  releaseName={campaignForm.name || 'New Release'}
+                  onVideoGenerated={handleVideoGenerated}
+                  className="border-0 shadow-none p-0"
+                />
+                
+                {generatedVideos.length > 0 && (
+                  <div className="mt-6 pt-6 border-t">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Layers className="w-4 h-4" />
+                      Generated Video Creatives ({generatedVideos.length})
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {generatedVideos.slice(-6).map((video, index) => (
+                        <div key={index} className="relative rounded-lg overflow-hidden border bg-card">
+                          <video 
+                            src={video.url} 
+                            className="w-full aspect-video object-cover"
+                            controls
+                          />
+                          <div className="p-2 text-xs text-muted-foreground">
+                            Created: {video.createdAt.toLocaleString()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="testing" className="space-y-6">

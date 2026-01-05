@@ -52,7 +52,6 @@ const Help = lazy(() => import('@/pages/Help'));
 const Storefront = lazy(() => import('@/pages/Storefront'));
 const AdminAutonomy = lazy(() => import('@/pages/AdminAutonomy'));
 const ProducerProfilePage = lazy(() => import('@/pages/ProducerProfilePage'));
-const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
 
 function Router() {
   return (
@@ -77,7 +76,6 @@ function Router() {
       <Route path="/royalties" component={Royalties} />
       <Route path="/studio/:projectId" component={Studio} />
       <Route path="/studio" component={Studio} />
-      <Route path="/video-studio" component={VideoStudio} />
       <Route path="/show" component={ShowPage} />
       <Route path="/distribution" component={Distribution} />
       <Route path="/pricing" component={Pricing} />

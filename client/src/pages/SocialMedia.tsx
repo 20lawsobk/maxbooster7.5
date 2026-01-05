@@ -87,6 +87,7 @@ import { UnifiedInbox } from '@/components/social/UnifiedInbox';
 import { SocialListening } from '@/components/social/SocialListening';
 import { CompetitorBenchmarking } from '@/components/social/CompetitorBenchmarking';
 import { UnifiedCalendar } from '@/components/social/UnifiedCalendar';
+import { VideoContentGenerator, Platform as VideoGeneratorPlatform } from '@/components/content/VideoContentGenerator';
 
 // Social Media Platform Interfaces
 interface SocialPlatform {
@@ -405,6 +406,7 @@ export default function SocialMedia() {
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [uploadedMedia, setUploadedMedia] = useState<File | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Calendar state
@@ -1327,7 +1329,12 @@ export default function SocialMedia() {
 
                   <div>
                     <Label>Content Format</Label>
-                    <Select value={regularContentFormat} onValueChange={setRegularContentFormat}>
+                    <Select value={regularContentFormat} onValueChange={(value) => {
+                      setRegularContentFormat(value);
+                      if (value !== 'video') {
+                        setGeneratedVideoUrl(null);
+                      }
+                    }}>
                       <SelectTrigger data-testid="select-regular-content-format">
                         <SelectValue />
                       </SelectTrigger>
@@ -1340,109 +1347,175 @@ export default function SocialMedia() {
                     </Select>
                   </div>
 
-                  <div>
-                    <Label>Post Content</Label>
-                    <Textarea
-                      value={postContent}
-                      onChange={(e) => setPostContent(e.target.value)}
-                      placeholder="Write your post content here... AI will optimize it for each platform."
-                      rows={6}
-                      data-testid="textarea-post-content"
-                    />
-                  </div>
+                  {regularContentFormat === 'video' ? (
+                    <>
+                      <div>
+                        <Label>Topic / Content Description</Label>
+                        <Textarea
+                          value={postContent}
+                          onChange={(e) => setPostContent(e.target.value)}
+                          placeholder="Describe the video content you want to create (e.g., 'New single announcement', 'Behind the scenes studio session')"
+                          rows={3}
+                          data-testid="textarea-video-topic"
+                        />
+                      </div>
 
-                  <div>
-                    <Label>Upload Media (Optional)</Label>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,video/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setUploadedMedia(file);
-                          const previewUrl = URL.createObjectURL(file);
-                          setMediaPreviewUrl(previewUrl);
-                          uploadMediaMutation.mutate(file);
-                        }
-                      }}
-                      data-testid="input-upload-media"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadMediaMutation.isPending}
-                        data-testid="button-upload-media"
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        {uploadMediaMutation.isPending ? 'Uploading...' : 'Upload Image/Video'}
-                      </Button>
-                      {uploadedMedia && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setUploadedMedia(null);
-                            setMediaPreviewUrl(null);
-                            if (fileInputRef.current) {
-                              fileInputRef.current.value = '';
+                      {selectedPlatforms.length > 0 ? (
+                        <VideoContentGenerator
+                          platform={(selectedPlatforms[0] === 'twitter' ? 'twitter' : 
+                                    selectedPlatforms[0] === 'instagram' ? 'instagram' :
+                                    selectedPlatforms[0] === 'tiktok' ? 'tiktok' :
+                                    selectedPlatforms[0] === 'youtube' ? 'youtube' :
+                                    selectedPlatforms[0] === 'facebook' ? 'facebook' :
+                                    selectedPlatforms[0] === 'linkedin' ? 'linkedin' :
+                                    'instagram') as VideoGeneratorPlatform}
+                          contentText={postContent || 'Create engaging content'}
+                          artistName={user?.displayName || user?.username || 'Artist'}
+                          onVideoGenerated={async (url: string, blob: Blob) => {
+                            setGeneratedVideoUrl(url);
+                            setMediaPreviewUrl(url);
+                            const file = new File([blob], 'generated-video.webm', { type: 'video/webm' });
+                            setUploadedMedia(file);
+                            uploadMediaMutation.mutate(file);
+                            toast({
+                              title: 'Video Ready!',
+                              description: 'Your video has been generated and is ready to schedule.',
+                            });
+                          }}
+                        />
+                      ) : (
+                        <div className="p-6 border rounded-lg bg-muted/50 text-center">
+                          <Video className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                          <p className="text-muted-foreground mb-2">Select a platform to generate video</p>
+                          <p className="text-sm text-muted-foreground">Choose at least one platform above to start video generation</p>
+                        </div>
+                      )}
+
+                      {generatedVideoUrl && (
+                        <div className="space-y-3">
+                          <Label>Generated Video Preview</Label>
+                          <div className="rounded-lg overflow-hidden border">
+                            <video src={generatedVideoUrl} className="w-full max-h-64" controls />
+                          </div>
+                          <Button
+                            onClick={handleSchedulePostFromTab}
+                            disabled={selectedPlatforms.length === 0}
+                            className="w-full"
+                            data-testid="button-schedule-video-post"
+                          >
+                            <Calendar className="w-4 h-4 mr-2" />
+                            Schedule Video Post
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <Label>Post Content</Label>
+                        <Textarea
+                          value={postContent}
+                          onChange={(e) => setPostContent(e.target.value)}
+                          placeholder="Write your post content here... AI will optimize it for each platform."
+                          rows={6}
+                          data-testid="textarea-post-content"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Upload Media (Optional)</Label>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*,video/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setUploadedMedia(file);
+                              const previewUrl = URL.createObjectURL(file);
+                              setMediaPreviewUrl(previewUrl);
+                              uploadMediaMutation.mutate(file);
                             }
                           }}
-                          data-testid="button-remove-media"
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                    {mediaPreviewUrl && (
-                      <div className="mt-2 relative">
-                        {uploadedMedia?.type.startsWith('image/') ? (
-                          <img
-                            src={mediaPreviewUrl}
-                            alt="Preview"
-                            className="max-h-40 rounded-lg"
-                          />
-                        ) : (
-                          <video src={mediaPreviewUrl} className="max-h-40 rounded-lg" controls />
+                          data-testid="input-upload-media"
+                        />
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadMediaMutation.isPending}
+                            data-testid="button-upload-media"
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            {uploadMediaMutation.isPending ? 'Uploading...' : 'Upload Image/Video'}
+                          </Button>
+                          {uploadedMedia && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setUploadedMedia(null);
+                                setMediaPreviewUrl(null);
+                                if (fileInputRef.current) {
+                                  fileInputRef.current.value = '';
+                                }
+                              }}
+                              data-testid="button-remove-media"
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                        {mediaPreviewUrl && (
+                          <div className="mt-2 relative">
+                            {uploadedMedia?.type.startsWith('image/') ? (
+                              <img
+                                src={mediaPreviewUrl}
+                                alt="Preview"
+                                className="max-h-40 rounded-lg"
+                              />
+                            ) : (
+                              <video src={mediaPreviewUrl} className="max-h-40 rounded-lg" controls />
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
 
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={handleGenerateContent}
-                      disabled={isGeneratingContent}
-                      className="flex-1"
-                      data-testid="button-generate-content"
-                    >
-                      {isGeneratingContent ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4 mr-2" />
-                          Generate with AI
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      onClick={handleSchedulePostFromTab}
-                      disabled={!postContent.trim() || selectedPlatforms.length === 0}
-                      variant="outline"
-                      data-testid="button-schedule-post"
-                    >
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Schedule
-                    </Button>
-                  </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={handleGenerateContent}
+                          disabled={isGeneratingContent}
+                          className="flex-1"
+                          data-testid="button-generate-content"
+                        >
+                          {isGeneratingContent ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Wand2 className="w-4 h-4 mr-2" />
+                              Generate with AI
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={handleSchedulePostFromTab}
+                          disabled={!postContent.trim() || selectedPlatforms.length === 0}
+                          variant="outline"
+                          data-testid="button-schedule-post"
+                        >
+                          <Calendar className="w-4 h-4 mr-2" />
+                          Schedule
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
