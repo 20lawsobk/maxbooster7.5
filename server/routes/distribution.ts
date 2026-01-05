@@ -501,34 +501,33 @@ router.get('/platforms', async (_req: Request, res: Response) => {
   }
 });
 
-// POST /api/distribution/platforms/sync - Sync DSPs from LabelGrid API to local database
-router.post('/platforms/sync', requireAuth, async (req: Request, res: Response) => {
+// POST /api/distribution/platforms/verify - Verify local DSP catalog status
+router.post('/platforms/verify', requireAuth, async (req: Request, res: Response) => {
   try {
-    const result = await labelGridService.syncDSPsToDatabase();
+    const result = await labelGridService.verifyDSPCatalog();
     res.json({
       success: true,
-      synced: result.synced,
-      updated: result.updated,
-      errors: result.errors,
-      message: labelGridService.isApiConfigured() 
-        ? `Synced ${result.synced} new and updated ${result.updated} existing DSPs from LabelGrid`
-        : 'LabelGrid API not configured - using local catalog',
+      ...result,
+      message: `DSP catalog verified: ${result.total} platforms (${result.active} active)`,
     });
   } catch (error: unknown) {
-    logger.error('Error syncing platforms:', error);
-    res.status(500).json({ error: 'Failed to sync platforms' });
+    logger.error('Error verifying platforms:', error);
+    res.status(500).json({ error: 'Failed to verify platforms' });
   }
 });
 
-// GET /api/distribution/platforms/status - Check LabelGrid API status
+// GET /api/distribution/platforms/status - Check LabelGrid API and DSP catalog status
 router.get('/platforms/status', async (_req: Request, res: Response) => {
   try {
+    const catalogStatus = await labelGridService.verifyDSPCatalog();
     res.json({
-      configured: labelGridService.isApiConfigured(),
-      source: labelGridService.isApiConfigured() ? 'labelgrid_api' : 'local_catalog',
+      labelGridConfigured: labelGridService.isApiConfigured(),
+      catalogSource: 'local_database',
+      catalog: catalogStatus,
       message: labelGridService.isApiConfigured()
-        ? 'LabelGrid API is configured. DSPs are fetched dynamically.'
-        : 'LabelGrid API not configured. Using local DSP catalog as fallback.',
+        ? 'LabelGrid API configured. DSP catalog maintained locally, platforms validated during distribution.'
+        : 'LabelGrid API not configured. DSP catalog available for reference.',
+      architecture: 'LabelGrid API handles releases/distribution/analytics. DSP catalog maintained locally.',
     });
   } catch (error: unknown) {
     logger.error('Error checking platform status:', error);

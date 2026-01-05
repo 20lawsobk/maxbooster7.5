@@ -343,55 +343,21 @@ class LabelGridService {
   }
 
   /**
-   * Fetch available DSPs from LabelGrid API
-   * This is the CORRECT method to get distribution platforms when API is configured
-   * Falls back to local database when API is not available
+   * Get available DSPs for distribution
+   * 
+   * ARCHITECTURE NOTE: LabelGrid API is used for releases, distribution, analytics, and royalties.
+   * The DSP list is maintained locally as a reference catalog - LabelGrid does not expose 
+   * a public /dsps endpoint. When submitting releases, platform selection is validated 
+   * against LabelGrid's supported platforms on their end.
+   * 
+   * The local catalog reflects all platforms LabelGrid supports for distribution.
    */
   async getAvailableDSPs(): Promise<LabelGridDSPListResponse> {
     await this.loadConfig();
-
-    if (!this.isApiConfigured()) {
-      logger.info('📦 LabelGrid not configured - using local DSP catalog');
-      return this.getLocalDSPCatalog();
-    }
-
-    const endpoint = this.getEndpoint('getDSPs', '/v1/dsps');
-    this.logApiCall('GET', endpoint);
-
-    try {
-      const response = await this.retryWithBackoff(async () => {
-        return await this.client.get<{ dsps: any[]; total: number }>(endpoint);
-      });
-
-      const dsps: LabelGridDSP[] = response.data.dsps.map((dsp: any) => ({
-        id: dsp.id,
-        name: dsp.name,
-        slug: dsp.slug || dsp.id.toLowerCase().replace(/\s+/g, '-'),
-        category: this.categorizeByRegion(dsp.region, dsp.type),
-        region: dsp.region || 'global',
-        isActive: dsp.active !== false,
-        processingTime: dsp.processing_time || dsp.processingTime || '3-7 days',
-        requirements: {
-          isrc: dsp.requires_isrc ?? true,
-          upc: dsp.requires_upc ?? true,
-          metadata: dsp.required_metadata || ['title', 'artist', 'album'],
-          audioFormats: dsp.audio_formats || ['WAV', 'FLAC'],
-        },
-        deliveryMethod: dsp.delivery_method || 'api',
-        logoUrl: dsp.logo_url,
-      }));
-
-      logger.info(`✅ Fetched ${dsps.length} DSPs from LabelGrid API`);
-
-      return {
-        dsps,
-        total: response.data.total,
-        syncedAt: new Date().toISOString(),
-      };
-    } catch (error: unknown) {
-      logger.warn('⚠️  Failed to fetch DSPs from LabelGrid API - using local catalog');
-      return this.getLocalDSPCatalog();
-    }
+    
+    // DSP catalog is maintained locally - LabelGrid validates platform support during release submission
+    logger.info('📦 Using local DSP catalog (LabelGrid validates platforms during distribution)');
+    return this.getLocalDSPCatalog();
   }
 
   /**
@@ -431,68 +397,27 @@ class LabelGridService {
   }
 
   /**
-   * Sync DSPs from LabelGrid API to local database
-   * This should be called periodically to keep local catalog updated
+   * Verify local DSP catalog status
+   * 
+   * ARCHITECTURE NOTE: DSPs are maintained locally. LabelGrid validates platform support
+   * when releases are submitted for distribution. This method verifies local catalog integrity.
    */
-  async syncDSPsToDatabase(): Promise<{ synced: number; updated: number; errors: string[] }> {
-    const result = { synced: 0, updated: 0, errors: [] as string[] };
-
-    if (!this.isApiConfigured()) {
-      logger.info('📦 LabelGrid not configured - skipping DSP sync');
-      return result;
-    }
-
+  async verifyDSPCatalog(): Promise<{ total: number; active: number; inactive: number }> {
     try {
-      const response = await this.getAvailableDSPs();
+      const catalog = await this.getLocalDSPCatalog();
+      const active = catalog.dsps.filter(d => d.isActive).length;
+      const inactive = catalog.dsps.filter(d => !d.isActive).length;
       
-      for (const dsp of response.dsps) {
-        try {
-          const existing = await storage.getDSPProviderBySlug(dsp.slug);
-          
-          if (existing) {
-            await storage.updateDSPProvider(existing.id, {
-              name: dsp.name,
-              isActive: dsp.isActive,
-              metadata: {
-                category: dsp.category,
-                region: dsp.region,
-                processingTime: dsp.processingTime,
-                requirements: dsp.requirements,
-                deliveryMethod: dsp.deliveryMethod,
-                syncedFromLabelGrid: true,
-                lastSyncedAt: new Date().toISOString(),
-              },
-            });
-            result.updated++;
-          } else {
-            await storage.createDSPProvider({
-              name: dsp.name,
-              slug: dsp.slug,
-              isActive: dsp.isActive,
-              logoUrl: dsp.logoUrl,
-              metadata: {
-                category: dsp.category,
-                region: dsp.region,
-                processingTime: dsp.processingTime,
-                requirements: dsp.requirements,
-                deliveryMethod: dsp.deliveryMethod,
-                syncedFromLabelGrid: true,
-                lastSyncedAt: new Date().toISOString(),
-              },
-            });
-            result.synced++;
-          }
-        } catch (err: any) {
-          result.errors.push(`Failed to sync ${dsp.name}: ${err.message}`);
-        }
-      }
-
-      logger.info(`✅ DSP sync complete: ${result.synced} new, ${result.updated} updated`);
-      return result;
+      logger.info(`✅ DSP catalog verified: ${catalog.total} total, ${active} active, ${inactive} inactive`);
+      
+      return {
+        total: catalog.total,
+        active,
+        inactive,
+      };
     } catch (error: any) {
-      logger.error('Failed to sync DSPs from LabelGrid:', error);
-      result.errors.push(error.message);
-      return result;
+      logger.error('Failed to verify DSP catalog:', error);
+      return { total: 0, active: 0, inactive: 0 };
     }
   }
 
