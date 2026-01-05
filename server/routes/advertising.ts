@@ -302,15 +302,24 @@ router.post('/optimize-campaign', requireAuth, async (req, res) => {
 // AI-powered content generation for ads
 router.post('/generate-content', requireAuth, async (req, res) => {
   try {
-    const { campaignId, contentType = 'ad_copy', platform = 'instagram' } = req.body;
+    const { 
+      campaignId, 
+      contentType = 'promotional', 
+      platform = 'instagram',
+      topic = 'new music release',
+      tone = 'energetic'
+    } = req.body;
+
+    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin'];
+    const validTones = ['professional', 'casual', 'energetic', 'promotional'];
 
     const result = await unifiedAIController.generateContent({
-      type: contentType,
-      platform,
-      context: {
-        campaignId,
-        targetAudience: 'music fans',
-      },
+      tone: validTones.includes(tone) ? tone : 'energetic',
+      platform: validPlatforms.includes(platform) ? platform : 'instagram',
+      topic: topic || 'new music',
+      contentType: contentType === 'ad_copy' ? 'promotional' : contentType,
+      includeHashtags: true,
+      includeEmojis: true,
     });
 
     if (!result.success) {
@@ -319,6 +328,7 @@ router.post('/generate-content', requireAuth, async (req, res) => {
 
     res.json({
       success: true,
+      campaignId,
       content: result.data,
     });
   } catch (error) {

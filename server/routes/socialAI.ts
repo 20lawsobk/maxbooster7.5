@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { socialChatbotService, ChatbotMessage } from '../services/socialChatbotService';
 import { socialListeningService } from '../services/socialListeningService';
 import { socialStrategyAIService } from '../services/socialStrategyAIService';
+import { unifiedAIController } from '../services/unifiedAIController';
 import { logger } from '../logger';
 
 const router = Router();
@@ -525,6 +526,49 @@ router.get('/ai-content/trending-topics', requireAuth, async (req: Authenticated
   } catch (error) {
     logger.error('Get trending topics error:', error);
     res.status(500).json({ message: 'Failed to get trending topics' });
+  }
+});
+
+// AI content generation endpoint
+router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { 
+      platform = 'instagram', 
+      contentType = 'post',
+      topic = 'new music',
+      tone = 'energetic'
+    } = req.body;
+
+    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin'];
+    const validTones = ['professional', 'casual', 'energetic', 'promotional'];
+    const validContentTypes = ['release', 'behind-the-scenes', 'announcement', 'engagement', 'promotional'];
+
+    const mappedContentType = contentType === 'post' ? 'engagement' : 
+                              contentType === 'announcement' ? 'announcement' :
+                              contentType === 'tips' ? 'engagement' : 'promotional';
+
+    const result = await unifiedAIController.generateContent({
+      tone: validTones.includes(tone) ? tone : 'energetic',
+      platform: validPlatforms.includes(platform) ? platform : 'instagram',
+      topic: topic || 'music',
+      contentType: validContentTypes.includes(mappedContentType) ? mappedContentType : 'engagement',
+      includeHashtags: true,
+      includeEmojis: true,
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ message: result.error });
+    }
+
+    res.json({
+      success: true,
+      platform,
+      contentType,
+      content: result.data,
+    });
+  } catch (error) {
+    logger.error('AI content generate error:', error);
+    res.status(500).json({ message: 'Failed to generate AI content' });
   }
 });
 
