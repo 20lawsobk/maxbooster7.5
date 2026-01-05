@@ -5,7 +5,7 @@ import { notificationService } from './notificationService';
 import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../logger.js';
 
-export type ApprovalStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published';
+export type ApprovalStatus = 'draft' | 'pending_review' | 'approved' | 'scheduled' | 'rejected' | 'published';
 export type UserRole = 'content_creator' | 'reviewer' | 'manager' | 'admin';
 
 interface AuthenticatedRequest extends Request {
@@ -16,21 +16,50 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
+export interface StateTransitionEvent {
+  postId: string;
+  fromStatus: ApprovalStatus;
+  toStatus: ApprovalStatus;
+  userId: string;
+  timestamp: Date;
+  metadata?: Record<string, any>;
+}
+
 export class ApprovalService {
   private stateTransitions: Record<ApprovalStatus, ApprovalStatus[]> = {
     draft: ['pending_review'],
     pending_review: ['approved', 'rejected', 'draft'],
-    approved: ['published', 'draft'],
+    approved: ['scheduled', 'published', 'draft'],
+    scheduled: ['published', 'approved', 'draft'],
     rejected: ['draft'],
     published: [],
   };
 
+  private stateTransitionHooks: Map<string, ((event: StateTransitionEvent) => Promise<void>)[]> = new Map();
+
   private rolePermissions: Record<UserRole, string[]> = {
     content_creator: ['submit', 'view_own'],
     reviewer: ['submit', 'approve', 'reject', 'view_all'],
-    manager: ['submit', 'approve', 'reject', 'publish', 'view_all'],
-    admin: ['submit', 'approve', 'reject', 'publish', 'view_all', 'manage_roles'],
+    manager: ['submit', 'approve', 'reject', 'schedule', 'publish', 'view_all'],
+    admin: ['submit', 'approve', 'reject', 'schedule', 'publish', 'view_all', 'manage_roles'],
   };
+
+  onStateTransition(status: ApprovalStatus, hook: (event: StateTransitionEvent) => Promise<void>) {
+    const hooks = this.stateTransitionHooks.get(status) || [];
+    hooks.push(hook);
+    this.stateTransitionHooks.set(status, hooks);
+  }
+
+  private async triggerTransitionHooks(event: StateTransitionEvent): Promise<void> {
+    const hooks = this.stateTransitionHooks.get(event.toStatus) || [];
+    for (const hook of hooks) {
+      try {
+        await hook(event);
+      } catch (error) {
+        logger.error('State transition hook error:', error);
+      }
+    }
+  }
 
   async getUserRole(userId: string): Promise<UserRole> {
     const [user] = await db
@@ -212,6 +241,108 @@ export class ApprovalService {
     } catch (error: unknown) {
       logger.error('Reject post error:', error);
       return { success: false, error: 'Failed to reject post' };
+    }
+  }
+
+  async schedulePost(
+    postId: string,
+    userId: string,
+    scheduledAt: Date,
+    comment?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const validation = await this.validateStateTransition(postId, 'scheduled', userId);
+      if (!validation.valid) {
+        return { success: false, error: validation.error };
+      }
+
+      const [post] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
+
+      if (scheduledAt < new Date()) {
+        return { success: false, error: 'Scheduled time must be in the future' };
+      }
+
+      await db
+        .update(posts)
+        .set({
+          approvalStatus: 'scheduled',
+          scheduledAt: scheduledAt,
+          reviewedBy: userId,
+          reviewedAt: new Date(),
+        })
+        .where(eq(posts.id, postId));
+
+      await this.logApprovalAction({
+        postId,
+        userId,
+        action: 'schedule',
+        fromStatus: post.approvalStatus as ApprovalStatus,
+        toStatus: 'scheduled',
+        comment,
+        metadata: { scheduledAt: scheduledAt.toISOString() },
+      });
+
+      await this.triggerTransitionHooks({
+        postId,
+        fromStatus: post.approvalStatus as ApprovalStatus,
+        toStatus: 'scheduled',
+        userId,
+        timestamp: new Date(),
+        metadata: { scheduledAt: scheduledAt.toISOString() },
+      });
+
+      await this.notifyPostCreator(postId, userId, 'approved', `Post scheduled for ${scheduledAt.toLocaleString()}`);
+
+      return { success: true };
+    } catch (error: unknown) {
+      logger.error('Schedule post error:', error);
+      return { success: false, error: 'Failed to schedule post' };
+    }
+  }
+
+  async publishPost(
+    postId: string,
+    userId: string,
+    comment?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const validation = await this.validateStateTransition(postId, 'published', userId);
+      if (!validation.valid) {
+        return { success: false, error: validation.error };
+      }
+
+      const [post] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
+
+      await db
+        .update(posts)
+        .set({
+          approvalStatus: 'published',
+          status: 'published',
+          publishedAt: new Date(),
+        })
+        .where(eq(posts.id, postId));
+
+      await this.logApprovalAction({
+        postId,
+        userId,
+        action: 'publish',
+        fromStatus: post.approvalStatus as ApprovalStatus,
+        toStatus: 'published',
+        comment,
+      });
+
+      await this.triggerTransitionHooks({
+        postId,
+        fromStatus: post.approvalStatus as ApprovalStatus,
+        toStatus: 'published',
+        userId,
+        timestamp: new Date(),
+      });
+
+      return { success: true };
+    } catch (error: unknown) {
+      logger.error('Publish post error:', error);
+      return { success: false, error: 'Failed to publish post' };
     }
   }
 

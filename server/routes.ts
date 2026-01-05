@@ -2561,6 +2561,7 @@ export async function registerRoutes(
     // Payments & Payouts
     { path: "/api/billing", name: "billing", loader: () => import("./routes/billing") },
     { path: "/api/payouts", name: "payouts", loader: () => import("./routes/payouts") },
+    { path: "/api/invoices", name: "invoices", loader: () => import("./routes/invoices") },
     { path: "/api/kyc", name: "kyc", loader: () => import("./routes/kyc") },
 
     // Social & Advertising
@@ -2613,6 +2614,7 @@ export async function registerRoutes(
     // Analytics API
     { path: "/api/v1/analytics", name: "v1Analytics", loader: () => import("./routes/api/v1/analytics") },
     { path: "/api/certified-analytics", name: "certifiedAnalytics", loader: () => import("./routes/api/certifiedAnalytics") },
+    { path: "/api/analytics-alerts", name: "analyticsAlerts", loader: () => import("./routes/api/analyticsAlerts") },
 
     // Webhooks
     { path: "/webhooks/sendgrid", name: "sendgridWebhook", loader: () => import("./routes/webhooks/sendgrid") },

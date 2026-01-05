@@ -570,6 +570,45 @@ export default function StorefrontBuilder() {
                   </TabsContent>
 
                   <TabsContent value="colors" className="space-y-4 mt-4">
+                    <div className="mb-6">
+                      <Label className="text-base font-semibold mb-3 block">Theme Presets</Label>
+                      <p className="text-sm text-muted-foreground mb-4">Quick-start with a pre-designed theme</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        {[
+                          { name: 'Midnight Purple', primary: '#8B5CF6', secondary: '#EC4899', background: '#0F172A', text: '#F8FAFC' },
+                          { name: 'Ocean Blue', primary: '#3B82F6', secondary: '#06B6D4', background: '#0C1929', text: '#E2E8F0' },
+                          { name: 'Sunset Orange', primary: '#F97316', secondary: '#EAB308', background: '#1C1917', text: '#FAFAF9' },
+                          { name: 'Forest Green', primary: '#22C55E', secondary: '#10B981', background: '#0D1B12', text: '#ECFDF5' },
+                          { name: 'Rose Gold', primary: '#F43F5E', secondary: '#FB7185', background: '#18181B', text: '#FAFAFA' },
+                          { name: 'Classic Light', primary: '#1E293B', secondary: '#64748B', background: '#FFFFFF', text: '#0F172A' },
+                          { name: 'Neon Cyber', primary: '#00FF88', secondary: '#FF00FF', background: '#0A0A0A', text: '#00FF88' },
+                          { name: 'Warm Earth', primary: '#D97706', secondary: '#92400E', background: '#1C1917', text: '#FEF3C7' },
+                        ].map((theme) => (
+                          <button
+                            key={theme.name}
+                            onClick={() => setCustomization({
+                              ...customization,
+                              colors: {
+                                primary: theme.primary,
+                                secondary: theme.secondary,
+                                background: theme.background,
+                                text: theme.text,
+                              },
+                            })}
+                            className="p-3 rounded-lg border-2 border-transparent hover:border-primary transition-all text-left group"
+                            style={{ backgroundColor: theme.background }}
+                          >
+                            <div className="flex gap-1 mb-2">
+                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.primary }} />
+                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.secondary }} />
+                            </div>
+                            <span className="text-xs font-medium" style={{ color: theme.text }}>{theme.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Label className="text-base font-semibold block">Custom Colors</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <Label>Primary Color</Label>

@@ -1,6 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
 import { logger } from '../logger';
+import { competitorBenchmarkService } from '../services/competitorBenchmarkService';
+import { db } from '../db';
+import { socialInboxMessages, socialMentions, socialKeywords } from '@shared/schema';
+import { eq, and, desc, gte, or } from 'drizzle-orm';
 
 const router = Router();
 
@@ -206,15 +210,57 @@ router.get('/listening/alerts', requireAuth, async (req: AuthenticatedRequest, r
 // COMPETITOR BENCHMARKING ROUTES
 // =========================================
 
-// Get competitors - returns empty array when no real data exists
+// Get competitors - returns competitors from database
 router.get('/competitors', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const competitors = await storage.getCompetitors?.(userId) || [];
+    const competitors = await competitorBenchmarkService.getCompetitors(userId);
     res.json(competitors);
   } catch (error) {
     logger.error('Failed to get competitors:', error);
     res.json([]);
+  }
+});
+
+// Add competitor
+router.post('/competitors', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { name, handle, platforms } = req.body;
+
+    if (!name || !handle) {
+      return res.status(400).json({ error: 'Name and handle are required' });
+    }
+
+    const result = await competitorBenchmarkService.addCompetitor(userId, { name, handle, platforms });
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.status(201).json(result.competitor);
+  } catch (error) {
+    logger.error('Failed to add competitor:', error);
+    res.status(500).json({ error: 'Failed to add competitor' });
+  }
+});
+
+// Remove competitor
+router.delete('/competitors/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const result = await competitorBenchmarkService.removeCompetitor(userId, id);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to remove competitor:', error);
+    res.status(500).json({ error: 'Failed to remove competitor' });
   }
 });
 
@@ -230,24 +276,25 @@ router.get('/your-stats', requireAuth, async (req: AuthenticatedRequest, res: Re
   }
 });
 
-// Get benchmark competitors - returns empty data when no real data exists
+// Get benchmark competitors - returns comprehensive benchmark data
 router.get('/benchmark/competitors', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const competitors = await storage.getCompetitors?.(userId) || [];
-    const yourBrand = await storage.getUserSocialStats?.(userId) || null;
-    res.json({ competitors, yourBrand });
+    const competitors = await competitorBenchmarkService.getCompetitors(userId);
+    const yourBrand = await competitorBenchmarkService.getYourStats(userId);
+    const comparison = await competitorBenchmarkService.getBenchmarkComparison(userId);
+    res.json({ competitors, yourBrand, comparison });
   } catch (error) {
     logger.error('Failed to get benchmark competitors:', error);
-    res.json({ competitors: [], yourBrand: null });
+    res.json({ competitors: [], yourBrand: null, comparison: [] });
   }
 });
 
-// Get benchmark insights - returns empty array when no real data exists
+// Get benchmark insights - returns competitive insights
 router.get('/benchmark/insights', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const insights = await storage.getBenchmarkInsights?.(userId) || [];
+    const insights = await competitorBenchmarkService.getInsights(userId);
     res.json(insights);
   } catch (error) {
     logger.error('Failed to get benchmark insights:', error);
@@ -255,42 +302,129 @@ router.get('/benchmark/insights', requireAuth, async (req: AuthenticatedRequest,
   }
 });
 
+// Get share of voice
+router.get('/benchmark/share-of-voice', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const shareOfVoice = await competitorBenchmarkService.getShareOfVoice(userId);
+    res.json(shareOfVoice);
+  } catch (error) {
+    logger.error('Failed to get share of voice:', error);
+    res.json({ yourBrand: { mentions: 0, percentage: 0, reach: 0, sentiment: 0 }, competitors: [], industryTotal: 0 });
+  }
+});
+
 // =========================================
 // UNIFIED INBOX ROUTES - Returns empty data until real messages exist
 // =========================================
 
-// Get inbox messages - returns empty array when no real data exists (dormant behavior)
+// Get inbox messages - returns messages from database with filtering
 router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const messages = await storage.getSocialInboxMessages?.(userId) || [];
-    res.json({ messages, total: messages.length });
+    const { platform, status, priority, sentiment, limit = '50', offset = '0' } = req.query;
+
+    let query = db
+      .select()
+      .from(socialInboxMessages)
+      .where(eq(socialInboxMessages.userId, userId))
+      .orderBy(desc(socialInboxMessages.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+
+    const messages = await query;
+    
+    const filteredMessages = messages.filter(m => {
+      if (platform && platform !== 'all' && m.platform !== platform) return false;
+      if (status && status !== 'all' && m.status !== status) return false;
+      if (priority && priority !== 'all' && m.priority !== priority) return false;
+      if (sentiment && sentiment !== 'all' && m.sentiment !== sentiment) return false;
+      return true;
+    });
+
+    res.json({ 
+      messages: filteredMessages.map(m => ({
+        id: m.id,
+        platform: m.platform,
+        type: m.messageType,
+        content: m.content,
+        author: {
+          id: m.authorId,
+          name: m.authorName,
+          username: m.authorHandle,
+          avatar: m.authorAvatar,
+          followers: m.authorFollowers,
+          verified: m.authorVerified,
+        },
+        postContent: m.postContent,
+        postUrl: m.postUrl,
+        sentiment: m.sentiment,
+        priority: m.priority,
+        status: m.status,
+        assignedTo: m.assignedTo,
+        tags: m.tags || [],
+        threadId: m.threadId,
+        createdAt: m.createdAt,
+        readAt: m.readAt,
+        repliedAt: m.repliedAt,
+      })), 
+      total: filteredMessages.length 
+    });
   } catch (error) {
     logger.error('Failed to get inbox messages:', error);
     res.json({ messages: [], total: 0 });
   }
 });
 
-// Get inbox stats - returns zero stats when no real data exists
+// Get inbox stats - returns stats from database
 router.get('/inbox/stats', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const messages = await storage.getSocialInboxMessages?.(userId) || [];
+    const messages = await db
+      .select()
+      .from(socialInboxMessages)
+      .where(eq(socialInboxMessages.userId, userId));
+
     const stats = {
-      unread: messages.filter((m: any) => m.status === 'unread').length,
-      highPriority: messages.filter((m: any) => m.priority === 'high' && m.status === 'unread').length,
-      negative: messages.filter((m: any) => m.sentiment === 'negative' && m.status === 'unread').length,
+      total: messages.length,
+      unread: messages.filter(m => m.status === 'unread').length,
+      highPriority: messages.filter(m => m.priority === 'high' && m.status === 'unread').length,
+      negative: messages.filter(m => m.sentiment === 'negative' && m.status === 'unread').length,
+      byPlatform: {
+        twitter: messages.filter(m => m.platform === 'twitter').length,
+        instagram: messages.filter(m => m.platform === 'instagram').length,
+        facebook: messages.filter(m => m.platform === 'facebook').length,
+        tiktok: messages.filter(m => m.platform === 'tiktok').length,
+        youtube: messages.filter(m => m.platform === 'youtube').length,
+        linkedin: messages.filter(m => m.platform === 'linkedin').length,
+      },
     };
     res.json(stats);
   } catch (error) {
     logger.error('Failed to get inbox stats:', error);
-    res.json({ unread: 0, highPriority: 0, negative: 0 });
+    res.json({ total: 0, unread: 0, highPriority: 0, negative: 0, byPlatform: {} });
   }
 });
 
 // Mark message as read
 router.post('/inbox/:id/read', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    await db
+      .update(socialInboxMessages)
+      .set({ 
+        status: 'read',
+        readAt: new Date(),
+      })
+      .where(
+        and(
+          eq(socialInboxMessages.id, id),
+          eq(socialInboxMessages.userId, userId)
+        )
+      );
+
     res.json({ success: true });
   } catch (error) {
     logger.error('Failed to mark message as read:', error);
@@ -298,13 +432,113 @@ router.post('/inbox/:id/read', requireAuth, async (req: AuthenticatedRequest, re
   }
 });
 
+// Mark multiple messages as read
+router.post('/inbox/bulk/read', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { messageIds } = req.body;
+
+    if (!Array.isArray(messageIds)) {
+      return res.status(400).json({ error: 'messageIds must be an array' });
+    }
+
+    for (const id of messageIds) {
+      await db
+        .update(socialInboxMessages)
+        .set({ 
+          status: 'read',
+          readAt: new Date(),
+        })
+        .where(
+          and(
+            eq(socialInboxMessages.id, id),
+            eq(socialInboxMessages.userId, userId)
+          )
+        );
+    }
+
+    res.json({ success: true, updated: messageIds.length });
+  } catch (error) {
+    logger.error('Failed to mark messages as read:', error);
+    res.status(500).json({ error: 'Failed to mark messages as read' });
+  }
+});
+
 // Reply to message
 router.post('/inbox/:id/reply', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { content } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ error: 'Reply content is required' });
+    }
+
+    await db
+      .update(socialInboxMessages)
+      .set({ 
+        status: 'replied',
+        repliedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(socialInboxMessages.id, id),
+          eq(socialInboxMessages.userId, userId)
+        )
+      );
+
     res.json({ success: true });
   } catch (error) {
     logger.error('Failed to reply to message:', error);
     res.status(500).json({ error: 'Failed to reply to message' });
+  }
+});
+
+// Assign message to team member
+router.post('/inbox/:id/assign', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { assigneeId } = req.body;
+
+    await db
+      .update(socialInboxMessages)
+      .set({ assignedTo: assigneeId })
+      .where(
+        and(
+          eq(socialInboxMessages.id, id),
+          eq(socialInboxMessages.userId, userId)
+        )
+      );
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to assign message:', error);
+    res.status(500).json({ error: 'Failed to assign message' });
+  }
+});
+
+// Archive message
+router.post('/inbox/:id/archive', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    await db
+      .update(socialInboxMessages)
+      .set({ status: 'archived' })
+      .where(
+        and(
+          eq(socialInboxMessages.id, id),
+          eq(socialInboxMessages.userId, userId)
+        )
+      );
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to archive message:', error);
+    res.status(500).json({ error: 'Failed to archive message' });
   }
 });
 

@@ -183,6 +183,88 @@ router.post('/:postId/reject', async (req: AuthenticatedRequest, res) => {
   }
 });
 
+router.post('/:postId/schedule', async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { postId } = req.params;
+    const { scheduledAt, comment } = req.body;
+
+    if (!scheduledAt) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'scheduledAt is required',
+      });
+    }
+
+    const hasPermission = await approvalService.checkPermission(req.user.id, 'schedule');
+    if (!hasPermission) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have permission to schedule posts',
+      });
+    }
+
+    const result = await approvalService.schedulePost(
+      postId,
+      req.user.id,
+      new Date(scheduledAt),
+      comment
+    );
+
+    if (!result.success) {
+      return res.status(400).json({
+        error: result.error || 'Failed to schedule post',
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Post scheduled successfully',
+    });
+  } catch (error: unknown) {
+    logger.error('Schedule post error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/:postId/publish', async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { postId } = req.params;
+    const { comment } = req.body;
+
+    const hasPermission = await approvalService.checkPermission(req.user.id, 'publish');
+    if (!hasPermission) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have permission to publish posts',
+      });
+    }
+
+    const result = await approvalService.publishPost(postId, req.user.id, comment);
+
+    if (!result.success) {
+      return res.status(400).json({
+        error: result.error || 'Failed to publish post',
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Post published successfully',
+    });
+  } catch (error: unknown) {
+    logger.error('Publish post error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.get('/history/:postId', async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.user) {

@@ -353,7 +353,7 @@ router.post('/sync/:platform', async (req: AuthenticatedRequest, res: Response) 
     const platform = req.params.platform as DSPPlatform;
     const { startDate, endDate } = req.body;
 
-    const validPlatforms: DSPPlatform[] = ['spotify', 'apple', 'youtube', 'amazon', 'tidal', 'deezer', 'soundcloud', 'pandora'];
+    const validPlatforms: DSPPlatform[] = ['spotify', 'apple', 'youtube', 'amazon', 'tidal', 'deezer', 'soundcloud', 'pandora', 'tiktok', 'instagram'];
     if (!validPlatforms.includes(platform)) {
       return res.status(400).json({ error: 'Bad Request', message: 'Invalid platform' });
     }

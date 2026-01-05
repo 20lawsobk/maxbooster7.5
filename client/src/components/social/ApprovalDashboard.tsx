@@ -37,7 +37,7 @@ interface Post {
   platform: string;
   content: string;
   mediaUrls?: string[];
-  approvalStatus: 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published';
+  approvalStatus: 'draft' | 'pending_review' | 'approved' | 'scheduled' | 'rejected' | 'published';
   submittedBy?: string;
   reviewedBy?: string;
   reviewedAt?: Date;
@@ -68,6 +68,7 @@ const statusConfig = {
     label: 'Pending Review',
   },
   approved: { color: 'bg-green-500/20 text-green-400', icon: CheckCircle2, label: 'Approved' },
+  scheduled: { color: 'bg-purple-500/20 text-purple-400', icon: Calendar, label: 'Scheduled' },
   rejected: { color: 'bg-red-500/20 text-red-400', icon: XCircle, label: 'Rejected' },
   published: { color: 'bg-blue-500/20 text-blue-400', icon: Send, label: 'Published' },
 };

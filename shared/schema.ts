@@ -715,20 +715,257 @@ export const releaseScheduledActions = pgTable("release_scheduled_actions", {
 });
 
 // ============================================================================
-// PRE-SAVE CAMPAIGNS
+// PRE-SAVE CAMPAIGNS (Enhanced for production)
 // ============================================================================
 export const preSaveCampaigns = pgTable("pre_save_campaigns", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   releaseId: varchar("release_id").notNull(),
   userId: varchar("user_id").notNull(),
   name: text("name").notNull(),
+  slug: text("slug").unique(),
   startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
   platforms: text("platforms").array(),
   status: text("status").default("active"),
   totalSaves: integer("total_saves").default(0),
+  spotifySaves: integer("spotify_saves").default(0),
+  appleMusicSaves: integer("apple_music_saves").default(0),
+  deezerSaves: integer("deezer_saves").default(0),
   artwork: text("artwork"),
+  landingPageUrl: text("landing_page_url"),
+  collectEmails: boolean("collect_emails").default(true),
+  emailSignups: integer("email_signups").default(0),
+  targetSaves: integer("target_saves"),
+  conversionRate: real("conversion_rate"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPreSaveCampaignSchema = createInsertSchema(preSaveCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertPreSaveCampaign = typeof preSaveCampaigns.$inferInsert;
+
+// ============================================================================
+// PRE-SAVE ENTRIES (Individual user saves)
+// ============================================================================
+export const preSaveEntries = pgTable("pre_save_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull(),
+  platform: text("platform").notNull(),
+  email: text("email"),
+  spotifyUserId: text("spotify_user_id"),
+  appleMusicUserId: text("apple_music_user_id"),
+  deezerUserId: text("deezer_user_id"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  country: text("country"),
+  city: text("city"),
+  referer: text("referer"),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const insertPreSaveEntrySchema = createInsertSchema(preSaveEntries).omit({ id: true, createdAt: true });
+export type PreSaveEntry = typeof preSaveEntries.$inferSelect;
+export type InsertPreSaveEntry = typeof preSaveEntries.$inferInsert;
+
+// ============================================================================
+// DISTRIBUTION SLA METRICS (Production delivery tracking)
+// ============================================================================
+export const distributionSLAMetrics = pgTable("distribution_sla_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").notNull(),
+  platform: text("platform").notNull(),
+  submittedAt: timestamp("submitted_at").notNull(),
+  targetDeliveryAt: timestamp("target_delivery_at").notNull(),
+  actualDeliveryAt: timestamp("actual_delivery_at"),
+  liveAt: timestamp("live_at"),
+  slaTargetHours: integer("sla_target_hours").default(48),
+  actualDeliveryHours: real("actual_delivery_hours"),
+  metSLA: boolean("met_sla"),
+  status: text("status").default("pending"),
+  deliveryPhase: text("delivery_phase").default("queued"),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  lastRetryAt: timestamp("last_retry_at"),
+  platformReleaseId: text("platform_release_id"),
+  platformTrackingUrl: text("platform_tracking_url"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDistributionSLAMetricSchema = createInsertSchema(distributionSLAMetrics).omit({ id: true, createdAt: true, updatedAt: true });
+export type DistributionSLAMetric = typeof distributionSLAMetrics.$inferSelect;
+export type InsertDistributionSLAMetric = typeof distributionSLAMetrics.$inferInsert;
+
+// ============================================================================
+// CONTENT ID REGISTRATIONS (YouTube monetization)
+// ============================================================================
+export const contentIdRegistrations = pgTable("content_id_registrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").notNull(),
+  trackId: varchar("track_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  isrc: text("isrc").notNull(),
+  assetId: text("asset_id"),
+  status: text("status").default("pending"),
+  registrationType: text("registration_type").default("sound_recording"),
+  ownershipPercentage: real("ownership_percentage").default(100),
+  territories: text("territories").array(),
+  matchPolicy: text("match_policy").default("monetize"),
+  claimPolicy: text("claim_policy").default("monetize"),
+  allowUserUploads: boolean("allow_user_uploads").default(false),
+  youtubeChannelId: text("youtube_channel_id"),
+  submittedAt: timestamp("submitted_at"),
+  approvedAt: timestamp("approved_at"),
+  activeAt: timestamp("active_at"),
+  totalClaims: integer("total_claims").default(0),
+  totalRevenue: real("total_revenue").default(0),
+  lastClaimAt: timestamp("last_claim_at"),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertContentIdRegistrationSchema = createInsertSchema(contentIdRegistrations).omit({ id: true, createdAt: true, updatedAt: true });
+export type ContentIdRegistration = typeof contentIdRegistrations.$inferSelect;
+export type InsertContentIdRegistration = typeof contentIdRegistrations.$inferInsert;
+
+// ============================================================================
+// SYNC LICENSING (Film/TV/Ads licensing)
+// ============================================================================
+export const syncLicenses = pgTable("sync_licenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").notNull(),
+  trackId: varchar("track_id"),
+  userId: varchar("user_id").notNull(),
+  isAvailableForSync: boolean("is_available_for_sync").default(true),
+  syncCategories: text("sync_categories").array(),
+  exclusivityType: text("exclusivity_type").default("non_exclusive"),
+  minimumFee: real("minimum_fee"),
+  currency: text("currency").default("usd"),
+  pricePerUse: real("price_per_use"),
+  territories: text("territories").array(),
+  usageTypes: text("usage_types").array(),
+  mediaTypes: text("media_types").array(),
+  duration: text("duration"),
+  instrumentalAvailable: boolean("instrumental_available").default(false),
+  instrumentalUrl: text("instrumental_url"),
+  stemsAvailable: boolean("stems_available").default(false),
+  stemsUrl: text("stems_url"),
+  contactEmail: text("contact_email"),
+  contactName: text("contact_name"),
+  publisherName: text("publisher_name"),
+  publisherIPI: text("publisher_ipi"),
+  proAffiliation: text("pro_affiliation"),
+  status: text("status").default("active"),
+  totalInquiries: integer("total_inquiries").default(0),
+  totalPlacements: integer("total_placements").default(0),
+  totalRevenue: real("total_revenue").default(0),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSyncLicenseSchema = createInsertSchema(syncLicenses).omit({ id: true, createdAt: true, updatedAt: true });
+export type SyncLicense = typeof syncLicenses.$inferSelect;
+export type InsertSyncLicense = typeof syncLicenses.$inferInsert;
+
+// ============================================================================
+// SYNC LICENSE INQUIRIES
+// ============================================================================
+export const syncLicenseInquiries = pgTable("sync_license_inquiries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  syncLicenseId: varchar("sync_license_id").notNull(),
+  userId: varchar("user_id"),
+  inquirerName: text("inquirer_name").notNull(),
+  inquirerEmail: text("inquirer_email").notNull(),
+  inquirerCompany: text("inquirer_company"),
+  projectType: text("project_type"),
+  projectDescription: text("project_description"),
+  proposedUsage: text("proposed_usage"),
+  proposedFee: real("proposed_fee"),
+  proposedTerritory: text("proposed_territory"),
+  proposedDuration: text("proposed_duration"),
+  status: text("status").default("pending"),
+  respondedAt: timestamp("responded_at"),
+  responseNotes: text("response_notes"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSyncLicenseInquirySchema = createInsertSchema(syncLicenseInquiries).omit({ id: true, createdAt: true });
+export type SyncLicenseInquiry = typeof syncLicenseInquiries.$inferSelect;
+export type InsertSyncLicenseInquiry = typeof syncLicenseInquiries.$inferInsert;
+
+// ============================================================================
+// ROYALTY SPLITS (Collaborator percentage allocations)
+// ============================================================================
+export const royaltySplits = pgTable("royalty_splits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").notNull(),
+  trackId: varchar("track_id"),
+  userId: varchar("user_id"),
+  collaboratorName: text("collaborator_name").notNull(),
+  collaboratorEmail: text("collaborator_email").notNull(),
+  role: text("role").notNull(),
+  percentage: real("percentage").notNull(),
+  payoutMethod: text("payout_method").default("platform"),
+  stripeAccountId: text("stripe_account_id"),
+  paypalEmail: text("paypal_email"),
+  bankDetails: jsonb("bank_details"),
+  status: text("status").default("pending"),
+  inviteSentAt: timestamp("invite_sent_at"),
+  inviteAcceptedAt: timestamp("invite_accepted_at"),
+  verifiedAt: timestamp("verified_at"),
+  totalEarned: real("total_earned").default(0),
+  totalPaid: real("total_paid").default(0),
+  pendingPayout: real("pending_payout").default(0),
+  lastPayoutAt: timestamp("last_payout_at"),
+  ipiNumber: text("ipi_number"),
+  proAffiliation: text("pro_affiliation"),
+  publisherName: text("publisher_name"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertRoyaltySplitSchema = createInsertSchema(royaltySplits).omit({ id: true, createdAt: true, updatedAt: true });
+export type RoyaltySplit = typeof royaltySplits.$inferSelect;
+export type InsertRoyaltySplit = typeof royaltySplits.$inferInsert;
+
+// ============================================================================
+// ROYALTY TRANSACTIONS (Payment history)
+// ============================================================================
+export const royaltyTransactions = pgTable("royalty_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  splitId: varchar("split_id").notNull(),
+  releaseId: varchar("release_id").notNull(),
+  userId: varchar("user_id"),
+  amount: real("amount").notNull(),
+  currency: text("currency").default("usd"),
+  transactionType: text("transaction_type").notNull(),
+  platform: text("platform"),
+  periodStart: timestamp("period_start"),
+  periodEnd: timestamp("period_end"),
+  streamCount: integer("stream_count"),
+  status: text("status").default("pending"),
+  stripeTransferId: text("stripe_transfer_id"),
+  paypalTransactionId: text("paypal_transaction_id"),
+  paidAt: timestamp("paid_at"),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRoyaltyTransactionSchema = createInsertSchema(royaltyTransactions).omit({ id: true, createdAt: true });
+export type RoyaltyTransaction = typeof royaltyTransactions.$inferSelect;
+export type InsertRoyaltyTransaction = typeof royaltyTransactions.$inferInsert;
 
 // ============================================================================
 // INSTANT PAYOUTS
@@ -740,9 +977,137 @@ export const instantPayouts = pgTable("instant_payouts", {
   currency: text("currency").default("usd"),
   status: text("status").default("pending"),
   stripePayoutId: text("stripe_payout_id"),
+  riskScore: real("risk_score"),
+  riskFlags: jsonb("risk_flags"),
+  failureReason: text("failure_reason"),
+  metadata: jsonb("metadata"),
   processedAt: timestamp("processed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// ============================================================================
+// REFUNDS (Payment Refund Tracking)
+// ============================================================================
+export const refunds = pgTable("refunds", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  sellerId: varchar("seller_id"),
+  amountCents: bigint("amount_cents", { mode: "number" }).notNull(),
+  currency: text("currency").default("usd"),
+  reason: text("reason"),
+  status: text("status").default("pending"),
+  stripeRefundId: text("stripe_refund_id"),
+  stripeChargeId: text("stripe_charge_id"),
+  initiatedBy: text("initiated_by"),
+  refundType: text("refund_type").default("full"),
+  failureReason: text("failure_reason"),
+  metadata: jsonb("metadata"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type Refund = typeof refunds.$inferSelect;
+export type InsertRefund = typeof refunds.$inferInsert;
+export const insertRefundSchema = createInsertSchema(refunds).omit({ id: true, createdAt: true });
+
+// ============================================================================
+// LEDGER ENTRIES (Financial Audit Trail)
+// ============================================================================
+export const ledgerEntries = pgTable("ledger_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  entryType: text("entry_type").notNull(),
+  amountCents: bigint("amount_cents", { mode: "number" }).notNull(),
+  currency: text("currency").default("usd"),
+  balanceAfterCents: bigint("balance_after_cents", { mode: "number" }),
+  referenceType: text("reference_type"),
+  referenceId: varchar("reference_id"),
+  description: text("description"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type LedgerEntry = typeof ledgerEntries.$inferSelect;
+export type InsertLedgerEntry = typeof ledgerEntries.$inferInsert;
+export const insertLedgerEntrySchema = createInsertSchema(ledgerEntries).omit({ id: true, createdAt: true });
+
+// ============================================================================
+// TAX FORMS (1099, W-9, etc.)
+// ============================================================================
+export const taxForms = pgTable("tax_forms", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  formType: text("form_type").notNull(),
+  taxYear: integer("tax_year").notNull(),
+  totalEarningsCents: bigint("total_earnings_cents", { mode: "number" }).default(0),
+  status: text("status").default("pending"),
+  formData: jsonb("form_data"),
+  pdfUrl: text("pdf_url"),
+  submittedAt: timestamp("submitted_at"),
+  generatedAt: timestamp("generated_at"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type TaxForm = typeof taxForms.$inferSelect;
+export type InsertTaxForm = typeof taxForms.$inferInsert;
+export const insertTaxFormSchema = createInsertSchema(taxForms).omit({ id: true, createdAt: true });
+
+// ============================================================================
+// INVOICES (Persistent Invoice Storage)
+// ============================================================================
+export const invoices = pgTable("invoices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  userId: varchar("user_id").notNull(),
+  invoiceType: text("invoice_type").default("sale"),
+  status: text("status").default("draft"),
+  fromAddress: jsonb("from_address"),
+  toAddress: jsonb("to_address"),
+  lineItems: jsonb("line_items"),
+  subtotalCents: bigint("subtotal_cents", { mode: "number" }).default(0),
+  taxCents: bigint("tax_cents", { mode: "number" }).default(0),
+  discountCents: bigint("discount_cents", { mode: "number" }).default(0),
+  totalCents: bigint("total_cents", { mode: "number" }).default(0),
+  currency: text("currency").default("usd"),
+  dueDate: timestamp("due_date"),
+  paidAt: timestamp("paid_at"),
+  paymentMethod: text("payment_method"),
+  stripeInvoiceId: text("stripe_invoice_id"),
+  pdfUrl: text("pdf_url"),
+  notes: text("notes"),
+  terms: text("terms"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = typeof invoices.$inferInsert;
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, createdAt: true, updatedAt: true });
+
+// ============================================================================
+// SPLIT PAYMENTS (Collaborator Payment Tracking)
+// ============================================================================
+export const splitPayments = pgTable("split_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  collaboratorId: varchar("collaborator_id").notNull(),
+  percentage: real("percentage").notNull(),
+  amountCents: bigint("amount_cents", { mode: "number" }).notNull(),
+  currency: text("currency").default("usd"),
+  status: text("status").default("pending"),
+  stripeTransferId: text("stripe_transfer_id"),
+  failureReason: text("failure_reason"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SplitPayment = typeof splitPayments.$inferSelect;
+export type InsertSplitPayment = typeof splitPayments.$inferInsert;
+export const insertSplitPaymentSchema = createInsertSchema(splitPayments).omit({ id: true, createdAt: true });
 
 // ============================================================================
 // KYC DOCUMENTS
@@ -2690,6 +3055,110 @@ export const autopilotCrossInsights = pgTable("autopilot_cross_insights", {
 export type AutopilotCrossInsight = typeof autopilotCrossInsights.$inferSelect;
 export const insertAutopilotCrossInsightSchema = createInsertSchema(autopilotCrossInsights).omit({ id: true, createdAt: true });
 export type InsertAutopilotCrossInsight = z.infer<typeof insertAutopilotCrossInsightSchema>;
+
+// ============================================================================
+// SOCIAL LISTENING - Brand mentions and sentiment tracking
+// ============================================================================
+export const socialMentions = pgTable("social_mentions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  platform: text("platform").notNull(),
+  author: text("author"),
+  authorHandle: text("author_handle"),
+  authorAvatar: text("author_avatar"),
+  authorFollowers: integer("author_followers").default(0),
+  content: text("content"),
+  sentiment: text("sentiment").default("neutral"),
+  sentimentScore: real("sentiment_score").default(0),
+  keywords: jsonb("keywords"),
+  reach: integer("reach").default(0),
+  engagement: integer("engagement").default(0),
+  url: text("url"),
+  isInfluencer: boolean("is_influencer").default(false),
+  responded: boolean("responded").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SocialMention = typeof socialMentions.$inferSelect;
+export const insertSocialMentionSchema = createInsertSchema(socialMentions).omit({ id: true, createdAt: true });
+export type InsertSocialMention = z.infer<typeof insertSocialMentionSchema>;
+
+// ============================================================================
+// SOCIAL KEYWORDS - Tracked keywords for social listening
+// ============================================================================
+export const socialKeywords = pgTable("social_keywords", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  keyword: text("keyword").notNull(),
+  isActive: boolean("is_active").default(true),
+  mentionCount: integer("mention_count").default(0),
+  lastMentionAt: timestamp("last_mention_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SocialKeyword = typeof socialKeywords.$inferSelect;
+export const insertSocialKeywordSchema = createInsertSchema(socialKeywords).omit({ id: true, createdAt: true });
+export type InsertSocialKeyword = z.infer<typeof insertSocialKeywordSchema>;
+
+// ============================================================================
+// COMPETITOR PROFILES - Competitor tracking for benchmarking
+// ============================================================================
+export const competitorProfiles = pgTable("competitor_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  handle: text("handle"),
+  platforms: jsonb("platforms"),
+  followers: integer("followers").default(0),
+  followersGrowth: real("followers_growth").default(0),
+  engagementRate: real("engagement_rate").default(0),
+  postsPerWeek: real("posts_per_week").default(0),
+  avgLikes: integer("avg_likes").default(0),
+  avgComments: integer("avg_comments").default(0),
+  avgShares: integer("avg_shares").default(0),
+  contentMix: jsonb("content_mix"),
+  topHashtags: jsonb("top_hashtags"),
+  lastUpdated: timestamp("last_updated"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CompetitorProfile = typeof competitorProfiles.$inferSelect;
+export const insertCompetitorProfileSchema = createInsertSchema(competitorProfiles).omit({ id: true, createdAt: true });
+export type InsertCompetitorProfile = z.infer<typeof insertCompetitorProfileSchema>;
+
+// ============================================================================
+// SOCIAL INBOX MESSAGES - Unified inbox for all platform messages
+// ============================================================================
+export const socialInboxMessages = pgTable("social_inbox_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  platform: text("platform").notNull(),
+  messageType: text("message_type").notNull(),
+  content: text("content"),
+  authorId: text("author_id"),
+  authorName: text("author_name"),
+  authorHandle: text("author_handle"),
+  authorAvatar: text("author_avatar"),
+  authorFollowers: integer("author_followers").default(0),
+  authorVerified: boolean("author_verified").default(false),
+  postContent: text("post_content"),
+  postUrl: text("post_url"),
+  sentiment: text("sentiment").default("neutral"),
+  priority: text("priority").default("medium"),
+  status: text("status").default("unread"),
+  assignedTo: varchar("assigned_to"),
+  tags: jsonb("tags"),
+  threadId: varchar("thread_id"),
+  parentMessageId: varchar("parent_message_id"),
+  repliedAt: timestamp("replied_at"),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SocialInboxMessage = typeof socialInboxMessages.$inferSelect;
+export const insertSocialInboxMessageSchema = createInsertSchema(socialInboxMessages).omit({ id: true, createdAt: true });
+export type InsertSocialInboxMessage = z.infer<typeof insertSocialInboxMessageSchema>;
 
 // ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)

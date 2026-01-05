@@ -1325,6 +1325,51 @@ export default function Analytics() {
     },
   });
 
+  const { data: crossPlatformData, isLoading: crossPlatformLoading } = useQuery({
+    queryKey: ['/api/analytics-alerts/cross-platform-comparison'],
+    enabled: !!user && selectedTab === 'cross-platform',
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: triggerCitiesData, isLoading: triggerCitiesLoading, refetch: refetchTriggerCities } = useQuery({
+    queryKey: ['/api/analytics-alerts/trigger-cities'],
+    enabled: !!user && selectedTab === 'trigger-cities',
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: alertsData, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery({
+    queryKey: ['/api/analytics-alerts/alerts'],
+    enabled: !!user && selectedTab === 'alerts',
+    refetchInterval: autoRefresh ? 60000 : false,
+  });
+
+  const { data: alertSummaryData } = useQuery({
+    queryKey: ['/api/analytics-alerts/alerts/summary'],
+    enabled: !!user,
+    staleTime: 30000,
+  });
+
+  const dismissAlertMutation = useMutation({
+    mutationFn: async (alertId: string) => {
+      return await apiRequest('POST', `/api/analytics-alerts/alerts/${alertId}/dismiss`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/analytics-alerts/alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/analytics-alerts/alerts/summary'] });
+      toast({ title: 'Alert dismissed' });
+    },
+  });
+
+  const trackPlaylistChangesMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', '/api/analytics-alerts/playlist-changes/track');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/analytics-alerts/alerts'] });
+      toast({ title: 'Playlist changes tracked', description: 'New playlist activity has been detected.' });
+    },
+  });
+
   useEffect(() => {
     const handleAnomalyDetected = (message: any) => {
       if (message.type === 'anomaly_detected') {
@@ -1567,9 +1612,15 @@ export default function Analytics() {
         </StatCardRow>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className={`grid w-full h-auto ${user?.role === 'admin' ? 'grid-cols-10' : 'grid-cols-7'}`}>
+          <TabsList className={`grid w-full h-auto ${user?.role === 'admin' ? 'grid-cols-12' : 'grid-cols-10'}`}>
             <TabsTrigger value="overview" data-testid="tab-overview" className="text-xs px-2">
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="cross-platform" data-testid="tab-cross-platform" className="text-xs px-2">
+              Cross-Platform
+            </TabsTrigger>
+            <TabsTrigger value="trigger-cities" data-testid="tab-trigger-cities" className="text-xs px-2">
+              Hotspots
             </TabsTrigger>
             <TabsTrigger value="fan-journey" data-testid="tab-fan-journey" className="text-xs px-2">
               Fan Journey
@@ -1590,14 +1641,14 @@ export default function Analytics() {
             <TabsTrigger value="geographic" data-testid="tab-geographic" className="text-xs px-2">
               Geographic
             </TabsTrigger>
-            <TabsTrigger value="demographics" data-testid="tab-demographics" className="text-xs px-2">
-              Demographics
-            </TabsTrigger>
             <TabsTrigger value="playlists" data-testid="tab-playlists" className="text-xs px-2">
               Playlists
             </TabsTrigger>
             <TabsTrigger value="revenue" data-testid="tab-revenue" className="text-xs px-2">
               Revenue
+            </TabsTrigger>
+            <TabsTrigger value="alerts" data-testid="tab-alerts" className="text-xs px-2 relative">
+              Alerts
             </TabsTrigger>
             {user?.role === 'admin' && (
               <TabsTrigger value="anomalies" data-testid="tab-anomalies" className="text-xs px-2 relative">
@@ -1754,6 +1805,325 @@ export default function Analytics() {
                 )}
               </ChartCard>
             </div>
+          </TabsContent>
+
+          <TabsContent value="cross-platform" className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold">Cross-Platform Performance</h2>
+                <p className="text-sm text-muted-foreground">Compare your performance across streaming and social platforms</p>
+              </div>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Layers className="h-3 w-3" />
+                Multi-Platform Analytics
+              </Badge>
+            </div>
+
+            {crossPlatformLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-48" />)}
+              </div>
+            ) : crossPlatformData?.data ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  {(crossPlatformData.data as any).metrics?.map((platform: any) => {
+                    const platformColors: Record<string, string> = {
+                      spotify: 'bg-green-500',
+                      apple: 'bg-red-500',
+                      youtube: 'bg-red-600',
+                      tiktok: 'bg-pink-500',
+                      instagram: 'bg-purple-500',
+                    };
+                    const platformIcons: Record<string, React.ReactNode> = {
+                      spotify: <Music className="h-5 w-5" />,
+                      apple: <Music className="h-5 w-5" />,
+                      youtube: <Video className="h-5 w-5" />,
+                      tiktok: <Video className="h-5 w-5" />,
+                      instagram: <Camera className="h-5 w-5" />,
+                    };
+                    return (
+                      <Card key={platform.platform} className="relative overflow-hidden">
+                        <div className={`absolute top-0 left-0 right-0 h-1 ${platformColors[platform.platform] || 'bg-blue-500'}`} />
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-8 h-8 rounded-full ${platformColors[platform.platform]?.replace('bg-', 'bg-opacity-20 bg-')} flex items-center justify-center`}>
+                              {platformIcons[platform.platform]}
+                            </div>
+                            <CardTitle className="text-sm capitalize">{platform.platform}</CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Streams</span>
+                            <span className="font-medium">{platform.streams?.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Listeners</span>
+                            <span className="font-medium">{platform.listeners?.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Engagement</span>
+                            <span className="font-medium">{platform.engagement?.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Revenue</span>
+                            <span className="font-medium text-green-600">${platform.revenue?.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-1 mt-2">
+                            {platform.growthRate > 0 ? (
+                              <ArrowUp className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <ArrowDown className="h-4 w-4 text-red-500" />
+                            )}
+                            <span className={platform.growthRate > 0 ? 'text-green-600' : 'text-red-600'}>
+                              {Math.abs(platform.growthRate).toFixed(1)}%
+                            </span>
+                            <span className="text-xs text-muted-foreground">growth</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {(crossPlatformData.data as any).recommendations?.length > 0 && (
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5 text-yellow-500" />
+                        Platform Recommendations
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {(crossPlatformData.data as any).recommendations.map((rec: string, idx: number) => (
+                          <div key={idx} className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                            <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-medium text-blue-600">{idx + 1}</span>
+                            </div>
+                            <p className="text-sm">{rec}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            ) : (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Layers className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Connect Your Platforms</h3>
+                  <p className="text-muted-foreground">Link your streaming and social accounts to see cross-platform analytics</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="trigger-cities" className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold">🔥 Trigger Cities & Regional Hotspots</h2>
+                <p className="text-sm text-muted-foreground">Detect cities where your music is trending and growing fastest</p>
+              </div>
+              <Button onClick={() => refetchTriggerCities()} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+
+            {triggerCitiesLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-40" />)}
+              </div>
+            ) : (triggerCitiesData?.data as any[])?.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(triggerCitiesData?.data as any[]).map((city: any, idx: number) => (
+                  <Card key={idx} className={`relative overflow-hidden ${city.isHotspot ? 'border-orange-500 border-2' : ''}`}>
+                    {city.isHotspot && (
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="destructive" className="flex items-center gap-1">
+                          <Flame className="h-3 w-3" />
+                          Hotspot
+                        </Badge>
+                      </div>
+                    )}
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-blue-500" />
+                        <div>
+                          <CardTitle className="text-base">{city.city}</CardTitle>
+                          <CardDescription>{city.country} • {city.region}</CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Streams</p>
+                          <p className="font-semibold">{city.streamCount?.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Listeners</p>
+                          <p className="font-semibold">{city.listenerCount?.toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Growth</span>
+                        <div className={`flex items-center gap-1 ${city.growthPercentage > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {city.growthPercentage > 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                          <span className="font-semibold">{Math.abs(city.growthPercentage).toFixed(1)}%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {city.platforms?.map((p: string) => (
+                          <Badge key={p} variant="outline" className="text-xs capitalize">{p}</Badge>
+                        ))}
+                      </div>
+                      <Badge 
+                        variant={city.trendDirection === 'rising' ? 'default' : city.trendDirection === 'declining' ? 'destructive' : 'secondary'}
+                        className="capitalize"
+                      >
+                        {city.trendDirection}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <MapPin className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Trigger Cities Yet</h3>
+                  <p className="text-muted-foreground">We'll detect regional hotspots as your music grows in popularity</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="alerts" className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold">🔔 Alerts & Notifications</h2>
+                <p className="text-sm text-muted-foreground">Milestones, playlist changes, and significant events</p>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => trackPlaylistChangesMutation.mutate()} variant="outline" size="sm" disabled={trackPlaylistChangesMutation.isPending}>
+                  <ListMusic className="h-4 w-4 mr-2" />
+                  Track Playlists
+                </Button>
+                <Button onClick={() => refetchAlerts()} variant="outline" size="sm">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+
+            {alertSummaryData?.data && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <Card className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-blue-500" />
+                    <div>
+                      <p className="text-2xl font-bold">{(alertSummaryData.data as any).total || 0}</p>
+                      <p className="text-xs text-muted-foreground">Total Alerts</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-orange-500" />
+                    <div>
+                      <p className="text-2xl font-bold">{(alertSummaryData.data as any).unread || 0}</p>
+                      <p className="text-xs text-muted-foreground">Unread</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-yellow-500" />
+                    <div>
+                      <p className="text-2xl font-bold">{(alertSummaryData.data as any).byType?.milestone || 0}</p>
+                      <p className="text-xs text-muted-foreground">Milestones</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <div className="flex items-center gap-2">
+                    <ListMusic className="h-5 w-5 text-green-500" />
+                    <div>
+                      <p className="text-2xl font-bold">{((alertSummaryData.data as any).byType?.playlist_add || 0) + ((alertSummaryData.data as any).byType?.playlist_remove || 0)}</p>
+                      <p className="text-xs text-muted-foreground">Playlist Changes</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {alertsLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
+              </div>
+            ) : (alertsData?.data as any[])?.length > 0 ? (
+              <div className="space-y-4">
+                {(alertsData?.data as any[]).map((alert: any) => {
+                  const priorityColors: Record<string, string> = {
+                    critical: 'border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20',
+                    high: 'border-l-4 border-l-orange-500 bg-orange-50 dark:bg-orange-950/20',
+                    medium: 'border-l-4 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/20',
+                    low: 'border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-950/20',
+                  };
+                  const typeIcons: Record<string, React.ReactNode> = {
+                    milestone: <Trophy className="h-5 w-5 text-yellow-500" />,
+                    playlist_add: <Plus className="h-5 w-5 text-green-500" />,
+                    playlist_remove: <Trash2 className="h-5 w-5 text-red-500" />,
+                    trigger_city: <MapPin className="h-5 w-5 text-orange-500" />,
+                    growth_spike: <TrendingUp className="h-5 w-5 text-green-500" />,
+                    viral_alert: <Rocket className="h-5 w-5 text-purple-500" />,
+                    decline_warning: <TrendingDown className="h-5 w-5 text-red-500" />,
+                  };
+                  return (
+                    <Card key={alert.id} className={`${priorityColors[alert.priority] || ''} ${alert.dismissed ? 'opacity-50' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-1">{typeIcons[alert.type] || <Bell className="h-5 w-5" />}</div>
+                            <div>
+                              <h4 className="font-semibold">{alert.title}</h4>
+                              <p className="text-sm text-muted-foreground mt-1">{alert.message}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="text-xs capitalize">{alert.type.replace('_', ' ')}</Badge>
+                                <Badge variant={alert.priority === 'critical' ? 'destructive' : 'secondary'} className="text-xs capitalize">{alert.priority}</Badge>
+                                {alert.platform && <Badge variant="outline" className="text-xs capitalize">{alert.platform}</Badge>}
+                                <span className="text-xs text-muted-foreground">{new Date(alert.createdAt).toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {!alert.dismissed && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => dismissAlertMutation.mutate(alert.id)}
+                              disabled={dismissAlertMutation.isPending}
+                            >
+                              Dismiss
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Bell className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Alerts Yet</h3>
+                  <p className="text-muted-foreground">We'll notify you when significant events occur</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="fan-journey" className="space-y-6">

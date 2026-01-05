@@ -29,10 +29,73 @@ export interface BeatListing {
 }
 
 export interface BeatLicense {
-  type: 'basic' | 'premium' | 'exclusive';
+  type: 'basic' | 'premium' | 'exclusive' | 'unlimited';
   price: number;
   features: string[];
+  streams?: number | 'unlimited';
+  copies?: number | 'unlimited';
+  radioStations?: number | 'unlimited';
+  musicVideos?: number | 'unlimited';
+  duration?: string;
+  allowsBroadcast?: boolean;
+  allowsProfit?: boolean;
+  allowsSync?: boolean;
 }
+
+export const DEFAULT_LICENSE_TEMPLATES: Record<string, BeatLicense> = {
+  basic: {
+    type: 'basic',
+    price: 29.99,
+    features: ['MP3 Download', 'Non-exclusive rights', 'Up to 100K streams', 'Up to 5K copies'],
+    streams: 100000,
+    copies: 5000,
+    radioStations: 2,
+    musicVideos: 1,
+    duration: '1 year',
+    allowsBroadcast: false,
+    allowsProfit: true,
+    allowsSync: false,
+  },
+  premium: {
+    type: 'premium',
+    price: 99.99,
+    features: ['WAV + MP3 Download', 'Non-exclusive rights', 'Up to 500K streams', 'Up to 25K copies', 'Broadcast rights'],
+    streams: 500000,
+    copies: 25000,
+    radioStations: 10,
+    musicVideos: 3,
+    duration: '2 years',
+    allowsBroadcast: true,
+    allowsProfit: true,
+    allowsSync: true,
+  },
+  unlimited: {
+    type: 'unlimited',
+    price: 199.99,
+    features: ['WAV + MP3 + Stems', 'Non-exclusive rights', 'Unlimited streams', 'Unlimited copies', 'Full broadcast rights'],
+    streams: 'unlimited',
+    copies: 'unlimited',
+    radioStations: 'unlimited',
+    musicVideos: 'unlimited',
+    duration: 'Lifetime',
+    allowsBroadcast: true,
+    allowsProfit: true,
+    allowsSync: true,
+  },
+  exclusive: {
+    type: 'exclusive',
+    price: 999.99,
+    features: ['Full ownership transfer', 'All source files + Stems', 'Complete exclusivity', 'No royalty splits'],
+    streams: 'unlimited',
+    copies: 'unlimited',
+    radioStations: 'unlimited',
+    musicVideos: 'unlimited',
+    duration: 'Lifetime (Full Ownership)',
+    allowsBroadcast: true,
+    allowsProfit: true,
+    allowsSync: true,
+  },
+};
 
 // Service-layer Order type (domain model)
 export interface Order {

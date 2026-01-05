@@ -327,6 +327,306 @@ export class StripeService {
       });
     }
   }
+
+  /**
+   * Create a refund for an order
+   */
+  async createRefund(params: {
+    orderId: string;
+    userId: string;
+    sellerId?: string;
+    amountCents?: number;
+    reason?: string;
+    initiatedBy?: string;
+  }): Promise<{ success: boolean; refundId?: string; stripeRefundId?: string; error?: string }> {
+    try {
+      const { db } = await import('../db');
+      const { orders, refunds, ledgerEntries, notifications } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [order] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, params.orderId));
+
+      if (!order) {
+        return { success: false, error: 'Order not found' };
+      }
+
+      if (!order.stripePaymentIntentId) {
+        return { success: false, error: 'No payment found for order' };
+      }
+
+      const amountCents = params.amountCents || Math.round(order.amount * 100);
+      const refundType = params.amountCents && params.amountCents < Math.round(order.amount * 100) ? 'partial' : 'full';
+
+      const [refundRecord] = await db
+        .insert(refunds)
+        .values({
+          orderId: params.orderId,
+          userId: params.userId,
+          sellerId: params.sellerId || order.sellerId,
+          amountCents,
+          currency: order.currency || 'usd',
+          reason: params.reason,
+          status: 'pending',
+          initiatedBy: params.initiatedBy || 'customer',
+          refundType,
+        })
+        .returning();
+
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+        const chargeId = paymentIntent.latest_charge as string;
+
+        const stripeRefund = await stripe.refunds.create({
+          charge: chargeId,
+          amount: amountCents,
+          reason: this.mapRefundReason(params.reason),
+          metadata: {
+            orderId: params.orderId,
+            refundId: refundRecord.id,
+            initiatedBy: params.initiatedBy || 'customer',
+          },
+        });
+
+        await db
+          .update(refunds)
+          .set({
+            status: stripeRefund.status as string,
+            stripeRefundId: stripeRefund.id,
+            stripeChargeId: chargeId,
+            processedAt: new Date(),
+          })
+          .where(eq(refunds.id, refundRecord.id));
+
+        await db.insert(ledgerEntries).values({
+          userId: params.userId,
+          entryType: 'refund',
+          amountCents,
+          currency: order.currency || 'usd',
+          referenceType: 'refund',
+          referenceId: refundRecord.id,
+          description: `Refund for order ${params.orderId}`,
+        });
+
+        await db.insert(notifications).values({
+          userId: params.userId,
+          type: 'refund',
+          title: 'Refund Processed',
+          message: `Your refund of $${(amountCents / 100).toFixed(2)} has been processed and will appear in 5-10 business days.`,
+          metadata: { refundId: refundRecord.id, orderId: params.orderId },
+        });
+
+        logger.info('Refund created successfully', { refundId: refundRecord.id, stripeRefundId: stripeRefund.id });
+
+        return {
+          success: true,
+          refundId: refundRecord.id,
+          stripeRefundId: stripeRefund.id,
+        };
+      } catch (stripeError: any) {
+        await db
+          .update(refunds)
+          .set({
+            status: 'failed',
+            failureReason: stripeError.message,
+          })
+          .where(eq(refunds.id, refundRecord.id));
+
+        return { success: false, error: stripeError.message };
+      }
+    } catch (error: any) {
+      logger.error('Error creating refund:', error);
+      return { success: false, error: error.message || 'Failed to create refund' };
+    }
+  }
+
+  private mapRefundReason(reason?: string): 'duplicate' | 'fraudulent' | 'requested_by_customer' | undefined {
+    if (!reason) return 'requested_by_customer';
+    const lower = reason.toLowerCase();
+    if (lower.includes('duplicate')) return 'duplicate';
+    if (lower.includes('fraud')) return 'fraudulent';
+    return 'requested_by_customer';
+  }
+
+  /**
+   * Handle refund webhook events
+   */
+  async handleRefundWebhook(refund: Stripe.Refund) {
+    try {
+      const { db } = await import('../db');
+      const { refunds } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const refundId = refund.metadata?.refundId;
+      if (!refundId) {
+        logger.warn('Refund webhook without refundId metadata', { stripeRefundId: refund.id });
+        return;
+      }
+
+      await db
+        .update(refunds)
+        .set({
+          status: refund.status as string,
+          processedAt: refund.status === 'succeeded' ? new Date() : undefined,
+          failureReason: refund.failure_reason || undefined,
+        })
+        .where(eq(refunds.id, refundId));
+
+      logger.info('Refund status updated from webhook', { refundId, status: refund.status });
+    } catch (error) {
+      logger.error('Error handling refund webhook:', error);
+    }
+  }
+
+  /**
+   * Get refund status
+   */
+  async getRefundStatus(refundId: string) {
+    try {
+      const { db } = await import('../db');
+      const { refunds } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [refund] = await db
+        .select()
+        .from(refunds)
+        .where(eq(refunds.id, refundId));
+
+      if (!refund) {
+        throw new Error('Refund not found');
+      }
+
+      return refund;
+    } catch (error) {
+      logger.error('Error getting refund status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get refunds for an order
+   */
+  async getOrderRefunds(orderId: string) {
+    try {
+      const { db } = await import('../db');
+      const { refunds } = await import('@shared/schema');
+      const { eq, desc } = await import('drizzle-orm');
+
+      const orderRefunds = await db
+        .select()
+        .from(refunds)
+        .where(eq(refunds.orderId, orderId))
+        .orderBy(desc(refunds.createdAt));
+
+      return orderRefunds;
+    } catch (error) {
+      logger.error('Error getting order refunds:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate 1099-K tax form data for a seller
+   */
+  async generateTaxFormData(userId: string, taxYear: number) {
+    try {
+      const { db } = await import('../db');
+      const { orders, users, instantPayouts, taxForms } = await import('@shared/schema');
+      const { eq, and, gte, lte, sql } = await import('drizzle-orm');
+
+      const startOfYear = new Date(`${taxYear}-01-01T00:00:00Z`);
+      const endOfYear = new Date(`${taxYear}-12-31T23:59:59Z`);
+
+      const earningsResult = await db.execute(
+        sql`SELECT 
+              COALESCE(SUM(amount), 0) as total_gross,
+              COUNT(*) as transaction_count
+            FROM orders 
+            WHERE seller_id = ${userId} 
+            AND status = 'completed'
+            AND created_at >= ${startOfYear.toISOString()}
+            AND created_at <= ${endOfYear.toISOString()}`
+      );
+
+      const payoutsResult = await db.execute(
+        sql`SELECT COALESCE(SUM(amount_cents), 0) as total_payouts
+            FROM instant_payouts 
+            WHERE user_id = ${userId} 
+            AND status = 'completed'
+            AND created_at >= ${startOfYear.toISOString()}
+            AND created_at <= ${endOfYear.toISOString()}`
+      );
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      const totalGross = Number(earningsResult.rows?.[0]?.total_gross || 0);
+      const transactionCount = Number(earningsResult.rows?.[0]?.transaction_count || 0);
+      const totalPayouts = Number(payoutsResult.rows?.[0]?.total_payouts || 0) / 100;
+
+      const requires1099 = totalGross >= 600 || transactionCount >= 200;
+
+      const formData = {
+        payerName: 'Max Booster Platform',
+        payeeName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown',
+        payeeEmail: user?.email || '',
+        taxYear,
+        grossAmount: totalGross,
+        transactionCount,
+        totalPayouts,
+        requiresForm: requires1099,
+        box1a: totalGross,
+        box1b: 0,
+        federalWithholding: 0,
+      };
+
+      if (requires1099) {
+        const [existingForm] = await db
+          .select()
+          .from(taxForms)
+          .where(
+            and(
+              eq(taxForms.userId, userId),
+              eq(taxForms.taxYear, taxYear),
+              eq(taxForms.formType, '1099-K')
+            )
+          )
+          .limit(1);
+
+        if (existingForm) {
+          await db
+            .update(taxForms)
+            .set({
+              totalEarningsCents: Math.round(totalGross * 100),
+              formData,
+              status: 'generated',
+              generatedAt: new Date(),
+            })
+            .where(eq(taxForms.id, existingForm.id));
+        } else {
+          await db.insert(taxForms).values({
+            userId,
+            formType: '1099-K',
+            taxYear,
+            totalEarningsCents: Math.round(totalGross * 100),
+            formData,
+            status: 'generated',
+            generatedAt: new Date(),
+          });
+        }
+      }
+
+      return formData;
+    } catch (error) {
+      logger.error('Error generating tax form data:', error);
+      throw error;
+    }
+  }
 }
 
 export const stripeService = new StripeService();

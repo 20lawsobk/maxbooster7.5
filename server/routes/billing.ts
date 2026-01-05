@@ -348,4 +348,88 @@ router.post('/create-portal-session', requireAuth, async (req: AuthenticatedRequ
   }
 });
 
+router.post('/refund', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { orderId, amountCents, reason } = req.body;
+    
+    if (!orderId) {
+      return res.status(400).json({ message: 'Order ID is required' });
+    }
+    
+    const { stripeService } = await import('../services/stripeService');
+    const result = await stripeService.createRefund({
+      orderId,
+      userId,
+      amountCents,
+      reason,
+      initiatedBy: 'customer',
+    });
+    
+    if (!result.success) {
+      return res.status(400).json({ message: result.error });
+    }
+    
+    res.json({
+      success: true,
+      refundId: result.refundId,
+      message: 'Refund initiated successfully',
+    });
+  } catch (error) {
+    logger.error('[Billing] Failed to create refund:', error);
+    res.status(500).json({ message: 'Failed to process refund' });
+  }
+});
+
+router.get('/refund/:refundId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { refundId } = req.params;
+    
+    const { stripeService } = await import('../services/stripeService');
+    const refund = await stripeService.getRefundStatus(refundId);
+    
+    if (refund.userId !== req.user!.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    
+    res.json(refund);
+  } catch (error: any) {
+    if (error.message === 'Refund not found') {
+      return res.status(404).json({ message: 'Refund not found' });
+    }
+    logger.error('[Billing] Failed to get refund status:', error);
+    res.status(500).json({ message: 'Failed to get refund status' });
+  }
+});
+
+router.get('/order/:orderId/refunds', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    
+    const { stripeService } = await import('../services/stripeService');
+    const refunds = await stripeService.getOrderRefunds(orderId);
+    
+    res.json({ refunds });
+  } catch (error) {
+    logger.error('[Billing] Failed to get order refunds:', error);
+    res.status(500).json({ message: 'Failed to get order refunds' });
+  }
+});
+
+router.get('/ledger', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+    
+    const { instantPayoutService } = await import('../services/instantPayoutService');
+    const entries = await instantPayoutService.getLedgerHistory(userId, limit, offset);
+    
+    res.json({ entries, pagination: { limit, offset } });
+  } catch (error) {
+    logger.error('[Billing] Failed to get ledger history:', error);
+    res.status(500).json({ message: 'Failed to get ledger history' });
+  }
+});
+
 export default router;

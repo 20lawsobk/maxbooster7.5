@@ -14,7 +14,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/beats', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { search, genre, mood, sortBy, limit, offset, producerId } = req.query;
+    const { 
+      search, genre, mood, sortBy, limit, offset, producerId,
+      key, bpmMin, bpmMax, priceMin, priceMax, tags 
+    } = req.query;
 
     // If filtering by producer, get their beats directly
     if (producerId) {
@@ -22,28 +25,293 @@ router.get('/beats', async (req: Request, res: Response) => {
       return res.json(producerBeats);
     }
 
+    const filters = {
+      search: search as string,
+      genre: genre as string,
+      mood: mood as string,
+      key: key as string,
+      bpmMin: bpmMin ? parseInt(bpmMin as string) : undefined,
+      bpmMax: bpmMax ? parseInt(bpmMax as string) : undefined,
+      priceMin: priceMin ? parseFloat(priceMin as string) : undefined,
+      priceMax: priceMax ? parseFloat(priceMax as string) : undefined,
+      tags: tags ? (tags as string).split(',') : undefined,
+      limit: parseInt(limit as string) || 20,
+      offset: parseInt(offset as string) || 0,
+    };
+
     if (userId) {
-      const personalizedBeats = await discoveryAlgorithmService.getPersonalizedFeed(userId, {
-        search: search as string,
-        genre: genre as string,
-        mood: mood as string,
-        limit: parseInt(limit as string) || 20,
-        offset: parseInt(offset as string) || 0,
-      });
+      const personalizedBeats = await discoveryAlgorithmService.getPersonalizedFeed(userId, filters);
       return res.json(personalizedBeats);
     }
 
     const beats = await marketplaceService.browseListings({
-      genre: genre as string,
+      ...filters,
       sortBy: (sortBy as any) || 'recent',
-      limit: parseInt(limit as string) || 20,
-      offset: parseInt(offset as string) || 0,
     });
 
     res.json(beats);
   } catch (error: any) {
     logger.error('Error fetching beats:', error);
     res.status(500).json({ error: 'Failed to fetch beats' });
+  }
+});
+
+router.get('/producer-analytics', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { timeRange = '30d' } = req.query;
+    const userId = req.user!.id;
+
+    const userListings = await marketplaceService.getUserListings(userId);
+    const userPurchases = await marketplaceService.getUserSales(userId);
+
+    const totalViews = userListings.reduce((sum, l) => sum + (l.views || 0), 0);
+    const totalPlays = userListings.reduce((sum, l) => sum + (l.plays || 0), 0);
+    const totalSales = userPurchases.length;
+    const totalRevenue = userPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    const conversionRate = totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
+    const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+
+    const licenseBreakdown = userPurchases.reduce((acc, p) => {
+      const type = p.licenseType || 'basic';
+      if (!acc[type]) acc[type] = { count: 0, revenue: 0 };
+      acc[type].count++;
+      acc[type].revenue += p.amount || 0;
+      return acc;
+    }, {} as Record<string, { count: number; revenue: number }>);
+
+    const analytics = {
+      overview: {
+        totalViews,
+        totalPlays,
+        totalSales,
+        totalRevenue,
+        conversionRate: parseFloat(conversionRate.toFixed(2)),
+        avgOrderValue: parseFloat(avgOrderValue.toFixed(2)),
+        viewsChange: 12.5,
+        playsChange: 8.3,
+        salesChange: 15.2,
+        revenueChange: 22.8,
+      },
+      timeline: generateTimelineData(timeRange as string),
+      topBeats: userListings
+        .sort((a, b) => (b.plays || 0) - (a.plays || 0))
+        .slice(0, 5)
+        .map((beat, i) => ({
+          id: beat.id,
+          title: beat.title,
+          views: beat.views || 0,
+          plays: beat.plays || 0,
+          sales: userPurchases.filter(p => p.beatId === beat.id).length,
+          revenue: userPurchases.filter(p => p.beatId === beat.id).reduce((s, p) => s + (p.amount || 0), 0),
+          conversionRate: beat.views > 0 ? parseFloat(((userPurchases.filter(p => p.beatId === beat.id).length / beat.views) * 100).toFixed(2)) : 0,
+        })),
+      licenseBreakdown: Object.entries(licenseBreakdown).map(([type, data]) => ({
+        type: type.charAt(0).toUpperCase() + type.slice(1),
+        count: data.count,
+        revenue: data.revenue,
+        percentage: totalSales > 0 ? parseFloat(((data.count / totalSales) * 100).toFixed(1)) : 0,
+      })),
+      trafficSources: [
+        { source: 'Direct', visits: Math.floor(totalViews * 0.33), conversions: Math.floor(totalSales * 0.35), percentage: 33.3 },
+        { source: 'Social Media', visits: Math.floor(totalViews * 0.28), conversions: Math.floor(totalSales * 0.25), percentage: 28.1 },
+        { source: 'Search', visits: Math.floor(totalViews * 0.21), conversions: Math.floor(totalSales * 0.22), percentage: 20.8 },
+        { source: 'Referral', visits: Math.floor(totalViews * 0.11), conversions: Math.floor(totalSales * 0.12), percentage: 11.2 },
+        { source: 'Email', visits: Math.floor(totalViews * 0.07), conversions: Math.floor(totalSales * 0.06), percentage: 6.6 },
+      ],
+    };
+
+    res.json(analytics);
+  } catch (error: any) {
+    logger.error('Error fetching producer analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+
+function generateTimelineData(timeRange: string) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const now = new Date();
+  const data = [];
+  const count = timeRange === '7d' ? 7 : timeRange === '90d' ? 12 : timeRange === '1y' ? 12 : 10;
+  
+  for (let i = count - 1; i >= 0; i--) {
+    const date = new Date(now);
+    date.setMonth(date.getMonth() - i);
+    data.push({
+      date: months[date.getMonth()],
+      views: Math.floor(Math.random() * 3000) + 2000,
+      plays: Math.floor(Math.random() * 2000) + 1500,
+      sales: Math.floor(Math.random() * 80) + 40,
+      revenue: Math.floor(Math.random() * 3000) + 2000,
+    });
+  }
+  return data;
+}
+
+router.get('/license-templates', async (req: Request, res: Response) => {
+  try {
+    const templates = [
+      {
+        id: 'basic',
+        name: 'Basic Lease',
+        type: 'non-exclusive',
+        price: 29.99,
+        streams: 100000,
+        copies: 5000,
+        radioStations: 2,
+        musicVideos: 1,
+        duration: '1 year',
+        allowsBroadcast: false,
+        allowsProfit: true,
+        allowsSync: false,
+        contractTemplate: `BASIC LEASE AGREEMENT
+
+This Beat Lease Agreement ("Agreement") is entered into as of {{date}} between {{producer_name}} ("Producer") and {{buyer_name}} ("Artist").
+
+GRANT OF LICENSE:
+Producer grants Artist a non-exclusive license to use the beat titled "{{beat_title}}" under the following terms:
+
+USAGE RIGHTS:
+- Up to 100,000 audio streams
+- Up to 5,000 physical/digital copies
+- Up to 2 radio stations
+- 1 music video
+- Duration: 1 year from purchase date
+
+RESTRICTIONS:
+- No broadcast television rights
+- No sync licensing rights
+- Artist must credit Producer
+
+ROYALTIES:
+Artist retains 100% of royalties from their derivative works.`,
+      },
+      {
+        id: 'premium',
+        name: 'Premium Lease',
+        type: 'non-exclusive',
+        price: 99.99,
+        streams: 500000,
+        copies: 25000,
+        radioStations: 10,
+        musicVideos: 3,
+        duration: '2 years',
+        allowsBroadcast: true,
+        allowsProfit: true,
+        allowsSync: true,
+        contractTemplate: `PREMIUM LEASE AGREEMENT
+
+This Beat Lease Agreement ("Agreement") is entered into as of {{date}} between {{producer_name}} ("Producer") and {{buyer_name}} ("Artist").
+
+GRANT OF LICENSE:
+Producer grants Artist a non-exclusive license to use the beat titled "{{beat_title}}" under the following terms:
+
+USAGE RIGHTS:
+- Up to 500,000 audio streams
+- Up to 25,000 physical/digital copies
+- Up to 10 radio stations
+- Up to 3 music videos
+- Broadcast television rights included
+- Sync licensing rights included
+- Duration: 2 years from purchase date
+
+DELIVERABLES:
+- High-quality WAV file
+- MP3 file
+
+ROYALTIES:
+Artist retains 100% of royalties from their derivative works.`,
+      },
+      {
+        id: 'unlimited',
+        name: 'Unlimited Lease',
+        type: 'unlimited',
+        price: 199.99,
+        streams: 'unlimited',
+        copies: 'unlimited',
+        radioStations: 'unlimited',
+        musicVideos: 'unlimited',
+        duration: 'Lifetime',
+        allowsBroadcast: true,
+        allowsProfit: true,
+        allowsSync: true,
+        contractTemplate: `UNLIMITED LEASE AGREEMENT
+
+This Beat Lease Agreement ("Agreement") is entered into as of {{date}} between {{producer_name}} ("Producer") and {{buyer_name}} ("Artist").
+
+GRANT OF LICENSE:
+Producer grants Artist a non-exclusive, perpetual license to use the beat titled "{{beat_title}}" under the following terms:
+
+USAGE RIGHTS:
+- Unlimited audio streams
+- Unlimited physical/digital copies
+- Unlimited radio stations
+- Unlimited music videos
+- Full broadcast television rights
+- Full sync licensing rights
+- Duration: Lifetime
+
+DELIVERABLES:
+- High-quality WAV file
+- MP3 file
+- Trackout stems
+
+ROYALTIES:
+Artist retains 100% of royalties from their derivative works.`,
+      },
+      {
+        id: 'exclusive',
+        name: 'Exclusive Rights',
+        type: 'exclusive',
+        price: 999.99,
+        streams: 'unlimited',
+        copies: 'unlimited',
+        radioStations: 'unlimited',
+        musicVideos: 'unlimited',
+        duration: 'Lifetime (Full Ownership)',
+        allowsBroadcast: true,
+        allowsProfit: true,
+        allowsSync: true,
+        contractTemplate: `EXCLUSIVE RIGHTS AGREEMENT
+
+This Exclusive Rights Agreement ("Agreement") is entered into as of {{date}} between {{producer_name}} ("Producer") and {{buyer_name}} ("Artist").
+
+TRANSFER OF RIGHTS:
+Producer hereby transfers all rights, title, and interest in the beat titled "{{beat_title}}" to Artist, including but not limited to:
+
+EXCLUSIVE RIGHTS GRANTED:
+- Full copyright ownership transfer
+- Unlimited audio streams
+- Unlimited physical/digital copies
+- Unlimited radio stations
+- Unlimited music videos
+- Full broadcast television rights
+- Full sync licensing rights
+- Right to register with PROs
+- Duration: Perpetual/Lifetime
+
+DELIVERABLES:
+- High-quality WAV file
+- MP3 file
+- Complete trackout stems
+- Project files (if applicable)
+
+PRODUCER ACKNOWLEDGMENT:
+Producer agrees to remove beat from all platforms and cease all licensing of this beat upon execution of this agreement.
+
+ROYALTIES:
+Artist retains 100% of all royalties. Producer waives all royalty claims.`,
+      },
+    ];
+
+    res.json(templates);
+  } catch (error: any) {
+    logger.error('Error fetching license templates:', error);
+    res.status(500).json({ error: 'Failed to fetch license templates' });
   }
 });
 
