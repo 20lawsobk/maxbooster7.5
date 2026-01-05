@@ -377,28 +377,7 @@ export default function Studio() {
     audioEngineRef.current = AudioEngine.getInstance();
   }
 
-  // Memoize the onError callback to prevent audio engine re-initialization
-  const handleStudioError = useCallback(
-    (error: Error) => {
-      logger.error('Studio controller error:', error);
-      toast({
-        title: 'Playback error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-    [toast]
-  );
-
-  // Initialize studio controller
-  const controller = useStudioController({
-    projectId: selectedProject?.id?.toString() || null,
-    onError: handleStudioError,
-  });
-
-  // Get real duration from audio clips (reactive - updates when clips change)
-  const projectDuration = controller.projectDuration;
-
+  // Fetch projects first - needed for deriving selectedProject
   const { data: projectsData } = useQuery({
     queryKey: ['/api/studio/projects'],
     enabled: !!user,
@@ -415,6 +394,28 @@ export default function Studio() {
       (p: Project) => p.id === params.projectId || p.id.toString() === params.projectId
     ) || null;
   }, [params.projectId, projects]);
+
+  // Memoize the onError callback to prevent audio engine re-initialization
+  const handleStudioError = useCallback(
+    (error: Error) => {
+      logger.error('Studio controller error:', error);
+      toast({
+        title: 'Playback error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+    [toast]
+  );
+
+  // Initialize studio controller (now selectedProject is defined above)
+  const controller = useStudioController({
+    projectId: selectedProject?.id?.toString() || null,
+    onError: handleStudioError,
+  });
+
+  // Get real duration from audio clips (reactive - updates when clips change)
+  const projectDuration = controller.projectDuration;
   
   const { data: tracks = [], isLoading: isLoadingTracks } = useQuery<StudioTrack[]>({
     queryKey: ['/api/studio/projects', selectedProject?.id, 'tracks'],
