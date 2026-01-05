@@ -78,7 +78,7 @@ export function FileUploadZone({
   const uploadFile = useCallback(
     async (uploadingFile: UploadingFile) => {
       const formData = new FormData();
-      formData.append('audio', uploadingFile.file);
+      formData.append('audioFile', uploadingFile.file);
       if (projectId) {
         formData.append('projectId', projectId.toString());
       }

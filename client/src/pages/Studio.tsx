@@ -490,7 +490,7 @@ export default function Studio() {
   const uploadFileMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append('audio', file);
+      formData.append('audioFile', file);
       if (selectedProject) formData.append('projectId', selectedProject.id.toString());
       return await apiRequest('POST', '/api/studio/upload', formData);
     },
