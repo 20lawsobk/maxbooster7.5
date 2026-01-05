@@ -272,9 +272,6 @@ export default function Studio() {
     }
   }, [audioDevices.selectedInput, setSelectedInputDevice]);
 
-  // Marker persistence with React Query
-  const markerService = useMarkers(selectedProject?.id || null);
-
   // Metronome Transport Sync
   const isPlaying = useStudioStore((state) => state.isPlaying);
   useEffect(() => {
@@ -371,6 +368,9 @@ export default function Studio() {
       (p: Project) => p.id === params.projectId || p.id.toString() === params.projectId
     ) || null;
   }, [params.projectId, projects]);
+
+  // Marker persistence with React Query (must be after selectedProject is defined)
+  const markerService = useMarkers(selectedProject?.id || null);
 
   // Initialize AI workflow hook (must be after selectedProject is defined)
   const { startWorkflow, cancel, retry, reset, integrate, aiMix, aiMaster, audioAnalysis } =
