@@ -127,8 +127,18 @@ All environment variables are configured and validated at startup:
 - **Refund Handling**: Webhooks for charge.refunded, disputes, chargebacks
 - **Tax Documents**: 1099-K generation for qualifying sellers
 
+### User Retention Features (NEW)
+- **First Week Success Path**: Guided onboarding with XP points, task categories, and progress tracking
+- **Artist Progress Dashboard**: Visual career metrics with animated gauge, growth charts, milestone timeline
+- **Achievement System**: 16+ achievements with tiers (bronze/silver/gold/platinum), confetti animations, leaderboard
+- **AI Career Coach**: Personalized daily recommendations, gap analysis, SMART goal suggestions
+- **Revenue Forecasting**: 3/6/12 month projections with confidence intervals, seasonality factors
+- **Weekly Insights Email**: Automated Monday emails with stats, achievements, recommendations (SendGrid + cron)
+- **Collaboration Network**: Artist connections, AI-powered matching, project management
+- **Release Countdown Hub**: Pre-release campaign tracking with 20-task checklist, analytics
+
 ## API Routes Summary
-The server loads 50+ API route modules including:
+The server loads 60+ API route modules including:
 - `/api/distribution` - Music distribution management
 - `/api/analytics` - Analytics and reporting
 - `/api/marketplace` - Beat marketplace
@@ -139,6 +149,14 @@ The server loads 50+ API route modules including:
 - `/api/analytics-alerts` - Alert and trigger city detection
 - `/api/studio/*` - AI studio features
 - `/api/admin/*` - Admin dashboard
+- `/api/onboarding` - First Week Success Path
+- `/api/achievements` - Achievement system and streaks
+- `/api/artist-progress` - Career progress dashboard
+- `/api/career-coach` - AI career recommendations
+- `/api/revenue-forecast` - Earnings projections
+- `/api/email-preferences` - Weekly insights settings
+- `/api/collaborations` - Artist networking
+- `/api/countdowns` - Release countdown hub
 
 ## Notes
 - The server binds to 0.0.0.0:5000 for both frontend and API

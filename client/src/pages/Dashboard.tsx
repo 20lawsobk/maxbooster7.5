@@ -9,6 +9,14 @@ import FeatureDiscovery from '@/components/feature-discovery/FeatureDiscovery';
 import FeatureSpotlight from '@/components/feature-discovery/FeatureSpotlight';
 import { UserOverviewPanel } from '@/components/dashboard/UserOverviewPanel';
 import { SmartNextActionWidget } from '@/components/dashboard/SmartNextActionWidget';
+import { FirstWeekSuccessPath } from '@/components/onboarding/FirstWeekSuccessPath';
+import { ArtistProgressDashboard } from '@/components/dashboard/ArtistProgressDashboard';
+import { AICareerCoach } from '@/components/dashboard/AICareerCoach';
+import { RevenueForecast } from '@/components/dashboard/RevenueForecast';
+import { StreakCounter } from '@/components/achievements/StreakCounter';
+import { AchievementNotification } from '@/components/achievements/AchievementNotification';
+import { CountdownCard } from '@/components/releases/CountdownCard';
+import { SuggestedCollaborators } from '@/components/collaboration/SuggestedCollaborators';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -353,6 +361,9 @@ function DashboardContent({ user }: { user: any }) {
 
   return (
     <AppLayout>
+      {/* Achievement Notification System */}
+      <AchievementNotification />
+      
       <div className="max-w-7xl mx-auto space-y-6" role="main" aria-label="Dashboard content">
         {/* Header */}
         <header className="flex justify-between items-center" role="banner">
@@ -370,6 +381,8 @@ function DashboardContent({ user }: { user: any }) {
             role="navigation"
             aria-label="Dashboard actions"
           >
+            {/* Streak Counter in Header */}
+            <StreakCounter mode="compact" />
             <Button
               data-testid="button-discover-features"
               variant="outline"
@@ -552,9 +565,12 @@ function DashboardContent({ user }: { user: any }) {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger data-testid="tab-overview" value="overview">
               Overview
+            </TabsTrigger>
+            <TabsTrigger data-testid="tab-growth" value="growth">
+              Growth
             </TabsTrigger>
             <TabsTrigger data-testid="tab-analytics" value="analytics">
               Analytics
@@ -684,6 +700,44 @@ function DashboardContent({ user }: { user: any }) {
                 </CardContent>
               </Card>
             </div>
+
+            {/* First Week Success Path for new users */}
+            <FirstWeekSuccessPath />
+          </TabsContent>
+
+          {/* Growth Tab - Retention Features */}
+          <TabsContent value="growth" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* AI Career Coach */}
+              <div className="lg:col-span-2">
+                <AICareerCoach />
+              </div>
+              
+              {/* Streak Counter */}
+              <div className="space-y-4">
+                <StreakCounter mode="full" />
+                <SuggestedCollaborators />
+              </div>
+            </div>
+
+            {/* Artist Progress Dashboard */}
+            <ArtistProgressDashboard />
+
+            {/* Revenue Forecast */}
+            <RevenueForecast />
+
+            {/* Upcoming Releases */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Calendar className="w-5 h-5 mr-2 text-purple-600" />
+                  Upcoming Releases
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CountdownCard />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="ai-insights" className="space-y-6">
