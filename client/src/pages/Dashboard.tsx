@@ -10,6 +10,8 @@ import FeatureSpotlight from '@/components/feature-discovery/FeatureSpotlight';
 import { UserOverviewPanel } from '@/components/dashboard/UserOverviewPanel';
 import { SmartNextActionWidget } from '@/components/dashboard/SmartNextActionWidget';
 import FirstWeekSuccessPath from '@/components/onboarding/FirstWeekSuccessPath';
+import PowerFeatureSpotlight from '@/components/onboarding/PowerFeatureSpotlight';
+import ContextualFeatureHint from '@/components/onboarding/ContextualFeatureHint';
 import { ArtistProgressDashboard } from '@/components/dashboard/ArtistProgressDashboard';
 import { AICareerCoach } from '@/components/dashboard/AICareerCoach';
 import RevenueForecast from '@/components/dashboard/RevenueForecast';
@@ -417,6 +419,12 @@ function DashboardContent({ user }: { user: any }) {
 
         {/* User Overview Panel */}
         <UserOverviewPanel user={user} />
+
+        {/* Progressive Feature Discovery - Shows one feature at a time */}
+        <PowerFeatureSpotlight 
+          userPersona={user?.onboardingData?.persona || null}
+          compact={false}
+        />
 
         {/* Value Calculator - Show subscription savings */}
         {hasPaidSubscription && <ValueCalculator />}
@@ -938,6 +946,9 @@ function DashboardContent({ user }: { user: any }) {
             onExploreFeature={handleExploreFeature}
           />
         )}
+
+        {/* Contextual Feature Hints - appears after completing tasks */}
+        <ContextualFeatureHint />
       </div>
     </AppLayout>
   );

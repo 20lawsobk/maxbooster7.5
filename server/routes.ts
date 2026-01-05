@@ -2232,6 +2232,48 @@ export async function registerRoutes(
     }
   });
 
+  // Get seen features for progressive disclosure
+  app.get("/api/users/seen-features", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const seenFeatures = req.user.onboardingData?.seenFeatures || [];
+      return res.json({ seenFeatures });
+    } catch (error) {
+      console.error("Get seen features error:", error);
+      return res.status(500).json({ message: "Failed to get seen features" });
+    }
+  });
+
+  // Mark feature as seen for progressive disclosure
+  app.post("/api/users/mark-feature-seen", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const { featureId } = req.body;
+      if (!featureId) {
+        return res.status(400).json({ message: "Feature ID is required" });
+      }
+      const currentOnboardingData = req.user.onboardingData || {};
+      const seenFeatures = currentOnboardingData.seenFeatures || [];
+      if (!seenFeatures.includes(featureId)) {
+        seenFeatures.push(featureId);
+      }
+      await storage.updateUser(req.user.id, {
+        onboardingData: {
+          ...currentOnboardingData,
+          seenFeatures,
+        },
+      });
+      return res.json({ success: true, seenFeatures });
+    } catch (error) {
+      console.error("Mark feature seen error:", error);
+      return res.status(500).json({ message: "Failed to mark feature as seen" });
+    }
+  });
+
   // Royalties download statement endpoint
   app.get("/api/royalties/download-statement/:statementId", async (req: Request, res: Response) => {
     if (!req.user) {

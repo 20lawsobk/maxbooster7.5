@@ -384,41 +384,71 @@ class OnboardingService {
           icon: 'Music',
         },
         {
+          name: 'Try AI Music Generator',
+          description: 'Generate a custom melody, beat, or full track using AI — describe what you want or upload audio',
+          category: 'Explore Features',
+          points: 150,
+          order: 3,
+          isRequired: false,
+          actionUrl: '/studio',
+          icon: 'Sparkles',
+        },
+        {
           name: 'Connect a social account',
           description: 'Link your Instagram, TikTok, or Twitter to enable automated posting',
           category: 'Connect Socials',
           points: 75,
-          order: 3,
+          order: 4,
           isRequired: false,
           actionUrl: '/social-media',
           icon: 'Share2',
+        },
+        {
+          name: 'Activate Social Autopilot',
+          description: 'Turn on AI-powered auto-posting trained on viral music marketing strategies',
+          category: 'Connect Socials',
+          points: 125,
+          order: 5,
+          isRequired: false,
+          actionUrl: '/social-media',
+          icon: 'Sparkles',
         },
         {
           name: 'Set up your beat store',
           description: 'Configure your storefront to start selling beats and licenses',
           category: 'First Release',
           points: 100,
-          order: 4,
+          order: 6,
           isRequired: false,
           actionUrl: '/storefront',
           icon: 'ShoppingBag',
         },
         {
           name: 'Schedule first post',
-          description: 'Create and schedule your first social media post using AI',
+          description: 'Create and schedule your first social media post using AI optimization',
           category: 'Connect Socials',
           points: 75,
-          order: 5,
+          order: 7,
           isRequired: false,
           actionUrl: '/social-media',
           icon: 'Calendar',
+        },
+        {
+          name: 'Explore Zero-Cost Advertising',
+          description: 'Learn how our AI creates viral organic content that outperforms paid ads',
+          category: 'Explore Features',
+          points: 100,
+          order: 8,
+          isRequired: false,
+          actionUrl: '/advertising',
+          icon: 'Sparkles',
         },
         {
           name: 'Explore analytics',
           description: 'Check out your analytics dashboard to understand your audience',
           category: 'Explore Features',
           points: 50,
-          order: 6,
+          order: 9,
           isRequired: false,
           actionUrl: '/analytics',
           icon: 'BarChart3',
@@ -428,7 +458,7 @@ class OnboardingService {
           description: 'Invite a fellow artist or collaborator to work on projects together',
           category: 'Explore Features',
           points: 100,
-          order: 7,
+          order: 10,
           isRequired: false,
           actionUrl: '/settings',
           icon: 'UserPlus',
@@ -440,6 +470,55 @@ class OnboardingService {
     } catch (error) {
       logger.error('Error seeding onboarding tasks:', error);
       throw new Error('Failed to seed onboarding tasks');
+    }
+  }
+
+  async ensureAITasksExist(): Promise<void> {
+    try {
+      const existingTasks = await db.select().from(onboardingTasks);
+      const existingNames = existingTasks.map(t => t.name);
+      
+      const aiTasks = [
+        {
+          name: 'Try AI Music Generator',
+          description: 'Generate a custom melody, beat, or full track using AI — describe what you want or upload audio',
+          category: 'Explore Features',
+          points: 150,
+          order: 3,
+          isRequired: false,
+          actionUrl: '/studio',
+          icon: 'Sparkles',
+        },
+        {
+          name: 'Activate Social Autopilot',
+          description: 'Turn on AI-powered auto-posting trained on viral music marketing strategies',
+          category: 'Connect Socials',
+          points: 125,
+          order: 5,
+          isRequired: false,
+          actionUrl: '/social-media',
+          icon: 'Sparkles',
+        },
+        {
+          name: 'Explore Zero-Cost Advertising',
+          description: 'Learn how our AI creates viral organic content that outperforms paid ads',
+          category: 'Explore Features',
+          points: 100,
+          order: 8,
+          isRequired: false,
+          actionUrl: '/advertising',
+          icon: 'Sparkles',
+        },
+      ];
+
+      const tasksToInsert = aiTasks.filter(task => !existingNames.includes(task.name));
+      
+      if (tasksToInsert.length > 0) {
+        await db.insert(onboardingTasks).values(tasksToInsert);
+        logger.info(`Added ${tasksToInsert.length} AI-related onboarding tasks`);
+      }
+    } catch (error) {
+      logger.error('Error ensuring AI tasks exist:', error);
     }
   }
 }

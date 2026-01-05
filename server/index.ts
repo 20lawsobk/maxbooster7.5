@@ -307,6 +307,15 @@ app.use((req, res, next) => {
     logger.error(`❌ Failed to initialize admin: ${e.message}`);
   }
 
+  // Seed onboarding tasks and ensure AI tasks exist for existing databases
+  try {
+    const { onboardingService } = await import('./services/onboardingService.js');
+    await onboardingService.seedDefaultTasks();
+    await onboardingService.ensureAITasksExist();
+  } catch (e: any) {
+    logger.warn(`⚠️ Could not seed onboarding tasks: ${e.message}`);
+  }
+
   await registerRoutes(httpServer, app);
 
   // JSON 404 handler for unmatched API routes (must be after all API routes)
