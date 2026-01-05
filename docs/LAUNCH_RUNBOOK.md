@@ -73,29 +73,55 @@ curl https://your-domain.com/api/health/circuits
 ## Launch Day Timeline
 
 ### T-60 Minutes
-- [ ] Run `npx tsx scripts/pre-launch-check.ts`
+- [ ] Run `npm run prelaunch` - comprehensive 25+ point check
 - [ ] Verify all circuit breakers are CLOSED
 - [ ] Check database connection pool
-- [ ] Verify Redis connection
+- [ ] Verify Redis connection: `curl /api/system/health`
 - [ ] Test Stripe webhook with CLI: `stripe trigger payment_intent.succeeded`
+- [ ] Send test email via SendGrid API
+
+### T-45 Minutes: AI & Video Validation
+- [ ] Login as admin and verify AI Studio presets load
+- [ ] Navigate to Social Media page, select "Video" format - verify VideoContentGenerator loads
+- [ ] Navigate to Advertisement > Creative AI tab - verify video option available
+- [ ] Check Autopilot actions include video creation types
+- [ ] Test onboarding flow - verify persona selection works
+- [ ] Verify First Week Success Path tasks display correctly
 
 ### T-30 Minutes
 - [ ] Clear any test data from production
-- [ ] Verify admin account access
-- [ ] Enable error monitoring (Sentry)
-- [ ] Set up status page monitoring
+- [ ] Verify admin account access to Executive Dashboard
+- [ ] Enable error monitoring (Sentry) - verify events arrive
+- [ ] Set up external status page monitoring (UptimeRobot, etc.)
+- [ ] Verify queue health: check `/api/system/health` for queue metrics
+
+### T-15 Minutes: Integration Verification
+- [ ] Test Stripe checkout flow (use test card if sandbox)
+- [ ] Verify webhook endpoint responds: `POST /api/webhooks/stripe`
+- [ ] Test social OAuth for at least one platform (Twitter/Facebook)
+- [ ] Verify LabelGrid API responds: `GET /api/distribution/platforms`
+- [ ] Confirm object storage accessible: upload/download test file
 
 ### T-0 Launch
 - [ ] Monitor `/api/system/status` every 30 seconds
 - [ ] Watch Sentry for new errors
 - [ ] Monitor Stripe dashboard for payments
 - [ ] Watch server logs for unusual activity
+- [ ] Check queue health for stuck jobs
 
 ### T+15 Minutes
 - [ ] Verify first user registrations working
-- [ ] Check email delivery (SendGrid)
-- [ ] Confirm social OAuth flows
+- [ ] Check email delivery (SendGrid activity logs)
+- [ ] Confirm social OAuth flows complete successfully
 - [ ] Test payment flow end-to-end
+- [ ] Verify onboarding tasks unlock correctly
+
+### T+30 Minutes: Feature Validation
+- [ ] Test AI music generation with new user account
+- [ ] Verify video creation in Social Media page
+- [ ] Check distribution platform list loads
+- [ ] Confirm marketplace displays correctly
+- [ ] Verify achievement system triggers on actions
 
 ---
 
