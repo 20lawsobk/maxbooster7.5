@@ -287,11 +287,12 @@ export function FileUploadZone({
           <input
             ref={fileInputRef}
             type="file"
-            accept={ACCEPTED_EXTENSIONS.join(',')}
+            accept=".wav,.mp3,.flac,.ogg,.aiff,.aif,.webm,.aac,.m4a,audio/mpeg,audio/wav,audio/flac,audio/ogg,audio/aiff,audio/webm,audio/aac,audio/mp4,audio/*"
             multiple
             onChange={handleFileSelect}
             className="sr-only"
             tabIndex={-1}
+            aria-label="Upload audio files"
           />
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-full bg-primary/10">
@@ -359,11 +360,12 @@ export function FileUploadZone({
         <input
           ref={fileInputRef}
           type="file"
-          accept={ACCEPTED_EXTENSIONS.join(',')}
+          accept=".wav,.mp3,.flac,.ogg,.aiff,.aif,.webm,.aac,.m4a,audio/mpeg,audio/wav,audio/flac,audio/ogg,audio/aiff,audio/webm,audio/aac,audio/mp4,audio/*"
           multiple
           onChange={handleFileSelect}
           className="sr-only"
           tabIndex={-1}
+          aria-label="Upload audio files"
         />
 
         <div className="flex flex-col items-center justify-center text-center gap-3 sm:gap-4">

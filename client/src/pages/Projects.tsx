@@ -130,6 +130,7 @@ export default function Projects() {
       });
       setIsUploadOpen(false);
       setUploadForm({ title: '', description: '', genre: '', file: null });
+      setIsUploading(false);
     },
     onError: (error: unknown) => {
       const apiError = error as ApiError;
@@ -138,6 +139,7 @@ export default function Projects() {
         description: apiError.message || 'Failed to upload project. Please try again.',
         variant: 'destructive',
       });
+      setIsUploading(false);
     },
   });
 
@@ -268,10 +270,9 @@ export default function Projects() {
     formData.append('title', uploadForm.title);
     formData.append('description', uploadForm.description);
     formData.append('genre', uploadForm.genre);
-    formData.append('audio', uploadForm.file);
+    formData.append('audio', uploadForm.file, uploadForm.file.name);
 
     uploadMutation.mutate(formData);
-    setIsUploading(false);
   };
 
   const getWorkflowStageLabel = (stage: string) => {
@@ -421,17 +422,24 @@ export default function Projects() {
                   <Input
                     id="file"
                     type="file"
-                    accept="audio/*"
+                    accept=".mp3,.wav,.flac,.ogg,.aiff,.aif,.webm,.aac,.m4a,audio/mpeg,audio/wav,audio/flac,audio/ogg,audio/aiff,audio/webm,audio/aac,audio/mp4,audio/*"
+                    capture={undefined}
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null;
                       setUploadForm((prev) => ({ ...prev, file }));
                     }}
                     required
                     data-testid="input-file-upload"
+                    aria-describedby="file-help"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Supported formats: MP3, WAV, FLAC, OGG (Max 100MB)
+                  <p id="file-help" className="text-xs text-gray-500 mt-1">
+                    Supported formats: MP3, WAV, FLAC, OGG, AIFF, WebM, AAC (Max 500MB)
                   </p>
+                  {uploadForm.file && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Selected: {uploadForm.file.name} ({(uploadForm.file.size / (1024 * 1024)).toFixed(2)} MB)
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">
