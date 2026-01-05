@@ -93,7 +93,18 @@ All environment variables are configured and validated at startup:
 - **Sync Licensing**: Licensing opportunities for film/TV/advertising
 - **Royalty Splits**: Collaborator split management with automatic payouts
 - **Pre-Save Campaigns**: Spotify/Apple Music pre-save with follower/save tracking
-- Delivery to 150+ DSPs (Spotify, Apple Music, YouTube Music, etc.)
+- **53 Distribution Platforms** organized by category:
+  - **Major Streaming**: Spotify (preferred), Apple Music, iTunes, Amazon Music, Tidal, Deezer, YouTube Music, Pandora, iHeartRadio, Napster
+  - **Electronic/Indie**: Beatport (EDM), Juno Download, Bandcamp, SoundCloud, Audiomack, Traxsource
+  - **China**: NetEase Cloud Music, QQ Music, Kugou, Kuwo, Kuaishou (Tencent ecosystem)
+  - **India**: JioSaavn, Gaana
+  - **Middle East/Africa**: Anghami, Boomplay
+  - **Asia Pacific**: JOOX, KKBOX (Taiwan/HK), AWA (Japan), FLO (Korea), Melon (Korea)
+  - **Russia**: Yandex Music, VK Music
+  - **Latin America**: Claro Música, Trebel
+  - **Social/Content ID**: TikTok, Meta Library (FB/IG), Instagram, Facebook, Snapchat, YouTube Content ID, Twitch, SoundExchange
+  - **Niche/Lifestyle**: Peloton, Soundtrack Your Brand (B2B), Pretzel Rocks (streamer-safe), Roblox
+  - **Additional Stores**: Amazon MP3, 7digital, Qobuz, MediaNet, Gracenote, Shazam, Tencent Music
 
 ### Social Media Management
 - **Approval Workflows**: Draft → Pending Review → Approved → Scheduled → Published
