@@ -87,6 +87,19 @@ All environment variables are configured and validated at startup:
 - Plugin hosting with VST3/AU support via bridge
 - Real-time collaboration with Y.js and WebSocket
 
+### Video Studio (Custom In-House, Veo 2-Inspired)
+- **WebGL Render Engine**: OffscreenCanvas + WebGL2 with scene graph and layer compositing
+- **Shader Library**: 13 GLSL shaders (particle systems, bloom, gradient, wave distortion, chromatic aberration, vignette, color grading, noise, blur, kaleidoscope, pixelate, glitch)
+- **Audio Visualizers**: 4 types (spectrum bars, waveform, circular radial, particle physics) with 11 presets
+- **Lyric Engine**: LRC/SRT parsing, karaoke-style animation, word-by-word highlight, 5 style presets
+- **Text Animator**: Character/word animation, gradient text, glow, outline, shadow, text path (curved text)
+- **Promo Templates**: 7 template types (release announcement, tour/event, behind-the-scenes, quote/lyric, countdown timer, split screen, social teaser)
+- **Video Export**: MediaRecorder API with WebM/MP4, 720p/1080p/4K, 24/30/60 fps
+- **Browser Capabilities**: Auto-detection of WebGL2, OffscreenCanvas, MediaRecorder codecs with fallbacks
+- **Render Orchestrator**: Frame scheduling, audio sync, keyframe interpolation, export mode
+- **Template Compiler**: Converts template options to renderable VideoProject with layers and keyframes
+- **Route**: `/video-studio` - Full video creation UI with template gallery and customization
+
 ### Distribution (LabelGrid Integration)
 - **LabelGrid API**: Handles releases, distribution submission, analytics, and royalties
 - **Local DSP Catalog**: 53 platforms maintained locally, validated by LabelGrid during distribution
