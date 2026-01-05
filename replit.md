@@ -147,6 +147,10 @@ All environment variables are configured and validated at startup:
 
 ### User Retention Features (NEW)
 - **First Week Success Path**: Guided onboarding with XP points, task categories, and progress tracking
+- **Progressive Feature Discovery**: Persona-based AI feature spotlights (artist/producer/label/manager) with contextual hints
+- **PowerFeatureSpotlight Component**: Shows one key AI feature at a time based on user persona, resets when feature changes
+- **ContextualFeatureHint Component**: Floating hints triggered after completing basic tasks (profile→AI generator, etc.)
+- **AI Feature Milestones**: 3 dedicated onboarding tasks for AI Music Generator, Social Autopilot, Zero-Cost Advertising
 - **Artist Progress Dashboard**: Visual career metrics with animated gauge, growth charts, milestone timeline
 - **Achievement System**: 16+ achievements with tiers (bronze/silver/gold/platinum), confetti animations, leaderboard
 - **AI Career Coach**: Personalized daily recommendations, gap analysis, SMART goal suggestions
