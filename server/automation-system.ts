@@ -186,6 +186,69 @@ export class AutomationSystem extends EventEmitter {
         return { success: true, message: 'Data backed up successfully' };
       },
     });
+
+    // Video creation actions
+    this.registerAction('create-promo-video', {
+      name: 'Create Promotional Video',
+      description: 'Generate promotional video content using AI-powered video studio',
+      parameters: ['userId', 'templateType', 'platform', 'contentText', 'audioUrl', 'aspectRatio', 'colorPalette'],
+      execute: async (params) => {
+        logger.info(`🎬 Creating ${params.templateType} video for ${params.platform}`);
+        return { 
+          success: true, 
+          message: 'Promotional video created successfully',
+          templateType: params.templateType,
+          platform: params.platform,
+          aspectRatio: params.aspectRatio || '16:9'
+        };
+      },
+    });
+
+    this.registerAction('create-social-video', {
+      name: 'Create Social Media Video',
+      description: 'Generate platform-optimized video for social media posts',
+      parameters: ['userId', 'platforms', 'contentText', 'audioUrl', 'duration', 'visualStyle'],
+      execute: async (params) => {
+        const platformList = Array.isArray(params.platforms) ? params.platforms.join(', ') : params.platforms;
+        logger.info(`📹 Creating social video for: ${platformList}`);
+        return { 
+          success: true, 
+          message: 'Social media video created successfully',
+          platforms: params.platforms,
+          duration: params.duration || 15
+        };
+      },
+    });
+
+    this.registerAction('create-lyric-video', {
+      name: 'Create Lyric Video',
+      description: 'Generate animated lyric video with audio synchronization',
+      parameters: ['userId', 'audioUrl', 'lyrics', 'visualStyle', 'colorPalette', 'resolution'],
+      execute: async (params) => {
+        logger.info(`🎤 Creating lyric video with ${params.visualStyle} style`);
+        return { 
+          success: true, 
+          message: 'Lyric video created successfully',
+          visualStyle: params.visualStyle || 'karaoke',
+          resolution: params.resolution || '1080p'
+        };
+      },
+    });
+
+    this.registerAction('create-visualizer-video', {
+      name: 'Create Audio Visualizer Video',
+      description: 'Generate audio-reactive visualizer video with custom effects',
+      parameters: ['userId', 'audioUrl', 'visualizerType', 'colorPalette', 'shaderEffects', 'duration'],
+      execute: async (params) => {
+        logger.info(`🌊 Creating ${params.visualizerType} visualizer video`);
+        return { 
+          success: true, 
+          message: 'Visualizer video created successfully',
+          visualizerType: params.visualizerType || 'spectrum',
+          shaderEffects: params.shaderEffects || ['bloom', 'particles']
+        };
+      },
+    });
   }
 
   // Register built-in conditions

@@ -470,9 +470,9 @@ class AutoPostGenerator {
       
       case 'video':
         if (objective === 'viral') {
-          return `Create SHORT, attention-grabbing video for ${topic} (15-60 seconds). Hook viewers in first 3 seconds. Examples: music video snippet, performance clip, creative visual, trending sound/challenge, or emotional storytelling. Vertical format (9:16) performs best on TikTok, Instagram Reels, YouTube Shorts. Include captions for sound-off viewing.`;
+          return `Create SHORT, attention-grabbing video for ${topic} (15-60 seconds) using Video Studio. Hook viewers in first 3 seconds. Templates: Social Teaser (quick announcement), Quote Card (lyric highlight). Features: Audio visualizers (spectrum/particle), 13 GLSL shaders (bloom, glitch, particles), karaoke-style lyrics. Format: 9:16 vertical for TikTok/Reels/Shorts. Export: 1080p at 30fps.`;
         }
-        return `Create engaging video for ${topic} (30-90 seconds). Examples: music video preview, performance footage, behind-the-scenes content, lyric video, or promotional clip. Vertical format (9:16) recommended. Add captions and ensure good lighting/audio quality.`;
+        return `Create engaging video for ${topic} (30-90 seconds) using Video Studio. Templates: Release Promo (new music), Lyric Video (animated lyrics), Audio Visualizer (reactive graphics). Features: WebGL2 render engine, 4 visualizer types, text animation with glow/gradient. Format: 9:16 vertical or 16:9 horizontal. Export: 720p/1080p/4K at 24/30/60fps.`;
       
       case 'carousel':
         return `Create carousel/slideshow (2-10 images/videos) for ${topic}. Examples: step-by-step story, before/after sequence, collection showcase, or multi-angle presentation. Each slide should tell part of the story. Works best on Instagram and Facebook. Include swipeable call-to-action.`;
