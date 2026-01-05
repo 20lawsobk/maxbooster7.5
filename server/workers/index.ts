@@ -379,6 +379,14 @@ export async function initializeWorkers(): Promise<void> {
   logger.info(`   - CSV Import (concurrency: ${config.queue.concurrency.csv})`);
   logger.info(`   - Analytics (concurrency: ${config.queue.concurrency.analytics})`);
   logger.info(`   - Email (concurrency: ${config.queue.concurrency.email})`);
+  
+  try {
+    const { initializeWeeklyInsightsCron } = await import('./weeklyInsightsCron.js');
+    initializeWeeklyInsightsCron();
+  } catch (error) {
+    logger.warn('⚠️  Could not initialize weekly insights cron:', error);
+  }
+  
   logger.info('⏳ Waiting for jobs...');
 }
 

@@ -1935,11 +1935,21 @@ export const revenueForecasts = pgTable("revenue_forecasts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
   releaseId: varchar("release_id"),
+  forecastDate: timestamp("forecast_date").defaultNow(),
   forecastType: text("forecast_type").notNull(),
   period: text("period").notNull(),
+  projectedStreams: integer("projected_streams"),
+  projectedRevenue: real("projected_revenue"),
+  projectedRoyalties: real("projected_royalties"),
   predictedRevenue: real("predicted_revenue"),
+  confidence: real("confidence"),
   confidenceLevel: real("confidence_level"),
+  confidenceLow: real("confidence_low"),
+  confidenceHigh: real("confidence_high"),
+  methodology: text("methodology"),
   factors: jsonb("factors"),
+  actualRevenue: real("actual_revenue"),
+  actualStreams: integer("actual_streams"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -3159,6 +3169,322 @@ export const socialInboxMessages = pgTable("social_inbox_messages", {
 export type SocialInboxMessage = typeof socialInboxMessages.$inferSelect;
 export const insertSocialInboxMessageSchema = createInsertSchema(socialInboxMessages).omit({ id: true, createdAt: true });
 export type InsertSocialInboxMessage = z.infer<typeof insertSocialInboxMessageSchema>;
+
+// ============================================================================
+// ONBOARDING TASKS - Default tasks for first week success path
+// ============================================================================
+export const onboardingTasks = pgTable("onboarding_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  points: integer("points").default(0),
+  order: integer("order").default(0),
+  isRequired: boolean("is_required").default(false),
+  actionUrl: text("action_url"),
+  icon: text("icon"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type OnboardingTask = typeof onboardingTasks.$inferSelect;
+export const insertOnboardingTaskSchema = createInsertSchema(onboardingTasks).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertOnboardingTask = z.infer<typeof insertOnboardingTaskSchema>;
+
+// ============================================================================
+// USER ONBOARDING - Track user progress through first week success path
+// ============================================================================
+export const userOnboarding = pgTable("user_onboarding", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  currentStep: integer("current_step").default(0),
+  completedSteps: jsonb("completed_steps").$type<string[]>().default([]),
+  totalPoints: integer("total_points").default(0),
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  skippedAt: timestamp("skipped_at"),
+  dayStreak: integer("day_streak").default(0),
+  lastActivityAt: timestamp("last_activity_at").defaultNow(),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type UserOnboarding = typeof userOnboarding.$inferSelect;
+export const insertUserOnboardingSchema = createInsertSchema(userOnboarding).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertUserOnboarding = z.infer<typeof insertUserOnboardingSchema>;
+
+// ============================================================================
+// ARTIST PROGRESS SNAPSHOTS - Daily career growth metrics
+// ============================================================================
+export const artistProgressSnapshots = pgTable("artist_progress_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  snapshotDate: date("snapshot_date").notNull(),
+  totalStreams: bigint("total_streams", { mode: "number" }).default(0),
+  totalFollowers: integer("total_followers").default(0),
+  totalRevenue: real("total_revenue").default(0),
+  totalReleases: integer("total_releases").default(0),
+  engagementScore: real("engagement_score").default(0),
+  growthRate: real("growth_rate").default(0),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ArtistProgressSnapshot = typeof artistProgressSnapshots.$inferSelect;
+export const insertArtistProgressSnapshotSchema = createInsertSchema(artistProgressSnapshots).omit({ id: true, createdAt: true });
+export type InsertArtistProgressSnapshot = z.infer<typeof insertArtistProgressSnapshotSchema>;
+
+// ============================================================================
+// ACHIEVEMENTS - Gamification milestones and badges
+// ============================================================================
+export const achievements = pgTable("achievements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  iconUrl: text("icon_url"),
+  points: integer("points").default(0),
+  requirement: jsonb("requirement"),
+  tier: text("tier").default("bronze"),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type Achievement = typeof achievements.$inferSelect;
+export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true, createdAt: true });
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+
+// ============================================================================
+// USER ACHIEVEMENTS - Track which achievements users have unlocked
+// ============================================================================
+export const userAchievements = pgTable("user_achievements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  achievementId: varchar("achievement_id").notNull(),
+  progress: real("progress").default(0),
+  unlockedAt: timestamp("unlocked_at"),
+  notified: boolean("notified").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true, createdAt: true });
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+
+// ============================================================================
+// USER STREAKS - Track login, posting, and release streaks
+// ============================================================================
+export const userStreaks = pgTable("user_streaks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  streakType: text("streak_type").notNull(),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  lastActivityDate: date("last_activity_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type UserStreak = typeof userStreaks.$inferSelect;
+export const insertUserStreakSchema = createInsertSchema(userStreaks).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertUserStreak = z.infer<typeof insertUserStreakSchema>;
+
+// ============================================================================
+// CAREER COACH RECOMMENDATIONS - AI-powered personalized daily tips
+// ============================================================================
+export const careerCoachRecommendations = pgTable("career_coach_recommendations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  priority: integer("priority").default(1),
+  actionUrl: text("action_url"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  dismissedAt: timestamp("dismissed_at"),
+  completedAt: timestamp("completed_at"),
+});
+
+export type CareerCoachRecommendation = typeof careerCoachRecommendations.$inferSelect;
+export const insertCareerCoachRecommendationSchema = createInsertSchema(careerCoachRecommendations).omit({ id: true, createdAt: true });
+export type InsertCareerCoachRecommendation = z.infer<typeof insertCareerCoachRecommendationSchema>;
+
+// ============================================================================
+// CAREER GOALS - User-defined SMART goals with progress tracking
+// ============================================================================
+export const careerGoals = pgTable("career_goals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  goalType: text("goal_type").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  targetValue: real("target_value").notNull(),
+  currentValue: real("current_value").default(0),
+  unit: text("unit"),
+  deadline: timestamp("deadline"),
+  status: text("status").default("active"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type CareerGoal = typeof careerGoals.$inferSelect;
+export const insertCareerGoalSchema = createInsertSchema(careerGoals).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCareerGoal = z.infer<typeof insertCareerGoalSchema>;
+
+// ============================================================================
+// EMAIL PREFERENCES - User email notification settings
+// ============================================================================
+export const emailPreferences = pgTable("email_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  weeklyInsights: boolean("weekly_insights").default(true),
+  weeklyInsightsFrequency: text("weekly_insights_frequency").default("weekly"),
+  marketingEmails: boolean("marketing_emails").default(true),
+  releaseAlerts: boolean("release_alerts").default(true),
+  collaborationAlerts: boolean("collaboration_alerts").default(true),
+  revenueAlerts: boolean("revenue_alerts").default(true),
+  unsubscribedAt: timestamp("unsubscribed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type EmailPreference = typeof emailPreferences.$inferSelect;
+export const insertEmailPreferenceSchema = createInsertSchema(emailPreferences).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertEmailPreference = z.infer<typeof insertEmailPreferenceSchema>;
+
+// ============================================================================
+// SENT EMAILS - Track all sent emails for analytics and tracking
+// ============================================================================
+export const sentEmails = pgTable("sent_emails", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  emailType: text("email_type").notNull(),
+  subject: text("subject").notNull(),
+  recipientEmail: text("recipient_email").notNull(),
+  metadata: jsonb("metadata"),
+  sentAt: timestamp("sent_at").defaultNow(),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  clickedLink: text("clicked_link"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SentEmail = typeof sentEmails.$inferSelect;
+export const insertSentEmailSchema = createInsertSchema(sentEmails).omit({ id: true, createdAt: true, sentAt: true });
+export type InsertSentEmail = z.infer<typeof insertSentEmailSchema>;
+
+// ============================================================================
+// ARTIST CONNECTIONS - Track connections between artists for collaboration
+// ============================================================================
+export const artistConnections = pgTable("artist_connections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requesterId: varchar("requester_id").notNull(),
+  receiverId: varchar("receiver_id").notNull(),
+  status: text("status").default("pending"),
+  message: text("message"),
+  createdAt: timestamp("created_at").defaultNow(),
+  acceptedAt: timestamp("accepted_at"),
+});
+
+export type ArtistConnection = typeof artistConnections.$inferSelect;
+export const insertArtistConnectionSchema = createInsertSchema(artistConnections).omit({ id: true, createdAt: true });
+export type InsertArtistConnection = z.infer<typeof insertArtistConnectionSchema>;
+
+// ============================================================================
+// COLLABORATION PROJECTS - Projects for artist collaborations
+// ============================================================================
+export const collaborationProjects = pgTable("collaboration_projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description"),
+  ownerId: varchar("owner_id").notNull(),
+  status: text("status").default("open"),
+  genre: text("genre"),
+  lookingFor: text("looking_for").array(),
+  maxMembers: integer("max_members").default(10),
+  isPublic: boolean("is_public").default(true),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type CollaborationProject = typeof collaborationProjects.$inferSelect;
+export const insertCollaborationProjectSchema = createInsertSchema(collaborationProjects).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCollaborationProject = z.infer<typeof insertCollaborationProjectSchema>;
+
+// ============================================================================
+// PROJECT MEMBERS - Track members of collaboration projects
+// ============================================================================
+export const projectMembers = pgTable("project_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  role: text("role").default("member"),
+  status: text("status").default("active"),
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit({ id: true, joinedAt: true });
+export type InsertProjectMember = z.infer<typeof insertProjectMemberSchema>;
+
+// ============================================================================
+// RELEASE COUNTDOWNS - Pre-release campaign tracking
+// ============================================================================
+export const releaseCountdowns = pgTable("release_countdowns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  releaseId: varchar("release_id"),
+  title: text("title").notNull(),
+  releaseDate: timestamp("release_date").notNull(),
+  artworkUrl: text("artwork_url"),
+  presaveUrl: text("presave_url"),
+  status: text("status").default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ReleaseCountdown = typeof releaseCountdowns.$inferSelect;
+export const insertReleaseCountdownSchema = createInsertSchema(releaseCountdowns).omit({ id: true, createdAt: true });
+export type InsertReleaseCountdown = z.infer<typeof insertReleaseCountdownSchema>;
+
+// ============================================================================
+// COUNTDOWN TASKS - Checklist items for pre-release campaigns
+// ============================================================================
+export const countdownTasks = pgTable("countdown_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  countdownId: varchar("countdown_id").notNull(),
+  task: text("task").notNull(),
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  order: integer("order").default(0),
+  category: text("category"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CountdownTask = typeof countdownTasks.$inferSelect;
+export const insertCountdownTaskSchema = createInsertSchema(countdownTasks).omit({ id: true, createdAt: true });
+export type InsertCountdownTask = z.infer<typeof insertCountdownTaskSchema>;
+
+// ============================================================================
+// COUNTDOWN ANALYTICS - Track pre-save metrics
+// ============================================================================
+export const countdownAnalytics = pgTable("countdown_analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  countdownId: varchar("countdown_id").notNull(),
+  date: timestamp("date").notNull().defaultNow(),
+  presaves: integer("presaves").default(0),
+  shares: integer("shares").default(0),
+  pageViews: integer("page_views").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CountdownAnalytic = typeof countdownAnalytics.$inferSelect;
+export const insertCountdownAnalyticSchema = createInsertSchema(countdownAnalytics).omit({ id: true, createdAt: true });
+export type InsertCountdownAnalytic = z.infer<typeof insertCountdownAnalyticSchema>;
 
 // ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)

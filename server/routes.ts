@@ -2498,8 +2498,12 @@ export async function registerRoutes(
   // Mount modular admin and paid routers
   const { default: adminRouter } = await import("./routes/admin.ts");
   const { default: paidRouter } = await import("./routes/paid.ts");
+  const { default: artistProgressRouter } = await import("./routes/artistProgress.ts");
+  const { default: revenueForecastRouter } = await import("./routes/revenueForecast.ts");
   app.use("/api/admin", adminRouter);
   app.use("/api/paid", paidRouter);
+  app.use("/api/artist-progress", artistProgressRouter);
+  app.use("/api/revenue-forecast", revenueForecastRouter);
 
   // AI: Optimize content
   app.post("/api/ai/optimize-content", async (req: Request, res: Response) => {
@@ -2549,7 +2553,10 @@ export async function registerRoutes(
   // Dynamically load and mount route modules (with error handling)
   const routeModules = [
     // Core Platform Routes
+    { path: "/api/achievements", name: "achievements", loader: () => import("./routes/achievements") },
+    { path: "/api/onboarding", name: "onboarding", loader: () => import("./routes/onboarding") },
     { path: "/api/distribution", name: "distribution", loader: () => import("./routes/distribution") },
+    { path: "/api/countdowns", name: "releaseCountdown", loader: () => import("./routes/releaseCountdown") },
     { path: "/api/storefront", name: "storefront", loader: () => import("./routes/storefront") },
     { path: "/api/analytics", name: "analytics", loader: () => import("./routes/analytics-internal") },
     { path: "/api/status", name: "status", loader: () => import("./routes/status") },
@@ -2598,6 +2605,9 @@ export async function registerRoutes(
     { path: "/api/developer", name: "developerApi", loader: () => import("./routes/developerApi") },
     { path: "/api/content-analysis", name: "content-analysis", loader: () => import("./routes/content-analysis") },
 
+    // Collaboration & Networking
+    { path: "/api/collaborations", name: "collaborations", loader: () => import("./routes/collaborations") },
+
     // Help & Support
     { path: "/api/helpdesk", name: "helpDesk", loader: () => import("./routes/helpDesk") },
     { path: "/api/support", name: "support", loader: () => import("./routes/support") },
@@ -2623,6 +2633,9 @@ export async function registerRoutes(
     // Reliability
     { path: "/api/reliability", name: "reliability", loader: () => import("./routes/reliability-endpoints") },
 
+    // Email Preferences
+    { path: "", name: "emailPreferences", loader: () => import("./routes/emailPreferences") },
+
     // Simulation (pre-launch testing)
     { path: "/api/simulation", name: "simulation", loader: () => import("./routes/simulation") },
 
@@ -2644,6 +2657,9 @@ export async function registerRoutes(
 
     // AI Services
     { path: "/api/ai", name: "ai", loader: () => import("./routes/ai") },
+
+    // Career Coach - AI-powered personalized recommendations
+    { path: "/api/career-coach", name: "careerCoach", loader: () => import("./routes/careerCoach") },
   ];
 
   for (const { path, name, loader } of routeModules) {
