@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { platformAPI } from './platform-apis.ts';
 import { customAI } from './custom-ai-engine.ts';
 import { logger } from './logger.js';
+import { autopilotCoordinatorService, type AutopilotType } from './services/autopilotCoordinatorService.js';
 
 interface AutonomousConfig {
   enabled: boolean;
@@ -34,12 +35,104 @@ export class AutonomousAutopilot extends EventEmitter {
   private topicPerformanceMap: Map<string, number> = new Map();
   private adaptiveLearningData: Map<string, any> = new Map();
   private userId: string;
+  private autopilotType: AutopilotType = 'social';
+  private coordinatorEnabled: boolean = true;
 
-  constructor(userId: string) {
+  constructor(userId: string, autopilotType: AutopilotType = 'social') {
     super();
     this.userId = userId;
+    this.autopilotType = autopilotType;
     this.config = this.getDefaultConfig();
     this.initializeAutonomousLearning();
+  }
+
+  setAutopilotType(type: AutopilotType): void {
+    this.autopilotType = type;
+  }
+
+  getAutopilotType(): AutopilotType {
+    return this.autopilotType;
+  }
+
+  setCoordinatorEnabled(enabled: boolean): void {
+    this.coordinatorEnabled = enabled;
+  }
+
+  private connectToCoordinator(): void {
+    if (this.coordinatorEnabled) {
+      autopilotCoordinatorService.connectAutopilot(this.userId, this.autopilotType);
+      logger.info(`Autopilot ${this.autopilotType} connected to coordinator for user ${this.userId}`);
+    }
+  }
+
+  private disconnectFromCoordinator(): void {
+    if (this.coordinatorEnabled) {
+      autopilotCoordinatorService.disconnectAutopilot(this.userId, this.autopilotType);
+      logger.info(`Autopilot ${this.autopilotType} disconnected from coordinator for user ${this.userId}`);
+    }
+  }
+
+  async getCoordinatedSlot(platform: string, preferredTime?: Date): Promise<Date> {
+    if (!this.coordinatorEnabled) {
+      return preferredTime || new Date();
+    }
+    
+    const slot = autopilotCoordinatorService.getNextAvailableSlot(
+      this.userId,
+      this.autopilotType,
+      platform,
+      preferredTime
+    );
+    
+    return slot.suggestedTime;
+  }
+
+  async registerPostWithCoordinator(
+    platform: string,
+    scheduledTime: Date,
+    content?: string
+  ): Promise<string | null> {
+    if (!this.coordinatorEnabled) {
+      return null;
+    }
+    
+    const post = autopilotCoordinatorService.registerPost(
+      this.userId,
+      this.autopilotType,
+      platform,
+      scheduledTime,
+      content
+    );
+    
+    return post?.id || null;
+  }
+
+  async shareInsightWithCoordinator(
+    insightType: 'timing' | 'content' | 'audience' | 'platform' | 'engagement',
+    data: Record<string, any>
+  ): Promise<void> {
+    if (!this.coordinatorEnabled) {
+      return;
+    }
+    
+    autopilotCoordinatorService.shareInsight(
+      this.userId,
+      this.autopilotType,
+      insightType,
+      data
+    );
+  }
+
+  getCoordinatorStatus() {
+    return autopilotCoordinatorService.getStatus(this.userId);
+  }
+
+  getCoordinatedSchedule() {
+    return autopilotCoordinatorService.getCoordinatedSchedule(this.userId);
+  }
+
+  syncCoordinatorInsights() {
+    return autopilotCoordinatorService.syncInsights(this.userId);
   }
 
   static createForSocialAndAds(userId: string): AutonomousAutopilot {
@@ -122,6 +215,10 @@ export class AutonomousAutopilot extends EventEmitter {
     }
 
     this.isRunning = true;
+    
+    // Connect to coordinator for cross-autopilot awareness
+    this.connectToCoordinator();
+    
     this.emit('autonomousModeStarted', this.config);
 
     // Start continuous content generation
@@ -133,7 +230,7 @@ export class AutonomousAutopilot extends EventEmitter {
     // Start adaptive learning
     this.scheduleAdaptiveLearning();
 
-    logger.info('Autonomous autopilot started with full automation');
+    logger.info(`Autonomous autopilot (${this.autopilotType}) started with full automation and coordinator integration`);
   }
 
   async stopAutonomousMode(): Promise<void> {
@@ -155,8 +252,11 @@ export class AutonomousAutopilot extends EventEmitter {
       this.adaptationInterval = null;
     }
 
+    // Disconnect from coordinator
+    this.disconnectFromCoordinator();
+
     this.emit('autonomousModeStopped');
-    logger.info('Autonomous autopilot stopped');
+    logger.info(`Autonomous autopilot (${this.autopilotType}) stopped`);
   }
 
   // Autonomous Content Generation
@@ -227,6 +327,9 @@ export class AutonomousAutopilot extends EventEmitter {
 
   private async generateAndPublishAutonomousContent(platform: string): Promise<void> {
     try {
+      // Check coordinator for available slot before posting
+      const scheduledTime = await this.getCoordinatedSlot(platform);
+      
       // Autonomously select the best topic based on performance history
       const topic = this.selectOptimalTopic();
 
@@ -240,6 +343,13 @@ export class AutonomousAutopilot extends EventEmitter {
         objectives: this.config.contentObjectives,
       });
 
+      // Register with coordinator before publishing
+      const coordinatorPostId = await this.registerPostWithCoordinator(
+        platform,
+        scheduledTime,
+        content.text.substring(0, 100)
+      );
+
       // Create content in storage
       const savedContent = {
         id: randomUUID(),
@@ -248,6 +358,7 @@ export class AutonomousAutopilot extends EventEmitter {
         selectedPlatforms: [platform],
         status: 'draft',
         contentType: 'social_post',
+        coordinatorPostId,
       } as any;
 
       // Publish immediately (fully autonomous)
@@ -262,6 +373,16 @@ export class AutonomousAutopilot extends EventEmitter {
         savedContent.status = 'published';
         (savedContent as any).publishedAt = new Date();
 
+        // Update coordinator with post status
+        if (coordinatorPostId) {
+          autopilotCoordinatorService.updatePostStatus(
+            this.userId,
+            coordinatorPostId,
+            'posted',
+            successfulPublish.postId
+          );
+        }
+
         // Schedule autonomous performance analysis
         setTimeout(
           () => {
@@ -274,10 +395,18 @@ export class AutonomousAutopilot extends EventEmitter {
           content: savedContent,
           platform,
           postId: successfulPublish.postId,
+          coordinatorPostId,
         });
 
         logger.info(
-          `Autonomous content published to ${platform}: "${content.text.substring(0, 50)}..."`
+          `Autonomous content published to ${platform}: "${content.text.substring(0, 50)}..." (coordinator: ${coordinatorPostId || 'disabled'})`
+        );
+      } else if (coordinatorPostId) {
+        // Update coordinator with failed status
+        autopilotCoordinatorService.updatePostStatus(
+          this.userId,
+          coordinatorPostId,
+          'failed'
         );
       }
     } catch (error: unknown) {
@@ -592,7 +721,7 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   private async learnFromPerformance(analytics: unknown, platform: string): Promise<void> {
-    const engagementRate = analytics.engagementRate;
+    const engagementRate = (analytics as any).engagementRate;
 
     // Feed performance data to custom AI for learning
     // Default to 'tips' content type and template index 0 since we don't track these in autonomous mode
@@ -612,6 +741,28 @@ export class AutonomousAutopilot extends EventEmitter {
       platformData.totalPosts;
 
     this.adaptiveLearningData.set(platform, platformData);
+
+    // Share engagement insights with coordinator for cross-autopilot learning
+    const currentHour = new Date().getHours();
+    await this.shareInsightWithCoordinator('engagement', {
+      platform,
+      engagementRate,
+      hour: currentHour,
+      likes: (analytics as any).likes || 0,
+      comments: (analytics as any).comments || 0,
+      shares: (analytics as any).shares || 0,
+      reach: (analytics as any).reach || 0,
+    });
+
+    // Share timing insights if engagement is above average
+    if (engagementRate > platformData.avgEngagement) {
+      await this.shareInsightWithCoordinator('timing', {
+        platform,
+        hour: currentHour,
+        engagementScore: engagementRate,
+        isOptimal: true,
+      });
+    }
   }
 
   // Topic Selection with Learning

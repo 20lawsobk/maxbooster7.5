@@ -3487,6 +3487,58 @@ export const insertCountdownAnalyticSchema = createInsertSchema(countdownAnalyti
 export type InsertCountdownAnalytic = z.infer<typeof insertCountdownAnalyticSchema>;
 
 // ============================================================================
+// AUTOPILOT LEARNING DATA - Track performance metrics for continuous learning
+// ============================================================================
+export const autopilotLearningData = pgTable("autopilot_learning_data", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  platform: text("platform").notNull(),
+  contentType: text("content_type"),
+  hookType: text("hook_type"),
+  postingHour: integer("posting_hour"),
+  postingDayOfWeek: integer("posting_day_of_week"),
+  engagementRate: real("engagement_rate").default(0),
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  shares: integer("shares").default(0),
+  likes: integer("likes").default(0),
+  comments: integer("comments").default(0),
+  saves: integer("saves").default(0),
+  reach: integer("reach").default(0),
+  hashtags: jsonb("hashtags").$type<string[]>(),
+  contentText: text("content_text"),
+  mediaType: text("media_type"),
+  postId: varchar("post_id"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type AutopilotLearningData = typeof autopilotLearningData.$inferSelect;
+export const insertAutopilotLearningDataSchema = createInsertSchema(autopilotLearningData).omit({ id: true, createdAt: true });
+export type InsertAutopilotLearningData = z.infer<typeof insertAutopilotLearningDataSchema>;
+
+// ============================================================================
+// AUTOPILOT INSIGHTS - AI-generated insights from learning data
+// ============================================================================
+export const autopilotInsights = pgTable("autopilot_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  insightType: text("insight_type").notNull(),
+  platform: text("platform"),
+  data: jsonb("data").notNull(),
+  confidence: real("confidence").default(0),
+  priority: integer("priority").default(0),
+  isActive: boolean("is_active").default(true),
+  expiresAt: timestamp("expires_at"),
+  generatedAt: timestamp("generated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type AutopilotInsight = typeof autopilotInsights.$inferSelect;
+export const insertAutopilotInsightSchema = createInsertSchema(autopilotInsights).omit({ id: true, createdAt: true, generatedAt: true });
+export type InsertAutopilotInsight = z.infer<typeof insertAutopilotInsightSchema>;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });

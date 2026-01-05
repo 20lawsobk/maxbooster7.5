@@ -2582,6 +2582,8 @@ export async function registerRoutes(
     { path: "/api/advertising/autopilot", name: "advertisingAutopilot", loader: () => import("./routes/advertisingAutopilot") },
     { path: "/api/autopilot", name: "autopilot", loader: () => import("./routes/autopilot") },
     { path: "/api/autopilot", name: "dualAutopilot", loader: () => import("./routes/dualAutopilot") },
+    { path: "/api/autopilot/coordinator", name: "autopilotCoordinator", loader: () => import("./routes/autopilot-coordinator") },
+    { path: "/api/autopilot/learning", name: "autopilotLearning", loader: () => import("./routes/autopilot-learning") },
     { path: "/api/auto/social", name: "autonomousSocial", loader: () => import("./routes/autonomousSocial") },
     { path: "/api/auto-updates", name: "autoUpdates", loader: () => import("./routes/autoUpdates") },
 
