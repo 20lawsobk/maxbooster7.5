@@ -469,13 +469,70 @@ router.post('/codes/validate', requireAuth, async (req: Request, res: Response) 
 // ===================
 
 // GET /api/distribution/platforms - Get all DSP providers
+// Uses LabelGrid API when configured, falls back to local database
 router.get('/platforms', async (_req: Request, res: Response) => {
   try {
-    const platforms = await storage.getDSPProviders();
-    res.json(platforms);
+    // Use LabelGrid's dynamic DSP fetching (correct method)
+    // This fetches from LabelGrid API if configured, otherwise uses local catalog
+    const response = await labelGridService.getAvailableDSPs();
+    
+    // Transform to expected format for frontend
+    const platforms = response.dsps.map(dsp => ({
+      id: dsp.id,
+      name: dsp.name,
+      slug: dsp.slug,
+      category: dsp.category,
+      region: dsp.region,
+      isActive: dsp.isActive,
+      processingTime: dsp.processingTime,
+      requirements: dsp.requirements,
+      logoUrl: dsp.logoUrl,
+    }));
+    
+    res.json({
+      platforms,
+      total: response.total,
+      source: labelGridService.isApiConfigured() ? 'labelgrid_api' : 'local_catalog',
+      syncedAt: response.syncedAt,
+    });
   } catch (error: unknown) {
     logger.error('Error fetching platforms:', error);
     res.status(500).json({ error: 'Failed to fetch platforms' });
+  }
+});
+
+// POST /api/distribution/platforms/sync - Sync DSPs from LabelGrid API to local database
+router.post('/platforms/sync', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await labelGridService.syncDSPsToDatabase();
+    res.json({
+      success: true,
+      synced: result.synced,
+      updated: result.updated,
+      errors: result.errors,
+      message: labelGridService.isApiConfigured() 
+        ? `Synced ${result.synced} new and updated ${result.updated} existing DSPs from LabelGrid`
+        : 'LabelGrid API not configured - using local catalog',
+    });
+  } catch (error: unknown) {
+    logger.error('Error syncing platforms:', error);
+    res.status(500).json({ error: 'Failed to sync platforms' });
+  }
+});
+
+// GET /api/distribution/platforms/status - Check LabelGrid API status
+router.get('/platforms/status', async (_req: Request, res: Response) => {
+  try {
+    res.json({
+      configured: labelGridService.isApiConfigured(),
+      source: labelGridService.isApiConfigured() ? 'labelgrid_api' : 'local_catalog',
+      message: labelGridService.isApiConfigured()
+        ? 'LabelGrid API is configured. DSPs are fetched dynamically.'
+        : 'LabelGrid API not configured. Using local DSP catalog as fallback.',
+    });
+  } catch (error: unknown) {
+    logger.error('Error checking platform status:', error);
+    res.status(500).json({ error: 'Failed to check platform status' });
   }
 });
 

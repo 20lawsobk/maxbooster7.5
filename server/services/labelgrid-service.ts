@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { loggingService } from './loggingService';
 import { storage } from '../storage';
 import { logger } from '../logger.js';
 
@@ -174,6 +173,30 @@ export interface LabelGridPayoutRequest {
   processedAt?: string;
 }
 
+export interface LabelGridDSP {
+  id: string;
+  name: string;
+  slug: string;
+  category: 'streaming' | 'download' | 'social' | 'electronic' | 'regional' | 'niche' | 'monetization';
+  region: string;
+  isActive: boolean;
+  processingTime: string;
+  requirements: {
+    isrc: boolean;
+    upc: boolean;
+    metadata: string[];
+    audioFormats: string[];
+  };
+  deliveryMethod: 'api' | 'ftp' | 'ddex';
+  logoUrl?: string;
+}
+
+export interface LabelGridDSPListResponse {
+  dsps: LabelGridDSP[];
+  total: number;
+  syncedAt: string;
+}
+
 class LabelGridService {
   private client: AxiosInstance;
   private apiToken: string | undefined;
@@ -294,23 +317,197 @@ class LabelGridService {
   }
 
   private logError(context: string, error: unknown): void {
-    const errorDetails = {
+    const err = error as any;
+    logger.error(`${context}: ${err?.message || 'Unknown error'}`, {
       context,
-      message: error.message,
-      code: error.code,
-      status: error.response?.status,
-      data: error.response?.data,
-    };
-
-    loggingService.logError(`${context}: ${error.message}`, errorDetails);
+      message: err?.message,
+      code: err?.code,
+      status: err?.response?.status,
+      data: err?.response?.data,
+    });
   }
 
   private logApiCall(method: string, endpoint: string, data?: unknown): void {
-    loggingService.logInfo(`LabelGrid API ${method} ${endpoint}`, {
+    logger.info(`LabelGrid API ${method} ${endpoint}`, {
       endpoint,
       method,
       hasData: !!data,
     });
+  }
+
+  /**
+   * Check if LabelGrid API is configured
+   */
+  isApiConfigured(): boolean {
+    return !!this.apiToken;
+  }
+
+  /**
+   * Fetch available DSPs from LabelGrid API
+   * This is the CORRECT method to get distribution platforms when API is configured
+   * Falls back to local database when API is not available
+   */
+  async getAvailableDSPs(): Promise<LabelGridDSPListResponse> {
+    await this.loadConfig();
+
+    if (!this.isApiConfigured()) {
+      logger.info('📦 LabelGrid not configured - using local DSP catalog');
+      return this.getLocalDSPCatalog();
+    }
+
+    const endpoint = this.getEndpoint('getDSPs', '/v1/dsps');
+    this.logApiCall('GET', endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<{ dsps: any[]; total: number }>(endpoint);
+      });
+
+      const dsps: LabelGridDSP[] = response.data.dsps.map((dsp: any) => ({
+        id: dsp.id,
+        name: dsp.name,
+        slug: dsp.slug || dsp.id.toLowerCase().replace(/\s+/g, '-'),
+        category: this.categorizeByRegion(dsp.region, dsp.type),
+        region: dsp.region || 'global',
+        isActive: dsp.active !== false,
+        processingTime: dsp.processing_time || dsp.processingTime || '3-7 days',
+        requirements: {
+          isrc: dsp.requires_isrc ?? true,
+          upc: dsp.requires_upc ?? true,
+          metadata: dsp.required_metadata || ['title', 'artist', 'album'],
+          audioFormats: dsp.audio_formats || ['WAV', 'FLAC'],
+        },
+        deliveryMethod: dsp.delivery_method || 'api',
+        logoUrl: dsp.logo_url,
+      }));
+
+      logger.info(`✅ Fetched ${dsps.length} DSPs from LabelGrid API`);
+
+      return {
+        dsps,
+        total: response.data.total,
+        syncedAt: new Date().toISOString(),
+      };
+    } catch (error: unknown) {
+      logger.warn('⚠️  Failed to fetch DSPs from LabelGrid API - using local catalog');
+      return this.getLocalDSPCatalog();
+    }
+  }
+
+  /**
+   * Get local DSP catalog from database as fallback
+   */
+  private async getLocalDSPCatalog(): Promise<LabelGridDSPListResponse> {
+    try {
+      const providers = await storage.getAllDSPProviders();
+      
+      const dsps: LabelGridDSP[] = providers.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        category: p.metadata?.category || 'streaming',
+        region: p.metadata?.region || 'global',
+        isActive: p.isActive ?? true,
+        processingTime: p.metadata?.processingTime || '3-7 days',
+        requirements: p.metadata?.requirements || {
+          isrc: true,
+          upc: true,
+          metadata: ['title', 'artist', 'album'],
+          audioFormats: ['WAV', 'FLAC'],
+        },
+        deliveryMethod: p.metadata?.deliveryMethod || 'api',
+        logoUrl: p.logoUrl,
+      }));
+
+      return {
+        dsps,
+        total: dsps.length,
+        syncedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      logger.error('Failed to get local DSP catalog:', error);
+      return { dsps: [], total: 0, syncedAt: new Date().toISOString() };
+    }
+  }
+
+  /**
+   * Sync DSPs from LabelGrid API to local database
+   * This should be called periodically to keep local catalog updated
+   */
+  async syncDSPsToDatabase(): Promise<{ synced: number; updated: number; errors: string[] }> {
+    const result = { synced: 0, updated: 0, errors: [] as string[] };
+
+    if (!this.isApiConfigured()) {
+      logger.info('📦 LabelGrid not configured - skipping DSP sync');
+      return result;
+    }
+
+    try {
+      const response = await this.getAvailableDSPs();
+      
+      for (const dsp of response.dsps) {
+        try {
+          const existing = await storage.getDSPProviderBySlug(dsp.slug);
+          
+          if (existing) {
+            await storage.updateDSPProvider(existing.id, {
+              name: dsp.name,
+              isActive: dsp.isActive,
+              metadata: {
+                category: dsp.category,
+                region: dsp.region,
+                processingTime: dsp.processingTime,
+                requirements: dsp.requirements,
+                deliveryMethod: dsp.deliveryMethod,
+                syncedFromLabelGrid: true,
+                lastSyncedAt: new Date().toISOString(),
+              },
+            });
+            result.updated++;
+          } else {
+            await storage.createDSPProvider({
+              name: dsp.name,
+              slug: dsp.slug,
+              isActive: dsp.isActive,
+              logoUrl: dsp.logoUrl,
+              metadata: {
+                category: dsp.category,
+                region: dsp.region,
+                processingTime: dsp.processingTime,
+                requirements: dsp.requirements,
+                deliveryMethod: dsp.deliveryMethod,
+                syncedFromLabelGrid: true,
+                lastSyncedAt: new Date().toISOString(),
+              },
+            });
+            result.synced++;
+          }
+        } catch (err: any) {
+          result.errors.push(`Failed to sync ${dsp.name}: ${err.message}`);
+        }
+      }
+
+      logger.info(`✅ DSP sync complete: ${result.synced} new, ${result.updated} updated`);
+      return result;
+    } catch (error: any) {
+      logger.error('Failed to sync DSPs from LabelGrid:', error);
+      result.errors.push(error.message);
+      return result;
+    }
+  }
+
+  private categorizeByRegion(region: string, type?: string): LabelGridDSP['category'] {
+    if (type === 'social' || type === 'ugc') return 'social';
+    if (type === 'electronic') return 'electronic';
+    if (type === 'monetization' || type === 'content_id') return 'monetization';
+    
+    const regionalMarkets = ['china', 'india', 'middle_east', 'africa', 'asia', 'russia', 'latin_america', 'korea', 'japan', 'taiwan'];
+    if (region && regionalMarkets.some(r => region.toLowerCase().includes(r))) return 'regional';
+    
+    if (type === 'niche' || type === 'fitness' || type === 'gaming') return 'niche';
+    if (type === 'download' || type === 'store') return 'download';
+    
+    return 'streaming';
   }
 
   async createRelease(releaseData: LabelGridRelease): Promise<LabelGridReleaseResponse> {

@@ -88,12 +88,16 @@ All environment variables are configured and validated at startup:
 - Real-time collaboration with Y.js and WebSocket
 
 ### Distribution (LabelGrid Integration)
+- **Dynamic DSP Fetching**: Platforms are fetched from LabelGrid API at runtime (correct method)
+- **Hybrid Architecture**: LabelGrid API when configured, local database as cache/fallback
 - **SLA Tracking**: Delivery SLA with target dates and status monitoring
 - **Content ID**: YouTube Content ID registration and claim management
 - **Sync Licensing**: Licensing opportunities for film/TV/advertising
 - **Royalty Splits**: Collaborator split management with automatic payouts
 - **Pre-Save Campaigns**: Spotify/Apple Music pre-save with follower/save tracking
-- **53 Distribution Platforms** organized by category:
+- **DSP Sync Endpoint**: `POST /api/distribution/platforms/sync` keeps local catalog updated
+- **Platform Status**: `GET /api/distribution/platforms/status` checks LabelGrid connection
+- **Distribution Platforms** (fetched dynamically from LabelGrid, fallback to local catalog):
   - **Major Streaming**: Spotify (preferred), Apple Music, iTunes, Amazon Music, Tidal, Deezer, YouTube Music, Pandora, iHeartRadio, Napster
   - **Electronic/Indie**: Beatport (EDM), Juno Download, Bandcamp, SoundCloud, Audiomack, Traxsource
   - **China**: NetEase Cloud Music, QQ Music, Kugou, Kuwo, Kuaishou (Tencent ecosystem)

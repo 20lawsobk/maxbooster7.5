@@ -666,6 +666,65 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getAllDSPProviders(): Promise<any[]> {
+    try {
+      const providers = await db.select().from(dspProviders);
+      return providers;
+    } catch (error) {
+      console.error('Error fetching all DSP providers:', error);
+      return [];
+    }
+  }
+
+  async createDSPProvider(data: {
+    name: string;
+    slug: string;
+    isActive?: boolean;
+    logoUrl?: string;
+    metadata?: any;
+  }): Promise<any> {
+    try {
+      const [provider] = await db
+        .insert(dspProviders)
+        .values({
+          id: `dsp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: data.name,
+          slug: data.slug,
+          isActive: data.isActive ?? true,
+          logoUrl: data.logoUrl,
+          metadata: data.metadata,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      return provider;
+    } catch (error) {
+      console.error('Error creating DSP provider:', error);
+      throw error;
+    }
+  }
+
+  async updateDSPProvider(id: string, data: {
+    name?: string;
+    isActive?: boolean;
+    metadata?: any;
+  }): Promise<any | null> {
+    try {
+      const [provider] = await db
+        .update(dspProviders)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(dspProviders.id, id))
+        .returning();
+      return provider || null;
+    } catch (error) {
+      console.error('Error updating DSP provider:', error);
+      return null;
+    }
+  }
+
   async deleteHyperFollowPage(id: string): Promise<boolean> {
     try {
       await db.delete(hyperFollowPages).where(eq(hyperFollowPages.id, id));
