@@ -50,6 +50,13 @@ Max Booster is a comprehensive music career management platform powered by AI. I
 - **Build**: `npm run build`
 - **Production**: `npm run start`
 
+## Pre-Launch & Testing
+- **Pre-launch check**: `npm run prelaunch` - Runs 16-point health verification
+- **Security audit**: `npm run security:audit`
+- **Load test**: `npm run test:load`
+- **All tests**: `npm run test:all`
+- **Launch runbook**: See `docs/LAUNCH_RUNBOOK.md` for launch day procedures
+
 ## Admin Account
 - **Email**: blawzmusic@gmail.com
 - **Password**: Iamadmin123!

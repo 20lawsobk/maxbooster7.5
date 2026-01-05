@@ -25,6 +25,7 @@
     "test:security": "tsx scripts/penetration-test.ts",
     "security:audit": "tsx scripts/security-audit.ts",
     "test:all": "npm run security:audit && npm run test:load && npm run test:security",
+    "prelaunch": "tsx scripts/pre-launch-check.ts",
     "bootstrap:admin": "tsx -e \"import { bootstrapAdmin } from './server/init-admin'; bootstrapAdmin().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })\""
   },
   "build": {
