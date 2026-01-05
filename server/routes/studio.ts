@@ -116,6 +116,27 @@ router.post('/projects', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// DELETE project
+router.delete('/projects/:projectId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    await db.delete(studioTracks).where(eq(studioTracks.projectId, projectId));
+    await db.delete(projects).where(eq(projects.id, projectId));
+    
+    res.json({ success: true, message: 'Project deleted' });
+  } catch (error: unknown) {
+    logger.error('Error deleting project:', error);
+    res.status(500).json({ error: 'Failed to delete project' });
+  }
+});
+
 // GET recent files
 router.get('/recent-files', requireAuth, async (req: Request, res: Response) => {
   try {
