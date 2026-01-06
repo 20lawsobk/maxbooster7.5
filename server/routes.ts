@@ -1370,6 +1370,17 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      let audioUrl: string | null = null;
+      let fileSize: number | null = null;
+      
+      // Store uploaded audio file if present
+      if (req.file) {
+        const { storeUploadedFile } = await import('./middleware/uploadHandler.js');
+        const storedFile = await storeUploadedFile(req.file, 'audio', req.user.id);
+        audioUrl = storedFile.url;
+        fileSize = req.file.size;
+      }
+      
       const project = await storage.createProject({
         userId: req.user.id,
         title: req.body.title || "Untitled Project",
@@ -1380,6 +1391,8 @@ export async function registerRoutes(
         status: "draft",
         isStudioProject: req.body.isStudioProject || false,
         metadata: req.body.metadata || {},
+        audioUrl,
+        fileSize,
       });
       return res.json(project);
     } catch (error) {
