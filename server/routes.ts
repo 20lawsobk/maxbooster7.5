@@ -1350,7 +1350,22 @@ export async function registerRoutes(
   });
 
   // Projects: Create new project (supports both JSON and FormData)
-  app.post("/api/projects", upload.single('audio'), async (req: Request, res: Response) => {
+  // Wrap multer in error handler to prevent server crashes
+  app.post("/api/projects", (req: Request, res: Response, next) => {
+    upload.single('audio')(req, res, (err: any) => {
+      if (err) {
+        console.error("Project upload error:", err);
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(413).json({ message: "File too large. Maximum size is 500MB." });
+        }
+        if (err.message?.includes('Invalid file type')) {
+          return res.status(400).json({ message: err.message });
+        }
+        return res.status(400).json({ message: err.message || "Upload failed" });
+      }
+      next();
+    });
+  }, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }

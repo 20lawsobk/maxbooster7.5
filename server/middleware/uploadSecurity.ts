@@ -22,7 +22,7 @@ export const UPLOAD_LIMITS: Record<UploadCategory, UploadLimits> = {
     maxDimensions: { width: 3000, height: 3000 },
   },
   audio: {
-    maxSize: 100 * 1024 * 1024,
+    maxSize: 500 * 1024 * 1024, // 500MB to match UI
     allowedTypes: [
       'audio/mpeg',
       'audio/wav', 'audio/x-wav', 'audio/wave',
