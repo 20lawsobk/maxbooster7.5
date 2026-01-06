@@ -28,7 +28,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import { AutonomousDashboard } from '@/components/autonomous/autonomous-dashboard';
 import { ContentAnalyzer } from '@/components/content/ContentAnalyzer';
 import { VideoContentGenerator, type Platform as VideoPlatform } from '@/components/content/VideoContentGenerator';
@@ -408,8 +408,9 @@ export default function Advertisement() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('image', file);
-      const response = await apiRequest('POST', '/api/advertising/upload-image', formData);
-      return response.json();
+      return uploadWithProgress('/api/advertising/upload-image', formData, {
+        timeout: 300000, // 5 minutes
+      });
     },
     onSuccess: () => {
       toast({
@@ -417,10 +418,10 @@ export default function Advertisement() {
         description: 'Your campaign image has been uploaded successfully.',
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: 'Upload Failed',
-        description: 'Failed to upload image. Please try again.',
+        description: error.message || 'Failed to upload image. Please try again.',
         variant: 'destructive',
       });
     },

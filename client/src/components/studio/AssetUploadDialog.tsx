@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { uploadWithProgress } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
@@ -35,29 +36,9 @@ export function AssetUploadDialog({ open, onOpenChange, assetType }: AssetUpload
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const xhr = new XMLHttpRequest();
-
-      return new Promise((resolve, reject) => {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const progress = (e.loaded / e.total) * 100;
-            setUploadProgress(progress);
-          }
-        });
-
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText));
-          } else {
-            reject(new Error(xhr.responseText || 'Upload failed'));
-          }
-        });
-
-        xhr.addEventListener('error', () => reject(new Error('Network error')));
-        xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
-
-        xhr.open('POST', '/api/assets/upload');
-        xhr.send(formData);
+      return uploadWithProgress('/api/assets/upload', formData, {
+        onProgress: (percent) => setUploadProgress(percent),
+        timeout: 300000, // 5 minutes
       });
     },
     onSuccess: () => {

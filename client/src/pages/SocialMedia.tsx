@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import {
   Share2,
   Plus,
@@ -606,19 +606,20 @@ export default function SocialMedia() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('media', file);
-      const response = await apiRequest('POST', '/api/social/upload-media', formData);
-      return response.json();
+      return uploadWithProgress('/api/social/upload-media', formData, {
+        timeout: 300000, // 5 minutes
+      });
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: 'Media Uploaded!',
         description: 'Your media has been uploaded successfully.',
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: 'Upload Failed',
-        description: 'Failed to upload media. Please try again.',
+        description: error.message || 'Failed to upload media. Please try again.',
         variant: 'destructive',
       });
     },
