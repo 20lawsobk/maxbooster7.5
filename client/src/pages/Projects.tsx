@@ -97,7 +97,6 @@ export default function Projects() {
     genre: '',
     file: null as File | null,
   });
-  const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
@@ -133,7 +132,6 @@ export default function Projects() {
       });
       setIsUploadOpen(false);
       setUploadForm({ title: '', description: '', genre: '', file: null });
-      setIsUploading(false);
       setUploadProgress(0);
     },
     onError: (error: unknown) => {
@@ -143,7 +141,6 @@ export default function Projects() {
         description: apiError.message || 'Failed to upload project. Please try again.',
         variant: 'destructive',
       });
-      setIsUploading(false);
       setUploadProgress(0);
     },
   });
@@ -269,8 +266,6 @@ export default function Projects() {
       return;
     }
 
-    setIsUploading(true);
-
     const formData = new FormData();
     formData.append('title', uploadForm.title);
     formData.append('description', uploadForm.description);
@@ -357,7 +352,11 @@ export default function Projects() {
             </p>
           </div>
 
-          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+          <Dialog open={isUploadOpen} onOpenChange={(open) => {
+            // Prevent closing while upload is in progress
+            if (!open && uploadMutation.isPending) return;
+            setIsUploadOpen(open);
+          }}>
             <DialogTrigger asChild>
               <Button
                 className="gradient-bg"
@@ -368,7 +367,15 @@ export default function Projects() {
                 Upload Project
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent 
+              className="max-w-md"
+              onInteractOutside={(e) => {
+                if (uploadMutation.isPending) e.preventDefault();
+              }}
+              onEscapeKeyDown={(e) => {
+                if (uploadMutation.isPending) e.preventDefault();
+              }}
+            >
               <DialogHeader>
                 <DialogTitle>Upload New Project</DialogTitle>
               </DialogHeader>
@@ -451,7 +458,7 @@ export default function Projects() {
                   <Button type="button" variant="outline" onClick={() => setIsUploadOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isUploading || uploadMutation.isPending}>
+                  <Button type="submit" disabled={uploadMutation.isPending}>
                     {uploadMutation.isPending ? `Uploading ${uploadProgress}%` : 'Upload Project'}
                   </Button>
                 </div>
