@@ -896,11 +896,12 @@ class AudioEngine {
           // Calculate when to start this clip
           const clipStartTime = now + (clip.startTime - startTime);
           const offset = clip.offset || 0;
+          const clipDuration = clip.duration || buffer.duration;
 
           if (clipStartTime >= now) {
             // Clip starts in the future
             source.start(clipStartTime, offset);
-          } else if (clipStartTime + clip.duration > now) {
+          } else if (clipStartTime + clipDuration > now) {
             // Clip is already playing, start from current position
             const elapsed = now - clipStartTime;
             source.start(now, offset + elapsed);

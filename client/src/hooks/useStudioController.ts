@@ -28,7 +28,8 @@ export interface StudioTrack {
 export interface AudioClipData {
   id: string;
   name: string;
-  filePath: string;
+  filePath?: string;
+  audioUrl?: string;
   startTime: number;
   duration: number;
   offset?: number;
@@ -255,7 +256,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
               track.id,
               clips.map((clip) => ({
                 id: clip.id,
-                url: clip.filePath,
+                url: clip.audioUrl || clip.filePath || '',
                 startTime: clip.startTime,
                 duration: clip.duration,
                 offset: clip.offset || 0,
@@ -398,7 +399,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
                 track.id,
                 clips.map((clip) => ({
                   id: clip.id,
-                  url: clip.filePath,
+                  url: clip.audioUrl || clip.filePath || '',
                   startTime: clip.startTime,
                   duration: clip.duration,
                   offset: clip.offset,

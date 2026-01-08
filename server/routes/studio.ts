@@ -36,12 +36,12 @@ const updateTrackSchema = z.object({
   mute: z.boolean().optional(),
   solo: z.boolean().optional(),
   armed: z.boolean().optional(),
-  recordEnabled: z.boolean().optional(),
-  inputMonitoring: z.boolean().optional(),
+  isMuted: z.boolean().optional(),
+  isSolo: z.boolean().optional(),
+  isArmed: z.boolean().optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  height: z.number().int().min(40).max(300).optional(),
-  collapsed: z.boolean().optional(),
   outputBus: z.string().optional(),
+  order: z.number().int().optional(),
 });
 
 const updateClipSchema = z.object({
@@ -378,12 +378,27 @@ router.patch('/tracks/:trackId', requireAuth, async (req: Request, res: Response
 
     const data = updateTrackSchema.parse(req.body);
 
+    const dbData: Record<string, unknown> = {};
+    if (data.name !== undefined) dbData.name = data.name;
+    if (data.volume !== undefined) dbData.volume = data.volume;
+    if (data.pan !== undefined) dbData.pan = data.pan;
+    if (data.color !== undefined) dbData.color = data.color;
+    if (data.outputBus !== undefined) dbData.outputBus = data.outputBus;
+    if (data.order !== undefined) dbData.order = data.order;
+    if (data.mute !== undefined) dbData.isMuted = data.mute;
+    if (data.solo !== undefined) dbData.isSolo = data.solo;
+    if (data.armed !== undefined) dbData.isArmed = data.armed;
+    if (data.isMuted !== undefined) dbData.isMuted = data.isMuted;
+    if (data.isSolo !== undefined) dbData.isSolo = data.isSolo;
+    if (data.isArmed !== undefined) dbData.isArmed = data.isArmed;
+
+    if (Object.keys(dbData).length === 0) {
+      return res.json(track);
+    }
+
     const [updated] = await db
       .update(studioTracks)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(dbData)
       .where(eq(studioTracks.id, trackId))
       .returning();
 
