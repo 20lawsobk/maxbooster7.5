@@ -499,7 +499,7 @@ const SortableTrackRow = memo(function SortableTrackRow({
                 </SelectTrigger>
                 <SelectContent className="bg-[#252525] border-gray-700">
                   <SelectItem value="master">Master</SelectItem>
-                  {mixBusses.map((bus) => (
+                  {(mixBusses || []).map((bus) => (
                     <SelectItem key={bus.id} value={bus.id}>
                       {bus.name}
                     </SelectItem>
@@ -521,7 +521,7 @@ const SortableTrackRow = memo(function SortableTrackRow({
               ))}
             </div>
             {/* Audio Clips */}
-            {clips.map((clip) => {
+            {(clips || []).map((clip) => {
               const totalBars = 32;
               const leftPercent = (clip.startTime / totalBars) * 100;
               const widthPercent = (clip.duration / totalBars) * 100;
