@@ -817,6 +817,7 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
   try {
     const userId = (req as any).user?.id;
     const file = req.file;
+    const projectId = req.body.projectId;
     
     if (!file) {
       return res.status(400).json({ error: 'No audio file provided' });
@@ -832,7 +833,67 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
       size: file.size,
       mimeType: file.mimetype,
       url: storedFile.url,
+      projectId,
     });
+    
+    let track = null;
+    let clip = null;
+    
+    if (projectId) {
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
+      if (hasAccess) {
+        const existingTracks = await db.query.studioTracks.findMany({
+          where: eq(studioTracks.projectId, projectId),
+        });
+        const trackNumber = existingTracks.length + 1;
+        
+        const trackName = file.originalname.replace(/\.[^/.]+$/, '') || `Track ${trackNumber}`;
+        const trackId = `track_${nanoid()}`;
+        
+        const [newTrack] = await db.insert(studioTracks).values({
+          id: trackId,
+          projectId,
+          name: trackName,
+          trackType: 'audio',
+          trackNumber,
+          volume: 1,
+          pan: 0,
+          mute: false,
+          solo: false,
+          armed: false,
+          recordEnabled: false,
+          inputMonitoring: false,
+          color: `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`,
+          height: 80,
+          collapsed: false,
+          outputBus: 'master',
+        }).returning();
+        
+        track = newTrack;
+        
+        const clipId = `clip_${nanoid()}`;
+        const [newClip] = await db.insert(audioClips).values({
+          id: clipId,
+          projectId,
+          trackId,
+          name: trackName,
+          audioUrl: storedFile.url,
+          startTime: 0,
+          duration: null,
+          fadeIn: 0,
+          fadeOut: 0,
+          gain: 1,
+        }).returning();
+        
+        clip = newClip;
+        
+        logger.info('Created track and audio clip for uploaded file', {
+          trackId,
+          clipId,
+          projectId,
+        });
+      }
+    }
     
     res.json({
       success: true,
@@ -842,6 +903,8 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
       size: file.size,
       mimeType: file.mimetype,
       message: 'File uploaded successfully',
+      track,
+      clip,
     });
   } catch (error: unknown) {
     logger.error('Error uploading file:', error);
