@@ -211,11 +211,13 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         throw new Error('Audio engine not initialized');
       }
 
-      // Initialize AudioEngine if needed (requires user gesture)
-      if (!audioEngineInitialized) {
-        await audioEngineRef.current.initialize();
-        setAudioEngineInitialized(true);
+      // Initialize and unlock AudioEngine (BeatStars-style: works on user gesture)
+      const isReady = await audioEngineRef.current.ensureReady();
+      if (!isReady) {
+        // Still not ready, but we can continue - it might unlock mid-playback
+        logger.warn('Audio engine not fully ready, attempting playback anyway');
       }
+      setAudioEngineInitialized(true);
 
       // Clear orphaned tracks from previous sessions
       const currentTrackIds = new Set(tracks.map((t) => t.id));
