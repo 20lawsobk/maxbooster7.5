@@ -202,7 +202,7 @@ class AudioEngine {
     channels: 2,
     bitDepth: 24,
     enableLatencyCompensation: true,
-    enableAudioWorklet: true,
+    enableAudioWorklet: false, // Disabled - requires separate worklet processor files
   };
 
   private actualLatencyMs = 0;
@@ -380,14 +380,41 @@ class AudioEngine {
       // Note: Web Audio API always processes internally at 32-bit float
       // The format setting is used for export and display purposes
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      this.context = new AudioContextClass({
-        latencyHint: this.config.latencyHint,
-        sampleRate: this.config.sampleRate,
-      });
+      
+      if (!AudioContextClass) {
+        throw new Error('AudioContext not available in this browser');
+      }
+      
+      // Try to create with preferred sample rate, fallback to browser default
+      try {
+        this.context = new AudioContextClass({
+          latencyHint: this.config.latencyHint,
+          sampleRate: this.config.sampleRate,
+        });
+      } catch (sampleRateError) {
+        // Fallback: let browser choose sample rate
+        logger.warn('Failed to create AudioContext with specified sample rate, using browser default');
+        this.context = new AudioContextClass({
+          latencyHint: this.config.latencyHint,
+        });
+      }
 
-      // On iOS Safari, AudioContext starts in suspended state and requires user interaction
+      // On iOS Safari and some browsers, AudioContext starts in suspended state
+      // Must be resumed in response to user interaction
       if (this.context.state === 'suspended') {
-        logger.info('AudioContext is suspended - will resume on user interaction');
+        logger.info('AudioContext is suspended - resuming...');
+        try {
+          await this.context.resume();
+          logger.info('AudioContext resumed successfully, state:', this.context.state);
+        } catch (resumeError) {
+          logger.warn('Could not resume AudioContext immediately:', resumeError);
+        }
+      }
+
+      // Update config with actual sample rate from context (browser may have used different rate)
+      if (this.context.sampleRate !== this.config.sampleRate) {
+        logger.info(`Browser used sample rate ${this.context.sampleRate}Hz instead of requested ${this.config.sampleRate}Hz`);
+        this.config.sampleRate = this.context.sampleRate as SampleRate;
       }
 
       // Calculate actual latency
