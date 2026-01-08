@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { apiRequest, queryClient as qc } from '@/lib/queryClient';
 import { isUnauthorizedError } from '@/lib/authUtils';
 import { PlatformConnections } from '@/components/social/platform-connections';
@@ -56,6 +57,7 @@ export default function Settings() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { trackProfileComplete, trackSocialAccountConnected, trackCollaboratorInvited } = useOnboardingProgress();
   const [, navigate] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -186,6 +188,7 @@ export default function Settings() {
         title: 'Profile Updated',
         description: 'Your profile has been updated successfully.',
       });
+      trackProfileComplete();
     },
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {

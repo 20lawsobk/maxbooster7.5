@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle } from 'lucide-react';
 import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon } from '@/components/ui/brand-icons';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 interface Platform {
   id: string;
@@ -23,6 +24,7 @@ interface Platform {
 export function PlatformConnections() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { trackSocialAccountConnected } = useOnboardingProgress();
 
   const { data: connections = [], isLoading } = useQuery({
     queryKey: ['/api/social/connections'],
@@ -51,6 +53,7 @@ export function PlatformConnections() {
           title: 'Platform Connected',
           description: `Successfully connected to ${platform}`,
         });
+        trackSocialAccountConnected();
       }
     },
     onError: (error: unknown) => {

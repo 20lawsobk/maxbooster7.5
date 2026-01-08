@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -391,6 +392,11 @@ export default function SocialMedia() {
   const { user, isLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { 
+    trackSocialAccountConnected, 
+    trackSocialAutopilotActivated,
+    trackFirstPostScheduled 
+  } = useOnboardingProgress();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [postContent, setPostContent] = useState('');
@@ -535,6 +541,7 @@ export default function SocialMedia() {
       setScheduledTime('');
       setSelectedPlatforms([]);
       queryClient.invalidateQueries({ queryKey: ['/api/social/posts'] });
+      trackFirstPostScheduled();
     },
     onError: () => {
       toast({
@@ -757,6 +764,7 @@ export default function SocialMedia() {
         description: 'Autopilot is now managing your social media posts.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/autopilot/status'] });
+      trackSocialAutopilotActivated();
     },
     onError: () => {
       toast({
