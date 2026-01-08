@@ -97,6 +97,7 @@ import { TimeRuler } from '@/components/studio/TimeRuler';
 import { AutomationLane } from '@/components/studio/AutomationLane';
 import AudioEngine from '@/lib/audioEngine';
 import { LayoutGrid } from '@/components/studio/LayoutGrid';
+import { StudioOneWrapper } from '@/components/studio/StudioOneWrapper';
 import { StudioTopBar } from '@/components/studio/StudioTopBar';
 import { StudioInspector } from '@/components/studio/StudioInspector';
 import { StudioBrowser } from '@/components/studio/StudioBrowser';
@@ -337,6 +338,7 @@ export default function Studio() {
   const [showProjectSetup, setShowProjectSetup] = useState(false);
   const [showSessionManager, setShowSessionManager] = useState(false);
   const [showMasteringDelivery, setShowMasteringDelivery] = useState(false);
+  const [useStudioOneLayout, setUseStudioOneLayout] = useState(false);
 
   const shortcutOverlay = useShortcutOverlay();
 
@@ -1842,31 +1844,165 @@ export default function Studio() {
               />
             </div>
           )}
+          {useStudioOneLayout ? (
+            <StudioOneWrapper
+              tracks={displayTracks.map(t => ({
+                ...t,
+                inserts: [],
+                sends: [],
+              }))}
+              busses={mixBusses.map((b: MixBus) => ({
+                id: b.id,
+                name: b.name,
+                color: b.color,
+                volume: b.volume,
+                pan: b.pan,
+                mute: b.mute,
+                solo: b.solo,
+              }))}
+              masterVolume={masterVolume}
+              selectedTrackId={selectedTrack || undefined}
+              inspectorVisible={inspectorVisible}
+              browserVisible={browserVisible}
+              consoleVisible={true}
+              bpm={controller.transport.tempo}
+              pixelsPerBar={Math.round(zoom * 100)}
+              scrollOffset={0}
+              onInspectorVisibleChange={toggleInspector}
+              onBrowserVisibleChange={toggleBrowser}
+              onConsoleVisibleChange={() => {}}
+              onTrackVolumeChange={(trackId, volume) => handleTrackUpdate(trackId, { volume })}
+              onTrackPanChange={(trackId, pan) => handleTrackUpdate(trackId, { pan })}
+              onTrackMuteToggle={(trackId) => {
+                const track = displayTracks.find(t => t.id === trackId);
+                if (track) handleTrackUpdate(trackId, { mute: !track.mute });
+              }}
+              onTrackSoloToggle={(trackId) => {
+                const track = displayTracks.find(t => t.id === trackId);
+                if (track) handleTrackUpdate(trackId, { solo: !track.solo });
+              }}
+              onTrackArmedToggle={(trackId) => {
+                const track = displayTracks.find(t => t.id === trackId);
+                if (track) handleTrackUpdate(trackId, { armed: !track.armed });
+              }}
+              onMasterVolumeChange={handleMasterVolumeChange}
+              onAddTrack={() => setShowAddTrackDialog(true)}
+              onAddBus={() => setShowAddBusDialog(true)}
+              onTrackSelect={handleTrackSelect}
+              useNewLayout={true}
+              toolbar={
+                <div className="flex items-center gap-2 px-4 py-2">
+                  <StudioTopBar
+                    tempo={controller.transport.tempo}
+                    timeSignature={selectedProject?.timeSignature || '4/4'}
+                    cpuUsage={cpuUsage}
+                    zoom={zoom}
+                    selectedTool={undefined}
+                    selectedProject={selectedProject}
+                    projects={projects}
+                    onToolSelect={() => {}}
+                    onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
+                    onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
+                    onShowTutorial={() => setShowTutorial(true)}
+                    onZoomReset={() => setZoom(1)}
+                    onProjectChange={(projectId) => setLocation(`/studio/${projectId}`)}
+                    onCreateProject={(title) => createProjectMutation.mutate(title)}
+                    onUploadFile={() => setShowFullscreenUpload(true)}
+                    onSaveProject={handleSaveProject}
+                    isSaving={isSaving}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setUseStudioOneLayout(false)}
+                    className="ml-auto"
+                  >
+                    Classic Layout
+                  </Button>
+                </div>
+              }
+              transport={
+                <TransportBar
+                  isPlaying={controller.transport.isPlaying}
+                  isRecording={controller.transport.isRecording}
+                  isPaused={controller.transport.isPaused}
+                  isLooping={controller.transport.isLooping}
+                  tempo={controller.transport.tempo}
+                  timeSignature={selectedProject?.timeSignature || '4/4'}
+                  currentTime={controller.transport.currentTime}
+                  onPlay={() => controller.play()}
+                  onPause={() => controller.pause()}
+                  onStop={() => controller.stop()}
+                  onRecord={() =>
+                    controller.transport.isRecording
+                      ? controller.stopRecording()
+                      : controller.startRecording()
+                  }
+                  onSeek={(time) => controller.seek(time)}
+                  duration={projectDuration}
+                  masterVolume={masterVolume}
+                  onMasterVolumeChange={handleMasterVolumeChange}
+                />
+              }
+            >
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <Timeline
+                  tracks={displayTracks}
+                  zoom={zoom}
+                  currentTime={controller.transport.currentTime}
+                  isPlaying={controller.transport.isPlaying}
+                  selectedTrack={selectedTrack}
+                  onTrackSelect={handleTrackSelect}
+                  onTimeChange={(time) => controller.seek(time)}
+                />
+                <TrackList
+                  tracks={displayTracks}
+                  selectedTrack={selectedTrack}
+                  onTrackSelect={handleTrackSelect}
+                  zoom={zoom}
+                  currentTime={controller.transport.currentTime}
+                  isPlaying={controller.transport.isPlaying}
+                  onTrackUpdate={handleTrackUpdate as (trackId: string, updates: unknown) => void}
+                />
+              </div>
+            </StudioOneWrapper>
+          ) : (
           <LayoutGrid
             topBar={
               <div className="flex flex-col">
-                <StudioTopBar
-                  tempo={controller.transport.tempo}
-                  timeSignature={selectedProject?.timeSignature || '4/4'}
-                  cpuUsage={cpuUsage}
-                  zoom={zoom}
-                  selectedTool={undefined}
-                  selectedProject={selectedProject}
-                  projects={projects}
-                  onToolSelect={() => {}}
-                  onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
-                  onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
-                  onShowTutorial={() => setShowTutorial(true)}
-                  onZoomReset={() => setZoom(1)}
-                  onProjectChange={(projectId) => {
-                    // Just navigate - selectedProject is derived from URL + query data
-                    setLocation(`/studio/${projectId}`);
-                  }}
-                  onCreateProject={(title) => createProjectMutation.mutate(title)}
-                  onUploadFile={() => setShowFullscreenUpload(true)}
-                  onSaveProject={handleSaveProject}
-                  isSaving={isSaving}
-                />
+                <div className="flex items-center">
+                  <StudioTopBar
+                    tempo={controller.transport.tempo}
+                    timeSignature={selectedProject?.timeSignature || '4/4'}
+                    cpuUsage={cpuUsage}
+                    zoom={zoom}
+                    selectedTool={undefined}
+                    selectedProject={selectedProject}
+                    projects={projects}
+                    onToolSelect={() => {}}
+                    onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
+                    onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
+                    onShowTutorial={() => setShowTutorial(true)}
+                    onZoomReset={() => setZoom(1)}
+                    onProjectChange={(projectId) => {
+                      // Just navigate - selectedProject is derived from URL + query data
+                      setLocation(`/studio/${projectId}`);
+                    }}
+                    onCreateProject={(title) => createProjectMutation.mutate(title)}
+                    onUploadFile={() => setShowFullscreenUpload(true)}
+                    onSaveProject={handleSaveProject}
+                    isSaving={isSaving}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setUseStudioOneLayout(true)}
+                    className="ml-2 mr-4 shrink-0"
+                    title="Switch to Studio One-style professional layout"
+                  >
+                    Pro Layout
+                  </Button>
+                </div>
                 <WorkflowStateBar
                   currentState={workflowState}
                   onStateChange={(state) => {
@@ -2408,6 +2544,8 @@ export default function Studio() {
             inspectorCollapsed={!inspectorVisible}
             browserCollapsed={!browserVisible}
           />
+          )
+          }
 
           {/* Upload overlay - uses inline positioning instead of portal to avoid fullscreen exit issues */}
           {showFullscreenUpload && (
