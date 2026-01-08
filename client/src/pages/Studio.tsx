@@ -1256,6 +1256,13 @@ export default function Studio() {
     [controller]
   );
 
+  const handleTrackSelect = useCallback(
+    (trackId: string) => {
+      setSelectedTrack(trackId);
+    },
+    []
+  );
+
   const handleMuteToggle = useCallback(
     async (trackId: string) => {
       try {
