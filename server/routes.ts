@@ -673,6 +673,51 @@ export async function registerRoutes(
     }
   });
 
+  // Storage: Serve files from storage (proxy for Replit Object Storage)
+  app.get("/api/storage/file/:key(*)", async (req: Request, res: Response) => {
+    try {
+      const key = decodeURIComponent(req.params.key);
+      
+      if (!key) {
+        return res.status(400).json({ message: "File key is required" });
+      }
+
+      const { storageService } = await import('./services/storageService.js');
+      
+      const exists = await storageService.fileExists(key);
+      if (!exists) {
+        return res.status(404).json({ message: "File not found" });
+      }
+
+      const fileBuffer = await storageService.downloadFile(key);
+      
+      const ext = key.split('.').pop()?.toLowerCase() || '';
+      const mimeTypes: Record<string, string> = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'webp': 'image/webp',
+        'gif': 'image/gif',
+        'mp3': 'audio/mpeg',
+        'wav': 'audio/wav',
+        'flac': 'audio/flac',
+        'ogg': 'audio/ogg',
+        'pdf': 'application/pdf',
+      };
+      
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', fileBuffer.length);
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      
+      return res.send(fileBuffer);
+    } catch (error) {
+      console.error("Storage file serve error:", error);
+      return res.status(500).json({ message: "Failed to serve file" });
+    }
+  });
+
   // Auth: Export user data
   app.get("/api/auth/export-data", async (req: Request, res: Response) => {
     if (!req.user) {

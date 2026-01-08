@@ -298,8 +298,10 @@ class ReplitStorageProvider implements StorageProvider {
   }
 
   async getDownloadUrl(key: string, expiresIn?: number): Promise<string> {
-    // Return public URL for Replit storage
-    return `https://storage.replit.com/${this.bucketId}/${key}`;
+    // Replit Object Storage files are private by default
+    // Return a proxy URL that our backend will serve
+    const encodedKey = encodeURIComponent(key);
+    return `/api/storage/file/${encodedKey}`;
   }
 
   async fileExists(key: string): Promise<boolean> {
