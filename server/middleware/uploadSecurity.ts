@@ -22,16 +22,19 @@ export const UPLOAD_LIMITS: Record<UploadCategory, UploadLimits> = {
     maxDimensions: { width: 3000, height: 3000 },
   },
   audio: {
-    maxSize: 500 * 1024 * 1024, // 500MB to match UI
+    maxSize: 500 * 1024 * 1024, // 500MB - industry standard for professional audio
     allowedTypes: [
       'audio/mpeg',
       'audio/wav', 'audio/x-wav', 'audio/wave',
       'audio/flac', 'audio/x-flac',
       'audio/aac', 'audio/x-aac', 'audio/aacp',
       'audio/ogg', 'audio/vorbis',
+      'audio/opus', 'audio/x-opus',
       'audio/mp4', 'audio/x-m4a', 'audio/m4a',
+      'audio/x-alac', 'audio/alac',
       'audio/aiff', 'audio/x-aiff',
       'audio/webm',
+      'audio/x-caf',
     ],
   },
   document: {
@@ -52,12 +55,17 @@ const MAGIC_BYTES: Record<string, number[]> = {
   'audio/x-flac': [0x66, 0x4c, 0x61, 0x43],
   'audio/ogg': [0x4f, 0x67, 0x67, 0x53],
   'audio/vorbis': [0x4f, 0x67, 0x67, 0x53],
+  'audio/opus': [0x4f, 0x67, 0x67, 0x53],
+  'audio/x-opus': [0x4f, 0x67, 0x67, 0x53],
   'audio/aiff': [0x46, 0x4f, 0x52, 0x4d],
   'audio/x-aiff': [0x46, 0x4f, 0x52, 0x4d],
   'audio/mp4': [0x00, 0x00, 0x00],
   'audio/x-m4a': [0x00, 0x00, 0x00],
   'audio/m4a': [0x00, 0x00, 0x00],
+  'audio/x-alac': [0x00, 0x00, 0x00],
+  'audio/alac': [0x00, 0x00, 0x00],
   'audio/webm': [0x1a, 0x45, 0xdf, 0xa3],
+  'audio/x-caf': [0x63, 0x61, 0x66, 0x66],
   'application/pdf': [0x25, 0x50, 0x44, 0x46],
 };
 
@@ -73,10 +81,12 @@ const EXTENSION_TO_MIME: Record<string, string[]> = {
   '.flac': ['audio/flac', 'audio/x-flac'],
   '.aac': ['audio/aac', 'audio/x-aac', 'audio/aacp'],
   '.ogg': ['audio/ogg', 'audio/vorbis'],
-  '.m4a': ['audio/mp4', 'audio/x-m4a', 'audio/m4a'],
+  '.opus': ['audio/opus', 'audio/x-opus', 'audio/ogg'],
+  '.m4a': ['audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/x-alac', 'audio/alac'],
   '.aiff': ['audio/aiff', 'audio/x-aiff'],
   '.aif': ['audio/aiff', 'audio/x-aiff'],
   '.webm': ['audio/webm'],
+  '.caf': ['audio/x-caf'],
   '.pdf': ['application/pdf'],
 };
 

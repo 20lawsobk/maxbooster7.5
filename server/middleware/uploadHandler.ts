@@ -31,17 +31,28 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
     'audio/flac',
     'audio/x-flac',
     'audio/ogg',
+    'audio/vorbis',
+    'audio/opus',
+    'audio/x-opus',
     'audio/aac',
+    'audio/x-aac',
+    'audio/aacp',
     'audio/webm',
     'audio/mp4',
     'audio/x-m4a',
+    'audio/m4a',
+    'audio/x-alac',
+    'audio/alac',
+    'audio/aiff',
+    'audio/x-aiff',
+    'audio/x-caf',
     'image/jpeg',
     'image/png',
     'image/webp',
     'application/pdf',
   ];
 
-  const allowedExts = ['.mp3', '.wav', '.ogg', '.aac', '.flac', '.webm', '.mp4', '.m4a', '.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+  const allowedExts = ['.mp3', '.wav', '.ogg', '.opus', '.aac', '.flac', '.webm', '.mp4', '.m4a', '.aiff', '.aif', '.caf', '.jpg', '.jpeg', '.png', '.webp', '.pdf'];
   const ext = path.extname(file.originalname).toLowerCase();
 
   if (ext === '.svg') {
@@ -143,7 +154,7 @@ export const handleUploadError = (error: unknown, req: Request, res: unknown, ne
     switch (error.code) {
       case 'LIMIT_FILE_SIZE':
         return res.status(413).json({
-          message: 'File too large. Maximum size is 100MB.',
+          message: 'File too large. Maximum size is 500MB for audio files.',
           code: 'FILE_TOO_LARGE',
         });
       case 'LIMIT_FILE_COUNT':
