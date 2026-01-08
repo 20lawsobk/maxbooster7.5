@@ -331,7 +331,14 @@ export function StudioOneWrapper({
         transport={transport}
         inspector={inspector}
         arranger={arrangerElement}
-        arrange={timeline || children}
+        arrange={
+          <div className="flex flex-col h-full overflow-hidden">
+            {timeline}
+            <div className="flex-1 overflow-hidden">
+              {children}
+            </div>
+          </div>
+        }
         console={consoleElement}
         browser={browserElement}
         launcher={launcherElement}

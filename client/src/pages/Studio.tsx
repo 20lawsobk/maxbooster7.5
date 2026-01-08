@@ -2047,16 +2047,14 @@ export default function Studio() {
               </div>
             }
             inspector={
-              inspectorVisible ? (
-                <InspectorPanel
-                  selectedTrack={
-                    selectedTrack ? displayTracks.find((t) => t.id === selectedTrack) || null : null
-                  }
-                  selectedClip={null}
-                  onTrackUpdate={handleTrackUpdate as (trackId: string, updates: unknown) => void}
-                  onClipUpdate={(clipId: string, updates: unknown) => logger.info('Clip update:', clipId, String(updates))}
-                />
-              ) : null
+              <InspectorPanel
+                selectedTrack={
+                  selectedTrack ? displayTracks.find((t) => t.id === selectedTrack) || null : null
+                }
+                selectedClip={null}
+                onTrackUpdate={handleTrackUpdate as (trackId: string, updates: unknown) => void}
+                onClipUpdate={(clipId: string, updates: unknown) => logger.info('Clip update:', clipId, String(updates))}
+              />
             }
             timeline={
               <>

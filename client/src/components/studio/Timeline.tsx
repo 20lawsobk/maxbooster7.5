@@ -18,14 +18,14 @@ interface Track {
 
 interface TimelineProps {
   currentTime: number;
-  loopEnabled: boolean;
-  loopStart: number;
-  loopEnd: number;
-  duration: number;
-  timeSignature: string;
+  loopEnabled?: boolean;
+  loopStart?: number;
+  loopEnd?: number;
+  duration?: number;
+  timeSignature?: string;
   tracks?: Track[];
   trackClips?: Map<string, AudioClip[]>;
-  onTimelineClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onTimelineClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   onClipUpdate?: (
     trackId: string,
     clipId: string,
@@ -33,6 +33,11 @@ interface TimelineProps {
   ) => void;
   snapEnabled?: boolean;
   snapInterval?: number;
+  zoom?: number;
+  isPlaying?: boolean;
+  selectedTrack?: string | null;
+  onTrackSelect?: (trackId: string) => void;
+  onTimeChange?: (time: number) => void;
 }
 
 /**
@@ -40,19 +45,24 @@ interface TimelineProps {
  */
 export function Timeline({
   currentTime,
-  loopEnabled,
-  loopStart,
-  loopEnd,
-  duration,
-  timeSignature,
+  loopEnabled = false,
+  loopStart = 0,
+  loopEnd = 60,
+  duration = 60,
+  timeSignature = '4/4',
   tracks = [],
   trackClips = new Map(),
   onTimelineClick,
   onClipUpdate,
   snapEnabled = true,
   snapInterval = 0.25, // Quarter note at 120 BPM ≈ 0.5s, snap to 0.25s grid
+  zoom = 1,
+  isPlaying = false,
+  selectedTrack = null,
+  onTrackSelect,
+  onTimeChange,
 }: TimelineProps) {
-  const [numerator] = timeSignature.split('/').map(Number);
+  const [numerator] = (timeSignature || '4/4').split('/').map(Number);
   const [draggingClip, setDraggingClip] = useState<{ clipId: string; trackId: string } | null>(
     null
   );
@@ -288,7 +298,17 @@ export function Timeline({
           borderColor: 'var(--studio-border)',
           backgroundColor: 'var(--studio-bg-medium)',
         }}
-        onClick={onTimelineClick}
+        onClick={(e) => {
+          if (onTimelineClick) {
+            onTimelineClick(e);
+          }
+          if (onTimeChange && timelineRef.current) {
+            const rect = timelineRef.current.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickTime = (clickX / rect.width) * duration;
+            onTimeChange(Math.max(0, Math.min(duration, clickTime)));
+          }
+        }}
         data-testid="timeline-ruler"
       >
         {/* Grid Markers */}
