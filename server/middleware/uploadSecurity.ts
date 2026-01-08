@@ -117,9 +117,44 @@ export function sanitizeFilename(filename: string): string {
   return `${safeName}${ext}`;
 }
 
+// Helper to detect if buffer contains a valid image format
+function isValidImageBuffer(buffer: Buffer): boolean {
+  if (buffer.length < 4) return false;
+  
+  // Check for PNG: 89 50 4E 47
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) {
+    return true;
+  }
+  
+  // Check for JPEG: FF D8 FF
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return true;
+  }
+  
+  // Check for WebP: RIFF....WEBP
+  if (buffer.length >= 12) {
+    const isRiff = buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46;
+    const isWebp = buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50;
+    if (isRiff && isWebp) return true;
+  }
+  
+  // Check for GIF: GIF87a or GIF89a
+  if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) {
+    return true;
+  }
+  
+  return false;
+}
+
 export function verifyMagicBytes(buffer: Buffer, expectedMimeType: string): boolean {
   if (!buffer || buffer.length < 4) {
     return false;
+  }
+
+  // For image types, be flexible - allow any valid image format since we'll convert it
+  // This handles cases where file extension doesn't match actual content (e.g., PNG saved as .jpeg)
+  if (expectedMimeType.startsWith('image/')) {
+    return isValidImageBuffer(buffer);
   }
 
   const magicBytes = MAGIC_BYTES[expectedMimeType];
@@ -142,15 +177,6 @@ export function verifyMagicBytes(buffer: Buffer, expectedMimeType: string): bool
       const isRiff = buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46;
       const isWave = buffer[8] === 0x57 && buffer[9] === 0x41 && buffer[10] === 0x56 && buffer[11] === 0x45;
       return isRiff && isWave;
-    }
-    return false;
-  }
-
-  if (expectedMimeType === 'image/webp') {
-    if (buffer.length >= 12) {
-      const isRiff = buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46;
-      const isWebp = buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50;
-      return isRiff && isWebp;
     }
     return false;
   }
