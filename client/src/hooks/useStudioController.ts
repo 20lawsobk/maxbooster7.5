@@ -367,7 +367,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         audioEngineRef.current = AudioEngine.getInstance();
       }
 
-      // Load audio tracks into the audio engine
+      // Load audio clip data for tracks (defer audio engine track creation until play)
       for (const track of tracksData) {
         if (track.trackType === 'audio') {
           try {
@@ -379,35 +379,8 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
 
             const clips: AudioClipData[] = await response.json();
             clipsMap.set(track.id, clips || []);
-
-            // Add track to audio engine (only if it doesn't exist)
-            if (audioEngineRef.current && !audioEngineRef.current.hasTrack(track.id)) {
-              audioEngineRef.current.createTrack({
-                id: track.id,
-                name: track.name,
-                gain: track.volume,
-                pan: track.pan,
-                isMuted: track.mute,
-                isSolo: track.solo,
-                bus: track.outputBus || 'master',
-              });
-            }
-
-            // Add clips to the track in audio engine
-            if (audioEngineRef.current && clips.length > 0) {
-              audioEngineRef.current.addClipsToTrack(
-                track.id,
-                clips.map((clip) => ({
-                  id: clip.id,
-                  url: clip.audioUrl || clip.filePath || '',
-                  startTime: clip.startTime,
-                  duration: clip.duration,
-                  offset: clip.offset,
-                }))
-              );
-            }
           } catch (error: unknown) {
-            logger.error(`Failed to load track ${track.id}:`, error);
+            logger.error(`Failed to load clips for track ${track.id}:`, error);
             if (onError) onError(error as Error);
           }
         }
