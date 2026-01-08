@@ -1,4 +1,4 @@
-import { useEffect, ReactNode } from 'react';
+import { useEffect, useRef, ReactNode, useCallback } from 'react';
 import { useStudioLayoutStore } from '@/lib/studioLayoutStore';
 import { studioOneTheme, cssVariables } from '@/lib/studioOneTheme';
 import { StudioOneConsole } from './StudioOneConsole';
@@ -6,6 +6,7 @@ import { StudioOneBrowser } from './StudioOneBrowser';
 import { ArrangerTrack } from './ArrangerTrack';
 import { LauncherGrid } from './LauncherGrid';
 import { ConsoleNavColumn } from './ConsoleNavColumn';
+import { StudioOneLayout } from './StudioOneLayout';
 
 interface StudioTrack {
   id: string;
@@ -80,6 +81,9 @@ interface StudioOneWrapperProps {
   bpm?: number;
   pixelsPerBar?: number;
   scrollOffset?: number;
+  onInspectorVisibleChange?: (visible: boolean) => void;
+  onBrowserVisibleChange?: (visible: boolean) => void;
+  onConsoleVisibleChange?: (visible: boolean) => void;
   onTrackVolumeChange: (trackId: string, volume: number) => void;
   onTrackPanChange: (trackId: string, pan: number) => void;
   onTrackMuteToggle: (trackId: string) => void;
@@ -100,6 +104,11 @@ interface StudioOneWrapperProps {
   onArrangerSectionAdd?: (section: Omit<ArrangerSection, 'id'>) => void;
   onArrangerSectionUpdate?: (id: string, updates: Partial<ArrangerSection>) => void;
   onArrangerSectionDelete?: (id: string) => void;
+  useNewLayout?: boolean;
+  toolbar?: ReactNode;
+  transport?: ReactNode;
+  inspector?: ReactNode;
+  timeline?: ReactNode;
   children?: ReactNode;
 }
 
@@ -116,6 +125,9 @@ export function StudioOneWrapper({
   bpm = 120,
   pixelsPerBar = 100,
   scrollOffset = 0,
+  onInspectorVisibleChange,
+  onBrowserVisibleChange,
+  onConsoleVisibleChange,
   onTrackVolumeChange,
   onTrackPanChange,
   onTrackMuteToggle,
@@ -136,6 +148,11 @@ export function StudioOneWrapper({
   onArrangerSectionAdd,
   onArrangerSectionUpdate,
   onArrangerSectionDelete,
+  useNewLayout = false,
+  toolbar,
+  transport,
+  inspector,
+  timeline,
   children,
 }: StudioOneWrapperProps) {
   const {
@@ -144,28 +161,64 @@ export function StudioOneWrapper({
     inspectorPanel,
     consolePanel,
     arrangerTrackVisible,
-    togglePanel,
+    launcherPanel,
+    setPanelVisibility,
+    toggleArrangerTrack,
   } = useStudioLayoutStore();
 
-  useEffect(() => {
-    if (browserPanel.visible !== browserVisible) {
-      togglePanel('browser');
-    }
-  }, [browserVisible, browserPanel.visible, togglePanel]);
+  const initializedRef = useRef(false);
+  const externalUpdateRef = useRef(false);
 
   useEffect(() => {
-    if (inspectorPanel.visible !== inspectorVisible) {
-      togglePanel('inspector');
+    if (!initializedRef.current) {
+      setPanelVisibility('browser', browserVisible);
+      setPanelVisibility('inspector', inspectorVisible);
+      setPanelVisibility('console', consoleVisible);
+      initializedRef.current = true;
     }
-  }, [inspectorVisible, inspectorPanel.visible, togglePanel]);
+  }, []);
 
   useEffect(() => {
-    if (consolePanel.visible !== consoleVisible) {
-      togglePanel('console');
+    if (!initializedRef.current) return;
+    if (externalUpdateRef.current) {
+      externalUpdateRef.current = false;
+      return;
     }
-  }, [consoleVisible, consolePanel.visible, togglePanel]);
+    if (browserPanel.visible !== browserVisible && onBrowserVisibleChange) {
+      onBrowserVisibleChange(browserPanel.visible);
+    }
+  }, [browserPanel.visible]);
+
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    if (externalUpdateRef.current) {
+      externalUpdateRef.current = false;
+      return;
+    }
+    if (inspectorPanel.visible !== inspectorVisible && onInspectorVisibleChange) {
+      onInspectorVisibleChange(inspectorPanel.visible);
+    }
+  }, [inspectorPanel.visible]);
+
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    if (externalUpdateRef.current) {
+      externalUpdateRef.current = false;
+      return;
+    }
+    if (consolePanel.visible !== consoleVisible && onConsoleVisibleChange) {
+      onConsoleVisibleChange(consolePanel.visible);
+    }
+  }, [consolePanel.visible]);
 
   const defaultBrowserFiles: BrowserFile[] = browserFiles.length > 0 ? browserFiles : [
+    {
+      id: 'project-files',
+      name: 'Project Files',
+      type: 'folder',
+      path: '/project',
+      children: [],
+    },
     {
       id: 'samples',
       name: 'Samples',
@@ -193,43 +246,109 @@ export function StudioOneWrapper({
     },
   ];
 
+  const consoleElement = (
+    <StudioOneConsole
+      tracks={tracks.map((t, i) => ({
+        ...t,
+        trackNumber: t.trackNumber || i + 1,
+        inserts: t.inserts || [],
+        sends: t.sends || [],
+      }))}
+      busses={busses}
+      masterVolume={masterVolume}
+      selectedTrackId={selectedTrackId}
+      onTrackVolumeChange={onTrackVolumeChange}
+      onTrackPanChange={onTrackPanChange}
+      onTrackMuteToggle={onTrackMuteToggle}
+      onTrackSoloToggle={onTrackSoloToggle}
+      onTrackArmedToggle={onTrackArmedToggle}
+      onBusVolumeChange={onBusVolumeChange || (() => {})}
+      onBusPanChange={onBusPanChange || (() => {})}
+      onBusMuteToggle={onBusMuteToggle || (() => {})}
+      onBusSoloToggle={onBusSoloToggle || (() => {})}
+      onMasterVolumeChange={onMasterVolumeChange}
+      onAddTrack={onAddTrack}
+      onAddBus={onAddBus || (() => {})}
+      onTrackSelect={onTrackSelect}
+    />
+  );
+
+  const browserElement = (
+    <StudioOneBrowser
+      files={defaultBrowserFiles}
+      onFileSelect={onFileSelect || (() => {})}
+      onFileDragStart={onFileDragStart || (() => {})}
+      onFilePreview={onFilePreview || (() => {})}
+      onFileAdd={onFileAdd || (() => {})}
+      onToggleFavorite={() => {}}
+    />
+  );
+
+  const arrangerElement = arrangerTrackVisible ? (
+    <ArrangerTrack
+      sections={arrangerSections}
+      bpm={bpm}
+      timeSignature={[4, 4]}
+      pixelsPerBar={pixelsPerBar}
+      scrollOffset={scrollOffset}
+      visible={arrangerTrackVisible}
+      onToggleVisibility={toggleArrangerTrack}
+      onSectionAdd={onArrangerSectionAdd || (() => {})}
+      onSectionUpdate={onArrangerSectionUpdate || (() => {})}
+      onSectionDelete={onArrangerSectionDelete || (() => {})}
+      onSectionDuplicate={() => {}}
+      onSectionMove={() => {}}
+      onSectionResize={() => {}}
+    />
+  ) : null;
+
+  const launcherElement = (
+    <LauncherGrid
+      scenes={[
+        { id: '1', name: 'Scene 1', clips: [] },
+        { id: '2', name: 'Scene 2', clips: [] },
+        { id: '3', name: 'Scene 3', clips: [] },
+      ]}
+      tracks={tracks.map((t) => ({
+        id: t.id,
+        name: t.name,
+        color: t.color,
+        armed: t.armed || false,
+      }))}
+      onClipTrigger={() => {}}
+      onSceneTrigger={() => {}}
+      onSceneStop={() => {}}
+      onAddScene={() => {}}
+      onAddClip={() => {}}
+      onStopAll={() => {}}
+    />
+  );
+
+  if (useNewLayout) {
+    return (
+      <StudioOneLayout
+        toolbar={toolbar}
+        transport={transport}
+        inspector={inspector}
+        arranger={arrangerElement}
+        arrange={timeline || children}
+        console={consoleElement}
+        browser={browserElement}
+        launcher={launcherElement}
+      />
+    );
+  }
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: cssVariables }} />
       
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Main content from parent (LayoutGrid) */}
         <div className="flex-1 flex overflow-hidden">
           {children}
         </div>
 
-        {/* Studio One Console - replaces or augments the dock */}
-        {consolePanel.visible && (
-          <StudioOneConsole
-            tracks={tracks.map((t, i) => ({
-              ...t,
-              trackNumber: t.trackNumber || i + 1,
-              inserts: t.inserts || [],
-              sends: t.sends || [],
-            }))}
-            busses={busses}
-            masterVolume={masterVolume}
-            selectedTrackId={selectedTrackId}
-            onTrackVolumeChange={onTrackVolumeChange}
-            onTrackPanChange={onTrackPanChange}
-            onTrackMuteToggle={onTrackMuteToggle}
-            onTrackSoloToggle={onTrackSoloToggle}
-            onTrackArmedToggle={onTrackArmedToggle}
-            onBusVolumeChange={onBusVolumeChange || (() => {})}
-            onBusPanChange={onBusPanChange || (() => {})}
-            onBusMuteToggle={onBusMuteToggle || (() => {})}
-            onBusSoloToggle={onBusSoloToggle || (() => {})}
-            onMasterVolumeChange={onMasterVolumeChange}
-            onAddTrack={onAddTrack}
-            onAddBus={onAddBus || (() => {})}
-            onTrackSelect={onTrackSelect}
-          />
-        )}
+        {consolePanel.visible && consoleElement}
       </div>
     </>
   );

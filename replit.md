@@ -20,6 +20,7 @@ Max Booster is a comprehensive music career management platform powered by AI. I
 │   ├── src/
 │   │   ├── components/   # Reusable UI components
 │   │   │   ├── studio/   # AI Studio components (SpectralProcessor, ModulationMatrix, etc.)
+│   │   │   │   └── studioone/    # Studio One-style DAW components (Jan 2026)
 │   │   │   ├── marketplace/ # Marketplace components (AdvancedBeatSearch, ProducerAnalytics)
 │   │   │   └── social/   # Social media components (UnifiedInbox, CompetitorBenchmark)
 │   │   ├── contexts/     # React contexts

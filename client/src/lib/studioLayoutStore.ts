@@ -59,6 +59,7 @@ export interface StudioLayoutState {
   toggleAutomationVisible: () => void;
   toggleArrangerTrack: () => void;
   toggleMarkerLane: () => void;
+  setPanelVisibility: (panel: 'browser' | 'inspector' | 'console' | 'launcher', visible: boolean) => void;
   resetLayout: () => void;
 }
 
@@ -171,6 +172,14 @@ export const useStudioLayoutStore = create<StudioLayoutState>()(
       toggleArrangerTrack: () => set((state) => ({ arrangerTrackVisible: !state.arrangerTrackVisible })),
 
       toggleMarkerLane: () => set((state) => ({ markerLaneVisible: !state.markerLaneVisible })),
+
+      setPanelVisibility: (panel, visible) => set((state) => {
+        const panelKey = `${panel}Panel` as keyof StudioLayoutState;
+        const currentPanel = state[panelKey] as PanelState;
+        return {
+          [panelKey]: { ...currentPanel, visible },
+        } as Partial<StudioLayoutState>;
+      }),
 
       resetLayout: () => set(defaultState),
     }),
