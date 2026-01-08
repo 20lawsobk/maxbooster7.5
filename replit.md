@@ -35,7 +35,10 @@ Max Booster is a comprehensive music career management platform powered by AI. I
 │   │   ├── competitorBenchmarkService.ts # Social competitor analysis
 │   │   ├── analyticsAlertService.ts  # Trigger cities, playlist tracking, alerts
 │   │   ├── instantPayoutService.ts   # Risk-checked instant payouts with ledger
-│   │   └── invoiceService.ts         # Automated invoice generation
+│   │   ├── invoiceService.ts         # Automated invoice generation
+│   │   ├── audioNormalizationService.ts  # LUFS measurement, EBU R128, streaming targets
+│   │   ├── audioMetadataService.ts   # Metadata extraction, distribution validation
+│   │   └── waveformCacheService.ts   # Server-side waveform generation with caching
 │   ├── middleware/       # Express middleware
 │   ├── monitoring/       # System monitoring
 │   └── safety/           # Security features
@@ -94,6 +97,17 @@ All environment variables are configured and validated at startup:
 - **SessionStateBus**: Session-wide state management with real-time sync
 - Plugin hosting with VST3/AU support via bridge
 - Real-time collaboration with Y.js and WebSocket
+
+### Professional Audio Services (Jan 2026)
+- **LUFS Normalization**: EBU R128 loudness measurement with K-weighting, gating, and true peak detection
+- **Streaming Targets**: Spotify (-14 LUFS), Apple Music (-16 LUFS), YouTube (-14 LUFS), Tidal, Amazon, Deezer
+- **Broadcast Standards**: EBU R128 (-23 LUFS), ATSC A/85 (-24 LUFS), ARIB (-24 LUFS)
+- **Metadata Extraction**: Full ID3/Vorbis/APE tag support via music-metadata library
+- **Distribution Validation**: Platform-specific requirements check (sample rate, bit depth, codec, duration)
+- **Waveform Generation**: Server-side waveform with 24-hour caching (WAV files)
+- **Accessible Audio Player**: WCAG 2.2 compliant with full keyboard navigation (Space/K/J/L/M/0-9/arrows)
+- **File Upload Security**: 500MB limit, magic bytes validation, supports WAV/AIFF/FLAC/MP3/AAC/OGG/Opus/ALAC/CAF
+- **Audio Analysis API**: `/api/audio-analysis/analyze-metadata`, `/analyze-loudness`, `/generate-waveform`, `/validate-distribution`
 
 ### Video Creation (Custom In-House, Integrated into Content Flows)
 - **WebGL Render Engine**: OffscreenCanvas + WebGL2 with scene graph and layer compositing
