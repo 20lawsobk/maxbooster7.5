@@ -428,88 +428,107 @@ class AudioEngine {
 
   /**
    * Initialize AudioContext with professional audio quality settings
-   * Uses BeatStars-style initialization: create context early, unlock on user gesture
+   * Uses battle-tested pattern: lazy initialization inside user gesture
    *
    * @param config - Audio engine configuration
    */
   async initialize(config?: AudioEngineConfig): Promise<void> {
-    // If already initialized, just ensure it's unlocked
+    // If already fully initialized, just ensure it's running
     if (this.initialized && this.context) {
-      await this.unlockAudioContext();
+      if (this.context.state === 'suspended') {
+        try {
+          await this.context.resume();
+        } catch (e) {
+          logger.warn('Could not resume context:', e);
+        }
+      }
       return;
     }
 
-    try {
-      // Check if Web Audio API is supported
-      if (!AudioEngine.isSupported()) {
-        throw new Error('Web Audio API is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.');
-      }
+    // Merge configuration with defaults
+    if (config) {
+      this.config = { ...this.config, ...config };
+    }
 
-      // Merge configuration with defaults
-      if (config) {
-        this.config = { ...this.config, ...config };
-      }
-
-      // Get AudioContext class with webkit fallback for older Safari
+    // Step 1: Create AudioContext if not exists
+    if (!this.context) {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       
       if (!AudioContextClass) {
-        throw new Error('AudioContext not available in this browser');
+        throw new Error('Web Audio API is not supported in this browser');
       }
       
-      // Create AudioContext - let browser choose optimal settings for compatibility
-      // Don't specify sampleRate to maximize mobile compatibility
+      // Create with minimal options for maximum compatibility
+      this.context = new AudioContextClass();
+      logger.info(`AudioContext created, state: ${this.context.state}, sampleRate: ${this.context.sampleRate}`);
+    }
+
+    // Step 2: Resume if suspended (this is the key step that requires user gesture)
+    if (this.context.state === 'suspended') {
+      logger.info('AudioContext suspended, attempting resume...');
       try {
-        this.context = new AudioContextClass({
-          latencyHint: 'interactive', // Low latency for DAW use
-        });
-      } catch (createError) {
-        // Ultimate fallback: no options at all
-        logger.warn('Failed to create AudioContext with options, trying without:', createError);
-        this.context = new AudioContextClass();
+        await this.context.resume();
+        logger.info(`AudioContext resumed, state: ${this.context.state}`);
+      } catch (resumeError) {
+        logger.warn('Resume failed (may need user gesture):', resumeError);
       }
+    }
 
-      // Attach unlock listeners for future user interactions
+    // Step 3: iOS Safari silent buffer trick
+    if (this.context.state !== 'running') {
+      try {
+        const silentBuffer = this.context.createBuffer(1, 1, 22050);
+        const source = this.context.createBufferSource();
+        source.buffer = silentBuffer;
+        source.connect(this.context.destination);
+        source.start(0);
+        
+        // Try resume again after silent buffer
+        await this.context.resume();
+        logger.info(`After silent buffer, state: ${this.context.state}`);
+      } catch (e) {
+        logger.warn('Silent buffer trick failed:', e);
+      }
+    }
+
+    // Step 4: Set up audio graph only if context is ready
+    if (this.context.state === 'running' && !this.initialized) {
+      try {
+        // Update config with actual sample rate
+        this.config.sampleRate = this.context.sampleRate as SampleRate;
+        this.actualLatencyMs = calculateLatencyMs(this.config.bufferSize!, this.config.sampleRate!);
+
+        // Create master chain
+        this.createMasterChain();
+
+        // Create default master bus
+        this.createBus({
+          id: 'master',
+          name: 'Master',
+          gain: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+        });
+
+        // Calculate latency compensation
+        this.calculateLatencyCompensation();
+
+        this.initialized = true;
+        this.unlocked = true;
+        
+        logger.info(`🎵 Audio Engine Ready:
+  Sample Rate: ${this.context.sampleRate}Hz
+  State: ${this.context.state}
+  Initialized: ${this.initialized}`);
+      } catch (setupError) {
+        logger.error('Failed to set up audio graph:', setupError);
+        throw setupError;
+      }
+    } else if (this.context.state !== 'running') {
+      // Context created but not running - this is OK, will unlock on next user interaction
+      logger.info(`AudioContext created but suspended. Will resume on user interaction.`);
       this.attachUnlockListeners();
-
-      // Try to unlock immediately (will work if called from user gesture)
-      await this.unlockAudioContext();
-
-      // Update config with actual sample rate from context
-      this.config.sampleRate = this.context.sampleRate as SampleRate;
-
-      // Calculate actual latency
-      this.actualLatencyMs = calculateLatencyMs(this.config.bufferSize!, this.config.sampleRate!);
-
-      logger.info(`🎵 Audio Engine Initialized:
-  Sample Rate: ${this.context.sampleRate}Hz (browser native)
-  Buffer Size: ${this.config.bufferSize} samples
-  Latency: ${this.actualLatencyMs.toFixed(2)}ms
-  Context State: ${this.context.state}
-  Unlocked: ${this.unlocked}
-  Max Tracks: ${this.config.maxTracks}`);
-
-      // Calculate latency compensation values
-      this.calculateLatencyCompensation();
-
-      // Create master chain
-      this.createMasterChain();
-
-      // Create default master bus
-      this.createBus({
-        id: 'master',
-        name: 'Master',
-        gain: 0.8,
-        pan: 0,
-        isMuted: false,
-        isSolo: false,
-      });
-
-      this.initialized = true;
-      logger.info('Audio engine initialization complete');
-    } catch (error: unknown) {
-      logger.error('Failed to initialize AudioEngine:', error);
-      throw new Error('Failed to initialize audio context. Please check browser compatibility.');
     }
   }
 
@@ -518,15 +537,46 @@ class AudioEngine {
    * Returns true if audio is ready, false if user interaction is still needed
    */
   async ensureReady(): Promise<boolean> {
-    if (!this.initialized) {
-      await this.initialize();
-    }
+    // Always try to initialize (it's idempotent)
+    await this.initialize();
     
-    if (!this.unlocked) {
-      await this.unlockAudioContext();
+    // If still not initialized after init attempt, try harder
+    if (!this.initialized && this.context) {
+      // Try resume one more time
+      try {
+        await this.context.resume();
+        
+        // If running now, complete setup
+        if (this.context.state === 'running') {
+          this.config.sampleRate = this.context.sampleRate as SampleRate;
+          this.actualLatencyMs = calculateLatencyMs(this.config.bufferSize!, this.config.sampleRate!);
+          
+          if (!this.masterGainNode) {
+            this.createMasterChain();
+          }
+          
+          if (!this.busNodes.has('master')) {
+            this.createBus({
+              id: 'master',
+              name: 'Master', 
+              gain: 0.8,
+              pan: 0,
+              isMuted: false,
+              isSolo: false,
+            });
+          }
+          
+          this.calculateLatencyCompensation();
+          this.initialized = true;
+          this.unlocked = true;
+          logger.info('Audio engine ready after ensureReady');
+        }
+      } catch (e) {
+        logger.warn('ensureReady resume failed:', e);
+      }
     }
 
-    return this.unlocked && this.context?.state === 'running';
+    return this.initialized && this.context?.state === 'running';
   }
 
   /**
