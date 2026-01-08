@@ -129,6 +129,7 @@ import { SnapGridOverlay, Playhead, LoopRegion } from '@/components/studio/SnapG
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useMIDIDevices } from '@/hooks/useMIDIDevices';
 import { useMetronome } from '@/hooks/useMetronome';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 // Import audio plugins and AI processors
 import { CompressorPlugin } from '@/lib/audio/plugins/CompressorPlugin';
@@ -258,6 +259,9 @@ export default function Studio() {
   // DAW Professional Features
   const audioDevices = useAudioDevices();
   const midiDevices = useMIDIDevices();
+  
+  // Onboarding progress tracking
+  const { trackFirstTrackUpload, trackAIGeneratorUsed } = useOnboardingProgress();
   const metronome = useMetronome({
     bpm: tempo,
     timeSignature:
@@ -502,6 +506,7 @@ export default function Studio() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/recent-files'] });
       toast({ title: 'File uploaded successfully' });
+      trackFirstTrackUpload();
     },
     onError: (error: Error) => {
       toast({
@@ -1767,6 +1772,7 @@ export default function Studio() {
         title: 'Track added successfully',
         description: 'Generated audio has been added to your project',
       });
+      trackAIGeneratorUsed();
     },
     onError: (error: unknown) => {
       toast({
