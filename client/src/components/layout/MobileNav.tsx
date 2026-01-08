@@ -229,15 +229,15 @@ export function MobileNav() {
                   <div className="mt-3 text-xs">
                     <span className={cn(
                       'px-2 py-1 rounded-full',
-                      user.subscriptionPlan === 'lifetime' && 'bg-gradient-to-r from-amber-500 to-orange-500 text-white',
-                      user.subscriptionPlan === 'yearly' && 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
-                      user.subscriptionPlan === 'monthly' && 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
-                      !user.subscriptionPlan && 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                      user.subscriptionTier === 'lifetime' && 'bg-gradient-to-r from-amber-500 to-orange-500 text-white',
+                      user.subscriptionTier === 'yearly' && 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+                      user.subscriptionTier === 'monthly' && 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+                      !user.subscriptionTier && 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                     )}>
-                      {user.subscriptionPlan === 'lifetime' && '🎵 Lifetime Access'}
-                      {user.subscriptionPlan === 'yearly' && '📅 Yearly Plan'}
-                      {user.subscriptionPlan === 'monthly' && '📆 Monthly Plan'}
-                      {!user.subscriptionPlan && 'Free'}
+                      {user.subscriptionTier === 'lifetime' && '🎵 Lifetime Access'}
+                      {user.subscriptionTier === 'yearly' && '📅 Yearly Plan'}
+                      {user.subscriptionTier === 'monthly' && '📆 Monthly Plan'}
+                      {!user.subscriptionTier && 'Free'}
                     </span>
                   </div>
                 </div>

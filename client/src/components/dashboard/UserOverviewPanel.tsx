@@ -10,7 +10,7 @@ interface UserOverviewPanelProps {
     username: string;
     email: string;
     avatarUrl?: string;
-    subscriptionPlan?: string | null;
+    subscriptionTier?: string | null;
     createdAt?: string | Date;
     lastLogin?: string | Date;
   };
@@ -65,7 +65,7 @@ export function UserOverviewPanel({ user }: UserOverviewPanelProps) {
     };
   };
 
-  const badge = getSubscriptionBadge(user.subscriptionPlan ?? null);
+  const badge = getSubscriptionBadge(user.subscriptionTier ?? null);
 
   // Get user initials for avatar fallback
   const getInitials = (username: string | null | undefined) => {

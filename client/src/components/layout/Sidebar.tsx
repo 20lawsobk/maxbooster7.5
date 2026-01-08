@@ -103,11 +103,11 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
             </Button>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {user.subscriptionPlan === 'lifetime'
+            {user.subscriptionTier === 'lifetime'
               ? '🎵 Lifetime Access'
-              : user.subscriptionPlan === 'yearly'
+              : user.subscriptionTier === 'yearly'
                 ? '📅 Yearly Plan'
-                : user.subscriptionPlan === 'monthly'
+                : user.subscriptionTier === 'monthly'
                   ? '📆 Monthly Plan'
                   : 'Free'}
           </p>
