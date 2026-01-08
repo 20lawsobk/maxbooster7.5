@@ -651,8 +651,13 @@ class AudioEngine {
    * Load and cache audio buffer
    */
   async loadBuffer(clipId: string, url: string): Promise<AudioBuffer> {
+    // Try to ensure audio is ready
     if (!this.context) {
-      throw new Error('AudioContext not initialized');
+      await this.ensureReady();
+    }
+    
+    if (!this.context) {
+      throw new Error('Cannot load audio buffer: AudioContext not available. Please interact with the page first.');
     }
 
     // Check cache first
@@ -802,8 +807,9 @@ class AudioEngine {
    *                                               ReverbSend → DelayNode → Convolver → WetGain
    */
   createTrack(config: TrackConfig): void {
-    if (!this.context) {
-      throw new Error('AudioContext not initialized');
+    if (!this.context || !this.initialized) {
+      logger.warn('Cannot create track: AudioContext not initialized. Track will be created when audio is ready.');
+      return;
     }
 
     // Create input gain
@@ -969,7 +975,8 @@ class AudioEngine {
    */
   createBus(config: BusConfig): void {
     if (!this.context) {
-      throw new Error('AudioContext not initialized');
+      logger.warn('Cannot create bus: AudioContext not initialized');
+      return;
     }
 
     const gainNode = this.context.createGain();
@@ -1006,8 +1013,14 @@ class AudioEngine {
    * Start synchronized playback
    */
   async play(startTime: number = 0): Promise<void> {
+    // Try to ensure audio is ready before playing
+    if (!this.context || !this.initialized) {
+      await this.ensureReady();
+    }
+    
     if (!this.context) {
-      throw new Error('AudioContext not initialized');
+      logger.warn('Cannot play: AudioContext not available');
+      return;
     }
 
     // Resume context if suspended
@@ -1233,17 +1246,20 @@ class AudioEngine {
    * Load clips for a track (replaces existing clips)
    */
   async loadTrack(trackId: string, clips: AudioClip[]): Promise<void> {
-    if (!this.context) {
-      throw new Error('AudioContext not initialized');
+    // Store clips regardless of audio state
+    this.trackClips.set(trackId, clips);
+    
+    // If audio not ready, just store clips - they'll be loaded when we play
+    if (!this.context || !this.initialized) {
+      logger.info(`Clips stored for track ${trackId}, will load audio when context is ready`);
+      return;
     }
 
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) {
-      throw new Error(`Track ${trackId} not found`);
+      logger.warn(`Track ${trackId} not found in audio engine, clips stored but not preloaded`);
+      return;
     }
-
-    // Update clips in internal storage
-    this.trackClips.set(trackId, clips);
 
     // Preload buffers for all clips
     const loadPromises = clips.map((clip) => this.loadBuffer(clip.id, clip.url));
@@ -1536,9 +1552,10 @@ class AudioEngine {
    * Generate an impulse response programmatically
    * Creates exponentially decaying white noise for natural reverb
    */
-  generateImpulseResponse(duration: number, decay: number): AudioBuffer {
+  generateImpulseResponse(duration: number, decay: number): AudioBuffer | null {
     if (!this.context) {
-      throw new Error('AudioContext not initialized');
+      logger.warn('Cannot generate impulse response: AudioContext not initialized');
+      return null;
     }
 
     const sampleRate = this.context.sampleRate;
@@ -1563,9 +1580,10 @@ class AudioEngine {
   /**
    * Load an impulse response from file or cache
    */
-  async loadImpulseResponse(irId: string): Promise<AudioBuffer> {
+  async loadImpulseResponse(irId: string): Promise<AudioBuffer | null> {
     if (!this.context) {
-      throw new Error('AudioContext not initialized');
+      logger.warn('Cannot load impulse response: AudioContext not initialized');
+      return null;
     }
 
     // Check cache first
