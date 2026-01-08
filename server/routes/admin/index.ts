@@ -228,7 +228,7 @@ router.get('/users', async (req, res) => {
         firstName: users.firstName,
         lastName: users.lastName,
         role: users.role,
-        subscriptionPlan: users.subscriptionTier,
+        subscriptionTier: users.subscriptionTier,
         subscriptionStatus: users.subscriptionStatus,
         createdAt: users.createdAt,
       })
@@ -266,7 +266,7 @@ router.get('/users/export', async (req, res) => {
       firstName: users.firstName,
       lastName: users.lastName,
       role: users.role,
-      subscriptionPlan: users.subscriptionTier,
+      subscriptionTier: users.subscriptionTier,
       subscriptionStatus: users.subscriptionStatus,
       createdAt: users.createdAt,
     }).from(users).orderBy(desc(users.createdAt));
@@ -288,7 +288,7 @@ router.get('/users/:userId', async (req, res) => {
       firstName: users.firstName,
       lastName: users.lastName,
       role: users.role,
-      subscriptionPlan: users.subscriptionTier,
+      subscriptionTier: users.subscriptionTier,
       subscriptionStatus: users.subscriptionStatus,
       createdAt: users.createdAt,
     }).from(users).where(eq(users.id, userId)).limit(1);

@@ -28,7 +28,7 @@ const SUBSCRIPTION_PRICES = {
 export function ValueCalculator() {
   const { user } = useRequireSubscription();
   
-  const subscriptionTier = user?.subscriptionPlan || 'monthly';
+  const subscriptionTier = user?.subscriptionTier || 'monthly';
   const isLifetime = subscriptionTier === 'lifetime';
   const isYearly = subscriptionTier === 'yearly';
   const isMonthly = subscriptionTier === 'monthly';

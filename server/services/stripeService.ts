@@ -223,7 +223,7 @@ export class StripeService {
     if (tier === 'lifetime' && userId) {
       // Update user subscription status
       await storage.updateUser(userId, {
-        subscriptionPlan: 'lifetime',
+        subscriptionTier: 'lifetime',
         subscriptionStatus: 'active',
       });
     } else if (type === 'stem_purchase' && stemId && buyerId && sellerId && listingId) {
@@ -309,7 +309,7 @@ export class StripeService {
         const tier =
           subscription.items.data[0].price.recurring?.interval === 'year' ? 'yearly' : 'monthly';
         await storage.updateUser(user.id, {
-          subscriptionPlan: tier,
+          subscriptionTier: tier,
           subscriptionStatus: subscription.status,
         });
       }

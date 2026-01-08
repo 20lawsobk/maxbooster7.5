@@ -63,7 +63,7 @@ interface AdminUser {
   username: string;
   email: string;
   role: string;
-  subscriptionPlan: string | null;
+  subscriptionTier: string | null;
   subscriptionStatus: string | null;
   createdAt: string;
   password?: undefined;
@@ -356,7 +356,7 @@ export default function Admin() {
     if (foundUser) {
       toast({
         title: `User: ${foundUser.username || foundUser.email}`,
-        description: `Plan: ${foundUser.subscriptionPlan || 'None'} | Status: ${foundUser.subscriptionStatus || 'Unknown'} | Role: ${foundUser.role || 'user'}`,
+        description: `Plan: ${foundUser.subscriptionTier || 'None'} | Status: ${foundUser.subscriptionStatus || 'Unknown'} | Role: ${foundUser.role || 'user'}`,
       });
     }
   };
@@ -366,7 +366,7 @@ export default function Admin() {
     if (foundUser) {
       setSelectedUser(foundUser);
       setEditUserRole(foundUser.role || 'user');
-      setEditUserPlan(foundUser.subscriptionPlan || 'free');
+      setEditUserPlan(foundUser.subscriptionTier || 'free');
       setEditUserStatus(foundUser.subscriptionStatus || 'active');
       setShowEditUserDialog(true);
     }
@@ -441,7 +441,7 @@ export default function Admin() {
       (user.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || user.subscriptionStatus === statusFilter;
-    const matchesPlan = planFilter === 'all' || user.subscriptionPlan === planFilter;
+    const matchesPlan = planFilter === 'all' || user.subscriptionTier === planFilter;
 
     return matchesSearch && matchesStatus && matchesPlan;
   });
@@ -700,9 +700,9 @@ export default function Admin() {
                             <TableCell>
                               <Badge
                                 variant="secondary"
-                                className={getPlanColor(user.subscriptionPlan ?? '')}
+                                className={getPlanColor(user.subscriptionTier ?? '')}
                               >
-                                {user.subscriptionPlan?.toUpperCase() || 'FREE'}
+                                {user.subscriptionTier?.toUpperCase() || 'FREE'}
                               </Badge>
                             </TableCell>
                             <TableCell>

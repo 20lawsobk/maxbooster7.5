@@ -24,16 +24,16 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
     }
 
     // Check if subscription has expired (monthly/yearly plans only, lifetime never expires)
-    if (req.user.subscriptionEndsAt && req.user.subscriptionPlan !== 'lifetime') {
+    if (req.user.subscriptionEndsAt && req.user.subscriptionTier !== 'lifetime') {
       const subscriptionEnd = new Date(req.user.subscriptionEndsAt);
 
       if (now > subscriptionEnd) {
         // Subscription has expired - block access
-        const planName = req.user.subscriptionPlan === 'monthly' ? 'monthly' : 'yearly';
+        const planName = req.user.subscriptionTier === 'monthly' ? 'monthly' : 'yearly';
         return res.status(403).json({
           message: `Your ${planName} subscription has expired. Please renew your subscription to continue using Max Booster.`,
           subscriptionExpired: true,
-          plan: req.user.subscriptionPlan,
+          plan: req.user.subscriptionTier,
         });
       }
     }
