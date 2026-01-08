@@ -1072,12 +1072,28 @@ export default function Studio() {
     }
   }, [selectedProject?.id, selectedProject?.workflowStage]);
 
+  // Track which project's tracks have been loaded to avoid re-loading loops
+  const loadedTracksProjectRef = useRef<string | null>(null);
+  const loadedTrackIdsRef = useRef<string>('');
+
   useEffect(() => {
     if (!selectedProject || !tracks.length || isLoadingTracks) return;
+
+    // Create a stable key from track IDs to detect actual changes
+    const trackIdsKey = tracks.map(t => t.id).sort().join(',');
+    
+    // Skip if we've already loaded these exact tracks for this project
+    if (loadedTracksProjectRef.current === selectedProject.id && 
+        loadedTrackIdsRef.current === trackIdsKey) {
+      return;
+    }
 
     const loadTracksIntoController = async () => {
       try {
         await controller.loadTracks(tracks as any);
+        // Mark as loaded only after successful load
+        loadedTracksProjectRef.current = selectedProject.id;
+        loadedTrackIdsRef.current = trackIdsKey;
       } catch (error: unknown) {
         logger.error('Error loading tracks into controller:', error);
         toast({
