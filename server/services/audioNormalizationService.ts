@@ -137,17 +137,20 @@ export class AudioNormalizationService {
     const gainDb = targetLUFS - analysis.integratedLoudness;
     let gainLinear = Math.pow(10, gainDb / 20);
 
-    const maxPeakAfter = analysis.truePeak + gainDb;
+    const truePeakDb = analysis.truePeak;
+    const projectedPeakAfterGain = truePeakDb + gainDb;
     let clippingPrevented = false;
 
-    if (preventClipping && maxPeakAfter > -1) {
-      const headroom = -1 - analysis.integratedLoudness;
-      const maxGainDb = headroom + analysis.integratedLoudness;
-      gainLinear = Math.pow(10, (targetLUFS - analysis.integratedLoudness - (maxPeakAfter + 1)) / 20);
+    if (preventClipping && projectedPeakAfterGain > -1) {
+      const availableHeadroom = -1 - truePeakDb;
+      const clampedGainDb = Math.min(gainDb, availableHeadroom);
+      gainLinear = Math.pow(10, clampedGainDb / 20);
       clippingPrevented = true;
       logger.info('Clipping prevention applied', {
-        originalGain: gainDb,
-        adjustedGain: 20 * Math.log10(gainLinear),
+        originalGainDb: gainDb,
+        clampedGainDb,
+        truePeakBefore: truePeakDb,
+        projectedPeakAfter: projectedPeakAfterGain,
       });
     }
 
