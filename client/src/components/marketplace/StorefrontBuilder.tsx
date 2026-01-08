@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import {
   Store,
   Palette,
@@ -118,6 +119,7 @@ export default function StorefrontBuilder() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { trackBeatStoreSetup } = useOnboardingProgress();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedStorefront, setSelectedStorefront] = useState<Storefront | null>(null);
@@ -201,6 +203,7 @@ export default function StorefrontBuilder() {
       setShowCreateDialog(false);
       setSelectedStorefront(data);
       setCreateForm({ name: '', slug: '', templateId: '' });
+      trackBeatStoreSetup();
     },
     onError: (error: unknown) => {
       toast({

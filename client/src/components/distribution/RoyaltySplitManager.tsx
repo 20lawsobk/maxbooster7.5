@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Users, Plus, Trash2, AlertCircle, CheckCircle, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 interface RoyaltySplit {
   id: string;
@@ -49,6 +50,7 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
     percentage: 0,
   });
   const { toast } = useToast();
+  const { trackCollaboratorInvited } = useOnboardingProgress();
 
   const totalPercentage = splits.reduce((sum, split) => sum + split.percentage, 0);
   const remainingPercentage = 100 - totalPercentage;
@@ -139,6 +141,7 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
         title: 'Invites sent',
         description: `${pendingSplits.length} email invitation(s) sent successfully`,
       });
+      trackCollaboratorInvited();
     } catch (error: unknown) {
       toast({
         title: 'Failed to send invites',

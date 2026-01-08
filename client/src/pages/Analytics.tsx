@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -1201,10 +1202,28 @@ export default function Analytics() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { trackAnalyticsExplored } = useOnboardingProgress();
+  const analyticsExploredRef = useRef(false);
 
-  const [timeRange, setTimeRange] = useState('30d');
+  const [timeRange, setTimeRangeState] = useState('30d');
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('overview');
+  const [selectedTab, setSelectedTabState] = useState('overview');
+
+  const handleTimeRangeChange = useCallback((value: string) => {
+    setTimeRangeState(value);
+    if (!analyticsExploredRef.current) {
+      analyticsExploredRef.current = true;
+      trackAnalyticsExplored();
+    }
+  }, [trackAnalyticsExplored]);
+
+  const handleTabChange = useCallback((value: string) => {
+    setSelectedTabState(value);
+    if (!analyticsExploredRef.current) {
+      analyticsExploredRef.current = true;
+      trackAnalyticsExplored();
+    }
+  }, [trackAnalyticsExplored]);
   const [realtimeData, setRealtimeData] = useState<any>(null);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   const [connectionLostTime, setConnectionLostTime] = useState<number | null>(null);
@@ -1491,7 +1510,7 @@ export default function Analytics() {
               <RefreshCw className={`w-4 h-4 mr-2 ${analyticsLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Select value={timeRange} onValueChange={setTimeRange}>
+            <Select value={timeRange} onValueChange={handleTimeRangeChange}>
               <SelectTrigger className="w-32" data-testid="select-time-range">
                 <SelectValue />
               </SelectTrigger>
@@ -1611,7 +1630,7 @@ export default function Analytics() {
           />
         </StatCardRow>
 
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
+        <Tabs value={selectedTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className={`grid w-full h-auto ${user?.role === 'admin' ? 'grid-cols-12' : 'grid-cols-10'}`}>
             <TabsTrigger value="overview" data-testid="tab-overview" className="text-xs px-2">
               Overview

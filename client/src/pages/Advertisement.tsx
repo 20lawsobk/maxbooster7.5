@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -318,6 +319,15 @@ export default function Advertisement() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { trackZeroCostAdvertisingExplored } = useOnboardingProgress();
+  const advertisingExploredRef = useRef(false);
+
+  const handleTrackAdvertisingExplored = () => {
+    if (!advertisingExploredRef.current) {
+      advertisingExploredRef.current = true;
+      trackZeroCostAdvertisingExplored();
+    }
+  };
 
   const { data: audienceSegmentsData } = useQuery<{ segments: AudienceSegment[] }>({
     queryKey: ['/api/advertising/audience-segments'],
@@ -368,8 +378,20 @@ export default function Advertisement() {
   const forecasts: ForecastData[] = Array.isArray(forecastsData) ? forecastsData : forecastsData?.forecasts || [];
   const competitorInsights: CompetitorInsight[] = Array.isArray(competitorInsightsData) ? competitorInsightsData : competitorInsightsData?.insights || [];
 
-  const [isCreateCampaignOpen, setIsCreateCampaignOpen] = useState(false);
-  const [activeEnterpriseTab, setActiveEnterpriseTab] = useState('creative-automation');
+  const [isCreateCampaignOpen, setIsCreateCampaignOpenState] = useState(false);
+  const [activeEnterpriseTab, setActiveEnterpriseTabState] = useState('creative-automation');
+
+  const setIsCreateCampaignOpen = (open: boolean) => {
+    setIsCreateCampaignOpenState(open);
+    if (open) {
+      handleTrackAdvertisingExplored();
+    }
+  };
+
+  const setActiveEnterpriseTab = (tab: string) => {
+    setActiveEnterpriseTabState(tab);
+    handleTrackAdvertisingExplored();
+  };
   const [videoPlatform, setVideoPlatform] = useState<VideoPlatform>('instagram');
   const [generatedVideos, setGeneratedVideos] = useState<Array<{ url: string; blob: Blob; createdAt: Date }>>([]);
   const [campaignForm, setCampaignForm] = useState({
