@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { uploadWithProgress } from '@/lib/queryClient';
+import { UploadList, type UploadItemData } from '@/components/ui/upload-item';
 import {
   Upload,
   FileAudio,
@@ -14,6 +15,7 @@ import {
   Loader2,
   Music,
   FolderOpen,
+  Clipboard,
 } from 'lucide-react';
 
 interface UploadingFile {
@@ -60,10 +62,43 @@ export function FileUploadZone({
 }: FileUploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
+  const [isFocused, setIsFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   const processedExternalFilesRef = useRef<FileList | null>(null);
+  const abortControllersRef = useRef<Map<string, () => void>>(new Map());
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!dropZoneRef.current?.contains(document.activeElement) && !isFocused) return;
+      
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const audioFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === 'file' && item.type.startsWith('audio/')) {
+          const file = item.getAsFile();
+          if (file) audioFiles.push(file);
+        }
+      }
+
+      if (audioFiles.length > 0) {
+        e.preventDefault();
+        processFiles(audioFiles);
+        toast({
+          title: `${audioFiles.length} file${audioFiles.length > 1 ? 's' : ''} pasted`,
+          description: 'Starting upload...',
+        });
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [isFocused, processFiles, toast]);
 
   const validateFile = useCallback((file: File): string | null => {
     const extension = '.' + file.name.split('.').pop()?.toLowerCase();
@@ -240,7 +275,28 @@ export function FileUploadZone({
   }, []);
 
   const removeFile = useCallback((id: string) => {
+    const abortFn = abortControllersRef.current.get(id);
+    if (abortFn) {
+      abortFn();
+      abortControllersRef.current.delete(id);
+    }
     setUploadingFiles((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const retryFile = useCallback((id: string) => {
+    const file = uploadingFiles.find(f => f.id === id);
+    if (file && file.status === 'error') {
+      setUploadingFiles(prev => prev.map(f => 
+        f.id === id ? { ...f, status: 'pending' as const, progress: 0, error: undefined } : f
+      ));
+      uploadFile({ ...file, status: 'pending', progress: 0 });
+    }
+  }, [uploadingFiles, uploadFile]);
+
+  const cancelAllUploads = useCallback(() => {
+    abortControllersRef.current.forEach((abortFn) => abortFn());
+    abortControllersRef.current.clear();
+    setUploadingFiles([]);
   }, []);
 
   const hasActiveUploads = uploadingFiles.some(
@@ -251,21 +307,26 @@ export function FileUploadZone({
     return (
       <div className={cn('space-y-2', className)}>
         <div
+          ref={dropZoneRef}
           className={cn(
             'relative border-2 border-dashed rounded-lg p-4 transition-all duration-200 cursor-pointer touch-manipulation',
             isDragging
               ? 'border-primary bg-primary/10'
-              : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 active:bg-muted/70'
+              : isFocused
+                ? 'border-primary/70 bg-primary/5'
+                : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 active:bg-muted/70'
           )}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onClick={handleBrowseClick}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBrowseClick(); } }}
-          aria-label="Click or tap to upload audio files"
+          aria-label="Click or tap to upload audio files. Paste with Ctrl+V."
         >
           <input
             ref={fileInputRef}
@@ -329,21 +390,26 @@ export function FileUploadZone({
   return (
     <div className={cn('space-y-3 sm:space-y-4', className)}>
       <div
+        ref={dropZoneRef}
         className={cn(
           'relative border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-8 transition-all duration-200 cursor-pointer touch-manipulation',
           isDragging
             ? 'border-primary bg-primary/10 scale-[1.01] sm:scale-[1.02]'
-            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 active:bg-muted/50'
+            : isFocused
+              ? 'border-primary/70 bg-primary/5 ring-2 ring-primary/20'
+              : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 active:bg-muted/50'
         )}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onClick={handleBrowseClick}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBrowseClick(); } }}
-        aria-label="Click or tap to upload audio files"
+        aria-label="Click or tap to upload audio files. You can also paste files with Ctrl+V."
       >
         <input
           ref={fileInputRef}
@@ -375,7 +441,7 @@ export function FileUploadZone({
               {isDragging ? 'Drop your audio files here' : 'Tap to upload audio files'}
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-              or drag & drop files here
+              or drag & drop • paste with Ctrl+V
             </p>
             <p className="text-xs text-muted-foreground sm:hidden">
               Tap anywhere in this area
