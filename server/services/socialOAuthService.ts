@@ -111,7 +111,7 @@ export class SocialOAuthService {
       
       for (const account of expiringAccounts) {
         try {
-          if (!account.tokenExpiresAt) continue;
+          if (!account.tokenExpiresAt || !account.refreshToken) continue;
 
           const expiresAt = new Date(account.tokenExpiresAt).getTime();
           const timeUntilExpiry = expiresAt - Date.now();
@@ -119,7 +119,15 @@ export class SocialOAuthService {
           // Refresh if expiring within buffer period
           if (timeUntilExpiry > 0 && timeUntilExpiry <= TOKEN_REFRESH_BUFFER_MS) {
             logger.info(`🔄 Proactively refreshing token for user ${account.userId} on ${account.platform}`);
-            await this.refreshAccessToken(account.userId, account.platform);
+            
+            // Decrypt the refresh token before passing to refreshAccessToken
+            const decryptedRefreshToken = this.decryptToken(account.refreshToken);
+            if (decryptedRefreshToken) {
+              await this.refreshAccessToken(account.userId, account.platform, decryptedRefreshToken);
+            } else {
+              // Fallback to internal fetch if decryption fails
+              await this.refreshAccessToken(account.userId, account.platform);
+            }
           }
         } catch (error) {
           logger.warn(`Failed to check/refresh token for ${account.userId}:${account.platform}:`, error);
@@ -421,7 +429,8 @@ export class SocialOAuthService {
    */
   async refreshAccessToken(
     userId: string,
-    platform: string
+    platform: string,
+    providedRefreshToken?: string
   ): Promise<{ accessToken: string; expiresIn?: number }> {
     const config = this.oauthConfigs.get(platform);
     if (!config) {
@@ -429,16 +438,21 @@ export class SocialOAuthService {
     }
 
     try {
-      // Get refresh token from database
-      const tokens = await this.getStoredTokens(userId, platform);
-      if (!tokens?.refreshToken) {
-        throw new Error('No refresh token available');
+      let refreshToken = providedRefreshToken;
+
+      if (!refreshToken) {
+        // Get refresh token from database if not provided
+        const tokens = await this.getStoredTokens(userId, platform);
+        if (!tokens?.refreshToken) {
+          throw new Error('No refresh token available');
+        }
+        refreshToken = tokens.refreshToken;
       }
 
       const response = await axios.post(config.tokenUrl, {
         client_id: config.clientId,
         client_secret: config.clientSecret,
-        refresh_token: tokens.refreshToken,
+        refresh_token: refreshToken,
         grant_type: 'refresh_token',
       });
 
@@ -561,7 +575,11 @@ export class SocialOAuthService {
       updatedAt: new Date().toISOString(),
     };
 
-    await storage.updateUserSocialToken(userId, platform, JSON.stringify(updated));
+    // Encrypt updated token data before storing
+    const encryptedData = this.encryptToken(JSON.stringify(updated));
+    await storage.updateUserSocialToken(userId, platform, encryptedData);
+    
+    logger.info(`🔐 Encrypted and updated access token for user ${userId} on ${platform}`);
   }
 }
 
