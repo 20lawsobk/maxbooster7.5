@@ -164,6 +164,63 @@ The following 14 feature domains are REQUIRED for production launch:
 
 ---
 
+## PHASE 3 ARCHITECTURE CLEANUP (2026-01-09)
+
+### Completed Cleanup Actions
+1. **Removed legacy `src/` directory** - Was a stale duplicate of `client/src/` with outdated components; confirmed not referenced in any imports, tsconfig, or vite config
+
+### Architectural Recommendations (Future Work)
+These items are documented for post-launch cleanup but are LOW PRIORITY for MVP:
+
+1. **Modularize routes.ts** (3120 lines)
+   - Current: All auth/user endpoints in single monolithic file
+   - Recommendation: Split into `server/routes/auth/`, `server/routes/user/`, `server/routes/storage/`
+   - Risk: HIGH - Refactoring core auth could introduce regressions
+   - Priority: Post-launch
+
+2. **Improve dynamic import resilience**
+   - Current: `safeLoadRoute()` catches failures silently with warning logs
+   - Recommendation: Add route health checks and surface failed routes in admin dashboard
+   - Priority: Post-launch
+
+3. **Consolidate service layer**
+   - Current: 130+ service files with some overlap
+   - Recommendation: Identify and merge duplicate functionality
+   - Priority: Post-launch
+
+4. **Test coverage expansion**
+   - Current: ~7 test files covering basic scenarios
+   - Recommendation: Add integration tests for all P0 endpoints
+   - Priority: Phase 4 (Test Matrix)
+
+### Directory Structure (Current)
+```
+/
+├── client/                  # React frontend (SPA)
+│   ├── public/             # Static assets
+│   └── src/                # Source code
+│       ├── components/     # UI components
+│       ├── hooks/          # Custom React hooks
+│       ├── lib/            # Utilities
+│       └── pages/          # Route pages
+├── server/                  # Express backend
+│   ├── config/             # Configuration
+│   ├── middleware/         # Express middleware
+│   ├── routes/             # API route handlers
+│   ├── services/           # Business logic
+│   ├── workers/            # Background jobs
+│   └── simulations/        # Simulation engines
+├── shared/                  # Shared code (DO NOT MODIFY)
+│   ├── ml/                 # Machine learning models
+│   ├── video/              # Video rendering
+│   └── schema.ts           # Database schema
+├── migrations/             # Drizzle migrations
+├── tests/                  # Test files
+└── pocket-dimensions/      # Local file storage
+```
+
+---
+
 ## User Preferences
 I prefer clear and concise communication.
 I value iterative development and frequent updates.
