@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { posts, approvalHistory, users, notifications } from '@shared/schema';
-import { eq, and, or, desc } from 'drizzle-orm';
+import { eq, and, or, desc, sql } from 'drizzle-orm';
 import { notificationService } from './notificationService';
 import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../logger.js';
@@ -62,13 +62,19 @@ export class ApprovalService {
   }
 
   async getUserRole(userId: string): Promise<UserRole> {
-    const [user] = await db
-      .select({ socialRole: users.socialRole })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    return (user?.socialRole as UserRole) || 'content_creator';
+    try {
+      const result = await db.execute<{ role: string | null }>(
+        sql`SELECT role FROM users WHERE id = ${userId} LIMIT 1`
+      );
+      const user = result.rows?.[0];
+      if (user?.role === 'admin') {
+        return 'admin';
+      }
+      return 'content_creator';
+    } catch (error) {
+      logger.warn('getUserRole error, defaulting to content_creator:', error);
+      return 'content_creator';
+    }
   }
 
   async checkPermission(userId: string, action: string): Promise<boolean> {
@@ -404,26 +410,62 @@ export class ApprovalService {
         return [];
       }
 
-      const pendingPosts = await db
-        .select({
-          id: posts.id,
-          campaignId: posts.campaignId,
-          platform: posts.platform,
-          content: posts.content,
-          mediaUrls: posts.mediaUrls,
-          approvalStatus: posts.approvalStatus,
-          submittedBy: posts.submittedBy,
-          scheduledAt: posts.scheduledAt,
-          createdAt: posts.createdAt,
-          submitterEmail: users.email,
-          submitterName: users.firstName,
-        })
-        .from(posts)
-        .leftJoin(users, eq(posts.submittedBy, users.id))
-        .where(eq(posts.approvalStatus, 'pending_review'))
-        .orderBy(desc(posts.createdAt));
+      const result = await db.execute<{
+        id: string;
+        user_id: string;
+        campaign_id: string | null;
+        platform: string;
+        content: string | null;
+        media_urls: string[] | null;
+        status: string | null;
+        approval_status: string | null;
+        submitted_by: string | null;
+        reviewed_by: string | null;
+        scheduled_at: Date | null;
+        created_at: Date | null;
+      }>(
+        sql`SELECT id, user_id, campaign_id, platform, content, media_urls, status, approval_status, submitted_by, reviewed_by, scheduled_at, created_at FROM posts WHERE approval_status = 'pending_review' ORDER BY created_at DESC`
+      );
 
-      return pendingPosts;
+      const pendingPosts = result.rows || [];
+
+      const enrichedPosts = await Promise.all(
+        pendingPosts.map(async (post) => {
+          let submitterEmail = null;
+          let submitterName = null;
+
+          if (post.submitted_by) {
+            try {
+              const userResult = await db.execute<{ email: string; first_name: string | null }>(
+                sql`SELECT email, first_name FROM users WHERE id = ${post.submitted_by} LIMIT 1`
+              );
+              const submitter = userResult.rows?.[0];
+              if (submitter) {
+                submitterEmail = submitter.email;
+                submitterName = submitter.first_name;
+              }
+            } catch {
+              // User lookup failed, continue without enrichment
+            }
+          }
+
+          return {
+            id: post.id,
+            campaignId: post.campaign_id,
+            platform: post.platform,
+            content: post.content,
+            mediaUrls: post.media_urls,
+            approvalStatus: post.approval_status,
+            submittedBy: post.submitted_by,
+            scheduledAt: post.scheduled_at,
+            createdAt: post.created_at,
+            submitterEmail,
+            submitterName,
+          };
+        })
+      );
+
+      return enrichedPosts;
     } catch (error: unknown) {
       logger.error('Get pending approvals error:', error);
       return [];

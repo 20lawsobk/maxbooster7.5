@@ -7,6 +7,8 @@ export { clusterSessionManager } from './clusterSession.js';
 import { logger } from '../logger.js';
 import { distributedCache } from './distributedCache.js';
 import { clusterSessionManager } from './clusterSession.js';
+import { autoScalingManager } from './autoScaling.js';
+import { circuitBreakerRegistry } from './circuitBreaker.js';
 
 export async function initializeInfrastructure(): Promise<void> {
   logger.info('════════════════════════════════════════════════════════');
@@ -38,9 +40,6 @@ export function getInfrastructureStatus(): {
   circuitBreakers: any;
   scaling: any;
 } {
-  const { autoScalingManager } = require('./autoScaling.js');
-  const { circuitBreakerRegistry } = require('./circuitBreaker.js');
-  
   return {
     cache: distributedCache.getStats(),
     sessions: clusterSessionManager.getStatus(),
