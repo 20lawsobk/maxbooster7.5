@@ -216,7 +216,140 @@ These items are documented for post-launch cleanup but are LOW PRIORITY for MVP:
 │   └── schema.ts           # Database schema
 ├── migrations/             # Drizzle migrations
 ├── tests/                  # Test files
-└── pocket-dimensions/      # Local file storage
+└── pocket-dimensions/      # Local file storage (legacy)
+```
+
+---
+
+## PHASE 4 TEST & DIAGNOSTIC MATRIX (2026-01-09)
+
+### Storage Configuration
+- **Provider**: Replit Object Storage
+- **Bucket ID**: replit-objstore-a2e7d94c-7464-44d3-927f-bc16cf12bdf5
+- **Status**: ACTIVE
+
+### Health Check Endpoints (Production Ready)
+| Endpoint | Purpose | Response |
+|----------|---------|----------|
+| `GET /api/health` | Basic health check | `{"status":"ok"}` |
+| `GET /api/system/health` | Comprehensive health | Full system status with components |
+| `GET /api/system/status` | External monitoring | Uptime, error rate, memory |
+| `GET /api/system/metrics` | Prometheus metrics | Metrics for external scrapers |
+| `GET /api/system/process` | Process monitoring | CPU, memory, handles |
+| `GET /api/system/memory` | Memory details | Heap usage, GC stats |
+| `GET /api/system/database` | Database health | Connection pool, query stats |
+| `GET /api/system/database/metrics` | Query telemetry | P95 latency, slow queries |
+| `GET /api/health/circuits` | Circuit breaker status | All external service states |
+| `GET /api/health/circuits/:name` | Individual circuit | Single service status |
+| `POST /api/health/circuits/:name/reset` | Reset circuit | Recovery action |
+| `POST /api/health/circuits/reset-all` | Reset all circuits | Global recovery |
+
+### Existing Test Infrastructure
+| Category | Path | Description |
+|----------|------|-------------|
+| Unit | `tests/unit/` | Basic unit tests |
+| Integration | `tests/integration/stripe-verification.ts` | Stripe API verification |
+| Load | `tests/load/load-test.ts` | Load testing framework |
+| Smoke | `tests/smoke/post-deployment-tests.ts` | Post-deploy verification |
+| Chaos | `tests/chaos/worker-crash-test.ts` | Worker resilience |
+| Burn-in | `tests/burn-in/24-hour-test.ts` | 24-hour stability test |
+
+### P0 Feature Test Matrix
+| Feature | Endpoints to Test | Test Type | Priority |
+|---------|------------------|-----------|----------|
+| **Auth - Happy Path** | | | |
+| Auth - Register | POST /api/auth/register | Integration | CRITICAL |
+| Auth - Login | POST /api/auth/login | Integration | CRITICAL |
+| Auth - Logout | POST /api/auth/logout | Integration | CRITICAL |
+| Auth - 2FA Setup | POST /api/auth/2fa/setup | Integration | CRITICAL |
+| Auth - 2FA Verify | POST /api/auth/2fa/verify | Integration | CRITICAL |
+| Auth - Session | GET /api/auth/me | Integration | CRITICAL |
+| **Auth - Negative Path** | | | |
+| Auth - Invalid Credentials | POST /api/auth/login (wrong password) | Integration | CRITICAL |
+| Auth - Duplicate Email | POST /api/auth/register (existing email) | Integration | CRITICAL |
+| Auth - Password Reset | POST /api/auth/forgot-password | Integration | CRITICAL |
+| Auth - Session Revocation | POST /api/auth/sessions/terminate | Integration | CRITICAL |
+| **Billing - Happy Path** | | | |
+| Billing - Checkout | POST /api/billing/create-checkout | Integration | CRITICAL |
+| Billing - Webhook | POST /api/webhooks/stripe | Integration | CRITICAL |
+| Billing - Subscription Status | GET /api/billing/subscription | Integration | CRITICAL |
+| **Billing - Negative Path** | | | |
+| Billing - Failed Payment | Webhook: payment_intent.payment_failed | Integration | CRITICAL |
+| Billing - Cancellation | POST /api/billing/cancel | Integration | HIGH |
+| Billing - Downgrade | POST /api/billing/change-plan | Integration | HIGH |
+| **Dashboard & Onboarding** | | | |
+| Dashboard - Overview | GET /api/dashboard/* | Integration | CRITICAL |
+| Onboarding - Status | GET /api/auth/onboarding-status | Integration | CRITICAL |
+| Onboarding - Update | POST /api/auth/update-onboarding | Integration | CRITICAL |
+| Onboarding - Tasks | GET /api/onboarding/tasks | Integration | CRITICAL |
+| **Settings & Profile** | | | |
+| Profile - Get | GET /api/auth/profile | Integration | CRITICAL |
+| Profile - Update | PUT /api/auth/profile | Integration | CRITICAL |
+| Preferences - Get | GET /api/auth/preferences | Integration | CRITICAL |
+| Preferences - Update | PUT /api/auth/preferences | Integration | CRITICAL |
+| Notifications - Get | GET /api/auth/notifications | Integration | CRITICAL |
+| **Projects & Workspace** | | | |
+| Projects - List | GET /api/studio/projects | Integration | HIGH |
+| Projects - Create | POST /api/studio/projects | Integration | HIGH |
+| Projects - Load | GET /api/studio/projects/:id | Integration | HIGH |
+| Workspace - Status | GET /api/workspace/status | Integration | HIGH |
+| **Storage Verification** | | | |
+| Storage - Upload | POST (test file upload) | Smoke | CRITICAL |
+| Storage - Download | GET (test file download) | Smoke | CRITICAL |
+| Storage - Delete | DELETE (test file cleanup) | Smoke | HIGH |
+| **Studio - Core** | | | |
+| Studio - Session | GET/POST /api/studio/* | Integration | HIGH |
+| **Distribution** | | | |
+| Distribution - Release | POST /api/distribution/releases | Integration | HIGH |
+| Distribution - Status | GET /api/distribution/releases/:id | Integration | HIGH |
+| **Admin** | | | |
+| Admin - Dashboard | GET /api/admin/dashboard | Integration | HIGH |
+| Admin - Users | GET /api/admin/users | Integration | HIGH |
+
+### Diagnostic Commands
+```bash
+# Check system health
+curl http://localhost:5000/api/system/health
+
+# Check external services
+curl http://localhost:5000/api/health/circuits
+
+# Run smoke tests
+npx tsx tests/smoke/post-deployment-tests.ts
+
+# Run load tests
+npx tsx tests/load/load-test.ts
+
+# Run 24-hour burn-in
+npx tsx tests/burn-in/24-hour-test.ts
+```
+
+### Monitoring Integrations
+- **Sentry**: Error tracking configured (DSN in secrets)
+- **Redis**: Queue monitoring and session tracking
+- **Database**: Query telemetry with P95 metrics
+- **Circuit Breakers**: 12 external services monitored (Stripe, SendGrid, social APIs, etc.)
+
+### Alert Thresholds & Monitoring Triggers
+| Metric | Warning | Critical | Action |
+|--------|---------|----------|--------|
+| Memory Usage | 1024MB | 1536MB | Auto-GC / Alert |
+| Error Rate | 1% | 5% | Sentry alert |
+| Response Time (P95) | 500ms | 2000ms | Performance review |
+| Queue Backpressure | 500 jobs | 1000 jobs | Pause intake |
+| Database Slow Queries | 5/min | 20/min | Query optimization |
+| Circuit Breaker Open | 1 service | 3+ services | Service degradation |
+| Session Store Latency | 50ms | 200ms | Redis investigation |
+| Uptime | <99.5% | <99% | Incident response |
+
+### Storage Smoke Test Script
+```bash
+# Verify Replit Object Storage is working
+curl -X POST http://localhost:5000/api/storage/test-upload \
+  -H "Content-Type: application/json" \
+  -d '{"test": true}'
+
+# Expected: {"success": true, "key": "test/..."}
 ```
 
 ---
