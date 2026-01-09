@@ -63,6 +63,12 @@ export async function initializeAdmin() {
       }).where(eq(users.id, admin.id));
       logger.info('✅ Admin credentials and subscription synced');
     } else {
+      if (!adminUsername) {
+        logger.warn('⚠️ ADMIN_USERNAME not set - cannot create new admin account');
+        await seedPluginCatalog();
+        return null;
+      }
+      
       logger.info('🔐 Creating admin account...');
       isNewAdmin = true;
       
