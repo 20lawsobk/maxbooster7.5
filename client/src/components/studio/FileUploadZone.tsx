@@ -252,16 +252,20 @@ export function FileUploadZone({
       <div className={cn('space-y-2', className)}>
         <div
           className={cn(
-            'relative border-2 border-dashed rounded-lg p-4 transition-all duration-200 cursor-pointer',
+            'relative border-2 border-dashed rounded-lg p-4 transition-all duration-200 cursor-pointer touch-manipulation',
             isDragging
               ? 'border-primary bg-primary/10'
-              : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'
+              : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 active:bg-muted/70'
           )}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onClick={handleBrowseClick}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBrowseClick(); } }}
+          aria-label="Click or tap to upload audio files"
         >
           <input
             ref={fileInputRef}
@@ -278,7 +282,7 @@ export function FileUploadZone({
               <Upload className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">Drop audio files or click to browse</p>
+              <p className="text-sm font-medium">Tap to upload audio files</p>
               <p className="text-xs text-muted-foreground">WAV, MP3, FLAC, AIFF, OGG</p>
             </div>
           </div>
@@ -326,15 +330,20 @@ export function FileUploadZone({
     <div className={cn('space-y-3 sm:space-y-4', className)}>
       <div
         className={cn(
-          'relative border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-8 transition-all duration-200',
+          'relative border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-8 transition-all duration-200 cursor-pointer touch-manipulation',
           isDragging
             ? 'border-primary bg-primary/10 scale-[1.01] sm:scale-[1.02]'
-            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'
+            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 active:bg-muted/50'
         )}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        onClick={handleBrowseClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBrowseClick(); } }}
+        aria-label="Click or tap to upload audio files"
       >
         <input
           ref={fileInputRef}
@@ -363,17 +372,20 @@ export function FileUploadZone({
 
           <div className="space-y-1">
             <p className="text-base sm:text-lg font-medium">
-              {isDragging ? 'Drop your audio files here' : 'Drag & drop audio files'}
+              {isDragging ? 'Drop your audio files here' : 'Tap to upload audio files'}
             </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              or tap the button below to browse
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
+              or drag & drop files here
+            </p>
+            <p className="text-xs text-muted-foreground sm:hidden">
+              Tap anywhere in this area
             </p>
           </div>
 
           <Button 
-            onClick={handleBrowseClick} 
+            onClick={(e) => { e.stopPropagation(); handleBrowseClick(); }}
             variant="outline" 
-            className="gap-2 h-9 sm:h-10 px-4 sm:px-6 text-sm"
+            className="gap-2 min-h-[44px] h-10 sm:h-11 px-5 sm:px-6 text-sm touch-manipulation"
           >
             <FolderOpen className="h-4 w-4" />
             <span className="hidden xs:inline">Browse Files</span>

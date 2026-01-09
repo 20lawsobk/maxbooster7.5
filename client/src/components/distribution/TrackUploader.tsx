@@ -157,19 +157,30 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
       <CardContent className="space-y-4">
         {/* Drop Zone */}
         <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+          className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-colors cursor-pointer touch-manipulation ${
             isDragging
               ? 'border-primary bg-primary/5'
-              : 'border-muted-foreground/25 hover:border-primary/50'
+              : 'border-muted-foreground/25 hover:border-primary/50 active:bg-muted/50'
           }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
+          onClick={() => fileInputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
+          aria-label="Click or tap to upload audio files"
         >
-          <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-lg font-medium mb-2">Drag and drop audio files here</p>
-          <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
-          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+          <Upload className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+          <p className="text-base sm:text-lg font-medium mb-2">Tap to upload audio files</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-4 hidden sm:block">or drag & drop files here</p>
+          <p className="text-xs text-muted-foreground mb-4 sm:hidden">Tap anywhere in this area</p>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            className="min-h-[44px] touch-manipulation"
+          >
             <Upload className="h-4 w-4 mr-2" />
             Select Files
           </Button>
@@ -177,11 +188,12 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
             ref={fileInputRef}
             type="file"
             multiple
-            accept={ALLOWED_FORMATS.join(',')}
+            accept={ALLOWED_FORMATS.join(',') + ',audio/*'}
             className="hidden"
             onChange={(e) => handleFiles(e.target.files)}
+            aria-label="Upload audio files"
           />
-          <p className="text-xs text-muted-foreground mt-4">
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-4">
             Accepted formats: {ALLOWED_FORMATS.join(', ')} • Max {maxFiles} tracks
           </p>
         </div>
