@@ -59,7 +59,7 @@ export function AppLayout({ title, subtitle, children, noPadding = false }: AppL
     <FluidLayoutContext.Provider value={fluidLayout}>
       <div 
         ref={containerRef}
-        className="flex bg-gray-50 dark:bg-background overflow-hidden max-w-[1920px] mx-auto"
+        className="flex bg-gray-50 dark:bg-background overflow-hidden"
         style={{ 
           height: '100dvh',
           minHeight: isSmallHeight ? 'auto' : '100dvh',
@@ -74,14 +74,18 @@ export function AppLayout({ title, subtitle, children, noPadding = false }: AppL
           <main
             className={`flex-1 ${noPadding ? 'overflow-hidden' : `overflow-y-auto ${getPadding()} pb-safe-bottom`}`}
           >
-            {!noPadding && (
-              <div className={isMobile ? 'mb-2' : isTablet ? 'mb-3' : 'mb-4'}>
-                <BreadcrumbTrail />
+            {noPadding ? (
+              children
+            ) : (
+              <div className="max-w-[1920px] mx-auto">
+                <div className={isMobile ? 'mb-2' : isTablet ? 'mb-3' : 'mb-4'}>
+                  <BreadcrumbTrail />
+                </div>
+                <div className={getSpacing().replace('gap', 'space-y')}>
+                  {children}
+                </div>
               </div>
             )}
-            <div className={noPadding ? '' : getSpacing().replace('gap', 'space-y')}>
-              {children}
-            </div>
           </main>
         </div>
       </div>
