@@ -96,4 +96,18 @@ router.post('/seed', async (req, res) => {
   }
 });
 
+router.get('/status', async (req, res) => {
+  try {
+    const tasks = await onboardingService.getTasks();
+    res.json({ 
+      status: 'active',
+      totalTasks: tasks?.length || 0,
+      version: '1.0.0',
+    });
+  } catch (error) {
+    logger.error('Error fetching onboarding status:', error);
+    res.status(500).json({ error: 'Failed to fetch status' });
+  }
+});
+
 export default router;

@@ -2,8 +2,9 @@ import bcrypt from 'bcrypt';
 import { storage } from './storage';
 import { logger } from './logger.js';
 import { db } from './db';
-import { users, userStorage, userTasteProfiles } from '../shared/schema';
-import { eq } from 'drizzle-orm';
+import { users, userStorage, userTasteProfiles, dspProviders } from '../shared/schema';
+import { eq, sql } from 'drizzle-orm';
+import { DSP_POLICIES } from './services/dspPolicyChecker';
 
 /**
  * Admin Account Initialization
@@ -91,6 +92,7 @@ export async function initializeAdmin() {
     await initializeAdminResources(admin.id, adminEmail, isNewAdmin);
     
     await seedPluginCatalog();
+    await seedDSPProviders();
     
     return admin;
   } catch (error: unknown) {
@@ -369,4 +371,54 @@ async function seedStudioTemplates() {
 
 export async function bootstrapAdmin() {
   return initializeAdmin();
+}
+
+/**
+ * Seed DSP providers from DSP_POLICIES if the table is empty
+ */
+export async function seedDSPProviders() {
+  try {
+    logger.info('🔧 Syncing DSP providers...');
+    
+    const dspList = Object.entries(DSP_POLICIES).map(([slug, policy]) => ({
+      id: `dsp_${slug}`,
+      name: policy.name,
+      slug: slug.toLowerCase(),
+      isActive: true,
+      metadata: {
+        category: getCategoryFromSlug(slug),
+        region: 'global',
+        processingTime: '3-7 days',
+        requirements: {
+          isrc: true,
+          upc: true,
+          metadata: policy.metadata?.requiredFields || ['title', 'artist'],
+          audioFormats: policy.audio?.formats || ['WAV', 'FLAC'],
+        },
+        deliveryMethod: 'api',
+        coverArtRequirements: policy.coverArt,
+        audioRequirements: policy.audio,
+      },
+    }));
+    
+    for (const dsp of dspList) {
+      await db.insert(dspProviders).values(dsp).onConflictDoNothing();
+    }
+    
+    logger.info(`✅ Seeded ${dspList.length} DSP providers`);
+  } catch (error: any) {
+    logger.error('Failed to seed DSP providers:', error.message);
+  }
+}
+
+function getCategoryFromSlug(slug: string): string {
+  const socialPlatforms = ['tiktok', 'instagram', 'snapchat', 'facebook', 'youtube'];
+  const electronicPlatforms = ['beatport', 'traxsource', 'juno'];
+  const regionalPlatforms = ['netease', 'qq', 'jiosaavn', 'gaana', 'anghami', 'boomplay', 'yandex', 'vk'];
+  
+  if (socialPlatforms.some(p => slug.toLowerCase().includes(p))) return 'social';
+  if (electronicPlatforms.some(p => slug.toLowerCase().includes(p))) return 'electronic';
+  if (regionalPlatforms.some(p => slug.toLowerCase().includes(p))) return 'regional';
+  
+  return 'streaming';
 }
