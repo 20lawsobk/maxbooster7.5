@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Upload, X, FileAudio, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, X, FileAudio, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 
@@ -28,7 +28,9 @@ interface TrackUploaderProps {
  */
 export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const { toast } = useToast();
 
   const ALLOWED_FORMATS = ['.wav', '.mp3', '.flac', '.aac', '.ogg', '.m4a'];
@@ -45,11 +47,7 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
     return null;
   };
 
-  const handleFiles = async (newFiles: FileList | null) => {
-    if (!newFiles) return;
-
-    const fileArray = Array.from(newFiles);
-
+  const handleFilesInternal = async (fileArray: File[]) => {
     if (files.length + fileArray.length > maxFiles) {
       toast({
         title: 'Too many files',
@@ -80,7 +78,6 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
         progress: 100,
       };
 
-      // Extract audio duration
       try {
         const duration = await getAudioDuration(file);
         audioFile.duration = duration;
@@ -93,10 +90,18 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
 
     onChange([...files, ...audioFiles]);
 
-    toast({
-      title: 'Files added',
-      description: `${audioFiles.length} track(s) ready for upload`,
-    });
+    if (audioFiles.length > 0) {
+      toast({
+        title: 'Files added',
+        description: `${audioFiles.length} track(s) ready for upload`,
+      });
+    }
+  };
+
+  const handleFiles = async (newFiles: FileList | null) => {
+    if (!newFiles) return;
+    const fileArray = Array.from(newFiles);
+    handleFilesInternal(fileArray);
   };
 
   const getAudioDuration = (file: File): Promise<number> => {
@@ -157,23 +162,28 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
       <CardContent className="space-y-4">
         {/* Drop Zone */}
         <div
-          className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-colors cursor-pointer touch-manipulation ${
+          ref={dropZoneRef}
+          className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-all cursor-pointer touch-manipulation ${
             isDragging
-              ? 'border-primary bg-primary/5'
-              : 'border-muted-foreground/25 hover:border-primary/50 active:bg-muted/50'
+              ? 'border-primary bg-primary/5 scale-[1.01]'
+              : isFocused
+                ? 'border-primary/70 bg-primary/5 ring-2 ring-primary/20'
+                : 'border-muted-foreground/25 hover:border-primary/50 active:bg-muted/50'
           }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
-          aria-label="Click or tap to upload audio files"
+          aria-label="Click or tap to upload audio files. Paste with Ctrl+V."
         >
           <Upload className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
           <p className="text-base sm:text-lg font-medium mb-2">Tap to upload audio files</p>
-          <p className="text-xs sm:text-sm text-muted-foreground mb-4 hidden sm:block">or drag & drop files here</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-4 hidden sm:block">or drag & drop • paste with Ctrl+V</p>
           <p className="text-xs text-muted-foreground mb-4 sm:hidden">Tap anywhere in this area</p>
           <Button 
             type="button" 
