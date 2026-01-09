@@ -104,11 +104,12 @@ Max Booster has completed comprehensive production hardening across 5 critical p
 - Worker concurrency: Configured
 - **Responsive Optimization Completed**:
   - Normalized breakpoints: `mobileMax=768px` aligned across `useFluidLayout.ts`, `use-mobile.tsx`, and Tailwind `md:`
-  - Max-width constraint: Added `max-w-[1920px]` to AppLayout for ultra-wide screens
+  - Max-width constraint: `max-w-[1920px]` applied conditionally to content area (skipped for full-bleed layouts)
   - Safe-area padding: iOS/Android device support via `pb-safe-bottom` class
   - Touch targets: Minimum 44px via `min-h-touch`/`min-w-touch` Tailwind utilities
   - Responsive charts: All charts use `ResponsiveContainer` from recharts
   - Fluid layout system: `FluidGrid`, `FluidStack`, `FluidCardGrid` components auto-adapt
+  - Full-bleed support: Studio and other `noPadding` views render edge-to-edge
 
 ### Phase 9: Security Audit
 **Status**: Hardened
