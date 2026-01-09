@@ -2737,7 +2737,7 @@ export async function registerRoutes(
     { path: "/api/admin/metrics", name: "adminMetrics", loader: () => import("./routes/admin/metrics") },
     { path: "/api/audit", name: "audit", loader: () => import("./routes/audit") },
     { path: "/api/testing", name: "testing", loader: () => import("./routes/testing") },
-    { path: "/api/webhooks", name: "webhooksAdmin", loader: () => import("./routes/webhooks-admin") },
+    { path: "/api/admin/webhooks", name: "webhooksAdmin", loader: () => import("./routes/webhooks-admin") },
     { path: "/api/logs", name: "logs", loader: () => import("./routes/logs") },
 
     // Analytics API
