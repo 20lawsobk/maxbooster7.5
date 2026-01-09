@@ -59,7 +59,7 @@ export function AppLayout({ title, subtitle, children, noPadding = false }: AppL
     <FluidLayoutContext.Provider value={fluidLayout}>
       <div 
         ref={containerRef}
-        className="flex bg-gray-50 dark:bg-background overflow-hidden"
+        className="flex bg-gray-50 dark:bg-background overflow-hidden max-w-[1920px] mx-auto"
         style={{ 
           height: '100dvh',
           minHeight: isSmallHeight ? 'auto' : '100dvh',

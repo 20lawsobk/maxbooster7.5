@@ -21,7 +21,7 @@ interface FluidLayoutResult {
 }
 
 const DEFAULT_CONFIG: FluidLayoutConfig = {
-  mobileMax: 640,
+  mobileMax: 768,
   tabletMax: 1024,
   desktopMax: 1440,
 };
