@@ -113,6 +113,57 @@ Max Booster is a comprehensive AI-powered platform designed to empower musicians
 
 ---
 
+## PHASE 2 SCOPE FREEZE (2026-01-09)
+
+### MVP Core Features (Launch Requirements)
+The following 14 feature domains are REQUIRED for production launch:
+
+| Priority | Feature | Routes | Status | Description |
+|----------|---------|--------|--------|-------------|
+| P0 | **Auth & User Management** | routes.ts | Core | Login, register, sessions, 2FA, password reset |
+| P0 | **Dashboard** | /dashboard | Core | Overview metrics, AI career coach, revenue forecast |
+| P0 | **Settings & Profile** | /settings | Core | User profile, preferences, notifications, security settings |
+| P0 | **Onboarding** | /onboarding | Core | First-time user experience, account setup wizard |
+| P0 | **Projects** | /projects | Core | Project creation, management, workspace organization |
+| P0 | **Studio (DAW)** | /studio | Core | Music production, mixing, mastering, plugins |
+| P0 | **Distribution** | /distribution | Core | Release wizard, DSP uploads, ISRC management |
+| P0 | **Billing & Payments** | billing.ts | Core | Stripe subscriptions, invoices, payouts |
+| P0 | **Admin Panel** | /admin | Core | User management, security dashboard, monitoring |
+| P1 | **Analytics** | /analytics | Essential | Performance tracking, AI insights, charts |
+| P1 | **Social Media** | /social-media | Essential | Platform connections, scheduling, content calendar |
+| P1 | **Marketplace** | /marketplace | Essential | Beat store, producer profiles, licensing |
+| P1 | **Royalties** | /royalties | Essential | Royalty tracking, splits, reconciliation |
+| P1 | **Support & Helpdesk** | /help | Essential | Ticket system, AI assistant, knowledge base |
+| P2 | **Advertising** | /advertising | Enhance | Paid ad campaigns, ROAS tracking |
+
+### Features to DEFER (Post-Launch)
+- Desktop App (Electron) - Focus on web-first
+- Developer API marketplace - Limited demand initially
+- Competitor benchmarking - Nice-to-have
+- Advanced AI content generation - High resource usage
+
+### Subscription Tiers
+| Tier | Monthly | Features |
+|------|---------|----------|
+| Free | $0 | Basic dashboard, 3 projects, limited analytics |
+| Monthly | $29/mo | Full access, unlimited projects |
+| Yearly | $249/yr | Full access + priority support |
+| Lifetime | $999 | All features forever |
+
+### Launch Checklist (Phase 2 Exit Criteria)
+- [ ] All P0 features fully functional with no critical bugs
+- [ ] All P1 features functional with minor issues acceptable
+- [ ] Authentication working with session management
+- [ ] Payment processing (Stripe) tested with real transactions
+- [ ] Email delivery (SendGrid) verified
+- [ ] Distribution integration (LabelGrid) operational
+- [ ] Social OAuth for all major platforms working
+- [ ] Admin panel accessible and functional
+- [ ] Error logging (Sentry) capturing exceptions
+- [ ] Mobile responsive design verified
+
+---
+
 ## User Preferences
 I prefer clear and concise communication.
 I value iterative development and frequent updates.
