@@ -32,6 +32,16 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
   const [isDragging, setIsDragging] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const { toast } = useToast();
+  
+  const filesRef = useRef(files);
+  const onChangeRef = useRef(onChange);
+  const maxFilesRef = useRef(maxFiles);
+  
+  useEffect(() => {
+    filesRef.current = files;
+    onChangeRef.current = onChange;
+    maxFilesRef.current = maxFiles;
+  }, [files, onChange, maxFiles]);
 
   const ALLOWED_FORMATS = ['.wav', '.mp3', '.flac', '.aac', '.ogg', '.m4a'];
   const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -47,11 +57,26 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
     return null;
   };
 
-  const handleFilesInternal = async (fileArray: File[]) => {
-    if (files.length + fileArray.length > maxFiles) {
+  const getAudioDuration = useCallback((file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio();
+      audio.addEventListener('loadedmetadata', () => {
+        resolve(audio.duration);
+      });
+      audio.addEventListener('error', reject);
+      audio.src = URL.createObjectURL(file);
+    });
+  }, []);
+
+  const handleFilesInternal = useCallback(async (fileArray: File[]) => {
+    const currentFiles = filesRef.current;
+    const currentOnChange = onChangeRef.current;
+    const currentMaxFiles = maxFilesRef.current;
+    
+    if (currentFiles.length + fileArray.length > currentMaxFiles) {
       toast({
         title: 'Too many files',
-        description: `Maximum ${maxFiles} tracks allowed`,
+        description: `Maximum ${currentMaxFiles} tracks allowed`,
         variant: 'destructive',
       });
       return;
@@ -88,7 +113,7 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
       audioFiles.push(audioFile);
     }
 
-    onChange([...files, ...audioFiles]);
+    currentOnChange([...currentFiles, ...audioFiles]);
 
     if (audioFiles.length > 0) {
       toast({
@@ -96,7 +121,7 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
         description: `${audioFiles.length} track(s) ready for upload`,
       });
     }
-  };
+  }, [toast, validateFile, getAudioDuration]);
 
   const handleFiles = async (newFiles: FileList | null) => {
     if (!newFiles) return;
@@ -104,16 +129,35 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
     handleFilesInternal(fileArray);
   };
 
-  const getAudioDuration = (file: File): Promise<number> => {
-    return new Promise((resolve, reject) => {
-      const audio = new Audio();
-      audio.addEventListener('loadedmetadata', () => {
-        resolve(audio.duration);
-      });
-      audio.addEventListener('error', reject);
-      audio.src = URL.createObjectURL(file);
-    });
-  };
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!dropZoneRef.current?.contains(document.activeElement) && !isFocused) return;
+      
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const audioFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === 'file' && item.type.startsWith('audio/')) {
+          const file = item.getAsFile();
+          if (file) audioFiles.push(file);
+        }
+      }
+
+      if (audioFiles.length > 0) {
+        e.preventDefault();
+        handleFilesInternal(audioFiles);
+        toast({
+          title: `${audioFiles.length} file${audioFiles.length > 1 ? 's' : ''} pasted`,
+          description: 'Processing audio files...',
+        });
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [isFocused, handleFilesInternal, toast]);
 
   const removeFile = (id: string) => {
     onChange(files.filter((f) => f.id !== id));

@@ -66,39 +66,8 @@ export function FileUploadZone({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const processedExternalFilesRef = useRef<FileList | null>(null);
-  const abortControllersRef = useRef<Map<string, () => void>>(new Map());
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      if (!dropZoneRef.current?.contains(document.activeElement) && !isFocused) return;
-      
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      const audioFiles: File[] = [];
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.kind === 'file' && item.type.startsWith('audio/')) {
-          const file = item.getAsFile();
-          if (file) audioFiles.push(file);
-        }
-      }
-
-      if (audioFiles.length > 0) {
-        e.preventDefault();
-        processFiles(audioFiles);
-        toast({
-          title: `${audioFiles.length} file${audioFiles.length > 1 ? 's' : ''} pasted`,
-          description: 'Starting upload...',
-        });
-      }
-    };
-
-    document.addEventListener('paste', handlePaste);
-    return () => document.removeEventListener('paste', handlePaste);
-  }, [isFocused, processFiles, toast]);
 
   const validateFile = useCallback((file: File): string | null => {
     const extension = '.' + file.name.split('.').pop()?.toLowerCase();
@@ -225,6 +194,36 @@ export function FileUploadZone({
     }
   }, [externalFiles, processFiles, onExternalFilesProcessed]);
 
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!dropZoneRef.current?.contains(document.activeElement) && !isFocused) return;
+      
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const audioFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === 'file' && item.type.startsWith('audio/')) {
+          const file = item.getAsFile();
+          if (file) audioFiles.push(file);
+        }
+      }
+
+      if (audioFiles.length > 0) {
+        e.preventDefault();
+        processFiles(audioFiles);
+        toast({
+          title: `${audioFiles.length} file${audioFiles.length > 1 ? 's' : ''} pasted`,
+          description: 'Starting upload...',
+        });
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [isFocused, processFiles, toast]);
+
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -275,28 +274,7 @@ export function FileUploadZone({
   }, []);
 
   const removeFile = useCallback((id: string) => {
-    const abortFn = abortControllersRef.current.get(id);
-    if (abortFn) {
-      abortFn();
-      abortControllersRef.current.delete(id);
-    }
     setUploadingFiles((prev) => prev.filter((f) => f.id !== id));
-  }, []);
-
-  const retryFile = useCallback((id: string) => {
-    const file = uploadingFiles.find(f => f.id === id);
-    if (file && file.status === 'error') {
-      setUploadingFiles(prev => prev.map(f => 
-        f.id === id ? { ...f, status: 'pending' as const, progress: 0, error: undefined } : f
-      ));
-      uploadFile({ ...file, status: 'pending', progress: 0 });
-    }
-  }, [uploadingFiles, uploadFile]);
-
-  const cancelAllUploads = useCallback(() => {
-    abortControllersRef.current.forEach((abortFn) => abortFn());
-    abortControllersRef.current.clear();
-    setUploadingFiles([]);
   }, []);
 
   const hasActiveUploads = uploadingFiles.some(
