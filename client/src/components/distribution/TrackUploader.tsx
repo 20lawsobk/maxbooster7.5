@@ -46,7 +46,7 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
   const ALLOWED_FORMATS = ['.wav', '.mp3', '.flac', '.aac', '.ogg', '.m4a'];
   const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!ALLOWED_FORMATS.includes(ext)) {
       return `Invalid format. Allowed: ${ALLOWED_FORMATS.join(', ')}`;
@@ -55,7 +55,7 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
       return `File too large. Maximum size: 100MB`;
     }
     return null;
-  };
+  }, []);
 
   const getAudioDuration = useCallback((file: File): Promise<number> => {
     return new Promise((resolve, reject) => {
