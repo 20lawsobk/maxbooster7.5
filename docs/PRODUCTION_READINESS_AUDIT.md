@@ -201,7 +201,114 @@ Based on impact analysis, the recommended hardening order is:
 
 ---
 
+---
+
+## Phase 2: Core Feature Identification & Scope Freeze
+
+### Production Infrastructure Assessment
+
+**Already Production-Ready:**
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Circuit Breakers | ✅ Complete | Full state machine, fallbacks, metrics |
+| Idempotency Service | ✅ Complete | Redis-backed with memory fallback |
+| Redis Connection Factory | ✅ Complete | Singleton, exponential backoff, graceful degradation |
+| CSRF Protection | ✅ Complete | Timing-safe comparison, webhook exemptions |
+| Self-Healing Security | ✅ Complete | SLO-driven, threat detection, IP blocking |
+| Stripe Webhooks | ✅ Complete | Signature verification, audit logging |
+| Webhook Reliability | ✅ Complete | Dead letter queue, exponential backoff, retries |
+| Session Management | ✅ Complete | Redis Cloud, distributed sessions |
+| Password Hashing | ✅ Complete | bcrypt with proper salt rounds |
+| 2FA Support | ✅ Complete | TOTP with otplib, QR code generation |
+
+### Core Features (REQUIRED for Launch)
+
+| Feature | System | Priority | Status |
+|---------|--------|----------|--------|
+| User Registration/Login | Auth | Critical | Ready |
+| Session Persistence | Auth | Critical | Ready |
+| 2FA Authentication | Auth | Critical | Ready |
+| Stripe Checkout | Payments | Critical | Ready |
+| Subscription Management | Payments | Critical | Ready |
+| Project CRUD | Studio | High | Ready |
+| Track Management | Studio | High | Ready |
+| File Upload | Studio | High | Ready |
+| Social OAuth | Social | High | Needs verification |
+| Post Scheduling | Social | High | Ready |
+| Beat Listings | Marketplace | High | Ready |
+| License Generation | Marketplace | High | Ready |
+| Release Submission | Distribution | High | Needs verification |
+| DSP Platform Catalog | Distribution | High | Ready |
+
+### Experimental/Deferrable Features
+
+| Feature | System | Reason to Defer |
+|---------|--------|-----------------|
+| AI Music Generation | AI | External API dependency |
+| VST Bridge | Studio | Complex native integration |
+| Real-time Collaboration | Studio | Y.js complexity |
+| Offline Mode | Utility | Non-essential for launch |
+| Desktop App (Electron) | App | Separate distribution channel |
+| Penetration Testing | Testing | Pre-launch only |
+| Chaos Testing | Testing | Pre-launch only |
+
+### Scope Freeze Decision
+
+**IN SCOPE (Must work for launch):**
+1. Authentication (login, register, 2FA, sessions)
+2. Payments (checkout, subscriptions, webhooks)
+3. Studio (projects, tracks, uploads, basic playback)
+4. Social Media (OAuth, scheduling, posting)
+5. Marketplace (listings, purchases, licenses)
+6. Distribution (release submission, DSP catalog)
+7. Admin (dashboard, monitoring, user management)
+
+**OUT OF SCOPE (Can be disabled/deferred):**
+1. AI Music Generation (graceful degradation if API unavailable)
+2. VST Plugin Bridge (desktop feature)
+3. Offline Mode (progressive enhancement)
+4. Desktop App (separate release)
+
+---
+
+## Phase 3-12: Domain Hardening Roadmap
+
+### Hardening Order (by impact)
+
+1. **Auth/Security + Payments** (Sprint 1)
+   - Session validation edge cases
+   - Payment flow error handling
+   - Webhook idempotency verification
+
+2. **Distribution** (Sprint 2)
+   - Release workflow validation
+   - LabelGrid API error handling
+   - DSP catalog verification
+
+3. **AI Studio** (Sprint 3)
+   - Project state persistence
+   - Track upload reliability
+   - Audio engine initialization
+
+4. **Social Media** (Sprint 4)
+   - OAuth token refresh
+   - Queue backpressure
+   - Publishing guarantees
+
+5. **Marketplace** (Sprint 5)
+   - License generation accuracy
+   - Payment escrow
+   - Dispute handling
+
+6. **Admin/Monitoring** (Sprint 6)
+   - Dashboard reliability
+   - Health check coverage
+   - Alert integration
+
+---
+
 ## Document Version
 - **Created:** January 9, 2026
-- **Status:** Phase 1 Complete
-- **Next Action:** Phase 2 - Core Feature Scope Confirmation
+- **Updated:** January 9, 2026
+- **Status:** Phase 2 Complete
+- **Next Action:** Phase 3 - Architecture Cleanup & Domain Hardening
