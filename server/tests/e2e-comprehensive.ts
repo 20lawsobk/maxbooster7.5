@@ -248,11 +248,18 @@ async function testBillingSystem() {
 async function testAdminAccount() {
   logger.info('\n👤 8. ADMIN ACCOUNT TESTS');
 
+  const adminEmail = process.env.ADMIN_EMAIL;
+  
+  if (!adminEmail) {
+    logger.warn('⚠️ ADMIN_EMAIL not set - skipping admin tests');
+    return;
+  }
+
   await runTest('Admin', 'Admin user exists', async () => {
     const [admin] = await db
       .select()
       .from(users)
-      .where(eq(users.email, 'blawzmusic@gmail.com'));
+      .where(eq(users.email, adminEmail));
     if (!admin) throw new Error('Admin user not found');
   });
 
@@ -260,7 +267,7 @@ async function testAdminAccount() {
     const [admin] = await db
       .select()
       .from(users)
-      .where(eq(users.email, 'blawzmusic@gmail.com'));
+      .where(eq(users.email, adminEmail));
     if (!admin) throw new Error('Admin user not found');
     if (admin.subscriptionTier !== 'lifetime') {
       throw new Error(`Admin subscription is ${admin.subscriptionTier}, not lifetime`);

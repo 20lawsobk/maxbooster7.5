@@ -8,8 +8,13 @@
  */
 
 const BASE_URL = process.env.APP_URL || 'http://localhost:5000';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'blawzmusic@gmail.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Iamadmin123!';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+  console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required');
+  process.exit(1);
+}
 
 interface CheckResult {
   name: string;

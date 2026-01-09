@@ -7,7 +7,7 @@
  * Run: npx tsx server/scripts/setupAdmin.ts
  * 
  * Environment variables:
- * - ADMIN_EMAIL (default: blawzmusic@gmail.com)
+ * - ADMIN_EMAIL (required)
  * - ADMIN_PASSWORD (required)
  */
 
@@ -32,12 +32,12 @@ import { eq } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 
 async function setupAdmin() {
-  const adminEmail = process.env.ADMIN_EMAIL || 'blawzmusic@gmail.com';
+  const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (!adminPassword) {
-    console.error('❌ ADMIN_PASSWORD environment variable must be set');
-    console.error('   Example: ADMIN_PASSWORD=yourSecurePassword npx tsx server/scripts/setupAdmin.ts');
+  if (!adminEmail || !adminPassword) {
+    console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be set');
+    console.error('   Example: ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=yourSecurePassword npx tsx server/scripts/setupAdmin.ts');
     process.exit(1);
   }
 

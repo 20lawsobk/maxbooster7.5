@@ -6,8 +6,14 @@ import { db } from '../server/db.ts';
 import bcrypt from 'bcrypt';
 
 async function setupAdminAccount() {
-    const adminEmail = 'blawzmusic@gmail.com';
-    const adminPassword = 'Iamadmin123!';
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    
+    if (!adminEmail || !adminPassword) {
+        console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required');
+        process.exit(1);
+    }
+    
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
     // Check if admin exists

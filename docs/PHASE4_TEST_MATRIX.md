@@ -235,7 +235,7 @@ All 18 required variables must be set:
 - (+ social platform credentials)
 
 ### 5.2 Test Data
-- Admin account: blawzmusic@gmail.com / Iamadmin123!
+- Admin account: Set via ADMIN_EMAIL and ADMIN_PASSWORD environment variables
 - Test Stripe cards: Use Stripe test mode cards
 - Test releases: Use placeholder audio files
 

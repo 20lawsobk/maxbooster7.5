@@ -20,9 +20,15 @@ import { DSP_POLICIES } from './services/dspPolicyChecker';
 
 export async function initializeAdmin() {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || 'blawzmusic@gmail.com';
+    const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
-    const adminUsername = process.env.ADMIN_USERNAME || 'blawzmusic';
+    const adminUsername = process.env.ADMIN_USERNAME;
+    
+    if (!adminEmail) {
+      logger.warn('⚠️ ADMIN_EMAIL not set - skipping admin initialization');
+      await seedPluginCatalog();
+      return null;
+    }
     
     if (!adminPassword) {
       logger.warn('⚠️ ADMIN_PASSWORD not set - skipping admin initialization');
