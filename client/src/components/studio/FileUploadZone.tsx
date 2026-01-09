@@ -441,7 +441,7 @@ export function FileUploadZone({
             <span className="text-muted-foreground/60 text-[9px] sm:text-xs">Max 500MB</span>
           </div>
         </div>
-      </div>
+      </label>
 
       {uploadingFiles.length > 0 && (
         <div className="space-y-1.5 sm:space-y-2">
