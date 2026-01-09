@@ -639,9 +639,9 @@ All are intentional defensive patterns:
 | `tests/TEST_COVERAGE_GUIDE.md` | Testing documentation |
 
 ### Admin Access
-- **Email**: blawzmusic@gmail.com
-- **Password**: Iamadmin123!
-- **Subscription**: Lifetime
+- **Email**: Stored in ADMIN_EMAIL environment variable
+- **Password**: Stored in ADMIN_PASSWORD environment variable
+- **Subscription**: Lifetime (auto-provisioned on startup)
 
 ### Launch Checklist
 - [x] Storage: Replit Object Storage configured
