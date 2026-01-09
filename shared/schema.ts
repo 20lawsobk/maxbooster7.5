@@ -523,6 +523,42 @@ export const insertContractTemplateSchema = createInsertSchema(contractTemplates
 });
 
 // ============================================================================
+// MARKETPLACE DISPUTES
+// ============================================================================
+export const marketplaceDisputes = pgTable("marketplace_disputes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  buyerId: varchar("buyer_id").notNull(),
+  sellerId: varchar("seller_id").notNull(),
+  disputeType: text("dispute_type").notNull(),
+  status: text("status").default("open"),
+  subject: text("subject").notNull(),
+  description: text("description").notNull(),
+  evidence: jsonb("evidence").$type<Array<{ type: string; url: string; uploadedAt: string; uploadedBy: string }>>().default([]),
+  messages: jsonb("messages").$type<Array<{ from: string; message: string; sentAt: string; type: 'user' | 'system' | 'admin' }>>().default([]),
+  resolution: jsonb("resolution").$type<{
+    outcome: 'refund_full' | 'refund_partial' | 'no_refund' | 'license_reissued' | 'mutual_agreement';
+    refundAmount?: number;
+    explanation: string;
+    resolvedBy: string;
+    resolvedAt: string;
+  } | null>(),
+  escalatedAt: timestamp("escalated_at"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertMarketplaceDisputeSchema = createInsertSchema(marketplaceDisputes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertMarketplaceDispute = z.infer<typeof insertMarketplaceDisputeSchema>;
+export type MarketplaceDispute = typeof marketplaceDisputes.$inferSelect;
+
+// ============================================================================
 // STATUS PAGE INCIDENT UPDATES
 // ============================================================================
 export const statusPageIncidentUpdates = pgTable("status_page_incident_updates", {

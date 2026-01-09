@@ -329,6 +329,7 @@ export class ApprovalWorkflowService {
         .set({
           status: decision,
           decision,
+          decidedBy: approverId,
           decidedAt: new Date(),
           comment,
         })

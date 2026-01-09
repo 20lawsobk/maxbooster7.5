@@ -3,6 +3,8 @@
  * 
  * Handles subscription management, payment methods, and billing history
  * using Stripe as the payment provider.
+ * 
+ * SECURITY: All Stripe API calls wrapped with circuit breaker for resilience
  */
 
 import { Router, Request, Response } from 'express';
@@ -11,8 +13,13 @@ import { db } from '../db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from '../logger';
+import { executeStripeOperation } from '../services/externalServices';
+import { billingRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
+
+// SECURITY: Apply rate limiting to all billing endpoints
+router.use(billingRateLimiter);
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
@@ -48,6 +55,7 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
   next();
 };
 
+// SECURITY: Customer creation wrapped with circuit breaker and proper error handling
 async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Promise<string> {
   if (!user) throw new Error('User not found');
   if (!stripe) throw new Error('Stripe not configured');
@@ -61,17 +69,27 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
     return dbUser.stripeCustomerId;
   }
   
-  const customer = await stripe.customers.create({
-    email: user.email,
-    metadata: { userId: user.id },
-  });
-  
-  await db
-    .update(users)
-    .set({ stripeCustomerId: customer.id })
-    .where(eq(users.id, user.id));
-  
-  return customer.id;
+  // SECURITY FIX: Wrap Stripe customer creation with circuit breaker
+  try {
+    const result = await executeStripeOperation(() =>
+      stripe.customers.create({
+        email: user.email,
+        metadata: { userId: user.id },
+      })
+    );
+    
+    const customer = result.data;
+    
+    await db
+      .update(users)
+      .set({ stripeCustomerId: customer.id })
+      .where(eq(users.id, user.id));
+    
+    return customer.id;
+  } catch (error: any) {
+    logger.error('[Billing] Failed to create Stripe customer:', error.message);
+    throw new Error('Failed to create billing account. Please try again.');
+  }
 }
 
 router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
@@ -392,6 +410,17 @@ router.post('/refund', requireAuth, async (req: AuthenticatedRequest, res: Respo
     
     if (!orderId) {
       return res.status(400).json({ message: 'Order ID is required' });
+    }
+    
+    // SECURITY FIX: Validate amountCents is a positive number
+    if (amountCents !== undefined) {
+      if (typeof amountCents !== 'number' || !Number.isInteger(amountCents) || amountCents <= 0) {
+        return res.status(400).json({ message: 'Amount must be a positive integer in cents' });
+      }
+      // SECURITY: Sanity check for maximum refund amount ($10,000)
+      if (amountCents > 1000000) {
+        return res.status(400).json({ message: 'Refund amount exceeds maximum limit' });
+      }
     }
     
     const { stripeService } = await import('../services/stripeService');

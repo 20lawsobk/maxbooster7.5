@@ -132,13 +132,49 @@ export class YjsCollaborationService {
     return doc;
   }
 
+  // Force save document immediately (used before unload)
+  async forceSave(projectId: string, doc: Y.Doc): Promise<void> {
+    try {
+      const fullDocumentState = Y.encodeStateAsUpdate(doc);
+      const base64State = Buffer.from(fullDocumentState).toString('base64');
+      const redisKey = `${this.REDIS_DOC_PREFIX}${projectId}`;
+
+      await storage.saveCollabSnapshot({
+        projectId,
+        documentState: base64State,
+        snapshotHash: generateHash(fullDocumentState),
+      });
+
+      try {
+        const redis = await getRedisClient();
+        if (redis) {
+          await redis.setEx(redisKey, this.REDIS_TTL, base64State);
+        }
+      } catch (error: unknown) {
+        logger.warn('Redis cache update failed during force save:', projectId);
+      }
+    } catch (error: unknown) {
+      logger.error('Failed to force save document:', projectId, error);
+      throw error;
+    }
+  }
+
   // Clean up document (clear timers and optionally clear Redis cache)
-  async unloadDocument(projectId: string, clearCache: boolean = false) {
-    // Clear save timer
+  async unloadDocument(projectId: string, doc?: Y.Doc, clearCache: boolean = false) {
+    // Clear pending save timer first
     const timer = this.saveTimers.get(projectId);
     if (timer) {
       clearTimeout(timer);
       this.saveTimers.delete(projectId);
+    }
+
+    // Force save before unload to ensure no data loss
+    if (doc) {
+      try {
+        await this.forceSave(projectId, doc);
+      } catch (error: unknown) {
+        logger.error('Failed to force save during unload:', projectId, error);
+      }
     }
 
     // Optionally clear Redis cache (useful when project is deleted)
@@ -150,7 +186,7 @@ export class YjsCollaborationService {
           await redis.del(redisKey);
         }
       } catch (error: unknown) {
-        // Redis cache clear failed, not critical
+        logger.warn('Redis cache clear failed:', projectId);
       }
     }
   }

@@ -140,23 +140,35 @@ function addWebhookAudit(entry: WebhookAuditEntry): void {
 
 /**
  * Idempotency check - prevent duplicate webhook processing
+ * SECURITY NOTE: Uses in-memory Set. For multi-node deployments,
+ * consider using Redis-based idempotency via idempotencyService.
  */
 const processedEvents = new Set<string>();
 const PROCESSED_EVENTS_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-export function checkIdempotency(eventId: string): boolean {
-  if (processedEvents.has(eventId)) {
-    logger.info(`[Stripe Webhook] Duplicate event ignored: ${eventId}`);
-    return true;
-  }
-  
+// Check if event has already been successfully processed
+export function isEventProcessed(eventId: string): boolean {
+  return processedEvents.has(eventId);
+}
+
+// Mark event as successfully processed
+export function markEventProcessed(eventId: string): void {
   processedEvents.add(eventId);
   
   // Clean up old events periodically
   setTimeout(() => {
     processedEvents.delete(eventId);
   }, PROCESSED_EVENTS_TTL);
+}
+
+// Legacy function for backward compatibility
+export function checkIdempotency(eventId: string): boolean {
+  if (processedEvents.has(eventId)) {
+    logger.info(`[Stripe Webhook] Duplicate event ignored: ${eventId}`);
+    return true;
+  }
   
+  // NOTE: Do NOT mark as processed here - caller should use markEventProcessed after success
   return false;
 }
 
@@ -175,8 +187,10 @@ export function registerWebhookHandler(eventType: string, handler: WebhookHandle
 }
 
 export async function handleWebhookEvent(event: Stripe.Event): Promise<{ success: boolean; message: string }> {
-  // Check idempotency first
-  if (checkIdempotency(event.id)) {
+  // SECURITY FIX: Check idempotency BEFORE processing, but only mark as processed AFTER success
+  // This ensures failed events can be retried
+  if (isEventProcessed(event.id)) {
+    logger.info(`[Stripe Webhook] Duplicate event ignored: ${event.id}`);
     return { success: true, message: 'Event already processed' };
   }
 
@@ -184,13 +198,27 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<{ success
   
   if (!handler) {
     logger.warn(`[Stripe Webhook] No handler for event type: ${event.type}`);
+    // Mark unhandled events as processed to prevent repeated logs
+    markEventProcessed(event.id);
     return { success: true, message: 'Event type not handled' };
   }
 
   try {
-    return await handler(event);
+    const result = await handler(event);
+    
+    // SECURITY FIX: Only mark as processed AFTER successful handling
+    // This allows failed events to be retried by Stripe
+    if (result.success) {
+      markEventProcessed(event.id);
+    } else {
+      // Log failed processing for retry tracking
+      logger.warn(`[Stripe Webhook] Handler failed for ${event.type} (${event.id}): ${result.message}`);
+    }
+    
+    return result;
   } catch (error: any) {
-    logger.error(`[Stripe Webhook] Handler error for ${event.type}:`, error);
+    // SECURITY: Don't mark as processed on error - allow retry
+    logger.error(`[Stripe Webhook] Handler error for ${event.type} (${event.id}):`, error);
     return { success: false, message: error.message };
   }
 }

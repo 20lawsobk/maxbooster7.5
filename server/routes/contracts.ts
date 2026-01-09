@@ -5,6 +5,9 @@ import { taxFormService, TaxpayerInfo } from '../services/taxFormService';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
+import { db } from '../db';
+import { marketplaceDisputes, users } from '@shared/schema';
+import { eq, and, or, desc, notInArray } from 'drizzle-orm';
 
 interface SplitParticipant {
   userId: string;
@@ -747,6 +750,560 @@ router.post('/split-sheets/validate', async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Error validating splits:', error);
     res.status(500).json({ error: 'Failed to validate splits' });
+  }
+});
+
+// =========================================
+// MARKETPLACE DISPUTE HANDLING
+// =========================================
+
+const VALID_DISPUTE_TYPES = ['license_issue', 'quality_issue', 'non_delivery', 'unauthorized_use', 'refund_request', 'other'];
+const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
+  'open': ['under_review', 'closed'],
+  'under_review': ['pending_seller_response', 'pending_buyer_response', 'resolved', 'escalated', 'closed'],
+  'pending_seller_response': ['under_review', 'resolved', 'escalated', 'closed'],
+  'pending_buyer_response': ['under_review', 'resolved', 'escalated', 'closed'],
+  'escalated': ['resolved', 'closed'],
+  'resolved': ['closed'],
+  'closed': [],
+};
+
+const isAdminUser = (user: any): boolean => {
+  return user?.role === 'admin' || user?.role === 'superadmin';
+};
+
+const canAccessDispute = (dispute: any, userId: string, userRole: string | null): boolean => {
+  return dispute.buyerId === userId || 
+         dispute.sellerId === userId || 
+         userRole === 'admin' || 
+         userRole === 'superadmin';
+};
+
+router.post('/marketplace-disputes', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { orderId, sellerId, disputeType, subject, description, evidence } = req.body;
+
+    if (!orderId || !disputeType || !subject || !description) {
+      return res.status(400).json({ error: 'orderId, disputeType, subject, and description are required' });
+    }
+
+    if (!VALID_DISPUTE_TYPES.includes(disputeType)) {
+      return res.status(400).json({ error: `Invalid dispute type. Valid types: ${VALID_DISPUTE_TYPES.join(', ')}` });
+    }
+
+    if (subject.length > 200) {
+      return res.status(400).json({ error: 'Subject must be 200 characters or less' });
+    }
+
+    if (description.length > 5000) {
+      return res.status(400).json({ error: 'Description must be 5000 characters or less' });
+    }
+
+    const existingDisputes = await db
+      .select()
+      .from(marketplaceDisputes)
+      .where(
+        and(
+          eq(marketplaceDisputes.orderId, orderId),
+          notInArray(marketplaceDisputes.status, ['resolved', 'closed'])
+        )
+      );
+
+    if (existingDisputes.length > 0) {
+      return res.status(400).json({ error: 'An open dispute already exists for this order', disputeId: existingDisputes[0].id });
+    }
+
+    const now = new Date();
+    const initialEvidence = (evidence || []).map((e: any) => ({
+      type: e.type || 'document',
+      url: e.url,
+      uploadedAt: now.toISOString(),
+      uploadedBy: req.user!.id,
+    }));
+
+    const initialMessages = [{
+      from: 'system',
+      message: 'Dispute created. Our team will review within 24-48 hours.',
+      sentAt: now.toISOString(),
+      type: 'system' as const,
+    }];
+
+    const [dispute] = await db
+      .insert(marketplaceDisputes)
+      .values({
+        orderId,
+        buyerId: req.user!.id,
+        sellerId: sellerId || '',
+        disputeType,
+        status: 'open',
+        subject,
+        description,
+        evidence: initialEvidence,
+        messages: initialMessages,
+      })
+      .returning();
+
+    logger.info(`Marketplace dispute ${dispute.id} created for order ${orderId} by user ${req.user!.id}`);
+
+    return res.status(201).json({
+      dispute,
+      message: 'Dispute created successfully. We will review your case shortly.',
+    });
+  } catch (error: any) {
+    logger.error('Error creating marketplace dispute:', error);
+    res.status(500).json({ error: error.message || 'Failed to create dispute' });
+  }
+});
+
+router.get('/marketplace-disputes', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { status } = req.query;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const isAdmin = isAdminUser(req.user);
+
+    let disputes;
+    if (isAdmin) {
+      disputes = await db
+        .select()
+        .from(marketplaceDisputes)
+        .orderBy(desc(marketplaceDisputes.createdAt));
+    } else {
+      disputes = await db
+        .select()
+        .from(marketplaceDisputes)
+        .where(or(
+          eq(marketplaceDisputes.buyerId, userId),
+          eq(marketplaceDisputes.sellerId, userId)
+        ))
+        .orderBy(desc(marketplaceDisputes.createdAt));
+    }
+
+    if (status && typeof status === 'string') {
+      disputes = disputes.filter(d => d.status === status);
+    }
+
+    return res.json({ disputes });
+  } catch (error: any) {
+    logger.error('Error fetching marketplace disputes:', error);
+    res.status(500).json({ error: 'Failed to fetch disputes' });
+  }
+});
+
+router.get('/marketplace-disputes/:disputeId', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { disputeId } = req.params;
+    const [dispute] = await db
+      .select()
+      .from(marketplaceDisputes)
+      .where(eq(marketplaceDisputes.id, disputeId));
+
+    if (!dispute) {
+      return res.status(404).json({ error: 'Dispute not found' });
+    }
+
+    if (!canAccessDispute(dispute, req.user!.id, req.user!.role)) {
+      return res.status(403).json({ error: 'Not authorized to view this dispute' });
+    }
+
+    return res.json({ dispute });
+  } catch (error: any) {
+    logger.error('Error fetching dispute:', error);
+    res.status(500).json({ error: 'Failed to fetch dispute' });
+  }
+});
+
+router.post('/marketplace-disputes/:disputeId/message', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { disputeId } = req.params;
+    const { message } = req.body;
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    if (message.length > 2000) {
+      return res.status(400).json({ error: 'Message must be 2000 characters or less' });
+    }
+
+    const [dispute] = await db
+      .select()
+      .from(marketplaceDisputes)
+      .where(eq(marketplaceDisputes.id, disputeId));
+
+    if (!dispute) {
+      return res.status(404).json({ error: 'Dispute not found' });
+    }
+
+    if (!canAccessDispute(dispute, req.user!.id, req.user!.role)) {
+      return res.status(403).json({ error: 'Not authorized to message on this dispute' });
+    }
+
+    if (['resolved', 'closed'].includes(dispute.status || '')) {
+      return res.status(400).json({ error: 'Cannot add messages to a resolved or closed dispute' });
+    }
+
+    const isAdmin = isAdminUser(req.user);
+    const newMessage = {
+      from: req.user!.id,
+      message: message.trim(),
+      sentAt: new Date().toISOString(),
+      type: isAdmin ? 'admin' as const : 'user' as const,
+    };
+
+    const updatedMessages = [...(dispute.messages || []), newMessage];
+    let newStatus = dispute.status;
+
+    if (dispute.status === 'pending_seller_response' && dispute.sellerId === req.user!.id) {
+      newStatus = 'under_review';
+      updatedMessages.push({
+        from: 'system',
+        message: 'Seller has responded. Dispute is under review.',
+        sentAt: new Date().toISOString(),
+        type: 'system' as const,
+      });
+    } else if (dispute.status === 'pending_buyer_response' && dispute.buyerId === req.user!.id) {
+      newStatus = 'under_review';
+      updatedMessages.push({
+        from: 'system',
+        message: 'Buyer has responded. Dispute is under review.',
+        sentAt: new Date().toISOString(),
+        type: 'system' as const,
+      });
+    }
+
+    const [updatedDispute] = await db
+      .update(marketplaceDisputes)
+      .set({
+        messages: updatedMessages,
+        status: newStatus,
+        updatedAt: new Date(),
+      })
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .returning();
+
+    logger.info(`Message added to dispute ${disputeId} by user ${req.user!.id}`);
+
+    return res.json({ dispute: updatedDispute, message: 'Message added successfully' });
+  } catch (error: any) {
+    logger.error('Error adding message to dispute:', error);
+    res.status(500).json({ error: 'Failed to add message' });
+  }
+});
+
+router.post('/marketplace-disputes/:disputeId/evidence', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { disputeId } = req.params;
+    const { type, url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ error: 'Evidence URL is required' });
+    }
+
+    const [dispute] = await db
+      .select()
+      .from(marketplaceDisputes)
+      .where(eq(marketplaceDisputes.id, disputeId));
+
+    if (!dispute) {
+      return res.status(404).json({ error: 'Dispute not found' });
+    }
+
+    if (!canAccessDispute(dispute, req.user!.id, req.user!.role)) {
+      return res.status(403).json({ error: 'Not authorized to add evidence to this dispute' });
+    }
+
+    if (['resolved', 'closed'].includes(dispute.status || '')) {
+      return res.status(400).json({ error: 'Cannot add evidence to a resolved or closed dispute' });
+    }
+
+    const newEvidence = {
+      type: type || 'document',
+      url,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: req.user!.id,
+    };
+
+    const isAdmin = isAdminUser(req.user);
+    let uploaderLabel = 'admin';
+    if (!isAdmin) {
+      uploaderLabel = dispute.buyerId === req.user!.id ? 'buyer' : 'seller';
+    }
+
+    const updatedEvidence = [...(dispute.evidence || []), newEvidence];
+    const updatedMessages = [...(dispute.messages || []), {
+      from: 'system',
+      message: `New evidence uploaded by ${uploaderLabel}`,
+      sentAt: new Date().toISOString(),
+      type: 'system' as const,
+    }];
+
+    const [updatedDispute] = await db
+      .update(marketplaceDisputes)
+      .set({
+        evidence: updatedEvidence,
+        messages: updatedMessages,
+        updatedAt: new Date(),
+      })
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .returning();
+
+    logger.info(`Evidence added to dispute ${disputeId} by user ${req.user!.id}`);
+
+    return res.json({ dispute: updatedDispute, message: 'Evidence added successfully' });
+  } catch (error: any) {
+    logger.error('Error adding evidence:', error);
+    res.status(500).json({ error: 'Failed to add evidence' });
+  }
+});
+
+router.post('/marketplace-disputes/:disputeId/escalate', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { disputeId } = req.params;
+    const { reason } = req.body;
+
+    const [dispute] = await db
+      .select()
+      .from(marketplaceDisputes)
+      .where(eq(marketplaceDisputes.id, disputeId));
+
+    if (!dispute) {
+      return res.status(404).json({ error: 'Dispute not found' });
+    }
+
+    if (dispute.buyerId !== req.user!.id) {
+      return res.status(403).json({ error: 'Only the buyer can escalate a dispute' });
+    }
+
+    if (!VALID_STATUS_TRANSITIONS[dispute.status || '']?.includes('escalated')) {
+      return res.status(400).json({ error: `Cannot escalate dispute from status: ${dispute.status}` });
+    }
+
+    const now = new Date();
+    const updatedMessages = [...(dispute.messages || []), {
+      from: 'system',
+      message: `Dispute escalated${reason ? `: ${reason}` : ''}. A senior support representative will review within 24 hours.`,
+      sentAt: now.toISOString(),
+      type: 'system' as const,
+    }];
+
+    const [updatedDispute] = await db
+      .update(marketplaceDisputes)
+      .set({
+        status: 'escalated',
+        escalatedAt: now,
+        updatedAt: now,
+        messages: updatedMessages,
+      })
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .returning();
+
+    logger.info(`Dispute ${disputeId} escalated by user ${req.user!.id}`);
+
+    return res.json({ dispute: updatedDispute, message: 'Dispute escalated successfully' });
+  } catch (error: any) {
+    logger.error('Error escalating dispute:', error);
+    res.status(500).json({ error: 'Failed to escalate dispute' });
+  }
+});
+
+router.post('/marketplace-disputes/:disputeId/resolve', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { disputeId } = req.params;
+    const { outcome, refundAmount, explanation } = req.body;
+
+    if (!outcome || !explanation) {
+      return res.status(400).json({ error: 'Outcome and explanation are required' });
+    }
+
+    const validOutcomes = ['refund_full', 'refund_partial', 'no_refund', 'license_reissued', 'mutual_agreement'];
+    if (!validOutcomes.includes(outcome)) {
+      return res.status(400).json({ error: `Invalid outcome. Valid outcomes: ${validOutcomes.join(', ')}` });
+    }
+
+    if (outcome === 'refund_partial' && (refundAmount === undefined || refundAmount <= 0)) {
+      return res.status(400).json({ error: 'Partial refund requires a valid refund amount' });
+    }
+
+    const [dispute] = await db
+      .select()
+      .from(marketplaceDisputes)
+      .where(eq(marketplaceDisputes.id, disputeId));
+
+    if (!dispute) {
+      return res.status(404).json({ error: 'Dispute not found' });
+    }
+
+    const isAdmin = isAdminUser(req.user);
+    if (outcome !== 'mutual_agreement' && !isAdmin) {
+      if (dispute.buyerId !== req.user!.id && dispute.sellerId !== req.user!.id) {
+        return res.status(403).json({ error: 'Not authorized to resolve this dispute' });
+      }
+    }
+
+    if (!VALID_STATUS_TRANSITIONS[dispute.status || '']?.includes('resolved')) {
+      return res.status(400).json({ error: `Cannot resolve dispute from status: ${dispute.status}` });
+    }
+
+    const now = new Date();
+    const resolution = {
+      outcome,
+      refundAmount: outcome === 'refund_partial' ? refundAmount : undefined,
+      explanation,
+      resolvedBy: req.user!.id,
+      resolvedAt: now.toISOString(),
+    };
+
+    const updatedMessages = [...(dispute.messages || []), {
+      from: 'system',
+      message: `Dispute resolved with outcome: ${outcome.replace(/_/g, ' ')}. ${explanation}`,
+      sentAt: now.toISOString(),
+      type: 'system' as const,
+    }];
+
+    const [updatedDispute] = await db
+      .update(marketplaceDisputes)
+      .set({
+        status: 'resolved',
+        resolvedAt: now,
+        updatedAt: now,
+        resolution,
+        messages: updatedMessages,
+      })
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .returning();
+
+    logger.info(`Dispute ${disputeId} resolved with outcome ${outcome} by user ${req.user!.id}`);
+
+    return res.json({ dispute: updatedDispute, message: 'Dispute resolved successfully' });
+  } catch (error: any) {
+    logger.error('Error resolving dispute:', error);
+    res.status(500).json({ error: 'Failed to resolve dispute' });
+  }
+});
+
+router.post('/marketplace-disputes/:disputeId/withdraw', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { disputeId } = req.params;
+
+    const [dispute] = await db
+      .select()
+      .from(marketplaceDisputes)
+      .where(eq(marketplaceDisputes.id, disputeId));
+
+    if (!dispute) {
+      return res.status(404).json({ error: 'Dispute not found' });
+    }
+
+    if (dispute.buyerId !== req.user!.id) {
+      return res.status(403).json({ error: 'Only the buyer can withdraw a dispute' });
+    }
+
+    if (['resolved', 'closed'].includes(dispute.status || '')) {
+      return res.status(400).json({ error: 'Cannot withdraw a resolved or closed dispute' });
+    }
+
+    const now = new Date();
+    const updatedMessages = [...(dispute.messages || []), {
+      from: 'system',
+      message: 'Dispute withdrawn by buyer.',
+      sentAt: now.toISOString(),
+      type: 'system' as const,
+    }];
+
+    const [updatedDispute] = await db
+      .update(marketplaceDisputes)
+      .set({
+        status: 'closed',
+        updatedAt: now,
+        messages: updatedMessages,
+      })
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .returning();
+
+    logger.info(`Dispute ${disputeId} withdrawn by user ${req.user!.id}`);
+
+    return res.json({ dispute: updatedDispute, message: 'Dispute withdrawn successfully' });
+  } catch (error: any) {
+    logger.error('Error withdrawing dispute:', error);
+    res.status(500).json({ error: 'Failed to withdraw dispute' });
+  }
+});
+
+router.get('/marketplace-disputes/stats', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = req.user!.id;
+    const isAdmin = isAdminUser(req.user);
+
+    let userDisputes;
+    if (isAdmin) {
+      userDisputes = await db
+        .select()
+        .from(marketplaceDisputes);
+    } else {
+      userDisputes = await db
+        .select()
+        .from(marketplaceDisputes)
+        .where(or(
+          eq(marketplaceDisputes.buyerId, userId),
+          eq(marketplaceDisputes.sellerId, userId)
+        ));
+    }
+
+    const stats = {
+      total: userDisputes.length,
+      open: userDisputes.filter(d => d.status === 'open').length,
+      underReview: userDisputes.filter(d => d.status === 'under_review').length,
+      pendingResponse: userDisputes.filter(d => 
+        d.status === 'pending_seller_response' || d.status === 'pending_buyer_response'
+      ).length,
+      resolved: userDisputes.filter(d => d.status === 'resolved').length,
+      escalated: userDisputes.filter(d => d.status === 'escalated').length,
+      closed: userDisputes.filter(d => d.status === 'closed').length,
+      asBuyer: userDisputes.filter(d => d.buyerId === userId).length,
+      asSeller: userDisputes.filter(d => d.sellerId === userId).length,
+    };
+
+    return res.json({ stats });
+  } catch (error: any) {
+    logger.error('Error fetching dispute stats:', error);
+    res.status(500).json({ error: 'Failed to fetch dispute stats' });
   }
 });
 

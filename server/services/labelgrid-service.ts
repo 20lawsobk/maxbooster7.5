@@ -2,6 +2,13 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { storage } from '../storage';
 import { logger } from '../logger.js';
 
+// AUDIT NOTE: A CircuitBreaker class exists at server/infrastructure/circuitBreaker.ts but is not
+// integrated with LabelGrid API calls. For improved resilience in production, consider:
+// 1. Import and wrap API calls with circuit breaker pattern
+// 2. Configure failure thresholds based on SLA requirements
+// 3. Add metrics collection for circuit breaker state changes
+// TODO: Integrate circuit breaker pattern for LabelGrid API calls to prevent cascade failures
+
 export interface LabelGridRelease {
   title: string;
   artist: string;
@@ -299,9 +306,11 @@ class LabelGridService {
         const isLastAttempt = attempt === retries;
         const axiosError = error as AxiosError;
 
+        // HARDENING: Include 429 (rate limit) in retryable errors with respect for Retry-After header
         const isRetryable =
           axiosError.code === 'ECONNABORTED' ||
           axiosError.code === 'ETIMEDOUT' ||
+          axiosError.response?.status === 429 ||
           (axiosError.response?.status && axiosError.response.status >= 500);
 
         if (isLastAttempt || !isRetryable) {

@@ -971,6 +971,38 @@ class PluginHostService {
     }
   }
 
+  private readonly PLUGIN_PROCESSING_TIMEOUT_MS = 30000;
+  private readonly MAX_AUDIO_BUFFER_SIZE = 10 * 1024 * 1024;
+
+  private async withPluginTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    pluginId: string
+  ): Promise<T> {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`Plugin ${pluginId} processing timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    try {
+      const result = await Promise.race([promise, timeoutPromise]);
+      clearTimeout(timeoutId!);
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId!);
+      throw error;
+    }
+  }
+
+  private validateBufferSize(samples: number[][] | Float32Array[]): void {
+    const totalSize = samples.reduce((sum, channel) => sum + channel.length * 4, 0);
+    if (totalSize > this.MAX_AUDIO_BUFFER_SIZE) {
+      throw new Error(`Audio buffer exceeds maximum allowed size (${this.MAX_AUDIO_BUFFER_SIZE} bytes)`);
+    }
+  }
+
   async processEffect(
     instanceId: string,
     inputBuffer: { samples: number[][]; sampleRate: number }
@@ -989,60 +1021,75 @@ class PluginHostService {
       throw new Error('Invalid effect plugin');
     }
 
-    const left = new Float32Array(inputBuffer.samples[0]);
-    const right = new Float32Array(inputBuffer.samples[1] || inputBuffer.samples[0]);
-    const params = instance.parameters;
+    this.validateBufferSize(inputBuffer.samples);
 
-    const processor = getEffectProcessor(instance.pluginId);
-    if (processor) {
-      const result = processor.process(
-        { samples: [left, right], sampleRate: inputBuffer.sampleRate, channels: 2 },
-        params,
-        { sampleRate: inputBuffer.sampleRate, tempo: 120 }
-      );
-      return {
-        samples: [Array.from(result.samples[0]), Array.from(result.samples[1])],
-        sampleRate: result.sampleRate,
-      };
-    }
+    const processInternal = async (): Promise<{ samples: number[][]; sampleRate: number }> => {
+      const left = new Float32Array(inputBuffer.samples[0]);
+      const right = new Float32Array(inputBuffer.samples[1] || inputBuffer.samples[0]);
+      const params = instance.parameters;
 
-    switch (plugin.type) {
-      case 'reverb':
-        this.applyReverb(left, right, params, inputBuffer.sampleRate);
-        break;
-      case 'delay':
-        this.applyDelay(left, right, params, inputBuffer.sampleRate);
-        break;
-      case 'chorus':
-        this.applyChorus(left, right, params, inputBuffer.sampleRate);
-        break;
-      case 'compressor':
-        this.applyCompressor(left, right, params, inputBuffer.sampleRate);
-        break;
-      case 'eq':
-        this.applyEQ(left, right, params, inputBuffer.sampleRate);
-        break;
-      case 'limiter':
-        this.applyLimiter(left, right, params, inputBuffer.sampleRate);
-        break;
-      case 'gate':
-        this.applyGate(left, right, params, inputBuffer.sampleRate);
-        break;
-      case 'distortion':
-        this.applyDistortion(left, right, params, inputBuffer.sampleRate);
-        break;
-      case 'phaser':
-        this.applyPhaser(left, right, params, inputBuffer.sampleRate);
-        break;
-      case 'flanger':
-        this.applyFlanger(left, right, params, inputBuffer.sampleRate);
-        break;
-    }
+      try {
+        const processor = getEffectProcessor(instance.pluginId);
+        if (processor) {
+          const result = processor.process(
+            { samples: [left, right], sampleRate: inputBuffer.sampleRate, channels: 2 },
+            params,
+            { sampleRate: inputBuffer.sampleRate, tempo: 120 }
+          );
+          return {
+            samples: [Array.from(result.samples[0]), Array.from(result.samples[1])],
+            sampleRate: result.sampleRate,
+          };
+        }
 
-    return {
-      samples: [Array.from(left), Array.from(right)],
-      sampleRate: inputBuffer.sampleRate,
+        switch (plugin.type) {
+          case 'reverb':
+            this.applyReverb(left, right, params, inputBuffer.sampleRate);
+            break;
+          case 'delay':
+            this.applyDelay(left, right, params, inputBuffer.sampleRate);
+            break;
+          case 'chorus':
+            this.applyChorus(left, right, params, inputBuffer.sampleRate);
+            break;
+          case 'compressor':
+            this.applyCompressor(left, right, params, inputBuffer.sampleRate);
+            break;
+          case 'eq':
+            this.applyEQ(left, right, params, inputBuffer.sampleRate);
+            break;
+          case 'limiter':
+            this.applyLimiter(left, right, params, inputBuffer.sampleRate);
+            break;
+          case 'gate':
+            this.applyGate(left, right, params, inputBuffer.sampleRate);
+            break;
+          case 'distortion':
+            this.applyDistortion(left, right, params, inputBuffer.sampleRate);
+            break;
+          case 'phaser':
+            this.applyPhaser(left, right, params, inputBuffer.sampleRate);
+            break;
+          case 'flanger':
+            this.applyFlanger(left, right, params, inputBuffer.sampleRate);
+            break;
+        }
+
+        return {
+          samples: [Array.from(left), Array.from(right)],
+          sampleRate: inputBuffer.sampleRate,
+        };
+      } catch (error: unknown) {
+        logger.error(`Plugin ${instance.pluginId} processing error:`, error);
+        return inputBuffer;
+      }
     };
+
+    return this.withPluginTimeout(
+      processInternal(),
+      this.PLUGIN_PROCESSING_TIMEOUT_MS,
+      instance.pluginId
+    );
   }
 
   async processEffectAdvanced(

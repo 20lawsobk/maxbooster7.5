@@ -301,11 +301,17 @@ export class StudioService {
       const uploadPath = path.join(process.cwd(), 'uploads', 'audio', fileName);
 
       const audioDir = path.join(process.cwd(), 'uploads', 'audio');
-      if (!fs.existsSync(audioDir)) {
-        fs.mkdirSync(audioDir, { recursive: true });
+      
+      // Use async operations to avoid blocking event loop
+      const fsPromises = await import('fs/promises');
+      try {
+        await fsPromises.access(audioDir);
+      } catch {
+        await fsPromises.mkdir(audioDir, { recursive: true });
       }
 
-      fs.renameSync(file.path, uploadPath);
+      // Use async rename instead of sync
+      await fsPromises.rename(file.path, uploadPath);
 
       return {
         id: audioId,
@@ -318,16 +324,53 @@ export class StudioService {
     }
   }
 
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    operationName: string
+  ): Promise<T> {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`${operationName} timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    try {
+      const result = await Promise.race([promise, timeoutPromise]);
+      clearTimeout(timeoutId!);
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId!);
+      throw error;
+    }
+  }
+
   async processAudio(
     audioId: string,
     audioPath: string,
     userId?: string
   ): Promise<{ waveformData: number[]; peaks: number[] }> {
+    const AUDIO_PROCESSING_TIMEOUT_MS = 60000; // 60 second timeout for audio processing
+    const MAX_WAVEFORM_SAMPLES = 100000; // Limit memory usage
+
     try {
       const { audioService } = await import('./audioService');
-      const waveformResult = await audioService.generateWaveform(audioPath, userId || 'system');
       
-      const waveformData = Array.isArray(waveformResult) ? waveformResult : [];
+      // Wrap waveform generation with timeout to prevent hanging
+      const waveformResult = await this.withTimeout(
+        audioService.generateWaveform(audioPath, userId || 'system'),
+        AUDIO_PROCESSING_TIMEOUT_MS,
+        'Audio waveform generation'
+      );
+      
+      let waveformData = Array.isArray(waveformResult) ? waveformResult : [];
+      
+      // Limit memory usage by downsampling if too many samples
+      if (waveformData.length > MAX_WAVEFORM_SAMPLES) {
+        const ratio = Math.ceil(waveformData.length / MAX_WAVEFORM_SAMPLES);
+        waveformData = waveformData.filter((_, i) => i % ratio === 0);
+      }
 
       const peaks = this.extractPeaksFromWaveform(waveformData, 100);
 
@@ -434,11 +477,16 @@ export class StudioService {
       const uploadPath = path.join(process.cwd(), 'uploads', 'audio', fileName);
 
       const audioDir = path.join(process.cwd(), 'uploads', 'audio');
-      if (!fs.existsSync(audioDir)) {
-        fs.mkdirSync(audioDir, { recursive: true });
+      
+      // Use async operations to avoid blocking event loop
+      const fsPromises = await import('fs/promises');
+      try {
+        await fsPromises.access(audioDir);
+      } catch {
+        await fsPromises.mkdir(audioDir, { recursive: true });
       }
 
-      fs.renameSync(file.path, uploadPath);
+      await fsPromises.rename(file.path, uploadPath);
 
       const audioClip = await storageAny.createAudioClip({
         id: clipId,

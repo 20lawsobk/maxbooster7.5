@@ -196,14 +196,87 @@ export class QueueBackpressureManager extends EventEmitter {
     return this.backpressureActive;
   }
 
-  async getStatus(): Promise<BackpressureStatus> {
+  /**
+   * Check if a new job can be added to the queue
+   * Returns false if backpressure is active or queue is at capacity
+   */
+  async canAcceptJob(queueName?: string): Promise<{ allowed: boolean; reason?: string }> {
+    if (this.backpressureActive) {
+      return { allowed: false, reason: 'Backpressure is active - system under load' };
+    }
+
+    // Check memory
     const memoryUsage = process.memoryUsage();
     const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
+    if (heapUsedMB > this.config.maxMemoryMB * 0.9) {
+      return { allowed: false, reason: `Memory usage at ${heapUsedMB.toFixed(0)}MB approaching limit` };
+    }
+
+    // Check specific queue if provided
+    if (queueName) {
+      const queue = this.queues.get(queueName);
+      if (queue) {
+        try {
+          const counts = await queue.getJobCounts('waiting', 'active', 'delayed');
+          const totalJobs = (counts.waiting || 0) + (counts.active || 0) + (counts.delayed || 0);
+          
+          if (totalJobs >= this.config.maxQueueSize) {
+            return { allowed: false, reason: `Queue ${queueName} is at capacity (${totalJobs}/${this.config.maxQueueSize})` };
+          }
+
+          // Warn when approaching limit (90%)
+          if (totalJobs >= this.config.maxQueueSize * 0.9) {
+            logger.warn(`⚠️ Queue ${queueName} approaching capacity: ${totalJobs}/${this.config.maxQueueSize}`);
+          }
+        } catch (error) {
+          logger.error(`Error checking queue ${queueName} capacity:`, error);
+        }
+      }
+    }
+
+    return { allowed: true };
+  }
+
+  /**
+   * Attempt to add a job, rejecting if queue is full
+   * Throws error with reason if rejected
+   */
+  async addJobWithBackpressure<T>(
+    queueName: string,
+    addJobFn: () => Promise<T>
+  ): Promise<T> {
+    const check = await this.canAcceptJob(queueName);
+    
+    if (!check.allowed) {
+      const error = new Error(`Job rejected: ${check.reason}`);
+      (error as any).code = 'BACKPRESSURE_REJECTION';
+      (error as any).retryAfter = 30; // Suggest retry after 30 seconds
+      logger.warn(`🚫 Job rejected for queue ${queueName}: ${check.reason}`);
+      throw error;
+    }
+
+    return await addJobFn();
+  }
+
+  async getStatus(): Promise<BackpressureStatus & { queueStats?: Record<string, number> }> {
+    const memoryUsage = process.memoryUsage();
+    const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
+
+    const queueStats: Record<string, number> = {};
+    for (const [name, queue] of this.queues.entries()) {
+      try {
+        const counts = await queue.getJobCounts('waiting', 'active', 'delayed');
+        queueStats[name] = (counts.waiting || 0) + (counts.active || 0) + (counts.delayed || 0);
+      } catch {
+        queueStats[name] = -1;
+      }
+    }
 
     return {
       active: this.backpressureActive,
       memoryUsageMB: heapUsedMB,
       timestamp: Date.now(),
+      queueStats,
     };
   }
 

@@ -1,16 +1,256 @@
 import { storage } from '../storage.js';
 import { logger } from '../logger.js';
+import { db } from '../db.js';
+import { socialAccounts } from '@shared/schema';
+import { gte, and, eq, isNotNull } from 'drizzle-orm';
 import axios from 'axios';
+import crypto from 'crypto';
+
+const TOKEN_ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+const TOKEN_ENCRYPTION_IV_LENGTH = 16;
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expiry
+const TOKEN_REFRESH_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 
 /**
  * Social OAuth Service
  * Manages OAuth connections for social media platforms
+ * 
+ * HARDENED FEATURES:
+ * - Token encryption at rest using AES-256-GCM
+ * - Proactive token refresh before expiry
+ * - Revoked token detection and handling
+ * - Token lifecycle monitoring
  */
 export class SocialOAuthService {
   private oauthConfigs: Map<string, OAuthConfig> = new Map();
+  private tokenRefreshInterval: NodeJS.Timeout | null = null;
+  private revokedTokenCache: Set<string> = new Set();
 
   constructor() {
     this.initializeOAuthConfigs();
+    this.startTokenRefreshMonitor();
+  }
+
+  /**
+   * Encrypt token data using AES-256-GCM
+   */
+  private encryptToken(plainText: string): string {
+    const iv = crypto.randomBytes(TOKEN_ENCRYPTION_IV_LENGTH);
+    const key = Buffer.from(TOKEN_ENCRYPTION_KEY.substring(0, 32).padEnd(32, '0'));
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    
+    let encrypted = cipher.update(plainText, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const authTag = cipher.getAuthTag();
+    
+    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+  }
+
+  /**
+   * Decrypt token data using AES-256-GCM
+   */
+  private decryptToken(encryptedText: string): string | null {
+    try {
+      const [ivHex, authTagHex, encrypted] = encryptedText.split(':');
+      if (!ivHex || !authTagHex || !encrypted) {
+        // Legacy unencrypted token - return as-is for migration
+        return encryptedText;
+      }
+      
+      const iv = Buffer.from(ivHex, 'hex');
+      const authTag = Buffer.from(authTagHex, 'hex');
+      const key = Buffer.from(TOKEN_ENCRYPTION_KEY.substring(0, 32).padEnd(32, '0'));
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+      decipher.setAuthTag(authTag);
+      
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      
+      return decrypted;
+    } catch (error) {
+      logger.error('Token decryption failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Start background monitor for proactive token refresh
+   */
+  private startTokenRefreshMonitor(): void {
+    if (this.tokenRefreshInterval) {
+      clearInterval(this.tokenRefreshInterval);
+    }
+
+    this.tokenRefreshInterval = setInterval(async () => {
+      await this.checkAndRefreshExpiringTokens();
+    }, TOKEN_REFRESH_CHECK_INTERVAL_MS);
+
+    logger.info('🔐 Token refresh monitor started (checking every minute)');
+  }
+
+  /**
+   * Check all tokens and refresh those expiring soon
+   */
+  private async checkAndRefreshExpiringTokens(): Promise<void> {
+    try {
+      // Query tokens expiring within the refresh buffer (5 minutes from now)
+      const expiryThreshold = new Date(Date.now() + TOKEN_REFRESH_BUFFER_MS);
+      const now = new Date();
+      
+      const expiringAccounts = await db.select()
+        .from(socialAccounts)
+        .where(
+          and(
+            isNotNull(socialAccounts.tokenExpiresAt),
+            isNotNull(socialAccounts.refreshToken),
+            eq(socialAccounts.isActive, true),
+            // Token expires within the buffer period but hasn't expired yet
+            gte(socialAccounts.tokenExpiresAt, now)
+          )
+        );
+      
+      for (const account of expiringAccounts) {
+        try {
+          if (!account.tokenExpiresAt) continue;
+
+          const expiresAt = new Date(account.tokenExpiresAt).getTime();
+          const timeUntilExpiry = expiresAt - Date.now();
+
+          // Refresh if expiring within buffer period
+          if (timeUntilExpiry > 0 && timeUntilExpiry <= TOKEN_REFRESH_BUFFER_MS) {
+            logger.info(`🔄 Proactively refreshing token for user ${account.userId} on ${account.platform}`);
+            await this.refreshAccessToken(account.userId, account.platform);
+          }
+        } catch (error) {
+          logger.warn(`Failed to check/refresh token for ${account.userId}:${account.platform}:`, error);
+        }
+      }
+    } catch (error) {
+      logger.error('Error in token refresh monitor:', error);
+    }
+  }
+
+  /**
+   * Check if a token error indicates revocation
+   */
+  private isTokenRevokedError(error: any): boolean {
+    const revokedIndicators = [
+      'invalid_grant',
+      'token_revoked',
+      'access_denied',
+      'The access token is invalid',
+      'Token has been expired or revoked',
+      'User has revoked access',
+      'OAuthException',
+      'Error validating access token',
+    ];
+
+    const errorMessage = error?.response?.data?.error_description 
+      || error?.response?.data?.error 
+      || error?.message 
+      || '';
+
+    const statusCode = error?.response?.status;
+    
+    // 401 with specific error messages typically means revoked
+    if (statusCode === 401 && revokedIndicators.some(indicator => 
+      errorMessage.toLowerCase().includes(indicator.toLowerCase())
+    )) {
+      return true;
+    }
+
+    return revokedIndicators.some(indicator => 
+      errorMessage.toLowerCase().includes(indicator.toLowerCase())
+    );
+  }
+
+  /**
+   * Handle a revoked token - disconnect and notify
+   */
+  private async handleRevokedToken(userId: string, platform: string): Promise<void> {
+    const cacheKey = `${userId}:${platform}`;
+    
+    // Prevent duplicate handling
+    if (this.revokedTokenCache.has(cacheKey)) {
+      return;
+    }
+    this.revokedTokenCache.add(cacheKey);
+
+    logger.warn(`⚠️ Token revoked for user ${userId} on ${platform}`);
+
+    try {
+      // Clear the stored token
+      await this.disconnectPlatform(userId, platform);
+
+      // TODO: Send notification to user about disconnected platform
+      // await notificationService.createNotification({
+      //   userId,
+      //   type: 'social_disconnected',
+      //   title: `${platform} Disconnected`,
+      //   message: `Your ${platform} account was disconnected. Please reconnect to continue posting.`,
+      // });
+    } catch (error) {
+      logger.error(`Failed to handle revoked token for ${userId}:${platform}:`, error);
+    }
+
+    // Clear from cache after 5 minutes
+    setTimeout(() => {
+      this.revokedTokenCache.delete(cacheKey);
+    }, 5 * 60 * 1000);
+  }
+
+  /**
+   * Get a valid access token, refreshing if needed
+   */
+  async getValidAccessToken(userId: string, platform: string): Promise<string | null> {
+    const tokens = await this.getStoredTokens(userId, platform);
+    if (!tokens) {
+      return null;
+    }
+
+    // Check if token is expired or expiring soon
+    if (tokens.expiresAt) {
+      const expiresAt = new Date(tokens.expiresAt).getTime();
+      const now = Date.now();
+
+      if (expiresAt <= now + TOKEN_REFRESH_BUFFER_MS) {
+        logger.info(`Token expiring soon for ${userId}:${platform}, refreshing...`);
+        try {
+          const refreshed = await this.refreshAccessToken(userId, platform);
+          return refreshed.accessToken;
+        } catch (error: any) {
+          if (this.isTokenRevokedError(error)) {
+            await this.handleRevokedToken(userId, platform);
+            return null;
+          }
+          throw error;
+        }
+      }
+    }
+
+    return tokens.accessToken;
+  }
+
+  /**
+   * Parse stored token data, handling both encrypted and legacy formats
+   */
+  private parseStoredTokens(tokenString: string): any {
+    if (!tokenString) return null;
+
+    try {
+      // Try to decrypt first
+      const decrypted = this.decryptToken(tokenString);
+      if (!decrypted) return null;
+
+      return JSON.parse(decrypted);
+    } catch {
+      // Fallback: try parsing as plain JSON (legacy)
+      try {
+        return JSON.parse(tokenString);
+      } catch {
+        return null;
+      }
+    }
   }
 
   /**
@@ -265,7 +505,7 @@ export class SocialOAuthService {
   }
 
   /**
-   * Save tokens to database
+   * Save tokens to database with encryption
    */
   private async saveTokens(
     userId: string,
@@ -283,21 +523,21 @@ export class SocialOAuthService {
       connectedAt: new Date().toISOString(),
     };
 
-    await storage.updateUserSocialToken(userId, platform, JSON.stringify(tokenData));
+    // Encrypt token data before storing
+    const encryptedData = this.encryptToken(JSON.stringify(tokenData));
+    await storage.updateUserSocialToken(userId, platform, encryptedData);
+    
+    logger.info(`🔐 Encrypted and saved tokens for user ${userId} on ${platform}`);
   }
 
   /**
-   * Get stored tokens from database
+   * Get stored tokens from database with decryption
    */
   private async getStoredTokens(userId: string, platform: string): Promise<any> {
     const tokenString = await storage.getUserSocialToken(userId, platform);
     if (!tokenString) return null;
 
-    try {
-      return JSON.parse(tokenString);
-    } catch {
-      return null;
-    }
+    return this.parseStoredTokens(tokenString);
   }
 
   /**

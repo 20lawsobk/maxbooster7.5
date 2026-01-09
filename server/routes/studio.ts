@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../auth';
 import { db } from '../db';
-import { projects, studioTracks, audioClips, studioTemplates } from '@shared/schema';
+import { projects, studioTracks, audioClips, studioTemplates, users } from '@shared/schema';
 import { eq, and, or, desc, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { studioService } from '../services/studioService';
@@ -63,11 +63,12 @@ const updateProjectSchema = z.object({
   tempo: z.number().min(20).max(999).optional(),
   bpm: z.number().min(20).max(999).optional(),
   key: z.string().optional(),
-  timeSignature: z.string().optional(),
-  sampleRate: z.number().optional(),
-  bitDepth: z.number().optional(),
+  timeSignature: z.string().regex(/^\d+\/\d+$/).optional(),
+  sampleRate: z.number().min(8000).max(192000).optional(),
+  bitDepth: z.number().refine(v => [16, 24, 32].includes(v), { message: 'Bit depth must be 16, 24, or 32' }).optional(),
   workflowStage: z.string().optional(),
   status: z.string().optional(),
+  version: z.number().int().optional(),
 });
 
 async function verifyProjectOwnership(projectId: string, userId: string): Promise<boolean> {
@@ -167,65 +168,7 @@ router.post('/record/upload', requireAuth, async (req: Request, res: Response) =
   }
 });
 
-// GET tracks for project
-router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { projectId } = req.params;
-    const userId = (req as any).user.id;
-    
-    const hasAccess = await verifyProjectOwnership(projectId, userId);
-    if (!hasAccess) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    
-    const tracks = await db.query.studioTracks.findMany({
-      where: eq(studioTracks.projectId, projectId),
-    });
-    
-    res.json(tracks);
-  } catch (error: unknown) {
-    logger.error('Error fetching tracks:', error);
-    res.status(500).json({ error: 'Failed to fetch tracks' });
-  }
-});
-
-// POST create track
-router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user.id;
-    const trackData = createTrackSchema.parse(req.body);
-    
-    const hasAccess = await verifyProjectOwnership(trackData.projectId, userId);
-    if (!hasAccess) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    
-    const trackId = nanoid();
-    const [track] = await db.insert(studioTracks).values({
-      id: trackId,
-      ...trackData,
-    }).returning();
-    
-    res.status(201).json(track);
-  } catch (error: unknown) {
-    logger.error('Error creating track:', error);
-    res.status(500).json({ error: 'Failed to create track' });
-  }
-});
-
-// GET audio clips for track
-router.get('/tracks/:trackId/audio-clips', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { trackId } = req.params;
-    const clips = await db.query.audioClips.findMany({
-      where: eq(audioClips.trackId, trackId),
-    });
-    res.json(clips);
-  } catch (error: unknown) {
-    logger.error('Error fetching audio clips:', error);
-    res.status(500).json({ error: 'Failed to fetch audio clips' });
-  }
-});
+// GET mix busses for project - NOTE: Track routes consolidated below to avoid duplicates
 
 // GET mix busses for project
 router.get('/projects/:projectId/mix-busses', requireAuth, async (req: Request, res: Response) => {
@@ -1017,33 +960,8 @@ router.post('/clips/audio', requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-// Tracks endpoints
-router.patch('/tracks/:trackId', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { trackId } = req.params;
-    res.json({
-      success: true,
-      id: trackId,
-      ...req.body,
-      updatedAt: new Date().toISOString(),
-    });
-  } catch (error: unknown) {
-    logger.error('Error updating track:', error);
-    res.status(500).json({ error: 'Failed to update track' });
-  }
-});
-
-router.delete('/tracks/:trackId', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { trackId } = req.params;
-    res.json({ success: true, message: 'Track deleted', trackId });
-  } catch (error: unknown) {
-    logger.error('Error deleting track:', error);
-    res.status(500).json({ error: 'Failed to delete track' });
-  }
-});
-
 // Markers endpoints
+// NOTE: Track PATCH/DELETE routes are defined above with proper DB operations
 router.get('/projects/:projectId/markers', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
@@ -1544,6 +1462,145 @@ router.post('/projects/:projectId/pool', requireAuth, async (req: Request, res: 
   } catch (error: unknown) {
     logger.error('Error adding file to pool:', error);
     res.status(500).json({ error: 'Failed to add file to pool' });
+  }
+});
+
+// ============================================================================
+// UPLOAD CLEANUP API (orphaned file management)
+// ============================================================================
+
+// POST cleanup orphaned uploads (admin only)
+router.post('/maintenance/cleanup-orphaned-uploads', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    
+    if (user?.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const fsPromises = await import('fs/promises');
+    const path = await import('path');
+    const uploadsDir = path.default.join(process.cwd(), 'uploads', 'audio');
+    
+    let cleaned = 0;
+    let errors = 0;
+    const maxAgeHours = parseInt(req.body.maxAgeHours) || 24;
+    const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
+    const now = Date.now();
+    
+    try {
+      const files = await fsPromises.readdir(uploadsDir);
+      
+      for (const file of files) {
+        const filePath = path.default.join(uploadsDir, file);
+        
+        try {
+          const stats = await fsPromises.stat(filePath);
+          const fileAge = now - stats.mtimeMs;
+          
+          if (fileAge > maxAgeMs) {
+            const clip = await db.query.audioClips.findFirst({
+              where: or(
+                eq(audioClips.filePath, `/uploads/audio/${file}`),
+                eq(audioClips.originalFilename, file)
+              ),
+            });
+            
+            if (!clip) {
+              await fsPromises.unlink(filePath);
+              cleaned++;
+              logger.info(`Cleaned orphaned upload: ${file}`);
+            }
+          }
+        } catch (err) {
+          errors++;
+          logger.warn(`Error processing file during cleanup: ${file}`, err);
+        }
+      }
+    } catch (err) {
+      logger.error('Error reading uploads directory:', err);
+      return res.status(500).json({ error: 'Failed to access uploads directory' });
+    }
+    
+    res.json({
+      success: true,
+      cleaned,
+      errors,
+      maxAgeHours,
+      message: `Cleaned ${cleaned} orphaned uploads, ${errors} errors encountered`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error cleaning orphaned uploads:', error);
+    res.status(500).json({ error: 'Failed to cleanup orphaned uploads' });
+  }
+});
+
+// GET orphaned uploads stats (admin only)
+router.get('/maintenance/orphaned-uploads-stats', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    
+    if (user?.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const fsPromises = await import('fs/promises');
+    const path = await import('path');
+    const uploadsDir = path.default.join(process.cwd(), 'uploads', 'audio');
+    
+    let orphanedCount = 0;
+    let orphanedSize = 0;
+    let totalFiles = 0;
+    const maxAgeMs = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    
+    try {
+      const files = await fsPromises.readdir(uploadsDir);
+      totalFiles = files.length;
+      
+      for (const file of files) {
+        const filePath = path.default.join(uploadsDir, file);
+        
+        try {
+          const stats = await fsPromises.stat(filePath);
+          const fileAge = now - stats.mtimeMs;
+          
+          if (fileAge > maxAgeMs) {
+            const clip = await db.query.audioClips.findFirst({
+              where: or(
+                eq(audioClips.filePath, `/uploads/audio/${file}`),
+                eq(audioClips.originalFilename, file)
+              ),
+            });
+            
+            if (!clip) {
+              orphanedCount++;
+              orphanedSize += stats.size;
+            }
+          }
+        } catch {
+          // Skip files that can't be accessed
+        }
+      }
+    } catch (err) {
+      logger.warn('Error reading uploads directory:', err);
+    }
+    
+    res.json({
+      totalFiles,
+      orphanedCount,
+      orphanedSizeBytes: orphanedSize,
+      orphanedSizeMB: Math.round(orphanedSize / (1024 * 1024) * 100) / 100,
+    });
+  } catch (error: unknown) {
+    logger.error('Error getting orphaned uploads stats:', error);
+    res.status(500).json({ error: 'Failed to get orphaned uploads stats' });
   }
 });
 

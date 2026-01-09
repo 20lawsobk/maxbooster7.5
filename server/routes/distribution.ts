@@ -309,7 +309,14 @@ router.post(
         return res.status(404).json({ error: 'Release not found' });
       }
 
-      const data = createTrackSchema.parse(JSON.parse(req.body.metadata || '{}'));
+      // SECURITY FIX: Wrap JSON.parse in try-catch to prevent unhandled exceptions on invalid JSON
+      let parsedMetadata: unknown;
+      try {
+        parsedMetadata = JSON.parse(req.body.metadata || '{}');
+      } catch (parseError) {
+        return res.status(400).json({ error: 'Invalid JSON in metadata field' });
+      }
+      const data = createTrackSchema.parse(parsedMetadata);
 
       const track = await storage.createDistroTrack({
         releaseId,
@@ -1056,15 +1063,81 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
       return res.status(404).json({ error: 'Release not found' });
     }
 
+    const metadata = release.metadata as any;
+
+    // HARDENING: Validate status transition - prevent duplicate submissions
+    const currentStatus = metadata?.status || release.status;
+    const validSubmissionStatuses = ['draft', 'pending', 'rejected'];
+    if (!validSubmissionStatuses.includes(currentStatus)) {
+      return res.status(400).json({ 
+        error: 'Invalid status transition',
+        message: `Cannot submit release with status '${currentStatus}'. Only releases in draft, pending, or rejected status can be submitted.`
+      });
+    }
+
+    // HARDENING: Validate UPC before submission
+    if (!release.upc) {
+      return res.status(400).json({ 
+        error: 'Missing UPC',
+        message: 'A valid UPC code is required before submission. Generate one in the release metadata.'
+      });
+    }
+    // Basic UPC format validation (12-13 digits)
+    const upcClean = release.upc.replace(/\D/g, '');
+    if (upcClean.length !== 12 && upcClean.length !== 13) {
+      return res.status(400).json({ 
+        error: 'Invalid UPC format',
+        message: 'UPC must be 12 or 13 digits.'
+      });
+    }
+
+    // HARDENING: Validate tracks exist and have ISRCs
+    const tracks = await storage.getDistroTracks(id);
+    if (!tracks || tracks.length === 0) {
+      return res.status(400).json({ 
+        error: 'No tracks',
+        message: 'At least one track is required before submission.'
+      });
+    }
+
+    const tracksWithoutISRC = tracks.filter((t: any) => !t.isrc);
+    if (tracksWithoutISRC.length > 0) {
+      return res.status(400).json({ 
+        error: 'Missing ISRC codes',
+        message: `${tracksWithoutISRC.length} track(s) are missing ISRC codes. All tracks require valid ISRC codes before submission.`,
+        tracksMissing: tracksWithoutISRC.map((t: any) => ({ id: t.id, title: t.title }))
+      });
+    }
+
+    // HARDENING: Validate ISRC format for all tracks (12 alphanumeric characters)
+    const isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
+    const invalidISRCs = tracks.filter((t: any) => {
+      const isrcClean = (t.isrc || '').replace(/[-\s]/g, '').toUpperCase();
+      return !isrcPattern.test(isrcClean);
+    });
+    if (invalidISRCs.length > 0) {
+      return res.status(400).json({ 
+        error: 'Invalid ISRC format',
+        message: `${invalidISRCs.length} track(s) have invalid ISRC format. ISRC must be 12 characters (CC-XXX-YY-NNNNN).`,
+        tracksInvalid: invalidISRCs.map((t: any) => ({ id: t.id, title: t.title, isrc: t.isrc }))
+      });
+    }
+
+    // HARDENING: Validate selected platforms
+    const selectedPlatforms = metadata.selectedPlatforms || [];
+    if (selectedPlatforms.length === 0) {
+      return res.status(400).json({ 
+        error: 'No platforms selected',
+        message: 'At least one distribution platform must be selected.'
+      });
+    }
+
     // Update release status to submitted
     await storage.updateDistroRelease(id, {
-      metadata: { ...(release.metadata as any), status: 'submitted' },
+      metadata: { ...metadata, status: 'submitted' },
     });
 
     // Create dispatch records for each selected platform
-    const metadata = release.metadata as any;
-    const selectedPlatforms = metadata.selectedPlatforms || [];
-
     for (const platformSlug of selectedPlatforms) {
       const provider = await storage.getDSPProviderBySlug(platformSlug);
       if (provider) {
@@ -1075,6 +1148,14 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
         });
       }
     }
+
+    // AUDIT: Log successful submission for tracking
+    logger.info(`Release ${id} submitted for distribution to ${selectedPlatforms.length} platforms`, {
+      releaseId: id,
+      userId,
+      platforms: selectedPlatforms,
+      trackCount: tracks.length
+    });
 
     res.json({ success: true, message: 'Release submitted for distribution' });
   } catch (error: unknown) {

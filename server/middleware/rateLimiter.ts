@@ -11,7 +11,13 @@ export const RATE_LIMITS = {
     login: { windowMs: 900000, max: 5 },
     register: { windowMs: 3600000, max: 3 },
     forgotPassword: { windowMs: 3600000, max: 3 },
+    // SECURITY: 2FA verification has strict limits to prevent brute-force attacks
+    twoFactor: { windowMs: 300000, max: 5 }, // 5 attempts per 5 minutes
     captchaThreshold: 3
+  },
+  billing: {
+    // SECURITY: Rate limits for billing endpoints
+    perUser: { windowMs: 60000, max: 10 } // 10 requests per minute
   },
   uploads: {
     perUser: { windowMs: 3600000, max: 50 }
@@ -263,6 +269,69 @@ export const forgotPasswordRateLimiter: RequestHandler = async (
 
   if (!result.allowed) {
     logger.warn(`Forgot password rate limit exceeded for IP: ${ip}`);
+    sendRateLimitExceeded(res, result.resetAt);
+    return;
+  }
+
+  next();
+};
+
+// SECURITY: 2FA verification rate limiter to prevent brute-force attacks
+export const twoFactorRateLimiter: RequestHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  // Skip in development mode
+  if (process.env.NODE_ENV !== 'production') {
+    next();
+    return;
+  }
+  
+  const ip = getClientIP(req);
+  const userId = getUserId(req);
+  // Use both IP and userId for stricter limiting
+  const key = userId ? `auth:2fa:${userId}:${ip}` : `auth:2fa:${ip}`;
+  const { twoFactor } = RATE_LIMITS.auth;
+
+  const result = await slidingWindowCheck(key, twoFactor.windowMs, twoFactor.max);
+  setRateLimitHeaders(res, twoFactor.max, result.remaining, result.resetAt);
+
+  if (!result.allowed) {
+    logger.warn(`2FA rate limit exceeded for ${userId ? `user ${userId}` : `IP ${ip}`}`);
+    sendRateLimitExceeded(res, result.resetAt);
+    return;
+  }
+
+  next();
+};
+
+// SECURITY: Billing endpoints rate limiter
+export const billingRateLimiter: RequestHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  // Skip in development mode
+  if (process.env.NODE_ENV !== 'production') {
+    next();
+    return;
+  }
+  
+  const userId = getUserId(req);
+  if (!userId) {
+    next();
+    return;
+  }
+
+  const key = `billing:user:${userId}`;
+  const { perUser } = RATE_LIMITS.billing;
+
+  const result = await slidingWindowCheck(key, perUser.windowMs, perUser.max);
+  setRateLimitHeaders(res, perUser.max, result.remaining, result.resetAt);
+
+  if (!result.allowed) {
+    logger.warn(`Billing rate limit exceeded for user: ${userId}`);
     sendRateLimitExceeded(res, result.resetAt);
     return;
   }

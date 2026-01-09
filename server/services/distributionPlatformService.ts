@@ -6,12 +6,16 @@ interface SubmissionResult {
   message: string;
 }
 
+// AUDIT NOTE: In-memory rate limiting only works for single-process deployments.
+// For clustered/multi-instance deployments, this should use Redis or database-backed rate limiting.
+// TODO: Migrate to distributed rate limiting using Redis or database for production scalability.
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60000;
 const RATE_LIMIT_MAX = 10;
 
 /**
- * TODO: Add function documentation
+ * Check if user has exceeded rate limit for distribution submissions.
+ * LIMITATION: This only works for single-process deployments.
  */
 function checkRateLimit(userId: string): boolean {
   const now = Date.now();
@@ -54,10 +58,13 @@ export async function submitToProvider(
     logs: `Queued for ${provider.name} submission at ${new Date().toISOString()}`,
   });
 
-  setTimeout(async () => {
-    await storage.updateDistroDispatch(dispatch.id, {
+  // HARDENING: Wrap async setTimeout in proper error handling to prevent unhandled promise rejections
+  setTimeout(() => {
+    storage.updateDistroDispatch(dispatch.id, {
       status: 'processing',
       logs: `${dispatch.logs}\nProcessing started at ${new Date().toISOString()}`,
+    }).catch((err) => {
+      console.error(`Failed to update dispatch ${dispatch.id} status:`, err);
     });
   }, 1000);
 

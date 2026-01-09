@@ -36,15 +36,26 @@ export interface BatchJobData {
 }
 
 const PLATFORM_RATE_LIMITS = {
-  twitter: { postsPerHour: 300, postsPerDay: 2400, delayMs: 12000 },
-  facebook: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000 },
-  instagram: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000 },
-  linkedin: { postsPerHour: 100, postsPerDay: 1000, delayMs: 36000 },
-  tiktok: { postsPerHour: 50, postsPerDay: 100, delayMs: 72000 },
-  youtube: { postsPerHour: 30, postsPerDay: 100, delayMs: 120000 },
-  threads: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000 },
-  default: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000 },
+  twitter: { postsPerHour: 300, postsPerDay: 2400, delayMs: 12000, baseBackoffMs: 60000 },
+  facebook: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000, baseBackoffMs: 120000 },
+  instagram: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000, baseBackoffMs: 120000 },
+  linkedin: { postsPerHour: 100, postsPerDay: 1000, delayMs: 36000, baseBackoffMs: 60000 },
+  tiktok: { postsPerHour: 50, postsPerDay: 100, delayMs: 72000, baseBackoffMs: 180000 },
+  youtube: { postsPerHour: 30, postsPerDay: 100, delayMs: 120000, baseBackoffMs: 300000 },
+  threads: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000, baseBackoffMs: 120000 },
+  default: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000, baseBackoffMs: 60000 },
 };
+
+/**
+ * Rate limit backoff state - shared via Redis for multi-process support
+ */
+interface RateLimitBackoffState {
+  platform: string;
+  accountId: string;
+  backoffUntil: number;
+  consecutiveHits: number;
+  lastHit: number;
+}
 
 /**
  * Creates Redis connection for social queue service with proper error handling
@@ -157,9 +168,21 @@ class SocialQueueService {
   }
 
   async checkRateLimit(platform: string, accountId: string): Promise<boolean> {
+    if (!this.redisClient) {
+      logger.warn('Redis unavailable - rate limit check skipped, allowing request');
+      return true;
+    }
+
     const rateLimits =
       PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] ||
       PLATFORM_RATE_LIMITS.default;
+
+    // Also check if in backoff state
+    const backoffStatus = await this.isInBackoff(platform, accountId);
+    if (backoffStatus.inBackoff) {
+      logger.info(`⏳ Rate limit check: ${platform}/${accountId} in backoff for ${(backoffStatus.remainingMs! / 1000).toFixed(0)}s more`);
+      return false;
+    }
 
     const hourKey = `rate:${platform}:${accountId}:hour`;
     const dayKey = `rate:${platform}:${accountId}:day`;
@@ -176,6 +199,11 @@ class SocialQueueService {
   }
 
   async incrementRateLimit(platform: string, accountId: string): Promise<void> {
+    if (!this.redisClient) {
+      logger.warn('Redis unavailable - rate limit increment skipped');
+      return;
+    }
+
     const hourKey = `rate:${platform}:${accountId}:hour`;
     const dayKey = `rate:${platform}:${accountId}:day`;
 
@@ -183,6 +211,186 @@ class SocialQueueService {
 
     await this.redisClient.expire(hourKey, 3600);
     await this.redisClient.expire(dayKey, 86400);
+  }
+
+  /**
+   * Handle 429 Too Many Requests response from platform
+   * Implements exponential backoff with jitter
+   * HARDENED: State is shared across processes via Redis
+   */
+  async handle429Response(
+    platform: string,
+    accountId: string,
+    retryAfterSeconds?: number
+  ): Promise<{ backoffMs: number; shouldRetry: boolean }> {
+    if (!this.redisClient) {
+      logger.warn('Redis unavailable - using default backoff');
+      const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] 
+        || PLATFORM_RATE_LIMITS.default;
+      return { backoffMs: platformConfig.baseBackoffMs, shouldRetry: true };
+    }
+
+    const backoffKey = `backoff:${platform}:${accountId}`;
+    const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] 
+      || PLATFORM_RATE_LIMITS.default;
+
+    try {
+      // Get current backoff state
+      const stateJson = await this.redisClient.get(backoffKey);
+      let state: RateLimitBackoffState = stateJson 
+        ? JSON.parse(stateJson)
+        : { platform, accountId, backoffUntil: 0, consecutiveHits: 0, lastHit: 0 };
+
+      // Update consecutive hits
+      const now = Date.now();
+      const timeSinceLastHit = now - state.lastHit;
+      
+      // Reset consecutive hits if it's been more than 1 hour since last hit
+      if (timeSinceLastHit > 3600000) {
+        state.consecutiveHits = 0;
+      }
+      
+      state.consecutiveHits++;
+      state.lastHit = now;
+
+      // Calculate backoff with exponential increase
+      let backoffMs: number;
+      if (retryAfterSeconds) {
+        // Use platform's Retry-After header if provided
+        backoffMs = retryAfterSeconds * 1000;
+      } else {
+        // Exponential backoff: baseBackoff * 2^consecutiveHits with jitter
+        const exponentialFactor = Math.min(Math.pow(2, state.consecutiveHits - 1), 32); // Cap at 32x
+        const jitter = Math.random() * 0.2 + 0.9; // 0.9 - 1.1
+        backoffMs = Math.round(platformConfig.baseBackoffMs * exponentialFactor * jitter);
+      }
+
+      // Cap maximum backoff at 1 hour
+      backoffMs = Math.min(backoffMs, 3600000);
+
+      state.backoffUntil = now + backoffMs;
+
+      // Store state in Redis with TTL
+      await this.redisClient.setex(backoffKey, 7200, JSON.stringify(state)); // 2 hour TTL
+
+      // Determine if we should retry
+      const maxConsecutiveHits = 5;
+      const shouldRetry = state.consecutiveHits < maxConsecutiveHits;
+
+      logger.warn(
+        `🚦 429 Rate Limited: ${platform}/${accountId} - ` +
+        `Consecutive hits: ${state.consecutiveHits}, ` +
+        `Backoff: ${(backoffMs / 1000).toFixed(0)}s, ` +
+        `Will retry: ${shouldRetry}`
+      );
+
+      return { backoffMs, shouldRetry };
+    } catch (error) {
+      logger.error('Error handling 429 response:', error);
+      return { backoffMs: platformConfig.baseBackoffMs, shouldRetry: true };
+    }
+  }
+
+  /**
+   * Check if platform is currently in backoff state
+   */
+  async isInBackoff(platform: string, accountId: string): Promise<{ inBackoff: boolean; remainingMs?: number }> {
+    if (!this.redisClient) {
+      return { inBackoff: false };
+    }
+
+    const backoffKey = `backoff:${platform}:${accountId}`;
+
+    try {
+      const stateJson = await this.redisClient.get(backoffKey);
+      if (!stateJson) {
+        return { inBackoff: false };
+      }
+
+      const state: RateLimitBackoffState = JSON.parse(stateJson);
+      const now = Date.now();
+      
+      if (state.backoffUntil > now) {
+        return { 
+          inBackoff: true, 
+          remainingMs: state.backoffUntil - now 
+        };
+      }
+
+      return { inBackoff: false };
+    } catch (error) {
+      logger.error('Error checking backoff state:', error);
+      return { inBackoff: false };
+    }
+  }
+
+  /**
+   * Clear backoff state after successful request
+   */
+  async clearBackoff(platform: string, accountId: string): Promise<void> {
+    if (!this.redisClient) return;
+
+    const backoffKey = `backoff:${platform}:${accountId}`;
+    try {
+      await this.redisClient.del(backoffKey);
+      logger.info(`✅ Cleared backoff for ${platform}/${accountId}`);
+    } catch (error) {
+      logger.error('Error clearing backoff:', error);
+    }
+  }
+
+  /**
+   * Get rate limit status for an account across all tracked metrics
+   */
+  async getRateLimitStatus(platform: string, accountId: string): Promise<{
+    withinLimits: boolean;
+    hourlyUsed: number;
+    hourlyLimit: number;
+    dailyUsed: number;
+    dailyLimit: number;
+    inBackoff: boolean;
+    backoffRemainingMs?: number;
+  }> {
+    const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] 
+      || PLATFORM_RATE_LIMITS.default;
+
+    if (!this.redisClient) {
+      return {
+        withinLimits: true,
+        hourlyUsed: 0,
+        hourlyLimit: platformConfig.postsPerHour,
+        dailyUsed: 0,
+        dailyLimit: platformConfig.postsPerDay,
+        inBackoff: false,
+      };
+    }
+
+    const hourKey = `rate:${platform}:${accountId}:hour`;
+    const dayKey = `rate:${platform}:${accountId}:day`;
+
+    const [hourCount, dayCount, backoffStatus] = await Promise.all([
+      this.redisClient.get(hourKey),
+      this.redisClient.get(dayKey),
+      this.isInBackoff(platform, accountId),
+    ]);
+
+    const hourlyUsed = parseInt(hourCount || '0');
+    const dailyUsed = parseInt(dayCount || '0');
+    
+    const withinLimits = 
+      hourlyUsed < platformConfig.postsPerHour && 
+      dailyUsed < platformConfig.postsPerDay &&
+      !backoffStatus.inBackoff;
+
+    return {
+      withinLimits,
+      hourlyUsed,
+      hourlyLimit: platformConfig.postsPerHour,
+      dailyUsed,
+      dailyLimit: platformConfig.postsPerDay,
+      inBackoff: backoffStatus.inBackoff,
+      backoffRemainingMs: backoffStatus.remainingMs,
+    };
   }
 
   async getBatchStatus(batchId: string): Promise<{

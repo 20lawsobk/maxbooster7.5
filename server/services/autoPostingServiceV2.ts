@@ -110,13 +110,23 @@ class AutoPostingServiceV2 {
   /**
    * Reload pending jobs from database on startup
    * CRITICAL FIX: Prevents data loss on restart
+   * HARDENED: Added idempotency check to prevent duplicate jobs
    */
   private async reloadPendingJobs() {
     try {
       const pendingPosts = await storage.getScheduledPosts({ status: 'pending' });
       
       let reloadedCount = 0;
+      let skippedCount = 0;
+      
       for (const post of pendingPosts) {
+        // IDEMPOTENCY CHECK: Skip if job already exists in queue
+        const existingJob = await this.postQueue.getJob(post.id);
+        if (existingJob) {
+          skippedCount++;
+          continue;
+        }
+
         const delay = new Date(post.scheduledTime).getTime() - Date.now();
         
         if (delay > 0) {
@@ -137,7 +147,7 @@ class AutoPostingServiceV2 {
         }
       }
 
-      logger.info(`✅ Reloaded ${reloadedCount} pending posts from database`);
+      logger.info(`✅ Reloaded ${reloadedCount} pending posts (${skippedCount} already in queue)`);
     } catch (error) {
       logger.error('Failed to reload pending jobs:', error);
     }
@@ -198,6 +208,7 @@ class AutoPostingServiceV2 {
   /**
    * Schedule a post for auto-posting
    * FIXED: Now uses durable Redis queue instead of in-memory Map
+   * HARDENED: Added duplicate prevention with idempotency check
    */
   async schedulePost(
     userId: string,
@@ -205,9 +216,30 @@ class AutoPostingServiceV2 {
     content: PostContent,
     scheduledTime: Date,
     createdBy: 'social_autopilot' | 'advertising_autopilot' | 'manual' = 'manual',
-    viralPrediction?: any
+    viralPrediction?: any,
+    idempotencyKey?: string
   ): Promise<ScheduledPost> {
-    const postId = `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate deterministic ID if idempotency key provided
+    const postId = idempotencyKey 
+      ? `post_${idempotencyKey}`
+      : `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // DUPLICATE PREVENTION: Check if post already exists
+    if (idempotencyKey) {
+      const existingPost = await storage.getScheduledPostById(postId);
+      if (existingPost) {
+        logger.info(`📋 Returning existing post ${postId} (idempotency key: ${idempotencyKey})`);
+        return existingPost as ScheduledPost;
+      }
+    }
+
+    // Also check if job already exists in queue
+    const existingJob = await this.postQueue.getJob(postId);
+    if (existingJob) {
+      logger.info(`📋 Post ${postId} already in queue, returning existing`);
+      const existingData = existingJob.data as ScheduledPost;
+      return existingData;
+    }
 
     const scheduledPost: ScheduledPost = {
       id: postId,

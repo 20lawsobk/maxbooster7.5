@@ -313,10 +313,20 @@ export class DistributionService {
   /**
    * Validate ISRC (International Standard Recording Code)
    * Format: CC-XXX-YY-NNNNN (e.g., US-S1Z-99-00001)
+   * 
+   * NOTE: This validates the dashed format. ISRC can also be represented as 12 continuous 
+   * characters (CCXXXYYNNNNN). Some DSPs accept either format. Consider normalizing input
+   * by stripping dashes before validation for broader compatibility.
    */
   validateISRC(isrc: string): boolean {
-    const isrcPattern = /^[A-Z]{2}-[A-Z0-9]{3}-\d{2}-\d{5}$/;
-    return isrcPattern.test(isrc);
+    // HARDENING: Accept both dashed and non-dashed formats
+    const normalizedIsrc = isrc.replace(/[-\s]/g, '').toUpperCase();
+    if (normalizedIsrc.length !== 12) {
+      return false;
+    }
+    // Pattern: 2 country letters + 3 registrant alphanumeric + 2 year digits + 5 designation digits
+    const isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
+    return isrcPattern.test(normalizedIsrc);
   }
 
   /**

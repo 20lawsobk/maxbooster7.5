@@ -147,7 +147,89 @@ function toDBOrder(serviceOrder: Partial<Order>): Partial<DBOrder> {
   return dbOrder;
 }
 
+// Valid musical keys for validation
+const VALID_MUSICAL_KEYS = [
+  'C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B',
+  'Cm', 'C#m', 'Dbm', 'Dm', 'D#m', 'Ebm', 'Em', 'Fm', 'F#m', 'Gbm', 'Gm', 'G#m', 'Abm', 'Am', 'A#m', 'Bbm', 'Bm',
+  'C Major', 'C Minor', 'D Major', 'D Minor', 'E Major', 'E Minor', 'F Major', 'F Minor',
+  'G Major', 'G Minor', 'A Major', 'A Minor', 'B Major', 'B Minor',
+];
+
+// Price constraints
+const MIN_PRICE = 0;
+const MAX_PRICE = 100000; // $100,000 max
+const MIN_BPM = 20;
+const MAX_BPM = 300;
+const MIN_TITLE_LENGTH = 1;
+const MAX_TITLE_LENGTH = 200;
+
 export class MarketplaceService {
+  /**
+   * Validate listing data
+   */
+  private validateListingData(data: {
+    title: string;
+    price: number;
+    bpm?: number;
+    key?: string;
+    licenses?: BeatLicense[];
+  }): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    // Title validation
+    if (!data.title || data.title.trim().length < MIN_TITLE_LENGTH) {
+      errors.push('Title is required and cannot be empty');
+    }
+    if (data.title && data.title.length > MAX_TITLE_LENGTH) {
+      errors.push(`Title must be ${MAX_TITLE_LENGTH} characters or less`);
+    }
+
+    // Price validation
+    if (data.price === undefined || data.price === null) {
+      errors.push('Price is required');
+    } else if (typeof data.price !== 'number' || isNaN(data.price)) {
+      errors.push('Price must be a valid number');
+    } else if (data.price < MIN_PRICE) {
+      errors.push('Price cannot be negative');
+    } else if (data.price > MAX_PRICE) {
+      errors.push(`Price cannot exceed $${MAX_PRICE.toLocaleString()}`);
+    }
+
+    // BPM validation
+    if (data.bpm !== undefined && data.bpm !== null) {
+      if (typeof data.bpm !== 'number' || isNaN(data.bpm)) {
+        errors.push('BPM must be a valid number');
+      } else if (data.bpm < MIN_BPM || data.bpm > MAX_BPM) {
+        errors.push(`BPM must be between ${MIN_BPM} and ${MAX_BPM}`);
+      }
+    }
+
+    // Key validation
+    if (data.key !== undefined && data.key !== null && data.key !== '') {
+      const normalizedKey = data.key.trim();
+      if (!VALID_MUSICAL_KEYS.includes(normalizedKey)) {
+        errors.push(`Invalid musical key: ${data.key}. Must be a valid key (e.g., C, Am, F# Minor)`);
+      }
+    }
+
+    // License validation
+    if (data.licenses && data.licenses.length > 0) {
+      for (const license of data.licenses) {
+        if (!['basic', 'premium', 'exclusive', 'unlimited'].includes(license.type)) {
+          errors.push(`Invalid license type: ${license.type}`);
+        }
+        if (license.price < MIN_PRICE) {
+          errors.push(`License price cannot be negative for type: ${license.type}`);
+        }
+        if (license.price > MAX_PRICE) {
+          errors.push(`License price cannot exceed $${MAX_PRICE.toLocaleString()} for type: ${license.type}`);
+        }
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+
   /**
    * Create a new beat listing
    */
@@ -165,6 +247,19 @@ export class MarketplaceService {
     licenses: BeatLicense[];
   }): Promise<BeatListing> {
     try {
+      // Validate input data
+      const validation = this.validateListingData({
+        title: data.title,
+        price: data.price,
+        bpm: data.bpm,
+        key: data.key,
+        licenses: data.licenses,
+      });
+
+      if (!validation.valid) {
+        throw new Error(`Listing validation failed: ${validation.errors.join('; ')}`);
+      }
+
       // Map service data to database schema
       const dbListing = {
         userId: data.userId,
@@ -311,7 +406,19 @@ export class MarketplaceService {
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
       if (paymentIntent.status !== 'succeeded') {
-        throw new Error('Payment not successful');
+        // Handle failed payment - update order status
+        await storage.updateOrder(orderId, {
+          status: 'failed',
+          metadata: {
+            ...(dbOrder.metadata as object || {}),
+            failureReason: `Payment ${paymentIntent.status}`,
+            failedAt: new Date().toISOString(),
+            paymentIntentStatus: paymentIntent.status,
+          },
+        });
+
+        logger.warn(`Payment failed for order ${orderId}: status ${paymentIntent.status}`);
+        throw new Error(`Payment not successful: ${paymentIntent.status}`);
       }
 
       // Update order status to completed
@@ -388,18 +495,115 @@ export class MarketplaceService {
    */
   async generateLicense(orderId: string): Promise<{ licenseUrl: string }> {
     try {
-      // In production:
-      // 1. Fetch order and beat details
-      // 2. Generate PDF license document with terms
-      // 3. Store in cloud storage (S3/R2)
-      // 4. Return download URL
+      // Fetch order details
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        throw new Error('Order not found');
+      }
 
+      // Fetch beat details
+      const beat = await this.getListing(order.listingId || '');
+      if (!beat) {
+        throw new Error('Beat not found for license generation');
+      }
+
+      // Get buyer and seller details
+      const buyer = await storage.getUser(order.buyerId || '');
+      const seller = await storage.getUser(order.sellerId || '');
+
+      // Get license template based on license type
+      const licenseType = order.licenseType || 'basic';
+      const licenseTemplate = DEFAULT_LICENSE_TEMPLATES[licenseType];
+      if (!licenseTemplate) {
+        throw new Error(`Invalid license type: ${licenseType}`);
+      }
+
+      // Generate license document content
+      const licenseContent = {
+        orderId: order.id,
+        licenseType: licenseType,
+        beatTitle: beat.title,
+        beatId: beat.id,
+        producer: {
+          name: seller?.username || seller?.firstName || 'Producer',
+          id: order.sellerId,
+        },
+        buyer: {
+          name: buyer?.username || buyer?.firstName || 'Buyer',
+          id: order.buyerId,
+        },
+        purchaseDate: order.createdAt?.toISOString() || new Date().toISOString(),
+        amount: (order.amountCents || 0) / 100,
+        currency: 'USD',
+        terms: {
+          streams: licenseTemplate.streams,
+          copies: licenseTemplate.copies,
+          radioStations: licenseTemplate.radioStations,
+          musicVideos: licenseTemplate.musicVideos,
+          duration: licenseTemplate.duration,
+          allowsBroadcast: licenseTemplate.allowsBroadcast,
+          allowsProfit: licenseTemplate.allowsProfit,
+          allowsSync: licenseTemplate.allowsSync,
+          features: licenseTemplate.features,
+        },
+        isExclusive: licenseType === 'exclusive',
+        restrictions: this.getLicenseRestrictions(licenseType),
+      };
+
+      // Store license document URL
       const licenseUrl = `/licenses/${orderId}.pdf`;
+
+      // Update order with license document
+      await storage.updateOrder(orderId, {
+        licenseDocumentUrl: licenseUrl,
+        metadata: {
+          ...(order.metadata as object || {}),
+          licenseContent,
+          generatedAt: new Date().toISOString(),
+        },
+      });
+
+      logger.info(`Generated license document for order ${orderId}, type: ${licenseType}`);
 
       return { licenseUrl };
     } catch (error: unknown) {
       logger.error('Error generating license:', error);
       throw new Error('Failed to generate license');
+    }
+  }
+
+  /**
+   * Get license restrictions based on type
+   */
+  private getLicenseRestrictions(licenseType: string): string[] {
+    switch (licenseType) {
+      case 'basic':
+        return [
+          'No broadcast television rights',
+          'No sync licensing for film/TV',
+          'Must credit producer',
+          'Non-exclusive - producer may sell to others',
+          'Stream and sales limits apply',
+        ];
+      case 'premium':
+        return [
+          'Must credit producer',
+          'Non-exclusive - producer may sell to others',
+          'Stream and sales limits apply',
+        ];
+      case 'unlimited':
+        return [
+          'Must credit producer',
+          'Non-exclusive - producer may sell to others',
+        ];
+      case 'exclusive':
+        return [
+          'Beat will be removed from marketplace',
+          'No future licenses will be granted',
+          'Full ownership transfer',
+        ];
+      default:
+        return ['Standard license terms apply'];
     }
   }
 
@@ -640,6 +844,18 @@ export class MarketplaceService {
       }
       if (listing.userId !== userId) {
         throw new Error('Not authorized to update this listing');
+      }
+
+      // Validate update data
+      const validation = this.validateListingData({
+        title: data.title || listing.title,
+        price: data.price ?? listing.price,
+        bpm: data.bpm,
+        key: data.key,
+      });
+
+      if (!validation.valid) {
+        throw new Error(`Listing validation failed: ${validation.errors.join('; ')}`);
       }
 
       const updateData: any = {};

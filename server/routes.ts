@@ -195,6 +195,7 @@ export async function registerRoutes(
   });
 
   // Auth: Login (accepts username or email)
+  // SECURITY: Session regeneration implemented to prevent session fixation attacks
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
       const { email, username, password, twoFactorCode } = req.body;
@@ -238,28 +239,37 @@ export async function registerRoutes(
         }
       }
 
-      req.session.userId = user.id;
-
       const isProduction = process.env.NODE_ENV === 'production';
 
-      // Explicitly save session for Redis persistence in production
-      req.session.save((err) => {
-        if (err) {
-          console.error('[Login] Session save failed:', err);
+      // SECURITY FIX: Regenerate session to prevent session fixation attacks
+      // This creates a new session ID while preserving session data
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          console.error('[Login] Session regeneration failed:', regenerateErr);
           return res.status(500).json({ message: "Login failed - session error" });
         }
 
-        // Production debugging: log session and cookie info
-        if (isProduction) {
-          const setCookieHeader = res.getHeader('Set-Cookie');
-          console.log(`[Login] SUCCESS: userId=${user.id}, sessionId=${req.session.id?.substring(0, 8)}`);
-          console.log(`[Login] Cookie config: secure=${req.session.cookie.secure}, sameSite=${req.session.cookie.sameSite}, domain=${req.session.cookie.domain || 'not set'}, path=${req.session.cookie.path}`);
-          console.log(`[Login] Set-Cookie header present: ${!!setCookieHeader}`);
-          console.log(`[Login] Response headers:`, JSON.stringify(Object.fromEntries(res.getHeaderNames().map(n => [n, res.getHeader(n)]))));
-        }
+        req.session.userId = user.id;
 
-        const { password: _, ...userWithoutPassword } = user;
-        return res.json(userWithoutPassword);
+        // Explicitly save session for Redis persistence in production
+        req.session.save((err) => {
+          if (err) {
+            console.error('[Login] Session save failed:', err);
+            return res.status(500).json({ message: "Login failed - session error" });
+          }
+
+          // Production debugging: log session and cookie info
+          if (isProduction) {
+            const setCookieHeader = res.getHeader('Set-Cookie');
+            console.log(`[Login] SUCCESS: userId=${user.id}, sessionId=${req.session.id?.substring(0, 8)}`);
+            console.log(`[Login] Cookie config: secure=${req.session.cookie.secure}, sameSite=${req.session.cookie.sameSite}, domain=${req.session.cookie.domain || 'not set'}, path=${req.session.cookie.path}`);
+            console.log(`[Login] Set-Cookie header present: ${!!setCookieHeader}`);
+            console.log(`[Login] Response headers:`, JSON.stringify(Object.fromEntries(res.getHeaderNames().map(n => [n, res.getHeader(n)]))));
+          }
+
+          const { password: _, ...userWithoutPassword } = user;
+          return res.json(userWithoutPassword);
+        });
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -552,19 +562,52 @@ export async function registerRoutes(
   });
 
   // Auth: Change password
+  // SECURITY: Invalidates all other sessions after password change
   app.post("/api/auth/change-password", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
       const { currentPassword, newPassword } = req.body;
+      
+      // Validate new password
+      if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({ message: "New password must be at least 8 characters" });
+      }
+      
       const isValid = await bcrypt.compare(currentPassword, req.user.password);
       if (!isValid) {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       await storage.updateUser(req.user.id, { password: hashedPassword });
-      return res.json({ success: true });
+      
+      // SECURITY FIX: Invalidate all OTHER sessions for this user after password change
+      const currentSessionId = req.session.id;
+      try {
+        const userSessions = await storage.getSessionsByUserId(req.user.id);
+        for (const session of userSessions) {
+          if (session.id !== currentSessionId) {
+            await storage.deleteSession(session.id);
+            // Also try to delete from Redis if available
+            try {
+              const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
+              const redisClient = await getRedisClient();
+              if (redisClient) {
+                await redisClient.del(`maxbooster:sess:${session.id}`);
+              }
+            } catch (redisError) {
+              // Redis deletion is best-effort
+            }
+          }
+        }
+        console.log(`[Security] Invalidated ${userSessions.length - 1} sessions after password change for user ${req.user.id}`);
+      } catch (sessionError) {
+        console.warn('[Security] Could not invalidate other sessions:', sessionError);
+        // Continue - password was changed successfully
+      }
+      
+      return res.json({ success: true, message: "Password changed. Other sessions have been logged out." });
     } catch (error) {
       console.error("Change password error:", error);
       return res.status(500).json({ message: "Failed to change password" });
@@ -765,7 +808,9 @@ export async function registerRoutes(
   });
 
   // Auth: 2FA verify - Verify TOTP code and enable 2FA
-  app.post("/api/auth/2fa/verify", async (req: Request, res: Response) => {
+  // SECURITY: Rate limited to prevent brute-force attacks on 2FA codes
+  const { twoFactorRateLimiter } = await import('./middleware/rateLimiter.js');
+  app.post("/api/auth/2fa/verify", twoFactorRateLimiter, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -775,6 +820,11 @@ export async function registerRoutes(
 
       if (!code) {
         return res.status(400).json({ message: "Verification code is required" });
+      }
+
+      // SECURITY: Validate code format (6 digits)
+      if (!/^\d{6}$/.test(code)) {
+        return res.status(400).json({ message: "Invalid code format" });
       }
 
       const secret = req.user.twoFactorSecret;
@@ -798,7 +848,8 @@ export async function registerRoutes(
   });
 
   // Auth: 2FA disable - Disable 2FA on account
-  app.post("/api/auth/2fa/disable", async (req: Request, res: Response) => {
+  // SECURITY: Rate limited to prevent brute-force attacks
+  app.post("/api/auth/2fa/disable", twoFactorRateLimiter, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -818,6 +869,11 @@ export async function registerRoutes(
       if (req.user.twoFactorEnabled && req.user.twoFactorSecret) {
         if (!code) {
           return res.status(400).json({ message: "2FA code is required" });
+        }
+
+        // SECURITY: Validate code format (6 digits)
+        if (!/^\d{6}$/.test(code)) {
+          return res.status(400).json({ message: "Invalid code format" });
         }
 
         const isCodeValid = authenticator.verify({ token: code, secret: req.user.twoFactorSecret });

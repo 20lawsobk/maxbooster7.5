@@ -16,6 +16,166 @@ const stripe = process.env.STRIPE_SECRET_KEY?.startsWith('sk_')
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' })
   : null;
 
+// Validation constraints
+const SLUG_PATTERN = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
+const DOMAIN_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+const MAX_NAME_LENGTH = 100;
+const MIN_NAME_LENGTH = 2;
+const MAX_SLUG_LENGTH = 63;
+const MIN_SLUG_LENGTH = 3;
+const RESERVED_SLUGS = ['admin', 'api', 'www', 'app', 'dashboard', 'login', 'signup', 'help', 'support', 'billing', 'settings'];
+
+// Allowed customization keys for sanitization
+const ALLOWED_CUSTOMIZATION_KEYS = [
+  'primaryColor', 'secondaryColor', 'backgroundColor', 'textColor',
+  'fontFamily', 'headerFont', 'bodyFont',
+  'logoUrl', 'bannerUrl', 'favicon',
+  'borderRadius', 'buttonStyle', 'layoutType',
+  'showSocialLinks', 'socialLinks',
+  'headerLayout', 'footerLayout', 'gridColumns',
+  'accentColor', 'linkColor', 'shadowStyle',
+];
+
+const ALLOWED_SEO_KEYS = [
+  'title', 'description', 'keywords', 'ogImage', 'ogTitle', 'ogDescription',
+  'twitterCard', 'twitterHandle', 'canonicalUrl', 'robots',
+];
+
+/**
+ * Sanitize HTML to prevent XSS
+ */
+function sanitizeString(input: string): string {
+  return input
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+/**
+ * Validate and sanitize customization object
+ */
+function sanitizeCustomization(customization: any): Record<string, any> {
+  if (!customization || typeof customization !== 'object') {
+    return {};
+  }
+
+  const sanitized: Record<string, any> = {};
+  for (const [key, value] of Object.entries(customization)) {
+    if (!ALLOWED_CUSTOMIZATION_KEYS.includes(key)) {
+      continue; // Skip unknown keys
+    }
+
+    if (typeof value === 'string') {
+      // Validate URLs
+      if (key.endsWith('Url') || key === 'logoUrl' || key === 'bannerUrl' || key === 'favicon') {
+        if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
+          sanitized[key] = value;
+        }
+      } else if (key.includes('Color') || key === 'primaryColor' || key === 'secondaryColor') {
+        // Validate color format (hex, rgb, named colors)
+        if (/^#[0-9A-Fa-f]{3,8}$/.test(value) || /^rgba?\(/.test(value) || /^[a-z]+$/i.test(value)) {
+          sanitized[key] = value;
+        }
+      } else {
+        sanitized[key] = sanitizeString(value);
+      }
+    } else if (typeof value === 'boolean' || typeof value === 'number') {
+      sanitized[key] = value;
+    } else if (Array.isArray(value) && key === 'socialLinks') {
+      // Validate social links
+      sanitized[key] = value.filter((link: any) =>
+        typeof link === 'object' &&
+        typeof link.platform === 'string' &&
+        typeof link.url === 'string' &&
+        (link.url.startsWith('http://') || link.url.startsWith('https://'))
+      ).map((link: any) => ({
+        platform: sanitizeString(link.platform),
+        url: link.url,
+      }));
+    }
+  }
+
+  return sanitized;
+}
+
+/**
+ * Validate and sanitize SEO object
+ */
+function sanitizeSEO(seo: any): Record<string, any> {
+  if (!seo || typeof seo !== 'object') {
+    return {};
+  }
+
+  const sanitized: Record<string, any> = {};
+  for (const [key, value] of Object.entries(seo)) {
+    if (!ALLOWED_SEO_KEYS.includes(key)) {
+      continue;
+    }
+
+    if (typeof value === 'string') {
+      if (key === 'ogImage' || key === 'canonicalUrl') {
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+          sanitized[key] = value;
+        }
+      } else if (key === 'title' && value.length > 70) {
+        sanitized[key] = sanitizeString(value.substring(0, 70));
+      } else if (key === 'description' && value.length > 160) {
+        sanitized[key] = sanitizeString(value.substring(0, 160));
+      } else if (key === 'robots') {
+        // Only allow valid robots directives
+        const validDirectives = ['index', 'noindex', 'follow', 'nofollow'];
+        const directives = value.split(',').map(d => d.trim().toLowerCase());
+        sanitized[key] = directives.filter(d => validDirectives.includes(d)).join(', ');
+      } else {
+        sanitized[key] = sanitizeString(value);
+      }
+    }
+  }
+
+  return sanitized;
+}
+
+/**
+ * Validate storefront input
+ */
+function validateStorefrontInput(input: { name?: string; slug?: string; customDomain?: string }): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (input.name !== undefined) {
+    if (input.name.length < MIN_NAME_LENGTH) {
+      errors.push(`Name must be at least ${MIN_NAME_LENGTH} characters`);
+    }
+    if (input.name.length > MAX_NAME_LENGTH) {
+      errors.push(`Name must be ${MAX_NAME_LENGTH} characters or less`);
+    }
+  }
+
+  if (input.slug !== undefined) {
+    if (input.slug.length < MIN_SLUG_LENGTH) {
+      errors.push(`Slug must be at least ${MIN_SLUG_LENGTH} characters`);
+    }
+    if (input.slug.length > MAX_SLUG_LENGTH) {
+      errors.push(`Slug must be ${MAX_SLUG_LENGTH} characters or less`);
+    }
+    if (!SLUG_PATTERN.test(input.slug)) {
+      errors.push('Slug must contain only lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen');
+    }
+    if (RESERVED_SLUGS.includes(input.slug.toLowerCase())) {
+      errors.push('This slug is reserved and cannot be used');
+    }
+  }
+
+  if (input.customDomain !== undefined && input.customDomain !== null && input.customDomain !== '') {
+    if (!DOMAIN_PATTERN.test(input.customDomain)) {
+      errors.push('Invalid custom domain format');
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 export interface CreateStorefrontInput {
   userId: string;
   name: string;
@@ -55,6 +215,16 @@ export class StorefrontService {
    */
   async createStorefront(input: CreateStorefrontInput) {
     try {
+      // Validate input
+      const validation = validateStorefrontInput({
+        name: input.name,
+        slug: input.slug,
+      });
+
+      if (!validation.valid) {
+        throw new Error(`Validation failed: ${validation.errors.join('; ')}`);
+      }
+
       const existingSlug = await db.query.storefronts.findFirst({
         where: eq(storefronts.slug, input.slug),
       });
@@ -80,19 +250,23 @@ export class StorefrontService {
           })
         : null;
 
+      // Sanitize customization data
+      const sanitizedCustomization = sanitizeCustomization(input.customization);
+
       const [storefront] = await db
         .insert(storefronts)
         .values({
           userId: input.userId,
-          name: input.name,
-          slug: input.slug,
+          name: sanitizeString(input.name),
+          slug: input.slug.toLowerCase(),
           templateId: input.templateId || null,
-          customization: input.customization || {},
+          customization: sanitizedCustomization,
           isActive: true,
           isPublic: true,
         })
         .returning();
 
+      logger.info(`Created storefront ${storefront.id} for user ${input.userId}`);
       return storefront;
     } catch (error: unknown) {
       logger.error('Error creating storefront:', error);
@@ -198,6 +372,17 @@ export class StorefrontService {
         throw new Error('Unauthorized');
       }
 
+      // Validate updates
+      const validation = validateStorefrontInput({
+        name: updates.name,
+        slug: updates.slug,
+        customDomain: updates.customDomain,
+      });
+
+      if (!validation.valid) {
+        throw new Error(`Validation failed: ${validation.errors.join('; ')}`);
+      }
+
       if (updates.slug && updates.slug !== storefront.slug) {
         const existingSlug = await db.query.storefronts.findFirst({
           where: eq(storefronts.slug, updates.slug),
@@ -208,15 +393,52 @@ export class StorefrontService {
         }
       }
 
+      // Build sanitized updates
+      const sanitizedUpdates: Record<string, any> = {
+        updatedAt: new Date(),
+      };
+
+      if (updates.name !== undefined) {
+        sanitizedUpdates.name = sanitizeString(updates.name);
+      }
+      if (updates.slug !== undefined) {
+        sanitizedUpdates.slug = updates.slug.toLowerCase();
+      }
+      if (updates.subdomain !== undefined) {
+        sanitizedUpdates.subdomain = updates.subdomain?.toLowerCase();
+      }
+      if (updates.customDomain !== undefined) {
+        sanitizedUpdates.customDomain = updates.customDomain;
+      }
+      if (updates.isSubdomainActive !== undefined) {
+        sanitizedUpdates.isSubdomainActive = updates.isSubdomainActive;
+      }
+      if (updates.isCustomDomainActive !== undefined) {
+        sanitizedUpdates.isCustomDomainActive = updates.isCustomDomainActive;
+      }
+      if (updates.templateId !== undefined) {
+        sanitizedUpdates.templateId = updates.templateId;
+      }
+      if (updates.customization !== undefined) {
+        sanitizedUpdates.customization = sanitizeCustomization(updates.customization);
+      }
+      if (updates.seo !== undefined) {
+        sanitizedUpdates.seo = sanitizeSEO(updates.seo);
+      }
+      if (updates.isActive !== undefined) {
+        sanitizedUpdates.isActive = updates.isActive;
+      }
+      if (updates.isPublic !== undefined) {
+        sanitizedUpdates.isPublic = updates.isPublic;
+      }
+
       const [updatedStorefront] = await db
         .update(storefronts)
-        .set({
-          ...updates,
-          updatedAt: new Date(),
-        })
+        .set(sanitizedUpdates)
         .where(eq(storefronts.id, storefrontId))
         .returning();
 
+      logger.info(`Updated storefront ${storefrontId}`);
       return updatedStorefront;
     } catch (error: unknown) {
       logger.error('Error updating storefront:', error);
