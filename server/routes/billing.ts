@@ -14,9 +14,21 @@ import { logger } from '../logger';
 
 const router = Router();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
+  logger.warn('[Billing] STRIPE_SECRET_KEY not configured. Billing endpoints will return errors.');
+}
+
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
   apiVersion: '2023-10-16' as any,
-});
+}) : null;
+
+const requireStripe = (req: Request, res: Response, next: any) => {
+  if (!stripe) {
+    return res.status(503).json({ message: 'Billing service not configured' });
+  }
+  next();
+};
 
 interface AuthenticatedRequest extends Request {
   user?: { 
@@ -38,6 +50,7 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
 
 async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Promise<string> {
   if (!user) throw new Error('User not found');
+  if (!stripe) throw new Error('Stripe not configured');
   
   const [dbUser] = await db
     .select()
@@ -76,7 +89,7 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
     
     let stripeSubscription = null;
     
-    if (user.stripeCustomerId) {
+    if (user.stripeCustomerId && stripe) {
       try {
         const subscriptions = await stripe.subscriptions.list({
           customer: user.stripeCustomerId,
@@ -120,6 +133,10 @@ router.get('/payment-method', requireAuth, async (req: AuthenticatedRequest, res
       return res.json({ last4: null, expiry: null, brand: null });
     }
     
+    if (!stripe) {
+      return res.json({ last4: null, expiry: null, brand: null });
+    }
+    
     try {
       const paymentMethods = await stripe.paymentMethods.list({
         customer: user.stripeCustomerId,
@@ -155,7 +172,7 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
       .from(users)
       .where(eq(users.id, userId));
     
-    if (!user?.stripeCustomerId) {
+    if (!user?.stripeCustomerId || !stripe) {
       return res.json([]);
     }
     
@@ -189,6 +206,10 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
 
 router.post('/cancel-subscription', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    if (!stripe) {
+      return res.status(503).json({ message: 'Billing service not configured' });
+    }
+    
     const userId = req.user!.id;
     
     const [user] = await db
@@ -231,6 +252,10 @@ router.post('/cancel-subscription', requireAuth, async (req: AuthenticatedReques
 
 router.post('/reactivate-subscription', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    if (!stripe) {
+      return res.status(503).json({ message: 'Billing service not configured' });
+    }
+    
     const userId = req.user!.id;
     
     const [user] = await db
@@ -272,6 +297,10 @@ router.post('/reactivate-subscription', requireAuth, async (req: AuthenticatedRe
 
 router.get('/invoices/:invoiceId/download', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    if (!stripe) {
+      return res.status(503).json({ message: 'Billing service not configured' });
+    }
+    
     const userId = req.user!.id;
     const { invoiceId } = req.params;
     
@@ -304,6 +333,10 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
 
 router.post('/update-payment', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    if (!stripe) {
+      return res.status(503).json({ message: 'Billing service not configured' });
+    }
+    
     const userId = req.user!.id;
     const customerId = await getOrCreateStripeCustomer(req.user);
     
@@ -325,6 +358,10 @@ router.post('/update-payment', requireAuth, async (req: AuthenticatedRequest, re
 
 router.post('/create-portal-session', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    if (!stripe) {
+      return res.status(503).json({ message: 'Billing service not configured' });
+    }
+    
     const userId = req.user!.id;
     
     const [user] = await db

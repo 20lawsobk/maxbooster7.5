@@ -474,7 +474,7 @@ class LabelGridService {
         });
       });
 
-      loggingService.logInfo('LabelGrid release created successfully', {
+      logger.info('LabelGrid release created successfully', {
         releaseId: response.data.releaseId,
         status: response.data.status,
       });
@@ -533,7 +533,7 @@ class LabelGridService {
         });
       });
 
-      loggingService.logInfo('ISRC generated successfully', {
+      logger.info('ISRC generated successfully', {
         code: response.data.code,
         artist,
         title,
@@ -565,7 +565,7 @@ class LabelGridService {
         });
       });
 
-      loggingService.logInfo('UPC generated successfully', {
+      logger.info('UPC generated successfully', {
         code: response.data.code,
         releaseTitle,
       });
@@ -621,7 +621,7 @@ class LabelGridService {
         return await this.client.patch<LabelGridReleaseResponse>(endpoint, updates);
       });
 
-      loggingService.logInfo('LabelGrid release updated successfully', {
+      logger.info('LabelGrid release updated successfully', {
         releaseId,
       });
 
@@ -649,7 +649,7 @@ class LabelGridService {
         return await this.client.delete(endpoint);
       });
 
-      loggingService.logInfo('LabelGrid release takedown initiated', {
+      logger.info('LabelGrid release takedown initiated', {
         releaseId,
       });
 
@@ -729,7 +729,7 @@ class LabelGridService {
         });
       });
 
-      loggingService.logInfo('Publishing metadata set successfully', { releaseId });
+      logger.info('Publishing metadata set successfully', { releaseId });
       return response.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
@@ -785,7 +785,7 @@ class LabelGridService {
         });
       });
 
-      loggingService.logInfo('Release submitted for sync licensing', { releaseId });
+      logger.info('Release submitted for sync licensing', { releaseId });
       return response.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
@@ -839,7 +839,7 @@ class LabelGridService {
         return await this.client.put<LabelGridSyncSubmission>(endpoint, { action });
       });
 
-      loggingService.logInfo('Sync submission updated', { submissionId, action });
+      logger.info('Sync submission updated', { submissionId, action });
       return response.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
@@ -871,7 +871,7 @@ class LabelGridService {
         });
       });
 
-      loggingService.logInfo('Smart link created', { releaseId, linkId: response.data.id });
+      logger.info('Smart link created', { releaseId, linkId: response.data.id });
       return response.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
@@ -957,7 +957,7 @@ class LabelGridService {
         });
       });
 
-      loggingService.logInfo('Pre-save campaign created', { releaseId, campaignId: response.data.id });
+      logger.info('Pre-save campaign created', { releaseId, campaignId: response.data.id });
       return response.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
@@ -1042,7 +1042,7 @@ class LabelGridService {
         });
       });
 
-      loggingService.logInfo('Content claim submitted', { releaseId, platforms });
+      logger.info('Content claim submitted', { releaseId, platforms });
       return response.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
@@ -1175,7 +1175,7 @@ class LabelGridService {
         });
       });
 
-      loggingService.logInfo('Payout requested', { amount, method: method || 'paypal' });
+      logger.info('Payout requested', { amount, method: method || 'paypal' });
       return response.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;

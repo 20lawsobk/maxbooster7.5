@@ -20,7 +20,8 @@ router.get('/balance', async (req, res) => {
     res.json(balance);
   } catch (error: unknown) {
     logger.error('Error fetching payout balance:', error);
-    res.status(500).json({ error: error.message || 'Failed to fetch balance' });
+    const message = error instanceof Error ? error.message : 'Failed to fetch balance';
+    res.status(500).json({ error: message });
   }
 });
 
@@ -101,7 +102,8 @@ router.get('/history', async (req, res) => {
     });
   } catch (error: unknown) {
     logger.error('Error fetching payout history:', error);
-    res.status(500).json({ error: error.message || 'Failed to fetch payout history' });
+    const message = error instanceof Error ? error.message : 'Failed to fetch payout history';
+    res.status(500).json({ error: message });
   }
 });
 
@@ -127,12 +129,13 @@ router.get('/status/:payoutId', async (req, res) => {
     res.json(payout);
   } catch (error: unknown) {
     logger.error('Error fetching payout status:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch payout status';
 
-    if (error.message === 'Payout not found') {
+    if (message === 'Payout not found') {
       return res.status(404).json({ error: 'Payout not found' });
     }
 
-    res.status(500).json({ error: error.message || 'Failed to fetch payout status' });
+    res.status(500).json({ error: message });
   }
 });
 
@@ -163,7 +166,8 @@ router.post('/setup', async (req, res) => {
     res.json({ url: accountLinkUrl });
   } catch (error: unknown) {
     logger.error('Error setting up payout account:', error);
-    res.status(500).json({ error: error.message || 'Failed to setup payout account' });
+    const message = error instanceof Error ? error.message : 'Failed to setup payout account';
+    res.status(500).json({ error: message });
   }
 });
 
@@ -181,7 +185,8 @@ router.get('/verify', async (req, res) => {
     res.json(verification);
   } catch (error: unknown) {
     logger.error('Error verifying payout account:', error);
-    res.status(500).json({ error: error.message || 'Failed to verify account' });
+    const message = error instanceof Error ? error.message : 'Failed to verify account';
+    res.status(500).json({ error: message });
   }
 });
 
@@ -204,7 +209,8 @@ router.get('/dashboard', async (req, res) => {
     res.json({ url: result.url });
   } catch (error: unknown) {
     logger.error('Error getting dashboard link:', error);
-    res.status(500).json({ error: error.message || 'Failed to get dashboard link' });
+    const message = error instanceof Error ? error.message : 'Failed to get dashboard link';
+    res.status(500).json({ error: message });
   }
 });
 
@@ -222,7 +228,8 @@ router.get('/earnings', async (req, res) => {
     res.json(earnings);
   } catch (error: unknown) {
     logger.error('Error getting earnings summary:', error);
-    res.status(500).json({ error: error.message || 'Failed to get earnings summary' });
+    const message = error instanceof Error ? error.message : 'Failed to get earnings summary';
+    res.status(500).json({ error: message });
   }
 });
 
