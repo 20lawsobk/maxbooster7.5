@@ -269,10 +269,6 @@ export function FileUploadZone({
     [processFiles]
   );
 
-  const handleBrowseClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
   const removeFile = useCallback((id: string) => {
     setUploadingFiles((prev) => prev.filter((f) => f.id !== id));
   }, []);
@@ -281,13 +277,16 @@ export function FileUploadZone({
     (f) => f.status === 'pending' || f.status === 'uploading'
   );
 
+  const inputId = useRef(`file-upload-${Math.random().toString(36).substr(2, 9)}`).current;
+
   if (compact) {
     return (
       <div className={cn('space-y-2', className)}>
-        <div
+        <label
+          htmlFor={inputId}
           ref={dropZoneRef}
           className={cn(
-            'relative border-2 border-dashed rounded-lg p-4 transition-all duration-200 cursor-pointer touch-manipulation',
+            'relative border-2 border-dashed rounded-lg p-4 transition-all duration-200 cursor-pointer touch-manipulation block',
             isDragging
               ? 'border-primary bg-primary/10'
               : isFocused
@@ -298,21 +297,20 @@ export function FileUploadZone({
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          onClick={handleBrowseClick}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          role="button"
           tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBrowseClick(); } }}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
           aria-label="Click or tap to upload audio files. Paste with Ctrl+V."
         >
           <input
+            id={inputId}
             ref={fileInputRef}
             type="file"
             accept=".wav,.mp3,.flac,.ogg,.aiff,.aif,.webm,.aac,.m4a,audio/mpeg,audio/wav,audio/flac,audio/ogg,audio/aiff,audio/webm,audio/aac,audio/mp4,audio/*"
             multiple
             onChange={handleFileSelect}
-            className="sr-only"
+            className="absolute w-0 h-0 overflow-hidden opacity-0"
             tabIndex={-1}
             aria-label="Upload audio files"
           />
@@ -325,7 +323,7 @@ export function FileUploadZone({
               <p className="text-xs text-muted-foreground">WAV, MP3, FLAC, AIFF, OGG</p>
             </div>
           </div>
-        </div>
+        </label>
 
         {uploadingFiles.length > 0 && (
           <div className="space-y-1">
@@ -364,13 +362,14 @@ export function FileUploadZone({
       </div>
     );
   }
-
+  
   return (
     <div className={cn('space-y-3 sm:space-y-4', className)}>
-      <div
+      <label
+        htmlFor={inputId}
         ref={dropZoneRef}
         className={cn(
-          'relative border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-8 transition-all duration-200 cursor-pointer touch-manipulation',
+          'relative border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-8 transition-all duration-200 cursor-pointer touch-manipulation block',
           isDragging
             ? 'border-primary bg-primary/10 scale-[1.01] sm:scale-[1.02]'
             : isFocused
@@ -381,21 +380,20 @@ export function FileUploadZone({
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        onClick={handleBrowseClick}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        role="button"
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBrowseClick(); } }}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
         aria-label="Click or tap to upload audio files. You can also paste files with Ctrl+V."
       >
         <input
+          id={inputId}
           ref={fileInputRef}
           type="file"
           accept=".wav,.mp3,.flac,.ogg,.aiff,.aif,.webm,.aac,.m4a,audio/mpeg,audio/wav,audio/flac,audio/ogg,audio/aiff,audio/webm,audio/aac,audio/mp4,audio/*"
           multiple
           onChange={handleFileSelect}
-          className="sr-only"
+          className="absolute w-0 h-0 overflow-hidden opacity-0"
           tabIndex={-1}
           aria-label="Upload audio files"
         />
@@ -426,15 +424,13 @@ export function FileUploadZone({
             </p>
           </div>
 
-          <Button 
-            onClick={(e) => { e.stopPropagation(); handleBrowseClick(); }}
-            variant="outline" 
-            className="gap-2 min-h-[44px] h-10 sm:h-11 px-5 sm:px-6 text-sm touch-manipulation"
+          <span 
+            className="gap-2 min-h-[44px] h-10 sm:h-11 px-5 sm:px-6 text-sm touch-manipulation inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
           >
             <FolderOpen className="h-4 w-4" />
             <span className="hidden xs:inline">Browse Files</span>
             <span className="xs:hidden">Browse</span>
-          </Button>
+          </span>
 
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
             <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted">WAV</span>
