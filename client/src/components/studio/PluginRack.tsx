@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   ChevronDown,
@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Slider } from '@/components/ui/slider';
 import { Knob } from './Knob';
+import { audioEngine } from '@/lib/audioEngine';
 
 export interface PluginInstance {
   id: string;
@@ -220,13 +221,53 @@ export function PluginRack({
     onPluginsChange(plugins.filter((p) => p.id !== pluginId));
   }, [plugins, onPluginsChange]);
 
+  const applyPluginToAudioEngine = useCallback((plugin: PluginInstance) => {
+    if (plugin.bypass) return;
+    
+    switch (plugin.type) {
+      case 'eq':
+        audioEngine.updateTrackEQ(trackId, {
+          lowGain: plugin.parameters.low ?? 0,
+          midGain: plugin.parameters.mid ?? 0,
+          highGain: plugin.parameters.high ?? 0,
+          midFrequency: plugin.parameters.midFreq ?? 1000,
+          bypass: plugin.bypass,
+        });
+        break;
+      case 'compressor':
+        audioEngine.updateTrackCompressor(trackId, {
+          threshold: plugin.parameters.threshold ?? -20,
+          ratio: plugin.parameters.ratio ?? 4,
+          attack: plugin.parameters.attack ?? 10,
+          release: plugin.parameters.release ?? 100,
+          knee: 6,
+          bypass: plugin.bypass,
+        });
+        break;
+      case 'reverb':
+        audioEngine.updateTrackReverb(trackId, {
+          mix: plugin.parameters.mix ?? 30,
+          decay: plugin.parameters.decay ?? 2,
+          preDelay: 0,
+          bypass: plugin.bypass,
+        });
+        break;
+      default:
+        break;
+    }
+  }, [trackId]);
+
   const toggleBypass = useCallback((pluginId: string) => {
-    onPluginsChange(
-      plugins.map((p) =>
-        p.id === pluginId ? { ...p, bypass: !p.bypass } : p
-      )
+    const updatedPlugins = plugins.map((p) =>
+      p.id === pluginId ? { ...p, bypass: !p.bypass } : p
     );
-  }, [plugins, onPluginsChange]);
+    onPluginsChange(updatedPlugins);
+    
+    const plugin = updatedPlugins.find(p => p.id === pluginId);
+    if (plugin) {
+      applyPluginToAudioEngine(plugin);
+    }
+  }, [plugins, onPluginsChange, applyPluginToAudioEngine]);
 
   const toggleExpanded = useCallback((pluginId: string) => {
     onPluginsChange(
@@ -237,14 +278,26 @@ export function PluginRack({
   }, [plugins, onPluginsChange]);
 
   const updateParameter = useCallback((pluginId: string, key: string, value: number) => {
-    onPluginsChange(
-      plugins.map((p) =>
-        p.id === pluginId
-          ? { ...p, parameters: { ...p.parameters, [key]: value } }
-          : p
-      )
+    const updatedPlugins = plugins.map((p) =>
+      p.id === pluginId
+        ? { ...p, parameters: { ...p.parameters, [key]: value } }
+        : p
     );
-  }, [plugins, onPluginsChange]);
+    onPluginsChange(updatedPlugins);
+    
+    const plugin = updatedPlugins.find(p => p.id === pluginId);
+    if (plugin) {
+      applyPluginToAudioEngine(plugin);
+    }
+  }, [plugins, onPluginsChange, applyPluginToAudioEngine]);
+
+  useEffect(() => {
+    plugins.forEach(plugin => {
+      if (!plugin.bypass) {
+        applyPluginToAudioEngine(plugin);
+      }
+    });
+  }, []);
 
   const handleReorder = useCallback((reorderedPlugins: PluginInstance[]) => {
     onPluginsChange(reorderedPlugins);

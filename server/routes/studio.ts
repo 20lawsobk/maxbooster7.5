@@ -406,6 +406,67 @@ router.get('/tracks/:trackId/audio-clips', requireAuth, async (req: Request, res
   }
 });
 
+router.post(
+  '/projects/:projectId/tracks/:trackId/clips/upload',
+  requireAuth,
+  audioUpload.single('audio'),
+  handleUploadError,
+  async (req: Request, res: Response) => {
+    try {
+      const { projectId, trackId } = req.params;
+      const userId = (req as any).user.id;
+
+      if (!await verifyProjectOwnership(projectId, userId)) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      const track = await db.query.studioTracks.findFirst({
+        where: and(eq(studioTracks.id, trackId), eq(studioTracks.projectId, projectId)),
+      });
+
+      if (!track) {
+        return res.status(404).json({ error: 'Track not found' });
+      }
+
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ error: 'No audio file provided' });
+      }
+
+      const { url } = await storeUploadedFile(file, userId, 'audio');
+
+      const name = req.body.name || file.originalname || `Recording ${new Date().toLocaleTimeString()}`;
+      const startTime = parseFloat(req.body.startTime) || 0;
+      const duration = parseFloat(req.body.duration) || null;
+
+      const clipId = nanoid();
+      const [clip] = await db
+        .insert(audioClips)
+        .values({
+          id: clipId,
+          projectId,
+          trackId,
+          name,
+          audioUrl: url,
+          startTime,
+          duration,
+        })
+        .returning();
+
+      logger.info('Audio clip uploaded successfully', { clipId, trackId, projectId, userId });
+
+      res.status(201).json({
+        success: true,
+        clipId: clip.id,
+        clip,
+      });
+    } catch (error: unknown) {
+      logger.error('Error uploading audio clip:', error);
+      res.status(500).json({ error: 'Failed to upload audio clip' });
+    }
+  }
+);
+
 router.patch('/clips/:clipId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { clipId } = req.params;
