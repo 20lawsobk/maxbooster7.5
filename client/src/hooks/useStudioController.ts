@@ -203,6 +203,16 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     },
   });
 
+  // Delete clip mutation
+  const deleteClipMutation = useMutation({
+    mutationFn: async (clipId: string) => {
+      return await apiRequest('DELETE', `/api/studio/clips/${clipId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+    },
+  });
+
   // ========== TRANSPORT CONTROLS ==========
 
   const play = useCallback(async () => {

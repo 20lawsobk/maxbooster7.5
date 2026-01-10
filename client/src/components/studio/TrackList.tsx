@@ -38,7 +38,9 @@ import {
   ChevronUp,
   CircleIcon,
   Circle,
+  X,
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import {
   DndContext,
   closestCenter,
@@ -122,6 +124,7 @@ interface TrackListProps {
   onTrackUpdate: (trackId: string, updates: Partial<StudioTrack>) => void;
   onDuplicateTrack: (trackId: string) => void;
   onDeleteTrack: (trackId: string) => void;
+  onDeleteClip?: (trackId: string, clipId: string) => void;
   onAddTrack: () => void;
   onReorderTracks?: (oldIndex: number, newIndex: number) => void;
 }
@@ -224,6 +227,7 @@ interface SortableTrackRowProps {
   onTrackUpdate: (trackId: string, updates: Partial<StudioTrack>) => void;
   onDuplicateTrack: (trackId: string) => void;
   onDeleteTrack: (trackId: string) => void;
+  onDeleteClip?: (trackId: string, clipId: string) => void;
 }
 
 const SortableTrackRow = memo(function SortableTrackRow({
@@ -237,6 +241,7 @@ const SortableTrackRow = memo(function SortableTrackRow({
   onTrackUpdate,
   onDuplicateTrack,
   onDeleteTrack,
+  onDeleteClip,
 }: SortableTrackRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: track.id,
@@ -540,8 +545,22 @@ const SortableTrackRow = memo(function SortableTrackRow({
                   }}
                   data-testid={`clip-${clip.id}`}
                 >
-                  <div className="p-1 h-full flex flex-col justify-between">
-                    <div className="text-xs font-medium text-white truncate">{clip.name}</div>
+                  <div className="p-1 h-full flex flex-col justify-between relative">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-medium text-white truncate flex-1">{clip.name}</div>
+                      {onDeleteClip && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteClip(track.id, clip.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded bg-red-500/80 hover:bg-red-600 transition-all ml-1"
+                          title="Delete clip"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      )}
+                    </div>
                     <div className="h-6 flex items-end gap-0.5">
                       {Array.from({ length: 20 }).map((_, i) => (
                         <div
@@ -606,9 +625,17 @@ export function TrackList({
   onTrackUpdate,
   onDuplicateTrack,
   onDeleteTrack,
+  onDeleteClip,
   onAddTrack,
   onReorderTracks,
 }: TrackListProps) {
+  useEffect(() => {
+    logger.info('TrackList render - trackClips size:', trackClips.size);
+    trackClips.forEach((clips, trackId) => {
+      logger.info(`TrackList - Track ${trackId} has ${clips.length} clips:`, clips);
+    });
+  }, [trackClips]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -671,6 +698,7 @@ export function TrackList({
               onTrackUpdate={onTrackUpdate}
               onDuplicateTrack={onDuplicateTrack}
               onDeleteTrack={onDeleteTrack}
+              onDeleteClip={onDeleteClip}
             />
           ))}
         </ScrollArea>
