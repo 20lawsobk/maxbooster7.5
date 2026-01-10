@@ -126,6 +126,8 @@ export default function Projects() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
       toast({
         title: 'Success!',
         description: 'Your project has been uploaded successfully.',
@@ -151,6 +153,8 @@ export default function Projects() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
       toast({
         title: 'Project Deleted',
         description: 'The project has been removed successfully.',
@@ -173,6 +177,8 @@ export default function Projects() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
       toast({
         title: 'Project Updated',
         description: 'Your project has been updated successfully.',

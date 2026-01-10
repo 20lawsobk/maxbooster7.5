@@ -106,6 +106,8 @@ export function StudioStartHub({ onProjectSelect, onCreateProject }: StudioStart
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
     },
     onError: () => {
       toast({
@@ -127,6 +129,8 @@ export function StudioStartHub({ onProjectSelect, onCreateProject }: StudioStart
         description: `Created "${project.title}" from template`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       onProjectSelect(project.id);
     },
     onError: () => {

@@ -191,8 +191,10 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
 
       const newProject = await response.json();
 
-      // Invalidate and refetch
+      // Invalidate and refetch - sync across all project views
       await queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
 
       toast({
         title: 'Project created',

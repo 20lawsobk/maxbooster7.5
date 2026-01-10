@@ -462,6 +462,8 @@ export default function Studio() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       // Navigate to the new project - selectedProject will be derived from URL + query data
       setLocation(`/studio/${data.id}`);
       toast({ title: 'Project created successfully' });
@@ -486,6 +488,8 @@ export default function Studio() {
     onSuccess: () => {
       // Invalidate to refresh - selectedProject will update automatically from derived state
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       toast({ title: 'Project settings saved' });
     },
     onError: (error: Error) => {
