@@ -96,7 +96,6 @@ import { ZoomControls } from '@/components/studio/ZoomControls';
 import { TimeRuler } from '@/components/studio/TimeRuler';
 import { AutomationLane } from '@/components/studio/AutomationLane';
 import AudioEngine from '@/lib/audioEngine';
-import { LayoutGrid } from '@/components/studio/LayoutGrid';
 import { StudioOneWrapper } from '@/components/studio/StudioOneWrapper';
 import { StudioTopBar } from '@/components/studio/StudioTopBar';
 import { StudioInspector } from '@/components/studio/StudioInspector';
@@ -338,7 +337,6 @@ export default function Studio() {
   const [showProjectSetup, setShowProjectSetup] = useState(false);
   const [showSessionManager, setShowSessionManager] = useState(false);
   const [showMasteringDelivery, setShowMasteringDelivery] = useState(false);
-  const [useStudioOneLayout, setUseStudioOneLayout] = useState(false);
 
   const shortcutOverlay = useShortcutOverlay();
 
@@ -1926,83 +1924,89 @@ export default function Studio() {
               />
             </div>
           )}
-          {useStudioOneLayout ? (
-            <StudioOneWrapper
-              tracks={displayTracks.map(t => ({
-                ...t,
-                inserts: [],
-                sends: [],
-              }))}
-              busses={mixBusses.map((b: MixBus) => ({
-                id: b.id,
-                name: b.name,
-                color: b.color,
-                volume: b.volume,
-                pan: b.pan,
-                mute: b.mute,
-                solo: b.solo,
-              }))}
-              masterVolume={masterVolume}
-              selectedTrackId={selectedTrack || undefined}
-              inspectorVisible={inspectorVisible}
-              browserVisible={browserVisible}
-              consoleVisible={true}
-              bpm={controller.transport.tempo}
-              pixelsPerBar={Math.round(zoom * 100)}
-              scrollOffset={0}
-              onInspectorVisibleChange={toggleInspector}
-              onBrowserVisibleChange={toggleBrowser}
-              onConsoleVisibleChange={() => {}}
-              onTrackVolumeChange={(trackId, volume) => handleTrackUpdate(trackId, { volume })}
-              onTrackPanChange={(trackId, pan) => handleTrackUpdate(trackId, { pan })}
-              onTrackMuteToggle={(trackId) => {
-                const track = displayTracks.find(t => t.id === trackId);
-                if (track) handleTrackUpdate(trackId, { mute: !track.mute });
-              }}
-              onTrackSoloToggle={(trackId) => {
-                const track = displayTracks.find(t => t.id === trackId);
-                if (track) handleTrackUpdate(trackId, { solo: !track.solo });
-              }}
-              onTrackArmedToggle={(trackId) => {
-                const track = displayTracks.find(t => t.id === trackId);
-                if (track) handleTrackUpdate(trackId, { armed: !track.armed });
-              }}
-              onMasterVolumeChange={handleMasterVolumeChange}
-              onAddTrack={() => setShowAddTrackDialog(true)}
-              onAddBus={() => setShowAddBusDialog(true)}
-              onTrackSelect={handleTrackSelect}
-              useNewLayout={true}
-              toolbar={
-                <div className="flex items-center gap-2 px-4 py-2">
-                  <StudioTopBar
-                    tempo={controller.transport.tempo}
-                    timeSignature={selectedProject?.timeSignature || '4/4'}
-                    cpuUsage={cpuUsage}
-                    zoom={zoom}
-                    selectedTool={undefined}
-                    selectedProject={selectedProject}
-                    projects={projects}
-                    onToolSelect={() => {}}
-                    onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
-                    onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
-                    onShowTutorial={() => setShowTutorial(true)}
-                    onZoomReset={() => setZoom(1)}
-                    onProjectChange={(projectId) => setLocation(`/studio/${projectId}`)}
-                    onCreateProject={(title) => createProjectMutation.mutate(title)}
-                    onUploadFile={() => setShowFullscreenUpload(true)}
-                    onSaveProject={handleSaveProject}
-                    isSaving={isSaving}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setUseStudioOneLayout(false)}
-                    className="ml-auto"
-                  >
-                    Classic Layout
-                  </Button>
-                </div>
-              }
+          <StudioOneWrapper
+            tracks={displayTracks.map(t => ({
+              ...t,
+              inserts: [],
+              sends: [],
+            }))}
+            busses={mixBusses.map((b: MixBus) => ({
+              id: b.id,
+              name: b.name,
+              color: b.color,
+              volume: b.volume,
+              pan: b.pan,
+              mute: b.mute,
+              solo: b.solo,
+            }))}
+            masterVolume={masterVolume}
+            selectedTrackId={selectedTrack || undefined}
+            inspectorVisible={inspectorVisible}
+            browserVisible={browserVisible}
+            consoleVisible={true}
+            bpm={controller.transport.tempo}
+            pixelsPerBar={Math.round(zoom * 100)}
+            scrollOffset={0}
+            onInspectorVisibleChange={toggleInspector}
+            onBrowserVisibleChange={toggleBrowser}
+            onConsoleVisibleChange={() => {}}
+            onTrackVolumeChange={(trackId, volume) => handleTrackUpdate(trackId, { volume })}
+            onTrackPanChange={(trackId, pan) => handleTrackUpdate(trackId, { pan })}
+            onTrackMuteToggle={(trackId) => {
+              const track = displayTracks.find(t => t.id === trackId);
+              if (track) handleTrackUpdate(trackId, { mute: !track.mute });
+            }}
+            onTrackSoloToggle={(trackId) => {
+              const track = displayTracks.find(t => t.id === trackId);
+              if (track) handleTrackUpdate(trackId, { solo: !track.solo });
+            }}
+            onTrackArmedToggle={(trackId) => {
+              const track = displayTracks.find(t => t.id === trackId);
+              if (track) handleTrackUpdate(trackId, { armed: !track.armed });
+            }}
+            onMasterVolumeChange={handleMasterVolumeChange}
+            onAddTrack={() => setShowAddTrackDialog(true)}
+            onAddBus={() => setShowAddBusDialog(true)}
+            onTrackSelect={handleTrackSelect}
+            useNewLayout={true}
+            toolbar={
+              <div className="flex flex-col w-full">
+                <StudioTopBar
+                  tempo={controller.transport.tempo}
+                  timeSignature={selectedProject?.timeSignature || '4/4'}
+                  cpuUsage={cpuUsage}
+                  zoom={zoom}
+                  selectedTool={undefined}
+                  selectedProject={selectedProject}
+                  projects={projects}
+                  onToolSelect={() => {}}
+                  onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
+                  onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
+                  onShowTutorial={() => setShowTutorial(true)}
+                  onZoomReset={() => setZoom(1)}
+                  onProjectChange={(projectId) => setLocation(`/studio/${projectId}`)}
+                  onCreateProject={(title) => createProjectMutation.mutate(title)}
+                  onUploadFile={() => setShowFullscreenUpload(true)}
+                  onSaveProject={handleSaveProject}
+                  isSaving={isSaving}
+                />
+                <WorkflowStateBar
+                  currentState={workflowState}
+                  onStateChange={(state) => {
+                    setWorkflowState(state);
+                    if (selectedProject) {
+                      updateProjectMutation.mutate({
+                        id: selectedProject.id,
+                        workflowStage: state,
+                      });
+                    }
+                    if (state === 'setup') setShowProjectSetup(true);
+                    if (state === 'mastering' || state === 'delivery') setShowMasteringDelivery(true);
+                  }}
+                  completedSteps={completedWorkflowSteps}
+                />
+              </div>
+            }
               transport={
                 <TransportBar
                   isPlaying={controller.transport.isPlaying}
@@ -2061,588 +2065,6 @@ export default function Studio() {
                 onReorderTracks={handleReorderTracks}
               />
             </StudioOneWrapper>
-          ) : (
-          <LayoutGrid
-            topBar={
-              <div className="flex flex-col">
-                <div className="flex items-center">
-                  <StudioTopBar
-                    tempo={controller.transport.tempo}
-                    timeSignature={selectedProject?.timeSignature || '4/4'}
-                    cpuUsage={cpuUsage}
-                    zoom={zoom}
-                    selectedTool={undefined}
-                    selectedProject={selectedProject}
-                    projects={projects}
-                    onToolSelect={() => {}}
-                    onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
-                    onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
-                    onShowTutorial={() => setShowTutorial(true)}
-                    onZoomReset={() => setZoom(1)}
-                    onProjectChange={(projectId) => {
-                      // Just navigate - selectedProject is derived from URL + query data
-                      setLocation(`/studio/${projectId}`);
-                    }}
-                    onCreateProject={(title) => createProjectMutation.mutate(title)}
-                    onUploadFile={() => setShowFullscreenUpload(true)}
-                    onSaveProject={handleSaveProject}
-                    isSaving={isSaving}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setUseStudioOneLayout(true)}
-                    className="ml-2 mr-4 shrink-0"
-                    title="Switch to Studio One-style professional layout"
-                  >
-                    Pro Layout
-                  </Button>
-                </div>
-                <WorkflowStateBar
-                  currentState={workflowState}
-                  onStateChange={(state) => {
-                    setWorkflowState(state);
-                    if (selectedProject) {
-                      updateProjectMutation.mutate({
-                        id: selectedProject.id,
-                        workflowStage: state,
-                      });
-                    }
-                    if (state === 'setup') {
-                      setShowProjectSetup(true);
-                    } else if (state === 'mastering' || state === 'delivery') {
-                      setShowMasteringDelivery(true);
-                    }
-                  }}
-                  completedSteps={completedWorkflowSteps}
-                />
-              </div>
-            }
-            inspector={
-              <InspectorPanel
-                selectedTrack={
-                  selectedTrack ? displayTracks.find((t) => t.id === selectedTrack) || null : null
-                }
-                selectedClip={null}
-                onTrackUpdate={handleTrackUpdate as (trackId: string, updates: unknown) => void}
-                onClipUpdate={(clipId: string, updates: unknown) => logger.info('Clip update:', clipId, String(updates))}
-              />
-            }
-            timeline={
-              <>
-                <div
-                  className="border-b max-h-32 overflow-y-auto"
-                  style={{
-                    borderColor: 'var(--studio-border)',
-                    backgroundColor: 'var(--studio-bg-medium)',
-                  }}
-                >
-                  <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                    <div className="flex items-center gap-2 flex-wrap px-4 py-2">
-                      <RecordingPanel
-                        projectId={selectedProject?.id?.toString() || ''}
-                        armedTracks={displayTracks.filter((t) => t.armed).map(t => ({ id: t.id, name: t.name }))}
-                        inputMonitoringMode={inputMonitoringMode}
-                        latencyMs={latencyMs}
-                        currentTransportTime={controller.transport.currentTime}
-                        onRecordingStart={() => controller.startRecording()}
-                        onRecordingStop={() => controller.stopRecording()}
-                        onClipUploaded={(trackId, clip) => controller.addClipToMap(trackId, clip)}
-                      />
-                      <PerformanceMonitor
-                        cpuUsage={cpuUsage}
-                        showCPUWarning={showCPUWarning}
-                        freezingTrackId={freezingTrackId}
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
-                        onClick={() => setIsAIMixing(true)}
-                        data-testid="button-ai-mix"
-                      >
-                        <Brain className="h-4 w-4 mr-1" />
-                        AI Mix
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
-                        onClick={() => setIsAIMastering(true)}
-                        data-testid="button-ai-master"
-                      >
-                        <Sparkles className="h-4 w-4 mr-1" />
-                        AI Master
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 text-amber-400 hover:text-amber-300 hover:bg-amber-900/20"
-                        onClick={() => setShowAIGeneratorDialog(true)}
-                        data-testid="button-ai-generator"
-                      >
-                        <Wand2 className="h-4 w-4 mr-1" />
-                        AI Generator
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-900/20"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShowAIAssistant(true);
-                        }}
-                        data-testid="button-ai-assistant"
-                      >
-                        <Sparkles className="h-4 w-4 mr-1" />
-                        AI Assistant
-                      </Button>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant={showAnalysisPanel ? 'secondary' : 'ghost'}
-                              className="h-8 text-green-400 hover:text-green-300 hover:bg-green-900/20"
-                              onClick={() => {
-                                if (trackAnalysisData) {
-                                  setShowAnalysisPanel(true);
-                                } else {
-                                  handleAnalyzeAudio();
-                                }
-                              }}
-                              disabled={
-                                !selectedProject ||
-                                tracks.length === 0 ||
-                                audioAnalysis.currentState === 'requesting' ||
-                                audioAnalysis.currentState === 'processing'
-                              }
-                              data-testid="button-analyze-audio"
-                            >
-                              {audioAnalysis.currentState === 'requesting' ||
-                              audioAnalysis.currentState === 'processing' ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                  Analyzing...
-                                </>
-                              ) : (
-                                <>
-                                  <Activity className="h-4 w-4 mr-1" />
-                                  Analyze
-                                </>
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Analyze audio features (BPM, key, energy, etc.)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <Button
-                        size="sm"
-                        variant={showLyricsPanel ? 'secondary' : 'ghost'}
-                        className="h-8"
-                        onClick={() => setShowLyricsPanel(!showLyricsPanel)}
-                        data-testid="button-toggle-lyrics"
-                      >
-                        <FileText className="h-4 w-4 mr-1" />
-                        Lyrics
-                      </Button>
-                      <Separator orientation="vertical" className="h-6 bg-gray-600" />
-                      {lastSaved && (
-                        <div
-                          className="text-xs text-gray-400"
-                          data-testid="text-autosave-indicator"
-                        >
-                          {isSaving ? (
-                            <span className="text-blue-400">💾 Saving...</span>
-                          ) : (
-                            <span>
-                              💾 Saved{' '}
-                              {new Date().getTime() - lastSaved.getTime() < 60000
-                                ? 'just now'
-                                : `${Math.floor((new Date().getTime() - lastSaved.getTime()) / 60000)}m ago`}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8"
-                        onClick={() => setShowExportDialog(true)}
-                        disabled={!selectedProject}
-                        data-testid="button-open-export"
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        Export
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8"
-                        onClick={() => setShowStemExportDialog(true)}
-                        disabled={!selectedProject || tracks.length === 0}
-                        data-testid="button-export-stems"
-                      >
-                        <Layers className="h-4 w-4 mr-1" />
-                        Export Stems
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8"
-                        onClick={() => setShowConversionDialog(true)}
-                        disabled={!selectedProject}
-                        data-testid="button-convert"
-                      >
-                        <FileAudio className="h-4 w-4 mr-1" />
-                        Convert
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8"
-                        onClick={() => setShowDistributionDialog(true)}
-                        disabled={!selectedProject}
-                        data-testid="button-open-distribution"
-                      >
-                        <FileText className="h-4 w-4 mr-1" />
-                        Distribution
-                      </Button>
-                      <Separator orientation="vertical" className="h-6 bg-gray-600" />
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8"
-                              onClick={() => setShowFullscreenUpload(true)}
-                              data-testid="button-upload-audio"
-                            >
-                              <Upload className="h-4 w-4 mr-1" />
-                              Upload
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Upload audio files (Ctrl+U)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8"
-                              onClick={toggleFullscreen}
-                              data-testid="button-toggle-fullscreen"
-                            >
-                              {isFullscreen ? (
-                                <>
-                                  <Minimize className="h-4 w-4 mr-1" />
-                                  Exit
-                                </>
-                              ) : (
-                                <>
-                                  <Maximize className="h-4 w-4 mr-1" />
-                                  Fullscreen
-                                </>
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              {isFullscreen ? 'Exit fullscreen (ESC)' : 'Enter fullscreen mode'}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <Separator orientation="vertical" className="h-6 bg-gray-600" />
-                      <Button
-                        size="sm"
-                        variant={view === 'arrangement' ? 'secondary' : 'ghost'}
-                        className="h-8"
-                        onClick={() => setView('arrangement')}
-                        data-testid="button-view-arrangement"
-                      >
-                        <Layers className="h-4 w-4 mr-1" />
-                        Arrangement
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={view === 'mixer' ? 'secondary' : 'ghost'}
-                        className="h-8"
-                        onClick={() => setView('mixer')}
-                        data-testid="button-view-mixer"
-                      >
-                        <Sliders className="h-4 w-4 mr-1" />
-                        Mixer
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex flex-col overflow-hidden bg-[#1a1a1a]">
-                  {!selectedProject ? (
-                    <div className="h-full flex items-center justify-center">
-                      <div className="text-center max-w-md">
-                        <AudioWaveform className="h-16 w-16 mx-auto mb-4 text-gray-600" />
-                        <h3 className="text-lg font-semibold text-white mb-2">
-                          No Project Selected
-                        </h3>
-                        <p className="text-sm text-gray-400 mb-4">
-                          Create a new project or select an existing one from the dropdown above to
-                          get started
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div
-                        className={`${showLyricsPanel ? 'flex-1' : 'flex-1'} flex flex-col overflow-hidden`}
-                      >
-                        {view === 'arrangement' ? (
-                          <div className="flex-1 flex flex-col overflow-hidden">
-                            <div className="p-4 border-b border-gray-700">
-                              <WaveformVisualizer
-                                audioEngine={audioEngineRef.current}
-                                isPlaying={controller.transport.isPlaying}
-                                mode={visualizerMode}
-                                onModeChange={setVisualizerMode}
-                              />
-                            </div>
-                            {/* Zoom Controls and Snap Grid */}
-                            <ZoomControls />
-
-                            {/* Time Ruler */}
-                            <div className="flex">
-                              <div className="w-32 sm:w-48 md:w-56 lg:w-64 bg-[#252525] border-r border-gray-700 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <TimeRuler
-                                  duration={projectDuration}
-                                  tempo={controller.transport.tempo}
-                                  timeSignature={selectedProject?.timeSignature || '4/4'}
-                                  loopEnabled={controller.transport.loopEnabled}
-                                  loopStart={controller.transport.loopStart}
-                                  loopEnd={controller.transport.loopEnd}
-                                  onTimelineClick={handleTimelineClick}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Marker Lane */}
-                            <div className="flex">
-                              <div className="w-32 sm:w-48 md:w-56 lg:w-64 bg-[#252525] border-r border-gray-700 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <MarkerLane
-                                  duration={projectDuration}
-                                  onTimelineClick={handleTimelineClick}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="flex border-b border-gray-700">
-                              <div className="w-32 sm:w-48 md:w-56 lg:w-64 bg-[#252525] border-r border-gray-700 p-1 sm:p-2 flex items-center justify-between shrink-0">
-                                <div className="text-[10px] sm:text-xs font-semibold text-gray-400 hidden sm:block">TRACKS</div>
-                                <div className="flex gap-0.5 sm:gap-1 flex-wrap">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 sm:h-6 px-1.5 sm:px-2 text-[10px] sm:text-xs touch-manipulation"
-                                    onClick={() => setShowAddTrackDialog(true)}
-                                    data-testid="button-add-track"
-                                  >
-                                    <Plus className="h-3 w-3 sm:mr-1" />
-                                    <span className="hidden sm:inline">Add</span>
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 sm:h-6 px-1.5 sm:px-2 text-[10px] sm:text-xs touch-manipulation"
-                                    onClick={() => setShowAddBusDialog(true)}
-                                    data-testid="button-add-bus"
-                                  >
-                                    <MonitorSpeaker className="h-3 w-3 sm:mr-1" />
-                                    <span className="hidden sm:inline">Bus</span>
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant={showAutomation ? 'secondary' : 'ghost'}
-                                    className="h-7 sm:h-6 px-1.5 sm:px-2 text-[10px] sm:text-xs touch-manipulation"
-                                    onClick={() => setShowAutomation(!showAutomation)}
-                                    data-testid="button-toggle-automation"
-                                  >
-                                    <Activity className="h-3 w-3 sm:mr-1" />
-                                    <span className="hidden sm:inline">Auto</span>
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="flex-1 bg-[#1a1a1a] relative timeline-container">
-                                <Timeline
-                                  currentTime={controller.transport.currentTime}
-                                  loopEnabled={controller.transport.loopEnabled}
-                                  loopStart={controller.transport.loopStart}
-                                  loopEnd={controller.transport.loopEnd}
-                                  duration={projectDuration}
-                                  timeSignature={selectedProject?.timeSignature || '4/4'}
-                                  tracks={displayTracks.map((t) => ({
-                                    id: t.id,
-                                    name: t.name,
-                                    color: t.color || TRACK_COLORS[0],
-                                  }))}
-                                  trackClips={normalizedTrackClips}
-                                  onTimelineClick={handleTimelineMouseClick}
-                                  onClipUpdate={handleClipUpdate}
-                                  snapEnabled={true}
-                                  snapInterval={0.25}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Automation Lanes */}
-                            {showAutomation && selectedTrack && (
-                              <div className="flex">
-                                <div className="w-32 sm:w-48 md:w-56 lg:w-64 bg-[#252525] border-r border-gray-700 shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <AutomationLane
-                                    trackId={selectedTrack}
-                                    parameter={automationParameter}
-                                    duration={projectDuration}
-                                    onPointsChange={(points) => {
-                                      logger.info('Automation points updated:', points);
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            <ScrollArea className="flex-1 track-list-container">
-                              <TrackList
-                                tracks={displayTracks}
-                                trackClips={normalizedTrackClips}
-                                mixBusses={mixBusses}
-                                onTrackNameChange={handleTrackNameChange}
-                                onMuteToggle={handleMuteToggle}
-                                onSoloToggle={handleSoloToggle}
-                                onVolumeChange={handleVolumeChange}
-                                onTrackUpdate={handleTrackUpdate}
-                                onDuplicateTrack={handleDuplicateTrack}
-                                onDeleteTrack={handleDeleteTrack}
-                                onDeleteClip={handleDeleteClip}
-                                onAddTrack={handleAddTrack}
-                                onReorderTracks={handleReorderTracks}
-                              />
-                            </ScrollArea>
-                          </div>
-                        ) : (
-                          <div className="mixer-panel h-full">
-                            <MixerPanel
-                              tracks={displayTracks}
-                              projectId={selectedProject?.id}
-                              onMuteToggle={handleMuteToggle}
-                              onSoloToggle={handleSoloToggle}
-                              onVolumeChange={handleVolumeChange}
-                              onPanChange={handlePanChange}
-                              onMasterVolumeChange={handleMasterVolumeChange}
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      {showLyricsPanel && (
-                        <div
-                          className="border-t border-gray-700 bg-[#1a1a1a] flex flex-col"
-                          style={{ height: '200px' }}
-                        >
-                          <div className="h-8 bg-[#252525] border-b border-gray-700 flex items-center justify-between px-3">
-                            <div className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-gray-400" />
-                              <span className="text-xs font-semibold text-gray-400">LYRICS</span>
-                              {selectedProject && (
-                                <span className="text-xs text-gray-500">
-                                  - {selectedProject.title}
-                                </span>
-                              )}
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                              onClick={() => setShowLyricsPanel(false)}
-                              data-testid="button-close-lyrics-panel"
-                            >
-                              <ChevronDown className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <div className="flex-1 p-3">
-                            <Textarea
-                              value={lyricsContent}
-                              onChange={(e) => setLyricsContent(e.target.value)}
-                              placeholder={
-                                selectedProject
-                                  ? 'Type or paste your lyrics here...'
-                                  : 'Select a project to add lyrics'
-                              }
-                              className="w-full h-full bg-[#1a1a1a] border-gray-700 text-white resize-none focus-visible:ring-1 focus-visible:ring-gray-600 font-mono text-sm"
-                              disabled={!selectedProject}
-                              data-testid="textarea-lyrics"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="audio/*"
-                  className="sr-only"
-                  onChange={handleFileUpload}
-                  tabIndex={-1}
-                />
-              </>
-            }
-            browser={
-              browserVisible ? (
-                <div className="browser-panel h-full">
-                  <BrowserPanel projectId={selectedProject?.id as any ?? null} onTrackCreated={handleTrackCreatedFromUpload} />
-                </div>
-              ) : null
-            }
-            dock={
-              <div className="transport-container">
-                <TransportBar
-                  armedTracksCount={displayTracks.filter((t) => t.armed).length}
-                  onUndo={() => logger.info('Undo')}
-                  onRedo={() => logger.info('Redo')}
-                  canUndo={false}
-                  canRedo={false}
-                  onPlay={handlePlay}
-                  onPause={handlePause}
-                  onStop={handleStop}
-                  onRecord={() =>
-                    controller.transport.isRecording
-                      ? controller.stopRecording()
-                      : controller.startRecording()
-                  }
-                  onSeek={(time) => controller.seek(time)}
-                  duration={projectDuration}
-                  masterVolume={masterVolume}
-                  onMasterVolumeChange={handleMasterVolumeChange}
-                />
-              </div>
-            }
-            inspectorCollapsed={!inspectorVisible}
-            browserCollapsed={!browserVisible}
-          />
-          )
-          }
 
           {/* Upload overlay - uses inline positioning instead of portal to avoid fullscreen exit issues */}
           {showFullscreenUpload && (
