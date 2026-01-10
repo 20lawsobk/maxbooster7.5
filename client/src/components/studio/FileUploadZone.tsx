@@ -26,9 +26,32 @@ interface UploadingFile {
   error?: string;
 }
 
+interface UploadResult {
+  track?: {
+    id: string;
+    name: string;
+    trackType: string;
+    order: number;
+    volume: number;
+    pan: number;
+    isMuted: boolean;
+    isSolo: boolean;
+    isArmed: boolean;
+    color: string;
+  };
+  clip?: {
+    id: string;
+    name: string;
+    audioUrl: string;
+    startTime: number;
+    duration: number | null;
+  };
+}
+
 interface FileUploadZoneProps {
   projectId: number | null;
   onUploadComplete?: () => void;
+  onTrackCreated?: (result: UploadResult) => void;
   className?: string;
   compact?: boolean;
   externalFiles?: FileList | null;
@@ -55,6 +78,7 @@ const MAX_FILE_SIZE = 500 * 1024 * 1024;
 export function FileUploadZone({
   projectId,
   onUploadComplete,
+  onTrackCreated,
   className,
   compact = false,
   externalFiles,
@@ -81,7 +105,7 @@ export function FileUploadZone({
   }, []);
 
   const uploadFile = useCallback(
-    async (uploadingFile: UploadingFile) => {
+    async (uploadingFile: UploadingFile): Promise<UploadResult | null> => {
       const formData = new FormData();
       formData.append('audioFile', uploadingFile.file);
       if (projectId) {
@@ -93,7 +117,7 @@ export function FileUploadZone({
           prev.map((f) => (f.id === uploadingFile.id ? { ...f, status: 'uploading' } : f))
         );
 
-        await uploadWithProgress('/api/studio/upload', formData, {
+        const response = await uploadWithProgress('/api/studio/upload', formData, {
           onProgress: (percent) => {
             setUploadingFiles((prev) =>
               prev.map((f) => (f.id === uploadingFile.id ? { ...f, progress: percent } : f))
@@ -107,6 +131,8 @@ export function FileUploadZone({
             f.id === uploadingFile.id ? { ...f, status: 'success', progress: 100 } : f
           )
         );
+
+        return response as UploadResult;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Upload failed';
         setUploadingFiles((prev) =>
@@ -159,18 +185,26 @@ export function FileUploadZone({
 
       const uploadPromises = newUploadingFiles.map((uploadingFile) =>
         uploadFile(uploadingFile)
-          .then(() => ({ success: true }))
-          .catch(() => ({ success: false }))
+          .then((result) => ({ success: true, result }))
+          .catch(() => ({ success: false, result: null }))
       );
 
       const results = await Promise.all(uploadPromises);
       const successCount = results.filter((r) => r.success).length;
-      const errorCount = results.filter((r) => !r.success).length;
 
       queryClient.invalidateQueries({
         queryKey: ['/api/studio/projects', projectId, 'tracks'],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/studio/projects', projectId?.toString(), 'tracks'],
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/recent-files'] });
+
+      for (const result of results) {
+        if (result.success && result.result && onTrackCreated) {
+          onTrackCreated(result.result);
+        }
+      }
 
       if (successCount > 0) {
         toast({
@@ -183,7 +217,7 @@ export function FileUploadZone({
         setUploadingFiles((prev) => prev.filter((f) => f.status !== 'success'));
       }, 2000);
     },
-    [validateFile, uploadFile, queryClient, projectId, toast, onUploadComplete]
+    [validateFile, uploadFile, queryClient, projectId, toast, onUploadComplete, onTrackCreated]
   );
 
   useEffect(() => {

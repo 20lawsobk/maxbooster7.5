@@ -37,6 +37,7 @@ interface RecordingPanelProps {
   currentTransportTime?: number;
   onRecordingStart?: () => void;
   onRecordingStop?: () => void;
+  onClipUploaded?: (trackId: string, clip: { id: string; name: string; startTime: number; duration: number; audioUrl: string }) => void;
 }
 
 export function RecordingPanel({
@@ -47,6 +48,7 @@ export function RecordingPanel({
   currentTransportTime = 0,
   onRecordingStart,
   onRecordingStop,
+  onClipUploaded,
 }: RecordingPanelProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -126,7 +128,17 @@ export function RecordingPanel({
     
     try {
       for (const track of armedTracks) {
-        await uploadRecording(projectId, track.id, recordStartTime);
+        const result = await uploadRecording(projectId, track.id, recordStartTime);
+        
+        if (result && onClipUploaded) {
+          onClipUploaded(track.id, {
+            id: result.clipId,
+            name: `Recording ${new Date().toLocaleTimeString()}`,
+            startTime: recordStartTime,
+            duration: duration,
+            audioUrl: '',
+          });
+        }
         
         queryClient.invalidateQueries({ 
           queryKey: ['/api/studio/tracks', track.id, 'audio-clips'] 
@@ -153,7 +165,7 @@ export function RecordingPanel({
     } finally {
       setIsUploading(false);
     }
-  }, [recordedBlob, armedTracks, projectId, recordStartTime, uploadRecording, queryClient, toast, clearRecording]);
+  }, [recordedBlob, armedTracks, projectId, recordStartTime, duration, uploadRecording, queryClient, toast, clearRecording, onClipUploaded]);
 
   const handleDiscardRecording = useCallback(() => {
     clearRecording();

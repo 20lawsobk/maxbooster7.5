@@ -1283,6 +1283,21 @@ export default function Studio() {
     []
   );
 
+  const handleTrackCreatedFromUpload = useCallback(
+    (result: { track?: { id: string; name: string }; clip?: { id: string; name: string; audioUrl: string; startTime: number; duration: number | null } }) => {
+      if (result.track && result.clip) {
+        controller.addClipToMap(result.track.id, {
+          id: result.clip.id,
+          name: result.clip.name,
+          audioUrl: result.clip.audioUrl,
+          startTime: result.clip.startTime || 0,
+          duration: result.clip.duration || 0,
+        });
+      }
+    },
+    [controller]
+  );
+
   const handleMuteToggle = useCallback(
     async (trackId: string) => {
       try {
@@ -2072,11 +2087,14 @@ export default function Studio() {
                   <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
                     <div className="flex items-center gap-2 flex-wrap px-4 py-2">
                       <RecordingPanel
-                        isRecording={controller.transport.isRecording}
-                        recordingDuration={recordingDuration}
-                        armedTracksCount={displayTracks.filter((t) => t.armed).length}
+                        projectId={selectedProject?.id?.toString() || ''}
+                        armedTracks={displayTracks.filter((t) => t.armed).map(t => ({ id: t.id, name: t.name }))}
                         inputMonitoringMode={inputMonitoringMode}
                         latencyMs={latencyMs}
+                        currentTransportTime={controller.transport.currentTime}
+                        onRecordingStart={() => controller.startRecording()}
+                        onRecordingStop={() => controller.stopRecording()}
+                        onClipUploaded={(trackId, clip) => controller.addClipToMap(trackId, clip)}
                       />
                       <PerformanceMonitor
                         cpuUsage={cpuUsage}
@@ -2539,7 +2557,7 @@ export default function Studio() {
             browser={
               browserVisible ? (
                 <div className="browser-panel h-full">
-                  <BrowserPanel projectId={selectedProject?.id as any ?? null} />
+                  <BrowserPanel projectId={selectedProject?.id as any ?? null} onTrackCreated={handleTrackCreatedFromUpload} />
                 </div>
               ) : null
             }

@@ -171,11 +171,34 @@ function BrowserTreeItem({ item, level, onSelect, selectedId, onPreview, onStopP
   );
 }
 
-interface BrowserPanelProps {
-  projectId?: number | null;
+interface UploadResult {
+  track?: {
+    id: string;
+    name: string;
+    trackType: string;
+    order: number;
+    volume: number;
+    pan: number;
+    isMuted: boolean;
+    isSolo: boolean;
+    isArmed: boolean;
+    color: string;
+  };
+  clip?: {
+    id: string;
+    name: string;
+    audioUrl: string;
+    startTime: number;
+    duration: number | null;
+  };
 }
 
-export function BrowserPanel({ projectId = null }: BrowserPanelProps) {
+interface BrowserPanelProps {
+  projectId?: number | null;
+  onTrackCreated?: (result: UploadResult) => void;
+}
+
+export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelProps) {
   const {
     browserSearchQuery,
     browserActiveTab,
@@ -647,7 +670,7 @@ export function BrowserPanel({ projectId = null }: BrowserPanelProps) {
           className="p-3 border-t"
           style={{ borderColor: 'var(--studio-border)' }}
         >
-          <FileUploadZone projectId={projectId} compact />
+          <FileUploadZone projectId={projectId} compact onTrackCreated={onTrackCreated} />
         </div>
       )}
 
