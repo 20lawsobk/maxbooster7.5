@@ -539,6 +539,78 @@ router.delete('/clips/:clipId', requireAuth, async (req: Request, res: Response)
   }
 });
 
+router.get('/tracks/:trackId/automation', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { trackId } = req.params;
+    const userId = (req as any).user.id;
+    const { parameter } = req.query;
+
+    const track = await db.query.studioTracks.findFirst({
+      where: eq(studioTracks.id, trackId),
+    });
+
+    if (!track) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    if (!await verifyProjectOwnership(track.projectId, userId)) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (track.metadata as Record<string, unknown>) || {};
+    const automation = (metadata.automation as Record<string, unknown[]>) || {};
+    
+    if (parameter) {
+      res.json({ points: automation[parameter as string] || [] });
+    } else {
+      res.json({ automation });
+    }
+  } catch (error: unknown) {
+    logger.error('Error getting automation:', error);
+    res.status(500).json({ error: 'Failed to get automation' });
+  }
+});
+
+router.put('/tracks/:trackId/automation', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { trackId } = req.params;
+    const userId = (req as any).user.id;
+    const { parameter, points } = req.body;
+
+    if (!parameter || !Array.isArray(points)) {
+      return res.status(400).json({ error: 'Parameter and points array required' });
+    }
+
+    const track = await db.query.studioTracks.findFirst({
+      where: eq(studioTracks.id, trackId),
+    });
+
+    if (!track) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    if (!await verifyProjectOwnership(track.projectId, userId)) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (track.metadata as Record<string, unknown>) || {};
+    const automation = (metadata.automation as Record<string, unknown[]>) || {};
+    automation[parameter] = points;
+
+    const [updated] = await db
+      .update(studioTracks)
+      .set({ metadata: { ...metadata, automation } })
+      .where(eq(studioTracks.id, trackId))
+      .returning();
+
+    logger.info('Automation saved', { trackId, parameter, pointCount: points.length });
+    res.json({ success: true, points });
+  } catch (error: unknown) {
+    logger.error('Error saving automation:', error);
+    res.status(500).json({ error: 'Failed to save automation' });
+  }
+});
+
 router.post('/record/upload', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;

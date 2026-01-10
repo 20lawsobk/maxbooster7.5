@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { Pen, Trash2, Circle, Plus, Minus } from 'lucide-react';
+import { Pen, Trash2, Circle, Plus, Minus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -9,6 +9,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useStudioStore } from '@/lib/studioStore';
+import { audioEngine } from '@/lib/audioEngine';
+import { useToast } from '@/hooks/use-toast';
 
 interface AutomationPoint {
   id: string;
@@ -23,6 +25,7 @@ interface AutomationLaneProps {
   duration: number;
   initialPoints?: AutomationPoint[];
   onPointsChange?: (points: AutomationPoint[]) => void;
+  currentTime?: number;
 }
 
 const PARAMETER_CONFIG = {
@@ -38,25 +41,106 @@ const PARAMETER_CONFIG = {
   },
 };
 
-/**
- * TODO: Add function documentation
- */
 export function AutomationLane({
   trackId,
   parameter,
   duration,
   initialPoints = [],
   onPointsChange,
+  currentTime = 0,
 }: AutomationLaneProps) {
+  const { toast } = useToast();
   const { zoom, snapEnabled, snapResolution } = useStudioStore();
   const [points, setPoints] = useState<AutomationPoint[]>(initialPoints);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const config = PARAMETER_CONFIG[parameter];
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAutomation = async () => {
+      try {
+        const res = await fetch(`/api/studio/tracks/${trackId}/automation?parameter=${parameter}`, {
+          credentials: 'include',
+        });
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          if (data.points && Array.isArray(data.points)) {
+            setPoints(data.points);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load automation:', error);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    loadAutomation();
+    return () => { cancelled = true; };
+  }, [trackId, parameter]);
+
+  const saveAutomation = useCallback((pointsToSave: AutomationPoint[]) => {
+    const snapshot = JSON.parse(JSON.stringify(pointsToSave));
+    
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(async () => {
+      setIsSaving(true);
+      try {
+        const res = await fetch(`/api/studio/tracks/${trackId}/automation`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ parameter, points: snapshot }),
+        });
+        if (!res.ok) throw new Error('Failed to save');
+      } catch (error) {
+        toast({ title: 'Failed to save automation', variant: 'destructive' });
+      } finally {
+        setIsSaving(false);
+      }
+    }, 500);
+  }, [trackId, parameter, toast]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
+
+  const interpolateValue = useCallback((time: number): number => {
+    if (points.length === 0) return config.defaultValue;
+    const sorted = [...points].sort((a, b) => a.time - b.time);
+    if (time <= sorted[0].time) return sorted[0].value;
+    if (time >= sorted[sorted.length - 1].time) return sorted[sorted.length - 1].value;
+    
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (time >= sorted[i].time && time < sorted[i + 1].time) {
+        const t = (time - sorted[i].time) / (sorted[i + 1].time - sorted[i].time);
+        return sorted[i].value + t * (sorted[i + 1].value - sorted[i].value);
+      }
+    }
+    return config.defaultValue;
+  }, [points, config.defaultValue]);
+
+  useEffect(() => {
+    if (points.length === 0) return;
+    const value = interpolateValue(currentTime);
+    
+    if (parameter === 'volume') {
+      audioEngine.setTrackVolume(trackId, value);
+    } else if (parameter === 'pan') {
+      audioEngine.setTrackPan(trackId, (value - 0.5) * 2);
+    }
+  }, [currentTime, trackId, parameter, points, interpolateValue]);
 
   // Draw automation curve on canvas
   useEffect(() => {
@@ -162,9 +246,10 @@ export function AutomationLane({
       setPoints(newPoints);
       setSelectedPointId(newPoint.id);
       onPointsChange?.(newPoints);
+      saveAutomation(newPoints);
       setIsAdding(false);
     },
-    [isAdding, duration, snapEnabled, snapResolution, points, onPointsChange]
+    [isAdding, duration, snapEnabled, snapResolution, points, onPointsChange, saveAutomation]
   );
 
   const startDrag = useCallback(
@@ -226,8 +311,11 @@ export function AutomationLane({
   );
 
   const endDrag = useCallback(() => {
+    if (isDragging) {
+      saveAutomation(points);
+    }
     setIsDragging(false);
-  }, []);
+  }, [isDragging, points, saveAutomation]);
 
   const deletePoint = useCallback(() => {
     if (!selectedPointId) return;
@@ -236,7 +324,8 @@ export function AutomationLane({
     setPoints(newPoints);
     setSelectedPointId(null);
     onPointsChange?.(newPoints);
-  }, [selectedPointId, points, onPointsChange]);
+    saveAutomation(newPoints);
+  }, [selectedPointId, points, onPointsChange, saveAutomation]);
 
   const toggleCurve = useCallback(() => {
     if (!selectedPointId) return;
@@ -249,7 +338,8 @@ export function AutomationLane({
 
     setPoints(newPoints);
     onPointsChange?.(newPoints);
-  }, [selectedPointId, points, onPointsChange]);
+    saveAutomation(newPoints);
+  }, [selectedPointId, points, onPointsChange, saveAutomation]);
 
   const getValueLabel = (normalizedValue: number) => {
     const { min, max, unit } = config;
