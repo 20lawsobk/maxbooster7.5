@@ -650,12 +650,27 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     [updateClipMutation, trackClips, onError]
   );
 
+  const deleteClip = useCallback(
+    async (trackId: string, clipId: string) => {
+      try {
+        await deleteClipMutation.mutateAsync(clipId);
+        removeClipFromMap(trackId, clipId);
+        logger.info('Clip deleted successfully', { trackId, clipId });
+      } catch (error: unknown) {
+        logger.error('Failed to delete clip:', error);
+        if (onError) onError(error as Error);
+        throw error;
+      }
+    },
+    [deleteClipMutation, removeClipFromMap, onError]
+  );
+
   // Calculate project duration from clips reactively
   const projectDuration = useMemo(() => {
     let maxDuration = 0;
     for (const clips of trackClips.values()) {
       for (const clip of clips) {
-        const clipEnd = clip.startTime + clip.duration;
+        const clipEnd = clip.startTime + (clip.duration || 0);
         if (clipEnd > maxDuration) {
           maxDuration = clipEnd;
         }
@@ -702,6 +717,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     // Clips
     trackClips,
     updateClip,
+    deleteClip,
     updateClipInMap,
     addClipToMap,
     removeClipFromMap,

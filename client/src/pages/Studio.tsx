@@ -1002,6 +1002,46 @@ export default function Studio() {
 
   const displayTracks: StudioTrack[] = controller.tracks;
 
+  // Normalize trackClips Map to ensure React detects changes and durations have fallbacks
+  const normalizedTrackClips = useMemo(() => {
+    const normalized = new Map<string, Array<{
+      id: string;
+      name: string;
+      startTime: number;
+      duration: number;
+      audioUrl?: string;
+      filePath?: string;
+    }>>();
+    
+    controller.trackClips.forEach((clips, trackId) => {
+      normalized.set(trackId, clips.map(clip => ({
+        id: clip.id,
+        name: clip.name,
+        startTime: clip.startTime || 0,
+        duration: clip.duration || 4, // Default 4 bars for null durations
+        audioUrl: clip.audioUrl,
+        filePath: clip.filePath,
+      })));
+    });
+    
+    return normalized;
+  }, [controller.trackClips]);
+
+  // Delete clip handler
+  const handleDeleteClip = useCallback(async (trackId: string, clipId: string) => {
+    try {
+      await controller.deleteClip(trackId, clipId);
+      toast({ title: 'Clip deleted' });
+    } catch (error: unknown) {
+      logger.error('Failed to delete clip:', error);
+      toast({ 
+        title: 'Failed to delete clip', 
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive' 
+      });
+    }
+  }, [controller, toast]);
+
   useEffect(() => {
     // Poll for AudioContext availability and monitor CPU
     const checkInterval = setInterval(() => {
@@ -1986,8 +2026,7 @@ export default function Studio() {
                   onMasterVolumeChange={handleMasterVolumeChange}
                 />
               }
-            >
-              <div className="flex-1 flex flex-col overflow-hidden">
+              timeline={
                 <Timeline
                   tracks={displayTracks}
                   zoom={zoom}
@@ -1996,27 +2035,31 @@ export default function Studio() {
                   selectedTrack={selectedTrack}
                   onTrackSelect={handleTrackSelect}
                   onTimeChange={(time) => controller.seek(time)}
+                  trackClips={normalizedTrackClips}
+                  onClipUpdate={handleClipUpdate}
                 />
-                <TrackList
-                  tracks={displayTracks}
-                  trackClips={controller.trackClips}
-                  mixBusses={mixBusses}
-                  selectedTrack={selectedTrack}
-                  onTrackSelect={handleTrackSelect}
-                  zoom={zoom}
-                  currentTime={controller.transport.currentTime}
-                  isPlaying={controller.transport.isPlaying}
-                  onTrackNameChange={handleTrackNameChange}
-                  onMuteToggle={handleMuteToggle}
-                  onSoloToggle={handleSoloToggle}
-                  onVolumeChange={handleVolumeChange}
-                  onTrackUpdate={handleTrackUpdate}
-                  onDuplicateTrack={handleDuplicateTrack}
-                  onDeleteTrack={handleDeleteTrack}
-                  onAddTrack={handleAddTrack}
-                  onReorderTracks={handleReorderTracks}
-                />
-              </div>
+              }
+            >
+              <TrackList
+                tracks={displayTracks}
+                trackClips={normalizedTrackClips}
+                mixBusses={mixBusses}
+                selectedTrack={selectedTrack}
+                onTrackSelect={handleTrackSelect}
+                zoom={zoom}
+                currentTime={controller.transport.currentTime}
+                isPlaying={controller.transport.isPlaying}
+                onTrackNameChange={handleTrackNameChange}
+                onMuteToggle={handleMuteToggle}
+                onSoloToggle={handleSoloToggle}
+                onVolumeChange={handleVolumeChange}
+                onTrackUpdate={handleTrackUpdate}
+                onDuplicateTrack={handleDuplicateTrack}
+                onDeleteTrack={handleDeleteTrack}
+                onDeleteClip={handleDeleteClip}
+                onAddTrack={handleAddTrack}
+                onReorderTracks={handleReorderTracks}
+              />
             </StudioOneWrapper>
           ) : (
           <LayoutGrid
@@ -2452,7 +2495,7 @@ export default function Studio() {
                                     name: t.name,
                                     color: t.color || TRACK_COLORS[0],
                                   }))}
-                                  trackClips={controller.trackClips}
+                                  trackClips={normalizedTrackClips}
                                   onTimelineClick={handleTimelineMouseClick}
                                   onClipUpdate={handleClipUpdate}
                                   snapEnabled={true}
@@ -2480,7 +2523,7 @@ export default function Studio() {
                             <ScrollArea className="flex-1 track-list-container">
                               <TrackList
                                 tracks={displayTracks}
-                                trackClips={controller.trackClips}
+                                trackClips={normalizedTrackClips}
                                 mixBusses={mixBusses}
                                 onTrackNameChange={handleTrackNameChange}
                                 onMuteToggle={handleMuteToggle}
@@ -2489,6 +2532,7 @@ export default function Studio() {
                                 onTrackUpdate={handleTrackUpdate}
                                 onDuplicateTrack={handleDuplicateTrack}
                                 onDeleteTrack={handleDeleteTrack}
+                                onDeleteClip={handleDeleteClip}
                                 onAddTrack={handleAddTrack}
                                 onReorderTracks={handleReorderTracks}
                               />
