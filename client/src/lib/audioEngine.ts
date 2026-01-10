@@ -1719,4 +1719,7 @@ class AudioEngine {
   }
 }
 
+// Singleton instance for use across components
+export const audioEngine = new AudioEngine();
+
 export default AudioEngine;
