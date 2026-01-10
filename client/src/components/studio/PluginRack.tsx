@@ -222,8 +222,6 @@ export function PluginRack({
   }, [plugins, onPluginsChange]);
 
   const applyPluginToAudioEngine = useCallback((plugin: PluginInstance) => {
-    if (plugin.bypass) return;
-    
     switch (plugin.type) {
       case 'eq':
         audioEngine.updateTrackEQ(trackId, {
@@ -240,7 +238,7 @@ export function PluginRack({
           ratio: plugin.parameters.ratio ?? 4,
           attack: plugin.parameters.attack ?? 10,
           release: plugin.parameters.release ?? 100,
-          knee: 6,
+          knee: plugin.parameters.knee ?? 6,
           bypass: plugin.bypass,
         });
         break;
@@ -248,7 +246,7 @@ export function PluginRack({
         audioEngine.updateTrackReverb(trackId, {
           mix: plugin.parameters.mix ?? 30,
           decay: plugin.parameters.decay ?? 2,
-          preDelay: 0,
+          preDelay: plugin.parameters.preDelay ?? 0,
           bypass: plugin.bypass,
         });
         break;
@@ -293,11 +291,9 @@ export function PluginRack({
 
   useEffect(() => {
     plugins.forEach(plugin => {
-      if (!plugin.bypass) {
-        applyPluginToAudioEngine(plugin);
-      }
+      applyPluginToAudioEngine(plugin);
     });
-  }, []);
+  }, [trackId, applyPluginToAudioEngine]);
 
   const handleReorder = useCallback((reorderedPlugins: PluginInstance[]) => {
     onPluginsChange(reorderedPlugins);
