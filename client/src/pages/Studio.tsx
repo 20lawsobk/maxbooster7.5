@@ -1999,12 +1999,22 @@ export default function Studio() {
                 />
                 <TrackList
                   tracks={displayTracks}
+                  trackClips={controller.trackClips}
+                  mixBusses={mixBusses}
                   selectedTrack={selectedTrack}
                   onTrackSelect={handleTrackSelect}
                   zoom={zoom}
                   currentTime={controller.transport.currentTime}
                   isPlaying={controller.transport.isPlaying}
-                  onTrackUpdate={handleTrackUpdate as (trackId: string, updates: unknown) => void}
+                  onTrackNameChange={handleTrackNameChange}
+                  onMuteToggle={handleMuteToggle}
+                  onSoloToggle={handleSoloToggle}
+                  onVolumeChange={handleVolumeChange}
+                  onTrackUpdate={handleTrackUpdate}
+                  onDuplicateTrack={handleDuplicateTrack}
+                  onDeleteTrack={handleDeleteTrack}
+                  onAddTrack={handleAddTrack}
+                  onReorderTracks={handleReorderTracks}
                 />
               </div>
             </StudioOneWrapper>

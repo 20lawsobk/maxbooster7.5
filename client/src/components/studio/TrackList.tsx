@@ -523,8 +523,9 @@ const SortableTrackRow = memo(function SortableTrackRow({
             {/* Audio Clips */}
             {(clips || []).map((clip) => {
               const totalBars = 32;
-              const leftPercent = (clip.startTime / totalBars) * 100;
-              const widthPercent = (clip.duration / totalBars) * 100;
+              const leftPercent = ((clip.startTime || 0) / totalBars) * 100;
+              const clipDuration = clip.duration || 4;
+              const widthPercent = Math.max((clipDuration / totalBars) * 100, 3);
 
               return (
                 <div
@@ -535,6 +536,7 @@ const SortableTrackRow = memo(function SortableTrackRow({
                     width: `${widthPercent}%`,
                     backgroundColor: track.color,
                     opacity: track.mute ? 0.4 : 0.8,
+                    minWidth: '60px',
                   }}
                   data-testid={`clip-${clip.id}`}
                 >
