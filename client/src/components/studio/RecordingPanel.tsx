@@ -41,7 +41,7 @@ interface RecordingPanelProps {
 
 export function RecordingPanel({
   projectId,
-  armedTracks,
+  armedTracks = [],
   inputMonitoringMode,
   latencyMs = 0,
   currentTransportTime = 0,
