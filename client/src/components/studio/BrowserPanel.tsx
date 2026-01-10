@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ChevronDown,
   Play,
+  Square,
   Upload,
 } from 'lucide-react';
 
@@ -47,12 +48,12 @@ interface BrowserTreeItemProps {
   level: number;
   onSelect: (item: BrowserItem) => void;
   selectedId: string | null;
+  onPreview?: (fileUrl: string, itemId: string) => void;
+  onStopPreview?: () => void;
+  previewingId?: string | null;
 }
 
-/**
- * TODO: Add function documentation
- */
-function BrowserTreeItem({ item, level, onSelect, selectedId }: BrowserTreeItemProps) {
+function BrowserTreeItem({ item, level, onSelect, selectedId, onPreview, onStopPreview, previewingId }: BrowserTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(level === 0);
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -127,16 +128,25 @@ function BrowserTreeItem({ item, level, onSelect, selectedId }: BrowserTreeItemP
           </span>
         )}
 
-        {item.type === 'sample' && (
+        {(item.type === 'sample' || item.type === 'file') && item.fileUrl && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 opacity-0 hover:opacity-100"
+            className={`h-6 w-6 p-0 ${previewingId === item.id ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}
             onClick={(e) => {
               e.stopPropagation();
+              if (previewingId === item.id) {
+                onStopPreview?.();
+              } else if (item.fileUrl) {
+                onPreview?.(item.fileUrl, item.id);
+              }
             }}
           >
-            <Play className="h-3 w-3" />
+            {previewingId === item.id ? (
+              <Square className="h-3 w-3 text-red-400" />
+            ) : (
+              <Play className="h-3 w-3" />
+            )}
           </Button>
         )}
       </div>
@@ -150,6 +160,9 @@ function BrowserTreeItem({ item, level, onSelect, selectedId }: BrowserTreeItemP
               level={level + 1}
               onSelect={onSelect}
               selectedId={selectedId}
+              onPreview={onPreview}
+              onStopPreview={onStopPreview}
+              previewingId={previewingId}
             />
           ))}
         </div>
@@ -174,6 +187,43 @@ export function BrowserPanel({ projectId = null }: BrowserPanelProps) {
 
   const [localSearch, setLocalSearch] = useState(browserSearchQuery);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handlePreview = useCallback((fileUrl: string, itemId: string) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+    }
+    
+    const audio = new Audio(fileUrl);
+    audio.volume = 0.7;
+    audioRef.current = audio;
+    setPreviewingId(itemId);
+    
+    audio.onended = () => {
+      setPreviewingId(null);
+    };
+    
+    audio.onerror = () => {
+      setPreviewingId(null);
+      console.warn('Failed to preview audio file:', fileUrl);
+    };
+    
+    audio.play().catch((err) => {
+      console.warn('Audio preview failed:', err);
+      setPreviewingId(null);
+    });
+  }, []);
+
+  const handleStopPreview = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+    setPreviewingId(null);
+  }, []);
 
   const handleSearch = (query: string) => {
     setLocalSearch(query);
@@ -581,6 +631,9 @@ export function BrowserPanel({ projectId = null }: BrowserPanelProps) {
                     level={0}
                     onSelect={(item) => setBrowserSelectedItem(item.id)}
                     selectedId={browserSelectedItem}
+                    onPreview={handlePreview}
+                    onStopPreview={handleStopPreview}
+                    previewingId={previewingId}
                   />
                 ))
               )}
