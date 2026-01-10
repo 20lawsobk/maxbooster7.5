@@ -245,7 +245,7 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
       where: eq(studioTracks.projectId, data.projectId),
     });
 
-    const trackNumber = data.trackNumber ?? existingTracks.length + 1;
+    const trackOrder = data.trackNumber ?? existingTracks.length;
 
     const [track] = await db
       .insert(studioTracks)
@@ -254,20 +254,15 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
         projectId: data.projectId,
         name: data.name,
         trackType: data.trackType,
-        trackNumber,
+        order: trackOrder,
         volume: data.volume,
         pan: data.pan,
-        mute: data.mute,
-        solo: data.solo,
-        armed: data.armed,
-        recordEnabled: data.recordEnabled,
-        inputMonitoring: data.inputMonitoring,
+        isMuted: data.mute,
+        isSolo: data.solo,
+        isArmed: data.armed,
+        inputSource: null,
         color: data.color || `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`,
-        height: data.height,
-        collapsed: data.collapsed,
         outputBus: data.outputBus,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       })
       .returning();
 
@@ -292,7 +287,7 @@ router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res:
 
     const tracks = await db.query.studioTracks.findMany({
       where: eq(studioTracks.projectId, projectId),
-      orderBy: (studioTracks, { asc }) => [asc(studioTracks.trackNumber)],
+      orderBy: (studioTracks, { asc }) => [asc(studioTracks.order)],
     });
 
     res.json(tracks);
@@ -803,9 +798,9 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
         const existingTracks = await db.query.studioTracks.findMany({
           where: eq(studioTracks.projectId, projectId),
         });
-        const trackNumber = existingTracks.length + 1;
+        const trackOrder = existingTracks.length;
         
-        const trackName = file.originalname.replace(/\.[^/.]+$/, '') || `Track ${trackNumber}`;
+        const trackName = file.originalname.replace(/\.[^/.]+$/, '') || `Track ${trackOrder + 1}`;
         const trackId = `track_${nanoid()}`;
         
         const [newTrack] = await db.insert(studioTracks).values({
@@ -813,17 +808,14 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
           projectId,
           name: trackName,
           trackType: 'audio',
-          trackNumber,
+          order: trackOrder,
           volume: 1,
           pan: 0,
-          mute: false,
-          solo: false,
-          armed: false,
-          recordEnabled: false,
-          inputMonitoring: false,
+          isMuted: false,
+          isSolo: false,
+          isArmed: false,
+          inputSource: null,
           color: `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`,
-          height: 80,
-          collapsed: false,
           outputBus: 'master',
         }).returning();
         
