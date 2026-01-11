@@ -1036,7 +1036,6 @@ export default function Studio() {
     try {
       await controller.deleteClip(trackId, clipId);
       toast({ title: 'Clip deleted' });
-      clearSelection();
     } catch (error: unknown) {
       logger.error('Failed to delete clip:', error);
       toast({ 
@@ -1045,9 +1044,9 @@ export default function Studio() {
         variant: 'destructive' 
       });
     }
-  }, [controller, toast, clearSelection]);
+  }, [controller, toast]);
 
-  // Keyboard handler for Delete key - delete selected clip
+  // Keyboard handler for Delete key - delete selected clip only when delete tool is active
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't handle if typing in an input/textarea
@@ -1055,7 +1054,8 @@ export default function Studio() {
         return;
       }
       
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedClipId) {
+      // Only delete when the delete tool is active and a clip is selected
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedClipId && selectedTool === 'delete') {
         e.preventDefault();
         // Find which track contains this clip
         for (const [trackId, clips] of controller.trackClips.entries()) {
@@ -1069,7 +1069,7 @@ export default function Studio() {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedClipId, controller.trackClips, handleDeleteClip]);
+  }, [selectedClipId, selectedTool, controller.trackClips, handleDeleteClip]);
 
   useEffect(() => {
     // Poll for AudioContext availability and monitor CPU
