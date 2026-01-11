@@ -1143,9 +1143,10 @@ class AudioEngine {
   async seek(time: number): Promise<void> {
     const wasPlaying = this.transportState.isPlaying;
     
-    // Stop current playback
+    // Stop current playback and reset state
     if (wasPlaying) {
       this.stopAllSources();
+      this.transportState.isPlaying = false;
     }
     
     // Update transport time
