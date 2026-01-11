@@ -151,6 +151,41 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     };
   }, [isPlaying, setStoreCurrentTime]);
 
+  // Preload all audio buffers when trackClips changes (eliminates play() delay)
+  const preloadProjectAudio = useCallback(async () => {
+    if (!trackClips.size) return;
+    
+    const audioEngine = audioEngineRef.current;
+    if (!audioEngine) return;
+    
+    try {
+      const loadPromises: Promise<void>[] = [];
+      
+      for (const [, clips] of trackClips.entries()) {
+        for (const clip of clips) {
+          const url = clip.audioUrl || clip.filePath;
+          if (url) {
+            loadPromises.push(
+              audioEngine.loadBuffer(url).then(() => {}).catch((e) => {
+                logger.warn(`Failed to preload clip ${clip.id}:`, e);
+              })
+            );
+          }
+        }
+      }
+      
+      await Promise.all(loadPromises);
+      logger.info(`Preloaded ${loadPromises.length} audio buffers`);
+    } catch (error) {
+      logger.warn('Error during audio preload:', error);
+    }
+  }, [trackClips]);
+
+  // Trigger preloading when trackClips changes
+  useEffect(() => {
+    preloadProjectAudio();
+  }, [trackClips, preloadProjectAudio]);
+
   // Create track mutation
   const createTrackMutation = useMutation({
     mutationFn: async (trackData: Partial<InsertStudioTrack>) => {
@@ -238,7 +273,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         }
       });
 
-      // Preload all tracks and clips into AudioEngine
+      // Set up tracks in AudioEngine (buffers are already preloaded)
       for (const track of tracks) {
         if (track.trackType === 'audio') {
           const clips = trackClips.get(track.id) || [];
@@ -262,7 +297,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
             audioEngineRef.current.setTrackSolo(track.id, track.solo);
           }
 
-          // Load clips for this track to ensure synchronization
+          // Add clips to track (awaiting since loadTrack is instant with cached buffers)
           if (clips.length > 0) {
             await audioEngineRef.current.loadTrack(
               track.id,
@@ -273,7 +308,9 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
                 duration: clip.duration,
                 offset: clip.offset || 0,
               }))
-            );
+            ).catch((e) => {
+              logger.warn(`Failed to load track ${track.id}:`, e);
+            });
           }
         }
       }
