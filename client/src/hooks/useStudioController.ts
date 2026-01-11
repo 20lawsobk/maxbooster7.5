@@ -87,6 +87,11 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
 
   // RAF for time updates
   const animationFrameRef = useRef<number>();
+  
+  // Meter levels state (only active when playing)
+  const [trackMeterLevels, setTrackMeterLevels] = useState<Map<string, [number, number]>>(new Map());
+  const [masterMeterLevels, setMasterMeterLevels] = useState<[number, number]>([0, 0]);
+  const meterAnimationRef = useRef<number>();
 
   // Transport state getter for compatibility
   const transport: TransportState = {
@@ -150,6 +155,52 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
       }
     };
   }, [isPlaying, setStoreCurrentTime]);
+
+  // Poll meter levels from audio engine only when playing
+  useEffect(() => {
+    const dbToLinear = (db: number): number => {
+      if (db <= -60) return 0;
+      return Math.pow(10, db / 20);
+    };
+    
+    if (isPlaying && audioEngineRef.current) {
+      const updateMeters = () => {
+        const engine = audioEngineRef.current;
+        if (!engine) {
+          meterAnimationRef.current = requestAnimationFrame(updateMeters);
+          return;
+        }
+        
+        const newLevels = new Map<string, [number, number]>();
+        for (const track of tracks) {
+          const peakData = engine.getTrackPeakLevel(track.id);
+          const linearPeak = peakData ? dbToLinear(peakData.peak) : 0;
+          const safeLevel = Number.isFinite(linearPeak) ? Math.max(0, Math.min(1, linearPeak)) : 0;
+          newLevels.set(track.id, [safeLevel, safeLevel]);
+        }
+        setTrackMeterLevels(newLevels);
+        
+        const masterPeak = engine.getMasterPeakLevel();
+        const masterLinear = masterPeak ? dbToLinear(masterPeak.peak) : 0;
+        const safeMaster = Number.isFinite(masterLinear) ? Math.max(0, Math.min(1, masterLinear)) : 0;
+        setMasterMeterLevels([safeMaster, safeMaster]);
+        
+        meterAnimationRef.current = requestAnimationFrame(updateMeters);
+      };
+      meterAnimationRef.current = requestAnimationFrame(updateMeters);
+    } else {
+      if (meterAnimationRef.current) {
+        cancelAnimationFrame(meterAnimationRef.current);
+      }
+      setTrackMeterLevels(new Map());
+      setMasterMeterLevels([0, 0]);
+    }
+    return () => {
+      if (meterAnimationRef.current) {
+        cancelAnimationFrame(meterAnimationRef.current);
+      }
+    };
+  }, [isPlaying, tracks]);
 
   // Preload all audio buffers when trackClips changes (eliminates play() delay)
   const preloadProjectAudio = useCallback(async () => {
@@ -750,6 +801,10 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     toggleMute,
     toggleSolo,
     setMasterVolume,
+    
+    // Meters (only active when playing)
+    trackMeterLevels,
+    masterMeterLevels,
 
     // Clips
     trackClips,

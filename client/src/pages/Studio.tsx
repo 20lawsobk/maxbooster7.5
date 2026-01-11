@@ -1940,6 +1940,8 @@ export default function Studio() {
               solo: b.solo,
             }))}
             masterVolume={masterVolume}
+            trackMeterLevels={controller.trackMeterLevels}
+            masterMeterLevels={controller.masterMeterLevels}
             selectedTrackId={selectedTrack || undefined}
             inspectorVisible={inspectorVisible}
             browserVisible={browserVisible}

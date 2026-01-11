@@ -330,22 +330,30 @@ export function StudioOneChannelStrip({
   useEffect(() => {
     if (mute) {
       setLocalMeterLevels([0, 0]);
+      setLocalPeakLevels([0, 0]);
       return;
     }
 
-    const interval = setInterval(() => {
-      const baseLevel = volume * 0.7;
-      const newL = Math.random() * 0.3 * volume + baseLevel;
-      const newR = Math.random() * 0.3 * volume + baseLevel;
-      setLocalMeterLevels([newL, newR]);
+    const safeValue = (val: number | undefined): number => {
+      if (val === undefined || val === null || !Number.isFinite(val)) return 0;
+      return Math.max(0, Math.min(1, val));
+    };
+    
+    const rawL = safeValue(meterLevels?.[0]) * volume;
+    const rawR = safeValue(meterLevels?.[1]) * volume;
+    const scaledL = Math.min(1, rawL);
+    const scaledR = Math.min(1, rawR);
+    setLocalMeterLevels([scaledL, scaledR]);
+    
+    if (scaledL > 0 || scaledR > 0) {
       setLocalPeakLevels((prev) => [
-        Math.max(prev[0] * 0.98, newL),
-        Math.max(prev[1] * 0.98, newR),
+        Math.max(prev[0] * 0.98, scaledL),
+        Math.max(prev[1] * 0.98, scaledR),
       ]);
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, [volume, mute]);
+    } else {
+      setLocalPeakLevels((prev) => [prev[0] * 0.95, prev[1] * 0.95]);
+    }
+  }, [meterLevels, volume, mute]);
 
   const getTrackTypeLabel = () => {
     switch (trackType) {

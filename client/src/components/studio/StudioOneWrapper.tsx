@@ -72,6 +72,8 @@ interface StudioOneWrapperProps {
   tracks: StudioTrack[];
   busses: MixBus[];
   masterVolume: number;
+  trackMeterLevels?: Map<string, [number, number]>;
+  masterMeterLevels?: [number, number];
   selectedTrackId?: string;
   inspectorVisible: boolean;
   browserVisible: boolean;
@@ -116,6 +118,8 @@ export function StudioOneWrapper({
   tracks,
   busses,
   masterVolume,
+  trackMeterLevels,
+  masterMeterLevels,
   selectedTrackId,
   inspectorVisible,
   browserVisible,
@@ -256,6 +260,8 @@ export function StudioOneWrapper({
       }))}
       busses={busses}
       masterVolume={masterVolume}
+      trackMeterLevels={trackMeterLevels}
+      masterMeterLevels={masterMeterLevels}
       selectedTrackId={selectedTrackId}
       onTrackVolumeChange={onTrackVolumeChange}
       onTrackPanChange={onTrackPanChange}

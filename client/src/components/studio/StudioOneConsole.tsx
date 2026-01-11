@@ -49,6 +49,8 @@ interface StudioOneConsoleProps {
   tracks: StudioTrack[];
   busses: MixBus[];
   masterVolume: number;
+  trackMeterLevels?: Map<string, [number, number]>;
+  masterMeterLevels?: [number, number];
   onTrackVolumeChange: (trackId: string, volume: number) => void;
   onTrackPanChange: (trackId: string, pan: number) => void;
   onTrackMuteToggle: (trackId: string) => void;
@@ -69,6 +71,8 @@ export function StudioOneConsole({
   tracks,
   busses,
   masterVolume,
+  trackMeterLevels,
+  masterMeterLevels,
   onTrackVolumeChange,
   onTrackPanChange,
   onTrackMuteToggle,
@@ -162,6 +166,7 @@ export function StudioOneConsole({
                 inserts={track.inserts}
                 sends={track.sends}
                 outputBus={track.outputBus}
+                meterLevels={trackMeterLevels?.get(track.id) || [0, 0]}
                 onVolumeChange={(v) => onTrackVolumeChange(track.id, v)}
                 onPanChange={(v) => onTrackPanChange(track.id, v)}
                 onMuteToggle={() => onTrackMuteToggle(track.id)}
@@ -241,6 +246,7 @@ export function StudioOneConsole({
               pan={0}
               mute={false}
               solo={false}
+              meterLevels={masterMeterLevels || [0, 0]}
               onVolumeChange={onMasterVolumeChange}
               onPanChange={() => {}}
               onMuteToggle={() => {}}
