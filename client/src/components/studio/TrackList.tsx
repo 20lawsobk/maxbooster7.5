@@ -574,16 +574,23 @@ const SortableTrackRow = memo(function SortableTrackRow({
                         </button>
                       )}
                     </div>
-                    <div className="h-6 flex items-end gap-0.5">
-                      {Array.from({ length: 20 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 bg-white/30 rounded-t"
-                          style={{
-                            height: `${Math.random() * 100}%`,
-                          }}
-                        />
-                      ))}
+                    {/* Professional waveform visualization - deterministic based on clip id */}
+                    <div className="h-6 flex items-center gap-px overflow-hidden">
+                      {Array.from({ length: 48 }).map((_, i) => {
+                        const seed = clip.id.charCodeAt(i % clip.id.length) + i;
+                        const height = 20 + ((seed * 7) % 80);
+                        const opacity = 0.4 + ((seed * 3) % 40) / 100;
+                        return (
+                          <div
+                            key={i}
+                            className="flex-1 min-w-[1px] rounded-sm"
+                            style={{
+                              height: `${height}%`,
+                              background: `rgba(255, 255, 255, ${opacity})`,
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

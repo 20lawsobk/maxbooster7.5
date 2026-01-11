@@ -36,6 +36,8 @@ import {
   Plus,
   FolderOpen,
   HelpCircle,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
 
 interface Project {
@@ -62,6 +64,10 @@ interface StudioTopBarProps {
   onUploadFile?: () => void;
   onSaveProject?: () => void;
   onShowTutorial?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
   isSaving?: boolean;
 }
 
@@ -86,6 +92,10 @@ export function StudioTopBar({
   onUploadFile,
   onSaveProject,
   onShowTutorial,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
   isSaving = false,
 }: StudioTopBarProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -246,6 +256,77 @@ export function StudioTopBar({
                 </button>
               </TooltipTrigger>
               <TooltipContent>{isSaving ? 'Saving...' : 'Save Project'}</TooltipContent>
+            </Tooltip>
+
+            {/* Undo/Redo Buttons */}
+            <div className="h-6 w-px mx-1" style={{ background: 'var(--studio-border)' }} />
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="h-9 w-9 rounded-md flex items-center justify-center transition-all"
+                  style={{
+                    background: canUndo ? 'var(--studio-surface)' : 'var(--studio-bg-medium)',
+                    color: canUndo ? 'var(--studio-text-muted)' : 'var(--studio-text-subtle)',
+                    border: '1px solid var(--studio-border-subtle)',
+                    boxShadow: canUndo ? 'var(--studio-shadow-sm)' : 'none',
+                    opacity: canUndo ? 1 : 0.5,
+                    cursor: canUndo ? 'pointer' : 'not-allowed',
+                  }}
+                  onClick={onUndo}
+                  disabled={!canUndo}
+                  data-testid="button-undo"
+                  onMouseEnter={(e) => {
+                    if (canUndo) {
+                      e.currentTarget.style.background = 'var(--studio-surface-elevated)';
+                      e.currentTarget.style.color = 'var(--studio-text)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (canUndo) {
+                      e.currentTarget.style.background = 'var(--studio-surface)';
+                      e.currentTarget.style.color = 'var(--studio-text-muted)';
+                    }
+                  }}
+                >
+                  <Undo2 className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="h-9 w-9 rounded-md flex items-center justify-center transition-all"
+                  style={{
+                    background: canRedo ? 'var(--studio-surface)' : 'var(--studio-bg-medium)',
+                    color: canRedo ? 'var(--studio-text-muted)' : 'var(--studio-text-subtle)',
+                    border: '1px solid var(--studio-border-subtle)',
+                    boxShadow: canRedo ? 'var(--studio-shadow-sm)' : 'none',
+                    opacity: canRedo ? 1 : 0.5,
+                    cursor: canRedo ? 'pointer' : 'not-allowed',
+                  }}
+                  onClick={onRedo}
+                  disabled={!canRedo}
+                  data-testid="button-redo"
+                  onMouseEnter={(e) => {
+                    if (canRedo) {
+                      e.currentTarget.style.background = 'var(--studio-surface-elevated)';
+                      e.currentTarget.style.color = 'var(--studio-text)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (canRedo) {
+                      e.currentTarget.style.background = 'var(--studio-surface)';
+                      e.currentTarget.style.color = 'var(--studio-text-muted)';
+                    }
+                  }}
+                >
+                  <Redo2 className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Redo (Ctrl+Shift+Z)</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 

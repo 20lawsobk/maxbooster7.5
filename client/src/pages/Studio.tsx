@@ -222,6 +222,25 @@ export default function Studio() {
   // Tool state for select/cut/delete tools
   const [selectedTool, setSelectedTool] = useState<'select' | 'cut' | 'delete'>('select');
 
+  // Undo/Redo history for clip operations (session-based)
+  interface ClipData {
+    id: string;
+    name: string;
+    startTime: number;
+    duration: number;
+    audioUrl?: string;
+    filePath?: string;
+    offset?: number;
+    gain?: number;
+  }
+  interface UndoAction {
+    type: 'delete_clip';
+    trackId: string;
+    clip: ClipData;
+  }
+  const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
+  const [redoStack, setRedoStack] = useState<UndoAction[]>([]);
+
   // Use Zustand store for zoom and other timeline state
   const {
     zoom,
@@ -1031,11 +1050,35 @@ export default function Studio() {
     return normalized;
   }, [controller.trackClips]);
 
-  // Delete clip handler
+  // Delete clip handler with undo support
   const handleDeleteClip = useCallback(async (trackId: string, clipId: string) => {
     try {
+      // Find clip data before deleting (for undo)
+      const clips = controller.trackClips.get(trackId);
+      const clipToDelete = clips?.find(c => c.id === clipId);
+      
+      if (clipToDelete) {
+        // Save complete clip data to undo stack for session-based restore
+        setUndoStack(prev => [...prev, {
+          type: 'delete_clip' as const,
+          trackId,
+          clip: {
+            id: clipToDelete.id,
+            name: clipToDelete.name,
+            startTime: clipToDelete.startTime || 0,
+            duration: clipToDelete.duration || 4,
+            audioUrl: clipToDelete.audioUrl,
+            filePath: clipToDelete.filePath,
+            offset: clipToDelete.offset || 0,
+            gain: clipToDelete.gain || 1,
+          }
+        }]);
+        // Clear redo stack on new action
+        setRedoStack([]);
+      }
+      
       await controller.deleteClip(trackId, clipId);
-      toast({ title: 'Clip deleted' });
+      toast({ title: 'Clip deleted', description: 'Press Ctrl+Z to undo (this session only)' });
     } catch (error: unknown) {
       logger.error('Failed to delete clip:', error);
       toast({ 
@@ -1046,11 +1089,71 @@ export default function Studio() {
     }
   }, [controller, toast]);
 
-  // Keyboard handler for Delete key - delete selected clip only when delete tool is active
+  // Undo handler - restores clip to local state and audio engine (session-based undo)
+  const handleUndo = useCallback(() => {
+    const lastAction = undoStack[undoStack.length - 1];
+    if (!lastAction) return;
+    
+    if (lastAction.type === 'delete_clip') {
+      try {
+        // Restore the clip to local map and audio engine
+        controller.addClipToMap(lastAction.trackId, lastAction.clip);
+        toast({ title: 'Undo', description: 'Clip restored' });
+        
+        // Move from undo to redo stack
+        setUndoStack(prev => prev.slice(0, -1));
+        setRedoStack(prev => [...prev, lastAction]);
+      } catch (error) {
+        logger.error('Failed to undo:', error);
+        toast({ title: 'Undo failed', variant: 'destructive' });
+      }
+    }
+  }, [undoStack, controller, toast]);
+
+  // Redo handler
+  const handleRedo = useCallback(() => {
+    const lastAction = redoStack[redoStack.length - 1];
+    if (!lastAction) return;
+    
+    if (lastAction.type === 'delete_clip') {
+      try {
+        // Remove clip from local map and audio engine (clip was already deleted from server)
+        controller.removeClipFromMap(lastAction.trackId, lastAction.clip.id);
+        toast({ title: 'Redo', description: 'Clip removed again' });
+        
+        // Move from redo to undo stack
+        setRedoStack(prev => prev.slice(0, -1));
+        setUndoStack(prev => [...prev, lastAction]);
+      } catch (error) {
+        logger.error('Failed to redo:', error);
+        toast({ title: 'Redo failed', variant: 'destructive' });
+      }
+    }
+  }, [redoStack, controller, toast]);
+
+  // Keyboard handler for Delete, Undo (Ctrl+Z), and Redo (Ctrl+Shift+Z)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't handle if typing in an input/textarea
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      // Undo: Ctrl+Z (or Cmd+Z on Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (undoStack.length > 0) {
+          handleUndo();
+        }
+        return;
+      }
+      
+      // Redo: Ctrl+Shift+Z or Ctrl+Y
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'Z' || e.key === 'y')) {
+        e.preventDefault();
+        if (redoStack.length > 0) {
+          handleRedo();
+        }
         return;
       }
       
@@ -1069,7 +1172,7 @@ export default function Studio() {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedClipId, selectedTool, controller.trackClips, handleDeleteClip]);
+  }, [selectedClipId, selectedTool, controller.trackClips, handleDeleteClip, undoStack, redoStack, handleUndo, handleRedo]);
 
   useEffect(() => {
     // Poll for AudioContext availability and monitor CPU
@@ -2021,6 +2124,10 @@ export default function Studio() {
                   onCreateProject={(title) => createProjectMutation.mutate(title)}
                   onUploadFile={() => setShowFullscreenUpload(true)}
                   onSaveProject={handleSaveProject}
+                  onUndo={handleUndo}
+                  onRedo={handleRedo}
+                  canUndo={undoStack.length > 0}
+                  canRedo={redoStack.length > 0}
                   isSaving={isSaving}
                 />
                 <WorkflowStateBar
