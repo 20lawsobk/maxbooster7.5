@@ -125,6 +125,8 @@ interface TrackListProps {
   onDuplicateTrack: (trackId: string) => void;
   onDeleteTrack: (trackId: string) => void;
   onDeleteClip?: (trackId: string, clipId: string) => void;
+  onClipSelect?: (clipId: string) => void;
+  selectedClipId?: string | null;
   onAddTrack: () => void;
   onReorderTracks?: (oldIndex: number, newIndex: number) => void;
 }
@@ -228,6 +230,8 @@ interface SortableTrackRowProps {
   onDuplicateTrack: (trackId: string) => void;
   onDeleteTrack: (trackId: string) => void;
   onDeleteClip?: (trackId: string, clipId: string) => void;
+  onClipSelect?: (clipId: string) => void;
+  selectedClipId?: string | null;
 }
 
 const SortableTrackRow = memo(function SortableTrackRow({
@@ -242,6 +246,8 @@ const SortableTrackRow = memo(function SortableTrackRow({
   onDuplicateTrack,
   onDeleteTrack,
   onDeleteClip,
+  onClipSelect,
+  selectedClipId,
 }: SortableTrackRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: track.id,
@@ -531,17 +537,24 @@ const SortableTrackRow = memo(function SortableTrackRow({
               const leftPercent = ((clip.startTime || 0) / totalBars) * 100;
               const clipDuration = clip.duration || 4;
               const widthPercent = Math.max((clipDuration / totalBars) * 100, 3);
+              const isSelected = selectedClipId === clip.id;
 
               return (
                 <div
                   key={clip.id}
-                  className="absolute h-14 top-3 rounded cursor-pointer hover:brightness-110 transition-all group"
+                  className={`absolute h-14 top-3 rounded cursor-pointer hover:brightness-110 transition-all group ${
+                    isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-transparent' : ''
+                  }`}
                   style={{
                     left: `${leftPercent}%`,
                     width: `${widthPercent}%`,
                     backgroundColor: track.color,
-                    opacity: track.mute ? 0.4 : 0.8,
+                    opacity: track.mute ? 0.4 : isSelected ? 1 : 0.8,
                     minWidth: '60px',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClipSelect?.(clip.id);
                   }}
                   data-testid={`clip-${clip.id}`}
                 >
@@ -626,6 +639,8 @@ export function TrackList({
   onDuplicateTrack,
   onDeleteTrack,
   onDeleteClip,
+  onClipSelect,
+  selectedClipId,
   onAddTrack,
   onReorderTracks,
 }: TrackListProps) {
@@ -699,6 +714,8 @@ export function TrackList({
               onDuplicateTrack={onDuplicateTrack}
               onDeleteTrack={onDeleteTrack}
               onDeleteClip={onDeleteClip}
+              onClipSelect={onClipSelect}
+              selectedClipId={selectedClipId}
             />
           ))}
         </ScrollArea>

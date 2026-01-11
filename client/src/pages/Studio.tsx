@@ -219,6 +219,9 @@ export default function Studio() {
     'volume'
   );
 
+  // Tool state for select/cut/delete tools
+  const [selectedTool, setSelectedTool] = useState<'select' | 'cut' | 'delete'>('select');
+
   // Use Zustand store for zoom and other timeline state
   const {
     zoom,
@@ -254,6 +257,9 @@ export default function Studio() {
     addTake,
     updateTake,
     deleteTake,
+    selectedClipId,
+    selectClip,
+    clearSelection,
   } = useStudioStore();
 
   // DAW Professional Features
@@ -1030,6 +1036,7 @@ export default function Studio() {
     try {
       await controller.deleteClip(trackId, clipId);
       toast({ title: 'Clip deleted' });
+      clearSelection();
     } catch (error: unknown) {
       logger.error('Failed to delete clip:', error);
       toast({ 
@@ -1038,7 +1045,31 @@ export default function Studio() {
         variant: 'destructive' 
       });
     }
-  }, [controller, toast]);
+  }, [controller, toast, clearSelection]);
+
+  // Keyboard handler for Delete key - delete selected clip
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle if typing in an input/textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedClipId) {
+        e.preventDefault();
+        // Find which track contains this clip
+        for (const [trackId, clips] of controller.trackClips.entries()) {
+          if (clips.some(c => c.id === selectedClipId)) {
+            handleDeleteClip(trackId, selectedClipId);
+            break;
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedClipId, controller.trackClips, handleDeleteClip]);
 
   useEffect(() => {
     // Poll for AudioContext availability and monitor CPU
@@ -1978,10 +2009,10 @@ export default function Studio() {
                   timeSignature={selectedProject?.timeSignature || '4/4'}
                   cpuUsage={cpuUsage}
                   zoom={zoom}
-                  selectedTool={undefined}
+                  selectedTool={selectedTool}
                   selectedProject={selectedProject}
                   projects={projects}
-                  onToolSelect={() => {}}
+                  onToolSelect={setSelectedTool}
                   onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
                   onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
                   onShowTutorial={() => setShowTutorial(true)}
@@ -2063,6 +2094,8 @@ export default function Studio() {
                 onDuplicateTrack={handleDuplicateTrack}
                 onDeleteTrack={handleDeleteTrack}
                 onDeleteClip={handleDeleteClip}
+                onClipSelect={selectClip}
+                selectedClipId={selectedClipId}
                 onAddTrack={handleAddTrack}
                 onReorderTracks={handleReorderTracks}
               />
