@@ -164,9 +164,9 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
       for (const [, clips] of trackClips.entries()) {
         for (const clip of clips) {
           const url = clip.audioUrl || clip.filePath;
-          if (url) {
+          if (url && clip.id) {
             loadPromises.push(
-              audioEngine.loadBuffer(url).then(() => {}).catch((e) => {
+              audioEngine.loadBuffer(clip.id, url).then(() => {}).catch((e) => {
                 logger.warn(`Failed to preload clip ${clip.id}:`, e);
               })
             );

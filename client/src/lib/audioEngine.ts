@@ -1137,6 +1137,28 @@ class AudioEngine {
   }
 
   /**
+   * Seek to a specific time position
+   * If currently playing, will stop and restart from the new position
+   */
+  async seek(time: number): Promise<void> {
+    const wasPlaying = this.transportState.isPlaying;
+    
+    // Stop current playback
+    if (wasPlaying) {
+      this.stopAllSources();
+    }
+    
+    // Update transport time
+    this.transportState.currentTime = Math.max(0, time);
+    this.transportState.pauseTime = this.transportState.currentTime;
+    
+    // Restart if was playing
+    if (wasPlaying) {
+      await this.play(this.transportState.currentTime);
+    }
+  }
+
+  /**
    * Stop all active audio sources
    */
   private stopAllSources(): void {
