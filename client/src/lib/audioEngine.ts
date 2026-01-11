@@ -587,6 +587,36 @@ class AudioEngine {
   }
 
   /**
+   * Calculate latency compensation for accurate playback timing
+   * Uses AudioContext baseLatency and outputLatency if available
+   */
+  private calculateLatencyCompensation(): void {
+    if (!this.context) return;
+    
+    let totalLatencySeconds = 0;
+    
+    // Get base latency (time from scheduling to processing)
+    if ('baseLatency' in this.context) {
+      totalLatencySeconds += (this.context as AudioContext & { baseLatency?: number }).baseLatency || 0;
+    }
+    
+    // Get output latency (time from processing to speakers)
+    if ('outputLatency' in this.context) {
+      totalLatencySeconds += (this.context as AudioContext & { outputLatency?: number }).outputLatency || 0;
+    }
+    
+    // Fallback: estimate from buffer size if latency APIs not available
+    if (totalLatencySeconds === 0 && this.config.bufferSize && this.config.sampleRate) {
+      totalLatencySeconds = this.config.bufferSize / this.config.sampleRate;
+    }
+    
+    // Store latency in milliseconds
+    this.actualLatencyMs = totalLatencySeconds * 1000;
+    
+    logger.info(`Latency compensation calculated: ${this.actualLatencyMs.toFixed(2)}ms`);
+  }
+
+  /**
    * Create master dynamics chain:
    * MasterGain -> MasterCompressor -> MasterLimiter (WaveShaper) -> Analyser -> Destination
    */
