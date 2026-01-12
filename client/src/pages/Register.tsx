@@ -169,6 +169,7 @@ export default function Register() {
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   required
                   disabled={isLoading}
+                  autoComplete="username"
                   data-testid="input-username"
                 />
               </div>
@@ -183,6 +184,7 @@ export default function Register() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                   disabled={isLoading}
+                  autoComplete="email"
                   data-testid="input-email"
                 />
               </div>
@@ -197,6 +199,7 @@ export default function Register() {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
                   disabled={isLoading}
+                  autoComplete="new-password"
                   data-testid="input-password"
                 />
               </div>
@@ -211,6 +214,7 @@ export default function Register() {
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   required
                   disabled={isLoading}
+                  autoComplete="new-password"
                   data-testid="input-confirm-password"
                 />
               </div>

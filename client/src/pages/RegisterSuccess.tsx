@@ -192,6 +192,7 @@ export default function RegisterSuccess() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
+                    autoComplete="new-password"
                     data-testid="input-password"
                   />
                   <Button
@@ -219,6 +220,7 @@ export default function RegisterSuccess() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={6}
+                    autoComplete="new-password"
                     data-testid="input-confirm-password"
                   />
                   <Button

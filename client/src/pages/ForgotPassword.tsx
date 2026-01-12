@@ -39,9 +39,10 @@ export default function ForgotPassword() {
         description: data.message || 'Check your email for password reset instructions.',
       });
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send reset link. Please try again.';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to send reset link. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -89,6 +90,7 @@ export default function ForgotPassword() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
+                    autoComplete="email"
                     data-testid="input-forgot-password-email"
                   />
                 </div>

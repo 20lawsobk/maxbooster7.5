@@ -289,6 +289,7 @@ export default function RegisterPayment() {
                       value={formData.username}
                       onChange={handleInputChange}
                       required
+                      autoComplete="username"
                       data-testid="input-username"
                     />
                   </div>
@@ -303,6 +304,7 @@ export default function RegisterPayment() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
+                      autoComplete="email"
                       data-testid="input-email"
                     />
                   </div>
@@ -317,6 +319,7 @@ export default function RegisterPayment() {
                       onChange={handleInputChange}
                       max={new Date().toISOString().split('T')[0]}
                       required
+                      autoComplete="bday"
                       data-testid="input-birthdate"
                       className="w-full"
                     />
