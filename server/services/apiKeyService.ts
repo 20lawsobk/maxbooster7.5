@@ -44,13 +44,14 @@ export async function generateApiKey(
     const rateLimit = tier === 'enterprise' ? 5000 : tier === 'pro' ? 1000 : 100;
 
     // Insert ONLY the hashed key into database (never store plaintext)
+    const keyPrefix = apiKey.substring(0, 12); // Store first 12 chars for identification (mb_live_xxxx)
     const [newKey] = await db
       .insert(apiKeys)
       .values({
         userId,
-        keyName,
-        hashedApiKey, // Only store the hash
-        tier,
+        name: keyName,
+        keyHash: hashedApiKey, // Only store the hash
+        keyPrefix,
         rateLimit,
         isActive: true,
       })
@@ -63,6 +64,8 @@ export async function generateApiKey(
     // Return the plaintext key to user (ONLY TIME IT'S SHOWN)
     return {
       ...newKey,
+      keyName, // Include keyName for client consumption
+      tier, // Include tier for client consumption
       apiKey, // Return plaintext key for user to save (not stored in DB)
     };
   } catch (error: unknown) {
@@ -107,7 +110,7 @@ export async function validateApiKey(req: ApiKeyRequest, res: Response, next: Ne
     const [keyRecord] = await db
       .select()
       .from(apiKeys)
-      .where(and(eq(apiKeys.hashedApiKey, hashedApiKey), eq(apiKeys.isActive, true)))
+      .where(and(eq(apiKeys.keyHash, hashedApiKey), eq(apiKeys.isActive, true)))
       .limit(1);
 
     if (!keyRecord) {
@@ -129,8 +132,8 @@ export async function validateApiKey(req: ApiKeyRequest, res: Response, next: Ne
     req.apiKey = {
       id: keyRecord.id,
       userId: keyRecord.userId,
-      tier: keyRecord.tier,
-      rateLimit: keyRecord.rateLimit,
+      tier: 'free', // Default tier since schema doesn't store tier
+      rateLimit: keyRecord.rateLimit || 1000,
     };
 
     // Update last used timestamp (async, don't wait)
