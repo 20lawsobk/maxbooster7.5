@@ -317,6 +317,21 @@ export default function Studio() {
   const [isAIMixing, setIsAIMixing] = useState(false);
   const [isAIMastering, setIsAIMastering] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  
+  // Per-track plugin state management
+  const [trackPluginsMap, setTrackPluginsMap] = useState<Map<string, PluginInstance[]>>(new Map());
+  
+  const getTrackPlugins = useCallback((trackId: string): PluginInstance[] => {
+    return trackPluginsMap.get(trackId) || [];
+  }, [trackPluginsMap]);
+  
+  const handleTrackPluginsChange = useCallback((trackId: string, plugins: PluginInstance[]) => {
+    setTrackPluginsMap(prev => {
+      const next = new Map(prev);
+      next.set(trackId, plugins);
+      return next;
+    });
+  }, []);
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const [globalDroppedFiles, setGlobalDroppedFiles] = useState<FileList | null>(null);
   const globalDragCounterRef = useRef(0);
@@ -2382,6 +2397,8 @@ export default function Studio() {
                     .find(c => c.id === selectedClipId)}
                   onTrackUpdate={(trackId, updates) => handleTrackUpdate(trackId, updates as any)}
                   onClipUpdate={(clipId, updates) => handleClipUpdate(clipId, updates as any)}
+                  plugins={selectedTrack ? getTrackPlugins(selectedTrack) : []}
+                  onPluginsChange={selectedTrack ? (plugins) => handleTrackPluginsChange(selectedTrack, plugins) : undefined}
                 />
               }
               timeline={

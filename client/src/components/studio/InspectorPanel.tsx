@@ -131,13 +131,9 @@ export function InspectorPanel({
 }: InspectorPanelProps) {
   const { selectedTrackId, selectedClipId } = useStudioStore();
 
-  const [localPlugins, setLocalPlugins] = useState<PluginInstance[]>([
-    { id: '1', type: 'eq', name: 'Parametric EQ', bypass: false, expanded: false, parameters: { low: 0, mid: 0, high: 0, midFreq: 1000 } },
-    { id: '2', type: 'compressor', name: 'Compressor', bypass: false, expanded: false, parameters: { threshold: -20, ratio: 4, attack: 10, release: 100, makeup: 0 } },
-  ]);
-
-  const activePlugins = plugins.length > 0 ? plugins : localPlugins;
-  const handlePluginsChange = onPluginsChange || setLocalPlugins;
+  // Use plugins directly without fallback to maintain per-track isolation
+  const activePlugins = plugins;
+  const handlePluginsChange = onPluginsChange || (() => {});
 
   const hasSelection = selectedTrackId || selectedClipId;
 
