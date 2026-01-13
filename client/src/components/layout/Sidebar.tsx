@@ -15,6 +15,12 @@ import {
   Shield,
   Brain,
   X,
+  FileText,
+  Users,
+  Building2,
+  Timer,
+  Receipt,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -40,6 +46,13 @@ const navItems: NavItem[] = [
   { labelKey: 'distribution.royalties', path: '/royalties', icon: DollarSign },
   { labelKey: 'navigation.studio', path: '/studio', icon: Disc },
   { labelKey: 'navigation.distribution', path: '/distribution', icon: Radio },
+  { labelKey: 'navigation.contracts', path: '/contracts', icon: FileText },
+  { labelKey: 'navigation.collaborations', path: '/collaborations', icon: Users },
+  { labelKey: 'navigation.workspaces', path: '/workspaces', icon: Building2 },
+  { labelKey: 'navigation.releaseCountdown', path: '/release-countdown', icon: Timer },
+  { labelKey: 'navigation.careerCoach', path: '/career-coach', icon: Brain },
+  { labelKey: 'navigation.invoices', path: '/invoices', icon: Receipt },
+  { labelKey: 'navigation.verification', path: '/verification', icon: ShieldCheck },
   { labelKey: 'settings.title', path: '/admin', icon: Shield, adminOnly: true },
   { labelKey: 'settings.security', path: '/admin/security', icon: Shield, adminOnly: true },
 ];

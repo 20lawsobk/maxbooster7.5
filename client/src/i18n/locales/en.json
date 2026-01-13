@@ -39,7 +39,14 @@
     "help": "Help",
     "helpCenter": "Help Center",
     "status": "Status",
-    "desktopApp": "Desktop App"
+    "desktopApp": "Desktop App",
+    "contracts": "Contracts",
+    "collaborations": "Collaborations",
+    "workspaces": "Workspaces",
+    "releaseCountdown": "Release Countdown",
+    "careerCoach": "Career Coach",
+    "invoices": "Invoices",
+    "verification": "Verification"
   },
   "auth": {
     "loginTitle": "Login to Max Booster",
