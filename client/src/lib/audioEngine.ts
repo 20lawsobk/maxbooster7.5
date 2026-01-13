@@ -1577,67 +1577,578 @@ class AudioEngine {
     }
   }
 
+  private delayEffects = new Map<string, {
+    delayNode: DelayNode;
+    feedbackGain: GainNode;
+    wetGain: GainNode;
+    dryGain: GainNode;
+    params: { time: number; feedback: number; mix: number; bypass: boolean };
+  }>();
+
+  private distortionEffects = new Map<string, {
+    waveshaper: WaveShaperNode;
+    toneFilter: BiquadFilterNode;
+    wetGain: GainNode;
+    dryGain: GainNode;
+    params: { drive: number; tone: number; mix: number; bypass: boolean };
+  }>();
+
+  private chorusEffects = new Map<string, {
+    delayNode: DelayNode;
+    lfo: OscillatorNode;
+    lfoGain: GainNode;
+    wetGain: GainNode;
+    dryGain: GainNode;
+    params: { rate: number; depth: number; mix: number; bypass: boolean };
+  }>();
+
+  private flangerEffects = new Map<string, {
+    delayNode: DelayNode;
+    lfo: OscillatorNode;
+    lfoGain: GainNode;
+    feedbackGain: GainNode;
+    wetGain: GainNode;
+    dryGain: GainNode;
+    params: { rate: number; depth: number; feedback: number; mix: number; bypass: boolean };
+  }>();
+
+  private phaserEffects = new Map<string, {
+    allpassFilters: BiquadFilterNode[];
+    lfo: OscillatorNode;
+    lfoGain: GainNode;
+    feedbackGain: GainNode;
+    wetGain: GainNode;
+    dryGain: GainNode;
+    params: { rate: number; depth: number; stages: number; feedback: number; mix: number; bypass: boolean };
+  }>();
+
+  private gateEffects = new Map<string, {
+    gateGain: GainNode;
+    params: { threshold: number; attack: number; release: number; range: number; bypass: boolean };
+  }>();
+
+  private limiterEffects = new Map<string, {
+    waveshaper: WaveShaperNode;
+    params: { ceiling: number; release: number; bypass: boolean };
+  }>();
+
   /**
    * Update delay effect parameters for a track
+   * Uses aux send from reverbSend node - shares with reverb for consistent behavior
+   * Delay wet signal mixes with reverb in the wet path
    */
   updateTrackDelay(trackId: string, params: { time?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
+    if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
-    logger.info(`[AudioEngine] Updating delay for track ${trackId}:`, params);
+
+    let effect = this.delayEffects.get(trackId);
+    
+    if (!effect) {
+      const delayNode = this.context.createDelay(2.0);
+      const feedbackGain = this.context.createGain();
+      const wetGain = this.context.createGain();
+      const dryGain = this.context.createGain();
+
+      delayNode.delayTime.value = 0.25;
+      feedbackGain.gain.value = 0.4;
+      wetGain.gain.value = 0.3;
+      dryGain.gain.value = 1.0;
+
+      trackNode.reverbSend.connect(delayNode);
+      delayNode.connect(feedbackGain);
+      feedbackGain.connect(delayNode);
+      delayNode.connect(wetGain);
+      wetGain.connect(trackNode.reverbWetGain);
+
+      effect = {
+        delayNode,
+        feedbackGain,
+        wetGain,
+        dryGain,
+        params: { time: 250, feedback: 40, mix: 30, bypass: false },
+      };
+      this.delayEffects.set(trackId, effect);
+      logger.info(`[AudioEngine] Delay effect connected via reverb send for track ${trackId}`);
+    }
+
+    const currentTime = this.context.currentTime;
+    const timeConstant = 0.01;
+
+    if (params.time !== undefined) {
+      effect.delayNode.delayTime.setTargetAtTime(params.time / 1000, currentTime, timeConstant);
+      effect.params.time = params.time;
+    }
+    if (params.feedback !== undefined) {
+      effect.feedbackGain.gain.setTargetAtTime(params.feedback / 100, currentTime, timeConstant);
+      effect.params.feedback = params.feedback;
+    }
+    if (params.mix !== undefined) {
+      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
+      effect.params.mix = params.mix;
+    }
+    if (params.bypass !== undefined) {
+      effect.params.bypass = params.bypass;
+      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
+    }
+
+    logger.info(`[AudioEngine] Updated delay for track ${trackId}:`, effect.params);
   }
 
   /**
    * Update distortion effect parameters for a track
+   * Uses aux send from reverbSend node for consistent routing
+   * Distortion wet signal mixes with reverb in the wet path
    */
   updateTrackDistortion(trackId: string, params: { drive?: number; tone?: number; mix?: number; bypass?: boolean }): void {
+    if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
-    logger.info(`[AudioEngine] Updating distortion for track ${trackId}:`, params);
+
+    let effect = this.distortionEffects.get(trackId);
+
+    if (!effect) {
+      const waveshaper = this.context.createWaveShaper();
+      const toneFilter = this.context.createBiquadFilter();
+      const wetGain = this.context.createGain();
+      const dryGain = this.context.createGain();
+
+      toneFilter.type = 'lowpass';
+      toneFilter.frequency.value = 8000;
+      wetGain.gain.value = 1.0;
+      dryGain.gain.value = 1.0;
+
+      const k = 50 * 4;
+      const samples = 44100;
+      const curve = new Float32Array(samples);
+      const deg = Math.PI / 180;
+      for (let i = 0; i < samples; ++i) {
+        const x = (i * 2) / samples - 1;
+        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+      }
+      waveshaper.curve = curve;
+
+      trackNode.reverbSend.connect(waveshaper);
+      waveshaper.connect(toneFilter);
+      toneFilter.connect(wetGain);
+      wetGain.connect(trackNode.reverbWetGain);
+
+      effect = {
+        waveshaper,
+        toneFilter,
+        wetGain,
+        dryGain,
+        params: { drive: 50, tone: 50, mix: 100, bypass: false },
+      };
+      this.distortionEffects.set(trackId, effect);
+      logger.info(`[AudioEngine] Distortion effect connected via reverb send for track ${trackId}`);
+    }
+
+    const currentTime = this.context.currentTime;
+    const timeConstant = 0.01;
+
+    if (params.drive !== undefined) {
+      const k = params.drive * 4;
+      const samples = 44100;
+      const curve = new Float32Array(samples);
+      const deg = Math.PI / 180;
+      for (let i = 0; i < samples; ++i) {
+        const x = (i * 2) / samples - 1;
+        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+      }
+      effect.waveshaper.curve = curve;
+      effect.params.drive = params.drive;
+    }
+    if (params.tone !== undefined) {
+      const frequency = 500 + (params.tone / 100) * 15500;
+      effect.toneFilter.frequency.setTargetAtTime(frequency, currentTime, timeConstant);
+      effect.params.tone = params.tone;
+    }
+    if (params.mix !== undefined) {
+      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
+      effect.params.mix = params.mix;
+    }
+    if (params.bypass !== undefined) {
+      effect.params.bypass = params.bypass;
+      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
+    }
+
+    logger.info(`[AudioEngine] Updated distortion for track ${trackId}:`, effect.params);
   }
 
   /**
    * Update chorus effect parameters for a track
+   * Uses aux send from reverbSend node for consistent routing
+   * LFO modulates delay time for classic chorus effect
    */
   updateTrackChorus(trackId: string, params: { rate?: number; depth?: number; mix?: number; bypass?: boolean }): void {
+    if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
-    logger.info(`[AudioEngine] Updating chorus for track ${trackId}:`, params);
+
+    let effect = this.chorusEffects.get(trackId);
+
+    if (!effect) {
+      const delayNode = this.context.createDelay(0.05);
+      const lfo = this.context.createOscillator();
+      const lfoGain = this.context.createGain();
+      const wetGain = this.context.createGain();
+      const dryGain = this.context.createGain();
+
+      lfo.type = 'sine';
+      lfo.frequency.value = 1;
+      lfoGain.gain.value = 0.003;
+      delayNode.delayTime.value = 0.025;
+      wetGain.gain.value = 0.5;
+      dryGain.gain.value = 0.5;
+
+      lfo.connect(lfoGain);
+      lfoGain.connect(delayNode.delayTime);
+      lfo.start();
+
+      trackNode.reverbSend.connect(delayNode);
+      delayNode.connect(wetGain);
+      wetGain.connect(trackNode.reverbWetGain);
+
+      effect = {
+        delayNode,
+        lfo,
+        lfoGain,
+        wetGain,
+        dryGain,
+        params: { rate: 1, depth: 50, mix: 50, bypass: false },
+      };
+      this.chorusEffects.set(trackId, effect);
+      logger.info(`[AudioEngine] Chorus effect connected via reverb send for track ${trackId}`);
+    }
+
+    const currentTime = this.context.currentTime;
+    const timeConstant = 0.01;
+
+    if (params.rate !== undefined) {
+      effect.lfo.frequency.setTargetAtTime(params.rate, currentTime, timeConstant);
+      effect.params.rate = params.rate;
+    }
+    if (params.depth !== undefined) {
+      const depthValue = (params.depth / 100) * 0.01;
+      effect.lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
+      effect.params.depth = params.depth;
+    }
+    if (params.mix !== undefined) {
+      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
+      effect.params.mix = params.mix;
+    }
+    if (params.bypass !== undefined) {
+      effect.params.bypass = params.bypass;
+      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
+    }
+
+    logger.info(`[AudioEngine] Updated chorus for track ${trackId}:`, effect.params);
   }
 
   /**
    * Update flanger effect parameters for a track
+   * Uses aux send from reverbSend node for consistent routing
+   * Short modulated delay with feedback for metallic flanging
    */
   updateTrackFlanger(trackId: string, params: { rate?: number; depth?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
+    if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
-    logger.info(`[AudioEngine] Updating flanger for track ${trackId}:`, params);
+
+    let effect = this.flangerEffects.get(trackId);
+
+    if (!effect) {
+      const delayNode = this.context.createDelay(0.02);
+      const lfo = this.context.createOscillator();
+      const lfoGain = this.context.createGain();
+      const feedbackGain = this.context.createGain();
+      const wetGain = this.context.createGain();
+      const dryGain = this.context.createGain();
+
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.3;
+      lfoGain.gain.value = 0.002;
+      delayNode.delayTime.value = 0.005;
+      feedbackGain.gain.value = 0.45;
+      wetGain.gain.value = 0.5;
+      dryGain.gain.value = 0.5;
+
+      lfo.connect(lfoGain);
+      lfoGain.connect(delayNode.delayTime);
+      lfo.start();
+
+      trackNode.reverbSend.connect(delayNode);
+      delayNode.connect(feedbackGain);
+      feedbackGain.connect(delayNode);
+      delayNode.connect(wetGain);
+      wetGain.connect(trackNode.reverbWetGain);
+
+      effect = {
+        delayNode,
+        lfo,
+        lfoGain,
+        feedbackGain,
+        wetGain,
+        dryGain,
+        params: { rate: 0.3, depth: 60, feedback: 50, mix: 50, bypass: false },
+      };
+      this.flangerEffects.set(trackId, effect);
+      logger.info(`[AudioEngine] Flanger effect connected via reverb send for track ${trackId}`);
+    }
+
+    const currentTime = this.context.currentTime;
+    const timeConstant = 0.01;
+
+    if (params.rate !== undefined) {
+      effect.lfo.frequency.setTargetAtTime(params.rate, currentTime, timeConstant);
+      effect.params.rate = params.rate;
+    }
+    if (params.depth !== undefined) {
+      const depthValue = (params.depth / 100) * 0.007;
+      effect.lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
+      effect.params.depth = params.depth;
+    }
+    if (params.feedback !== undefined) {
+      effect.feedbackGain.gain.setTargetAtTime(params.feedback / 100 * 0.9, currentTime, timeConstant);
+      effect.params.feedback = params.feedback;
+    }
+    if (params.mix !== undefined) {
+      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
+      effect.params.mix = params.mix;
+    }
+    if (params.bypass !== undefined) {
+      effect.params.bypass = params.bypass;
+      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
+    }
+
+    logger.info(`[AudioEngine] Updated flanger for track ${trackId}:`, effect.params);
   }
 
   /**
    * Update phaser effect parameters for a track
+   * Uses aux send from reverbSend node for consistent routing
+   * Cascaded all-pass filters modulated by LFO for phase-shifting
    */
   updateTrackPhaser(trackId: string, params: { rate?: number; depth?: number; stages?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
+    if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
-    logger.info(`[AudioEngine] Updating phaser for track ${trackId}:`, params);
+
+    let effect = this.phaserEffects.get(trackId);
+
+    if (!effect) {
+      const allpassFilters: BiquadFilterNode[] = [];
+      for (let i = 0; i < 6; i++) {
+        const filter = this.context.createBiquadFilter();
+        filter.type = 'allpass';
+        filter.frequency.value = 1000 + i * 500;
+        filter.Q.value = 0.5;
+        allpassFilters.push(filter);
+      }
+
+      for (let i = 0; i < allpassFilters.length - 1; i++) {
+        allpassFilters[i].connect(allpassFilters[i + 1]);
+      }
+
+      const lfo = this.context.createOscillator();
+      const lfoGain = this.context.createGain();
+      const feedbackGain = this.context.createGain();
+      const wetGain = this.context.createGain();
+      const dryGain = this.context.createGain();
+
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.5;
+      lfoGain.gain.value = 500;
+      feedbackGain.gain.value = 0.4;
+      wetGain.gain.value = 0.5;
+      dryGain.gain.value = 0.5;
+
+      lfo.connect(lfoGain);
+      allpassFilters.forEach(filter => lfoGain.connect(filter.frequency));
+      lfo.start();
+
+      trackNode.reverbSend.connect(allpassFilters[0]);
+      allpassFilters[allpassFilters.length - 1].connect(feedbackGain);
+      feedbackGain.connect(allpassFilters[0]);
+      allpassFilters[allpassFilters.length - 1].connect(wetGain);
+      wetGain.connect(trackNode.reverbWetGain);
+
+      effect = {
+        allpassFilters,
+        lfo,
+        lfoGain,
+        feedbackGain,
+        wetGain,
+        dryGain,
+        params: { rate: 0.5, depth: 60, stages: 6, feedback: 50, mix: 50, bypass: false },
+      };
+      this.phaserEffects.set(trackId, effect);
+      logger.info(`[AudioEngine] Phaser effect connected via reverb send for track ${trackId}`);
+    }
+
+    const currentTime = this.context.currentTime;
+    const timeConstant = 0.01;
+
+    if (params.rate !== undefined) {
+      effect.lfo.frequency.setTargetAtTime(params.rate, currentTime, timeConstant);
+      effect.params.rate = params.rate;
+    }
+    if (params.depth !== undefined) {
+      const depthValue = (params.depth / 100) * 1000;
+      effect.lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
+      effect.params.depth = params.depth;
+    }
+    if (params.feedback !== undefined) {
+      effect.feedbackGain.gain.setTargetAtTime(params.feedback / 100 * 0.8, currentTime, timeConstant);
+      effect.params.feedback = params.feedback;
+    }
+    if (params.mix !== undefined) {
+      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
+      effect.params.mix = params.mix;
+    }
+    if (params.bypass !== undefined) {
+      effect.params.bypass = params.bypass;
+      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
+    }
+
+    logger.info(`[AudioEngine] Updated phaser for track ${trackId}:`, effect.params);
   }
 
   /**
    * Update gate effect parameters for a track
+   * Uses the existing trackNode.gate GainNode for gating
+   * Controls the gain based on threshold - open/close behavior
    */
   updateTrackGate(trackId: string, params: { threshold?: number; attack?: number; release?: number; range?: number; bypass?: boolean }): void {
+    if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
-    logger.info(`[AudioEngine] Updating gate for track ${trackId}:`, params);
+
+    let effect = this.gateEffects.get(trackId);
+
+    if (!effect) {
+      effect = {
+        gateGain: trackNode.gate,
+        params: { threshold: -40, attack: 1, release: 100, range: -80, bypass: false },
+      };
+      this.gateEffects.set(trackId, effect);
+      logger.info(`[AudioEngine] Gate effect configured for track ${trackId}`);
+    }
+
+    const currentTime = this.context.currentTime;
+    const timeConstant = 0.01;
+
+    if (params.threshold !== undefined) {
+      effect.params.threshold = params.threshold;
+    }
+    if (params.attack !== undefined) {
+      effect.params.attack = params.attack;
+    }
+    if (params.release !== undefined) {
+      effect.params.release = params.release;
+    }
+    if (params.range !== undefined) {
+      effect.params.range = params.range;
+      const rangeGain = Math.pow(10, params.range / 20);
+      trackNode.gate.gain.setTargetAtTime(rangeGain, currentTime, timeConstant);
+    }
+    if (params.bypass !== undefined) {
+      effect.params.bypass = params.bypass;
+      trackNode.gate.gain.setTargetAtTime(params.bypass ? 1 : Math.pow(10, effect.params.range / 20), currentTime, timeConstant);
+    }
+
+    logger.info(`[AudioEngine] Updated gate for track ${trackId}:`, effect.params);
   }
 
   /**
    * Update limiter effect parameters for a track
+   * Uses the existing trackNode.limiter WaveShaperNode for brickwall limiting
+   * Creates soft-clipping curve based on ceiling parameter
    */
   updateTrackLimiter(trackId: string, params: { ceiling?: number; release?: number; bypass?: boolean }): void {
+    if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
-    logger.info(`[AudioEngine] Updating limiter for track ${trackId}:`, params);
+
+    let effect = this.limiterEffects.get(trackId);
+
+    if (!effect) {
+      effect = {
+        waveshaper: trackNode.limiter,
+        params: { ceiling: -0.3, release: 100, bypass: false },
+      };
+      this.limiterEffects.set(trackId, effect);
+      
+      const ceiling = Math.pow(10, -0.3 / 20);
+      const samples = 44100;
+      const curve = new Float32Array(samples);
+      for (let i = 0; i < samples; ++i) {
+        const x = (i * 2) / samples - 1;
+        if (Math.abs(x) < ceiling) {
+          curve[i] = x;
+        } else {
+          const sign = x > 0 ? 1 : -1;
+          const excess = Math.abs(x) - ceiling;
+          const softClip = ceiling + (1 - ceiling) * Math.tanh(excess / (1 - ceiling));
+          curve[i] = sign * Math.min(softClip, 1);
+        }
+      }
+      trackNode.limiter.curve = curve;
+      
+      logger.info(`[AudioEngine] Limiter effect configured for track ${trackId}`);
+    }
+
+    if (params.ceiling !== undefined) {
+      const ceiling = Math.pow(10, params.ceiling / 20);
+      const samples = 44100;
+      const curve = new Float32Array(samples);
+      for (let i = 0; i < samples; ++i) {
+        const x = (i * 2) / samples - 1;
+        if (Math.abs(x) < ceiling) {
+          curve[i] = x;
+        } else {
+          const sign = x > 0 ? 1 : -1;
+          const excess = Math.abs(x) - ceiling;
+          const softClip = ceiling + (1 - ceiling) * Math.tanh(excess / (1 - ceiling));
+          curve[i] = sign * Math.min(softClip, 1);
+        }
+      }
+      trackNode.limiter.curve = curve;
+      effect.params.ceiling = params.ceiling;
+    }
+    if (params.release !== undefined) {
+      effect.params.release = params.release;
+    }
+    if (params.bypass !== undefined) {
+      effect.params.bypass = params.bypass;
+      if (params.bypass) {
+        const samples = 44100;
+        const linearCurve = new Float32Array(samples);
+        for (let i = 0; i < samples; ++i) {
+          linearCurve[i] = (i * 2) / samples - 1;
+        }
+        trackNode.limiter.curve = linearCurve;
+      } else {
+        const ceiling = Math.pow(10, effect.params.ceiling / 20);
+        const samples = 44100;
+        const curve = new Float32Array(samples);
+        for (let i = 0; i < samples; ++i) {
+          const x = (i * 2) / samples - 1;
+          if (Math.abs(x) < ceiling) {
+            curve[i] = x;
+          } else {
+            const sign = x > 0 ? 1 : -1;
+            const excess = Math.abs(x) - ceiling;
+            const softClip = ceiling + (1 - ceiling) * Math.tanh(excess / (1 - ceiling));
+            curve[i] = sign * Math.min(softClip, 1);
+          }
+        }
+        trackNode.limiter.curve = curve;
+      }
+    }
+
+    logger.info(`[AudioEngine] Updated limiter for track ${trackId}:`, effect.params);
   }
 
   /**
