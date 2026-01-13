@@ -2,15 +2,21 @@
 /**
  * Max Booster - Desktop & Mobile App Build Script
  * 
- * Builds:
+ * RECOMMENDED: Use GitHub Actions for production builds
+ * - Push a tag (v2.0.0) to trigger automated builds on all platforms
+ * - See .github/workflows/build-desktop.yml and build-mobile.yml
+ * - See .github/SECRETS_SETUP.md for required secrets
+ * 
+ * Local builds (development/testing):
  * - Desktop: Windows (NSIS, Portable), macOS (DMG, ZIP), Linux (AppImage, DEB)
  * - Mobile: iOS (Capacitor), Android (Capacitor)
  * 
  * Usage:
- *   npx tsx scripts/build-apps.ts desktop    # Build desktop apps only
- *   npx tsx scripts/build-apps.ts mobile     # Build mobile apps only
+ *   npx tsx scripts/build-apps.ts desktop    # Build desktop apps only (current platform)
+ *   npx tsx scripts/build-apps.ts mobile     # Setup mobile apps (requires native IDEs)
  *   npx tsx scripts/build-apps.ts all        # Build all platforms
  *   npx tsx scripts/build-apps.ts version    # Bump version only
+ *   npx tsx scripts/build-apps.ts github     # Show GitHub Actions instructions
  */
 
 import { execSync, spawn } from 'child_process';
@@ -296,6 +302,42 @@ function generateBuildInfo(): void {
   log('Build info generated: build-info.json', 'success');
 }
 
+function showGitHubInstructions(): void {
+  console.log(`
+${APP_NAME} - GitHub Actions Build Instructions
+================================================
+
+RECOMMENDED: Use GitHub Actions for production builds across all platforms.
+
+1. SETUP SECRETS
+   Go to GitHub > Settings > Secrets and variables > Actions
+   See .github/SECRETS_SETUP.md for required secrets
+
+2. TRIGGER BUILDS
+
+   Automatic (push a version tag):
+   $ git tag v2.0.1
+   $ git push origin v2.0.1
+
+   Manual:
+   - Go to Actions tab in GitHub
+   - Select "Build Desktop Apps" or "Build Mobile Apps"
+   - Click "Run workflow"
+
+3. DOWNLOAD ARTIFACTS
+   - Go to Actions > Select workflow run
+   - Download artifacts from the bottom of the page
+
+4. RELEASES
+   Tagged builds automatically create GitHub Releases with all installers attached.
+
+WORKFLOWS:
+  .github/workflows/build-desktop.yml  - Windows, macOS, Linux builds
+  .github/workflows/build-mobile.yml   - iOS, Android builds
+
+`);
+}
+
 function showHelp(): void {
   console.log(`
 ${APP_NAME} Build Script
@@ -305,19 +347,24 @@ Usage:
   npx tsx scripts/build-apps.ts <command>
 
 Commands:
-  desktop     Build desktop applications (Electron)
-  mobile      Setup and build mobile applications (Capacitor)
-  all         Build all platforms
-  version     Bump patch version
+  desktop        Build desktop apps for current platform (Electron)
+  mobile         Setup mobile apps locally (Capacitor)
+  all            Build all platforms locally
+  version        Bump patch version
   version:minor  Bump minor version
   version:major  Bump major version
-  info        Generate build info
-  help        Show this help message
+  info           Generate build info
+  github         Show GitHub Actions build instructions (RECOMMENDED)
+  help           Show this help message
+
+RECOMMENDED FOR PRODUCTION:
+  Use GitHub Actions to build for all platforms automatically.
+  Run: npx tsx scripts/build-apps.ts github
 
 Examples:
-  npx tsx scripts/build-apps.ts desktop
-  npx tsx scripts/build-apps.ts mobile
-  npx tsx scripts/build-apps.ts all
+  npx tsx scripts/build-apps.ts github   # See GitHub Actions instructions
+  npx tsx scripts/build-apps.ts desktop  # Local build for current OS
+  npx tsx scripts/build-apps.ts mobile   # Setup Capacitor locally
 `);
 }
 
@@ -361,6 +408,10 @@ async function main(): Promise<void> {
         
       case 'info':
         generateBuildInfo();
+        break;
+        
+      case 'github':
+        showGitHubInstructions();
         break;
         
       case 'help':

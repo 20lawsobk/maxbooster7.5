@@ -1,62 +1,166 @@
-name: Build Desktop Installers
+name: Build Desktop Apps
 
 on:
   push:
-    branches: [main]
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 2.0.0)'
+        required: false
+        default: ''
+
+env:
+  NODE_VERSION: '20'
+  APP_NAME: 'Max Booster'
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+
       - name: Install Linux build dependencies
-        run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot
-      - run: npm ci
-      - run: npm run build
-      - run: npx electron-builder --linux AppImage --publish never
-      - uses: actions/upload-artifact@v4
+        run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot rpm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Build Linux packages
+        run: npx electron-builder --linux AppImage deb tar.gz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: linux-installers
-          path: dist-installers/*.AppImage
+          path: |
+            dist-installers/*.AppImage
+            dist-installers/*.deb
+            dist-installers/*.tar.gz
           if-no-files-found: warn
+          retention-days: 30
 
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      - run: npx electron-builder --win --publish never
-      - uses: actions/upload-artifact@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Build Windows installer
+        run: npx electron-builder --win nsis portable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: windows-installers
-          path: dist-installers/*.exe
+          path: |
+            dist-installers/*.exe
           if-no-files-found: warn
+          retention-days: 30
 
   build-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      - run: npx electron-builder --mac --publish never
-      - uses: actions/upload-artifact@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Build macOS installer
+        run: npx electron-builder --mac dmg zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.MAC_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: macos-installers
-          path: dist-installers/*.dmg
+          path: |
+            dist-installers/*.dmg
+            dist-installers/*.zip
           if-no-files-found: warn
+          retention-days: 30
+
+  create-release:
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display downloaded files
+        run: find artifacts -type f -name "*" | head -50
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/windows-installers/*
+            artifacts/macos-installers/*
+            artifacts/linux-installers/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          name: "${{ env.APP_NAME }} ${{ github.ref_name }}"
+          body: |
+            ## ${{ env.APP_NAME }} ${{ github.ref_name }}
+            
+            ### Downloads
+            - **Windows**: NSIS Installer (.exe) or Portable (.exe)
+            - **macOS**: DMG or ZIP
+            - **Linux**: AppImage, DEB, or tar.gz
+            
+            ### Installation
+            Download the appropriate installer for your operating system and run it.
+            
+            ### What's New
+            See the automatically generated release notes below.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

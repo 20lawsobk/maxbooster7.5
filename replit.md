@@ -115,12 +115,28 @@ Admin credentials stored in environment variables:
 
 ## Build & Deployment
 
-### Build Scripts
+### GitHub Actions (Recommended for Production)
+Production builds are handled by GitHub Actions for all platforms:
+
+| Workflow | Trigger | Platforms |
+|----------|---------|-----------|
+| `build-desktop.yml` | Tag `v*` or manual | Windows, macOS, Linux |
+| `build-mobile.yml` | Tag `v*` or manual | iOS, Android |
+
+**To trigger a release build:**
+```bash
+git tag v2.0.1
+git push origin v2.0.1
+```
+
+**Required secrets:** See `.github/SECRETS_SETUP.md`
+
+### Local Build Scripts (Development/Testing)
 | Command | Description |
 |---------|-------------|
-| `npm run build:desktop` | Build desktop apps (Electron) |
+| `npm run build:desktop` | Build desktop apps for current OS |
 | `npm run build:mobile` | Setup mobile apps (Capacitor) |
-| `npm run build:apps` | Build all platforms |
+| `npm run build:apps` | Build all platforms locally |
 | `npm run build:version` | Bump patch version |
 | `npm run cap:sync` | Sync Capacitor projects |
 | `npm run cap:ios` | Open iOS project in Xcode |
@@ -132,7 +148,11 @@ Admin credentials stored in environment variables:
 - **Linux**: AppImage, DEB, tar.gz
 - **Output Directory**: `dist-installers/`
 
-### Mobile Build Requirements
+### Mobile Build Output
+- **Android**: Debug APK, Release APK, App Bundle (AAB)
+- **iOS**: Debug Build, Release IPA
+
+### Build Requirements
 - **iOS**: macOS + Xcode 15+ (Apple Developer Account for distribution)
 - **Android**: Android Studio Flamingo+ (Java 17)
 - **Capacitor Version**: 8.x
@@ -142,3 +162,6 @@ Admin credentials stored in environment variables:
 - `electron/preload.js` - Electron preload script
 - `capacitor.config.ts` - Capacitor configuration
 - `scripts/build-apps.ts` - Unified build script
+- `.github/workflows/build-desktop.yml` - Desktop CI/CD
+- `.github/workflows/build-mobile.yml` - Mobile CI/CD
+- `.github/SECRETS_SETUP.md` - Secrets documentation
