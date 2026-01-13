@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useStudioStore } from '@/lib/studioStore';
+import { PluginRack, type PluginInstance } from './PluginRack';
 import {
   Settings2,
   ChevronDown,
@@ -27,6 +28,8 @@ interface InspectorPanelProps {
   selectedClip?: any;
   onTrackUpdate?: (trackId: string, updates: unknown) => void;
   onClipUpdate?: (clipId: string, updates: unknown) => void;
+  plugins?: PluginInstance[];
+  onPluginsChange?: (plugins: PluginInstance[]) => void;
 }
 
 interface CollapsibleSectionProps {
@@ -123,13 +126,18 @@ export function InspectorPanel({
   selectedClip,
   onTrackUpdate,
   onClipUpdate,
+  plugins = [],
+  onPluginsChange,
 }: InspectorPanelProps) {
   const { selectedTrackId, selectedClipId } = useStudioStore();
 
-  const [effects, setEffects] = useState([
-    { id: '1', name: 'EQ', type: 'eq', bypass: false },
-    { id: '2', name: 'Compressor', type: 'compressor', bypass: false },
+  const [localPlugins, setLocalPlugins] = useState<PluginInstance[]>([
+    { id: '1', type: 'eq', name: 'Parametric EQ', bypass: false, expanded: false, parameters: { low: 0, mid: 0, high: 0, midFreq: 1000 } },
+    { id: '2', type: 'compressor', name: 'Compressor', bypass: false, expanded: false, parameters: { threshold: -20, ratio: 4, attack: 10, release: 100, makeup: 0 } },
   ]);
+
+  const activePlugins = plugins.length > 0 ? plugins : localPlugins;
+  const handlePluginsChange = onPluginsChange || setLocalPlugins;
 
   const hasSelection = selectedTrackId || selectedClipId;
 
@@ -298,69 +306,13 @@ export function InspectorPanel({
               </div>
             </CollapsibleSection>
 
-            {/* Effect Chain */}
-            <CollapsibleSection title="EFFECTS" icon={<Sliders className="h-4 w-4" />}>
-              <div className="space-y-2">
-                {effects.map((effect, index) => (
-                  <div
-                    key={effect.id}
-                    className="flex items-center gap-2 p-2 rounded hover:bg-white/5"
-                    style={{ background: 'var(--studio-bg-deep)' }}
-                  >
-                    <GripVertical
-                      className="h-4 w-4 cursor-grab"
-                      style={{ color: 'var(--studio-text-subtle)' }}
-                    />
-                    <Zap
-                      className="h-4 w-4"
-                      style={{
-                        color: effect.bypass ? 'var(--studio-text-subtle)' : 'var(--studio-accent)',
-                      }}
-                    />
-                    <span
-                      className="flex-1 text-sm"
-                      style={{
-                        color: effect.bypass ? 'var(--studio-text-subtle)' : 'var(--studio-text)',
-                      }}
-                    >
-                      {effect.name}
-                    </span>
-                    <Switch
-                      checked={!effect.bypass}
-                      onCheckedChange={(checked) => {
-                        const newEffects = [...effects];
-                        newEffects[index].bypass = !checked;
-                        setEffects(newEffects);
-                      }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => {
-                        setEffects(effects.filter((_, i) => i !== index));
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full h-8 text-xs gap-2"
-                  onClick={() => {
-                    setEffects([
-                      ...effects,
-                      { id: Date.now().toString(), name: 'New Effect', type: 'fx', bypass: false },
-                    ]);
-                  }}
-                >
-                  <Plus className="h-3 w-3" />
-                  Add Effect
-                </Button>
-              </div>
+            {/* Plugin Rack - Built-in Effects */}
+            <CollapsibleSection title="PLUGINS" icon={<Sliders className="h-4 w-4" />}>
+              <PluginRack
+                trackId={selectedTrackId || 'master'}
+                plugins={activePlugins}
+                onPluginsChange={handlePluginsChange}
+              />
             </CollapsibleSection>
 
             {/* Routing */}

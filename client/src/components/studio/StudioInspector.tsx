@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, ChevronRight, Volume2, Circle } from 'lucide-react';
+import { PluginRack, type PluginInstance } from './PluginRack';
 
 interface StudioTrack {
   id: string;
@@ -14,6 +16,7 @@ interface StudioTrack {
   solo: boolean;
   color: string;
   effects?: any;
+  plugins?: PluginInstance[];
 }
 
 interface StudioInspectorProps {
@@ -182,20 +185,18 @@ export function StudioInspector({
                 </div>
               </div>
 
-              {/* Effects Section */}
-              {selectedTrack.effects && (
-                <>
-                  <Separator style={{ backgroundColor: 'var(--studio-border)' }} />
-                  <div className="space-y-2">
-                    <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
-                      Effects
-                    </Label>
-                    <div className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
-                      EQ, Compressor, Reverb available
-                    </div>
-                  </div>
-                </>
-              )}
+              {/* Plugin Rack - Built-in Effects */}
+              <Separator style={{ backgroundColor: 'var(--studio-border)' }} />
+              <div className="space-y-2">
+                <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  Plugins
+                </Label>
+                <PluginRack
+                  trackId={selectedTrack.id}
+                  plugins={selectedTrack.plugins || []}
+                  onPluginsChange={(plugins) => onTrackUpdate(selectedTrack.id, { plugins })}
+                />
+              </div>
             </>
           ) : (
             <div className="text-center py-8">
