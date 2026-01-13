@@ -52,6 +52,13 @@ const Help = lazy(() => import('@/pages/Help'));
 const Storefront = lazy(() => import('@/pages/Storefront'));
 const AdminAutonomy = lazy(() => import('@/pages/AdminAutonomy'));
 const ProducerProfilePage = lazy(() => import('@/pages/ProducerProfilePage'));
+const Verification = lazy(() => import('@/pages/Verification'));
+const Contracts = lazy(() => import('@/pages/Contracts'));
+const Workspaces = lazy(() => import('@/pages/Workspaces'));
+const Collaborations = lazy(() => import('@/pages/Collaborations'));
+const CareerCoach = lazy(() => import('@/pages/CareerCoach'));
+const ReleaseCountdown = lazy(() => import('@/pages/ReleaseCountdown'));
+const Invoices = lazy(() => import('@/pages/Invoices'));
 
 function Router() {
   return (
@@ -99,6 +106,13 @@ function Router() {
       <Route path="/help" component={Help} />
       <Route path="/storefront" component={Storefront} />
       <Route path="/admin/autonomy" component={AdminAutonomy} />
+      <Route path="/verification" component={Verification} />
+      <Route path="/contracts" component={Contracts} />
+      <Route path="/workspaces" component={Workspaces} />
+      <Route path="/collaborations" component={Collaborations} />
+      <Route path="/career-coach" component={CareerCoach} />
+      <Route path="/release-countdown" component={ReleaseCountdown} />
+      <Route path="/invoices" component={Invoices} />
       <Route component={NotFound} />
     </Switch>
   );
