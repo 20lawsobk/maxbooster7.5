@@ -14,6 +14,9 @@ import {
   Sparkles,
   Clock,
   Music,
+  Zap,
+  Wind,
+  Maximize2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,6 +32,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Knob } from './Knob';
 import { audioEngine } from '@/lib/audioEngine';
+import { PluginControlDialog, EXTENDED_PARAMETERS } from './PluginControlDialog';
 
 export interface PluginInstance {
   id: string;
@@ -146,6 +150,33 @@ const PLUGIN_DEFINITIONS: PluginDefinition[] = [
     ],
   },
   {
+    type: 'flanger',
+    name: 'Flanger',
+    icon: <Zap className="h-3.5 w-3.5" />,
+    category: 'modulation',
+    color: '#ec4899',
+    parameters: [
+      { name: 'Rate', key: 'rate', min: 0.01, max: 10, default: 0.3, unit: 'Hz' },
+      { name: 'Depth', key: 'depth', min: 0, max: 100, default: 60 },
+      { name: 'Feedback', key: 'feedback', min: -100, max: 100, default: 50 },
+      { name: 'Mix', key: 'mix', min: 0, max: 100, default: 50, unit: '%' },
+    ],
+  },
+  {
+    type: 'phaser',
+    name: 'Phaser',
+    icon: <Wind className="h-3.5 w-3.5" />,
+    category: 'modulation',
+    color: '#a855f7',
+    parameters: [
+      { name: 'Rate', key: 'rate', min: 0.01, max: 10, default: 0.5, unit: 'Hz' },
+      { name: 'Depth', key: 'depth', min: 0, max: 100, default: 60 },
+      { name: 'Stages', key: 'stages', min: 2, max: 12, default: 6 },
+      { name: 'Feedback', key: 'feedback', min: 0, max: 100, default: 50 },
+      { name: 'Mix', key: 'mix', min: 0, max: 100, default: 50, unit: '%' },
+    ],
+  },
+  {
     type: 'gate',
     name: 'Noise Gate',
     icon: <Volume2 className="h-3.5 w-3.5" />,
@@ -193,6 +224,199 @@ export function PluginRack({
   maxPlugins = 8,
 }: PluginRackProps) {
   const [draggedPlugin, setDraggedPlugin] = useState<string | null>(null);
+  const [controlDialogOpen, setControlDialogOpen] = useState(false);
+  const [selectedPluginForControl, setSelectedPluginForControl] = useState<PluginInstance | null>(null);
+
+  const applyPluginToAudioEngine = useCallback((plugin: PluginInstance) => {
+    switch (plugin.type) {
+      case 'eq':
+        audioEngine.updateTrackEQ(trackId, {
+          lowGain: plugin.parameters.low ?? 0,
+          midGain: plugin.parameters.mid ?? 0,
+          highGain: plugin.parameters.high ?? 0,
+          midFrequency: plugin.parameters.midFreq ?? 1000,
+          lowFrequency: plugin.parameters.lowFreq ?? 80,
+          highFrequency: plugin.parameters.highFreq ?? 8000,
+          bypass: plugin.bypass,
+        });
+        break;
+      case 'compressor':
+        audioEngine.updateTrackCompressor(trackId, {
+          threshold: plugin.parameters.threshold ?? -20,
+          ratio: plugin.parameters.ratio ?? 4,
+          attack: plugin.parameters.attack ?? 10,
+          release: plugin.parameters.release ?? 100,
+          knee: plugin.parameters.knee ?? 6,
+          makeup: plugin.parameters.makeup ?? 0,
+          bypass: plugin.bypass,
+        });
+        break;
+      case 'reverb':
+        audioEngine.updateTrackReverb(trackId, {
+          mix: plugin.parameters.mix ?? 30,
+          decay: plugin.parameters.decay ?? 2,
+          preDelay: plugin.parameters.preDelay ?? 20,
+          size: plugin.parameters.size ?? 50,
+          damping: plugin.parameters.damping ?? 50,
+          bypass: plugin.bypass,
+        });
+        break;
+      case 'delay':
+        if (typeof audioEngine.updateTrackDelay === 'function') {
+          audioEngine.updateTrackDelay(trackId, {
+            time: plugin.parameters.time ?? 250,
+            feedback: plugin.parameters.feedback ?? 40,
+            mix: plugin.parameters.mix ?? 30,
+            bypass: plugin.bypass,
+          });
+        } else {
+          console.error('[PluginRack] audioEngine.updateTrackDelay is not available');
+        }
+        break;
+      case 'distortion':
+        if (typeof audioEngine.updateTrackDistortion === 'function') {
+          audioEngine.updateTrackDistortion(trackId, {
+            drive: plugin.parameters.drive ?? 50,
+            tone: plugin.parameters.tone ?? 50,
+            mix: plugin.parameters.mix ?? 100,
+            bypass: plugin.bypass,
+          });
+        } else {
+          console.error('[PluginRack] audioEngine.updateTrackDistortion is not available');
+        }
+        break;
+      case 'chorus':
+        if (typeof audioEngine.updateTrackChorus === 'function') {
+          audioEngine.updateTrackChorus(trackId, {
+            rate: plugin.parameters.rate ?? 1,
+            depth: plugin.parameters.depth ?? 50,
+            mix: plugin.parameters.mix ?? 50,
+            bypass: plugin.bypass,
+          });
+        } else {
+          console.error('[PluginRack] audioEngine.updateTrackChorus is not available');
+        }
+        break;
+      case 'flanger':
+        if (typeof audioEngine.updateTrackFlanger === 'function') {
+          audioEngine.updateTrackFlanger(trackId, {
+            rate: plugin.parameters.rate ?? 0.3,
+            depth: plugin.parameters.depth ?? 60,
+            feedback: plugin.parameters.feedback ?? 50,
+            mix: plugin.parameters.mix ?? 50,
+            bypass: plugin.bypass,
+          });
+        } else {
+          console.error('[PluginRack] audioEngine.updateTrackFlanger is not available');
+        }
+        break;
+      case 'phaser':
+        if (typeof audioEngine.updateTrackPhaser === 'function') {
+          audioEngine.updateTrackPhaser(trackId, {
+            rate: plugin.parameters.rate ?? 0.5,
+            depth: plugin.parameters.depth ?? 60,
+            stages: plugin.parameters.stages ?? 6,
+            feedback: plugin.parameters.feedback ?? 50,
+            mix: plugin.parameters.mix ?? 50,
+            bypass: plugin.bypass,
+          });
+        } else {
+          console.error('[PluginRack] audioEngine.updateTrackPhaser is not available');
+        }
+        break;
+      case 'gate':
+        if (typeof audioEngine.updateTrackGate === 'function') {
+          audioEngine.updateTrackGate(trackId, {
+            threshold: plugin.parameters.threshold ?? -40,
+            attack: plugin.parameters.attack ?? 1,
+            release: plugin.parameters.release ?? 100,
+            range: plugin.parameters.range ?? -80,
+            bypass: plugin.bypass,
+          });
+        } else {
+          console.error('[PluginRack] audioEngine.updateTrackGate is not available');
+        }
+        break;
+      case 'limiter':
+        if (typeof audioEngine.updateTrackLimiter === 'function') {
+          audioEngine.updateTrackLimiter(trackId, {
+            ceiling: plugin.parameters.ceiling ?? -0.3,
+            release: plugin.parameters.release ?? 100,
+            bypass: plugin.bypass,
+          });
+        } else {
+          console.error('[PluginRack] audioEngine.updateTrackLimiter is not available');
+        }
+        break;
+      default:
+        break;
+    }
+  }, [trackId]);
+
+  const openControlDialog = useCallback((plugin: PluginInstance) => {
+    setSelectedPluginForControl(plugin);
+    setControlDialogOpen(true);
+  }, []);
+
+  const handleDialogParameterChange = useCallback((key: string, value: number) => {
+    if (!selectedPluginForControl) return;
+    const updatedPlugins = plugins.map((p) =>
+      p.id === selectedPluginForControl.id
+        ? { ...p, parameters: { ...p.parameters, [key]: value } }
+        : p
+    );
+    onPluginsChange(updatedPlugins);
+    const updatedPlugin = updatedPlugins.find(p => p.id === selectedPluginForControl.id);
+    if (updatedPlugin) {
+      setSelectedPluginForControl(updatedPlugin);
+      applyPluginToAudioEngine(updatedPlugin);
+    }
+  }, [selectedPluginForControl, plugins, onPluginsChange, applyPluginToAudioEngine]);
+
+  const handleDialogBypassChange = useCallback((bypass: boolean) => {
+    if (!selectedPluginForControl) return;
+    const updatedPlugins = plugins.map((p) =>
+      p.id === selectedPluginForControl.id ? { ...p, bypass } : p
+    );
+    onPluginsChange(updatedPlugins);
+    const updatedPlugin = updatedPlugins.find(p => p.id === selectedPluginForControl.id);
+    if (updatedPlugin) {
+      setSelectedPluginForControl(updatedPlugin);
+      applyPluginToAudioEngine(updatedPlugin);
+    }
+  }, [selectedPluginForControl, plugins, onPluginsChange, applyPluginToAudioEngine]);
+
+  const handleDialogReset = useCallback(() => {
+    if (!selectedPluginForControl) return;
+    
+    const defaultParams: Record<string, number> = {};
+    
+    const basicDef = PLUGIN_DEFINITIONS.find((d) => d.type === selectedPluginForControl.type);
+    if (basicDef) {
+      basicDef.parameters.forEach((param) => {
+        defaultParams[param.key] = param.default;
+      });
+    }
+    
+    const extendedDef = EXTENDED_PARAMETERS[selectedPluginForControl.type];
+    if (extendedDef) {
+      extendedDef.forEach((param) => {
+        defaultParams[param.key] = param.default;
+      });
+    }
+    
+    const updatedPlugins = plugins.map((p) =>
+      p.id === selectedPluginForControl.id
+        ? { ...p, parameters: defaultParams, bypass: false }
+        : p
+    );
+    onPluginsChange(updatedPlugins);
+    const updatedPlugin = updatedPlugins.find(p => p.id === selectedPluginForControl.id);
+    if (updatedPlugin) {
+      setSelectedPluginForControl(updatedPlugin);
+      applyPluginToAudioEngine(updatedPlugin);
+    }
+  }, [selectedPluginForControl, plugins, onPluginsChange, applyPluginToAudioEngine]);
 
   const addPlugin = useCallback((type: PluginType) => {
     if (plugins.length >= maxPlugins) return;
@@ -201,9 +425,17 @@ export function PluginRack({
     if (!definition) return;
 
     const defaultParams: Record<string, number> = {};
+    
     definition.parameters.forEach((param) => {
       defaultParams[param.key] = param.default;
     });
+    
+    const extendedDef = EXTENDED_PARAMETERS[type];
+    if (extendedDef) {
+      extendedDef.forEach((param) => {
+        defaultParams[param.key] = param.default;
+      });
+    }
 
     const newPlugin: PluginInstance = {
       id: `plugin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -220,40 +452,6 @@ export function PluginRack({
   const removePlugin = useCallback((pluginId: string) => {
     onPluginsChange(plugins.filter((p) => p.id !== pluginId));
   }, [plugins, onPluginsChange]);
-
-  const applyPluginToAudioEngine = useCallback((plugin: PluginInstance) => {
-    switch (plugin.type) {
-      case 'eq':
-        audioEngine.updateTrackEQ(trackId, {
-          lowGain: plugin.parameters.low ?? 0,
-          midGain: plugin.parameters.mid ?? 0,
-          highGain: plugin.parameters.high ?? 0,
-          midFrequency: plugin.parameters.midFreq ?? 1000,
-          bypass: plugin.bypass,
-        });
-        break;
-      case 'compressor':
-        audioEngine.updateTrackCompressor(trackId, {
-          threshold: plugin.parameters.threshold ?? -20,
-          ratio: plugin.parameters.ratio ?? 4,
-          attack: plugin.parameters.attack ?? 10,
-          release: plugin.parameters.release ?? 100,
-          knee: plugin.parameters.knee ?? 6,
-          bypass: plugin.bypass,
-        });
-        break;
-      case 'reverb':
-        audioEngine.updateTrackReverb(trackId, {
-          mix: plugin.parameters.mix ?? 30,
-          decay: plugin.parameters.decay ?? 2,
-          preDelay: plugin.parameters.preDelay ?? 0,
-          bypass: plugin.bypass,
-        });
-        break;
-      default:
-        break;
-    }
-  }, [trackId]);
 
   const toggleBypass = useCallback((pluginId: string) => {
     const updatedPlugins = plugins.map((p) =>
@@ -447,6 +645,19 @@ export function PluginRack({
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="h-5 w-5 p-0"
+                          onClick={() => openControlDialog(plugin)}
+                          title="Open full controls"
+                        >
+                          <Maximize2 
+                            className="h-3 w-3" 
+                            style={{ color: definition.color }}
+                          />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className="h-5 w-5 p-0 hover:text-red-500"
                           onClick={() => removePlugin(plugin.id)}
                         >
@@ -504,6 +715,15 @@ export function PluginRack({
           </Reorder.Group>
         )}
       </div>
+
+      <PluginControlDialog
+        open={controlDialogOpen}
+        onOpenChange={setControlDialogOpen}
+        plugin={selectedPluginForControl}
+        onParameterChange={handleDialogParameterChange}
+        onBypassChange={handleDialogBypassChange}
+        onReset={handleDialogReset}
+      />
     </div>
   );
 }

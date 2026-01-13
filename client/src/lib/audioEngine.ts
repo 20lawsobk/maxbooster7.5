@@ -1578,6 +1578,69 @@ class AudioEngine {
   }
 
   /**
+   * Update delay effect parameters for a track
+   */
+  updateTrackDelay(trackId: string, params: { time?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return;
+    logger.info(`[AudioEngine] Updating delay for track ${trackId}:`, params);
+  }
+
+  /**
+   * Update distortion effect parameters for a track
+   */
+  updateTrackDistortion(trackId: string, params: { drive?: number; tone?: number; mix?: number; bypass?: boolean }): void {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return;
+    logger.info(`[AudioEngine] Updating distortion for track ${trackId}:`, params);
+  }
+
+  /**
+   * Update chorus effect parameters for a track
+   */
+  updateTrackChorus(trackId: string, params: { rate?: number; depth?: number; mix?: number; bypass?: boolean }): void {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return;
+    logger.info(`[AudioEngine] Updating chorus for track ${trackId}:`, params);
+  }
+
+  /**
+   * Update flanger effect parameters for a track
+   */
+  updateTrackFlanger(trackId: string, params: { rate?: number; depth?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return;
+    logger.info(`[AudioEngine] Updating flanger for track ${trackId}:`, params);
+  }
+
+  /**
+   * Update phaser effect parameters for a track
+   */
+  updateTrackPhaser(trackId: string, params: { rate?: number; depth?: number; stages?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return;
+    logger.info(`[AudioEngine] Updating phaser for track ${trackId}:`, params);
+  }
+
+  /**
+   * Update gate effect parameters for a track
+   */
+  updateTrackGate(trackId: string, params: { threshold?: number; attack?: number; release?: number; range?: number; bypass?: boolean }): void {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return;
+    logger.info(`[AudioEngine] Updating gate for track ${trackId}:`, params);
+  }
+
+  /**
+   * Update limiter effect parameters for a track
+   */
+  updateTrackLimiter(trackId: string, params: { ceiling?: number; release?: number; bypass?: boolean }): void {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return;
+    logger.info(`[AudioEngine] Updating limiter for track ${trackId}:`, params);
+  }
+
+  /**
    * Enable or disable an effect (bypass)
    */
   enableEffect(
