@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const PRODUCTION_URL = 'https://maxbooster.replit.app';
 const APP_NAME = 'Max Booster';
+const APP_VERSION = '2.0.0';
 
 let mainWindow;
 let tray = null;
@@ -234,7 +235,7 @@ app.on('activate', () => {
 
 app.setAboutPanelOptions({
   applicationName: APP_NAME,
-  applicationVersion: app.getVersion(),
-  copyright: 'B-Lawz Music',
-  credits: 'AI-Powered Music Career Management'
+  applicationVersion: APP_VERSION,
+  copyright: '2024-2026 B-Lawz Music',
+  credits: 'AI-Powered Music Career Management Platform\nWeb | Desktop | Mobile'
 });

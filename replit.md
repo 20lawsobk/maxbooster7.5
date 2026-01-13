@@ -1,7 +1,15 @@
 # Max Booster - AI-Powered Music Career Management Platform
 
+## Version
+**Current Version**: 2.0.0 (January 2026)
+
 ## Overview
 Max Booster is an AI-powered platform designed to empower musicians, producers, and labels by streamlining music career management. It offers tools for music production, global distribution, social media management, a beat marketplace, and advanced analytics. The platform's core purpose is to provide a comprehensive, one-stop solution for artists to grow their careers and maximize market potential, from AI-assisted audio creation to detailed performance tracking.
+
+### Platform Availability
+- **Web**: https://maxbooster.replit.app
+- **Desktop**: Windows, macOS, Linux (Electron)
+- **Mobile**: iOS, Android (Capacitor)
 
 ## User Preferences
 I prefer clear and concise communication.
@@ -104,3 +112,33 @@ Admin credentials stored in environment variables:
 - **Provider**: Replit Object Storage
 - **Bucket ID**: replit-objstore-2afac943-48fb-4a4f-b5b4-7cb21892b200
 - **Service**: `server/services/replitStorageService.ts`
+
+## Build & Deployment
+
+### Build Scripts
+| Command | Description |
+|---------|-------------|
+| `npm run build:desktop` | Build desktop apps (Electron) |
+| `npm run build:mobile` | Setup mobile apps (Capacitor) |
+| `npm run build:apps` | Build all platforms |
+| `npm run build:version` | Bump patch version |
+| `npm run cap:sync` | Sync Capacitor projects |
+| `npm run cap:ios` | Open iOS project in Xcode |
+| `npm run cap:android` | Open Android project in Android Studio |
+
+### Desktop Build Output
+- **Windows**: NSIS Installer, Portable
+- **macOS**: DMG, ZIP
+- **Linux**: AppImage, DEB, tar.gz
+- **Output Directory**: `dist-installers/`
+
+### Mobile Build Requirements
+- **iOS**: macOS + Xcode 15+ (Apple Developer Account for distribution)
+- **Android**: Android Studio Flamingo+ (Java 17)
+- **Capacitor Version**: 8.x
+
+### Build Configuration Files
+- `electron/main.js` - Electron main process
+- `electron/preload.js` - Electron preload script
+- `capacitor.config.ts` - Capacitor configuration
+- `scripts/build-apps.ts` - Unified build script
