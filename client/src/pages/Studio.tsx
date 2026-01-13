@@ -1475,6 +1475,18 @@ export default function Studio() {
     []
   );
 
+  const handleOpenTrackPlugins = useCallback(
+    (trackId: string) => {
+      // Select the track
+      setSelectedTrack(trackId);
+      // Show inspector panel if not visible
+      if (!inspectorVisible) {
+        toggleInspector();
+      }
+    },
+    [inspectorVisible, toggleInspector]
+  );
+
   const handleTrackCreatedFromUpload = useCallback(
     (result: { track?: { id: string; name: string }; clip?: { id: string; name: string; audioUrl: string; startTime: number; duration: number | null } }) => {
       if (result.track && result.clip) {
@@ -2430,8 +2442,9 @@ export default function Studio() {
                 tracks={displayTracks}
                 trackClips={normalizedTrackClips}
                 mixBusses={mixBusses}
-                selectedTrack={selectedTrack}
+                selectedTrackId={selectedTrack}
                 onTrackSelect={handleTrackSelect}
+                onOpenTrackPlugins={handleOpenTrackPlugins}
                 zoom={zoom}
                 currentTime={controller.transport.currentTime}
                 isPlaying={controller.transport.isPlaying}

@@ -39,6 +39,7 @@ import {
   CircleIcon,
   Circle,
   X,
+  Settings2,
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import {
@@ -129,6 +130,12 @@ interface TrackListProps {
   selectedClipId?: string | null;
   onAddTrack: () => void;
   onReorderTracks?: (oldIndex: number, newIndex: number) => void;
+  selectedTrackId?: string | null;
+  onTrackSelect?: (trackId: string) => void;
+  onOpenTrackPlugins?: (trackId: string) => void;
+  zoom?: number;
+  currentTime?: number;
+  isPlaying?: boolean;
 }
 
 const TRACK_COLORS = [
@@ -232,6 +239,8 @@ interface SortableTrackRowProps {
   onDeleteClip?: (trackId: string, clipId: string) => void;
   onClipSelect?: (clipId: string) => void;
   selectedClipId?: string | null;
+  onOpenTrackPlugins?: (trackId: string) => void;
+  isSelected?: boolean;
 }
 
 const SortableTrackRow = memo(function SortableTrackRow({
@@ -248,6 +257,8 @@ const SortableTrackRow = memo(function SortableTrackRow({
   onDeleteClip,
   onClipSelect,
   selectedClipId,
+  onOpenTrackPlugins,
+  isSelected,
 }: SortableTrackRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: track.id,
@@ -601,6 +612,14 @@ const SortableTrackRow = memo(function SortableTrackRow({
       </ContextMenuTrigger>
       <ContextMenuContent className="bg-[#252525] border-gray-700 text-white">
         <ContextMenuItem
+          onClick={() => onOpenTrackPlugins?.(track.id)}
+          data-testid={`context-plugins-${track.id}`}
+        >
+          <Settings2 className="h-3 w-3 mr-2" />
+          Track Plugins
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem
           onClick={() => onDuplicateTrack(track.id)}
           data-testid={`context-duplicate-${track.id}`}
         >
@@ -650,6 +669,12 @@ export function TrackList({
   selectedClipId,
   onAddTrack,
   onReorderTracks,
+  selectedTrackId,
+  onTrackSelect,
+  onOpenTrackPlugins,
+  zoom,
+  currentTime,
+  isPlaying,
 }: TrackListProps) {
   useEffect(() => {
     logger.info('TrackList render - trackClips size:', trackClips.size);
@@ -723,6 +748,8 @@ export function TrackList({
               onDeleteClip={onDeleteClip}
               onClipSelect={onClipSelect}
               selectedClipId={selectedClipId}
+              onOpenTrackPlugins={onOpenTrackPlugins}
+              isSelected={selectedTrackId === track.id}
             />
           ))}
         </ScrollArea>
