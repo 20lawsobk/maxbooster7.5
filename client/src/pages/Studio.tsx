@@ -220,7 +220,7 @@ export default function Studio() {
   );
 
   // Tool state for select/cut/delete tools
-  const [selectedTool, setSelectedTool] = useState<'select' | 'cut' | 'delete'>('select');
+  const [selectedTool, setSelectedTool] = useState<'select' | 'cut' | 'delete' | 'range' | 'draw' | 'erase' | 'split'>('select');
 
   // Undo/Redo history for clip operations (session-based)
   interface ClipData {
@@ -1852,11 +1852,171 @@ export default function Studio() {
       key: ',',
       handler: () => handleSkipBack(),
       description: 'Skip back',
+      category: 'Navigation',
     },
     {
       key: '.',
       handler: () => handleSkipForward(),
       description: 'Skip forward',
+      category: 'Navigation',
+    },
+    {
+      key: 'Home',
+      handler: () => {
+        controller.transport.currentTime = 0;
+        announce('Go to start');
+      },
+      description: 'Go to start',
+      category: 'Navigation',
+    },
+    {
+      key: 'End',
+      handler: () => {
+        const duration = selectedProject?.duration || 60;
+        controller.transport.currentTime = duration;
+        announce('Go to end');
+      },
+      description: 'Go to end',
+      category: 'Navigation',
+    },
+    {
+      key: 'o',
+      handler: () => {
+        if (selectedTrack) {
+          const track = displayTracks.find((t) => t.id === selectedTrack);
+          if (track) {
+            handleSoloToggle(track.id);
+            announce(`Track ${track.name} ${track.solo ? 'unsolo' : 'solo'}`);
+          }
+        }
+      },
+      description: 'Solo selected track',
+      category: 'Track',
+    },
+    {
+      key: 't',
+      handler: () => {
+        handleAddTrack('audio');
+        announce('New audio track added');
+      },
+      description: 'Add new audio track',
+      category: 'Track',
+    },
+    {
+      key: 'ArrowUp',
+      handler: () => {
+        const currentIndex = displayTracks.findIndex((t) => t.id === selectedTrack);
+        if (currentIndex > 0) {
+          const prevTrack = displayTracks[currentIndex - 1];
+          setSelectedTrack(prevTrack.id);
+          announce(`Selected track: ${prevTrack.name}`);
+        }
+      },
+      description: 'Select previous track',
+      category: 'Track',
+    },
+    {
+      key: 'ArrowDown',
+      handler: () => {
+        const currentIndex = displayTracks.findIndex((t) => t.id === selectedTrack);
+        if (currentIndex < displayTracks.length - 1) {
+          const nextTrack = displayTracks[currentIndex + 1];
+          setSelectedTrack(nextTrack.id);
+          announce(`Selected track: ${nextTrack.name}`);
+        }
+      },
+      description: 'Select next track',
+      category: 'Track',
+    },
+    {
+      key: 'n',
+      handler: () => {
+        setSnapEnabled(!snapEnabled);
+        announce(`Snap to grid ${!snapEnabled ? 'enabled' : 'disabled'}`);
+      },
+      description: 'Toggle snap to grid',
+      category: 'Grid',
+    },
+    {
+      key: '0',
+      ctrl: true,
+      handler: () => {
+        setZoom(1);
+        announce('Zoom reset to fit');
+      },
+      description: 'Zoom to fit',
+      category: 'Navigation',
+    },
+    {
+      key: 'e',
+      handler: () => {
+        if (selectedTrack) {
+          const track = displayTracks.find((t) => t.id === selectedTrack);
+          if (track) {
+            toggleInspector();
+            announce(`Inspector panel for ${track.name}`);
+          }
+        } else {
+          toggleInspector();
+          announce('Inspector panel toggled');
+        }
+      },
+      description: 'Toggle inspector/effects panel',
+      category: 'View',
+    },
+    {
+      key: '1',
+      handler: () => {
+        setSelectedTool('select');
+        announce('Selection tool');
+      },
+      description: 'Selection tool',
+      category: 'Tools',
+    },
+    {
+      key: '2',
+      handler: () => {
+        setSelectedTool('range');
+        announce('Range selection tool');
+      },
+      description: 'Range selection tool',
+      category: 'Tools',
+    },
+    {
+      key: '3',
+      handler: () => {
+        setSelectedTool('draw');
+        announce('Draw tool');
+      },
+      description: 'Draw/Pencil tool',
+      category: 'Tools',
+    },
+    {
+      key: '4',
+      handler: () => {
+        setSelectedTool('erase');
+        announce('Eraser tool');
+      },
+      description: 'Eraser tool',
+      category: 'Tools',
+    },
+    {
+      key: '5',
+      handler: () => {
+        setSelectedTool('split');
+        announce('Split tool');
+      },
+      description: 'Split tool',
+      category: 'Tools',
+    },
+    {
+      key: 'Escape',
+      handler: () => {
+        useStudioStore.getState().clearSelection();
+        announce('Selection cleared');
+      },
+      description: 'Clear selection',
+      category: 'Edit',
     },
   ]);
 
