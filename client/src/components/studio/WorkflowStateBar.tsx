@@ -14,6 +14,8 @@ import {
   AlertCircle,
   Settings2,
   FileOutput,
+  X,
+  ChevronDown,
 } from 'lucide-react';
 
 export type WorkflowState = 'setup' | 'recording' | 'editing' | 'mixing' | 'mastering' | 'delivery';
@@ -77,6 +79,8 @@ interface WorkflowStateBarProps {
   completedSteps?: WorkflowState[];
   projectProgress?: number;
   className?: string;
+  isCollapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
 export function WorkflowStateBar({
@@ -85,9 +89,30 @@ export function WorkflowStateBar({
   completedSteps = [],
   projectProgress = 0,
   className = '',
+  isCollapsed = false,
+  onCollapsedChange,
 }: WorkflowStateBarProps) {
   const [showDetails, setShowDetails] = useState(false);
   const currentIndex = WORKFLOW_STEPS.findIndex(s => s.id === currentState);
+
+  // If collapsed, render a minimal expand button
+  if (isCollapsed) {
+    return (
+      <div className={`bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 ${className}`}>
+        <div className="flex items-center justify-center px-2 py-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onCollapsedChange?.(false)}
+            className="text-zinc-400 hover:text-white text-xs gap-1"
+          >
+            <ChevronDown className="h-3 w-3" />
+            Show Workflow ({WORKFLOW_STEPS[currentIndex]?.label || 'Setup'})
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const getStepStatus = useCallback((step: WorkflowStep, index: number) => {
     if (completedSteps.includes(step.id)) return 'completed';
@@ -182,6 +207,24 @@ export function WorkflowStateBar({
             >
               {showDetails ? 'Hide' : 'Details'}
             </Button>
+
+            {onCollapsedChange && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onCollapsedChange(true)}
+                    className="text-zinc-400 hover:text-white p-1.5"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-zinc-800 border-zinc-700">
+                  <p className="text-xs">Collapse workflow bar</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
 

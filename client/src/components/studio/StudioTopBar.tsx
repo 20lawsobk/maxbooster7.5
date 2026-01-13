@@ -38,6 +38,7 @@ import {
   HelpCircle,
   Undo2,
   Redo2,
+  Wand2,
 } from 'lucide-react';
 
 interface Project {
@@ -64,6 +65,7 @@ interface StudioTopBarProps {
   onUploadFile?: () => void;
   onSaveProject?: () => void;
   onShowTutorial?: () => void;
+  onOpenAIGenerator?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -92,6 +94,7 @@ export function StudioTopBar({
   onUploadFile,
   onSaveProject,
   onShowTutorial,
+  onOpenAIGenerator,
   onUndo,
   onRedo,
   canUndo = false,
@@ -256,6 +259,46 @@ export function StudioTopBar({
                 </button>
               </TooltipTrigger>
               <TooltipContent>{isSaving ? 'Saving...' : 'Save Project'}</TooltipContent>
+            </Tooltip>
+
+            {/* AI Melody Generator Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="h-9 px-3 rounded-md flex items-center justify-center gap-1.5 transition-all"
+                  style={{
+                    background: selectedProject
+                      ? 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)'
+                      : 'var(--studio-bg-medium)',
+                    color: selectedProject ? '#fff' : 'var(--studio-text-subtle)',
+                    border: '1px solid var(--studio-border-subtle)',
+                    boxShadow: selectedProject
+                      ? '0 2px 8px rgba(139, 92, 246, 0.3)'
+                      : 'none',
+                    opacity: selectedProject ? 1 : 0.5,
+                    cursor: selectedProject ? 'pointer' : 'not-allowed',
+                  }}
+                  onClick={onOpenAIGenerator}
+                  disabled={!selectedProject}
+                  data-testid="button-ai-generator"
+                  onMouseEnter={(e) => {
+                    if (selectedProject) {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #9b6cf7 0%, #7376f2 100%)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedProject) {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.3)';
+                    }
+                  }}
+                >
+                  <Wand2 className="h-4 w-4" />
+                  <span className="text-xs font-medium hidden lg:inline">AI Generate</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>AI Melody Generator - Create melodies, beats & instruments</TooltipContent>
             </Tooltip>
 
             {/* Undo/Redo Buttons */}

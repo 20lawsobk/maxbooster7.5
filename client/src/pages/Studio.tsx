@@ -377,6 +377,7 @@ export default function Studio() {
   const [masterVolume, setMasterVolume] = useState(80);
   const tutorialShownRef = useRef(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('setup');
+  const [workflowBarCollapsed, setWorkflowBarCollapsed] = useState(false);
   const [completedWorkflowSteps, setCompletedWorkflowSteps] = useState<WorkflowState[]>([]);
   const [showProjectSetup, setShowProjectSetup] = useState(false);
   const [showSessionManager, setShowSessionManager] = useState(false);
@@ -2343,6 +2344,7 @@ export default function Studio() {
                   onCreateProject={(title) => createProjectMutation.mutate(title)}
                   onUploadFile={() => setShowFullscreenUpload(true)}
                   onSaveProject={handleSaveProject}
+                  onOpenAIGenerator={() => setShowAIGeneratorDialog(true)}
                   onUndo={handleUndo}
                   onRedo={handleRedo}
                   canUndo={undoStack.length > 0}
@@ -2363,6 +2365,8 @@ export default function Studio() {
                     if (state === 'mastering' || state === 'delivery') setShowMasteringDelivery(true);
                   }}
                   completedSteps={completedWorkflowSteps}
+                  isCollapsed={workflowBarCollapsed}
+                  onCollapsedChange={setWorkflowBarCollapsed}
                 />
               </div>
             }
