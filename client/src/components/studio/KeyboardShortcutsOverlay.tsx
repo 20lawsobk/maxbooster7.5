@@ -96,6 +96,13 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
     ],
   },
   {
+    name: 'Lyrics',
+    shortcuts: [
+      { keys: ['Y'], description: 'Toggle Lyrics Display' },
+      { keys: ['Alt', 'Enter'], description: 'Snap Lyric to Playhead' },
+    ],
+  },
+  {
     name: 'File & Project',
     shortcuts: [
       { keys: ['Ctrl', 'S'], description: 'Save Project' },

@@ -99,6 +99,9 @@ import AudioEngine from '@/lib/audioEngine';
 import { StudioOneWrapper } from '@/components/studio/StudioOneWrapper';
 import { StudioTopBar } from '@/components/studio/StudioTopBar';
 import { StudioInspector } from '@/components/studio/StudioInspector';
+import { GlobalLyricsTrack } from '@/components/studio/GlobalLyricsTrack';
+import { LyricsDisplayWindow } from '@/components/studio/LyricsDisplayWindow';
+import { LyricsImportDialog } from '@/components/studio/LyricsImportDialog';
 import { StudioBrowser } from '@/components/studio/StudioBrowser';
 import { StudioDock } from '@/components/studio/StudioDock';
 import { useMarkers } from '@/hooks/useMarkers';
@@ -320,6 +323,7 @@ export default function Studio() {
   const [showLyricsPanel, setShowLyricsPanel] = useState(false);
   const [lyricsContent, setLyricsContent] = useState('');
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showLyricsImportDialog, setShowLyricsImportDialog] = useState(false);
   const [showStemExportDialog, setShowStemExportDialog] = useState(false);
   const [showDistributionDialog, setShowDistributionDialog] = useState(false);
   const [showAIGeneratorDialog, setShowAIGeneratorDialog] = useState(false);
@@ -2018,6 +2022,29 @@ export default function Studio() {
       description: 'Clear selection',
       category: 'Edit',
     },
+    {
+      key: 'Enter',
+      alt: true,
+      handler: () => {
+        const { selectedLyricId, snapLyricToPlayhead } = useStudioStore.getState();
+        if (selectedLyricId) {
+          snapLyricToPlayhead(selectedLyricId);
+          announce('Lyric snapped to playhead');
+        }
+      },
+      description: 'Snap selected lyric to playhead',
+      category: 'Lyrics',
+    },
+    {
+      key: 'y',
+      handler: () => {
+        useStudioStore.getState().toggleLyricsDisplay();
+        const visible = useStudioStore.getState().lyricsDisplayVisible;
+        announce(`Lyrics display ${visible ? 'shown' : 'hidden'}`);
+      },
+      description: 'Toggle lyrics display window',
+      category: 'View',
+    },
   ]);
 
   useEffect(() => {
@@ -2348,17 +2375,24 @@ export default function Studio() {
                 />
               }
               timeline={
-                <Timeline
-                  tracks={displayTracks}
-                  zoom={zoom}
-                  currentTime={controller.transport.currentTime}
-                  isPlaying={controller.transport.isPlaying}
-                  selectedTrack={selectedTrack}
-                  onTrackSelect={handleTrackSelect}
-                  onTimeChange={(time) => controller.seek(time)}
-                  trackClips={normalizedTrackClips}
-                  onClipUpdate={handleClipUpdate}
-                />
+                <>
+                  <GlobalLyricsTrack
+                    duration={projectDuration}
+                    zoom={zoom}
+                    onTimeChange={(time) => controller.seek(time)}
+                  />
+                  <Timeline
+                    tracks={displayTracks}
+                    zoom={zoom}
+                    currentTime={controller.transport.currentTime}
+                    isPlaying={controller.transport.isPlaying}
+                    selectedTrack={selectedTrack}
+                    onTrackSelect={handleTrackSelect}
+                    onTimeChange={(time) => controller.seek(time)}
+                    trackClips={normalizedTrackClips}
+                    onClipUpdate={handleClipUpdate}
+                  />
+                </>
               }
             >
               <TrackList
@@ -2861,6 +2895,13 @@ export default function Studio() {
               size: f?.size || f?.fileSize || 0,
             }))}
           />
+
+          <LyricsImportDialog
+            open={showLyricsImportDialog}
+            onOpenChange={setShowLyricsImportDialog}
+          />
+
+          <LyricsDisplayWindow />
 
           <ProjectSetupConsole
             isOpen={showProjectSetup}

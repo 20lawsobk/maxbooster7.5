@@ -86,6 +86,7 @@ export interface LyricWord {
   text: string;
   startTime: number;
   endTime: number;
+  midiNoteId?: string;
 }
 
 export interface LyricLine {
@@ -93,6 +94,20 @@ export interface LyricLine {
   words: LyricWord[];
   startTime: number;
   endTime: number;
+  text?: string;
+}
+
+// Lyrics Display Settings
+export interface LyricsDisplaySettings {
+  fontSize: 'small' | 'medium' | 'large' | 'xlarge';
+  fontFamily: string;
+  textColor: string;
+  highlightColor: string;
+  backgroundColor: string;
+  textAlign: 'left' | 'center' | 'right';
+  lineSpacing: number;
+  showWordHighlight: boolean;
+  teleprompterMode: boolean;
 }
 
 // Autoscroll modes matching Studio One Pro 7.2+
@@ -174,6 +189,10 @@ export interface StudioState {
 
   // Lyrics State
   lyrics: LyricLine[];
+  selectedLyricId: string | null;
+  lyricsDisplayVisible: boolean;
+  lyricsTrackVisible: boolean;
+  lyricsDisplaySettings: LyricsDisplaySettings;
 
   // Transport Actions
   setCurrentTime: (time: number) => void;
@@ -262,6 +281,14 @@ export interface StudioState {
   addLyric: (line: LyricLine) => void;
   updateLyric: (id: string, updates: Partial<LyricLine>) => void;
   deleteLyric: (id: string) => void;
+  selectLyric: (id: string | null) => void;
+  snapLyricToPlayhead: (id: string) => void;
+  toggleLyricsDisplay: () => void;
+  toggleLyricsTrack: () => void;
+  updateLyricsDisplaySettings: (updates: Partial<LyricsDisplaySettings>) => void;
+  importLyrics: (text: string) => void;
+  getCurrentLyricLine: () => LyricLine | null;
+  getCurrentLyricWord: () => LyricWord | null;
 }
 
 export const useStudioStore = create<StudioState>((set, get) => ({
@@ -337,6 +364,20 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Lyrics State
   lyrics: [],
+  selectedLyricId: null,
+  lyricsDisplayVisible: false,
+  lyricsTrackVisible: true,
+  lyricsDisplaySettings: {
+    fontSize: 'large' as const,
+    fontFamily: 'Inter, sans-serif',
+    textColor: '#ffffff',
+    highlightColor: '#fbbf24',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    textAlign: 'center' as const,
+    lineSpacing: 1.5,
+    showWordHighlight: true,
+    teleprompterMode: false,
+  },
 
   // Playhead Actions
   setCurrentTime: (time) => set({ currentTime: time }),
@@ -582,4 +623,73 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       lyrics: state.lyrics.filter((l) => l.id !== id),
     })),
+
+  selectLyric: (id) => set({ selectedLyricId: id }),
+
+  snapLyricToPlayhead: (id) =>
+    set((state) => {
+      const currentTime = state.currentTime;
+      const lyric = state.lyrics.find((l) => l.id === id);
+      if (!lyric) return state;
+      const duration = lyric.endTime - lyric.startTime;
+      return {
+        lyrics: state.lyrics
+          .map((l) =>
+            l.id === id
+              ? { ...l, startTime: currentTime, endTime: currentTime + duration }
+              : l
+          )
+          .sort((a, b) => a.startTime - b.startTime),
+      };
+    }),
+
+  toggleLyricsDisplay: () =>
+    set((state) => ({ lyricsDisplayVisible: !state.lyricsDisplayVisible })),
+
+  toggleLyricsTrack: () =>
+    set((state) => ({ lyricsTrackVisible: !state.lyricsTrackVisible })),
+
+  updateLyricsDisplaySettings: (updates) =>
+    set((state) => ({
+      lyricsDisplaySettings: { ...state.lyricsDisplaySettings, ...updates },
+    })),
+
+  importLyrics: (text) => {
+    const lines = text.split('\n').filter((line) => line.trim());
+    const newLyrics: LyricLine[] = lines.map((line, index) => ({
+      id: `lyric-${Date.now()}-${index}`,
+      text: line.trim(),
+      words: line.trim().split(/\s+/).map((word, wordIndex) => ({
+        id: `word-${Date.now()}-${index}-${wordIndex}`,
+        text: word,
+        startTime: index * 4,
+        endTime: index * 4 + 2,
+      })),
+      startTime: index * 4,
+      endTime: (index + 1) * 4,
+    }));
+    set((state) => ({
+      lyrics: [...state.lyrics, ...newLyrics].sort((a, b) => a.startTime - b.startTime),
+    }));
+  },
+
+  getCurrentLyricLine: () => {
+    const state = get();
+    const currentTime = state.currentTime;
+    return state.lyrics.find(
+      (line) => currentTime >= line.startTime && currentTime < line.endTime
+    ) || null;
+  },
+
+  getCurrentLyricWord: () => {
+    const state = get();
+    const currentTime = state.currentTime;
+    const currentLine = state.lyrics.find(
+      (line) => currentTime >= line.startTime && currentTime < line.endTime
+    );
+    if (!currentLine) return null;
+    return currentLine.words.find(
+      (word) => currentTime >= word.startTime && currentTime < word.endTime
+    ) || null;
+  },
 }));
