@@ -162,6 +162,21 @@ export interface TrackEffects {
   reverb?: TrackReverbParams;
 }
 
+// Modular effect slot for insert rack
+export interface EffectSlot {
+  id: string;
+  type: 'delay' | 'distortion' | 'chorus' | 'flanger' | 'phaser';
+  enabled: boolean;
+  bypass: boolean;
+  order: number; // Position in effect chain
+  inputNode: GainNode;
+  outputNode: GainNode;
+  dryNode: GainNode; // For dry/wet mix
+  wetNode: GainNode;
+  processingNodes: AudioNode[]; // Effect-specific nodes
+  params: Record<string, number | boolean>;
+}
+
 export interface AutomationPoint {
   id: string;
   time: number;
@@ -245,7 +260,7 @@ class AudioEngine {
   private abortControllers = new Map<string, AbortController>();
   private maxCacheSize = 100; // Maximum number of cached buffers
 
-  // Audio graph nodes - enhanced with gate and limiter
+  // Audio graph nodes - enhanced with gate, limiter, and modular effect insert rack
   private trackNodes = new Map<
     string,
     {
@@ -257,6 +272,8 @@ class AudioEngine {
       gateAnalyser: AnalyserNode;
       compressor: DynamicsCompressorNode;
       limiter: WaveShaperNode; // Soft clipper limiter
+      effectPre: GainNode; // Effect insert rack input
+      effectPost: GainNode; // Effect insert rack output
       postGain: GainNode;
       analyser: AnalyserNode;
       panNode: StereoPannerNode;
@@ -269,6 +286,7 @@ class AudioEngine {
       latencyCompensationDelay: DelayNode;
       sources: Map<string, AudioBufferSourceNode>; // clipId -> source
       effects: TrackEffects;
+      effectSlots: Map<string, EffectSlot>; // Modular effect slots
     }
   >();
 
@@ -831,10 +849,10 @@ class AudioEngine {
   }
 
   /**
-   * Create a new track with complete effects chain
-   * Routing: Source → InputGain → EQ(Low→Mid→High) → Compressor → PostGain+Analyser → Pan → Bus
-   *                                                      ↓
-   *                                               ReverbSend → DelayNode → Convolver → WetGain
+   * Create a new track with complete effects chain including modular insert rack
+   * Routing: Source → InputGain → EQ(Low→Mid→High) → Gate → Compressor → Limiter → EffectRack → PostGain → Analyser → Pan → Bus
+   *                                                                                                    ↓
+   *                                                                                             ReverbSend → DelayNode → Convolver → WetGain
    */
   createTrack(config: TrackConfig): void {
     if (!this.context || !this.initialized) {
@@ -865,6 +883,12 @@ class AudioEngine {
     eqHigh.Q.value = 0.707;
     eqHigh.gain.value = 0;
 
+    // Create gate (simulated using gain node + analyser for detection)
+    const gate = this.context.createGain();
+    gate.gain.value = 1.0; // Fully open by default
+    const gateAnalyser = this.context.createAnalyser();
+    gateAnalyser.fftSize = 256;
+
     // Create compressor
     const compressor = this.context.createDynamicsCompressor();
     compressor.threshold.value = -24;
@@ -872,6 +896,33 @@ class AudioEngine {
     compressor.attack.value = 0.01; // 10ms
     compressor.release.value = 0.2; // 200ms
     compressor.knee.value = 6;
+
+    // Create limiter (soft clipper using waveshaper)
+    const limiter = this.context.createWaveShaper();
+    const limiterCeiling = 0.95; // -0.5dB
+    const samples = 8192;
+    const limiterCurve = new Float32Array(samples);
+    for (let i = 0; i < samples; ++i) {
+      const x = (i * 2) / samples - 1;
+      if (Math.abs(x) < limiterCeiling) {
+        limiterCurve[i] = x;
+      } else {
+        const sign = x > 0 ? 1 : -1;
+        const excess = Math.abs(x) - limiterCeiling;
+        const softClip = limiterCeiling + (1 - limiterCeiling) * Math.tanh(excess / (1 - limiterCeiling));
+        limiterCurve[i] = sign * Math.min(softClip, 1);
+      }
+    }
+    limiter.curve = limiterCurve;
+    limiter.oversample = '2x';
+
+    // Create modular effect insert rack (effectPre → [slots] → effectPost)
+    const effectPre = this.context.createGain();
+    effectPre.gain.value = 1.0;
+    const effectPost = this.context.createGain();
+    effectPost.gain.value = 1.0;
+    // By default, effectPre connects directly to effectPost (bypass)
+    effectPre.connect(effectPost);
 
     // Create post-gain and analyser
     const postGain = this.context.createGain();
@@ -901,18 +952,29 @@ class AudioEngine {
     // Convolver starts as null, will be created when reverb is loaded
     const reverbConvolver: ConvolverNode | null = null;
 
-    // Connect dry signal path: InputGain → EQ → Compressor → PostGain+Analyser → Pan
+    // Create latency compensation delay
+    const latencyCompensationDelay = this.context.createDelay(0.5);
+    latencyCompensationDelay.delayTime.value = 0;
+
+    // Connect full signal path:
+    // InputGain → EQ → Gate → Compressor → Limiter → EffectRack → PostGain → Analyser → Pan
     inputGain.connect(eqLow);
     eqLow.connect(eqMid);
     eqMid.connect(eqHigh);
-    eqHigh.connect(compressor);
-    compressor.connect(postGain);
+    eqHigh.connect(gateAnalyser); // Gate analyser for level detection
+    eqHigh.connect(gate);
+    gate.connect(compressor);
+    compressor.connect(limiter);
+    limiter.connect(effectPre);
+    effectPost.connect(postGain);
     postGain.connect(analyser);
     analyser.connect(reverbDryGain); // Split to dry path
     analyser.connect(panNode); // Continue to pan
+    analyser.connect(reverbSend); // Send to reverb
 
-    // Connect reverb send: Analyser → ReverbSend → DelayNode → (Convolver) → WetGain → Pan
-    // Note: Convolver will be connected when IR is loaded
+    // Connect reverb send: ReverbSend → DelayNode → (Convolver) → WetGain → Pan
+    reverbSend.connect(reverbDelayNode);
+    reverbWetGain.connect(panNode);
 
     // Connect to bus
     const bus = this.busNodes.get(config.bus);
@@ -931,7 +993,12 @@ class AudioEngine {
       eqLow,
       eqMid,
       eqHigh,
+      gate,
+      gateAnalyser,
       compressor,
+      limiter,
+      effectPre,
+      effectPost,
       postGain,
       analyser,
       panNode,
@@ -940,15 +1007,21 @@ class AudioEngine {
       reverbWetGain,
       reverbDryGain,
       reverbDelayNode,
+      auxSends: new Map(),
+      latencyCompensationDelay,
       sources: new Map(),
       effects: {
         eq: { lowGain: 0, midGain: 0, highGain: 0, midFrequency: 1000, bypass: false },
         compressor: { threshold: -24, ratio: 3, attack: 10, release: 200, knee: 6, bypass: false },
+        gate: { threshold: -40, attack: 1, hold: 50, release: 100, range: -80, bypass: true },
+        limiter: { threshold: -0.5, attack: 0.5, release: 100, lookahead: 5, bypass: false },
         reverb: { mix: 0.2, decay: 2.0, preDelay: 0, irId: 'default', bypass: false },
       },
+      effectSlots: new Map(),
     });
 
     this.tracks.set(config.id, config);
+    logger.info(`[AudioEngine] Created track ${config.id} with full effect chain including insert rack`);
   }
 
   /**
@@ -967,12 +1040,26 @@ class AudioEngine {
         source.disconnect();
       });
 
+      // Disconnect effect slots
+      trackNode.effectSlots.forEach((slot) => {
+        slot.inputNode.disconnect();
+        slot.outputNode.disconnect();
+        slot.dryNode.disconnect();
+        slot.wetNode.disconnect();
+        slot.processingNodes.forEach(node => node.disconnect());
+      });
+
       // Disconnect all effect nodes
       trackNode.inputGain.disconnect();
       trackNode.eqLow.disconnect();
       trackNode.eqMid.disconnect();
       trackNode.eqHigh.disconnect();
+      trackNode.gate.disconnect();
+      trackNode.gateAnalyser.disconnect();
       trackNode.compressor.disconnect();
+      trackNode.limiter.disconnect();
+      trackNode.effectPre.disconnect();
+      trackNode.effectPost.disconnect();
       trackNode.postGain.disconnect();
       trackNode.analyser.disconnect();
       trackNode.panNode.disconnect();
@@ -983,6 +1070,7 @@ class AudioEngine {
       trackNode.reverbWetGain.disconnect();
       trackNode.reverbDryGain.disconnect();
       trackNode.reverbDelayNode.disconnect();
+      trackNode.latencyCompensationDelay.disconnect();
 
       this.trackNodes.delete(trackId);
     }
@@ -1632,387 +1720,594 @@ class AudioEngine {
     params: { ceiling: number; release: number; bypass: boolean };
   }>();
 
+  // ===== SLOT MANAGER: Modular Effect Insert Rack =====
+
+  /**
+   * Add an effect slot to the track's insert rack
+   * Creates a proper insert with dry/wet blend and bypass capability
+   */
+  addEffectSlot(trackId: string, slotId: string, effectType: EffectSlot['type']): EffectSlot | null {
+    if (!this.context) return null;
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return null;
+
+    // Check if slot already exists
+    if (trackNode.effectSlots.has(slotId)) {
+      logger.warn(`[AudioEngine] Effect slot ${slotId} already exists on track ${trackId}`);
+      return trackNode.effectSlots.get(slotId) || null;
+    }
+
+    // Create slot nodes
+    const inputNode = this.context.createGain();
+    const outputNode = this.context.createGain();
+    const dryNode = this.context.createGain();
+    const wetNode = this.context.createGain();
+
+    inputNode.gain.value = 1.0;
+    outputNode.gain.value = 1.0;
+    dryNode.gain.value = 0.5; // 50% dry by default
+    wetNode.gain.value = 0.5; // 50% wet by default
+
+    // Create the slot
+    const slot: EffectSlot = {
+      id: slotId,
+      type: effectType,
+      enabled: true,
+      bypass: false,
+      order: trackNode.effectSlots.size,
+      inputNode,
+      outputNode,
+      dryNode,
+      wetNode,
+      processingNodes: [],
+      params: {},
+    };
+
+    // Create effect-specific processing chain
+    this.createEffectProcessingChain(slot, effectType);
+
+    // Store the slot
+    trackNode.effectSlots.set(slotId, slot);
+
+    // Rewire the insert rack
+    this.rewireInsertRack(trackId);
+
+    logger.info(`[AudioEngine] Added ${effectType} effect slot ${slotId} to track ${trackId}`);
+    return slot;
+  }
+
+  /**
+   * Create the DSP processing chain for a specific effect type
+   */
+  private createEffectProcessingChain(slot: EffectSlot, effectType: EffectSlot['type']): void {
+    if (!this.context) return;
+
+    // Clear existing nodes
+    slot.processingNodes = [];
+
+    switch (effectType) {
+      case 'delay': {
+        const delayNode = this.context.createDelay(2.0);
+        const feedbackGain = this.context.createGain();
+        delayNode.delayTime.value = 0.25;
+        feedbackGain.gain.value = 0.4;
+        
+        // Connect processing chain
+        slot.inputNode.connect(delayNode);
+        delayNode.connect(feedbackGain);
+        feedbackGain.connect(delayNode);
+        delayNode.connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
+
+        slot.processingNodes = [delayNode, feedbackGain];
+        slot.params = { time: 250, feedback: 40, mix: 50, bypass: false };
+        break;
+      }
+      case 'distortion': {
+        const waveshaper = this.context.createWaveShaper();
+        const toneFilter = this.context.createBiquadFilter();
+        toneFilter.type = 'lowpass';
+        toneFilter.frequency.value = 8000;
+
+        // Create distortion curve
+        const k = 50 * 4;
+        const samples = 8192;
+        const curve = new Float32Array(samples);
+        const deg = Math.PI / 180;
+        for (let i = 0; i < samples; ++i) {
+          const x = (i * 2) / samples - 1;
+          curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+        }
+        waveshaper.curve = curve;
+
+        slot.inputNode.connect(waveshaper);
+        waveshaper.connect(toneFilter);
+        toneFilter.connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
+
+        slot.processingNodes = [waveshaper, toneFilter];
+        slot.params = { drive: 50, tone: 50, mix: 50, bypass: false };
+        break;
+      }
+      case 'chorus': {
+        const delayNode = this.context.createDelay(0.05);
+        const lfo = this.context.createOscillator();
+        const lfoGain = this.context.createGain();
+        
+        lfo.type = 'sine';
+        lfo.frequency.value = 1;
+        lfoGain.gain.value = 0.003;
+        delayNode.delayTime.value = 0.025;
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(delayNode.delayTime);
+        lfo.start();
+
+        slot.inputNode.connect(delayNode);
+        delayNode.connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
+
+        slot.processingNodes = [delayNode, lfo, lfoGain];
+        slot.params = { rate: 1, depth: 50, mix: 50, bypass: false };
+        break;
+      }
+      case 'flanger': {
+        const delayNode = this.context.createDelay(0.02);
+        const lfo = this.context.createOscillator();
+        const lfoGain = this.context.createGain();
+        const feedbackGain = this.context.createGain();
+
+        lfo.type = 'sine';
+        lfo.frequency.value = 0.3;
+        lfoGain.gain.value = 0.002;
+        delayNode.delayTime.value = 0.005;
+        feedbackGain.gain.value = 0.45;
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(delayNode.delayTime);
+        lfo.start();
+
+        slot.inputNode.connect(delayNode);
+        delayNode.connect(feedbackGain);
+        feedbackGain.connect(delayNode);
+        delayNode.connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
+
+        slot.processingNodes = [delayNode, lfo, lfoGain, feedbackGain];
+        slot.params = { rate: 0.3, depth: 60, feedback: 50, mix: 50, bypass: false };
+        break;
+      }
+      case 'phaser': {
+        const allpassFilters: BiquadFilterNode[] = [];
+        for (let i = 0; i < 6; i++) {
+          const filter = this.context.createBiquadFilter();
+          filter.type = 'allpass';
+          filter.frequency.value = 1000 + i * 500;
+          filter.Q.value = 0.5;
+          allpassFilters.push(filter);
+        }
+
+        for (let i = 0; i < allpassFilters.length - 1; i++) {
+          allpassFilters[i].connect(allpassFilters[i + 1]);
+        }
+
+        const lfo = this.context.createOscillator();
+        const lfoGain = this.context.createGain();
+        const feedbackGain = this.context.createGain();
+
+        lfo.type = 'sine';
+        lfo.frequency.value = 0.5;
+        lfoGain.gain.value = 500;
+        feedbackGain.gain.value = 0.4;
+
+        lfo.connect(lfoGain);
+        allpassFilters.forEach(filter => lfoGain.connect(filter.frequency));
+        lfo.start();
+
+        slot.inputNode.connect(allpassFilters[0]);
+        allpassFilters[allpassFilters.length - 1].connect(feedbackGain);
+        feedbackGain.connect(allpassFilters[0]);
+        allpassFilters[allpassFilters.length - 1].connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
+
+        slot.processingNodes = [...allpassFilters, lfo, lfoGain, feedbackGain];
+        slot.params = { rate: 0.5, depth: 60, stages: 6, feedback: 50, mix: 50, bypass: false };
+        break;
+      }
+    }
+  }
+
+  /**
+   * Rewire the insert rack to chain all enabled slots in order
+   * Only disconnects inter-slot connections (outputNode downstream), preserves internal slot routing
+   * Bypassed slots are included in chain but pass audio through unchanged
+   */
+  private rewireInsertRack(trackId: string): void {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return;
+
+    // Disconnect effectPre (breaks connection to first slot or effectPost)
+    try {
+      trackNode.effectPre.disconnect();
+    } catch (e) {
+      // May already be disconnected
+    }
+
+    // Only disconnect slot outputNodes (inter-slot connections), NOT inputNodes
+    // This preserves internal slot routing: inputNode → processing → dry/wet → outputNode
+    trackNode.effectSlots.forEach((slot) => {
+      try {
+        slot.outputNode.disconnect();
+      } catch (e) {
+        // May already be disconnected
+      }
+    });
+
+    // Get all enabled slots sorted by order (includes bypassed ones)
+    const allEnabledSlots = Array.from(trackNode.effectSlots.values())
+      .filter(slot => slot.enabled)
+      .sort((a, b) => a.order - b.order);
+
+    if (allEnabledSlots.length === 0) {
+      // No slots, connect effectPre directly to effectPost (bypass)
+      trackNode.effectPre.connect(trackNode.effectPost);
+      logger.info(`[AudioEngine] Insert rack for track ${trackId}: bypass (no slots)`);
+      return;
+    }
+
+    // Chain all enabled slots: effectPre → slot1 → slot2 → ... → effectPost
+    trackNode.effectPre.connect(allEnabledSlots[0].inputNode);
+    
+    for (let i = 0; i < allEnabledSlots.length - 1; i++) {
+      allEnabledSlots[i].outputNode.connect(allEnabledSlots[i + 1].inputNode);
+    }
+    
+    allEnabledSlots[allEnabledSlots.length - 1].outputNode.connect(trackNode.effectPost);
+
+    // Configure each slot's bypass state using gain control (keeps internal routing)
+    allEnabledSlots.forEach(slot => {
+      this.configureSlotBypassGains(slot);
+    });
+
+    const activeCount = allEnabledSlots.filter(s => !s.bypass).length;
+    const bypassedCount = allEnabledSlots.filter(s => s.bypass).length;
+    logger.info(`[AudioEngine] Insert rack for track ${trackId}: ${activeCount} active, ${bypassedCount} bypassed`);
+  }
+
+  /**
+   * Configure a slot's bypass state using gain control
+   * The slot's internal routing (inputNode → processing → dry/wet → outputNode) is ALWAYS connected
+   * Bypass is achieved by setting dry=1.0, wet=0.0 (passes unprocessed signal)
+   * Active is achieved by setting proper dry/wet mix
+   */
+  private configureSlotBypassGains(slot: EffectSlot): void {
+    if (slot.bypass) {
+      // Bypass mode: dry=1.0, wet=0.0 (unprocessed signal passes through dryNode)
+      slot.dryNode.gain.value = 1.0;
+      slot.wetNode.gain.value = 0.0;
+    } else {
+      // Active mode: restore dry/wet mix from params
+      const mix = (slot.params.mix as number) ?? 50;
+      const wetLevel = mix / 100;
+      const dryLevel = 1 - wetLevel;
+      slot.dryNode.gain.value = dryLevel;
+      slot.wetNode.gain.value = wetLevel;
+    }
+  }
+
+  /**
+   * Remove an effect slot from the track's insert rack
+   */
+  removeEffectSlot(trackId: string, slotId: string): boolean {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return false;
+
+    const slot = trackNode.effectSlots.get(slotId);
+    if (!slot) return false;
+
+    // Disconnect all nodes
+    slot.inputNode.disconnect();
+    slot.outputNode.disconnect();
+    slot.dryNode.disconnect();
+    slot.wetNode.disconnect();
+    slot.processingNodes.forEach(node => {
+      try {
+        node.disconnect();
+        if ('stop' in node && typeof node.stop === 'function') {
+          (node as OscillatorNode).stop();
+        }
+      } catch (e) {
+        // May already be disconnected/stopped
+      }
+    });
+
+    // Remove from map
+    trackNode.effectSlots.delete(slotId);
+
+    // Rewire the insert rack
+    this.rewireInsertRack(trackId);
+
+    logger.info(`[AudioEngine] Removed effect slot ${slotId} from track ${trackId}`);
+    return true;
+  }
+
+  /**
+   * Update effect slot parameters with type-safe node access
+   */
+  updateEffectSlot(trackId: string, slotId: string, params: Record<string, number | boolean>): void {
+    if (!this.context) return;
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return;
+
+    const slot = trackNode.effectSlots.get(slotId);
+    if (!slot) return;
+
+    const currentTime = this.context.currentTime;
+    const timeConstant = 0.01;
+
+    // Update slot params
+    Object.assign(slot.params, params);
+
+    // Handle bypass - triggers rewiring of the insert rack
+    if (params.bypass !== undefined) {
+      slot.bypass = params.bypass as boolean;
+      this.rewireInsertRack(trackId);
+    }
+
+    // Handle mix - maintains unity gain (dry + wet = 1.0)
+    // Only apply gains if slot is not bypassed (bypass keeps wet=0, dry=1)
+    if (params.mix !== undefined) {
+      // Store the value in params (already done by Object.assign above)
+      // Only apply if not bypassed
+      if (!slot.bypass) {
+        const mix = params.mix as number;
+        const wetLevel = mix / 100;
+        const dryLevel = 1 - wetLevel;
+        slot.wetNode.gain.setTargetAtTime(wetLevel, currentTime, timeConstant);
+        slot.dryNode.gain.setTargetAtTime(dryLevel, currentTime, timeConstant);
+      }
+      // If bypassed, the value is stored but gains remain at bypass state (dry=1, wet=0)
+    }
+
+    // Update effect-specific parameters with validation
+    const nodes = slot.processingNodes;
+    if (!nodes || nodes.length === 0) {
+      logger.warn(`[AudioEngine] No processing nodes for slot ${slotId} on track ${trackId}`);
+      return;
+    }
+
+    switch (slot.type) {
+      case 'delay': {
+        if (nodes.length < 2) break;
+        const delayNode = nodes[0] as DelayNode;
+        const feedbackGain = nodes[1] as GainNode;
+        if (params.time !== undefined && delayNode.delayTime) {
+          delayNode.delayTime.setTargetAtTime((params.time as number) / 1000, currentTime, timeConstant);
+        }
+        if (params.feedback !== undefined && feedbackGain.gain) {
+          feedbackGain.gain.setTargetAtTime((params.feedback as number) / 100, currentTime, timeConstant);
+        }
+        break;
+      }
+      case 'distortion': {
+        if (nodes.length < 2) break;
+        const waveshaper = nodes[0] as WaveShaperNode;
+        const toneFilter = nodes[1] as BiquadFilterNode;
+        if (params.drive !== undefined) {
+          const k = (params.drive as number) * 4;
+          const samples = 8192;
+          const curve = new Float32Array(samples);
+          const deg = Math.PI / 180;
+          for (let i = 0; i < samples; ++i) {
+            const x = (i * 2) / samples - 1;
+            curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+          }
+          waveshaper.curve = curve;
+        }
+        if (params.tone !== undefined && toneFilter.frequency) {
+          const frequency = 500 + ((params.tone as number) / 100) * 15500;
+          toneFilter.frequency.setTargetAtTime(frequency, currentTime, timeConstant);
+        }
+        break;
+      }
+      case 'chorus': {
+        if (nodes.length < 3) break;
+        const lfo = nodes[1] as OscillatorNode;
+        const lfoGain = nodes[2] as GainNode;
+        if (params.rate !== undefined && lfo.frequency) {
+          lfo.frequency.setTargetAtTime(params.rate as number, currentTime, timeConstant);
+        }
+        if (params.depth !== undefined && lfoGain.gain) {
+          const depthValue = ((params.depth as number) / 100) * 0.01;
+          lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
+        }
+        break;
+      }
+      case 'flanger': {
+        if (nodes.length < 4) break;
+        const lfo = nodes[1] as OscillatorNode;
+        const lfoGain = nodes[2] as GainNode;
+        const feedbackGain = nodes[3] as GainNode;
+        if (params.rate !== undefined && lfo.frequency) {
+          lfo.frequency.setTargetAtTime(params.rate as number, currentTime, timeConstant);
+        }
+        if (params.depth !== undefined && lfoGain.gain) {
+          const depthValue = ((params.depth as number) / 100) * 0.007;
+          lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
+        }
+        if (params.feedback !== undefined && feedbackGain.gain) {
+          feedbackGain.gain.setTargetAtTime((params.feedback as number) / 100 * 0.9, currentTime, timeConstant);
+        }
+        break;
+      }
+      case 'phaser': {
+        // Phaser has: [allpassFilters..., lfo, lfoGain, feedbackGain]
+        if (nodes.length < 3) break;
+        const lfo = nodes[nodes.length - 3] as OscillatorNode;
+        const lfoGain = nodes[nodes.length - 2] as GainNode;
+        const feedbackGain = nodes[nodes.length - 1] as GainNode;
+        if (params.rate !== undefined && lfo.frequency) {
+          lfo.frequency.setTargetAtTime(params.rate as number, currentTime, timeConstant);
+        }
+        if (params.depth !== undefined && lfoGain.gain) {
+          const depthValue = ((params.depth as number) / 100) * 1000;
+          lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
+        }
+        if (params.feedback !== undefined && feedbackGain.gain) {
+          feedbackGain.gain.setTargetAtTime((params.feedback as number) / 100 * 0.8, currentTime, timeConstant);
+        }
+        break;
+      }
+    }
+
+    logger.info(`[AudioEngine] Updated effect slot ${slotId} on track ${trackId}:`, params);
+  }
+
+  /**
+   * Get effect slot by ID
+   */
+  getEffectSlot(trackId: string, slotId: string): EffectSlot | null {
+    const trackNode = this.trackNodes.get(trackId);
+    if (!trackNode) return null;
+    return trackNode.effectSlots.get(slotId) || null;
+  }
+
+  // ===== END SLOT MANAGER =====
+
   /**
    * Update delay effect parameters for a track
-   * Uses aux send from reverbSend node - shares with reverb for consistent behavior
-   * Delay wet signal mixes with reverb in the wet path
+   * Uses the modular insert rack for proper signal flow
+   * Creates slot if needed, then updates parameters
    */
   updateTrackDelay(trackId: string, params: { time?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    let effect = this.delayEffects.get(trackId);
-    
-    if (!effect) {
-      const delayNode = this.context.createDelay(2.0);
-      const feedbackGain = this.context.createGain();
-      const wetGain = this.context.createGain();
-      const dryGain = this.context.createGain();
+    const slotId = `delay_${trackId}`;
+    let slot = trackNode.effectSlots.get(slotId);
 
-      delayNode.delayTime.value = 0.25;
-      feedbackGain.gain.value = 0.4;
-      wetGain.gain.value = 0.3;
-      dryGain.gain.value = 1.0;
-
-      trackNode.reverbSend.connect(delayNode);
-      delayNode.connect(feedbackGain);
-      feedbackGain.connect(delayNode);
-      delayNode.connect(wetGain);
-      wetGain.connect(trackNode.reverbWetGain);
-
-      effect = {
-        delayNode,
-        feedbackGain,
-        wetGain,
-        dryGain,
-        params: { time: 250, feedback: 40, mix: 30, bypass: false },
-      };
-      this.delayEffects.set(trackId, effect);
-      logger.info(`[AudioEngine] Delay effect connected via reverb send for track ${trackId}`);
+    if (!slot) {
+      slot = this.addEffectSlot(trackId, slotId, 'delay');
+      if (!slot) {
+        logger.error(`[AudioEngine] Failed to create delay slot for track ${trackId}`);
+        return;
+      }
     }
 
-    const currentTime = this.context.currentTime;
-    const timeConstant = 0.01;
-
-    if (params.time !== undefined) {
-      effect.delayNode.delayTime.setTargetAtTime(params.time / 1000, currentTime, timeConstant);
-      effect.params.time = params.time;
-    }
-    if (params.feedback !== undefined) {
-      effect.feedbackGain.gain.setTargetAtTime(params.feedback / 100, currentTime, timeConstant);
-      effect.params.feedback = params.feedback;
-    }
-    if (params.mix !== undefined) {
-      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
-      effect.params.mix = params.mix;
-    }
-    if (params.bypass !== undefined) {
-      effect.params.bypass = params.bypass;
-      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
-    }
-
-    logger.info(`[AudioEngine] Updated delay for track ${trackId}:`, effect.params);
+    // Update slot parameters
+    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
+    logger.info(`[AudioEngine] Updated delay for track ${trackId}:`, params);
   }
 
   /**
    * Update distortion effect parameters for a track
-   * Uses aux send from reverbSend node for consistent routing
-   * Distortion wet signal mixes with reverb in the wet path
+   * Uses the modular insert rack for proper signal flow
    */
   updateTrackDistortion(trackId: string, params: { drive?: number; tone?: number; mix?: number; bypass?: boolean }): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    let effect = this.distortionEffects.get(trackId);
+    const slotId = `distortion_${trackId}`;
+    let slot = trackNode.effectSlots.get(slotId);
 
-    if (!effect) {
-      const waveshaper = this.context.createWaveShaper();
-      const toneFilter = this.context.createBiquadFilter();
-      const wetGain = this.context.createGain();
-      const dryGain = this.context.createGain();
-
-      toneFilter.type = 'lowpass';
-      toneFilter.frequency.value = 8000;
-      wetGain.gain.value = 1.0;
-      dryGain.gain.value = 1.0;
-
-      const k = 50 * 4;
-      const samples = 44100;
-      const curve = new Float32Array(samples);
-      const deg = Math.PI / 180;
-      for (let i = 0; i < samples; ++i) {
-        const x = (i * 2) / samples - 1;
-        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+    if (!slot) {
+      slot = this.addEffectSlot(trackId, slotId, 'distortion');
+      if (!slot) {
+        logger.error(`[AudioEngine] Failed to create distortion slot for track ${trackId}`);
+        return;
       }
-      waveshaper.curve = curve;
-
-      trackNode.reverbSend.connect(waveshaper);
-      waveshaper.connect(toneFilter);
-      toneFilter.connect(wetGain);
-      wetGain.connect(trackNode.reverbWetGain);
-
-      effect = {
-        waveshaper,
-        toneFilter,
-        wetGain,
-        dryGain,
-        params: { drive: 50, tone: 50, mix: 100, bypass: false },
-      };
-      this.distortionEffects.set(trackId, effect);
-      logger.info(`[AudioEngine] Distortion effect connected via reverb send for track ${trackId}`);
     }
 
-    const currentTime = this.context.currentTime;
-    const timeConstant = 0.01;
-
-    if (params.drive !== undefined) {
-      const k = params.drive * 4;
-      const samples = 44100;
-      const curve = new Float32Array(samples);
-      const deg = Math.PI / 180;
-      for (let i = 0; i < samples; ++i) {
-        const x = (i * 2) / samples - 1;
-        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
-      }
-      effect.waveshaper.curve = curve;
-      effect.params.drive = params.drive;
-    }
-    if (params.tone !== undefined) {
-      const frequency = 500 + (params.tone / 100) * 15500;
-      effect.toneFilter.frequency.setTargetAtTime(frequency, currentTime, timeConstant);
-      effect.params.tone = params.tone;
-    }
-    if (params.mix !== undefined) {
-      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
-      effect.params.mix = params.mix;
-    }
-    if (params.bypass !== undefined) {
-      effect.params.bypass = params.bypass;
-      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
-    }
-
-    logger.info(`[AudioEngine] Updated distortion for track ${trackId}:`, effect.params);
+    // Update slot parameters
+    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
+    logger.info(`[AudioEngine] Updated distortion for track ${trackId}:`, params);
   }
 
   /**
    * Update chorus effect parameters for a track
-   * Uses aux send from reverbSend node for consistent routing
-   * LFO modulates delay time for classic chorus effect
+   * Uses the modular insert rack for proper signal flow
    */
   updateTrackChorus(trackId: string, params: { rate?: number; depth?: number; mix?: number; bypass?: boolean }): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    let effect = this.chorusEffects.get(trackId);
+    const slotId = `chorus_${trackId}`;
+    let slot = trackNode.effectSlots.get(slotId);
 
-    if (!effect) {
-      const delayNode = this.context.createDelay(0.05);
-      const lfo = this.context.createOscillator();
-      const lfoGain = this.context.createGain();
-      const wetGain = this.context.createGain();
-      const dryGain = this.context.createGain();
-
-      lfo.type = 'sine';
-      lfo.frequency.value = 1;
-      lfoGain.gain.value = 0.003;
-      delayNode.delayTime.value = 0.025;
-      wetGain.gain.value = 0.5;
-      dryGain.gain.value = 0.5;
-
-      lfo.connect(lfoGain);
-      lfoGain.connect(delayNode.delayTime);
-      lfo.start();
-
-      trackNode.reverbSend.connect(delayNode);
-      delayNode.connect(wetGain);
-      wetGain.connect(trackNode.reverbWetGain);
-
-      effect = {
-        delayNode,
-        lfo,
-        lfoGain,
-        wetGain,
-        dryGain,
-        params: { rate: 1, depth: 50, mix: 50, bypass: false },
-      };
-      this.chorusEffects.set(trackId, effect);
-      logger.info(`[AudioEngine] Chorus effect connected via reverb send for track ${trackId}`);
+    if (!slot) {
+      slot = this.addEffectSlot(trackId, slotId, 'chorus');
+      if (!slot) {
+        logger.error(`[AudioEngine] Failed to create chorus slot for track ${trackId}`);
+        return;
+      }
     }
 
-    const currentTime = this.context.currentTime;
-    const timeConstant = 0.01;
-
-    if (params.rate !== undefined) {
-      effect.lfo.frequency.setTargetAtTime(params.rate, currentTime, timeConstant);
-      effect.params.rate = params.rate;
-    }
-    if (params.depth !== undefined) {
-      const depthValue = (params.depth / 100) * 0.01;
-      effect.lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
-      effect.params.depth = params.depth;
-    }
-    if (params.mix !== undefined) {
-      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
-      effect.params.mix = params.mix;
-    }
-    if (params.bypass !== undefined) {
-      effect.params.bypass = params.bypass;
-      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
-    }
-
-    logger.info(`[AudioEngine] Updated chorus for track ${trackId}:`, effect.params);
+    // Update slot parameters
+    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
+    logger.info(`[AudioEngine] Updated chorus for track ${trackId}:`, params);
   }
 
   /**
    * Update flanger effect parameters for a track
-   * Uses aux send from reverbSend node for consistent routing
-   * Short modulated delay with feedback for metallic flanging
+   * Uses the modular insert rack for proper signal flow
    */
   updateTrackFlanger(trackId: string, params: { rate?: number; depth?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    let effect = this.flangerEffects.get(trackId);
+    const slotId = `flanger_${trackId}`;
+    let slot = trackNode.effectSlots.get(slotId);
 
-    if (!effect) {
-      const delayNode = this.context.createDelay(0.02);
-      const lfo = this.context.createOscillator();
-      const lfoGain = this.context.createGain();
-      const feedbackGain = this.context.createGain();
-      const wetGain = this.context.createGain();
-      const dryGain = this.context.createGain();
-
-      lfo.type = 'sine';
-      lfo.frequency.value = 0.3;
-      lfoGain.gain.value = 0.002;
-      delayNode.delayTime.value = 0.005;
-      feedbackGain.gain.value = 0.45;
-      wetGain.gain.value = 0.5;
-      dryGain.gain.value = 0.5;
-
-      lfo.connect(lfoGain);
-      lfoGain.connect(delayNode.delayTime);
-      lfo.start();
-
-      trackNode.reverbSend.connect(delayNode);
-      delayNode.connect(feedbackGain);
-      feedbackGain.connect(delayNode);
-      delayNode.connect(wetGain);
-      wetGain.connect(trackNode.reverbWetGain);
-
-      effect = {
-        delayNode,
-        lfo,
-        lfoGain,
-        feedbackGain,
-        wetGain,
-        dryGain,
-        params: { rate: 0.3, depth: 60, feedback: 50, mix: 50, bypass: false },
-      };
-      this.flangerEffects.set(trackId, effect);
-      logger.info(`[AudioEngine] Flanger effect connected via reverb send for track ${trackId}`);
+    if (!slot) {
+      slot = this.addEffectSlot(trackId, slotId, 'flanger');
+      if (!slot) {
+        logger.error(`[AudioEngine] Failed to create flanger slot for track ${trackId}`);
+        return;
+      }
     }
 
-    const currentTime = this.context.currentTime;
-    const timeConstant = 0.01;
-
-    if (params.rate !== undefined) {
-      effect.lfo.frequency.setTargetAtTime(params.rate, currentTime, timeConstant);
-      effect.params.rate = params.rate;
-    }
-    if (params.depth !== undefined) {
-      const depthValue = (params.depth / 100) * 0.007;
-      effect.lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
-      effect.params.depth = params.depth;
-    }
-    if (params.feedback !== undefined) {
-      effect.feedbackGain.gain.setTargetAtTime(params.feedback / 100 * 0.9, currentTime, timeConstant);
-      effect.params.feedback = params.feedback;
-    }
-    if (params.mix !== undefined) {
-      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
-      effect.params.mix = params.mix;
-    }
-    if (params.bypass !== undefined) {
-      effect.params.bypass = params.bypass;
-      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
-    }
-
-    logger.info(`[AudioEngine] Updated flanger for track ${trackId}:`, effect.params);
+    // Update slot parameters
+    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
+    logger.info(`[AudioEngine] Updated flanger for track ${trackId}:`, params);
   }
 
   /**
    * Update phaser effect parameters for a track
-   * Uses aux send from reverbSend node for consistent routing
-   * Cascaded all-pass filters modulated by LFO for phase-shifting
+   * Uses the modular insert rack for proper signal flow
    */
   updateTrackPhaser(trackId: string, params: { rate?: number; depth?: number; stages?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    let effect = this.phaserEffects.get(trackId);
+    const slotId = `phaser_${trackId}`;
+    let slot = trackNode.effectSlots.get(slotId);
 
-    if (!effect) {
-      const allpassFilters: BiquadFilterNode[] = [];
-      for (let i = 0; i < 6; i++) {
-        const filter = this.context.createBiquadFilter();
-        filter.type = 'allpass';
-        filter.frequency.value = 1000 + i * 500;
-        filter.Q.value = 0.5;
-        allpassFilters.push(filter);
+    if (!slot) {
+      slot = this.addEffectSlot(trackId, slotId, 'phaser');
+      if (!slot) {
+        logger.error(`[AudioEngine] Failed to create phaser slot for track ${trackId}`);
+        return;
       }
-
-      for (let i = 0; i < allpassFilters.length - 1; i++) {
-        allpassFilters[i].connect(allpassFilters[i + 1]);
-      }
-
-      const lfo = this.context.createOscillator();
-      const lfoGain = this.context.createGain();
-      const feedbackGain = this.context.createGain();
-      const wetGain = this.context.createGain();
-      const dryGain = this.context.createGain();
-
-      lfo.type = 'sine';
-      lfo.frequency.value = 0.5;
-      lfoGain.gain.value = 500;
-      feedbackGain.gain.value = 0.4;
-      wetGain.gain.value = 0.5;
-      dryGain.gain.value = 0.5;
-
-      lfo.connect(lfoGain);
-      allpassFilters.forEach(filter => lfoGain.connect(filter.frequency));
-      lfo.start();
-
-      trackNode.reverbSend.connect(allpassFilters[0]);
-      allpassFilters[allpassFilters.length - 1].connect(feedbackGain);
-      feedbackGain.connect(allpassFilters[0]);
-      allpassFilters[allpassFilters.length - 1].connect(wetGain);
-      wetGain.connect(trackNode.reverbWetGain);
-
-      effect = {
-        allpassFilters,
-        lfo,
-        lfoGain,
-        feedbackGain,
-        wetGain,
-        dryGain,
-        params: { rate: 0.5, depth: 60, stages: 6, feedback: 50, mix: 50, bypass: false },
-      };
-      this.phaserEffects.set(trackId, effect);
-      logger.info(`[AudioEngine] Phaser effect connected via reverb send for track ${trackId}`);
     }
 
-    const currentTime = this.context.currentTime;
-    const timeConstant = 0.01;
-
-    if (params.rate !== undefined) {
-      effect.lfo.frequency.setTargetAtTime(params.rate, currentTime, timeConstant);
-      effect.params.rate = params.rate;
-    }
-    if (params.depth !== undefined) {
-      const depthValue = (params.depth / 100) * 1000;
-      effect.lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
-      effect.params.depth = params.depth;
-    }
-    if (params.feedback !== undefined) {
-      effect.feedbackGain.gain.setTargetAtTime(params.feedback / 100 * 0.8, currentTime, timeConstant);
-      effect.params.feedback = params.feedback;
-    }
-    if (params.mix !== undefined) {
-      effect.wetGain.gain.setTargetAtTime(params.mix / 100, currentTime, timeConstant);
-      effect.params.mix = params.mix;
-    }
-    if (params.bypass !== undefined) {
-      effect.params.bypass = params.bypass;
-      effect.wetGain.gain.setTargetAtTime(params.bypass ? 0 : effect.params.mix / 100, currentTime, timeConstant);
-    }
-
-    logger.info(`[AudioEngine] Updated phaser for track ${trackId}:`, effect.params);
+    // Update slot parameters
+    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
+    logger.info(`[AudioEngine] Updated phaser for track ${trackId}:`, params);
   }
 
   /**
