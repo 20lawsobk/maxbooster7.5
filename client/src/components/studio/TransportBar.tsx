@@ -26,6 +26,7 @@ import {
 import { AIMixer } from '@/lib/audio/AIMixer';
 import { AIMastering } from '@/lib/audio/AIMastering';
 import { useToast } from '@/hooks/use-toast';
+import { AutoscrollButton } from './AutoscrollButton';
 import AudioEngine from '@/lib/audioEngine';
 
 interface TransportBarProps {
@@ -387,6 +388,11 @@ export function TransportBar({
             </TooltipTrigger>
             <TooltipContent>Metronome (M)</TooltipContent>
           </Tooltip>
+
+          <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+
+          {/* Autoscroll */}
+          <AutoscrollButton />
         </div>
 
         {/* Right: Tempo & Undo/Redo */}

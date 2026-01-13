@@ -95,12 +95,16 @@ export interface LyricLine {
   endTime: number;
 }
 
+// Autoscroll modes matching Studio One Pro 7.2+
+export type AutoscrollMode = 'off' | 'turnover' | 'continuous-centered' | 'continuous-left';
+
 export interface StudioState {
   // Playhead and Navigation
   currentTime: number;
   isPlaying: boolean;
   isRecording: boolean;
   followPlayhead: boolean;
+  autoscrollMode: AutoscrollMode;
 
   // Transport State
   loopEnabled: boolean;
@@ -176,6 +180,8 @@ export interface StudioState {
   setIsPlaying: (playing: boolean) => void;
   setIsRecording: (recording: boolean) => void;
   toggleFollowPlayhead: () => void;
+  setAutoscrollMode: (mode: AutoscrollMode) => void;
+  cycleAutoscrollMode: () => void;
   setLoopEnabled: (enabled: boolean) => void;
   setLoopStart: (time: number) => void;
   setLoopEnd: (time: number) => void;
@@ -264,6 +270,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   isPlaying: false,
   isRecording: false,
   followPlayhead: true,
+  autoscrollMode: 'turnover' as AutoscrollMode,
 
   // Transport State
   loopEnabled: false,
@@ -336,6 +343,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setIsPlaying: (playing) => set({ isPlaying: playing }),
   setIsRecording: (recording) => set({ isRecording: recording }),
   toggleFollowPlayhead: () => set((state) => ({ followPlayhead: !state.followPlayhead })),
+  setAutoscrollMode: (mode) => set({ autoscrollMode: mode, followPlayhead: mode !== 'off' }),
+  cycleAutoscrollMode: () => set((state) => {
+    const modes: AutoscrollMode[] = ['off', 'turnover', 'continuous-centered', 'continuous-left'];
+    const currentIndex = modes.indexOf(state.autoscrollMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    const nextMode = modes[nextIndex];
+    return { autoscrollMode: nextMode, followPlayhead: nextMode !== 'off' };
+  }),
 
   // Transport Actions
   setLoopEnabled: (enabled) => set({ loopEnabled: enabled }),

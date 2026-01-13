@@ -1814,6 +1814,23 @@ export default function Studio() {
       description: 'Toggle metronome',
     },
     {
+      key: 'f',
+      handler: () => {
+        const { cycleAutoscrollMode } = useStudioStore.getState();
+        cycleAutoscrollMode();
+        const newMode = useStudioStore.getState().autoscrollMode;
+        const modeLabels: Record<string, string> = { 
+          'off': 'Off', 
+          'turnover': 'Turn Over', 
+          'continuous-centered': 'Continuous Centered', 
+          'continuous-left': 'Continuous Left' 
+        };
+        announce(`Autoscroll: ${modeLabels[newMode]}`);
+      },
+      description: 'Toggle Autoscroll mode',
+      category: 'Navigation',
+    },
+    {
       key: '=',
       ctrl: true,
       handler: () => {

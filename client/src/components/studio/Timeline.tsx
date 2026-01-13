@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { useStudioStore } from '@/lib/studioStore';
 
 interface AudioClip {
   id: string;
@@ -41,7 +42,8 @@ interface TimelineProps {
 }
 
 /**
- * TODO: Add function documentation
+ * Timeline component with autoscroll support
+ * Modes: turnover (page jump), continuous-centered, continuous-left
  */
 export function Timeline({
   currentTime,
@@ -55,14 +57,16 @@ export function Timeline({
   onTimelineClick,
   onClipUpdate,
   snapEnabled = true,
-  snapInterval = 0.25, // Quarter note at 120 BPM ≈ 0.5s, snap to 0.25s grid
+  snapInterval = 0.25,
   zoom = 1,
   isPlaying = false,
   selectedTrack = null,
   onTrackSelect,
   onTimeChange,
 }: TimelineProps) {
+  const { autoscrollMode } = useStudioStore();
   const [numerator] = (timeSignature || '4/4').split('/').map(Number);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [draggingClip, setDraggingClip] = useState<{ clipId: string; trackId: string } | null>(
     null
   );
@@ -288,8 +292,47 @@ export function Timeline({
     handleResizeEnd,
   ]);
 
+  // Autoscroll effect - scroll timeline based on mode when playing
+  useEffect(() => {
+    if (!isPlaying || autoscrollMode === 'off' || !scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const containerWidth = container.clientWidth;
+    const scrollableWidth = container.scrollWidth;
+    const playheadPosition = (currentTime / duration) * scrollableWidth;
+
+    switch (autoscrollMode) {
+      case 'turnover': {
+        const currentScroll = container.scrollLeft;
+        const visibleEnd = currentScroll + containerWidth;
+        const pageMargin = containerWidth * 0.1;
+        if (playheadPosition > visibleEnd - pageMargin) {
+          container.scrollTo({ left: playheadPosition - pageMargin, behavior: 'auto' });
+        } else if (playheadPosition < currentScroll) {
+          container.scrollTo({ left: Math.max(0, playheadPosition - pageMargin), behavior: 'auto' });
+        }
+        break;
+      }
+      case 'continuous-centered': {
+        const targetScroll = playheadPosition - containerWidth / 2;
+        container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'auto' });
+        break;
+      }
+      case 'continuous-left': {
+        const leftMargin = containerWidth * 0.1;
+        const targetScroll = playheadPosition - leftMargin;
+        container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'auto' });
+        break;
+      }
+    }
+  }, [currentTime, isPlaying, autoscrollMode, duration]);
+
   return (
-    <div className="border-b" style={{ borderColor: 'var(--studio-border)' }}>
+    <div 
+      ref={scrollContainerRef}
+      className="border-b overflow-x-auto" 
+      style={{ borderColor: 'var(--studio-border)' }}
+    >
       {/* Time Ruler */}
       <div
         ref={timelineRef}
