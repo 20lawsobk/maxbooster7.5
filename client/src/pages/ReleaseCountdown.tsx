@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,10 +40,10 @@ interface Release {
 function CountdownTimer({ targetDate }: { targetDate: string }) {
   const [, setTick] = useState(0);
   
-  useState(() => {
+  useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(interval);
-  });
+  }, [targetDate]);
   
   const target = new Date(targetDate);
   const now = new Date();
