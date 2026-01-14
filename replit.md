@@ -109,7 +109,8 @@ Admin credentials stored in environment variables:
 - `ADMIN_PASSWORD` - (configured in environment)
 
 ### Storage Configuration
-- **Provider**: Local storage (development), Replit Object Storage (production)
+- **Provider**: Replit Object Storage
+- **Bucket ID**: replit-objstore-e75041f4-5045-4b3b-a8c7-29bb5b43b9d4
 - **Service**: `server/services/storageService.ts`
 
 ### Configured Environment Variables
