@@ -104,14 +104,23 @@ The frontend leverages shadcn/ui components for a modern and accessible user exp
 
 ### Admin Access
 Admin credentials stored in environment variables:
-- `ADMIN_EMAIL` - Admin email address
-- `ADMIN_USERNAME` - Admin username
-- `ADMIN_PASSWORD` - Admin password
+- `ADMIN_EMAIL` - blawzmusic@gmail.com
+- `ADMIN_USERNAME` - blawzmusic
+- `ADMIN_PASSWORD` - (configured in environment)
 
 ### Storage Configuration
-- **Provider**: Replit Object Storage
-- **Bucket ID**: replit-objstore-2afac943-48fb-4a4f-b5b4-7cb21892b200
-- **Service**: `server/services/replitStorageService.ts`
+- **Provider**: Local storage (development), Replit Object Storage (production)
+- **Service**: `server/services/storageService.ts`
+
+### Configured Environment Variables
+All 28 environment variables are properly configured:
+- **Payment**: STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
+- **Email**: SENDGRID_API_KEY
+- **Distribution**: LABELGRID_API_TOKEN
+- **Social Media**: TWITTER_API_KEY/SECRET, FACEBOOK_APP_ID/SECRET, INSTAGRAM_APP_ID/SECRET, TIKTOK_CLIENT_KEY/SECRET, YOUTUBE_CLIENT_ID/SECRET, LINKEDIN_CLIENT_ID/SECRET, THREADS_APP_ID/SECRET
+- **Google**: GOOGLE_CLIENT_ID/SECRET, GOOGLE_BUSINESS_CLIENT_ID/SECRET
+- **Infrastructure**: DATABASE_URL, SESSION_SECRET, REDIS_URL, SENTRY_DSN
+- **Admin**: ADMIN_EMAIL, ADMIN_USERNAME, ADMIN_PASSWORD
 
 ## Build & Deployment
 
