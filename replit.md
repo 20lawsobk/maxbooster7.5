@@ -113,6 +113,34 @@ Admin credentials stored in environment variables:
 - **Bucket ID**: replit-objstore-e75041f4-5045-4b3b-a8c7-29bb5b43b9d4
 - **Service**: `server/services/storageService.ts`
 
+### KYC/Identity Verification Workflow
+Complete end-to-end identity verification system for payout eligibility:
+
+**User Flow:**
+1. Type Selection - Choose Individual or Business verification
+2. Information Entry - Submit personal/business details
+3. Document Upload - Upload required documents (government ID, proof of address, selfie, etc.)
+4. Review Submission - Submit for admin review
+
+**Admin Flow:**
+- Access via `/admin/kyc` or "KYC Verification Review" button on Admin page
+- Filter by status (all, under_review, pending, verified, rejected)
+- View uploaded documents securely
+- Approve or reject verifications with notes/reasons
+
+**Key Files:**
+- `client/src/pages/Verification.tsx` - User verification form
+- `client/src/pages/admin/KYCReview.tsx` - Admin review dashboard
+- `server/routes/kyc.ts` - API endpoints
+- `server/services/kycService.ts` - Business logic with ownership verification
+
+**Security Features:**
+- Server-side ownership verification for all user operations
+- Admin authorization required for review endpoints
+- Secure file uploads using multer with size limits (10MB)
+- Server-generated storage paths (ignores client metadata)
+- Allowed file types: JPG, PNG, PDF
+
 ### Configured Environment Variables
 All 28 environment variables are properly configured:
 - **Payment**: STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET

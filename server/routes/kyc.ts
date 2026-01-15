@@ -150,7 +150,7 @@ router.put('/individual', async (req, res) => {
     }
 
     const validated = individualInfoSchema.parse(info);
-    const verification = await kycService.updateIndividualInfo(verificationId, validated);
+    const verification = await kycService.updateIndividualInfo(verificationId, validated, req.user.id);
 
     res.json({
       success: true,
@@ -185,7 +185,7 @@ router.put('/business', async (req, res) => {
     }
 
     const validated = businessInfoSchema.parse(info);
-    const verification = await kycService.updateBusinessInfo(verificationId, validated);
+    const verification = await kycService.updateBusinessInfo(verificationId, validated, req.user.id);
 
     res.json({
       success: true,
@@ -399,7 +399,7 @@ router.post('/upgrade', async (req, res) => {
       return res.status(400).json({ error: 'Verification ID and new level required' });
     }
 
-    const verification = await kycService.upgradeVerificationLevel(verificationId, newLevel);
+    const verification = await kycService.upgradeVerificationLevel(verificationId, newLevel, req.user.id);
 
     res.json({
       success: true,

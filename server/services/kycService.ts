@@ -147,10 +147,14 @@ export class KYCService {
     return verification;
   }
 
-  async updateIndividualInfo(verificationId: string, info: IndividualInfo): Promise<KYCVerification> {
+  async updateIndividualInfo(verificationId: string, info: IndividualInfo, userId: string): Promise<KYCVerification> {
     const verification = await this.getVerification(verificationId);
     if (!verification) {
       throw new Error('Verification not found');
+    }
+
+    if (verification.userId !== userId) {
+      throw new Error('Unauthorized: This verification does not belong to you');
     }
 
     if (verification.verificationType !== 'individual') {
@@ -180,10 +184,14 @@ export class KYCService {
     return updated;
   }
 
-  async updateBusinessInfo(verificationId: string, info: BusinessInfo): Promise<KYCVerification> {
+  async updateBusinessInfo(verificationId: string, info: BusinessInfo, userId: string): Promise<KYCVerification> {
     const verification = await this.getVerification(verificationId);
     if (!verification) {
       throw new Error('Verification not found');
+    }
+
+    if (verification.userId !== userId) {
+      throw new Error('Unauthorized: This verification does not belong to you');
     }
 
     if (verification.verificationType !== 'business') {
@@ -216,6 +224,10 @@ export class KYCService {
     const verification = await this.getVerification(request.verificationId);
     if (!verification) {
       throw new Error('Verification not found');
+    }
+
+    if (verification.userId !== request.userId) {
+      throw new Error('Unauthorized: This verification does not belong to you');
     }
 
     if (verification.status === 'verified') {
@@ -518,10 +530,14 @@ export class KYCService {
     return { eligible: true, currentLevel: verification.level };
   }
 
-  async upgradeVerificationLevel(verificationId: string, newLevel: KYCLevel): Promise<KYCVerification> {
+  async upgradeVerificationLevel(verificationId: string, newLevel: KYCLevel, userId: string): Promise<KYCVerification> {
     const verification = await this.getVerification(verificationId);
     if (!verification) {
       throw new Error('Verification not found');
+    }
+
+    if (verification.userId !== userId) {
+      throw new Error('Unauthorized: This verification does not belong to you');
     }
 
     const levelOrder: KYCLevel[] = ['basic', 'enhanced', 'full'];
