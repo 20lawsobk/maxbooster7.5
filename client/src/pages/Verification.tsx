@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
@@ -114,6 +114,25 @@ export default function Verification() {
     queryKey: ['/api/kyc/documents'],
     enabled: !!user && !!status?.verificationId,
   });
+
+  useEffect(() => {
+    if (!status || isLoading) return;
+    
+    if (status.status === 'not_started' || !status.verificationId) {
+      setStep(1);
+    } else if (status.status === 'pending') {
+      const hasDocuments = (status.documentsSubmitted?.length || 0) > 0;
+      if (hasDocuments) {
+        setStep(4);
+      } else {
+        setStep(2);
+      }
+    } else if (status.status === 'under_review' || status.status === 'verified') {
+      setStep(4);
+    } else if (status.status === 'rejected') {
+      setStep(1);
+    }
+  }, [status, isLoading]);
 
   const startVerificationMutation = useMutation({
     mutationFn: async (type: 'individual' | 'business') => {
