@@ -254,15 +254,17 @@ export class KYCService {
     const [document] = await db
       .insert(kycDocuments)
       .values({
-        verificationId: request.verificationId,
         userId: request.userId,
         documentType: request.documentType,
-        fileName: request.fileName,
-        fileSize: request.fileSize,
-        mimeType: request.mimeType,
-        storagePath: request.storagePath,
+        documentUrl: request.storagePath,
         status: 'pending',
-        expirationDate: request.expirationDate,
+        expiresAt: request.expirationDate,
+        metadata: {
+          verificationId: request.verificationId,
+          fileName: request.fileName,
+          fileSize: request.fileSize,
+          mimeType: request.mimeType,
+        },
       })
       .returning();
 
@@ -310,21 +312,36 @@ export class KYCService {
   }
 
   async reviewDocument(documentId: string, reviewerId: string, approved: boolean, reason?: string): Promise<KYCDocument> {
+    const existingDoc = await this.getDocument(documentId);
+    if (!existingDoc) {
+      throw new Error('Document not found');
+    }
+    
+    const existingMeta = (existingDoc.metadata as Record<string, any>) || {};
+    const updatedMeta = {
+      ...existingMeta,
+      reviewedBy: reviewerId,
+      reviewedAt: new Date().toISOString(),
+      rejectionReason: approved ? null : reason,
+    };
+
     const [document] = await db
       .update(kycDocuments)
       .set({
         status: approved ? 'approved' : 'rejected',
-        rejectionReason: approved ? null : reason,
-        reviewedAt: new Date(),
-        reviewedBy: reviewerId,
+        verifiedAt: approved ? new Date() : null,
+        metadata: updatedMeta,
       })
       .where(eq(kycDocuments.id, documentId))
       .returning();
 
     logger.info(`Document ${documentId} ${approved ? 'approved' : 'rejected'} by ${reviewerId}`);
 
-    const allDocs = await this.getVerificationDocuments(document.verificationId);
-    await this.checkAndUpdateVerificationStatus(document.verificationId, allDocs);
+    const verificationId = existingMeta.verificationId;
+    if (verificationId) {
+      const allDocs = await this.getVerificationDocuments(verificationId);
+      await this.checkAndUpdateVerificationStatus(verificationId, allDocs);
+    }
 
     return document;
   }
@@ -442,11 +459,21 @@ export class KYCService {
   }
 
   async getVerificationDocuments(verificationId: string): Promise<KYCDocument[]> {
-    return db
+    const verification = await this.getVerification(verificationId);
+    if (!verification) {
+      return [];
+    }
+    
+    const allDocs = await db
       .select()
       .from(kycDocuments)
-      .where(eq(kycDocuments.verificationId, verificationId))
-      .orderBy(desc(kycDocuments.uploadedAt));
+      .where(eq(kycDocuments.userId, verification.userId))
+      .orderBy(desc(kycDocuments.createdAt));
+    
+    return allDocs.filter(doc => {
+      const meta = (doc.metadata as Record<string, any>) || {};
+      return meta.verificationId === verificationId;
+    });
   }
 
   async getDocument(documentId: string): Promise<KYCDocument | null> {

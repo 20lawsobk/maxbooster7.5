@@ -443,10 +443,19 @@ router.get('/admin/documents/:documentId/view', async (req, res) => {
       return res.status(404).json({ error: 'Document not found' });
     }
 
-    const file = await storageService.downloadFile(document.storagePath);
+    const metadata = (document.metadata as Record<string, any>) || {};
+    const storagePath = document.documentUrl || metadata.storagePath;
+    const fileName = metadata.fileName || `document_${documentId}`;
+    const mimeType = metadata.mimeType || 'application/octet-stream';
+
+    if (!storagePath) {
+      return res.status(404).json({ error: 'Document file not found' });
+    }
+
+    const file = await storageService.downloadFile(storagePath);
     
-    res.setHeader('Content-Type', document.mimeType);
-    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
     res.send(file);
   } catch (error: unknown) {
     logger.error('Error viewing document:', error);
