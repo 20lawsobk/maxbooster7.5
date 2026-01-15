@@ -105,6 +105,7 @@ export async function initializeAdmin() {
     
     await seedPluginCatalog();
     await seedDSPProviders();
+    await seedDistributionPlatformsFromFile();
     
     return admin;
   } catch (error: unknown) {
@@ -433,4 +434,17 @@ function getCategoryFromSlug(slug: string): string {
   if (regionalPlatforms.some(p => slug.toLowerCase().includes(p))) return 'regional';
   
   return 'streaming';
+}
+
+/**
+ * Seed distribution platforms from the comprehensive distributionPlatforms.ts file
+ * This provides 100+ DSP platforms matching DistroKid's full offering
+ */
+async function seedDistributionPlatformsFromFile() {
+  try {
+    const { seedDistributionPlatforms } = await import('./seed/distributionPlatforms.js');
+    await seedDistributionPlatforms();
+  } catch (error: any) {
+    logger.warn('Distribution platforms seeding skipped:', error.message);
+  }
 }
