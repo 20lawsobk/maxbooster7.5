@@ -488,6 +488,40 @@ export class KYCService {
     return updated;
   }
 
+  async submitForReview(verificationId: string, userId: string): Promise<KYCVerification> {
+    const verification = await this.getVerification(verificationId);
+    if (!verification) {
+      throw new Error('Verification not found');
+    }
+
+    if (verification.userId !== userId) {
+      throw new Error('Unauthorized to submit this verification');
+    }
+
+    if (verification.status === 'under_review' || verification.status === 'verified') {
+      throw new Error('Verification already submitted or verified');
+    }
+
+    const documents = await this.getVerificationDocuments(verificationId);
+    if (documents.length === 0) {
+      throw new Error('At least one document is required before submission');
+    }
+
+    const [updated] = await db
+      .update(kycVerifications)
+      .set({
+        status: 'under_review',
+        submittedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(kycVerifications.id, verificationId))
+      .returning();
+
+    logger.info(`Verification ${verificationId} submitted for review by user ${userId}`);
+
+    return updated;
+  }
+
   private async checkAndUpdateVerificationStatus(verificationId: string, existingDocs?: KYCDocument[]): Promise<void> {
     const verification = await this.getVerification(verificationId);
     if (!verification) return;

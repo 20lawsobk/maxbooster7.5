@@ -1,7 +1,22 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { kycService } from '../services/kycService.js';
+import { storageService } from '../services/storageService.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPG, PNG, and PDF are allowed.'));
+    }
+  },
+});
 
 const router = Router();
 
@@ -276,6 +291,81 @@ router.get('/documents', async (req, res) => {
   } catch (error: unknown) {
     logger.error('Error fetching documents:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch documents';
+    res.status(500).json({ error: message });
+  }
+});
+
+router.post('/documents/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { verificationId, documentType } = req.body;
+
+    if (!verificationId || !documentType) {
+      return res.status(400).json({ error: 'Verification ID and document type are required' });
+    }
+
+    const storagePath = await storageService.uploadFile(
+      req.file.buffer,
+      'kyc-documents',
+      req.file.originalname,
+      req.file.mimetype
+    );
+
+    const document = await kycService.uploadDocument({
+      verificationId,
+      documentType,
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      storagePath,
+      userId: req.user.id,
+    });
+
+    logger.info(`KYC document uploaded: ${documentType} for verification ${verificationId}`);
+
+    res.status(201).json({
+      success: true,
+      document,
+      message: 'Document uploaded successfully. It will be reviewed shortly.',
+    });
+  } catch (error: unknown) {
+    logger.error('Error uploading document:', error);
+    const message = error instanceof Error ? error.message : 'Failed to upload document';
+    res.status(500).json({ error: message });
+  }
+});
+
+router.post('/submit', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { verificationId } = req.body;
+
+    if (!verificationId) {
+      return res.status(400).json({ error: 'Verification ID required' });
+    }
+
+    const verification = await kycService.submitForReview(verificationId, req.user.id);
+
+    logger.info(`Verification ${verificationId} submitted for review`);
+
+    res.json({
+      success: true,
+      verification,
+      message: 'Verification submitted for review. This typically takes 1-2 business days.',
+    });
+  } catch (error: unknown) {
+    logger.error('Error submitting verification:', error);
+    const message = error instanceof Error ? error.message : 'Failed to submit verification';
     res.status(500).json({ error: message });
   }
 });
