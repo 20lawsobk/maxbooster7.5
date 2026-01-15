@@ -135,7 +135,7 @@ export class KYCService {
       .insert(kycVerifications)
       .values({
         userId: request.userId,
-        type: request.type,
+        verificationType: request.type,
         status: 'pending',
         level: request.level || 'basic',
         startedAt: new Date(),
@@ -153,7 +153,7 @@ export class KYCService {
       throw new Error('Verification not found');
     }
 
-    if (verification.type !== 'individual') {
+    if (verification.verificationType !== 'individual') {
       throw new Error('Verification type mismatch');
     }
 
@@ -186,7 +186,7 @@ export class KYCService {
       throw new Error('Verification not found');
     }
 
-    if (verification.type !== 'business') {
+    if (verification.verificationType !== 'business') {
       throw new Error('Verification type mismatch');
     }
 
@@ -350,7 +350,7 @@ export class KYCService {
     }
 
     const documents = await this.getVerificationDocuments(verification.id);
-    const requiredDocs = DOCUMENT_REQUIREMENTS[verification.level][verification.type];
+    const requiredDocs = DOCUMENT_REQUIREMENTS[verification.level][verification.verificationType as KYCType];
     const submittedTypes = documents.map(d => d.documentType);
     const approvedTypes = documents.filter(d => d.status === 'approved').map(d => d.documentType);
     const pendingTypes = documents.filter(d => d.status === 'pending').map(d => d.documentType);
@@ -493,7 +493,7 @@ export class KYCService {
     if (!verification) return;
 
     const documents = existingDocs || await this.getVerificationDocuments(verificationId);
-    const requiredDocs = DOCUMENT_REQUIREMENTS[verification.level][verification.type];
+    const requiredDocs = DOCUMENT_REQUIREMENTS[verification.level][verification.verificationType as KYCType];
 
     const hasAllRequired = requiredDocs.every(docType =>
       documents.some(d => d.documentType === docType && d.status !== 'rejected')
@@ -570,7 +570,7 @@ export class KYCService {
           html: `
             <h2>Verification Approved</h2>
             <p>Dear ${user.firstName || 'User'},</p>
-            <p>Your ${verification.type} verification has been approved at the ${verification.level} level.</p>
+            <p>Your ${verification.verificationType} verification has been approved at the ${verification.level} level.</p>
             <p>You can now receive payouts up to the limits for your verification tier.</p>
           `,
         });
