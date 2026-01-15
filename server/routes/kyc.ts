@@ -419,12 +419,38 @@ router.get('/admin/pending', async (req, res) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    const pending = await kycService.getPendingVerifications();
+    const status = req.query.status as string || 'under_review';
+    const verifications = await kycService.getVerificationsWithDetails(status === 'all' ? undefined : status);
 
-    res.json({ verifications: pending });
+    res.json({ verifications });
   } catch (error: unknown) {
     logger.error('Error fetching pending verifications:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch pending verifications';
+    res.status(500).json({ error: message });
+  }
+});
+
+router.get('/admin/documents/:documentId/view', async (req, res) => {
+  try {
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { documentId } = req.params;
+    const document = await kycService.getDocument(documentId);
+    
+    if (!document) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const file = await storageService.downloadFile(document.storagePath);
+    
+    res.setHeader('Content-Type', document.mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+    res.send(file);
+  } catch (error: unknown) {
+    logger.error('Error viewing document:', error);
+    const message = error instanceof Error ? error.message : 'Failed to view document';
     res.status(500).json({ error: message });
   }
 });

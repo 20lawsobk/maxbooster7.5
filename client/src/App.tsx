@@ -53,6 +53,7 @@ const Storefront = lazy(() => import('@/pages/Storefront'));
 const AdminAutonomy = lazy(() => import('@/pages/AdminAutonomy'));
 const ProducerProfilePage = lazy(() => import('@/pages/ProducerProfilePage'));
 const Verification = lazy(() => import('@/pages/Verification'));
+const KYCReview = lazy(() => import('@/pages/admin/KYCReview'));
 const Contracts = lazy(() => import('@/pages/Contracts'));
 const Workspaces = lazy(() => import('@/pages/Workspaces'));
 const Collaborations = lazy(() => import('@/pages/Collaborations'));
@@ -89,6 +90,7 @@ function Router() {
       <Route path="/subscribe/:tier" component={Subscribe} />
       <Route path="/admin/security" component={SecurityDashboard} />
       <Route path="/admin/support" component={SupportDashboard} />
+      <Route path="/admin/kyc" component={KYCReview} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin" component={Admin} />
       <Route path="/settings" component={Settings} />

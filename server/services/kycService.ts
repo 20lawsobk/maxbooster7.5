@@ -399,6 +399,14 @@ export class KYCService {
       .orderBy(desc(kycDocuments.uploadedAt));
   }
 
+  async getDocument(documentId: string): Promise<KYCDocument | null> {
+    const [doc] = await db
+      .select()
+      .from(kycDocuments)
+      .where(eq(kycDocuments.id, documentId));
+    return doc || null;
+  }
+
   async getPendingVerifications(): Promise<KYCVerification[]> {
     return db
       .select()
@@ -410,6 +418,57 @@ export class KYCService {
         )
       )
       .orderBy(kycVerifications.createdAt);
+  }
+
+  async getVerificationsWithDetails(statusFilter?: string): Promise<any[]> {
+    let query = db
+      .select({
+        id: kycVerifications.id,
+        userId: kycVerifications.userId,
+        verificationType: kycVerifications.verificationType,
+        level: kycVerifications.level,
+        status: kycVerifications.status,
+        firstName: kycVerifications.firstName,
+        lastName: kycVerifications.lastName,
+        businessName: kycVerifications.businessName,
+        dateOfBirth: kycVerifications.dateOfBirth,
+        nationality: kycVerifications.nationality,
+        address: kycVerifications.address,
+        city: kycVerifications.city,
+        state: kycVerifications.state,
+        postalCode: kycVerifications.postalCode,
+        country: kycVerifications.country,
+        taxIdNumber: kycVerifications.taxIdNumber,
+        businessType: kycVerifications.businessType,
+        businessRegistrationNumber: kycVerifications.businessRegistrationNumber,
+        submittedAt: kycVerifications.submittedAt,
+        createdAt: kycVerifications.createdAt,
+        userEmail: users.email,
+        username: users.username,
+      })
+      .from(kycVerifications)
+      .leftJoin(users, eq(kycVerifications.userId, users.id))
+      .orderBy(desc(kycVerifications.createdAt));
+
+    let verifications;
+    if (statusFilter) {
+      verifications = await query.where(eq(kycVerifications.status, statusFilter));
+    } else {
+      verifications = await query;
+    }
+
+    const results = await Promise.all(
+      verifications.map(async (v) => {
+        const documents = await this.getVerificationDocuments(v.id);
+        return {
+          ...v,
+          user: { email: v.userEmail, username: v.username },
+          documents,
+        };
+      })
+    );
+
+    return results;
   }
 
   async checkPayoutEligibility(userId: string, amount: number): Promise<{
