@@ -117,6 +117,28 @@ const PAYOUT_THRESHOLDS: Record<KYCLevel, number> = {
 
 const VERIFICATION_EXPIRY_DAYS = 365;
 
+interface KYCMetadata {
+  level?: KYCLevel;
+  startedAt?: string;
+  submittedAt?: string;
+  taxFormType?: TaxFormType;
+  taxFormSubmitted?: boolean;
+  reviewedBy?: string;
+  reviewNotes?: string;
+  rejectionReason?: string;
+  individualInfo?: IndividualInfo;
+  businessInfo?: BusinessInfo;
+}
+
+function getMetadata(verification: KYCVerification): KYCMetadata {
+  return (verification.metadata as KYCMetadata) || {};
+}
+
+function getLevel(verification: KYCVerification): KYCLevel {
+  const metadata = getMetadata(verification);
+  return metadata.level || 'basic';
+}
+
 export class KYCService {
   async startVerification(request: KYCStartRequest): Promise<KYCVerification> {
     const existingVerification = await this.getActiveVerification(request.userId);
@@ -137,8 +159,10 @@ export class KYCService {
         userId: request.userId,
         verificationType: request.type,
         status: 'pending',
-        level: request.level || 'basic',
-        startedAt: new Date(),
+        metadata: {
+          level: request.level || 'basic',
+          startedAt: new Date().toISOString(),
+        },
       })
       .returning();
 
@@ -161,20 +185,16 @@ export class KYCService {
       throw new Error('Verification type mismatch');
     }
 
+    const existingMetadata = (verification.metadata as Record<string, unknown>) || {};
+    const updatedMetadata = {
+      ...existingMetadata,
+      individualInfo: info,
+    };
+
     const [updated] = await db
       .update(kycVerifications)
       .set({
-        firstName: info.firstName,
-        lastName: info.lastName,
-        dateOfBirth: info.dateOfBirth,
-        nationality: info.nationality,
-        address: info.address,
-        city: info.city,
-        state: info.state,
-        postalCode: info.postalCode,
-        country: info.country,
-        taxIdNumber: info.taxIdNumber,
-        updatedAt: new Date(),
+        metadata: updatedMetadata,
       })
       .where(eq(kycVerifications.id, verificationId))
       .returning();
@@ -198,19 +218,16 @@ export class KYCService {
       throw new Error('Verification type mismatch');
     }
 
+    const existingMetadata = (verification.metadata as Record<string, unknown>) || {};
+    const updatedMetadata = {
+      ...existingMetadata,
+      businessInfo: info,
+    };
+
     const [updated] = await db
       .update(kycVerifications)
       .set({
-        businessName: info.businessName,
-        businessType: info.businessType,
-        businessRegistrationNumber: info.businessRegistrationNumber,
-        taxIdNumber: info.taxIdNumber,
-        address: info.address,
-        city: info.city,
-        state: info.state,
-        postalCode: info.postalCode,
-        country: info.country,
-        updatedAt: new Date(),
+        metadata: updatedMetadata,
       })
       .where(eq(kycVerifications.id, verificationId))
       .returning();
@@ -272,12 +289,17 @@ export class KYCService {
       storagePath: submission.documentPath,
     });
 
+    const existingMetadata = getMetadata(verification);
+    const updatedMetadata = {
+      ...existingMetadata,
+      taxFormType: submission.formType,
+      taxFormSubmitted: true,
+    };
+
     const [updated] = await db
       .update(kycVerifications)
       .set({
-        taxFormType: submission.formType,
-        taxFormSubmitted: true,
-        updatedAt: new Date(),
+        metadata: updatedMetadata,
       })
       .where(eq(kycVerifications.id, submission.verificationId))
       .returning();
@@ -316,15 +338,20 @@ export class KYCService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + VERIFICATION_EXPIRY_DAYS);
 
+    const existingMetadata = getMetadata(verification);
+    const updatedMetadata = {
+      ...existingMetadata,
+      reviewedBy: reviewerId,
+      reviewNotes: notes,
+    };
+
     const [updated] = await db
       .update(kycVerifications)
       .set({
         status: 'verified',
         verifiedAt: new Date(),
         expiresAt,
-        reviewedBy: reviewerId,
-        reviewNotes: notes,
-        updatedAt: new Date(),
+        metadata: updatedMetadata,
       })
       .where(eq(kycVerifications.id, verificationId))
       .returning();
@@ -337,13 +364,23 @@ export class KYCService {
   }
 
   async rejectVerification(verificationId: string, reviewerId: string, reason: string): Promise<KYCVerification> {
+    const verification = await this.getVerification(verificationId);
+    if (!verification) {
+      throw new Error('Verification not found');
+    }
+
+    const existingMetadata = getMetadata(verification);
+    const updatedMetadata = {
+      ...existingMetadata,
+      rejectionReason: reason,
+      reviewedBy: reviewerId,
+    };
+
     const [updated] = await db
       .update(kycVerifications)
       .set({
         status: 'rejected',
-        rejectionReason: reason,
-        reviewedBy: reviewerId,
-        updatedAt: new Date(),
+        metadata: updatedMetadata,
       })
       .where(eq(kycVerifications.id, verificationId))
       .returning();
@@ -361,23 +398,24 @@ export class KYCService {
       return null;
     }
 
+    const metadata = getMetadata(verification);
+    const level = getLevel(verification);
     const documents = await this.getVerificationDocuments(verification.id);
-    const requiredDocs = DOCUMENT_REQUIREMENTS[verification.level][verification.verificationType as KYCType];
+    const requiredDocs = DOCUMENT_REQUIREMENTS[level][verification.verificationType as KYCType];
     const submittedTypes = documents.map(d => d.documentType);
-    const approvedTypes = documents.filter(d => d.status === 'approved').map(d => d.documentType);
     const pendingTypes = documents.filter(d => d.status === 'pending').map(d => d.documentType);
 
     const taxFormRequired = this.isTaxFormRequired(verification);
 
     return {
       verificationId: verification.id,
-      status: verification.status,
-      level: verification.level,
+      status: verification.status as KYCStatus,
+      level,
       documentsRequired: requiredDocs,
       documentsSubmitted: submittedTypes as DocumentType[],
       documentsPending: pendingTypes as DocumentType[],
       taxFormRequired,
-      taxFormSubmitted: verification.taxFormSubmitted || false,
+      taxFormSubmitted: metadata.taxFormSubmitted || false,
       payoutEligible: this.isPayoutEligible(verification),
       message: this.getStatusMessage(verification),
     };
@@ -438,22 +476,10 @@ export class KYCService {
         id: kycVerifications.id,
         userId: kycVerifications.userId,
         verificationType: kycVerifications.verificationType,
-        level: kycVerifications.level,
         status: kycVerifications.status,
-        firstName: kycVerifications.firstName,
-        lastName: kycVerifications.lastName,
-        businessName: kycVerifications.businessName,
-        dateOfBirth: kycVerifications.dateOfBirth,
-        nationality: kycVerifications.nationality,
-        address: kycVerifications.address,
-        city: kycVerifications.city,
-        state: kycVerifications.state,
-        postalCode: kycVerifications.postalCode,
-        country: kycVerifications.country,
-        taxIdNumber: kycVerifications.taxIdNumber,
-        businessType: kycVerifications.businessType,
-        businessRegistrationNumber: kycVerifications.businessRegistrationNumber,
-        submittedAt: kycVerifications.submittedAt,
+        metadata: kycVerifications.metadata,
+        verifiedAt: kycVerifications.verifiedAt,
+        expiresAt: kycVerifications.expiresAt,
         createdAt: kycVerifications.createdAt,
         userEmail: users.email,
         username: users.username,
@@ -472,8 +498,31 @@ export class KYCService {
     const results = await Promise.all(
       verifications.map(async (v) => {
         const documents = await this.getVerificationDocuments(v.id);
+        const metadata = (v.metadata as KYCMetadata) || {};
+        const individualInfo = metadata.individualInfo;
+        const businessInfo = metadata.businessInfo;
+        
         return {
-          ...v,
+          id: v.id,
+          userId: v.userId,
+          verificationType: v.verificationType,
+          status: v.status,
+          level: metadata.level || 'basic',
+          firstName: individualInfo?.firstName,
+          lastName: individualInfo?.lastName,
+          businessName: businessInfo?.businessName,
+          dateOfBirth: individualInfo?.dateOfBirth,
+          nationality: individualInfo?.nationality,
+          address: individualInfo?.address || businessInfo?.address,
+          city: individualInfo?.city || businessInfo?.city,
+          state: individualInfo?.state || businessInfo?.state,
+          postalCode: individualInfo?.postalCode || businessInfo?.postalCode,
+          country: individualInfo?.country || businessInfo?.country,
+          taxIdNumber: individualInfo?.taxIdNumber || businessInfo?.taxIdNumber,
+          businessType: businessInfo?.businessType,
+          businessRegistrationNumber: businessInfo?.businessRegistrationNumber,
+          submittedAt: metadata.submittedAt,
+          createdAt: v.createdAt,
           user: { email: v.userEmail, username: v.username },
           documents,
         };
@@ -499,35 +548,38 @@ export class KYCService {
       };
     }
 
+    const level = getLevel(verification);
+    const metadata = getMetadata(verification);
+
     if (this.isExpired(verification)) {
       return {
         eligible: false,
         reason: 'KYC verification has expired. Please renew.',
-        requiredLevel: verification.level,
-        currentLevel: verification.level,
+        requiredLevel: level,
+        currentLevel: level,
       };
     }
 
-    const threshold = PAYOUT_THRESHOLDS[verification.level];
+    const threshold = PAYOUT_THRESHOLDS[level];
     if (amount > threshold) {
       const requiredLevel = this.getRequiredLevelForAmount(amount);
       return {
         eligible: false,
-        reason: `Payout amount exceeds ${verification.level} tier limit. Please upgrade to ${requiredLevel}.`,
+        reason: `Payout amount exceeds ${level} tier limit. Please upgrade to ${requiredLevel}.`,
         requiredLevel,
-        currentLevel: verification.level,
+        currentLevel: level,
       };
     }
 
-    if (this.isTaxFormRequired(verification) && !verification.taxFormSubmitted) {
+    if (this.isTaxFormRequired(verification) && !metadata.taxFormSubmitted) {
       return {
         eligible: false,
         reason: 'Tax form submission required before payouts',
-        currentLevel: verification.level,
+        currentLevel: level,
       };
     }
 
-    return { eligible: true, currentLevel: verification.level };
+    return { eligible: true, currentLevel: level };
   }
 
   async upgradeVerificationLevel(verificationId: string, newLevel: KYCLevel, userId: string): Promise<KYCVerification> {
@@ -540,20 +592,26 @@ export class KYCService {
       throw new Error('Unauthorized: This verification does not belong to you');
     }
 
+    const currentLevel = getLevel(verification);
     const levelOrder: KYCLevel[] = ['basic', 'enhanced', 'full'];
-    const currentIndex = levelOrder.indexOf(verification.level);
+    const currentIndex = levelOrder.indexOf(currentLevel);
     const newIndex = levelOrder.indexOf(newLevel);
 
     if (newIndex <= currentIndex) {
       throw new Error('Can only upgrade to a higher verification level');
     }
 
+    const existingMetadata = getMetadata(verification);
+    const updatedMetadata = {
+      ...existingMetadata,
+      level: newLevel,
+    };
+
     const [updated] = await db
       .update(kycVerifications)
       .set({
-        level: newLevel,
         status: 'pending',
-        updatedAt: new Date(),
+        metadata: updatedMetadata,
       })
       .where(eq(kycVerifications.id, verificationId))
       .returning();
@@ -582,12 +640,17 @@ export class KYCService {
       throw new Error('At least one document is required before submission');
     }
 
+    const existingMetadata = getMetadata(verification);
+    const updatedMetadata = {
+      ...existingMetadata,
+      submittedAt: new Date().toISOString(),
+    };
+
     const [updated] = await db
       .update(kycVerifications)
       .set({
         status: 'under_review',
-        submittedAt: new Date(),
-        updatedAt: new Date(),
+        metadata: updatedMetadata,
       })
       .where(eq(kycVerifications.id, verificationId))
       .returning();
@@ -601,20 +664,26 @@ export class KYCService {
     const verification = await this.getVerification(verificationId);
     if (!verification) return;
 
+    const level = getLevel(verification);
     const documents = existingDocs || await this.getVerificationDocuments(verificationId);
-    const requiredDocs = DOCUMENT_REQUIREMENTS[verification.level][verification.verificationType as KYCType];
+    const requiredDocs = DOCUMENT_REQUIREMENTS[level][verification.verificationType as KYCType];
 
     const hasAllRequired = requiredDocs.every(docType =>
       documents.some(d => d.documentType === docType && d.status !== 'rejected')
     );
 
     if (hasAllRequired && verification.status === 'pending') {
+      const existingMetadata = getMetadata(verification);
+      const updatedMetadata = {
+        ...existingMetadata,
+        submittedAt: new Date().toISOString(),
+      };
+
       await db
         .update(kycVerifications)
         .set({
           status: 'under_review',
-          submittedAt: new Date(),
-          updatedAt: new Date(),
+          metadata: updatedMetadata,
         })
         .where(eq(kycVerifications.id, verificationId));
 
@@ -628,10 +697,13 @@ export class KYCService {
   }
 
   private isTaxFormRequired(verification: KYCVerification): boolean {
-    if (verification.country === 'US') {
+    const metadata = getMetadata(verification);
+    const country = metadata.individualInfo?.country || metadata.businessInfo?.country;
+    if (country === 'US') {
       return true;
     }
-    return verification.level === 'enhanced' || verification.level === 'full';
+    const level = getLevel(verification);
+    return level === 'enhanced' || level === 'full';
   }
 
   private isPayoutEligible(verification: KYCVerification): boolean {
@@ -645,6 +717,7 @@ export class KYCService {
   }
 
   private getStatusMessage(verification: KYCVerification): string {
+    const metadata = getMetadata(verification);
     switch (verification.status) {
       case 'not_started':
         return 'Verification not started. Please provide your information.';
@@ -657,7 +730,7 @@ export class KYCService {
           ? 'Your verification has expired. Please renew.'
           : 'Your account is verified.';
       case 'rejected':
-        return `Verification rejected: ${verification.rejectionReason}`;
+        return `Verification rejected: ${metadata.rejectionReason || 'No reason provided'}`;
       case 'expired':
         return 'Your verification has expired. Please submit new documents.';
       default:
@@ -672,6 +745,8 @@ export class KYCService {
         .from(users)
         .where(eq(users.id, verification.userId));
 
+      const level = getLevel(verification);
+
       if (user?.email) {
         await emailService.sendEmail({
           to: user.email,
@@ -679,7 +754,7 @@ export class KYCService {
           html: `
             <h2>Verification Approved</h2>
             <p>Dear ${user.firstName || 'User'},</p>
-            <p>Your ${verification.verificationType} verification has been approved at the ${verification.level} level.</p>
+            <p>Your ${verification.verificationType} verification has been approved at the ${level} level.</p>
             <p>You can now receive payouts up to the limits for your verification tier.</p>
           `,
         });
@@ -696,6 +771,8 @@ export class KYCService {
         .from(users)
         .where(eq(users.id, verification.userId));
 
+      const metadata = getMetadata(verification);
+
       if (user?.email) {
         await emailService.sendEmail({
           to: user.email,
@@ -704,7 +781,7 @@ export class KYCService {
             <h2>Verification Requires Attention</h2>
             <p>Dear ${user.firstName || 'User'},</p>
             <p>Your verification was not approved for the following reason:</p>
-            <p><em>${verification.rejectionReason}</em></p>
+            <p><em>${metadata.rejectionReason || 'Please contact support for details'}</em></p>
             <p>Please log in to your account to submit corrected information.</p>
           `,
         });
