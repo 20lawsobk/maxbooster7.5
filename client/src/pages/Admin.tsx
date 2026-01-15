@@ -555,6 +555,22 @@ export default function Admin() {
           ))}
         </div>
 
+        {/* Quick Links */}
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" onClick={() => setLocation('/admin/kyc')} className="gap-2">
+            <Shield className="h-4 w-4" />
+            KYC Verification Review
+          </Button>
+          <Button variant="outline" onClick={() => setLocation('/admin/security')} className="gap-2">
+            <Shield className="h-4 w-4" />
+            Security Dashboard
+          </Button>
+          <Button variant="outline" onClick={() => setLocation('/admin/support')} className="gap-2">
+            <Mail className="h-4 w-4" />
+            Support Dashboard
+          </Button>
+        </div>
+
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="users" data-testid="tab-users">
