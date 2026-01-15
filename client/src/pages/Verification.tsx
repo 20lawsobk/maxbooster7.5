@@ -28,9 +28,12 @@ interface VerificationStatus {
   status: 'not_started' | 'pending' | 'under_review' | 'verified' | 'rejected' | 'expired';
   verificationId?: string;
   level?: string;
+  verificationType?: 'individual' | 'business';
+  infoSubmitted?: boolean;
   documentsRequired?: string[];
   documentsSubmitted?: string[];
   documentsPending?: string[];
+  allDocumentsUploaded?: boolean;
   taxFormRequired?: boolean;
   taxFormSubmitted?: boolean;
   payoutEligible?: boolean;
@@ -118,14 +121,19 @@ export default function Verification() {
   useEffect(() => {
     if (!status || isLoading) return;
     
+    if (status.verificationType) {
+      setVerificationType(status.verificationType);
+    }
+    
     if (status.status === 'not_started' || !status.verificationId) {
       setStep(1);
     } else if (status.status === 'pending') {
-      const hasDocuments = (status.documentsSubmitted?.length || 0) > 0;
-      if (hasDocuments) {
-        setStep(4);
-      } else {
+      if (!status.infoSubmitted) {
         setStep(2);
+      } else if (!status.allDocumentsUploaded) {
+        setStep(3);
+      } else {
+        setStep(4);
       }
     } else if (status.status === 'under_review' || status.status === 'verified') {
       setStep(4);

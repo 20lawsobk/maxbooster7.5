@@ -78,9 +78,12 @@ export interface VerificationResult {
   verificationId: string;
   status: KYCStatus;
   level: KYCLevel;
+  verificationType: KYCType;
+  infoSubmitted: boolean;
   documentsRequired: DocumentType[];
   documentsSubmitted: DocumentType[];
   documentsPending: DocumentType[];
+  allDocumentsUploaded: boolean;
   taxFormRequired: boolean;
   taxFormSubmitted: boolean;
   payoutEligible: boolean;
@@ -417,20 +420,30 @@ export class KYCService {
 
     const metadata = getMetadata(verification);
     const level = getLevel(verification);
+    const verificationType = verification.verificationType as KYCType;
     const documents = await this.getVerificationDocuments(verification.id);
-    const requiredDocs = DOCUMENT_REQUIREMENTS[level][verification.verificationType as KYCType];
+    const requiredDocs = DOCUMENT_REQUIREMENTS[level][verificationType];
     const submittedTypes = documents.map(d => d.documentType);
     const pendingTypes = documents.filter(d => d.status === 'pending').map(d => d.documentType);
 
     const taxFormRequired = this.isTaxFormRequired(verification);
+    
+    const infoSubmitted = verificationType === 'individual' 
+      ? !!(metadata.individualInfo?.firstName && metadata.individualInfo?.lastName)
+      : !!(metadata.businessInfo?.businessName);
+    
+    const allDocumentsUploaded = requiredDocs.every(docType => submittedTypes.includes(docType));
 
     return {
       verificationId: verification.id,
       status: verification.status as KYCStatus,
       level,
+      verificationType,
+      infoSubmitted,
       documentsRequired: requiredDocs,
       documentsSubmitted: submittedTypes as DocumentType[],
       documentsPending: pendingTypes as DocumentType[],
+      allDocumentsUploaded,
       taxFormRequired,
       taxFormSubmitted: metadata.taxFormSubmitted || false,
       payoutEligible: this.isPayoutEligible(verification),
