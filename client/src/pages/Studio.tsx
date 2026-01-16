@@ -2408,8 +2408,8 @@ export default function Studio() {
               inspector={
                 <InspectorPanel
                   selectedTrack={displayTracks.find(t => t.id === selectedTrack)}
-                  selectedClip={normalizedTrackClips
-                    .flatMap(tc => tc.clips)
+                  selectedClip={Array.from(normalizedTrackClips.values())
+                    .flat()
                     .find(c => c.id === selectedClipId)}
                   onTrackUpdate={(trackId, updates) => handleTrackUpdate(trackId, updates as any)}
                   onClipUpdate={(clipId, updates) => handleClipUpdate(clipId, updates as any)}
