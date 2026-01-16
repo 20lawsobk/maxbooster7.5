@@ -30,6 +30,7 @@ interface InspectorPanelProps {
   onClipUpdate?: (clipId: string, updates: unknown) => void;
   plugins?: PluginInstance[];
   onPluginsChange?: (plugins: PluginInstance[]) => void;
+  onClose?: () => void;
 }
 
 interface CollapsibleSectionProps {
@@ -128,6 +129,7 @@ export function InspectorPanel({
   onClipUpdate,
   plugins = [],
   onPluginsChange,
+  onClose,
 }: InspectorPanelProps) {
   const { selectedTrackId, selectedClipId } = useStudioStore();
 
@@ -147,12 +149,23 @@ export function InspectorPanel({
         }}
       >
         <div
-          className="h-12 px-4 flex items-center border-b"
+          className="h-12 px-4 flex items-center justify-between border-b"
           style={{ borderColor: 'var(--studio-border)' }}
         >
           <h3 className="text-sm font-bold tracking-wide" style={{ color: 'var(--studio-text)' }}>
             INSPECTOR
           </h3>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 hover:bg-white/10"
+              onClick={onClose}
+              title="Close Inspector"
+            >
+              <X className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
+            </Button>
+          )}
         </div>
         <div
           className="flex-1 flex flex-col items-center justify-center gap-3 p-6"
@@ -181,16 +194,29 @@ export function InspectorPanel({
         <h3 className="text-sm font-bold tracking-wide" style={{ color: 'var(--studio-text)' }}>
           INSPECTOR
         </h3>
-        <Badge
-          variant="outline"
-          className="text-[10px]"
-          style={{
-            borderColor: 'var(--studio-accent)',
-            color: 'var(--studio-accent)',
-          }}
-        >
-          {selectedTrackId ? 'Track' : 'Clip'}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="outline"
+            className="text-[10px]"
+            style={{
+              borderColor: 'var(--studio-accent)',
+              color: 'var(--studio-accent)',
+            }}
+          >
+            {selectedTrackId ? 'Track' : 'Clip'}
+          </Badge>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 hover:bg-white/10"
+              onClick={onClose}
+              title="Close Inspector"
+            >
+              <X className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
+            </Button>
+          )}
+        </div>
       </div>
 
       <ScrollArea className="flex-1">

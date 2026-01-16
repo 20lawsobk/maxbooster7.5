@@ -2415,6 +2415,7 @@ export default function Studio() {
                   onClipUpdate={(clipId, updates) => handleClipUpdate(clipId, updates as any)}
                   plugins={selectedTrack ? getTrackPlugins(selectedTrack) : []}
                   onPluginsChange={selectedTrack ? (plugins) => handleTrackPluginsChange(selectedTrack, plugins) : undefined}
+                  onClose={toggleInspector}
                 />
               }
               timeline={
