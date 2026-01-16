@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,12 @@ import {
   Play,
   Square,
   Upload,
+  Star,
+  StarOff,
+  Filter,
+  Clock,
+  SortAsc,
+  SortDesc,
 } from 'lucide-react';
 
 interface BrowserItem {
@@ -30,6 +36,9 @@ interface BrowserItem {
   size?: string;
   duration?: string;
   fileUrl?: string;
+  sampleRate?: number;
+  fileType?: string;
+  createdAt?: string;
 }
 
 interface UserAsset {
@@ -42,7 +51,6 @@ interface UserAsset {
   createdAt: string;
 }
 
-
 interface BrowserTreeItemProps {
   item: BrowserItem;
   level: number;
@@ -51,10 +59,25 @@ interface BrowserTreeItemProps {
   onPreview?: (fileUrl: string, itemId: string) => void;
   onStopPreview?: () => void;
   previewingId?: string | null;
+  favorites: Set<string>;
+  onToggleFavorite: (itemId: string) => void;
+  onHover?: (item: BrowserItem | null) => void;
 }
 
-function BrowserTreeItem({ item, level, onSelect, selectedId, onPreview, onStopPreview, previewingId }: BrowserTreeItemProps) {
+function BrowserTreeItem({ 
+  item, 
+  level, 
+  onSelect, 
+  selectedId, 
+  onPreview, 
+  onStopPreview, 
+  previewingId,
+  favorites,
+  onToggleFavorite,
+  onHover,
+}: BrowserTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(level === 0);
+  const isFavorite = favorites.has(item.id);
 
   const handleDragStart = (e: React.DragEvent) => {
     if (item.type === 'folder') {
@@ -94,7 +117,9 @@ function BrowserTreeItem({ item, level, onSelect, selectedId, onPreview, onStopP
       <div
         draggable={item.type !== 'folder'}
         onDragStart={handleDragStart}
-        className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-white/5 rounded transition-colors ${
+        onMouseEnter={() => onHover?.(item)}
+        onMouseLeave={() => onHover?.(null)}
+        className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-white/5 rounded transition-colors group ${
           selectedId === item.id ? 'bg-white/10' : ''
         }`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
@@ -128,11 +153,29 @@ function BrowserTreeItem({ item, level, onSelect, selectedId, onPreview, onStopP
           </span>
         )}
 
+        {item.type !== 'folder' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-5 w-5 p-0 ${isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(item.id);
+            }}
+          >
+            {isFavorite ? (
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+            ) : (
+              <StarOff className="h-3 w-3" style={{ color: 'var(--studio-text-muted)' }} />
+            )}
+          </Button>
+        )}
+
         {(item.type === 'sample' || item.type === 'file') && item.fileUrl && (
           <Button
             variant="ghost"
             size="sm"
-            className={`h-6 w-6 p-0 ${previewingId === item.id ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}
+            className={`h-6 w-6 p-0 ${previewingId === item.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
             onClick={(e) => {
               e.stopPropagation();
               if (previewingId === item.id) {
@@ -163,10 +206,100 @@ function BrowserTreeItem({ item, level, onSelect, selectedId, onPreview, onStopP
               onPreview={onPreview}
               onStopPreview={onStopPreview}
               previewingId={previewingId}
+              favorites={favorites}
+              onToggleFavorite={onToggleFavorite}
+              onHover={onHover}
             />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function WaveformPreviewPanel({ item, isPlaying }: { item: BrowserItem | null; isPlaying: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !item) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.fillStyle = 'var(--studio-bg-deep)';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = isPlaying ? '#3b82f6' : '#6b7280';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+
+    const bars = 60;
+    const barWidth = width / bars;
+    const seed = item.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    
+    for (let i = 0; i < bars; i++) {
+      const pseudoRandom = Math.sin(seed * (i + 1) * 0.1) * 0.5 + 0.5;
+      const barHeight = pseudoRandom * (height - 10) * 0.8 + 5;
+      const x = i * barWidth + barWidth / 2;
+      const y = (height - barHeight) / 2;
+
+      ctx.fillStyle = isPlaying ? 'rgba(59, 130, 246, 0.7)' : 'rgba(107, 114, 128, 0.5)';
+      ctx.fillRect(x - barWidth / 4, y, barWidth / 2, barHeight);
+    }
+
+    ctx.stroke();
+  }, [item, isPlaying]);
+
+  if (!item || item.type === 'folder') {
+    return (
+      <div
+        className="h-16 flex items-center justify-center border-t"
+        style={{
+          background: 'var(--studio-bg-deep)',
+          borderColor: 'var(--studio-border)',
+        }}
+      >
+        <p className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+          Select an audio file to preview
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="border-t"
+      style={{
+        background: 'var(--studio-bg-deep)',
+        borderColor: 'var(--studio-border)',
+      }}
+    >
+      <div className="px-3 py-1.5 flex items-center justify-between">
+        <span className="text-xs font-medium truncate" style={{ color: 'var(--studio-text)' }}>
+          {item.name}
+        </span>
+        <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+          {item.duration && (
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {item.duration}
+            </span>
+          )}
+          {item.size && <span>{item.size}</span>}
+          {item.sampleRate && <span>{item.sampleRate / 1000}kHz</span>}
+        </div>
+      </div>
+      <canvas
+        ref={canvasRef}
+        width={300}
+        height={50}
+        className="w-full"
+        style={{ height: '50px' }}
+      />
     </div>
   );
 }
@@ -213,6 +346,45 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'type'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'audio' | 'midi' | 'preset' | 'plugin'>('all');
+  const [hoveredItem, setHoveredItem] = useState<BrowserItem | null>(null);
+  const [selectedItemForPreview, setSelectedItemForPreview] = useState<BrowserItem | null>(null);
+
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('studio-favorites');
+    if (saved) {
+      try {
+        setFavorites(new Set(JSON.parse(saved)));
+      } catch (e) {
+        console.warn('Failed to load favorites from localStorage');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (favorites.size > 0) {
+      localStorage.setItem('studio-favorites', JSON.stringify([...favorites]));
+    }
+  }, [favorites]);
+
+  const toggleFavorite = useCallback((itemId: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  }, []);
+
   const handlePreview = useCallback((fileUrl: string, itemId: string) => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -248,38 +420,48 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
     setPreviewingId(null);
   }, []);
 
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setLocalSearch(query);
-    setBrowserSearchQuery(query);
-  };
+    
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    debounceTimeoutRef.current = setTimeout(() => {
+      setBrowserSearchQuery(query);
+    }, 150);
+  }, [setBrowserSearchQuery]);
 
-  // Fetch user samples
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const { data: userSamples = [], isLoading: samplesLoading } = useQuery<UserAsset[]>({
     queryKey: ['/api/assets', { assetType: 'sample' }],
     queryFn: async () => {
       const response = await fetch('/api/assets?assetType=sample');
       if (!response.ok) throw new Error('Failed to fetch samples');
       const data = await response.json();
-      // API returns { assets: [], type, total } - extract the array
       return Array.isArray(data) ? data : (data.assets || []);
     },
     enabled: browserActiveTab === 'samples',
   });
 
-  // Fetch user plugins
   const { data: userPlugins = [], isLoading: pluginsLoading } = useQuery<UserAsset[]>({
     queryKey: ['/api/assets', { assetType: 'plugin' }],
     queryFn: async () => {
       const response = await fetch('/api/assets?assetType=plugin');
       if (!response.ok) throw new Error('Failed to fetch plugins');
       const data = await response.json();
-      // API returns { assets: [], type, total } - extract the array
       return Array.isArray(data) ? data : (data.assets || []);
     },
     enabled: browserActiveTab === 'plugins',
   });
 
-  // Fetch native plugins from catalog (immutable data - cache for 1 hour)
   const { data: nativePlugins = {}, isLoading: nativePluginsLoading } = useQuery<Record<string, Array<{ id: string; name: string; kind: string; category?: string }>>>({
     queryKey: ['/api/studio/plugins'],
     queryFn: async () => {
@@ -288,11 +470,10 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
       return response.json();
     },
     enabled: browserActiveTab === 'plugins',
-    staleTime: 60 * 60 * 1000, // 1 hour - plugin catalog is immutable
-    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache longer
+    staleTime: 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
   });
 
-  // Fetch genre presets from real AI service
   const { data: genrePresets = [], isLoading: presetsLoading } = useQuery<{ id: string; name: string; icon: string; description: string }[]>({
     queryKey: ['/api/studio/ai-music/presets'],
     queryFn: async () => {
@@ -305,7 +486,6 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
     retry: false,
   });
 
-  // Convert genre presets to browser items - directly use server-provided data
   const convertPresetsToBrowserItems = (): BrowserItem[] => {
     if (!genrePresets.length) return [];
     
@@ -338,7 +518,6 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
     return result;
   };
 
-  // Convert user assets to browser items
   const convertAssetsToBrowserItems = (assets: UserAsset[]): BrowserItem[] => {
     return assets.map((asset) => ({
       id: asset.id,
@@ -346,10 +525,11 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
       type: asset.assetType === 'sample' ? 'sample' : 'plugin',
       size: `${(asset.fileSize / (1024 * 1024)).toFixed(1)} MB`,
       fileUrl: asset.fileUrl,
+      fileType: asset.fileType,
+      createdAt: asset.createdAt,
     }));
   };
 
-  // Convert native plugins to browser items (grouped by type from API)
   const convertNativePluginsToBrowserItems = (pluginsByType: Record<string, Array<{ id: string; name: string; type?: string; category?: string }>>): BrowserItem[] => {
     const typeLabels: Record<string, string> = {
       piano: 'Pianos',
@@ -386,12 +566,9 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
       instrument: 'Instruments',
     };
 
-    // Sort types: instruments first, then effects
     const typeOrder = [
-      // Instruments
       'piano', 'strings', 'drums', 'bass', 'pad', 'analog', 'fm', 'wavetable', 'sampler',
       'organ', 'lead', 'pluck', 'brass', 'woodwind', 'synth',
-      // Effects
       'reverb', 'delay', 'chorus', 'compressor', 'eq', 'limiter', 'gate', 'distortion', 'phaser', 'flanger',
       'modulation', 'saturation', 'filter', 'utility', 'dynamics', 'effect',
     ];
@@ -399,7 +576,6 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
     const sortedEntries = Object.entries(pluginsByType).sort((a, b) => {
       const indexA = typeOrder.indexOf(a[0]);
       const indexB = typeOrder.indexOf(b[0]);
-      // Unknown types go to the end
       return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
     });
     
@@ -415,56 +591,71 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
     }));
   };
 
-  const filterItems = (items: BrowserItem[], query: string): BrowserItem[] => {
-    if (!query) return items;
-
+  const filterItems = useCallback((items: BrowserItem[], query: string): BrowserItem[] => {
     const lowerQuery = query.toLowerCase();
+    
     return items.reduce<BrowserItem[]>((acc, item) => {
-      if (item.name.toLowerCase().includes(lowerQuery)) {
-        acc.push(item);
-      } else if (item.children) {
+      const matchesSearch = !query || item.name.toLowerCase().includes(lowerQuery);
+      const matchesFavorite = !showFavoritesOnly || favorites.has(item.id) || item.type === 'folder';
+      const matchesType = typeFilter === 'all' || 
+        (typeFilter === 'audio' && (item.type === 'sample' || item.type === 'file')) ||
+        (typeFilter === 'preset' && item.type === 'preset') ||
+        (typeFilter === 'plugin' && item.type === 'plugin') ||
+        item.type === 'folder';
+
+      if (item.children) {
         const filteredChildren = filterItems(item.children, query);
         if (filteredChildren.length > 0) {
           acc.push({ ...item, children: filteredChildren });
         }
+      } else if (matchesSearch && matchesFavorite && matchesType) {
+        acc.push(item);
       }
+      
       return acc;
     }, []);
-  };
+  }, [showFavoritesOnly, favorites, typeFilter]);
 
-  const getContentForTab = () => {
+  const sortItems = useCallback((items: BrowserItem[]): BrowserItem[] => {
+    return items.map(item => {
+      if (item.children) {
+        return { ...item, children: sortItems(item.children) };
+      }
+      return item;
+    }).sort((a, b) => {
+      if (a.type === 'folder' && b.type !== 'folder') return -1;
+      if (a.type !== 'folder' && b.type === 'folder') return 1;
+
+      let comparison = 0;
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'date':
+          comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
+          break;
+        case 'type':
+          comparison = a.type.localeCompare(b.type);
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [sortBy, sortOrder]);
+
+  const getContentForTab = useCallback(() => {
     switch (browserActiveTab) {
       case 'pool': {
         const poolItems: BrowserItem[] = [
-          {
-            id: 'recordings',
-            name: 'Recordings',
-            type: 'folder',
-            children: [],
-          },
-          {
-            id: 'takes',
-            name: 'Takes',
-            type: 'folder',
-            children: [],
-          },
-          {
-            id: 'bounces',
-            name: 'Bounces',
-            type: 'folder',
-            children: [],
-          },
-          {
-            id: 'imported',
-            name: 'Imported Media',
-            type: 'folder',
-            children: [],
-          },
+          { id: 'recordings', name: 'Recordings', type: 'folder', children: [] },
+          { id: 'takes', name: 'Takes', type: 'folder', children: [] },
+          { id: 'bounces', name: 'Bounces', type: 'folder', children: [] },
+          { id: 'imported', name: 'Imported Media', type: 'folder', children: [] },
         ];
-        return filterItems(poolItems, localSearch);
+        return sortItems(filterItems(poolItems, localSearch));
       }
       case 'presets':
-        return filterItems(convertPresetsToBrowserItems(), localSearch);
+        return sortItems(filterItems(convertPresetsToBrowserItems(), localSearch));
       case 'samples': {
         const userItems = convertAssetsToBrowserItems(userSamples);
         const allItems: BrowserItem[] = [];
@@ -478,7 +669,7 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
           });
         }
 
-        return filterItems(allItems, localSearch);
+        return sortItems(filterItems(allItems, localSearch));
       }
       case 'plugins': {
         const userItems = convertAssetsToBrowserItems(userPlugins);
@@ -496,22 +687,31 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
 
         allItems.push(...nativeItems);
 
-        return filterItems(allItems, localSearch);
+        return sortItems(filterItems(allItems, localSearch));
       }
       case 'files':
-        return filterItems([], localSearch);
+        return sortItems(filterItems([], localSearch));
       default:
         return [];
     }
-  };
+  }, [browserActiveTab, localSearch, userSamples, userPlugins, nativePlugins, genrePresets, filterItems, sortItems]);
 
-  const content = getContentForTab();
+  const content = useMemo(() => getContentForTab(), [getContentForTab]);
   const showUploadButton = browserActiveTab === 'samples' || browserActiveTab === 'plugins';
 
   const isLoading =
     (browserActiveTab === 'samples' && samplesLoading) ||
     (browserActiveTab === 'plugins' && (pluginsLoading || nativePluginsLoading)) ||
     (browserActiveTab === 'presets' && presetsLoading);
+
+  const handleItemSelect = useCallback((item: BrowserItem) => {
+    setBrowserSelectedItem(item.id);
+    if (item.type === 'sample' || item.type === 'file') {
+      setSelectedItemForPreview(item);
+    }
+  }, [setBrowserSelectedItem]);
+
+  const previewItem = hoveredItem?.type !== 'folder' ? hoveredItem : selectedItemForPreview;
 
   return (
     <div
@@ -521,7 +721,6 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
         borderColor: 'var(--studio-border)',
       }}
     >
-      {/* Header */}
       <div
         className="h-12 px-4 flex items-center justify-between border-b"
         style={{ borderColor: 'var(--studio-border)' }}
@@ -543,7 +742,6 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
         )}
       </div>
 
-      {/* Search */}
       <div className="p-3 border-b" style={{ borderColor: 'var(--studio-border)' }}>
         <div className="relative">
           <Search
@@ -564,7 +762,74 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
         </div>
       </div>
 
-      {/* Tabs */}
+      <div
+        className="px-3 py-2 flex items-center gap-2 border-b"
+        style={{ borderColor: 'var(--studio-border)' }}
+      >
+        <div className="flex items-center gap-1">
+          <Filter className="h-3 w-3" style={{ color: 'var(--studio-text-muted)' }} />
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)}
+            className="h-7 px-2 text-xs rounded border"
+            style={{
+              background: 'var(--studio-bg-deep)',
+              borderColor: 'var(--studio-border)',
+              color: 'var(--studio-text)',
+            }}
+          >
+            <option value="all">All Types</option>
+            <option value="audio">Audio</option>
+            <option value="midi">MIDI</option>
+            <option value="preset">Presets</option>
+            <option value="plugin">Plugins</option>
+          </select>
+        </div>
+
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+          className="h-7 px-2 text-xs rounded border"
+          style={{
+            background: 'var(--studio-bg-deep)',
+            borderColor: 'var(--studio-border)',
+            color: 'var(--studio-text)',
+          }}
+        >
+          <option value="name">Name</option>
+          <option value="date">Date</option>
+          <option value="type">Type</option>
+        </select>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0"
+          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+          title={sortOrder === 'asc' ? 'Sort Ascending' : 'Sort Descending'}
+        >
+          {sortOrder === 'asc' ? (
+            <SortAsc className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
+          ) : (
+            <SortDesc className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
+          )}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`h-7 w-7 p-0 ml-auto ${showFavoritesOnly ? 'bg-yellow-400/20' : ''}`}
+          onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+          title={showFavoritesOnly ? 'Show All' : 'Show Favorites Only'}
+        >
+          {showFavoritesOnly ? (
+            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+          ) : (
+            <Star className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
+          )}
+        </Button>
+      </div>
+
       <Tabs
         value={browserActiveTab}
         onValueChange={(value) => setBrowserActiveTab(value as any)}
@@ -632,9 +897,9 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
                 >
                   <Box className="h-12 w-12 opacity-50" />
                   <p className="text-sm">
-                    {localSearch ? 'No results found' : 'No items available'}
+                    {localSearch ? 'No results found' : showFavoritesOnly ? 'No favorites yet' : 'No items available'}
                   </p>
-                  {showUploadButton && !localSearch && (
+                  {showUploadButton && !localSearch && !showFavoritesOnly && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -652,11 +917,14 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
                     key={item.id}
                     item={item}
                     level={0}
-                    onSelect={(item) => setBrowserSelectedItem(item.id)}
+                    onSelect={handleItemSelect}
                     selectedId={browserSelectedItem}
                     onPreview={handlePreview}
                     onStopPreview={handleStopPreview}
                     previewingId={previewingId}
+                    favorites={favorites}
+                    onToggleFavorite={toggleFavorite}
+                    onHover={setHoveredItem}
                   />
                 ))
               )}
@@ -664,6 +932,11 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
           </ScrollArea>
         </TabsContent>
       </Tabs>
+
+      <WaveformPreviewPanel 
+        item={previewItem} 
+        isPlaying={previewingId === previewItem?.id} 
+      />
 
       {(browserActiveTab === 'pool' || browserActiveTab === 'files') && projectId && (
         <div
