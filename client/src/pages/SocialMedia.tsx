@@ -1041,21 +1041,18 @@ export default function SocialMedia() {
     publishCalendarPostMutation.mutate(postId);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          <p className="text-muted-foreground">Loading Social Media...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!user) return null;
 
   return (
     <AppLayout>
+      {isLoading ? (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            <p className="text-muted-foreground">Loading Social Media...</p>
+          </div>
+        </div>
+      ) : (
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Section */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200/60 dark:border-gray-700">
@@ -2841,6 +2838,7 @@ export default function SocialMedia() {
           </TabsContent>
         </Tabs>
       </div>
+      )}
     </AppLayout>
   );
 }

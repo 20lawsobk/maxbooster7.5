@@ -574,16 +574,6 @@ export default function Advertisement() {
     return styles[level];
   };
 
-  if (authLoading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      </AppLayout>
-    );
-  }
-
   if (!user) return null;
 
   if (user.role !== 'admin') {
@@ -592,6 +582,11 @@ export default function Advertisement() {
 
   return (
     <AppLayout>
+      {authLoading ? (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      ) : (
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -1463,6 +1458,7 @@ export default function Advertisement() {
           </TabsContent>
         </Tabs>
       </div>
+      )}
     </AppLayout>
   );
 }

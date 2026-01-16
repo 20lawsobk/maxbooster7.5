@@ -120,11 +120,6 @@ export default function CareerCoach() {
     setChatInput('');
   };
 
-  if (!user) {
-    setLocation('/login');
-    return null;
-  }
-
   const goals = goalsData?.goals || [];
   const recommendations = recommendationsData?.recommendations || [];
   const insights = insightsData?.insights;
@@ -157,6 +152,11 @@ export default function CareerCoach() {
       default: return <Sparkles className="h-5 w-5" />;
     }
   };
+
+  if (!user) {
+    setLocation('/login');
+    return null;
+  }
 
   return (
     <AppLayout>
