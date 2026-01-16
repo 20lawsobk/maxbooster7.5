@@ -186,7 +186,7 @@ export default function Collaborations() {
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage src={request.avatar} />
-                        <AvatarFallback>{request.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback>{(request.name || 'UN').slice(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-medium">{request.name}</p>
@@ -250,7 +250,7 @@ export default function Collaborations() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-12 w-12">
                           <AvatarImage src={connection.avatar} />
-                          <AvatarFallback>{connection.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                          <AvatarFallback>{(connection.name || 'UN').slice(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div>
                           <CardTitle className="text-base">{connection.name}</CardTitle>
@@ -313,7 +313,7 @@ export default function Collaborations() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-12 w-12">
                           <AvatarImage src={suggestion.avatar} />
-                          <AvatarFallback>{suggestion.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                          <AvatarFallback>{(suggestion.name || 'UN').slice(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <CardTitle className="text-base">{suggestion.name}</CardTitle>
@@ -392,7 +392,7 @@ export default function Collaborations() {
                           {project.collaborators.map((collab) => (
                             <Avatar key={collab.id} className="h-8 w-8 border-2 border-background">
                               <AvatarImage src={collab.avatar} />
-                              <AvatarFallback>{collab.name.slice(0, 2)}</AvatarFallback>
+                              <AvatarFallback>{(collab.name || 'UN').slice(0, 2)}</AvatarFallback>
                             </Avatar>
                           ))}
                         </div>
@@ -421,7 +421,7 @@ export default function Collaborations() {
               <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                 <Avatar>
                   <AvatarImage src={selectedUser.avatar} />
-                  <AvatarFallback>{selectedUser.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{(selectedUser.name || 'UN').slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">{selectedUser.name}</p>
