@@ -352,7 +352,7 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
       )}
 
       <div
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md transition-all duration-500 transform"
+        className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md transition-all duration-500 transform"
         style={isFirstStep ? { ...getContentStyle() } : getContentStyle()}
       >
         <button
