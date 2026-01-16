@@ -906,7 +906,7 @@ export async function registerRoutes(
     });
   });
 
-  // Auth: Demo login - Provides full paid subscription access for showcasing features
+  // Auth: Demo login - Read-only showcase of all features
   app.post("/api/auth/demo", async (req: Request, res: Response) => {
     try {
       let demoUser = await storage.getUserByEmail("demo@maxbooster.com");
@@ -920,20 +920,8 @@ export async function registerRoutes(
         });
       }
       
-      // Ensure demo user has full paid subscription access for showcasing
-      if (!demoUser.subscriptionTier || demoUser.subscriptionTier !== 'yearly') {
-        await storage.updateUser(demoUser.id, {
-          subscriptionTier: 'yearly',
-          subscriptionStatus: 'active',
-          subscriptionEndsAt: new Date('2099-12-31'),
-          onboardingCompleted: true,
-          onboardingStep: 5
-        });
-        demoUser = await storage.getUserByEmail("demo@maxbooster.com");
-      }
-      
-      req.session.userId = demoUser!.id;
-      const { password, ...userWithoutPassword } = demoUser!;
+      req.session.userId = demoUser.id;
+      const { password, ...userWithoutPassword } = demoUser;
       return res.json(userWithoutPassword);
     } catch (error) {
       console.error("Demo login error:", error);
