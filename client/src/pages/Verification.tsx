@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -337,7 +338,7 @@ export default function Verification() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <AppLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -808,7 +809,7 @@ export default function Verification() {
 
         <WhyVerifyCard />
       </div>
-    </div>
+    </AppLayout>
   );
 }
 
