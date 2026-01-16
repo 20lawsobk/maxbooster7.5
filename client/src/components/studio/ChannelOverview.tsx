@@ -225,10 +225,9 @@ export function ChannelOverview({
     return db.toFixed(1);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
+      {isOpen && (
       <motion.div
         className="fixed z-50 shadow-2xl rounded-lg overflow-hidden"
         style={{
@@ -630,6 +629,7 @@ export function ChannelOverview({
           </div>
         </ScrollArea>
       </motion.div>
+      )}
     </AnimatePresence>
   );
 }
