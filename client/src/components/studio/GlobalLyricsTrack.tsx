@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from 'react';
 import { useStudioStore, LyricLine } from '@/lib/studioStore';
-import { Plus, Trash2, AlignLeft, Music2, GripVertical } from 'lucide-react';
+import { Plus, Trash2, AlignLeft, Music2, GripVertical, Maximize2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -8,9 +8,11 @@ interface GlobalLyricsTrackProps {
   duration: number;
   zoom: number;
   onTimeChange?: (time: number) => void;
+  onOpenFullscreen?: () => void;
+  onOpenLyricsPanel?: () => void;
 }
 
-export function GlobalLyricsTrack({ duration, zoom, onTimeChange }: GlobalLyricsTrackProps) {
+export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscreen, onOpenLyricsPanel }: GlobalLyricsTrackProps) {
   const {
     lyrics,
     lyricsTrackVisible,
@@ -127,21 +129,46 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange }: GlobalLyrics
         backgroundColor: 'var(--studio-bg-deep)',
       }}
     >
-      <div className="absolute left-0 top-0 bottom-0 w-48 flex items-center gap-2 px-3 border-r z-10"
+      <div className="absolute left-0 top-0 bottom-0 w-48 flex items-center gap-1 px-3 border-r z-10"
         style={{ borderColor: 'var(--studio-border)', backgroundColor: 'var(--studio-bg-medium)' }}
       >
         <Music2 className="w-4 h-4" style={{ color: 'var(--studio-accent)' }} />
         <span className="text-xs font-medium" style={{ color: 'var(--studio-text)' }}>
           Lyrics
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="ml-auto h-6 w-6 p-0"
-          onClick={handleAddLyric}
-        >
-          <Plus className="w-3 h-3" />
-        </Button>
+        <div className="ml-auto flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={handleAddLyric}
+            title="Add lyric"
+          >
+            <Plus className="w-3 h-3" />
+          </Button>
+          {onOpenLyricsPanel && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={onOpenLyricsPanel}
+              title="Edit lyrics"
+            >
+              <FileText className="w-3 h-3" />
+            </Button>
+          )}
+          {onOpenFullscreen && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={onOpenFullscreen}
+              title="Fullscreen"
+            >
+              <Maximize2 className="w-3 h-3" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div

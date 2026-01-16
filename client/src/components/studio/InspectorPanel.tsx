@@ -160,7 +160,10 @@ export function InspectorPanel({
               variant="ghost"
               size="icon"
               className="h-7 w-7 hover:bg-white/10"
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
               title="Close Inspector"
             >
               <X className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
@@ -210,7 +213,10 @@ export function InspectorPanel({
               variant="ghost"
               size="icon"
               className="h-7 w-7 hover:bg-white/10"
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
               title="Close Inspector"
             >
               <X className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />

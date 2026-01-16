@@ -2422,6 +2422,8 @@ export default function Studio() {
                     duration={projectDuration}
                     zoom={zoom}
                     onTimeChange={(time) => controller.seek(time)}
+                    onOpenFullscreen={toggleFullscreen}
+                    onOpenLyricsPanel={() => setShowLyricsImportDialog(true)}
                   />
                   <Timeline
                     tracks={displayTracks}
