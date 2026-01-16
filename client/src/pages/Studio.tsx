@@ -282,6 +282,18 @@ export default function Studio() {
     selectedClipId,
     selectClip,
     clearSelection,
+    currentTool,
+    setCurrentTool,
+    gridVisible,
+    toggleGridVisible,
+    gridDivision,
+    setGridDivision,
+    automationMode,
+    setAutomationMode,
+    toggleAutomationLanes,
+    toggleLyricsDisplay,
+    recordingMode,
+    setRecordingMode,
   } = useStudioStore();
 
   // DAW Professional Features
@@ -1151,7 +1163,7 @@ export default function Studio() {
     }
   }, [redoStack, controller, toast]);
 
-  // Keyboard handler for Delete, Undo (Ctrl+Z), and Redo (Ctrl+Shift+Z)
+  // Keyboard handler for Delete, Undo (Ctrl+Z), Redo (Ctrl+Shift+Z), and DAW shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't handle if typing in an input/textarea
@@ -1187,12 +1199,102 @@ export default function Studio() {
             break;
           }
         }
+        return;
+      }
+
+      // Automation mode shortcuts (Alt + number)
+      if (e.altKey) {
+        e.preventDefault();
+        if (e.key === '1') { setAutomationMode('off'); return; }
+        if (e.key === '2') { setAutomationMode('read'); return; }
+        if (e.key === '3') { setAutomationMode('write'); return; }
+        if (e.key === '4') { setAutomationMode('touch'); return; }
+        if (e.key === '5') { setAutomationMode('latch'); return; }
+      }
+
+      // Tool shortcuts (1-7) - only when not using alt/ctrl modifiers
+      if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key === '1') { e.preventDefault(); setCurrentTool('pointer'); return; }
+        if (e.key === '2') { e.preventDefault(); setCurrentTool('range'); return; }
+        if (e.key === '3') { e.preventDefault(); setCurrentTool('draw'); return; }
+        if (e.key === '4') { e.preventDefault(); setCurrentTool('pencil'); return; }
+        if (e.key === '5') { e.preventDefault(); setCurrentTool('split'); return; }
+        if (e.key === '6') { e.preventDefault(); setCurrentTool('slip'); return; }
+        if (e.key === '7') { e.preventDefault(); setCurrentTool('eraser'); return; }
+      }
+
+      // Grid shortcuts
+      if (e.key === 'g' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        const finer: Record<number, number> = { 1: 2, 2: 4, 4: 8, 8: 16, 16: 32, 32: 32 };
+        setGridDivision(finer[gridDivision] || 4);
+        return;
+      }
+      if (e.key === 'G' || (e.key === 'g' && e.shiftKey)) {
+        e.preventDefault();
+        const coarser: Record<number, number> = { 32: 16, 16: 8, 8: 4, 4: 2, 2: 1, 1: 1 };
+        setGridDivision(coarser[gridDivision] || 4);
+        return;
+      }
+      if (e.key === 'n' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleGridVisible();
+        return;
+      }
+
+      // Panel toggle shortcuts
+      if (e.key === 'b' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleBrowser();
+        return;
+      }
+      if (e.key === 'i' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleInspector();
+        return;
+      }
+      if (e.key === 'y' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleLyricsDisplay();
+        return;
+      }
+      if (e.key === 'a' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleAutomationLanes();
+        return;
+      }
+
+      // Recording mode shortcuts
+      if (e.key === 'p' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setPunchMode(!punchMode);
+        return;
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedClipId, selectedTool, controller.trackClips, handleDeleteClip, undoStack, redoStack, handleUndo, handleRedo]);
+  }, [
+    selectedClipId, 
+    selectedTool, 
+    controller.trackClips, 
+    handleDeleteClip, 
+    undoStack, 
+    redoStack, 
+    handleUndo, 
+    handleRedo,
+    setCurrentTool,
+    gridDivision,
+    setGridDivision,
+    toggleGridVisible,
+    toggleBrowser,
+    toggleInspector,
+    toggleLyricsDisplay,
+    toggleAutomationLanes,
+    punchMode,
+    setPunchMode,
+    setAutomationMode,
+  ]);
 
   useEffect(() => {
     // Poll for AudioContext availability and monitor CPU
