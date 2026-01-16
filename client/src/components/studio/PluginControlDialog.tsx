@@ -397,11 +397,9 @@ export function PluginControlDialog({
   const [activeTab, setActiveTab] = useState('controls');
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
 
-  if (!plugin) return null;
-
-  const info = PLUGIN_INFO[plugin.type];
-  const presets = PLUGIN_PRESETS[plugin.type] || [];
-  const extendedParams = EXTENDED_PARAMETERS[plugin.type] || [];
+  const info = plugin ? PLUGIN_INFO[plugin.type] : null;
+  const presets = plugin ? (PLUGIN_PRESETS[plugin.type] || []) : [];
+  const extendedParams = plugin ? (EXTENDED_PARAMETERS[plugin.type] || []) : [];
 
   const handlePresetSelect = (preset: PluginPreset) => {
     setSelectedPreset(preset.id);
@@ -414,6 +412,8 @@ export function PluginControlDialog({
     const decimals = param.max <= 1 ? 2 : param.max <= 10 ? 1 : 0;
     return value.toFixed(decimals) + (param.unit || '');
   };
+
+  if (!plugin || !info) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
