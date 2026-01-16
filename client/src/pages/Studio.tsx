@@ -2338,49 +2338,30 @@ export default function Studio() {
             onTrackSelect={handleTrackSelect}
             useNewLayout={true}
             toolbar={
-              <div className="flex flex-col w-full">
-                <StudioTopBar
-                  tempo={controller.transport.tempo}
-                  timeSignature={selectedProject?.timeSignature || '4/4'}
-                  cpuUsage={cpuUsage}
-                  zoom={zoom}
-                  selectedTool={selectedTool}
-                  selectedProject={selectedProject}
-                  projects={projects}
-                  onToolSelect={setSelectedTool}
-                  onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
-                  onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
-                  onShowTutorial={() => setShowTutorial(true)}
-                  onZoomReset={() => setZoom(1)}
-                  onProjectChange={(projectId) => setLocation(`/studio/${projectId}`)}
-                  onCreateProject={(title) => createProjectMutation.mutate(title)}
-                  onUploadFile={() => setShowFullscreenUpload(true)}
-                  onSaveProject={handleSaveProject}
-                  onOpenAIGenerator={() => setShowAIGeneratorDialog(true)}
-                  onUndo={handleUndo}
-                  onRedo={handleRedo}
-                  canUndo={undoStack.length > 0}
-                  canRedo={redoStack.length > 0}
-                  isSaving={isSaving}
-                />
-                <WorkflowStateBar
-                  currentState={workflowState}
-                  onStateChange={(state) => {
-                    setWorkflowState(state);
-                    if (selectedProject) {
-                      updateProjectMutation.mutate({
-                        id: selectedProject.id,
-                        workflowStage: state,
-                      });
-                    }
-                    if (state === 'setup') setShowProjectSetup(true);
-                    if (state === 'mastering' || state === 'delivery') setShowMasteringDelivery(true);
-                  }}
-                  completedSteps={completedWorkflowSteps}
-                  isCollapsed={workflowBarCollapsed}
-                  onCollapsedChange={setWorkflowBarCollapsed}
-                />
-              </div>
+              <StudioTopBar
+                tempo={controller.transport.tempo}
+                timeSignature={selectedProject?.timeSignature || '4/4'}
+                cpuUsage={cpuUsage}
+                zoom={zoom}
+                selectedTool={selectedTool}
+                selectedProject={selectedProject}
+                projects={projects}
+                onToolSelect={setSelectedTool}
+                onZoomIn={() => setZoom(Math.min(zoom * 1.2, 5))}
+                onZoomOut={() => setZoom(Math.max(zoom / 1.2, 0.1))}
+                onShowTutorial={() => setShowTutorial(true)}
+                onZoomReset={() => setZoom(1)}
+                onProjectChange={(projectId) => setLocation(`/studio/${projectId}`)}
+                onCreateProject={(title) => createProjectMutation.mutate(title)}
+                onUploadFile={() => setShowFullscreenUpload(true)}
+                onSaveProject={handleSaveProject}
+                onOpenAIGenerator={() => setShowAIGeneratorDialog(true)}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                canUndo={undoStack.length > 0}
+                canRedo={redoStack.length > 0}
+                isSaving={isSaving}
+              />
             }
               transport={
                 <TransportBar
@@ -2420,6 +2401,23 @@ export default function Studio() {
               }
               timeline={
                 <>
+                  <WorkflowStateBar
+                    currentState={workflowState}
+                    onStateChange={(state) => {
+                      setWorkflowState(state);
+                      if (selectedProject) {
+                        updateProjectMutation.mutate({
+                          id: selectedProject.id,
+                          workflowStage: state,
+                        });
+                      }
+                      if (state === 'setup') setShowProjectSetup(true);
+                      if (state === 'mastering' || state === 'delivery') setShowMasteringDelivery(true);
+                    }}
+                    completedSteps={completedWorkflowSteps}
+                    isCollapsed={workflowBarCollapsed}
+                    onCollapsedChange={setWorkflowBarCollapsed}
+                  />
                   <GlobalLyricsTrack
                     duration={projectDuration}
                     zoom={zoom}
