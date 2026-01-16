@@ -603,10 +603,12 @@ export default function Distribution() {
     enabled: !!user,
   });
 
-  const { data: platformsData = [], isLoading: platformsLoading } = useQuery<PlatformData[]>({
+  const { data: platformsResponse, isLoading: platformsLoading } = useQuery<{ platforms: PlatformData[] }>({
     queryKey: ['/api/distribution/platforms'],
     enabled: !!user,
   });
+
+  const platformsData = platformsResponse?.platforms || [];
 
   const DISTRO_PLATFORMS: DistroPlatform[] = platformsData.map((platform) => {
     const platformEarning = platformEarnings.find((p) => p.platform === platform.name);
