@@ -449,21 +449,18 @@ export default function Settings() {
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          <p className="text-muted-foreground">Loading Settings...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!user) return null;
 
   return (
     <AppLayout>
+      {authLoading ? (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            <p className="text-muted-foreground">Loading Settings...</p>
+          </div>
+        </div>
+      ) : (
       <div className="p-6 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -1222,6 +1219,7 @@ export default function Settings() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      )}
     </AppLayout>
   );
 }

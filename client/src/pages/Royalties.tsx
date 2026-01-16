@@ -419,17 +419,6 @@ export default function Royalties() {
     )
     .slice(0, 4);
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          <p className="text-muted-foreground">Loading Royalties...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!user) return null;
 
   if (user.role !== 'admin') {
@@ -438,6 +427,14 @@ export default function Royalties() {
 
   return (
     <AppLayout>
+      {(authLoading || isLoading) ? (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            <p className="text-muted-foreground">Loading Royalties...</p>
+          </div>
+        </div>
+      ) : (
       <div className="p-6 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -1376,6 +1373,7 @@ export default function Royalties() {
           </DialogContent>
         </Dialog>
       </div>
+      )}
     </AppLayout>
   );
 }

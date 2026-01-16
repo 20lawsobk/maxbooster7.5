@@ -81,11 +81,6 @@ export default function Contracts() {
     },
   });
 
-  if (!user) {
-    setLocation('/login');
-    return null;
-  }
-
   const templates = templatesData?.templates || [];
   const contracts = contractsData?.contracts || [];
   const filteredContracts = filterStatus === 'all' 
@@ -112,6 +107,11 @@ export default function Contracts() {
       default: return <FileText className="h-4 w-4" />;
     }
   };
+
+  if (!user) {
+    setLocation('/login');
+    return null;
+  }
 
   return (
     <AppLayout>

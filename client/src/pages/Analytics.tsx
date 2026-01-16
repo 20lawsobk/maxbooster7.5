@@ -1461,8 +1461,6 @@ export default function Analytics() {
     );
   }
 
-  if (!user) return null;
-
   const data = analyticsData as AnalyticsData;
   const currentData = realtimeData || data?.overview;
 
@@ -1474,6 +1472,8 @@ export default function Analytics() {
     const hours = Math.floor(minutes / 60);
     return `${hours}h ago`;
   }, [lastUpdate]);
+
+  if (!user) return null;
 
   return (
     <AppLayout>

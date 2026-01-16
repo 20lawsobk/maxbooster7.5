@@ -1264,10 +1264,9 @@ export default function Marketplace() {
     );
   }
 
-  if (!user) return null;
-
   return (
     <AppLayout>
+      {!user ? null : (
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200/60 dark:border-gray-700">
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -3323,6 +3322,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      )}
     </AppLayout>
   );
 }
