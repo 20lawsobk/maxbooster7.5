@@ -232,14 +232,6 @@ export default function Verification() {
     return null;
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
   const currentVerificationId = verificationId || status?.verificationId;
 
   const getStatusBadge = () => {
@@ -275,9 +267,17 @@ export default function Verification() {
     return Math.min(Math.round((completedSteps / totalSteps) * 100), 95);
   };
 
-  if (status?.status === 'verified') {
-    return (
-      <div className="min-h-screen bg-background p-6">
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      );
+    }
+
+    if (status?.status === 'verified') {
+      return (
         <div className="max-w-2xl mx-auto">
           <Card className="border-green-500/50 bg-green-500/5">
             <CardHeader className="text-center">
@@ -292,13 +292,11 @@ export default function Verification() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (status?.status === 'under_review') {
-    return (
-      <div className="min-h-screen bg-background p-6">
+    if (status?.status === 'under_review') {
+      return (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -333,12 +331,10 @@ export default function Verification() {
 
           <WhyVerifyCard />
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  return (
-    <AppLayout>
+    return (
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -809,6 +805,12 @@ export default function Verification() {
 
         <WhyVerifyCard />
       </div>
+    );
+  };
+
+  return (
+    <AppLayout>
+      {renderContent()}
     </AppLayout>
   );
 }
