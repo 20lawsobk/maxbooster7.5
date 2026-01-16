@@ -159,9 +159,9 @@ export function StudioStartHub({ onProjectSelect, onCreateProject }: StudioStart
     t => selectedCategory === 'all' || t.category === selectedCategory
   ) || [];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-8">
+      {isLoading ? (
         <div className="max-w-7xl mx-auto space-y-8">
           <Skeleton className="h-12 w-64" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -171,12 +171,7 @@ export function StudioStartHub({ onProjectSelect, onCreateProject }: StudioStart
           </div>
           <Skeleton className="h-96" />
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-8">
+      ) : (
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -376,6 +371,7 @@ export function StudioStartHub({ onProjectSelect, onCreateProject }: StudioStart
           </div>
         </div>
       </div>
+      )}
 
       {/* New Project Dialog */}
       <Dialog open={showNewProjectDialog} onOpenChange={setShowNewProjectDialog}>
