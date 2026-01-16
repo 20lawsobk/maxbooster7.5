@@ -18,7 +18,8 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { VolumeX, Headphones, Music, Mic, Settings2, Maximize2 } from 'lucide-react';
+import { VolumeX, Headphones, Music, Mic, Settings2, Maximize2, CircleDot, Radio, ArrowRight } from 'lucide-react';
+import { useStudioStore } from '@/lib/studioStore';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import AudioEngine from '@/lib/audioEngine';
@@ -41,6 +42,11 @@ interface StudioTrack {
   mute: boolean;
   solo: boolean;
   color: string;
+  armed?: boolean;
+  inputMonitoring?: boolean;
+  phaseInvert?: boolean;
+  sends?: { id: string; level: number; preFader: boolean }[];
+  busAssignment?: string;
   effects?: {
     eq?: {
       lowGain: number;
@@ -68,6 +74,11 @@ interface MixerPanelProps {
   onVolumeChange: (trackId: string, volume: number) => void;
   onPanChange: (trackId: string, pan: number) => void;
   onMasterVolumeChange: (volume: number) => void;
+  onTrackArm?: (trackId: string) => void;
+  onInputMonitoring?: (trackId: string) => void;
+  onPhaseInvert?: (trackId: string) => void;
+  onSendChange?: (trackId: string, sendId: string, level: number) => void;
+  onBusAssign?: (trackId: string, busId: string) => void;
 }
 
 interface TrackEffects {
@@ -125,6 +136,11 @@ export function MixerPanel({
   onVolumeChange,
   onPanChange,
   onMasterVolumeChange,
+  onTrackArm,
+  onInputMonitoring,
+  onPhaseInvert,
+  onSendChange,
+  onBusAssign,
 }: MixerPanelProps) {
   const { toast } = useToast();
   const [masterVolume, setMasterVolume] = useState(0.8);
@@ -416,8 +432,8 @@ export function MixerPanel({
                       />
                     </div>
 
-                    {/* Pan Knob */}
-                    <div className="flex justify-center">
+                    {/* Pan Knob with Phase Invert */}
+                    <div className="flex justify-center items-center gap-2">
                       <Knob
                         value={track.pan}
                         onChange={(value) => onPanChange(track.id, value)}
@@ -430,10 +446,27 @@ export function MixerPanel({
                         color={track.color}
                         data-testid={`slider-pan-${track.id}`}
                       />
+                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          size="sm"
+                          variant={track.phaseInvert ? 'default' : 'ghost'}
+                          className="h-7 w-7 px-0 transition-all touch-manipulation font-bold text-xs"
+                          onClick={() => onPhaseInvert?.(track.id)}
+                          data-testid={`button-mixer-phase-${track.id}`}
+                          title="Phase Invert"
+                          style={{
+                            background: track.phaseInvert ? '#eab308' : 'transparent',
+                            borderColor: track.phaseInvert ? '#eab308' : 'var(--studio-border)',
+                            color: track.phaseInvert ? '#000' : 'var(--studio-text)',
+                          }}
+                        >
+                          Ø
+                        </Button>
+                      </motion.div>
                     </div>
 
                     {/* Mute/Solo Buttons with Animation */}
-                    <div className="flex gap-1 sm:gap-2 justify-center">
+                    <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
                       <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                         <Button
                           size="sm"
@@ -465,6 +498,38 @@ export function MixerPanel({
                         >
                           <Headphones className="h-3 w-3 sm:mr-1" />
                           <span className="text-[10px] sm:text-xs hidden sm:inline">SOLO</span>
+                        </Button>
+                      </motion.div>
+                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          size="sm"
+                          variant={track.armed ? 'default' : 'ghost'}
+                          className="h-9 sm:h-8 w-9 sm:w-8 px-0 transition-all touch-manipulation font-bold"
+                          onClick={() => onTrackArm?.(track.id)}
+                          data-testid={`button-mixer-arm-${track.id}`}
+                          style={{
+                            background: track.armed ? '#ef4444' : 'transparent',
+                            borderColor: track.armed ? '#ef4444' : 'var(--studio-border)',
+                            color: track.armed ? '#fff' : 'var(--studio-text)',
+                          }}
+                        >
+                          <CircleDot className="h-3 w-3" />
+                        </Button>
+                      </motion.div>
+                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          size="sm"
+                          variant={track.inputMonitoring ? 'default' : 'ghost'}
+                          className="h-9 sm:h-8 w-9 sm:w-8 px-0 transition-all touch-manipulation"
+                          onClick={() => onInputMonitoring?.(track.id)}
+                          data-testid={`button-mixer-monitor-${track.id}`}
+                          style={{
+                            background: track.inputMonitoring ? '#22c55e' : 'transparent',
+                            borderColor: track.inputMonitoring ? '#22c55e' : 'var(--studio-border)',
+                            color: track.inputMonitoring ? '#fff' : 'var(--studio-text)',
+                          }}
+                        >
+                          <Radio className="h-3 w-3" />
                         </Button>
                       </motion.div>
                     </div>
@@ -742,7 +807,91 @@ export function MixerPanel({
                           </div>
                         </AccordionContent>
                       </AccordionItem>
+
+                      {/* Sends Section */}
+                      <AccordionItem value="sends" className="border-gray-700">
+                        <AccordionTrigger className="text-xs text-gray-300 py-2 hover:text-white">
+                          Sends
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-3 pt-2">
+                          {[
+                            { id: 'send1', label: 'Send 1 (Reverb)' },
+                            { id: 'send2', label: 'Send 2 (Delay)' },
+                            { id: 'send3', label: 'Send 3 (Chorus)' },
+                            { id: 'send4', label: 'Send 4 (Aux)' },
+                          ].map((send) => {
+                            const trackSend = track.sends?.find(s => s.id === send.id);
+                            const sendLevel = trackSend?.level ?? 0;
+                            const preFader = trackSend?.preFader ?? false;
+                            
+                            return (
+                              <div
+                                key={send.id}
+                                className="flex items-center gap-2 pb-2 border-b"
+                                style={{ borderColor: 'var(--studio-border)' }}
+                                data-testid={`send-slot-${track.id}-${send.id}`}
+                              >
+                                <div className="flex-1">
+                                  <Label className="text-[10px] text-gray-400 block mb-1">
+                                    {send.label}
+                                  </Label>
+                                  <div className="flex items-center gap-2">
+                                    <Knob
+                                      value={sendLevel}
+                                      onChange={(value) => onSendChange?.(track.id, send.id, value)}
+                                      size={32}
+                                      min={0}
+                                      max={100}
+                                      defaultValue={0}
+                                      color="#8b5cf6"
+                                    />
+                                    <div className="flex items-center gap-1">
+                                      <Label className="text-[9px] text-gray-500">PRE</Label>
+                                      <Switch
+                                        checked={preFader}
+                                        onCheckedChange={() => {}}
+                                        className="scale-75"
+                                        data-testid={`toggle-send-pre-${track.id}-${send.id}`}
+                                      />
+                                    </div>
+                                    <span className="text-[10px] text-gray-400 ml-auto">
+                                      {sendLevel}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </AccordionContent>
+                      </AccordionItem>
                     </Accordion>
+
+                    {/* Bus Assignment */}
+                    <div className="mt-2 pt-2 border-t" style={{ borderColor: 'var(--studio-border)' }}>
+                      <div className="flex items-center gap-2">
+                        <ArrowRight className="w-3 h-3 text-gray-500" />
+                        <Select
+                          value={track.busAssignment || 'main'}
+                          onValueChange={(value) => onBusAssign?.(track.id, value)}
+                        >
+                          <SelectTrigger
+                            className="h-7 text-[10px] flex-1"
+                            data-testid={`select-bus-${track.id}`}
+                          >
+                            <SelectValue placeholder="Output" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="main">Main Out</SelectItem>
+                            <SelectItem value="bus1">Bus 1</SelectItem>
+                            <SelectItem value="bus2">Bus 2</SelectItem>
+                            <SelectItem value="bus3">Bus 3</SelectItem>
+                            <SelectItem value="bus4">Bus 4</SelectItem>
+                            <SelectItem value="group1">Group 1</SelectItem>
+                            <SelectItem value="group2">Group 2</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
