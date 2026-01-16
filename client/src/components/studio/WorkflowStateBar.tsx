@@ -95,6 +95,13 @@ export function WorkflowStateBar({
   const [showDetails, setShowDetails] = useState(false);
   const currentIndex = WORKFLOW_STEPS.findIndex(s => s.id === currentState);
 
+  const getStepStatus = useCallback((step: WorkflowStep, index: number) => {
+    if (completedSteps.includes(step.id)) return 'completed';
+    if (step.id === currentState) return 'current';
+    if (index < currentIndex) return 'passed';
+    return 'upcoming';
+  }, [currentState, currentIndex, completedSteps]);
+
   // If collapsed, render a minimal expand button
   if (isCollapsed) {
     return (
@@ -113,13 +120,6 @@ export function WorkflowStateBar({
       </div>
     );
   }
-
-  const getStepStatus = useCallback((step: WorkflowStep, index: number) => {
-    if (completedSteps.includes(step.id)) return 'completed';
-    if (step.id === currentState) return 'current';
-    if (index < currentIndex) return 'passed';
-    return 'upcoming';
-  }, [currentState, currentIndex, completedSteps]);
 
   return (
     <TooltipProvider>
