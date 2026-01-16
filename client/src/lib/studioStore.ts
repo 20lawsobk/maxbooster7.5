@@ -113,6 +113,11 @@ export interface LyricsDisplaySettings {
 // Autoscroll modes matching Studio One Pro 7.2+
 export type AutoscrollMode = 'off' | 'turnover' | 'continuous-centered' | 'continuous-left';
 
+// Professional DAW Types
+export type RecordingMode = 'replace' | 'overdub' | 'stacked';
+export type AutomationMode = 'read' | 'write' | 'touch' | 'latch' | 'off';
+export type EditTool = 'pointer' | 'range' | 'split' | 'slip' | 'draw' | 'pencil' | 'eraser';
+
 export interface StudioState {
   // Playhead and Navigation
   currentTime: number;
@@ -193,6 +198,31 @@ export interface StudioState {
   lyricsDisplayVisible: boolean;
   lyricsTrackVisible: boolean;
   lyricsDisplaySettings: LyricsDisplaySettings;
+
+  // Professional Recording State
+  recordingMode: RecordingMode;
+  preRollBars: number;
+  countInBars: number;
+  returnToStartOnStop: boolean;
+  inputMonitoring: boolean;
+
+  // Editing Tools
+  currentTool: EditTool;
+  rangeSelectionStart: number | null;
+  rangeSelectionEnd: number | null;
+
+  // Automation State
+  automationMode: AutomationMode;
+  automationLanesVisible: boolean;
+  selectedAutomationParameter: string | null;
+
+  // Grid/Snap Settings
+  gridVisible: boolean;
+  gridDivision: number;
+
+  // Crossfade Settings
+  crossfadeLength: number;
+  crossfadeCurve: 'linear' | 'equal-power' | 'exponential';
 
   // Transport Actions
   setCurrentTime: (time: number) => void;
@@ -289,6 +319,31 @@ export interface StudioState {
   importLyrics: (text: string) => void;
   getCurrentLyricLine: () => LyricLine | null;
   getCurrentLyricWord: () => LyricWord | null;
+
+  // Recording Mode Actions
+  setRecordingMode: (mode: RecordingMode) => void;
+  setPreRollBars: (bars: number) => void;
+  setCountInBars: (bars: number) => void;
+  setReturnToStartOnStop: (enabled: boolean) => void;
+  setInputMonitoring: (enabled: boolean) => void;
+
+  // Edit Tool Actions
+  setCurrentTool: (tool: EditTool) => void;
+  setRangeSelection: (start: number | null, end: number | null) => void;
+  clearRangeSelection: () => void;
+
+  // Automation Actions
+  setAutomationMode: (mode: AutomationMode) => void;
+  toggleAutomationLanes: () => void;
+  setSelectedAutomationParameter: (param: string | null) => void;
+
+  // Grid Actions
+  toggleGridVisible: () => void;
+  setGridDivision: (division: number) => void;
+
+  // Crossfade Actions
+  setCrossfadeLength: (length: number) => void;
+  setCrossfadeCurve: (curve: 'linear' | 'equal-power' | 'exponential') => void;
 }
 
 export const useStudioStore = create<StudioState>((set, get) => ({
@@ -378,6 +433,31 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     showWordHighlight: true,
     teleprompterMode: false,
   },
+
+  // Professional Recording State
+  recordingMode: 'replace',
+  preRollBars: 0,
+  countInBars: 0,
+  returnToStartOnStop: true,
+  inputMonitoring: false,
+
+  // Editing Tools
+  currentTool: 'pointer',
+  rangeSelectionStart: null,
+  rangeSelectionEnd: null,
+
+  // Automation State
+  automationMode: 'read',
+  automationLanesVisible: false,
+  selectedAutomationParameter: null,
+
+  // Grid/Snap Settings
+  gridVisible: true,
+  gridDivision: 4,
+
+  // Crossfade Settings
+  crossfadeLength: 0.01,
+  crossfadeCurve: 'equal-power',
 
   // Playhead Actions
   setCurrentTime: (time) => set({ currentTime: time }),
@@ -692,4 +772,29 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       (word) => currentTime >= word.startTime && currentTime < word.endTime
     ) || null;
   },
+
+  // Recording Mode Actions
+  setRecordingMode: (mode) => set({ recordingMode: mode }),
+  setPreRollBars: (bars) => set({ preRollBars: Math.max(0, Math.min(8, bars)) }),
+  setCountInBars: (bars) => set({ countInBars: Math.max(0, Math.min(8, bars)) }),
+  setReturnToStartOnStop: (enabled) => set({ returnToStartOnStop: enabled }),
+  setInputMonitoring: (enabled) => set({ inputMonitoring: enabled }),
+
+  // Edit Tool Actions
+  setCurrentTool: (tool) => set({ currentTool: tool }),
+  setRangeSelection: (start, end) => set({ rangeSelectionStart: start, rangeSelectionEnd: end }),
+  clearRangeSelection: () => set({ rangeSelectionStart: null, rangeSelectionEnd: null }),
+
+  // Automation Actions
+  setAutomationMode: (mode) => set({ automationMode: mode }),
+  toggleAutomationLanes: () => set((state) => ({ automationLanesVisible: !state.automationLanesVisible })),
+  setSelectedAutomationParameter: (param) => set({ selectedAutomationParameter: param }),
+
+  // Grid Actions
+  toggleGridVisible: () => set((state) => ({ gridVisible: !state.gridVisible })),
+  setGridDivision: (division) => set({ gridDivision: division }),
+
+  // Crossfade Actions
+  setCrossfadeLength: (length) => set({ crossfadeLength: Math.max(0.001, Math.min(5, length)) }),
+  setCrossfadeCurve: (curve) => set({ crossfadeCurve: curve }),
 }));

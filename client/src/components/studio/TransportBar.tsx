@@ -22,6 +22,12 @@ import {
   Volume2,
   VolumeX,
   Volume1,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Layers,
+  Timer,
+  AlertCircle,
+  Radio,
 } from 'lucide-react';
 import { AIMixer } from '@/lib/audio/AIMixer';
 import { AIMastering } from '@/lib/audio/AIMastering';
@@ -78,6 +84,22 @@ export function TransportBar({
     setLoopEnd,
     setTempo,
     setMetronomeEnabled,
+    punchMode,
+    punchIn,
+    punchOut,
+    setPunchMode,
+    setPunchIn,
+    setPunchOut,
+    recordingMode,
+    setRecordingMode,
+    preRollBars,
+    setPreRollBars,
+    countInBars,
+    setCountInBars,
+    returnToStartOnStop,
+    setReturnToStartOnStop,
+    inputMonitoring,
+    setInputMonitoring,
   } = useStudioStore();
 
   const [tapTempoTimes, setTapTempoTimes] = useState<number[]>([]);
@@ -261,20 +283,135 @@ export function TransportBar({
             <TooltipContent>Play/Pause (Space)</TooltipContent>
           </Tooltip>
 
+          {/* Input Monitoring Toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className={`studio-btn h-8 w-8 rounded flex items-center justify-center ${
+                  inputMonitoring ? 'studio-btn-accent' : ''
+                }`}
+                onClick={() => setInputMonitoring(!inputMonitoring)}
+                style={{
+                  boxShadow: inputMonitoring ? '0 0 8px rgba(34, 197, 94, 0.4)' : undefined,
+                }}
+              >
+                <Radio className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Input Monitoring {inputMonitoring ? 'On' : 'Off'}</TooltipContent>
+          </Tooltip>
+
           {/* Record */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className={`studio-btn-record h-10 w-10 rounded-md flex items-center justify-center ${
+                className={`studio-btn-record h-10 w-10 rounded-md flex items-center justify-center relative ${
                   isRecording ? 'recording animate-pulse' : ''
-                }`}
+                } ${punchMode ? 'punch-armed' : ''}`}
                 onClick={handleRecord}
+                style={{
+                  border: punchMode ? '2px solid #f59e0b' : undefined,
+                  boxShadow: punchMode ? '0 0 10px rgba(245, 158, 11, 0.4)' : undefined,
+                }}
               >
                 <Circle className="h-4 w-4" fill={isRecording ? 'currentColor' : 'none'} />
+                {recordingMode !== 'replace' && (
+                  <span
+                    className="absolute -bottom-1 -right-1 text-[8px] font-bold px-1 rounded"
+                    style={{
+                      background: recordingMode === 'overdub' ? '#3b82f6' : '#8b5cf6',
+                      color: '#fff',
+                    }}
+                  >
+                    {recordingMode === 'overdub' ? 'OVR' : 'STK'}
+                  </span>
+                )}
               </button>
             </TooltipTrigger>
-            <TooltipContent>Record (R)</TooltipContent>
+            <TooltipContent>
+              Record (R) - {recordingMode === 'replace' ? 'Replace' : recordingMode === 'overdub' ? 'Overdub' : 'Stacked'}
+              {punchMode && ' [Punch Armed]'}
+            </TooltipContent>
           </Tooltip>
+
+          {/* Recording Mode Selector */}
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className={`studio-btn h-5 px-1.5 rounded text-[8px] font-bold ${
+                      recordingMode === 'replace' ? 'studio-btn-accent' : ''
+                    }`}
+                    onClick={() => setRecordingMode('replace')}
+                  >
+                    REP
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Replace Mode</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className={`studio-btn h-5 px-1.5 rounded text-[8px] font-bold ${
+                      recordingMode === 'overdub' ? 'studio-btn-accent' : ''
+                    }`}
+                    onClick={() => setRecordingMode('overdub')}
+                  >
+                    OVR
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Overdub Mode</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className={`studio-btn h-5 px-1.5 rounded text-[8px] font-bold ${
+                      recordingMode === 'stacked' ? 'studio-btn-accent' : ''
+                    }`}
+                    onClick={() => setRecordingMode('stacked')}
+                  >
+                    <Layers className="h-2.5 w-2.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Stacked Takes Mode</TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="flex items-center gap-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <select
+                    className="studio-btn h-5 px-1 rounded text-[8px] font-bold bg-transparent cursor-pointer"
+                    style={{ color: 'var(--studio-text)' }}
+                    value={preRollBars}
+                    onChange={(e) => setPreRollBars(Number(e.target.value))}
+                  >
+                    <option value={0}>PR:0</option>
+                    <option value={1}>PR:1</option>
+                    <option value={2}>PR:2</option>
+                    <option value={4}>PR:4</option>
+                  </select>
+                </TooltipTrigger>
+                <TooltipContent>Pre-roll Bars</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <select
+                    className="studio-btn h-5 px-1 rounded text-[8px] font-bold bg-transparent cursor-pointer"
+                    style={{ color: 'var(--studio-text)' }}
+                    value={countInBars}
+                    onChange={(e) => setCountInBars(Number(e.target.value))}
+                  >
+                    <option value={0}>CI:0</option>
+                    <option value={1}>CI:1</option>
+                    <option value={2}>CI:2</option>
+                    <option value={4}>CI:4</option>
+                  </select>
+                </TooltipTrigger>
+                <TooltipContent>Count-in Bars</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
 
           {/* Skip Forward */}
           <Tooltip>
@@ -367,6 +504,85 @@ export function TransportBar({
                   className="w-16 h-7 text-xs"
                   min={loopStart + 1}
                 />
+              </div>
+            )}
+          </div>
+
+          <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+
+          {/* Punch Recording Controls */}
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className={`studio-btn h-9 px-3 rounded-md text-xs font-bold flex items-center gap-1.5 ${
+                    punchMode ? 'studio-btn-accent' : ''
+                  }`}
+                  onClick={() => setPunchMode(!punchMode)}
+                  style={{
+                    border: punchMode ? '1px solid #f59e0b' : undefined,
+                    boxShadow: punchMode ? '0 0 8px rgba(245, 158, 11, 0.3)' : undefined,
+                  }}
+                >
+                  <ArrowDownToLine className="h-3.5 w-3.5" />
+                  <ArrowUpFromLine className="h-3.5 w-3.5" />
+                  PUNCH
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Toggle Punch In/Out Recording (I)</TooltipContent>
+            </Tooltip>
+
+            {punchMode && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <span
+                    className="text-[10px] font-medium"
+                    style={{ color: 'var(--studio-text-subtle)' }}
+                  >
+                    IN
+                  </span>
+                  <Input
+                    type="number"
+                    value={punchIn ?? 0}
+                    onChange={(e) => setPunchIn(Number(e.target.value))}
+                    className="w-14 h-6 text-xs"
+                    min={0}
+                    style={{
+                      borderColor: '#f59e0b',
+                    }}
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span
+                    className="text-[10px] font-medium"
+                    style={{ color: 'var(--studio-text-subtle)' }}
+                  >
+                    OUT
+                  </span>
+                  <Input
+                    type="number"
+                    value={punchOut ?? 0}
+                    onChange={(e) => setPunchOut(Number(e.target.value))}
+                    className="w-14 h-6 text-xs"
+                    min={(punchIn ?? 0) + 1}
+                    style={{
+                      borderColor: '#f59e0b',
+                    }}
+                  />
+                </div>
+                {punchMode && (
+                  <div
+                    className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium"
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.2)',
+                      color: '#fbbf24',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                    }}
+                  >
+                    <AlertCircle className="h-3 w-3" />
+                    ARMED
+                  </div>
+                )}
               </div>
             )}
           </div>
