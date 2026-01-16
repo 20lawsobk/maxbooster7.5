@@ -209,21 +209,15 @@ export function WorkflowStateBar({
             </Button>
 
             {onCollapsedChange && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onCollapsedChange(true)}
-                    className="text-zinc-400 hover:text-white p-1.5"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-zinc-800 border-zinc-700">
-                  <p className="text-xs">Collapse workflow bar</p>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onCollapsedChange(true)}
+                className="text-zinc-400 hover:text-white p-1.5"
+                title="Collapse workflow bar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>
