@@ -122,9 +122,7 @@ export function StudioOneConsole({
     };
   }, [isResizing, startY, startHeight, setPanelHeight]);
 
-  if (!consolePanel.visible) return null;
-
-  return (
+  return consolePanel.visible ? (
     <div
       ref={containerRef}
       className="flex flex-col border-t"
@@ -259,5 +257,5 @@ export function StudioOneConsole({
         </ScrollArea>
       </div>
     </div>
-  );
+  ) : null;
 }

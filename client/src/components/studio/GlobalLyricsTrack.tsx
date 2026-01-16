@@ -119,9 +119,7 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange }: GlobalLyrics
     [deleteLyric, selectedLyricId, selectLyric]
   );
 
-  if (!lyricsTrackVisible) return null;
-
-  return (
+  return lyricsTrackVisible ? (
     <div
       className="h-12 border-b relative select-none"
       style={{
@@ -228,5 +226,5 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange }: GlobalLyrics
         />
       </div>
     </div>
-  );
+  ) : null;
 }

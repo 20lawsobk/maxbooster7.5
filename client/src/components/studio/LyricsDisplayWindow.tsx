@@ -79,7 +79,9 @@ export function LyricsDisplayWindow({ onClose }: LyricsDisplayWindowProps) {
     setCurrentTime(line.startTime);
   };
 
-  if (!lyricsDisplayVisible) return null;
+  if (!lyricsDisplayVisible) {
+    return null;
+  }
 
   const content = (
     <AnimatePresence>

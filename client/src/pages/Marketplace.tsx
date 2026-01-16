@@ -2424,6 +2424,7 @@ export default function Marketplace() {
           </TabsContent>
         </Tabs>
       </div>
+      )}
 
       {showPreviewPlayer && currentBeat && (
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t shadow-lg p-4 z-50">
@@ -3322,7 +3323,6 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      )}
     </AppLayout>
   );
 }
