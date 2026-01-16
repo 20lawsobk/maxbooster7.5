@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
@@ -11,7 +11,15 @@ import { logger } from '../logger.js';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/beats', async (req: Request, res: Response) => {
+const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  next();
+};
+
+router.get('/beats', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const { 
@@ -329,7 +337,7 @@ router.get('/my-beats', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/producers', async (req: Request, res: Response) => {
+router.get('/producers', requireAuth, async (req: Request, res: Response) => {
   try {
     const producers = await storage.getProducers();
     res.json({ producers: producers || [] });
@@ -1100,7 +1108,7 @@ router.post('/collaborations', async (req: Request, res: Response) => {
 });
 
 // Producer by ID endpoint
-router.get('/producers/:producerId', async (req: Request, res: Response) => {
+router.get('/producers/:producerId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { producerId } = req.params;
     const producer = await storage.getUser(producerId);
@@ -1145,7 +1153,7 @@ router.get('/producers/:producerId/follow-status', async (req: Request, res: Res
 });
 
 // Stems endpoints
-router.get('/stems/:stemId', async (req: Request, res: Response) => {
+router.get('/stems/:stemId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { stemId } = req.params;
     res.json({

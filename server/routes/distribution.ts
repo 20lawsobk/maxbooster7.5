@@ -477,7 +477,7 @@ router.post('/codes/validate', requireAuth, async (req: Request, res: Response) 
 
 // GET /api/distribution/platforms - Get all DSP providers
 // Uses LabelGrid API when configured, falls back to local database
-router.get('/platforms', async (_req: Request, res: Response) => {
+router.get('/platforms', requireAuth, async (_req: Request, res: Response) => {
   try {
     // Use LabelGrid's dynamic DSP fetching (correct method)
     // This fetches from LabelGrid API if configured, otherwise uses local catalog
@@ -524,7 +524,7 @@ router.post('/platforms/verify', requireAuth, async (req: Request, res: Response
 });
 
 // GET /api/distribution/platforms/status - Check LabelGrid API and DSP catalog status
-router.get('/platforms/status', async (_req: Request, res: Response) => {
+router.get('/platforms/status', requireAuth, async (_req: Request, res: Response) => {
   try {
     const catalogStatus = await labelGridService.verifyDSPCatalog();
     res.json({

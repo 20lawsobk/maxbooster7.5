@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { contractTemplateService, ContractVariables } from '../services/contractTemplateService';
 import { invoiceService } from '../services/invoiceService';
 import { taxFormService, TaxpayerInfo } from '../services/taxFormService';
@@ -8,6 +8,14 @@ import { nanoid } from 'nanoid';
 import { db } from '../db';
 import { marketplaceDisputes, users } from '@shared/schema';
 import { eq, and, or, desc, notInArray } from 'drizzle-orm';
+
+const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  next();
+};
 
 interface SplitParticipant {
   userId: string;
@@ -33,7 +41,7 @@ const splitSheets: Map<string, SplitSheet> = new Map();
 
 const router = Router();
 
-router.get('/templates', async (req: Request, res: Response) => {
+router.get('/templates', requireAuth, async (req: Request, res: Response) => {
   try {
     const templates = contractTemplateService.getTemplates();
     const { category } = req.query;
@@ -51,7 +59,7 @@ router.get('/templates', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/templates/:templateId', async (req: Request, res: Response) => {
+router.get('/templates/:templateId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { templateId } = req.params;
     const template = contractTemplateService.getTemplateById(templateId);

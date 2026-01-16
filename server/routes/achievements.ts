@@ -1,9 +1,17 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { achievementService } from "../services/achievementService";
 
 const router = Router();
 
-router.get("/", async (req: Request, res: Response) => {
+const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  next();
+};
+
+router.get("/", requireAuth, async (req: Request, res: Response) => {
   try {
     const achievements = await achievementService.getAllAchievements();
     return res.json(achievements);
@@ -55,7 +63,7 @@ router.post("/mark-notified/:achievementId", async (req: Request, res: Response)
   }
 });
 
-router.get("/leaderboard", async (req: Request, res: Response) => {
+router.get("/leaderboard", requireAuth, async (req: Request, res: Response) => {
   try {
     const category = req.query.category as string | undefined;
     const limit = parseInt(req.query.limit as string) || 10;
