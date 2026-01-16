@@ -3088,14 +3088,20 @@ export async function registerRoutes(
     }
   });
 
-  // Public payment-bypass status endpoint (separate from admin-only management endpoints)
+  // Admin-only payment-bypass status endpoint
   app.get("/api/payment-bypass/status", async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
       const { paymentBypassService } = await import('./services/paymentBypassService');
       const status = await paymentBypassService.getStatus();
       return res.json({ bypassed: status.bypassed, reason: status.config?.reason || null });
     } catch (error) {
-      return res.json({ bypassed: false, reason: null });
+      return res.status(500).json({ error: 'Failed to get payment bypass status' });
     }
   });
 
