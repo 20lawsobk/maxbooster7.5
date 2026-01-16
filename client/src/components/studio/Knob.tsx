@@ -15,6 +15,7 @@ interface KnobProps {
   unit?: string;
   color?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 /**
@@ -34,6 +35,7 @@ export function Knob({
   unit = '',
   color = 'var(--knob-indicator)',
   className = '',
+  disabled = false,
 }: KnobProps) {
   const knobRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -58,6 +60,7 @@ export function Knob({
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      if (disabled) return;
       e.preventDefault();
       setIsDragging(true);
       setShowValue(true);
@@ -102,16 +105,18 @@ export function Knob({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [value, onChange, min, max, bipolar]
+    [value, onChange, min, max, bipolar, disabled]
   );
 
   const handleDoubleClick = useCallback(() => {
+    if (disabled) return;
     onChange(defaultValue);
     onDoubleClick?.();
-  }, [onChange, defaultValue, onDoubleClick]);
+  }, [onChange, defaultValue, onDoubleClick, disabled]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
+      if (disabled) return;
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.01 : 0.01;
       const multiplier = e.shiftKey ? 0.1 : 1;
@@ -128,7 +133,7 @@ export function Knob({
       setShowValue(true);
       setTimeout(() => setShowValue(false), 1000);
     },
-    [value, onChange, min, max, bipolar]
+    [value, onChange, min, max, bipolar, disabled]
   );
 
   // Format display value
@@ -154,7 +159,7 @@ export function Knob({
     >
       {/* Knob Container */}
       <div
-        className="relative cursor-grab active:cursor-grabbing"
+        className={`relative ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-grab active:cursor-grabbing'}`}
         style={{ width: size, height: size }}
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
