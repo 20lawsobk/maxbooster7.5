@@ -403,6 +403,7 @@ export default function Studio() {
   const [showSessionManager, setShowSessionManager] = useState(false);
   const [showMasteringDelivery, setShowMasteringDelivery] = useState(false);
   const [showMasteringSuite, setShowMasteringSuite] = useState(false);
+  const [showRoutingMatrix, setShowRoutingMatrix] = useState(false);
 
   const shortcutOverlay = useShortcutOverlay();
 
