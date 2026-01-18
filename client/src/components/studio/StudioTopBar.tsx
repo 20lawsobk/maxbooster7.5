@@ -108,6 +108,8 @@ export function StudioTopBar({
   canUndo = false,
   canRedo = false,
   isSaving = false,
+  showLauncher,
+  onToggleLauncher,
   onOpenShowMode,
 }: StudioTopBarProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
