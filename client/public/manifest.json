@@ -10,6 +10,18 @@
   "scope": "/",
   "lang": "en",
   "categories": ["music", "entertainment", "productivity"],
+  "protocol_handlers": [
+    {
+      "protocol": "web+maxbooster",
+      "url": "/handle-link?url=%s"
+    }
+  ],
+  "handle_links": "preferred",
+  "url_handlers": [
+    {
+      "origin": "https://*.replit.dev"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",

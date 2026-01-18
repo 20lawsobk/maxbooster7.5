@@ -6,6 +6,8 @@ import { SkipLinks } from '@/components/SkipLinks';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
 import { AIAssistantPublic } from '@/components/support/AIAssistantPublic';
 import { AIAssistantPersonalized } from '@/components/support/AIAssistantPersonalized';
+import { InstallBanner } from '@/components/pwa/InstallBanner';
+import { DeepLinkHandler } from '@/components/DeepLinkHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
 import Landing from '@/pages/Landing';
@@ -60,6 +62,7 @@ const Collaborations = lazy(() => import('@/pages/Collaborations'));
 const CareerCoach = lazy(() => import('@/pages/CareerCoach'));
 const ReleaseCountdown = lazy(() => import('@/pages/ReleaseCountdown'));
 const Invoices = lazy(() => import('@/pages/Invoices'));
+const HandleLink = lazy(() => import('@/pages/HandleLink'));
 
 function Router() {
   return (
@@ -115,6 +118,7 @@ function Router() {
       <Route path="/career-coach" component={CareerCoach} />
       <Route path="/release-countdown" component={ReleaseCountdown} />
       <Route path="/invoices" component={Invoices} />
+      <Route path="/handle-link" component={HandleLink} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -247,6 +251,8 @@ function App() {
     <>
       <Toaster />
       <CookieConsentBanner />
+      <InstallBanner />
+      <DeepLinkHandler />
       <AIAssistantManager />
       <div id="main-content" role="main" tabIndex={-1}>
         <Suspense
