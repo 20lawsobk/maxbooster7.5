@@ -40,7 +40,9 @@ export function ResponsiveLayout({
 }: ResponsiveLayoutProps) {
   const layoutType = useLayoutType();
   
-  const effectiveWebContent = webContent || tabletContent;
+  const effectiveWebContent = webContent || tabletContent || children;
+  const effectiveMobileContent = mobileContent || webContent || tabletContent || children;
+  const effectiveDesktopContent = desktopContent || webContent || tabletContent || children;
 
   if (layoutType === 'mobile') {
     return (
@@ -52,7 +54,7 @@ export function ResponsiveLayout({
         noPadding={noPadding}
         className={className}
       >
-        {mobileContent || children}
+        {effectiveMobileContent}
       </MobileLayout>
     );
   }
@@ -66,7 +68,7 @@ export function ResponsiveLayout({
         showSidebar={showSidebar}
         className={className}
       >
-        {desktopContent || children}
+        {effectiveDesktopContent}
       </DesktopLayout>
     );
   }
@@ -79,7 +81,7 @@ export function ResponsiveLayout({
       showSidebar={showSidebar}
       className={className}
     >
-      {effectiveWebContent || children}
+      {effectiveWebContent}
     </WebLayout>
   );
 }
