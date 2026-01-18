@@ -8,9 +8,29 @@ import {
   Pencil, 
   PenTool,
   Eraser,
-  Maximize 
+  Maximize,
+  Target,
+  Trash2,
+  Zap 
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+  ContextMenuSeparator,
+} from '@/components/ui/context-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface AudioClip {
   id: string;
@@ -42,7 +62,7 @@ interface TimelineProps {
   onClipUpdate?: (
     trackId: string,
     clipId: string,
-    updates: { startTime?: number; duration?: number }
+    updates: { startTime?: number; duration?: number; syncOffset?: number }
   ) => void;
   onClipSplit?: (trackId: string, clipId: string, splitTime: number) => void;
   onRangeSelect?: (start: number, end: number) => void;
@@ -150,6 +170,16 @@ export function Timeline({
   const [localRangeEnd, setLocalRangeEnd] = useState<number | null>(null);
 
   const [splitPreviewTime, setSplitPreviewTime] = useState<number | null>(null);
+
+  // Sync Point Dialog State
+  const [syncPointDialogOpen, setSyncPointDialogOpen] = useState(false);
+  const [syncPointEditClip, setSyncPointEditClip] = useState<{
+    clipId: string;
+    trackId: string;
+    clipDuration: number;
+    currentSyncOffset: number;
+  } | null>(null);
+  const [syncPointInputValue, setSyncPointInputValue] = useState('');
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const trackLanesRef = useRef<HTMLDivElement>(null);
@@ -717,7 +747,101 @@ export function Timeline({
     fitTimelineToContents(contentEnd);
   }, [trackClips, currentTime, fitTimelineToContents]);
 
+  // Sync Point Context Menu Handlers
+  const handleOpenSyncPointDialog = useCallback(
+    (clipId: string, trackId: string, clipDuration: number, currentSyncOffset: number) => {
+      setSyncPointEditClip({ clipId, trackId, clipDuration, currentSyncOffset });
+      setSyncPointInputValue(currentSyncOffset.toFixed(3));
+      setSyncPointDialogOpen(true);
+    },
+    []
+  );
+
+  const handleSetSyncPoint = useCallback(() => {
+    if (!syncPointEditClip || !onClipUpdate) return;
+    
+    const syncOffset = parseFloat(syncPointInputValue) || 0;
+    const clampedOffset = Math.max(0, Math.min(syncOffset, syncPointEditClip.clipDuration));
+    
+    onClipUpdate(syncPointEditClip.trackId, syncPointEditClip.clipId, {
+      syncOffset: clampedOffset,
+    });
+    
+    setSyncPointDialogOpen(false);
+    setSyncPointEditClip(null);
+  }, [syncPointEditClip, syncPointInputValue, onClipUpdate]);
+
+  const handleClearSyncPoint = useCallback(
+    (clipId: string, trackId: string) => {
+      if (!onClipUpdate) return;
+      onClipUpdate(trackId, clipId, { syncOffset: 0 });
+    },
+    [onClipUpdate]
+  );
+
   return (
+    <>
+    {/* Sync Point Dialog */}
+    <Dialog open={syncPointDialogOpen} onOpenChange={setSyncPointDialogOpen}>
+      <DialogContent className="sm:max-w-[320px]" style={{ background: 'var(--studio-bg-deep)', border: '1px solid var(--studio-border)' }}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2" style={{ color: 'var(--studio-text)' }}>
+            <Target className="h-4 w-4 text-yellow-500" />
+            Set Sync Point
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="sync-offset" style={{ color: 'var(--studio-text-subtle)' }}>
+              Sync Offset (seconds from clip start)
+            </Label>
+            <Input
+              id="sync-offset"
+              type="number"
+              step="0.001"
+              min="0"
+              max={syncPointEditClip?.clipDuration || 100}
+              value={syncPointInputValue}
+              onChange={(e) => setSyncPointInputValue(e.target.value)}
+              className="font-mono"
+              style={{ 
+                background: 'var(--studio-surface)', 
+                borderColor: 'var(--studio-border)',
+                color: 'var(--studio-text)'
+              }}
+            />
+            {syncPointEditClip && (
+              <p className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                Clip duration: {syncPointEditClip.clipDuration.toFixed(3)}s
+              </p>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setSyncPointDialogOpen(false)}
+            style={{ 
+              background: 'var(--studio-surface)', 
+              borderColor: 'var(--studio-border)',
+              color: 'var(--studio-text)'
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSetSyncPoint}
+            style={{ 
+              background: '#f59e0b', 
+              color: '#000'
+            }}
+          >
+            Set Sync Point
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <div 
       ref={scrollContainerRef}
       className="border-b overflow-x-auto relative" 
@@ -1007,86 +1131,127 @@ export function Timeline({
                       ? previewPosition.endTime
                       : clip.startTime + clip.duration;
                   const displayDuration = displayEndTime - displayStartTime;
+                  const hasSyncPoint = clip.syncOffset !== undefined && clip.syncOffset > 0;
 
                   return (
-                    <div
-                      key={clip.id}
-                      className={`absolute top-1 bottom-1 rounded overflow-hidden transition-opacity ${
-                        isDragging || isResizing
-                          ? 'opacity-50 ring-2 ring-white'
-                          : 'hover:ring-2 hover:ring-blue-400'
-                      }`}
-                      style={{
-                        left: `${(displayStartTime / effectiveDuration) * 100}%`,
-                        width: `${(displayDuration / effectiveDuration) * 100}%`,
-                        backgroundColor: track.color,
-                        cursor: currentTool === 'split' ? 'crosshair' : 'move',
-                      }}
-                      onMouseDown={(e) => handleClipDragStart(e, clip.id, track.id, clip)}
-                      onClick={(e) => handleClipClick(e, clip.id, track.id, clip)}
-                      data-testid={`clip-${clip.id}`}
-                    >
-                      {/* Clip content */}
-                      <div className="h-full flex items-center px-2 relative">
-                        <div className="text-xs text-white font-medium truncate flex-1">
-                          {clip.name}
-                        </div>
-
-                        {/* Resize handles - hide when using split or range tool */}
-                        {currentTool !== 'split' && currentTool !== 'range' && (
-                          <>
-                            <div
-                              className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 active:bg-white/50"
-                              onMouseDown={(e) =>
-                                handleResizeStart(e, clip.id, track.id, 'start', clip)
-                              }
-                              data-testid={`clip-${clip.id}-resize-start`}
-                            />
-                            <div
-                              className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 active:bg-white/50"
-                              onMouseDown={(e) => handleResizeStart(e, clip.id, track.id, 'end', clip)}
-                              data-testid={`clip-${clip.id}-resize-end`}
-                            />
-                          </>
-                        )}
-                      </div>
-
-                      {/* Sync Point Marker (yellow diamond) */}
-                      {showSyncPoints && clip.syncOffset !== undefined && clip.syncOffset > 0 && (
+                    <ContextMenu key={clip.id}>
+                      <ContextMenuTrigger asChild>
                         <div
-                          className="absolute top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+                          className={`absolute top-1 bottom-1 rounded overflow-hidden transition-opacity ${
+                            isDragging || isResizing
+                              ? 'opacity-50 ring-2 ring-white'
+                              : 'hover:ring-2 hover:ring-blue-400'
+                          }`}
                           style={{
-                            left: `${(clip.syncOffset / clip.duration) * 100}%`,
+                            left: `${(displayStartTime / effectiveDuration) * 100}%`,
+                            width: `${(displayDuration / effectiveDuration) * 100}%`,
+                            backgroundColor: translucentEventsEnabled 
+                              ? `${track.color}99` 
+                              : track.color,
+                            cursor: currentTool === 'split' ? 'crosshair' : 'move',
                           }}
-                          data-testid={`sync-point-${clip.id}`}
+                          onMouseDown={(e) => handleClipDragStart(e, clip.id, track.id, clip)}
+                          onClick={(e) => handleClipClick(e, clip.id, track.id, clip)}
+                          data-testid={`clip-${clip.id}`}
                         >
-                          <div
-                            className="w-2.5 h-2.5 rotate-45 border-2"
-                            style={{
-                              backgroundColor: '#fbbf24',
-                              borderColor: '#f59e0b',
-                              boxShadow: '0 0 4px rgba(251, 191, 36, 0.6)',
-                            }}
-                          />
-                        </div>
-                      )}
+                          {/* Clip content */}
+                          <div className="h-full flex items-center px-2 relative">
+                            <div className="text-xs text-white font-medium truncate flex-1">
+                              {clip.name}
+                            </div>
 
-                      {/* Waveform placeholder */}
-                      <div 
-                        className="absolute inset-0 pointer-events-none"
-                        style={{ opacity: translucentEventsEnabled ? 0.3 : 0.2 }}
-                      >
-                        <div className="h-full flex items-center justify-around px-1">
-                          {Array.from({ length: 20 }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="w-0.5 bg-white"
-                              style={{ height: `${30 + Math.random() * 70}%` }}
-                            />
-                          ))}
+                            {/* Resize handles - hide when using split or range tool */}
+                            {currentTool !== 'split' && currentTool !== 'range' && (
+                              <>
+                                <div
+                                  className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 active:bg-white/50"
+                                  onMouseDown={(e) =>
+                                    handleResizeStart(e, clip.id, track.id, 'start', clip)
+                                  }
+                                  data-testid={`clip-${clip.id}-resize-start`}
+                                />
+                                <div
+                                  className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 active:bg-white/50"
+                                  onMouseDown={(e) => handleResizeStart(e, clip.id, track.id, 'end', clip)}
+                                  data-testid={`clip-${clip.id}-resize-end`}
+                                />
+                              </>
+                            )}
+                          </div>
+
+                          {/* Sync Point Marker (yellow diamond) */}
+                          {showSyncPoints && hasSyncPoint && clip.duration > 0 && (() => {
+                            const syncRatio = Math.max(0, Math.min(1, (clip.syncOffset ?? 0) / clip.duration));
+                            if (!isFinite(syncRatio)) return null;
+                            return (
+                              <div
+                                className="absolute top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+                                style={{
+                                  left: `${syncRatio * 100}%`,
+                                }}
+                                data-testid={`sync-point-${clip.id}`}
+                              >
+                                <div
+                                  className="w-2.5 h-2.5 rotate-45 border-2"
+                                  style={{
+                                    backgroundColor: '#fbbf24',
+                                    borderColor: '#f59e0b',
+                                    boxShadow: '0 0 4px rgba(251, 191, 36, 0.6)',
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Waveform placeholder */}
+                          <div 
+                            className="absolute inset-0 pointer-events-none"
+                            style={{ opacity: translucentEventsEnabled ? 0.5 : 0.2 }}
+                          >
+                            <div className="h-full flex items-center justify-around px-1">
+                              {Array.from({ length: 20 }).map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="w-0.5 bg-white"
+                                  style={{ height: `${30 + Math.random() * 70}%` }}
+                                />
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent 
+                        className="w-48"
+                        style={{
+                          background: 'var(--studio-bg-deep)',
+                          borderColor: 'var(--studio-border)',
+                        }}
+                      >
+                        <ContextMenuItem
+                          onClick={() => handleOpenSyncPointDialog(clip.id, track.id, clip.duration, clip.syncOffset || 0)}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Target className="h-4 w-4 text-yellow-500" />
+                          <span>Set Sync Point</span>
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          onClick={() => handleClearSyncPoint(clip.id, track.id)}
+                          disabled={!hasSyncPoint}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-400" />
+                          <span>Clear Sync Point</span>
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem
+                          disabled
+                          className="flex items-center gap-2 cursor-not-allowed opacity-50"
+                        >
+                          <Zap className="h-4 w-4 text-blue-400" />
+                          <span>Snap to Nearest Transient</span>
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
                   );
                 })}
               </div>
@@ -1102,6 +1267,23 @@ export function Timeline({
           {adaptiveSnapEnabled && ' (adaptive)'}
         </div>
       )}
+
+      {/* Translucent Mode Visual Indicator */}
+      {translucentEventsEnabled && (
+        <div 
+          className="absolute top-1 right-1 z-30 flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
+          style={{
+            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+            color: '#a78bfa',
+            border: '1px solid rgba(139, 92, 246, 0.4)',
+          }}
+          data-testid="translucent-mode-indicator"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+          Translucent
+        </div>
+      )}
     </div>
+    </>
   );
 }

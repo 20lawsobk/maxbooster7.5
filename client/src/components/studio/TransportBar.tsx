@@ -28,6 +28,9 @@ import {
   Timer,
   AlertCircle,
   Radio,
+  Grid3X3,
+  Eye,
+  Target,
 } from 'lucide-react';
 import { AIMixer } from '@/lib/audio/AIMixer';
 import { AIMastering } from '@/lib/audio/AIMastering';
@@ -100,6 +103,12 @@ export function TransportBar({
     setReturnToStartOnStop,
     inputMonitoring,
     setInputMonitoring,
+    adaptiveSnapEnabled,
+    setAdaptiveSnapEnabled,
+    translucentEventsEnabled,
+    setTranslucentEventsEnabled,
+    showSyncPoints,
+    setShowSyncPoints,
   } = useStudioStore();
 
   const [tapTempoTimes, setTapTempoTimes] = useState<number[]>([]);
@@ -609,6 +618,62 @@ export function TransportBar({
 
           {/* Autoscroll */}
           <AutoscrollButton />
+
+          <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+
+          {/* Audio Sync Settings (Studio One style) */}
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className={`studio-btn h-8 w-8 rounded flex items-center justify-center ${
+                    adaptiveSnapEnabled ? 'studio-btn-accent' : ''
+                  }`}
+                  onClick={() => setAdaptiveSnapEnabled(!adaptiveSnapEnabled)}
+                  style={{
+                    boxShadow: adaptiveSnapEnabled ? '0 0 8px rgba(59, 130, 246, 0.4)' : undefined,
+                  }}
+                >
+                  <Grid3X3 className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Adaptive Snap {adaptiveSnapEnabled ? 'On' : 'Off'} - Grid adapts to zoom level</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className={`studio-btn h-8 w-8 rounded flex items-center justify-center ${
+                    translucentEventsEnabled ? 'studio-btn-accent' : ''
+                  }`}
+                  onClick={() => setTranslucentEventsEnabled(!translucentEventsEnabled)}
+                  style={{
+                    boxShadow: translucentEventsEnabled ? '0 0 8px rgba(139, 92, 246, 0.4)' : undefined,
+                  }}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Translucent Events {translucentEventsEnabled ? 'On' : 'Off'} - Show grid through waveforms</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className={`studio-btn h-8 w-8 rounded flex items-center justify-center ${
+                    showSyncPoints ? 'studio-btn-accent' : ''
+                  }`}
+                  onClick={() => setShowSyncPoints(!showSyncPoints)}
+                  style={{
+                    boxShadow: showSyncPoints ? '0 0 8px rgba(251, 191, 36, 0.4)' : undefined,
+                  }}
+                >
+                  <Target className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Show Sync Points {showSyncPoints ? 'On' : 'Off'} - Display sync point markers on clips</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
         {/* Right: Tempo & Undo/Redo */}
