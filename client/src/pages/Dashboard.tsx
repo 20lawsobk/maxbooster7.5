@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
+import { MobileDashboard } from '@/components/mobile/MobileDashboard';
+import { TabletDashboard } from '@/components/tablet/TabletDashboard';
 import { QuickStartWizard } from '@/components/onboarding/QuickStartWizard';
 import { ValueCalculator } from '@/components/onboarding/ValueCalculator';
 import SimplifiedDashboard from '@/components/onboarding/SimplifiedDashboard';
@@ -102,7 +104,7 @@ export default function Dashboard() {
   // Show loading skeleton during auth check to prevent flickering
   if (authLoading) {
     return (
-      <AppLayout>
+      <ResponsiveLayout>
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
@@ -112,7 +114,7 @@ export default function Dashboard() {
           <SkeletonChart />
           <SkeletonList />
         </div>
-      </AppLayout>
+      </ResponsiveLayout>
     );
   }
 
@@ -362,7 +364,11 @@ function DashboardContent({ user }: { user: any }) {
   }
 
   return (
-    <AppLayout>
+    <ResponsiveLayout
+      title="Dashboard"
+      mobileContent={<MobileDashboard user={user} />}
+      tabletContent={<TabletDashboard user={user} />}
+    >
       {/* Achievement Notification System */}
       <AchievementNotification />
       
@@ -950,6 +956,6 @@ function DashboardContent({ user }: { user: any }) {
         {/* Contextual Feature Hints - appears after completing tasks */}
         <ContextualFeatureHint />
       </div>
-    </AppLayout>
+    </ResponsiveLayout>
   );
 }

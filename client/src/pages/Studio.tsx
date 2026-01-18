@@ -26,7 +26,9 @@ import { useMultiTrackRecorder } from '@/hooks/useMultiTrackRecorder';
 import { useStudioController } from '@/hooks/useStudioController';
 import { arrayMove } from '@dnd-kit/sortable';
 
-import { AppLayout } from '@/components/layout/AppLayout';
+import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
+import { MobileStudio } from '@/components/mobile/MobileStudio';
+import { TabletStudio } from '@/components/tablet/TabletStudio';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -2373,7 +2375,12 @@ export default function Studio() {
   }, [createProjectMutation]);
 
   return (
-    <AppLayout noPadding={!isDataLoading && !!selectedProject}>
+    <ResponsiveLayout 
+      noPadding={!isDataLoading && !!selectedProject}
+      title="Studio"
+      mobileContent={<MobileStudio projectId={selectedProject?.id?.toString()} />}
+      tabletContent={<TabletStudio projectId={selectedProject?.id?.toString()} />}
+    >
       {isDataLoading ? (
         <div
           className="flex items-center justify-center h-full"
@@ -3349,6 +3356,6 @@ export default function Studio() {
           </DialogContainerProvider>
         </div>
       )}
-    </AppLayout>
+    </ResponsiveLayout>
   );
 }
