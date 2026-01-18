@@ -27,7 +27,6 @@ import { useStudioController } from '@/hooks/useStudioController';
 import { arrayMove } from '@dnd-kit/sortable';
 
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
-import { MobileStudio } from '@/components/mobile/MobileStudio';
 import { TabletStudio } from '@/components/tablet/TabletStudio';
 import { Button } from '@/components/ui/button';
 import {
@@ -2722,7 +2721,7 @@ export default function Studio() {
     <ResponsiveLayout 
       noPadding={!isDataLoading && !!selectedProject}
       title="Studio"
-      mobileContent={<MobileStudio projectId={selectedProject?.id?.toString()} />}
+      mobileContent={proDAWContent}
       webContent={proDAWContent}
       desktopContent={proDAWContent}
     >
