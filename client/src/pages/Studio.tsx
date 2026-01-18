@@ -1950,16 +1950,30 @@ export default function Studio() {
     {
       key: 'f',
       handler: () => {
-        const { cycleAutoscrollMode } = useStudioStore.getState();
-        cycleAutoscrollMode();
-        const newMode = useStudioStore.getState().autoscrollMode;
-        const modeLabels: Record<string, string> = { 
-          'off': 'Off', 
-          'turnover': 'Turn Over', 
-          'continuous-centered': 'Continuous Centered', 
-          'continuous-left': 'Continuous Left' 
-        };
-        announce(`Autoscroll: ${modeLabels[newMode]}`);
+        const { cycleAutoscrollMode, autoscrollPaused, autoscrollMode, resumeAutoscroll } = useStudioStore.getState();
+        
+        // If autoscroll is paused, resume it (Studio One 7.2 smart re-engagement)
+        if (autoscrollPaused && autoscrollMode !== 'off') {
+          resumeAutoscroll();
+          const modeLabels: Record<string, string> = { 
+            'off': 'Off', 
+            'turnover': 'Turn Over', 
+            'continuous-centered': 'Continuous Centered', 
+            'continuous-left': 'Continuous Left' 
+          };
+          announce(`Autoscroll resumed: ${modeLabels[autoscrollMode]}`);
+        } else {
+          // Otherwise cycle through modes
+          cycleAutoscrollMode();
+          const newMode = useStudioStore.getState().autoscrollMode;
+          const modeLabels: Record<string, string> = { 
+            'off': 'Off', 
+            'turnover': 'Turn Over', 
+            'continuous-centered': 'Continuous Centered', 
+            'continuous-left': 'Continuous Left' 
+          };
+          announce(`Autoscroll: ${modeLabels[newMode]}`);
+        }
       },
       description: 'Toggle Autoscroll mode',
       category: 'Navigation',

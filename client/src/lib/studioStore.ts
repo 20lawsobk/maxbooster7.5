@@ -224,6 +224,16 @@ export interface StudioState {
   crossfadeLength: number;
   crossfadeCurve: 'linear' | 'equal-power' | 'exponential';
 
+  // Infinite Timeline State (Studio One style)
+  projectDuration: number; // Dynamic duration in seconds
+  projectEndMarker: number; // Export end marker (non-restrictive)
+  minProjectDuration: number; // Minimum duration before expansion
+  autoExpandEnabled: boolean; // Auto-expand timeline when playhead exceeds
+
+  // Smart Re-engagement (Studio One 7.2 style)
+  autoscrollPaused: boolean; // True when user manually scrolled during playback
+  lastManualScrollTime: number; // Timestamp of last manual scroll
+
   // Transport Actions
   setCurrentTime: (time: number) => void;
   setIsPlaying: (playing: boolean) => void;
@@ -344,6 +354,18 @@ export interface StudioState {
   // Crossfade Actions
   setCrossfadeLength: (length: number) => void;
   setCrossfadeCurve: (curve: 'linear' | 'equal-power' | 'exponential') => void;
+
+  // Infinite Timeline Actions (Studio One style)
+  setProjectDuration: (duration: number) => void;
+  setProjectEndMarker: (time: number) => void;
+  expandTimelineIfNeeded: (playheadTime: number) => void;
+  fitTimelineToContents: (contentEndTime: number) => void;
+  setAutoExpandEnabled: (enabled: boolean) => void;
+
+  // Smart Re-engagement Actions (Studio One 7.2 style)
+  pauseAutoscroll: () => void; // Called when user manually scrolls during playback
+  resumeAutoscroll: () => void; // Called when user presses F or clicks autoscroll button
+  isAutoscrollActive: () => boolean; // Returns false if mode is off or paused
 }
 
 export const useStudioStore = create<StudioState>((set, get) => ({
@@ -458,6 +480,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Crossfade Settings
   crossfadeLength: 0.01,
   crossfadeCurve: 'equal-power',
+
+  // Infinite Timeline State (Studio One style - default 5 minutes)
+  projectDuration: 300, // 5 minutes in seconds
+  projectEndMarker: 300,
+  minProjectDuration: 60, // Minimum 1 minute
+  autoExpandEnabled: true,
+
+  // Smart Re-engagement State (Studio One 7.2 style)
+  autoscrollPaused: false,
+  lastManualScrollTime: 0,
 
   // Playhead Actions
   setCurrentTime: (time) => set({ currentTime: time }),
@@ -797,4 +829,53 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Crossfade Actions
   setCrossfadeLength: (length) => set({ crossfadeLength: Math.max(0.001, Math.min(5, length)) }),
   setCrossfadeCurve: (curve) => set({ crossfadeCurve: curve }),
+
+  // Infinite Timeline Actions (Studio One style)
+  setProjectDuration: (duration) => set((state) => ({ 
+    projectDuration: Math.max(state.minProjectDuration, duration) 
+  })),
+  
+  setProjectEndMarker: (time) => set({ projectEndMarker: Math.max(0, time) }),
+  
+  // Dynamic expansion: auto-allocate more time when playhead nears end
+  expandTimelineIfNeeded: (playheadTime) => set((state) => {
+    if (!state.autoExpandEnabled) return {};
+    
+    // Expand when playhead is within 10% of the end
+    const threshold = state.projectDuration * 0.9;
+    if (playheadTime >= threshold) {
+      // Expand by 50% each time
+      const newDuration = state.projectDuration * 1.5;
+      return { projectDuration: newDuration };
+    }
+    return {};
+  }),
+  
+  // Fit timeline view to content (like "Fit Timeline to Contents" command)
+  fitTimelineToContents: (contentEndTime) => set((state) => {
+    // Add 10% padding after content
+    const paddedDuration = contentEndTime * 1.1;
+    const newDuration = Math.max(state.minProjectDuration, paddedDuration);
+    return { 
+      projectDuration: newDuration,
+      projectEndMarker: contentEndTime 
+    };
+  }),
+  
+  setAutoExpandEnabled: (enabled) => set({ autoExpandEnabled: enabled }),
+
+  // Smart Re-engagement Actions (Studio One 7.2 style)
+  pauseAutoscroll: () => set({ 
+    autoscrollPaused: true, 
+    lastManualScrollTime: Date.now() 
+  }),
+  
+  resumeAutoscroll: () => set({ 
+    autoscrollPaused: false 
+  }),
+  
+  isAutoscrollActive: () => {
+    const state = get();
+    return state.autoscrollMode !== 'off' && !state.autoscrollPaused;
+  },
 }));

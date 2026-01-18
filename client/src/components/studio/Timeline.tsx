@@ -7,8 +7,10 @@ import {
   Move, 
   Pencil, 
   PenTool,
-  Eraser 
+  Eraser,
+  Maximize 
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AudioClip {
   id: string;
@@ -105,11 +107,25 @@ export function Timeline({
     rangeSelectionStart,
     rangeSelectionEnd,
     setRangeSelection,
-    clearRangeSelection
+    clearRangeSelection,
+    projectDuration,
+    projectEndMarker,
+    expandTimelineIfNeeded,
+    fitTimelineToContents,
+    autoExpandEnabled,
+    autoscrollPaused,
+    pauseAutoscroll,
+    isAutoscrollActive
   } = useStudioStore();
+  
+  // Use project duration for infinite timeline, fallback to prop
+  const effectiveDuration = projectDuration || duration;
   
   const [numerator] = (timeSignature || '4/4').split('/').map(Number);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const isUserScrollingRef = useRef<boolean>(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [draggingClip, setDraggingClip] = useState<{ clipId: string; trackId: string } | null>(
     null
   );
@@ -133,39 +149,55 @@ export function Timeline({
   const timelineRef = useRef<HTMLDivElement>(null);
   const trackLanesRef = useRef<HTMLDivElement>(null);
 
+  // Calculate total bars based on project duration and tempo
+  // At 120 BPM with 4/4, one bar = 2 seconds
+  const beatsPerBar = numerator;
+  const { tempo } = useStudioStore();
+  const secondsPerBeat = 60 / tempo;
+  const secondsPerBar = secondsPerBeat * beatsPerBar;
+  const totalBars = Math.ceil(effectiveDuration / secondsPerBar);
+  
+  // Virtualized timeline markers - only calculate visible range for efficiency
   const timelineMarkers = useMemo(
-    () =>
-      Array.from({ length: 32 }).map((_, i) => {
-        const isBar = i % numerator === 0;
+    () => {
+      // Calculate total beats based on duration (for efficiency at massive lengths)
+      const maxBeats = Math.min(totalBars * beatsPerBar, 10000); // Cap for performance
+      
+      return Array.from({ length: maxBeats }).map((_, i) => {
+        const isBar = i % beatsPerBar === 0;
         return {
           index: i,
           isBar,
-          label: isBar ? Math.floor(i / numerator) + 1 : '',
+          label: isBar ? Math.floor(i / beatsPerBar) + 1 : '',
         };
-      }),
-    [numerator]
+      });
+    },
+    [beatsPerBar, totalBars]
   );
 
   const gridLines = useMemo(() => {
     if (!gridVisible) return [];
     
     const lines: { position: number; type: 'bar' | 'beat' | 'subdivision' }[] = [];
-    const beatsPerBar = numerator;
     const subdivisionsPerBeat = gridDivision;
-    const totalBeats = 32;
+    // Use total beats from project duration for infinite timeline support
+    const totalBeatsInProject = totalBars * beatsPerBar;
+    // Cap at 5000 for performance (still plenty for a multi-hour project)
+    const maxBeats = Math.min(totalBeatsInProject, 5000);
     
-    for (let beat = 0; beat <= totalBeats; beat++) {
+    for (let beat = 0; beat <= maxBeats; beat++) {
       const isBar = beat % beatsPerBar === 0;
-      const position = (beat / totalBeats) * 100;
+      const position = (beat / maxBeats) * 100;
       
       lines.push({
         position,
         type: isBar ? 'bar' : 'beat',
       });
       
-      if (subdivisionsPerBeat > 1) {
+      // Only add subdivisions at lower beat counts for performance
+      if (subdivisionsPerBeat > 1 && maxBeats <= 500) {
         for (let sub = 1; sub < subdivisionsPerBeat; sub++) {
-          const subPosition = ((beat + sub / subdivisionsPerBeat) / totalBeats) * 100;
+          const subPosition = ((beat + sub / subdivisionsPerBeat) / maxBeats) * 100;
           if (subPosition < 100) {
             lines.push({
               position: subPosition,
@@ -177,7 +209,7 @@ export function Timeline({
     }
     
     return lines;
-  }, [gridVisible, gridDivision, numerator]);
+  }, [gridVisible, gridDivision, beatsPerBar, totalBars]);
 
   const getCrossfadeRegions = useCallback((clips: AudioClip[]) => {
     const crossfades: { startTime: number; endTime: number; clipAId: string; clipBId: string }[] = [];
@@ -211,18 +243,18 @@ export function Timeline({
     (pixels: number): number => {
       if (!timelineRef.current) return 0;
       const width = timelineRef.current.offsetWidth;
-      return (pixels / width) * duration;
+      return (pixels / width) * effectiveDuration;
     },
-    [duration]
+    [effectiveDuration]
   );
 
   const timeToPixels = useCallback(
     (time: number): number => {
       if (!timelineRef.current) return 0;
       const width = timelineRef.current.offsetWidth;
-      return (time / duration) * width;
+      return (time / effectiveDuration) * width;
     },
-    [duration]
+    [effectiveDuration]
   );
 
   const snapToGrid = useCallback(
@@ -265,13 +297,13 @@ export function Timeline({
       let newStartTime = mouseTime - dragOffset;
 
       newStartTime = snapToGrid(newStartTime);
-      newStartTime = Math.max(0, Math.min(newStartTime, duration - clipDuration));
+      newStartTime = Math.max(0, Math.min(newStartTime, effectiveDuration - clipDuration));
 
       const newEndTime = newStartTime + clipDuration;
 
       setPreviewPosition({ startTime: newStartTime, endTime: newEndTime });
     },
-    [draggingClip, trackClips, pixelsToTime, snapToGrid, dragOffset, duration]
+    [draggingClip, trackClips, pixelsToTime, snapToGrid, dragOffset, effectiveDuration]
   );
 
   const handleClipDragEnd = useCallback(() => {
@@ -330,12 +362,12 @@ export function Timeline({
       if (resizingClip.edge === 'start') {
         newStartTime = Math.max(0, Math.min(mouseTime, clip.startTime + clip.duration - 0.1));
       } else {
-        newEndTime = Math.max(clip.startTime + 0.1, Math.min(mouseTime, duration));
+        newEndTime = Math.max(clip.startTime + 0.1, Math.min(mouseTime, effectiveDuration));
       }
 
       setPreviewPosition({ startTime: newStartTime, endTime: newEndTime });
     },
-    [resizingClip, trackClips, pixelsToTime, snapToGrid, duration]
+    [resizingClip, trackClips, pixelsToTime, snapToGrid, effectiveDuration]
   );
 
   const handleResizeEnd = useCallback(() => {
@@ -406,11 +438,11 @@ export function Timeline({
       const mouseX = e.clientX - rect.left;
       let endTime = pixelsToTime(mouseX);
       endTime = snapToGrid(endTime);
-      endTime = Math.max(0, Math.min(endTime, duration));
+      endTime = Math.max(0, Math.min(endTime, effectiveDuration));
       
       setLocalRangeEnd(endTime);
     },
-    [isRangeSelecting, rangeStartPos, pixelsToTime, snapToGrid, duration]
+    [isRangeSelecting, rangeStartPos, pixelsToTime, snapToGrid, effectiveDuration]
   );
 
   const handleRangeMouseUp = useCallback(() => {
@@ -498,39 +530,137 @@ export function Timeline({
     handleRangeMouseUp,
   ]);
 
+  // Smart Re-engagement: Detect manual scroll during playback and pause autoscroll
   useEffect(() => {
-    if (!isPlaying || autoscrollMode === 'off' || !scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = () => {
+      // User is manually scrolling during playback - pause autoscroll
+      if (isPlaying && autoscrollMode !== 'off' && !autoscrollPaused) {
+        isUserScrollingRef.current = true;
+        pauseAutoscroll();
+        
+        // Clear any existing timeout
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+        
+        // Reset the user scrolling flag after a short delay
+        scrollTimeoutRef.current = setTimeout(() => {
+          isUserScrollingRef.current = false;
+        }, 150);
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: true });
+    
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [isPlaying, autoscrollMode, autoscrollPaused, pauseAutoscroll]);
+
+  // Hardware-accelerated smooth autoscroll using requestAnimationFrame
+  useEffect(() => {
+    // Check if autoscroll is active (not off and not paused by user)
+    const shouldAutoscroll = isPlaying && autoscrollMode !== 'off' && !autoscrollPaused;
+    
+    if (!shouldAutoscroll || !scrollContainerRef.current) {
+      // Cancel any pending animation frame when not playing
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      return;
+    }
+
+    // Check if timeline needs expansion (Studio One style dynamic allocation)
+    if (autoExpandEnabled) {
+      expandTimelineIfNeeded(currentTime);
+    }
 
     const container = scrollContainerRef.current;
     const containerWidth = container.clientWidth;
     const scrollableWidth = container.scrollWidth;
-    const playheadPosition = (currentTime / duration) * scrollableWidth;
+    const playheadPosition = (currentTime / effectiveDuration) * scrollableWidth;
+
+    let targetScroll: number;
 
     switch (autoscrollMode) {
       case 'turnover': {
         const currentScroll = container.scrollLeft;
         const visibleEnd = currentScroll + containerWidth;
         const pageMargin = containerWidth * 0.1;
+        
         if (playheadPosition > visibleEnd - pageMargin) {
-          container.scrollTo({ left: playheadPosition - pageMargin, behavior: 'auto' });
+          targetScroll = playheadPosition - pageMargin;
         } else if (playheadPosition < currentScroll) {
-          container.scrollTo({ left: Math.max(0, playheadPosition - pageMargin), behavior: 'auto' });
+          targetScroll = Math.max(0, playheadPosition - pageMargin);
+        } else {
+          return; // No scroll needed
         }
         break;
       }
       case 'continuous-centered': {
-        const targetScroll = playheadPosition - containerWidth / 2;
-        container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'auto' });
+        // Playhead stays centered - timeline moves behind it
+        targetScroll = Math.max(0, playheadPosition - containerWidth / 2);
         break;
       }
       case 'continuous-left': {
+        // Playhead stays on left side (10% margin) - maximize future visibility
         const leftMargin = containerWidth * 0.1;
-        const targetScroll = playheadPosition - leftMargin;
-        container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'auto' });
+        targetScroll = Math.max(0, playheadPosition - leftMargin);
         break;
       }
+      default:
+        return;
     }
-  }, [currentTime, isPlaying, autoscrollMode, duration]);
+
+    // Use requestAnimationFrame for hardware-accelerated smooth scrolling
+    const smoothScroll = () => {
+      if (!scrollContainerRef.current) return;
+      
+      const currentScroll = scrollContainerRef.current.scrollLeft;
+      const diff = targetScroll - currentScroll;
+      
+      // Smooth interpolation factor (higher = faster, lower = smoother)
+      const smoothFactor = autoscrollMode === 'turnover' ? 1.0 : 0.15;
+      
+      if (Math.abs(diff) < 0.5) {
+        // Close enough, snap to target
+        scrollContainerRef.current.scrollLeft = targetScroll;
+      } else if (autoscrollMode === 'turnover') {
+        // Turnover mode: instant page jump
+        scrollContainerRef.current.scrollLeft = targetScroll;
+      } else {
+        // Continuous modes: smooth interpolation for "moving background" effect
+        const newScroll = currentScroll + diff * smoothFactor;
+        scrollContainerRef.current.scrollLeft = newScroll;
+        
+        // Continue animation if still far from target
+        if (Math.abs(targetScroll - newScroll) > 0.5) {
+          animationFrameRef.current = requestAnimationFrame(smoothScroll);
+        }
+      }
+    };
+
+    // Cancel previous animation frame before starting new one
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    animationFrameRef.current = requestAnimationFrame(smoothScroll);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [currentTime, isPlaying, autoscrollMode, autoscrollPaused, effectiveDuration, autoExpandEnabled, expandTimelineIfNeeded]);
 
   const getTimelineCursor = () => {
     switch (currentTool) {
@@ -555,24 +685,83 @@ export function Timeline({
     ? Math.max(rangeStartPos, localRangeEnd)
     : rangeSelectionEnd;
 
+  // Handler for Fit Timeline to Contents
+  const handleFitToContents = useCallback(() => {
+    // Find the furthest content end time from clips
+    let maxEndTime = 0;
+    trackClips.forEach((clips) => {
+      clips.forEach((clip) => {
+        const clipEnd = clip.startTime + clip.duration;
+        if (clipEnd > maxEndTime) maxEndTime = clipEnd;
+      });
+    });
+    
+    // Default to current time if no clips, or minimum 60 seconds
+    const contentEnd = Math.max(maxEndTime, currentTime, 60);
+    fitTimelineToContents(contentEnd);
+  }, [trackClips, currentTime, fitTimelineToContents]);
+
   return (
     <div 
       ref={scrollContainerRef}
       className="border-b overflow-x-auto relative" 
-      style={{ borderColor: 'var(--studio-border)' }}
+      style={{ 
+        borderColor: 'var(--studio-border)',
+        // Hardware acceleration for smooth scrolling
+        willChange: 'scroll-position',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
+      }}
     >
-      {/* Tool Indicator Badge */}
-      <div
-        className="absolute top-1 left-1 z-30 flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
-        style={{
-          backgroundColor: 'var(--studio-bg-deep)',
-          color: 'var(--studio-text-muted)',
-          border: '1px solid var(--studio-border)',
-        }}
-        data-testid="tool-indicator"
-      >
-        {TOOL_ICONS[currentTool] || TOOL_ICONS.pointer}
-        <span>{TOOL_LABELS[currentTool] || 'Select'}</span>
+      {/* Tool Indicator Badge & Timeline Controls */}
+      <div className="absolute top-1 left-1 z-30 flex items-center gap-2">
+        <div
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
+          style={{
+            backgroundColor: 'var(--studio-bg-deep)',
+            color: 'var(--studio-text-muted)',
+            border: '1px solid var(--studio-border)',
+          }}
+          data-testid="tool-indicator"
+        >
+          {TOOL_ICONS[currentTool] || TOOL_ICONS.pointer}
+          <span>{TOOL_LABELS[currentTool] || 'Select'}</span>
+        </div>
+        
+        {/* Fit Timeline to Contents Button (Studio One style) */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleFitToContents}
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium hover:bg-blue-600/20 transition-colors"
+              style={{
+                backgroundColor: 'var(--studio-bg-deep)',
+                color: 'var(--studio-text-muted)',
+                border: '1px solid var(--studio-border)',
+              }}
+              data-testid="fit-timeline-button"
+            >
+              <Maximize className="w-3 h-3" />
+              <span>Fit</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            Fit Timeline to Contents
+          </TooltipContent>
+        </Tooltip>
+        
+        {/* Duration Indicator */}
+        <div
+          className="px-1.5 py-0.5 rounded text-[10px] font-mono"
+          style={{
+            backgroundColor: 'var(--studio-bg-deep)',
+            color: 'var(--studio-text-subtle)',
+            border: '1px solid var(--studio-border)',
+          }}
+          data-testid="duration-indicator"
+        >
+          {totalBars} bars • {Math.floor(effectiveDuration / 60)}:{String(Math.floor(effectiveDuration % 60)).padStart(2, '0')}
+        </div>
       </div>
 
       {/* Time Ruler */}
@@ -593,8 +782,8 @@ export function Timeline({
           if (onTimeChange && timelineRef.current) {
             const rect = timelineRef.current.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
-            const clickTime = (clickX / rect.width) * duration;
-            onTimeChange(Math.max(0, Math.min(duration, clickTime)));
+            const clickTime = (clickX / rect.width) * effectiveDuration;
+            onTimeChange(Math.max(0, Math.min(effectiveDuration, clickTime)));
           }
         }}
         onMouseDown={handleRangeMouseDown}
@@ -625,8 +814,8 @@ export function Timeline({
           <div
             className="absolute top-0 bottom-0 bg-blue-500/20 border-l-2 border-r-2 border-blue-500 pointer-events-none"
             style={{
-              left: `${(loopStart / (duration || 60)) * 100}%`,
-              width: `${((loopEnd - loopStart) / (duration || 60)) * 100}%`,
+              left: `${(loopStart / effectiveDuration) * 100}%`,
+              width: `${((loopEnd - loopStart) / effectiveDuration) * 100}%`,
             }}
             data-testid="loop-region"
           >
@@ -641,8 +830,8 @@ export function Timeline({
           <div
             className="absolute top-0 bottom-0 pointer-events-none"
             style={{
-              left: `${(rangeStart / duration) * 100}%`,
-              width: `${((rangeEnd - rangeStart) / duration) * 100}%`,
+              left: `${(rangeStart / effectiveDuration) * 100}%`,
+              width: `${((rangeEnd - rangeStart) / effectiveDuration) * 100}%`,
               backgroundColor: 'rgba(59, 130, 246, 0.3)',
               borderLeft: '2px solid rgba(59, 130, 246, 0.8)',
               borderRight: '2px solid rgba(59, 130, 246, 0.8)',
@@ -656,7 +845,7 @@ export function Timeline({
           <div
             className="absolute top-0 bottom-0 w-px pointer-events-none z-20"
             style={{
-              left: `${(splitPreviewTime / duration) * 100}%`,
+              left: `${(splitPreviewTime / effectiveDuration) * 100}%`,
               backgroundColor: '#ef4444',
               boxShadow: '0 0 4px rgba(239, 68, 68, 0.5)',
             }}
@@ -669,7 +858,7 @@ export function Timeline({
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none z-10"
             style={{
-              left: `${(currentTime / duration) * 100}%`,
+              left: `${(currentTime / effectiveDuration) * 100}%`,
             }}
             data-testid="playhead-indicator"
           >
@@ -715,8 +904,8 @@ export function Timeline({
             <div
               className="absolute top-0 bottom-0 pointer-events-none z-10"
               style={{
-                left: `${(rangeStart / duration) * 100}%`,
-                width: `${((rangeEnd - rangeStart) / duration) * 100}%`,
+                left: `${(rangeStart / effectiveDuration) * 100}%`,
+                width: `${((rangeEnd - rangeStart) / effectiveDuration) * 100}%`,
                 backgroundColor: 'rgba(59, 130, 246, 0.2)',
                 borderLeft: '2px solid rgba(59, 130, 246, 0.7)',
                 borderRight: '2px solid rgba(59, 130, 246, 0.7)',
@@ -737,7 +926,7 @@ export function Timeline({
             <div
               className="absolute top-0 bottom-0 w-px pointer-events-none z-20"
               style={{
-                left: `${(splitPreviewTime / duration) * 100}%`,
+                left: `${(splitPreviewTime / effectiveDuration) * 100}%`,
                 backgroundColor: '#ef4444',
                 boxShadow: '0 0 4px rgba(239, 68, 68, 0.5)',
               }}
@@ -764,8 +953,8 @@ export function Timeline({
                     key={`crossfade-${idx}`}
                     className="absolute top-1 bottom-1 pointer-events-none z-5"
                     style={{
-                      left: `${(cf.startTime / duration) * 100}%`,
-                      width: `${((cf.endTime - cf.startTime) / duration) * 100}%`,
+                      left: `${(cf.startTime / effectiveDuration) * 100}%`,
+                      width: `${((cf.endTime - cf.startTime) / effectiveDuration) * 100}%`,
                       minWidth: '8px',
                     }}
                     data-testid={`crossfade-${cf.clipAId}-${cf.clipBId}`}
@@ -812,8 +1001,8 @@ export function Timeline({
                           : 'hover:ring-2 hover:ring-blue-400'
                       }`}
                       style={{
-                        left: `${(displayStartTime / duration) * 100}%`,
-                        width: `${(displayDuration / duration) * 100}%`,
+                        left: `${(displayStartTime / effectiveDuration) * 100}%`,
+                        width: `${(displayDuration / effectiveDuration) * 100}%`,
                         backgroundColor: track.color,
                         cursor: currentTool === 'split' ? 'crosshair' : 'move',
                       }}

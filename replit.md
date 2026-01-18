@@ -31,9 +31,15 @@ The frontend leverages shadcn/ui components for a modern and accessible user exp
 Design guidance based on Studio One 7.2 (2025) for implementing similar functionality:
 
 **Autoscroll Modes:**
+- **Turn Over (Default)**: Playhead moves across screen; when it reaches the right edge, the view "jumps" to the next page and playhead resets to left edge.
 - **Continuous Centered**: Playhead remains locked in the middle of the screen. Timeline (audio events, MIDI data, grid lines) moves from right to left during playback.
 - **Continuous Left**: Playhead stays on the left side of the screen, maximizing visibility of upcoming content ahead of the playhead.
-- **Hardware Acceleration**: Utilize graphics hardware acceleration for visually smooth scrolling, preventing choppiness during high-resolution scrolling.
+- **Hardware Acceleration**: Utilize graphics hardware acceleration (requestAnimationFrame) for visually smooth scrolling, preventing choppiness during high-resolution scrolling.
+
+**Smart Re-engagement (Studio One 7.2):**
+- **Manual Override**: If user manually scrolls during playback, autoscroll automatically pauses so user doesn't lose their place.
+- **Persistence**: Once manually disabled, autoscroll remains off—even after stopping and restarting playback—until user specifically re-engages it with the F key or toolbar icon.
+- **Visual Indicator**: Button shows "Paused" state in amber color when autoscroll is paused due to manual scroll.
 
 **"Infinite" Bars Implementation:**
 - **Dynamic Expansion**: No hard-coded limit on bars. Timeline automatically allocates more time/bars as needed when recording or playback continues beyond current end.

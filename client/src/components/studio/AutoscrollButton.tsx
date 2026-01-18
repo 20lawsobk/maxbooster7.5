@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useStudioStore, type AutoscrollMode } from '@/lib/studioStore';
-import { AlignHorizontalJustifyCenter, AlignLeft, BookOpen, ArrowRight } from 'lucide-react';
+import { AlignHorizontalJustifyCenter, AlignLeft, BookOpen, ArrowRight, Pause } from 'lucide-react';
 
 const AUTOSCROLL_MODES: { mode: AutoscrollMode; label: string; description: string }[] = [
   { mode: 'off', label: 'Off', description: 'Autoscroll disabled' },
@@ -25,7 +25,13 @@ function getAutoscrollIcon(mode: AutoscrollMode) {
 }
 
 export function AutoscrollButton() {
-  const { autoscrollMode, setAutoscrollMode, cycleAutoscrollMode } = useStudioStore();
+  const { 
+    autoscrollMode, 
+    setAutoscrollMode, 
+    cycleAutoscrollMode, 
+    autoscrollPaused,
+    resumeAutoscroll 
+  } = useStudioStore();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -42,7 +48,12 @@ export function AutoscrollButton() {
   }, []);
 
   const handleClick = () => {
-    cycleAutoscrollMode();
+    // If autoscroll is paused due to manual scroll, resume it
+    if (autoscrollPaused && autoscrollMode !== 'off') {
+      resumeAutoscroll();
+    } else {
+      cycleAutoscrollMode();
+    }
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -52,11 +63,14 @@ export function AutoscrollButton() {
 
   const handleModeSelect = (mode: AutoscrollMode) => {
     setAutoscrollMode(mode);
+    resumeAutoscroll(); // Clear paused state when explicitly selecting a mode
     setShowMenu(false);
   };
 
-  const Icon = getAutoscrollIcon(autoscrollMode);
+  // Show Pause icon when paused, otherwise show mode icon
+  const Icon = autoscrollPaused && autoscrollMode !== 'off' ? Pause : getAutoscrollIcon(autoscrollMode);
   const isActive = autoscrollMode !== 'off';
+  const isPaused = autoscrollPaused && autoscrollMode !== 'off';
   const currentModeInfo = AUTOSCROLL_MODES.find(m => m.mode === autoscrollMode);
 
   return (
@@ -70,21 +84,28 @@ export function AutoscrollButton() {
             onClick={handleClick}
             onContextMenu={handleContextMenu}
             className={`h-7 px-2 gap-1 ${
-              isActive 
-                ? 'bg-blue-600/30 text-blue-400 hover:bg-blue-600/40' 
-                : 'text-zinc-400 hover:text-zinc-200'
+              isPaused
+                ? 'bg-amber-600/30 text-amber-400 hover:bg-amber-600/40'
+                : isActive 
+                  ? 'bg-blue-600/30 text-blue-400 hover:bg-blue-600/40' 
+                  : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <Icon className="h-4 w-4" />
             <span className="text-[10px] font-medium uppercase tracking-wide">
-              {autoscrollMode === 'off' ? 'Auto' : autoscrollMode.replace('continuous-', '').slice(0, 3)}
+              {isPaused ? 'Paused' : autoscrollMode === 'off' ? 'Auto' : autoscrollMode.replace('continuous-', '').slice(0, 3)}
             </span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="text-xs">
-          <div className="font-medium">Autoscroll: {currentModeInfo?.label}</div>
+          <div className="font-medium">
+            Autoscroll: {currentModeInfo?.label}
+            {isPaused && ' (Paused)'}
+          </div>
           <div className="text-zinc-400 text-[10px]">
-            Click to cycle • Right-click for options • Press F
+            {isPaused 
+              ? 'Click or press F to resume'
+              : 'Click to cycle • Right-click for options • Press F'}
           </div>
         </TooltipContent>
       </Tooltip>
