@@ -355,6 +355,7 @@ export default function Studio() {
   const [globalDroppedFiles, setGlobalDroppedFiles] = useState<FileList | null>(null);
   const globalDragCounterRef = useRef(0);
   const [showLyricsPanel, setShowLyricsPanel] = useState(false);
+  const [showLyricsDisplay, setShowLyricsDisplay] = useState(false);
   const [lyricsContent, setLyricsContent] = useState('');
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showLyricsImportDialog, setShowLyricsImportDialog] = useState(false);
