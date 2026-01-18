@@ -28,7 +28,7 @@ import {
   Music,
   Layers,
   Sliders,
-  Waveform,
+  AudioWaveform,
   Mic,
   Folder,
   ChevronUp,
@@ -347,7 +347,7 @@ function TimelinePanel({
                 border: `1px solid ${track.color}60`,
               }}
             >
-              <Waveform className="w-4 h-4 mr-2" style={{ color: track.color }} />
+              <AudioWaveform className="w-4 h-4 mr-2" style={{ color: track.color }} />
               <span className="text-xs font-medium truncate">{track.name}</span>
             </div>
           </div>
@@ -577,7 +577,7 @@ export function TabletStudio({ projectId }: TabletStudioProps) {
             onClick={() => setViewMode('timeline')}
             className="touch-manipulation"
           >
-            <Waveform className="w-4 h-4" />
+            <AudioWaveform className="w-4 h-4" />
           </Button>
           <Button
             variant={viewMode === 'mixer' ? 'secondary' : 'ghost'}
