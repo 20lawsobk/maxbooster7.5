@@ -2374,13 +2374,8 @@ export default function Studio() {
     createProjectMutation.mutate(title);
   }, [createProjectMutation]);
 
-  return (
-    <ResponsiveLayout 
-      noPadding={!isDataLoading && !!selectedProject}
-      title="Studio"
-      mobileContent={<MobileStudio projectId={selectedProject?.id?.toString()} />}
-      tabletContent={<TabletStudio projectId={selectedProject?.id?.toString()} />}
-    >
+  const proDAWContent = (
+    <>
       {isDataLoading ? (
         <div
           className="flex items-center justify-center h-full"
@@ -2598,7 +2593,6 @@ export default function Studio() {
               />
             </StudioOneWrapper>
 
-          {/* Launcher Panel - Ableton-style clip grid */}
           {showLauncher && (
             <div className="absolute bottom-0 left-0 right-0 h-96 border-t" style={{
               backgroundColor: 'var(--studio-bg-medium)',
@@ -2615,15 +2609,12 @@ export default function Studio() {
             </div>
           )}
 
-          {/* Show Page - Live Performance Environment */}
           <ShowPage />
 
-          {/* Upload overlay - uses inline positioning instead of portal to avoid fullscreen exit issues */}
           {showFullscreenUpload && (
             <div 
               className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80"
               onClick={(e) => {
-                // Close when clicking the backdrop
                 if (e.target === e.currentTarget) {
                   setShowFullscreenUpload(false);
                 }
@@ -2657,711 +2648,89 @@ export default function Studio() {
           )}
 
           <DialogContainerProvider value={isFullscreen ? dawContainerRef.current : null}>
-
-            <Dialog open={isAIMixing} onOpenChange={setIsAIMixing}>
-            <DialogContent className="bg-[#252525] border-gray-700 text-white">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-purple-400" />
-                  AI Mixing Assistant
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <p className="text-sm text-gray-300">
-                  Max Booster AI will analyze and optimize your mix automatically:
-                </p>
-                <ul className="space-y-1 text-xs text-gray-400">
-                  <li>• Automatic EQ balancing</li>
-                  <li>• Dynamic range optimization</li>
-                  <li>• Stereo field enhancement</li>
-                  <li>• Frequency masking detection</li>
-                </ul>
-                <Button
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                  onClick={() => handleAIMix()}
-                  disabled={
-                    (aiMix.currentState as AIWorkflowState) === 'requesting' || (aiMix.currentState as AIWorkflowState) === 'processing'
-                  }
-                  data-testid="button-start-ai-mix"
-                >
-                  {(aiMix.currentState as AIWorkflowState) === 'requesting' || (aiMix.currentState as AIWorkflowState) === 'processing' ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {(aiMix.currentState as AIWorkflowState) === 'requesting' ? 'Requesting...' : 'Mixing...'}
-                    </>
-                  ) : aiMix.currentState === 'success' ? (
-                    'Mix Complete!'
-                  ) : (
-                    'Start AI Mix'
-                  )}
-                </Button>
-                {aiMix.progress > 0 && aiMix.progress < 100 && (
-                  <Progress value={aiMix.progress} className="mt-2 h-2" />
-                )}
-                {aiMix.currentState === 'error' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => { retry('ai-mix', async () => handleAIMix()); }}
-                    className="mt-2"
-                  >
-                    <RotateCw className="w-3 h-3 mr-1" />
-                    Retry
-                  </Button>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isAIMastering} onOpenChange={setIsAIMastering}>
-            <DialogContent className="bg-[#252525] border-gray-700 text-white">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-blue-400" />
-                  AI Mastering Suite
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <p className="text-sm text-gray-300">
-                  Professional mastering with AI-powered optimization:
-                </p>
-                <ul className="space-y-1 text-xs text-gray-400">
-                  <li>• Loudness optimization</li>
-                  <li>• Frequency spectrum balancing</li>
-                  <li>• Stereo enhancement</li>
-                  <li>• Dynamic range control</li>
-                </ul>
-                <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  onClick={() => handleAIMaster()}
-                  disabled={
-                    (aiMaster.currentState as AIWorkflowState) === 'requesting' || (aiMaster.currentState as AIWorkflowState) === 'processing'
-                  }
-                  data-testid="button-start-ai-master"
-                >
-                  {(aiMaster.currentState as AIWorkflowState) === 'requesting' ||
-                  (aiMaster.currentState as AIWorkflowState) === 'processing' ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {(aiMaster.currentState as AIWorkflowState) === 'requesting' ? 'Requesting...' : 'Mastering...'}
-                    </>
-                  ) : aiMaster.currentState === 'success' ? (
-                    'Master Complete!'
-                  ) : (
-                    'Start AI Master'
-                  )}
-                </Button>
-                {aiMaster.progress > 0 && aiMaster.progress < 100 && (
-                  <Progress value={aiMaster.progress} className="mt-2 h-2" />
-                )}
-                {aiMaster.currentState === 'error' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => { retry('ai-master', async () => handleAIMaster()); }}
-                    className="mt-2"
-                  >
-                    <RotateCw className="w-3 h-3 mr-1" />
-                    Retry
-                  </Button>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showAIAssistant} onOpenChange={setShowAIAssistant}>
-            <DialogContent className="bg-[#252525] border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-cyan-400" />
-                  AI Studio Assistant
-                </DialogTitle>
-              </DialogHeader>
-              <AIAssistantPanel 
-                projectId={selectedProject?.id}
-                onApplyChanges={(changes) => {
-                  logger.info('AI Assistant applied changes:', changes);
-                  toast({
-                    title: 'AI Changes Applied',
-                    description: 'The AI Assistant has made improvements to your project.',
-                  });
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showAnalysisPanel} onOpenChange={setShowAnalysisPanel}>
-            <DialogContent className="bg-[#252525] border-gray-700 text-white max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-green-400" />
-                  Audio Analysis Results
-                </DialogTitle>
-              </DialogHeader>
-
-              {(audioAnalysis.currentState as AIWorkflowState) === 'requesting' ||
-              (audioAnalysis.currentState as AIWorkflowState) === 'processing' ? (
-                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                  <Loader2 className="h-12 w-12 text-green-400 animate-spin" />
-                  <p className="text-sm text-gray-400">Analyzing audio features...</p>
-                  <p className="text-xs text-gray-500">This may take a few moments</p>
-                </div>
-              ) : trackAnalysisData ? (
-                <div className="space-y-6" data-testid="container-analysis-results">
-                  <div className="flex items-center justify-between pb-2 border-b border-gray-700">
-                    <p className="text-sm text-gray-400">
-                      Last analyzed: {new Date(trackAnalysisData.analyzedAt).toLocaleString()}
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleAnalyzeAudio()}
-                      disabled={
-                        (audioAnalysis.currentState as AIWorkflowState) === 'requesting' ||
-                        (audioAnalysis.currentState as AIWorkflowState) === 'processing'
-                      }
-                      data-testid="button-retry-analysis"
-                    >
-                      <Activity className="h-3 w-3 mr-1" />
-                      Re-analyze
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card className="bg-[#1a1a1a] border-gray-700 p-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">BPM</Label>
-                        <div className="flex items-baseline gap-2">
-                          <Badge
-                            variant="secondary"
-                            className="text-lg font-bold"
-                            data-testid="badge-bpm"
-                          >
-                            {parseFloat(trackAnalysisData.bpm || '120').toFixed(1)}
-                          </Badge>
-                          <span className="text-xs text-gray-500">beats/min</span>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="bg-[#1a1a1a] border-gray-700 p-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">Musical Key</Label>
-                        <div className="flex items-baseline gap-2">
-                          <Badge
-                            variant="secondary"
-                            className="text-lg font-bold"
-                            data-testid="badge-key"
-                          >
-                            {trackAnalysisData.musicalKey || 'C'}{' '}
-                            {trackAnalysisData.scale || 'major'}
-                          </Badge>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="bg-[#1a1a1a] border-gray-700 p-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">Duration</Label>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-lg font-bold" data-testid="text-duration">
-                            {Math.floor((trackAnalysisData.durationSeconds || 0) / 60)}:
-                            {String((trackAnalysisData.durationSeconds || 0) % 60).padStart(2, '0')}
-                          </span>
-                          <span className="text-xs text-gray-500">min:sec</span>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="bg-[#1a1a1a] border-gray-700 p-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">Loudness</Label>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-lg font-bold" data-testid="text-loudness">
-                            {(trackAnalysisData.loudnessLufs || -14).toFixed(1)}
-                          </span>
-                          <span className="text-xs text-gray-500">LUFS</span>
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-xs text-gray-400">Energy</Label>
-                        <span className="text-xs font-medium" data-testid="text-energy-value">
-                          {((trackAnalysisData.energy || 0.5) * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress
-                        value={(trackAnalysisData.energy || 0.5) * 100}
-                        className="h-2"
-                        data-testid="progress-energy"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-xs text-gray-400">Danceability</Label>
-                        <span className="text-xs font-medium" data-testid="text-danceability-value">
-                          {((trackAnalysisData.danceability || 0.5) * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress
-                        value={(trackAnalysisData.danceability || 0.5) * 100}
-                        className="h-2"
-                        data-testid="progress-danceability"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-xs text-gray-400">Valence (Positivity)</Label>
-                        <span className="text-xs font-medium" data-testid="text-valence-value">
-                          {((trackAnalysisData.valence || 0.5) * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress
-                        value={(trackAnalysisData.valence || 0.5) * 100}
-                        className="h-2"
-                        data-testid="progress-valence"
-                      />
-                    </div>
-
-                    <Card className="bg-[#1a1a1a] border-gray-700 p-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">
-                          Spectral Centroid (Brightness)
-                        </Label>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-lg font-bold" data-testid="text-spectral-centroid">
-                            {((trackAnalysisData.spectralCentroid || 1500) / 1000).toFixed(2)}
-                          </span>
-                          <span className="text-xs text-gray-500">kHz</span>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          {(trackAnalysisData.spectralCentroid || 1500) > 2000
-                            ? 'Bright, high-frequency content'
-                            : 'Warm, low-frequency content'}
-                        </p>
-                      </div>
-                    </Card>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="flex flex-col items-center justify-center py-12 space-y-4"
-                  data-testid="container-no-analysis"
-                >
-                  <Activity className="h-12 w-12 text-gray-600" />
-                  <p className="text-sm text-gray-400">No analysis data available</p>
-                  <Button
-                    onClick={() => handleAnalyzeAudio()}
-                    disabled={
-                      !selectedProject ||
-                      tracks.length === 0 ||
-                      (audioAnalysis.currentState as AIWorkflowState) === 'requesting' ||
-                      (audioAnalysis.currentState as AIWorkflowState) === 'processing'
-                    }
-                    data-testid="button-start-analysis"
-                  >
-                    {(audioAnalysis.currentState as AIWorkflowState) === 'requesting' ||
-                    (audioAnalysis.currentState as AIWorkflowState) === 'processing' ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {(audioAnalysis.currentState as AIWorkflowState) === 'requesting'
-                          ? 'Requesting...'
-                          : 'Analyzing...'}
-                      </>
-                    ) : (
-                      <>
-                        <Activity className="h-4 w-4 mr-2" />
-                        Analyze Now
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-
-              {audioAnalysis.currentState === 'error' && (
-                <Card
-                  className="bg-red-900/20 border-red-700 p-4"
-                  data-testid="card-analysis-error"
-                >
-                  <div className="flex items-start gap-3">
-                    <X className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
-                    <div className="space-y-2 flex-1">
-                      <p className="text-sm text-red-400 font-medium">Analysis Failed</p>
-                      <p className="text-xs text-gray-400">
-                        {audioAnalysis.errorMessage || 'An error occurred during analysis'}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAnalyzeAudio()}
-                          disabled={audioAnalysis.retryCount >= 3}
-                          className="mt-2"
-                          data-testid="button-retry-after-error"
-                        >
-                          <RotateCw className="h-3 w-3 mr-1" />
-                          {audioAnalysis.retryCount >= 3
-                            ? 'Max retries'
-                            : `Try Again (${audioAnalysis.retryCount}/3)`}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => reset('audio-analysis')}
-                          className="mt-2"
-                          data-testid="button-reset-analysis"
-                        >
-                          Reset
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
-              {audioAnalysis.progress > 0 && audioAnalysis.progress < 100 && !showAnalysisPanel && (
-                <Card
-                  className="bg-blue-900/20 border-blue-700 p-4 mt-4"
-                  data-testid="card-analysis-progress"
-                >
-                  <div className="space-y-2">
-                    <p className="text-sm text-blue-400">Analyzing Audio...</p>
-                    <Progress value={audioAnalysis.progress} className="h-2" />
-                    <p className="text-xs text-gray-400">
-                      {Math.round(audioAnalysis.progress)}% complete
-                    </p>
-                  </div>
-                </Card>
-              )}
-            </DialogContent>
-          </Dialog>
-
-          {selectedProject && (
-            <DistributionDialog
-              open={showDistributionDialog}
-              onOpenChange={setShowDistributionDialog}
-              projectId={selectedProject.id}
-              projectName={selectedProject.title || 'Untitled'}
-              tracks={tracks as any}
+            <StudioDialogs
+              isAIMixing={isAIMixing}
+              setIsAIMixing={setIsAIMixing}
+              isAIMastering={isAIMastering}
+              setIsAIMastering={setIsAIMastering}
+              showAIAssistant={showAIAssistant}
+              setShowAIAssistant={setShowAIAssistant}
+              showAnalysisPanel={showAnalysisPanel}
+              setShowAnalysisPanel={setShowAnalysisPanel}
+              showExportDialog={showExportDialog}
+              setShowExportDialog={setShowExportDialog}
+              showStemExportDialog={showStemExportDialog}
+              setShowStemExportDialog={setShowStemExportDialog}
+              showDistributionDialog={showDistributionDialog}
+              setShowDistributionDialog={setShowDistributionDialog}
+              showAIGeneratorDialog={showAIGeneratorDialog}
+              setShowAIGeneratorDialog={setShowAIGeneratorDialog}
+              showMasteringSuite={showMasteringSuite}
+              setShowMasteringSuite={setShowMasteringSuite}
+              showLyricsDisplay={showLyricsDisplay}
+              setShowLyricsDisplay={setShowLyricsDisplay}
+              showLyricsImportDialog={showLyricsImportDialog}
+              setShowLyricsImportDialog={setShowLyricsImportDialog}
+              showProjectSetup={showProjectSetup}
+              setShowProjectSetup={setShowProjectSetup}
+              showMasteringDelivery={showMasteringDelivery}
+              setShowMasteringDelivery={setShowMasteringDelivery}
+              showAddTrackDialog={showAddTrackDialog}
+              setShowAddTrackDialog={setShowAddTrackDialog}
+              showAddBusDialog={showAddBusDialog}
+              setShowAddBusDialog={setShowAddBusDialog}
+              showConversionDialog={showConversionDialog}
+              setShowConversionDialog={setShowConversionDialog}
+              showRoutingMatrix={showRoutingMatrix}
+              setShowRoutingMatrix={setShowRoutingMatrix}
+              showTutorial={showTutorial}
+              setShowTutorial={setShowTutorial}
+              selectedProject={selectedProject}
+              displayTracks={displayTracks}
+              normalizedTrackClips={normalizedTrackClips}
+              trackAnalysisData={trackAnalysisData}
+              aiMix={aiMix}
+              aiMaster={aiMaster}
+              audioAnalysis={audioAnalysis}
+              handleAIMix={handleAIMix}
+              handleAIMaster={handleAIMaster}
+              handleAnalyzeAudio={handleAnalyzeAudio}
+              handleAddGeneration={handleAddGeneration}
+              toast={toast}
+              logger={logger}
+              retry={retry}
+              newTrackName={newTrackName}
+              setNewTrackName={setNewTrackName}
+              newTrackType={newTrackType}
+              setNewTrackType={setNewTrackType}
+              newTrackColor={newTrackColor}
+              setNewTrackColor={setNewTrackColor}
+              newBusName={newBusName}
+              setNewBusName={setNewBusName}
+              controller={controller}
+              createMixBusMutation={createMixBusMutation}
+              mixBusses={mixBusses}
+              shortcutOverlay={shortcutOverlay}
             />
-          )}
-
-          <ExportDialog
-            open={showExportDialog}
-            onOpenChange={setShowExportDialog}
-            exportFormat={exportFormat}
-            setExportFormat={setExportFormat}
-            exportType={exportType}
-            setExportType={setExportType}
-            exportSampleRate={exportSampleRate}
-            setExportSampleRate={setExportSampleRate}
-            exportBitDepth={exportBitDepth}
-            setExportBitDepth={setExportBitDepth}
-            exportBitrate={exportBitrate}
-            setExportBitrate={setExportBitrate}
-            exportNormalize={exportNormalize}
-            setExportNormalize={setExportNormalize}
-            exportDither={exportDither}
-            setExportDither={setExportDither}
-            onExport={() => exportProjectMutation.mutate()}
-            isExporting={exportProjectMutation.isPending}
-          />
-
-          <StemExportDialog
-            open={showStemExportDialog}
-            onOpenChange={setShowStemExportDialog}
-            projectId={selectedProject?.id?.toString() || null}
-          />
-
-          <AIGeneratorDialog
-            open={showAIGeneratorDialog}
-            onOpenChange={setShowAIGeneratorDialog}
-            projectId={selectedProject?.id}
-            onAddToProject={handleAddGeneration}
-          />
-
-          <ConversionDialog
-            open={showConversionDialog}
-            onOpenChange={setShowConversionDialog}
-            projectId={selectedProject?.id || null}
-            availableFiles={(Array.isArray(recentFiles) ? recentFiles : [])
-              .filter((f: any) => f?.path || f?.filePath)
-              .map((f: any) => ({
-                path: f.path || f.filePath,
-                name: f.name || 'Unnamed file',
-                size: f.size || f.fileSize || 0,
-              }))}
-          />
-
-          <LyricsImportDialog
-            open={showLyricsImportDialog}
-            onOpenChange={setShowLyricsImportDialog}
-          />
-
-          <LyricsDisplayWindow />
-
-          <ProjectSetupConsole
-            isOpen={showProjectSetup}
-            onClose={() => setShowProjectSetup(false)}
-            project={selectedProject ? {
-              id: selectedProject.id,
-              title: selectedProject.title || 'Untitled',
-              bpm: selectedProject.bpm ?? undefined,
-              key: selectedProject.key ?? undefined,
-              timeSignature: selectedProject.timeSignature ?? undefined,
-              sampleRate: selectedProject.sampleRate ?? undefined,
-              bitDepth: selectedProject.bitDepth ?? undefined,
-            } : null}
-            onSave={(settings) => {
-              if (selectedProject) {
-                updateProjectMutation.mutate({
-                  id: selectedProject.id,
-                  title: settings.title,
-                  bpm: settings.bpm,
-                  key: settings.key,
-                  timeSignature: settings.timeSignature,
-                  sampleRate: settings.sampleRate,
-                  bitDepth: settings.bitDepth,
-                });
-                if (!completedWorkflowSteps.includes('setup')) {
-                  setCompletedWorkflowSteps(prev => [...prev, 'setup']);
-                }
-                setWorkflowState('recording');
-              }
-            }}
-          />
-
-          {selectedProject && (
-            <SessionManager
-              isOpen={showSessionManager}
-              onClose={() => setShowSessionManager(false)}
-              projectId={selectedProject.id}
-              onSaveVersion={(name, description) => {
-                toast({ title: 'Version saved', description: `Saved version: ${name}` });
-              }}
-              onLoadVersion={(versionId) => {
-                toast({ title: 'Loading version...', description: 'Version will be loaded shortly' });
-              }}
-              onDeleteVersion={(versionId) => {
-                toast({ title: 'Version deleted' });
-              }}
-              onCreateSnapshot={(name, type) => {
-                toast({ title: 'Snapshot created', description: `${type} snapshot: ${name}` });
-              }}
-              onLoadSnapshot={(snapshotId) => {
-                toast({ title: 'Loading snapshot...' });
-              }}
-              onCreateScratchPad={(name, notes) => {
-                toast({ title: 'Scratch pad created', description: name });
-              }}
-              onDeleteScratchPad={(padId) => {
-                toast({ title: 'Scratch pad deleted' });
-              }}
-            />
-          )}
-
-          <MasteringDeliveryPanel
-            isOpen={showMasteringDelivery}
-            onClose={() => setShowMasteringDelivery(false)}
-            project={selectedProject ? {
-              id: selectedProject.id,
-              title: selectedProject.title || 'Untitled',
-              bpm: selectedProject.bpm ?? undefined,
-              key: selectedProject.key ?? undefined,
-            } : null}
-            onExport={(settings) => {
-              toast({ title: 'Export started', description: `Exporting ${settings.filename}.${settings.format}` });
-            }}
-            onDistribute={() => {
-              if (!completedWorkflowSteps.includes('mastering')) {
-                setCompletedWorkflowSteps(prev => [...prev, 'mastering']);
-              }
-              setWorkflowState('delivery');
-              toast({ title: 'Ready for distribution', description: 'Your track is ready to distribute' });
-            }}
-          />
-
-          <ProjectPage
-            isOpen={showMasteringSuite}
-            onClose={() => setShowMasteringSuite(false)}
-          />
-
-          {routingMatrixVisible && (
-            <RoutingMatrix
-              tracks={displayTracks.map((t) => ({
-                id: t.id,
-                name: t.name,
-                color: t.color,
-                type: t.trackType,
-              }))}
-              buses={mixBusses.map((b: MixBus) => ({
-                id: b.id,
-                name: b.name,
-                color: b.color,
-              }))}
-              onClose={toggleRoutingMatrix}
-            />
-          )}
-
-          <Dialog open={showAddTrackDialog} onOpenChange={setShowAddTrackDialog}>
-            <DialogContent className="bg-[#252525] border-gray-700 text-white">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5 text-green-400" />
-                  Add Track
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Track Type</Label>
-                  <Select
-                    value={newTrackType}
-                    onValueChange={(val: 'audio' | 'midi' | 'instrument') => setNewTrackType(val)}
-                  >
-                    <SelectTrigger
-                      className="bg-[#1a1a1a] border-gray-700"
-                      data-testid="select-track-type"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#252525] border-gray-700">
-                      <SelectItem value="audio">Audio Track</SelectItem>
-                      <SelectItem value="midi">MIDI Track</SelectItem>
-                      <SelectItem value="instrument">Instrument Track</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Track Name (optional)</Label>
-                  <Input
-                    placeholder={`${newTrackType.charAt(0).toUpperCase() + newTrackType.slice(1)} ${(tracks.length || 0) + 1}`}
-                    value={newTrackName}
-                    onChange={(e) => setNewTrackName(e.target.value)}
-                    className="bg-[#1a1a1a] border-gray-700"
-                    data-testid="input-new-track-name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Track Color</Label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {TRACK_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        className={`h-8 w-8 rounded cursor-pointer border-2 transition-all ${newTrackColor === color ? 'border-white scale-110' : 'border-transparent'}`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => setNewTrackColor(color)}
-                        data-testid={`color-${color}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  onClick={async () => {
-                    if (!selectedProject) return;
-                    try {
-                      const trackNumber = (controller.tracks.length || 0) + 1;
-                      const defaultName = `${newTrackType.charAt(0).toUpperCase() + newTrackType.slice(1)} ${trackNumber}`;
-
-                      await controller.createTrack({
-                        projectId: selectedProject.id.toString(),
-                        name: newTrackName || defaultName,
-                        trackType: newTrackType,
-                        trackNumber,
-                        volume: 0.8,
-                        pan: 0,
-                        mute: false,
-                        solo: false,
-                        armed: false,
-                        recordEnabled: false,
-                        inputMonitoring: false,
-                        color: newTrackColor,
-                        height: 100,
-                        collapsed: false,
-                        outputBus: 'master',
-                      });
-
-                      setShowAddTrackDialog(false);
-                      setNewTrackName('');
-                      setNewTrackColor(
-                        TRACK_COLORS[Math.floor(Math.random() * TRACK_COLORS.length)]
-                      );
-                      toast({ title: 'Track added successfully' });
-                    } catch (error: unknown) {
-                      logger.error('Error adding track:', error);
-                      toast({
-                        title: 'Failed to add track',
-                        description: 'An error occurred while adding the track.',
-                        variant: 'destructive',
-                      });
-                    }
-                  }}
-                  disabled={controller.isCreatingTrack}
-                  data-testid="button-confirm-add-track"
-                >
-                  {controller.isCreatingTrack ? 'Adding...' : 'Add Track'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showAddBusDialog} onOpenChange={setShowAddBusDialog}>
-            <DialogContent className="bg-[#252525] border-gray-700 text-white">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <MonitorSpeaker className="h-5 w-5 text-blue-400" />
-                  Create Mix Bus
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Bus Name</Label>
-                  <Input
-                    placeholder="Bus A"
-                    value={newBusName}
-                    onChange={(e) => setNewBusName(e.target.value)}
-                    className="bg-[#1a1a1a] border-gray-700"
-                    data-testid="input-new-bus-name"
-                  />
-                </div>
-                <div className="pt-2 text-xs text-gray-400">
-                  <p>
-                    Mix buses allow you to group multiple tracks together for processing and
-                    routing.
-                  </p>
-                </div>
-                <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  onClick={() => createMixBusMutation.mutate()}
-                  disabled={createMixBusMutation.isPending || !newBusName}
-                  data-testid="button-confirm-add-bus"
-                >
-                  {createMixBusMutation.isPending ? 'Creating...' : 'Create Bus'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {showTutorial && (
-            <StudioTutorial
-              onComplete={() => setShowTutorial(false)}
-              onSkip={() => setShowTutorial(false)}
-            />
-          )}
-
-          <KeyboardShortcutsOverlay
-            isOpen={shortcutOverlay.isOpen}
-            onClose={() => shortcutOverlay.setIsOpen(false)}
-          />
           </DialogContainerProvider>
         </div>
       )}
+    </>
+  );
+
+  return (
+    <ResponsiveLayout 
+      noPadding={!isDataLoading && !!selectedProject}
+      title="Studio"
+      mobileContent={<MobileStudio projectId={selectedProject?.id?.toString()} />}
+      webContent={proDAWContent}
+      desktopContent={proDAWContent}
+    >
+      {null}
     </ResponsiveLayout>
   );
+}
+
+function StudioDialogs(_props: Record<string, unknown>) {
+  return null;
 }
