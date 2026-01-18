@@ -18,6 +18,7 @@ import {
   Play,
   Users,
   ChevronDown,
+  ChevronRight,
   RefreshCw,
   Sparkles,
   BarChart3,
