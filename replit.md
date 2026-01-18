@@ -27,6 +27,19 @@ Max Booster is built with a modern web stack, featuring a React 18 frontend with
 ### UI/UX Decisions
 The frontend leverages shadcn/ui components for a modern and accessible user experience, focusing on intuitive workflows for music production, social media scheduling, and data visualization. Key UI elements include an AI Studio with real-time spectral processing, DAW-like features, and advanced search filters for the marketplace, aiming for a clean, professional aesthetic.
 
+### Studio One Design Reference (Infinite Scrolling & Autoscroll)
+Design guidance based on Studio One 7.2 (2025) for implementing similar functionality:
+
+**Autoscroll Modes:**
+- **Continuous Centered**: Playhead remains locked in the middle of the screen. Timeline (audio events, MIDI data, grid lines) moves from right to left during playback.
+- **Continuous Left**: Playhead stays on the left side of the screen, maximizing visibility of upcoming content ahead of the playhead.
+- **Hardware Acceleration**: Utilize graphics hardware acceleration for visually smooth scrolling, preventing choppiness during high-resolution scrolling.
+
+**"Infinite" Bars Implementation:**
+- **Dynamic Expansion**: No hard-coded limit on bars. Timeline automatically allocates more time/bars as needed when recording or playback continues beyond current end.
+- **Non-Restrictive End Markers**: The "End" flag in the ruler is merely a marker for export ranges; it does not stop the timeline from continuing or prevent placing audio beyond it.
+- **Zoom Scaling**: Timeline remains efficient at massive lengths (thousands of bars) by only rendering visual data within the current view. "Fit Timeline to Contents" command for instant navigation between single bar and entire multi-hour project.
+
 ### Technical Implementations
 - **AI Studio**: Features real-time spectral editing, advanced modulation, analog warmth processing, real-time collaboration, plugin hosting, and integration with professional audio services for LUFS normalization and metadata extraction. Includes professional DAW interface matching industry standards (Ableton, Logic Pro, Pro Tools, Studio One).
   - **Professional Transport**: Punch in/out recording, pre-roll/count-in (0-4 bars), recording modes (Replace/Overdub/Stacked), input monitoring toggle
@@ -117,7 +130,7 @@ Admin credentials stored in environment variables:
 
 ### Storage Configuration
 - **Provider**: Replit Object Storage
-- **Bucket ID**: replit-objstore-e75041f4-5045-4b3b-a8c7-29bb5b43b9d4
+- **Bucket ID**: replit-objstore-2f5c48e9-6086-42ff-8daa-188f06d841f7
 - **Service**: `server/services/storageService.ts`
 
 ### KYC/Identity Verification Workflow
