@@ -234,6 +234,11 @@ export interface StudioState {
   autoscrollPaused: boolean; // True when user manually scrolled during playback
   lastManualScrollTime: number; // Timestamp of last manual scroll
 
+  // Adaptive Grid and Sync Settings (Studio One style)
+  adaptiveSnapEnabled: boolean; // When true, snap resolution adapts to zoom level
+  translucentEventsEnabled: boolean; // When true, waveforms are semi-transparent
+  showSyncPoints: boolean; // When true, sync point markers are visible
+
   // Transport Actions
   setCurrentTime: (time: number) => void;
   setIsPlaying: (playing: boolean) => void;
@@ -366,6 +371,12 @@ export interface StudioState {
   pauseAutoscroll: () => void; // Called when user manually scrolls during playback
   resumeAutoscroll: () => void; // Called when user presses F or clicks autoscroll button
   isAutoscrollActive: () => boolean; // Returns false if mode is off or paused
+
+  // Adaptive Grid and Sync Actions (Studio One style)
+  setAdaptiveSnapEnabled: (enabled: boolean) => void;
+  setTranslucentEventsEnabled: (enabled: boolean) => void;
+  setShowSyncPoints: (enabled: boolean) => void;
+  getAdaptiveSnapInterval: (zoom: number) => number; // Returns snap interval based on zoom level
 }
 
 export const useStudioStore = create<StudioState>((set, get) => ({
@@ -490,6 +501,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Smart Re-engagement State (Studio One 7.2 style)
   autoscrollPaused: false,
   lastManualScrollTime: 0,
+
+  // Adaptive Grid and Sync Settings (Studio One style)
+  adaptiveSnapEnabled: true,
+  translucentEventsEnabled: false,
+  showSyncPoints: true,
 
   // Playhead Actions
   setCurrentTime: (time) => set({ currentTime: time }),
@@ -877,5 +893,29 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   isAutoscrollActive: () => {
     const state = get();
     return state.autoscrollMode !== 'off' && !state.autoscrollPaused;
+  },
+
+  // Adaptive Grid and Sync Actions (Studio One style)
+  setAdaptiveSnapEnabled: (enabled) => set({ adaptiveSnapEnabled: enabled }),
+  setTranslucentEventsEnabled: (enabled) => set({ translucentEventsEnabled: enabled }),
+  setShowSyncPoints: (enabled) => set({ showSyncPoints: enabled }),
+  
+  getAdaptiveSnapInterval: (zoom: number): number => {
+    const state = get();
+    const tempo = state.tempo;
+    const secondsPerBeat = 60 / tempo;
+    
+    if (zoom < 0.5) {
+      const [numerator] = state.timeSignature.split('/').map(Number);
+      return secondsPerBeat * numerator;
+    } else if (zoom < 1.0) {
+      return secondsPerBeat;
+    } else if (zoom < 2.0) {
+      return secondsPerBeat / 4;
+    } else if (zoom < 3.0) {
+      return secondsPerBeat / 8;
+    } else {
+      return secondsPerBeat / 16;
+    }
   },
 }));

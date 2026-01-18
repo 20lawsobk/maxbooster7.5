@@ -20,6 +20,7 @@ interface AudioClip {
   filePath?: string;
   gain?: number;
   offset?: number;
+  syncOffset?: number; // Seconds from clip start where the sync point is
 }
 
 interface Track {
@@ -115,7 +116,11 @@ export function Timeline({
     autoExpandEnabled,
     autoscrollPaused,
     pauseAutoscroll,
-    isAutoscrollActive
+    isAutoscrollActive,
+    adaptiveSnapEnabled,
+    showSyncPoints,
+    translucentEventsEnabled,
+    getAdaptiveSnapInterval
   } = useStudioStore();
   
   // Use project duration for infinite timeline, fallback to prop
@@ -258,11 +263,22 @@ export function Timeline({
   );
 
   const snapToGrid = useCallback(
-    (time: number): number => {
+    (time: number, syncOffset?: number): number => {
       if (!snapEnabled) return time;
-      return Math.round(time / snapInterval) * snapInterval;
+      
+      const effectiveSnapInterval = adaptiveSnapEnabled 
+        ? getAdaptiveSnapInterval(zoom) 
+        : snapInterval;
+      
+      if (syncOffset !== undefined && syncOffset > 0) {
+        const syncPointTime = time + syncOffset;
+        const snappedSyncPoint = Math.round(syncPointTime / effectiveSnapInterval) * effectiveSnapInterval;
+        return snappedSyncPoint - syncOffset;
+      }
+      
+      return Math.round(time / effectiveSnapInterval) * effectiveSnapInterval;
     },
-    [snapEnabled, snapInterval]
+    [snapEnabled, snapInterval, adaptiveSnapEnabled, getAdaptiveSnapInterval, zoom]
   );
 
   const handleClipDragStart = useCallback(
@@ -296,7 +312,7 @@ export function Timeline({
       const clipDuration = clip.duration;
       let newStartTime = mouseTime - dragOffset;
 
-      newStartTime = snapToGrid(newStartTime);
+      newStartTime = snapToGrid(newStartTime, clip.syncOffset);
       newStartTime = Math.max(0, Math.min(newStartTime, effectiveDuration - clipDuration));
 
       const newEndTime = newStartTime + clipDuration;
@@ -1035,8 +1051,31 @@ export function Timeline({
                         )}
                       </div>
 
+                      {/* Sync Point Marker (yellow diamond) */}
+                      {showSyncPoints && clip.syncOffset !== undefined && clip.syncOffset > 0 && (
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+                          style={{
+                            left: `${(clip.syncOffset / clip.duration) * 100}%`,
+                          }}
+                          data-testid={`sync-point-${clip.id}`}
+                        >
+                          <div
+                            className="w-2.5 h-2.5 rotate-45 border-2"
+                            style={{
+                              backgroundColor: '#fbbf24',
+                              borderColor: '#f59e0b',
+                              boxShadow: '0 0 4px rgba(251, 191, 36, 0.6)',
+                            }}
+                          />
+                        </div>
+                      )}
+
                       {/* Waveform placeholder */}
-                      <div className="absolute inset-0 opacity-20 pointer-events-none">
+                      <div 
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ opacity: translucentEventsEnabled ? 0.3 : 0.2 }}
+                      >
                         <div className="h-full flex items-center justify-around px-1">
                           {Array.from({ length: 20 }).map((_, i) => (
                             <div
@@ -1059,7 +1098,8 @@ export function Timeline({
       {/* Snap indicator */}
       {snapEnabled && (draggingClip || resizingClip) && (
         <div className="absolute bottom-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-tl z-20">
-          Snap: {snapInterval}s
+          Snap: {(adaptiveSnapEnabled ? getAdaptiveSnapInterval(zoom) : snapInterval).toFixed(3)}s
+          {adaptiveSnapEnabled && ' (adaptive)'}
         </div>
       )}
     </div>
