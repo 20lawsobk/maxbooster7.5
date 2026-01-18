@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -17,14 +17,15 @@ import {
   DollarSign,
   Play,
   Users,
-  ChevronRight,
+  ChevronDown,
   RefreshCw,
   Sparkles,
   BarChart3,
 } from 'lucide-react';
+import type { User } from '@shared/schema';
 
 interface MobileDashboardProps {
-  user: any;
+  user: User;
 }
 
 interface MetricCardProps {
@@ -83,13 +84,14 @@ function QuickAction({ icon: Icon, label, onClick, color }: QuickActionProps) {
   );
 }
 
-interface CollapsibleSectionProps {
+interface MobileSectionProps {
   title: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  action?: React.ReactNode;
 }
 
-function CollapsibleSection({ title, children, defaultOpen = true }: CollapsibleSectionProps) {
+function MobileSection({ title, children, defaultOpen = true, action }: MobileSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const toggle = () => {
@@ -98,24 +100,27 @@ function CollapsibleSection({ title, children, defaultOpen = true }: Collapsible
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-6">
       <button
         type="button"
         onClick={toggle}
-        className="w-full flex items-center justify-between py-3 px-1 touch-manipulation"
+        className="w-full flex items-center justify-between py-2 px-1 touch-manipulation active:opacity-70 transition-opacity"
       >
-        <h3 className="font-semibold text-sm">{title}</h3>
-        <ChevronRight
-          className={cn(
-            'w-4 h-4 text-muted-foreground transition-transform',
-            isOpen && 'rotate-90'
-          )}
-        />
+        <h3 className="font-semibold text-sm text-foreground">{title}</h3>
+        <div className="flex items-center gap-2">
+          {action}
+          <ChevronDown
+            className={cn(
+              'w-4 h-4 text-muted-foreground transition-transform duration-200',
+              isOpen && 'rotate-180'
+            )}
+          />
+        </div>
       </button>
       <div
         className={cn(
           'transition-all duration-200 overflow-hidden',
-          isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+          isOpen ? 'max-h-[2000px] opacity-100 mt-2' : 'max-h-0 opacity-0'
         )}
       >
         {children}
@@ -285,7 +290,7 @@ export function MobileDashboard({ user }: MobileDashboardProps) {
           </CardContent>
         </Card>
 
-        <CollapsibleSection title="Recent Projects">
+        <MobileSection title="Recent Projects">
           <div className="space-y-2">
             {projects.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -325,9 +330,9 @@ export function MobileDashboard({ user }: MobileDashboardProps) {
               ))
             )}
           </div>
-        </CollapsibleSection>
+        </MobileSection>
 
-        <CollapsibleSection title="AI Insights" defaultOpen={false}>
+        <MobileSection title="AI Insights" defaultOpen={false}>
           <Card className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-200 dark:border-blue-800">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
@@ -343,9 +348,9 @@ export function MobileDashboard({ user }: MobileDashboardProps) {
               </div>
             </CardContent>
           </Card>
-        </CollapsibleSection>
+        </MobileSection>
 
-        <CollapsibleSection title="Goals Progress" defaultOpen={false}>
+        <MobileSection title="Goals Progress" defaultOpen={false}>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-sm mb-1">
@@ -369,7 +374,7 @@ export function MobileDashboard({ user }: MobileDashboardProps) {
               <Progress value={85} className="h-2" />
             </div>
           </div>
-        </CollapsibleSection>
+        </MobileSection>
       </div>
     </div>
   );

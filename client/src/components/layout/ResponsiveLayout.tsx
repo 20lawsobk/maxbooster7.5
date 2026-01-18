@@ -1,8 +1,11 @@
 import { ReactNode } from 'react';
-import { useIsMobile, useIsTablet } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileLayout } from './MobileLayout';
-import { TabletLayout } from './TabletLayout';
-import { AppLayout } from './AppLayout';
+import { WebLayout } from './WebLayout';
+import { DesktopLayout } from './DesktopLayout';
+import { isElectron, isCapacitor } from '@/lib/environment';
+
+export type LayoutType = 'mobile' | 'web' | 'desktop';
 
 interface ResponsiveLayoutProps {
   children: ReactNode;
@@ -10,6 +13,8 @@ interface ResponsiveLayoutProps {
   subtitle?: string;
   noPadding?: boolean;
   mobileContent?: ReactNode;
+  webContent?: ReactNode;
+  desktopContent?: ReactNode;
   tabletContent?: ReactNode;
   showNavigation?: boolean;
   enableSwipeNavigation?: boolean;
@@ -24,6 +29,8 @@ export function ResponsiveLayout({
   subtitle,
   noPadding = false,
   mobileContent,
+  webContent,
+  desktopContent,
   tabletContent,
   showNavigation = true,
   enableSwipeNavigation = true,
@@ -31,10 +38,11 @@ export function ResponsiveLayout({
   showFloatingActions = true,
   className,
 }: ResponsiveLayoutProps) {
-  const isMobile = useIsMobile();
-  const isTablet = useIsTablet();
+  const layoutType = useLayoutType();
+  
+  const effectiveWebContent = webContent || tabletContent;
 
-  if (isMobile) {
+  if (layoutType === 'mobile') {
     return (
       <MobileLayout
         title={title}
@@ -49,33 +57,59 @@ export function ResponsiveLayout({
     );
   }
 
-  if (isTablet) {
+  if (layoutType === 'desktop') {
     return (
-      <TabletLayout
+      <DesktopLayout
         title={title}
         subtitle={subtitle}
         noPadding={noPadding}
         showSidebar={showSidebar}
-        showFloatingActions={showFloatingActions}
         className={className}
       >
-        {tabletContent || children}
-      </TabletLayout>
+        {desktopContent || children}
+      </DesktopLayout>
     );
   }
 
   return (
-    <AppLayout title={title} subtitle={subtitle} noPadding={noPadding}>
-      {children}
-    </AppLayout>
+    <WebLayout
+      title={title}
+      subtitle={subtitle}
+      noPadding={noPadding}
+      showSidebar={showSidebar}
+      className={className}
+    >
+      {effectiveWebContent || children}
+    </WebLayout>
   );
 }
 
-export function useLayoutType() {
+export function useLayoutType(): LayoutType {
   const isMobile = useIsMobile();
-  const isTablet = useIsTablet();
 
-  if (isMobile) return 'mobile';
-  if (isTablet) return 'tablet';
-  return 'desktop';
+  if (isMobile || isCapacitor()) {
+    return 'mobile';
+  }
+
+  if (isElectron()) {
+    return 'desktop';
+  }
+
+  return 'web';
+}
+
+export function getLayoutTypeSync(): LayoutType {
+  if (isCapacitor()) {
+    return 'mobile';
+  }
+
+  if (isElectron()) {
+    return 'desktop';
+  }
+
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    return 'mobile';
+  }
+
+  return 'web';
 }

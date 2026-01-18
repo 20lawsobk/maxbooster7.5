@@ -1,10 +1,10 @@
-import { ReactNode, useRef } from 'react';
-import { MobileNavigation, MobileNavigationSpacer } from './MobileNavigation';
-import { TopBar } from './TopBar';
+import { ReactNode, useRef, useState } from 'react';
+import { MobileNavigation } from './MobileNavigation';
 import { useIsMobile, useOrientation } from '@/hooks/use-mobile';
 import { useSwipeGesture, triggerHapticFeedback } from '@/hooks/useTouchGestures';
 import { useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -73,7 +73,24 @@ export function MobileLayout({
       )}
       data-orientation={orientation}
     >
-      <TopBar title={title} subtitle={subtitle} onMenuClick={() => {}} />
+      {/* Mobile Header */}
+      <header 
+        className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        <div className="flex items-center justify-between h-14 px-4">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {title && (
+              <div className="min-w-0 flex-1">
+                <h1 className="font-semibold text-base truncate">{title}</h1>
+                {subtitle && (
+                  <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
 
       <main
         className={cn(
@@ -151,24 +168,19 @@ export function CollapsibleSection({
   };
 
   return (
-    <div className={cn('border rounded-lg overflow-hidden', className)}>
+    <div className={cn('border rounded-xl overflow-hidden bg-card', className)}>
       <button
         type="button"
         onClick={toggle}
-        className="w-full flex items-center justify-between p-4 bg-muted/50 min-h-[44px] touch-manipulation"
+        className="w-full flex items-center justify-between p-4 bg-muted/30 min-h-[48px] touch-manipulation active:bg-muted/50 transition-colors"
       >
-        <span className="font-medium">{title}</span>
-        <svg
+        <span className="font-medium text-sm">{title}</span>
+        <ChevronDown
           className={cn(
-            'w-5 h-5 transition-transform duration-200',
+            'w-5 h-5 text-muted-foreground transition-transform duration-200',
             isOpen && 'rotate-180'
           )}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        />
       </button>
       <div
         className={cn(
@@ -181,5 +193,3 @@ export function CollapsibleSection({
     </div>
   );
 }
-
-import { useState } from 'react';

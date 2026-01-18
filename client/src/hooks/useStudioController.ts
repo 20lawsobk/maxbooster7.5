@@ -349,12 +349,13 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
           }
 
           // Add clips to track (awaiting since loadTrack is instant with cached buffers)
-          if (clips.length > 0) {
+          const validClips = clips.filter((clip) => clip.audioUrl || clip.filePath);
+          if (validClips.length > 0) {
             await audioEngineRef.current.loadTrack(
               track.id,
-              clips.map((clip) => ({
+              validClips.map((clip) => ({
                 id: clip.id,
-                url: clip.audioUrl || clip.filePath || '',
+                url: clip.audioUrl || clip.filePath,
                 startTime: clip.startTime,
                 duration: clip.duration,
                 offset: clip.offset || 0,

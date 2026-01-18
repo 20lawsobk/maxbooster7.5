@@ -3042,13 +3042,15 @@ export default function Studio() {
             </DialogContent>
           </Dialog>
 
-          <DistributionDialog
-            open={showDistributionDialog}
-            onOpenChange={setShowDistributionDialog}
-            projectId={selectedProject?.id || ''}
-            projectName={selectedProject?.title || 'Untitled'}
-            tracks={tracks as any}
-          />
+          {selectedProject && (
+            <DistributionDialog
+              open={showDistributionDialog}
+              onOpenChange={setShowDistributionDialog}
+              projectId={selectedProject.id}
+              projectName={selectedProject.title || 'Untitled'}
+              tracks={tracks as any}
+            />
+          )}
 
           <ExportDialog
             open={showExportDialog}
@@ -3088,11 +3090,13 @@ export default function Studio() {
             open={showConversionDialog}
             onOpenChange={setShowConversionDialog}
             projectId={selectedProject?.id || null}
-            availableFiles={(Array.isArray(recentFiles) ? recentFiles : []).map((f: any) => ({
-              path: f?.path || f?.filePath || '',
-              name: f?.name || '',
-              size: f?.size || f?.fileSize || 0,
-            }))}
+            availableFiles={(Array.isArray(recentFiles) ? recentFiles : [])
+              .filter((f: any) => f?.path || f?.filePath)
+              .map((f: any) => ({
+                path: f.path || f.filePath,
+                name: f.name || 'Unnamed file',
+                size: f.size || f.fileSize || 0,
+              }))}
           />
 
           <LyricsImportDialog
@@ -3133,32 +3137,34 @@ export default function Studio() {
             }}
           />
 
-          <SessionManager
-            isOpen={showSessionManager}
-            onClose={() => setShowSessionManager(false)}
-            projectId={selectedProject?.id || ''}
-            onSaveVersion={(name, description) => {
-              toast({ title: 'Version saved', description: `Saved version: ${name}` });
-            }}
-            onLoadVersion={(versionId) => {
-              toast({ title: 'Loading version...', description: 'Version will be loaded shortly' });
-            }}
-            onDeleteVersion={(versionId) => {
-              toast({ title: 'Version deleted' });
-            }}
-            onCreateSnapshot={(name, type) => {
-              toast({ title: 'Snapshot created', description: `${type} snapshot: ${name}` });
-            }}
-            onLoadSnapshot={(snapshotId) => {
-              toast({ title: 'Loading snapshot...' });
-            }}
-            onCreateScratchPad={(name, notes) => {
-              toast({ title: 'Scratch pad created', description: name });
-            }}
-            onDeleteScratchPad={(padId) => {
-              toast({ title: 'Scratch pad deleted' });
-            }}
-          />
+          {selectedProject && (
+            <SessionManager
+              isOpen={showSessionManager}
+              onClose={() => setShowSessionManager(false)}
+              projectId={selectedProject.id}
+              onSaveVersion={(name, description) => {
+                toast({ title: 'Version saved', description: `Saved version: ${name}` });
+              }}
+              onLoadVersion={(versionId) => {
+                toast({ title: 'Loading version...', description: 'Version will be loaded shortly' });
+              }}
+              onDeleteVersion={(versionId) => {
+                toast({ title: 'Version deleted' });
+              }}
+              onCreateSnapshot={(name, type) => {
+                toast({ title: 'Snapshot created', description: `${type} snapshot: ${name}` });
+              }}
+              onLoadSnapshot={(snapshotId) => {
+                toast({ title: 'Loading snapshot...' });
+              }}
+              onCreateScratchPad={(name, notes) => {
+                toast({ title: 'Scratch pad created', description: name });
+              }}
+              onDeleteScratchPad={(padId) => {
+                toast({ title: 'Scratch pad deleted' });
+              }}
+            />
+          )}
 
           <MasteringDeliveryPanel
             isOpen={showMasteringDelivery}

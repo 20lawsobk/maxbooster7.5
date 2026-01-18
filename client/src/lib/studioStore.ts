@@ -1534,9 +1534,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Launcher Actions (Ableton Session View style)
   addLauncherClip: (clip) => {
+    if (!clip.trackId) {
+      throw new Error('LauncherClip requires a trackId - this is a programming error');
+    }
     const newClip: LauncherClip = {
       id: clip.id || `clip-${Date.now()}`,
-      trackId: clip.trackId || '',
+      trackId: clip.trackId,
       slotIndex: clip.slotIndex ?? 0,
       name: clip.name || 'New Clip',
       color: clip.color || '#4ade80',
