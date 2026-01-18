@@ -44,7 +44,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { useStudioStore } from '@/lib/studioStore';
+import { useStudioStore, formatChord, type ChordDisplayMode } from '@/lib/studioStore';
 
 export interface Chord {
   id: string;
@@ -200,7 +200,7 @@ export function ChordTrack({
   onChordChange,
   initialChords = [],
 }: ChordTrackProps) {
-  const { currentTime, snapEnabled, snapResolution, zoom } = useStudioStore();
+  const { currentTime, snapEnabled, snapResolution, zoom, projectKey, chordDisplayMode } = useStudioStore();
   
   const [chords, setChords] = useState<Chord[]>(initialChords);
   const [selectedChordId, setSelectedChordId] = useState<string | null>(null);
@@ -241,8 +241,26 @@ export function ChordTrack({
   }, [snapEnabled, snapResolution]);
 
   const getChordDisplayName = useCallback((chord: Chord): string => {
-    return `${chord.root}${chord.quality}${chord.bass ? `/${chord.bass}` : ''}`;
-  }, []);
+    const formattedChord = formatChord(chord.root, chord.quality, projectKey, chordDisplayMode);
+    return chord.bass ? `${formattedChord}/${chord.bass}` : formattedChord;
+  }, [projectKey, chordDisplayMode]);
+
+  const getChordModeStyles = useCallback((): { background?: string; borderColor?: string; boxShadow?: string } => {
+    switch (chordDisplayMode) {
+      case 'nashville':
+        return {
+          borderColor: 'rgba(245, 158, 11, 0.6)',
+          boxShadow: '0 0 8px rgba(245, 158, 11, 0.3)',
+        };
+      case 'roman':
+        return {
+          borderColor: 'rgba(139, 92, 246, 0.6)',
+          boxShadow: '0 0 8px rgba(139, 92, 246, 0.3)',
+        };
+      default:
+        return {};
+    }
+  }, [chordDisplayMode]);
 
   const handleAddChord = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!isAdding || !timelineRef.current) return;
@@ -703,15 +721,30 @@ export function ChordTrack({
                   style={{
                     left: `${(displayStartTime / duration) * 100}%`,
                     width: `${(displayDuration / duration) * 100}%`,
-                    backgroundColor: chord.color,
+                    backgroundColor: chordDisplayMode === 'nashville' 
+                      ? `color-mix(in srgb, ${chord.color} 70%, #f59e0b 30%)`
+                      : chordDisplayMode === 'roman'
+                      ? `color-mix(in srgb, ${chord.color} 70%, #8b5cf6 30%)`
+                      : chord.color,
                     minWidth: '40px',
+                    border: chordDisplayMode !== 'standard' ? `2px solid ${getChordModeStyles().borderColor}` : undefined,
+                    boxShadow: getChordModeStyles().boxShadow,
                   }}
                   onClick={(e) => handleChordClick(e, chord)}
                   onMouseDown={(e) => handleDragStart(e, chord)}
                   data-testid={`chord-${chord.id}`}
                 >
                   <div className="h-full flex items-center justify-center px-2 relative overflow-hidden">
-                    <span className="text-white text-sm font-bold whitespace-nowrap drop-shadow-md">
+                    <span 
+                      className="text-white text-sm font-bold whitespace-nowrap drop-shadow-md"
+                      style={{
+                        textShadow: chordDisplayMode === 'nashville' 
+                          ? '0 0 8px rgba(245, 158, 11, 0.5)' 
+                          : chordDisplayMode === 'roman'
+                          ? '0 0 8px rgba(139, 92, 246, 0.5)'
+                          : undefined,
+                      }}
+                    >
                       {getChordDisplayName(chord)}
                     </span>
                   </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
-import { useStudioStore } from '@/lib/studioStore';
+import { useStudioStore, TempoMap } from '@/lib/studioStore';
 import { 
   MousePointer2, 
   Maximize2, 
@@ -11,7 +11,11 @@ import {
   Maximize,
   Target,
   Trash2,
-  Zap 
+  Zap,
+  Music,
+  Loader2,
+  AlignHorizontalJustifyCenter,
+  X
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -180,6 +184,66 @@ export function Timeline({
     currentSyncOffset: number;
   } | null>(null);
   const [syncPointInputValue, setSyncPointInputValue] = useState('');
+
+  // Tempo Detection State
+  const {
+    projectTempoMaps,
+    isAnalyzingTempo,
+    analyzingClipId,
+    addTempoMap,
+    removeTempoMap,
+    setIsAnalyzingTempo,
+    getTempoMapForClip,
+    tempo: projectTempo,
+  } = useStudioStore();
+
+  // Mock tempo analysis function
+  const analyzeClipTempo = useCallback(async (clipId: string, clipDuration: number): Promise<TempoMap> => {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const detectedBpm = Math.round(80 + Math.random() * 80);
+    const secondsPerBeat = 60 / detectedBpm;
+    const beatCount = Math.floor(clipDuration / secondsPerBeat);
+    
+    const beatMarkers = Array.from({ length: beatCount }, (_, i) => i * secondsPerBeat);
+    const downbeats = beatMarkers.filter((_, i) => i % 4 === 0);
+    
+    return {
+      clipId,
+      detectedBpm,
+      confidence: 0.85 + Math.random() * 0.15,
+      beatMarkers,
+      downbeats,
+      timeSignature: '4/4'
+    };
+  }, []);
+
+  // Handle tempo detection
+  const handleDetectTempo = useCallback(async (clipId: string, trackId: string, clipDuration: number) => {
+    setIsAnalyzingTempo(true, clipId);
+    try {
+      const tempoMap = await analyzeClipTempo(clipId, clipDuration);
+      addTempoMap(tempoMap);
+    } finally {
+      setIsAnalyzingTempo(false, null);
+    }
+  }, [analyzeClipTempo, addTempoMap, setIsAnalyzingTempo]);
+
+  // Handle align to project tempo
+  const handleAlignToProjectTempo = useCallback((clipId: string, trackId: string, clip: AudioClip) => {
+    const tempoMap = getTempoMapForClip(clipId);
+    if (!tempoMap || !onClipUpdate) return;
+    
+    const stretchRatio = tempoMap.detectedBpm / projectTempo;
+    const newDuration = clip.duration / stretchRatio;
+    
+    onClipUpdate(trackId, clipId, { duration: newDuration });
+  }, [getTempoMapForClip, projectTempo, onClipUpdate]);
+
+  // Handle clear tempo data
+  const handleClearTempoData = useCallback((clipId: string) => {
+    removeTempoMap(clipId);
+  }, [removeTempoMap]);
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const trackLanesRef = useRef<HTMLDivElement>(null);
@@ -1132,6 +1196,8 @@ export function Timeline({
                       : clip.startTime + clip.duration;
                   const displayDuration = displayEndTime - displayStartTime;
                   const hasSyncPoint = clip.syncOffset !== undefined && clip.syncOffset > 0;
+                  const clipTempoMap = getTempoMapForClip(clip.id);
+                  const isAnalyzingThisClip = isAnalyzingTempo && analyzingClipId === clip.id;
 
                   return (
                     <ContextMenu key={clip.id}>
@@ -1159,6 +1225,37 @@ export function Timeline({
                             <div className="text-xs text-white font-medium truncate flex-1">
                               {clip.name}
                             </div>
+
+                            {/* BPM Badge - shown when tempo is detected */}
+                            {clipTempoMap && (
+                              <div
+                                className="absolute top-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold z-10"
+                                style={{
+                                  backgroundColor: 'rgba(59, 130, 246, 0.9)',
+                                  color: '#ffffff',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                                }}
+                                data-testid={`bpm-badge-${clip.id}`}
+                              >
+                                <Music className="w-2.5 h-2.5" />
+                                {clipTempoMap.detectedBpm} BPM
+                              </div>
+                            )}
+
+                            {/* Loading indicator during tempo analysis */}
+                            {isAnalyzingThisClip && (
+                              <div
+                                className="absolute top-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium z-10"
+                                style={{
+                                  backgroundColor: 'rgba(251, 191, 36, 0.9)',
+                                  color: '#000000',
+                                }}
+                                data-testid={`analyzing-indicator-${clip.id}`}
+                              >
+                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                Analyzing...
+                              </div>
+                            )}
 
                             {/* Resize handles - hide when using split or range tool */}
                             {currentTool !== 'split' && currentTool !== 'range' && (
@@ -1203,6 +1300,31 @@ export function Timeline({
                             );
                           })()}
 
+                          {/* Beat Markers - subtle vertical lines at beat positions */}
+                          {clipTempoMap && clipTempoMap.beatMarkers.length > 0 && (
+                            <div className="absolute inset-0 pointer-events-none z-5">
+                              {clipTempoMap.beatMarkers.map((beatTime, idx) => {
+                                const beatPositionRatio = beatTime / clip.duration;
+                                if (beatPositionRatio < 0 || beatPositionRatio > 1) return null;
+                                const isDownbeat = clipTempoMap.downbeats.includes(beatTime);
+                                return (
+                                  <div
+                                    key={`beat-${idx}`}
+                                    className="absolute top-0 bottom-0"
+                                    style={{
+                                      left: `${beatPositionRatio * 100}%`,
+                                      width: isDownbeat ? '2px' : '1px',
+                                      backgroundColor: isDownbeat 
+                                        ? 'rgba(251, 191, 36, 0.6)' 
+                                        : 'rgba(255, 255, 255, 0.3)',
+                                    }}
+                                    data-testid={`beat-marker-${clip.id}-${idx}`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          )}
+
                           {/* Waveform placeholder */}
                           <div 
                             className="absolute inset-0 pointer-events-none"
@@ -1221,12 +1343,48 @@ export function Timeline({
                         </div>
                       </ContextMenuTrigger>
                       <ContextMenuContent 
-                        className="w-48"
+                        className="w-56"
                         style={{
                           background: 'var(--studio-bg-deep)',
                           borderColor: 'var(--studio-border)',
                         }}
                       >
+                        {/* Tempo Detection Section */}
+                        <ContextMenuItem
+                          onClick={() => handleDetectTempo(clip.id, track.id, clip.duration)}
+                          disabled={isAnalyzingThisClip}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          {isAnalyzingThisClip ? (
+                            <Loader2 className="h-4 w-4 text-yellow-400 animate-spin" />
+                          ) : (
+                            <Music className="h-4 w-4 text-blue-400" />
+                          )}
+                          <span>{isAnalyzingThisClip ? 'Analyzing...' : 'Detect Tempo'}</span>
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          onClick={() => handleAlignToProjectTempo(clip.id, track.id, clip)}
+                          disabled={!clipTempoMap}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <AlignHorizontalJustifyCenter className="h-4 w-4 text-green-400" />
+                          <span>Align to Project Tempo</span>
+                          {clipTempoMap && (
+                            <span className="ml-auto text-[10px] text-muted-foreground">
+                              {clipTempoMap.detectedBpm}→{projectTempo}
+                            </span>
+                          )}
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          onClick={() => handleClearTempoData(clip.id)}
+                          disabled={!clipTempoMap}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <X className="h-4 w-4 text-red-400" />
+                          <span>Clear Tempo Data</span>
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                        {/* Sync Point Section */}
                         <ContextMenuItem
                           onClick={() => handleOpenSyncPointDialog(clip.id, track.id, clip.duration, clip.syncOffset || 0)}
                           className="flex items-center gap-2 cursor-pointer"

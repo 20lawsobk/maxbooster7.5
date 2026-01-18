@@ -40,7 +40,11 @@ import {
   Circle,
   X,
   Settings2,
+  Snowflake,
+  Loader2,
 } from 'lucide-react';
+import { useStudioStore } from '@/lib/studioStore';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { logger } from '@/lib/logger';
 import {
   DndContext,
@@ -264,6 +268,27 @@ const SortableTrackRow = memo(function SortableTrackRow({
     id: track.id,
   });
 
+  const {
+    frozenTracks,
+    isFreezing,
+    freezingTrackId,
+    freezeTrack,
+    unfreezeTrack,
+    isTrackFrozen,
+  } = useStudioStore();
+
+  const isThisTrackFrozen = isTrackFrozen(track.id);
+  const isThisTrackFreezing = isFreezing && freezingTrackId === track.id;
+
+  const handleFreezeTrack = async () => {
+    const totalDuration = clips.reduce((acc, clip) => Math.max(acc, clip.startTime + clip.duration), 10);
+    await freezeTrack(track.id, totalDuration);
+  };
+
+  const handleUnfreezeTrack = () => {
+    unfreezeTrack(track.id);
+  };
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -328,18 +353,30 @@ const SortableTrackRow = memo(function SortableTrackRow({
         >
           {/* Professional Track Header with Depth */}
           <motion.div
-            className="w-32 sm:w-48 md:w-56 lg:w-64 border-r flex flex-col overflow-hidden shrink-0"
+            className={`w-32 sm:w-48 md:w-56 lg:w-64 border-r flex flex-col overflow-hidden shrink-0 ${
+              isThisTrackFrozen ? 'frozen-track' : ''
+            }`}
             style={{
               height: isExpanded ? `${track.height || 100}px` : '40px',
-              background: isDragOver ? 'var(--studio-accent-muted)' : 'var(--track-header-bg)',
-              borderColor: isDragOver ? 'var(--studio-accent)' : 'var(--studio-border)',
+              background: isThisTrackFrozen 
+                ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(30, 58, 138, 0.2))'
+                : isDragOver ? 'var(--studio-accent-muted)' : 'var(--track-header-bg)',
+              borderColor: isThisTrackFrozen 
+                ? 'rgba(6, 182, 212, 0.4)' 
+                : isDragOver ? 'var(--studio-accent)' : 'var(--studio-border)',
               transition:
                 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, border-color 0.2s',
-              boxShadow: isDragOver ? '0 0 20px var(--studio-accent)' : 'var(--studio-shadow-md)',
+              boxShadow: isThisTrackFrozen 
+                ? '0 0 15px rgba(6, 182, 212, 0.2)' 
+                : isDragOver ? '0 0 20px var(--studio-accent)' : 'var(--studio-shadow-md)',
             }}
             whileHover={{
-              background: isDragOver ? 'var(--studio-accent-muted)' : 'var(--track-header-hover)',
-              boxShadow: isDragOver ? '0 0 20px var(--studio-accent)' : 'var(--studio-shadow-lg)',
+              background: isThisTrackFrozen 
+                ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(30, 58, 138, 0.25))'
+                : isDragOver ? 'var(--studio-accent-muted)' : 'var(--track-header-hover)',
+              boxShadow: isThisTrackFrozen 
+                ? '0 0 20px rgba(6, 182, 212, 0.3)' 
+                : isDragOver ? '0 0 20px var(--studio-accent)' : 'var(--studio-shadow-lg)',
             }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -392,6 +429,38 @@ const SortableTrackRow = memo(function SortableTrackRow({
                   <MonitoringLED active={track.inputMonitoring} color="#00ff00" />
                   <MonitoringLED active={track.armed} color="#ff0000" />
                 </div>
+
+                {/* Frozen Indicator / Freeze Button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <motion.button
+                        onClick={isThisTrackFrozen ? handleUnfreezeTrack : handleFreezeTrack}
+                        disabled={isThisTrackFreezing}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        className={`p-1 rounded transition-all ${
+                          isThisTrackFrozen 
+                            ? 'bg-cyan-500/30 text-cyan-400' 
+                            : 'hover:bg-white/10 text-gray-400 hover:text-cyan-400'
+                        }`}
+                        data-testid={`button-freeze-${track.id}`}
+                      >
+                        {isThisTrackFreezing ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Snowflake className="w-3 h-3" />
+                        )}
+                      </motion.button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>{isThisTrackFrozen ? 'Unfreeze Track' : 'Freeze Track'}</p>
+                      {isThisTrackFrozen && (
+                        <p className="text-xs text-gray-400">Click to restore live plugins</p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
                 {/* Expand/Collapse Button */}
                 <motion.button
@@ -612,12 +681,43 @@ const SortableTrackRow = memo(function SortableTrackRow({
       </ContextMenuTrigger>
       <ContextMenuContent className="bg-[#252525] border-gray-700 text-white">
         <ContextMenuItem
-          onClick={() => onOpenTrackPlugins?.(track.id)}
+          onClick={() => !isThisTrackFrozen && onOpenTrackPlugins?.(track.id)}
           data-testid={`context-plugins-${track.id}`}
+          disabled={isThisTrackFrozen}
+          className={isThisTrackFrozen ? 'opacity-50 cursor-not-allowed' : ''}
         >
           <Settings2 className="h-3 w-3 mr-2" />
-          Track Plugins
+          {isThisTrackFrozen ? 'Plugins (Unfreeze to edit)' : 'Track Plugins'}
         </ContextMenuItem>
+        <ContextMenuSeparator />
+        {isThisTrackFrozen ? (
+          <ContextMenuItem
+            onClick={handleUnfreezeTrack}
+            data-testid={`context-unfreeze-${track.id}`}
+            className="text-cyan-400"
+          >
+            <Snowflake className="h-3 w-3 mr-2" />
+            Unfreeze Track
+          </ContextMenuItem>
+        ) : (
+          <ContextMenuItem
+            onClick={handleFreezeTrack}
+            data-testid={`context-freeze-${track.id}`}
+            disabled={isThisTrackFreezing}
+          >
+            {isThisTrackFreezing ? (
+              <>
+                <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                Freezing...
+              </>
+            ) : (
+              <>
+                <Snowflake className="h-3 w-3 mr-2" />
+                Freeze Track
+              </>
+            )}
+          </ContextMenuItem>
+        )}
         <ContextMenuSeparator />
         <ContextMenuItem
           onClick={() => onDuplicateTrack(track.id)}

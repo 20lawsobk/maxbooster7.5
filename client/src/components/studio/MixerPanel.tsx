@@ -18,8 +18,9 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { VolumeX, Headphones, Music, Mic, Settings2, Maximize2, CircleDot, Radio, ArrowRight } from 'lucide-react';
+import { VolumeX, Headphones, Music, Mic, Settings2, Maximize2, CircleDot, Radio, ArrowRight, Snowflake } from 'lucide-react';
 import { useStudioStore } from '@/lib/studioStore';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import AudioEngine from '@/lib/audioEngine';
@@ -143,6 +144,7 @@ export function MixerPanel({
   onBusAssign,
 }: MixerPanelProps) {
   const { toast } = useToast();
+  const { frozenTracks, isTrackFrozen } = useStudioStore();
   const [masterVolume, setMasterVolume] = useState(0.8);
   const [trackEffects, setTrackEffects] = useState<Record<string, TrackEffects>>(() =>
     tracks.reduce(
@@ -360,6 +362,7 @@ export function MixerPanel({
           {tracks.map((track, index) => {
             const effects = trackEffects[track.id] || defaultEffects;
             const levels = trackLevels[track.id] || { level: -60, peak: -60 };
+            const isFrozen = isTrackFrozen(track.id);
 
             return (
               <motion.div
@@ -369,14 +372,19 @@ export function MixerPanel({
                 transition={{ delay: index * 0.05, duration: 0.3 }}
               >
                 <Card
-                  className="w-44 sm:w-56 md:w-72 border-gray-700 overflow-hidden group shrink-0"
+                  className={`w-44 sm:w-56 md:w-72 border-gray-700 overflow-hidden group shrink-0 ${
+                    isFrozen ? 'frozen-channel' : ''
+                  }`}
                   style={{
-                    background: 'var(--studio-panel)',
-                    borderColor: 'var(--studio-border)',
+                    background: isFrozen 
+                      ? 'linear-gradient(180deg, rgba(6, 182, 212, 0.15), rgba(30, 58, 138, 0.2))'
+                      : 'var(--studio-panel)',
+                    borderColor: isFrozen ? 'rgba(6, 182, 212, 0.4)' : 'var(--studio-border)',
+                    boxShadow: isFrozen ? '0 0 15px rgba(6, 182, 212, 0.2)' : undefined,
                   }}
                 >
                   {/* Track Color Strip */}
-                  <div className="h-1 w-full" style={{ background: track.color }} />
+                  <div className="h-1 w-full" style={{ background: isFrozen ? '#06b6d4' : track.color }} />
 
                   <CardContent className="p-2 sm:p-4 flex flex-col gap-2 sm:gap-4">
                     {/* Track Header */}
@@ -386,22 +394,42 @@ export function MixerPanel({
                       transition={{ type: 'spring', stiffness: 400 }}
                     >
                       <div className="flex items-center gap-2">
-                        {track.trackType === 'audio' && (
+                        {isFrozen ? (
+                          <Snowflake className="w-3 h-3 text-cyan-400" />
+                        ) : track.trackType === 'audio' ? (
                           <Music className="w-3 h-3" style={{ color: track.color }} />
-                        )}
-                        {track.trackType === 'instrument' && (
+                        ) : track.trackType === 'instrument' ? (
                           <Mic className="w-3 h-3" style={{ color: track.color }} />
-                        )}
+                        ) : null}
                         <div
                           className="text-sm font-medium truncate"
-                          style={{ color: 'var(--studio-text)' }}
+                          style={{ color: isFrozen ? '#06b6d4' : 'var(--studio-text)' }}
                           data-testid={`text-track-name-${track.id}`}
                         >
                           {track.name}
                         </div>
+                        {isFrozen && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="px-1.5 py-0.5 text-[9px] font-bold bg-cyan-500/30 text-cyan-400 rounded border border-cyan-500/50 tracking-wider">
+                                  FROZEN
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Track is frozen - CPU optimized</p>
+                                <p className="text-xs text-gray-400">Unfreeze to edit plugins</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                       <Settings2
-                        className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        className={`w-3 h-3 transition-opacity cursor-pointer ${
+                          isFrozen 
+                            ? 'opacity-30 cursor-not-allowed' 
+                            : 'opacity-0 group-hover:opacity-100'
+                        }`}
                         style={{ color: 'var(--studio-text-muted)' }}
                       />
                     </motion.div>

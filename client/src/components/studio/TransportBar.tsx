@@ -31,7 +31,21 @@ import {
   Grid3X3,
   Eye,
   Target,
+  Snowflake,
+  Cpu,
+  ChevronUp,
+  ChevronDown,
+  RotateCcwIcon,
+  Music,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { MUSICAL_KEYS, type MusicalKey, type KeyMode, type ChordDisplayMode } from '@/lib/studioStore';
 import { AIMixer } from '@/lib/audio/AIMixer';
 import { AIMastering } from '@/lib/audio/AIMastering';
 import { useToast } from '@/hooks/use-toast';
@@ -109,6 +123,20 @@ export function TransportBar({
     setTranslucentEventsEnabled,
     showSyncPoints,
     setShowSyncPoints,
+    frozenTracks,
+    getFrozenTrackCount,
+    projectKey,
+    projectKeyMode,
+    globalTranspose,
+    originalProjectKey,
+    setProjectKey,
+    setProjectKeyMode,
+    transposeUp,
+    transposeDown,
+    resetTranspose,
+    getTransposedKey,
+    chordDisplayMode,
+    cycleChordDisplayMode,
   } = useStudioStore();
 
   const [tapTempoTimes, setTapTempoTimes] = useState<number[]>([]);
@@ -673,6 +701,50 @@ export function TransportBar({
               </TooltipTrigger>
               <TooltipContent>Show Sync Points {showSyncPoints ? 'On' : 'Off'} - Display sync point markers on clips</TooltipContent>
             </Tooltip>
+
+            <div className="h-6 w-px ml-1" style={{ background: 'var(--studio-border)' }} />
+
+            {/* Chord Display Mode Toggle */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="studio-btn h-8 px-2.5 rounded flex items-center justify-center gap-1.5 font-bold text-xs"
+                  onClick={cycleChordDisplayMode}
+                  style={{
+                    background: chordDisplayMode === 'nashville'
+                      ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(234, 88, 12, 0.2))'
+                      : chordDisplayMode === 'roman'
+                      ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.2))'
+                      : undefined,
+                    color: chordDisplayMode === 'nashville'
+                      ? '#fbbf24'
+                      : chordDisplayMode === 'roman'
+                      ? '#a78bfa'
+                      : 'var(--studio-text)',
+                    border: chordDisplayMode === 'nashville'
+                      ? '1px solid rgba(245, 158, 11, 0.5)'
+                      : chordDisplayMode === 'roman'
+                      ? '1px solid rgba(139, 92, 246, 0.5)'
+                      : '1px solid var(--studio-border)',
+                    boxShadow: chordDisplayMode === 'nashville'
+                      ? '0 0 10px rgba(245, 158, 11, 0.3)'
+                      : chordDisplayMode === 'roman'
+                      ? '0 0 10px rgba(139, 92, 246, 0.3)'
+                      : undefined,
+                  }}
+                >
+                  <Music2 className="h-3 w-3" />
+                  <span>
+                    {chordDisplayMode === 'nashville' ? '123' : chordDisplayMode === 'roman' ? 'IV' : 'C'}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Chord Display: {chordDisplayMode === 'standard' ? 'Standard (C, Am, G7)' : chordDisplayMode === 'nashville' ? 'Nashville Numbers (1, 6m, 5/7)' : 'Roman Numerals (I, vi, V7)'}
+                <br />
+                <span className="text-muted-foreground">Click to cycle modes</span>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -750,6 +822,143 @@ export function TransportBar({
 
           <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
 
+          {/* Global Transpose Controls */}
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1">
+                  <Music className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-subtle)' }} />
+                  <Select
+                    value={projectKey}
+                    onValueChange={(value: MusicalKey) => setProjectKey(value)}
+                  >
+                    <SelectTrigger
+                      className="h-8 w-16 text-xs font-bold border-none"
+                      style={{
+                        background: 'var(--studio-surface)',
+                        color: 'var(--studio-text)',
+                      }}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MUSICAL_KEYS.map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {key}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={projectKeyMode}
+                    onValueChange={(value: KeyMode) => setProjectKeyMode(value)}
+                  >
+                    <SelectTrigger
+                      className="h-8 w-20 text-xs font-bold border-none"
+                      style={{
+                        background: 'var(--studio-surface)',
+                        color: 'var(--studio-text)',
+                      }}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="major">Major</SelectItem>
+                      <SelectItem value="minor">Minor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                Project Key - All audio & MIDI will transpose relative to this key
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Transpose Display with visual indicator */}
+            {globalTranspose !== 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className="flex items-center gap-1 px-2 py-1 rounded text-xs font-bold"
+                    style={{
+                      background: globalTranspose > 0 
+                        ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.3))'
+                        : 'linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(234, 88, 12, 0.3))',
+                      color: globalTranspose > 0 ? '#4ade80' : '#fb923c',
+                      border: globalTranspose > 0 
+                        ? '1px solid rgba(34, 197, 94, 0.4)'
+                        : '1px solid rgba(249, 115, 22, 0.4)',
+                      boxShadow: globalTranspose > 0
+                        ? '0 0 8px rgba(34, 197, 94, 0.3)'
+                        : '0 0 8px rgba(249, 115, 22, 0.3)',
+                    }}
+                  >
+                    {globalTranspose > 0 ? '↑' : '↓'}
+                    {Math.abs(globalTranspose)}
+                    <span className="ml-1 opacity-70">
+                      {originalProjectKey} → {getTransposedKey()}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Transposed {Math.abs(globalTranspose)} semitone{Math.abs(globalTranspose) !== 1 ? 's' : ''} {globalTranspose > 0 ? 'up' : 'down'}
+                  <br />
+                  Original: {originalProjectKey} {projectKeyMode} → {getTransposedKey()} {projectKeyMode}
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* Transpose Up/Down Buttons */}
+            <div className="flex flex-col gap-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="studio-btn h-4 w-6 rounded-sm flex items-center justify-center"
+                    onClick={transposeUp}
+                    disabled={globalTranspose >= 12}
+                    style={{ opacity: globalTranspose >= 12 ? 0.4 : 1 }}
+                  >
+                    <ChevronUp className="h-3 w-3" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Transpose Up (Shift+↑)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="studio-btn h-4 w-6 rounded-sm flex items-center justify-center"
+                    onClick={transposeDown}
+                    disabled={globalTranspose <= -12}
+                    style={{ opacity: globalTranspose <= -12 ? 0.4 : 1 }}
+                  >
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Transpose Down (Shift+↓)</TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* Reset Button - only show when transposed */}
+            {globalTranspose !== 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="studio-btn h-8 w-8 rounded flex items-center justify-center"
+                    onClick={resetTranspose}
+                    style={{
+                      color: '#fbbf24',
+                    }}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Reset Transpose (Shift+0)</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+
+          <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+
           {/* Progress Bar - Marketplace-style */}
           <div className="flex items-center gap-2 min-w-[180px]">
             <span
@@ -804,6 +1013,37 @@ export function TransportBar({
           </div>
 
           <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+
+          {/* CPU Savings Indicator */}
+          {getFrozenTrackCount() > 0 && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(30, 58, 138, 0.2))',
+                      border: '1px solid rgba(6, 182, 212, 0.3)',
+                      boxShadow: '0 0 10px rgba(6, 182, 212, 0.15)',
+                    }}
+                  >
+                    <Snowflake className="w-3.5 h-3.5 text-cyan-400" />
+                    <div className="flex items-center gap-1">
+                      <Cpu className="w-3 h-3 text-cyan-300" />
+                      <span className="text-xs font-bold text-cyan-400">
+                        {getFrozenTrackCount()} FROZEN
+                      </span>
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-semibold">{getFrozenTrackCount()} track{getFrozenTrackCount() > 1 ? 's' : ''} frozen</p>
+                  <p className="text-xs text-gray-400">CPU optimized - plugins bypassed</p>
+                </TooltipContent>
+              </Tooltip>
+              <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+            </>
+          )}
 
           {/* Undo/Redo */}
           {(onUndo || onRedo) && (

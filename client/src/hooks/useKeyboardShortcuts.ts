@@ -172,4 +172,9 @@ export const STUDIO_SHORTCUTS = {
   SNAP_TOGGLE: { key: 'n', description: 'Toggle snap to grid', category: 'Grid' },
   SNAP_GRID_FINER: { key: 'g', description: 'Finer grid', category: 'Grid' },
   SNAP_GRID_COARSER: { key: 'g', shift: true, description: 'Coarser grid', category: 'Grid' },
+  
+  // Global Transpose
+  TRANSPOSE_UP: { key: 'ArrowUp', shift: true, description: 'Transpose up 1 semitone', category: 'Transpose' },
+  TRANSPOSE_DOWN: { key: 'ArrowDown', shift: true, description: 'Transpose down 1 semitone', category: 'Transpose' },
+  TRANSPOSE_RESET: { key: '0', shift: true, description: 'Reset transpose', category: 'Transpose' },
 };

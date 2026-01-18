@@ -98,6 +98,8 @@ import { AutomationLane } from '@/components/studio/AutomationLane';
 import AudioEngine from '@/lib/audioEngine';
 import { StudioOneWrapper } from '@/components/studio/StudioOneWrapper';
 import { StudioTopBar } from '@/components/studio/StudioTopBar';
+import { LauncherPanel } from '@/components/studio/LauncherPanel';
+import { ShowPage } from '@/components/studio/ShowPage';
 import { StudioInspector } from '@/components/studio/StudioInspector';
 import { GlobalLyricsTrack } from '@/components/studio/GlobalLyricsTrack';
 import { LyricsDisplayWindow } from '@/components/studio/LyricsDisplayWindow';
@@ -122,6 +124,7 @@ import { ProjectSetupConsole } from '@/components/studio/ProjectSetupConsole';
 import { WorkflowStateBar, type WorkflowState } from '@/components/studio/WorkflowStateBar';
 import { SessionManager } from '@/components/studio/SessionManager';
 import { MasteringDeliveryPanel } from '@/components/studio/MasteringDeliveryPanel';
+import { ProjectPage } from '@/components/studio/ProjectPage';
 import { KeyboardShortcutsOverlay } from '@/components/studio/KeyboardShortcutsOverlay';
 import { LEDMeter, LoudnessMeter, ClipIndicator } from '@/components/studio/LEDMeter';
 import { EnhancedZoomControls } from '@/components/studio/EnhancedZoomControls';
@@ -294,6 +297,9 @@ export default function Studio() {
     toggleLyricsDisplay,
     recordingMode,
     setRecordingMode,
+    showLauncher,
+    toggleLauncher,
+    toggleShowPage,
   } = useStudioStore();
 
   // DAW Professional Features
@@ -394,6 +400,7 @@ export default function Studio() {
   const [showProjectSetup, setShowProjectSetup] = useState(false);
   const [showSessionManager, setShowSessionManager] = useState(false);
   const [showMasteringDelivery, setShowMasteringDelivery] = useState(false);
+  const [showMasteringSuite, setShowMasteringSuite] = useState(false);
 
   const shortcutOverlay = useShortcutOverlay();
 
@@ -2472,11 +2479,15 @@ export default function Studio() {
                 onUploadFile={() => setShowFullscreenUpload(true)}
                 onSaveProject={handleSaveProject}
                 onOpenAIGenerator={() => setShowAIGeneratorDialog(true)}
+                onOpenMasteringSuite={() => setShowMasteringSuite(true)}
                 onUndo={handleUndo}
                 onRedo={handleRedo}
                 canUndo={undoStack.length > 0}
                 canRedo={redoStack.length > 0}
                 isSaving={isSaving}
+                showLauncher={showLauncher}
+                onToggleLauncher={toggleLauncher}
+                onOpenShowMode={toggleShowPage}
               />
             }
               transport={
@@ -2579,6 +2590,26 @@ export default function Studio() {
                 onReorderTracks={handleReorderTracks}
               />
             </StudioOneWrapper>
+
+          {/* Launcher Panel - Ableton-style clip grid */}
+          {showLauncher && (
+            <div className="absolute bottom-0 left-0 right-0 h-96 border-t" style={{
+              backgroundColor: 'var(--studio-bg-medium)',
+              borderColor: 'var(--studio-border)',
+              zIndex: 40,
+            }}>
+              <LauncherPanel 
+                tracks={displayTracks.map(t => ({
+                  id: t.id,
+                  name: t.name,
+                  color: t.color,
+                }))}
+              />
+            </div>
+          )}
+
+          {/* Show Page - Live Performance Environment */}
+          <ShowPage />
 
           {/* Upload overlay - uses inline positioning instead of portal to avoid fullscreen exit issues */}
           {showFullscreenUpload && (
@@ -3141,6 +3172,11 @@ export default function Studio() {
               setWorkflowState('delivery');
               toast({ title: 'Ready for distribution', description: 'Your track is ready to distribute' });
             }}
+          />
+
+          <ProjectPage
+            isOpen={showMasteringSuite}
+            onClose={() => setShowMasteringSuite(false)}
           />
 
           {routingMatrixVisible && (

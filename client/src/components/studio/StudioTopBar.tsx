@@ -39,6 +39,9 @@ import {
   Undo2,
   Redo2,
   Wand2,
+  Disc3,
+  LayoutGrid,
+  Radio,
 } from 'lucide-react';
 
 interface Project {
@@ -66,11 +69,15 @@ interface StudioTopBarProps {
   onSaveProject?: () => void;
   onShowTutorial?: () => void;
   onOpenAIGenerator?: () => void;
+  onOpenMasteringSuite?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
   isSaving?: boolean;
+  showLauncher?: boolean;
+  onToggleLauncher?: () => void;
+  onOpenShowMode?: () => void;
 }
 
 /**
@@ -95,11 +102,13 @@ export function StudioTopBar({
   onSaveProject,
   onShowTutorial,
   onOpenAIGenerator,
+  onOpenMasteringSuite,
   onUndo,
   onRedo,
   canUndo = false,
   canRedo = false,
   isSaving = false,
+  onOpenShowMode,
 }: StudioTopBarProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newProjectTitle, setNewProjectTitle] = useState('');
@@ -300,6 +309,68 @@ export function StudioTopBar({
               </TooltipTrigger>
               <TooltipContent>AI Melody Generator - Create melodies, beats & instruments</TooltipContent>
             </Tooltip>
+
+            {/* Mastering Suite Button */}
+            {onOpenMasteringSuite && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="h-9 px-3 rounded-md flex items-center justify-center gap-1.5 transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                      color: '#fff',
+                      border: '1px solid var(--studio-border-subtle)',
+                      boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
+                    }}
+                    onClick={onOpenMasteringSuite}
+                    data-testid="button-mastering-suite"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.3)';
+                    }}
+                  >
+                    <Disc3 className="h-4 w-4" />
+                    <span className="text-xs font-medium hidden lg:inline">Mastering</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Mastering Suite - Master and export your tracks</TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* Show Mode Button */}
+            {onOpenShowMode && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="h-9 px-3 rounded-md flex items-center justify-center gap-1.5 transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                      color: '#fff',
+                      border: '1px solid var(--studio-border-subtle)',
+                      boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
+                    }}
+                    onClick={onOpenShowMode}
+                    data-testid="button-show-mode"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(34, 197, 94, 0.3)';
+                    }}
+                  >
+                    <Radio className="h-4 w-4" />
+                    <span className="text-xs font-medium hidden lg:inline">Show Mode</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Show Mode - Live performance environment</TooltipContent>
+              </Tooltip>
+            )}
 
             {/* Undo/Redo Buttons */}
             <div className="h-6 w-px mx-1" style={{ background: 'var(--studio-border)' }} />
@@ -626,6 +697,26 @@ export function StudioTopBar({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Show Studio Tutorial</TooltipContent>
+            </Tooltip>
+          )}
+
+          {onToggleLauncher && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={onToggleLauncher}
+                  data-testid="button-launcher"
+                  style={{
+                    color: showLauncher ? 'var(--studio-accent)' : 'var(--studio-text)',
+                  }}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Session Launcher (Ableton-style clip grid)</TooltipContent>
             </Tooltip>
           )}
 
