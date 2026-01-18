@@ -15,16 +15,28 @@ on:
           - ios
           - android
           - both
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
 
 env:
   NODE_VERSION: '20'
   JAVA_VERSION: '17'
   APP_NAME: 'Max Booster'
+  APP_ID: 'com.blawzmusic.maxbooster'
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.platform == 'android' || github.event.inputs.platform == 'both' || github.event.inputs.platform == '' }}
+    if: >-
+      github.event_name == 'push' ||
+      github.event.inputs.platform == 'android' ||
+      github.event.inputs.platform == 'both'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -44,50 +56,107 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Capacitor dependencies
-        run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npm install @capacitor/app @capacitor/browser @capacitor/camera
-          npm install @capacitor/filesystem @capacitor/haptics @capacitor/keyboard
-          npm install @capacitor/local-notifications @capacitor/network
-          npm install @capacitor/preferences @capacitor/push-notifications
-          npm install @capacitor/share @capacitor/splash-screen @capacitor/status-bar
+      - name: Install Capacitor CLI
+        run: npm install -g @capacitor/cli
 
       - name: Build web assets
         run: npm run build
+        env:
+          NODE_ENV: production
 
-      - name: Add Android platform
-        run: npx cap add android || true
+      - name: Initialize Android platform
+        run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx cap sync android
 
-      - name: Sync Capacitor
-        run: npx cap sync android
+      - name: Setup Android Signing
+        id: android_signing
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "::warning::No Android keystore provided, release build will be unsigned"
+            echo "ANDROID_SIGNING_CONFIGURED=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          
+          cat > android/keystore.properties << EOF
+          storeFile=release.keystore
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+          
+          cat > android/app/signing.gradle << 'GRADLE'
+          def keystorePropertiesFile = rootProject.file("keystore.properties")
+          if (keystorePropertiesFile.exists()) {
+              def keystoreProperties = new Properties()
+              keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+              
+              android {
+                  signingConfigs {
+                      release {
+                          storeFile file(keystoreProperties['storeFile'])
+                          storePassword keystoreProperties['storePassword']
+                          keyAlias keystoreProperties['keyAlias']
+                          keyPassword keystoreProperties['keyPassword']
+                      }
+                  }
+                  buildTypes {
+                      release {
+                          signingConfig signingConfigs.release
+                      }
+                  }
+              }
+          }
+          GRADLE
+          
+          if ! grep -q "signing.gradle" android/app/build.gradle; then
+            echo "" >> android/app/build.gradle
+            echo "apply from: 'signing.gradle'" >> android/app/build.gradle
+          fi
+          
+          echo "ANDROID_SIGNING_CONFIGURED=true" >> $GITHUB_OUTPUT
+          echo "Android signing configured successfully"
 
       - name: Build Android Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Build Android Release APK
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
         working-directory: android
-        run: ./gradlew assembleRelease
-        env:
-          ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_FILE }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Build Android App Bundle (AAB)
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
         working-directory: android
-        run: ./gradlew bundleRelease
-        env:
-          ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_FILE }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: List build outputs
+        run: |
+          echo "=== Debug APK ==="
+          find android -name "*.apk" -path "*/debug/*" 2>/dev/null || echo "No debug APK found"
+          echo "=== Release APK ==="
+          find android -name "*.apk" -path "*/release/*" 2>/dev/null || echo "No release APK found"
+          echo "=== App Bundle ==="
+          find android -name "*.aab" 2>/dev/null || echo "No AAB found"
 
       - name: Upload Android Debug APK
         uses: actions/upload-artifact@v4
@@ -98,7 +167,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Android Release APK
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
@@ -107,7 +176,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Android App Bundle
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
         uses: actions/upload-artifact@v4
         with:
           name: android-app-bundle
@@ -116,8 +185,11 @@ jobs:
           retention-days: 30
 
   build-ios:
-    runs-on: macos-latest
-    if: ${{ github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'both' || github.event.inputs.platform == '' }}
+    runs-on: macos-14
+    if: >-
+      github.event_name == 'push' ||
+      github.event.inputs.platform == 'ios' ||
+      github.event.inputs.platform == 'both'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -131,82 +203,182 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: '15.4'
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/App/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Capacitor dependencies
-        run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/ios
-          npm install @capacitor/app @capacitor/browser @capacitor/camera
-          npm install @capacitor/filesystem @capacitor/haptics @capacitor/keyboard
-          npm install @capacitor/local-notifications @capacitor/network
-          npm install @capacitor/preferences @capacitor/push-notifications
-          npm install @capacitor/share @capacitor/splash-screen @capacitor/status-bar
+      - name: Install Capacitor CLI
+        run: npm install -g @capacitor/cli
 
       - name: Build web assets
         run: npm run build
+        env:
+          NODE_ENV: production
 
-      - name: Add iOS platform
-        run: npx cap add ios || true
+      - name: Initialize iOS platform
+        run: |
+          if [ ! -d "ios" ]; then
+            npx cap add ios
+          fi
+          npx cap sync ios
 
-      - name: Sync Capacitor
-        run: npx cap sync ios
-
-      - name: Install CocoaPods
+      - name: Install CocoaPods dependencies
         working-directory: ios/App
-        run: pod install
+        run: |
+          pod install || pod install --repo-update
 
-      - name: Build iOS (Debug - No Signing)
+      - name: Build iOS Simulator (Debug)
         working-directory: ios/App
         run: |
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
             -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
             -derivedDataPath build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=YES \
             build
 
+      - name: Check iOS Signing Prerequisites
+        id: ios_signing_check
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
+        run: |
+          MISSING=""
+          if [ -z "${{ secrets.APPLE_CERTIFICATE_BASE64 }}" ]; then
+            MISSING="${MISSING}APPLE_CERTIFICATE_BASE64 "
+          fi
+          if [ -z "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" ]; then
+            MISSING="${MISSING}APPLE_CERTIFICATE_PASSWORD "
+          fi
+          if [ -z "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" ]; then
+            MISSING="${MISSING}APPLE_PROVISIONING_PROFILE_BASE64 "
+          fi
+          if [ -z "${{ secrets.APPLE_TEAM_ID }}" ]; then
+            MISSING="${MISSING}APPLE_TEAM_ID "
+          fi
+          
+          if [ -n "$MISSING" ]; then
+            echo "::warning::Missing iOS signing secrets: $MISSING"
+            echo "::warning::Release build will be skipped. Debug simulator build will still run."
+            echo "IOS_SIGNING_AVAILABLE=false" >> $GITHUB_OUTPUT
+          else
+            echo "All iOS signing secrets are available"
+            echo "IOS_SIGNING_AVAILABLE=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Apple Certificate
+        id: setup_certificate
+        if: (startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release') && steps.ios_signing_check.outputs.IOS_SIGNING_AVAILABLE == 'true'
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ github.run_id }}
+        run: |
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          
+          echo -n "$APPLE_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          echo -n "$APPLE_PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+          
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          security import $CERTIFICATE_PATH -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+          
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          PROFILE_UUID=$(security cms -D -i $PP_PATH | plutil -extract UUID raw -)
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
+          
+          PROFILE_NAME=$(security cms -D -i $PP_PATH | plutil -extract Name raw -)
+          echo "PROVISIONING_PROFILE_NAME=${PROFILE_NAME}" >> $GITHUB_ENV
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+          echo "IOS_SIGNING_CONFIGURED=true" >> $GITHUB_OUTPUT
+          echo "Certificate installed, Profile: ${PROFILE_NAME} (UUID: ${PROFILE_UUID})"
+
+      - name: Create ExportOptions.plist
+        if: steps.setup_certificate.outputs.IOS_SIGNING_CONFIGURED == 'true'
+        run: |
+          cat > ios/App/ExportOptions.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>${{ secrets.APPLE_TEAM_ID }}</string>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>uploadSymbols</key>
+              <true/>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>${{ env.APP_ID }}</key>
+                  <string>${PROVISIONING_PROFILE_NAME}</string>
+              </dict>
+          </dict>
+          </plist>
+          EOF
+
       - name: Build iOS Archive (Release)
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.setup_certificate.outputs.IOS_SIGNING_CONFIGURED == 'true'
         working-directory: ios/App
         run: |
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
-            -archivePath build/App.xcarchive \
+            -sdk iphoneos \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
             archive
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
 
       - name: Export IPA
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.setup_certificate.outputs.IOS_SIGNING_CONFIGURED == 'true'
         working-directory: ios/App
         run: |
           xcodebuild \
             -exportArchive \
-            -archivePath build/App.xcarchive \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
             -exportPath build/ipa \
             -exportOptionsPlist ExportOptions.plist
+
+      - name: Cleanup Keychain
+        if: always()
+        run: |
+          if [ -n "${{ env.KEYCHAIN_PATH }}" ]; then
+            security delete-keychain ${{ env.KEYCHAIN_PATH }} || true
+          fi
 
       - name: Upload iOS Debug Build
         uses: actions/upload-artifact@v4
         with:
-          name: ios-debug-build
+          name: ios-simulator-build
           path: ios/App/build/Build/Products/Debug-iphonesimulator/*.app
           if-no-files-found: warn
           retention-days: 14
 
       - name: Upload iOS IPA
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
         uses: actions/upload-artifact@v4
         with:
           name: ios-release-ipa
@@ -214,41 +386,115 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-  upload-to-stores:
-    needs: [build-android, build-ios]
+  upload-to-play-store:
+    needs: build-android
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') && needs.build-android.result == 'success'
     steps:
-      - name: Download Android artifacts
+      - name: Download Android App Bundle
         uses: actions/download-artifact@v4
         with:
           name: android-app-bundle
           path: android-bundle
+
+      - name: List downloaded files
+        run: ls -la android-bundle/
 
       - name: Upload to Google Play (Internal Testing)
         if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: com.blawzmusic.maxbooster
+          packageName: ${{ env.APP_ID }}
           releaseFiles: android-bundle/*.aab
           track: internal
           status: draft
+          whatsNewDirectory: .github/whatsnew
 
-      - name: Store upload summary
+  create-release:
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: >-
+      always() &&
+      startsWith(github.ref, 'refs/tags/v') &&
+      (needs.build-android.result == 'success' || needs.build-ios.result == 'success')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display downloaded files
+        run: |
+          echo "=== All artifacts ==="
+          find artifacts -type f | sort
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/android-release-apk/*.apk
+            artifacts/android-app-bundle/*.aab
+            artifacts/ios-release-ipa/*.ipa
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          name: "${{ env.APP_NAME }} v${{ steps.version.outputs.VERSION }}"
+          body: |
+            ## ${{ env.APP_NAME }} v${{ steps.version.outputs.VERSION }}
+            
+            ### Mobile Downloads
+            
+            #### Android
+            - **APK**: Direct install (sideloading)
+            - **AAB**: Google Play Store upload
+            
+            #### iOS
+            - **IPA**: Upload to App Store Connect via Transporter
+            
+            ### Installation Instructions
+            
+            **Android APK:**
+            1. Download the APK file
+            2. Enable "Install from unknown sources" in settings
+            3. Open the APK to install
+            
+            **Android (Play Store):**
+            The AAB is automatically uploaded to the internal testing track.
+            
+            **iOS:**
+            1. Download the IPA
+            2. Use Apple Transporter to upload to App Store Connect
+            3. Submit for TestFlight or App Store review
+            
+            ### What's New
+            See the automatically generated release notes below.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-summary:
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Build Summary
         run: |
           echo "## Mobile Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Android" >> $GITHUB_STEP_SUMMARY
-          echo "- Debug APK: Available as artifact" >> $GITHUB_STEP_SUMMARY
-          echo "- Release APK: Available as artifact" >> $GITHUB_STEP_SUMMARY
-          echo "- App Bundle (AAB): Available as artifact / Uploaded to Play Store" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Android | ${{ needs.build-android.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| iOS | ${{ needs.build-ios.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### iOS" >> $GITHUB_STEP_SUMMARY
-          echo "- Debug Build: Available as artifact (simulator)" >> $GITHUB_STEP_SUMMARY
-          echo "- Release IPA: Available as artifact" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "1. Download artifacts from the Actions tab" >> $GITHUB_STEP_SUMMARY
-          echo "2. For iOS: Upload IPA to App Store Connect using Transporter" >> $GITHUB_STEP_SUMMARY
-          echo "3. For Android: Upload AAB to Google Play Console" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Android Debug APK (14 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- Android Release APK (30 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- Android App Bundle - AAB (30 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- iOS Simulator Build (14 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- iOS Release IPA (30 day retention)" >> $GITHUB_STEP_SUMMARY

@@ -10,13 +10,62 @@ on:
         description: 'Version to build (e.g., 2.0.0)'
         required: false
         default: ''
+      platforms:
+        description: 'Platforms to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - linux
+          - windows
+          - macos
 
 env:
   NODE_VERSION: '20'
   APP_NAME: 'Max Booster'
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      build_linux: ${{ steps.platforms.outputs.LINUX }}
+      build_windows: ${{ steps.platforms.outputs.WINDOWS }}
+      build_macos: ${{ steps.platforms.outputs.MACOS }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            echo "VERSION=${VERSION}-dev.${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine platforms
+        id: platforms
+        run: |
+          PLATFORM="${{ github.event.inputs.platforms }}"
+          if [ "$PLATFORM" = "all" ] || [ -z "$PLATFORM" ]; then
+            echo "LINUX=true" >> $GITHUB_OUTPUT
+            echo "WINDOWS=true" >> $GITHUB_OUTPUT
+            echo "MACOS=true" >> $GITHUB_OUTPUT
+          else
+            echo "LINUX=$([[ "$PLATFORM" == "linux" ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+            echo "WINDOWS=$([[ "$PLATFORM" == "windows" ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+            echo "MACOS=$([[ "$PLATFORM" == "macos" ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+          fi
+
   build-linux:
+    needs: prepare
+    if: needs.prepare.outputs.build_linux == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -28,19 +77,50 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      - name: Cache Electron Builder
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-builder-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-builder-
+
       - name: Install Linux build dependencies
-        run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot rpm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            dpkg \
+            fakeroot \
+            rpm \
+            libarchive-tools
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Update version
+        run: |
+          npm version ${{ needs.prepare.outputs.version }} --no-git-tag-version --allow-same-version || true
+
       - name: Build web assets
         run: npm run build
+        env:
+          NODE_ENV: production
 
       - name: Build Linux packages
-        run: npx electron-builder --linux AppImage deb tar.gz
+        run: npx electron-builder --linux AppImage deb tar.gz --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List build outputs
+        run: ls -la dist-installers/
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -54,6 +134,8 @@ jobs:
           retention-days: 30
 
   build-windows:
+    needs: prepare
+    if: needs.prepare.outputs.build_windows == 'true'
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -65,16 +147,43 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/electron/Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      - name: Cache Electron Builder
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/electron-builder/cache
+          key: ${{ runner.os }}-electron-builder-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-builder-
+
       - name: Install dependencies
         run: npm ci
 
+      - name: Update version
+        run: |
+          npm version ${{ needs.prepare.outputs.version }} --no-git-tag-version --allow-same-version
+        continue-on-error: true
+
       - name: Build web assets
         run: npm run build
+        env:
+          NODE_ENV: production
 
       - name: Build Windows installer
-        run: npx electron-builder --win nsis portable
+        run: npx electron-builder --win nsis portable --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List build outputs
+        run: Get-ChildItem dist-installers/
+        shell: powershell
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -86,7 +195,9 @@ jobs:
           retention-days: 30
 
   build-macos:
-    runs-on: macos-latest
+    needs: prepare
+    if: needs.prepare.outputs.build_macos == 'true'
+    runs-on: macos-14
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -97,21 +208,126 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/electron
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      - name: Cache Electron Builder
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/electron-builder
+          key: ${{ runner.os }}-electron-builder-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-builder-
+
       - name: Install dependencies
         run: npm ci
 
+      - name: Update version
+        run: |
+          npm version ${{ needs.prepare.outputs.version }} --no-git-tag-version --allow-same-version || true
+
       - name: Build web assets
         run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Check macOS Signing Prerequisites
+        id: macos_signing_check
+        run: |
+          if [ -z "${{ secrets.MAC_CERTIFICATE_BASE64 }}" ]; then
+            echo "::warning::No macOS certificate provided, build will be unsigned"
+            echo "MAC_SIGNING_AVAILABLE=false" >> $GITHUB_OUTPUT
+          else
+            echo "macOS signing certificate available"
+            echo "MAC_SIGNING_AVAILABLE=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup macOS signing
+        id: setup_macos_signing
+        if: steps.macos_signing_check.outputs.MAC_SIGNING_AVAILABLE == 'true'
+        env:
+          MAC_CERTIFICATE_BASE64: ${{ secrets.MAC_CERTIFICATE_BASE64 }}
+          MAC_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ github.run_id }}
+        run: |
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          
+          echo -n "$MAC_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          security import $CERTIFICATE_PATH -P "$MAC_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+          
+          echo "CSC_KEYCHAIN=$KEYCHAIN_PATH" >> $GITHUB_ENV
+          echo "MAC_SIGNING_CONFIGURED=true" >> $GITHUB_OUTPUT
+          echo "Certificate imported successfully"
 
       - name: Build macOS installer
-        run: npx electron-builder --mac dmg zip
+        run: npx electron-builder --mac dmg zip --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ${{ secrets.MAC_CERTIFICATE }}
+          CSC_LINK: ${{ secrets.MAC_CERTIFICATE_BASE64 }}
           CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Notarize macOS app
+        if: steps.setup_macos_signing.outputs.MAC_SIGNING_CONFIGURED == 'true' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
+            echo "::warning::Notarization secrets not configured, skipping notarization"
+            exit 0
+          fi
+          
+          DMG_FILE=$(find dist-installers -name "*.dmg" | head -1)
+          ZIP_FILE=$(find dist-installers -name "*.zip" | head -1)
+          
+          if [ -n "$DMG_FILE" ]; then
+            echo "Notarizing $DMG_FILE..."
+            xcrun notarytool submit "$DMG_FILE" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait
+            
+            xcrun stapler staple "$DMG_FILE"
+            echo "DMG notarization complete"
+          fi
+          
+          if [ -n "$ZIP_FILE" ]; then
+            echo "Notarizing $ZIP_FILE..."
+            xcrun notarytool submit "$ZIP_FILE" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait
+            echo "ZIP notarization complete (stapling not supported for ZIP)"
+          fi
+
+      - name: Cleanup Keychain
+        if: always()
+        run: |
+          if [ -n "${{ env.CSC_KEYCHAIN }}" ]; then
+            security delete-keychain ${{ env.CSC_KEYCHAIN }} || true
+          fi
+
+      - name: List build outputs
+        run: ls -la dist-installers/
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -124,9 +340,9 @@ jobs:
           retention-days: 30
 
   create-release:
-    needs: [build-linux, build-windows, build-macos]
+    needs: [prepare, build-linux, build-windows, build-macos]
+    if: always() && startsWith(github.ref, 'refs/tags/v') && (needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success')
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
@@ -134,33 +350,81 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+        continue-on-error: true
 
       - name: Display downloaded files
-        run: find artifacts -type f -name "*" | head -50
+        run: |
+          echo "=== All artifacts ==="
+          find artifacts -type f 2>/dev/null | sort || echo "No artifacts found"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/windows-installers/*
-            artifacts/macos-installers/*
-            artifacts/linux-installers/*
+            artifacts/windows-installers/*.exe
+            artifacts/macos-installers/*.dmg
+            artifacts/macos-installers/*.zip
+            artifacts/linux-installers/*.AppImage
+            artifacts/linux-installers/*.deb
+            artifacts/linux-installers/*.tar.gz
           generate_release_notes: true
           draft: false
-          prerelease: false
-          name: "${{ env.APP_NAME }} ${{ github.ref_name }}"
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          name: "${{ env.APP_NAME }} v${{ needs.prepare.outputs.version }}"
           body: |
-            ## ${{ env.APP_NAME }} ${{ github.ref_name }}
+            ## ${{ env.APP_NAME }} v${{ needs.prepare.outputs.version }}
             
-            ### Downloads
-            - **Windows**: NSIS Installer (.exe) or Portable (.exe)
-            - **macOS**: DMG or ZIP
-            - **Linux**: AppImage, DEB, or tar.gz
+            ### Desktop Downloads
             
-            ### Installation
-            Download the appropriate installer for your operating system and run it.
+            | Platform | Installer | Portable |
+            |----------|-----------|----------|
+            | **Windows** | NSIS Installer (.exe) | Portable (.exe) |
+            | **macOS** | DMG | ZIP |
+            | **Linux** | AppImage, DEB | tar.gz |
+            
+            ### Installation Instructions
+            
+            **Windows:**
+            - Download the NSIS installer (.exe) and run it
+            - Or download the portable version for no-install usage
+            
+            **macOS:**
+            - Download the DMG, open it, and drag Max Booster to Applications
+            - If you see a security warning, go to System Preferences > Security & Privacy to allow the app
+            
+            **Linux:**
+            - **AppImage**: Make executable with `chmod +x *.AppImage` and run
+            - **DEB**: Install with `sudo dpkg -i *.deb`
+            - **tar.gz**: Extract and run the binary
+            
+            ### System Requirements
+            - **Windows**: Windows 10 or later (64-bit)
+            - **macOS**: macOS 11 (Big Sur) or later
+            - **Linux**: Ubuntu 20.04 or equivalent (64-bit)
             
             ### What's New
             See the automatically generated release notes below.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-summary:
+    needs: [prepare, build-linux, build-windows, build-macos]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## Desktop Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux | ${{ needs.build-linux.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows | ${{ needs.build-windows.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS | ${{ needs.build-macos.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts (30 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows: NSIS Installer, Portable" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS: DMG, ZIP" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux: AppImage, DEB, tar.gz" >> $GITHUB_STEP_SUMMARY
