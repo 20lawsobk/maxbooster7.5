@@ -455,7 +455,16 @@ async function buildCapsule(options: BuildOptions = {}): Promise<void> {
   }
 
   try {
-    execSync(`npx esbuild ${loaderSrc} --bundle --platform=node --format=esm --outfile=${loaderDest} --minify --target=node20`, {
+    execFileSync('npx', [
+      'esbuild',
+      loaderSrc,
+      '--bundle',
+      '--platform=node',
+      '--format=esm',
+      '--outfile=' + loaderDest,
+      '--minify',
+      '--target=node20'
+    ], {
       cwd: projectRoot,
       stdio: 'inherit',
     });
