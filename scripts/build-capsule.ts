@@ -34,7 +34,7 @@
  */
 
 import { PlatformCapsuleBuilder, CapsuleMetadata } from '../server/pocket-dimension/platform-capsule.js';
-import { execSync, spawn } from 'child_process';
+import { execSync, execFileSync, spawn } from 'child_process';
 import { existsSync, mkdirSync, rmSync, readdirSync, statSync, readFileSync, writeFileSync, copyFileSync, cpSync, createReadStream } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -231,7 +231,7 @@ function splitIntoShards(tarballPath: string, outputDir: string): TarballShard[]
   // Use streaming with split command for memory efficiency
   // Each shard is a complete segment that must be concatenated in order
   try {
-    execSync(`split -b ${SHARD_SIZE_MB}m "${tarballPath}" "${join(shardsDir, 'shard_')}"`, {
+    execFileSync('split', ['-b', `${SHARD_SIZE_MB}m`, tarballPath, join(shardsDir, 'shard_')], {
       stdio: 'pipe',
     });
     
