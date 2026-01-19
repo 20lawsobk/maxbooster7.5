@@ -60,7 +60,7 @@ export class SocialOAuthService {
       const iv = Buffer.from(ivHex, 'hex');
       const authTag = Buffer.from(authTagHex, 'hex');
       const key = Buffer.from(TOKEN_ENCRYPTION_KEY.substring(0, 32).padEnd(32, '0'));
-      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
       decipher.setAuthTag(authTag);
       
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
