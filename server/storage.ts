@@ -18,10 +18,13 @@ import {
   hyperFollowPages,
   listings,
   sessions,
+  collabSnapshots,
   type User, 
   type InsertUser, 
   type DSPProvider,
-  type InsertProject
+  type InsertProject,
+  type CollabSnapshot,
+  type InsertCollabSnapshot
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
@@ -1240,6 +1243,52 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error fetching seller orders:', error);
       return [];
+    }
+  }
+
+  // ============================================================================
+  // COLLABORATION SNAPSHOTS - Real-time Yjs document persistence
+  // ============================================================================
+
+  async saveCollabSnapshot(data: InsertCollabSnapshot): Promise<CollabSnapshot> {
+    const [snapshot] = await db
+      .insert(collabSnapshots)
+      .values(data)
+      .returning();
+    return snapshot;
+  }
+
+  async getLatestCollabSnapshot(projectId: string): Promise<CollabSnapshot | null> {
+    const [snapshot] = await db
+      .select()
+      .from(collabSnapshots)
+      .where(eq(collabSnapshots.projectId, projectId))
+      .orderBy(desc(collabSnapshots.createdAt))
+      .limit(1);
+    return snapshot || null;
+  }
+
+  async getCollabSnapshots(projectId: string, limit: number = 10): Promise<CollabSnapshot[]> {
+    return await db
+      .select()
+      .from(collabSnapshots)
+      .where(eq(collabSnapshots.projectId, projectId))
+      .orderBy(desc(collabSnapshots.createdAt))
+      .limit(limit);
+  }
+
+  async deleteOldCollabSnapshots(projectId: string, keepCount: number = 10): Promise<void> {
+    const snapshots = await db
+      .select({ id: collabSnapshots.id })
+      .from(collabSnapshots)
+      .where(eq(collabSnapshots.projectId, projectId))
+      .orderBy(desc(collabSnapshots.createdAt));
+
+    if (snapshots.length > keepCount) {
+      const idsToDelete = snapshots.slice(keepCount).map(s => s.id);
+      for (const id of idsToDelete) {
+        await db.delete(collabSnapshots).where(eq(collabSnapshots.id, id));
+      }
     }
   }
 }

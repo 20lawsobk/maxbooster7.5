@@ -3472,6 +3472,23 @@ export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit
 export type InsertProjectMember = z.infer<typeof insertProjectMemberSchema>;
 
 // ============================================================================
+// COLLABORATION SNAPSHOTS - Persistent storage for real-time Yjs documents
+// ============================================================================
+export const collabSnapshots = pgTable("collab_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull(),
+  documentState: text("document_state").notNull(),
+  documentHash: varchar("document_hash", { length: 64 }),
+  version: integer("version").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by"),
+});
+
+export type CollabSnapshot = typeof collabSnapshots.$inferSelect;
+export const insertCollabSnapshotSchema = createInsertSchema(collabSnapshots).omit({ id: true, createdAt: true });
+export type InsertCollabSnapshot = z.infer<typeof insertCollabSnapshotSchema>;
+
+// ============================================================================
 // RELEASE COUNTDOWNS - Pre-release campaign tracking
 // ============================================================================
 export const releaseCountdowns = pgTable("release_countdowns", {
