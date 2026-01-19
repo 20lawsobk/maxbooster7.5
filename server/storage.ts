@@ -511,22 +511,26 @@ export class DatabaseStorage implements IStorage {
     const existingPlugins = await db.select().from(pluginCatalog).limit(1);
     if (existingPlugins.length > 0) return;
 
-    const defaultPlugins = [
-      { id: 'mb-eq8', name: 'EQ-8', slug: 'eq-8', type: 'eq', category: 'effect', vendor: 'Max Booster', version: '1.0.0', description: '8-band parametric EQ', isBuiltIn: true, isActive: true },
-      { id: 'mb-compressor', name: 'Compressor Pro', slug: 'compressor-pro', type: 'compressor', category: 'effect', vendor: 'Max Booster', version: '1.0.0', description: 'Professional compressor', isBuiltIn: true, isActive: true },
-      { id: 'mb-reverb', name: 'Reverb Space', slug: 'reverb-space', type: 'reverb', category: 'effect', vendor: 'Max Booster', version: '1.0.0', description: 'Algorithmic reverb', isBuiltIn: true, isActive: true },
-      { id: 'mb-delay', name: 'Delay Lab', slug: 'delay-lab', type: 'delay', category: 'effect', vendor: 'Max Booster', version: '1.0.0', description: 'Multi-tap delay', isBuiltIn: true, isActive: true },
-      { id: 'mb-limiter', name: 'Limiter Max', slug: 'limiter-max', type: 'limiter', category: 'effect', vendor: 'Max Booster', version: '1.0.0', description: 'Transparent limiter', isBuiltIn: true, isActive: true },
-      { id: 'mb-piano', name: 'MB Piano', slug: 'mb-piano', type: 'piano', category: 'instrument', vendor: 'Max Booster', version: '1.0.0', description: 'Virtual acoustic piano', isBuiltIn: true, isActive: true },
-      { id: 'mb-strings', name: 'MB Strings', slug: 'mb-strings', type: 'strings', category: 'instrument', vendor: 'Max Booster', version: '1.0.0', description: 'Lush string ensemble', isBuiltIn: true, isActive: true },
-      { id: 'mb-drums', name: 'MB Drums', slug: 'mb-drums', type: 'drums', category: 'instrument', vendor: 'Max Booster', version: '1.0.0', description: 'Punchy drum kit', isBuiltIn: true, isActive: true },
-      { id: 'mb-bass', name: 'MB Bass', slug: 'mb-bass', type: 'bass', category: 'instrument', vendor: 'Max Booster', version: '1.0.0', description: 'Deep bass synthesizer', isBuiltIn: true, isActive: true },
-      { id: 'mb-pad', name: 'MB Synth Pad', slug: 'mb-synth-pad', type: 'pad', category: 'instrument', vendor: 'Max Booster', version: '1.0.0', description: 'Atmospheric pad synthesizer', isBuiltIn: true, isActive: true },
-    ];
-
-    for (const plugin of defaultPlugins) {
-      await db.insert(pluginCatalog).values(plugin).onConflictDoNothing();
+    const { ALL_PLUGINS } = await import('./services/plugins/index');
+    
+    console.log(`🎹 Seeding ${ALL_PLUGINS.length} studio plugins...`);
+    
+    for (const plugin of ALL_PLUGINS) {
+      await db.insert(pluginCatalog).values({
+        id: plugin.id,
+        name: plugin.name,
+        slug: plugin.slug,
+        type: plugin.type,
+        category: plugin.category,
+        vendor: plugin.author || 'Max Booster',
+        version: plugin.version,
+        description: plugin.description,
+        isBuiltIn: true,
+        isActive: true,
+      }).onConflictDoNothing();
     }
+    
+    console.log(`   ✓ Seeded ${ALL_PLUGINS.length} studio plugins`);
   }
 
   async getProducers(): Promise<any[]> {
