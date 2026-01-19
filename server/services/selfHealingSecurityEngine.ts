@@ -120,12 +120,89 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   };
 
   private threatPatterns = {
-    // SQL injection: specific keywords with context, not just any SQL word
-    sqlInjection: /(\bUNION\s+SELECT\b)|(\bDROP\s+(TABLE|DATABASE)\b)|(\bEXEC\s*\()|('.*?(--|#|\/\*))|(\bOR\s+['"]?\d+['"]?\s*=\s*['"]?\d+)/gi,
-    xss: /<script[^>]*>|<\/script>|javascript:|on\w+\s*=/gi,
-    pathTraversal: /\.\.\/|\.\.\\|%2e%2e%2f|%2e%2e%5c/gi,
-    // Command injection: actual shell patterns, not just special chars
-    commandInjection: /;\s*(rm|cat|wget|curl|bash|sh|nc|netcat|python|perl|ruby|php)\s|`[^`]+`|\$\([^)]+\)|&&\s*(rm|cat|wget|curl|bash)|>\s*\/|<\s*\//gi,
+    // SQL injection: comprehensive patterns for various attack vectors
+    sqlInjection: new RegExp([
+      '\\bUNION\\s+(ALL\\s+)?SELECT\\b',           // UNION SELECT attacks
+      '\\bDROP\\s+(TABLE|DATABASE|INDEX)\\b',      // DROP statements
+      '\\bDELETE\\s+FROM\\b',                      // DELETE statements
+      '\\bTRUNCATE\\s+TABLE\\b',                   // TRUNCATE statements
+      '\\bINSERT\\s+INTO\\b.*\\bVALUES\\b',        // INSERT with VALUES
+      '\\bUPDATE\\s+\\w+\\s+SET\\b',               // UPDATE statements
+      '\\bEXEC(UTE)?\\s*\\(',                      // EXEC/EXECUTE
+      '\\bxp_\\w+',                                // SQL Server extended procs
+      '\\bsp_\\w+',                                // SQL Server stored procs
+      '\\bINTO\\s+(OUT|DUMP)FILE\\b',              // File operations
+      '\\bLOAD_FILE\\s*\\(',                       // File read
+      '\\bBENCHMARK\\s*\\(',                       // Timing attacks
+      '\\bSLEEP\\s*\\(',                           // Time-based injection
+      '\\bWAITFOR\\s+DELAY\\b',                    // SQL Server delay
+      '\\bPG_SLEEP\\s*\\(',                        // PostgreSQL delay
+      "\\bOR\\s+['\"]?\\d+['\"]?\\s*=\\s*['\"]?\\d+", // OR 1=1 variants
+      "\\bAND\\s+['\"]?\\d+['\"]?\\s*=\\s*['\"]?\\d+", // AND 1=1 variants
+      "'\\s*(--|#|\\/\\*)",                        // Comment injection after quote
+      "\\bHAVING\\s+\\d+\\s*=\\s*\\d+",             // HAVING injection
+      "\\bGROUP\\s+BY\\s+.+\\bHAVING\\b",          // GROUP BY HAVING
+      "\\bORDER\\s+BY\\s+\\d+",                     // ORDER BY injection
+      "';\\s*--",                                  // Quote-semicolon-comment
+      "\\bCHAR\\s*\\(\\d+\\)",                      // CHAR() encoding bypass
+      "\\bCONCAT\\s*\\(",                           // CONCAT for obfuscation
+      "0x[0-9a-fA-F]{6,}",                         // Hex-encoded strings
+    ].join('|'), 'gi'),
+    // XSS: comprehensive cross-site scripting patterns
+    xss: new RegExp([
+      '<script[^>]*>',                             // Script tags
+      '</script>',                                 // Closing script tags
+      'javascript:',                               // JavaScript protocol
+      'vbscript:',                                 // VBScript protocol
+      'on\\w+\\s*=',                               // Event handlers
+      '<iframe[^>]*>',                             // iFrame injection
+      '<object[^>]*>',                             // Object tags
+      '<embed[^>]*>',                              // Embed tags
+      '<svg[^>]*onload',                           // SVG with onload
+      '<img[^>]*onerror',                          // Image with onerror
+      '<body[^>]*onload',                          // Body with onload
+      'expression\\s*\\(',                         // CSS expression
+      'url\\s*\\(\\s*["\']?javascript:',           // CSS url() with JS
+      '<meta[^>]*http-equiv\\s*=\\s*["\']?refresh', // Meta refresh
+      '&#x?\\d+;',                                 // HTML entities (suspicious)
+      '%3C%73%63%72%69%70%74',                     // URL-encoded <script
+    ].join('|'), 'gi'),
+    // Path traversal: directory traversal attacks
+    pathTraversal: new RegExp([
+      '\\.\\.\\/|\\.\\.\\\\',                      // Basic traversal
+      '%2e%2e%2f|%2e%2e%5c',                       // URL-encoded
+      '\\.\\.\\.\\/',                              // Triple dot variant
+      '%252e%252e%252f',                           // Double URL-encoded
+      '\\.\\.%00',                                 // Null byte injection
+      '%c0%ae%c0%ae',                              // UTF-8 overlong encoding
+      '\\/etc\\/passwd',                           // Unix password file
+      '\\/etc\\/shadow',                           // Unix shadow file
+      '\\\\windows\\\\system32',                   // Windows system32
+      'c:\\\\windows',                             // Windows path
+    ].join('|'), 'gi'),
+    // Command injection: shell command patterns
+    commandInjection: new RegExp([
+      ';\\s*(rm|cat|wget|curl|bash|sh|nc|netcat|python|perl|ruby|php|node|npm)\\s',
+      '`[^`]+`',                                   // Backtick execution
+      '\\$\\([^)]+\\)',                            // Command substitution
+      '&&\\s*(rm|cat|wget|curl|bash|sh|ls|pwd)',  // AND chain
+      '\\|\\|\\s*(rm|cat|wget|curl|bash|sh)',     // OR chain
+      '\\|\\s*(cat|less|more|head|tail|grep)',    // Pipe to command
+      '>\\s*\\/[a-z]',                             // Redirect to root
+      '<\\s*\\/[a-z]',                             // Read from root
+      '\\$\\{.*\\}',                               // Variable expansion
+      '\\beval\\s*\\(',                            // Eval calls
+      '\\bsystem\\s*\\(',                          // System calls
+      '\\bexec\\s*\\(',                            // Exec calls
+      '\\bpopen\\s*\\(',                           // Popen calls
+      '\\bpassthru\\s*\\(',                        // Passthru calls
+    ].join('|'), 'gi'),
+    // LDAP injection patterns
+    ldapInjection: /\)\s*\(|\)\s*\||\*\)|\(\|/gi,
+    // XML/XXE injection patterns  
+    xxeInjection: /<!ENTITY|<!DOCTYPE[^>]*\[|SYSTEM\s+["']file:|SYSTEM\s+["']http/gi,
+    // NoSQL injection patterns
+    nosqlInjection: /\$where|\$ne|\$gt|\$lt|\$gte|\$lte|\$in|\$nin|\$or|\$and|\$not|\$regex|\$exists/gi,
     bruteForce: { threshold: 5, window: 60000 },
     ddos: { threshold: 100, window: 10000 },
   };
@@ -208,10 +285,22 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     const { payload, source } = event;
     const content = JSON.stringify(payload);
 
+    // Reset lastIndex for global regex patterns before testing
+    this.threatPatterns.sqlInjection.lastIndex = 0;
+    this.threatPatterns.xss.lastIndex = 0;
+    this.threatPatterns.pathTraversal.lastIndex = 0;
+    this.threatPatterns.commandInjection.lastIndex = 0;
+    this.threatPatterns.ldapInjection.lastIndex = 0;
+    this.threatPatterns.xxeInjection.lastIndex = 0;
+    this.threatPatterns.nosqlInjection.lastIndex = 0;
+
     if (this.threatPatterns.sqlInjection.test(content)) return true;
     if (this.threatPatterns.xss.test(content)) return true;
     if (this.threatPatterns.pathTraversal.test(content)) return true;
     if (this.threatPatterns.commandInjection.test(content)) return true;
+    if (this.threatPatterns.ldapInjection.test(content)) return true;
+    if (this.threatPatterns.xxeInjection.test(content)) return true;
+    if (this.threatPatterns.nosqlInjection.test(content)) return true;
 
     const ipScore = this.ipThreatScores.get(source.ip);
     if (ipScore && ipScore.score > 80) return true;
@@ -252,6 +341,15 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     let threatLevel = 0;
     let threatType = 'unknown';
 
+    // Reset lastIndex for global regex patterns
+    this.threatPatterns.sqlInjection.lastIndex = 0;
+    this.threatPatterns.xss.lastIndex = 0;
+    this.threatPatterns.pathTraversal.lastIndex = 0;
+    this.threatPatterns.commandInjection.lastIndex = 0;
+    this.threatPatterns.ldapInjection.lastIndex = 0;
+    this.threatPatterns.xxeInjection.lastIndex = 0;
+    this.threatPatterns.nosqlInjection.lastIndex = 0;
+
     if (this.threatPatterns.sqlInjection.test(content)) {
       indicators.push('SQL injection pattern detected');
       threatLevel = Math.max(threatLevel, 0.95);
@@ -274,6 +372,24 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       indicators.push('Command injection pattern');
       threatLevel = Math.max(threatLevel, 0.95);
       threatType = threatType === 'unknown' ? 'command_injection' : threatType;
+    }
+
+    if (this.threatPatterns.ldapInjection.test(content)) {
+      indicators.push('LDAP injection pattern detected');
+      threatLevel = Math.max(threatLevel, 0.9);
+      threatType = threatType === 'unknown' ? 'ldap_injection' : threatType;
+    }
+
+    if (this.threatPatterns.xxeInjection.test(content)) {
+      indicators.push('XXE/XML injection pattern detected');
+      threatLevel = Math.max(threatLevel, 0.95);
+      threatType = threatType === 'unknown' ? 'xxe_injection' : threatType;
+    }
+
+    if (this.threatPatterns.nosqlInjection.test(content)) {
+      indicators.push('NoSQL injection pattern detected');
+      threatLevel = Math.max(threatLevel, 0.9);
+      threatType = threatType === 'unknown' ? 'nosql_injection' : threatType;
     }
 
     const rateScore = this.checkRateLimit(event.source.ip);

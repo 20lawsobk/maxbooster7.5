@@ -13,6 +13,57 @@ import { logger } from '../logger.js';
 import { randomUUID } from 'crypto';
 import { selfHealingSecurityMiddleware } from '../middleware/selfHealingMiddleware.js';
 
+/**
+ * Prototype pollution protection
+ * Removes dangerous properties from objects recursively
+ */
+function sanitizeObject(obj: any, depth: number = 0): any {
+  if (depth > 10) return obj; // Prevent stack overflow
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item, depth + 1));
+  }
+  
+  const dangerous = ['__proto__', 'constructor', 'prototype'];
+  const sanitized: any = {};
+  
+  for (const key of Object.keys(obj)) {
+    if (dangerous.includes(key)) {
+      logger.warn(`[Security] Blocked prototype pollution attempt: ${key}`);
+      continue;
+    }
+    sanitized[key] = sanitizeObject(obj[key], depth + 1);
+  }
+  
+  return sanitized;
+}
+
+/**
+ * Prototype pollution protection middleware
+ * Sanitizes request body, query, and params
+ */
+export function prototypePollutionMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    if (req.body && typeof req.body === 'object') {
+      req.body = sanitizeObject(req.body);
+    }
+    if (req.query && typeof req.query === 'object') {
+      req.query = sanitizeObject(req.query);
+    }
+    if (req.params && typeof req.params === 'object') {
+      req.params = sanitizeObject(req.params);
+    }
+    next();
+  } catch (error) {
+    logger.error('Prototype pollution protection error:', error);
+    next();
+  }
+}
+
 export interface MandatoryMiddlewareResult {
   success: boolean;
   loadedMiddleware: string[];
@@ -200,7 +251,18 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     throw new Error('Failed to load mandatory CORS middleware');
   }
 
-  // 5. Rate limiting (required - but configurable for scale)
+  // 5. Prototype pollution protection (required)
+  try {
+    app.use(prototypePollutionMiddleware);
+    loadedMiddleware.push('prototypePollution');
+    logger.info('   ✓ Prototype pollution protection');
+  } catch (error) {
+    failedMiddleware.push('prototypePollution');
+    logger.error('   ✗ Prototype pollution protection FAILED', error);
+    throw new Error('Failed to load mandatory prototype pollution middleware');
+  }
+
+  // 6. Rate limiting (required - but configurable for scale)
   try {
     const isDev = process.env.NODE_ENV !== 'production';
     const isLoadTest = process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
@@ -233,7 +295,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     throw new Error('Failed to load mandatory rate limiting middleware');
   }
 
-  // 6. Strict API rate limiting (for sensitive endpoints)
+  // 7. Strict API rate limiting (for sensitive endpoints)
   try {
     const isDev = process.env.NODE_ENV !== 'production';
     const isLoadTest = process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
@@ -257,7 +319,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     throw new Error('Failed to load mandatory strict rate limiting middleware');
   }
 
-  // 7. Self-Healing Security Engine (10x faster than attacks)
+  // 8. Self-Healing Security Engine (10x faster than attacks)
   try {
     app.use(selfHealingSecurityMiddleware);
     loadedMiddleware.push('selfHealingSecurity');
