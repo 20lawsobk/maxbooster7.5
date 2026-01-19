@@ -60,6 +60,10 @@ export default defineConfig({
       "react/jsx-dev-runtime",
       "wouter",
       "@tanstack/react-query",
+      "framer-motion",
+      "zustand",
+      "i18next",
+      "react-i18next",
     ],
   },
 });

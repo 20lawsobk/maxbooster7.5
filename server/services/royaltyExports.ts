@@ -9,7 +9,7 @@ import {
 } from '@shared/schema';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { logger } from '../logger.js';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { royaltiesTaxComplianceService } from './royaltiesTaxComplianceService.js';
 import { royaltyEngine, type PeriodStatement, type SplitBreakdown } from './royaltyEngine.js';
