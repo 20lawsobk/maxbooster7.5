@@ -50,6 +50,7 @@ import {
   LinkedInIcon,
   ThreadsIcon,
 } from '@/components/ui/brand-icons';
+import { AutopilotPreferences } from './AutopilotPreferences';
 
 interface AutopilotConfig {
   enabled: boolean;
@@ -360,11 +361,12 @@ export function AutopilotDashboard() {
             </CardHeader>
             <CardContent>
               <Tabs value={activeConfigTab} onValueChange={setActiveConfigTab}>
-                <TabsList className="grid grid-cols-4 mb-4">
+                <TabsList className="grid grid-cols-5 mb-4">
                   <TabsTrigger value="basic">Basic</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
                   <TabsTrigger value="platforms">Platforms</TabsTrigger>
                   <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                  <TabsTrigger value="preferences">My Preferences</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="basic" className="space-y-4">
@@ -680,6 +682,10 @@ export function AutopilotDashboard() {
                       </CardContent>
                     </Card>
                   </div>
+                </TabsContent>
+
+                <TabsContent value="preferences" className="space-y-4">
+                  <AutopilotPreferences />
                 </TabsContent>
               </Tabs>
             </CardContent>

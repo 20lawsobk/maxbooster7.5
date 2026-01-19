@@ -2759,6 +2759,7 @@ export async function registerRoutes(
     { path: "/api/autopilot/learning", name: "autopilotLearning", loader: () => import("./routes/autopilot-learning") },
     { path: "/api/auto/social", name: "autonomousSocial", loader: () => import("./routes/autonomousSocial") },
     { path: "/api/auto-updates", name: "autoUpdates", loader: () => import("./routes/autoUpdates") },
+    { path: "/api/autopilot/preferences", name: "autopilotPreferences", loader: () => import("./routes/autopilotPreferences") },
 
     // Studio/DAW Routes
     { path: "/api/studio", name: "studio", loader: () => import("./routes/studio") },

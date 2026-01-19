@@ -3595,6 +3595,88 @@ export const insertAutopilotInsightSchema = createInsertSchema(autopilotInsights
 export type InsertAutopilotInsight = z.infer<typeof insertAutopilotInsightSchema>;
 
 // ============================================================================
+// AUTOPILOT USER PREFERENCES - User-provided content generation guidelines
+// ============================================================================
+export const autopilotPreferences = pgTable("autopilot_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  
+  // Artist/Brand Identity
+  artistName: text("artist_name"),
+  artistBio: text("artist_bio"),
+  genre: text("genre"),
+  subGenres: jsonb("sub_genres").$type<string[]>(),
+  brandVoice: text("brand_voice"), // 'professional' | 'casual' | 'energetic' | 'edgy' | 'inspirational'
+  targetAudience: text("target_audience"),
+  uniqueSellingPoints: jsonb("unique_selling_points").$type<string[]>(),
+  
+  // Content Generation Guidelines
+  contentTone: text("content_tone"), // 'professional' | 'casual' | 'energetic' | 'promotional'
+  preferredEmojis: jsonb("preferred_emojis").$type<string[]>(),
+  avoidEmojis: boolean("avoid_emojis").default(false),
+  preferredHashtags: jsonb("preferred_hashtags").$type<string[]>(),
+  avoidHashtags: jsonb("avoid_hashtags").$type<string[]>(),
+  contentThemes: jsonb("content_themes").$type<string[]>(), // e.g. ['new releases', 'behind the scenes', 'fan engagement']
+  avoidTopics: jsonb("avoid_topics").$type<string[]>(),
+  callToActionStyle: text("call_to_action_style"), // 'direct' | 'subtle' | 'question' | 'urgency'
+  
+  // Platform-Specific Settings
+  platformSettings: jsonb("platform_settings").$type<{
+    twitter?: { enabled: boolean; postsPerDay: number; autoPost: boolean; contentTypes: string[] };
+    instagram?: { enabled: boolean; postsPerDay: number; autoPost: boolean; contentTypes: string[] };
+    tiktok?: { enabled: boolean; postsPerDay: number; autoPost: boolean; contentTypes: string[] };
+    facebook?: { enabled: boolean; postsPerDay: number; autoPost: boolean; contentTypes: string[] };
+    youtube?: { enabled: boolean; postsPerDay: number; autoPost: boolean; contentTypes: string[] };
+    linkedin?: { enabled: boolean; postsPerDay: number; autoPost: boolean; contentTypes: string[] };
+    threads?: { enabled: boolean; postsPerDay: number; autoPost: boolean; contentTypes: string[] };
+    googlebusiness?: { enabled: boolean; postsPerDay: number; autoPost: boolean; contentTypes: string[] };
+  }>(),
+  
+  // Posting Schedule
+  postingSchedule: jsonb("posting_schedule").$type<{
+    timezone: string;
+    preferredHours: number[];
+    preferredDays: string[];
+    avoidHours: number[];
+    avoidDays: string[];
+  }>(),
+  
+  // Advertisement Autopilot Settings
+  adAutopilotEnabled: boolean("ad_autopilot_enabled").default(false),
+  organicGrowthPriority: text("organic_growth_priority"), // 'reach' | 'engagement' | 'followers' | 'conversions'
+  crossPostingEnabled: boolean("cross_posting_enabled").default(true),
+  viralOptimizationLevel: text("viral_optimization_level"), // 'conservative' | 'moderate' | 'aggressive'
+  
+  // Content Examples (for AI to learn from)
+  contentExamples: jsonb("content_examples").$type<{
+    goodPosts: string[];
+    badPosts: string[];
+    inspirationalAccounts: string[];
+  }>(),
+  
+  // Current Promotions/Releases
+  currentReleases: jsonb("current_releases").$type<{
+    title: string;
+    type: string;
+    releaseDate: string;
+    streamingLinks: Record<string, string>;
+    promoUntil: string;
+  }[]>(),
+  
+  // Custom Instructions
+  customInstructions: text("custom_instructions"),
+  
+  // Status
+  isActive: boolean("is_active").default(true),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type AutopilotPreference = typeof autopilotPreferences.$inferSelect;
+export const insertAutopilotPreferenceSchema = createInsertSchema(autopilotPreferences).omit({ id: true, createdAt: true, lastUpdated: true });
+export type InsertAutopilotPreference = z.infer<typeof insertAutopilotPreferenceSchema>;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });

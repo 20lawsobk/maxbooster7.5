@@ -9,12 +9,14 @@ import {
   userBrandVoices,
   hashtagResearch,
   bestPostingTimes,
+  autopilotPreferences,
   type UserBrandVoice,
   type InsertUserBrandVoice,
   type InsertHashtagResearch,
   type InsertBestPostingTime,
   type InsertInferenceRun,
   type InsertExplanationLog,
+  type AutopilotPreference,
 } from '@shared/schema';
 import { eq, and, gte, desc, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
@@ -158,6 +160,39 @@ export class AIContentService {
 
   constructor() {
     this.initializeAIModels();
+  }
+
+  async getUserAutopilotPreferences(userId: string): Promise<AutopilotPreference | null> {
+    try {
+      const [preferences] = await db
+        .select()
+        .from(autopilotPreferences)
+        .where(eq(autopilotPreferences.userId, userId));
+      return preferences || null;
+    } catch (error) {
+      logger.error('Error fetching user autopilot preferences:', error);
+      return null;
+    }
+  }
+
+  async generateContentWithPreferences(
+    userId: string,
+    options: ContentGenerationOptions
+  ): Promise<GeneratedContent> {
+    const preferences = await this.getUserAutopilotPreferences(userId);
+    
+    const enrichedOptions = {
+      ...options,
+      tone: preferences?.contentTone as any || options.tone || 'casual',
+      artistName: preferences?.artistName,
+      genre: preferences?.genre,
+      brandVoice: preferences?.brandVoice,
+      preferredHashtags: preferences?.preferredHashtags as string[] || [],
+      avoidTopics: preferences?.avoidTopics as string[] || [],
+      customInstructions: preferences?.customInstructions,
+    };
+
+    return this.generateContent(enrichedOptions as ContentGenerationOptions);
   }
 
   private async initializeAIModels() {
