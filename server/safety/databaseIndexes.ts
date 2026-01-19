@@ -214,16 +214,20 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
         continue;
       }
 
-      // Create the index
-      const uniqueStr = index.unique ? 'UNIQUE' : '';
-      const columnsStr = index.columns.join(', ');
+      // Create the index using Drizzle sql template with identifiers
+      // Note: Values come from hardcoded REQUIRED_INDEXES constant (no user input)
+      const indexNameId = sql.identifier(index.name);
+      const tableId = sql.identifier(index.table);
+      const columnsId = sql.join(index.columns.map(c => sql.identifier(c)), sql`, `);
       
-      await db.execute(
-        sql.raw(`CREATE ${uniqueStr} INDEX CONCURRENTLY IF NOT EXISTS ${index.name} ON ${index.table} (${columnsStr})`)
-      );
+      if (index.unique) {
+        await db.execute(sql`CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS ${indexNameId} ON ${tableId} (${columnsId})`);
+      } else {
+        await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${indexNameId} ON ${tableId} (${columnsId})`);
+      }
 
       created.push(index.name);
-      logger.info(`   ✓ ${index.name} on ${index.table}(${columnsStr})`);
+      logger.info(`   ✓ ${index.name} on ${index.table}(${index.columns.join(', ')})`);
     } catch (error: any) {
       // Some errors are expected (table doesn't exist, etc.)
       if (error.message?.includes('does not exist')) {
