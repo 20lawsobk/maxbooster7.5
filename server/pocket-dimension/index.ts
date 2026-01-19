@@ -631,7 +631,7 @@ export class PocketDimension extends EventEmitter {
     const authTag = data.subarray(16, 32);
     const encrypted = data.subarray(32);
     
-    const decipher = createDecipheriv('aes-256-gcm', this.encryptionKey, iv);
+    const decipher = createDecipheriv('aes-256-gcm', this.encryptionKey, iv, { authTagLength: 16 });
     decipher.setAuthTag(authTag);
     
     return Buffer.concat([decipher.update(encrypted), decipher.final()]);
