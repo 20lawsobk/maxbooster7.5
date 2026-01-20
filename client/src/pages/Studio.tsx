@@ -2830,9 +2830,10 @@ function StudioDialogs(props: StudioDialogsProps) {
 
       {props.showAIGeneratorDialog && (
         <AIGeneratorDialog
-          isOpen={props.showAIGeneratorDialog}
-          onClose={() => props.setShowAIGeneratorDialog(false)}
-          onGenerate={props.handleAddGeneration}
+          open={props.showAIGeneratorDialog}
+          onOpenChange={props.setShowAIGeneratorDialog}
+          projectId={props.selectedProject?.id}
+          onAddToProject={props.handleAddGeneration}
         />
       )}
 
