@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -171,6 +171,69 @@ export default function StorefrontBuilder() {
     },
     maxSubscribers: null as number | null,
   });
+
+  const [uploadingAsset, setUploadingAsset] = useState<string | null>(null);
+
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAssetUpload = async (file: File, assetType: 'logo' | 'banner' | 'avatar') => {
+    if (!file) return;
+    
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast({
+        title: 'File Too Large',
+        description: 'Maximum file size is 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid File Type',
+        description: 'Please upload a JPEG, PNG, GIF, or WebP image',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingAsset(assetType);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('assetType', assetType);
+
+      const response = await uploadWithProgress('/api/storefront/upload-asset', formData, {});
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      setCustomization({
+        ...customization,
+        [assetType]: result.url,
+      });
+
+      toast({
+        title: 'Upload Successful',
+        description: `Your ${assetType} has been uploaded`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Upload Failed',
+        description: error instanceof Error ? error.message : 'Failed to upload file',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingAsset(null);
+    }
+  };
 
   const { data: storefronts = [], isLoading: storefrontsLoading } = useQuery<Storefront[]>({
     queryKey: ['/api/storefront/my'],
@@ -567,31 +630,115 @@ export default function StorefrontBuilder() {
                   <TabsContent value="branding" className="space-y-4 mt-4">
                     <div>
                       <Label>Logo</Label>
-                      <div className="mt-2 border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
-                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Click to upload logo (PNG, JPG, max 2MB)
-                        </p>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAssetUpload(file, 'logo');
+                        }}
+                      />
+                      <div 
+                        className="mt-2 border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer relative overflow-hidden"
+                        onClick={() => logoInputRef.current?.click()}
+                      >
+                        {customization.logo ? (
+                          <div className="relative">
+                            <img src={customization.logo} alt="Logo" className="max-h-20 mx-auto object-contain" />
+                            <p className="text-xs text-muted-foreground mt-2">Click to change</p>
+                          </div>
+                        ) : (
+                          <>
+                            {uploadingAsset === 'logo' ? (
+                              <div className="animate-pulse">Uploading...</div>
+                            ) : (
+                              <>
+                                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  Click to upload logo (PNG, JPG, max 5MB)
+                                </p>
+                              </>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
 
                     <div>
                       <Label>Banner Image</Label>
-                      <div className="mt-2 border-2 border-dashed rounded-lg p-12 text-center hover:border-primary transition-colors cursor-pointer">
-                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Click to upload banner (PNG, JPG, recommended 1920x400px)
-                        </p>
+                      <input
+                        ref={bannerInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAssetUpload(file, 'banner');
+                        }}
+                      />
+                      <div 
+                        className="mt-2 border-2 border-dashed rounded-lg text-center hover:border-primary transition-colors cursor-pointer relative overflow-hidden"
+                        onClick={() => bannerInputRef.current?.click()}
+                      >
+                        {customization.banner ? (
+                          <div className="relative">
+                            <img src={customization.banner} alt="Banner" className="w-full h-32 object-cover" />
+                            <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white bg-black/50 px-2 py-1 rounded">Click to change</p>
+                          </div>
+                        ) : (
+                          <div className="p-12">
+                            {uploadingAsset === 'banner' ? (
+                              <div className="animate-pulse">Uploading...</div>
+                            ) : (
+                              <>
+                                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  Click to upload banner (PNG, JPG, recommended 1920x400px)
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div>
                       <Label>Profile Avatar</Label>
-                      <div className="mt-2 border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
-                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Click to upload avatar (PNG, JPG, square recommended)
-                        </p>
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAssetUpload(file, 'avatar');
+                        }}
+                      />
+                      <div 
+                        className="mt-2 border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer relative overflow-hidden"
+                        onClick={() => avatarInputRef.current?.click()}
+                      >
+                        {customization.avatar ? (
+                          <div className="relative">
+                            <img src={customization.avatar} alt="Avatar" className="w-20 h-20 mx-auto rounded-full object-cover" />
+                            <p className="text-xs text-muted-foreground mt-2">Click to change</p>
+                          </div>
+                        ) : (
+                          <>
+                            {uploadingAsset === 'avatar' ? (
+                              <div className="animate-pulse">Uploading...</div>
+                            ) : (
+                              <>
+                                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  Click to upload avatar (PNG, JPG, square recommended)
+                                </p>
+                              </>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
 

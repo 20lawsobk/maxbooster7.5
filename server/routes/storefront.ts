@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { storefrontService } from '../services/storefrontService';
+import { ReplitStorageService } from '../services/replitStorageService';
 import {
   insertStorefrontSchema,
   updateStorefrontSchema,
@@ -8,6 +10,28 @@ import {
 } from '@shared/schema';
 import { z } from 'zod';
 import { logger } from '../logger.js';
+
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, GIF, and WebP images are allowed'));
+    }
+  }
+});
+
+let storageService: ReplitStorageService | null = null;
+try {
+  if (process.env.REPLIT_BUCKET_ID) {
+    storageService = new ReplitStorageService();
+  }
+} catch (e) {
+  logger.warn('ReplitStorageService not available, file uploads will be disabled');
+}
 
 const router = Router();
 
@@ -632,6 +656,51 @@ router.put('/:storefrontId/subdomain', async (req, res) => {
     if (errorMessage === 'Unauthorized') {
       return res.status(403).json({ error: errorMessage });
     }
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
+ * POST /api/storefront/upload-asset
+ * Upload storefront assets (logo, banner, avatar)
+ */
+router.post('/upload-asset', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    if (!storageService) {
+      return res.status(503).json({ error: 'File storage service is not available' });
+    }
+
+    const { assetType } = req.body;
+    if (!['logo', 'banner', 'avatar'].includes(assetType)) {
+      return res.status(400).json({ error: 'Invalid asset type. Must be logo, banner, or avatar' });
+    }
+
+    const folder = `storefronts/${req.user!.id}/${assetType}`;
+    const result = await storageService.uploadFile(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+      folder
+    );
+
+    logger.info(`Uploaded storefront ${assetType} for user ${req.user!.id}: ${result.key}`);
+
+    res.json({
+      url: result.url,
+      key: result.key,
+      assetType,
+    });
+  } catch (error: unknown) {
+    logger.error('Error uploading storefront asset:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to upload asset';
     res.status(500).json({ error: errorMessage });
   }
 });
