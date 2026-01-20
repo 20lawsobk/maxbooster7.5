@@ -41,6 +41,12 @@ import {
   DollarSign,
   Users,
   Crown,
+  ExternalLink,
+  Music,
+  Instagram,
+  Twitter,
+  Youtube,
+  RefreshCw,
 } from 'lucide-react';
 
 interface StorefrontTemplate {
@@ -384,7 +390,15 @@ export default function StorefrontBuilder() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(`/store/${storefront.slug}`, '_blank');
+                      }}
+                    >
                       <Eye className="w-4 h-4 mr-1" />
                       Preview
                     </Button>
@@ -396,6 +410,7 @@ export default function StorefrontBuilder() {
                         e.stopPropagation();
                         setSelectedStorefront(storefront);
                         setCustomization(storefront.customization);
+                        setActiveTab('overview');
                       }}
                     >
                       <Edit className="w-4 h-4 mr-1" />
@@ -408,21 +423,36 @@ export default function StorefrontBuilder() {
           </div>
 
           {selectedStorefront && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Customize {selectedStorefront.name}</CardTitle>
-                <CardDescription>
-                  Personalize your storefront with colors, branding, and membership tiers
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="branding">Branding</TabsTrigger>
-                    <TabsTrigger value="colors">Colors & Fonts</TabsTrigger>
-                    <TabsTrigger value="membership">Membership Tiers</TabsTrigger>
-                  </TabsList>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>Customize {selectedStorefront.name}</CardTitle>
+                      <CardDescription>
+                        Personalize your storefront with colors, branding, and membership tiers
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/store/${selectedStorefront.slug}`, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-1" />
+                        Open in New Tab
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid w-full grid-cols-4">
+                      <TabsTrigger value="overview">Overview</TabsTrigger>
+                      <TabsTrigger value="branding">Branding</TabsTrigger>
+                      <TabsTrigger value="colors">Colors & Fonts</TabsTrigger>
+                      <TabsTrigger value="membership">Membership Tiers</TabsTrigger>
+                    </TabsList>
 
                   <TabsContent value="overview" className="space-y-4 mt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -889,6 +919,155 @@ export default function StorefrontBuilder() {
                 </Tabs>
               </CardContent>
             </Card>
+
+              <Card className="sticky top-4">
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="w-5 h-5" />
+                      Live Preview
+                    </CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setCustomization({...customization});
+                      }}
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <CardDescription>
+                    See how your storefront looks as you customize it
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div 
+                    className="rounded-lg overflow-hidden border"
+                    style={{
+                      backgroundColor: customization.colors?.background || '#FFFFFF',
+                      color: customization.colors?.text || '#000000',
+                    }}
+                  >
+                    {customization.banner && (
+                      <div
+                        className="w-full h-24 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${customization.banner})` }}
+                      />
+                    )}
+                    {!customization.banner && (
+                      <div 
+                        className="w-full h-24 flex items-center justify-center"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${customization.colors?.primary || '#8B5CF6'} 0%, ${customization.colors?.secondary || '#EC4899'} 100%)` 
+                        }}
+                      >
+                        <span className="text-white/60 text-sm">Banner Area</span>
+                      </div>
+                    )}
+                    
+                    <div className="p-4">
+                      <div className="flex items-start gap-3 mb-4">
+                        {customization.avatar ? (
+                          <img 
+                            src={customization.avatar} 
+                            alt="Avatar" 
+                            className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
+                          />
+                        ) : (
+                          <div 
+                            className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white shadow"
+                            style={{ 
+                              background: `linear-gradient(135deg, ${customization.colors?.primary || '#8B5CF6'} 0%, ${customization.colors?.secondary || '#EC4899'} 100%)` 
+                            }}
+                          >
+                            <Music className="w-6 h-6 text-white" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 
+                            className="font-bold text-lg truncate"
+                            style={{ fontFamily: customization.fonts?.heading || 'Inter' }}
+                          >
+                            {selectedStorefront.name}
+                          </h3>
+                          <p 
+                            className="text-sm opacity-70 line-clamp-2"
+                            style={{ fontFamily: customization.fonts?.body || 'Inter' }}
+                          >
+                            {customization.bio || 'Your bio will appear here...'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {(customization.socialLinks?.instagram || 
+                        customization.socialLinks?.twitter || 
+                        customization.socialLinks?.youtube) && (
+                        <div className="flex gap-2 mb-4">
+                          {customization.socialLinks?.instagram && (
+                            <div 
+                              className="w-8 h-8 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: customization.colors?.primary || '#8B5CF6' }}
+                            >
+                              <Instagram className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                          {customization.socialLinks?.twitter && (
+                            <div 
+                              className="w-8 h-8 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: customization.colors?.primary || '#8B5CF6' }}
+                            >
+                              <Twitter className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                          {customization.socialLinks?.youtube && (
+                            <div 
+                              className="w-8 h-8 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: customization.colors?.primary || '#8B5CF6' }}
+                            >
+                              <Youtube className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-3 gap-2">
+                        {[1, 2, 3].map((i) => (
+                          <div 
+                            key={i}
+                            className="aspect-square rounded-lg flex items-center justify-center"
+                            style={{ 
+                              backgroundColor: customization.colors?.primary ? `${customization.colors.primary}20` : '#8B5CF620' 
+                            }}
+                          >
+                            <Music 
+                              className="w-6 h-6"
+                              style={{ color: customization.colors?.primary || '#8B5CF6' }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-4 pt-4 border-t border-current/10">
+                        <p className="text-xs text-center opacity-50">
+                          Preview of your storefront at /{selectedStorefront.slug}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 flex gap-2">
+                    <Button 
+                      className="flex-1"
+                      onClick={() => window.open(`/store/${selectedStorefront.slug}`, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View Full Storefront
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
         </>
       )}

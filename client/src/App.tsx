@@ -110,6 +110,7 @@ function Router() {
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/help" component={Help} />
       <Route path="/storefront" component={Storefront} />
+      <Route path="/store/:slug" component={Storefront} />
       <Route path="/admin/autonomy" component={AdminAutonomy} />
       <Route path="/verification" component={Verification} />
       <Route path="/contracts" component={Contracts} />
