@@ -132,13 +132,18 @@ interface AdCampaign {
   };
 }
 
-interface SocialConnections {
-  [platform: string]: {
-    connected: boolean;
-    username?: string;
-    followers?: number;
-  };
+interface SocialConnection {
+  id: string;
+  name: string;
+  isConnected: boolean;
+  followers: number;
+  engagement: number;
+  lastSync: string;
+  status: string;
+  username?: string;
 }
+
+type SocialConnections = SocialConnection[];
 
 interface AutopilotStatus {
   isRunning: boolean;
@@ -1110,7 +1115,7 @@ export default function Advertisement() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                   <div className="p-4 rounded-lg bg-white/50 dark:bg-gray-900/50 text-center">
                     <p className="text-sm text-muted-foreground">Connected Profiles</p>
-                    <p className="text-2xl font-bold text-purple-600">{socialConnections ? Object.values(socialConnections).filter((p: any) => p.connected).length : 0}</p>
+                    <p className="text-2xl font-bold text-purple-600">{socialConnections ? socialConnections.filter((p) => p.isConnected).length : 0}</p>
                   </div>
                   <div className="p-4 rounded-lg bg-white/50 dark:bg-gray-900/50 text-center">
                     <p className="text-sm text-muted-foreground">Network Reach</p>
@@ -1148,17 +1153,17 @@ export default function Advertisement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {socialConnections && Object.entries(socialConnections).filter(([_, data]: [string, any]) => data.connected).length > 0 ? (
-                    Object.entries(socialConnections).filter(([_, data]: [string, any]) => data.connected).map(([platform, data]: [string, any]) => (
-                      <div key={platform} className="p-4 rounded-lg border bg-card">
+                  {socialConnections && socialConnections.filter((p) => p.isConnected).length > 0 ? (
+                    socialConnections.filter((p) => p.isConnected).map((platform) => (
+                      <div key={platform.id} className="p-4 rounded-lg border bg-card">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
-                              {platform.charAt(0).toUpperCase()}
+                              {platform.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <h4 className="font-semibold capitalize">{platform}</h4>
-                              <p className="text-sm text-muted-foreground">@{data.username ?? 'connected'}</p>
+                              <h4 className="font-semibold">{platform.name}</h4>
+                              <p className="text-sm text-muted-foreground">@{platform.username ?? 'connected'}</p>
                             </div>
                           </div>
                           <Badge className="bg-green-500/10 text-green-600">
@@ -1169,7 +1174,7 @@ export default function Advertisement() {
                         <div className="grid grid-cols-3 gap-4">
                           <div className="text-center p-2 rounded bg-gray-50 dark:bg-gray-900/50">
                             <p className="text-xs text-muted-foreground">Followers</p>
-                            <p className="font-bold">{data.followers?.toLocaleString() ?? '--'}</p>
+                            <p className="font-bold">{platform.followers?.toLocaleString() ?? '--'}</p>
                           </div>
                           <div className="text-center p-2 rounded bg-gray-50 dark:bg-gray-900/50">
                             <p className="text-xs text-muted-foreground">Posts</p>

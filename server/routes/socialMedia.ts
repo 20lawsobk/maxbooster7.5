@@ -4,7 +4,7 @@ import { logger } from '../logger';
 import { competitorBenchmarkService } from '../services/competitorBenchmarkService';
 import { unifiedAIController } from '../services/unifiedAIController';
 import { db } from '../db';
-import { socialInboxMessages, socialMentions, socialKeywords } from '@shared/schema';
+import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
 
 const router = Router();
@@ -143,12 +143,53 @@ router.get('/ai-insights', requireAuth, async (req: AuthenticatedRequest, res: R
   }
 });
 
-// Get platform status - returns empty array when no real data exists
+// Get platform status - returns connected social accounts from OAuth connections
+// Returns array format for SocialMedia page, also works for Advertisement page
 router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const platforms = await storage.getSocialPlatformStatus?.(userId) || [];
-    res.json(platforms);
+    
+    // Get actual OAuth connections from socialAccounts table
+    const connections = await db
+      .select()
+      .from(socialAccounts)
+      .where(eq(socialAccounts.userId, userId));
+    
+    // Build a map of connected platforms
+    const connectionMap = new Map<string, typeof connections[0]>();
+    for (const conn of connections) {
+      if (conn.isActive) {
+        connectionMap.set(conn.platform, conn);
+      }
+    }
+    
+    // Return array format matching SocialPlatform interface expected by frontend
+    const supportedPlatforms = [
+      { id: 'facebook', name: 'Facebook' },
+      { id: 'instagram', name: 'Instagram' },
+      { id: 'twitter', name: 'Twitter (X)' },
+      { id: 'youtube', name: 'YouTube' },
+      { id: 'tiktok', name: 'TikTok' },
+      { id: 'linkedin', name: 'LinkedIn' },
+      { id: 'threads', name: 'Threads' },
+      { id: 'googlebusiness', name: 'Google Business' },
+    ];
+    
+    const platformStatus = supportedPlatforms.map(platform => {
+      const conn = connectionMap.get(platform.id);
+      return {
+        id: platform.id,
+        name: platform.name,
+        isConnected: !!conn,
+        followers: conn?.followerCount || 0,
+        engagement: 0,
+        lastSync: conn?.createdAt?.toISOString() || '',
+        status: conn ? 'active' : 'inactive',
+        username: conn?.username || undefined,
+      };
+    });
+    
+    res.json(platformStatus);
   } catch (error) {
     logger.error('Failed to get platform status:', error);
     res.json([]);
@@ -577,23 +618,25 @@ router.get('/activity', requireAuth, async (req: AuthenticatedRequest, res: Resp
   }
 });
 
-// Connections endpoint
+// Connections endpoint - redirect to OAuth connections (actual data is in socialOAuth.ts)
 router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ connections: [] });
+    const userId = req.user!.id;
+    const connections = await db
+      .select()
+      .from(socialAccounts)
+      .where(eq(socialAccounts.userId, userId));
+    
+    res.json(connections.map(c => ({
+      platform: c.platform,
+      username: c.username,
+      connected: c.isActive,
+      connectedAt: c.createdAt,
+      followers: c.followerCount || 0,
+    })));
   } catch (error) {
     logger.error('Failed to get connections:', error);
-    res.json({ connections: [] });
-  }
-});
-
-// Platform status endpoint
-router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ platforms: [] });
-  } catch (error) {
-    logger.error('Failed to get platform status:', error);
-    res.json({ platforms: [] });
+    res.json([]);
   }
 });
 
