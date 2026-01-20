@@ -68,3 +68,73 @@ Key responsive components:
 - **Social Media APIs**: Integrations with Twitter, Facebook, Instagram, TikTok, YouTube, and LinkedIn.
 - **music-metadata library**: Audio metadata extraction.
 - **Y.js**: Real-time collaboration in the AI Studio.
+
+## Social Media OAuth Configuration
+
+### Overview
+The platform supports OAuth connections to 8 social media platforms for autopilot posting, scheduling, and analytics. All OAuth flows use secure token encryption and automatic refresh.
+
+### Configured Platforms
+
+| Platform | OAuth Type | Key Environment Variables | Callback URL |
+|----------|-----------|---------------------------|--------------|
+| Twitter/X | OAuth 2.0 + PKCE | TWITTER_CLIENT_ID, TWITTER_API_SECRET | /api/social/callback/twitter |
+| Facebook | OAuth 2.0 | FACEBOOK_APP_ID, FACEBOOK_APP_SECRET | /api/social/callback/facebook |
+| Instagram | Meta Graph API | Uses Facebook credentials | /api/social/callback/instagram |
+| Threads | Meta API | Uses Facebook credentials | /api/social/callback/threads |
+| TikTok | OAuth 2.0 + PKCE | TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET | /api/social/callback/tiktok |
+| YouTube | Google OAuth 2.0 | YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET | /api/social/callback/youtube |
+| LinkedIn | OAuth 2.0 | LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET | /api/social/callback/linkedin |
+| Google Business | Google OAuth 2.0 | GOOGLE_BUSINESS_CLIENT_ID, GOOGLE_BUSINESS_CLIENT_SECRET | /api/social/callback/googlebusiness |
+
+### Developer Portal Setup Requirements
+
+**Base Callback URL**: `https://maxbooster.replit.app`
+
+#### Twitter/X (developer.x.com)
+- Create project and app in Developer Portal
+- Enable OAuth 2.0 in User Authentication Settings
+- App Type: Web App (Confidential Client)
+- Redirect URI: `https://maxbooster.replit.app/api/social/callback/twitter`
+- Scopes: `tweet.read tweet.write users.read follows.read follows.write offline.access`
+
+#### Facebook/Instagram/Threads (developers.facebook.com)
+- Create Business App in Meta Developer Dashboard
+- Add Facebook Login, Instagram Graph API products
+- Configure redirect URIs for each platform
+- Scopes: `pages_show_list pages_manage_posts instagram_basic instagram_content_publish threads_basic threads_content_publish`
+
+#### TikTok (developers.tiktok.com)
+- Create app and add Login Kit + Content Posting API
+- Submit for app review (required for publishing)
+- Redirect URI: `https://maxbooster.replit.app/api/social/callback/tiktok`
+- Scopes: `user.info.basic video.publish`
+
+#### YouTube (console.cloud.google.com)
+- Enable YouTube Data API v3
+- Configure OAuth consent screen
+- Create OAuth 2.0 credentials (Web Application)
+- Redirect URI: `https://maxbooster.replit.app/api/social/callback/youtube`
+- Scopes: `youtube youtube.upload youtube.readonly yt-analytics.readonly`
+
+#### LinkedIn (linkedin.com/developers)
+- Create app and link to Company Page
+- Add "Share on LinkedIn" product
+- Redirect URI: `https://maxbooster.replit.app/api/social/callback/linkedin`
+- Scopes: `openid profile email w_member_social`
+
+#### Google Business Profile (console.cloud.google.com)
+- Enable Business Profile API
+- Use same OAuth credentials as YouTube
+- Scope: `https://www.googleapis.com/auth/business.manage`
+
+### Token Management
+- Access tokens are encrypted at rest using AES-256-GCM
+- Automatic token refresh runs every minute for tokens expiring within 5 minutes
+- Revoked tokens are automatically detected and users are prompted to reconnect
+
+### Implementation Files
+- `server/routes/socialOAuth.ts` - OAuth routes and callback handlers
+- `server/services/socialOAuthService.ts` - Token encryption/refresh service
+- `server/platform-apis.ts` - Platform-specific posting and analytics APIs
+- `client/src/components/social/platform-connections.tsx` - Frontend connection UI
