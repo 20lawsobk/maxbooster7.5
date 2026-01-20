@@ -282,8 +282,8 @@ export class SocialOAuthService {
 
     // Twitter/X OAuth
     this.oauthConfigs.set('twitter', {
-      clientId: process.env.TWITTER_CLIENT_ID || '',
-      clientSecret: process.env.TWITTER_CLIENT_SECRET || '',
+      clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || '',
+      clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET || '',
       authUrl: 'https://twitter.com/i/oauth2/authorize',
       tokenUrl: 'https://api.twitter.com/2/oauth2/token',
       scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
