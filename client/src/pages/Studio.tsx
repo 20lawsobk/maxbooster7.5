@@ -2710,6 +2710,7 @@ export default function Studio() {
               setNewBusName={setNewBusName}
               controller={controller}
               createMixBusMutation={createMixBusMutation}
+              addTrackMutation={addTrackMutation}
               mixBusses={mixBusses}
               shortcutOverlay={shortcutOverlay}
             />
@@ -2732,6 +2733,360 @@ export default function Studio() {
   );
 }
 
-function StudioDialogs(_props: Record<string, unknown>) {
-  return null;
+interface StudioDialogsProps {
+  isAIMixing: boolean;
+  setIsAIMixing: (v: boolean) => void;
+  isAIMastering: boolean;
+  setIsAIMastering: (v: boolean) => void;
+  showAIAssistant: boolean;
+  setShowAIAssistant: (v: boolean) => void;
+  showAnalysisPanel: boolean;
+  setShowAnalysisPanel: (v: boolean) => void;
+  showExportDialog: boolean;
+  setShowExportDialog: (v: boolean) => void;
+  showStemExportDialog: boolean;
+  setShowStemExportDialog: (v: boolean) => void;
+  showDistributionDialog: boolean;
+  setShowDistributionDialog: (v: boolean) => void;
+  showAIGeneratorDialog: boolean;
+  setShowAIGeneratorDialog: (v: boolean) => void;
+  showMasteringSuite: boolean;
+  setShowMasteringSuite: (v: boolean) => void;
+  showLyricsDisplay: boolean;
+  setShowLyricsDisplay: (v: boolean) => void;
+  showLyricsImportDialog: boolean;
+  setShowLyricsImportDialog: (v: boolean) => void;
+  showProjectSetup: boolean;
+  setShowProjectSetup: (v: boolean) => void;
+  showMasteringDelivery: boolean;
+  setShowMasteringDelivery: (v: boolean) => void;
+  showAddTrackDialog: boolean;
+  setShowAddTrackDialog: (v: boolean) => void;
+  showAddBusDialog: boolean;
+  setShowAddBusDialog: (v: boolean) => void;
+  showConversionDialog: boolean;
+  setShowConversionDialog: (v: boolean) => void;
+  showRoutingMatrix: boolean;
+  setShowRoutingMatrix: (v: boolean) => void;
+  showTutorial: boolean;
+  setShowTutorial: (v: boolean) => void;
+  selectedProject: Project | null | undefined;
+  displayTracks: any[];
+  normalizedTrackClips: Map<string, any[]>;
+  trackAnalysisData: Map<string, TrackAnalysis>;
+  aiMix: any;
+  aiMaster: any;
+  audioAnalysis: any;
+  handleAIMix: () => void;
+  handleAIMaster: () => void;
+  handleAnalyzeAudio: () => void;
+  handleAddGeneration: (audio: any) => void;
+  toast: any;
+  logger: any;
+  retry: () => void;
+  newTrackName: string;
+  setNewTrackName: (v: string) => void;
+  newTrackType: string;
+  setNewTrackType: (v: string) => void;
+  newTrackColor: string;
+  setNewTrackColor: (v: string) => void;
+  newBusName: string;
+  setNewBusName: (v: string) => void;
+  controller: any;
+  createMixBusMutation: any;
+  addTrackMutation: any;
+  mixBusses: any[];
+  shortcutOverlay: any;
+}
+
+function StudioDialogs(props: StudioDialogsProps) {
+  return (
+    <>
+      {props.showExportDialog && props.selectedProject && (
+        <ExportDialog
+          isOpen={props.showExportDialog}
+          onClose={() => props.setShowExportDialog(false)}
+          projectId={props.selectedProject.id}
+          tracks={props.displayTracks}
+        />
+      )}
+
+      {props.showStemExportDialog && props.selectedProject && (
+        <StemExportDialog
+          isOpen={props.showStemExportDialog}
+          onClose={() => props.setShowStemExportDialog(false)}
+          projectId={props.selectedProject.id}
+          tracks={props.displayTracks}
+        />
+      )}
+
+      {props.showDistributionDialog && props.selectedProject && (
+        <DistributionDialog
+          isOpen={props.showDistributionDialog}
+          onClose={() => props.setShowDistributionDialog(false)}
+          projectId={props.selectedProject.id}
+        />
+      )}
+
+      {props.showAIGeneratorDialog && (
+        <AIGeneratorDialog
+          isOpen={props.showAIGeneratorDialog}
+          onClose={() => props.setShowAIGeneratorDialog(false)}
+          onGenerate={props.handleAddGeneration}
+        />
+      )}
+
+      {props.showConversionDialog && props.selectedProject && (
+        <ConversionDialog
+          isOpen={props.showConversionDialog}
+          onClose={() => props.setShowConversionDialog(false)}
+          projectId={props.selectedProject.id}
+          tracks={props.displayTracks}
+        />
+      )}
+
+      {props.showLyricsImportDialog && (
+        <LyricsImportDialog
+          isOpen={props.showLyricsImportDialog}
+          onClose={() => props.setShowLyricsImportDialog(false)}
+          onImport={(lyrics) => {
+            props.toast({
+              title: 'Lyrics Imported',
+              description: 'Lyrics have been added to your project',
+            });
+            props.setShowLyricsImportDialog(false);
+          }}
+        />
+      )}
+
+      {props.showLyricsDisplay && (
+        <LyricsDisplayWindow
+          isOpen={props.showLyricsDisplay}
+          onClose={() => props.setShowLyricsDisplay(false)}
+          currentTime={props.controller?.transport?.currentTime || 0}
+        />
+      )}
+
+      {props.showRoutingMatrix && (
+        <Dialog open={props.showRoutingMatrix} onOpenChange={props.setShowRoutingMatrix}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Audio Routing Matrix</DialogTitle>
+            </DialogHeader>
+            <RoutingMatrix
+              tracks={props.displayTracks}
+              busses={props.mixBusses}
+              onRoutingChange={(trackId, busId) => {
+                props.toast({
+                  title: 'Routing Updated',
+                  description: `Track routed to bus`,
+                });
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {props.showTutorial && (
+        <StudioTutorial
+          isOpen={props.showTutorial}
+          onClose={() => props.setShowTutorial(false)}
+        />
+      )}
+
+      {props.showAddTrackDialog && (
+        <Dialog open={props.showAddTrackDialog} onOpenChange={props.setShowAddTrackDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Add New Track
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="track-name">Track Name</Label>
+                <Input
+                  id="track-name"
+                  value={props.newTrackName}
+                  onChange={(e) => props.setNewTrackName(e.target.value)}
+                  placeholder="Enter track name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="track-type">Track Type</Label>
+                <Select value={props.newTrackType} onValueChange={props.setNewTrackType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="audio">Audio</SelectItem>
+                    <SelectItem value="midi">MIDI</SelectItem>
+                    <SelectItem value="instrument">Instrument</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="track-color">Track Color</Label>
+                <div className="flex gap-2">
+                  {['#8B5CF6', '#EC4899', '#22C55E', '#3B82F6', '#F59E0B', '#EF4444'].map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`w-8 h-8 rounded-full border-2 ${props.newTrackColor === color ? 'border-white' : 'border-transparent'}`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => props.setNewTrackColor(color)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => props.setShowAddTrackDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => props.addTrackMutation?.mutate?.()}
+                disabled={props.addTrackMutation?.isPending}
+              >
+                {props.addTrackMutation?.isPending ? 'Adding...' : 'Add Track'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {props.showProjectSetup && props.selectedProject && (
+        <ProjectSetupConsole
+          isOpen={props.showProjectSetup}
+          onClose={() => props.setShowProjectSetup(false)}
+          project={props.selectedProject}
+        />
+      )}
+
+      {props.showMasteringDelivery && props.selectedProject && (
+        <MasteringDeliveryPanel
+          isOpen={props.showMasteringDelivery}
+          onClose={() => props.setShowMasteringDelivery(false)}
+          projectId={props.selectedProject.id}
+          tracks={props.displayTracks}
+        />
+      )}
+
+      {props.showMasteringSuite && props.selectedProject && (
+        <Dialog open={props.showMasteringSuite} onOpenChange={props.setShowMasteringSuite}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                AI Mastering Suite
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="text-center py-8">
+                <Sparkles className="h-16 w-16 mx-auto text-primary mb-4" />
+                <h3 className="text-lg font-semibold mb-2">AI-Powered Mastering</h3>
+                <p className="text-muted-foreground mb-4">
+                  Analyze your mix and apply professional mastering with AI assistance.
+                </p>
+                <Button onClick={props.handleAIMaster} disabled={props.isAIMastering}>
+                  {props.isAIMastering ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Mastering...
+                    </>
+                  ) : (
+                    'Start AI Mastering'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {props.showAddBusDialog && (
+        <Dialog open={props.showAddBusDialog} onOpenChange={props.setShowAddBusDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                Add Mix Bus
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="bus-name">Bus Name</Label>
+                <Input
+                  id="bus-name"
+                  value={props.newBusName}
+                  onChange={(e) => props.setNewBusName(e.target.value)}
+                  placeholder="e.g., Drums, Vocals, Effects"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => props.setShowAddBusDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                if (props.newBusName.trim()) {
+                  props.createMixBusMutation?.mutate?.({ name: props.newBusName.trim() });
+                }
+                props.setShowAddBusDialog(false);
+                props.setNewBusName('');
+              }}>
+                Create Bus
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {props.showAIAssistant && (
+        <AIAssistantPanel
+          isOpen={props.showAIAssistant}
+          onClose={() => props.setShowAIAssistant(false)}
+          projectId={props.selectedProject?.id}
+          tracks={props.displayTracks}
+        />
+      )}
+
+      {props.showAnalysisPanel && (
+        <Dialog open={props.showAnalysisPanel} onOpenChange={props.setShowAnalysisPanel}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Audio Analysis
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {props.trackAnalysisData.size > 0 ? (
+                Array.from(props.trackAnalysisData.entries()).map(([trackId, analysis]) => (
+                  <div key={trackId} className="p-4 bg-muted rounded-lg space-y-2">
+                    <h4 className="font-medium">Track: {props.displayTracks.find(t => t.id === trackId)?.name || trackId}</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>BPM: {analysis.bpm || 'N/A'}</div>
+                      <div>Key: {analysis.musicalKey || 'N/A'}</div>
+                      <div>Energy: {analysis.energy ? `${Math.round(analysis.energy * 100)}%` : 'N/A'}</div>
+                      <div>Duration: {analysis.durationSeconds ? `${Math.round(analysis.durationSeconds)}s` : 'N/A'}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No analysis data available</p>
+                  <Button variant="outline" className="mt-4" onClick={props.handleAnalyzeAudio}>
+                    Analyze Audio
+                  </Button>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
 }
