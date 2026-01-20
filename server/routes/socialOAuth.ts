@@ -105,7 +105,15 @@ const PLATFORMS = {
   },
 };
 
-const oauthStates = new Map<string, { userId: string; platform: string; createdAt: Date }>();
+const oauthStates = new Map<string, { userId: string; platform: string; createdAt: Date; codeVerifier?: string }>();
+
+function generateCodeVerifier(): string {
+  return crypto.randomBytes(32).toString('base64url');
+}
+
+function generateCodeChallenge(verifier: string): string {
+  return crypto.createHash('sha256').update(verifier).digest('base64url');
+}
 
 setInterval(() => {
   const now = Date.now();
@@ -160,21 +168,22 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     }
     
     const state = crypto.randomBytes(32).toString('hex');
-    oauthStates.set(state, { userId, platform, createdAt: new Date() });
-    
     const baseUrl = getBaseUrl();
     const redirectUri = `${baseUrl}/api/social/callback/${platform}`;
     
     const params = new URLSearchParams();
+    let codeVerifier: string | undefined;
     
     if (platform === 'twitter') {
+      codeVerifier = generateCodeVerifier();
+      const codeChallenge = generateCodeChallenge(codeVerifier);
       params.set('response_type', 'code');
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
       params.set('scope', config.scope);
       params.set('state', state);
-      params.set('code_challenge', 'challenge');
-      params.set('code_challenge_method', 'plain');
+      params.set('code_challenge', codeChallenge);
+      params.set('code_challenge_method', 'S256');
     } else if (platform === 'tiktok') {
       params.set('client_key', config.clientId);
       params.set('scope', config.scope);
@@ -196,6 +205,8 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('state', state);
       params.set('response_type', 'code');
     }
+    
+    oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
     
     const authUrl = `${config.authUrl}?${params.toString()}`;
     
@@ -247,7 +258,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       
       if (platform === 'twitter') {
         tokenParams.set('client_id', config.clientId!);
-        tokenParams.set('code_verifier', 'challenge');
+        tokenParams.set('code_verifier', stateData.codeVerifier || '');
       } else if (platform === 'tiktok') {
         tokenParams.set('client_key', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
