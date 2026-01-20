@@ -1120,6 +1120,31 @@ router.get('/producers/:producerId', requireAuth, async (req: Request, res: Resp
     const producerBeats = await marketplaceService.getListingsByProducer(producerId);
     const beatCount = producerBeats.length;
     
+    // Get follower count by checking all taste profiles
+    const { userTasteProfiles } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { sql } = await import('drizzle-orm');
+    
+    const followerResult = await db.execute(sql`
+      SELECT COUNT(*) as count FROM user_taste_profiles 
+      WHERE ${producerId} = ANY(followed_producers)
+    `);
+    const followerCount = Number(followerResult.rows[0]?.count || 0);
+    
+    // Calculate average rating from producer's beats
+    let avgRating = 0;
+    let totalRatings = 0;
+    for (const beat of producerBeats) {
+      const metadata = (beat.metadata as any) || {};
+      if (metadata.avgRating && metadata.ratingCount) {
+        avgRating += metadata.avgRating * metadata.ratingCount;
+        totalRatings += metadata.ratingCount;
+      }
+    }
+    if (totalRatings > 0) {
+      avgRating = Math.round((avgRating / totalRatings) * 10) / 10;
+    }
+    
     res.json({
       id: producer.id,
       username: producer.username,
@@ -1128,9 +1153,9 @@ router.get('/producers/:producerId', requireAuth, async (req: Request, res: Resp
       location: producer.location,
       website: producer.website,
       socialLinks: producer.socialLinks,
-      followerCount: 0,
-      beatCount: beatCount,
-      rating: 0,
+      followerCount,
+      beatCount,
+      rating: avgRating,
       verified: producer.role === 'admin' || producer.subscriptionTier === 'lifetime',
     });
   } catch (error: any) {
@@ -1145,10 +1170,225 @@ router.get('/producers/:producerId/follow-status', async (req: Request, res: Res
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    res.json({ isFollowing: false });
+    const { producerId } = req.params;
+    const profile = await discoveryAlgorithmService.getOrCreateTasteProfile(req.user!.id);
+    const followedProducers = profile.followedProducers || [];
+    const isFollowing = followedProducers.includes(producerId);
+    res.json({ isFollowing });
   } catch (error: any) {
     logger.error('Error fetching follow status:', error);
     res.status(500).json({ error: 'Failed to fetch follow status' });
+  }
+});
+
+// Toggle unfollow producer
+router.post('/unfollow/:producerId', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const { producerId } = req.params;
+    const result = await discoveryAlgorithmService.unfollowProducer(req.user!.id, producerId);
+    res.json(result);
+  } catch (error: any) {
+    logger.error('Error unfollowing producer:', error);
+    res.status(500).json({ error: 'Failed to unfollow producer' });
+  }
+});
+
+// Like a beat (toggle)
+router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const { beatId } = req.params;
+    
+    // Check if already liked
+    const { beatInteractions, listings } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { eq, and } = await import('drizzle-orm');
+    
+    const existingLike = await db.select()
+      .from(beatInteractions)
+      .where(
+        and(
+          eq(beatInteractions.userId, req.user!.id),
+          eq(beatInteractions.beatId, beatId),
+          eq(beatInteractions.interactionType, 'like')
+        )
+      )
+      .limit(1);
+    
+    if (existingLike.length > 0) {
+      // Unlike - remove the interaction and decrement count
+      await db.delete(beatInteractions)
+        .where(
+          and(
+            eq(beatInteractions.userId, req.user!.id),
+            eq(beatInteractions.beatId, beatId),
+            eq(beatInteractions.interactionType, 'like')
+          )
+        );
+      
+      // Decrement like count in listing metadata
+      const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
+      if (listing) {
+        const currentMetadata = (listing.metadata as any) || {};
+        const newLikes = Math.max(0, (currentMetadata.likes || 0) - 1);
+        await db.update(listings)
+          .set({ metadata: { ...currentMetadata, likes: newLikes } })
+          .where(eq(listings.id, beatId));
+      }
+      
+      res.json({ success: true, liked: false, likes: (listing?.metadata as any)?.likes || 0 });
+    } else {
+      // Like - record the interaction
+      await discoveryAlgorithmService.recordInteraction({
+        userId: req.user!.id,
+        beatId,
+        interactionType: 'like',
+        source: 'marketplace',
+      });
+      
+      // Increment like count in listing metadata
+      const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
+      if (listing) {
+        const currentMetadata = (listing.metadata as any) || {};
+        const newLikes = (currentMetadata.likes || 0) + 1;
+        await db.update(listings)
+          .set({ metadata: { ...currentMetadata, likes: newLikes } })
+          .where(eq(listings.id, beatId));
+        res.json({ success: true, liked: true, likes: newLikes });
+      } else {
+        res.json({ success: true, liked: true });
+      }
+    }
+  } catch (error: any) {
+    logger.error('Error liking beat:', error);
+    res.status(500).json({ error: 'Failed to like beat' });
+  }
+});
+
+// Get like status for a beat
+router.get('/beats/:beatId/like-status', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const { beatId } = req.params;
+    
+    // Check if user has liked this beat by checking interactions
+    const { beatInteractions } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { eq, and } = await import('drizzle-orm');
+    
+    const likes = await db.select()
+      .from(beatInteractions)
+      .where(
+        and(
+          eq(beatInteractions.userId, req.user!.id),
+          eq(beatInteractions.beatId, beatId),
+          eq(beatInteractions.interactionType, 'like')
+        )
+      )
+      .limit(1);
+    
+    res.json({ isLiked: likes.length > 0 });
+  } catch (error: any) {
+    logger.error('Error checking like status:', error);
+    res.status(500).json({ error: 'Failed to check like status' });
+  }
+});
+
+// Rate a beat
+router.post('/beats/:beatId/rate', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const { beatId } = req.params;
+    const { rating } = req.body;
+    
+    if (typeof rating !== 'number' || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+    
+    // Store rating in beat interactions with custom data
+    await discoveryAlgorithmService.recordInteraction({
+      userId: req.user!.id,
+      beatId,
+      interactionType: 'rate',
+      source: 'marketplace',
+    });
+    
+    // Update listing metadata with new rating
+    const { listings } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { eq, sql } = await import('drizzle-orm');
+    
+    // Get current listing and update average rating
+    const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
+    if (listing) {
+      const currentMetadata = (listing.metadata as any) || {};
+      const currentRatings = currentMetadata.ratings || [];
+      const userRatingIndex = currentRatings.findIndex((r: any) => r.userId === req.user!.id);
+      
+      if (userRatingIndex >= 0) {
+        currentRatings[userRatingIndex].rating = rating;
+      } else {
+        currentRatings.push({ userId: req.user!.id, rating, createdAt: new Date().toISOString() });
+      }
+      
+      const avgRating = currentRatings.reduce((sum: number, r: any) => sum + r.rating, 0) / currentRatings.length;
+      
+      await db.update(listings)
+        .set({ 
+          metadata: { 
+            ...currentMetadata, 
+            ratings: currentRatings,
+            avgRating: Math.round(avgRating * 10) / 10,
+            ratingCount: currentRatings.length,
+          } 
+        })
+        .where(eq(listings.id, beatId));
+      
+      res.json({ success: true, rating, avgRating: Math.round(avgRating * 10) / 10 });
+    } else {
+      res.status(404).json({ error: 'Beat not found' });
+    }
+  } catch (error: any) {
+    logger.error('Error rating beat:', error);
+    res.status(500).json({ error: 'Failed to rate beat' });
+  }
+});
+
+// Get beat rating info
+router.get('/beats/:beatId/rating', async (req: Request, res: Response) => {
+  try {
+    const { beatId } = req.params;
+    const { listings } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { eq } = await import('drizzle-orm');
+    
+    const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
+    if (!listing) {
+      return res.status(404).json({ error: 'Beat not found' });
+    }
+    
+    const metadata = (listing.metadata as any) || {};
+    const userRating = req.isAuthenticated() 
+      ? (metadata.ratings || []).find((r: any) => r.userId === req.user!.id)?.rating || 0
+      : 0;
+    
+    res.json({
+      avgRating: metadata.avgRating || 0,
+      ratingCount: metadata.ratingCount || 0,
+      userRating,
+    });
+  } catch (error: any) {
+    logger.error('Error fetching beat rating:', error);
+    res.status(500).json({ error: 'Failed to fetch rating' });
   }
 });
 

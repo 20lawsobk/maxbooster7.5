@@ -439,6 +439,50 @@ const LICENSE_TYPES: LicenseTemplate[] = [
   },
 ];
 
+function ProducerFollowButton({ producerId, followMutation, unfollowMutation }: { 
+  producerId: string; 
+  followMutation: any; 
+  unfollowMutation: any;
+}) {
+  const { data: followStatus, isLoading } = useQuery({
+    queryKey: ['/api/marketplace/producers', producerId, 'follow-status'],
+    queryFn: async () => {
+      const response = await fetch(`/api/marketplace/producers/${producerId}/follow-status`, {
+        credentials: 'include',
+      });
+      if (!response.ok) return { isFollowing: false };
+      return response.json();
+    },
+  });
+
+  const isFollowing = followStatus?.isFollowing || false;
+  const isPending = followMutation.isPending || unfollowMutation.isPending;
+
+  return (
+    <Button 
+      variant={isFollowing ? "default" : "outline"} 
+      size="icon" 
+      onClick={() => {
+        if (isFollowing) {
+          unfollowMutation.mutate(producerId);
+        } else {
+          followMutation.mutate(producerId);
+        }
+      }}
+      disabled={isLoading || isPending}
+      className={isFollowing ? "bg-purple-600 hover:bg-purple-700" : ""}
+    >
+      {isPending ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : isFollowing ? (
+        <UserCheck className="w-4 h-4" />
+      ) : (
+        <UserPlus className="w-4 h-4" />
+      )}
+    </Button>
+  );
+}
+
 export default function Marketplace() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
@@ -868,6 +912,49 @@ export default function Marketplace() {
         description: 'You will see updates from this producer',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/producers'] });
+    },
+  });
+
+  const unfollowProducerMutation = useMutation({
+    mutationFn: async (producerId: string) => {
+      const response = await apiRequest('POST', `/api/marketplace/unfollow/${producerId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Producer Unfollowed',
+        description: 'You have unfollowed this producer',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/producers'] });
+    },
+  });
+
+  const likeBeatMutation = useMutation({
+    mutationFn: async (beatId: string) => {
+      const response = await apiRequest('POST', `/api/marketplace/beats/${beatId}/like`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Beat Liked!',
+        description: 'This beat has been added to your favorites',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/for-you'] });
+    },
+  });
+
+  const rateBeatMutation = useMutation({
+    mutationFn: async ({ beatId, rating }: { beatId: string; rating: number }) => {
+      const response = await apiRequest('POST', `/api/marketplace/beats/${beatId}/rate`, { rating });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Rating Submitted!',
+        description: `Your rating has been recorded. Average: ${data.avgRating}/5`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
     },
   });
 
@@ -1580,9 +1667,27 @@ export default function Marketplace() {
                               <Play className="w-3 h-3" />
                               <span>{(beat.plays ?? 0).toLocaleString()}</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <Heart className="w-3 h-3" />
+                            <button 
+                              className="flex items-center space-x-1 hover:text-red-500 transition-colors"
+                              onClick={() => likeBeatMutation.mutate(beat.id)}
+                              disabled={likeBeatMutation.isPending}
+                            >
+                              <Heart className={`w-3 h-3 ${likeBeatMutation.isPending ? 'animate-pulse' : ''}`} />
                               <span>{(beat.likes ?? 0).toLocaleString()}</span>
+                            </button>
+                            <div className="flex items-center space-x-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  onClick={() => rateBeatMutation.mutate({ beatId: beat.id, rating: star })}
+                                  className="hover:scale-110 transition-transform"
+                                  disabled={rateBeatMutation.isPending}
+                                >
+                                  <Star 
+                                    className={`w-3 h-3 ${star <= ((beat as any).avgRating || 0) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} 
+                                  />
+                                </button>
+                              ))}
                             </div>
                           </div>
                           <div className="text-right">
@@ -1697,9 +1802,11 @@ export default function Marketplace() {
                           >
                             View Profile
                           </Button>
-                          <Button variant="outline" size="icon" onClick={() => followProducerMutation.mutate(producer.id)}>
-                            <UserPlus className="w-4 h-4" />
-                          </Button>
+                          <ProducerFollowButton 
+                            producerId={producer.id}
+                            followMutation={followProducerMutation}
+                            unfollowMutation={unfollowProducerMutation}
+                          />
                           <Button
                             variant="outline"
                             size="icon"

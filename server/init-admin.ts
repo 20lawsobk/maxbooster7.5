@@ -162,6 +162,50 @@ async function initializeAdminResources(adminId: string, adminEmail: string, isN
       logger.info('   ✓ Admin taste profile exists');
     }
     
+    // 3. Check and initialize admin producer storefront
+    const { storefronts } = await import('../shared/schema');
+    const [existingStorefront] = await db
+      .select()
+      .from(storefronts)
+      .where(eq(storefronts.userId, adminId));
+    
+    if (!existingStorefront) {
+      const adminUsername = process.env.ADMIN_USERNAME || 'blawz';
+      const slug = adminUsername.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      
+      await db.insert(storefronts).values({
+        userId: adminId,
+        name: 'B-Lawz Music',
+        slug: slug,
+        subdomain: slug,
+        description: 'Official B-Lawz Music producer storefront. Premium beats, instrumentals, and sound packs for artists worldwide.',
+        branding: {
+          primaryColor: '#8B5CF6',
+          secondaryColor: '#3B82F6',
+          accentColor: '#22C55E',
+          fontFamily: 'Inter',
+          headerStyle: 'modern',
+          layoutStyle: 'grid',
+        },
+        socialLinks: {
+          instagram: 'https://instagram.com/blawzmusic',
+          twitter: 'https://twitter.com/blawzmusic',
+          youtube: 'https://youtube.com/@blawzmusic',
+          spotify: 'https://open.spotify.com/artist/blawzmusic',
+        },
+        seoSettings: {
+          title: 'B-Lawz Music - Premium Beats & Instrumentals',
+          description: 'Professional beats and instrumentals for artists. Trap, Hip-Hop, R&B, and more.',
+          keywords: ['beats', 'instrumentals', 'hip-hop', 'trap', 'producer', 'music'],
+        },
+        isPublished: true,
+        isVerified: true,
+      });
+      logger.info('   ✓ Admin producer storefront initialized');
+    } else {
+      logger.info('   ✓ Admin producer storefront exists');
+    }
+    
     logger.info('✅ Admin resources verified/initialized');
   } catch (error) {
     logger.error('Error initializing admin resources:', error);
