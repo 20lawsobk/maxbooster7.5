@@ -85,6 +85,9 @@ app.get('/tiktok-developers-site-verification.txt', (_req, res) => {
 app.get('/tiktok-developers-site-hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx', (_req, res) => {
   res.type('text/plain').send('tiktok-developers-site-verification=hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx');
 });
+app.get('/tiktokhnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx.txt', (_req, res) => {
+  res.type('text/plain').send('tiktok-developers-site-verification=hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx');
+});
 
 declare module "http" {
   interface IncomingMessage {
