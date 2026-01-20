@@ -185,11 +185,15 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('code_challenge', codeChallenge);
       params.set('code_challenge_method', 'S256');
     } else if (platform === 'tiktok') {
+      codeVerifier = generateCodeVerifier();
+      const codeChallenge = generateCodeChallenge(codeVerifier);
       params.set('client_key', config.clientId);
       params.set('scope', config.scope);
       params.set('response_type', 'code');
       params.set('redirect_uri', redirectUri);
       params.set('state', state);
+      params.set('code_challenge', codeChallenge);
+      params.set('code_challenge_method', 'S256');
     } else if (platform === 'youtube') {
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
@@ -262,6 +266,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       } else if (platform === 'tiktok') {
         tokenParams.set('client_key', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
+        tokenParams.set('code_verifier', stateData.codeVerifier || '');
       } else {
         tokenParams.set('client_id', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
