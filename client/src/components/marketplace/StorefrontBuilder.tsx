@@ -46,7 +46,6 @@ import {
   Instagram,
   Twitter,
   Youtube,
-  RefreshCw,
 } from 'lucide-react';
 
 interface StorefrontTemplate {
@@ -922,23 +921,12 @@ export default function StorefrontBuilder() {
 
               <Card className="sticky top-4">
                 <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="flex items-center gap-2">
-                      <Eye className="w-5 h-5" />
-                      Live Preview
-                    </CardTitle>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setCustomization({...customization});
-                      }}
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5" />
+                    Live Preview
+                  </CardTitle>
                   <CardDescription>
-                    See how your storefront looks as you customize it
+                    Changes update automatically as you customize
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
