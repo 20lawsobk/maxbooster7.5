@@ -2901,4 +2901,215 @@ router.get('/royalties/tax-documents', requireAuth, async (req: Request, res: Re
   }
 });
 
+// ===================
+// DATA TRANSFER & PROFILE SYNC ENDPOINTS
+// ===================
+
+import { distributionDataTransferService, SUPPORTED_DISTRIBUTORS, STREAMING_PLATFORMS } from '../services/distributionDataTransferService';
+
+// GET /api/distribution/transfer/distributors - Get supported distributors for import
+router.get('/transfer/distributors', requireAuth, async (_req: Request, res: Response) => {
+  try {
+    const distributors = distributionDataTransferService.getSupportedDistributors();
+    res.json({ distributors });
+  } catch (error: unknown) {
+    logger.error('Error fetching supported distributors:', error);
+    res.status(500).json({ error: 'Failed to fetch distributors' });
+  }
+});
+
+// GET /api/distribution/transfer/platforms - Get supported streaming platforms for profile sync
+router.get('/transfer/platforms', requireAuth, async (_req: Request, res: Response) => {
+  try {
+    const platforms = distributionDataTransferService.getSupportedPlatforms();
+    res.json({ platforms });
+  } catch (error: unknown) {
+    logger.error('Error fetching supported platforms:', error);
+    res.status(500).json({ error: 'Failed to fetch platforms' });
+  }
+});
+
+// POST /api/distribution/transfer/validate - Validate import CSV before processing
+router.post('/transfer/validate', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    const file = req.file;
+    const { distributor } = req.body;
+
+    if (!file) {
+      return res.status(400).json({ error: 'CSV file required' });
+    }
+
+    if (!distributor) {
+      return res.status(400).json({ error: 'Distributor must be specified' });
+    }
+
+    const csvContent = fs.readFileSync(file.path, 'utf-8');
+    const validation = await distributionDataTransferService.validateImportData(csvContent, distributor);
+
+    fs.unlinkSync(file.path);
+
+    res.json(validation);
+  } catch (error: unknown) {
+    logger.error('Error validating import data:', error);
+    res.status(500).json({ error: 'Failed to validate import data' });
+  }
+});
+
+// POST /api/distribution/transfer/import - Import releases from another distributor
+router.post('/transfer/import', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const file = req.file;
+    const { distributor } = req.body;
+
+    if (!file) {
+      return res.status(400).json({ error: 'CSV file required' });
+    }
+
+    if (!distributor) {
+      return res.status(400).json({ error: 'Distributor must be specified' });
+    }
+
+    const csvContent = fs.readFileSync(file.path, 'utf-8');
+    const job = await distributionDataTransferService.importFromDistributor(userId, distributor, csvContent);
+
+    fs.unlinkSync(file.path);
+
+    res.json({
+      success: true,
+      job,
+      message: `Import ${job.status}: ${job.successItems} releases imported, ${job.failedItems} failed`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error importing from distributor:', error);
+    res.status(500).json({ error: 'Failed to import releases' });
+  }
+});
+
+// GET /api/distribution/transfer/jobs - Get user's transfer jobs history
+router.get('/transfer/jobs', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const jobs = await distributionDataTransferService.getUserTransferJobs(userId);
+    res.json({ jobs });
+  } catch (error: unknown) {
+    logger.error('Error fetching transfer jobs:', error);
+    res.status(500).json({ error: 'Failed to fetch transfer jobs' });
+  }
+});
+
+// GET /api/distribution/transfer/jobs/:id - Get specific transfer job status
+router.get('/transfer/jobs/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const job = await distributionDataTransferService.getTransferJob(id);
+    
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    
+    res.json({ job });
+  } catch (error: unknown) {
+    logger.error('Error fetching transfer job:', error);
+    res.status(500).json({ error: 'Failed to fetch transfer job' });
+  }
+});
+
+// POST /api/distribution/profiles/link - Link a streaming platform profile
+router.post('/profiles/link', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { platformId, profileUrl, artistName } = req.body;
+
+    if (!platformId || !profileUrl) {
+      return res.status(400).json({ error: 'Platform ID and profile URL are required' });
+    }
+
+    const profile = await distributionDataTransferService.linkStreamingProfile(
+      userId,
+      platformId,
+      profileUrl,
+      { artistName }
+    );
+
+    res.json({
+      success: true,
+      profile,
+      message: `Successfully linked ${platformId} profile`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error linking streaming profile:', error);
+    res.status(500).json({ error: 'Failed to link streaming profile' });
+  }
+});
+
+// GET /api/distribution/profiles - Get all linked streaming profiles
+router.get('/profiles', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const profiles = await distributionDataTransferService.getLinkedProfiles(userId);
+    res.json({ profiles });
+  } catch (error: unknown) {
+    logger.error('Error fetching linked profiles:', error);
+    res.status(500).json({ error: 'Failed to fetch linked profiles' });
+  }
+});
+
+// POST /api/distribution/profiles/:platformId/sync - Sync profile data from platform
+router.post('/profiles/:platformId/sync', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { platformId } = req.params;
+
+    const profile = await distributionDataTransferService.syncProfileData(userId, platformId);
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not linked' });
+    }
+
+    res.json({
+      success: true,
+      profile,
+      message: `Successfully synced ${platformId} profile data`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error syncing streaming profile:', error);
+    res.status(500).json({ error: 'Failed to sync streaming profile' });
+  }
+});
+
+// DELETE /api/distribution/profiles/:platformId - Unlink a streaming platform profile
+router.delete('/profiles/:platformId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { platformId } = req.params;
+
+    const deleted = await distributionDataTransferService.unlinkStreamingProfile(userId, platformId);
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully unlinked ${platformId} profile`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error unlinking streaming profile:', error);
+    res.status(500).json({ error: 'Failed to unlink streaming profile' });
+  }
+});
+
+// GET /api/distribution/migration/report - Get migration report for user's catalog
+router.get('/migration/report', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const report = await distributionDataTransferService.generateMigrationReport(userId);
+    res.json(report);
+  } catch (error: unknown) {
+    logger.error('Error generating migration report:', error);
+    res.status(500).json({ error: 'Failed to generate migration report' });
+  }
+});
+
 export default router;

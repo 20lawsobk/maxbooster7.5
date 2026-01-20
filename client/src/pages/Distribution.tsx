@@ -103,6 +103,7 @@ import { AutomatedQC } from '@/components/distribution/AutomatedQC';
 import { ISRCManager } from '@/components/distribution/ISRCManager';
 import { TakedownManager } from '@/components/distribution/TakedownManager';
 import { EarningsReconciliation } from '@/components/distribution/EarningsReconciliation';
+import { DataTransferWizard } from '@/components/distribution/DataTransferWizard';
 import { RoyaltySplitManager } from '@/components/distribution/RoyaltySplitManager';
 import { ReleaseDateScheduler } from '@/components/distribution/ReleaseDateScheduler';
 import { HyperFollowBuilder } from '@/components/distribution/HyperFollowBuilder';
@@ -1308,6 +1309,14 @@ export default function Distribution() {
                 data-testid="tab-platforms"
               >
                 Platforms
+              </TabsTrigger>
+              <TabsTrigger
+                value="transfer"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-transfer"
+              >
+                <Link2 className="w-4 h-4 mr-1" />
+                Data Transfer
               </TabsTrigger>
             </TabsList>
           </div>
@@ -2893,6 +2902,11 @@ export default function Distribution() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Data Transfer Tab */}
+          <TabsContent value="transfer" className="space-y-6">
+            <DataTransferWizard />
           </TabsContent>
         </Tabs>
 
