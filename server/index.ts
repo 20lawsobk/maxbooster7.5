@@ -78,6 +78,10 @@ try {
 // Apply input sanitization
 app.use(sanitizationMiddleware);
 
+// TikTok Developers Site Verification
+app.get('/tiktok-developers-site-verification.txt', (_req, res) => {
+  res.type('text/plain').send('tiktok-developers-site-verification=2eTtZlaK1eOvKU9HENmYDbCHsBmtz7dl');
+});
 
 declare module "http" {
   interface IncomingMessage {
