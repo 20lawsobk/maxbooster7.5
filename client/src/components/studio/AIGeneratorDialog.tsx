@@ -49,34 +49,264 @@ import {
   Settings2,
 } from 'lucide-react';
 
-const INSTRUMENT_TYPES = [
-  { id: 'drums', name: 'Drums', icon: '🥁' },
-  { id: 'bass', name: 'Bass', icon: '🎸' },
-  { id: 'synth', name: 'Synth Lead', icon: '🎹' },
-  { id: 'pad', name: 'Pad', icon: '🌊' },
-  { id: 'pluck', name: 'Pluck', icon: '✨' },
-  { id: 'arp', name: 'Arpeggio', icon: '🎶' },
-  { id: 'melody', name: 'Melody', icon: '🎵' },
-  { id: 'full_beat', name: 'Full Beat', icon: '🔊' },
+const INSTRUMENT_CATEGORIES = {
+  melodic: [
+    { id: 'piano', name: 'Piano', icon: '🎹' },
+    { id: 'synth_lead', name: 'Synth Lead', icon: '🎛️' },
+    { id: 'synth_pad', name: 'Synth Pad', icon: '🌊' },
+    { id: 'synth_pluck', name: 'Synth Pluck', icon: '✨' },
+    { id: 'synth_brass', name: 'Synth Brass', icon: '🎺' },
+    { id: 'electric_piano', name: 'Electric Piano', icon: '🎹' },
+    { id: 'organ', name: 'Organ', icon: '⛪' },
+    { id: 'guitar_acoustic', name: 'Acoustic Guitar', icon: '🎸' },
+    { id: 'guitar_electric', name: 'Electric Guitar', icon: '🎸' },
+    { id: 'bass_electric', name: 'Electric Bass', icon: '🎸' },
+    { id: 'bass_synth', name: 'Synth Bass', icon: '🔊' },
+    { id: 'bass_808', name: '808 Bass', icon: '💥' },
+    { id: 'strings_violin', name: 'Violin', icon: '🎻' },
+    { id: 'strings_ensemble', name: 'Strings Ensemble', icon: '🎻' },
+    { id: 'brass_trumpet', name: 'Trumpet', icon: '🎺' },
+    { id: 'brass_trombone', name: 'Trombone', icon: '🎺' },
+    { id: 'woodwind_flute', name: 'Flute', icon: '🪈' },
+    { id: 'woodwind_saxophone', name: 'Saxophone', icon: '🎷' },
+    { id: 'vocal_lead', name: 'Vocal Lead', icon: '🎤' },
+    { id: 'vocal_choir', name: 'Choir', icon: '🎵' },
+    { id: 'vibraphone', name: 'Vibraphone', icon: '🔔' },
+    { id: 'marimba', name: 'Marimba', icon: '🪘' },
+    { id: 'bells', name: 'Bells', icon: '🔔' },
+    { id: 'kalimba', name: 'Kalimba', icon: '🎶' },
+    { id: 'ethnic_sitar', name: 'Sitar', icon: '🪕' },
+    { id: 'ethnic_koto', name: 'Koto', icon: '🎌' },
+    { id: 'ethnic_erhu', name: 'Erhu', icon: '🎻' },
+    { id: 'ethnic_pan_flute', name: 'Pan Flute', icon: '🪈' },
+    { id: 'vocal_harmony', name: 'Vocal Harmony', icon: '🎤' },
+  ],
+  drums: [
+    { id: 'acoustic_kit', name: 'Acoustic Kit', icon: '🥁' },
+    { id: 'electronic_kit', name: 'Electronic Kit', icon: '🎚️' },
+    { id: '808_kit', name: '808 Kit', icon: '💥' },
+    { id: '909_kit', name: '909 Kit', icon: '🔊' },
+    { id: 'trap_kit', name: 'Trap Kit', icon: '🔥' },
+    { id: 'jazz_kit', name: 'Jazz Kit', icon: '🎷' },
+    { id: 'rock_kit', name: 'Rock Kit', icon: '🎸' },
+    { id: 'metal_kit', name: 'Metal Kit', icon: '⚡' },
+    { id: 'lofi_kit', name: 'Lo-Fi Kit', icon: '📻' },
+    { id: 'boombap_kit', name: 'Boom Bap Kit', icon: '🎧' },
+    { id: 'drill_kit', name: 'Drill Kit', icon: '🔫' },
+    { id: 'dnb_kit', name: 'D&B Kit', icon: '⚡' },
+    { id: 'house_kit', name: 'House Kit', icon: '🏠' },
+    { id: 'techno_kit', name: 'Techno Kit', icon: '🎛️' },
+  ],
+  percussion: [
+    { id: 'congas', name: 'Congas', icon: '🪘' },
+    { id: 'bongos', name: 'Bongos', icon: '🪘' },
+    { id: 'timbales', name: 'Timbales', icon: '🥁' },
+    { id: 'djembe', name: 'Djembe', icon: '🪘' },
+    { id: 'tabla', name: 'Tabla', icon: '🪘' },
+    { id: 'shaker', name: 'Shaker', icon: '🎵' },
+    { id: 'tambourine', name: 'Tambourine', icon: '🪇' },
+    { id: 'cowbell', name: 'Cowbell', icon: '🔔' },
+  ],
+};
+
+const GENRE_CATEGORIES = {
+  electronic: {
+    name: 'Electronic',
+    genres: [
+      { id: 'house', name: 'House', tempo: 125 },
+      { id: 'techno', name: 'Techno', tempo: 130 },
+      { id: 'trance', name: 'Trance', tempo: 140 },
+      { id: 'dnb', name: 'Drum & Bass', tempo: 174 },
+      { id: 'dubstep', name: 'Dubstep', tempo: 140 },
+      { id: 'electro', name: 'Electro', tempo: 128 },
+      { id: 'edm', name: 'EDM', tempo: 128 },
+      { id: 'ambient', name: 'Ambient', tempo: 70 },
+      { id: 'idm', name: 'IDM', tempo: 120 },
+      { id: 'breakbeat', name: 'Breakbeat', tempo: 130 },
+    ],
+  },
+  hiphop: {
+    name: 'Hip Hop',
+    genres: [
+      { id: 'trap', name: 'Trap', tempo: 140 },
+      { id: 'boombap', name: 'Boom Bap', tempo: 90 },
+      { id: 'lofi', name: 'Lo-Fi', tempo: 80 },
+      { id: 'drill', name: 'Drill', tempo: 145 },
+      { id: 'phonk', name: 'Phonk', tempo: 135 },
+      { id: 'cloud_rap', name: 'Cloud Rap', tempo: 65 },
+      { id: 'old_school', name: 'Old School', tempo: 95 },
+      { id: 'g_funk', name: 'G-Funk', tempo: 90 },
+      { id: 'crunk', name: 'Crunk', tempo: 140 },
+    ],
+  },
+  rock: {
+    name: 'Rock',
+    genres: [
+      { id: 'classic_rock', name: 'Classic Rock', tempo: 120 },
+      { id: 'hard_rock', name: 'Hard Rock', tempo: 130 },
+      { id: 'metal', name: 'Metal', tempo: 140 },
+      { id: 'punk', name: 'Punk', tempo: 160 },
+      { id: 'indie', name: 'Indie', tempo: 115 },
+      { id: 'grunge', name: 'Grunge', tempo: 100 },
+      { id: 'alternative', name: 'Alternative', tempo: 120 },
+      { id: 'prog_rock', name: 'Progressive', tempo: 110 },
+      { id: 'blues_rock', name: 'Blues Rock', tempo: 100 },
+    ],
+  },
+  jazz: {
+    name: 'Jazz',
+    genres: [
+      { id: 'bebop', name: 'Bebop', tempo: 180 },
+      { id: 'swing', name: 'Swing', tempo: 140 },
+      { id: 'cool_jazz', name: 'Cool Jazz', tempo: 100 },
+      { id: 'fusion', name: 'Fusion', tempo: 120 },
+      { id: 'latin_jazz', name: 'Latin Jazz', tempo: 110 },
+      { id: 'smooth_jazz', name: 'Smooth Jazz', tempo: 90 },
+      { id: 'bossa_nova', name: 'Bossa Nova', tempo: 120 },
+      { id: 'acid_jazz', name: 'Acid Jazz', tempo: 100 },
+    ],
+  },
+  rnb: {
+    name: 'R&B / Soul',
+    genres: [
+      { id: 'contemporary_rnb', name: 'Contemporary R&B', tempo: 85 },
+      { id: 'neo_soul', name: 'Neo Soul', tempo: 80 },
+      { id: 'classic_rnb', name: 'Classic R&B', tempo: 90 },
+      { id: 'funk', name: 'Funk', tempo: 110 },
+      { id: 'soul', name: 'Soul', tempo: 100 },
+      { id: 'motown', name: 'Motown', tempo: 115 },
+      { id: 'disco', name: 'Disco', tempo: 120 },
+    ],
+  },
+  pop: {
+    name: 'Pop',
+    genres: [
+      { id: 'synth_pop', name: 'Synth Pop', tempo: 120 },
+      { id: 'dance_pop', name: 'Dance Pop', tempo: 125 },
+      { id: 'electro_pop', name: 'Electro Pop', tempo: 118 },
+      { id: 'indie_pop', name: 'Indie Pop', tempo: 115 },
+      { id: 'dream_pop', name: 'Dream Pop', tempo: 100 },
+      { id: 'k_pop', name: 'K-Pop', tempo: 128 },
+      { id: 'latin_pop', name: 'Latin Pop', tempo: 100 },
+    ],
+  },
+  latin: {
+    name: 'Latin',
+    genres: [
+      { id: 'reggaeton', name: 'Reggaeton', tempo: 95 },
+      { id: 'salsa', name: 'Salsa', tempo: 180 },
+      { id: 'bachata', name: 'Bachata', tempo: 130 },
+      { id: 'merengue', name: 'Merengue', tempo: 160 },
+      { id: 'cumbia', name: 'Cumbia', tempo: 100 },
+      { id: 'dembow', name: 'Dembow', tempo: 115 },
+      { id: 'samba', name: 'Samba', tempo: 100 },
+      { id: 'flamenco', name: 'Flamenco', tempo: 120 },
+    ],
+  },
+  world: {
+    name: 'World',
+    genres: [
+      { id: 'afrobeat', name: 'Afrobeat', tempo: 110 },
+      { id: 'reggae', name: 'Reggae', tempo: 80 },
+      { id: 'dub', name: 'Dub', tempo: 70 },
+      { id: 'dancehall', name: 'Dancehall', tempo: 100 },
+      { id: 'ska', name: 'Ska', tempo: 160 },
+      { id: 'soca', name: 'Soca', tempo: 130 },
+      { id: 'highlife', name: 'Highlife', tempo: 105 },
+    ],
+  },
+  classical: {
+    name: 'Classical',
+    genres: [
+      { id: 'baroque', name: 'Baroque', tempo: 80 },
+      { id: 'romantic', name: 'Romantic', tempo: 90 },
+      { id: 'impressionist', name: 'Impressionist', tempo: 70 },
+      { id: 'minimalist', name: 'Minimalist', tempo: 60 },
+      { id: 'neo_classical', name: 'Neo-Classical', tempo: 75 },
+      { id: 'orchestral', name: 'Orchestral', tempo: 100 },
+    ],
+  },
+  country: {
+    name: 'Country',
+    genres: [
+      { id: 'traditional', name: 'Traditional', tempo: 100 },
+      { id: 'modern_country', name: 'Modern Country', tempo: 110 },
+      { id: 'country_rock', name: 'Country Rock', tempo: 120 },
+      { id: 'bluegrass', name: 'Bluegrass', tempo: 130 },
+      { id: 'americana', name: 'Americana', tempo: 100 },
+      { id: 'folk', name: 'Folk', tempo: 90 },
+    ],
+  },
+};
+
+const SCALES = [
+  { id: 'major', name: 'Major' },
+  { id: 'minor', name: 'Minor' },
+  { id: 'dorian', name: 'Dorian' },
+  { id: 'phrygian', name: 'Phrygian' },
+  { id: 'lydian', name: 'Lydian' },
+  { id: 'mixolydian', name: 'Mixolydian' },
+  { id: 'locrian', name: 'Locrian' },
+  { id: 'harmonic_minor', name: 'Harmonic Minor' },
+  { id: 'melodic_minor', name: 'Melodic Minor' },
+  { id: 'pentatonic_major', name: 'Pentatonic Major' },
+  { id: 'pentatonic_minor', name: 'Pentatonic Minor' },
+  { id: 'blues', name: 'Blues' },
+  { id: 'whole_tone', name: 'Whole Tone' },
+  { id: 'diminished', name: 'Diminished' },
+  { id: 'chromatic', name: 'Chromatic' },
+  { id: 'hungarian_minor', name: 'Hungarian Minor' },
+  { id: 'phrygian_dominant', name: 'Phrygian Dominant' },
+  { id: 'double_harmonic', name: 'Double Harmonic' },
+  { id: 'bebop_dominant', name: 'Bebop Dominant' },
+  { id: 'altered', name: 'Altered' },
+  { id: 'japanese', name: 'Japanese (Hirajoshi)' },
+  { id: 'arabic', name: 'Arabic' },
+  { id: 'flamenco', name: 'Flamenco' },
+  { id: 'neapolitan', name: 'Neapolitan' },
 ];
 
-const GENRES = [
-  { id: 'trap', name: 'Trap', tempo: 140 },
-  { id: 'house', name: 'House', tempo: 125 },
-  { id: 'hiphop', name: 'Hip Hop', tempo: 90 },
-  { id: 'dnb', name: 'Drum & Bass', tempo: 174 },
-  { id: 'techno', name: 'Techno', tempo: 130 },
-  { id: 'lofi', name: 'Lo-Fi', tempo: 80 },
-  { id: 'dubstep', name: 'Dubstep', tempo: 140 },
-  { id: 'pop', name: 'Pop', tempo: 120 },
-  { id: 'rock', name: 'Rock', tempo: 120 },
-  { id: 'jazz', name: 'Jazz', tempo: 110 },
-  { id: 'rnb', name: 'R&B', tempo: 85 },
-  { id: 'ambient', name: 'Ambient', tempo: 70 },
+const STYLES = [
+  { id: 'aggressive', name: 'Aggressive' },
+  { id: 'ambient', name: 'Ambient' },
+  { id: 'atmospheric', name: 'Atmospheric' },
+  { id: 'bouncy', name: 'Bouncy' },
+  { id: 'bright', name: 'Bright' },
+  { id: 'calm', name: 'Calm' },
+  { id: 'cinematic', name: 'Cinematic' },
+  { id: 'dark', name: 'Dark' },
+  { id: 'dreamy', name: 'Dreamy' },
+  { id: 'driving', name: 'Driving' },
+  { id: 'emotional', name: 'Emotional' },
+  { id: 'energetic', name: 'Energetic' },
+  { id: 'epic', name: 'Epic' },
+  { id: 'ethereal', name: 'Ethereal' },
+  { id: 'funky', name: 'Funky' },
+  { id: 'futuristic', name: 'Futuristic' },
+  { id: 'groovy', name: 'Groovy' },
+  { id: 'happy', name: 'Happy' },
+  { id: 'hypnotic', name: 'Hypnotic' },
+  { id: 'intense', name: 'Intense' },
+  { id: 'laid_back', name: 'Laid Back' },
+  { id: 'melancholic', name: 'Melancholic' },
+  { id: 'melodic', name: 'Melodic' },
+  { id: 'minimal', name: 'Minimal' },
+  { id: 'mysterious', name: 'Mysterious' },
+  { id: 'nostalgic', name: 'Nostalgic' },
+  { id: 'peaceful', name: 'Peaceful' },
+  { id: 'powerful', name: 'Powerful' },
+  { id: 'psychedelic', name: 'Psychedelic' },
+  { id: 'punchy', name: 'Punchy' },
+  { id: 'relaxed', name: 'Relaxed' },
+  { id: 'romantic', name: 'Romantic' },
+  { id: 'smooth', name: 'Smooth' },
+  { id: 'soulful', name: 'Soulful' },
+  { id: 'spacey', name: 'Spacey' },
+  { id: 'uplifting', name: 'Uplifting' },
+  { id: 'warm', name: 'Warm' },
 ];
 
 const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const SCALES = ['major', 'minor', 'dorian', 'phrygian', 'lydian', 'mixolydian'];
 
 const textToMusicSchema = z.object({
   text: z.string().optional().default(''),
@@ -142,13 +372,19 @@ export function AIGeneratorDialog({
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [instrumentType, setInstrumentType] = useState<string>('drums');
+  const [instrumentCategory, setInstrumentCategory] = useState<'melodic' | 'drums' | 'percussion'>('melodic');
+  const [instrumentType, setInstrumentType] = useState<string>('synth_lead');
+  const [genreCategory, setGenreCategory] = useState<string>('hiphop');
   const [genre, setGenre] = useState<string>('trap');
   const [tempo, setTempo] = useState<number>(140);
   const [musicalKey, setMusicalKey] = useState<string>('C');
   const [scale, setScale] = useState<string>('minor');
+  const [style, setStyle] = useState<string>('melodic');
+  const [complexity, setComplexity] = useState<number>(0.5);
+  const [swing, setSwing] = useState<number>(0);
+  const [humanize, setHumanize] = useState<number>(0.2);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [targetType, setTargetType] = useState<string>('drums');
+  const [targetType, setTargetType] = useState<string>('synth_lead');
 
   // Use the AI workflow hook
   const { startWorkflow, cancel, retry, reset, integrate, textToMusic, audioToMusic } =
@@ -325,7 +561,8 @@ export function AIGeneratorDialog({
   
   const handleGenreChange = (newGenre: string) => {
     setGenre(newGenre);
-    const genreData = GENRES.find(g => g.id === newGenre);
+    const cat = GENRE_CATEGORIES[genreCategory as keyof typeof GENRE_CATEGORIES];
+    const genreData = cat?.genres.find(g => g.id === newGenre);
     if (genreData) {
       setTempo(genreData.tempo);
     }
@@ -427,15 +664,33 @@ export function AIGeneratorDialog({
           </TabsList>
 
           <TabsContent value="text" className="space-y-4" data-testid="text-to-music-content">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Instrument Type</Label>
+                <Label>Category</Label>
+                <Select value={instrumentCategory} onValueChange={(v) => {
+                  setInstrumentCategory(v as 'melodic' | 'drums' | 'percussion');
+                  const instruments = INSTRUMENT_CATEGORIES[v as keyof typeof INSTRUMENT_CATEGORIES];
+                  if (instruments?.length) setInstrumentType(instruments[0].id);
+                }} disabled={isProcessing}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="melodic">Melodic</SelectItem>
+                    <SelectItem value="drums">Drums</SelectItem>
+                    <SelectItem value="percussion">Percussion</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Instrument</Label>
                 <Select value={instrumentType} onValueChange={setInstrumentType} disabled={isProcessing}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select instrument" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {INSTRUMENT_TYPES.map((type) => (
+                  <SelectContent className="max-h-[300px]">
+                    {INSTRUMENT_CATEGORIES[instrumentCategory]?.map((type) => (
                       <SelectItem key={type.id} value={type.id}>
                         <span className="flex items-center gap-2">
                           <span>{type.icon}</span>
@@ -448,13 +703,52 @@ export function AIGeneratorDialog({
               </div>
               
               <div className="space-y-2">
+                <Label>Style</Label>
+                <Select value={style} onValueChange={setStyle} disabled={isProcessing}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select style" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {STYLES.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Genre Category</Label>
+                <Select value={genreCategory} onValueChange={(v) => {
+                  setGenreCategory(v);
+                  const cat = GENRE_CATEGORIES[v as keyof typeof GENRE_CATEGORIES];
+                  if (cat?.genres?.length) {
+                    setGenre(cat.genres[0].id);
+                    setTempo(cat.genres[0].tempo);
+                  }
+                }} disabled={isProcessing}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(GENRE_CATEGORIES).map(([key, cat]) => (
+                      <SelectItem key={key} value={key}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
                 <Label>Genre</Label>
                 <Select value={genre} onValueChange={handleGenreChange} disabled={isProcessing}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select genre" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {GENRES.map((g) => (
+                  <SelectContent className="max-h-[300px]">
+                    {GENRE_CATEGORIES[genreCategory as keyof typeof GENRE_CATEGORIES]?.genres.map((g) => (
                       <SelectItem key={g.id} value={g.id}>
                         {g.name} ({g.tempo} BPM)
                       </SelectItem>
@@ -500,13 +794,72 @@ export function AIGeneratorDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select scale" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px]">
                     {SCALES.map((s) => (
-                      <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            
+            <div className="space-y-4 p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Advanced Pattern Controls</Label>
+                <Switch checked={showAdvanced} onCheckedChange={setShowAdvanced} />
+              </div>
+              
+              {showAdvanced && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Complexity: {Math.round(complexity * 100)}%</Label>
+                    </div>
+                    <Slider
+                      value={[complexity]}
+                      onValueChange={(v) => setComplexity(v[0])}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      disabled={isProcessing}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">Higher complexity adds more notes and variations</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Swing: {Math.round(swing * 100)}%</Label>
+                    </div>
+                    <Slider
+                      value={[swing]}
+                      onValueChange={(v) => setSwing(v[0])}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      disabled={isProcessing}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">Adds groove and shuffle feel</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Humanize: {Math.round(humanize * 100)}%</Label>
+                    </div>
+                    <Slider
+                      value={[humanize]}
+                      onValueChange={(v) => setHumanize(v[0])}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      disabled={isProcessing}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">Adds natural timing and velocity variations</p>
+                  </div>
+                </div>
+              )}
             </div>
             
             <Separator />
@@ -671,8 +1024,18 @@ export function AIGeneratorDialog({
                 <SelectTrigger>
                   <SelectValue placeholder="Select output type" />
                 </SelectTrigger>
-                <SelectContent>
-                  {INSTRUMENT_TYPES.map((type) => (
+                <SelectContent className="max-h-[300px]">
+                  <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Melodic</div>
+                  {INSTRUMENT_CATEGORIES.melodic.slice(0, 10).map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      <span className="flex items-center gap-2">
+                        <span>{type.icon}</span>
+                        <span>{type.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                  <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Drums</div>
+                  {INSTRUMENT_CATEGORIES.drums.slice(0, 8).map((type) => (
                     <SelectItem key={type.id} value={type.id}>
                       <span className="flex items-center gap-2">
                         <span>{type.icon}</span>
