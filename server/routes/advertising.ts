@@ -1,76 +1,97 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { unifiedAIController } from '../services/unifiedAIController.js';
+import { storage } from '../storage.js';
+
+interface AuthenticatedRequest extends Request {
+  user?: { id: string };
+}
 
 const router = Router();
 
-router.get('/campaigns', requireAuth, async (req, res) => {
+router.get('/campaigns', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json([]);
+    const userId = req.user!.id;
+    const campaigns = await storage.getAdvertisingCampaigns(userId);
+    res.json(campaigns);
   } catch (error) {
     logger.error('Failed to get campaigns:', error);
     res.status(500).json({ error: 'Failed to get campaigns' });
   }
 });
 
-router.get('/ai-insights', requireAuth, async (req, res) => {
+router.get('/ai-insights', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json(null);
+    const userId = req.user!.id;
+    const insights = await storage.getAdvertisingInsights(userId);
+    res.json(insights);
   } catch (error) {
     logger.error('Failed to get AI insights:', error);
     res.status(500).json({ error: 'Failed to get AI insights' });
   }
 });
 
-router.get('/audience-segments', requireAuth, async (req, res) => {
+router.get('/audience-segments', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ segments: [] });
+    const userId = req.user!.id;
+    const segments = await storage.getAudienceSegments(userId);
+    res.json({ segments });
   } catch (error) {
     logger.error('Failed to get audience segments:', error);
     res.status(500).json({ error: 'Failed to get audience segments' });
   }
 });
 
-router.get('/creative-fatigue', requireAuth, async (req, res) => {
+router.get('/creative-fatigue', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ creatives: [] });
+    const userId = req.user!.id;
+    const creatives = await storage.getCreativeFatigue(userId);
+    res.json({ creatives });
   } catch (error) {
     logger.error('Failed to get creative fatigue:', error);
     res.status(500).json({ error: 'Failed to get creative fatigue' });
   }
 });
 
-router.get('/bidding-strategies', requireAuth, async (req, res) => {
+router.get('/bidding-strategies', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ strategies: [] });
+    const userId = req.user!.id;
+    const strategies = await storage.getBiddingStrategies(userId);
+    res.json({ strategies });
   } catch (error) {
     logger.error('Failed to get bidding strategies:', error);
     res.status(500).json({ error: 'Failed to get bidding strategies' });
   }
 });
 
-router.get('/lookalike-audiences', requireAuth, async (req, res) => {
+router.get('/lookalike-audiences', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ audiences: [] });
+    const userId = req.user!.id;
+    const audiences = await storage.getLookalikeAudiences(userId);
+    res.json({ audiences });
   } catch (error) {
     logger.error('Failed to get lookalike audiences:', error);
     res.status(500).json({ error: 'Failed to get lookalike audiences' });
   }
 });
 
-router.get('/forecasts', requireAuth, async (req, res) => {
+router.get('/forecasts', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ forecasts: [] });
+    const userId = req.user!.id;
+    const forecasts = await storage.getAdvertisingForecasts(userId);
+    res.json({ forecasts: forecasts ? [forecasts] : [] });
   } catch (error) {
     logger.error('Failed to get forecasts:', error);
     res.status(500).json({ error: 'Failed to get forecasts' });
   }
 });
 
-router.get('/competitor-insights', requireAuth, async (req, res) => {
+router.get('/competitor-insights', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ insights: [] });
+    const userId = req.user!.id;
+    const insights = await storage.getCompetitorInsights(userId);
+    res.json({ insights });
   } catch (error) {
     logger.error('Failed to get competitor insights:', error);
     res.status(500).json({ error: 'Failed to get competitor insights' });
