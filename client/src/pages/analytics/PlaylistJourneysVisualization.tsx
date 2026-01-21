@@ -1,4 +1,5 @@
 import { useState, memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,8 @@ import {
   Sparkles,
   Radio,
   UserCheck,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 
 interface PlaylistEvent {
@@ -314,15 +317,29 @@ const TypeBreakdownChart = memo(({ breakdown }: { breakdown: PlaylistTypeBreakdo
 TypeBreakdownChart.displayName = 'TypeBreakdownChart';
 
 export default function PlaylistJourneysVisualization({ 
-  events = defaultEvents, 
-  positionHistory = defaultPositionHistory,
-  typeBreakdown = defaultTypeBreakdown,
+  events: propEvents, 
+  positionHistory: propPositionHistory,
+  typeBreakdown: propTypeBreakdown,
   onRefresh 
 }: PlaylistJourneysProps) {
   const [timeFilter, setTimeFilter] = useState('30d');
   const [platformFilter, setPlatformFilter] = useState('all');
 
-  const filteredEvents = events.filter(event => {
+  const { data: journeysResponse, isLoading, refetch } = useQuery({
+    queryKey: ['/api/analytics/playlist-journeys', timeFilter],
+    enabled: !propEvents,
+  });
+
+  const events = propEvents || journeysResponse?.data?.events || defaultEvents;
+  const positionHistory = propPositionHistory || journeysResponse?.data?.positionHistory || defaultPositionHistory;
+  const typeBreakdown = propTypeBreakdown || journeysResponse?.data?.typeBreakdown || defaultTypeBreakdown;
+
+  const handleRefresh = () => {
+    refetch();
+    onRefresh?.();
+  };
+
+  const filteredEvents = events.filter((event: PlaylistEvent) => {
     if (platformFilter !== 'all' && event.platform.toLowerCase() !== platformFilter) {
       return false;
     }
@@ -330,10 +347,10 @@ export default function PlaylistJourneysVisualization({
   });
 
   const stats = {
-    totalPlaylists: events.filter(e => e.action === 'added').length,
-    removals: events.filter(e => e.action === 'removed').length,
-    estimatedStreams: events.reduce((sum, e) => sum + e.estimatedStreams, 0),
-    totalReach: events.reduce((sum, e) => sum + e.followers, 0),
+    totalPlaylists: events.filter((e: PlaylistEvent) => e.action === 'added').length,
+    removals: events.filter((e: PlaylistEvent) => e.action === 'removed').length,
+    estimatedStreams: events.reduce((sum: number, e: PlaylistEvent) => sum + e.estimatedStreams, 0),
+    totalReach: events.reduce((sum: number, e: PlaylistEvent) => sum + e.followers, 0),
   };
 
   return (
@@ -349,6 +366,9 @@ export default function PlaylistJourneysVisualization({
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          </Button>
           <Select value={timeFilter} onValueChange={setTimeFilter}>
             <SelectTrigger className="w-32">
               <SelectValue />

@@ -374,31 +374,81 @@ export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryPr
     setIsLoading(true);
     setResult(null);
 
-    const queryLower = queryText.toLowerCase();
-    let matchedResult: QueryResult | null = null;
-    
-    for (const [key, value] of Object.entries(mockResults)) {
-      if (queryLower.includes(key)) {
-        matchedResult = value;
-        break;
-      }
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    if (matchedResult) {
-      setResult(matchedResult);
-      setHistory(prev => [
-        { query: queryText, timestamp: new Date(), resultType: matchedResult!.type },
-        ...prev.slice(0, 9),
-      ]);
-    } else {
-      setResult({
-        type: 'text',
-        title: 'Query Result',
-        summary: `I analyzed your question: "${queryText}". Based on your current data, here's what I found...`,
-        data: null,
+    try {
+      const response = await fetch('/api/analytics/natural-language-query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ query: queryText }),
       });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.result) {
+          setResult(data.result);
+          setHistory(prev => [
+            { query: queryText, timestamp: new Date(), resultType: data.result.type },
+            ...prev.slice(0, 9),
+          ]);
+        } else {
+          const queryLower = queryText.toLowerCase();
+          let matchedResult: QueryResult | null = null;
+          
+          for (const [key, value] of Object.entries(mockResults)) {
+            if (queryLower.includes(key)) {
+              matchedResult = value;
+              break;
+            }
+          }
+
+          if (matchedResult) {
+            setResult(matchedResult);
+            setHistory(prev => [
+              { query: queryText, timestamp: new Date(), resultType: matchedResult!.type },
+              ...prev.slice(0, 9),
+            ]);
+          } else {
+            setResult({
+              type: 'text',
+              title: 'Query Result',
+              summary: `I analyzed your question: "${queryText}". Based on your current data, here's what I found...`,
+              data: null,
+            });
+          }
+        }
+      } else {
+        setResult({
+          type: 'text',
+          title: 'Query Result',
+          summary: `Unable to process your query. Please try again later.`,
+          data: null,
+        });
+      }
+    } catch (error) {
+      const queryLower = queryText.toLowerCase();
+      let matchedResult: QueryResult | null = null;
+      
+      for (const [key, value] of Object.entries(mockResults)) {
+        if (queryLower.includes(key)) {
+          matchedResult = value;
+          break;
+        }
+      }
+
+      if (matchedResult) {
+        setResult(matchedResult);
+        setHistory(prev => [
+          { query: queryText, timestamp: new Date(), resultType: matchedResult!.type },
+          ...prev.slice(0, 9),
+        ]);
+      } else {
+        setResult({
+          type: 'text',
+          title: 'Query Result',
+          summary: `I analyzed your question: "${queryText}". Based on your current data, here's what I found...`,
+          data: null,
+        });
+      }
     }
 
     setIsLoading(false);

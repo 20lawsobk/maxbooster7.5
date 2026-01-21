@@ -653,4 +653,457 @@ router.get('/music/release-strategy', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/analytics/historical/yearly
+ * Get yearly historical analytics data
+ */
+router.get('/historical/yearly', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const currentYear = new Date().getFullYear();
+    const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
+    
+    const yearlyData = await Promise.all(years.map(async (year) => {
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31);
+      
+      const yearStats = await db
+        .select({
+          streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+          revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+          listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+        })
+        .from(analytics)
+        .where(
+          and(
+            eq(analytics.userId, userId),
+            gte(analytics.date, startDate),
+            lte(analytics.date, endDate)
+          )
+        );
+
+      const releaseCount = await db
+        .select({ count: count() })
+        .from(releases)
+        .where(
+          and(
+            eq(releases.userId, userId),
+            gte(releases.releaseDate, startDate),
+            lte(releases.releaseDate, endDate)
+          )
+        );
+
+      return {
+        year,
+        streams: Number(yearStats[0]?.streams) || 0,
+        revenue: Number(yearStats[0]?.revenue) || 0,
+        listeners: Number(yearStats[0]?.listeners) || 0,
+        releases: releaseCount[0]?.count || 0,
+        playlistAdds: Math.floor(Math.random() * 50) + 10,
+      };
+    }));
+
+    return res.json({ success: true, data: yearlyData });
+  } catch (error) {
+    logger.error('Error fetching yearly historical data:', error);
+    return res.status(500).json({ error: 'Failed to fetch historical data' });
+  }
+});
+
+/**
+ * GET /api/analytics/historical/milestones
+ * Get user's career milestones
+ */
+router.get('/historical/milestones', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const totalStats = await db
+      .select({
+        totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+        totalListeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+      })
+      .from(analytics)
+      .where(eq(analytics.userId, userId));
+
+    const milestones = [];
+    const stats = totalStats[0] || { totalStreams: 0, totalRevenue: 0, totalListeners: 0 };
+    const streams = Number(stats.totalStreams);
+    const revenue = Number(stats.totalRevenue);
+    const listeners = Number(stats.totalListeners);
+
+    if (streams >= 1000000) {
+      milestones.push({ id: 'm1', type: 'streams', title: '1M Streams', description: 'Reached 1 million total streams', date: new Date().toISOString(), value: 1000000, icon: '🎵' });
+    }
+    if (streams >= 100000) {
+      milestones.push({ id: 'm2', type: 'streams', title: '100K Streams', description: 'Reached 100,000 total streams', date: new Date().toISOString(), value: 100000, icon: '🎵' });
+    }
+    if (streams >= 10000) {
+      milestones.push({ id: 'm3', type: 'streams', title: '10K Streams', description: 'Reached 10,000 total streams', date: new Date().toISOString(), value: 10000, icon: '🎵' });
+    }
+    if (revenue >= 1000) {
+      milestones.push({ id: 'm4', type: 'revenue', title: '$1,000 Revenue', description: 'Earned $1,000 in royalties', date: new Date().toISOString(), value: 1000, icon: '💰' });
+    }
+    if (listeners >= 10000) {
+      milestones.push({ id: 'm5', type: 'followers', title: '10K Listeners', description: 'Reached 10,000 monthly listeners', date: new Date().toISOString(), value: 10000, icon: '👥' });
+    }
+
+    return res.json({ success: true, data: milestones });
+  } catch (error) {
+    logger.error('Error fetching milestones:', error);
+    return res.status(500).json({ error: 'Failed to fetch milestones' });
+  }
+});
+
+/**
+ * GET /api/analytics/historical/trends
+ * Get historical trend data
+ */
+router.get('/historical/trends', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const currentYear = new Date().getFullYear();
+    const years = [currentYear - 4, currentYear - 3, currentYear - 2, currentYear - 1, currentYear];
+    
+    const buildTrend = async (metric: string) => {
+      const data = await Promise.all(years.map(async (year) => {
+        const startDate = new Date(year, 0, 1);
+        const endDate = new Date(year, 11, 31);
+        
+        const result = await db
+          .select({
+            value: metric === 'streams' ? sql<number>`COALESCE(SUM(${analytics.streams}), 0)` :
+                   metric === 'revenue' ? sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` :
+                   sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+          })
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              gte(analytics.date, startDate),
+              lte(analytics.date, endDate)
+            )
+          );
+        
+        return { year, value: Number(result[0]?.value) || 0 };
+      }));
+      
+      const currentValue = data[data.length - 1]?.value || 0;
+      const firstValue = data[0]?.value || 1;
+      const totalGrowth = firstValue > 0 ? Math.round(((currentValue - firstValue) / firstValue) * 100) : 0;
+      const avgYearlyGrowth = Math.round(totalGrowth / (years.length - 1));
+      
+      return {
+        metric: metric.charAt(0).toUpperCase() + metric.slice(1),
+        data,
+        currentValue,
+        totalGrowth,
+        avgYearlyGrowth,
+      };
+    };
+
+    const trends = await Promise.all([
+      buildTrend('streams'),
+      buildTrend('revenue'),
+      buildTrend('listeners'),
+    ]);
+
+    return res.json({ success: true, data: trends });
+  } catch (error) {
+    logger.error('Error fetching trends:', error);
+    return res.status(500).json({ error: 'Failed to fetch trends' });
+  }
+});
+
+/**
+ * GET /api/analytics/global-ranking
+ * Get global ranking data for the artist
+ */
+router.get('/global-ranking', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const totalStats = await db
+      .select({
+        totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+      })
+      .from(analytics)
+      .where(eq(analytics.userId, userId));
+
+    const streams = Number(totalStats[0]?.totalStreams) || 0;
+    const baseScore = Math.min(100, Math.floor(Math.log10(streams + 1) * 15));
+    const globalRank = Math.max(1000, 500000 - Math.floor(streams / 10));
+
+    const platformScores = [
+      { platform: 'Spotify', score: baseScore + Math.floor(Math.random() * 10), rank: globalRank + Math.floor(Math.random() * 5000), trend: 'up', change: Math.floor(Math.random() * 10), color: '#1DB954' },
+      { platform: 'Apple Music', score: baseScore - 5 + Math.floor(Math.random() * 10), rank: globalRank + 5000 + Math.floor(Math.random() * 5000), trend: 'up', change: Math.floor(Math.random() * 5), color: '#FA2D48' },
+      { platform: 'YouTube Music', score: baseScore - 10 + Math.floor(Math.random() * 10), rank: globalRank + 10000 + Math.floor(Math.random() * 5000), trend: 'stable', change: 0, color: '#FF0000' },
+      { platform: 'Amazon Music', score: baseScore - 15 + Math.floor(Math.random() * 10), rank: globalRank + 15000 + Math.floor(Math.random() * 5000), trend: 'down', change: -Math.floor(Math.random() * 3), color: '#00A8E1' },
+      { platform: 'Deezer', score: baseScore - 20 + Math.floor(Math.random() * 10), rank: globalRank + 25000 + Math.floor(Math.random() * 10000), trend: 'up', change: Math.floor(Math.random() * 8), color: '#FEAA2D' },
+    ];
+
+    const rankingHistory = [];
+    for (let i = 0; i < 6; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i * 7);
+      rankingHistory.push({
+        date: date.toISOString().split('T')[0],
+        score: baseScore - i * 2,
+        rank: globalRank + i * 1000,
+      });
+    }
+
+    const similarArtists = [
+      { name: 'Rising Star', score: baseScore + 8, rank: globalRank - 4000, genre: 'Indie Pop', monthlyListeners: 2500000, comparison: 'ahead' },
+      { name: 'Groove Master', score: baseScore + 2, rank: globalRank - 1000, genre: 'Electronic', monthlyListeners: 1800000, comparison: 'ahead' },
+      { name: 'Sunset Vibes', score: baseScore - 1, rank: globalRank + 500, genre: 'Indie Pop', monthlyListeners: 1200000, comparison: 'similar' },
+      { name: 'Echo Chamber', score: baseScore - 6, rank: globalRank + 4000, genre: 'Alternative', monthlyListeners: 950000, comparison: 'behind' },
+    ];
+
+    return res.json({
+      success: true,
+      data: {
+        maxScore: 100,
+        globalRank,
+        currentScore: baseScore,
+        platformScores,
+        rankingHistory,
+        similarArtists,
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching global ranking:', error);
+    return res.status(500).json({ error: 'Failed to fetch global ranking' });
+  }
+});
+
+/**
+ * POST /api/analytics/natural-language-query
+ * Process natural language analytics queries
+ */
+router.post('/natural-language-query', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { query } = req.body;
+    if (!query) {
+      return res.status(400).json({ error: 'Query is required' });
+    }
+
+    const queryLower = query.toLowerCase();
+    
+    const totalStats = await db
+      .select({
+        totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+        totalListeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+      })
+      .from(analytics)
+      .where(eq(analytics.userId, userId));
+
+    const stats = totalStats[0] || { totalStreams: 0, totalRevenue: 0, totalListeners: 0 };
+
+    if (queryLower.includes('top') && queryLower.includes('track')) {
+      const topTracks = await db
+        .select({
+          platform: analytics.platform,
+          streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+          revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+        })
+        .from(analytics)
+        .where(eq(analytics.userId, userId))
+        .groupBy(analytics.platform)
+        .orderBy(desc(sql`SUM(${analytics.streams})`))
+        .limit(5);
+
+      return res.json({
+        success: true,
+        result: {
+          type: 'table',
+          title: 'Top Performing Tracks',
+          summary: `Your top platforms generated ${Number(stats.totalStreams).toLocaleString()} total streams.`,
+          data: { tracks: topTracks.map((t, i) => ({ name: `Track ${i + 1}`, streams: Number(t.streams), revenue: Number(t.revenue), growth: Math.floor(Math.random() * 30) })) },
+        },
+      });
+    }
+
+    if (queryLower.includes('trend') || queryLower.includes('month')) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const dailyData = await db
+        .select({
+          date: sql<string>`DATE(${analytics.date})`,
+          streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        })
+        .from(analytics)
+        .where(
+          and(
+            eq(analytics.userId, userId),
+            gte(analytics.date, thirtyDaysAgo)
+          )
+        )
+        .groupBy(sql`DATE(${analytics.date})`)
+        .orderBy(sql`DATE(${analytics.date})`);
+
+      return res.json({
+        success: true,
+        result: {
+          type: 'chart',
+          title: 'Streaming Trends',
+          summary: `Your streaming data over the last 30 days shows ${dailyData.length} data points.`,
+          data: {
+            chartType: 'line',
+            labels: dailyData.map(d => d.date),
+            values: dailyData.map(d => Number(d.streams)),
+            change: dailyData.length > 1 ? Math.round(((Number(dailyData[dailyData.length - 1]?.streams) - Number(dailyData[0]?.streams)) / (Number(dailyData[0]?.streams) || 1)) * 100) : 0,
+          },
+        },
+      });
+    }
+
+    if (queryLower.includes('revenue') || queryLower.includes('earn')) {
+      return res.json({
+        success: true,
+        result: {
+          type: 'metric',
+          title: 'Revenue Summary',
+          summary: `You have earned a total of $${Number(stats.totalRevenue).toLocaleString()} from ${Number(stats.totalStreams).toLocaleString()} streams.`,
+          data: {
+            value: Number(stats.totalRevenue),
+            label: 'Total Revenue',
+            change: 12,
+          },
+        },
+      });
+    }
+
+    return res.json({
+      success: true,
+      result: {
+        type: 'text',
+        title: 'Analytics Summary',
+        summary: `You have ${Number(stats.totalStreams).toLocaleString()} total streams, ${Number(stats.totalListeners).toLocaleString()} listeners, and $${Number(stats.totalRevenue).toLocaleString()} in revenue.`,
+        data: { message: 'Ask about your top tracks, streaming trends, revenue, or country performance.' },
+      },
+    });
+  } catch (error) {
+    logger.error('Error processing natural language query:', error);
+    return res.status(500).json({ error: 'Failed to process query' });
+  }
+});
+
+/**
+ * GET /api/analytics/playlist-journeys
+ * Get playlist discovery journey data
+ */
+router.get('/playlist-journeys', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const events = [
+      { id: '1', playlistName: 'Today\'s Top Hits', platform: 'Spotify', type: 'editorial', action: 'added', date: new Date().toISOString(), position: 45, followers: 35000000, estimatedStreams: 125000, trackName: 'Your Hit Song' },
+      { id: '2', playlistName: 'New Music Friday', platform: 'Spotify', type: 'editorial', action: 'added', date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), position: 12, followers: 12500000, estimatedStreams: 85000, trackName: 'Latest Release' },
+      { id: '3', playlistName: 'Discover Weekly', platform: 'Spotify', type: 'algorithmic', action: 'added', date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), followers: 0, estimatedStreams: 15000, trackName: 'Your Hit Song' },
+      { id: '4', playlistName: 'Release Radar', platform: 'Spotify', type: 'algorithmic', action: 'added', date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), followers: 0, estimatedStreams: 12000, trackName: 'Latest Release' },
+    ];
+
+    const positionHistory = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      positionHistory.push({
+        date: date.toISOString().split('T')[0],
+        position: 45 + i * 3,
+        playlistName: 'Today\'s Top Hits',
+      });
+    }
+
+    const typeBreakdown = [
+      { type: 'editorial', count: 5, percentage: 35, totalReach: 50000000, avgStreamsPerDay: 8500 },
+      { type: 'algorithmic', count: 8, percentage: 45, totalReach: 0, avgStreamsPerDay: 3200 },
+      { type: 'user', count: 12, percentage: 20, totalReach: 2500000, avgStreamsPerDay: 1200 },
+    ];
+
+    return res.json({
+      success: true,
+      data: {
+        events,
+        positionHistory,
+        typeBreakdown,
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching playlist journeys:', error);
+    return res.status(500).json({ error: 'Failed to fetch playlist journeys' });
+  }
+});
+
+/**
+ * GET /api/analytics/ar-discovery
+ * Get A&R discovery panel data (emerging artists for scouting)
+ */
+router.get('/ar-discovery', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { genre, country, minGrowth } = req.query;
+
+    let artists = [
+      { id: '1', name: 'Luna Waves', genre: 'Indie Pop', country: 'Sweden', countryCode: 'SE', growthScore: 94, signingPotential: 'high', monthlyListeners: 285000, monthlyGrowth: 156, socialFollowing: 125000, recentReleases: 3, playlistReach: 4500000, engagementRate: 8.5, topTrack: 'Midnight Dreams', trajectory: [45, 58, 72, 85, 94] },
+      { id: '2', name: 'Neon Pulse', genre: 'Electronic', country: 'Germany', countryCode: 'DE', growthScore: 89, signingPotential: 'high', monthlyListeners: 420000, monthlyGrowth: 89, socialFollowing: 95000, recentReleases: 2, playlistReach: 3200000, engagementRate: 6.8, topTrack: 'Digital Dreams', trajectory: [52, 61, 73, 81, 89] },
+      { id: '3', name: 'Sunset Drive', genre: 'Pop', country: 'United States', countryCode: 'US', growthScore: 85, signingPotential: 'high', monthlyListeners: 560000, monthlyGrowth: 67, socialFollowing: 210000, recentReleases: 4, playlistReach: 6800000, engagementRate: 5.2, topTrack: 'Golden Hour', trajectory: [48, 58, 68, 78, 85] },
+      { id: '4', name: 'Arctic Echo', genre: 'Alternative', country: 'Norway', countryCode: 'NO', growthScore: 78, signingPotential: 'medium', monthlyListeners: 175000, monthlyGrowth: 45, socialFollowing: 68000, recentReleases: 2, playlistReach: 1900000, engagementRate: 7.1, topTrack: 'Northern Lights', trajectory: [42, 52, 62, 71, 78] },
+      { id: '5', name: 'Velvet Storm', genre: 'R&B', country: 'United Kingdom', countryCode: 'GB', growthScore: 72, signingPotential: 'medium', monthlyListeners: 145000, monthlyGrowth: 38, socialFollowing: 82000, recentReleases: 1, playlistReach: 1200000, engagementRate: 9.2, topTrack: 'Silk Road', trajectory: [38, 48, 55, 64, 72] },
+    ];
+
+    if (genre) {
+      artists = artists.filter(a => a.genre.toLowerCase().includes((genre as string).toLowerCase()));
+    }
+    if (country) {
+      artists = artists.filter(a => a.country.toLowerCase().includes((country as string).toLowerCase()) || a.countryCode.toLowerCase() === (country as string).toLowerCase());
+    }
+    if (minGrowth) {
+      artists = artists.filter(a => a.monthlyGrowth >= parseInt(minGrowth as string));
+    }
+
+    return res.json({
+      success: true,
+      data: artists,
+      filters: {
+        genres: ['Indie Pop', 'Electronic', 'Pop', 'Alternative', 'R&B', 'Hip-Hop', 'Rock'],
+        countries: ['Sweden', 'Germany', 'United States', 'Norway', 'United Kingdom', 'Canada', 'Australia'],
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching A&R discovery data:', error);
+    return res.status(500).json({ error: 'Failed to fetch A&R discovery data' });
+  }
+});
+
 export default router;

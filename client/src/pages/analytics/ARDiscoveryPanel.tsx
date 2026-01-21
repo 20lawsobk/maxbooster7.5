@@ -1,4 +1,5 @@
 import { useState, memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,8 @@ import {
   Zap,
   BarChart3,
   Heart,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 
 interface EmergingArtist {
@@ -352,25 +355,34 @@ const GrowthTrajectoryChart = memo(({ artists }: { artists: EmergingArtist[] }) 
 });
 GrowthTrajectoryChart.displayName = 'GrowthTrajectoryChart';
 
-export default function ARDiscoveryPanel({ artists = defaultArtists, onArtistSelect }: ARDiscoveryProps) {
+export default function ARDiscoveryPanel({ artists: propArtists, onArtistSelect }: ARDiscoveryProps) {
   const [genreFilter, setGenreFilter] = useState('all');
   const [countryFilter, setCountryFilter] = useState('all');
   const [potentialFilter, setPotentialFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('growthScore');
 
-  const genres = [...new Set(artists.map(a => a.genre))];
-  const countries = [...new Set(artists.map(a => a.country))];
+  const { data: discoveryResponse, isLoading, refetch } = useQuery({
+    queryKey: ['/api/analytics/ar-discovery', genreFilter, countryFilter],
+    enabled: !propArtists,
+  });
+
+  const artists = propArtists || discoveryResponse?.data || defaultArtists;
+  const availableGenres = discoveryResponse?.filters?.genres || [...new Set(artists.map((a: EmergingArtist) => a.genre))];
+  const availableCountries = discoveryResponse?.filters?.countries || [...new Set(artists.map((a: EmergingArtist) => a.country))];
+
+  const genres = availableGenres;
+  const countries = availableCountries;
 
   const filteredArtists = artists
-    .filter(artist => {
+    .filter((artist: EmergingArtist) => {
       if (genreFilter !== 'all' && artist.genre !== genreFilter) return false;
       if (countryFilter !== 'all' && artist.country !== countryFilter) return false;
       if (potentialFilter !== 'all' && artist.signingPotential !== potentialFilter) return false;
       if (searchQuery && !artist.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       return true;
     })
-    .sort((a, b) => {
+    .sort((a: EmergingArtist, b: EmergingArtist) => {
       switch (sortBy) {
         case 'growthScore': return b.growthScore - a.growthScore;
         case 'monthlyGrowth': return b.monthlyGrowth - a.monthlyGrowth;
@@ -382,9 +394,9 @@ export default function ARDiscoveryPanel({ artists = defaultArtists, onArtistSel
 
   const stats = {
     totalArtists: artists.length,
-    highPotential: artists.filter(a => a.signingPotential === 'high').length,
-    avgGrowthScore: Math.round(artists.reduce((sum, a) => sum + a.growthScore, 0) / artists.length),
-    totalReach: artists.reduce((sum, a) => sum + a.playlistReach, 0),
+    highPotential: artists.filter((a: EmergingArtist) => a.signingPotential === 'high').length,
+    avgGrowthScore: artists.length > 0 ? Math.round(artists.reduce((sum: number, a: EmergingArtist) => sum + a.growthScore, 0) / artists.length) : 0,
+    totalReach: artists.reduce((sum: number, a: EmergingArtist) => sum + a.playlistReach, 0),
   };
 
   return (
@@ -399,6 +411,9 @@ export default function ARDiscoveryPanel({ artists = defaultArtists, onArtistSel
             Discover emerging artists with high growth potential
           </p>
         </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

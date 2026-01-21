@@ -1,4 +1,5 @@
 import { useState, memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +31,8 @@ import {
   Minus,
   BarChart3,
   LineChart,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 
 interface YearData {
@@ -467,20 +470,52 @@ const LongTermTrends = memo(({ trends }: { trends: TrendData[] }) => {
 LongTermTrends.displayName = 'LongTermTrends';
 
 export default function HistoricalAnalyticsView({
-  yearlyData = defaultYearlyData,
-  milestones = defaultMilestones,
-  trends = defaultTrends,
+  yearlyData: propYearlyData,
+  milestones: propMilestones,
+  trends: propTrends,
 }: HistoricalAnalyticsProps) {
+  const { data: yearlyResponse, isLoading: yearlyLoading, refetch: refetchYearly } = useQuery({
+    queryKey: ['/api/analytics/historical/yearly'],
+    enabled: !propYearlyData,
+  });
+
+  const { data: milestonesResponse, isLoading: milestonesLoading, refetch: refetchMilestones } = useQuery({
+    queryKey: ['/api/analytics/historical/milestones'],
+    enabled: !propMilestones,
+  });
+
+  const { data: trendsResponse, isLoading: trendsLoading, refetch: refetchTrends } = useQuery({
+    queryKey: ['/api/analytics/historical/trends'],
+    enabled: !propTrends,
+  });
+
+  const yearlyData = propYearlyData || yearlyResponse?.data || defaultYearlyData;
+  const milestones = propMilestones || milestonesResponse?.data || defaultMilestones;
+  const trends = propTrends || trendsResponse?.data || defaultTrends;
+  
+  const isLoading = yearlyLoading || milestonesLoading || trendsLoading;
+
+  const handleRefresh = () => {
+    refetchYearly();
+    refetchMilestones();
+    refetchTrends();
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <History className="h-6 w-6 text-indigo-500" />
-          Historical Analytics
-        </h2>
-        <p className="text-muted-foreground mt-1">
-          Track your long-term growth and career milestones
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <History className="h-6 w-6 text-indigo-500" />
+            Historical Analytics
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Track your long-term growth and career milestones
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+        </Button>
       </div>
 
       <Tabs defaultValue="comparison" className="w-full">

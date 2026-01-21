@@ -1,4 +1,5 @@
 import { useState, memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,8 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 
 interface PlatformScore {
@@ -320,16 +323,27 @@ const SimilarArtistsComparison = memo(({ artists, currentScore }: { artists: Sim
 SimilarArtistsComparison.displayName = 'SimilarArtistsComparison';
 
 export default function GlobalRankingDashboard({
-  maxScore = 74,
-  globalRank = 12453,
-  platformScores = defaultPlatformScores,
-  rankingHistory = defaultRankingHistory,
-  similarArtists = defaultSimilarArtists,
+  maxScore: propMaxScore,
+  globalRank: propGlobalRank,
+  platformScores: propPlatformScores,
+  rankingHistory: propRankingHistory,
+  similarArtists: propSimilarArtists,
 }: GlobalRankingProps) {
   const [timeRange, setTimeRange] = useState('30d');
 
+  const { data: rankingResponse, isLoading, refetch } = useQuery({
+    queryKey: ['/api/analytics/global-ranking', timeRange],
+    enabled: !propMaxScore && !propGlobalRank,
+  });
+
+  const maxScore = propMaxScore ?? rankingResponse?.data?.currentScore ?? 74;
+  const globalRank = propGlobalRank ?? rankingResponse?.data?.globalRank ?? 12453;
+  const platformScores = propPlatformScores || rankingResponse?.data?.platformScores || defaultPlatformScores;
+  const rankingHistory = propRankingHistory || rankingResponse?.data?.rankingHistory || defaultRankingHistory;
+  const similarArtists = propSimilarArtists || rankingResponse?.data?.similarArtists || defaultSimilarArtists;
+
   const avgPlatformScore = Math.round(
-    platformScores.reduce((sum, p) => sum + p.score, 0) / platformScores.length
+    platformScores.reduce((sum: number, p: PlatformScore) => sum + p.score, 0) / platformScores.length
   );
 
   return (
@@ -344,16 +358,21 @@ export default function GlobalRankingDashboard({
             Your performance score across all platforms
           </p>
         </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7d">Last 7 days</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          </Button>
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
