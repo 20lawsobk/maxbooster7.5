@@ -4,6 +4,7 @@ import { platformAPI } from './platform-apis.ts';
 import { customAI } from './custom-ai-engine.ts';
 import { logger } from './logger.js';
 import { autopilotCoordinatorService, type AutopilotType } from './services/autopilotCoordinatorService.js';
+import { hyperLearningEngine } from './services/hyperLearningEngine.js';
 
 interface AutonomousConfig {
   enabled: boolean;
@@ -763,6 +764,61 @@ export class AutonomousAutopilot extends EventEmitter {
         isOptimal: true,
       });
     }
+  }
+
+  async getHyperLearningOptimizedContent(platform: string): Promise<{
+    optimalHook: string;
+    optimalLength: string;
+    optimalTiming: { hour: number; dayOfWeek: number };
+    microPatternRecommendations: string[];
+    predictedEngagement: number;
+  } | null> {
+    try {
+      const prediction = await hyperLearningEngine.predictOptimalContent(this.userId, platform);
+      return {
+        optimalHook: prediction.optimalHook,
+        optimalLength: prediction.optimalLength,
+        optimalTiming: prediction.optimalTiming,
+        microPatternRecommendations: prediction.microPatternRecommendations,
+        predictedEngagement: prediction.predictedEngagement,
+      };
+    } catch (error) {
+      logger.warn('HyperLearning optimization unavailable, using standard learning');
+      return null;
+    }
+  }
+
+  async applyHyperLearningToContent(content: string, platform: string): Promise<string> {
+    try {
+      const hyperOptimization = await this.getHyperLearningOptimizedContent(platform);
+      if (!hyperOptimization) return content;
+
+      let optimizedContent = content;
+
+      for (const recommendation of hyperOptimization.microPatternRecommendations.slice(0, 3)) {
+        if (recommendation.includes('emoji') && !content.match(/[\u{1F600}-\u{1F64F}]/u)) {
+          const emojis = ['🎵', '🎶', '🔥', '✨', '💯', '🙌', '💪', '🎤', '🎹', '🎸'];
+          optimizedContent = emojis[Math.floor(Math.random() * emojis.length)] + ' ' + optimizedContent;
+        }
+        if (recommendation.includes('question') && !content.includes('?')) {
+          optimizedContent += '\n\nWhat do you think?';
+        }
+      }
+
+      return optimizedContent;
+    } catch (error) {
+      logger.warn('Failed to apply HyperLearning optimizations:', error);
+      return content;
+    }
+  }
+
+  getHyperLearningStatus(): { enabled: boolean; learningMultiplier: number; microPatternsDetected: number } {
+    const status = hyperLearningEngine.getStatus();
+    return {
+      enabled: status.isRunning,
+      learningMultiplier: status.metrics.learningMultiplier,
+      microPatternsDetected: status.microPatternCount,
+    };
   }
 
   // Topic Selection with Learning
