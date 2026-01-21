@@ -362,14 +362,15 @@ export default function ARDiscoveryPanel({ artists: propArtists, onArtistSelect 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('growthScore');
 
-  const { data: discoveryResponse, isLoading, refetch } = useQuery({
+  const { data: discoveryResponse, isLoading, isError, refetch } = useQuery<{ data: EmergingArtist[]; filters: { genres: string[]; countries: string[] } }>({
     queryKey: ['/api/analytics/ar-discovery', genreFilter, countryFilter],
     enabled: !propArtists,
   });
 
-  const artists = propArtists || discoveryResponse?.data || defaultArtists;
-  const availableGenres = discoveryResponse?.filters?.genres || [...new Set(artists.map((a: EmergingArtist) => a.genre))];
-  const availableCountries = discoveryResponse?.filters?.countries || [...new Set(artists.map((a: EmergingArtist) => a.country))];
+  const discoveryData = discoveryResponse?.data ?? discoveryResponse;
+  const artists = propArtists || (isError ? defaultArtists : (Array.isArray(discoveryData) ? discoveryData : discoveryData?.data)) || defaultArtists;
+  const availableGenres = (isError ? [] : discoveryResponse?.filters?.genres) || [...new Set(artists.map((a: EmergingArtist) => a.genre))];
+  const availableCountries = (isError ? [] : discoveryResponse?.filters?.countries) || [...new Set(artists.map((a: EmergingArtist) => a.country))];
 
   const genres = availableGenres;
   const countries = availableCountries;

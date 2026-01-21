@@ -325,14 +325,15 @@ export default function PlaylistJourneysVisualization({
   const [timeFilter, setTimeFilter] = useState('30d');
   const [platformFilter, setPlatformFilter] = useState('all');
 
-  const { data: journeysResponse, isLoading, refetch } = useQuery({
+  const { data: journeysResponse, isLoading, isError, refetch } = useQuery<{ data: { events: PlaylistEvent[]; positionHistory: PositionHistory[]; typeBreakdown: PlaylistTypeBreakdown[] } }>({
     queryKey: ['/api/analytics/playlist-journeys', timeFilter],
     enabled: !propEvents,
   });
 
-  const events = propEvents || journeysResponse?.data?.events || defaultEvents;
-  const positionHistory = propPositionHistory || journeysResponse?.data?.positionHistory || defaultPositionHistory;
-  const typeBreakdown = propTypeBreakdown || journeysResponse?.data?.typeBreakdown || defaultTypeBreakdown;
+  const journeysData = journeysResponse?.data ?? journeysResponse;
+  const events = propEvents || (isError ? defaultEvents : journeysData?.events) || defaultEvents;
+  const positionHistory = propPositionHistory || (isError ? defaultPositionHistory : journeysData?.positionHistory) || defaultPositionHistory;
+  const typeBreakdown = propTypeBreakdown || (isError ? defaultTypeBreakdown : journeysData?.typeBreakdown) || defaultTypeBreakdown;
 
   const handleRefresh = () => {
     refetch();

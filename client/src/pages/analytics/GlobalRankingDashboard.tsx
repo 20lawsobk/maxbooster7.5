@@ -331,16 +331,17 @@ export default function GlobalRankingDashboard({
 }: GlobalRankingProps) {
   const [timeRange, setTimeRange] = useState('30d');
 
-  const { data: rankingResponse, isLoading, refetch } = useQuery({
+  const { data: rankingResponse, isLoading, isError, refetch } = useQuery<{ data: { currentScore: number; globalRank: number; platformScores: PlatformScore[]; rankingHistory: RankingHistory[]; similarArtists: SimilarArtist[] } }>({
     queryKey: ['/api/analytics/global-ranking', timeRange],
     enabled: !propMaxScore && !propGlobalRank,
   });
 
-  const maxScore = propMaxScore ?? rankingResponse?.data?.currentScore ?? 74;
-  const globalRank = propGlobalRank ?? rankingResponse?.data?.globalRank ?? 12453;
-  const platformScores = propPlatformScores || rankingResponse?.data?.platformScores || defaultPlatformScores;
-  const rankingHistory = propRankingHistory || rankingResponse?.data?.rankingHistory || defaultRankingHistory;
-  const similarArtists = propSimilarArtists || rankingResponse?.data?.similarArtists || defaultSimilarArtists;
+  const rankingData = rankingResponse?.data ?? rankingResponse;
+  const maxScore = propMaxScore ?? (isError ? 74 : rankingData?.currentScore) ?? 74;
+  const globalRank = propGlobalRank ?? (isError ? 12453 : rankingData?.globalRank) ?? 12453;
+  const platformScores = propPlatformScores || (isError ? defaultPlatformScores : rankingData?.platformScores) || defaultPlatformScores;
+  const rankingHistory = propRankingHistory || (isError ? defaultRankingHistory : rankingData?.rankingHistory) || defaultRankingHistory;
+  const similarArtists = propSimilarArtists || (isError ? defaultSimilarArtists : rankingData?.similarArtists) || defaultSimilarArtists;
 
   const avgPlatformScore = Math.round(
     platformScores.reduce((sum: number, p: PlatformScore) => sum + p.score, 0) / platformScores.length

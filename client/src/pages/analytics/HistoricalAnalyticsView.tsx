@@ -474,24 +474,24 @@ export default function HistoricalAnalyticsView({
   milestones: propMilestones,
   trends: propTrends,
 }: HistoricalAnalyticsProps) {
-  const { data: yearlyResponse, isLoading: yearlyLoading, refetch: refetchYearly } = useQuery({
+  const { data: yearlyResponse, isLoading: yearlyLoading, isError: yearlyError, refetch: refetchYearly } = useQuery<{ data: YearData[] }>({
     queryKey: ['/api/analytics/historical/yearly'],
     enabled: !propYearlyData,
   });
 
-  const { data: milestonesResponse, isLoading: milestonesLoading, refetch: refetchMilestones } = useQuery({
+  const { data: milestonesResponse, isLoading: milestonesLoading, isError: milestonesError, refetch: refetchMilestones } = useQuery<{ data: Milestone[] }>({
     queryKey: ['/api/analytics/historical/milestones'],
     enabled: !propMilestones,
   });
 
-  const { data: trendsResponse, isLoading: trendsLoading, refetch: refetchTrends } = useQuery({
+  const { data: trendsResponse, isLoading: trendsLoading, isError: trendsError, refetch: refetchTrends } = useQuery<{ data: TrendData[] }>({
     queryKey: ['/api/analytics/historical/trends'],
     enabled: !propTrends,
   });
 
-  const yearlyData = propYearlyData || yearlyResponse?.data || defaultYearlyData;
-  const milestones = propMilestones || milestonesResponse?.data || defaultMilestones;
-  const trends = propTrends || trendsResponse?.data || defaultTrends;
+  const yearlyData = propYearlyData || (yearlyError ? defaultYearlyData : yearlyResponse?.data ?? yearlyResponse) || defaultYearlyData;
+  const milestones = propMilestones || (milestonesError ? defaultMilestones : milestonesResponse?.data ?? milestonesResponse) || defaultMilestones;
+  const trends = propTrends || (trendsError ? defaultTrends : trendsResponse?.data ?? trendsResponse) || defaultTrends;
   
   const isLoading = yearlyLoading || milestonesLoading || trendsLoading;
 
