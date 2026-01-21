@@ -78,14 +78,16 @@ The platform supports OAuth connections to 8 social media platforms for autopilo
 
 | Platform | OAuth Type | Key Environment Variables | Callback URL |
 |----------|-----------|---------------------------|--------------|
-| Twitter/X | OAuth 2.0 + PKCE | TWITTER_CLIENT_ID, TWITTER_API_SECRET | /api/social/callback/twitter |
-| Facebook | OAuth 2.0 | FACEBOOK_APP_ID, FACEBOOK_APP_SECRET | /api/social/callback/facebook |
-| Instagram | Meta Graph API | Uses Facebook credentials | /api/social/callback/instagram |
-| Threads | Meta API | Uses Facebook credentials | /api/social/callback/threads |
-| TikTok | OAuth 2.0 + PKCE | TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET | /api/social/callback/tiktok |
-| YouTube | Google OAuth 2.0 | YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET | /api/social/callback/youtube |
-| LinkedIn | OAuth 2.0 | LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET | /api/social/callback/linkedin |
-| Google Business | Google OAuth 2.0 | GOOGLE_BUSINESS_CLIENT_ID, GOOGLE_BUSINESS_CLIENT_SECRET | /api/social/callback/googlebusiness |
+| Twitter/X | OAuth 2.0 + PKCE | TWITTER_CLIENT_ID, TWITTER_API_SECRET | /auth/twitter/callback |
+| Twitter/X (OAuth 1.0) | OAuth 1.0a | TWITTER_API_KEY, TWITTER_API_SECRET | /auth/twitter/oauth1/callback |
+| Facebook | OAuth 2.0 | FACEBOOK_APP_ID, FACEBOOK_APP_SECRET | /auth/facebook/callback |
+| Instagram | Meta Graph API | Uses Facebook credentials | /auth/instagram/callback |
+| Threads | Meta API | Uses Facebook credentials | /auth/threads/callback |
+| TikTok | OAuth 2.0 + PKCE | TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET | /auth/tiktok/callback |
+| YouTube | Google OAuth 2.0 | YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET | /auth/youtube/callback |
+| Google | Google OAuth 2.0 | GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET | /auth/google/callback |
+| LinkedIn | OAuth 2.0 | LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET | /auth/linkedin/callback |
+| Google Business | Google OAuth 2.0 | GOOGLE_BUSINESS_CLIENT_ID, GOOGLE_BUSINESS_CLIENT_SECRET | /auth/google-business/callback |
 
 ### Developer Portal Setup Requirements
 
@@ -95,37 +97,44 @@ The platform supports OAuth connections to 8 social media platforms for autopilo
 - Create project and app in Developer Portal
 - Enable OAuth 2.0 in User Authentication Settings
 - App Type: Web App (Confidential Client)
-- Redirect URI: `https://maxbooster.replit.app/api/social/callback/twitter`
+- Redirect URI (OAuth 2.0): `https://maxbooster.replit.app/auth/twitter/callback`
+- Redirect URI (OAuth 1.0): `https://maxbooster.replit.app/auth/twitter/oauth1/callback`
 - Scopes: `tweet.read tweet.write users.read follows.read follows.write offline.access`
 
 #### Facebook/Instagram/Threads (developers.facebook.com)
 - Create Business App in Meta Developer Dashboard
 - Add Facebook Login, Instagram Graph API products
-- Configure redirect URIs for each platform
+- Redirect URIs:
+  - Facebook: `https://maxbooster.replit.app/auth/facebook/callback`
+  - Instagram: `https://maxbooster.replit.app/auth/instagram/callback`
+  - Threads: `https://maxbooster.replit.app/auth/threads/callback`
 - Scopes: `pages_show_list pages_manage_posts instagram_basic instagram_content_publish threads_basic threads_content_publish`
 
 #### TikTok (developers.tiktok.com)
 - Create app and add Login Kit + Content Posting API
 - Submit for app review (required for publishing)
-- Redirect URI: `https://maxbooster.replit.app/api/social/callback/tiktok`
+- Redirect URI: `https://maxbooster.replit.app/auth/tiktok/callback`
 - Scopes: `user.info.basic video.publish`
 
-#### YouTube (console.cloud.google.com)
+#### YouTube/Google (console.cloud.google.com)
 - Enable YouTube Data API v3
 - Configure OAuth consent screen
 - Create OAuth 2.0 credentials (Web Application)
-- Redirect URI: `https://maxbooster.replit.app/api/social/callback/youtube`
+- Redirect URIs:
+  - YouTube: `https://maxbooster.replit.app/auth/youtube/callback`
+  - Google: `https://maxbooster.replit.app/auth/google/callback`
 - Scopes: `youtube youtube.upload youtube.readonly yt-analytics.readonly`
 
 #### LinkedIn (linkedin.com/developers)
 - Create app and link to Company Page
 - Add "Share on LinkedIn" product
-- Redirect URI: `https://maxbooster.replit.app/api/social/callback/linkedin`
+- Redirect URI: `https://maxbooster.replit.app/auth/linkedin/callback`
 - Scopes: `openid profile email w_member_social`
 
 #### Google Business Profile (console.cloud.google.com)
 - Enable Business Profile API
 - Use same OAuth credentials as YouTube
+- Redirect URI: `https://maxbooster.replit.app/auth/google-business/callback`
 - Scope: `https://www.googleapis.com/auth/business.manage`
 
 ### Token Management

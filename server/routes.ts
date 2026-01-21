@@ -2859,6 +2859,31 @@ export async function registerRoutes(
     }
   }
 
+  // OAuth callback routes - maps new URL structure to existing handlers
+  // These routes redirect to the socialOAuth callback handler
+  const oauthCallbackPaths = [
+    { path: '/auth/twitter/callback', platform: 'twitter' },
+    { path: '/auth/twitter/oauth1/callback', platform: 'twitter' },
+    { path: '/auth/facebook/callback', platform: 'facebook' },
+    { path: '/auth/instagram/callback', platform: 'instagram' },
+    { path: '/auth/threads/callback', platform: 'threads' },
+    { path: '/auth/tiktok/callback', platform: 'tiktok' },
+    { path: '/auth/youtube/callback', platform: 'youtube' },
+    { path: '/auth/google/callback', platform: 'google' },
+    { path: '/auth/google-business/callback', platform: 'googlebusiness' },
+    { path: '/auth/linkedin/callback', platform: 'linkedin' },
+  ];
+
+  for (const { path, platform } of oauthCallbackPaths) {
+    app.get(path, (req: Request, res: Response) => {
+      // Forward to the existing OAuth callback handler with query params
+      const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
+      const redirectUrl = `/api/social/callback/${platform}${queryString ? '?' + queryString : ''}`;
+      res.redirect(redirectUrl);
+    });
+  }
+  log('OAuth callback redirect routes registered');
+
   // Error reporting endpoint
   app.post("/api/errors", (req: Request, res: Response) => {
     console.error("Client error:", req.body);

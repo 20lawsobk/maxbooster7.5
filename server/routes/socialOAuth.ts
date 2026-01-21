@@ -129,6 +129,25 @@ function getBaseUrl(): string {
   return process.env.APP_URL || 'https://maxbooster.replit.app';
 }
 
+// Map platform names to their OAuth callback paths
+const CALLBACK_PATHS: Record<string, string> = {
+  twitter: '/auth/twitter/callback',
+  facebook: '/auth/facebook/callback',
+  instagram: '/auth/instagram/callback',
+  threads: '/auth/threads/callback',
+  tiktok: '/auth/tiktok/callback',
+  youtube: '/auth/youtube/callback',
+  google: '/auth/google/callback',
+  googlebusiness: '/auth/google-business/callback',
+  linkedin: '/auth/linkedin/callback',
+};
+
+function getCallbackUrl(platform: string): string {
+  const baseUrl = getBaseUrl();
+  const path = CALLBACK_PATHS[platform] || `/auth/${platform}/callback`;
+  return `${baseUrl}${path}`;
+}
+
 router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -168,8 +187,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     }
     
     const state = crypto.randomBytes(32).toString('hex');
-    const baseUrl = getBaseUrl();
-    const redirectUri = `${baseUrl}/api/social/callback/${platform}`;
+    const redirectUri = getCallbackUrl(platform);
     
     const params = new URLSearchParams();
     let codeVerifier: string | undefined;
@@ -249,8 +267,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       return res.redirect(`/settings?error=unsupported_platform`);
     }
     
-    const baseUrl = getBaseUrl();
-    const redirectUri = `${baseUrl}/api/social/callback/${platform}`;
+    const redirectUri = getCallbackUrl(platform);
     
     let tokenData: any;
     
