@@ -280,6 +280,21 @@ export class SocialOAuthService {
       redirectUri: `${process.env.DOMAIN}/auth/facebook/callback`,
     });
 
+    // Instagram OAuth (uses Facebook/Meta credentials)
+    this.oauthConfigs.set('instagram', {
+      clientId: process.env.FACEBOOK_CLIENT_ID || '',
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET || '',
+      authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
+      tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token',
+      scopes: [
+        'instagram_basic',
+        'instagram_content_publish',
+        'pages_show_list',
+        'pages_read_engagement',
+      ],
+      redirectUri: `${process.env.DOMAIN}/auth/instagram/callback`,
+    });
+
     // Twitter/X OAuth
     this.oauthConfigs.set('twitter', {
       clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || '',
@@ -301,6 +316,20 @@ export class SocialOAuthService {
         'https://www.googleapis.com/auth/youtube',
       ],
       redirectUri: `${process.env.DOMAIN}/auth/youtube/callback`,
+    });
+
+    // Google OAuth
+    this.oauthConfigs.set('google', {
+      clientId: process.env.GOOGLE_CLIENT_ID || process.env.YOUTUBE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.YOUTUBE_CLIENT_SECRET || '',
+      authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenUrl: 'https://oauth2.googleapis.com/token',
+      scopes: [
+        'openid',
+        'email',
+        'profile',
+      ],
+      redirectUri: `${process.env.DOMAIN}/auth/google/callback`,
     });
 
     // TikTok OAuth
