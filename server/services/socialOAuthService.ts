@@ -11,6 +11,9 @@ const TOKEN_ENCRYPTION_IV_LENGTH = 16;
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expiry
 const TOKEN_REFRESH_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 
+// Get base domain for OAuth redirects - always use production URL for consistency
+const getOAuthDomain = () => process.env.DOMAIN || process.env.APP_URL || 'https://maxbooster.replit.app';
+
 /**
  * Social OAuth Service
  * Manages OAuth connections for social media platforms
@@ -277,7 +280,7 @@ export class SocialOAuthService {
         'instagram_basic',
         'instagram_content_publish',
       ],
-      redirectUri: `${process.env.DOMAIN}/auth/facebook/callback`,
+      redirectUri: `${getOAuthDomain()}/auth/facebook/callback`,
     });
 
     // Instagram OAuth (uses Facebook/Meta credentials)
@@ -292,7 +295,7 @@ export class SocialOAuthService {
         'pages_show_list',
         'pages_read_engagement',
       ],
-      redirectUri: `${process.env.DOMAIN}/auth/instagram/callback`,
+      redirectUri: `${getOAuthDomain()}/auth/instagram/callback`,
     });
 
     // Twitter/X OAuth
@@ -302,7 +305,7 @@ export class SocialOAuthService {
       authUrl: 'https://twitter.com/i/oauth2/authorize',
       tokenUrl: 'https://api.twitter.com/2/oauth2/token',
       scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
-      redirectUri: `${process.env.DOMAIN}/auth/twitter/callback`,
+      redirectUri: `${getOAuthDomain()}/auth/twitter/callback`,
     });
 
     // YouTube OAuth
@@ -315,7 +318,7 @@ export class SocialOAuthService {
         'https://www.googleapis.com/auth/youtube.upload',
         'https://www.googleapis.com/auth/youtube',
       ],
-      redirectUri: `${process.env.DOMAIN}/auth/youtube/callback`,
+      redirectUri: `${getOAuthDomain()}/auth/youtube/callback`,
     });
 
     // Google OAuth
@@ -329,7 +332,7 @@ export class SocialOAuthService {
         'email',
         'profile',
       ],
-      redirectUri: `${process.env.DOMAIN}/auth/google/callback`,
+      redirectUri: `${getOAuthDomain()}/auth/google/callback`,
     });
 
     // TikTok OAuth
@@ -339,7 +342,7 @@ export class SocialOAuthService {
       authUrl: 'https://www.tiktok.com/auth/authorize/',
       tokenUrl: 'https://open-api.tiktok.com/oauth/access_token/',
       scopes: ['user.info.basic', 'video.list', 'video.upload'],
-      redirectUri: `${process.env.DOMAIN}/auth/tiktok/callback`,
+      redirectUri: `${getOAuthDomain()}/auth/tiktok/callback`,
     });
 
     // LinkedIn OAuth
@@ -349,7 +352,7 @@ export class SocialOAuthService {
       authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
       tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
       scopes: ['r_liteprofile', 'w_member_social'],
-      redirectUri: `${process.env.DOMAIN}/auth/linkedin/callback`,
+      redirectUri: `${getOAuthDomain()}/auth/linkedin/callback`,
     });
 
     // Threads OAuth (using Instagram Graph API)
@@ -359,7 +362,7 @@ export class SocialOAuthService {
       authUrl: 'https://www.threads.net/oauth/authorize',
       tokenUrl: 'https://graph.threads.net/oauth/access_token',
       scopes: ['threads_basic', 'threads_content_publish'],
-      redirectUri: `${process.env.DOMAIN}/auth/threads/callback`,
+      redirectUri: `${getOAuthDomain()}/auth/threads/callback`,
     });
 
     // Google Business Profile OAuth
@@ -372,7 +375,7 @@ export class SocialOAuthService {
         'https://www.googleapis.com/auth/business.manage',
         'https://www.googleapis.com/auth/plus.business.manage',
       ],
-      redirectUri: `${process.env.DOMAIN}/auth/google-business/callback`,
+      redirectUri: `${getOAuthDomain()}/auth/google-business/callback`,
     });
   }
 
