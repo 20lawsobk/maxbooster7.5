@@ -277,7 +277,7 @@ export class SocialOAuthService {
         'instagram_basic',
         'instagram_content_publish',
       ],
-      redirectUri: `${process.env.DOMAIN}/api/oauth/callback/facebook`,
+      redirectUri: `${process.env.DOMAIN}/auth/facebook/callback`,
     });
 
     // Twitter/X OAuth
@@ -287,7 +287,7 @@ export class SocialOAuthService {
       authUrl: 'https://twitter.com/i/oauth2/authorize',
       tokenUrl: 'https://api.twitter.com/2/oauth2/token',
       scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
-      redirectUri: `${process.env.DOMAIN}/api/oauth/callback/twitter`,
+      redirectUri: `${process.env.DOMAIN}/auth/twitter/callback`,
     });
 
     // YouTube OAuth
@@ -300,7 +300,7 @@ export class SocialOAuthService {
         'https://www.googleapis.com/auth/youtube.upload',
         'https://www.googleapis.com/auth/youtube',
       ],
-      redirectUri: `${process.env.DOMAIN}/api/oauth/callback/youtube`,
+      redirectUri: `${process.env.DOMAIN}/auth/youtube/callback`,
     });
 
     // TikTok OAuth
@@ -310,7 +310,7 @@ export class SocialOAuthService {
       authUrl: 'https://www.tiktok.com/auth/authorize/',
       tokenUrl: 'https://open-api.tiktok.com/oauth/access_token/',
       scopes: ['user.info.basic', 'video.list', 'video.upload'],
-      redirectUri: `${process.env.DOMAIN}/api/oauth/callback/tiktok`,
+      redirectUri: `${process.env.DOMAIN}/auth/tiktok/callback`,
     });
 
     // LinkedIn OAuth
@@ -320,7 +320,7 @@ export class SocialOAuthService {
       authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
       tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
       scopes: ['r_liteprofile', 'w_member_social'],
-      redirectUri: `${process.env.DOMAIN}/api/oauth/callback/linkedin`,
+      redirectUri: `${process.env.DOMAIN}/auth/linkedin/callback`,
     });
 
     // Threads OAuth (using Instagram Graph API)
@@ -330,7 +330,7 @@ export class SocialOAuthService {
       authUrl: 'https://www.threads.net/oauth/authorize',
       tokenUrl: 'https://graph.threads.net/oauth/access_token',
       scopes: ['threads_basic', 'threads_content_publish'],
-      redirectUri: `${process.env.DOMAIN}/api/oauth/callback/threads`,
+      redirectUri: `${process.env.DOMAIN}/auth/threads/callback`,
     });
 
     // Google Business Profile OAuth
@@ -343,7 +343,7 @@ export class SocialOAuthService {
         'https://www.googleapis.com/auth/business.manage',
         'https://www.googleapis.com/auth/plus.business.manage',
       ],
-      redirectUri: `${process.env.DOMAIN}/api/oauth/callback/google_business`,
+      redirectUri: `${process.env.DOMAIN}/auth/google-business/callback`,
     });
   }
 
