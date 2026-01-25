@@ -268,28 +268,95 @@ export class SocialOAuthService {
    * Initialize OAuth configurations for each platform
    */
   private initializeOAuthConfigs() {
-    // Meta (Facebook + Instagram) OAuth - Combined connection
-    this.oauthConfigs.set('meta', {
+    // Facebook OAuth
+    this.oauthConfigs.set('facebook', {
       clientId: process.env.FACEBOOK_APP_ID || process.env.FACEBOOK_CLIENT_ID || '',
       clientSecret: process.env.FACEBOOK_APP_SECRET || process.env.FACEBOOK_CLIENT_SECRET || '',
       authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
       tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-      scopes: [
-        'public_profile',
-        'email',
-        'pages_show_list',
-        'pages_read_engagement',
-        'pages_manage_posts',
-        'pages_read_user_content',
-        'business_management',
-        'instagram_basic',
-        'instagram_content_publish',
-        'instagram_manage_comments',
-        'instagram_manage_insights',
-      ],
-      redirectUri: `${getOAuthDomain()}/auth/meta/callback`,
+      scopes: ['public_profile', 'email', 'pages_show_list', 'pages_read_engagement', 'pages_manage_posts', 'pages_read_user_content', 'business_management'],
+      redirectUri: `${getOAuthDomain()}/auth/facebook/callback`,
     });
 
+    // Instagram OAuth (uses Facebook/Meta credentials)
+    this.oauthConfigs.set('instagram', {
+      clientId: process.env.FACEBOOK_APP_ID || process.env.FACEBOOK_CLIENT_ID || '',
+      clientSecret: process.env.FACEBOOK_APP_SECRET || process.env.FACEBOOK_CLIENT_SECRET || '',
+      authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
+      tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
+      scopes: ['public_profile', 'instagram_basic', 'instagram_content_publish', 'instagram_manage_comments', 'instagram_manage_insights', 'pages_show_list', 'pages_read_engagement'],
+      redirectUri: `${getOAuthDomain()}/auth/instagram/callback`,
+    });
+
+    // Twitter/X OAuth
+    this.oauthConfigs.set('twitter', {
+      clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || '',
+      clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET || '',
+      authUrl: 'https://twitter.com/i/oauth2/authorize',
+      tokenUrl: 'https://api.twitter.com/2/oauth2/token',
+      scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
+      redirectUri: `${getOAuthDomain()}/auth/twitter/callback`,
+    });
+
+    // YouTube OAuth
+    this.oauthConfigs.set('youtube', {
+      clientId: process.env.YOUTUBE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.YOUTUBE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '',
+      authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenUrl: 'https://oauth2.googleapis.com/token',
+      scopes: ['https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/youtube'],
+      redirectUri: `${getOAuthDomain()}/auth/youtube/callback`,
+    });
+
+    // Google OAuth
+    this.oauthConfigs.set('google', {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenUrl: 'https://oauth2.googleapis.com/token',
+      scopes: ['openid', 'email', 'profile'],
+      redirectUri: `${getOAuthDomain()}/auth/google/callback`,
+    });
+
+    // LinkedIn OAuth
+    this.oauthConfigs.set('linkedin', {
+      clientId: process.env.LINKEDIN_CLIENT_ID || '',
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET || '',
+      authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
+      tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
+      scopes: ['r_liteprofile', 'w_member_social'],
+      redirectUri: `${getOAuthDomain()}/auth/linkedin/callback`,
+    });
+
+    // Google Business Profile OAuth
+    this.oauthConfigs.set('googlebusiness', {
+      clientId: process.env.GOOGLE_BUSINESS_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_BUSINESS_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '',
+      authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenUrl: 'https://oauth2.googleapis.com/token',
+      scopes: ['https://www.googleapis.com/auth/business.manage'],
+      redirectUri: `${getOAuthDomain()}/auth/google-business/callback`,
+    });
+
+    // Threads OAuth (Coming March 1st, 2026)
+    this.oauthConfigs.set('threads', {
+      clientId: process.env.THREADS_APP_ID || process.env.FACEBOOK_APP_ID || '',
+      clientSecret: process.env.THREADS_APP_SECRET || process.env.FACEBOOK_APP_SECRET || '',
+      authUrl: 'https://threads.net/oauth/authorize',
+      tokenUrl: 'https://graph.threads.net/oauth/access_token',
+      scopes: ['threads_basic', 'threads_content_publish', 'threads_manage_insights'],
+      redirectUri: `${getOAuthDomain()}/auth/threads/callback`,
+    });
+
+    // TikTok OAuth (Coming March 1st, 2026)
+    this.oauthConfigs.set('tiktok', {
+      clientId: process.env.TIKTOK_CLIENT_KEY || '',
+      clientSecret: process.env.TIKTOK_CLIENT_SECRET || '',
+      authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
+      tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
+      scopes: ['user.info.basic', 'video.list', 'video.publish'],
+      redirectUri: `${getOAuthDomain()}/auth/tiktok/callback`,
+    });
   }
 
   /**
@@ -437,7 +504,7 @@ export class SocialOAuthService {
    * Get connected platforms for a user
    */
   async getConnectedPlatforms(userId: string): Promise<string[]> {
-    const platforms = ['meta'];
+    const platforms = ['facebook', 'instagram', 'twitter', 'youtube', 'linkedin', 'googlebusiness', 'google'];
     const connected: string[] = [];
 
     for (const platform of platforms) {

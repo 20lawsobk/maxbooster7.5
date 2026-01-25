@@ -438,7 +438,7 @@ function ComingSoonDistribution() {
               <p className="text-xl text-gray-400 mb-2">Coming Soon</p>
               <div className="flex items-center justify-center gap-2 text-2xl font-semibold text-purple-400">
                 <CalendarIcon className="w-6 h-6" />
-                February 1st, 2026
+                March 1st, 2026
               </div>
             </div>
             <p className="text-gray-400 mb-8 max-w-md mx-auto">

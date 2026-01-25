@@ -72,13 +72,21 @@ Key responsive components:
 ## Social Media OAuth Configuration
 
 ### Overview
-The platform uses a single unified Meta OAuth connection for Facebook and Instagram. All OAuth flows use secure token encryption and automatic refresh.
+The platform supports OAuth connections to multiple social media platforms. Threads and TikTok are coming soon (March 1st, 2026). All OAuth flows use secure token encryption and automatic refresh.
 
 ### Configured Platforms
 
-| Platform | OAuth Type | Key Environment Variables | Callback URL |
-|----------|-----------|---------------------------|--------------|
-| Meta (Facebook + Instagram) | OAuth 2.0 | FACEBOOK_APP_ID, FACEBOOK_APP_SECRET | /auth/meta/callback |
+| Platform | OAuth Type | Key Environment Variables | Callback URL | Status |
+|----------|-----------|---------------------------|--------------|--------|
+| Facebook | OAuth 2.0 | FACEBOOK_APP_ID, FACEBOOK_APP_SECRET | /auth/facebook/callback | Active |
+| Instagram | Meta Graph API | FACEBOOK_APP_ID, FACEBOOK_APP_SECRET | /auth/instagram/callback | Active |
+| Twitter/X | OAuth 2.0 + PKCE | TWITTER_CLIENT_ID, TWITTER_CLIENT_SECRET | /auth/twitter/callback | Active |
+| YouTube | Google OAuth 2.0 | YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET | /auth/youtube/callback | Active |
+| Google | Google OAuth 2.0 | GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET | /auth/google/callback | Active |
+| LinkedIn | OAuth 2.0 | LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET | /auth/linkedin/callback | Active |
+| Google Business | Google OAuth 2.0 | GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET | /auth/google-business/callback | Active |
+| Threads | Meta API | FACEBOOK_APP_ID, FACEBOOK_APP_SECRET | /auth/threads/callback | Coming March 1st, 2026 |
+| TikTok | OAuth 2.0 + PKCE | TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET | /auth/tiktok/callback | Coming March 1st, 2026 |
 
 ### Developer Portal Setup Requirements
 
@@ -88,7 +96,10 @@ The platform uses a single unified Meta OAuth connection for Facebook and Instag
 - Create Business App in Meta Developer Dashboard
 - Add Facebook Login and Instagram Graph API products
 - Add `maxbooster.replit.app` to App Domains
-- Redirect URI: `https://maxbooster.replit.app/auth/meta/callback`
+- Redirect URIs:
+  - Facebook: `https://maxbooster.replit.app/auth/facebook/callback`
+  - Instagram: `https://maxbooster.replit.app/auth/instagram/callback`
+  - Threads: `https://maxbooster.replit.app/auth/threads/callback` (Coming Soon)
 - Scopes: `public_profile email pages_show_list pages_read_engagement pages_manage_posts pages_read_user_content business_management instagram_basic instagram_content_publish instagram_manage_comments instagram_manage_insights`
 
 ### Token Management
