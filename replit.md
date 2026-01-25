@@ -65,77 +65,31 @@ Key responsive components:
 - **Sentry**: Error tracking and monitoring.
 - **LabelGrid**: Music distribution, content ID, and sync licensing.
 - **Replit Object Storage**: File asset storage.
-- **Social Media APIs**: Integrations with Twitter, Facebook, Instagram, TikTok, YouTube, and LinkedIn.
+- **Meta Graph API**: Unified Facebook and Instagram integration via single Meta OAuth.
 - **music-metadata library**: Audio metadata extraction.
 - **Y.js**: Real-time collaboration in the AI Studio.
 
 ## Social Media OAuth Configuration
 
 ### Overview
-The platform supports OAuth connections to 8 social media platforms for autopilot posting, scheduling, and analytics. All OAuth flows use secure token encryption and automatic refresh.
+The platform uses a single unified Meta OAuth connection for Facebook and Instagram. All OAuth flows use secure token encryption and automatic refresh.
 
 ### Configured Platforms
 
 | Platform | OAuth Type | Key Environment Variables | Callback URL |
 |----------|-----------|---------------------------|--------------|
-| Twitter/X | OAuth 2.0 + PKCE | TWITTER_CLIENT_ID, TWITTER_API_SECRET | /auth/twitter/callback |
-| Twitter/X (OAuth 1.0) | OAuth 1.0a | TWITTER_API_KEY, TWITTER_API_SECRET | /auth/twitter/oauth1/callback |
-| Facebook | OAuth 2.0 | FACEBOOK_APP_ID, FACEBOOK_APP_SECRET | /auth/facebook/callback |
-| Instagram | Meta Graph API | Uses Facebook credentials | /auth/instagram/callback |
-| Threads | Meta API | Uses Facebook credentials | /auth/threads/callback |
-| TikTok | OAuth 2.0 + PKCE | TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET | /auth/tiktok/callback |
-| YouTube | Google OAuth 2.0 | YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET | /auth/youtube/callback |
-| Google | Google OAuth 2.0 | GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET | /auth/google/callback |
-| LinkedIn | OAuth 2.0 | LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET | /auth/linkedin/callback |
-| Google Business | Google OAuth 2.0 | GOOGLE_BUSINESS_CLIENT_ID, GOOGLE_BUSINESS_CLIENT_SECRET | /auth/google-business/callback |
+| Meta (Facebook + Instagram) | OAuth 2.0 | FACEBOOK_APP_ID, FACEBOOK_APP_SECRET | /auth/meta/callback |
 
 ### Developer Portal Setup Requirements
 
 **Base Callback URL**: `https://maxbooster.replit.app`
 
-#### Twitter/X (developer.x.com)
-- Create project and app in Developer Portal
-- Enable OAuth 2.0 in User Authentication Settings
-- App Type: Web App (Confidential Client)
-- Redirect URI (OAuth 2.0): `https://maxbooster.replit.app/auth/twitter/callback`
-- Redirect URI (OAuth 1.0): `https://maxbooster.replit.app/auth/twitter/oauth1/callback`
-- Scopes: `tweet.read tweet.write users.read follows.read follows.write offline.access`
-
-#### Facebook/Instagram/Threads (developers.facebook.com)
+#### Meta (Facebook + Instagram) (developers.facebook.com)
 - Create Business App in Meta Developer Dashboard
-- Add Facebook Login, Instagram Graph API products
-- Redirect URIs:
-  - Facebook: `https://maxbooster.replit.app/auth/facebook/callback`
-  - Instagram: `https://maxbooster.replit.app/auth/instagram/callback`
-  - Threads: `https://maxbooster.replit.app/auth/threads/callback`
-- Scopes: `pages_show_list pages_manage_posts instagram_basic instagram_content_publish threads_basic threads_content_publish`
-
-#### TikTok (developers.tiktok.com)
-- Create app and add Login Kit + Content Posting API
-- Submit for app review (required for publishing)
-- Redirect URI: `https://maxbooster.replit.app/auth/tiktok/callback`
-- Scopes: `user.info.basic video.publish`
-
-#### YouTube/Google (console.cloud.google.com)
-- Enable YouTube Data API v3
-- Configure OAuth consent screen
-- Create OAuth 2.0 credentials (Web Application)
-- Redirect URIs:
-  - YouTube: `https://maxbooster.replit.app/auth/youtube/callback`
-  - Google: `https://maxbooster.replit.app/auth/google/callback`
-- Scopes: `youtube youtube.upload youtube.readonly yt-analytics.readonly`
-
-#### LinkedIn (linkedin.com/developers)
-- Create app and link to Company Page
-- Add "Share on LinkedIn" product
-- Redirect URI: `https://maxbooster.replit.app/auth/linkedin/callback`
-- Scopes: `openid profile email w_member_social`
-
-#### Google Business Profile (console.cloud.google.com)
-- Enable Business Profile API
-- Use same OAuth credentials as YouTube
-- Redirect URI: `https://maxbooster.replit.app/auth/google-business/callback`
-- Scope: `https://www.googleapis.com/auth/business.manage`
+- Add Facebook Login and Instagram Graph API products
+- Add `maxbooster.replit.app` to App Domains
+- Redirect URI: `https://maxbooster.replit.app/auth/meta/callback`
+- Scopes: `public_profile email pages_show_list pages_read_engagement pages_manage_posts pages_read_user_content business_management instagram_basic instagram_content_publish instagram_manage_comments instagram_manage_insights`
 
 ### Token Management
 - Access tokens are encrypted at rest using AES-256-GCM
