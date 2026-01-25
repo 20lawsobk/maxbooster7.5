@@ -19,101 +19,19 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
 };
 
 const PLATFORMS = {
-  twitter: {
-    name: 'Twitter/X',
-    authUrl: 'https://twitter.com/i/oauth2/authorize',
-    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
-    scope: 'tweet.read tweet.write users.read follows.read follows.write offline.access',
-    clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY,
-    clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET,
-    usePKCE: true,
-    responseType: 'code',
-  },
-  facebook: {
-    name: 'Facebook',
+  meta: {
+    name: 'Meta (Facebook & Instagram)',
     authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
     tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-    scope: 'public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts,pages_read_user_content,business_management',
+    scope: 'public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts,pages_read_user_content,business_management,instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_insights',
     clientId: process.env.FACEBOOK_APP_ID,
     clientSecret: process.env.FACEBOOK_APP_SECRET,
     usePKCE: false,
     responseType: 'code',
   },
-  instagram: {
-    name: 'Instagram',
-    authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
-    tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-    scope: 'public_profile,instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_insights,pages_show_list,pages_read_engagement',
-    clientId: process.env.INSTAGRAM_APP_ID || process.env.FACEBOOK_APP_ID,
-    clientSecret: process.env.INSTAGRAM_APP_SECRET || process.env.FACEBOOK_APP_SECRET,
-    usePKCE: false,
-    responseType: 'code',
-  },
-  threads: {
-    name: 'Threads',
-    authUrl: 'https://threads.net/oauth/authorize',
-    tokenUrl: 'https://graph.threads.net/oauth/access_token',
-    scope: 'threads_basic,threads_content_publish,threads_manage_insights,threads_manage_replies,threads_read_replies',
-    clientId: process.env.THREADS_APP_ID || process.env.FACEBOOK_APP_ID,
-    clientSecret: process.env.THREADS_APP_SECRET || process.env.FACEBOOK_APP_SECRET,
-    usePKCE: false,
-    responseType: 'code',
-  },
-  tiktok: {
-    name: 'TikTok',
-    authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
-    tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-    scope: 'user.info.basic,user.info.profile,user.info.stats,video.list,video.publish,video.upload',
-    clientId: process.env.TIKTOK_CLIENT_KEY,
-    clientSecret: process.env.TIKTOK_CLIENT_SECRET,
-    usePKCE: true,
-    responseType: 'code',
-  },
-  youtube: {
-    name: 'YouTube',
-    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenUrl: 'https://oauth2.googleapis.com/token',
-    scope: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
-    clientId: process.env.YOUTUBE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
-    usePKCE: false,
-    responseType: 'code',
-    accessType: 'offline',
-    prompt: 'consent',
-  },
-  linkedin: {
-    name: 'LinkedIn',
-    authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
-    tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
-    scope: 'openid profile email w_member_social r_basicprofile r_organization_social rw_organization_admin',
-    clientId: process.env.LINKEDIN_CLIENT_ID,
-    clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-    usePKCE: false,
-    responseType: 'code',
-  },
-  googlebusiness: {
-    name: 'Google Business Profile',
-    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenUrl: 'https://oauth2.googleapis.com/token',
-    scope: 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/plus.business.manage',
-    clientId: process.env.GOOGLE_BUSINESS_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_BUSINESS_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
-    usePKCE: false,
-    responseType: 'code',
-    accessType: 'offline',
-    prompt: 'consent',
-  },
 };
 
 const oauthStates = new Map<string, { userId: string; platform: string; createdAt: Date; codeVerifier?: string }>();
-
-function generateCodeVerifier(): string {
-  return crypto.randomBytes(32).toString('base64url');
-}
-
-function generateCodeChallenge(verifier: string): string {
-  return crypto.createHash('sha256').update(verifier).digest('base64url');
-}
 
 setInterval(() => {
   const now = Date.now();
@@ -125,21 +43,11 @@ setInterval(() => {
 }, 60000);
 
 function getBaseUrl(): string {
-  // Always use production URL for OAuth callbacks (must match platform console registrations)
-  return process.env.APP_URL || 'https://maxbooster.replit.app';
+  return process.env.DOMAIN || process.env.APP_URL || 'https://maxbooster.replit.app';
 }
 
-// Map platform names to their OAuth callback paths
 const CALLBACK_PATHS: Record<string, string> = {
-  twitter: '/auth/twitter/callback',
-  facebook: '/auth/facebook/callback',
-  instagram: '/auth/instagram/callback',
-  threads: '/auth/threads/callback',
-  tiktok: '/auth/tiktok/callback',
-  youtube: '/auth/youtube/callback',
-  google: '/auth/google/callback',
-  googlebusiness: '/auth/google-business/callback',
-  linkedin: '/auth/linkedin/callback',
+  meta: '/auth/meta/callback',
 };
 
 function getCallbackUrl(platform: string): string {
@@ -190,49 +98,17 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     const redirectUri = getCallbackUrl(platform);
     
     const params = new URLSearchParams();
-    let codeVerifier: string | undefined;
+    params.set('client_id', config.clientId);
+    params.set('redirect_uri', redirectUri);
+    params.set('scope', config.scope);
+    params.set('state', state);
+    params.set('response_type', 'code');
     
-    if (platform === 'twitter') {
-      codeVerifier = generateCodeVerifier();
-      const codeChallenge = generateCodeChallenge(codeVerifier);
-      params.set('response_type', 'code');
-      params.set('client_id', config.clientId);
-      params.set('redirect_uri', redirectUri);
-      params.set('scope', config.scope);
-      params.set('state', state);
-      params.set('code_challenge', codeChallenge);
-      params.set('code_challenge_method', 'S256');
-    } else if (platform === 'tiktok') {
-      codeVerifier = generateCodeVerifier();
-      const codeChallenge = generateCodeChallenge(codeVerifier);
-      params.set('client_key', config.clientId);
-      params.set('scope', config.scope);
-      params.set('response_type', 'code');
-      params.set('redirect_uri', redirectUri);
-      params.set('state', state);
-      params.set('code_challenge', codeChallenge);
-      params.set('code_challenge_method', 'S256');
-    } else if (platform === 'youtube') {
-      params.set('client_id', config.clientId);
-      params.set('redirect_uri', redirectUri);
-      params.set('response_type', 'code');
-      params.set('scope', config.scope);
-      params.set('state', state);
-      params.set('access_type', 'offline');
-      params.set('prompt', 'consent');
-    } else {
-      params.set('client_id', config.clientId);
-      params.set('redirect_uri', redirectUri);
-      params.set('scope', config.scope);
-      params.set('state', state);
-      params.set('response_type', 'code');
-    }
-    
-    oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
+    oauthStates.set(state, { userId, platform, createdAt: new Date() });
     
     const authUrl = `${config.authUrl}?${params.toString()}`;
     
-    logger.info(`[OAuth] Generated auth URL for ${platform}`, { userId, platform });
+    logger.info(`[OAuth] Generated auth URL for ${platform}`, { userId, platform, redirectUri });
     
     res.json({ authUrl });
   } catch (error) {
@@ -276,27 +152,12 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       tokenParams.set('grant_type', 'authorization_code');
       tokenParams.set('code', code as string);
       tokenParams.set('redirect_uri', redirectUri);
-      
-      if (platform === 'twitter') {
-        tokenParams.set('client_id', config.clientId!);
-        tokenParams.set('code_verifier', stateData.codeVerifier || '');
-      } else if (platform === 'tiktok') {
-        tokenParams.set('client_key', config.clientId!);
-        tokenParams.set('client_secret', config.clientSecret!);
-        tokenParams.set('code_verifier', stateData.codeVerifier || '');
-      } else {
-        tokenParams.set('client_id', config.clientId!);
-        tokenParams.set('client_secret', config.clientSecret!);
-      }
+      tokenParams.set('client_id', config.clientId!);
+      tokenParams.set('client_secret', config.clientSecret!);
       
       const headers: Record<string, string> = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
-      
-      if (platform === 'twitter') {
-        const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
-        headers['Authorization'] = `Basic ${credentials}`;
-      }
       
       const tokenResponse = await fetch(config.tokenUrl, {
         method: 'POST',
@@ -315,32 +176,42 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       return res.redirect(`/settings?error=token_exchange_failed&platform=${platform}`);
     }
     
-    let username = 'Connected User';
+    let username = 'Meta User';
+    let facebookName = '';
+    let instagramUsername = '';
+    
     try {
-      if (platform === 'twitter') {
-        const userResponse = await fetch('https://api.twitter.com/2/users/me', {
-          headers: { Authorization: `Bearer ${tokenData.access_token}` },
-        });
-        const userData = await userResponse.json();
-        username = userData.data?.username || 'Twitter User';
-      } else if (platform === 'facebook') {
-        const userResponse = await fetch(`https://graph.facebook.com/me?access_token=${tokenData.access_token}`);
-        const userData = await userResponse.json();
-        username = userData.name || 'Facebook User';
-      } else if (platform === 'youtube') {
-        const userResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
-          headers: { Authorization: `Bearer ${tokenData.access_token}` },
-        });
-        const userData = await userResponse.json();
-        username = userData.items?.[0]?.snippet?.title || 'YouTube Channel';
-      } else if (platform === 'instagram') {
-        const userResponse = await fetch(`https://graph.instagram.com/me?fields=username&access_token=${tokenData.access_token}`);
-        const userData = await userResponse.json();
-        username = userData.username || 'Instagram User';
-      } else if (platform === 'tiktok') {
-        username = 'TikTok User';
-      } else if (platform === 'linkedin') {
-        username = 'LinkedIn User';
+      const fbResponse = await fetch(`https://graph.facebook.com/me?access_token=${tokenData.access_token}`);
+      const fbData = await fbResponse.json();
+      facebookName = fbData.name || '';
+      
+      try {
+        const pagesResponse = await fetch(`https://graph.facebook.com/me/accounts?access_token=${tokenData.access_token}`);
+        const pagesData = await pagesResponse.json();
+        
+        if (pagesData.data && pagesData.data.length > 0) {
+          const pageId = pagesData.data[0].id;
+          const pageToken = pagesData.data[0].access_token;
+          
+          const igResponse = await fetch(`https://graph.facebook.com/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
+          const igData = await igResponse.json();
+          
+          if (igData.instagram_business_account) {
+            const igAccountResponse = await fetch(`https://graph.facebook.com/${igData.instagram_business_account.id}?fields=username&access_token=${pageToken}`);
+            const igAccountData = await igAccountResponse.json();
+            instagramUsername = igAccountData.username || '';
+          }
+        }
+      } catch (igErr) {
+        logger.warn('Failed to fetch Instagram account:', igErr);
+      }
+      
+      if (facebookName && instagramUsername) {
+        username = `${facebookName} / @${instagramUsername}`;
+      } else if (facebookName) {
+        username = facebookName;
+      } else if (instagramUsername) {
+        username = `@${instagramUsername}`;
       }
     } catch (err) {
       logger.warn(`Failed to fetch user info for ${platform}:`, err);

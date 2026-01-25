@@ -2862,16 +2862,7 @@ export async function registerRoutes(
   // OAuth callback routes - maps new URL structure to existing handlers
   // These routes redirect to the socialOAuth callback handler
   const oauthCallbackPaths = [
-    { path: '/auth/twitter/callback', platform: 'twitter' },
-    { path: '/auth/twitter/oauth1/callback', platform: 'twitter' },
-    { path: '/auth/facebook/callback', platform: 'facebook' },
-    { path: '/auth/instagram/callback', platform: 'instagram' },
-    { path: '/auth/threads/callback', platform: 'threads' },
-    { path: '/auth/tiktok/callback', platform: 'tiktok' },
-    { path: '/auth/youtube/callback', platform: 'youtube' },
-    { path: '/auth/google/callback', platform: 'google' },
-    { path: '/auth/google-business/callback', platform: 'googlebusiness' },
-    { path: '/auth/linkedin/callback', platform: 'linkedin' },
+    { path: '/auth/meta/callback', platform: 'meta' },
   ];
 
   for (const { path, platform } of oauthCallbackPaths) {
