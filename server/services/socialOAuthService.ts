@@ -268,24 +268,14 @@ export class SocialOAuthService {
    * Initialize OAuth configurations for each platform
    */
   private initializeOAuthConfigs() {
-    // Facebook OAuth
-    this.oauthConfigs.set('facebook', {
+    // Meta OAuth (Facebook + Instagram combined)
+    this.oauthConfigs.set('meta', {
       clientId: process.env.FACEBOOK_APP_ID || process.env.FACEBOOK_CLIENT_ID || '',
       clientSecret: process.env.FACEBOOK_APP_SECRET || process.env.FACEBOOK_CLIENT_SECRET || '',
       authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
       tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-      scopes: ['public_profile', 'email', 'pages_show_list', 'pages_read_engagement', 'pages_manage_posts', 'pages_read_user_content', 'business_management'],
-      redirectUri: `${getOAuthDomain()}/auth/facebook/callback`,
-    });
-
-    // Instagram OAuth (uses Facebook/Meta credentials)
-    this.oauthConfigs.set('instagram', {
-      clientId: process.env.FACEBOOK_APP_ID || process.env.FACEBOOK_CLIENT_ID || '',
-      clientSecret: process.env.FACEBOOK_APP_SECRET || process.env.FACEBOOK_CLIENT_SECRET || '',
-      authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
-      tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-      scopes: ['public_profile', 'instagram_basic', 'instagram_content_publish', 'instagram_manage_comments', 'instagram_manage_insights', 'pages_show_list', 'pages_read_engagement'],
-      redirectUri: `${getOAuthDomain()}/auth/instagram/callback`,
+      scopes: ['public_profile', 'email', 'pages_show_list', 'pages_read_engagement', 'pages_manage_posts', 'pages_read_user_content', 'business_management', 'instagram_basic', 'instagram_content_publish', 'instagram_manage_comments', 'instagram_manage_insights'],
+      redirectUri: `${getOAuthDomain()}/auth/meta/callback`,
     });
 
     // Twitter/X OAuth

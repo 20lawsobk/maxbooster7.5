@@ -19,27 +19,17 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
 };
 
 const PLATFORMS = {
-  facebook: {
-    name: 'Facebook',
+  meta: {
+    name: 'Meta (Facebook + Instagram)',
     authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
     tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-    scope: 'public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts,pages_read_user_content,business_management',
+    scope: 'public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts,pages_read_user_content,business_management,instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_insights',
     clientId: process.env.FACEBOOK_APP_ID,
     clientSecret: process.env.FACEBOOK_APP_SECRET,
     usePKCE: false,
     responseType: 'code',
     enabled: true,
-  },
-  instagram: {
-    name: 'Instagram',
-    authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
-    tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-    scope: 'public_profile,instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_insights,pages_show_list,pages_read_engagement',
-    clientId: process.env.FACEBOOK_APP_ID,
-    clientSecret: process.env.FACEBOOK_APP_SECRET,
-    usePKCE: false,
-    responseType: 'code',
-    enabled: true,
+    multiPlatform: ['facebook', 'instagram'],
   },
   threads: {
     name: 'Threads',
@@ -354,28 +344,50 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       return res.redirect(`/settings?error=token_exchange_failed&platform=${platform}`);
     }
     
+    let facebookUsername = 'Facebook User';
+    let instagramUsername = 'Instagram User';
     let username = 'Connected User';
+    
     try {
-      if (platform === 'twitter') {
+      if (platform === 'meta') {
+        const userResponse = await fetch(`https://graph.facebook.com/me?access_token=${tokenData.access_token}`);
+        const userData = await userResponse.json();
+        facebookUsername = userData.name || 'Facebook User';
+        username = facebookUsername;
+        
+        try {
+          const igResponse = await fetch(`https://graph.facebook.com/me/accounts?access_token=${tokenData.access_token}`);
+          const igData = await igResponse.json();
+          if (igData.data && igData.data.length > 0) {
+            const pageId = igData.data[0].id;
+            const pageToken = igData.data[0].access_token;
+            const igAccountResponse = await fetch(
+              `https://graph.facebook.com/${pageId}?fields=instagram_business_account&access_token=${pageToken}`
+            );
+            const igAccountData = await igAccountResponse.json();
+            if (igAccountData.instagram_business_account) {
+              const igUsernameResponse = await fetch(
+                `https://graph.facebook.com/${igAccountData.instagram_business_account.id}?fields=username&access_token=${pageToken}`
+              );
+              const igUsernameData = await igUsernameResponse.json();
+              instagramUsername = igUsernameData.username || 'Instagram User';
+            }
+          }
+        } catch (igErr) {
+          logger.warn('Failed to fetch Instagram username:', igErr);
+        }
+      } else if (platform === 'twitter') {
         const userResponse = await fetch('https://api.twitter.com/2/users/me', {
           headers: { Authorization: `Bearer ${tokenData.access_token}` },
         });
         const userData = await userResponse.json();
         username = userData.data?.username || 'Twitter User';
-      } else if (platform === 'facebook') {
-        const userResponse = await fetch(`https://graph.facebook.com/me?access_token=${tokenData.access_token}`);
-        const userData = await userResponse.json();
-        username = userData.name || 'Facebook User';
       } else if (platform === 'youtube') {
         const userResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
           headers: { Authorization: `Bearer ${tokenData.access_token}` },
         });
         const userData = await userResponse.json();
         username = userData.items?.[0]?.snippet?.title || 'YouTube Channel';
-      } else if (platform === 'instagram') {
-        const userResponse = await fetch(`https://graph.instagram.com/me?fields=username&access_token=${tokenData.access_token}`);
-        const userData = await userResponse.json();
-        username = userData.username || 'Instagram User';
       } else if (platform === 'tiktok') {
         username = 'TikTok User';
       } else if (platform === 'linkedin') {
@@ -389,49 +401,56 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       logger.warn(`Failed to fetch user info for ${platform}:`, err);
     }
     
-    const existingConnection = await db
-      .select()
-      .from(socialAccounts)
-      .where(and(
-        eq(socialAccounts.userId, stateData.userId),
-        eq(socialAccounts.platform, platform)
-      ));
+    const platformsToSave = platform === 'meta' 
+      ? [{ name: 'facebook', username: facebookUsername }, { name: 'instagram', username: instagramUsername }]
+      : [{ name: platform, username }];
     
-    if (existingConnection.length > 0) {
-      await db
-        .update(socialAccounts)
-        .set({
+    for (const p of platformsToSave) {
+      const existingConnection = await db
+        .select()
+        .from(socialAccounts)
+        .where(and(
+          eq(socialAccounts.userId, stateData.userId),
+          eq(socialAccounts.platform, p.name)
+        ));
+      
+      if (existingConnection.length > 0) {
+        await db
+          .update(socialAccounts)
+          .set({
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token,
+            tokenExpiresAt: tokenData.expires_in 
+              ? new Date(Date.now() + tokenData.expires_in * 1000)
+              : null,
+            username: p.username,
+            isActive: true,
+          })
+          .where(eq(socialAccounts.id, existingConnection[0].id));
+      } else {
+        await db.insert(socialAccounts).values({
+          userId: stateData.userId,
+          platform: p.name,
           accessToken: tokenData.access_token,
           refreshToken: tokenData.refresh_token,
           tokenExpiresAt: tokenData.expires_in 
             ? new Date(Date.now() + tokenData.expires_in * 1000)
             : null,
-          username,
+          username: p.username,
+          platformUserId: tokenData.user_id || null,
           isActive: true,
-        })
-        .where(eq(socialAccounts.id, existingConnection[0].id));
-    } else {
-      await db.insert(socialAccounts).values({
-        userId: stateData.userId,
-        platform,
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token,
-        tokenExpiresAt: tokenData.expires_in 
-          ? new Date(Date.now() + tokenData.expires_in * 1000)
-          : null,
-        username,
-        platformUserId: tokenData.user_id || null,
-        isActive: true,
+        });
+      }
+      
+      logger.info(`[OAuth] Successfully connected ${p.name} for user`, { 
+        userId: stateData.userId, 
+        platform: p.name,
+        username: p.username 
       });
     }
     
-    logger.info(`[OAuth] Successfully connected ${platform} for user`, { 
-      userId: stateData.userId, 
-      platform,
-      username 
-    });
-    
-    res.redirect(`/settings?success=connected&platform=${platform}`);
+    const redirectPlatform = platform === 'meta' ? 'facebook,instagram' : platform;
+    res.redirect(`/settings?success=connected&platform=${redirectPlatform}`);
   } catch (error) {
     logger.error('OAuth callback error:', error);
     res.redirect('/settings?error=callback_failed');
@@ -443,17 +462,21 @@ router.post('/disconnect/:platform', requireAuth, async (req: AuthenticatedReque
     const userId = req.user!.id;
     const platform = req.params.platform.toLowerCase();
     
-    await db
-      .update(socialAccounts)
-      .set({ isActive: false, accessToken: null, refreshToken: null })
-      .where(and(
-        eq(socialAccounts.userId, userId),
-        eq(socialAccounts.platform, platform)
-      ));
+    const platformsToDisconnect = platform === 'meta' ? ['facebook', 'instagram'] : [platform];
     
-    logger.info(`[OAuth] Disconnected ${platform} for user`, { userId, platform });
+    for (const p of platformsToDisconnect) {
+      await db
+        .update(socialAccounts)
+        .set({ isActive: false, accessToken: null, refreshToken: null })
+        .where(and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, p)
+        ));
+      
+      logger.info(`[OAuth] Disconnected ${p} for user`, { userId, platform: p });
+    }
     
-    res.json({ success: true, message: `Disconnected from ${platform}` });
+    res.json({ success: true, message: `Disconnected from ${platform === 'meta' ? 'Facebook & Instagram' : platform}` });
   } catch (error) {
     logger.error('Failed to disconnect platform:', error);
     res.status(500).json({ message: 'Failed to disconnect platform' });

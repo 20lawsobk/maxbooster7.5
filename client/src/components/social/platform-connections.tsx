@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle } from 'lucide-react';
-import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon } from '@/components/ui/brand-icons';
+import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon } from '@/components/ui/brand-icons';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 interface Platform {
@@ -93,7 +93,20 @@ export function PlatformConnections() {
     },
   });
 
+  const metaConnected = connections.some((c: unknown) => c.platform === 'facebook' || c.platform === 'instagram');
+  const metaUsername = connections.find((c: unknown) => c.platform === 'facebook')?.username || 
+                       connections.find((c: unknown) => c.platform === 'instagram')?.username;
+
   const platforms: Platform[] = [
+    {
+      id: 'meta',
+      name: 'Meta (Facebook + Instagram)',
+      icon: MetaIcon,
+      color: 'text-blue-600',
+      connected: metaConnected,
+      username: metaUsername,
+      oauth: true,
+    },
     {
       id: 'twitter',
       name: 'Twitter/X',
@@ -101,24 +114,6 @@ export function PlatformConnections() {
       color: 'text-black dark:text-white',
       connected: connections.some((c: unknown) => c.platform === 'twitter'),
       username: connections.find((c: unknown) => c.platform === 'twitter')?.username,
-      oauth: true,
-    },
-    {
-      id: 'facebook',
-      name: 'Facebook',
-      icon: FacebookIcon,
-      color: 'text-blue-500',
-      connected: connections.some((c: unknown) => c.platform === 'facebook'),
-      username: connections.find((c: unknown) => c.platform === 'facebook')?.username,
-      oauth: true,
-    },
-    {
-      id: 'instagram',
-      name: 'Instagram',
-      icon: InstagramIcon,
-      color: 'text-pink-500',
-      connected: connections.some((c: unknown) => c.platform === 'instagram'),
-      username: connections.find((c: unknown) => c.platform === 'instagram')?.username,
       oauth: true,
     },
     {
