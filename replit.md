@@ -95,7 +95,10 @@ The platform supports OAuth connections to multiple social media platforms. Thre
 - Create Business App in Meta Developer Dashboard
 - Add Facebook Login and Instagram Graph API products
 - Add `maxbooster.replit.app` to App Domains
-- Redirect URI: `https://maxbooster.replit.app/auth/meta/callback`
+- Redirect URIs (all three work):
+  - `https://maxbooster.replit.app/auth/facebook/callback`
+  - `https://maxbooster.replit.app/auth/instagram/callback`
+  - `https://maxbooster.replit.app/auth/meta/callback`
 - Scopes: `public_profile email pages_show_list pages_read_engagement pages_manage_posts pages_read_user_content business_management instagram_basic instagram_content_publish instagram_manage_comments instagram_manage_insights`
 
 ### Token Management

@@ -2863,6 +2863,8 @@ export async function registerRoutes(
   // These routes redirect to the socialOAuth callback handler
   const oauthCallbackPaths = [
     { path: '/auth/meta/callback', platform: 'meta' },
+    { path: '/auth/facebook/callback', platform: 'meta' },
+    { path: '/auth/instagram/callback', platform: 'meta' },
     { path: '/auth/threads/callback', platform: 'threads' },
     { path: '/auth/tiktok/callback', platform: 'tiktok' },
     { path: '/auth/google/callback', platform: 'google' },
