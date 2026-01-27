@@ -78,6 +78,7 @@ import {
   LinkedInIcon,
   ThreadsIcon,
   GoogleIcon,
+  MetaIcon,
 } from '@/components/ui/brand-icons';
 import { ContentCalendarView } from '@/components/social/ContentCalendarView';
 import { SchedulePostDialog, SchedulePostData } from '@/components/social/SchedulePostDialog';
@@ -299,21 +300,10 @@ interface AutopilotStatus {
 // Social Media Platforms
 const SOCIAL_PLATFORMS: SocialPlatform[] = [
   {
-    id: 'facebook',
-    name: 'Facebook',
-    icon: FacebookIcon,
-    color: '#1877F2',
-    isConnected: false,
-    followers: 0,
-    engagement: 0,
-    lastSync: '',
-    status: 'inactive',
-  },
-  {
-    id: 'instagram',
-    name: 'Instagram',
-    icon: InstagramIcon,
-    color: '#E4405F',
+    id: 'meta',
+    name: 'Meta (Facebook + Instagram)',
+    icon: MetaIcon,
+    color: '#0081FB',
     isConnected: false,
     followers: 0,
     engagement: 0,
@@ -1370,6 +1360,7 @@ export default function SocialMedia() {
                         <VideoContentGenerator
                           platform={(selectedPlatforms[0] === 'twitter' ? 'twitter' : 
                                     selectedPlatforms[0] === 'instagram' ? 'instagram' :
+                                    selectedPlatforms[0] === 'meta' ? 'instagram' :
                                     selectedPlatforms[0] === 'tiktok' ? 'tiktok' :
                                     selectedPlatforms[0] === 'youtube' ? 'youtube' :
                                     selectedPlatforms[0] === 'facebook' ? 'facebook' :
