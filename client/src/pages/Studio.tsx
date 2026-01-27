@@ -2886,8 +2886,8 @@ function StudioDialogs(props: StudioDialogsProps) {
 
       {props.showTutorial && (
         <StudioTutorial
-          isOpen={props.showTutorial}
-          onClose={() => props.setShowTutorial(false)}
+          onComplete={() => props.setShowTutorial(false)}
+          onSkip={() => props.setShowTutorial(false)}
         />
       )}
 
