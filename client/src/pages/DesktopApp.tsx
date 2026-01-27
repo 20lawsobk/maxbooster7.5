@@ -1,4 +1,4 @@
-import { Download, Monitor, Zap, Shield, Cpu, HardDrive, Globe, AlertCircle, FileText, CheckCircle } from 'lucide-react';
+import { Download, Monitor, Zap, Shield, Cpu, HardDrive, Globe, AlertCircle, FileText, CheckCircle, Smartphone, Tablet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -55,7 +55,7 @@ export default function DesktopApp() {
 
   const GITHUB_RELEASES_URL = 'https://github.com/20lawsobk/maxbooster7.5/releases/latest/download';
   
-  const platforms = [
+  const desktopPlatforms = [
     {
       name: 'Windows',
       downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-Setup-1.0.0.exe`,
@@ -82,18 +82,46 @@ export default function DesktopApp() {
     },
   ];
 
+  const mobilePlatforms = [
+    {
+      name: 'iOS',
+      downloadUrl: 'https://apps.apple.com/app/max-booster',
+      icon: '📱',
+      storeIcon: '🍎',
+      storeName: 'App Store',
+      requirements: 'iOS 15.0 or later',
+      available: true,
+      comingSoon: false,
+    },
+    {
+      name: 'Android',
+      downloadUrl: 'https://play.google.com/store/apps/details?id=com.blawzmusic.maxbooster',
+      icon: '📱',
+      storeIcon: '🤖',
+      storeName: 'Google Play',
+      requirements: 'Android 8.0 or later',
+      available: true,
+      comingSoon: false,
+    },
+  ];
+
   return (
     <AppLayout>
       <div className="container mx-auto p-6 space-y-8">
       <div className="text-center space-y-4">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-4">
-          <Monitor className="w-10 h-10 text-primary" />
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full">
+            <Monitor className="w-8 h-8 text-primary" />
+          </div>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/10 rounded-full">
+            <Smartphone className="w-8 h-8 text-green-500" />
+          </div>
         </div>
         <h1 className="text-4xl font-bold tracking-tight">
-          {t('desktopApp.title')}
+          Desktop & Mobile Apps
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          {t('desktopApp.subtitle')}
+          Take Max Booster everywhere. Native apps for your computer, phone, and tablet - all synced with your account.
         </p>
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
           <Zap className="w-4 h-4 text-primary" />
@@ -121,11 +149,14 @@ export default function DesktopApp() {
       </div>
 
       <div className="space-y-6">
-        <h2 className="text-3xl font-bold text-center">
-          {t('desktopApp.downloadTitle')}
-        </h2>
+        <div className="flex items-center justify-center gap-3">
+          <Monitor className="w-8 h-8 text-primary" />
+          <h2 className="text-3xl font-bold text-center">
+            Desktop Apps
+          </h2>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {platforms.map((platform) => (
+          {desktopPlatforms.map((platform) => (
             <Card key={platform.name} className="border-2">
               <CardHeader className="text-center">
                 <div className="mb-4">
@@ -150,6 +181,69 @@ export default function DesktopApp() {
             </Card>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex items-center justify-center gap-3">
+          <Smartphone className="w-8 h-8 text-green-500" />
+          <h2 className="text-3xl font-bold text-center">
+            Mobile Apps
+          </h2>
+        </div>
+        <p className="text-center text-muted-foreground max-w-2xl mx-auto">
+          Access Max Booster on your phone or tablet. The same powerful features with a touch-optimized interface that adapts to any screen size.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          {mobilePlatforms.map((platform) => (
+            <Card key={platform.name} className="border-2 hover:border-green-500/50 transition-colors">
+              <CardHeader className="text-center">
+                <div className="mb-4">
+                  <Smartphone className="w-16 h-16 mx-auto text-green-500" />
+                </div>
+                <CardTitle className="text-2xl flex items-center justify-center gap-2">
+                  <span>{platform.storeIcon}</span>
+                  {platform.name}
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  {platform.requirements}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {platform.comingSoon ? (
+                  <Button className="w-full" size="lg" disabled variant="secondary">
+                    Coming Soon
+                  </Button>
+                ) : (
+                  <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" asChild>
+                    <a href={platform.downloadUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="w-4 h-4 mr-2" />
+                      Get on {platform.storeName}
+                    </a>
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground text-center">
+                  Version: 1.0.0
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        <Card className="border-2 border-green-500/20 bg-green-500/5 max-w-2xl mx-auto">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Tablet className="w-6 h-6 text-green-500" />
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold">Same Experience, Every Device</h4>
+                <p className="text-sm text-muted-foreground">
+                  Our dynamic layout system automatically adapts to your screen size. Whether you're on a phone, tablet, or desktop, you get the full Max Booster experience with an interface optimized for your device.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="border-2 border-amber-500/30 bg-amber-500/5">
