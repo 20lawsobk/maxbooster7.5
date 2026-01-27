@@ -142,7 +142,7 @@ function getBaseUrl(): string {
 }
 
 const CALLBACK_PATHS: Record<string, string> = {
-  meta: '/auth/meta/callback',
+  meta: '/auth/facebook/callback',
   facebook: '/auth/facebook/callback',
   instagram: '/auth/instagram/callback',
   threads: '/auth/threads/callback',
@@ -273,7 +273,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
 
 router.get('/callback/:platform', async (req: Request, res: Response) => {
   try {
-    const platform = req.params.platform.toLowerCase();
+    let platform = req.params.platform.toLowerCase();
     const { code, state, error, error_description } = req.query;
     
     if (error) {
@@ -287,6 +287,11 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     
     const stateData = oauthStates.get(state as string)!;
     oauthStates.delete(state as string);
+    
+    // Handle legacy callback URLs - facebook/instagram callbacks should work for meta platform
+    if ((platform === 'facebook' || platform === 'instagram') && stateData.platform === 'meta') {
+      platform = 'meta';
+    }
     
     if (stateData.platform !== platform) {
       return res.redirect('/settings?error=platform_mismatch');
