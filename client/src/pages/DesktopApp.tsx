@@ -85,23 +85,19 @@ export default function DesktopApp() {
   const mobilePlatforms = [
     {
       name: 'iOS',
-      downloadUrl: 'https://apps.apple.com/app/max-booster',
+      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-iOS-1.0.0.ipa`,
       icon: '📱',
       storeIcon: '🍎',
-      storeName: 'App Store',
       requirements: 'iOS 15.0 or later',
       available: true,
-      comingSoon: false,
     },
     {
       name: 'Android',
-      downloadUrl: 'https://play.google.com/store/apps/details?id=com.blawzmusic.maxbooster',
+      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-Android-1.0.0.apk`,
       icon: '📱',
       storeIcon: '🤖',
-      storeName: 'Google Play',
       requirements: 'Android 8.0 or later',
       available: true,
-      comingSoon: false,
     },
   ];
 
@@ -118,7 +114,7 @@ export default function DesktopApp() {
           </div>
         </div>
         <h1 className="text-4xl font-bold tracking-tight">
-          Desktop & Mobile Apps
+          Desktop and Mobile Versions
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Take Max Booster everywhere. Native apps for your computer, phone, and tablet - all synced with your account.
@@ -209,18 +205,12 @@ export default function DesktopApp() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {platform.comingSoon ? (
-                  <Button className="w-full" size="lg" disabled variant="secondary">
-                    Coming Soon
-                  </Button>
-                ) : (
-                  <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" asChild>
-                    <a href={platform.downloadUrl} target="_blank" rel="noopener noreferrer">
-                      <Download className="w-4 h-4 mr-2" />
-                      Get on {platform.storeName}
-                    </a>
-                  </Button>
-                )}
+                <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" asChild>
+                  <a href={platform.downloadUrl} download>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download {platform.name}
+                  </a>
+                </Button>
                 <p className="text-xs text-muted-foreground text-center">
                   Version: 1.0.0
                 </p>
