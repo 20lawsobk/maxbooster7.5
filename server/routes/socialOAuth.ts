@@ -142,6 +142,7 @@ function getBaseUrl(): string {
 }
 
 const CALLBACK_PATHS: Record<string, string> = {
+  meta: '/auth/meta/callback',
   facebook: '/auth/facebook/callback',
   instagram: '/auth/instagram/callback',
   threads: '/auth/threads/callback',
