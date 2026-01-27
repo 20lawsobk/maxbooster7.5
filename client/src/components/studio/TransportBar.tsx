@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useStudioStore } from '@/lib/studioStore';
+import { useDynamicLayout } from '@/hooks/useDynamicLayout';
 import {
   Play,
   Pause,
@@ -138,6 +139,14 @@ export function TransportBar({
     chordDisplayMode,
     cycleChordDisplayMode,
   } = useStudioStore();
+  
+  // Responsive layout
+  const { containerRef, isSmallScreen, isMediumScreen, breakpoint } = useDynamicLayout();
+  const isCompact = isSmallScreen || breakpoint === 'sm';
+  const buttonSize = isCompact ? 'h-8 w-8' : 'h-10 w-10';
+  const playButtonSize = isCompact ? 'h-10 w-10' : 'h-14 w-14';
+  const iconSize = isCompact ? 'h-3 w-3' : 'h-4 w-4';
+  const playIconSize = isCompact ? 'h-4 w-4' : 'h-6 w-6';
 
   const [tapTempoTimes, setTapTempoTimes] = useState<number[]>([]);
   const [isMuted, setIsMuted] = useState(masterVolume === 0);
@@ -269,7 +278,8 @@ export function TransportBar({
 
   return (
     <div
-      className="h-20 flex items-center justify-between px-6 border-b"
+      ref={containerRef as React.RefObject<HTMLDivElement>}
+      className={`flex items-center justify-between border-b ${isCompact ? 'px-2 py-1 gap-1 flex-wrap min-h-[52px]' : 'h-20 px-6'}`}
       style={{
         background:
           'linear-gradient(180deg, var(--studio-bg-medium) 0%, var(--studio-bg-deep) 100%)',
@@ -278,15 +288,15 @@ export function TransportBar({
     >
       <TooltipProvider>
         {/* Left: Transport Controls */}
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center ${isCompact ? 'gap-1' : 'gap-3'}`}>
           {/* Skip Back */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="studio-btn h-10 w-10 rounded-md flex items-center justify-center"
+                className={`studio-btn ${buttonSize} rounded-md flex items-center justify-center`}
                 onClick={handleSkipBack}
               >
-                <SkipBack className="h-4 w-4" />
+                <SkipBack className={iconSize} />
               </button>
             </TooltipTrigger>
             <TooltipContent>Skip Back (,)</TooltipContent>
@@ -296,10 +306,10 @@ export function TransportBar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="studio-btn h-10 w-10 rounded-md flex items-center justify-center"
+                className={`studio-btn ${buttonSize} rounded-md flex items-center justify-center`}
                 onClick={handleStop}
               >
-                <Square className="h-4 w-4" />
+                <Square className={iconSize} />
               </button>
             </TooltipTrigger>
             <TooltipContent>Stop (Enter)</TooltipContent>
@@ -309,12 +319,12 @@ export function TransportBar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className={`h-14 w-14 rounded-lg flex items-center justify-center transition-all ${
+                className={`${playButtonSize} rounded-lg flex items-center justify-center transition-all ${
                   isPlaying ? 'studio-btn-play playing' : 'studio-btn-play'
                 }`}
                 onClick={handlePlay}
               >
-                {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-0.5" />}
+                {isPlaying ? <Pause className={playIconSize} /> : <Play className={`${playIconSize} ml-0.5`} />}
               </button>
             </TooltipTrigger>
             <TooltipContent>Play/Pause (Space)</TooltipContent>
@@ -324,7 +334,7 @@ export function TransportBar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className={`studio-btn h-8 w-8 rounded flex items-center justify-center ${
+                className={`studio-btn ${isCompact ? 'h-7 w-7' : 'h-8 w-8'} rounded flex items-center justify-center ${
                   inputMonitoring ? 'studio-btn-accent' : ''
                 }`}
                 onClick={() => setInputMonitoring(!inputMonitoring)}
@@ -332,7 +342,7 @@ export function TransportBar({
                   boxShadow: inputMonitoring ? '0 0 8px rgba(34, 197, 94, 0.4)' : undefined,
                 }}
               >
-                <Radio className="h-3.5 w-3.5" />
+                <Radio className={isCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
               </button>
             </TooltipTrigger>
             <TooltipContent>Input Monitoring {inputMonitoring ? 'On' : 'Off'}</TooltipContent>
@@ -342,7 +352,7 @@ export function TransportBar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className={`studio-btn-record h-10 w-10 rounded-md flex items-center justify-center relative ${
+                className={`studio-btn-record ${buttonSize} rounded-md flex items-center justify-center relative ${
                   isRecording ? 'recording animate-pulse' : ''
                 } ${punchMode ? 'punch-armed' : ''}`}
                 onClick={handleRecord}
@@ -351,7 +361,7 @@ export function TransportBar({
                   boxShadow: punchMode ? '0 0 10px rgba(245, 158, 11, 0.4)' : undefined,
                 }}
               >
-                <Circle className="h-4 w-4" fill={isRecording ? 'currentColor' : 'none'} />
+                <Circle className={iconSize} fill={isRecording ? 'currentColor' : 'none'} />
                 {recordingMode !== 'replace' && (
                   <span
                     className="absolute -bottom-1 -right-1 text-[8px] font-bold px-1 rounded"
@@ -371,7 +381,8 @@ export function TransportBar({
             </TooltipContent>
           </Tooltip>
 
-          {/* Recording Mode Selector */}
+          {/* Recording Mode Selector - Hidden on compact screens */}
+          {!isCompact && (
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-0.5">
               <Tooltip>
@@ -449,15 +460,16 @@ export function TransportBar({
               </Tooltip>
             </div>
           </div>
+          )}
 
           {/* Skip Forward */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="studio-btn h-10 w-10 rounded-md flex items-center justify-center"
+                className={`studio-btn ${buttonSize} rounded-md flex items-center justify-center`}
                 onClick={handleSkipForward}
               >
-                <SkipForward className="h-4 w-4" />
+                <SkipForward className={iconSize} />
               </button>
             </TooltipTrigger>
             <TooltipContent>Skip Forward (.)</TooltipContent>
@@ -481,10 +493,10 @@ export function TransportBar({
         </div>
 
         {/* Center: Time Display & Loop Controls */}
-        <div className="flex items-center gap-6">
+        <div className={`flex items-center ${isCompact ? 'gap-2' : 'gap-6'}`}>
           {/* SMPTE Timecode */}
           <div
-            className="flex flex-col items-end px-4 py-2 rounded-md"
+            className={`flex flex-col items-end rounded-md ${isCompact ? 'px-2 py-1' : 'px-4 py-2'}`}
             style={{
               background: 'var(--studio-surface)',
               border: '1px solid var(--studio-border-subtle)',
@@ -492,39 +504,41 @@ export function TransportBar({
             }}
           >
             <div
-              className="text-lg font-mono font-bold tracking-widest"
+              className={`font-mono font-bold tracking-widest ${isCompact ? 'text-sm' : 'text-lg'}`}
               style={{ color: 'var(--studio-text)' }}
             >
               {formatSMPTE(currentTime)}
             </div>
+            {!isCompact && (
             <div
               className="text-xs font-mono tracking-wide"
               style={{ color: 'var(--studio-text-subtle)' }}
             >
               {formatMusicalTime(currentTime)}
             </div>
+            )}
           </div>
 
-          <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+          {!isCompact && <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />}
 
           {/* Loop Controls */}
           <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  className={`studio-btn h-9 px-4 rounded-md text-xs font-bold flex items-center gap-2 ${
+                  className={`studio-btn rounded-md text-xs font-bold flex items-center gap-2 ${
                     loopEnabled ? 'studio-btn-accent' : ''
-                  }`}
+                  } ${isCompact ? 'h-7 px-2' : 'h-9 px-4'}`}
                   onClick={() => setLoopEnabled(!loopEnabled)}
                 >
-                  <Repeat className="h-3.5 w-3.5" />
-                  LOOP
+                  <Repeat className={isCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+                  {!isCompact && 'LOOP'}
                 </button>
               </TooltipTrigger>
               <TooltipContent>Toggle Loop (L)</TooltipContent>
             </Tooltip>
 
-            {loopEnabled && (
+            {loopEnabled && !isCompact && (
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
@@ -545,9 +559,11 @@ export function TransportBar({
             )}
           </div>
 
+          {/* Punch Recording Controls - Hidden on compact */}
+          {!isCompact && (
+          <>
           <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
 
-          {/* Punch Recording Controls */}
           <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -648,6 +664,8 @@ export function TransportBar({
           <AutoscrollButton />
 
           <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+          </>
+          )}
 
           {/* Audio Sync Settings (Studio One style) */}
           <div className="flex items-center gap-1">

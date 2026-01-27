@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, ReactNode } from 'react';
 import { studioOneTheme, cssVariables } from '@/lib/studioOneTheme';
 import { useStudioLayoutStore } from '@/lib/studioLayoutStore';
+import { useDynamicLayout } from '@/hooks/useDynamicLayout';
 
 interface StudioOneLayoutProps {
   toolbar?: ReactNode;
@@ -12,6 +13,13 @@ interface StudioOneLayoutProps {
   browser?: ReactNode;
   launcher?: ReactNode;
 }
+
+const getResponsivePanelConfig = (isSmallScreen: boolean, isMediumScreen: boolean, width: number) => ({
+  browserWidth: isSmallScreen ? Math.min(width * 0.85, 320) : isMediumScreen ? 240 : 280,
+  inspectorWidth: isSmallScreen ? Math.min(width * 0.85, 320) : isMediumScreen ? 220 : 280,
+  toolbarHeight: isSmallScreen ? 40 : 48,
+  transportHeight: isSmallScreen ? 52 : 64,
+});
 
 const defaultPanelConfig = {
   browserWidth: 280,
@@ -38,9 +46,33 @@ export function StudioOneLayout({
     launcherPanel,
     setPanelWidth,
     setFocusedPanel,
+    setPanelVisibility,
   } = useStudioLayoutStore();
 
-  const panelConfig = defaultPanelConfig;
+  const { containerRef, width, isSmallScreen, isMediumScreen, breakpoint } = useDynamicLayout();
+  const panelConfig = getResponsivePanelConfig(isSmallScreen, isMediumScreen, width);
+  
+  // Auto-collapse side panels on small screens - show as overlay instead
+  const showInspectorInline = !isSmallScreen && inspectorPanel.visible && inspector;
+  const showBrowserInline = !isSmallScreen && browserPanel.visible && browser;
+  
+  // On mobile, only one side panel can be visible at a time (as overlay)
+  const [mobileActivePanel, setMobileActivePanel] = useState<'inspector' | 'browser' | null>(null);
+  
+  useEffect(() => {
+    if (isSmallScreen) {
+      // When on mobile, show the most recently toggled panel as overlay
+      if (inspectorPanel.visible) {
+        setMobileActivePanel('inspector');
+      } else if (browserPanel.visible) {
+        setMobileActivePanel('browser');
+      } else {
+        setMobileActivePanel(null);
+      }
+    } else {
+      setMobileActivePanel(null);
+    }
+  }, [isSmallScreen, inspectorPanel.visible, browserPanel.visible]);
 
   const [browserResizing, setBrowserResizing] = useState(false);
   const [inspectorResizing, setInspectorResizing] = useState(false);
@@ -95,6 +127,7 @@ export function StudioOneLayout({
       <style dangerouslySetInnerHTML={{ __html: cssVariables }} />
       
       <div 
+        ref={containerRef as React.RefObject<HTMLDivElement>}
         className="flex flex-col h-screen w-full overflow-hidden"
         style={{ background: studioOneTheme.colors.bg.deep }}
       >
@@ -113,9 +146,9 @@ export function StudioOneLayout({
 
         {transport && (
           <div 
-            className="shrink-0 border-b"
+            className="shrink-0 border-b overflow-x-auto"
             style={{ 
-              height: panelConfig.transportHeight,
+              minHeight: panelConfig.transportHeight,
               background: studioOneTheme.colors.bg.tertiary,
               borderColor: studioOneTheme.colors.border.primary,
             }}
@@ -124,8 +157,9 @@ export function StudioOneLayout({
           </div>
         )}
 
-        <div className="flex-1 flex overflow-hidden">
-          {inspectorPanel.visible && inspector && (
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Desktop: Inline inspector panel */}
+          {showInspectorInline && (
             <>
               <div 
                 className="shrink-0 border-r overflow-hidden"
@@ -143,6 +177,51 @@ export function StudioOneLayout({
                 style={{ background: studioOneTheme.colors.border.primary }}
                 onMouseDown={handleInspectorResizeStart}
               />
+            </>
+          )}
+          
+          {/* Mobile: Overlay panels */}
+          {isSmallScreen && mobileActivePanel === 'inspector' && inspectorPanel.visible && inspector && (
+            <>
+              <div 
+                className="absolute inset-0 bg-black/50 z-40"
+                onClick={() => {
+                  setMobileActivePanel(null);
+                  setPanelVisibility('inspector', false);
+                }}
+              />
+              <div 
+                className="absolute left-0 top-0 bottom-0 z-50 border-r overflow-hidden animate-in slide-in-from-left duration-200"
+                style={{ 
+                  width: panelConfig.inspectorWidth,
+                  background: studioOneTheme.colors.bg.panel,
+                  borderColor: studioOneTheme.colors.border.primary,
+                }}
+              >
+                {inspector}
+              </div>
+            </>
+          )}
+          
+          {isSmallScreen && mobileActivePanel === 'browser' && browserPanel.visible && browser && (
+            <>
+              <div 
+                className="absolute inset-0 bg-black/50 z-40"
+                onClick={() => {
+                  setMobileActivePanel(null);
+                  setPanelVisibility('browser', false);
+                }}
+              />
+              <div 
+                className="absolute right-0 top-0 bottom-0 z-50 border-l overflow-hidden animate-in slide-in-from-right duration-200"
+                style={{ 
+                  width: panelConfig.browserWidth,
+                  background: studioOneTheme.colors.bg.panel,
+                  borderColor: studioOneTheme.colors.border.primary,
+                }}
+              >
+                {browser}
+              </div>
             </>
           )}
 
@@ -173,7 +252,8 @@ export function StudioOneLayout({
             )}
           </div>
 
-          {browserPanel.visible && browser && (
+          {/* Desktop: Inline browser panel */}
+          {showBrowserInline && (
             <>
               <div
                 className="w-1 shrink-0 cursor-ew-resize hover:bg-blue-500/30 transition-colors"
