@@ -2513,6 +2513,8 @@ export default function Studio() {
                   duration={projectDuration}
                   masterVolume={masterVolume}
                   onMasterVolumeChange={handleMasterVolumeChange}
+                  onToggleFullscreen={toggleFullscreen}
+                  isFullscreen={isFullscreen}
                 />
               }
               inspector={

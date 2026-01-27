@@ -38,6 +38,8 @@ import {
   ChevronDown,
   RotateCcwIcon,
   Music,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 import {
   Select,
@@ -67,6 +69,8 @@ interface TransportBarProps {
   duration?: number;
   masterVolume?: number;
   onMasterVolumeChange?: (volume: number) => void;
+  onToggleFullscreen?: () => void;
+  isFullscreen?: boolean;
 }
 
 /**
@@ -86,6 +90,8 @@ export function TransportBar({
   duration = 300,
   masterVolume = 80,
   onMasterVolumeChange,
+  onToggleFullscreen,
+  isFullscreen = false,
 }: TransportBarProps) {
   const {
     currentTime,
@@ -1109,6 +1115,25 @@ export function TransportBar({
                 </Tooltip>
               )}
             </div>
+          )}
+
+          {/* Fullscreen Button - Always visible */}
+          {onToggleFullscreen && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className={`studio-btn ${buttonSize} rounded flex items-center justify-center`}
+                  onClick={onToggleFullscreen}
+                >
+                  {isFullscreen ? (
+                    <Minimize className={iconSize} />
+                  ) : (
+                    <Maximize className={iconSize} />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}</TooltipContent>
+            </Tooltip>
           )}
         </div>
       </TooltipProvider>
