@@ -17,6 +17,7 @@
     "electron:build": "electron-builder",
     "build:desktop": "tsx scripts/build-apps.ts desktop",
     "build:mobile": "tsx scripts/build-apps.ts mobile",
+    "build:desktop+mobile": "tsx scripts/build-apps.ts desktop+mobile",
     "build:apps": "tsx scripts/build-apps.ts all",
     "build:version": "tsx scripts/build-apps.ts version",
     "cap:sync": "npx cap sync",

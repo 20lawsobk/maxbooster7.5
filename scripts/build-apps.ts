@@ -103,7 +103,7 @@ function buildWebAssets(): void {
   log('Web assets built successfully', 'success');
 }
 
-function buildDesktop(): void {
+function buildDesktop(includeMobile: boolean = false): void {
   log('='.repeat(60), 'info');
   log('BUILDING DESKTOP APPLICATIONS', 'info');
   log('='.repeat(60), 'info');
@@ -140,10 +140,42 @@ function buildDesktop(): void {
       log('Generated installers:', 'info');
       files.forEach(file => console.log(`  - ${file}`));
     }
+    
+    if (includeMobile) {
+      log('', 'info');
+      log('Also building mobile apps...', 'info');
+      buildMobile();
+    }
   } catch (error) {
     log('Desktop build failed', 'error');
     throw error;
   }
+}
+
+function buildDesktopAndMobile(): void {
+  log('='.repeat(60), 'info');
+  log('BUILDING DESKTOP + MOBILE APPLICATIONS', 'info');
+  log('='.repeat(60), 'info');
+  
+  const pkg = getPackageJson();
+  log(`Building ${APP_NAME} v${pkg.version} for all platforms...`, 'info');
+  
+  buildWebAssets();
+  
+  buildDesktop(false);
+  
+  buildMobile();
+  
+  log('', 'info');
+  log('='.repeat(60), 'info');
+  log('BUILD SUMMARY', 'success');
+  log('='.repeat(60), 'info');
+  log('Desktop: dist-installers/', 'success');
+  log('Mobile:  android/ and ios/ (requires native IDEs to compile)', 'success');
+  log('', 'info');
+  log('Next steps for mobile:', 'info');
+  log('  iOS:     npx cap open ios      (requires macOS + Xcode)', 'info');
+  log('  Android: npx cap open android  (requires Android Studio)', 'info');
 }
 
 function setupCapacitor(): void {
@@ -348,8 +380,9 @@ Usage:
 
 Commands:
   desktop        Build desktop apps for current platform (Electron)
+  desktop+mobile Build desktop AND mobile apps in one command
   mobile         Setup mobile apps locally (Capacitor)
-  all            Build all platforms locally
+  all            Build all platforms locally (same as desktop+mobile)
   version        Bump patch version
   version:minor  Bump minor version
   version:major  Bump major version
@@ -362,9 +395,10 @@ RECOMMENDED FOR PRODUCTION:
   Run: npx tsx scripts/build-apps.ts github
 
 Examples:
-  npx tsx scripts/build-apps.ts github   # See GitHub Actions instructions
-  npx tsx scripts/build-apps.ts desktop  # Local build for current OS
-  npx tsx scripts/build-apps.ts mobile   # Setup Capacitor locally
+  npx tsx scripts/build-apps.ts github         # See GitHub Actions instructions
+  npx tsx scripts/build-apps.ts desktop        # Local build for current OS
+  npx tsx scripts/build-apps.ts desktop+mobile # Build desktop AND mobile together
+  npx tsx scripts/build-apps.ts mobile         # Setup Capacitor locally
 `);
 }
 
@@ -381,7 +415,13 @@ async function main(): Promise<void> {
     switch (command) {
       case 'desktop':
         buildWebAssets();
-        buildDesktop();
+        buildDesktop(false);
+        break;
+      
+      case 'desktop+mobile':
+      case 'desktop-mobile':
+      case 'both':
+        buildDesktopAndMobile();
         break;
         
       case 'mobile':
@@ -389,9 +429,7 @@ async function main(): Promise<void> {
         break;
         
       case 'all':
-        buildWebAssets();
-        buildDesktop();
-        buildMobile();
+        buildDesktopAndMobile();
         break;
         
       case 'version':
