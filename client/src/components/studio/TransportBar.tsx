@@ -140,9 +140,10 @@ export function TransportBar({
     cycleChordDisplayMode,
   } = useStudioStore();
   
-  // Responsive layout
-  const { containerRef, isSmallScreen, isMediumScreen, breakpoint } = useDynamicLayout();
-  const isCompact = isSmallScreen || breakpoint === 'sm';
+  // Responsive layout - include md breakpoint for landscape mobile/tablet
+  const { containerRef, isSmallScreen, isMediumScreen, breakpoint, width } = useDynamicLayout();
+  // Compact mode for screens under 1024px (xs, sm, md) - covers landscape phones and small tablets
+  const isCompact = isSmallScreen || isMediumScreen || width < 1024;
   const buttonSize = isCompact ? 'h-8 w-8' : 'h-10 w-10';
   const playButtonSize = isCompact ? 'h-10 w-10' : 'h-14 w-14';
   const iconSize = isCompact ? 'h-3 w-3' : 'h-4 w-4';

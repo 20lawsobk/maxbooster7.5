@@ -52,15 +52,18 @@ export function StudioOneLayout({
   const { containerRef, width, isSmallScreen, isMediumScreen, breakpoint } = useDynamicLayout();
   const panelConfig = getResponsivePanelConfig(isSmallScreen, isMediumScreen, width);
   
-  // Auto-collapse side panels on small screens - show as overlay instead
-  const showInspectorInline = !isSmallScreen && inspectorPanel.visible && inspector;
-  const showBrowserInline = !isSmallScreen && browserPanel.visible && browser;
+  // Mobile mode includes small screens AND medium screens (landscape phones, small tablets)
+  const isMobileMode = isSmallScreen || isMediumScreen || width < 1024;
+  
+  // Auto-collapse side panels on mobile - show as overlay instead
+  const showInspectorInline = !isMobileMode && inspectorPanel.visible && inspector;
+  const showBrowserInline = !isMobileMode && browserPanel.visible && browser;
   
   // On mobile, only one side panel can be visible at a time (as overlay)
   const [mobileActivePanel, setMobileActivePanel] = useState<'inspector' | 'browser' | null>(null);
   
   useEffect(() => {
-    if (isSmallScreen) {
+    if (isMobileMode) {
       // When on mobile, show the most recently toggled panel as overlay
       if (inspectorPanel.visible) {
         setMobileActivePanel('inspector');
@@ -72,7 +75,7 @@ export function StudioOneLayout({
     } else {
       setMobileActivePanel(null);
     }
-  }, [isSmallScreen, inspectorPanel.visible, browserPanel.visible]);
+  }, [isMobileMode, inspectorPanel.visible, browserPanel.visible]);
 
   const [browserResizing, setBrowserResizing] = useState(false);
   const [inspectorResizing, setInspectorResizing] = useState(false);
@@ -181,7 +184,7 @@ export function StudioOneLayout({
           )}
           
           {/* Mobile: Overlay panels */}
-          {isSmallScreen && mobileActivePanel === 'inspector' && inspectorPanel.visible && inspector && (
+          {isMobileMode && mobileActivePanel === 'inspector' && inspectorPanel.visible && inspector && (
             <>
               <div 
                 className="absolute inset-0 bg-black/50 z-40"
@@ -203,7 +206,7 @@ export function StudioOneLayout({
             </>
           )}
           
-          {isSmallScreen && mobileActivePanel === 'browser' && browserPanel.visible && browser && (
+          {isMobileMode && mobileActivePanel === 'browser' && browserPanel.visible && browser && (
             <>
               <div 
                 className="absolute inset-0 bg-black/50 z-40"
