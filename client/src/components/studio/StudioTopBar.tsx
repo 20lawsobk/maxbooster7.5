@@ -550,139 +550,151 @@ export function StudioTopBar({
               </Tooltip>
             </div>
 
-            <div className="h-6 w-px" style={{ background: 'var(--studio-border)' }} />
+            {/* Hide separator and zoom controls on mobile */}
+            {!isMobile && (
+              <>
+                <div className="h-6 w-px" style={{ background: 'var(--studio-border)' }} />
 
-            {/* Zoom Controls */}
-            <div className="flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="h-8 w-8 rounded-md flex items-center justify-center transition-all"
-                    onClick={onZoomOut}
-                    data-testid="button-zoom-out"
+                {/* Zoom Controls */}
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="h-8 w-8 rounded-md flex items-center justify-center transition-all"
+                        onClick={onZoomOut}
+                        data-testid="button-zoom-out"
+                        style={{
+                          background: 'var(--studio-surface)',
+                          color: 'var(--studio-text-muted)',
+                          border: '1px solid var(--studio-border-subtle)',
+                          boxShadow: 'var(--studio-shadow-sm)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--studio-surface-elevated)';
+                          e.currentTarget.style.color = 'var(--studio-text)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'var(--studio-surface)';
+                          e.currentTarget.style.color = 'var(--studio-text-muted)';
+                        }}
+                      >
+                        <ZoomOut className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Zoom Out</TooltipContent>
+                  </Tooltip>
+
+                  <div
+                    className="h-7 px-3 rounded-md cursor-pointer flex items-center justify-center font-mono text-xs font-semibold transition-all"
+                    onClick={onZoomReset}
+                    data-testid="badge-zoom-level"
                     style={{
                       background: 'var(--studio-surface)',
-                      color: 'var(--studio-text-muted)',
+                      color: 'var(--studio-text)',
                       border: '1px solid var(--studio-border-subtle)',
-                      boxShadow: 'var(--studio-shadow-sm)',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                      e.currentTarget.style.color = 'var(--studio-text)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--studio-surface)';
-                      e.currentTarget.style.color = 'var(--studio-text-muted)';
+                      boxShadow: 'var(--studio-shadow-inner)',
                     }}
                   >
-                    <ZoomOut className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Zoom Out</TooltipContent>
-              </Tooltip>
+                    {Math.round(zoom * 100)}%
+                  </div>
 
-              <div
-                className="h-7 px-3 rounded-md cursor-pointer flex items-center justify-center font-mono text-xs font-semibold transition-all"
-                onClick={onZoomReset}
-                data-testid="badge-zoom-level"
-                style={{
-                  background: 'var(--studio-surface)',
-                  color: 'var(--studio-text)',
-                  border: '1px solid var(--studio-border-subtle)',
-                  boxShadow: 'var(--studio-shadow-inner)',
-                }}
-              >
-                {Math.round(zoom * 100)}%
-              </div>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="h-8 w-8 rounded-md flex items-center justify-center transition-all"
-                    onClick={onZoomIn}
-                    data-testid="button-zoom-in"
-                    style={{
-                      background: 'var(--studio-surface)',
-                      color: 'var(--studio-text-muted)',
-                      border: '1px solid var(--studio-border-subtle)',
-                      boxShadow: 'var(--studio-shadow-sm)',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                      e.currentTarget.style.color = 'var(--studio-text)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--studio-surface)';
-                      e.currentTarget.style.color = 'var(--studio-text-muted)';
-                    }}
-                  >
-                    <ZoomIn className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Zoom In</TooltipContent>
-              </Tooltip>
-            </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="h-8 w-8 rounded-md flex items-center justify-center transition-all"
+                        onClick={onZoomIn}
+                        data-testid="button-zoom-in"
+                        style={{
+                          background: 'var(--studio-surface)',
+                          color: 'var(--studio-text-muted)',
+                          border: '1px solid var(--studio-border-subtle)',
+                          boxShadow: 'var(--studio-shadow-sm)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--studio-surface-elevated)';
+                          e.currentTarget.style.color = 'var(--studio-text)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'var(--studio-surface)';
+                          e.currentTarget.style.color = 'var(--studio-text-muted)';
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Zoom In</TooltipContent>
+                  </Tooltip>
+                </div>
+              </>
+            )}
           </TooltipProvider>
         </div>
 
-        {/* Center: Project Info */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Clock className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
-            <span
-              className="text-sm font-medium"
-              style={{ color: 'var(--studio-text)' }}
-              data-testid="text-tempo"
+        {/* Center: Project Info - Hide on mobile (shown in transport bar) */}
+        {!isMobile && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
+              <span
+                className="text-sm font-medium"
+                style={{ color: 'var(--studio-text)' }}
+                data-testid="text-tempo"
+              >
+                {tempo} BPM
+              </span>
+            </div>
+            <div
+              className="text-sm"
+              style={{ color: 'var(--studio-text-muted)' }}
+              data-testid="text-time-signature"
             >
-              {tempo} BPM
-            </span>
+              {timeSignature}
+            </div>
           </div>
-          <div
-            className="text-sm"
-            style={{ color: 'var(--studio-text-muted)' }}
-            data-testid="text-time-signature"
-          >
-            {timeSignature}
-          </div>
-        </div>
+        )}
 
         {/* Right: Status Indicators */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Cpu className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
-            <div className="flex items-center gap-1.5">
-              <div
-                className="h-1.5 w-12 rounded-full overflow-hidden"
-                style={{ backgroundColor: 'var(--studio-bg-deep)' }}
-              >
-                <div
-                  className="h-full transition-all duration-300"
-                  style={{
-                    width: `${cpuUsage}%`,
-                    backgroundColor:
-                      cpuUsage > 80
-                        ? '#ef4444'
-                        : cpuUsage > 60
-                          ? '#f59e0b'
-                          : 'var(--studio-accent)',
-                  }}
-                />
+          {/* CPU meter - Hide on mobile */}
+          {!isMobile && (
+            <>
+              <div className="flex items-center gap-2">
+                <Cpu className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className="h-1.5 w-12 rounded-full overflow-hidden"
+                    style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+                  >
+                    <div
+                      className="h-full transition-all duration-300"
+                      style={{
+                        width: `${cpuUsage}%`,
+                        backgroundColor:
+                          cpuUsage > 80
+                            ? '#ef4444'
+                            : cpuUsage > 60
+                              ? '#f59e0b'
+                              : 'var(--studio-accent)',
+                      }}
+                    />
+                  </div>
+                  <span
+                    className="text-xs font-mono"
+                    style={{ color: 'var(--studio-text-muted)' }}
+                    data-testid="text-cpu-usage"
+                  >
+                    {Math.round(cpuUsage)}%
+                  </span>
+                </div>
               </div>
-              <span
-                className="text-xs font-mono"
-                style={{ color: 'var(--studio-text-muted)' }}
-                data-testid="text-cpu-usage"
-              >
-                {Math.round(cpuUsage)}%
-              </span>
-            </div>
-          </div>
 
-          <Separator
-            orientation="vertical"
-            className="h-6"
-            style={{ backgroundColor: 'var(--studio-border)' }}
-          />
+              <Separator
+                orientation="vertical"
+                className="h-6"
+                style={{ backgroundColor: 'var(--studio-border)' }}
+              />
+            </>
+          )}
 
           {onShowTutorial && (
             <Tooltip>

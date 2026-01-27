@@ -40,6 +40,8 @@ import {
   Music,
   Maximize,
   Minimize,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import {
   Select,
@@ -71,6 +73,10 @@ interface TransportBarProps {
   onMasterVolumeChange?: (volume: number) => void;
   onToggleFullscreen?: () => void;
   isFullscreen?: boolean;
+  zoom?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onZoomReset?: () => void;
 }
 
 /**
@@ -92,6 +98,10 @@ export function TransportBar({
   onMasterVolumeChange,
   onToggleFullscreen,
   isFullscreen = false,
+  zoom = 1,
+  onZoomIn,
+  onZoomOut,
+  onZoomReset,
 }: TransportBarProps) {
   const {
     currentTime,
@@ -1134,6 +1144,44 @@ export function TransportBar({
               </TooltipTrigger>
               <TooltipContent>{isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}</TooltipContent>
             </Tooltip>
+          )}
+
+          {/* Zoom Controls - Only visible on compact/mobile mode */}
+          {isCompact && onZoomIn && onZoomOut && (
+            <div className="flex items-center gap-1 ml-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className={`studio-btn ${buttonSize} rounded flex items-center justify-center`}
+                    onClick={onZoomOut}
+                  >
+                    <ZoomOut className={iconSize} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Zoom Out</TooltipContent>
+              </Tooltip>
+
+              {onZoomReset && (
+                <button
+                  className="studio-btn h-7 px-2 rounded flex items-center justify-center text-xs font-mono"
+                  onClick={onZoomReset}
+                >
+                  {Math.round(zoom * 100)}%
+                </button>
+              )}
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className={`studio-btn ${buttonSize} rounded flex items-center justify-center`}
+                    onClick={onZoomIn}
+                  >
+                    <ZoomIn className={iconSize} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Zoom In</TooltipContent>
+              </Tooltip>
+            </div>
           )}
         </div>
       </TooltipProvider>

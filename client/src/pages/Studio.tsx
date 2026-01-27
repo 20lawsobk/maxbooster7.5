@@ -2515,6 +2515,10 @@ export default function Studio() {
                   onMasterVolumeChange={handleMasterVolumeChange}
                   onToggleFullscreen={toggleFullscreen}
                   isFullscreen={isFullscreen}
+                  zoom={zoom}
+                  onZoomIn={handleZoomIn}
+                  onZoomOut={handleZoomOut}
+                  onZoomReset={handleZoomReset}
                 />
               }
               inspector={
