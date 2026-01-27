@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef, useCallback, RefObject } from 'react';
+import { useState, useEffect, useRef, useCallback, RefObject, useMemo } from 'react';
 
 export type LayoutMode = 'mobile' | 'tablet' | 'desktop' | 'wide';
+
+export { useDynamicLayout, getDynamicGridClass, getDynamicSpacingClass, getDynamicTextClass } from './useDynamicLayout';
 
 interface FluidLayoutConfig {
   mobileMax?: number;

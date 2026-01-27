@@ -19,6 +19,34 @@ Max Booster is built with a modern web stack, featuring a React 18 frontend with
 ### UI/UX Decisions
 The frontend leverages shadcn/ui components for a modern and accessible user experience, focusing on intuitive workflows for music production, social media scheduling, and data visualization. The design incorporates concepts from professional DAWs like Studio One for features such as autoscroll modes, smart re-engagement, and "infinite" timeline bars, aiming for a clean, professional aesthetic.
 
+### Dynamic Layout System
+The platform uses a comprehensive dynamic layout system that auto-adjusts all components to fit any screen size. Key features:
+
+**Core Hooks:**
+- `useDynamicLayout` - Provides breakpoint detection, fluid sizing calculations, and responsive utilities
+- `useFluidLayout` - Container-based responsive layout with ResizeObserver
+
+**Layout Components:**
+- `DynamicGrid` - CSS Grid with auto-fit/auto-fill for automatic column adjustment
+- `DynamicFlex` - Flexible container with responsive gap and wrapping
+- `DynamicContainer` - Responsive container with fluid padding and max-width
+- `DynamicCard` - Cards with responsive padding
+- `DynamicText` - Typography with fluid font sizes
+- `ResponsiveColumns` - Grid with explicit breakpoint column counts
+
+**Responsive Utilities (`client/src/lib/responsive.ts`):**
+- `fluidClamp()` - Generate CSS clamp() values for fluid sizing
+- `fluidValue()` - Calculate fluid values based on viewport width
+- `responsiveValue()` - Get breakpoint-specific values
+- Predefined fluid spacing, font sizes, and border radius
+
+**Implementation Files:**
+- `client/src/hooks/useDynamicLayout.ts` - Core dynamic layout hook
+- `client/src/hooks/useFluidLayout.ts` - Fluid layout with container queries
+- `client/src/components/layout/DynamicGrid.tsx` - Grid components
+- `client/src/components/layout/DynamicContainer.tsx` - Container components
+- `client/src/lib/responsive.ts` - Responsive utility functions
+
 ### PWA Features
 - Install banner with 7-day dismissal (`client/src/components/pwa/InstallBanner.tsx`)
 - Deep linking via `web+maxbooster://` protocol (`client/src/lib/deepLinks.ts`)
