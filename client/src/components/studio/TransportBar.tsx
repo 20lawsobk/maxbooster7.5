@@ -769,7 +769,8 @@ export function TransportBar({
 
         {/* Right: Tempo & Undo/Redo */}
         <div className="flex items-center gap-4">
-          {/* Tempo Controls */}
+          {/* Tempo Controls - Hidden on compact */}
+          {!isCompact && (
           <div className="flex items-center gap-2">
             <button
               className="studio-btn h-8 w-8 rounded flex items-center justify-center"
@@ -825,8 +826,10 @@ export function TransportBar({
               <TooltipContent>Tap Tempo</TooltipContent>
             </Tooltip>
           </div>
+          )}
 
-          {/* Time Signature */}
+          {/* Time Signature - Hidden on compact */}
+          {!isCompact && (
           <div
             className="px-3 py-1.5 rounded-md font-mono text-base font-bold"
             style={{
@@ -838,10 +841,12 @@ export function TransportBar({
           >
             {timeSignature}
           </div>
+          )}
 
-          <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
+          {!isCompact && <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />}
 
-          {/* Global Transpose Controls */}
+          {/* Global Transpose Controls - Hidden on compact */}
+          {!isCompact && (
           <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -975,10 +980,13 @@ export function TransportBar({
               </Tooltip>
             )}
           </div>
+          )}
 
+          {/* Progress Bar - Hidden on compact */}
+          {!isCompact && (
+          <>
           <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
 
-          {/* Progress Bar - Marketplace-style */}
           <div className="flex items-center gap-2 min-w-[180px]">
             <span
               className="text-xs font-mono w-12 text-right"
@@ -1062,6 +1070,8 @@ export function TransportBar({
               </Tooltip>
               <div className="h-8 w-px" style={{ background: 'var(--studio-border)' }} />
             </>
+          )}
+          </>
           )}
 
           {/* Undo/Redo */}
