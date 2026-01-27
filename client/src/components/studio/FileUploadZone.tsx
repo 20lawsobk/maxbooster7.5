@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { uploadWithProgress } from '@/lib/queryClient';
 import { UploadList, type UploadItemData } from '@/components/ui/upload-item';
+import { isInFullscreenMode, exitFullscreenForUpload, reenterFullscreen } from '@/hooks/useFullscreenFileUpload';
 import {
   Upload,
   FileAudio,
@@ -90,6 +91,7 @@ export function FileUploadZone({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const processedExternalFilesRef = useRef<FileList | null>(null);
+  const fullscreenElementRef = useRef<Element | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -220,6 +222,37 @@ export function FileUploadZone({
     [validateFile, uploadFile, queryClient, projectId, toast, onUploadComplete, onTrackCreated]
   );
 
+  const handleFullscreenAwareClick = useCallback(async (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isInFullscreenMode()) {
+      fullscreenElementRef.current = await exitFullscreenForUpload();
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileSelectWithReenter = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        processFiles(files);
+      }
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      if (fullscreenElementRef.current) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await reenterFullscreen(fullscreenElementRef.current);
+        fullscreenElementRef.current = null;
+      }
+    },
+    [processFiles]
+  );
+
   useEffect(() => {
     if (externalFiles && externalFiles.length > 0 && externalFiles !== processedExternalFilesRef.current) {
       processedExternalFilesRef.current = externalFiles;
@@ -316,9 +349,9 @@ export function FileUploadZone({
   if (compact) {
     return (
       <div className={cn('space-y-2', className)}>
-        <label
-          htmlFor={inputId}
+        <div
           ref={dropZoneRef}
+          role="button"
           className={cn(
             'relative border-2 border-dashed rounded-lg p-4 transition-all duration-200 cursor-pointer touch-manipulation block',
             isDragging
@@ -327,6 +360,7 @@ export function FileUploadZone({
                 ? 'border-primary/70 bg-primary/5'
                 : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 active:bg-muted/70'
           )}
+          onClick={handleFullscreenAwareClick}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -334,7 +368,7 @@ export function FileUploadZone({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { handleFullscreenAwareClick(e); } }}
           aria-label="Click or tap to upload audio files. Paste with Ctrl+V."
         >
           <input
@@ -343,7 +377,7 @@ export function FileUploadZone({
             type="file"
             accept=".wav,.mp3,.flac,.ogg,.aiff,.aif,.webm,.aac,.m4a,audio/mpeg,audio/wav,audio/flac,audio/ogg,audio/aiff,audio/webm,audio/aac,audio/mp4,audio/*"
             multiple
-            onChange={handleFileSelect}
+            onChange={handleFileSelectWithReenter}
             className="absolute w-0 h-0 overflow-hidden opacity-0"
             tabIndex={-1}
             aria-label="Upload audio files"
@@ -357,7 +391,7 @@ export function FileUploadZone({
               <p className="text-xs text-muted-foreground">WAV, MP3, FLAC, AIFF, OGG</p>
             </div>
           </div>
-        </label>
+        </div>
 
         {uploadingFiles.length > 0 && (
           <div className="space-y-1">
@@ -399,9 +433,9 @@ export function FileUploadZone({
   
   return (
     <div className={cn('space-y-3 sm:space-y-4', className)}>
-      <label
-        htmlFor={inputId}
+      <div
         ref={dropZoneRef}
+        role="button"
         className={cn(
           'relative border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-8 transition-all duration-200 cursor-pointer touch-manipulation block',
           isDragging
@@ -410,6 +444,7 @@ export function FileUploadZone({
               ? 'border-primary/70 bg-primary/5 ring-2 ring-primary/20'
               : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 active:bg-muted/50'
         )}
+        onClick={handleFullscreenAwareClick}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -417,7 +452,7 @@ export function FileUploadZone({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { handleFullscreenAwareClick(e); } }}
         aria-label="Click or tap to upload audio files. You can also paste files with Ctrl+V."
       >
         <input
@@ -426,7 +461,7 @@ export function FileUploadZone({
           type="file"
           accept=".wav,.mp3,.flac,.ogg,.aiff,.aif,.webm,.aac,.m4a,audio/mpeg,audio/wav,audio/flac,audio/ogg,audio/aiff,audio/webm,audio/aac,audio/mp4,audio/*"
           multiple
-          onChange={handleFileSelect}
+          onChange={handleFileSelectWithReenter}
           className="absolute w-0 h-0 overflow-hidden opacity-0"
           tabIndex={-1}
           aria-label="Upload audio files"
@@ -475,7 +510,7 @@ export function FileUploadZone({
             <span className="text-muted-foreground/60 text-[9px] sm:text-xs">Max 500MB</span>
           </div>
         </div>
-      </label>
+      </div>
 
       {uploadingFiles.length > 0 && (
         <div className="space-y-1.5 sm:space-y-2">
