@@ -1,7 +1,6 @@
-import { useRef, useState, useCallback, useEffect, ReactNode } from 'react';
+import { useRef, useState, useCallback, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { studioOneTheme } from '@/lib/studioOneTheme';
-import { useStudioResponsive, getStudioTrackHeight, getStudioPinchZoomEnabled } from '@/hooks/useStudioResponsive';
 
 interface ResponsiveTimelineProps {
   children: ReactNode;
@@ -16,6 +15,8 @@ interface ResponsiveTimelineProps {
   className?: string;
 }
 
+const TRACK_HEIGHT = 80;
+
 export function ResponsiveTimeline({
   children,
   zoomLevel,
@@ -29,8 +30,7 @@ export function ResponsiveTimeline({
   className,
 }: ResponsiveTimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { layoutMode, isTouch } = useStudioResponsive();
-  const pinchZoomEnabled = getStudioPinchZoomEnabled(layoutMode);
+  const pinchZoomEnabled = false;
   
   const [isPinching, setIsPinching] = useState(false);
   const [initialPinchDistance, setInitialPinchDistance] = useState(0);
@@ -94,7 +94,7 @@ export function ResponsiveTimeline({
     }
   }, [zoomLevel, scrollX, scrollY, onZoomChange, onScrollChange]);
 
-  const trackHeight = getStudioTrackHeight(layoutMode);
+  const trackHeight = TRACK_HEIGHT;
   const effectivePixelsPerBar = pixelsPerBar * zoomLevel;
 
   return (
@@ -114,7 +114,6 @@ export function ResponsiveTimeline({
         totalBars={totalBars}
         bpm={bpm}
         pixelsPerBar={effectivePixelsPerBar}
-        layoutMode={layoutMode}
       />
       
       <div
@@ -126,7 +125,7 @@ export function ResponsiveTimeline({
         {children}
       </div>
       
-      {isTouch && (
+      {false && (
         <div
           className="absolute bottom-2 right-2 flex items-center gap-2 px-2 py-1 rounded-lg"
           style={{ background: 'rgba(0,0,0,0.6)' }}
@@ -163,7 +162,6 @@ interface TimelineRulerProps {
   totalBars: number;
   bpm: number;
   pixelsPerBar: number;
-  layoutMode: string;
 }
 
 function TimelineRuler({
@@ -172,9 +170,8 @@ function TimelineRuler({
   totalBars,
   bpm,
   pixelsPerBar,
-  layoutMode,
 }: TimelineRulerProps) {
-  const rulerHeight = layoutMode === 'mobile' ? 28 : layoutMode.includes('tablet') ? 24 : 20;
+  const rulerHeight = 20;
   
   const bars = [];
   const visibleBars = Math.ceil(1200 / pixelsPerBar) + 2;
@@ -247,9 +244,8 @@ export function ResponsiveTrackRow({
   children,
   className,
 }: ResponsiveTrackRowProps) {
-  const { layoutMode, panelConfig } = useStudioResponsive();
-  const trackHeight = getStudioTrackHeight(layoutMode);
-  const touchSize = panelConfig.touchTargetSize;
+  const trackHeight = TRACK_HEIGHT;
+  const touchSize = 44;
 
   return (
     <div
@@ -268,7 +264,7 @@ export function ResponsiveTrackRow({
       <div
         className="shrink-0 flex items-center gap-1 px-2 border-r"
         style={{
-          width: layoutMode === 'mobile' ? 100 : layoutMode.includes('tablet') ? 120 : 150,
+          width: 150,
           borderColor: studioOneTheme.colors.border.primary,
           borderLeft: `3px solid ${color}`,
         }}
@@ -280,8 +276,7 @@ export function ResponsiveTrackRow({
           {name}
         </span>
         
-        {layoutMode !== 'mobile' && (
-          <div className="flex gap-0.5">
+        <div className="flex gap-0.5">
             <button
               onClick={(e) => { e.stopPropagation(); onMuteToggle?.(); }}
               className={cn(
@@ -311,7 +306,6 @@ export function ResponsiveTrackRow({
               S
             </button>
           </div>
-        )}
       </div>
       
       <div className="flex-1 relative overflow-hidden">

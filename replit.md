@@ -19,21 +19,6 @@ Max Booster is built with a modern web stack, featuring a React 18 frontend with
 ### UI/UX Decisions
 The frontend leverages shadcn/ui components for a modern and accessible user experience, focusing on intuitive workflows for music production, social media scheduling, and data visualization. The design incorporates concepts from professional DAWs like Studio One for features such as autoscroll modes, smart re-engagement, and "infinite" timeline bars, aiming for a clean, professional aesthetic.
 
-### Responsive Layout System
-The app uses a `ResponsiveLayout` component that automatically renders device-appropriate layouts:
-- **Mobile**: Uses `MobileLayout` with bottom navigation, swipe gestures, and touch-optimized controls
-- **Tablet**: Uses `TabletLayout` with split-pane layouts, multi-touch mixer, and floating action buttons
-- **Desktop**: Uses standard `AppLayout` with sidebar navigation
-
-Key responsive components:
-- `client/src/components/layout/ResponsiveLayout.tsx` - Auto-switches between layouts
-- `client/src/components/layout/MobileLayout.tsx` - Mobile wrapper with bottom nav
-- `client/src/components/layout/TabletLayout.tsx` - Tablet wrapper with split panes
-- `client/src/components/mobile/MobileDashboard.tsx` - Touch-optimized dashboard
-- `client/src/components/mobile/MobileStudio.tsx` - Simplified mobile DAW
-- `client/src/components/tablet/TabletDashboard.tsx` - Multi-column tablet dashboard
-- `client/src/components/tablet/TabletStudio.tsx` - Side-by-side track/timeline view
-
 ### PWA Features
 - Install banner with 7-day dismissal (`client/src/components/pwa/InstallBanner.tsx`)
 - Deep linking via `web+maxbooster://` protocol (`client/src/lib/deepLinks.ts`)
