@@ -1,9 +1,72 @@
 import { useCallback, useRef, useEffect } from 'react';
 
+interface FilePickerAcceptType {
+  description?: string;
+  accept: Record<string, string[]>;
+}
+
 interface UseFullscreenFileUploadOptions {
-  onFilesSelected?: (files: FileList) => void;
+  onFilesSelected?: (files: File[]) => void;
   accept?: string;
   multiple?: boolean;
+}
+
+function supportsFileSystemAccess(): boolean {
+  return 'showOpenFilePicker' in window;
+}
+
+function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
+  if (accept === '*' || accept === '*/*') {
+    return [];
+  }
+
+  const types: FilePickerAcceptType[] = [];
+  const parts = accept.split(',').map(p => p.trim());
+
+  const audioExtensions: string[] = [];
+  const mimeTypes: Record<string, string[]> = {};
+
+  for (const part of parts) {
+    if (part.startsWith('.')) {
+      audioExtensions.push(part);
+    } else if (part.includes('/')) {
+      const [category] = part.split('/');
+      if (!mimeTypes[part]) {
+        mimeTypes[part] = [];
+      }
+      if (category === 'audio') {
+        const ext = part.split('/')[1];
+        if (ext && ext !== '*') {
+          mimeTypes[part].push(`.${ext}`);
+        }
+      }
+    }
+  }
+
+  if (audioExtensions.length > 0 || Object.keys(mimeTypes).length > 0) {
+    const acceptObj: Record<string, string[]> = {};
+
+    if (audioExtensions.length > 0) {
+      acceptObj['audio/*'] = audioExtensions;
+    }
+
+    for (const [mime, exts] of Object.entries(mimeTypes)) {
+      if (exts.length > 0) {
+        acceptObj[mime] = exts;
+      } else {
+        acceptObj[mime] = audioExtensions.length > 0 ? audioExtensions : [];
+      }
+    }
+
+    if (Object.keys(acceptObj).length > 0) {
+      types.push({
+        description: 'Audio Files',
+        accept: acceptObj
+      });
+    }
+  }
+
+  return types;
 }
 
 export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions = {}) {
@@ -27,7 +90,7 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
 
     const handleChange = () => {
       if (input.files && input.files.length > 0) {
-        onFilesSelected?.(input.files);
+        onFilesSelected?.(Array.from(input.files));
       }
 
       if (wasFullscreenRef.current && fullscreenElementRef.current) {
@@ -53,14 +116,36 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
   }, [accept, multiple, onFilesSelected]);
 
   const openFilePicker = useCallback(async () => {
-    if (!fileInputRef.current) return;
+    const isInFullscreen = isInFullscreenMode();
 
-    const isInFullscreen = !!(
-      document.fullscreenElement ||
-      (document as any).webkitFullscreenElement ||
-      (document as any).mozFullScreenElement ||
-      (document as any).msFullscreenElement
-    );
+    if (supportsFileSystemAccess() && isInFullscreen) {
+      try {
+        const fileTypes = parseAcceptToFileTypes(accept);
+        const handles = await (window as any).showOpenFilePicker({
+          multiple,
+          types: fileTypes.length > 0 ? fileTypes : undefined,
+          excludeAcceptAllOption: false
+        });
+
+        const files: File[] = [];
+        for (const handle of handles) {
+          const file = await handle.getFile();
+          files.push(file);
+        }
+
+        if (files.length > 0) {
+          onFilesSelected?.(files);
+        }
+        return;
+      } catch (e: any) {
+        if (e.name === 'AbortError') {
+          return;
+        }
+        console.warn('File System Access API failed, falling back:', e);
+      }
+    }
+
+    if (!fileInputRef.current) return;
 
     if (isInFullscreen) {
       wasFullscreenRef.current = true;
@@ -86,7 +171,7 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
     } else {
       fileInputRef.current.click();
     }
-  }, []);
+  }, [accept, multiple, onFilesSelected]);
 
   const cleanup = useCallback(() => {
     if (fileInputRef.current && document.body.contains(fileInputRef.current)) {
@@ -101,12 +186,8 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
 
   return {
     openFilePicker,
-    isFullscreen: !!(
-      document.fullscreenElement ||
-      (document as any).webkitFullscreenElement ||
-      (document as any).mozFullScreenElement ||
-      (document as any).msFullscreenElement
-    ),
+    isFullscreen: isInFullscreenMode(),
+    supportsFullscreenFilePicker: supportsFileSystemAccess()
   };
 }
 
@@ -160,4 +241,40 @@ export async function reenterFullscreen(element: Element | null): Promise<void> 
   } catch (e) {
     console.warn('Could not re-enter fullscreen:', e);
   }
+}
+
+export async function openFilePickerInFullscreen(options: {
+  accept?: string;
+  multiple?: boolean;
+}): Promise<File[]> {
+  const { accept = '*', multiple = true } = options;
+
+  if (supportsFileSystemAccess()) {
+    try {
+      const fileTypes = parseAcceptToFileTypes(accept);
+      const handles = await (window as any).showOpenFilePicker({
+        multiple,
+        types: fileTypes.length > 0 ? fileTypes : undefined,
+        excludeAcceptAllOption: false
+      });
+
+      const files: File[] = [];
+      for (const handle of handles) {
+        const file = await handle.getFile();
+        files.push(file);
+      }
+      return files;
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        return [];
+      }
+      throw e;
+    }
+  }
+
+  throw new Error('File System Access API not supported');
+}
+
+export function canPickFilesInFullscreen(): boolean {
+  return supportsFileSystemAccess();
 }

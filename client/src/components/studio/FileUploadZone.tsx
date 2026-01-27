@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { uploadWithProgress } from '@/lib/queryClient';
 import { UploadList, type UploadItemData } from '@/components/ui/upload-item';
-import { isInFullscreenMode, exitFullscreenForUpload, reenterFullscreen } from '@/hooks/useFullscreenFileUpload';
+import { isInFullscreenMode, exitFullscreenForUpload, reenterFullscreen, openFilePickerInFullscreen, canPickFilesInFullscreen } from '@/hooks/useFullscreenFileUpload';
 import {
   Upload,
   FileAudio,
@@ -226,13 +226,31 @@ export function FileUploadZone({
     e.preventDefault();
     e.stopPropagation();
     
-    if (isInFullscreenMode()) {
+    const inFullscreen = isInFullscreenMode();
+    
+    if (inFullscreen && canPickFilesInFullscreen()) {
+      try {
+        const acceptTypes = ACCEPTED_EXTENSIONS.join(',');
+        const files = await openFilePickerInFullscreen({
+          accept: acceptTypes,
+          multiple: true
+        });
+        if (files.length > 0) {
+          processFiles(files);
+        }
+        return;
+      } catch (err) {
+        console.warn('File System Access API not available, using fallback');
+      }
+    }
+    
+    if (inFullscreen) {
       fullscreenElementRef.current = await exitFullscreenForUpload();
       await new Promise(resolve => setTimeout(resolve, 150));
     }
     
     fileInputRef.current?.click();
-  }, []);
+  }, [processFiles]);
 
   const handleFileSelectWithReenter = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
