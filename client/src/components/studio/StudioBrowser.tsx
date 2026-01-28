@@ -10,10 +10,12 @@ interface Plugin {
   id: string;
   name: string;
   type: string;
-  description: string;
-  manufacturer: string;
-  version: string;
-  tags: string[];
+  description?: string;
+  author?: string;
+  manufacturer?: string;
+  version?: string;
+  tags?: string[];
+  category?: string;
 }
 
 interface PluginCatalogResponse {
@@ -46,19 +48,28 @@ export function StudioBrowser({
     queryKey: ['/api/studio/plugins'],
   });
 
-  // Filter and combine effect plugins (eq, dynamics, reverb, delay, modulation, distortion, filter, utility)
+  // Filter and combine effect plugins - includes all effect types from the 200 built-in plugins
   const effectPlugins = useMemo(() => {
     if (!pluginCatalog) return [];
 
     const effectKinds = [
-      'eq',
-      'dynamics',
       'reverb',
       'delay',
-      'modulation',
+      'compressor',
+      'eq',
       'distortion',
+      'chorus',
+      'flanger',
+      'phaser',
+      'limiter',
+      'gate',
+      'vocal',
+      'microphone',
+      'modulation',
+      'dynamics',
       'filter',
       'utility',
+      'saturation',
     ];
     const plugins: Plugin[] = [];
 
@@ -71,11 +82,27 @@ export function StudioBrowser({
     return plugins;
   }, [pluginCatalog]);
 
-  // Filter instrument plugins (synth, sampler)
+  // Filter instrument plugins - includes all instrument types from the 200 built-in plugins
   const instrumentPlugins = useMemo(() => {
     if (!pluginCatalog) return [];
 
-    const instrumentKinds = ['synth', 'sampler'];
+    const instrumentKinds = [
+      'piano',
+      'strings',
+      'drums',
+      'bass',
+      'pad',
+      'synth',
+      'analog',
+      'fm',
+      'wavetable',
+      'sampler',
+      'organ',
+      'lead',
+      'pluck',
+      'brass',
+      'woodwind',
+    ];
     const plugins: Plugin[] = [];
 
     instrumentKinds.forEach((kind) => {
@@ -277,10 +304,8 @@ export function StudioBrowser({
                     (plugin) =>
                       !searchQuery ||
                       plugin.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      plugin.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      plugin.tags?.some((tag) =>
-                        tag.toLowerCase().includes(searchQuery.toLowerCase())
-                      )
+                      plugin.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      plugin.type?.toLowerCase().includes(searchQuery.toLowerCase())
                   )
                   .map((plugin, index) => (
                     <button
@@ -311,11 +336,11 @@ export function StudioBrowser({
                           className="ml-6 flex items-center gap-2 text-xs"
                           style={{ color: 'var(--studio-text-muted)' }}
                         >
-                          <span>{plugin.manufacturer}</span>
-                          {plugin.tags && plugin.tags.length > 0 && (
+                          <span>{plugin.author || 'Max Booster'}</span>
+                          {plugin.type && (
                             <>
                               <span>•</span>
-                              <span className="truncate">{plugin.tags.slice(0, 2).join(', ')}</span>
+                              <span className="truncate capitalize">{plugin.type}</span>
                             </>
                           )}
                         </div>
@@ -352,10 +377,8 @@ export function StudioBrowser({
                     (plugin) =>
                       !searchQuery ||
                       plugin.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      plugin.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      plugin.tags?.some((tag) =>
-                        tag.toLowerCase().includes(searchQuery.toLowerCase())
-                      )
+                      plugin.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      plugin.type?.toLowerCase().includes(searchQuery.toLowerCase())
                   )
                   .map((plugin, index) => (
                     <button
@@ -386,11 +409,11 @@ export function StudioBrowser({
                           className="ml-6 flex items-center gap-2 text-xs"
                           style={{ color: 'var(--studio-text-muted)' }}
                         >
-                          <span>{plugin.manufacturer}</span>
-                          {plugin.tags && plugin.tags.length > 0 && (
+                          <span>{plugin.author || 'Max Booster'}</span>
+                          {plugin.type && (
                             <>
                               <span>•</span>
-                              <span className="truncate">{plugin.tags.slice(0, 2).join(', ')}</span>
+                              <span className="truncate capitalize">{plugin.type}</span>
                             </>
                           )}
                         </div>
