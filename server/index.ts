@@ -119,6 +119,17 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+// Serve generated audio content from root public folder
+import path from "path";
+app.use('/generated-content', express.static(path.join(process.cwd(), 'public', 'generated-content'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.wav') || filePath.endsWith('.mp3')) {
+      res.setHeader('Content-Type', filePath.endsWith('.wav') ? 'audio/wav' : 'audio/mpeg');
+      res.setHeader('Accept-Ranges', 'bytes');
+    }
+  }
+}));
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",

@@ -50,6 +50,8 @@ export interface GenerationResult {
   };
   duration: number;
   sourceType: 'text' | 'audio';
+  generatedNotes?: Array<{ note: string; octave: number; time: number; duration: number; velocity: number }>;
+  generatedChords?: Array<{ chord: string; time: number; duration: number }>;
 }
 
 async function saveToWav(audioData: Float32Array, sampleRate: number): Promise<string> {
@@ -88,6 +90,91 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
 
     logger.info(`[AI Audio] Generated ${output.metadata.type} at ${output.metadata.tempo}bpm in ${output.metadata.key} ${output.metadata.scale}`);
 
+    // Extract notes from patterns
+    const generatedNotes: GenerationResult['generatedNotes'] = [];
+    const generatedChords: GenerationResult['generatedChords'] = [];
+    
+    if (output.metadata.patterns) {
+      // Extract bass notes
+      if (output.metadata.patterns.bass?.notes) {
+        for (const note of output.metadata.patterns.bass.notes) {
+          generatedNotes.push({
+            note: note.note,
+            octave: note.octave,
+            time: note.time,
+            duration: note.duration,
+            velocity: note.velocity,
+          });
+        }
+      }
+      
+      // Extract melodic notes
+      if (output.metadata.patterns.melody?.notes) {
+        for (const note of output.metadata.patterns.melody.notes) {
+          generatedNotes.push({
+            note: note.note,
+            octave: note.octave,
+            time: note.time,
+            duration: note.duration,
+            velocity: note.velocity,
+          });
+        }
+      }
+      
+      // Count drum hits as notes too (for drums-only generation)
+      if (output.metadata.patterns.drums) {
+        const drums = output.metadata.patterns.drums;
+        let drumNoteCount = 0;
+        ['kick', 'snare', 'hihat', 'clap', 'perc'].forEach((drumType) => {
+          const pattern = drums[drumType as keyof typeof drums];
+          if (Array.isArray(pattern)) {
+            for (let i = 0; i < pattern.length; i++) {
+              const step = pattern[i];
+              if (step && typeof step === 'object' && 'active' in step && step.active) {
+                drumNoteCount++;
+                generatedNotes.push({
+                  note: drumType.toUpperCase(),
+                  octave: 0,
+                  time: i * 0.25,
+                  duration: 0.25,
+                  velocity: step.velocity || 0.8,
+                });
+              }
+            }
+          }
+        });
+      }
+      
+      // Generate chord names from bass notes (simplified chord detection)
+      if (output.metadata.patterns.bass?.notes && output.metadata.patterns.bass.notes.length > 0) {
+        const bassNotes = output.metadata.patterns.bass.notes;
+        const scale = output.metadata.scale;
+        const key = output.metadata.key;
+        
+        // Group notes by position to form chords
+        const notesByTime: Record<number, string[]> = {};
+        bassNotes.forEach(n => {
+          const timeKey = Math.floor(n.time);
+          if (!notesByTime[timeKey]) notesByTime[timeKey] = [];
+          notesByTime[timeKey].push(n.note);
+        });
+        
+        Object.entries(notesByTime).forEach(([timeStr, notes]) => {
+          const time = parseInt(timeStr);
+          if (notes.length > 0) {
+            const chordName = notes[0] + (scale === 'minor' ? 'm' : '');
+            generatedChords.push({
+              chord: chordName,
+              time,
+              duration: 1,
+            });
+          }
+        });
+      }
+    }
+
+    logger.info(`[AI Audio] Generated ${generatedNotes.length} notes, ${generatedChords.length} chords`);
+
     return {
       success: true,
       audioFilePath,
@@ -100,6 +187,8 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
       },
       duration: output.duration,
       sourceType: 'text',
+      generatedNotes,
+      generatedChords,
     };
   } catch (error) {
     logger.error('[AI Audio] Text generation failed:', error);

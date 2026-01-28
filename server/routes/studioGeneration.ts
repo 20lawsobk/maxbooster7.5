@@ -96,6 +96,8 @@ router.post('/text', requireAuth, async (req, res) => {
       parameters: result.parameters,
       duration: result.duration,
       sourceType: result.sourceType,
+      generatedNotes: result.generatedNotes || [],
+      generatedChords: result.generatedChords || [],
     });
   } catch (error: any) {
     logger.error('[Studio Generation] Text generation failed:', error);
@@ -149,6 +151,8 @@ router.post('/audio', requireAuth, upload.single('audio'), async (req, res) => {
       parameters: result.parameters,
       duration: result.duration,
       sourceType: result.sourceType,
+      generatedNotes: result.generatedNotes || [],
+      generatedChords: result.generatedChords || [],
     });
   } catch (error: any) {
     logger.error('[Studio Generation] Audio generation failed:', error);
