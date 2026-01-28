@@ -1669,6 +1669,18 @@ export default function Studio() {
     [controller, setMasterVolume]
   );
 
+  const handleZoomIn = useCallback(() => {
+    setZoom(Math.min(zoom * 1.2, 5));
+  }, [zoom, setZoom]);
+
+  const handleZoomOut = useCallback(() => {
+    setZoom(Math.max(zoom / 1.2, 0.1));
+  }, [zoom, setZoom]);
+
+  const handleZoomReset = useCallback(() => {
+    setZoom(1);
+  }, [setZoom]);
+
   const handleTrackNameChange = useCallback(
     async (trackId: string, name: string) => {
       try {
