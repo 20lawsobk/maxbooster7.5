@@ -185,18 +185,24 @@ export function InspectorPanel({
             INSPECTOR
           </h3>
           {onClose && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 hover:bg-white/10"
+            <button
+              type="button"
+              className="h-10 w-10 flex items-center justify-center rounded-md hover:bg-white/10 active:bg-white/20 touch-manipulation"
               onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 onClose();
               }}
               title="Close Inspector"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <X className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
-            </Button>
+              <X className="h-5 w-5" style={{ color: 'var(--studio-text-muted)' }} />
+            </button>
           )}
         </div>
         <div
@@ -237,18 +243,24 @@ export function InspectorPanel({
             {selectedTrackId ? 'Track' : 'Clip'}
           </Badge>
           {onClose && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 hover:bg-white/10"
+            <button
+              type="button"
+              className="h-10 w-10 flex items-center justify-center rounded-md hover:bg-white/10 active:bg-white/20 touch-manipulation"
               onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 onClose();
               }}
               title="Close Inspector"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <X className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
-            </Button>
+              <X className="h-5 w-5" style={{ color: 'var(--studio-text-muted)' }} />
+            </button>
           )}
         </div>
       </div>

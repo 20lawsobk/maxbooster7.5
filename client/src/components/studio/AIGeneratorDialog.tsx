@@ -574,12 +574,10 @@ export function AIGeneratorDialog({
     activeWorkflow.currentState === 'success' || activeWorkflow.currentState === 'integrated';
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-3xl max-h-[90vh] overflow-y-auto"
         data-testid="ai-generator-dialog"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -677,7 +675,7 @@ export function AIGeneratorDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="item-aligned">
                     <SelectItem value="melodic">Melodic</SelectItem>
                     <SelectItem value="drums">Drums</SelectItem>
                     <SelectItem value="percussion">Percussion</SelectItem>
@@ -691,7 +689,7 @@ export function AIGeneratorDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select instrument" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
+                  <SelectContent position="item-aligned" className="max-h-[300px]">
                     {INSTRUMENT_CATEGORIES[instrumentCategory]?.map((type) => (
                       <SelectItem key={type.id} value={type.id}>
                         <span className="flex items-center gap-2">
@@ -710,7 +708,7 @@ export function AIGeneratorDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select style" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
+                  <SelectContent position="item-aligned" className="max-h-[300px]">
                     {STYLES.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
@@ -735,7 +733,7 @@ export function AIGeneratorDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="item-aligned">
                     {Object.entries(GENRE_CATEGORIES).map(([key, cat]) => (
                       <SelectItem key={key} value={key}>{cat.name}</SelectItem>
                     ))}
@@ -749,7 +747,7 @@ export function AIGeneratorDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select genre" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
+                  <SelectContent position="item-aligned" className="max-h-[300px]">
                     {GENRE_CATEGORIES[genreCategory as keyof typeof GENRE_CATEGORIES]?.genres.map((g) => (
                       <SelectItem key={g.id} value={g.id}>
                         {g.name} ({g.tempo} BPM)
@@ -782,7 +780,7 @@ export function AIGeneratorDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select key" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="item-aligned">
                     {KEYS.map((k) => (
                       <SelectItem key={k} value={k}>{k}</SelectItem>
                     ))}
@@ -796,7 +794,7 @@ export function AIGeneratorDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select scale" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
+                  <SelectContent position="item-aligned" className="max-h-[300px]">
                     {SCALES.map((s) => (
                       <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
