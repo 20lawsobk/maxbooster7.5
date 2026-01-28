@@ -285,10 +285,55 @@ router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res:
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const tracks = await db.query.studioTracks.findMany({
+    let tracks = await db.query.studioTracks.findMany({
       where: eq(studioTracks.projectId, projectId),
       orderBy: (studioTracks, { asc }) => [asc(studioTracks.order)],
     });
+
+    // If no tracks exist but project has an audioUrl, auto-create a track with clip
+    if (tracks.length === 0) {
+      const project = await db.query.projects.findFirst({
+        where: eq(projects.id, projectId),
+      });
+
+      if (project?.audioUrl) {
+        logger.info(`Auto-creating track for project ${projectId} with audio ${project.audioUrl}`);
+        
+        // Create the track
+        const [newTrack] = await db.insert(studioTracks).values({
+          id: nanoid(),
+          projectId,
+          name: project.title || 'Audio Track 1',
+          type: 'audio',
+          order: 0,
+          color: '#3b82f6',
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          isArmed: false,
+        }).returning();
+
+        // Create an audio clip for this track
+        if (newTrack) {
+          await db.insert(audioClips).values({
+            id: nanoid(),
+            trackId: newTrack.id,
+            name: project.title || 'Audio Clip',
+            audioUrl: project.audioUrl,
+            startTime: 0,
+            duration: 0, // Will be detected by frontend
+            offset: 0,
+            gain: 1,
+            fadeIn: 0,
+            fadeOut: 0,
+            color: newTrack.color || '#3b82f6',
+          });
+
+          tracks = [newTrack];
+        }
+      }
+    }
 
     res.json(tracks);
   } catch (error: unknown) {
