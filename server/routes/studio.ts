@@ -318,16 +318,15 @@ router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res:
         if (newTrack) {
           await db.insert(audioClips).values({
             id: nanoid(),
+            projectId: projectId,
             trackId: newTrack.id,
             name: project.title || 'Audio Clip',
             audioUrl: project.audioUrl,
             startTime: 0,
             duration: 0, // Will be detected by frontend
-            offset: 0,
             gain: 1,
             fadeIn: 0,
             fadeOut: 0,
-            color: newTrack.color || '#3b82f6',
           });
 
           tracks = [newTrack];

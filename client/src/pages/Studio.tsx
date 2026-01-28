@@ -654,7 +654,7 @@ export default function Studio() {
       }
 
       // Get the actual audio file path from the first clip
-      const audioUrl = clips[0].filePath || clips[0].file_path;
+      const audioUrl = clips[0].audioUrl || clips[0].filePath || clips[0].file_path;
       if (!audioUrl) {
         throw new Error('No audio file path found. Please upload an audio file first.');
       }
@@ -936,7 +936,9 @@ export default function Studio() {
         .map(({ track, clips }) => {
           let audioUrl = '';
           if (clips.length > 0) {
-            audioUrl = clips[0].filePath || clips[0].file_path || '';
+            audioUrl = clips[0].audioUrl || clips[0].filePath || clips[0].file_path || '';
+          } else if ((track as any).audioUrl) {
+            audioUrl = (track as any).audioUrl;
           } else if ((track as any).filePath) {
             audioUrl = (track as any).filePath;
           }
