@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Search, 
   Folder, 
@@ -18,6 +19,8 @@ import {
   Download,
   Plus,
   MoreHorizontal,
+  Zap,
+  Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -26,6 +29,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { studioOneTheme } from '@/lib/studioOneTheme';
+
+interface Plugin {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  author?: string;
+  category?: string;
+}
+
+interface PluginCatalogResponse {
+  [kind: string]: Plugin[];
+}
 
 interface BrowserFile {
   id: string;
@@ -254,6 +270,74 @@ export function StudioOneBrowser({
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'tree' | 'grid'>('tree');
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('files');
+
+  // Fetch plugins from API
+  const { data: pluginCatalog, isLoading: isLoadingPlugins } = useQuery<PluginCatalogResponse>({
+    queryKey: ['/api/studio/plugins'],
+    enabled: activeTab === 'instruments' || activeTab === 'effects',
+    staleTime: 60 * 60 * 1000,
+  });
+
+  // Filter and combine effect plugins - includes all effect types from the 200 built-in plugins
+  const effectPlugins = useMemo(() => {
+    if (!pluginCatalog) return [];
+
+    const effectKinds = [
+      'reverb', 'delay', 'compressor', 'eq', 'distortion', 'chorus', 'flanger',
+      'phaser', 'limiter', 'gate', 'vocal', 'microphone', 'modulation',
+      'dynamics', 'filter', 'utility', 'saturation',
+    ];
+    const plugins: Plugin[] = [];
+
+    effectKinds.forEach((kind) => {
+      if (pluginCatalog[kind]) {
+        plugins.push(...pluginCatalog[kind]);
+      }
+    });
+
+    return plugins;
+  }, [pluginCatalog]);
+
+  // Filter instrument plugins - includes all instrument types from the 200 built-in plugins
+  const instrumentPlugins = useMemo(() => {
+    if (!pluginCatalog) return [];
+
+    const instrumentKinds = [
+      'piano', 'strings', 'drums', 'bass', 'pad', 'synth', 'analog',
+      'fm', 'wavetable', 'sampler', 'organ', 'lead', 'pluck', 'brass', 'woodwind',
+    ];
+    const plugins: Plugin[] = [];
+
+    instrumentKinds.forEach((kind) => {
+      if (pluginCatalog[kind]) {
+        plugins.push(...pluginCatalog[kind]);
+      }
+    });
+
+    return plugins;
+  }, [pluginCatalog]);
+
+  // Filter plugins by search query
+  const filteredInstruments = useMemo(() => {
+    if (!searchQuery) return instrumentPlugins;
+    const query = searchQuery.toLowerCase();
+    return instrumentPlugins.filter(p => 
+      p.name?.toLowerCase().includes(query) ||
+      p.type?.toLowerCase().includes(query) ||
+      p.author?.toLowerCase().includes(query)
+    );
+  }, [instrumentPlugins, searchQuery]);
+
+  const filteredEffects = useMemo(() => {
+    if (!searchQuery) return effectPlugins;
+    const query = searchQuery.toLowerCase();
+    return effectPlugins.filter(p => 
+      p.name?.toLowerCase().includes(query) ||
+      p.type?.toLowerCase().includes(query) ||
+      p.author?.toLowerCase().includes(query)
+    );
+  }, [effectPlugins, searchQuery]);
 
   const handleSelect = (file: BrowserFile) => {
     setSelectedFileId(file.id);
@@ -336,7 +420,7 @@ export function StudioOneBrowser({
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="files" className="flex-1 flex flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
         <TabsList 
           className="h-8 w-full justify-start rounded-none border-b shrink-0"
           style={{ 
@@ -345,8 +429,12 @@ export function StudioOneBrowser({
           }}
         >
           <TabsTrigger value="files" className="text-[10px] h-6 px-3">Files</TabsTrigger>
-          <TabsTrigger value="instruments" className="text-[10px] h-6 px-3">Instruments</TabsTrigger>
-          <TabsTrigger value="effects" className="text-[10px] h-6 px-3">Effects</TabsTrigger>
+          <TabsTrigger value="instruments" className="text-[10px] h-6 px-3">
+            Instruments {instrumentPlugins.length > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[9px] px-1">{instrumentPlugins.length}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="effects" className="text-[10px] h-6 px-3">
+            Effects {effectPlugins.length > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[9px] px-1">{effectPlugins.length}</Badge>}
+          </TabsTrigger>
           <TabsTrigger value="loops" className="text-[10px] h-6 px-3">Loops</TabsTrigger>
         </TabsList>
 
@@ -379,26 +467,90 @@ export function StudioOneBrowser({
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="instruments" className="flex-1 mt-0">
-          <div className="p-4 text-center">
-            <span 
-              className="text-[11px]"
-              style={{ color: studioOneTheme.colors.text.muted }}
-            >
-              Virtual instruments will appear here
-            </span>
-          </div>
+        <TabsContent value="instruments" className="flex-1 mt-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="py-1 space-y-0.5">
+              {isLoadingPlugins ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-4 w-4 animate-spin" style={{ color: studioOneTheme.colors.text.muted }} />
+                  <span className="ml-2 text-[11px]" style={{ color: studioOneTheme.colors.text.muted }}>
+                    Loading instruments...
+                  </span>
+                </div>
+              ) : filteredInstruments.length > 0 ? (
+                filteredInstruments.map((plugin) => (
+                  <button
+                    key={plugin.id}
+                    className="w-full text-left px-3 py-1.5 hover:bg-white/5 transition-colors flex items-center gap-2"
+                    onClick={() => onFileSelect?.({ id: plugin.id, name: plugin.name, type: 'preset', path: '' } as BrowserFile)}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/json', JSON.stringify({ type: 'plugin', plugin }));
+                    }}
+                  >
+                    <Music className="h-3.5 w-3.5 flex-shrink-0" style={{ color: studioOneTheme.colors.accent.purple }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-medium truncate" style={{ color: studioOneTheme.colors.text.primary }}>
+                        {plugin.name}
+                      </div>
+                      <div className="text-[9px] truncate" style={{ color: studioOneTheme.colors.text.muted }}>
+                        {plugin.author || 'Max Booster'} • {plugin.type}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="p-4 text-center">
+                  <span className="text-[11px]" style={{ color: studioOneTheme.colors.text.muted }}>
+                    {searchQuery ? 'No instruments match your search' : 'No instruments available'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="effects" className="flex-1 mt-0">
-          <div className="p-4 text-center">
-            <span 
-              className="text-[11px]"
-              style={{ color: studioOneTheme.colors.text.muted }}
-            >
-              Audio effects will appear here
-            </span>
-          </div>
+        <TabsContent value="effects" className="flex-1 mt-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="py-1 space-y-0.5">
+              {isLoadingPlugins ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-4 w-4 animate-spin" style={{ color: studioOneTheme.colors.text.muted }} />
+                  <span className="ml-2 text-[11px]" style={{ color: studioOneTheme.colors.text.muted }}>
+                    Loading effects...
+                  </span>
+                </div>
+              ) : filteredEffects.length > 0 ? (
+                filteredEffects.map((plugin) => (
+                  <button
+                    key={plugin.id}
+                    className="w-full text-left px-3 py-1.5 hover:bg-white/5 transition-colors flex items-center gap-2"
+                    onClick={() => onFileSelect?.({ id: plugin.id, name: plugin.name, type: 'preset', path: '' } as BrowserFile)}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/json', JSON.stringify({ type: 'plugin', plugin }));
+                    }}
+                  >
+                    <Zap className="h-3.5 w-3.5 flex-shrink-0" style={{ color: studioOneTheme.colors.accent.orange }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-medium truncate" style={{ color: studioOneTheme.colors.text.primary }}>
+                        {plugin.name}
+                      </div>
+                      <div className="text-[9px] truncate" style={{ color: studioOneTheme.colors.text.muted }}>
+                        {plugin.author || 'Max Booster'} • {plugin.type}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="p-4 text-center">
+                  <span className="text-[11px]" style={{ color: studioOneTheme.colors.text.muted }}>
+                    {searchQuery ? 'No effects match your search' : 'No effects available'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </TabsContent>
 
         <TabsContent value="loops" className="flex-1 mt-0">
