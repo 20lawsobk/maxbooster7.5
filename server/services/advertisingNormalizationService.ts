@@ -209,7 +209,7 @@ export class AdvertisingNormalizationService {
     }
 
     // Emoji engagement
-    if (!/[\u{1F300}-\u{1F9FF}]/u.test(content)) {
+    if (!new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'u').test(content)) {
       hooks.push('React with 🔥 if you love this!');
     }
 

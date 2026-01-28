@@ -360,11 +360,11 @@ class AITranslationService {
     }
 
     if (langData.emojiCulture === 'expressive') {
-      if (!adapted.match(/[\u{1F300}-\u{1F9FF}]/gu)) {
+      if (!adapted.match(new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu'))) {
         adapted = adapted + ' 🎵';
       }
     } else if (langData.emojiCulture === 'conservative') {
-      const emojiRegex = /[\\u{1F300}-\\u{1F9FF}]/gu;
+      const emojiRegex = new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu');
       const emojis = adapted.match(emojiRegex) || [];
       if (emojis.length > 2) {
         let count = 0;

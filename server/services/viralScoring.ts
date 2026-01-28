@@ -269,7 +269,7 @@ class ViralScoringService {
       }
     }
 
-    const emojiCount = (caption.match(/[\u{1F300}-\u{1F9FF}]/gu) || []).length;
+    const emojiCount = (caption.match(new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu')) || []).length;
     if (emojiCount >= 1 && emojiCount <= 5) {
       score += 8;
     } else if (emojiCount > 5) {

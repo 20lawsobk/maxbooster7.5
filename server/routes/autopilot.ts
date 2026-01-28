@@ -206,7 +206,7 @@ router.post('/predict-engagement', requireAuth, async (req, res) => {
     const socialModel = await aiModelManager.getSocialAutopilot(userId);
     
     // Create feature vector with multimodal data
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
+    const emojiRegex = new RegExp('[\\u{1F300}-\\u{1F9FF}]|[\\u{2600}-\\u{26FF}]|[\\u{2700}-\\u{27BF}]', 'u');
     const features = {
       platform,
       contentLength: content.length,

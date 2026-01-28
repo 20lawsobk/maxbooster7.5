@@ -796,7 +796,7 @@ export class AutonomousAutopilot extends EventEmitter {
       let optimizedContent = content;
 
       for (const recommendation of hyperOptimization.microPatternRecommendations.slice(0, 3)) {
-        if (recommendation.includes('emoji') && !content.match(/[\u{1F600}-\u{1F64F}]/u)) {
+        if (recommendation.includes('emoji') && !content.match(new RegExp('[\\u{1F600}-\\u{1F64F}]', 'u'))) {
           const emojis = ['🎵', '🎶', '🔥', '✨', '💯', '🙌', '💪', '🎤', '🎹', '🎸'];
           optimizedContent = emojis[Math.floor(Math.random() * emojis.length)] + ' ' + optimizedContent;
         }

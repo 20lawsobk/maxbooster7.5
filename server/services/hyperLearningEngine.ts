@@ -502,7 +502,7 @@ class HyperLearningEngine extends EventEmitter {
     const hookPatterns = [
       { name: 'question_start', regex: /^(what|why|how|when|where|who|which|do you|are you|have you)/i },
       { name: 'number_start', regex: /^[0-9]+\s/ },
-      { name: 'emoji_start', regex: /^[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]/u },
+      { name: 'emoji_start', regex: new RegExp('^[\\u{1F600}-\\u{1F64F}\\u{1F300}-\\u{1F5FF}]', 'u') },
       { name: 'capital_word', regex: /^[A-Z]{2,}/ },
       { name: 'ellipsis_start', regex: /^\.{2,}|^…/ },
       { name: 'announcement', regex: /^(breaking|just|new|announcing|introducing|finally)/i },

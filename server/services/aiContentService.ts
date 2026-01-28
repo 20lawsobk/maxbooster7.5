@@ -460,7 +460,7 @@ export class AIContentService {
   async analyzeBrandVoice(userId: string, historicalPosts: string[]): Promise<BrandVoiceProfile> {
     const startTime = Date.now();
 
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}]/gu;
+    const emojiRegex = new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu');
     const hashtagRegex = /#\w+/g;
 
     const totalEmojis = historicalPosts.reduce(
@@ -1711,7 +1711,7 @@ export class AIContentService {
       suggestions.push(`Consider adding ${rules.hashtagLimit} relevant hashtags`);
     }
 
-    if (rules.emojiRecommended && !content.match(/[\u{1F300}-\u{1F9FF}]/u)) {
+    if (rules.emojiRecommended && !content.match(new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'u'))) {
       suggestions.push('Consider adding emojis to increase engagement');
     }
 

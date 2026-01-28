@@ -342,7 +342,7 @@ class ContentQualityPipeline {
 
     const characterCount = content.length;
     const hashtagCount = hashtags.length;
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}]/gu;
+    const emojiRegex = new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu');
     const emojiCount = (content.match(emojiRegex) || []).length;
 
     if (characterCount > constraints.maxCharacters) {
@@ -492,7 +492,7 @@ class ContentQualityPipeline {
     let score = 70;
 
     if (context.brandVoice) {
-      const emojiRegex = /[\u{1F300}-\u{1F9FF}]/gu;
+      const emojiRegex = new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu');
       const emojiCount = (content.match(emojiRegex) || []).length;
 
       const expectedEmojis: Record<string, number> = {

@@ -1055,7 +1055,7 @@ export class AdvertisingAIService {
     // Text engagement factors
     const hashtagCount = (text.match(/#/g) || []).length;
     const questionCount = (text.match(/\?/g) || []).length;
-    const emojiCount = (text.match(/[\u{1F300}-\u{1F9FF}]/gu) || []).length;
+    const emojiCount = (text.match(new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu')) || []).length;
     const mentionCount = (text.match(/@\w+/g) || []).length;
     const wordCount = text.split(/\s+/).length;
 
@@ -1351,7 +1351,7 @@ export class AdvertisingAIService {
       emotionalTone: this.detectEmotionalTone(text),
       colorScheme: 'default', // Would analyze image if available
       hasHashtags: (text.match(/#/g) || []).length > 0,
-      hasEmojis: (text.match(/[\u{1F300}-\u{1F9FF}]/gu) || []).length > 0,
+      hasEmojis: (text.match(new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu')) || []).length > 0,
       hasQuestions: text.includes('?'),
       hasMentions: (text.match(/@\w+/g) || []).length > 0,
     };
