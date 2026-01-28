@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Download, Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface StemExportDialogProps {
   open: boolean;
@@ -42,6 +43,20 @@ interface StemExport {
 /**
  * TODO: Add function documentation
  */
+export interface StemExportOptions {
+  trackIds: string[];
+  format: 'wav' | 'mp3' | 'flac';
+  sampleRate: number;
+  bitDepth: number;
+  bitrate: number;
+  normalize: boolean;
+  includeEffects: boolean;
+  keepSpeakerFormat: boolean;
+  includeSends: boolean;
+  preserveVolumePan: boolean;
+  addEffectTail: boolean;
+}
+
 export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDialogProps) {
   const { toast } = useToast();
   const [selectedTracks, setSelectedTracks] = useState<Set<string>>(new Set());
@@ -51,6 +66,10 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
   const [bitrate, setBitrate] = useState(320);
   const [normalize, setNormalize] = useState(true);
   const [includeEffects, setIncludeEffects] = useState(true);
+  const [keepSpeakerFormat, setKeepSpeakerFormat] = useState(true);
+  const [includeSends, setIncludeSends] = useState(false);
+  const [preserveVolumePan, setPreserveVolumePan] = useState(true);
+  const [addEffectTail, setAddEffectTail] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportJobId, setExportJobId] = useState<string | null>(null);
   const [exportStatus, setExportStatus] = useState<StemExport | null>(null);
@@ -142,15 +161,22 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
     setIsExporting(true);
     setExportStatus(null);
 
+    const exportOptions: StemExportOptions = {
+      trackIds: Array.from(selectedTracks),
+      format: exportFormat,
+      sampleRate: exportFormat === 'wav' ? sampleRate : 44100,
+      bitDepth: exportFormat === 'wav' ? bitDepth : 16,
+      bitrate: exportFormat === 'mp3' ? bitrate : 320,
+      normalize,
+      includeEffects,
+      keepSpeakerFormat,
+      includeSends,
+      preserveVolumePan,
+      addEffectTail,
+    };
+
     try {
-      const res = await apiRequest('POST', `/api/studio/projects/${projectId}/export-stems`, {
-        trackIds: Array.from(selectedTracks),
-        exportFormat,
-        sampleRate: exportFormat === 'wav' ? sampleRate : undefined,
-        bitDepth: exportFormat === 'wav' ? bitDepth : undefined,
-        normalize,
-        includeEffects,
-      });
+      const res = await apiRequest('POST', `/api/studio/projects/${projectId}/export-stems`, exportOptions);
 
       const data = await res.json();
       setExportJobId(data.jobId);
@@ -396,35 +422,84 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
 
             <Separator className="bg-gray-700" />
 
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="normalize"
-                  checked={normalize}
-                  onCheckedChange={(checked) => setNormalize(checked as boolean)}
-                />
-                <Label htmlFor="normalize" className="cursor-pointer">
-                  Normalize audio levels
-                </Label>
+            <div className="space-y-4">
+              <div className="text-sm font-medium text-gray-300">Studio One 7 Options</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="normalize"
+                    checked={normalize}
+                    onCheckedChange={(checked) => setNormalize(checked as boolean)}
+                  />
+                  <Label htmlFor="normalize" className="cursor-pointer text-sm">
+                    Normalize audio levels
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="includeEffects"
+                    checked={includeEffects}
+                    onCheckedChange={(checked) => setIncludeEffects(checked as boolean)}
+                  />
+                  <Label htmlFor="includeEffects" className="cursor-pointer text-sm">
+                    Include insert effects
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="keepSpeakerFormat"
+                    checked={keepSpeakerFormat}
+                    onCheckedChange={(checked) => setKeepSpeakerFormat(checked as boolean)}
+                  />
+                  <Label htmlFor="keepSpeakerFormat" className="cursor-pointer text-sm">
+                    Keep Speaker Format
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="includeSends"
+                    checked={includeSends}
+                    onCheckedChange={(checked) => setIncludeSends(checked as boolean)}
+                  />
+                  <Label htmlFor="includeSends" className="cursor-pointer text-sm">
+                    Include Send Returns
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="preserveVolumePan"
+                    checked={preserveVolumePan}
+                    onCheckedChange={(checked) => setPreserveVolumePan(checked as boolean)}
+                  />
+                  <Label htmlFor="preserveVolumePan" className="cursor-pointer text-sm">
+                    Preserve Volume/Pan
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="addTail"
+                    checked={addEffectTail}
+                    onCheckedChange={(checked) => setAddEffectTail(checked as boolean)}
+                  />
+                  <Label htmlFor="addTail" className="cursor-pointer text-sm">
+                    Add Effect Tail (2s)
+                  </Label>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="includeEffects"
-                  checked={includeEffects}
-                  onCheckedChange={(checked) => setIncludeEffects(checked as boolean)}
-                />
-                <Label htmlFor="includeEffects" className="cursor-pointer">
-                  Include track effects and processing
-                </Label>
+              <div className="p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+                <p className="text-xs text-blue-300">
+                  <strong>Tip:</strong> Toggle "Include insert effects" off to export dry stems. 
+                  Use the power button on track headers to quickly disable all inserts before export.
+                </p>
               </div>
             </div>
 
             <Separator className="bg-gray-700" />
 
             <div className="pt-2 space-y-1 text-xs text-gray-400">
-              <p>• Each track will be exported as a separate file</p>
-              <p>• Files will be packaged in a ZIP archive</p>
-              <p>• Original track names will be preserved</p>
+              <p>• Each track exported as separate file (mono tracks stay mono)</p>
+              <p>• Files packaged in ZIP archive with original track names</p>
+              <p>• Insert effects rendered only if option enabled</p>
             </div>
 
             <Button
