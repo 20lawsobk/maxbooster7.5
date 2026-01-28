@@ -75,14 +75,47 @@ export interface GenerationRequest {
 // ============================================================================
 
 const INSTRUMENT_KEYWORDS: Record<InstrumentCategory, string[]> = {
-  drums: ['drum', 'drums', 'beat', 'percussion', 'rhythm', 'groove', 'pattern', 'loop'],
-  bass: ['bass', '808', 'sub', 'low', 'bottom', 'low-end', 'lowend'],
-  synth: ['synth', 'synthesizer', 'lead', 'melody', 'melodic', 'hook'],
-  pad: ['pad', 'ambient', 'atmosphere', 'atmospheric', 'texture', 'drone', 'sustained'],
-  pluck: ['pluck', 'pizzicato', 'stab', 'stabs', 'key', 'keys', 'piano', 'chord', 'chords'],
+  drums: [
+    'drum', 'drums', 'beat', 'rhythm', 'groove', 'pattern', 'loop', 'kit',
+    'acoustic_kit', 'electronic_kit', '808_kit', '909_kit', 'trap_kit', 
+    'jazz_kit', 'rock_kit', 'metal_kit', 'lofi_kit', 'boombap_kit',
+    'drill_kit', 'dnb_kit', 'house_kit', 'techno_kit',
+  ],
+  bass: [
+    'bass', '808', 'sub', 'low', 'bottom', 'low-end', 'lowend',
+    'bass_electric', 'electric bass', 'bass_synth', 'synth bass',
+    'bass_808', '808 bass', 'sub bass', 'bass guitar',
+  ],
+  synth: [
+    'synth', 'synthesizer', 'lead', 'melody', 'melodic', 'hook',
+    'synth_lead', 'synth lead', 'synth_brass', 'synth brass',
+    'electric_piano', 'electric piano', 'organ', 'vibraphone', 
+    'marimba', 'bells', 'kalimba',
+  ],
+  pad: [
+    'pad', 'ambient', 'atmosphere', 'atmospheric', 'texture', 'drone', 'sustained',
+    'synth_pad', 'synth pad', 'strings_ensemble', 'strings ensemble', 'string ensemble',
+    'vocal_choir', 'choir', 'vocal harmony', 'vocal_harmony',
+  ],
+  pluck: [
+    'pluck', 'pizzicato', 'stab', 'stabs', 'key', 'keys', 'chord', 'chords',
+    'piano', 'synth_pluck', 'synth pluck',
+    'guitar', 'guitar_acoustic', 'acoustic guitar', 'guitar_electric', 'electric guitar',
+    'strings_violin', 'violin', 'strings', 'string',
+    'brass_trumpet', 'trumpet', 'brass_trombone', 'trombone', 'brass', 'horn',
+    'woodwind_flute', 'flute', 'woodwind_saxophone', 'saxophone', 'sax', 'woodwind',
+    'vocal_lead', 'vocal lead', 'vocals', 'vocal',
+    'ethnic_sitar', 'sitar', 'ethnic_koto', 'koto', 'ethnic_erhu', 'erhu', 
+    'ethnic_pan_flute', 'pan flute', 'pan_flute',
+  ],
   arp: ['arp', 'arpeggio', 'arpeggiated', 'sequence', 'sequencer'],
   fx: ['fx', 'effect', 'riser', 'sweep', 'impact', 'transition', 'whoosh'],
 };
+
+const PERCUSSION_KEYWORDS: string[] = [
+  'percussion', 'perc', 'congas', 'bongos', 'timbales', 'djembe', 
+  'tabla', 'shaker', 'tambourine', 'cowbell',
+];
 
 const DRUM_TYPE_KEYWORDS: Record<DrumType, string[]> = {
   kick: ['kick', 'bass drum', 'bd', 'boom', 'thump', 'punch'],
@@ -103,12 +136,84 @@ const BASS_TYPE_KEYWORDS: Record<BassType, string[]> = {
 };
 
 const SYNTH_TYPE_KEYWORDS: Record<SynthType, string[]> = {
-  lead: ['lead', 'melody', 'hook', 'solo', 'screaming'],
-  pad: ['pad', 'ambient', 'lush', 'warm', 'floating'],
-  pluck: ['pluck', 'pizz', 'stab', 'short', 'percussive'],
+  lead: [
+    'lead', 'melody', 'hook', 'solo', 'screaming',
+    'synth_lead', 'synth lead', 'vocal_lead', 'vocal lead',
+  ],
+  pad: [
+    'pad', 'ambient', 'lush', 'warm', 'floating',
+    'synth_pad', 'synth pad', 'vocal_choir', 'choir', 
+    'strings_ensemble', 'strings ensemble', 'string ensemble',
+    'vocal_harmony', 'vocal harmony',
+  ],
+  pluck: [
+    'pluck', 'pizz', 'stab', 'short', 'percussive',
+    'synth_pluck', 'synth pluck', 'piano', 'electric_piano', 'electric piano',
+    'vibraphone', 'marimba', 'bells', 'kalimba',
+    'guitar', 'guitar_acoustic', 'acoustic guitar', 'guitar_electric', 'electric guitar',
+    'ethnic_sitar', 'sitar', 'ethnic_koto', 'koto', 'ethnic_erhu', 'erhu',
+  ],
   arp: ['arp', 'arpeggio', 'sequence', 'running'],
-  brass: ['brass', 'horn', 'stab', 'power'],
-  string: ['string', 'strings', 'orchestra', 'cinematic'],
+  brass: [
+    'brass', 'horn', 'stab', 'power',
+    'synth_brass', 'synth brass', 'brass_trumpet', 'trumpet', 
+    'brass_trombone', 'trombone',
+  ],
+  string: [
+    'string', 'strings', 'orchestra', 'cinematic',
+    'strings_violin', 'violin', 'strings_ensemble', 'strings ensemble',
+    'woodwind_flute', 'flute', 'woodwind_saxophone', 'saxophone', 'sax',
+    'ethnic_pan_flute', 'pan flute', 'pan_flute',
+  ],
+};
+
+const DRUM_KIT_STYLES: Record<string, { energy: number; brightness: number; distortion: number }> = {
+  acoustic_kit: { energy: 0.6, brightness: 0.5, distortion: 0 },
+  electronic_kit: { energy: 0.7, brightness: 0.6, distortion: 0.1 },
+  '808_kit': { energy: 0.8, brightness: 0.3, distortion: 0.3 },
+  '909_kit': { energy: 0.7, brightness: 0.6, distortion: 0.15 },
+  trap_kit: { energy: 0.85, brightness: 0.35, distortion: 0.35 },
+  jazz_kit: { energy: 0.4, brightness: 0.5, distortion: 0 },
+  rock_kit: { energy: 0.8, brightness: 0.55, distortion: 0.2 },
+  metal_kit: { energy: 0.95, brightness: 0.6, distortion: 0.4 },
+  lofi_kit: { energy: 0.35, brightness: 0.25, distortion: 0.15 },
+  boombap_kit: { energy: 0.6, brightness: 0.4, distortion: 0.1 },
+  drill_kit: { energy: 0.75, brightness: 0.35, distortion: 0.3 },
+  dnb_kit: { energy: 0.9, brightness: 0.55, distortion: 0.25 },
+  house_kit: { energy: 0.7, brightness: 0.6, distortion: 0.1 },
+  techno_kit: { energy: 0.8, brightness: 0.5, distortion: 0.2 },
+};
+
+const MELODIC_INSTRUMENT_PARAMS: Record<string, { brightness: number; attack: number; decay: number; sustain: number; synthType: SynthType }> = {
+  piano: { brightness: 0.6, attack: 0.01, decay: 0.8, sustain: 0.3, synthType: 'pluck' },
+  electric_piano: { brightness: 0.55, attack: 0.01, decay: 0.6, sustain: 0.4, synthType: 'pluck' },
+  organ: { brightness: 0.5, attack: 0.02, decay: 0.1, sustain: 0.9, synthType: 'pad' },
+  synth_lead: { brightness: 0.7, attack: 0.05, decay: 0.3, sustain: 0.7, synthType: 'lead' },
+  synth_pad: { brightness: 0.4, attack: 0.5, decay: 0.3, sustain: 0.8, synthType: 'pad' },
+  synth_pluck: { brightness: 0.65, attack: 0.005, decay: 0.4, sustain: 0.1, synthType: 'pluck' },
+  synth_brass: { brightness: 0.6, attack: 0.08, decay: 0.2, sustain: 0.75, synthType: 'brass' },
+  guitar_acoustic: { brightness: 0.55, attack: 0.005, decay: 0.6, sustain: 0.2, synthType: 'pluck' },
+  guitar_electric: { brightness: 0.65, attack: 0.01, decay: 0.5, sustain: 0.4, synthType: 'pluck' },
+  bass_electric: { brightness: 0.35, attack: 0.01, decay: 0.4, sustain: 0.5, synthType: 'pluck' },
+  bass_synth: { brightness: 0.4, attack: 0.02, decay: 0.3, sustain: 0.6, synthType: 'lead' },
+  bass_808: { brightness: 0.25, attack: 0.01, decay: 0.8, sustain: 0.3, synthType: 'lead' },
+  strings_violin: { brightness: 0.5, attack: 0.15, decay: 0.2, sustain: 0.8, synthType: 'string' },
+  strings_ensemble: { brightness: 0.45, attack: 0.3, decay: 0.2, sustain: 0.85, synthType: 'pad' },
+  brass_trumpet: { brightness: 0.7, attack: 0.03, decay: 0.15, sustain: 0.8, synthType: 'brass' },
+  brass_trombone: { brightness: 0.55, attack: 0.05, decay: 0.2, sustain: 0.75, synthType: 'brass' },
+  woodwind_flute: { brightness: 0.6, attack: 0.08, decay: 0.15, sustain: 0.7, synthType: 'string' },
+  woodwind_saxophone: { brightness: 0.55, attack: 0.05, decay: 0.2, sustain: 0.75, synthType: 'brass' },
+  vocal_lead: { brightness: 0.5, attack: 0.1, decay: 0.2, sustain: 0.7, synthType: 'lead' },
+  vocal_choir: { brightness: 0.45, attack: 0.4, decay: 0.3, sustain: 0.8, synthType: 'pad' },
+  vibraphone: { brightness: 0.65, attack: 0.01, decay: 0.8, sustain: 0.2, synthType: 'pluck' },
+  marimba: { brightness: 0.55, attack: 0.005, decay: 0.5, sustain: 0.1, synthType: 'pluck' },
+  bells: { brightness: 0.8, attack: 0.005, decay: 1.0, sustain: 0.15, synthType: 'pluck' },
+  kalimba: { brightness: 0.6, attack: 0.005, decay: 0.7, sustain: 0.1, synthType: 'pluck' },
+  ethnic_sitar: { brightness: 0.5, attack: 0.01, decay: 0.9, sustain: 0.2, synthType: 'pluck' },
+  ethnic_koto: { brightness: 0.55, attack: 0.005, decay: 0.6, sustain: 0.15, synthType: 'pluck' },
+  ethnic_erhu: { brightness: 0.45, attack: 0.1, decay: 0.2, sustain: 0.8, synthType: 'string' },
+  ethnic_pan_flute: { brightness: 0.5, attack: 0.1, decay: 0.15, sustain: 0.7, synthType: 'string' },
+  vocal_harmony: { brightness: 0.5, attack: 0.3, decay: 0.3, sustain: 0.75, synthType: 'pad' },
 };
 
 const MOOD_KEYWORDS: Record<string, { brightness: number; energy: number; attack: number }> = {
@@ -205,6 +310,13 @@ class TextTokenizer {
     for (const keywords of Object.values(SYNTH_TYPE_KEYWORDS)) {
       keywords.forEach(w => allWords.add(w.toLowerCase()));
     }
+    // Add percussion keywords
+    PERCUSSION_KEYWORDS.forEach(w => allWords.add(w.toLowerCase()));
+    // Add drum kit styles
+    Object.keys(DRUM_KIT_STYLES).forEach(w => allWords.add(w.toLowerCase()));
+    // Add melodic instrument names
+    Object.keys(MELODIC_INSTRUMENT_PARAMS).forEach(w => allWords.add(w.toLowerCase()));
+    
     Object.keys(MOOD_KEYWORDS).forEach(w => allWords.add(w.toLowerCase()));
     Object.keys(GENRE_TEMPLATES).forEach(w => allWords.add(w.toLowerCase()));
     Object.keys(KEY_ALIASES).forEach(w => allWords.add(w.toLowerCase()));
@@ -473,6 +585,41 @@ class ParameterExtractor {
       }
     }
 
+    // Extract instrument-specific parameters
+    // Check for specific melodic instruments
+    for (const [instrument, instrumentParams] of Object.entries(MELODIC_INSTRUMENT_PARAMS)) {
+      // Check both underscore and space versions
+      const instrumentName = instrument.replace(/_/g, ' ');
+      if (lowerText.includes(instrument) || lowerText.includes(instrumentName)) {
+        params.brightness = instrumentParams.brightness;
+        params.attack = instrumentParams.attack;
+        params.decay = instrumentParams.decay;
+        params.darkness = 1 - params.brightness;
+        break;
+      }
+    }
+    
+    // Check for specific drum kit styles
+    for (const [kit, kitParams] of Object.entries(DRUM_KIT_STYLES)) {
+      const kitName = kit.replace(/_/g, ' ');
+      if (lowerText.includes(kit) || lowerText.includes(kitName)) {
+        params.energy = kitParams.energy;
+        params.brightness = kitParams.brightness;
+        params.distortion = kitParams.distortion;
+        params.darkness = 1 - params.brightness;
+        break;
+      }
+    }
+    
+    // Check for percussion keywords
+    for (const percKeyword of PERCUSSION_KEYWORDS) {
+      if (lowerText.includes(percKeyword)) {
+        params.attack = 0.01;
+        params.decay = 0.4;
+        break;
+      }
+    }
+
     // Specific parameter keywords
     if (lowerText.includes('short') || lowerText.includes('tight')) {
       params.decay *= 0.5;
@@ -500,6 +647,18 @@ class ParameterExtractor {
     }
 
     return params;
+  }
+  
+  // Get specific instrument parameters for synthesis
+  getInstrumentParams(instrumentType: string): typeof MELODIC_INSTRUMENT_PARAMS[keyof typeof MELODIC_INSTRUMENT_PARAMS] | null {
+    const normalizedType = instrumentType.toLowerCase().replace(/\s+/g, '_');
+    return MELODIC_INSTRUMENT_PARAMS[normalizedType] || null;
+  }
+  
+  // Get drum kit style parameters
+  getDrumKitParams(kitType: string): typeof DRUM_KIT_STYLES[keyof typeof DRUM_KIT_STYLES] | null {
+    const normalizedType = kitType.toLowerCase().replace(/\s+/g, '_');
+    return DRUM_KIT_STYLES[normalizedType] || null;
   }
 }
 
