@@ -2,11 +2,15 @@ import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 import { aiModelManager } from './aiModelManager.js';
 import { autoPostingService, type PostContent } from './autoPostingService.js';
+import { contentQualityPipeline, type ContentVariant, type ContentScores } from './contentQualityPipeline';
+import { dynamicTrendsService } from './dynamicTrendsService';
+import { aiTranslationService, type TranslatedContent } from './aiTranslationService';
 
 /**
- * Auto-Post Generator Service
- * Generates AI-optimized content and automatically posts it
- * Integrates both Social Media Autopilot and Advertising Autopilot AI v3.0
+ * Auto-Post Generator Service v2.0
+ * AI-optimized content generation with quality scoring, variant selection,
+ * platform optimization, and multilingual support.
+ * Integrates ContentQualityPipeline for 3-5x variant generation and scoring.
  */
 
 export interface ContentGenerationRequest {
@@ -18,6 +22,9 @@ export interface ContentGenerationRequest {
   includeHashtags?: boolean;
   includeMentions?: boolean;
   mediaType?: 'text' | 'audio' | 'image' | 'photo' | 'video' | 'carousel';
+  generateVariants?: number;
+  targetLanguages?: string[];
+  genre?: string;
 }
 
 export interface GeneratedContent {
@@ -30,10 +37,13 @@ export interface GeneratedContent {
   viralScore?: number;
   expectedReach?: number;
   expectedEngagement?: number;
-  generatedBy: 'social_autopilot' | 'advertising_autopilot';
+  generatedBy: 'social_autopilot' | 'advertising_autopilot' | 'quality_pipeline';
   platforms: string[];
   optimalPostingTime: Date;
-  mediaGuidance?: string; // Guidance for what media content to create
+  mediaGuidance?: string;
+  qualityScores?: ContentScores;
+  variants?: ContentVariant[];
+  translations?: TranslatedContent[];
 }
 
 class AutoPostGenerator {
@@ -54,7 +64,165 @@ class AutoPostGenerator {
   }
 
   /**
-   * Generate content using Social Media Autopilot AI
+   * Generate high-quality content using ContentQualityPipeline v2.0
+   * - Generates multiple variants with scoring
+   * - Selects best variant based on quality metrics
+   * - Includes platform optimization and hashtag optimization
+   * - Supports multilingual translations
+   */
+  async generateEnhancedContent(
+    userId: string,
+    request: ContentGenerationRequest
+  ): Promise<GeneratedContent> {
+    const platforms = request.platforms || ['instagram'];
+    const primaryPlatform = platforms[0];
+    
+    try {
+      const variantCount = request.generateVariants || 3;
+      const { selected, variants, context } = await contentQualityPipeline.generateAndSelect(
+        userId,
+        {
+          topic: request.topic || 'new music',
+          objective: request.objective || 'engagement',
+          platform: primaryPlatform,
+          tone: request.tone,
+          targetAudience: request.targetAudience,
+          genre: request.genre,
+        },
+        variantCount,
+        55
+      );
+
+      if (!selected) {
+        logger.warn('No variant met quality threshold, falling back to legacy generation');
+        return this.generateSocialContent(userId, request);
+      }
+
+      const trendingHashtags = await dynamicTrendsService.getOptimizedHashtags(
+        primaryPlatform,
+        request.genre,
+        request.objective,
+        request.includeHashtags !== false ? 8 : 0
+      );
+
+      const combinedHashtags = request.includeHashtags !== false
+        ? [...new Set([...selected.hashtags, ...trendingHashtags.map(h => h.hashtag)])].slice(0, 12)
+        : [];
+
+      let translations: TranslatedContent[] | undefined;
+      if (request.targetLanguages && request.targetLanguages.length > 0) {
+        translations = await aiTranslationService.translateContent({
+          content: selected.content,
+          headline: selected.headline,
+          hashtags: combinedHashtags,
+          targetLanguages: request.targetLanguages,
+          preserveTone: true,
+          adaptForPlatform: primaryPlatform,
+        });
+      }
+
+      const now = new Date();
+      const optimalHour = this.getOptimalPostingHour(platforms);
+      const optimalTime = new Date(now);
+      optimalTime.setHours(optimalHour, 0, 0, 0);
+      if (optimalTime < now) {
+        optimalTime.setDate(optimalTime.getDate() + 1);
+      }
+
+      const mediaType = this.normalizeMediaType(request.mediaType || 'image');
+      const mediaGuidance = this.generateMediaGuidance(mediaType, request.topic || 'new music', request.objective || 'engagement');
+
+      logger.info(`Generated enhanced content for ${userId}: score=${selected.scores.overall.toFixed(1)}, variants=${variants.length}`);
+
+      return {
+        headline: selected.headline,
+        body: selected.content,
+        hashtags: combinedHashtags,
+        mentions: [],
+        mediaType,
+        callToAction: selected.callToAction,
+        viralScore: selected.scores.engagement / 100,
+        expectedReach: Math.round(selected.scores.overall * 100),
+        expectedEngagement: selected.scores.engagement,
+        generatedBy: 'quality_pipeline',
+        platforms,
+        optimalPostingTime: optimalTime,
+        mediaGuidance,
+        qualityScores: selected.scores,
+        variants,
+        translations,
+      };
+    } catch (error) {
+      logger.error('Enhanced content generation failed, falling back:', error);
+      return this.generateSocialContent(userId, request);
+    }
+  }
+
+  /**
+   * Generate content with A/B testing variants
+   * Returns multiple content options for split testing
+   */
+  async generateABTestVariants(
+    userId: string,
+    request: ContentGenerationRequest,
+    variantCount: number = 3
+  ): Promise<{ variants: ContentVariant[]; recommended: ContentVariant | null }> {
+    const primaryPlatform = (request.platforms || ['instagram'])[0];
+    
+    const { selected, variants } = await contentQualityPipeline.generateAndSelect(
+      userId,
+      {
+        topic: request.topic || 'new music',
+        objective: request.objective || 'engagement',
+        platform: primaryPlatform,
+        tone: request.tone,
+        genre: request.genre,
+      },
+      variantCount,
+      50
+    );
+
+    return { variants, recommended: selected };
+  }
+
+  /**
+   * Generate multilingual content for global reach
+   */
+  async generateMultilingualContent(
+    userId: string,
+    request: ContentGenerationRequest,
+    languages: string[]
+  ): Promise<{ primary: GeneratedContent; translations: TranslatedContent[] }> {
+    const primary = await this.generateEnhancedContent(userId, request);
+    
+    const translations = await aiTranslationService.translateContent({
+      content: primary.body,
+      headline: primary.headline,
+      hashtags: primary.hashtags,
+      targetLanguages: languages,
+      preserveTone: true,
+    });
+
+    return { primary, translations };
+  }
+
+  /**
+   * Get trending topics and hashtags for a platform
+   */
+  async getTrendingForPlatform(
+    platform: string,
+    genre?: string
+  ): Promise<{ topics: any[]; hashtags: any[] }> {
+    const [topics, hashtags] = await Promise.all([
+      dynamicTrendsService.getTrendingTopics(platform, genre),
+      dynamicTrendsService.getOptimizedHashtags(platform, genre, undefined, 15),
+    ]);
+
+    return { topics, hashtags };
+  }
+
+  /**
+   * Generate content using Social Media Autopilot AI (legacy method)
    */
   async generateSocialContent(
     userId: string,

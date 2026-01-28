@@ -317,43 +317,69 @@ export class AIContentService {
 
   async generateMultilingualContent(
     prompt: string,
-    targetLanguages: string[]
+    targetLanguages: string[],
+    options?: { headline?: string; hashtags?: string[]; platform?: string }
   ): Promise<MultilingualContent[]> {
     const startTime = Date.now();
-    const results: MultilingualContent[] = [];
-
-    for (const lang of targetLanguages) {
-      const template = this.languageTemplates[lang];
-      if (!template) continue;
-
-      const culturalAdaptations = this.getCulturalAdaptations(lang, prompt);
-      let translatedContent = this.translateContent(prompt, lang);
-
-      results.push({
-        language: template.name,
-        content: translatedContent,
-        culturalAdaptations,
+    
+    try {
+      const { aiTranslationService } = await import('./aiTranslationService');
+      
+      const translations = await aiTranslationService.translateContent({
+        content: prompt,
+        headline: options?.headline,
+        hashtags: options?.hashtags || [],
+        targetLanguages,
+        preserveTone: true,
+        adaptForPlatform: options?.platform,
       });
+
+      const results: MultilingualContent[] = translations.map(t => ({
+        language: t.language,
+        content: t.content,
+        culturalAdaptations: t.culturalNotes,
+      }));
+
+      const executionTimeMs = Date.now() - startTime;
+      const inferenceId = await this.logInference(
+        'multilingual',
+        { prompt, targetLanguages },
+        { results, count: results.length, avgConfidence: translations.reduce((sum, t) => sum + t.confidence, 0) / translations.length },
+        undefined,
+        executionTimeMs
+      );
+
+      if (inferenceId) {
+        const avgConfidence = translations.length > 0 
+          ? translations.reduce((sum, t) => sum + t.confidence, 0) / translations.length 
+          : 0;
+        await this.logExplanation(inferenceId, {
+          text: `AI-translated content into ${targetLanguages.length} languages with cultural adaptations and music terminology`,
+          features: { languages: targetLanguages.length / 10, musicTerms: 0.3, culturalAdaptation: 0.3 },
+          confidence: avgConfidence / 100,
+        });
+      }
+
+      return results;
+    } catch (error) {
+      logger.error('Enhanced translation failed, using legacy:', error);
+      
+      const results: MultilingualContent[] = [];
+      for (const lang of targetLanguages) {
+        const template = this.languageTemplates[lang];
+        if (!template) continue;
+
+        const culturalAdaptations = this.getCulturalAdaptations(lang, prompt);
+        let translatedContent = this.translateContent(prompt, lang);
+
+        results.push({
+          language: template.name,
+          content: translatedContent,
+          culturalAdaptations,
+        });
+      }
+      return results;
     }
-
-    const executionTimeMs = Date.now() - startTime;
-    const inferenceId = await this.logInference(
-      'multilingual',
-      { prompt, targetLanguages },
-      { results, count: results.length },
-      undefined,
-      executionTimeMs
-    );
-
-    if (inferenceId) {
-      await this.logExplanation(inferenceId, {
-        text: `Translated content into ${targetLanguages.length} languages with cultural adaptations`,
-        features: { languages: targetLanguages.length / 10, complexity: 0.5 },
-        confidence: 0.88,
-      });
-    }
-
-    return results;
   }
 
   private translateContent(content: string, targetLang: string): string {
@@ -639,86 +665,83 @@ export class AIContentService {
     }
   }
 
-  async getTrendingTopics(platform: string, region?: string): Promise<TrendingTopic[]> {
+  async getTrendingTopics(platform: string, region?: string, genre?: string): Promise<TrendingTopic[]> {
     const startTime = Date.now();
 
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const month = now.getMonth();
-    const hour = now.getHours();
+    try {
+      const { dynamicTrendsService } = await import('./dynamicTrendsService');
+      
+      const dynamicTrends = await dynamicTrendsService.getTrendingTopics(platform, genre, region);
+      
+      const trends: TrendingTopic[] = dynamicTrends.map(t => ({
+        topic: t.topic,
+        category: t.category,
+        popularity: t.popularity,
+        hashtags: t.hashtags,
+        region: t.region,
+      }));
 
-    const trends: TrendingTopic[] = [];
+      const executionTimeMs = Date.now() - startTime;
+      const inferenceId = await this.logInference(
+        'trendDetector',
+        { platform, region, genre },
+        { trends, count: trends.length, source: 'dynamicTrendsService' },
+        undefined,
+        executionTimeMs
+      );
 
-    if (dayOfWeek === 5 || dayOfWeek === 6) {
-      trends.push({
-        topic: 'Weekend Vibes',
-        category: 'social',
-        popularity: 85,
-        hashtags: ['#WeekendVibes', '#TGIF', '#WeekendMusic'],
-      });
+      if (inferenceId) {
+        await this.logExplanation(inferenceId, {
+          text: `Detected ${trends.length} trending topics for ${platform}${genre ? ` in ${genre}` : ''} using dynamic trends engine`,
+          features: { platform: 0.25, genre: 0.25, dayOfWeek: 0.25, season: 0.25 },
+          confidence: 0.92,
+        });
+      }
+
+      return trends;
+    } catch (error) {
+      logger.error('Dynamic trends failed, using fallback:', error);
+      
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const month = now.getMonth();
+
+      const trends: TrendingTopic[] = [];
+
+      if (dayOfWeek === 5 || dayOfWeek === 6) {
+        trends.push({
+          topic: 'Weekend Vibes',
+          category: 'social',
+          popularity: 85,
+          hashtags: ['#WeekendVibes', '#TGIF', '#WeekendMusic'],
+        });
+      }
+
+      if (month === 11) {
+        trends.push({
+          topic: 'Year in Review',
+          category: 'holiday',
+          popularity: 90,
+          hashtags: ['#2026Wrapped', '#YearInReview', '#BestOf2026'],
+        });
+      }
+
+      const musicTrends = [
+        { topic: 'New Music Friday', category: 'music' as const, popularity: 80, hashtags: ['#NewMusicFriday', '#NewMusic', '#MusicRelease'] },
+        { topic: 'Throwback Thursday', category: 'social' as const, popularity: 75, hashtags: ['#ThrowbackThursday', '#TBT', '#ClassicHits'] },
+        { topic: 'Independent Artists', category: 'industry' as const, popularity: 70, hashtags: ['#IndieMusic', '#IndependentArtist', '#SupportIndieMusic'] },
+      ];
+
+      if (dayOfWeek === 5) trends.push(musicTrends[0]);
+      if (dayOfWeek === 4) trends.push(musicTrends[1]);
+      trends.push(musicTrends[2]);
+
+      if (platform === 'tiktok') {
+        trends.push({ topic: 'Viral Dance Challenge', category: 'social', popularity: 95, hashtags: ['#DanceChallenge', '#ViralDance', '#TikTokDance'] });
+      }
+
+      return trends;
     }
-
-    if (month === 11) {
-      trends.push({
-        topic: 'Year in Review',
-        category: 'holiday',
-        popularity: 90,
-        hashtags: ['#2025Wrapped', '#YearInReview', '#BestOf2025'],
-      });
-    }
-
-    const musicTrends = [
-      {
-        topic: 'New Music Friday',
-        category: 'music' as const,
-        popularity: 80,
-        hashtags: ['#NewMusicFriday', '#NewMusic', '#MusicRelease'],
-      },
-      {
-        topic: 'Throwback Thursday',
-        category: 'social' as const,
-        popularity: 75,
-        hashtags: ['#ThrowbackThursday', '#TBT', '#ClassicHits'],
-      },
-      {
-        topic: 'Independent Artists',
-        category: 'industry' as const,
-        popularity: 70,
-        hashtags: ['#IndieMusic', '#IndependentArtist', '#SupportIndieMusic'],
-      },
-    ];
-
-    if (dayOfWeek === 5) trends.push(musicTrends[0]);
-    if (dayOfWeek === 4) trends.push(musicTrends[1]);
-    trends.push(musicTrends[2]);
-
-    if (platform === 'tiktok') {
-      trends.push({
-        topic: 'Viral Dance Challenge',
-        category: 'social',
-        popularity: 95,
-        hashtags: ['#DanceChallenge', '#ViralDance', '#TikTokDance'],
-      });
-    }
-
-    const executionTimeMs = Date.now() - startTime;
-    const inferenceId = await this.logInference(
-      'trendDetector',
-      { platform, region, dayOfWeek, month, hour },
-      { trends, count: trends.length },
-      undefined,
-      executionTimeMs
-    );
-
-    if (inferenceId) {
-      await this.logExplanation(inferenceId, {
-        text: `Detected ${trends.length} trending topics for ${platform}`,
-        features: { platform: 0.3, timeOfDay: 0.2, dayOfWeek: 0.3, season: 0.2 },
-        confidence: 0.87,
-      });
-    }
-
-    return trends;
   }
 
   async generateTrendingContent(topic: string, platform: string): Promise<string> {
