@@ -183,18 +183,18 @@ export function StudioOneLayout({
             </>
           )}
           
-          {/* Mobile: Overlay panels - z-[60] to be above navigation sidebar */}
+          {/* Mobile: Overlay panels - same layer as other interface elements */}
           {isMobileMode && mobileActivePanel === 'inspector' && inspectorPanel.visible && inspector && (
             <>
               <div 
-                className="fixed inset-0 bg-black/50 z-[55]"
+                className="absolute inset-0 bg-black/50 z-10"
                 onClick={() => {
                   setMobileActivePanel(null);
                   setPanelVisibility('inspector', false);
                 }}
               />
               <div 
-                className="fixed left-0 top-0 bottom-0 z-[60] border-r overflow-hidden animate-in slide-in-from-left duration-200"
+                className="absolute left-0 top-0 bottom-0 z-20 border-r overflow-hidden animate-in slide-in-from-left duration-200"
                 style={{ 
                   width: panelConfig.inspectorWidth,
                   background: studioOneTheme.colors.bg.panel,
@@ -209,14 +209,14 @@ export function StudioOneLayout({
           {isMobileMode && mobileActivePanel === 'browser' && browserPanel.visible && browser && (
             <>
               <div 
-                className="fixed inset-0 bg-black/50 z-[55]"
+                className="absolute inset-0 bg-black/50 z-10"
                 onClick={() => {
                   setMobileActivePanel(null);
                   setPanelVisibility('browser', false);
                 }}
               />
               <div 
-                className="fixed right-0 top-0 bottom-0 z-[60] border-l overflow-hidden animate-in slide-in-from-right duration-200"
+                className="absolute right-0 top-0 bottom-0 z-20 border-l overflow-hidden animate-in slide-in-from-right duration-200"
                 style={{ 
                   width: panelConfig.browserWidth,
                   background: studioOneTheme.colors.bg.panel,
