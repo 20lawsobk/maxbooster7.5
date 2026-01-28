@@ -6,6 +6,7 @@ import { discoveryAlgorithmService } from '../services/discoveryAlgorithmService
 import { marketplaceService } from '../services/marketplaceService';
 import { storage } from '../storage';
 import { storageService } from '../services/storageService';
+import { notificationService } from '../services/notificationService';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -776,6 +777,44 @@ router.post('/upload', upload.fields([
         },
       ],
     });
+
+    // Notify followers about the new beat upload (async, non-blocking)
+    (async () => {
+      try {
+        const producerId = req.user!.id;
+        const producerName = (req.user as any)?.firstName || (req.user as any)?.username || 'A producer you follow';
+        const followers = await discoveryAlgorithmService.getProducerFollowers(producerId);
+        
+        if (followers.length > 0) {
+          logger.info(`Notifying ${followers.length} followers about new beat: ${title}`);
+          
+          // Send notifications in parallel batches of 10
+          const batchSize = 10;
+          for (let i = 0; i < followers.length; i += batchSize) {
+            const batch = followers.slice(i, i + batchSize);
+            await Promise.all(batch.map(followerId => 
+              notificationService.send({
+                userId: followerId,
+                type: 'marketing',
+                title: 'New Beat Alert!',
+                message: `${producerName} just dropped a new beat: "${title}". Check it out now!`,
+                link: `/marketplace/beat/${listing.id}`,
+                metadata: {
+                  beatId: listing.id,
+                  producerId,
+                  beatTitle: title,
+                  genre,
+                },
+              }).catch(err => logger.error(`Failed to notify follower ${followerId}:`, err))
+            ));
+          }
+          
+          logger.info(`Successfully notified ${followers.length} followers about new beat`);
+        }
+      } catch (notifyError) {
+        logger.error('Error notifying followers about new beat:', notifyError);
+      }
+    })();
 
     res.status(201).json(listing);
   } catch (error: any) {

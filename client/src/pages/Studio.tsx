@@ -108,6 +108,7 @@ import { StudioBrowser } from '@/components/studio/StudioBrowser';
 import { StudioDock } from '@/components/studio/StudioDock';
 import { useMarkers } from '@/hooks/useMarkers';
 import { useStudioStore } from '@/lib/studioStore';
+import { useStudioLayoutStore } from '@/lib/studioLayoutStore';
 import { TransportBar } from '@/components/studio/TransportBar';
 import { BrowserPanel } from '@/components/studio/BrowserPanel';
 import { FileUploadZone } from '@/components/studio/FileUploadZone';
@@ -247,6 +248,10 @@ export default function Studio() {
   const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
   const [redoStack, setRedoStack] = useState<UndoAction[]>([]);
 
+  // Use layout store for panel visibility (inspector, browser, etc)
+  const { togglePanel, inspectorPanel } = useStudioLayoutStore();
+  const toggleInspectorPanel = useCallback(() => togglePanel('inspector'), [togglePanel]);
+  
   // Use Zustand store for zoom and other timeline state
   const {
     zoom,
@@ -1261,7 +1266,7 @@ export default function Studio() {
       }
       if (e.key === 'i' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
-        toggleInspector();
+        toggleInspectorPanel();
         return;
       }
       if (e.key === 'y' && !e.ctrlKey && !e.metaKey) {
@@ -1593,11 +1598,11 @@ export default function Studio() {
       // Select the track
       setSelectedTrack(trackId);
       // Show inspector panel if not visible
-      if (!inspectorVisible) {
-        toggleInspector();
+      if (!inspectorPanel.visible) {
+        toggleInspectorPanel();
       }
     },
-    [inspectorVisible, toggleInspector]
+    [inspectorPanel.visible, toggleInspectorPanel]
   );
 
   const handleTrackCreatedFromUpload = useCallback(
@@ -1893,7 +1898,7 @@ export default function Studio() {
     },
     {
       key: 'i',
-      handler: () => toggleInspector(),
+      handler: () => toggleInspectorPanel(),
       description: 'Toggle Inspector Panel',
     },
     {
@@ -2124,11 +2129,11 @@ export default function Studio() {
         if (selectedTrack) {
           const track = displayTracks.find((t) => t.id === selectedTrack);
           if (track) {
-            toggleInspector();
+            toggleInspectorPanel();
             announce(`Inspector panel for ${track.name}`);
           }
         } else {
-          toggleInspector();
+          toggleInspectorPanel();
           announce('Inspector panel toggled');
         }
       },
@@ -2448,13 +2453,13 @@ export default function Studio() {
             trackMeterLevels={controller.trackMeterLevels}
             masterMeterLevels={controller.masterMeterLevels}
             selectedTrackId={selectedTrack || undefined}
-            inspectorVisible={inspectorVisible}
+            inspectorVisible={inspectorPanel.visible}
             browserVisible={browserVisible}
             consoleVisible={true}
             bpm={controller.transport.tempo}
             pixelsPerBar={Math.round(zoom * 100)}
             scrollOffset={0}
-            onInspectorVisibleChange={toggleInspector}
+            onInspectorVisibleChange={toggleInspectorPanel}
             onBrowserVisibleChange={toggleBrowser}
             onConsoleVisibleChange={() => {}}
             onTrackVolumeChange={(trackId, volume) => handleTrackUpdate(trackId, { volume })}
@@ -2545,7 +2550,7 @@ export default function Studio() {
                   onClipUpdate={(clipId, updates) => handleClipUpdate(clipId, updates as any)}
                   plugins={selectedTrack ? getTrackPlugins(selectedTrack) : []}
                   onPluginsChange={selectedTrack ? (plugins) => handleTrackPluginsChange(selectedTrack, plugins) : undefined}
-                  onClose={toggleInspector}
+                  onClose={toggleInspectorPanel}
                 />
               }
               timeline={

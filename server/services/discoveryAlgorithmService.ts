@@ -302,6 +302,22 @@ export class DiscoveryAlgorithmService {
     }
   }
 
+  async getProducerFollowers(producerId: string): Promise<string[]> {
+    try {
+      // Use SQL array containment operator for efficient database-level filtering
+      const result = await db.execute(
+        sql`SELECT user_id FROM user_taste_profiles 
+            WHERE followed_producers @> ARRAY[${producerId}]::text[]`
+      );
+      
+      const followers = (result.rows || []).map((row: any) => row.user_id as string);
+      return followers;
+    } catch (error) {
+      logger.error('Error getting producer followers:', error);
+      return [];
+    }
+  }
+
   async getTasteInsights(userId: string) {
     try {
       const profile = await this.getOrCreateTasteProfile(userId);
