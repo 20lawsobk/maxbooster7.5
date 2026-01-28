@@ -126,9 +126,9 @@ export function StudioTopBar({
 
   return (
     <>
-      <div className={`h-full ${isMobile ? 'px-2 py-1' : 'px-6'} flex items-center justify-between gap-2 md:gap-6`}>
+      <div className={`h-full ${isMobile ? 'px-2 py-1' : 'px-4'} flex flex-wrap items-center justify-between gap-1.5 md:gap-4 overflow-hidden`}>
         {/* Left: Project Controls */}
-        <div className="flex items-center gap-1 md:gap-3 flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-1 md:gap-2 min-w-0">
           <Select value={selectedProject?.id || ''} onValueChange={onProjectChange}>
             <SelectTrigger
               className={`${isMobile ? 'w-[120px]' : 'w-[220px]'} h-9 text-sm font-medium`}

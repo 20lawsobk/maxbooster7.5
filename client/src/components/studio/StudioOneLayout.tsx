@@ -138,7 +138,7 @@ export function StudioOneLayout({
           <div 
             className="shrink-0 border-b"
             style={{ 
-              height: panelConfig.toolbarHeight,
+              minHeight: panelConfig.toolbarHeight,
               background: studioOneTheme.colors.bg.secondary,
               borderColor: studioOneTheme.colors.border.primary,
             }}
@@ -183,18 +183,18 @@ export function StudioOneLayout({
             </>
           )}
           
-          {/* Mobile: Overlay panels */}
+          {/* Mobile: Overlay panels - z-[60] to be above navigation sidebar */}
           {isMobileMode && mobileActivePanel === 'inspector' && inspectorPanel.visible && inspector && (
             <>
               <div 
-                className="absolute inset-0 bg-black/50 z-40"
+                className="fixed inset-0 bg-black/50 z-[55]"
                 onClick={() => {
                   setMobileActivePanel(null);
                   setPanelVisibility('inspector', false);
                 }}
               />
               <div 
-                className="absolute left-0 top-0 bottom-0 z-50 border-r overflow-hidden animate-in slide-in-from-left duration-200"
+                className="fixed left-0 top-0 bottom-0 z-[60] border-r overflow-hidden animate-in slide-in-from-left duration-200"
                 style={{ 
                   width: panelConfig.inspectorWidth,
                   background: studioOneTheme.colors.bg.panel,
@@ -209,14 +209,14 @@ export function StudioOneLayout({
           {isMobileMode && mobileActivePanel === 'browser' && browserPanel.visible && browser && (
             <>
               <div 
-                className="absolute inset-0 bg-black/50 z-40"
+                className="fixed inset-0 bg-black/50 z-[55]"
                 onClick={() => {
                   setMobileActivePanel(null);
                   setPanelVisibility('browser', false);
                 }}
               />
               <div 
-                className="absolute right-0 top-0 bottom-0 z-50 border-l overflow-hidden animate-in slide-in-from-right duration-200"
+                className="fixed right-0 top-0 bottom-0 z-[60] border-l overflow-hidden animate-in slide-in-from-right duration-200"
                 style={{ 
                   width: panelConfig.browserWidth,
                   background: studioOneTheme.colors.bg.panel,
