@@ -41,6 +41,7 @@ export interface ParsedIntent {
   category: InstrumentCategory;
   subType: string;
   confidence: number;
+  instrument?: string;
 }
 
 export interface ExtractedParameters {
@@ -486,9 +487,31 @@ class IntentClassifier {
     // Calculate confidence
     const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
     const confidence = totalScore > 0 ? maxScore / totalScore : 0.5;
+    
+    // Detect specific instrument name
+    let detectedInstrument: string | undefined;
+    for (const instrumentName of Object.keys(MELODIC_INSTRUMENT_PARAMS)) {
+      const spacedName = instrumentName.replace(/_/g, ' ');
+      if (lowerText.includes(instrumentName) || lowerText.includes(spacedName)) {
+        detectedInstrument = instrumentName;
+        break;
+      }
+    }
+    
+    // Also check drum kit styles for drums
+    if (bestCategory === 'drums' && !detectedInstrument) {
+      for (const kitName of Object.keys(DRUM_KIT_STYLES)) {
+        const spacedName = kitName.replace(/_/g, ' ');
+        if (lowerText.includes(kitName) || lowerText.includes(spacedName)) {
+          detectedInstrument = kitName;
+          break;
+        }
+      }
+    }
 
     return {
       category: bestCategory,
+      instrument: detectedInstrument,
       subType: subType === 'default' ? this.getDefaultSubType(bestCategory) : subType,
       confidence: Math.min(confidence, 0.95),
     };

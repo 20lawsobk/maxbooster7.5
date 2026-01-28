@@ -542,7 +542,15 @@ export class PatternRenderer {
     pattern: MelodicPattern,
     tempo: number,
     type: 'lead' | 'pad' | 'pluck' = 'lead',
-    preset: string = 'classic'
+    preset: string = 'classic',
+    instrumentParams?: {
+      brightness: number;
+      attack: number;
+      decay: number;
+      sustain?: number;
+      synthType?: 'sine' | 'square' | 'sawtooth' | 'triangle';
+      instrumentName?: string;
+    }
   ): Float32Array {
     const samplesPerBeat = Math.floor(this.sampleRate * 60 / tempo);
     const totalBeats = pattern.steps / 4;
@@ -551,23 +559,32 @@ export class PatternRenderer {
 
     for (const note of pattern.notes) {
       const startSample = Math.floor(note.time * samplesPerBeat);
-      const duration = note.duration * 60 / tempo; // Convert to seconds
+      const duration = note.duration * 60 / tempo;
       
-      const synthSound = this.synth.generateSynth(
-        note.note,
-        note.octave,
-        type,
-        preset,
-        Math.max(0.1, duration)
-      );
+      let synthSound: Float32Array;
+      
+      if (instrumentParams) {
+        synthSound = this.synth.generateSynthWithInstrumentParams(
+          note.note,
+          note.octave,
+          instrumentParams,
+          Math.max(0.1, duration)
+        );
+      } else {
+        synthSound = this.synth.generateSynth(
+          note.note,
+          note.octave,
+          type,
+          preset,
+          Math.max(0.1, duration)
+        );
+      }
 
-      // Mix into output
       for (let i = 0; i < synthSound.length && startSample + i < totalSamples; i++) {
         output[startSample + i] += synthSound[i] * note.velocity;
       }
     }
 
-    // Normalize
     let maxAmp = 0;
     for (let i = 0; i < output.length; i++) {
       maxAmp = Math.max(maxAmp, Math.abs(output[i]));

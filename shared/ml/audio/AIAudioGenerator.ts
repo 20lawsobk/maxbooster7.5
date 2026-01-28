@@ -273,20 +273,28 @@ export class AIAudioGenerator {
           parsed.intent.subType as 'lead' | 'pad' | 'arp'
         );
         patterns.melody = melodicPattern;
+        
+        const instrumentParams = {
+          brightness: parsed.params.brightness,
+          attack: parsed.params.attack,
+          decay: parsed.params.decay,
+          sustain: 0.6,
+          instrumentName: parsed.intent.instrument || parsed.intent.subType || 'synth_lead',
+        };
+        
         audioData = this.patternRenderer.renderMelodicPattern(
           melodicPattern,
           config.tempo,
           parsed.intent.subType as 'lead' | 'pad' | 'pluck',
-          parsed.params.brightness > 0.6 ? 'supersaw' : 'classic'
+          parsed.params.brightness > 0.6 ? 'supersaw' : 'classic',
+          instrumentParams
         );
         break;
       }
       
       default: {
-        // Full beat/loop generation
         type = 'full_beat';
         
-        // Generate all patterns
         const drumPattern = generateDrumPattern(config);
         const bassPattern = generateBassPattern(config);
         const melodicPattern = generateMelodicPattern(config, 'lead');
@@ -295,7 +303,14 @@ export class AIAudioGenerator {
         patterns.bass = bassPattern;
         patterns.melody = melodicPattern;
         
-        // Render each
+        const instrumentParams = {
+          brightness: parsed.params.brightness,
+          attack: parsed.params.attack,
+          decay: parsed.params.decay,
+          sustain: 0.6,
+          instrumentName: parsed.intent.instrument || 'synth_lead',
+        };
+        
         const drumAudio = this.patternRenderer.renderDrumPattern(
           drumPattern, 
           config.tempo, 
@@ -308,13 +323,14 @@ export class AIAudioGenerator {
         const melodyAudio = this.patternRenderer.renderMelodicPattern(
           melodicPattern, 
           config.tempo, 
-          'lead'
+          'lead',
+          'classic',
+          instrumentParams
         );
         
-        // Mix together
         audioData = this.patternRenderer.mixPatterns(
           [drumAudio, bassAudio, melodyAudio],
-          [1.0, 0.8, 0.6] // Gains
+          [1.0, 0.8, 0.6]
         );
       }
     }

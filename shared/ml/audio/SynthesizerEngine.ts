@@ -1056,6 +1056,118 @@ export class SynthesizerEngine {
     return synthesizeSynth(params, note, octave, { sampleRate: this.sampleRate, duration, tempo: 120 });
   }
   
+  generateSynthWithInstrumentParams(
+    note: string,
+    octave: number,
+    instrumentParams: {
+      brightness: number;
+      attack: number;
+      decay: number;
+      sustain?: number;
+      synthType?: 'sine' | 'square' | 'sawtooth' | 'triangle';
+      instrumentName?: string;
+    },
+    duration: number = 1
+  ): Float32Array {
+    const { brightness, attack, decay, sustain = 0.6, synthType = 'sawtooth', instrumentName } = instrumentParams;
+    
+    const cutoff = 500 + brightness * 7500;
+    const resonance = 1 + brightness * 6;
+    
+    let oscType: OscillatorType = synthType;
+    let secondOscType: OscillatorType = 'triangle';
+    let detuneAmount = 7;
+    let unisonVoices = 1;
+    let unisonDetune = 0;
+    
+    if (instrumentName) {
+      const name = instrumentName.toLowerCase();
+      if (name.includes('piano') || name.includes('electric_piano')) {
+        oscType = 'triangle';
+        secondOscType = 'sine';
+        detuneAmount = 2;
+      } else if (name.includes('organ')) {
+        oscType = 'square';
+        secondOscType = 'sine';
+        unisonVoices = 3;
+        unisonDetune = 5;
+      } else if (name.includes('violin') || name.includes('strings') || name.includes('cello')) {
+        oscType = 'sawtooth';
+        secondOscType = 'triangle';
+        unisonVoices = 4;
+        unisonDetune = 12;
+      } else if (name.includes('trumpet') || name.includes('brass') || name.includes('trombone')) {
+        oscType = 'sawtooth';
+        secondOscType = 'square';
+        detuneAmount = 3;
+      } else if (name.includes('flute') || name.includes('pan_flute')) {
+        oscType = 'sine';
+        secondOscType = 'triangle';
+        detuneAmount = 1;
+      } else if (name.includes('sax')) {
+        oscType = 'sawtooth';
+        secondOscType = 'square';
+        detuneAmount = 5;
+      } else if (name.includes('guitar')) {
+        oscType = 'triangle';
+        secondOscType = 'sawtooth';
+        detuneAmount = 3;
+      } else if (name.includes('vocal') || name.includes('choir')) {
+        oscType = 'sawtooth';
+        secondOscType = 'sine';
+        unisonVoices = 5;
+        unisonDetune = 8;
+      } else if (name.includes('vibraphone') || name.includes('marimba') || name.includes('bells') || name.includes('kalimba')) {
+        oscType = 'sine';
+        secondOscType = 'triangle';
+        detuneAmount = 0;
+      } else if (name.includes('sitar') || name.includes('koto') || name.includes('erhu')) {
+        oscType = 'sawtooth';
+        secondOscType = 'triangle';
+        unisonVoices = 2;
+        unisonDetune = 15;
+      } else if (name.includes('synth_lead')) {
+        oscType = 'sawtooth';
+        secondOscType = 'square';
+        unisonVoices = 3;
+        unisonDetune = 15;
+      } else if (name.includes('synth_pad')) {
+        oscType = 'sawtooth';
+        secondOscType = 'triangle';
+        unisonVoices = 5;
+        unisonDetune = 20;
+      } else if (name.includes('synth_pluck')) {
+        oscType = 'sawtooth';
+        secondOscType = 'square';
+        detuneAmount = 5;
+      } else if (name.includes('synth_brass')) {
+        oscType = 'sawtooth';
+        secondOscType = 'sawtooth';
+        unisonVoices = 4;
+        unisonDetune = 10;
+      }
+    }
+    
+    const params: SynthParams = {
+      type: 'lead',
+      oscillators: [
+        { type: oscType, frequency: 1, detune: 0 },
+        { type: secondOscType, frequency: 1, detune: detuneAmount },
+      ],
+      filter: {
+        type: 'lowpass',
+        cutoff,
+        resonance,
+        envAmount: 0.4,
+        envelope: { attack: attack * 0.5, decay: decay * 0.5, sustain: 0.5, release: decay },
+      },
+      ampEnvelope: { attack, decay: decay * 0.3, sustain, release: decay },
+      ...(unisonVoices > 1 ? { unison: { voices: unisonVoices, detune: unisonDetune, spread: 0.6 } } : {}),
+    };
+    
+    return synthesizeSynth(params, note, octave, { sampleRate: this.sampleRate, duration, tempo: 120 });
+  }
+  
   getSampleRate(): number {
     return this.sampleRate;
   }
