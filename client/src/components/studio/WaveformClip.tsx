@@ -60,19 +60,26 @@ export function WaveformClip({
   const [isResizing, setIsResizing] = useState<'left' | 'right' | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  const secondsPerBeat = 60 / bpm;
+  const [beatsPerBar] = timeSignature.split('/').map(Number);
+  const secondsPerBar = secondsPerBeat * (beatsPerBar || 4);
+
   const calculatedWidth = useMemo(() => {
-    return Math.max(width, duration * pixelsPerSecond * zoom);
+    const durationWidth = duration * pixelsPerSecond * zoom;
+    return Math.max(width, durationWidth);
   }, [width, duration, pixelsPerSecond, zoom]);
 
   const beatWidth = useMemo(() => {
-    const beatsPerSecond = bpm / 60;
-    return pixelsPerSecond * zoom / beatsPerSecond;
-  }, [bpm, pixelsPerSecond, zoom]);
+    return secondsPerBeat * pixelsPerSecond * zoom;
+  }, [secondsPerBeat, pixelsPerSecond, zoom]);
 
   const barWidth = useMemo(() => {
-    const [numerator] = timeSignature.split('/').map(Number);
-    return beatWidth * (numerator || 4);
-  }, [beatWidth, timeSignature]);
+    return secondsPerBar * pixelsPerSecond * zoom;
+  }, [secondsPerBar, pixelsPerSecond, zoom]);
+
+  const barsSpanned = useMemo(() => {
+    return Math.ceil(duration / secondsPerBar);
+  }, [duration, secondsPerBar]);
 
   useEffect(() => {
     if (waveformData && waveformData.length > 0) {
@@ -81,11 +88,12 @@ export function WaveformClip({
     }
 
     if (audioBuffer) {
+      const renderWidth = Math.max(Math.floor(calculatedWidth), 100);
       const channelData = audioBuffer.getChannelData(0);
-      const samplesPerPixel = Math.floor(channelData.length / width);
+      const samplesPerPixel = Math.floor(channelData.length / renderWidth);
       const peaks: number[] = [];
 
-      for (let i = 0; i < width; i++) {
+      for (let i = 0; i < renderWidth; i++) {
         const start = i * samplesPerPixel;
         const end = Math.min(start + samplesPerPixel, channelData.length);
         let max = 0;
@@ -184,8 +192,9 @@ export function WaveformClip({
 
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
       const numBeats = Math.ceil(renderWidth / beatWidth);
+      const bpb = beatsPerBar || 4;
       for (let i = 0; i <= numBeats; i++) {
-        if (i % 4 !== 0) {
+        if (i % bpb !== 0) {
           const x = i * beatWidth;
           ctx.beginPath();
           ctx.moveTo(x, 0);
@@ -367,8 +376,10 @@ export function WaveformClip({
           {muted && <span className="opacity-60">[M]</span>}
           {clipName}
         </span>
-        <span className="text-[9px] opacity-70 ml-2">
-          {duration.toFixed(1)}s
+        <span className="text-[9px] opacity-70 ml-2 flex items-center gap-1">
+          <span>{duration.toFixed(1)}s</span>
+          <span className="opacity-50">|</span>
+          <span>{barsSpanned} bar{barsSpanned !== 1 ? 's' : ''}</span>
         </span>
       </div>
 
