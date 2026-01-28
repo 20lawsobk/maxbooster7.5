@@ -574,10 +574,12 @@ export function AIGeneratorDialog({
     activeWorkflow.currentState === 'success' || activeWorkflow.currentState === 'integrated';
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent
         className="max-w-3xl max-h-[90vh] overflow-y-auto"
         data-testid="ai-generator-dialog"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <div className="flex items-center justify-between">
