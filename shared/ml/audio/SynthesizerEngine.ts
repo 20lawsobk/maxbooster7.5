@@ -343,7 +343,388 @@ class BiquadFilter {
 }
 
 // ============================================================================
-// EFFECTS
+// PROFESSIONAL AUDIO PROCESSING - Quality Enhancement Suite
+// ============================================================================
+
+// Moog-style Ladder Filter (24dB/oct resonant lowpass)
+class LadderFilter {
+  private stage: number[] = [0, 0, 0, 0];
+  private delay: number[] = [0, 0, 0, 0];
+  private tunedCoeff: number = 0;
+  private resonanceCoeff: number = 0;
+  
+  setCutoff(frequency: number, resonance: number, sampleRate: number) {
+    const fc = frequency / sampleRate;
+    this.tunedCoeff = 1.16 * fc - 0.16 * fc * fc * fc;
+    this.resonanceCoeff = resonance * (1.0 - 0.15 * fc * fc);
+  }
+  
+  process(input: number): number {
+    // Feedback path with resonance
+    const feedback = this.resonanceCoeff * this.stage[3];
+    let x = input - feedback;
+    x = clamp(x, -1, 1); // Prevent blowup
+    
+    // 4-pole cascade
+    for (let i = 0; i < 4; i++) {
+      const pole = this.stage[i];
+      x = x * this.tunedCoeff + this.delay[i] * (1 - this.tunedCoeff);
+      this.delay[i] = x;
+      this.stage[i] = x;
+    }
+    
+    return this.stage[3];
+  }
+  
+  reset() {
+    this.stage = [0, 0, 0, 0];
+    this.delay = [0, 0, 0, 0];
+  }
+}
+
+// State Variable Filter (multi-mode with smooth transitions)
+class StateVariableFilter {
+  private low: number = 0;
+  private band: number = 0;
+  private high: number = 0;
+  private notch: number = 0;
+  
+  process(input: number, cutoff: number, resonance: number, sampleRate: number): {
+    low: number; band: number; high: number; notch: number;
+  } {
+    const f = 2 * Math.sin(Math.PI * cutoff / sampleRate);
+    const q = 1 / Math.max(0.5, resonance);
+    
+    this.high = input - this.low - q * this.band;
+    this.band += f * this.high;
+    this.low += f * this.band;
+    this.notch = this.high + this.low;
+    
+    return { low: this.low, band: this.band, high: this.high, notch: this.notch };
+  }
+  
+  reset() {
+    this.low = this.band = this.high = this.notch = 0;
+  }
+}
+
+// Harmonic Overtone Generator for richer timbres
+function generateWithHarmonics(
+  baseFreq: number,
+  time: number,
+  harmonicStructure: { ratio: number; amplitude: number; phase?: number }[]
+): number {
+  let sample = 0;
+  for (const harmonic of harmonicStructure) {
+    const freq = baseFreq * harmonic.ratio;
+    const phase = harmonic.phase || 0;
+    sample += Math.sin(2 * Math.PI * freq * time + phase) * harmonic.amplitude;
+  }
+  return sample;
+}
+
+// Predefined harmonic structures for realistic timbres
+const HARMONIC_STRUCTURES = {
+  piano: [
+    { ratio: 1, amplitude: 1.0 },
+    { ratio: 2, amplitude: 0.4 },
+    { ratio: 3, amplitude: 0.2 },
+    { ratio: 4, amplitude: 0.15 },
+    { ratio: 5, amplitude: 0.1 },
+    { ratio: 6, amplitude: 0.08 },
+    { ratio: 7, amplitude: 0.05 },
+  ],
+  strings: [
+    { ratio: 1, amplitude: 1.0 },
+    { ratio: 2, amplitude: 0.5 },
+    { ratio: 3, amplitude: 0.33 },
+    { ratio: 4, amplitude: 0.25 },
+    { ratio: 5, amplitude: 0.2 },
+    { ratio: 6, amplitude: 0.17 },
+    { ratio: 7, amplitude: 0.14 },
+    { ratio: 8, amplitude: 0.12 },
+  ],
+  brass: [
+    { ratio: 1, amplitude: 1.0 },
+    { ratio: 2, amplitude: 0.7 },
+    { ratio: 3, amplitude: 0.5 },
+    { ratio: 4, amplitude: 0.35 },
+    { ratio: 5, amplitude: 0.25 },
+    { ratio: 6, amplitude: 0.18 },
+  ],
+  woodwind: [
+    { ratio: 1, amplitude: 1.0 },
+    { ratio: 2, amplitude: 0.3 },
+    { ratio: 3, amplitude: 0.5 },
+    { ratio: 4, amplitude: 0.15 },
+    { ratio: 5, amplitude: 0.3 },
+  ],
+  organ: [
+    { ratio: 0.5, amplitude: 0.5 },
+    { ratio: 1, amplitude: 1.0 },
+    { ratio: 2, amplitude: 0.8 },
+    { ratio: 3, amplitude: 0.6 },
+    { ratio: 4, amplitude: 0.5 },
+    { ratio: 6, amplitude: 0.3 },
+    { ratio: 8, amplitude: 0.2 },
+  ],
+  bell: [
+    { ratio: 1, amplitude: 1.0 },
+    { ratio: 2.4, amplitude: 0.6 },
+    { ratio: 3, amplitude: 0.5 },
+    { ratio: 4.2, amplitude: 0.4 },
+    { ratio: 5.4, amplitude: 0.3 },
+    { ratio: 6.8, amplitude: 0.2 },
+  ],
+};
+
+// Exponential/Logarithmic Envelope Generator (more natural response)
+function generateExponentialEnvelope(
+  params: EnvelopeParams,
+  time: number,
+  noteOffTime: number | null,
+  curvature: number = 3 // Higher = more curved
+): number {
+  const { attack, decay, sustain, release } = params;
+  
+  if (noteOffTime !== null && time >= noteOffTime) {
+    const releaseTime = time - noteOffTime;
+    if (releaseTime >= release) return 0;
+    // Exponential release curve
+    const t = releaseTime / release;
+    return sustain * Math.pow(1 - t, curvature);
+  }
+
+  if (time < attack) {
+    // Logarithmic attack (fast start, slows down)
+    const t = time / attack;
+    return 1 - Math.pow(1 - t, 1 / curvature);
+  } else if (time < attack + decay) {
+    // Exponential decay
+    const t = (time - attack) / decay;
+    return 1 - (1 - sustain) * (1 - Math.pow(1 - t, curvature));
+  } else {
+    return sustain;
+  }
+}
+
+// Schroeder Reverb Implementation
+class SchroederReverb {
+  private combFilters: { delay: Float32Array; index: number; feedback: number }[] = [];
+  private allpassFilters: { delay: Float32Array; index: number }[] = [];
+  private sampleRate: number;
+  
+  constructor(sampleRate: number, roomSize: number = 0.5, damping: number = 0.5) {
+    this.sampleRate = sampleRate;
+    
+    // Comb filter delay times (prime numbers for less metallic sound)
+    const combDelays = [1557, 1617, 1491, 1422, 1277, 1356].map(d => 
+      Math.floor(d * roomSize * sampleRate / 44100)
+    );
+    
+    // Allpass delay times
+    const allpassDelays = [225, 556, 441].map(d => 
+      Math.floor(d * sampleRate / 44100)
+    );
+    
+    // Initialize comb filters
+    for (const delay of combDelays) {
+      this.combFilters.push({
+        delay: new Float32Array(delay),
+        index: 0,
+        feedback: 0.84 - damping * 0.25,
+      });
+    }
+    
+    // Initialize allpass filters
+    for (const delay of allpassDelays) {
+      this.allpassFilters.push({
+        delay: new Float32Array(delay),
+        index: 0,
+      });
+    }
+  }
+  
+  process(input: number, wet: number = 0.3): number {
+    // Parallel comb filters
+    let combOutput = 0;
+    for (const comb of this.combFilters) {
+      const delayed = comb.delay[comb.index];
+      comb.delay[comb.index] = input + delayed * comb.feedback;
+      comb.index = (comb.index + 1) % comb.delay.length;
+      combOutput += delayed;
+    }
+    combOutput /= this.combFilters.length;
+    
+    // Series allpass filters
+    let output = combOutput;
+    for (const allpass of this.allpassFilters) {
+      const delayed = allpass.delay[allpass.index];
+      const temp = -0.5 * output + delayed;
+      allpass.delay[allpass.index] = output + 0.5 * delayed;
+      allpass.index = (allpass.index + 1) % allpass.delay.length;
+      output = temp;
+    }
+    
+    return input * (1 - wet) + output * wet;
+  }
+}
+
+// Stereo Chorus Effect
+class StereoChorus {
+  private delayLineL: Float32Array;
+  private delayLineR: Float32Array;
+  private writeIndex: number = 0;
+  private lfoPhase: number = 0;
+  private maxDelay: number;
+  private sampleRate: number;
+  
+  constructor(sampleRate: number) {
+    this.sampleRate = sampleRate;
+    this.maxDelay = Math.floor(sampleRate * 0.05); // 50ms max delay
+    this.delayLineL = new Float32Array(this.maxDelay);
+    this.delayLineR = new Float32Array(this.maxDelay);
+  }
+  
+  process(input: number, rate: number = 0.5, depth: number = 0.5, mix: number = 0.3): { left: number; right: number } {
+    // Write to delay line
+    this.delayLineL[this.writeIndex] = input;
+    this.delayLineR[this.writeIndex] = input;
+    
+    // LFO for modulation
+    this.lfoPhase += rate / this.sampleRate;
+    const lfoL = Math.sin(2 * Math.PI * this.lfoPhase);
+    const lfoR = Math.sin(2 * Math.PI * this.lfoPhase + Math.PI * 0.5); // 90 degree offset
+    
+    // Calculate delay times
+    const baseDelay = this.maxDelay * 0.2;
+    const modDepth = this.maxDelay * 0.3 * depth;
+    const delayL = baseDelay + lfoL * modDepth;
+    const delayR = baseDelay + lfoR * modDepth;
+    
+    // Read with interpolation
+    const readL = (this.writeIndex - delayL + this.maxDelay) % this.maxDelay;
+    const readR = (this.writeIndex - delayR + this.maxDelay) % this.maxDelay;
+    
+    const indexL = Math.floor(readL);
+    const indexR = Math.floor(readR);
+    const fracL = readL - indexL;
+    const fracR = readR - indexR;
+    
+    const wetL = this.delayLineL[indexL] * (1 - fracL) + this.delayLineL[(indexL + 1) % this.maxDelay] * fracL;
+    const wetR = this.delayLineR[indexR] * (1 - fracR) + this.delayLineR[(indexR + 1) % this.maxDelay] * fracR;
+    
+    this.writeIndex = (this.writeIndex + 1) % this.maxDelay;
+    
+    return {
+      left: input * (1 - mix) + wetL * mix,
+      right: input * (1 - mix) + wetR * mix,
+    };
+  }
+}
+
+// Analog-style Warmth/Saturation
+function analogWarmth(input: number, drive: number = 0.3, tone: number = 0.5): number {
+  // Asymmetric soft clipping for even harmonics (tube-like)
+  const asymmetry = 0.2;
+  let x = input * (1 + drive * 2);
+  
+  // Asymmetric clipping
+  if (x > 0) {
+    x = Math.tanh(x * (1 + asymmetry));
+  } else {
+    x = Math.tanh(x * (1 - asymmetry));
+  }
+  
+  // Add subtle even harmonics
+  const secondHarmonic = Math.sin(2 * Math.PI * 2 * Math.abs(input)) * drive * 0.1;
+  x += secondHarmonic * (input > 0 ? 1 : -1);
+  
+  // Gentle high-frequency rolloff for warmth
+  x = x * (1 - tone * 0.3) + x * tone * 0.7;
+  
+  return x * 0.7; // Compensate for gain increase
+}
+
+// DC Blocker (removes DC offset)
+class DCBlocker {
+  private x1: number = 0;
+  private y1: number = 0;
+  private R: number = 0.995;
+  
+  process(input: number): number {
+    const output = input - this.x1 + this.R * this.y1;
+    this.x1 = input;
+    this.y1 = output;
+    return output;
+  }
+}
+
+// Oversampling for anti-aliasing
+function oversample2x(samples: Float32Array): Float32Array {
+  const output = new Float32Array(samples.length * 2);
+  for (let i = 0; i < samples.length; i++) {
+    output[i * 2] = samples[i];
+    // Linear interpolation for intermediate sample
+    if (i < samples.length - 1) {
+      output[i * 2 + 1] = (samples[i] + samples[i + 1]) * 0.5;
+    } else {
+      output[i * 2 + 1] = samples[i] * 0.5;
+    }
+  }
+  return output;
+}
+
+function downsample2x(samples: Float32Array): Float32Array {
+  const output = new Float32Array(Math.floor(samples.length / 2));
+  
+  // Apply 4-tap FIR anti-aliasing filter before decimation
+  // Coefficients for a simple windowed-sinc low-pass filter
+  const coeffs = [0.1, 0.4, 0.4, 0.1]; // Approximate half-band filter
+  
+  for (let i = 0; i < output.length; i++) {
+    const srcIdx = i * 2;
+    let sum = 0;
+    
+    // Apply FIR filter centered on the output sample
+    for (let j = 0; j < coeffs.length; j++) {
+      const readIdx = srcIdx - 1 + j;
+      if (readIdx >= 0 && readIdx < samples.length) {
+        sum += samples[readIdx] * coeffs[j];
+      }
+    }
+    
+    output[i] = sum;
+  }
+  
+  return output;
+}
+
+// Velocity Curve for dynamic expression
+function velocityCurve(velocity: number, curve: 'linear' | 'soft' | 'hard' = 'linear'): number {
+  velocity = clamp(velocity, 0, 1);
+  switch (curve) {
+    case 'soft':
+      return Math.pow(velocity, 0.5); // More sensitive to soft playing
+    case 'hard':
+      return Math.pow(velocity, 2); // Less sensitive, needs more force
+    default:
+      return velocity;
+  }
+}
+
+// Stereo Width Control
+function stereoWidth(left: number, right: number, width: number): { left: number; right: number } {
+  const mid = (left + right) * 0.5;
+  const side = (left - right) * 0.5;
+  return {
+    left: mid + side * width,
+    right: mid - side * width,
+  };
+}
+
+// ============================================================================
+// EFFECTS (Original + Enhanced)
 // ============================================================================
 
 function softClip(x: number, drive: number = 1): number {
@@ -1066,106 +1447,233 @@ export class SynthesizerEngine {
       sustain?: number;
       synthType?: 'sine' | 'square' | 'sawtooth' | 'triangle';
       instrumentName?: string;
+      velocity?: number;
     },
     duration: number = 1
   ): Float32Array {
-    const { brightness, attack, decay, sustain = 0.6, synthType = 'sawtooth', instrumentName } = instrumentParams;
+    const { brightness, attack, decay, sustain = 0.6, synthType, instrumentName, velocity = 0.8 } = instrumentParams;
     
-    const cutoff = 500 + brightness * 7500;
-    const resonance = 1 + brightness * 6;
+    // Use 2x oversampling for anti-aliasing
+    const oversampleFactor = 2;
+    const internalSampleRate = this.sampleRate * oversampleFactor;
+    const samples = Math.floor(internalSampleRate * duration);
+    const oversampledOutput = new Float32Array(samples);
+    const rng = new SeededRandom(Date.now());
     
-    let oscType: OscillatorType = synthType;
+    const baseFreq = getNoteFrequency(note, octave);
+    const velocityGain = velocityCurve(velocity, 'soft');
+    
+    // Determine instrument characteristics
+    let harmonicType: keyof typeof HARMONIC_STRUCTURES = 'piano';
+    let useHarmonics = false;
+    let oscType: OscillatorType = synthType || 'sawtooth'; // Respect synthType override
     let secondOscType: OscillatorType = 'triangle';
     let detuneAmount = 7;
     let unisonVoices = 1;
     let unisonDetune = 0;
+    let reverbAmount = 0.15;
+    let warmthAmount = 0.2;
+    let chorusAmount = 0;
+    let vibratoRate = 0;
+    let vibratoDepth = 0;
+    let stereoWidthAmount = 1.0;
     
-    if (instrumentName) {
-      const name = instrumentName.toLowerCase();
-      if (name.includes('piano') || name.includes('electric_piano')) {
-        oscType = 'triangle';
-        secondOscType = 'sine';
-        detuneAmount = 2;
-      } else if (name.includes('organ')) {
-        oscType = 'square';
-        secondOscType = 'sine';
-        unisonVoices = 3;
-        unisonDetune = 5;
-      } else if (name.includes('violin') || name.includes('strings') || name.includes('cello')) {
-        oscType = 'sawtooth';
-        secondOscType = 'triangle';
-        unisonVoices = 4;
-        unisonDetune = 12;
-      } else if (name.includes('trumpet') || name.includes('brass') || name.includes('trombone')) {
-        oscType = 'sawtooth';
-        secondOscType = 'square';
-        detuneAmount = 3;
-      } else if (name.includes('flute') || name.includes('pan_flute')) {
-        oscType = 'sine';
-        secondOscType = 'triangle';
-        detuneAmount = 1;
-      } else if (name.includes('sax')) {
-        oscType = 'sawtooth';
-        secondOscType = 'square';
-        detuneAmount = 5;
-      } else if (name.includes('guitar')) {
-        oscType = 'triangle';
-        secondOscType = 'sawtooth';
-        detuneAmount = 3;
-      } else if (name.includes('vocal') || name.includes('choir')) {
-        oscType = 'sawtooth';
-        secondOscType = 'sine';
-        unisonVoices = 5;
-        unisonDetune = 8;
-      } else if (name.includes('vibraphone') || name.includes('marimba') || name.includes('bells') || name.includes('kalimba')) {
-        oscType = 'sine';
-        secondOscType = 'triangle';
-        detuneAmount = 0;
-      } else if (name.includes('sitar') || name.includes('koto') || name.includes('erhu')) {
-        oscType = 'sawtooth';
-        secondOscType = 'triangle';
-        unisonVoices = 2;
-        unisonDetune = 15;
-      } else if (name.includes('synth_lead')) {
-        oscType = 'sawtooth';
-        secondOscType = 'square';
-        unisonVoices = 3;
-        unisonDetune = 15;
-      } else if (name.includes('synth_pad')) {
-        oscType = 'sawtooth';
-        secondOscType = 'triangle';
-        unisonVoices = 5;
-        unisonDetune = 20;
-      } else if (name.includes('synth_pluck')) {
-        oscType = 'sawtooth';
-        secondOscType = 'square';
-        detuneAmount = 5;
-      } else if (name.includes('synth_brass')) {
-        oscType = 'sawtooth';
-        secondOscType = 'sawtooth';
-        unisonVoices = 4;
-        unisonDetune = 10;
-      }
+    const name = (instrumentName || '').toLowerCase();
+    
+    if (name.includes('piano') || name.includes('electric_piano')) {
+      harmonicType = 'piano';
+      useHarmonics = true;
+      reverbAmount = 0.25;
+      warmthAmount = 0.15;
+    } else if (name.includes('organ')) {
+      harmonicType = 'organ';
+      useHarmonics = true;
+      unisonVoices = 3;
+      unisonDetune = 5;
+      reverbAmount = 0.3;
+      chorusAmount = 0.3;
+    } else if (name.includes('violin') || name.includes('strings') || name.includes('cello') || name.includes('viola')) {
+      harmonicType = 'strings';
+      useHarmonics = true;
+      unisonVoices = 4;
+      unisonDetune = 12;
+      reverbAmount = 0.35;
+      vibratoRate = 5;
+      vibratoDepth = 0.02;
+    } else if (name.includes('trumpet') || name.includes('brass') || name.includes('trombone') || name.includes('horn')) {
+      harmonicType = 'brass';
+      useHarmonics = true;
+      reverbAmount = 0.2;
+      warmthAmount = 0.3;
+    } else if (name.includes('flute') || name.includes('pan_flute') || name.includes('recorder')) {
+      harmonicType = 'woodwind';
+      useHarmonics = true;
+      reverbAmount = 0.3;
+      vibratoRate = 4;
+      vibratoDepth = 0.015;
+    } else if (name.includes('sax')) {
+      harmonicType = 'brass';
+      useHarmonics = true;
+      warmthAmount = 0.35;
+      vibratoRate = 5;
+      vibratoDepth = 0.02;
+    } else if (name.includes('guitar') || name.includes('acoustic')) {
+      oscType = 'triangle';
+      secondOscType = 'sawtooth';
+      detuneAmount = 3;
+      reverbAmount = 0.2;
+      warmthAmount = 0.25;
+    } else if (name.includes('vocal') || name.includes('choir')) {
+      harmonicType = 'strings';
+      useHarmonics = true;
+      unisonVoices = 5;
+      unisonDetune = 8;
+      reverbAmount = 0.4;
+      chorusAmount = 0.25;
+      vibratoRate = 5;
+      vibratoDepth = 0.025;
+    } else if (name.includes('vibraphone') || name.includes('marimba') || name.includes('bells') || name.includes('kalimba') || name.includes('glockenspiel')) {
+      harmonicType = 'bell';
+      useHarmonics = true;
+      reverbAmount = 0.4;
+    } else if (name.includes('sitar') || name.includes('koto') || name.includes('erhu')) {
+      harmonicType = 'strings';
+      useHarmonics = true;
+      unisonVoices = 2;
+      unisonDetune = 15;
+      vibratoRate = 6;
+      vibratoDepth = 0.03;
+    } else if (name.includes('synth_lead') || name.includes('lead')) {
+      oscType = 'sawtooth';
+      secondOscType = 'square';
+      unisonVoices = 3;
+      unisonDetune = 15;
+      warmthAmount = 0.3;
+    } else if (name.includes('synth_pad') || name.includes('pad')) {
+      oscType = 'sawtooth';
+      secondOscType = 'triangle';
+      unisonVoices = 5;
+      unisonDetune = 20;
+      reverbAmount = 0.45;
+      chorusAmount = 0.35;
+    } else if (name.includes('synth_pluck') || name.includes('pluck')) {
+      oscType = 'sawtooth';
+      secondOscType = 'square';
+      detuneAmount = 5;
+      warmthAmount = 0.2;
+    } else if (name.includes('synth_brass')) {
+      oscType = 'sawtooth';
+      unisonVoices = 4;
+      unisonDetune = 10;
+      warmthAmount = 0.35;
     }
     
-    const params: SynthParams = {
-      type: 'lead',
-      oscillators: [
-        { type: oscType, frequency: 1, detune: 0 },
-        { type: secondOscType, frequency: 1, detune: detuneAmount },
-      ],
-      filter: {
-        type: 'lowpass',
-        cutoff,
-        resonance,
-        envAmount: 0.4,
-        envelope: { attack: attack * 0.5, decay: decay * 0.5, sustain: 0.5, release: decay },
-      },
-      ampEnvelope: { attack, decay: decay * 0.3, sustain, release: decay },
-      ...(unisonVoices > 1 ? { unison: { voices: unisonVoices, detune: unisonDetune, spread: 0.6 } } : {}),
-    };
+    // Initialize professional audio processors at oversampled rate
+    const ladderFilter = new LadderFilter();
+    const dcBlocker = new DCBlocker();
+    const reverb = new SchroederReverb(internalSampleRate, 0.5, 0.4);
+    const chorus = new StereoChorus(internalSampleRate);
     
-    return synthesizeSynth(params, note, octave, { sampleRate: this.sampleRate, duration, tempo: 120 });
+    const cutoff = 500 + brightness * 7500;
+    const resonance = 0.2 + brightness * 0.6;
+    
+    // Envelope parameters with exponential curves
+    const ampEnv: EnvelopeParams = { attack, decay: decay * 0.3, sustain, release: decay };
+    const filterEnv: EnvelopeParams = { attack: attack * 0.5, decay: decay * 0.5, sustain: 0.5, release: decay };
+    
+    // Get harmonic structure
+    const harmonics = HARMONIC_STRUCTURES[harmonicType] || HARMONIC_STRUCTURES.piano;
+    
+    // Generate at oversampled rate for anti-aliasing
+    for (let i = 0; i < samples; i++) {
+      const t = i / internalSampleRate;
+      
+      // Vibrato LFO
+      let pitchMod = 1;
+      if (vibratoRate > 0 && t > attack) {
+        const vibratoEnv = Math.min(1, (t - attack) / 0.5);
+        pitchMod = 1 + Math.sin(2 * Math.PI * vibratoRate * t) * vibratoDepth * vibratoEnv;
+      }
+      
+      // Generate sound
+      let sample = 0;
+      
+      if (useHarmonics) {
+        // Use harmonic overtone synthesis for realistic timbres
+        sample = generateWithHarmonics(baseFreq * pitchMod, t, harmonics);
+        
+        // Add unison voices if needed
+        if (unisonVoices > 1) {
+          for (let v = 1; v < unisonVoices; v++) {
+            const detuneRatio = Math.pow(2, ((v - unisonVoices / 2) * unisonDetune) / 1200);
+            sample += generateWithHarmonics(baseFreq * pitchMod * detuneRatio, t, harmonics) * 0.7;
+          }
+          sample /= unisonVoices;
+        }
+      } else {
+        // Use oscillator synthesis with unison
+        for (let v = 0; v < Math.max(1, unisonVoices); v++) {
+          const detuneRatio = unisonVoices > 1 
+            ? Math.pow(2, ((v - unisonVoices / 2) * unisonDetune) / 1200)
+            : 1;
+          const voiceFreq = baseFreq * pitchMod * detuneRatio;
+          const phase = voiceFreq * t;
+          
+          sample += generateOscillator(oscType, phase, rng);
+          sample += generateOscillator(secondOscType, phase * Math.pow(2, detuneAmount / 1200), rng) * 0.5;
+        }
+        sample /= Math.max(1, unisonVoices) * 1.5;
+      }
+      
+      // Apply exponential amplitude envelope
+      const ampEnvValue = generateExponentialEnvelope(ampEnv, t, duration * 0.8, 2.5);
+      
+      // Apply filter with envelope modulation at oversampled rate
+      const filterEnvValue = generateExponentialEnvelope(filterEnv, t, null, 2);
+      const modulatedCutoff = cutoff + filterEnvValue * cutoff * 0.5;
+      ladderFilter.setCutoff(clamp(modulatedCutoff, 20, 18000), resonance, internalSampleRate);
+      sample = ladderFilter.process(sample);
+      
+      // Apply analog warmth (nonlinear, benefits from oversampling)
+      if (warmthAmount > 0) {
+        sample = analogWarmth(sample, warmthAmount, 0.5);
+      }
+      
+      // Apply reverb
+      if (reverbAmount > 0) {
+        sample = reverb.process(sample, reverbAmount);
+      }
+      
+      // Apply chorus for stereo width - store stereo result for width processing
+      let sampleLeft = sample;
+      let sampleRight = sample;
+      if (chorusAmount > 0) {
+        const stereoResult = chorus.process(sample, 0.5, 0.5, chorusAmount);
+        sampleLeft = stereoResult.left;
+        sampleRight = stereoResult.right;
+      }
+      
+      // Apply stereo width control
+      if (stereoWidthAmount !== 1.0) {
+        const widthResult = stereoWidth(sampleLeft, sampleRight, stereoWidthAmount);
+        sampleLeft = widthResult.left;
+        sampleRight = widthResult.right;
+      }
+      
+      // Sum to mono for final output (system outputs mono audio)
+      sample = (sampleLeft + sampleRight) * 0.5;
+      
+      // DC blocking
+      sample = dcBlocker.process(sample);
+      
+      // Final amplitude and velocity - store in oversampled buffer
+      oversampledOutput[i] = clamp(sample * ampEnvValue * velocityGain * 0.8, -1, 1);
+    }
+    
+    // Downsample from 2x to target sample rate with anti-aliasing
+    const output = downsample2x(oversampledOutput);
+    
+    return output;
   }
   
   getSampleRate(): number {
