@@ -15,33 +15,44 @@ interface ProfessionalFaderProps {
   'data-testid'?: string;
 }
 
+// Maximum dB for safety - prevents excessive gain that could damage hearing/speakers
+const MAX_DB = 30;
+const MIN_DB = -60;
+const DB_RANGE = MAX_DB - MIN_DB; // 90dB total range
+
 const DB_MARKS = [
-  { db: '+6', position: 1 },
-  { db: '0', position: 0.75 },
-  { db: '-5', position: 0.65 },
-  { db: '-10', position: 0.5 },
-  { db: '-20', position: 0.3 },
+  { db: '+30', position: 1 },
+  { db: '+12', position: 0.8 },
+  { db: '0', position: 0.667 },
+  { db: '-10', position: 0.556 },
+  { db: '-20', position: 0.444 },
+  { db: '-40', position: 0.222 },
   { db: '-∞', position: 0 },
 ];
 
 /**
- * TODO: Add function documentation
+ * Converts normalized fader value (0-1) to decibels
+ * Range: -60dB to +30dB (capped for safety)
  */
 function valueToDb(value: number): number {
   if (value === 0) return -Infinity;
-  // Map 0-1 to -60 to +6 dB
-  const db = value * 66 - 60;
-  return Math.max(-60, Math.min(6, db));
+  // Map 0-1 to -60 to +30 dB
+  const db = value * DB_RANGE + MIN_DB;
+  return Math.max(MIN_DB, Math.min(MAX_DB, db));
 }
 
 /**
- * TODO: Add function documentation
+ * Converts decibels to normalized fader value (0-1)
+ * Range: -60dB to +30dB (capped for safety)
  */
 function dbToValue(db: number): number {
-  if (db === -Infinity) return 0;
-  // Map -60 to +6 dB to 0-1
-  return Math.max(0, Math.min(1, (db + 60) / 66));
+  if (db === -Infinity || db <= MIN_DB) return 0;
+  // Map -60 to +30 dB to 0-1
+  return Math.max(0, Math.min(1, (db - MIN_DB) / DB_RANGE));
 }
+
+// Export for use in other components
+export { valueToDb, dbToValue, MAX_DB, MIN_DB, DB_RANGE };
 
 /**
  * TODO: Add function documentation

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Volume2, VolumeX, Headphones, Mic, Settings2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ProfessionalFader } from './ProfessionalFader';
+import { ProfessionalFader, valueToDb, dbToValue, MAX_DB } from './ProfessionalFader';
 import { VUMeter } from './VUMeter';
 import { Knob } from './Knob';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -83,9 +83,10 @@ export function ChannelStrip({
     return () => clearInterval(interval);
   }, [volume, mute]);
 
-  const formatDb = (linear: number) => {
-    if (linear === 0) return '-∞';
-    const db = 20 * Math.log10(linear);
+  // Use consistent dB conversion with +30dB safety cap
+  const formatDb = (normalizedValue: number) => {
+    const db = valueToDb(normalizedValue);
+    if (db === -Infinity) return '-∞';
     return db.toFixed(1);
   };
 

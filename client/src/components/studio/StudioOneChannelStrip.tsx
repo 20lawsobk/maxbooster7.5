@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { studioOneTheme } from '@/lib/studioOneTheme';
 import { useStudioLayoutStore } from '@/lib/studioLayoutStore';
+import { valueToDb, dbToValue, MAX_DB, MIN_DB, DB_RANGE } from './ProfessionalFader';
 
 interface InsertEffect {
   id: string;
@@ -220,7 +221,11 @@ function VerticalFader({
   }, [isDragging, updateValue]);
 
   const thumbPosition = (1 - value) * 100;
-  const dbValue = value === 0 ? '-∞' : (20 * Math.log10(value)).toFixed(1);
+  // Use consistent dB conversion with +30dB safety cap
+  const db = valueToDb(value);
+  const dbValue = db === -Infinity ? '-∞' : db.toFixed(1);
+  // Unity gain (0dB) position for double-click reset
+  const unityGainValue = dbToValue(0);
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -234,7 +239,7 @@ function VerticalFader({
           border: `1px solid ${studioOneTheme.colors.border.subtle}`,
         }}
         onMouseDown={handleMouseDown}
-        onDoubleClick={() => onChange(0.75)}
+        onDoubleClick={() => onChange(unityGainValue)}
       >
         {/* Track fill */}
         <div
@@ -244,11 +249,11 @@ function VerticalFader({
             background: `linear-gradient(to top, ${color}40, ${color}20)`,
           }}
         />
-        {/* Unity mark (0dB) */}
+        {/* Unity mark (0dB) - position calculated from dB range */}
         <div
           className="absolute left-0 right-0 h-px"
           style={{
-            top: '25%',
+            top: `${(1 - unityGainValue) * 100}%`,
             background: studioOneTheme.colors.accent.green,
           }}
         />
