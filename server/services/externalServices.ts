@@ -92,6 +92,24 @@ export const youtubeCircuit = new CircuitBreaker({
   successThreshold: 3,
 });
 
+export const threadsCircuit = new CircuitBreaker({
+  name: 'threads',
+  failureThreshold: 5,
+  resetTimeout: 60000,
+  monitorInterval: 5000,
+  timeout: 20000,
+  successThreshold: 3,
+});
+
+export const googleBusinessCircuit = new CircuitBreaker({
+  name: 'googlebusiness',
+  failureThreshold: 5,
+  resetTimeout: 60000,
+  monitorInterval: 5000,
+  timeout: 20000,
+  successThreshold: 3,
+});
+
 export const aiServiceCircuit = new CircuitBreaker({
   name: 'aiService',
   failureThreshold: 3,
@@ -128,6 +146,8 @@ circuitBreakerRegistry.register(instagramCircuit);
 circuitBreakerRegistry.register(linkedinCircuit);
 circuitBreakerRegistry.register(tiktokCircuit);
 circuitBreakerRegistry.register(youtubeCircuit);
+circuitBreakerRegistry.register(threadsCircuit);
+circuitBreakerRegistry.register(googleBusinessCircuit);
 circuitBreakerRegistry.register(aiServiceCircuit);
 circuitBreakerRegistry.register(labelGridCircuit);
 circuitBreakerRegistry.register(dspCircuit);
@@ -321,7 +341,7 @@ export async function executeSendgridOperation<T>(
 }
 
 export async function executeSocialApiOperation<T>(
-  platform: 'twitter' | 'facebook' | 'instagram' | 'linkedin' | 'tiktok' | 'youtube' | 'generic',
+  platform: 'twitter' | 'facebook' | 'instagram' | 'linkedin' | 'tiktok' | 'youtube' | 'threads' | 'googlebusiness' | 'generic',
   operation: () => Promise<T>,
   options?: {
     cacheKey?: string;
@@ -338,6 +358,8 @@ export async function executeSocialApiOperation<T>(
     linkedin: linkedinCircuit,
     tiktok: tiktokCircuit,
     youtube: youtubeCircuit,
+    threads: threadsCircuit,
+    googlebusiness: googleBusinessCircuit,
     generic: socialApiCircuit,
   };
 
