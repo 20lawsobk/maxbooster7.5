@@ -145,12 +145,11 @@ export function ProfessionalFader({
     if (!showMeter) return null;
 
     const meterHeight = height;
-    // Clamp meter levels to prevent overflow beyond the fader container
-    // meterLevel range is -60dB to +6dB (66dB range), values above +6dB should be clamped
-    const clampedMeterLevel = Math.min(6, Math.max(-60, meterLevel));
-    const clampedPeakHold = Math.min(6, Math.max(-60, peakHold));
-    const levelHeight = Math.min(meterHeight, Math.max(0, ((clampedMeterLevel + 60) / 66) * meterHeight));
-    const peakHeight = Math.min(meterHeight, Math.max(0, ((clampedPeakHold + 60) / 66) * meterHeight));
+    // Use the full dB range (-60 to +30 = 90dB) to match the fader control range
+    const clampedMeterLevel = Math.min(MAX_DB, Math.max(MIN_DB, meterLevel));
+    const clampedPeakHold = Math.min(MAX_DB, Math.max(MIN_DB, peakHold));
+    const levelHeight = Math.max(0, ((clampedMeterLevel - MIN_DB) / DB_RANGE) * meterHeight);
+    const peakHeight = Math.max(0, ((clampedPeakHold - MIN_DB) / DB_RANGE) * meterHeight);
 
     return (
       <div
@@ -160,17 +159,20 @@ export function ProfessionalFader({
           background: 'var(--meter-background)',
         }}
       >
-        {/* LED segments */}
+        {/* LED segments - using full 90dB range (-60 to +30) */}
         {Array.from({ length: 20 }).map((_, i) => {
           const segmentHeight = meterHeight / 20;
           const segmentY = meterHeight - (i + 1) * segmentHeight;
-          const segmentDb = ((i + 1) / 20) * 66 - 60;
+          // Map segment to full dB range: -60 to +30
+          const segmentDb = ((i + 1) / 20) * DB_RANGE + MIN_DB;
           const isActive = levelHeight > i * segmentHeight;
 
           let color = '#2a2a2a';
           if (isActive) {
-            if (segmentDb < -18) color = 'var(--meter-green)';
-            else if (segmentDb < -6) color = 'var(--meter-yellow)';
+            // Adjusted thresholds for 90dB range:
+            // Green: -60 to -12dB, Yellow: -12 to +6dB, Red: +6 to +30dB
+            if (segmentDb < -12) color = 'var(--meter-green)';
+            else if (segmentDb < 6) color = 'var(--meter-yellow)';
             else color = 'var(--meter-red)';
           }
 

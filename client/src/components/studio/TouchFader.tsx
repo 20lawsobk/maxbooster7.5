@@ -33,7 +33,8 @@ export function TouchFader({
   const [startValue, setStartValue] = useState(value);
 
   const normalizedValue = (value - min) / (max - min);
-  const normalizedMeter = Math.min(1, Math.max(0, meterLevel / 100));
+  // meterLevel can range from 0-100+ for high gain, normalize to 0-1 with full range support
+  const normalizedMeter = Math.max(0, Math.min(1, meterLevel / max));
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
