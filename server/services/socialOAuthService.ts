@@ -347,6 +347,18 @@ export class SocialOAuthService {
       scopes: ['user.info.basic', 'video.list', 'video.publish'],
       redirectUri: `${getOAuthDomain()}/auth/tiktok/callback`,
     });
+
+    // TikTok OAuth (Sandbox)
+    if (process.env.TIKTOK_CLIENT_KEY1 && process.env.TIKTOK_CLIENT_SECRET1) {
+      this.oauthConfigs.set('tiktok_sandbox', {
+        clientId: process.env.TIKTOK_CLIENT_KEY1,
+        clientSecret: process.env.TIKTOK_CLIENT_SECRET1,
+        authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
+        tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
+        scopes: ['user.info.basic', 'video.list', 'video.publish'],
+        redirectUri: `${getOAuthDomain()}/auth/tiktok-sandbox/callback`,
+      });
+    }
   }
 
   /**

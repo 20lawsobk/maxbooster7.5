@@ -83,6 +83,15 @@ export const tiktokCircuit = new CircuitBreaker({
   successThreshold: 3,
 });
 
+export const tiktokSandboxCircuit = new CircuitBreaker({
+  name: 'tiktok_sandbox',
+  failureThreshold: 5,
+  resetTimeout: 60000,
+  monitorInterval: 5000,
+  timeout: 25000,
+  successThreshold: 3,
+});
+
 export const youtubeCircuit = new CircuitBreaker({
   name: 'youtube',
   failureThreshold: 5,
@@ -145,6 +154,7 @@ circuitBreakerRegistry.register(facebookCircuit);
 circuitBreakerRegistry.register(instagramCircuit);
 circuitBreakerRegistry.register(linkedinCircuit);
 circuitBreakerRegistry.register(tiktokCircuit);
+circuitBreakerRegistry.register(tiktokSandboxCircuit);
 circuitBreakerRegistry.register(youtubeCircuit);
 circuitBreakerRegistry.register(threadsCircuit);
 circuitBreakerRegistry.register(googleBusinessCircuit);
@@ -341,7 +351,7 @@ export async function executeSendgridOperation<T>(
 }
 
 export async function executeSocialApiOperation<T>(
-  platform: 'twitter' | 'facebook' | 'instagram' | 'linkedin' | 'tiktok' | 'youtube' | 'threads' | 'googlebusiness' | 'generic',
+  platform: 'twitter' | 'facebook' | 'instagram' | 'linkedin' | 'tiktok' | 'tiktok_sandbox' | 'youtube' | 'threads' | 'googlebusiness' | 'generic',
   operation: () => Promise<T>,
   options?: {
     cacheKey?: string;
@@ -357,6 +367,7 @@ export async function executeSocialApiOperation<T>(
     instagram: instagramCircuit,
     linkedin: linkedinCircuit,
     tiktok: tiktokCircuit,
+    tiktok_sandbox: tiktokSandboxCircuit,
     youtube: youtubeCircuit,
     threads: threadsCircuit,
     googlebusiness: googleBusinessCircuit,
