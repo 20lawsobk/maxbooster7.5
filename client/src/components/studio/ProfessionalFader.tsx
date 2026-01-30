@@ -191,11 +191,11 @@ export function ProfessionalFader({
           );
         })}
 
-        {/* Peak hold indicator */}
+        {/* Peak hold indicator - clamped to container height */}
         <motion.div
           className="absolute w-full h-0.5 bg-white"
           style={{
-            bottom: `${peakHeight}px`,
+            bottom: `${Math.min(peakHeight, meterHeight - 2)}px`,
             boxShadow: '0 0 4px rgba(255,255,255,0.8)',
           }}
           animate={{ opacity: [1, 0.8, 1] }}
