@@ -43,11 +43,12 @@ import {
 import './FlowStateTheme.css';
 import { useFlowStateAdapter, type FlowStateMode } from '@/hooks/useFlowStateAdapter';
 import { FlowState3DWorkspace } from './FlowState3DWorkspace';
-import { FlowStateAISidebar } from './FlowStateAISidebar';
+import { FlowStateAIPanel } from './FlowStateAIPanel';
 import { FlowStateSmartToolbar } from './FlowStateSmartToolbar';
 import { FlowStateMixer } from './FlowStateMixer';
 import { FlowStateSpectralVisualizer } from './FlowStateSpectralVisualizer';
 import { FlowStateCollaborationPresence, useCollaborationPresence } from './FlowStateCollaborationPresence';
+import { AIGeneratorDialog } from './AIGeneratorDialog';
 import { cn } from '@/lib/utils';
 
 interface FlowStateStudioProProps {
@@ -55,6 +56,10 @@ interface FlowStateStudioProProps {
   projectName?: string;
   onSave?: () => void;
   onExport?: () => void;
+  onAIMix?: () => void;
+  onAIMaster?: () => void;
+  isAIMixing?: boolean;
+  isAIMastering?: boolean;
 }
 
 const MODE_CONFIG: Record<FlowStateMode, { label: string; icon: typeof Music; color: string; description: string }> = {
@@ -78,15 +83,20 @@ export function FlowStateStudioPro({
   projectName = 'Untitled Project',
   onSave,
   onExport,
+  onAIMix,
+  onAIMaster,
+  isAIMixing = false,
+  isAIMastering = false,
 }: FlowStateStudioProProps) {
   const adapter = useFlowStateAdapter(projectId);
   const { tracks, transport, context, suggestions } = adapter;
   const collaboration = useCollaborationPresence(projectId);
 
-  const [showAISidebar, setShowAISidebar] = useState(true);
+  const [showAIPanel, setShowAIPanel] = useState(true);
   const [showMixer, setShowMixer] = useState(false);
   const [show3DWorkspace, setShow3DWorkspace] = useState(false);
   const [showSpectralVisualizer, setShowSpectralVisualizer] = useState(false);
+  const [showAIGeneratorDialog, setShowAIGeneratorDialog] = useState(false);
   const [activeTool, setActiveTool] = useState('pointer');
   const [chromeVisible, setChromeVisible] = useState(true);
 
@@ -311,10 +321,10 @@ export function FlowStateStudioPro({
               </motion.button>
               
               <motion.button
-                onClick={() => setShowAISidebar(!showAISidebar)}
+                onClick={() => setShowAIPanel(!showAIPanel)}
                 className={cn(
                   "p-2 rounded-lg transition-all",
-                  showAISidebar
+                  showAIPanel
                     ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
                     : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
                 )}
@@ -580,14 +590,14 @@ export function FlowStateStudioPro({
         </div>
 
         <AnimatePresence>
-          {showAISidebar && (
+          {showAIPanel && (
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: 280 }}
+              animate={{ width: 320 }}
               exit={{ width: 0 }}
               className="border-l border-white/5 overflow-hidden"
             >
-              <FlowStateAISidebar
+              <FlowStateAIPanel
                 suggestions={suggestions.map(s => ({
                   id: s.id,
                   type: s.type as any,
@@ -597,6 +607,12 @@ export function FlowStateStudioPro({
                   onApply: s.action,
                 }))}
                 mode={context.mode}
+                projectId={projectId}
+                onAIMix={onAIMix}
+                onAIMaster={onAIMaster}
+                onAIGenerate={() => setShowAIGeneratorDialog(true)}
+                isAIMixing={isAIMixing}
+                isAIMastering={isAIMastering}
               />
             </motion.div>
           )}
@@ -725,6 +741,17 @@ export function FlowStateStudioPro({
       <div className="absolute bottom-24 left-4 text-xs text-white/30 pointer-events-none">
         <span>Press TAB for Zero-Chrome mode</span>
       </div>
+
+      {projectId && (
+        <AIGeneratorDialog
+          isOpen={showAIGeneratorDialog}
+          onClose={() => setShowAIGeneratorDialog(false)}
+          projectId={parseInt(projectId)}
+          onGenerated={(params) => {
+            setShowAIGeneratorDialog(false);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -2754,6 +2754,10 @@ export default function Studio() {
           projectName={selectedProject?.name || 'Untitled Project'}
           onSave={() => toast({ title: 'Project Saved', description: 'Your changes have been saved.' })}
           onExport={() => setShowExportDialog(true)}
+          onAIMix={handleAIMix}
+          onAIMaster={handleAIMaster}
+          isAIMixing={isAIMixing}
+          isAIMastering={isAIMastering}
         />
         <button
           onClick={() => setStudioMode('classic')}
