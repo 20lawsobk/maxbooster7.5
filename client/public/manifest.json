@@ -1,7 +1,7 @@
 {
-  "name": "Max Booster - AI Music Career Manager",
+  "name": "Max Booster - AI Music Career Management Platform",
   "short_name": "Max Booster",
-  "description": "AI-powered music career management platform for artists and producers",
+  "description": "AI Music Career Management Platform for artists and producers",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",
