@@ -243,7 +243,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
         params.set('state', state);
         params.set('code_challenge', codeChallenge);
         params.set('code_challenge_method', 'S256');
-      } else if (platform === 'tiktok') {
+      } else if (platform === 'tiktok' || platform === 'tiktok_sandbox') {
         params.set('client_key', config.clientId);
         params.set('scope', config.scope);
         params.set('response_type', 'code');
@@ -325,7 +325,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       if (platform === 'twitter') {
         tokenParams.set('client_id', config.clientId!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
-      } else if (platform === 'tiktok') {
+      } else if (platform === 'tiktok' || platform === 'tiktok_sandbox') {
         tokenParams.set('client_key', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
@@ -404,7 +404,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         });
         const userData = await userResponse.json();
         username = userData.items?.[0]?.snippet?.title || 'YouTube Channel';
-      } else if (platform === 'tiktok') {
+      } else if (platform === 'tiktok' || platform === 'tiktok_sandbox') {
         username = 'TikTok User';
       } else if (platform === 'linkedin') {
         username = 'LinkedIn User';
