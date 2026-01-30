@@ -145,8 +145,12 @@ export function ProfessionalFader({
     if (!showMeter) return null;
 
     const meterHeight = height;
-    const levelHeight = Math.max(0, ((meterLevel + 60) / 66) * meterHeight);
-    const peakHeight = Math.max(0, ((peakHold + 60) / 66) * meterHeight);
+    // Clamp meter levels to prevent overflow beyond the fader container
+    // meterLevel range is -60dB to +6dB (66dB range), values above +6dB should be clamped
+    const clampedMeterLevel = Math.min(6, Math.max(-60, meterLevel));
+    const clampedPeakHold = Math.min(6, Math.max(-60, peakHold));
+    const levelHeight = Math.min(meterHeight, Math.max(0, ((clampedMeterLevel + 60) / 66) * meterHeight));
+    const peakHeight = Math.min(meterHeight, Math.max(0, ((clampedPeakHold + 60) / 66) * meterHeight));
 
     return (
       <div

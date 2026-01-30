@@ -89,7 +89,7 @@ export function TouchFader({
     >
       <div
         ref={trackRef}
-        className="relative rounded-lg cursor-pointer touch-none"
+        className="relative rounded-lg cursor-pointer touch-none overflow-hidden"
         style={{
           width: width - 8,
           height,
@@ -100,7 +100,8 @@ export function TouchFader({
         <div
           className="absolute bottom-0 left-0 right-0 rounded-b-lg transition-all"
           style={{
-            height: `${normalizedMeter * 100}%`,
+            height: `${Math.min(100, normalizedMeter * 100)}%`,
+            maxHeight: '100%',
             background: `linear-gradient(to top, ${studioOneTheme.colors.accent.green}, ${studioOneTheme.colors.accent.yellow})`,
             opacity: 0.3,
           }}
