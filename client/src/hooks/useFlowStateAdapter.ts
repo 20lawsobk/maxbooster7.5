@@ -241,6 +241,9 @@ export function useFlowStateAdapter(projectId: string | null): UseFlowStateAdapt
   }, [context.mode, context.selectedTrackIds]);
 
   const tracks = useMemo<FlowStateTrack[]>(() => {
+    if (!storeTracks || !Array.isArray(storeTracks)) {
+      return [];
+    }
     return storeTracks.map((track, index) => ({
       id: track.id,
       name: track.name,
@@ -256,7 +259,7 @@ export function useFlowStateAdapter(projectId: string | null): UseFlowStateAdapt
       spatialPosition: {
         x: (track.pan ?? 0) * 5,
         y: 0,
-        z: index * 2 - storeTracks.length,
+        z: index * 2 - (storeTracks?.length || 0),
       },
     }));
   }, [storeTracks, meterLevels]);
