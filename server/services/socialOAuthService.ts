@@ -356,7 +356,7 @@ export class SocialOAuthService {
         authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
         tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
         scopes: ['user.info.basic', 'video.list', 'video.publish'],
-        redirectUri: `${getOAuthDomain()}/auth/tiktok-sandbox/callback`,
+        redirectUri: `${getOAuthDomain()}/auth/tiktok/callback`,
       });
     }
   }

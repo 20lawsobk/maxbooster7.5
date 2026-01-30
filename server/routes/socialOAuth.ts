@@ -156,7 +156,7 @@ const CALLBACK_PATHS: Record<string, string> = {
   instagram: '/auth/instagram/callback',
   threads: '/auth/threads/callback',
   tiktok: '/auth/tiktok/callback',
-  tiktok_sandbox: '/auth/tiktok-sandbox/callback',
+  tiktok_sandbox: '/auth/tiktok/callback',
   google: '/auth/google/callback',
   youtube: '/auth/youtube/callback',
   googlebusiness: '/auth/google-business/callback',
