@@ -46,6 +46,8 @@ import { FlowState3DWorkspace } from './FlowState3DWorkspace';
 import { FlowStateAISidebar } from './FlowStateAISidebar';
 import { FlowStateSmartToolbar } from './FlowStateSmartToolbar';
 import { FlowStateMixer } from './FlowStateMixer';
+import { FlowStateSpectralVisualizer } from './FlowStateSpectralVisualizer';
+import { FlowStateCollaborationPresence, useCollaborationPresence } from './FlowStateCollaborationPresence';
 import { cn } from '@/lib/utils';
 
 interface FlowStateStudioProProps {
@@ -79,10 +81,12 @@ export function FlowStateStudioPro({
 }: FlowStateStudioProProps) {
   const adapter = useFlowStateAdapter(projectId);
   const { tracks, transport, context, suggestions } = adapter;
+  const collaboration = useCollaborationPresence(projectId);
 
   const [showAISidebar, setShowAISidebar] = useState(true);
   const [showMixer, setShowMixer] = useState(false);
   const [show3DWorkspace, setShow3DWorkspace] = useState(false);
+  const [showSpectralVisualizer, setShowSpectralVisualizer] = useState(false);
   const [activeTool, setActiveTool] = useState('pointer');
   const [chromeVisible, setChromeVisible] = useState(true);
 
@@ -141,6 +145,19 @@ export function FlowStateStudioPro({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [adapter, transport, context, onSave]);
 
+  useEffect(() => {
+    const selectedTrack = context.selectedTrackIds[0] || null;
+    collaboration.setCurrentTrack(selectedTrack);
+  }, [context.selectedTrackIds, collaboration]);
+
+  useEffect(() => {
+    collaboration.setRecordingStatus(transport.isRecording);
+  }, [transport.isRecording, collaboration]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    collaboration.updateCursorPosition(e.clientX, e.clientY);
+  }, [collaboration]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -176,7 +193,38 @@ export function FlowStateStudioPro({
   }, [adapter]);
 
   return (
-    <div className="flowstate-studio h-screen w-full flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden">
+    <div
+      className="flowstate-studio h-screen w-full flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden relative"
+      onMouseMove={handleMouseMove}
+    >
+      <FlowStateCollaborationPresence
+        collaborators={collaboration.collaborators}
+        currentUserId="current-user"
+        isConnected={collaboration.isConnected}
+        onInvite={() => console.log('Invite collaborators')}
+        onReconnect={() => collaboration.reconnect()}
+      />
+
+      <AnimatePresence>
+        {showSpectralVisualizer && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute top-20 left-1/2 -translate-x-1/2 z-40"
+          >
+            <FlowStateSpectralVisualizer
+              audioContext={null}
+              analyserNode={null}
+              isPlaying={transport.isPlaying}
+              width={400}
+              height={180}
+              mode="spectrum"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {chromeVisible && (
           <motion.header
@@ -228,8 +276,24 @@ export function FlowStateStudioPro({
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                title="3D Workspace"
               >
                 <Box className="w-4 h-4" />
+              </motion.button>
+
+              <motion.button
+                onClick={() => setShowSpectralVisualizer(!showSpectralVisualizer)}
+                className={cn(
+                  "p-2 rounded-lg transition-all",
+                  showSpectralVisualizer
+                    ? "bg-cyan-600 text-white"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                )}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Spectral Visualizer"
+              >
+                <Activity className="w-4 h-4" />
               </motion.button>
               
               <motion.button
