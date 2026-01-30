@@ -43,6 +43,11 @@ interface FlowStateAIPanelProps {
   onAIMix?: () => void;
   onAIMaster?: () => void;
   onAIGenerate?: () => void;
+  onGenerateMelody?: () => void;
+  onGenerateDrums?: () => void;
+  onGeneratePercussion?: () => void;
+  onGenerateBass?: () => void;
+  onAnalyzeAudio?: () => void;
   isAIMixing?: boolean;
   isAIMastering?: boolean;
 }
@@ -108,6 +113,11 @@ export function FlowStateAIPanel({
   onAIMix,
   onAIMaster,
   onAIGenerate,
+  onGenerateMelody,
+  onGenerateDrums,
+  onGeneratePercussion,
+  onGenerateBass,
+  onAnalyzeAudio,
   isAIMixing = false,
   isAIMastering = false,
 }: FlowStateAIPanelProps) {
@@ -329,34 +339,72 @@ export function FlowStateAIPanel({
               </motion.button>
 
               <div className="text-xs font-medium text-white/40 uppercase tracking-wider mt-4">
-                Quick Actions
+                Pattern Generators
               </div>
 
               <div className="space-y-2">
                 <motion.button
+                  onClick={onGenerateMelody}
                   className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 text-left"
                   whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                 >
                   <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
                     <FileAudio className="w-4 h-4 text-purple-400" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-white">Generate Melody</p>
                     <p className="text-[10px] text-white/50">AI-composed melodic lines</p>
                   </div>
+                  <ChevronRight className="w-4 h-4 text-white/30" />
                 </motion.button>
 
                 <motion.button
+                  onClick={onGenerateBass}
                   className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 text-left"
                   whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    <Music className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-white">Generate Bass</p>
+                    <p className="text-[10px] text-white/50">Low-end foundation patterns</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/30" />
+                </motion.button>
+
+                <motion.button
+                  onClick={onGenerateDrums}
+                  className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 text-left"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                 >
                   <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
                     <Layers className="w-4 h-4 text-orange-400" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-white">Generate Drums</p>
-                    <p className="text-[10px] text-white/50">Pattern-based drum tracks</p>
+                    <p className="text-[10px] text-white/50">Pattern-based drum grooves</p>
                   </div>
+                  <ChevronRight className="w-4 h-4 text-white/30" />
+                </motion.button>
+
+                <motion.button
+                  onClick={onGeneratePercussion}
+                  className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 text-left"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <Radio className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-white">Generate Percussion</p>
+                    <p className="text-[10px] text-white/50">Shakers, congas, tambourines</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/30" />
                 </motion.button>
               </div>
             </motion.div>
@@ -461,11 +509,14 @@ export function FlowStateAIPanel({
               </div>
 
               <motion.button
+                onClick={onAnalyzeAudio}
                 className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3"
                 whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
               >
                 <Volume2 className="w-4 h-4 text-white/60" />
-                <span className="text-sm text-white">Analyze Audio</span>
+                <span className="text-sm text-white flex-1 text-left">Analyze Audio</span>
+                <span className="text-[10px] text-white/30">BPM, Key, Energy</span>
               </motion.button>
             </motion.div>
           )}

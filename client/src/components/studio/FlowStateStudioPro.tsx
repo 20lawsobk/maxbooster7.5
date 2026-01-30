@@ -205,6 +205,26 @@ export function FlowStateStudioPro({
     adapter.toggleTrackSolo(trackId);
   }, [adapter]);
 
+  const handleGenerateMelody = useCallback(() => {
+    console.log('[FlowState] Generate Melody pattern');
+  }, []);
+
+  const handleGenerateBass = useCallback(() => {
+    console.log('[FlowState] Generate Bass pattern');
+  }, []);
+
+  const handleGenerateDrums = useCallback(() => {
+    console.log('[FlowState] Generate Drums pattern');
+  }, []);
+
+  const handleGeneratePercussion = useCallback(() => {
+    console.log('[FlowState] Generate Percussion pattern');
+  }, []);
+
+  const handleAnalyzeAudio = useCallback(() => {
+    console.log('[FlowState] Analyze Audio');
+  }, []);
+
   const handleToolbarAction = useCallback((actionId: string) => {
     const selectedTrack = context.selectedTrackIds[0];
     
@@ -693,6 +713,11 @@ export function FlowStateStudioPro({
                 onAIMix={onAIMix}
                 onAIMaster={onAIMaster}
                 onAIGenerate={() => setShowAIGeneratorDialog(true)}
+                onGenerateMelody={handleGenerateMelody}
+                onGenerateBass={handleGenerateBass}
+                onGenerateDrums={handleGenerateDrums}
+                onGeneratePercussion={handleGeneratePercussion}
+                onAnalyzeAudio={handleAnalyzeAudio}
                 isAIMixing={isAIMixing}
                 isAIMastering={isAIMastering}
               />
