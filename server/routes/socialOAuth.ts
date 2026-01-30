@@ -40,8 +40,7 @@ const PLATFORMS = {
     clientSecret: process.env.THREADS_APP_SECRET || process.env.FACEBOOK_APP_SECRET,
     usePKCE: false,
     responseType: 'code',
-    enabled: false, // Coming March 1st, 2026
-    comingSoon: 'March 1st, 2026',
+    enabled: true,
   },
   tiktok: {
     name: 'TikTok',
@@ -52,8 +51,7 @@ const PLATFORMS = {
     clientSecret: process.env.TIKTOK_CLIENT_SECRET,
     usePKCE: true,
     responseType: 'code',
-    enabled: false, // Coming March 1st, 2026
-    comingSoon: 'March 1st, 2026',
+    enabled: true,
   },
   google: {
     name: 'Google',
