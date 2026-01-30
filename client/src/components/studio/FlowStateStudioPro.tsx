@@ -205,6 +205,48 @@ export function FlowStateStudioPro({
     adapter.toggleTrackSolo(trackId);
   }, [adapter]);
 
+  const handleToolbarAction = useCallback((actionId: string) => {
+    const selectedTrack = context.selectedTrackIds[0];
+    
+    switch (actionId) {
+      case 'mute':
+        if (selectedTrack) adapter.toggleTrackMute(selectedTrack);
+        break;
+      case 'solo':
+        if (selectedTrack) adapter.toggleTrackSolo(selectedTrack);
+        break;
+      case 'arm':
+        if (selectedTrack) adapter.toggleTrackArm(selectedTrack);
+        break;
+      case 'delete':
+        if (selectedTrack) adapter.deleteTrack(selectedTrack);
+        break;
+      case 'duplicate':
+        if (selectedTrack) adapter.duplicateTrack(selectedTrack);
+        break;
+      case 'analyze':
+        console.log('[FlowState] Analyze track:', selectedTrack || 'No track selected');
+        break;
+      case 'stem-separate':
+        console.log('[FlowState] Stem separation:', selectedTrack || 'No track selected');
+        break;
+      case 'ai-process':
+        console.log('[FlowState] AI Process track:', selectedTrack || 'No track selected');
+        break;
+      case 'ai-enhance':
+        console.log('[FlowState] AI Enhance:', context.selectedClipIds[0] || 'No clip selected');
+        break;
+      case 'quantize':
+        console.log('[FlowState] Quantize MIDI:', context.selectedClipIds[0] || 'No clip selected');
+        break;
+      case 'humanize':
+        console.log('[FlowState] Humanize MIDI:', context.selectedClipIds[0] || 'No clip selected');
+        break;
+      default:
+        console.log('[FlowState] Toolbar action:', actionId);
+    }
+  }, [adapter, context]);
+
   return (
     <div
       className="flowstate-studio h-screen w-full flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden relative"
@@ -439,7 +481,7 @@ export function FlowStateStudioPro({
                 selectionType={context.selectionType}
                 selectedTrackId={context.selectedTrackIds[0] || null}
                 selectedClipId={context.selectedClipIds[0] || null}
-                onAction={(action) => console.log('Toolbar action:', action)}
+                onAction={handleToolbarAction}
               />
 
               <div className="flex-1 bg-gradient-to-b from-slate-900/50 to-slate-950/50 overflow-hidden relative">

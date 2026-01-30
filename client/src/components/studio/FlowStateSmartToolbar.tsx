@@ -21,6 +21,8 @@ import {
   Palette,
   Split,
   Merge,
+  Activity,
+  GitBranch,
 } from 'lucide-react';
 import type { SelectionType } from '@/hooks/useFlowStateAdapter';
 import { cn } from '@/lib/utils';
@@ -46,6 +48,8 @@ const TRACK_ACTIONS: ToolbarAction[] = [
   { id: 'mute', icon: VolumeX, label: 'Mute' },
   { id: 'solo', icon: Volume2, label: 'Solo' },
   { id: 'arm', icon: Mic, label: 'Arm' },
+  { id: 'analyze', icon: Activity, label: 'Analyze', suggested: true },
+  { id: 'stem-separate', icon: GitBranch, label: 'Separate Stems', suggested: true },
   { id: 'color', icon: Palette, label: 'Color', group: 'appearance' },
   { id: 'height', icon: ArrowUpDown, label: 'Height', group: 'appearance' },
   { id: 'ai-process', icon: Wand2, label: 'AI Process', suggested: true },
@@ -60,6 +64,7 @@ const CLIP_ACTIONS: ToolbarAction[] = [
   { id: 'merge', icon: Merge, label: 'Merge' },
   { id: 'reverse', icon: RotateCcw, label: 'Reverse' },
   { id: 'stretch', icon: Clock, label: 'Time Stretch' },
+  { id: 'analyze', icon: Activity, label: 'Analyze', suggested: true },
   { id: 'ai-enhance', icon: Sparkles, label: 'AI Enhance', suggested: true },
 ];
 
