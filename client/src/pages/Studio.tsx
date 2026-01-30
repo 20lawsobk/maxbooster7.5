@@ -4,7 +4,7 @@ import { useParams, useLocation } from 'wouter';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useAIWorkflow, type AIWorkflowState } from '@/hooks/useAIWorkflow';
 import type { Project } from '@shared/schema';
-import { FlowStateStudio } from '@/components/studio/FlowStateStudio';
+import { FlowStateStudioPro } from '@/components/studio/FlowStateStudioPro';
 
 interface TrackAnalysis {
   id: string;
@@ -2748,31 +2748,23 @@ export default function Studio() {
 
   if (studioMode === 'flowstate') {
     return (
-      <AppLayout noPadding title="FlowState Studio (Preview)">
-        <div className="relative h-full">
-          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[1002] px-4 py-2 
-            bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium 
-            rounded-full shadow-lg flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            FlowState Preview Mode - Visual Concept
-          </div>
-          <FlowStateStudio
-            projectId={selectedProject?.id?.toString()}
-            projectName={selectedProject?.name || 'Untitled Project'}
-            onSave={() => toast({ title: 'Project Saved', description: 'Your changes have been saved.' })}
-            onExport={() => setShowExportDialog(true)}
-          />
-          <button
-            onClick={() => setStudioMode('classic')}
-            className="fixed bottom-6 right-6 z-[1001] px-4 py-2 bg-slate-800/90 hover:bg-slate-700 
-              text-white text-sm font-medium rounded-full backdrop-blur-sm border border-white/10
-              shadow-lg transition-all hover:scale-105 flex items-center gap-2"
-          >
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
-            Switch to Classic
-          </button>
-        </div>
-      </AppLayout>
+      <div className="h-screen w-full relative">
+        <FlowStateStudioPro
+          projectId={selectedProject?.id?.toString() || null}
+          projectName={selectedProject?.name || 'Untitled Project'}
+          onSave={() => toast({ title: 'Project Saved', description: 'Your changes have been saved.' })}
+          onExport={() => setShowExportDialog(true)}
+        />
+        <button
+          onClick={() => setStudioMode('classic')}
+          className="fixed bottom-28 right-6 z-[1001] px-4 py-2 bg-slate-800/90 hover:bg-slate-700 
+            text-white text-sm font-medium rounded-full backdrop-blur-sm border border-white/10
+            shadow-lg transition-all hover:scale-105 flex items-center gap-2"
+        >
+          <span className="w-2 h-2 rounded-full bg-amber-400" />
+          Switch to Classic
+        </button>
+      </div>
     );
   }
 

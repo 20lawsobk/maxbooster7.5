@@ -1,52 +1,161 @@
+import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LucideIcon } from 'lucide-react';
+import {
+  Scissors,
+  Copy,
+  Clipboard,
+  Trash2,
+  Volume2,
+  VolumeX,
+  Mic,
+  Wand2,
+  Layers,
+  Music,
+  ArrowUpDown,
+  Maximize,
+  Minimize,
+  RotateCcw,
+  Clock,
+  Sparkles,
+  Sliders,
+  Palette,
+  Split,
+  Merge,
+} from 'lucide-react';
+import type { SelectionType } from '@/hooks/useFlowStateAdapter';
+import { cn } from '@/lib/utils';
 
 interface ToolbarAction {
   id: string;
-  icon: LucideIcon;
+  icon: React.ElementType;
   label: string;
   suggested?: boolean;
-  disabled?: boolean;
+  group?: string;
 }
 
 interface FlowStateSmartToolbarProps {
-  actions: ToolbarAction[];
+  selectionType: SelectionType;
+  selectedTrackId: string | null;
+  selectedClipId: string | null;
   onAction?: (actionId: string) => void;
 }
 
-export function FlowStateSmartToolbar({ actions, onAction }: FlowStateSmartToolbarProps) {
-  if (actions.length === 0) return null;
+const TRACK_ACTIONS: ToolbarAction[] = [
+  { id: 'duplicate', icon: Copy, label: 'Duplicate' },
+  { id: 'delete', icon: Trash2, label: 'Delete' },
+  { id: 'mute', icon: VolumeX, label: 'Mute' },
+  { id: 'solo', icon: Volume2, label: 'Solo' },
+  { id: 'arm', icon: Mic, label: 'Arm' },
+  { id: 'color', icon: Palette, label: 'Color', group: 'appearance' },
+  { id: 'height', icon: ArrowUpDown, label: 'Height', group: 'appearance' },
+  { id: 'ai-process', icon: Wand2, label: 'AI Process', suggested: true },
+];
+
+const CLIP_ACTIONS: ToolbarAction[] = [
+  { id: 'cut', icon: Scissors, label: 'Cut' },
+  { id: 'copy', icon: Copy, label: 'Copy' },
+  { id: 'paste', icon: Clipboard, label: 'Paste' },
+  { id: 'delete', icon: Trash2, label: 'Delete' },
+  { id: 'split', icon: Split, label: 'Split' },
+  { id: 'merge', icon: Merge, label: 'Merge' },
+  { id: 'reverse', icon: RotateCcw, label: 'Reverse' },
+  { id: 'stretch', icon: Clock, label: 'Time Stretch' },
+  { id: 'ai-enhance', icon: Sparkles, label: 'AI Enhance', suggested: true },
+];
+
+const RANGE_ACTIONS: ToolbarAction[] = [
+  { id: 'cut', icon: Scissors, label: 'Cut' },
+  { id: 'copy', icon: Copy, label: 'Copy' },
+  { id: 'delete', icon: Trash2, label: 'Delete' },
+  { id: 'loop', icon: RotateCcw, label: 'Loop Selection' },
+  { id: 'normalize', icon: Maximize, label: 'Normalize' },
+  { id: 'fade', icon: Minimize, label: 'Fade' },
+  { id: 'ai-fill', icon: Wand2, label: 'AI Fill', suggested: true },
+];
+
+const MIDI_ACTIONS: ToolbarAction[] = [
+  { id: 'cut', icon: Scissors, label: 'Cut' },
+  { id: 'copy', icon: Copy, label: 'Copy' },
+  { id: 'delete', icon: Trash2, label: 'Delete' },
+  { id: 'quantize', icon: Layers, label: 'Quantize' },
+  { id: 'transpose', icon: ArrowUpDown, label: 'Transpose' },
+  { id: 'velocity', icon: Sliders, label: 'Velocity' },
+  { id: 'humanize', icon: Sparkles, label: 'Humanize', suggested: true },
+];
+
+const AUTOMATION_ACTIONS: ToolbarAction[] = [
+  { id: 'draw', icon: Music, label: 'Draw' },
+  { id: 'smooth', icon: Wand2, label: 'Smooth' },
+  { id: 'clear', icon: Trash2, label: 'Clear' },
+  { id: 'copy', icon: Copy, label: 'Copy' },
+  { id: 'paste', icon: Clipboard, label: 'Paste' },
+  { id: 'ai-generate', icon: Sparkles, label: 'AI Generate', suggested: true },
+];
+
+export function FlowStateSmartToolbar({
+  selectionType,
+  selectedTrackId,
+  selectedClipId,
+  onAction,
+}: FlowStateSmartToolbarProps) {
+  const actions = useMemo(() => {
+    switch (selectionType) {
+      case 'track':
+        return TRACK_ACTIONS;
+      case 'clip':
+        return CLIP_ACTIONS;
+      case 'range':
+        return RANGE_ACTIONS;
+      case 'midi':
+        return MIDI_ACTIONS;
+      case 'automation':
+        return AUTOMATION_ACTIONS;
+      default:
+        return [];
+    }
+  }, [selectionType]);
+
+  if (actions.length === 0) {
+    return (
+      <div className="h-10 border-b border-white/5 bg-black/20 flex items-center px-4">
+        <span className="text-xs text-white/30">Select a track or clip to see available actions</span>
+      </div>
+    );
+  }
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 20 }}
-        className="flow-smart-toolbar"
-      >
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="h-12 border-b border-white/5 bg-gradient-to-r from-black/30 via-black/20 to-black/30 flex items-center px-4 gap-1"
+    >
+      <span className="text-[10px] text-white/40 uppercase tracking-wider mr-3 capitalize">
+        {selectionType}
+      </span>
+      
+      <div className="flex items-center gap-1">
         {actions.map((action, index) => (
           <motion.button
             key={action.id}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.05 }}
-            className={`flow-smart-toolbar-item ${action.suggested ? 'suggested' : ''}`}
+            transition={{ delay: index * 0.03 }}
             onClick={() => onAction?.(action.id)}
-            disabled={action.disabled}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all",
+              action.suggested
+                ? "bg-gradient-to-r from-purple-600/80 to-pink-600/80 text-white hover:from-purple-500 hover:to-pink-500"
+                : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+            )}
           >
-            <action.icon className="w-5 h-5" />
-            <span className="flow-smart-toolbar-label">{action.label}</span>
+            <action.icon className="w-3.5 h-3.5" />
+            <span>{action.label}</span>
             {action.suggested && (
-              <motion.div
-                className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-400 rounded-full"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              />
+              <Sparkles className="w-3 h-3 text-yellow-300 animate-pulse" />
             )}
           </motion.button>
         ))}
-      </motion.div>
-    </AnimatePresence>
+      </div>
+    </motion.div>
   );
 }

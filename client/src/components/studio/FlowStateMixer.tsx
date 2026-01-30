@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Volume2,
@@ -6,263 +6,247 @@ import {
   Headphones,
   MoreVertical,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface Track {
+interface MixerTrack {
   id: string;
   name: string;
-  type: 'audio' | 'midi';
   color: string;
   volume: number;
   pan: number;
   mute: boolean;
   solo: boolean;
   armed: boolean;
+  meterLevel: [number, number];
 }
 
 interface FlowStateMixerProps {
-  tracks: Track[];
-  onUpdateTrack: (id: string, updates: Partial<Track>) => void;
+  tracks: MixerTrack[];
+  onVolumeChange: (trackId: string, volume: number) => void;
+  onPanChange: (trackId: string, pan: number) => void;
+  onMuteToggle: (trackId: string) => void;
+  onSoloToggle: (trackId: string) => void;
+  masterMeterLevel?: [number, number];
 }
 
-export function FlowStateMixer({ tracks, onUpdateTrack }: FlowStateMixerProps) {
+export function FlowStateMixer({
+  tracks,
+  onVolumeChange,
+  onPanChange,
+  onMuteToggle,
+  onSoloToggle,
+  masterMeterLevel = [0.6, 0.55],
+}: FlowStateMixerProps) {
   return (
-    <div className="h-full flex bg-[var(--flow-bg-nebula)]">
-      {/* Track Channels */}
-      <div className="flex overflow-x-auto py-4 px-2 gap-1">
+    <div className="h-full flex bg-gradient-to-b from-slate-900/90 to-slate-950/90 backdrop-blur-xl">
+      <div className="flex overflow-x-auto py-3 px-2 gap-1">
         {tracks.map((track) => (
           <MixerChannel
             key={track.id}
             track={track}
-            onUpdate={(updates) => onUpdateTrack(track.id, updates)}
+            onVolumeChange={(v) => onVolumeChange(track.id, v)}
+            onPanChange={(p) => onPanChange(track.id, p)}
+            onMuteToggle={() => onMuteToggle(track.id)}
+            onSoloToggle={() => onSoloToggle(track.id)}
           />
         ))}
         
-        {/* Master Channel */}
-        <div className="flow-channel border-l-2 border-indigo-500/30 ml-2 pl-2">
-          <div className="flow-channel-name bg-indigo-500/20 text-indigo-300">
+        <div className="w-20 flex-shrink-0 bg-black/30 rounded-lg border border-white/5 p-2 flex flex-col gap-2 ml-2 border-l-2 border-indigo-500/30">
+          <div className="text-[10px] font-bold text-center py-1 bg-indigo-500/20 rounded text-indigo-300">
             MASTER
           </div>
           
-          <div className="flow-fader-container">
-            <div className="flex gap-1">
-              <MeterBar level={0.7} color="#22c55e" />
-              <MeterBar level={0.65} color="#22c55e" />
-            </div>
-            
-            <div className="flow-fader">
-              <div className="flow-fader-fill" style={{ height: '80%' }} />
-              <div 
-                className="flow-fader-handle"
-                style={{ bottom: 'calc(80% - 12px)' }}
-              />
-            </div>
-            
-            <div className="text-xs text-slate-400 font-mono">0.0</div>
+          <div className="flex-1 flex gap-1 items-end">
+            <MeterBar level={masterMeterLevel[0]} color="#22c55e" />
+            <MeterBar level={masterMeterLevel[1]} color="#22c55e" />
           </div>
           
-          <PanKnob value={0} onChange={() => {}} />
+          <div className="h-24 relative bg-black/40 rounded flex items-center justify-center">
+            <div className="absolute inset-x-2 inset-y-2 bg-gradient-to-t from-slate-800 to-slate-700 rounded" />
+            <div className="relative w-full h-1 bg-white/10 rounded mx-2">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-6 bg-gradient-to-b from-slate-300 to-slate-400 rounded-sm shadow-lg" />
+            </div>
+          </div>
+          
+          <div className="text-[10px] text-white/60 text-center">0.0 dB</div>
         </div>
       </div>
     </div>
   );
 }
 
-function MixerChannel({ 
-  track, 
-  onUpdate 
-}: { 
-  track: Track; 
-  onUpdate: (updates: Partial<Track>) => void;
-}) {
-  const [meterLevel, setMeterLevel] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+interface MixerChannelProps {
+  track: MixerTrack;
+  onVolumeChange: (volume: number) => void;
+  onPanChange: (pan: number) => void;
+  onMuteToggle: () => void;
+  onSoloToggle: () => void;
+}
+
+function MixerChannel({ track, onVolumeChange, onPanChange, onMuteToggle, onSoloToggle }: MixerChannelProps) {
+  const [isDraggingFader, setIsDraggingFader] = useState(false);
   const faderRef = useRef<HTMLDivElement>(null);
+  
+  const handleFaderMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsDraggingFader(true);
+    e.preventDefault();
+  }, []);
 
   useEffect(() => {
-    if (track.mute) {
-      setMeterLevel(0);
-      return;
-    }
+    if (!isDraggingFader) return;
 
-    const interval = setInterval(() => {
-      const base = track.volume * 0.7;
-      const variance = Math.random() * 0.3;
-      setMeterLevel(Math.min(1, base + variance));
-    }, 50);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!faderRef.current) return;
+      const rect = faderRef.current.getBoundingClientRect();
+      const y = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      onVolumeChange(y);
+    };
 
-    return () => clearInterval(interval);
-  }, [track.volume, track.mute]);
+    const handleMouseUp = () => setIsDraggingFader(false);
 
-  const handleFaderDrag = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!faderRef.current) return;
-    
-    const rect = faderRef.current.getBoundingClientRect();
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    const percentage = 1 - Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-    onUpdate({ volume: percentage });
-  };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
-  const volumeDb = track.volume > 0 
-    ? (20 * Math.log10(track.volume)).toFixed(1)
-    : '-∞';
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingFader, onVolumeChange]);
+
+  const dbValue = track.volume > 0 ? 20 * Math.log10(track.volume) : -Infinity;
+  const dbDisplay = dbValue === -Infinity ? '-∞' : dbValue.toFixed(1);
 
   return (
-    <motion.div 
-      className="flow-channel"
-      whileHover={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
-    >
-      {/* Track Name */}
-      <div 
-        className="flow-channel-name truncate"
-        style={{ backgroundColor: track.color + '20', color: track.color }}
+    <div className="w-16 flex-shrink-0 bg-black/30 rounded-lg border border-white/5 p-2 flex flex-col gap-2">
+      <div
+        className="text-[10px] font-medium text-center py-1 rounded truncate px-1"
+        style={{ backgroundColor: `${track.color}30`, color: track.color }}
       >
         {track.name}
       </div>
 
-      {/* Mute/Solo Buttons */}
-      <div className="flex gap-1 mb-2">
-        <button
-          className={`flex-1 py-1 rounded text-[10px] font-bold transition-colors
-            ${track.mute 
-              ? 'bg-amber-500 text-black' 
-              : 'bg-[var(--flow-bg-floating)] text-slate-500 hover:text-slate-300'
-            }`}
-          onClick={() => onUpdate({ mute: !track.mute })}
+      <div
+        className="w-6 h-6 mx-auto rounded-full border-2 border-white/20 relative cursor-pointer"
+        style={{ background: `conic-gradient(from -135deg, ${track.color} ${(track.pan + 1) * 135}deg, transparent 0)` }}
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-0.5 h-2 bg-white rounded-full" style={{ transform: `rotate(${track.pan * 135}deg)` }} />
+        </div>
+      </div>
+
+      <div className="flex gap-1">
+        <MeterBar level={track.meterLevel[0]} color={track.color} />
+        <MeterBar level={track.meterLevel[1]} color={track.color} />
+      </div>
+
+      <div
+        ref={faderRef}
+        className="h-20 relative bg-black/40 rounded cursor-ns-resize"
+        onMouseDown={handleFaderMouseDown}
+      >
+        <div className="absolute inset-x-1 inset-y-1 bg-gradient-to-t from-slate-800 to-slate-700 rounded overflow-hidden">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-full h-px bg-white/10"
+              style={{ top: `${(i + 1) * 10}%` }}
+            />
+          ))}
+        </div>
+
+        <motion.div
+          className="absolute left-1 right-1 h-3 rounded-sm shadow-lg cursor-grab active:cursor-grabbing"
+          style={{
+            background: `linear-gradient(to bottom, ${track.color}, ${track.color}aa)`,
+            bottom: `${track.volume * 100}%`,
+            transform: 'translateY(50%)',
+          }}
+          whileHover={{ scale: 1.05 }}
+        />
+      </div>
+
+      <div className="text-[10px] text-white/60 text-center font-mono">
+        {dbDisplay} dB
+      </div>
+
+      <div className="flex gap-1">
+        <motion.button
+          onClick={onMuteToggle}
+          className={cn(
+            "flex-1 h-6 rounded text-[10px] font-bold flex items-center justify-center",
+            track.mute
+              ? "bg-red-500 text-white"
+              : "bg-white/10 text-white/60 hover:bg-white/20"
+          )}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           M
-        </button>
-        <button
-          className={`flex-1 py-1 rounded text-[10px] font-bold transition-colors
-            ${track.solo 
-              ? 'bg-cyan-500 text-black' 
-              : 'bg-[var(--flow-bg-floating)] text-slate-500 hover:text-slate-300'
-            }`}
-          onClick={() => onUpdate({ solo: !track.solo })}
+        </motion.button>
+        
+        <motion.button
+          onClick={onSoloToggle}
+          className={cn(
+            "flex-1 h-6 rounded text-[10px] font-bold flex items-center justify-center",
+            track.solo
+              ? "bg-yellow-500 text-black"
+              : "bg-white/10 text-white/60 hover:bg-white/20"
+          )}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           S
-        </button>
+        </motion.button>
       </div>
 
-      {/* Fader & Meter */}
-      <div className="flow-fader-container flex-1">
-        <div className="flex gap-1">
-          <MeterBar level={meterLevel} color={track.color} />
-        </div>
-        
-        <div 
-          ref={faderRef}
-          className="flow-fader"
-          onMouseDown={(e) => {
-            setIsDragging(true);
-            handleFaderDrag(e);
-          }}
-          onMouseMove={(e) => isDragging && handleFaderDrag(e)}
-          onMouseUp={() => setIsDragging(false)}
-          onMouseLeave={() => setIsDragging(false)}
-        >
-          <motion.div 
-            className="flow-fader-fill" 
-            style={{ backgroundColor: track.color }}
-            animate={{ height: `${track.volume * 100}%` }}
-            transition={{ duration: 0.05 }}
-          />
-          <motion.div 
-            className="flow-fader-handle"
-            animate={{ bottom: `calc(${track.volume * 100}% - 12px)` }}
-            transition={{ duration: 0.05 }}
-          />
-        </div>
-        
-        <div className="text-xs text-slate-400 font-mono">{volumeDb}</div>
-      </div>
-
-      {/* Pan Knob */}
-      <PanKnob 
-        value={track.pan} 
-        onChange={(pan) => onUpdate({ pan })} 
-        color={track.color}
-      />
-    </motion.div>
-  );
-}
-
-function MeterBar({ level, color }: { level: number; color: string }) {
-  const segments = 20;
-  
-  return (
-    <div className="flow-meter">
-      {Array.from({ length: segments }, (_, i) => {
-        const segmentLevel = (segments - i) / segments;
-        const isActive = level >= segmentLevel;
-        
-        let segmentColor = color;
-        if (segmentLevel > 0.85) segmentColor = '#ef4444';
-        else if (segmentLevel > 0.7) segmentColor = '#f59e0b';
-        
-        return (
-          <div
-            key={i}
-            className={`flow-meter-segment ${isActive ? 'active' : 'inactive'}`}
-            style={{ backgroundColor: isActive ? segmentColor : segmentColor + '30' }}
-          />
-        );
-      })}
+      <motion.button
+        className={cn(
+          "h-5 rounded text-[10px] flex items-center justify-center",
+          track.armed
+            ? "bg-red-600 text-white animate-pulse"
+            : "bg-white/5 text-white/40"
+        )}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        REC
+      </motion.button>
     </div>
   );
 }
 
-function PanKnob({ 
-  value, 
-  onChange, 
-  color = '#6366f1' 
-}: { 
-  value: number; 
-  onChange: (value: number) => void;
-  color?: string;
-}) {
-  const [isDragging, setIsDragging] = useState(false);
-  const startY = useRef(0);
-  const startValue = useRef(0);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    startY.current = e.clientY;
-    startValue.current = value;
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      const delta = (startY.current - e.clientY) / 100;
-      const newValue = Math.max(-1, Math.min(1, startValue.current + delta));
-      onChange(newValue);
-    };
-    
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-    
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-  };
-
-  const rotation = value * 135;
-  const displayValue = value === 0 ? 'C' : value > 0 ? `R${Math.round(value * 50)}` : `L${Math.round(-value * 50)}`;
+function MeterBar({ level, color }: { level: number; color: string }) {
+  const segments = 16;
+  const activeSegments = Math.floor(level * segments);
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div 
-        className="flow-knob"
-        onMouseDown={handleMouseDown}
-        style={{ 
-          '--knob-rotation': `${rotation}deg`,
-          '--knob-value': `${((value + 1) / 2) * 270}deg`,
-        } as React.CSSProperties}
-      >
-        <div className="flow-knob-track" />
-        <div className="flow-knob-fill" style={{ background: `conic-gradient(from 225deg, ${color} ${((value + 1) / 2) * 270}deg, transparent ${((value + 1) / 2) * 270}deg)` }} />
-        <div className="flow-knob-indicator" />
-      </div>
-      <div className="text-[10px] text-slate-500 font-mono">{displayValue}</div>
+    <div className="flex-1 flex flex-col-reverse gap-px h-16 bg-black/40 rounded p-0.5">
+      {Array.from({ length: segments }).map((_, i) => {
+        const isActive = i < activeSegments;
+        const isPeak = i >= segments - 2;
+        const isWarn = i >= segments - 5 && i < segments - 2;
+
+        let segmentColor = color;
+        if (isPeak) segmentColor = '#ef4444';
+        else if (isWarn) segmentColor = '#eab308';
+
+        return (
+          <motion.div
+            key={i}
+            className="flex-1 rounded-sm"
+            style={{
+              backgroundColor: isActive ? segmentColor : 'rgba(255,255,255,0.05)',
+              opacity: isActive ? 1 : 0.3,
+            }}
+            initial={false}
+            animate={{
+              opacity: isActive ? 1 : 0.2,
+              scaleY: isActive ? 1 : 0.8,
+            }}
+            transition={{ duration: 0.05 }}
+          />
+        );
+      })}
     </div>
   );
 }
