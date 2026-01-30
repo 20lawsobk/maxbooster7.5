@@ -437,8 +437,13 @@ export interface StudioState {
 
   // Adaptive Grid and Sync Settings (Studio One style)
   adaptiveSnapEnabled: boolean; // When true, snap resolution adapts to zoom level
-  translucentEventsEnabled: boolean; // When true, waveforms are semi-transparent
+  translucentEventsEnabled: boolean; // When true, waveforms are semi-transparent showing grid lines through
   showSyncPoints: boolean; // When true, sync point markers are visible
+  
+  // Studio One 7-style Timeline Features
+  loopToolEnabled: boolean; // When true, dragging clip edges repeats/loops the audio
+  timeStretchEnabled: boolean; // When true, Alt/Option+drag stretches audio to fit
+  horizontalDropMode: boolean; // When Ctrl/Cmd held, imports render horizontally on single track
 
   // Tempo Detection State
   projectTempoMaps: TempoMap[];
@@ -616,6 +621,11 @@ export interface StudioState {
   setAdaptiveSnapEnabled: (enabled: boolean) => void;
   setTranslucentEventsEnabled: (enabled: boolean) => void;
   setShowSyncPoints: (enabled: boolean) => void;
+  
+  // Studio One 7-style Timeline Feature Actions
+  setLoopToolEnabled: (enabled: boolean) => void;
+  setTimeStretchEnabled: (enabled: boolean) => void;
+  setHorizontalDropMode: (enabled: boolean) => void;
   getAdaptiveSnapInterval: (zoom: number) => number; // Returns snap interval based on zoom level
 
   // Tempo Detection Actions
@@ -820,6 +830,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   adaptiveSnapEnabled: true,
   translucentEventsEnabled: false,
   showSyncPoints: true,
+  
+  // Studio One 7-style Timeline Features
+  loopToolEnabled: true,
+  timeStretchEnabled: true,
+  horizontalDropMode: false,
 
   // Tempo Detection State
   projectTempoMaps: [],
@@ -1274,6 +1289,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setAdaptiveSnapEnabled: (enabled) => set({ adaptiveSnapEnabled: enabled }),
   setTranslucentEventsEnabled: (enabled) => set({ translucentEventsEnabled: enabled }),
   setShowSyncPoints: (enabled) => set({ showSyncPoints: enabled }),
+  
+  // Studio One 7-style Timeline Feature Setters
+  setLoopToolEnabled: (enabled) => set({ loopToolEnabled: enabled }),
+  setTimeStretchEnabled: (enabled) => set({ timeStretchEnabled: enabled }),
+  setHorizontalDropMode: (enabled) => set({ horizontalDropMode: enabled }),
   
   getAdaptiveSnapInterval: (zoom: number): number => {
     const state = get();

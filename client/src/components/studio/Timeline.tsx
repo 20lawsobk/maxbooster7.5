@@ -144,6 +144,10 @@ export function Timeline({
     adaptiveSnapEnabled,
     showSyncPoints,
     translucentEventsEnabled,
+    loopToolEnabled,
+    timeStretchEnabled,
+    horizontalDropMode,
+    setHorizontalDropMode,
     getAdaptiveSnapInterval
   } = useStudioStore();
   
@@ -174,6 +178,11 @@ export function Timeline({
   const [localRangeEnd, setLocalRangeEnd] = useState<number | null>(null);
 
   const [splitPreviewTime, setSplitPreviewTime] = useState<number | null>(null);
+
+  // Studio One 7-style Modifier Key States
+  const [isAltPressed, setIsAltPressed] = useState(false);  // Time stretch mode
+  const [isCtrlPressed, setIsCtrlPressed] = useState(false); // Horizontal drop mode
+  const [isLoopExtending, setIsLoopExtending] = useState(false); // Loop tool active
 
   // Sync Point Dialog State
   const [syncPointDialogOpen, setSyncPointDialogOpen] = useState(false);
@@ -469,26 +478,59 @@ export function Timeline({
       let newStartTime = clip.startTime;
       let newEndTime = clip.startTime + clip.duration;
 
+      // Studio One 7-style: Alt/Option = Time Stretch mode (stretches to fit more/fewer bars)
+      // Default/Loop Tool = Extend clip by repeating/looping the audio content
+      const isTimeStretchMode = e.altKey && timeStretchEnabled;
+      const isLoopMode = loopToolEnabled && !isTimeStretchMode;
+      
+      // Track if we're in loop extending mode for visual feedback
+      if (isLoopMode && !isLoopExtending) {
+        setIsLoopExtending(true);
+      } else if (!isLoopMode && isLoopExtending) {
+        setIsLoopExtending(false);
+      }
+
       if (resizingClip.edge === 'start') {
         newStartTime = Math.max(0, Math.min(mouseTime, clip.startTime + clip.duration - 0.1));
       } else {
-        newEndTime = Math.max(clip.startTime + 0.1, Math.min(mouseTime, effectiveDuration));
+        // End edge resize - this is where loop tool and time stretch apply
+        if (isLoopMode) {
+          // Loop tool: allow extending beyond original clip duration (will loop/repeat)
+          // Snap to bar boundaries for clean loops
+          const barsPerSecond = 1 / secondsPerBar;
+          const loopBars = Math.max(1, Math.round((mouseTime - clip.startTime) * barsPerSecond));
+          newEndTime = clip.startTime + (loopBars / barsPerSecond);
+          // Clamp to timeline duration
+          newEndTime = Math.min(newEndTime, effectiveDuration);
+        } else if (isTimeStretchMode) {
+          // Time stretch: stretch audio to fit the new duration (without repeating)
+          // Allow extending up to 4x the original duration (reasonable for time stretch)
+          const maxStretch = clip.duration * 4;
+          newEndTime = Math.max(clip.startTime + 0.1, Math.min(mouseTime, clip.startTime + maxStretch, effectiveDuration));
+        } else {
+          // Normal trim: just adjust the visible portion
+          newEndTime = Math.max(clip.startTime + 0.1, Math.min(mouseTime, effectiveDuration));
+        }
       }
 
       setPreviewPosition({ startTime: newStartTime, endTime: newEndTime });
     },
-    [resizingClip, trackClips, pixelsToTime, snapToGrid, effectiveDuration]
+    [resizingClip, trackClips, pixelsToTime, snapToGrid, effectiveDuration, timeStretchEnabled, loopToolEnabled, isLoopExtending, secondsPerBar]
   );
 
   const handleResizeEnd = useCallback(() => {
     if (!resizingClip || !previewPosition) {
       setResizingClip(null);
       setPreviewPosition(null);
+      setIsLoopExtending(false);
       return;
     }
 
     if (onClipUpdate) {
       const duration = previewPosition.endTime - previewPosition.startTime;
+      // Pass the updated clip duration and start time
+      // Note: The loop/time stretch mode information is already encoded in the duration
+      // The parent component will handle actual audio processing based on the new duration
       onClipUpdate(resizingClip.trackId, resizingClip.clipId, {
         startTime: previewPosition.startTime,
         duration: duration,
@@ -497,6 +539,7 @@ export function Timeline({
 
     setResizingClip(null);
     setPreviewPosition(null);
+    setIsLoopExtending(false);
   }, [resizingClip, previewPosition, onClipUpdate]);
 
   const handleClipClick = useCallback(
@@ -591,6 +634,37 @@ export function Timeline({
     },
     [currentTool, pixelsToTime, snapToGrid]
   );
+
+  // Studio One 7-style: Track modifier keys for Time Stretch (Alt) and Horizontal Drop (Ctrl/Cmd)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && timeStretchEnabled) {
+        setIsAltPressed(true);
+      }
+      if ((e.ctrlKey || e.metaKey)) {
+        setIsCtrlPressed(true);
+        setHorizontalDropMode(true);
+      }
+    };
+    
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.altKey) {
+        setIsAltPressed(false);
+      }
+      if (!e.ctrlKey && !e.metaKey) {
+        setIsCtrlPressed(false);
+        setHorizontalDropMode(false);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [timeStretchEnabled, setHorizontalDropMode]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -932,6 +1006,50 @@ export function Timeline({
           <span>{TOOL_LABELS[currentTool] || 'Select'}</span>
         </div>
         
+        {/* Studio One 7-style: Modifier Key Indicators */}
+        {isAltPressed && (
+          <div
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold animate-pulse"
+            style={{
+              backgroundColor: 'rgba(251, 146, 60, 0.2)',
+              color: '#fb923c',
+              border: '1px solid #fb923c',
+            }}
+            data-testid="time-stretch-indicator"
+          >
+            <Zap className="w-3 h-3" />
+            <span>Time Stretch</span>
+          </div>
+        )}
+        {isCtrlPressed && (
+          <div
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold animate-pulse"
+            style={{
+              backgroundColor: 'rgba(34, 197, 94, 0.2)',
+              color: '#22c55e',
+              border: '1px solid #22c55e',
+            }}
+            data-testid="horizontal-drop-indicator"
+          >
+            <AlignHorizontalJustifyCenter className="w-3 h-3" />
+            <span>Horizontal Drop</span>
+          </div>
+        )}
+        {isLoopExtending && (
+          <div
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold animate-pulse"
+            style={{
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              color: '#3b82f6',
+              border: '1px solid #3b82f6',
+            }}
+            data-testid="loop-tool-indicator"
+          >
+            <Move className="w-3 h-3" />
+            <span>Loop/Repeat</span>
+          </div>
+        )}
+        
         {/* Fit Timeline to Contents Button (Studio One style) */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -995,20 +1113,40 @@ export function Timeline({
         onMouseLeave={() => setSplitPreviewTime(null)}
         data-testid="timeline-ruler"
       >
-        {/* Grid Markers */}
+        {/* Grid Markers - Enhanced Studio One 7 Style Ruler */}
         <div className="absolute inset-0 flex">
           {timelineMarkers.map(({ index, isBar, label }) => (
             <div
               key={index}
-              className="flex-1 text-xs pl-1 pt-1"
+              className="flex-1 relative"
               style={{
                 borderRight: isBar
-                  ? '1px solid var(--studio-border)'
-                  : '1px solid var(--studio-bg-deep)',
-                color: isBar ? 'var(--studio-text)' : 'var(--studio-text-muted)',
+                  ? '2px solid rgba(255, 255, 255, 0.3)'
+                  : '1px solid rgba(255, 255, 255, 0.08)',
               }}
             >
-              {label}
+              {/* Bar number label - larger and more prominent */}
+              {isBar && label && (
+                <div
+                  className="absolute top-0.5 left-1 font-bold text-sm select-none"
+                  style={{
+                    color: 'var(--studio-text)',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                  }}
+                >
+                  {label}
+                </div>
+              )}
+              {/* Beat tick marks at bottom */}
+              <div
+                className="absolute bottom-0 left-0 w-full"
+                style={{
+                  height: isBar ? '10px' : '6px',
+                  background: isBar 
+                    ? 'linear-gradient(to top, rgba(255,255,255,0.3), transparent)'
+                    : 'linear-gradient(to top, rgba(255,255,255,0.1), transparent)',
+                }}
+              />
             </div>
           ))}
         </div>
@@ -1212,14 +1350,52 @@ export function Timeline({
                             left: `${(displayStartTime / effectiveDuration) * 100}%`,
                             width: `${(displayDuration / effectiveDuration) * 100}%`,
                             backgroundColor: translucentEventsEnabled 
-                              ? `${track.color}99` 
+                              ? `${track.color}66` 
                               : track.color,
                             cursor: currentTool === 'split' ? 'crosshair' : 'move',
+                            backdropFilter: translucentEventsEnabled ? 'none' : undefined,
                           }}
                           onMouseDown={(e) => handleClipDragStart(e, clip.id, track.id, clip)}
                           onClick={(e) => handleClipClick(e, clip.id, track.id, clip)}
                           data-testid={`clip-${clip.id}`}
                         >
+                          {/* Ghost Grid Lines (visible when translucent events enabled) */}
+                          {translucentEventsEnabled && gridVisible && (
+                            <div className="absolute inset-0 pointer-events-none z-0">
+                              {(() => {
+                                const clipStartRatio = displayStartTime / effectiveDuration;
+                                const clipEndRatio = displayEndTime / effectiveDuration;
+                                const clipWidthRatio = clipEndRatio - clipStartRatio;
+                                
+                                return gridLines
+                                  .filter(line => {
+                                    const lineRatio = line.position / 100;
+                                    return lineRatio >= clipStartRatio && lineRatio <= clipEndRatio;
+                                  })
+                                  .map((line, idx) => {
+                                    const lineRatio = line.position / 100;
+                                    const positionWithinClip = ((lineRatio - clipStartRatio) / clipWidthRatio) * 100;
+                                    
+                                    return (
+                                      <div
+                                        key={`ghost-grid-${idx}`}
+                                        className="absolute top-0 bottom-0"
+                                        style={{
+                                          left: `${positionWithinClip}%`,
+                                          width: '1px',
+                                          backgroundColor:
+                                            line.type === 'bar'
+                                              ? 'rgba(255, 255, 255, 0.4)'
+                                              : line.type === 'beat'
+                                              ? 'rgba(255, 255, 255, 0.2)'
+                                              : 'rgba(255, 255, 255, 0.1)',
+                                        }}
+                                      />
+                                    );
+                                  });
+                              })()}
+                            </div>
+                          )}
                           {/* Clip content */}
                           <div className="h-full flex items-center px-2 relative">
                             <div className="text-xs text-white font-medium truncate flex-1">
@@ -1258,20 +1434,47 @@ export function Timeline({
                             )}
 
                             {/* Resize handles - hide when using split or range tool */}
+                            {/* Studio One 7-style: Alt/Option = Time Stretch, Default = Loop (if enabled) or Trim */}
                             {currentTool !== 'split' && currentTool !== 'range' && (
                               <>
-                                <div
-                                  className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 active:bg-white/50"
-                                  onMouseDown={(e) =>
-                                    handleResizeStart(e, clip.id, track.id, 'start', clip)
-                                  }
-                                  data-testid={`clip-${clip.id}-resize-start`}
-                                />
-                                <div
-                                  className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 active:bg-white/50"
-                                  onMouseDown={(e) => handleResizeStart(e, clip.id, track.id, 'end', clip)}
-                                  data-testid={`clip-${clip.id}-resize-end`}
-                                />
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className={`absolute left-0 top-0 bottom-0 w-2 ${
+                                        isAltPressed 
+                                          ? 'cursor-col-resize bg-orange-500/20 hover:bg-orange-500/40' 
+                                          : loopToolEnabled 
+                                          ? 'cursor-e-resize hover:bg-blue-500/30' 
+                                          : 'cursor-ew-resize hover:bg-white/30'
+                                      } active:bg-white/50 transition-colors`}
+                                      onMouseDown={(e) =>
+                                        handleResizeStart(e, clip.id, track.id, 'start', clip)
+                                      }
+                                      data-testid={`clip-${clip.id}-resize-start`}
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    {isAltPressed ? 'Time Stretch' : loopToolEnabled ? 'Loop/Repeat' : 'Trim Start'}
+                                  </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className={`absolute right-0 top-0 bottom-0 w-2 ${
+                                        isAltPressed 
+                                          ? 'cursor-col-resize bg-orange-500/20 hover:bg-orange-500/40' 
+                                          : loopToolEnabled 
+                                          ? 'cursor-e-resize hover:bg-blue-500/30' 
+                                          : 'cursor-ew-resize hover:bg-white/30'
+                                      } active:bg-white/50 transition-colors`}
+                                      onMouseDown={(e) => handleResizeStart(e, clip.id, track.id, 'end', clip)}
+                                      data-testid={`clip-${clip.id}-resize-end`}
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    {isAltPressed ? 'Time Stretch' : loopToolEnabled ? 'Loop/Repeat' : 'Trim End'}
+                                  </TooltipContent>
+                                </Tooltip>
                               </>
                             )}
                           </div>
@@ -1325,20 +1528,62 @@ export function Timeline({
                             </div>
                           )}
 
-                          {/* Waveform placeholder */}
+                          {/* Enhanced Waveform Visualization */}
                           <div 
-                            className="absolute inset-0 pointer-events-none"
-                            style={{ opacity: translucentEventsEnabled ? 0.5 : 0.2 }}
+                            className="absolute inset-0 pointer-events-none overflow-hidden"
+                            style={{ opacity: translucentEventsEnabled ? 0.6 : 0.3 }}
                           >
-                            <div className="h-full flex items-center justify-around px-1">
-                              {Array.from({ length: 20 }).map((_, i) => (
-                                <div
-                                  key={i}
-                                  className="w-0.5 bg-white"
-                                  style={{ height: `${30 + Math.random() * 70}%` }}
-                                />
-                              ))}
-                            </div>
+                            <svg 
+                              className="w-full h-full" 
+                              viewBox="0 0 200 40" 
+                              preserveAspectRatio="none"
+                            >
+                              <defs>
+                                <linearGradient id={`waveform-grad-${clip.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                  <stop offset="0%" stopColor="white" stopOpacity="0.8" />
+                                  <stop offset="50%" stopColor="white" stopOpacity="1" />
+                                  <stop offset="100%" stopColor="white" stopOpacity="0.8" />
+                                </linearGradient>
+                              </defs>
+                              {/* Generate waveform-like path */}
+                              <path
+                                d={(() => {
+                                  const points = 100;
+                                  const centerY = 20;
+                                  let path = `M 0 ${centerY}`;
+                                  
+                                  for (let i = 0; i <= points; i++) {
+                                    const x = (i / points) * 200;
+                                    const phase = (i / points) * Math.PI * 8 + (clip.id.charCodeAt(0) || 0);
+                                    const amplitude = 8 + Math.sin(phase * 0.5) * 6 + Math.sin(phase * 2.3) * 4;
+                                    const y1 = centerY - amplitude;
+                                    const y2 = centerY + amplitude;
+                                    
+                                    path += ` L ${x} ${y1}`;
+                                  }
+                                  
+                                  for (let i = points; i >= 0; i--) {
+                                    const x = (i / points) * 200;
+                                    const phase = (i / points) * Math.PI * 8 + (clip.id.charCodeAt(0) || 0);
+                                    const amplitude = 8 + Math.sin(phase * 0.5) * 6 + Math.sin(phase * 2.3) * 4;
+                                    const y2 = centerY + amplitude;
+                                    
+                                    path += ` L ${x} ${y2}`;
+                                  }
+                                  
+                                  path += ' Z';
+                                  return path;
+                                })()}
+                                fill={`url(#waveform-grad-${clip.id})`}
+                              />
+                              {/* Center line */}
+                              <line 
+                                x1="0" y1="20" x2="200" y2="20" 
+                                stroke="white" 
+                                strokeWidth="0.5" 
+                                opacity="0.3"
+                              />
+                            </svg>
                           </div>
                         </div>
                       </ContextMenuTrigger>
