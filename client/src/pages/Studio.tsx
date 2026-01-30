@@ -218,7 +218,6 @@ export default function Studio() {
   const params = useParams<{ projectId?: string }>();
   const [location, setLocation] = useLocation();
 
-  const [studioMode, setStudioMode] = useState<'classic' | 'flowstate'>('flowstate');
   const [view, setView] = useState<'arrangement' | 'mixer'>('arrangement');
   // selectedProject is now derived from URL params and query data to survive component remounts
   // This prevents the bug where fullscreen exit causes component remount and state loss
@@ -2746,50 +2745,19 @@ export default function Studio() {
     </>
   );
 
-  if (studioMode === 'flowstate') {
-    return (
-      <div className="h-screen w-full relative">
-        <FlowStateStudioPro
-          projectId={selectedProject?.id?.toString() || null}
-          projectName={selectedProject?.name || 'Untitled Project'}
-          onSave={() => toast({ title: 'Project Saved', description: 'Your changes have been saved.' })}
-          onExport={() => setShowExportDialog(true)}
-          onAIMix={handleAIMix}
-          onAIMaster={handleAIMaster}
-          isAIMixing={isAIMixing}
-          isAIMastering={isAIMastering}
-        />
-        <button
-          onClick={() => setStudioMode('classic')}
-          className="fixed bottom-28 right-6 z-[1001] px-4 py-2 bg-slate-800/90 hover:bg-slate-700 
-            text-white text-sm font-medium rounded-full backdrop-blur-sm border border-white/10
-            shadow-lg transition-all hover:scale-105 flex items-center gap-2"
-        >
-          <span className="w-2 h-2 rounded-full bg-amber-400" />
-          Switch to Classic
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <AppLayout 
-      noPadding={!isDataLoading && !!selectedProject}
-      title="Studio"
-    >
-      <div className="relative">
-        {proDAWContent}
-        <button
-          onClick={() => setStudioMode('flowstate')}
-          className="fixed bottom-6 right-6 z-[1001] px-4 py-2 bg-indigo-600/90 hover:bg-indigo-500 
-            text-white text-sm font-medium rounded-full backdrop-blur-sm border border-white/10
-            shadow-lg transition-all hover:scale-105 flex items-center gap-2"
-        >
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          Try FlowState UI
-        </button>
-      </div>
-    </AppLayout>
+    <div className="h-screen w-full relative">
+      <FlowStateStudioPro
+        projectId={selectedProject?.id?.toString() || null}
+        projectName={selectedProject?.name || 'Untitled Project'}
+        onSave={() => toast({ title: 'Project Saved', description: 'Your changes have been saved.' })}
+        onExport={() => setShowExportDialog(true)}
+        onAIMix={handleAIMix}
+        onAIMaster={handleAIMaster}
+        isAIMixing={isAIMixing}
+        isAIMastering={isAIMastering}
+      />
+    </div>
   );
 }
 
