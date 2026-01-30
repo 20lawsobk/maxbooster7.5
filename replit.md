@@ -23,8 +23,7 @@ The frontend utilizes shadcn/ui for a modern and accessible experience, focusing
 The platform supports Progressive Web App features, including an install banner, deep linking via `web+maxbooster://` protocol, a service worker for caching, and an external link opener with URL sanitization.
 
 ### Technical Implementations
-- **AI Studio**: Offers real-time spectral editing, advanced modulation, analog warmth processing, real-time collaboration (Y.js), plugin hosting, and a professional DAW interface with advanced transport controls, mixer console, enhanced timeline, automation lanes, inspector panel, and browser panel. Includes Studio One-style autoscroll modes, adaptive grid snapping, event sync points, and translucent waveform mode.
-- **FlowState Studio**: Revolutionary next-gen DAW interface featuring:
+- **FlowState Studio** (Unified, Permanent Interface): Revolutionary next-gen DAW interface that combines all AI Studio features with innovative UX. FlowState is now the sole, permanent interface for the Studio - no classic mode toggle. Features include:
   - **3D Spatial Workspace**: Canvas-based 3D visualization with particle systems, track nodes in spatial 3D coordinates (pan=X, volume=Y, index=Z), multiple view modes (spatial/circular/grid), and auto-orbit camera.
   - **GPU-Accelerated Spectral Visualizer**: WebGL shader-based audio visualization with spectrum, waveform, and circular modes. Includes proper resource cleanup, context loss handling, and shader compile/link error checking.
   - **Adaptive UI Modes**: 5 context-aware modes (Create/Record/Mix/Master/Perform) with mode-specific toolbars and AI suggestions. Keyboard shortcuts 1-5 for quick mode switching.
