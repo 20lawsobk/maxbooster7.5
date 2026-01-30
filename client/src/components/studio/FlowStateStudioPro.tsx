@@ -48,6 +48,7 @@ import { FlowStateSmartToolbar } from './FlowStateSmartToolbar';
 import { FlowStateMixer } from './FlowStateMixer';
 import { FlowStateSpectralVisualizer } from './FlowStateSpectralVisualizer';
 import { FlowStateCollaborationPresence, useCollaborationPresence } from './FlowStateCollaborationPresence';
+import { FlowStatePluginChain, type PluginNode } from './FlowStatePluginChain';
 import { AIGeneratorDialog } from './AIGeneratorDialog';
 import { cn } from '@/lib/utils';
 
@@ -94,11 +95,13 @@ export function FlowStateStudioPro({
 
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [showMixer, setShowMixer] = useState(false);
+  const [showPluginChain, setShowPluginChain] = useState(false);
   const [show3DWorkspace, setShow3DWorkspace] = useState(false);
   const [showSpectralVisualizer, setShowSpectralVisualizer] = useState(false);
   const [showAIGeneratorDialog, setShowAIGeneratorDialog] = useState(false);
   const [activeTool, setActiveTool] = useState('pointer');
   const [chromeVisible, setChromeVisible] = useState(true);
+  const [masterPlugins, setMasterPlugins] = useState<PluginNode[]>([]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -316,8 +319,24 @@ export function FlowStateStudioPro({
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                title="Mixer"
               >
                 <Sliders className="w-4 h-4" />
+              </motion.button>
+              
+              <motion.button
+                onClick={() => setShowPluginChain(!showPluginChain)}
+                className={cn(
+                  "p-2 rounded-lg transition-all",
+                  showPluginChain
+                    ? "bg-amber-600 text-white"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                )}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Plugin Chain"
+              >
+                <Layers className="w-4 h-4" />
               </motion.button>
               
               <motion.button
@@ -588,6 +607,27 @@ export function FlowStateStudioPro({
             )}
           </AnimatePresence>
         </div>
+
+        <AnimatePresence>
+          {showPluginChain && (
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 320 }}
+              exit={{ width: 0 }}
+              className="border-l border-white/5 overflow-hidden"
+            >
+              <FlowStatePluginChain
+                trackId={context.selectedTrackIds[0] || null}
+                trackName={context.selectedTrackIds[0] 
+                  ? tracks.find(t => t.id === context.selectedTrackIds[0])?.name || 'Selected Track'
+                  : 'Master'}
+                plugins={masterPlugins}
+                onPluginsChange={setMasterPlugins}
+                onClose={() => setShowPluginChain(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {showAIPanel && (
