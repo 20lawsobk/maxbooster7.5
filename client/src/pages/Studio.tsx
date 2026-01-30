@@ -2746,18 +2746,20 @@ export default function Studio() {
   );
 
   return (
-    <div className="h-screen w-full relative">
-      <FlowStateStudioPro
-        projectId={selectedProject?.id?.toString() || null}
-        projectName={selectedProject?.name || 'Untitled Project'}
-        onSave={() => toast({ title: 'Project Saved', description: 'Your changes have been saved.' })}
-        onExport={() => setShowExportDialog(true)}
-        onAIMix={handleAIMix}
-        onAIMaster={handleAIMaster}
-        isAIMixing={isAIMixing}
-        isAIMastering={isAIMastering}
-      />
-    </div>
+    <AppLayout noPadding title="Studio">
+      <div className="h-full w-full relative">
+        <FlowStateStudioPro
+          projectId={selectedProject?.id?.toString() || null}
+          projectName={selectedProject?.name || 'Untitled Project'}
+          onSave={() => toast({ title: 'Project Saved', description: 'Your changes have been saved.' })}
+          onExport={() => setShowExportDialog(true)}
+          onAIMix={handleAIMix}
+          onAIMaster={handleAIMaster}
+          isAIMixing={isAIMixing}
+          isAIMastering={isAIMastering}
+        />
+      </div>
+    </AppLayout>
   );
 }
 

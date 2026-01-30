@@ -269,7 +269,7 @@ export function FlowStateStudioPro({
 
   return (
     <div
-      className="flowstate-studio h-screen w-full flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden relative"
+      className="flowstate-studio h-full w-full flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden relative"
       onMouseMove={handleMouseMove}
     >
       <FlowStateCollaborationPresence
