@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { platformAPI } from './platform-apis.ts';
 import { customAI } from './custom-ai-engine.ts';
 import { logger } from './logger.js';
+import { advancedSocialAIService } from './services/advancedSocialAIService.js';
 
 interface AutopilotJob {
   id: string;
@@ -442,7 +443,7 @@ export class AutopilotEngine extends EventEmitter {
     }
   }
 
-  // AI Content Generation using custom AI engine
+  // AI Content Generation using Advanced Social AI (GPT-5.2 Level)
   private async generateContentForAutopilot(params: {
     topic: string;
     platform: string;
@@ -450,20 +451,83 @@ export class AutopilotEngine extends EventEmitter {
     contentType: string;
     targetAudience: string;
     businessGoals: string[];
-  }): Promise<{ text: string; hashtags: string[] }> {
-    const generatedContent = await customAI.generateContent({
-      topic: params.topic,
-      platform: params.platform,
-      brandVoice: params.brandVoice,
-      contentType: params.contentType,
-      targetAudience: params.targetAudience,
-      businessGoals: params.businessGoals,
-    });
+  }): Promise<{ text: string; hashtags: string[]; hook?: string; cta?: string; viralScore?: number }> {
+    try {
+      // Use Advanced Social AI for GPT-5.2 level content generation
+      const advancedResult = await advancedSocialAIService.generateAdvancedContent({
+        userId: this.userId,
+        topic: params.topic,
+        platforms: [params.platform.toLowerCase()],
+        objective: this.mapGoalsToObjective(params.businessGoals),
+        tone: this.mapBrandVoiceToTone(params.brandVoice),
+        targetAudience: params.targetAudience?.toLowerCase().replace(/\s+/g, '_'),
+        contentType: this.mapContentType(params.contentType),
+        includeHashtags: true,
+        includeEmojis: true,
+        variantCount: 3,
+      });
 
-    return {
-      text: generatedContent.text,
-      hashtags: generatedContent.hashtags,
-    };
+      logger.info(`[Autopilot] Generated content with Advanced AI: score=${advancedResult.scoring.overall.toFixed(1)}, viral=${advancedResult.viralPotential.score.toFixed(1)}`);
+
+      return {
+        text: advancedResult.primary.body,
+        hashtags: advancedResult.primary.hashtags,
+        hook: advancedResult.primary.hook,
+        cta: advancedResult.primary.callToAction,
+        viralScore: advancedResult.viralPotential.score,
+      };
+    } catch (error) {
+      // Fallback to legacy custom AI if Advanced AI fails
+      logger.warn('[Autopilot] Advanced AI failed, falling back to legacy:', error);
+      
+      const generatedContent = await customAI.generateContent({
+        topic: params.topic,
+        platform: params.platform,
+        brandVoice: params.brandVoice,
+        contentType: params.contentType,
+        targetAudience: params.targetAudience,
+        businessGoals: params.businessGoals,
+      });
+
+      return {
+        text: generatedContent.text,
+        hashtags: generatedContent.hashtags,
+      };
+    }
+  }
+
+  private mapGoalsToObjective(goals: string[]): 'awareness' | 'engagement' | 'conversions' | 'viral' {
+    const goalsLower = goals.map(g => g.toLowerCase()).join(' ');
+    if (goalsLower.includes('sales') || goalsLower.includes('revenue') || goalsLower.includes('conversion')) {
+      return 'conversions';
+    }
+    if (goalsLower.includes('viral') || goalsLower.includes('growth') || goalsLower.includes('reach')) {
+      return 'viral';
+    }
+    if (goalsLower.includes('brand') || goalsLower.includes('awareness')) {
+      return 'awareness';
+    }
+    return 'engagement';
+  }
+
+  private mapBrandVoiceToTone(brandVoice: string): 'professional' | 'casual' | 'energetic' | 'inspirational' | 'humorous' | 'storytelling' {
+    const voiceLower = brandVoice.toLowerCase();
+    if (voiceLower === 'professional') return 'professional';
+    if (voiceLower === 'energetic') return 'energetic';
+    if (voiceLower === 'informative') return 'professional';
+    if (voiceLower === 'humorous' || voiceLower === 'funny') return 'humorous';
+    if (voiceLower === 'inspirational' || voiceLower === 'motivational') return 'inspirational';
+    return 'casual';
+  }
+
+  private mapContentType(contentType: string): 'announcement' | 'behind_scenes' | 'engagement' | 'promotional' | 'storytelling' {
+    const typeLower = contentType.toLowerCase();
+    if (typeLower === 'announcements' || typeLower === 'announcement') return 'announcement';
+    if (typeLower === 'behind-the-scenes' || typeLower === 'bts') return 'behind_scenes';
+    if (typeLower === 'questions' || typeLower === 'polls') return 'engagement';
+    if (typeLower === 'promotional' || typeLower === 'promo') return 'promotional';
+    if (typeLower === 'tips' || typeLower === 'insights') return 'storytelling';
+    return 'engagement';
   }
 
   // Performance Learning

@@ -3,6 +3,7 @@ import { db } from '../db';
 import { userBrandVoices, autopilotPreferences } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { aiService } from './aiService';
+import { advancedSocialAIService, type AdvancedContentRequest, type ContentScoring as AdvancedScoring } from './advancedSocialAIService.js';
 
 export interface ContentVariant {
   id: string;
@@ -576,6 +577,155 @@ class ContentQualityPipeline {
     logger.info(`Generated ${variants.length} variants, selected: ${selected?.id || 'none'} (score: ${selected?.scores.overall.toFixed(1) || 'N/A'})`);
 
     return { selected, variants, context };
+  }
+
+  /**
+   * Generate content using Advanced Social AI (GPT-5.2 Level)
+   * Provides deep semantic understanding, viral pattern analysis,
+   * and multi-dimensional content scoring
+   */
+  async generateWithAdvancedAI(
+    userId: string,
+    baseContext: Partial<ContentContext>,
+    variantCount: number = 3
+  ): Promise<{
+    selected: ContentVariant | null;
+    variants: ContentVariant[];
+    context: ContentContext;
+    advancedInsights: {
+      viralPotential: number;
+      audienceResonance: number;
+      optimalTiming: { day: number; hour: number };
+      mediaRecommendation: string;
+      improvements: string[];
+    };
+  }> {
+    const context = await this.buildContext(userId, baseContext);
+    
+    try {
+      const advancedRequest: AdvancedContentRequest = {
+        userId,
+        topic: context.topic,
+        platforms: [context.platform],
+        objective: context.objective,
+        tone: context.tone as any,
+        targetAudience: context.targetAudience,
+        genre: context.genre,
+        artistName: context.artistName,
+        contentType: this.mapObjectiveToContentType(context.objective),
+        includeHashtags: true,
+        includeEmojis: true,
+        variantCount,
+      };
+
+      const advancedResult = await advancedSocialAIService.generateAdvancedContent(advancedRequest);
+
+      const variants: ContentVariant[] = advancedResult.variants.map((v, i) => ({
+        id: v.id,
+        content: v.content.split('\n\n')[1] || v.content,
+        headline: v.headline,
+        hashtags: v.hashtags,
+        callToAction: v.cta,
+        scores: {
+          overall: v.predictedScore,
+          engagement: advancedResult.scoring.engagement,
+          clarity: advancedResult.scoring.clarity,
+          sentiment: advancedResult.scoring.sentiment,
+          brandAlignment: advancedResult.scoring.brandAlignment,
+          hookStrength: advancedResult.scoring.hookStrength,
+          callToActionEffectiveness: advancedResult.scoring.ctaEffectiveness,
+        },
+        platformOptimizations: {
+          platform: context.platform,
+          characterCount: v.content.length,
+          maxCharacters: 2200,
+          hashtagCount: v.hashtags.length,
+          optimalHashtags: 10,
+          emojiCount: 3,
+          optimalEmojis: 3,
+          isValid: true,
+          issues: [],
+        },
+      }));
+
+      variants.push({
+        id: 'advanced_primary',
+        content: advancedResult.primary.body,
+        headline: advancedResult.primary.headline,
+        hashtags: advancedResult.primary.hashtags,
+        callToAction: advancedResult.primary.callToAction,
+        scores: {
+          overall: advancedResult.scoring.overall,
+          engagement: advancedResult.scoring.engagement,
+          clarity: advancedResult.scoring.clarity,
+          sentiment: advancedResult.scoring.sentiment,
+          brandAlignment: advancedResult.scoring.brandAlignment,
+          hookStrength: advancedResult.scoring.hookStrength,
+          callToActionEffectiveness: advancedResult.scoring.ctaEffectiveness,
+        },
+        platformOptimizations: {
+          platform: context.platform,
+          characterCount: advancedResult.primary.body.length,
+          maxCharacters: 2200,
+          hashtagCount: advancedResult.primary.hashtags.length,
+          optimalHashtags: 10,
+          emojiCount: advancedResult.primary.emojis.length,
+          optimalEmojis: 3,
+          isValid: true,
+          issues: [],
+        },
+      });
+
+      variants.sort((a, b) => b.scores.overall - a.scores.overall);
+      const selected = variants[0] || null;
+
+      logger.info(`[AdvancedAI] Generated ${variants.length} variants with GPT-5.2 level AI, best score: ${selected?.scores.overall.toFixed(1)}`);
+
+      return {
+        selected,
+        variants,
+        context,
+        advancedInsights: {
+          viralPotential: advancedResult.viralPotential.score,
+          audienceResonance: advancedResult.audienceResonance.resonanceScore,
+          optimalTiming: {
+            day: advancedResult.optimalTiming.bestDays[0] || 3,
+            hour: advancedResult.optimalTiming.bestHours[0] || 12,
+          },
+          mediaRecommendation: advancedResult.mediaGuidance.recommendedType,
+          improvements: advancedResult.insights
+            .filter(i => i.type === 'improvement')
+            .map(i => i.message),
+        },
+      };
+    } catch (error) {
+      logger.error('[AdvancedAI] Error generating advanced content, falling back:', error);
+      const variants = await this.generateVariants(context, variantCount);
+      const selected = await this.selectBestVariant(variants, 50);
+      
+      return {
+        selected,
+        variants,
+        context,
+        advancedInsights: {
+          viralPotential: 50,
+          audienceResonance: 60,
+          optimalTiming: { day: 3, hour: 12 },
+          mediaRecommendation: 'image',
+          improvements: [],
+        },
+      };
+    }
+  }
+
+  private mapObjectiveToContentType(objective: string): 'announcement' | 'behind_scenes' | 'engagement' | 'promotional' | 'storytelling' {
+    const mapping: Record<string, 'announcement' | 'behind_scenes' | 'engagement' | 'promotional' | 'storytelling'> = {
+      awareness: 'announcement',
+      engagement: 'engagement',
+      conversions: 'promotional',
+      viral: 'storytelling',
+    };
+    return mapping[objective] || 'announcement';
   }
 }
 
