@@ -2104,6 +2104,471 @@ router.post('/projects/:projectId/export-stems', requireAuth, async (req: Reques
 });
 
 // ============================================================================
+// MIX RECALL / VERSIONING SYSTEM (Studio One-inspired mix snapshots)
+// ============================================================================
+
+// Create a mix snapshot (save current mix state)
+router.post('/projects/:projectId/mix-snapshots', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId } = req.params;
+    const { name, description, autoSave } = req.body;
+
+    // Ensure studioProject exists
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    // Get all tracks with their current mix state
+    const tracks = await db.query.studioTracks.findMany({
+      where: eq(studioTracks.projectId, projectId),
+    });
+
+    // Capture mix state for each track
+    const trackStates = tracks.map(track => ({
+      trackId: track.id,
+      trackName: track.name,
+      trackType: track.trackType,
+      volume: track.volume,
+      pan: track.pan,
+      muted: track.muted,
+      soloed: track.soloed,
+      armed: track.armed,
+      color: track.color,
+      plugins: track.plugins,
+      routingBus: track.routingBus,
+    }));
+
+    // Get current bus configurations
+    const metadata = (project.metadata as any) || {};
+    const mixBusConfig = metadata.mixBusConfig || { busses: [] };
+
+    // Create the snapshot
+    const snapshotId = nanoid();
+    const snapshot = {
+      id: snapshotId,
+      name: name || `Mix Snapshot ${new Date().toLocaleString()}`,
+      description: description || '',
+      createdAt: new Date().toISOString(),
+      autoSave: autoSave || false,
+      trackStates,
+      mixBusConfig,
+      tempo: metadata.tempo || 120,
+      timeSignature: metadata.timeSignature || '4/4',
+    };
+
+    // Store in project metadata
+    const mixSnapshots = metadata.mixSnapshots || [];
+    mixSnapshots.push(snapshot);
+
+    await db.update(studioProjects)
+      .set({
+        metadata: {
+          ...metadata,
+          mixSnapshots,
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(studioProjects.id, projectId));
+
+    res.json({
+      success: true,
+      snapshot: {
+        id: snapshot.id,
+        name: snapshot.name,
+        description: snapshot.description,
+        createdAt: snapshot.createdAt,
+        autoSave: snapshot.autoSave,
+        trackCount: trackStates.length,
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error creating mix snapshot:', error);
+    res.status(500).json({ error: 'Failed to create mix snapshot' });
+  }
+});
+
+// Get all mix snapshots for a project
+router.get('/projects/:projectId/mix-snapshots', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId } = req.params;
+
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as any) || {};
+    const mixSnapshots = metadata.mixSnapshots || [];
+
+    // Return summaries (without full track state data for list view)
+    const summaries = mixSnapshots.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      description: s.description,
+      createdAt: s.createdAt,
+      autoSave: s.autoSave,
+      trackCount: s.trackStates?.length || 0,
+    }));
+
+    res.json({ snapshots: summaries });
+  } catch (error: unknown) {
+    logger.error('Error fetching mix snapshots:', error);
+    res.status(500).json({ error: 'Failed to fetch mix snapshots' });
+  }
+});
+
+// Get a specific mix snapshot with full details
+router.get('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId, snapshotId } = req.params;
+
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as any) || {};
+    const mixSnapshots = metadata.mixSnapshots || [];
+    const snapshot = mixSnapshots.find((s: any) => s.id === snapshotId);
+
+    if (!snapshot) {
+      return res.status(404).json({ error: 'Snapshot not found' });
+    }
+
+    res.json({ snapshot });
+  } catch (error: unknown) {
+    logger.error('Error fetching mix snapshot:', error);
+    res.status(500).json({ error: 'Failed to fetch mix snapshot' });
+  }
+});
+
+// Recall (restore) a mix snapshot
+router.post('/projects/:projectId/mix-snapshots/:snapshotId/recall', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId, snapshotId } = req.params;
+    const { selective, trackIds, includePlugins, includeBusConfig } = req.body;
+
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as any) || {};
+    const mixSnapshots = metadata.mixSnapshots || [];
+    const snapshot = mixSnapshots.find((s: any) => s.id === snapshotId);
+
+    if (!snapshot) {
+      return res.status(404).json({ error: 'Snapshot not found' });
+    }
+
+    // Determine which tracks to update
+    const trackStates = snapshot.trackStates || [];
+    const tracksToUpdate = selective && trackIds?.length > 0
+      ? trackStates.filter((ts: any) => trackIds.includes(ts.trackId))
+      : trackStates;
+
+    let updatedCount = 0;
+
+    // Update each track with the snapshot state
+    for (const trackState of tracksToUpdate) {
+      const updateData: any = {
+        volume: trackState.volume,
+        pan: trackState.pan,
+        muted: trackState.muted,
+        soloed: trackState.soloed,
+        armed: trackState.armed,
+        updatedAt: new Date(),
+      };
+
+      // Optionally include plugins
+      if (includePlugins !== false && trackState.plugins) {
+        updateData.plugins = trackState.plugins;
+      }
+
+      // Optionally include bus routing
+      if (includeBusConfig !== false && trackState.routingBus) {
+        updateData.routingBus = trackState.routingBus;
+      }
+
+      const result = await db.update(studioTracks)
+        .set(updateData)
+        .where(and(
+          eq(studioTracks.id, trackState.trackId),
+          eq(studioTracks.projectId, projectId)
+        ));
+
+      updatedCount++;
+    }
+
+    // Optionally restore mix bus configuration
+    if (includeBusConfig !== false && snapshot.mixBusConfig) {
+      await db.update(studioProjects)
+        .set({
+          metadata: {
+            ...metadata,
+            mixBusConfig: snapshot.mixBusConfig,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(studioProjects.id, projectId));
+    }
+
+    res.json({
+      success: true,
+      message: `Recalled mix snapshot "${snapshot.name}"`,
+      updatedTracks: updatedCount,
+    });
+  } catch (error: unknown) {
+    logger.error('Error recalling mix snapshot:', error);
+    res.status(500).json({ error: 'Failed to recall mix snapshot' });
+  }
+});
+
+// Update a mix snapshot (rename, update description)
+router.patch('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId, snapshotId } = req.params;
+    const { name, description } = req.body;
+
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as any) || {};
+    const mixSnapshots = metadata.mixSnapshots || [];
+    const snapshotIndex = mixSnapshots.findIndex((s: any) => s.id === snapshotId);
+
+    if (snapshotIndex === -1) {
+      return res.status(404).json({ error: 'Snapshot not found' });
+    }
+
+    // Update the snapshot
+    if (name !== undefined) {
+      mixSnapshots[snapshotIndex].name = name;
+    }
+    if (description !== undefined) {
+      mixSnapshots[snapshotIndex].description = description;
+    }
+    mixSnapshots[snapshotIndex].updatedAt = new Date().toISOString();
+
+    await db.update(studioProjects)
+      .set({
+        metadata: {
+          ...metadata,
+          mixSnapshots,
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(studioProjects.id, projectId));
+
+    res.json({
+      success: true,
+      snapshot: {
+        id: mixSnapshots[snapshotIndex].id,
+        name: mixSnapshots[snapshotIndex].name,
+        description: mixSnapshots[snapshotIndex].description,
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error updating mix snapshot:', error);
+    res.status(500).json({ error: 'Failed to update mix snapshot' });
+  }
+});
+
+// Delete a mix snapshot
+router.delete('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId, snapshotId } = req.params;
+
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as any) || {};
+    const mixSnapshots = metadata.mixSnapshots || [];
+    const snapshotIndex = mixSnapshots.findIndex((s: any) => s.id === snapshotId);
+
+    if (snapshotIndex === -1) {
+      return res.status(404).json({ error: 'Snapshot not found' });
+    }
+
+    const deletedName = mixSnapshots[snapshotIndex].name;
+    mixSnapshots.splice(snapshotIndex, 1);
+
+    await db.update(studioProjects)
+      .set({
+        metadata: {
+          ...metadata,
+          mixSnapshots,
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(studioProjects.id, projectId));
+
+    res.json({
+      success: true,
+      message: `Deleted mix snapshot "${deletedName}"`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error deleting mix snapshot:', error);
+    res.status(500).json({ error: 'Failed to delete mix snapshot' });
+  }
+});
+
+// Compare two mix snapshots
+router.get('/projects/:projectId/mix-snapshots/:snapshotId/compare/:compareSnapshotId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId, snapshotId, compareSnapshotId } = req.params;
+
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as any) || {};
+    const mixSnapshots = metadata.mixSnapshots || [];
+    
+    const snapshot1 = mixSnapshots.find((s: any) => s.id === snapshotId);
+    const snapshot2 = mixSnapshots.find((s: any) => s.id === compareSnapshotId);
+
+    if (!snapshot1 || !snapshot2) {
+      return res.status(404).json({ error: 'One or both snapshots not found' });
+    }
+
+    // Compare track states
+    const trackStates1 = snapshot1.trackStates || [];
+    const trackStates2 = snapshot2.trackStates || [];
+    
+    const differences: any[] = [];
+
+    for (const ts1 of trackStates1) {
+      const ts2 = trackStates2.find((t: any) => t.trackId === ts1.trackId);
+      if (!ts2) {
+        differences.push({
+          trackId: ts1.trackId,
+          trackName: ts1.trackName,
+          type: 'removed',
+          message: `Track "${ts1.trackName}" exists in "${snapshot1.name}" but not in "${snapshot2.name}"`,
+        });
+        continue;
+      }
+
+      const trackDiffs: string[] = [];
+      if (ts1.volume !== ts2.volume) {
+        trackDiffs.push(`Volume: ${ts1.volume?.toFixed(2)} → ${ts2.volume?.toFixed(2)}`);
+      }
+      if (ts1.pan !== ts2.pan) {
+        trackDiffs.push(`Pan: ${ts1.pan?.toFixed(2)} → ${ts2.pan?.toFixed(2)}`);
+      }
+      if (ts1.muted !== ts2.muted) {
+        trackDiffs.push(`Muted: ${ts1.muted} → ${ts2.muted}`);
+      }
+      if (ts1.soloed !== ts2.soloed) {
+        trackDiffs.push(`Soloed: ${ts1.soloed} → ${ts2.soloed}`);
+      }
+
+      if (trackDiffs.length > 0) {
+        differences.push({
+          trackId: ts1.trackId,
+          trackName: ts1.trackName,
+          type: 'changed',
+          changes: trackDiffs,
+        });
+      }
+    }
+
+    // Check for tracks in snapshot2 that don't exist in snapshot1
+    for (const ts2 of trackStates2) {
+      const ts1 = trackStates1.find((t: any) => t.trackId === ts2.trackId);
+      if (!ts1) {
+        differences.push({
+          trackId: ts2.trackId,
+          trackName: ts2.trackName,
+          type: 'added',
+          message: `Track "${ts2.trackName}" exists in "${snapshot2.name}" but not in "${snapshot1.name}"`,
+        });
+      }
+    }
+
+    res.json({
+      snapshot1: { id: snapshot1.id, name: snapshot1.name, createdAt: snapshot1.createdAt },
+      snapshot2: { id: snapshot2.id, name: snapshot2.name, createdAt: snapshot2.createdAt },
+      differences,
+      hasDifferences: differences.length > 0,
+    });
+  } catch (error: unknown) {
+    logger.error('Error comparing mix snapshots:', error);
+    res.status(500).json({ error: 'Failed to compare mix snapshots' });
+  }
+});
+
+// ============================================================================
 // START HUB API ENDPOINTS (Studio One-inspired project management)
 // ============================================================================
 
