@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Flag,
@@ -16,7 +16,8 @@ import {
   Music,
   Repeat,
   SkipForward,
-  SkipBack
+  SkipBack,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -46,6 +47,8 @@ import {
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useMarkers } from '@/hooks/useMarkers';
+import { useStudioStore } from '@/lib/studioStore';
 
 type MarkerType = 'intro' | 'verse' | 'prechorus' | 'chorus' | 'bridge' | 'breakdown' | 'drop' | 'outro' | 'custom';
 
@@ -61,6 +64,7 @@ interface Marker {
 }
 
 interface FlowStateArrangementMarkersProps {
+  projectId?: string;
   projectDuration?: number;
   currentTime?: number;
   onSeekToMarker?: (time: number) => void;
@@ -86,6 +90,7 @@ const COLORS = [
 ];
 
 export function FlowStateArrangementMarkers({
+  projectId,
   projectDuration = 180,
   currentTime = 0,
   onSeekToMarker,
@@ -93,7 +98,10 @@ export function FlowStateArrangementMarkers({
   className
 }: FlowStateArrangementMarkersProps) {
   const { toast } = useToast();
-  const [markers, setMarkers] = useState<Marker[]>([
+  const studioStore = useStudioStore();
+  const currentProjectId = projectId || studioStore.currentProjectId;
+  
+  const defaultMarkers: Marker[] = [
     { id: 'm1', name: 'Intro', type: 'intro', time: 0, duration: 8, color: '#3b82f6', isLocked: false, notes: '' },
     { id: 'm2', name: 'Verse 1', type: 'verse', time: 8, duration: 16, color: '#22c55e', isLocked: false, notes: '' },
     { id: 'm3', name: 'Pre-Chorus', type: 'prechorus', time: 24, duration: 8, color: '#eab308', isLocked: false, notes: '' },
@@ -105,7 +113,42 @@ export function FlowStateArrangementMarkers({
     { id: 'm9', name: 'Drop', type: 'drop', time: 104, duration: 16, color: '#f97316', isLocked: false, notes: '' },
     { id: 'm10', name: 'Chorus 3', type: 'chorus', time: 120, duration: 16, color: '#ef4444', isLocked: false, notes: '' },
     { id: 'm11', name: 'Outro', type: 'outro', time: 136, duration: 16, color: '#6b7280', isLocked: false, notes: '' },
-  ]);
+  ];
+  
+  const [demoMarkers, setDemoMarkers] = useState<Marker[]>(defaultMarkers);
+  
+  const {
+    markers: apiMarkers,
+    isLoading,
+    error: markersError,
+    createMarker,
+    updateMarker: updateMarkerApi,
+    deleteMarker: deleteMarkerApi
+  } = useMarkers(currentProjectId);
+  
+  useEffect(() => {
+    if (markersError) {
+      toast({ title: 'Failed to load markers, using demo data', variant: 'destructive' });
+    }
+  }, [markersError, toast]);
+  
+  const markers: Marker[] = useMemo(() => {
+    if (currentProjectId && apiMarkers && !markersError) {
+      return apiMarkers.map((m: any) => ({
+        id: m.id,
+        name: m.name || 'Marker',
+        type: (m.type || 'custom') as MarkerType,
+        time: m.position ?? m.time ?? 0,
+        duration: m.duration || 8,
+        color: m.color || '#3b82f6',
+        isLocked: m.isLocked ?? false,
+        notes: m.notes || ''
+      }));
+    }
+    return demoMarkers;
+  }, [currentProjectId, apiMarkers, markersError, demoMarkers]);
+  
+  const setMarkers = currentProjectId ? () => {} : setDemoMarkers;
 
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -118,78 +161,129 @@ export function FlowStateArrangementMarkers({
     [markers, currentTime]
   );
 
-  const addMarker = (atTime?: number) => {
+  const addMarker = useCallback((atTime?: number) => {
     const time = atTime ?? currentTime;
     const typeInfo = MARKER_TYPES.find(t => t.type === 'custom')!;
     
-    const newMarker: Marker = {
-      id: `m${Date.now()}`,
+    const newMarkerData = {
       name: 'New Section',
       type: 'custom',
       time,
+      position: time,
       duration: typeInfo.defaultDuration,
       color: typeInfo.color,
       isLocked: false,
       notes: ''
     };
 
-    setMarkers(prev => [...prev, newMarker].sort((a, b) => a.time - b.time));
-    setEditingMarker(newMarker);
-    setIsEditing(true);
-    toast({ title: 'Marker added' });
-  };
+    if (currentProjectId && createMarker) {
+      createMarker(newMarkerData);
+    } else {
+      const newMarker: Marker = {
+        id: `m${Date.now()}`,
+        ...newMarkerData as any
+      };
+      setMarkers(prev => [...prev, newMarker].sort((a, b) => a.time - b.time));
+      setEditingMarker(newMarker);
+      setIsEditing(true);
+      toast({ title: 'Marker added' });
+    }
+  }, [currentTime, currentProjectId, createMarker, toast]);
 
-  const deleteMarker = (markerId: string) => {
+  const handleDeleteMarker = useCallback((markerId: string) => {
     const marker = markers.find(m => m.id === markerId);
     if (marker?.isLocked) {
       toast({ title: 'Cannot delete locked marker', variant: 'destructive' });
       return;
     }
-    setMarkers(prev => prev.filter(m => m.id !== markerId));
+    
+    if (currentProjectId && deleteMarkerApi) {
+      deleteMarkerApi(markerId);
+    } else {
+      setMarkers(prev => prev.filter(m => m.id !== markerId));
+    }
     if (selectedMarker === markerId) setSelectedMarker(null);
-    toast({ title: 'Marker deleted' });
-  };
+  }, [markers, currentProjectId, deleteMarkerApi, selectedMarker, toast]);
 
-  const updateMarker = (updates: Partial<Marker>) => {
+  const updateMarker = useCallback((updates: Partial<Marker>) => {
     if (!editingMarker) return;
     
     const updated = { ...editingMarker, ...updates };
     setEditingMarker(updated);
-  };
+  }, [editingMarker]);
 
   const saveMarker = () => {
     if (!editingMarker) return;
 
-    setMarkers(prev => prev.map(m =>
-      m.id === editingMarker.id ? editingMarker : m
-    ).sort((a, b) => a.time - b.time));
+    if (currentProjectId && updateMarkerApi) {
+      updateMarkerApi({
+        id: editingMarker.id,
+        updates: {
+          name: editingMarker.name,
+          type: editingMarker.type,
+          position: editingMarker.time,
+          color: editingMarker.color,
+          isLocked: editingMarker.isLocked,
+          notes: editingMarker.notes
+        }
+      });
+    } else {
+      setMarkers(prev => prev.map(m =>
+        m.id === editingMarker.id ? editingMarker : m
+      ).sort((a, b) => a.time - b.time));
+      toast({ title: 'Marker updated' });
+    }
 
     setIsEditing(false);
     setEditingMarker(null);
     onUpdateMarkers?.(markers);
-    toast({ title: 'Marker updated' });
   };
 
   const toggleLock = (markerId: string) => {
-    setMarkers(prev => prev.map(m =>
-      m.id === markerId ? { ...m, isLocked: !m.isLocked } : m
-    ));
+    const marker = markers.find(m => m.id === markerId);
+    if (!marker) return;
+    
+    if (currentProjectId && updateMarkerApi) {
+      updateMarkerApi({
+        id: markerId,
+        updates: { isLocked: !marker.isLocked }
+      });
+    } else {
+      setMarkers(prev => prev.map(m =>
+        m.id === markerId ? { ...m, isLocked: !m.isLocked } : m
+      ));
+    }
   };
 
   const duplicateMarker = (markerId: string) => {
     const marker = markers.find(m => m.id === markerId);
     if (!marker) return;
 
-    const newMarker: Marker = {
-      ...marker,
-      id: `m${Date.now()}`,
+    const newMarkerData = {
       name: `${marker.name} (copy)`,
+      type: marker.type,
       time: marker.time + marker.duration,
-      isLocked: false
+      position: marker.time + marker.duration,
+      duration: marker.duration,
+      color: marker.color,
+      isLocked: false,
+      notes: marker.notes
     };
 
-    setMarkers(prev => [...prev, newMarker].sort((a, b) => a.time - b.time));
-    toast({ title: 'Marker duplicated' });
+    if (currentProjectId && createMarker) {
+      createMarker(newMarkerData);
+      toast({ title: 'Marker duplicated' });
+    } else {
+      const newMarker: Marker = {
+        ...marker,
+        id: `m${Date.now()}`,
+        name: `${marker.name} (copy)`,
+        time: marker.time + marker.duration,
+        isLocked: false
+      };
+      setMarkers(prev => [...prev, newMarker].sort((a, b) => a.time - b.time));
+      toast({ title: 'Marker duplicated' });
+    }
   };
 
   const navigateMarker = (direction: 'prev' | 'next') => {
@@ -487,7 +581,7 @@ export function FlowStateArrangementMarkers({
                           className="h-7 w-7 text-red-400"
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteMarker(marker.id);
+                            handleDeleteMarker(marker.id);
                           }}
                           disabled={marker.isLocked}
                         >

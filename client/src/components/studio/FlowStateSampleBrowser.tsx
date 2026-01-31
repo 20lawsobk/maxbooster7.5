@@ -23,7 +23,8 @@ import {
   Plus,
   Download,
   Tag,
-  Waveform
+  Waveform,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -42,6 +43,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 interface Sample {
   id: string;
@@ -117,7 +120,52 @@ export function FlowStateSampleBrowser({
   className
 }: FlowStateSampleBrowserProps) {
   const { toast } = useToast();
-  const [samples, setSamples] = useState(SAMPLE_LIBRARY);
+  
+  const [localSamples, setLocalSamples] = useState<Sample[]>(SAMPLE_LIBRARY);
+  const [apiDataLoaded, setApiDataLoaded] = useState(false);
+  
+  const { data: apiSamples, isLoading, error: samplesError } = useQuery({
+    queryKey: ['studio-samples'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/studio/samples');
+      return response.json();
+    },
+    staleTime: 60000,
+  });
+  
+  useEffect(() => {
+    if (samplesError) {
+      toast({ title: 'Failed to load samples, using demo library', variant: 'destructive' });
+    }
+  }, [samplesError, toast]);
+  
+  useEffect(() => {
+    if (apiSamples && !samplesError) {
+      setApiDataLoaded(true);
+      if (apiSamples.samples?.length > 0) {
+        const mappedSamples = apiSamples.samples.map((s: any) => ({
+          id: s.id,
+          name: s.name || s.fileName,
+          path: s.filePath || s.path,
+          category: s.category || 'Uncategorized',
+          subcategory: s.subcategory || '',
+          duration: s.duration || 1,
+          bpm: s.bpm,
+          key: s.key,
+          tags: s.tags || [],
+          isFavorite: s.isFavorite || false,
+          waveform: s.waveform || generateWaveform(),
+          size: s.size || 0
+        }));
+        setLocalSamples(mappedSamples);
+      } else {
+        setLocalSamples([]);
+      }
+    }
+  }, [apiSamples, samplesError]);
+  
+  const samples = localSamples;
+  const setSamples = setLocalSamples;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);

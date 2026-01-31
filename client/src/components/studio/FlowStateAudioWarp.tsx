@@ -14,7 +14,8 @@ import {
   ArrowLeftRight,
   MoveHorizontal,
   Waves,
-  Settings
+  Settings,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -32,6 +33,8 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 interface WarpMarker {
   id: string;
@@ -42,6 +45,7 @@ interface WarpMarker {
 }
 
 interface FlowStateAudioWarpProps {
+  clipId?: string;
   audioUrl?: string;
   duration?: number;
   originalTempo?: number;
@@ -58,6 +62,7 @@ const WARP_ALGORITHMS = [
 ];
 
 export function FlowStateAudioWarp({
+  clipId,
   audioUrl,
   duration = 16,
   originalTempo = 120,
@@ -65,14 +70,18 @@ export function FlowStateAudioWarp({
   className
 }: FlowStateAudioWarpProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const waveformRef = useRef<HTMLCanvasElement>(null);
-  const [markers, setMarkers] = useState<WarpMarker[]>([
+  
+  const defaultMarkers: WarpMarker[] = [
     { id: 'm1', originalTime: 0, warpedTime: 0, isLocked: true, isTransient: true },
     { id: 'm2', originalTime: 4, warpedTime: 4, isLocked: false, isTransient: true },
     { id: 'm3', originalTime: 8, warpedTime: 8, isLocked: false, isTransient: true },
     { id: 'm4', originalTime: 12, warpedTime: 12, isLocked: false, isTransient: true },
     { id: 'm5', originalTime: 16, warpedTime: 16, isLocked: true, isTransient: true },
-  ]);
+  ];
+  
+  const [markers, setMarkers] = useState<WarpMarker[]>(defaultMarkers);
   const [targetTempo, setTargetTempo] = useState(originalTempo);
   const [preservePitch, setPreservePitch] = useState(true);
   const [pitchShift, setPitchShift] = useState([0]);
@@ -83,6 +92,82 @@ export function FlowStateAudioWarp({
   const [isDragging, setIsDragging] = useState(false);
   const [showTransients, setShowTransients] = useState(true);
   const [quantizeStrength, setQuantizeStrength] = useState([0]);
+  
+  const { data: apiMarkers, isLoading: isLoadingMarkers, error: markersError } = useQuery({
+    queryKey: ['warp-markers', clipId],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/studio/clips/${clipId}/warp/markers`);
+      return response.json();
+    },
+    enabled: !!clipId,
+    staleTime: 30000,
+  });
+  
+  useEffect(() => {
+    if (apiMarkers?.markers?.length > 0) {
+      const mappedMarkers = apiMarkers.markers.map((m: any) => ({
+        id: m.id,
+        originalTime: m.sourceTime ?? m.originalTime ?? 0,
+        warpedTime: m.targetTime ?? m.warpedTime ?? m.sourceTime ?? 0,
+        isLocked: m.isLocked ?? false,
+        isTransient: m.isTransient ?? false
+      }));
+      setMarkers(mappedMarkers);
+    }
+  }, [apiMarkers]);
+  
+  useEffect(() => {
+    if (markersError) {
+      toast({ title: 'Failed to load warp markers', variant: 'destructive' });
+    }
+  }, [markersError, toast]);
+  
+  const detectTransientsMutation = useMutation({
+    mutationFn: async () => {
+      if (!clipId) throw new Error('No clip selected');
+      const response = await apiRequest('GET', `/api/studio/clips/${clipId}/warp/transients`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.transients) {
+        const newMarkers = data.transients.map((t: any, i: number) => ({
+          id: `t${i}`,
+          originalTime: t.time ?? t.sourceTime ?? 0,
+          warpedTime: t.time ?? t.sourceTime ?? 0,
+          isLocked: false,
+          isTransient: true
+        }));
+        setMarkers(prev => [...prev.filter(m => !m.isTransient), ...newMarkers]);
+        toast({ title: `Detected ${data.transients.length} transients` });
+      }
+    },
+    onError: () => {
+      toast({ title: 'Failed to detect transients', variant: 'destructive' });
+    }
+  });
+  
+  const commitWarpMutation = useMutation({
+    mutationFn: async () => {
+      if (!clipId) throw new Error('No clip selected');
+      const response = await apiRequest('POST', `/api/studio/clips/${clipId}/warp/commit`, {
+        pitchShift: pitchShift[0],
+        preserveFormants: preservePitch,
+        algorithm: algorithm === 'elastique' ? 'rubberband' : 'phase_vocoder',
+        quality: 'high'
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Warp applied successfully' });
+      queryClient.invalidateQueries({ queryKey: ['warp-markers', clipId] });
+      if (onApply) {
+        onApply(markers, targetTempo);
+      }
+    },
+    onError: () => {
+      toast({ title: 'Failed to apply warp', variant: 'destructive' });
+    }
+  });
 
   const tempoRatio = targetTempo / originalTempo;
   const warpedDuration = duration / tempoRatio;

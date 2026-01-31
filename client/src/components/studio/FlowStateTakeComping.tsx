@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Layers,
@@ -17,7 +17,8 @@ import {
   VolumeX,
   Scissors,
   Copy,
-  Wand2
+  Wand2,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -33,6 +34,9 @@ import {
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useStudioStore } from '@/lib/studioStore';
 
 interface TakeRegion {
   id: string;
@@ -55,6 +59,8 @@ interface Take {
 }
 
 interface FlowStateTakeCompingProps {
+  projectId?: string;
+  trackId?: string;
   trackName?: string;
   duration?: number;
   onExportComp?: (regions: TakeRegion[]) => void;
@@ -75,26 +81,110 @@ const generateWaveform = (seed: number): number[] => {
 };
 
 export function FlowStateTakeComping({
+  projectId,
+  trackId,
   trackName = 'Lead Vocals',
   duration = 16,
   onExportComp,
   className
 }: FlowStateTakeCompingProps) {
   const { toast } = useToast();
-  const [takes, setTakes] = useState<Take[]>([
+  const queryClient = useQueryClient();
+  const studioStore = useStudioStore();
+  const currentProjectId = projectId || studioStore.currentProjectId;
+  
+  const defaultTakes: Take[] = [
     { id: 't1', name: 'Take 1', number: 1, timestamp: new Date(Date.now() - 3600000), duration, isFavorite: false, isMuted: false, waveform: generateWaveform(1), rating: 3, notes: 'Good energy, pitch issues on verse' },
     { id: 't2', name: 'Take 2', number: 2, timestamp: new Date(Date.now() - 3000000), duration, isFavorite: true, isMuted: false, waveform: generateWaveform(2), rating: 5, notes: 'Best chorus' },
     { id: 't3', name: 'Take 3', number: 3, timestamp: new Date(Date.now() - 2400000), duration, isFavorite: false, isMuted: false, waveform: generateWaveform(3), rating: 4, notes: 'Clean performance' },
     { id: 't4', name: 'Take 4', number: 4, timestamp: new Date(Date.now() - 1800000), duration, isFavorite: true, isMuted: false, waveform: generateWaveform(4), rating: 5, notes: 'Perfect bridge section' },
     { id: 't5', name: 'Take 5', number: 5, timestamp: new Date(Date.now() - 1200000), duration, isFavorite: false, isMuted: true, waveform: generateWaveform(5), rating: 2, notes: 'Rough take' },
-  ]);
-
-  const [selectedRegions, setSelectedRegions] = useState<TakeRegion[]>([
+  ];
+  
+  const [takes, setTakes] = useState<Take[]>(defaultTakes);
+  
+  const { data: takeGroups, isLoading: isLoadingGroups, error: groupsError } = useQuery({
+    queryKey: ['comping-groups', currentProjectId],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/studio/projects/${currentProjectId}/comping/groups`);
+      return response.json();
+    },
+    enabled: !!currentProjectId,
+    staleTime: 30000,
+  });
+  
+  useEffect(() => {
+    if (groupsError) {
+      toast({ title: 'Failed to load takes, using demo data', variant: 'destructive' });
+    }
+  }, [groupsError, toast]);
+  
+  useEffect(() => {
+    if (takeGroups?.takeGroups?.length > 0) {
+      const mappedTakes = takeGroups.takeGroups.flatMap((group: any) =>
+        (group.lanes || []).map((lane: any, i: number) => ({
+          id: lane.id || `t${i}`,
+          name: lane.name || `Take ${i + 1}`,
+          number: lane.laneIndex || i + 1,
+          timestamp: new Date(lane.createdAt || Date.now()),
+          duration: group.endTime - group.startTime || duration,
+          isFavorite: lane.rating >= 4,
+          isMuted: lane.isMuted || false,
+          waveform: generateWaveform(i + 1),
+          rating: lane.rating || 3,
+          notes: lane.notes || ''
+        }))
+      );
+      if (mappedTakes.length > 0) {
+        setTakes(mappedTakes);
+      }
+    }
+  }, [takeGroups, duration]);
+  
+  const renderCompMutation = useMutation({
+    mutationFn: async (groupId: string) => {
+      if (!currentProjectId) throw new Error('No project selected');
+      const response = await apiRequest('POST', `/api/studio/projects/${currentProjectId}/comping/render`, { groupId });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Comp rendered successfully' });
+      if (onExportComp && data.audioUrl) {
+        onExportComp(selectedRegions);
+      }
+    },
+    onError: () => {
+      toast({ title: 'Failed to render comp', variant: 'destructive' });
+    }
+  });
+  
+  const defaultRegions: TakeRegion[] = [
     { id: 'r1', takeId: 't2', startTime: 0, endTime: 4 },
     { id: 'r2', takeId: 't3', startTime: 4, endTime: 8 },
     { id: 'r3', takeId: 't4', startTime: 8, endTime: 12 },
     { id: 'r4', takeId: 't2', startTime: 12, endTime: 16 },
-  ]);
+  ];
+  
+  const [selectedRegions, setSelectedRegions] = useState<TakeRegion[]>(defaultRegions);
+  
+  useEffect(() => {
+    if (takeGroups?.takeGroups?.length > 0) {
+      const mappedRegions: TakeRegion[] = [];
+      takeGroups.takeGroups.forEach((group: any) => {
+        (group.segments || []).forEach((segment: any, i: number) => {
+          mappedRegions.push({
+            id: segment.id || `r${i}`,
+            takeId: segment.laneId || segment.takeId || 't1',
+            startTime: segment.startTime ?? 0,
+            endTime: segment.endTime ?? segment.startTime + 4
+          });
+        });
+      });
+      if (mappedRegions.length > 0) {
+        setSelectedRegions(mappedRegions);
+      }
+    }
+  }, [takeGroups]);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);

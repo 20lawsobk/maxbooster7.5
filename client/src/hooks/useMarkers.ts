@@ -53,32 +53,36 @@ export function useMarkers(projectId: string | null) {
       return await response.json();
     },
     onMutate: async (newMarker) => {
-      // Optimistic update: Add temporary marker to Zustand store
+      await queryClient.cancelQueries({ queryKey: ['markers', projectId] });
+      const previousData = queryClient.getQueryData(['markers', projectId]);
       const tempId = `temp-${Date.now()}`;
-      const optimisticMarker: Marker = {
-        id: tempId,
-        ...newMarker,
-      };
+      const optimisticMarker: Marker = { id: tempId, ...newMarker };
+      queryClient.setQueryData(['markers', projectId], (old: any) => ({
+        markers: [...(old?.markers || []), optimisticMarker]
+      }));
       addMarker(optimisticMarker);
-      return { tempId };
+      return { tempId, previousData };
     },
     onSuccess: (data, variables, context) => {
-      // Replace temporary marker with real one from server
       if (context?.tempId) {
         deleteMarker(context.tempId);
       }
       addMarker(data);
-      queryClient.invalidateQueries({ queryKey: ['markers', projectId] });
+      queryClient.setQueryData(['markers', projectId], (old: any) => ({
+        markers: (old?.markers || []).filter((m: any) => m.id !== context?.tempId).concat(data)
+      }));
       toast({ title: 'Marker created' });
     },
     onError: (error: unknown, variables, context) => {
-      // Rollback: Remove temporary marker
+      if (context?.previousData) {
+        queryClient.setQueryData(['markers', projectId], context.previousData);
+      }
       if (context?.tempId) {
         deleteMarker(context.tempId);
       }
       toast({
         title: 'Failed to create marker',
-        description: error.message,
+        description: (error as Error).message,
         variant: 'destructive',
       });
     },
@@ -90,26 +94,33 @@ export function useMarkers(projectId: string | null) {
       return await response.json();
     },
     onMutate: async ({ id, updates }) => {
-      // Optimistic update: Update marker in Zustand store immediately
+      await queryClient.cancelQueries({ queryKey: ['markers', projectId] });
+      const previousData = queryClient.getQueryData(['markers', projectId]);
       const previousMarker = markers.find((m) => m.id === id);
+      queryClient.setQueryData(['markers', projectId], (old: any) => ({
+        markers: (old?.markers || []).map((m: any) => m.id === id ? { ...m, ...updates } : m)
+      }));
       if (previousMarker) {
         updateMarker(id, updates);
       }
-      return { previousMarker };
+      return { previousMarker, previousData };
     },
     onSuccess: (data) => {
-      // Update with server response
       updateMarker(data.id, data);
-      queryClient.invalidateQueries({ queryKey: ['markers', projectId] });
+      queryClient.setQueryData(['markers', projectId], (old: any) => ({
+        markers: (old?.markers || []).map((m: any) => m.id === data.id ? data : m)
+      }));
     },
     onError: (error: unknown, { id }, context) => {
-      // Rollback: Restore previous marker state
+      if (context?.previousData) {
+        queryClient.setQueryData(['markers', projectId], context.previousData);
+      }
       if (context?.previousMarker) {
         updateMarker(id, context.previousMarker);
       }
       toast({
         title: 'Failed to update marker',
-        description: error.message,
+        description: (error as Error).message,
         variant: 'destructive',
       });
     },
@@ -121,23 +132,28 @@ export function useMarkers(projectId: string | null) {
       return id;
     },
     onMutate: async (id) => {
-      // Optimistic update: Remove marker from Zustand store immediately
+      await queryClient.cancelQueries({ queryKey: ['markers', projectId] });
+      const previousData = queryClient.getQueryData(['markers', projectId]);
       const previousMarker = markers.find((m) => m.id === id);
+      queryClient.setQueryData(['markers', projectId], (old: any) => ({
+        markers: (old?.markers || []).filter((m: any) => m.id !== id)
+      }));
       deleteMarker(id);
-      return { previousMarker };
+      return { previousMarker, previousData };
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['markers', projectId] });
       toast({ title: 'Marker deleted' });
     },
     onError: (error: unknown, id, context) => {
-      // Rollback: Restore deleted marker
+      if (context?.previousData) {
+        queryClient.setQueryData(['markers', projectId], context.previousData);
+      }
       if (context?.previousMarker) {
         addMarker(context.previousMarker);
       }
       toast({
         title: 'Failed to delete marker',
-        description: error.message,
+        description: (error as Error).message,
         variant: 'destructive',
       });
     },
