@@ -144,6 +144,36 @@ const PLUGIN_PRESETS: Record<PluginType, PluginPreset[]> = {
     { id: 'gentle', name: 'Gentle', parameters: { ceiling: -0.5, release: 250 } },
     { id: 'punchy', name: 'Punchy', parameters: { ceiling: -0.2, release: 80 } },
   ],
+  deesser: [
+    { id: 'gentle', name: 'Gentle', parameters: { frequency: 6000, threshold: -20, ratio: 3, range: -6 } },
+    { id: 'vocal-standard', name: 'Vocal Standard', parameters: { frequency: 7000, threshold: -15, ratio: 4, range: -10 } },
+    { id: 'aggressive', name: 'Aggressive', parameters: { frequency: 5500, threshold: -10, ratio: 6, range: -15 } },
+    { id: 'bright-vocal', name: 'Bright Vocal', parameters: { frequency: 8000, threshold: -18, ratio: 3, range: -8 } },
+    { id: 'speech', name: 'Speech', parameters: { frequency: 6500, threshold: -12, ratio: 5, range: -12 } },
+    { id: 'female-vocal', name: 'Female Vocal', parameters: { frequency: 7500, threshold: -16, ratio: 4, range: -9 } },
+    { id: 'male-vocal', name: 'Male Vocal', parameters: { frequency: 5000, threshold: -14, ratio: 4, range: -10 } },
+    { id: 'broadcast', name: 'Broadcast', parameters: { frequency: 6000, threshold: -18, ratio: 3, range: -6 } },
+  ],
+  vocoder: [
+    { id: 'robot', name: 'Robot Voice', parameters: { bands: 16, modDepth: 100, attack: 5, release: 50 } },
+    { id: 'classic', name: 'Classic Vocoder', parameters: { bands: 24, modDepth: 80, attack: 10, release: 100 } },
+    { id: 'warm', name: 'Warm Vocoder', parameters: { bands: 12, modDepth: 70, attack: 20, release: 150 } },
+    { id: 'talk-box', name: 'Talk Box', parameters: { bands: 8, modDepth: 90, attack: 2, release: 30 } },
+    { id: 'whisper', name: 'Whisper', parameters: { bands: 32, modDepth: 50, attack: 30, release: 200 } },
+    { id: 'synth-voice', name: 'Synth Voice', parameters: { bands: 20, modDepth: 100, attack: 1, release: 20 } },
+    { id: 'choir', name: 'Choir Effect', parameters: { bands: 16, modDepth: 60, attack: 15, release: 120 } },
+    { id: 'alien', name: 'Alien', parameters: { bands: 48, modDepth: 100, attack: 1, release: 10 } },
+  ],
+  dynamiceq: [
+    { id: 'surgical', name: 'Surgical', parameters: { frequency: 3000, gain: -6, threshold: -20, ratio: 4 } },
+    { id: 'vocal-tame', name: 'Vocal Tame', parameters: { frequency: 2500, gain: -4, threshold: -15, ratio: 3 } },
+    { id: 'bass-control', name: 'Bass Control', parameters: { frequency: 80, gain: -8, threshold: -12, ratio: 5 } },
+    { id: 'harsh-tame', name: 'Harsh Tame', parameters: { frequency: 4000, gain: -6, threshold: -18, ratio: 4 } },
+    { id: 'mud-cut', name: 'Mud Cut', parameters: { frequency: 300, gain: -5, threshold: -20, ratio: 3 } },
+    { id: 'presence-boost', name: 'Presence Boost', parameters: { frequency: 5000, gain: 4, threshold: -25, ratio: 2 } },
+    { id: 'multiband-comp', name: 'Multiband Comp', parameters: { frequency: 1000, gain: -3, threshold: -15, ratio: 4 } },
+    { id: 'de-honk', name: 'De-Honk', parameters: { frequency: 800, gain: -6, threshold: -16, ratio: 4 } },
+  ],
 };
 
 const PLUGIN_INFO: Record<PluginType, {
@@ -273,6 +303,42 @@ const PLUGIN_INFO: Record<PluginType, {
       'Always check for distortion artifacts at high gains',
     ],
   },
+  deesser: {
+    title: 'De-Esser',
+    description: 'Remove harsh sibilance from vocals with frequency-targeted compression.',
+    icon: <Volume2 className="h-5 w-5" />,
+    color: '#14b8a6',
+    tips: [
+      'Focus on 4-8kHz range where sibilance typically occurs',
+      'Use split-band mode for more transparent processing',
+      'Female vocals often need higher frequency settings (7-9kHz)',
+      'Avoid over-processing which can cause lisping artifacts',
+    ],
+  },
+  vocoder: {
+    title: 'Vocoder',
+    description: 'Create robotic voice effects by modulating a carrier with voice input.',
+    icon: <Volume2 className="h-5 w-5" />,
+    color: '#d946ef',
+    tips: [
+      'Use a synth pad as the carrier for classic vocoder sounds',
+      'More bands = clearer speech intelligibility',
+      'Shorter attack/release = more robotic character',
+      'Try different carrier waveforms for varied timbres',
+    ],
+  },
+  dynamiceq: {
+    title: 'Dynamic EQ',
+    description: 'Apply frequency-dependent compression for surgical tone shaping.',
+    icon: <Activity className="h-5 w-5" />,
+    color: '#0ea5e9',
+    tips: [
+      'Use for taming problem frequencies only when they occur',
+      'More transparent than static EQ for harsh vocal frequencies',
+      'Great for controlling bass without losing punch on quiet passages',
+      'Combine with regular EQ for comprehensive tone shaping',
+    ],
+  },
 };
 
 export const EXTENDED_PARAMETERS: Record<PluginType, {
@@ -383,6 +449,36 @@ export const EXTENDED_PARAMETERS: Record<PluginType, {
     { name: 'Look-Ahead', key: 'lookAhead', min: 0, max: 10, default: 1, unit: 'ms', description: 'Anticipate peaks' },
     { name: 'Stereo Link', key: 'stereoLink', min: 0, max: 100, default: 100, unit: '%', description: 'Channel linking' },
     { name: 'Auto Release', key: 'autoRelease', min: 0, max: 100, default: 50, description: 'Program-dependent release' },
+  ],
+  deesser: [
+    { name: 'Frequency', key: 'frequency', min: 2000, max: 12000, default: 6000, unit: 'Hz', description: 'Target sibilance frequency' },
+    { name: 'Threshold', key: 'threshold', min: -40, max: 0, default: -15, unit: 'dB', description: 'Level to trigger de-essing' },
+    { name: 'Ratio', key: 'ratio', min: 1, max: 10, default: 4, description: 'Compression ratio' },
+    { name: 'Range', key: 'range', min: -20, max: 0, default: -10, unit: 'dB', description: 'Maximum gain reduction' },
+    { name: 'Bandwidth', key: 'bandwidth', min: 0.5, max: 4, default: 1.5, description: 'Q/bandwidth of detection' },
+    { name: 'Attack', key: 'attack', min: 0.1, max: 20, default: 2, unit: 'ms', description: 'Attack time' },
+    { name: 'Release', key: 'release', min: 10, max: 200, default: 50, unit: 'ms', description: 'Release time' },
+    { name: 'Listen', key: 'listen', min: 0, max: 100, default: 0, description: 'Solo detection band' },
+  ],
+  vocoder: [
+    { name: 'Bands', key: 'bands', min: 4, max: 64, default: 16, description: 'Number of frequency bands' },
+    { name: 'Mod Depth', key: 'modDepth', min: 0, max: 100, default: 100, unit: '%', description: 'Modulation intensity' },
+    { name: 'Attack', key: 'attack', min: 0.1, max: 100, default: 5, unit: 'ms', description: 'Envelope attack' },
+    { name: 'Release', key: 'release', min: 10, max: 500, default: 50, unit: 'ms', description: 'Envelope release' },
+    { name: 'High Freq', key: 'highFreq', min: 2000, max: 16000, default: 12000, unit: 'Hz', description: 'Upper frequency limit' },
+    { name: 'Low Freq', key: 'lowFreq', min: 50, max: 500, default: 100, unit: 'Hz', description: 'Lower frequency limit' },
+    { name: 'Formant Shift', key: 'formantShift', min: -24, max: 24, default: 0, unit: 'st', description: 'Shift formant frequencies' },
+    { name: 'Mix', key: 'mix', min: 0, max: 100, default: 100, unit: '%', description: 'Wet/dry blend' },
+  ],
+  dynamiceq: [
+    { name: 'Frequency', key: 'frequency', min: 20, max: 20000, default: 3000, unit: 'Hz', description: 'Target frequency' },
+    { name: 'Gain', key: 'gain', min: -18, max: 18, default: -6, unit: 'dB', description: 'Max gain change' },
+    { name: 'Threshold', key: 'threshold', min: -60, max: 0, default: -20, unit: 'dB', description: 'Trigger level' },
+    { name: 'Ratio', key: 'ratio', min: 1, max: 10, default: 4, description: 'Compression ratio' },
+    { name: 'Q', key: 'q', min: 0.1, max: 10, default: 1.5, description: 'Bandwidth' },
+    { name: 'Attack', key: 'attack', min: 0.1, max: 100, default: 5, unit: 'ms', description: 'Attack time' },
+    { name: 'Release', key: 'release', min: 10, max: 1000, default: 100, unit: 'ms', description: 'Release time' },
+    { name: 'Mix', key: 'mix', min: 0, max: 100, default: 100, unit: '%', description: 'Wet/dry blend' },
   ],
 };
 

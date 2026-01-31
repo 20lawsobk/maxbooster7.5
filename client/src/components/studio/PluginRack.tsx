@@ -54,7 +54,10 @@ export type PluginType =
   | 'flanger'
   | 'phaser'
   | 'gate'
-  | 'limiter';
+  | 'limiter'
+  | 'deesser'
+  | 'vocoder'
+  | 'dynamiceq';
 
 interface PluginDefinition {
   type: PluginType;
