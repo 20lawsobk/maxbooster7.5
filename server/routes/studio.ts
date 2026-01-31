@@ -172,11 +172,50 @@ router.post('/record/upload', requireAuth, async (req: Request, res: Response) =
 
 // GET mix busses for project - NOTE: Track routes consolidated below to avoid duplicates
 
+// Mix Bus interface for project metadata storage
+interface MixBusConfig {
+  id: string;
+  name: string;
+  type: 'master' | 'aux' | 'group' | 'fx';
+  volume: number;
+  pan: number;
+  muted: boolean;
+  solo: boolean;
+  color?: string;
+  order: number;
+  inputSources: string[];
+  outputBus?: string;
+  inserts?: string[];
+  sends?: Array<{ busId: string; level: number; preFader: boolean }>;
+}
+
+// Default mix busses for new projects
+const DEFAULT_MIX_BUSSES: MixBusConfig[] = [
+  { id: 'master', name: 'Master', type: 'master', volume: 1, pan: 0, muted: false, solo: false, color: '#6366f1', order: 0, inputSources: [] },
+  { id: 'mix-a', name: 'Mix A', type: 'group', volume: 1, pan: 0, muted: false, solo: false, color: '#10b981', order: 1, inputSources: [], outputBus: 'master' },
+  { id: 'mix-b', name: 'Mix B', type: 'group', volume: 1, pan: 0, muted: false, solo: false, color: '#f59e0b', order: 2, inputSources: [], outputBus: 'master' },
+  { id: 'fx-reverb', name: 'FX Reverb', type: 'fx', volume: 1, pan: 0, muted: false, solo: false, color: '#8b5cf6', order: 3, inputSources: [], outputBus: 'master' },
+  { id: 'fx-delay', name: 'FX Delay', type: 'fx', volume: 1, pan: 0, muted: false, solo: false, color: '#ec4899', order: 4, inputSources: [], outputBus: 'master' },
+];
+
 // GET mix busses for project
 router.get('/projects/:projectId/mix-busses', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    res.json([]);
+    const userId = (req as any).user.id;
+
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as Record<string, unknown>) || {};
+    const mixBusses = (metadata.mixBusses as MixBusConfig[]) || DEFAULT_MIX_BUSSES;
+
+    res.json(mixBusses);
   } catch (error: unknown) {
     logger.error('Error fetching mix busses:', error);
     res.status(500).json({ error: 'Failed to fetch mix busses' });
@@ -729,20 +768,193 @@ router.get('/recent-files', requireAuth, async (req: Request, res: Response) => 
 
 router.post('/mix-busses', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { projectId, name, type } = req.body;
-    res.status(201).json({
+    const userId = (req as any).user.id;
+    const { projectId, name, type, color, outputBus } = req.body;
+
+    if (!projectId) {
+      return res.status(400).json({ error: 'Project ID is required' });
+    }
+
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as Record<string, unknown>) || {};
+    const existingBusses = (metadata.mixBusses as MixBusConfig[]) || [...DEFAULT_MIX_BUSSES];
+
+    const newBus: MixBusConfig = {
       id: nanoid(),
-      projectId,
       name: name || 'New Bus',
       type: type || 'aux',
-      volume: 0,
+      volume: 1,
       pan: 0,
       muted: false,
       solo: false,
-    });
+      color: color || '#64748b',
+      order: existingBusses.length,
+      inputSources: [],
+      outputBus: outputBus || 'master',
+    };
+
+    const updatedBusses = [...existingBusses, newBus];
+
+    await db.update(projects)
+      .set({ 
+        metadata: { ...metadata, mixBusses: updatedBusses },
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, projectId));
+
+    res.status(201).json(newBus);
   } catch (error: unknown) {
     logger.error('Error creating mix bus:', error);
     res.status(500).json({ error: 'Failed to create mix bus' });
+  }
+});
+
+// PATCH update mix bus
+router.patch('/mix-busses/:busId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { busId } = req.params;
+    const { projectId, name, volume, pan, muted, solo, color, outputBus } = req.body;
+
+    if (!projectId) {
+      return res.status(400).json({ error: 'Project ID is required' });
+    }
+
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as Record<string, unknown>) || {};
+    const existingBusses = (metadata.mixBusses as MixBusConfig[]) || [...DEFAULT_MIX_BUSSES];
+
+    const busIndex = existingBusses.findIndex(b => b.id === busId);
+    if (busIndex === -1) {
+      return res.status(404).json({ error: 'Mix bus not found' });
+    }
+
+    const updatedBus: MixBusConfig = {
+      ...existingBusses[busIndex],
+      ...(name !== undefined && { name }),
+      ...(volume !== undefined && { volume }),
+      ...(pan !== undefined && { pan }),
+      ...(muted !== undefined && { muted }),
+      ...(solo !== undefined && { solo }),
+      ...(color !== undefined && { color }),
+      ...(outputBus !== undefined && { outputBus }),
+    };
+
+    existingBusses[busIndex] = updatedBus;
+
+    await db.update(projects)
+      .set({ 
+        metadata: { ...metadata, mixBusses: existingBusses },
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, projectId));
+
+    res.json(updatedBus);
+  } catch (error: unknown) {
+    logger.error('Error updating mix bus:', error);
+    res.status(500).json({ error: 'Failed to update mix bus' });
+  }
+});
+
+// DELETE mix bus
+router.delete('/mix-busses/:busId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { busId } = req.params;
+    const { projectId } = req.query as { projectId: string };
+
+    if (!projectId) {
+      return res.status(400).json({ error: 'Project ID is required' });
+    }
+
+    if (busId === 'master') {
+      return res.status(400).json({ error: 'Cannot delete master bus' });
+    }
+
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as Record<string, unknown>) || {};
+    const existingBusses = (metadata.mixBusses as MixBusConfig[]) || [...DEFAULT_MIX_BUSSES];
+
+    const updatedBusses = existingBusses.filter(b => b.id !== busId);
+
+    await db.update(projects)
+      .set({ 
+        metadata: { ...metadata, mixBusses: updatedBusses },
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, projectId));
+
+    res.json({ success: true });
+  } catch (error: unknown) {
+    logger.error('Error deleting mix bus:', error);
+    res.status(500).json({ error: 'Failed to delete mix bus' });
+  }
+});
+
+// POST update track routing
+router.post('/projects/:projectId/track-routing', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId } = req.params;
+    const { trackId, outputBus } = req.body;
+
+    if (!trackId) {
+      return res.status(400).json({ error: 'Track ID is required' });
+    }
+
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const track = await db.query.studioTracks.findFirst({
+      where: and(eq(studioTracks.id, trackId), eq(studioTracks.projectId, projectId)),
+    });
+
+    if (!track) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    const metadata = (project.metadata as Record<string, unknown>) || {};
+    const mixBusses = (metadata.mixBusses as MixBusConfig[]) || DEFAULT_MIX_BUSSES;
+    const validBusIds = mixBusses.map(b => b.id);
+
+    if (outputBus && !validBusIds.includes(outputBus)) {
+      return res.status(400).json({ error: 'Invalid output bus ID' });
+    }
+
+    await db.update(studioTracks)
+      .set({ outputBus: outputBus || 'master' })
+      .where(and(eq(studioTracks.id, trackId), eq(studioTracks.projectId, projectId)));
+
+    res.json({ success: true, trackId, outputBus: outputBus || 'master' });
+  } catch (error: unknown) {
+    logger.error('Error updating track routing:', error);
+    res.status(500).json({ error: 'Failed to update track routing' });
   }
 });
 
