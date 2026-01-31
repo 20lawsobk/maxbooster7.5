@@ -34,6 +34,12 @@ import {
   X,
   PanelRightOpen,
   PanelRightClose,
+  Waves,
+  Timer,
+  Flag,
+  GitBranch,
+  FolderOpen,
+  MoreHorizontal,
 } from 'lucide-react';
 import './FlowStateTheme.css';
 import { FlowStateAISidebar } from './FlowStateAISidebar';
@@ -41,6 +47,21 @@ import { FlowStateSmartToolbar } from './FlowStateSmartToolbar';
 import { FlowStateSpatialVisualizer } from './FlowStateSpatialVisualizer';
 import { FlowStateTrackList } from './FlowStateTrackList';
 import { FlowStateMixer } from './FlowStateMixer';
+import { FlowStateSpectralEditor } from './FlowStateSpectralEditor';
+import { FlowStateAudioWarp } from './FlowStateAudioWarp';
+import { FlowStateTakeComping } from './FlowStateTakeComping';
+import { FlowStateSampleBrowser } from './FlowStateSampleBrowser';
+import { FlowStateArrangementMarkers } from './FlowStateArrangementMarkers';
+import { FlowStateSidechainVisualizer } from './FlowStateSidechainVisualizer';
+import { FlowStateBeatSlicer } from './FlowStateBeatSlicer';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 
 interface FlowStateStudioProps {
   projectId?: string;
@@ -66,6 +87,13 @@ export function FlowStateStudio({
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
+  
+  // Advanced tool panels
+  const [activePanel, setActivePanel] = useState<string | null>(null);
+  
+  const togglePanel = (panel: string) => {
+    setActivePanel(prev => prev === panel ? null : panel);
+  };
   
   const [tracks, setTracks] = useState([
     { id: '1', name: 'Drums', type: 'audio' as const, color: '#f43f5e', volume: 0.8, pan: 0, mute: false, solo: false, armed: false },
@@ -241,6 +269,70 @@ export function FlowStateStudio({
             <Layers className="w-4 h-4" />
           </button>
           
+          {/* Advanced Tools Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button 
+                className={`flow-btn-ghost p-2 rounded-lg hover:bg-white/5 ${activePanel ? 'text-orange-400' : 'text-slate-400'}`}
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-700">
+              <DropdownMenuLabel className="text-zinc-400">Advanced Tools</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-zinc-700" />
+              <DropdownMenuItem 
+                className={`cursor-pointer ${activePanel === 'spectral' ? 'bg-indigo-500/20 text-indigo-400' : ''}`}
+                onClick={() => togglePanel('spectral')}
+              >
+                <Waves className="w-4 h-4 mr-2" />
+                Spectral Editor
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className={`cursor-pointer ${activePanel === 'warp' ? 'bg-amber-500/20 text-amber-400' : ''}`}
+                onClick={() => togglePanel('warp')}
+              >
+                <Timer className="w-4 h-4 mr-2" />
+                Audio Warp
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className={`cursor-pointer ${activePanel === 'comping' ? 'bg-purple-500/20 text-purple-400' : ''}`}
+                onClick={() => togglePanel('comping')}
+              >
+                <Layers className="w-4 h-4 mr-2" />
+                Take Comping
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className={`cursor-pointer ${activePanel === 'samples' ? 'bg-teal-500/20 text-teal-400' : ''}`}
+                onClick={() => togglePanel('samples')}
+              >
+                <FolderOpen className="w-4 h-4 mr-2" />
+                Sample Browser
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className={`cursor-pointer ${activePanel === 'markers' ? 'bg-red-500/20 text-red-400' : ''}`}
+                onClick={() => togglePanel('markers')}
+              >
+                <Flag className="w-4 h-4 mr-2" />
+                Arrangement Markers
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className={`cursor-pointer ${activePanel === 'sidechain' ? 'bg-pink-500/20 text-pink-400' : ''}`}
+                onClick={() => togglePanel('sidechain')}
+              >
+                <GitBranch className="w-4 h-4 mr-2" />
+                Sidechain Visualizer
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className={`cursor-pointer ${activePanel === 'slicer' ? 'bg-orange-500/20 text-orange-400' : ''}`}
+                onClick={() => togglePanel('slicer')}
+              >
+                <Scissors className="w-4 h-4 mr-2" />
+                Beat Slicer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           <div className="w-px h-6 bg-white/10 mx-2" />
           
           <button className="flow-btn-ghost p-2 rounded-lg hover:bg-white/5" onClick={onSave}>
@@ -318,6 +410,32 @@ export function FlowStateStudio({
                 <FlowStateMixer tracks={tracks} onUpdateTrack={(id, updates) => {
                   setTracks(tracks.map(t => t.id === id ? { ...t, ...updates } : t));
                 }} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Advanced Tools Panel */}
+          <AnimatePresence>
+            {activePanel && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 450, opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="border-t border-white/5 overflow-hidden"
+              >
+                {activePanel === 'spectral' && <FlowStateSpectralEditor />}
+                {activePanel === 'warp' && <FlowStateAudioWarp />}
+                {activePanel === 'comping' && <FlowStateTakeComping />}
+                {activePanel === 'samples' && <FlowStateSampleBrowser />}
+                {activePanel === 'markers' && (
+                  <FlowStateArrangementMarkers 
+                    currentTime={currentTime}
+                    onSeekToMarker={(time) => setCurrentTime(time)}
+                  />
+                )}
+                {activePanel === 'sidechain' && <FlowStateSidechainVisualizer />}
+                {activePanel === 'slicer' && <FlowStateBeatSlicer bpm={bpm} />}
               </motion.div>
             )}
           </AnimatePresence>
