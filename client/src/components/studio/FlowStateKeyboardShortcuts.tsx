@@ -79,6 +79,7 @@ const SHORTCUTS: ShortcutCategory[] = [
       { keys: ['⌘', 'S'], description: 'Save project' },
       { keys: ['⌘', 'E'], description: 'Export audio' },
       { keys: ['⌘', 'O'], description: 'Open project' },
+      { keys: ['⇧', 'P'], description: 'Open plugin browser' },
       { keys: ['?'], description: 'Show keyboard shortcuts' },
     ],
   },

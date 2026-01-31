@@ -32,6 +32,11 @@ The platform supports Progressive Web App features, including an install banner,
   - **Live Collaboration Presence**: WebSocket-ready presence system with user avatars, status indicators (active/idle/away), cursor tracking, track focus display, and recording status broadcast. Includes heartbeat, reconnection logic with exponential backoff.
   - **Smart Toolbar**: Selection-aware context toolbar showing relevant actions for tracks, clips, ranges, MIDI notes, or automation. AI-suggested actions highlighted.
   - **FlowStateAdapter Hook**: Bridge between studioStore and FlowState components with transport controls, track state, mixer bindings, and meter level updates via requestAnimationFrame.
+  - **Plugin Browser & Instrument Dialogs**: Comprehensive plugin browser (Shift+P) for browsing and adding 10 built-in effects (EQ, Compressor, Reverb, Delay, Distortion, Chorus, Flanger, Phaser, Gate, Limiter) and 10 digital instruments (Synthesizer, Sampler, Drum Machine, Piano, Organ, Bass, Strings, Brass, Pad, Lead). Each instrument type has dedicated control dialogs with parameter knobs, preset management, and bypass controls. Accessible via header button or track context menu.
+  - **Professional Timeline Ruler**: Bar/beat/sub-beat grid with zoom controls (25%-400%), loop region markers, and animated playhead with glow effect.
+  - **Track Creation Dialog**: Add Track button (⌘N) with 7 track types: Audio, Instrument, Vocal, Drums, Guitar, Bus, and Folder.
+  - **Keyboard Shortcuts Overlay**: Press "?" to view all shortcuts organized into 7 categories (Transport, Editing, Tools, Modes, View, Tracks, Project).
+  - **Context Menus**: Right-click context menus for tracks with standard DAW actions including duplicate, delete, mute, solo, rename, color, move, freeze, AI process, and add plugin.
 - **Video Creation**: Utilizes an in-house WebGL render engine for custom video generation with shaders, audio visualizers, lyric engines, and text animators.
 - **Distribution**: Integrates with LabelGrid for global music distribution, SLA tracking, Content ID registration, sync licensing, and automated royalty splits.
 - **Social Media Management**: Provides approval workflows, bulk scheduling, unified inbox, competitor benchmarking, and social listening tools via OAuth connections.

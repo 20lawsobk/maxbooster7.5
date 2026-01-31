@@ -131,6 +131,7 @@ export const TRACK_CONTEXT_MENU_ITEMS = (handlers: {
   onMoveDown: () => void;
   onFreeze: () => void;
   onAIProcess: () => void;
+  onAddPlugin?: () => void;
   isMuted: boolean;
   isSolo: boolean;
   isFrozen: boolean;
@@ -153,6 +154,7 @@ export const TRACK_CONTEXT_MENU_ITEMS = (handlers: {
     action: handlers.onSolo 
   },
   { id: 'separator', label: '' },
+  { id: 'add-plugin', label: 'Add Plugin/Instrument...', icon: Layers, shortcut: '⇧P', action: handlers.onAddPlugin },
   { id: 'color', label: 'Change Color', icon: Palette, action: handlers.onChangeColor },
   { id: 'move-up', label: 'Move Up', icon: ArrowUp, action: handlers.onMoveUp },
   { id: 'move-down', label: 'Move Down', icon: ArrowDown, action: handlers.onMoveDown },

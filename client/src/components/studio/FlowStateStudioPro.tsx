@@ -56,8 +56,12 @@ import { FlowStateAddTrack, AddTrackButton } from './FlowStateAddTrack';
 import { FlowStateEmptyState } from './FlowStateEmptyState';
 import { FlowStateKeyboardShortcuts } from './FlowStateKeyboardShortcuts';
 import { FlowStateContextMenu, TRACK_CONTEXT_MENU_ITEMS } from './FlowStateContextMenu';
+import { FlowStatePluginBrowser } from './FlowStatePluginBrowser';
+import { FlowStateInstrumentDialog, type InstrumentInstance, type InstrumentType } from './FlowStateInstrumentDialog';
+import { PluginControlDialog } from './PluginControlDialog';
 import { AIGeneratorDialog } from './AIGeneratorDialog';
 import { cn } from '@/lib/utils';
+import type { PluginInstance, PluginType } from './PluginRack';
 
 interface FlowStateStudioProProps {
   projectId: string | null;
@@ -119,6 +123,12 @@ export function FlowStateStudioPro({
     position: { x: 0, y: 0 },
     trackId: null,
   });
+  const [showPluginBrowser, setShowPluginBrowser] = useState(false);
+  const [selectedPlugin, setSelectedPlugin] = useState<PluginInstance | null>(null);
+  const [selectedInstrument, setSelectedInstrument] = useState<InstrumentInstance | null>(null);
+  const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
+  const [instrumentDialogOpen, setInstrumentDialogOpen] = useState(false);
+  const [activeTrackForPlugin, setActiveTrackForPlugin] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -180,9 +190,18 @@ export function FlowStateStudioPro({
             setShowAddTrackDialog(true);
           }
           break;
+        case 'KeyP':
+          if (e.shiftKey) {
+            e.preventDefault();
+            setShowPluginBrowser(true);
+          }
+          break;
         case 'Escape':
           setShowKeyboardShortcuts(false);
           setShowAddTrackDialog(false);
+          setShowPluginBrowser(false);
+          setPluginDialogOpen(false);
+          setInstrumentDialogOpen(false);
           setContextMenu(prev => ({ ...prev, isOpen: false }));
           break;
       }
@@ -259,6 +278,61 @@ export function FlowStateStudioPro({
     console.log('[FlowState] Analyze Audio');
   }, []);
 
+  const handleAddPlugin = useCallback((pluginId: string, type: 'effect' | 'instrument') => {
+    if (type === 'effect') {
+      const newPlugin: PluginInstance = {
+        id: `plugin-${Date.now()}`,
+        type: pluginId as PluginType,
+        name: pluginId.charAt(0).toUpperCase() + pluginId.slice(1),
+        bypass: false,
+        expanded: true,
+        parameters: {},
+      };
+      setSelectedPlugin(newPlugin);
+      setPluginDialogOpen(true);
+    } else {
+      const newInstrument: InstrumentInstance = {
+        id: `inst-${Date.now()}`,
+        type: pluginId as InstrumentType,
+        name: pluginId.charAt(0).toUpperCase() + pluginId.slice(1),
+        bypass: false,
+        parameters: {},
+      };
+      setSelectedInstrument(newInstrument);
+      setInstrumentDialogOpen(true);
+    }
+    setShowPluginBrowser(false);
+  }, []);
+
+  const handlePluginParameterChange = useCallback((key: string, value: number) => {
+    setSelectedPlugin(prev => prev ? { ...prev, parameters: { ...prev.parameters, [key]: value } } : null);
+  }, []);
+
+  const handlePluginBypassChange = useCallback((bypass: boolean) => {
+    setSelectedPlugin(prev => prev ? { ...prev, bypass } : null);
+  }, []);
+
+  const handlePluginReset = useCallback(() => {
+    setSelectedPlugin(prev => prev ? { ...prev, parameters: {} } : null);
+  }, []);
+
+  const handleInstrumentParameterChange = useCallback((key: string, value: number) => {
+    setSelectedInstrument(prev => prev ? { ...prev, parameters: { ...prev.parameters, [key]: value } } : null);
+  }, []);
+
+  const handleInstrumentBypassChange = useCallback((bypass: boolean) => {
+    setSelectedInstrument(prev => prev ? { ...prev, bypass } : null);
+  }, []);
+
+  const handleInstrumentReset = useCallback(() => {
+    setSelectedInstrument(prev => prev ? { ...prev, parameters: {} } : null);
+  }, []);
+
+  const handleOpenPluginBrowser = useCallback((trackId?: string) => {
+    setActiveTrackForPlugin(trackId || null);
+    setShowPluginBrowser(true);
+  }, []);
+
   const handleToolbarAction = useCallback((actionId: string) => {
     const selectedTrack = context.selectedTrackIds[0];
     
@@ -330,11 +404,12 @@ export function FlowStateStudioPro({
       onMoveDown: () => console.log('[FlowState] Move down:', track.id),
       onFreeze: () => console.log('[FlowState] Freeze:', track.id),
       onAIProcess: () => console.log('[FlowState] AI Process:', track.id),
+      onAddPlugin: () => handleOpenPluginBrowser(track.id),
       isMuted: track.mute,
       isSolo: track.solo,
       isFrozen: false,
     });
-  }, [adapter, tracks, contextMenu.trackId]);
+  }, [adapter, tracks, contextMenu.trackId, handleOpenPluginBrowser]);
 
   const pixelsPerSecond = 50 * timelineZoom;
 
@@ -515,6 +590,16 @@ export function FlowStateStudioPro({
                 title="Add Track (⌘N)"
               >
                 <Plus className="w-4 h-4" />
+              </motion.button>
+              
+              <motion.button
+                onClick={() => setShowPluginBrowser(true)}
+                className="p-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Plugins & Instruments (Shift+P)"
+              >
+                <Layers className="w-4 h-4" />
               </motion.button>
               
               <motion.button
@@ -1032,6 +1117,31 @@ export function FlowStateStudioPro({
         position={contextMenu.position}
         items={getTrackContextMenuItems()}
         onClose={() => setContextMenu(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      <FlowStatePluginBrowser
+        open={showPluginBrowser}
+        onOpenChange={setShowPluginBrowser}
+        onAddPlugin={handleAddPlugin}
+        trackId={activeTrackForPlugin || undefined}
+      />
+
+      <PluginControlDialog
+        open={pluginDialogOpen}
+        onOpenChange={setPluginDialogOpen}
+        plugin={selectedPlugin}
+        onParameterChange={handlePluginParameterChange}
+        onBypassChange={handlePluginBypassChange}
+        onReset={handlePluginReset}
+      />
+
+      <FlowStateInstrumentDialog
+        open={instrumentDialogOpen}
+        onOpenChange={setInstrumentDialogOpen}
+        instrument={selectedInstrument}
+        onParameterChange={handleInstrumentParameterChange}
+        onBypassChange={handleInstrumentBypassChange}
+        onReset={handleInstrumentReset}
       />
     </div>
   );
