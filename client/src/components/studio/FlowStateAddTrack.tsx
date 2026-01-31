@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Plus, 
   Music, 
@@ -10,9 +11,11 @@ import {
   Waves,
   Volume2,
   X,
-  Folder
+  Folder,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface TrackType {
   id: string;
@@ -20,31 +23,98 @@ interface TrackType {
   icon: typeof Music;
   color: string;
   description: string;
+  backendType: 'audio' | 'midi' | 'aux' | 'master';
 }
 
 const TRACK_TYPES: TrackType[] = [
-  { id: 'audio', name: 'Audio', icon: Waves, color: 'from-blue-500 to-cyan-500', description: 'Record or import audio files' },
-  { id: 'instrument', name: 'Instrument', icon: Piano, color: 'from-purple-500 to-pink-500', description: 'Virtual instruments & MIDI' },
-  { id: 'vocal', name: 'Vocal', icon: Mic, color: 'from-rose-500 to-orange-500', description: 'Optimized for vocals' },
-  { id: 'drum', name: 'Drums', icon: Drum, color: 'from-amber-500 to-yellow-500', description: 'Drum patterns & beats' },
-  { id: 'guitar', name: 'Guitar', icon: Guitar, color: 'from-emerald-500 to-teal-500', description: 'Guitar with amp simulation' },
-  { id: 'bus', name: 'Bus', icon: Volume2, color: 'from-slate-500 to-gray-500', description: 'Route multiple tracks' },
-  { id: 'folder', name: 'Folder', icon: Folder, color: 'from-indigo-500 to-violet-500', description: 'Organize track groups' },
+  { id: 'audio', name: 'Audio', icon: Waves, color: 'from-blue-500 to-cyan-500', description: 'Record or import audio files', backendType: 'audio' },
+  { id: 'instrument', name: 'Instrument', icon: Piano, color: 'from-purple-500 to-pink-500', description: 'Virtual instruments & MIDI', backendType: 'midi' },
+  { id: 'vocal', name: 'Vocal', icon: Mic, color: 'from-rose-500 to-orange-500', description: 'Optimized for vocals', backendType: 'audio' },
+  { id: 'drum', name: 'Drums', icon: Drum, color: 'from-amber-500 to-yellow-500', description: 'Drum patterns & beats', backendType: 'midi' },
+  { id: 'guitar', name: 'Guitar', icon: Guitar, color: 'from-emerald-500 to-teal-500', description: 'Guitar with amp simulation', backendType: 'audio' },
+  { id: 'bus', name: 'Bus', icon: Volume2, color: 'from-slate-500 to-gray-500', description: 'Route multiple tracks', backendType: 'aux' },
+  { id: 'folder', name: 'Folder', icon: Folder, color: 'from-indigo-500 to-violet-500', description: 'Organize track groups', backendType: 'aux' },
 ];
 
-interface FlowStateAddTrackProps {
-  onAddTrack: (type: string, name: string) => void;
-  onClose: () => void;
-  isOpen: boolean;
+const TYPE_COLORS: Record<string, string> = {
+  audio: '#3b82f6',
+  instrument: '#a855f7',
+  vocal: '#f43f5e',
+  drum: '#f59e0b',
+  guitar: '#10b981',
+  bus: '#64748b',
+  folder: '#6366f1',
+};
+
+interface CreateTrackParams {
+  projectId: string;
+  name: string;
+  trackType: 'audio' | 'midi' | 'aux' | 'master';
+  color?: string;
 }
 
-export function FlowStateAddTrack({ onAddTrack, onClose, isOpen }: FlowStateAddTrackProps) {
+async function createTrack(params: CreateTrackParams) {
+  const response = await fetch('/api/studio/tracks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create track');
+  }
+  return response.json();
+}
+
+interface FlowStateAddTrackProps {
+  onAddTrack: (type: string, name: string, track?: any) => void;
+  onClose: () => void;
+  isOpen: boolean;
+  projectId?: string;
+}
+
+export function FlowStateAddTrack({ onAddTrack, onClose, isOpen, projectId }: FlowStateAddTrackProps) {
   const [selectedType, setSelectedType] = useState<TrackType | null>(null);
   const [trackName, setTrackName] = useState('');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const createTrackMutation = useMutation({
+    mutationFn: createTrack,
+    onSuccess: (track, variables) => {
+      toast({
+        title: 'Track Created',
+        description: `${selectedType?.name || 'Track'} "${track.name}" has been added to your project`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['studio-tracks', projectId] });
+      onAddTrack(selectedType?.id || 'audio', track.name, track);
+      setSelectedType(null);
+      setTrackName('');
+      onClose();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to Create Track',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
 
   const handleCreate = () => {
-    if (selectedType) {
-      const name = trackName.trim() || `${selectedType.name} ${Date.now().toString(36).slice(-4).toUpperCase()}`;
+    if (!selectedType) return;
+
+    const name = trackName.trim() || `${selectedType.name} ${Date.now().toString(36).slice(-4).toUpperCase()}`;
+    
+    if (projectId) {
+      createTrackMutation.mutate({
+        projectId,
+        name,
+        trackType: selectedType.backendType,
+        color: TYPE_COLORS[selectedType.id],
+      });
+    } else {
       onAddTrack(selectedType.id, name);
       setSelectedType(null);
       setTrackName('');
@@ -102,6 +172,7 @@ export function FlowStateAddTrack({ onAddTrack, onClose, isOpen }: FlowStateAddT
                   )}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  disabled={createTrackMutation.isPending}
                 >
                   <div className={cn(
                     "w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center mb-3",
@@ -133,21 +204,33 @@ export function FlowStateAddTrack({ onAddTrack, onClose, isOpen }: FlowStateAddT
                         placeholder={`${selectedType.name} Track`}
                         className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-colors"
                         autoFocus
-                        onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                        onKeyDown={(e) => e.key === 'Enter' && !createTrackMutation.isPending && handleCreate()}
+                        disabled={createTrackMutation.isPending}
                       />
                     </div>
                     
                     <motion.button
                       onClick={handleCreate}
+                      disabled={createTrackMutation.isPending}
                       className={cn(
                         "w-full py-3 rounded-lg font-medium text-white bg-gradient-to-r flex items-center justify-center gap-2",
-                        selectedType.color
+                        selectedType.color,
+                        createTrackMutation.isPending && "opacity-70 cursor-not-allowed"
                       )}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
+                      whileHover={!createTrackMutation.isPending ? { scale: 1.01 } : undefined}
+                      whileTap={!createTrackMutation.isPending ? { scale: 0.99 } : undefined}
                     >
-                      <Plus className="w-4 h-4" />
-                      Create {selectedType.name} Track
+                      {createTrackMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4" />
+                          Create {selectedType.name} Track
+                        </>
+                      )}
                     </motion.button>
                   </div>
                 </motion.div>

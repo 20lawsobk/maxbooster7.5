@@ -57,6 +57,9 @@ import { FlowStateEmptyState } from './FlowStateEmptyState';
 import { FlowStateKeyboardShortcuts } from './FlowStateKeyboardShortcuts';
 import { FlowStateContextMenu, TRACK_CONTEXT_MENU_ITEMS } from './FlowStateContextMenu';
 import { FlowStatePluginBrowser } from './FlowStatePluginBrowser';
+import { FlowStateImportAudio } from './FlowStateImportAudio';
+import { FlowStateTemplateDialog } from './FlowStateTemplateDialog';
+import { FlowStateAIGenerate } from './FlowStateAIGenerate';
 import { FlowStateInstrumentDialog, type InstrumentInstance, type InstrumentType } from './FlowStateInstrumentDialog';
 import { PluginControlDialog } from './PluginControlDialog';
 import { AIGeneratorDialog } from './AIGeneratorDialog';
@@ -112,6 +115,9 @@ export function FlowStateStudioPro({
   const [showAIGeneratorDialog, setShowAIGeneratorDialog] = useState(false);
   const [showAddTrackDialog, setShowAddTrackDialog] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showImportAudioDialog, setShowImportAudioDialog] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showAIGenerateDialog, setShowAIGenerateDialog] = useState(false);
   const [activeTool, setActiveTool] = useState('pointer');
   const [chromeVisible, setChromeVisible] = useState(true);
   const [masterPlugins, setMasterPlugins] = useState<PluginNode[]>([]);
@@ -709,9 +715,9 @@ export function FlowStateStudioPro({
                     {tracks.length === 0 ? (
                       <FlowStateEmptyState
                         onAddTrack={() => setShowAddTrackDialog(true)}
-                        onImportAudio={() => console.log('[FlowState] Import audio')}
-                        onOpenTemplate={() => console.log('[FlowState] Open template')}
-                        onGenerateAI={() => setShowAIGeneratorDialog(true)}
+                        onImportAudio={() => setShowImportAudioDialog(true)}
+                        onOpenTemplate={() => setShowTemplateDialog(true)}
+                        onGenerateAI={() => setShowAIGenerateDialog(true)}
                       />
                     ) : (
                       <div className="space-y-2">
@@ -1105,6 +1111,7 @@ export function FlowStateStudioPro({
         isOpen={showAddTrackDialog}
         onClose={() => setShowAddTrackDialog(false)}
         onAddTrack={handleAddTrack}
+        projectId={projectId || undefined}
       />
 
       <FlowStateKeyboardShortcuts
@@ -1124,6 +1131,7 @@ export function FlowStateStudioPro({
         onOpenChange={setShowPluginBrowser}
         onAddPlugin={handleAddPlugin}
         trackId={activeTrackForPlugin || undefined}
+        projectId={projectId || undefined}
       />
 
       <PluginControlDialog
@@ -1142,6 +1150,32 @@ export function FlowStateStudioPro({
         onParameterChange={handleInstrumentParameterChange}
         onBypassChange={handleInstrumentBypassChange}
         onReset={handleInstrumentReset}
+      />
+
+      <FlowStateImportAudio
+        open={showImportAudioDialog}
+        onOpenChange={setShowImportAudioDialog}
+        projectId={projectId || undefined}
+        onImportComplete={(files) => {
+          console.log('[FlowState] Audio files imported:', files);
+        }}
+      />
+
+      <FlowStateTemplateDialog
+        open={showTemplateDialog}
+        onOpenChange={setShowTemplateDialog}
+        onProjectCreated={(project) => {
+          console.log('[FlowState] Project created from template:', project);
+        }}
+      />
+
+      <FlowStateAIGenerate
+        open={showAIGenerateDialog}
+        onOpenChange={setShowAIGenerateDialog}
+        projectId={projectId || undefined}
+        onGenerationComplete={(result) => {
+          console.log('[FlowState] AI generation complete:', result);
+        }}
       />
     </div>
   );
