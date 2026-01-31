@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../auth';
 import { db } from '../db';
-import { projects, studioTracks, audioClips, studioTemplates, users } from '@shared/schema';
+import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects } from '@shared/schema';
 import { eq, and, or, desc, isNull, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { studioService } from '../services/studioService';
@@ -14,7 +14,7 @@ const router = Router();
 const createTrackSchema = z.object({
   projectId: z.string().min(1),
   name: z.string().min(1).max(255),
-  trackType: z.enum(['audio', 'midi', 'aux', 'master']).default('audio'),
+  trackType: z.enum(['audio', 'midi', 'aux', 'master', 'folder', 'bus', 'instrument', 'vocal', 'drums', 'guitar']).default('audio'),
   trackNumber: z.number().int().min(0).optional(),
   volume: z.number().min(0).max(2).default(1),
   pan: z.number().min(-1).max(1).default(0),
@@ -27,6 +27,8 @@ const createTrackSchema = z.object({
   height: z.number().int().min(40).max(300).default(80),
   collapsed: z.boolean().default(false),
   outputBus: z.string().default('master'),
+  parentFolderId: z.string().optional(),
+  folderColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
 });
 
 const updateTrackSchema = z.object({
@@ -42,6 +44,9 @@ const updateTrackSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   outputBus: z.string().optional(),
   order: z.number().int().optional(),
+  parentFolderId: z.string().nullable().optional(),
+  collapsed: z.boolean().optional(),
+  folderColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
 });
 
 const updateClipSchema = z.object({
@@ -447,16 +452,31 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
+    // Validate parentFolderId BEFORE creating track
+    if (data.parentFolderId) {
+      const folder = await db.query.studioTracks.findFirst({
+        where: and(
+          eq(studioTracks.id, data.parentFolderId),
+          eq(studioTracks.trackType, 'folder'),
+          eq(studioTracks.projectId, data.projectId)
+        ),
+      });
+      if (!folder) {
+        return res.status(400).json({ error: 'Invalid folder ID' });
+      }
+    }
+
     const existingTracks = await db.query.studioTracks.findMany({
       where: eq(studioTracks.projectId, data.projectId),
     });
 
     const trackOrder = data.trackNumber ?? existingTracks.length;
 
+    const trackId = `track_${nanoid()}`;
     const [track] = await db
       .insert(studioTracks)
       .values({
-        id: `track_${nanoid()}`,
+        id: trackId,
         projectId: data.projectId,
         name: data.name,
         trackType: data.trackType,
@@ -472,7 +492,39 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
       })
       .returning();
 
-    res.status(201).json(track);
+    // Store folder relationship in project metadata
+    if (data.parentFolderId) {
+      // Get or create studioProject entry
+      let studioProject = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, data.projectId),
+      });
+      
+      if (!studioProject) {
+        const regularProject = await db.query.projects.findFirst({
+          where: eq(projects.id, data.projectId),
+        });
+        if (regularProject) {
+          const [created] = await db.insert(studioProjects).values({
+            id: data.projectId,
+            userId: userId,
+            name: regularProject.name || 'Untitled',
+            metadata: {},
+          }).returning();
+          studioProject = created;
+        }
+      }
+      
+      if (studioProject) {
+        const metadata = (studioProject.metadata as any) || {};
+        const trackFolders = { ...metadata.trackFolders } || {};
+        trackFolders[trackId] = data.parentFolderId;
+        await db.update(studioProjects)
+          .set({ metadata: { ...metadata, trackFolders } })
+          .where(eq(studioProjects.id, data.projectId));
+      }
+    }
+
+    res.status(201).json({ ...track, parentFolderId: data.parentFolderId || null });
   } catch (error: unknown) {
     logger.error('Error creating track:', error);
     if ((error as any).name === 'ZodError') {
@@ -580,17 +632,78 @@ router.patch('/tracks/:trackId', requireAuth, async (req: Request, res: Response
     if (data.isSolo !== undefined) dbData.isSolo = data.isSolo;
     if (data.isArmed !== undefined) dbData.isArmed = data.isArmed;
 
-    if (Object.keys(dbData).length === 0) {
+    // Handle parentFolderId changes in project metadata
+    let parentFolderId: string | null = null;
+    if (data.parentFolderId !== undefined) {
+      // Validate folder exists if not null
+      if (data.parentFolderId !== null) {
+        const folder = await db.query.studioTracks.findFirst({
+          where: and(
+            eq(studioTracks.id, data.parentFolderId),
+            eq(studioTracks.trackType, 'folder'),
+            eq(studioTracks.projectId, track.projectId)
+          ),
+        });
+        if (!folder) {
+          return res.status(400).json({ error: 'Invalid folder ID' });
+        }
+      }
+
+      // Get or create studioProject entry
+      let studioProject = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, track.projectId),
+      });
+      
+      // If studioProject doesn't exist, check if we have a regular project
+      if (!studioProject) {
+        const regularProject = await db.query.projects.findFirst({
+          where: eq(projects.id, track.projectId),
+        });
+        if (regularProject) {
+          // Create studioProject entry to store folder metadata
+          const [created] = await db.insert(studioProjects).values({
+            id: track.projectId,
+            userId: userId,
+            name: regularProject.name || 'Untitled',
+            metadata: {},
+          }).returning();
+          studioProject = created;
+        }
+      }
+      
+      if (studioProject) {
+        const metadata = (studioProject.metadata as any) || {};
+        const trackFolders = { ...metadata.trackFolders } || {};
+        
+        if (data.parentFolderId === null) {
+          delete trackFolders[trackId];
+          parentFolderId = null;
+        } else {
+          trackFolders[trackId] = data.parentFolderId;
+          parentFolderId = data.parentFolderId;
+        }
+        
+        await db.update(studioProjects)
+          .set({ metadata: { ...metadata, trackFolders } })
+          .where(eq(studioProjects.id, track.projectId));
+      }
+    }
+
+    if (Object.keys(dbData).length === 0 && data.parentFolderId === undefined) {
       return res.json(track);
     }
 
-    const [updated] = await db
-      .update(studioTracks)
-      .set(dbData)
-      .where(eq(studioTracks.id, trackId))
-      .returning();
+    let updated = track;
+    if (Object.keys(dbData).length > 0) {
+      const [result] = await db
+        .update(studioTracks)
+        .set(dbData)
+        .where(eq(studioTracks.id, trackId))
+        .returning();
+      updated = result;
+    }
 
-    res.json(updated);
+    res.json({ ...updated, parentFolderId });
   } catch (error: unknown) {
     logger.error('Error updating track:', error);
     if ((error as any).name === 'ZodError') {
@@ -1565,6 +1678,392 @@ router.post('/projects/:projectId/tracks/reorder', requireAuth, async (req: Requ
   } catch (error: unknown) {
     logger.error('Error reordering tracks:', error);
     res.status(500).json({ error: 'Failed to reorder tracks' });
+  }
+});
+
+// ============================================================================
+// TRACK FOLDERS/GROUPS API (Professional DAW track organization)
+// ============================================================================
+
+// Helper function to ensure studioProject exists
+async function ensureStudioProject(projectId: string, userId: number): Promise<boolean> {
+  let studioProject = await db.query.studioProjects.findFirst({
+    where: eq(studioProjects.id, projectId),
+  });
+  
+  if (!studioProject) {
+    // Check if regular project exists
+    const regularProject = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+    });
+    if (regularProject) {
+      await db.insert(studioProjects).values({
+        id: projectId,
+        userId: userId,
+        name: regularProject.name || 'Untitled',
+        metadata: {},
+      });
+      return true;
+    }
+    return false;
+  }
+  return studioProject.userId === userId;
+}
+
+// Create a folder track
+router.post('/folders', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId, name, color, position } = req.body;
+
+    if (!projectId || !name) {
+      return res.status(400).json({ error: 'projectId and name are required' });
+    }
+
+    // Ensure studioProject exists (create if needed from regular project)
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const folder = await db.insert(studioTracks).values({
+      id: nanoid(),
+      projectId,
+      name,
+      trackType: 'folder',
+      volume: 1,
+      pan: 0,
+      mute: false,
+      solo: false,
+      color: color || '#6366f1',
+      trackNumber: position ?? 0,
+    }).returning();
+
+    res.json(folder[0]);
+  } catch (error: unknown) {
+    logger.error('Error creating folder:', error);
+    res.status(500).json({ error: 'Failed to create folder' });
+  }
+});
+
+// Get all folders for a project with their children
+router.get('/projects/:projectId/folders', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId } = req.params;
+
+    // Ensure studioProject exists
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const studioProject = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    const tracks = await db.query.studioTracks.findMany({
+      where: eq(studioTracks.projectId, projectId),
+      orderBy: studioTracks.trackNumber,
+    });
+
+    // Build folder hierarchy
+    const folders = tracks.filter(t => t.trackType === 'folder');
+    const childTracks = tracks.filter(t => t.trackType !== 'folder');
+    const metadata = (studioProject?.metadata as any) || {};
+    const trackFolders = metadata?.trackFolders || {};
+
+    const foldersWithChildren = folders.map(folder => ({
+      ...folder,
+      children: childTracks.filter(t => trackFolders[t.id] === folder.id),
+    }));
+
+    res.json({
+      folders: foldersWithChildren,
+      unassignedTracks: childTracks.filter(t => !trackFolders[t.id]),
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching folders:', error);
+    res.status(500).json({ error: 'Failed to fetch folders' });
+  }
+});
+
+// Update folder properties
+router.patch('/folders/:folderId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { folderId } = req.params;
+    const { name, color, collapsed } = req.body;
+
+    const folder = await db.query.studioTracks.findFirst({
+      where: and(
+        eq(studioTracks.id, folderId),
+        eq(studioTracks.trackType, 'folder')
+      ),
+      with: {
+        project: true,
+      },
+    });
+
+    if (!folder || (folder.project as any)?.userId !== userId) {
+      return res.status(404).json({ error: 'Folder not found' });
+    }
+
+    const updates: any = {};
+    if (name !== undefined) updates.name = name;
+    if (color !== undefined) updates.color = color;
+
+    const updated = await db.update(studioTracks)
+      .set(updates)
+      .where(eq(studioTracks.id, folderId))
+      .returning();
+
+    // Handle collapsed state in project metadata
+    if (collapsed !== undefined) {
+      const projectId = folder.projectId;
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
+      });
+      
+      if (project) {
+        const metadata = (project.metadata as any) || {};
+        const folderStates = metadata.folderStates || {};
+        folderStates[folderId] = { collapsed };
+        
+        await db.update(studioProjects)
+          .set({ metadata: { ...metadata, folderStates } })
+          .where(eq(studioProjects.id, projectId));
+      }
+    }
+
+    res.json({ ...updated[0], collapsed });
+  } catch (error: unknown) {
+    logger.error('Error updating folder:', error);
+    res.status(500).json({ error: 'Failed to update folder' });
+  }
+});
+
+// Move track to folder
+router.post('/tracks/:trackId/move-to-folder', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { trackId } = req.params;
+    const { folderId, position } = req.body;
+
+    const track = await db.query.studioTracks.findFirst({
+      where: eq(studioTracks.id, trackId),
+      with: {
+        project: true,
+      },
+    });
+
+    if (!track || (track.project as any)?.userId !== userId) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    // Validate folder exists if folderId provided
+    if (folderId) {
+      const folder = await db.query.studioTracks.findFirst({
+        where: and(
+          eq(studioTracks.id, folderId),
+          eq(studioTracks.trackType, 'folder'),
+          eq(studioTracks.projectId, track.projectId)
+        ),
+      });
+      if (!folder) {
+        return res.status(400).json({ error: 'Invalid folder ID' });
+      }
+    }
+
+    // Store folder assignment in project metadata
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, track.projectId),
+    });
+
+    if (project) {
+      const metadata = (project.metadata as any) || {};
+      const trackFolders = metadata.trackFolders || {};
+      
+      if (folderId) {
+        trackFolders[trackId] = folderId;
+      } else {
+        delete trackFolders[trackId];
+      }
+      
+      await db.update(studioProjects)
+        .set({ metadata: { ...metadata, trackFolders } })
+        .where(eq(studioProjects.id, track.projectId));
+    }
+
+    // Update track position if specified
+    if (position !== undefined) {
+      await db.update(studioTracks)
+        .set({ trackNumber: position })
+        .where(eq(studioTracks.id, trackId));
+    }
+
+    res.json({
+      success: true,
+      trackId,
+      folderId: folderId || null,
+      position,
+    });
+  } catch (error: unknown) {
+    logger.error('Error moving track to folder:', error);
+    res.status(500).json({ error: 'Failed to move track to folder' });
+  }
+});
+
+// Delete folder (optionally preserving child tracks)
+router.delete('/folders/:folderId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { folderId } = req.params;
+    const { deleteChildren } = req.query;
+
+    const folder = await db.query.studioTracks.findFirst({
+      where: and(
+        eq(studioTracks.id, folderId),
+        eq(studioTracks.trackType, 'folder')
+      ),
+      with: {
+        project: true,
+      },
+    });
+
+    if (!folder || (folder.project as any)?.userId !== userId) {
+      return res.status(404).json({ error: 'Folder not found' });
+    }
+
+    const projectId = folder.projectId;
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (project) {
+      const metadata = (project.metadata as any) || {};
+      const trackFolders = metadata.trackFolders || {};
+      
+      // Find children
+      const childTrackIds = Object.entries(trackFolders)
+        .filter(([_, folder]) => folder === folderId)
+        .map(([trackId]) => trackId);
+
+      if (deleteChildren === 'true') {
+        // Delete all child tracks
+        for (const trackId of childTrackIds) {
+          await db.delete(studioTracks).where(eq(studioTracks.id, trackId));
+          delete trackFolders[trackId];
+        }
+      } else {
+        // Just unassign from folder
+        for (const trackId of childTrackIds) {
+          delete trackFolders[trackId];
+        }
+      }
+
+      // Update metadata
+      const folderStates = metadata.folderStates || {};
+      delete folderStates[folderId];
+      
+      await db.update(studioProjects)
+        .set({ metadata: { ...metadata, trackFolders, folderStates } })
+        .where(eq(studioProjects.id, projectId));
+    }
+
+    // Delete the folder track
+    await db.delete(studioTracks).where(eq(studioTracks.id, folderId));
+
+    res.json({
+      success: true,
+      folderId,
+      childrenDeleted: deleteChildren === 'true',
+    });
+  } catch (error: unknown) {
+    logger.error('Error deleting folder:', error);
+    res.status(500).json({ error: 'Failed to delete folder' });
+  }
+});
+
+// Bulk move tracks to folder
+router.post('/projects/:projectId/bulk-move-to-folder', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId } = req.params;
+    const { trackIds, folderId } = req.body;
+
+    if (!trackIds || !Array.isArray(trackIds)) {
+      return res.status(400).json({ error: 'trackIds array is required' });
+    }
+
+    // Ensure studioProject exists (create from regular project if needed)
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const project = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    // Validate all trackIds belong to this project and are not folders
+    const projectTracks = await db.query.studioTracks.findMany({
+      where: eq(studioTracks.projectId, projectId),
+    });
+    const validTrackIds = new Set(
+      projectTracks
+        .filter(t => t.trackType !== 'folder')
+        .map(t => t.id)
+    );
+    const invalidTracks = trackIds.filter(id => !validTrackIds.has(id));
+    if (invalidTracks.length > 0) {
+      return res.status(400).json({ 
+        error: 'Some track IDs are invalid or do not belong to this project',
+        invalidTracks 
+      });
+    }
+
+    // Validate folder if provided
+    if (folderId) {
+      const folder = await db.query.studioTracks.findFirst({
+        where: and(
+          eq(studioTracks.id, folderId),
+          eq(studioTracks.trackType, 'folder'),
+          eq(studioTracks.projectId, projectId)
+        ),
+      });
+      if (!folder) {
+        return res.status(400).json({ error: 'Invalid folder ID' });
+      }
+    }
+
+    const metadata = (project.metadata as any) || {};
+    const trackFolders = { ...metadata.trackFolders } || {};
+
+    for (const trackId of trackIds) {
+      if (folderId) {
+        trackFolders[trackId] = folderId;
+      } else {
+        delete trackFolders[trackId];
+      }
+    }
+
+    await db.update(studioProjects)
+      .set({ metadata: { ...metadata, trackFolders } })
+      .where(eq(studioProjects.id, projectId));
+
+    res.json({
+      success: true,
+      movedCount: trackIds.length,
+      folderId: folderId || null,
+    });
+  } catch (error: unknown) {
+    logger.error('Error bulk moving tracks:', error);
+    res.status(500).json({ error: 'Failed to bulk move tracks' });
   }
 });
 
