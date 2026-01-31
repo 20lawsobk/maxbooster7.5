@@ -39,6 +39,8 @@ import {
   Move,
   Pencil,
   Eraser,
+  Plus,
+  HelpCircle,
 } from 'lucide-react';
 import './FlowStateTheme.css';
 import { useFlowStateAdapter, type FlowStateMode } from '@/hooks/useFlowStateAdapter';
@@ -49,6 +51,11 @@ import { FlowStateMixer } from './FlowStateMixer';
 import { FlowStateSpectralVisualizer } from './FlowStateSpectralVisualizer';
 import { FlowStateCollaborationPresence, useCollaborationPresence } from './FlowStateCollaborationPresence';
 import { FlowStatePluginChain, type PluginNode } from './FlowStatePluginChain';
+import { FlowStateTimeline, FlowStatePlayhead } from './FlowStateTimeline';
+import { FlowStateAddTrack, AddTrackButton } from './FlowStateAddTrack';
+import { FlowStateEmptyState } from './FlowStateEmptyState';
+import { FlowStateKeyboardShortcuts } from './FlowStateKeyboardShortcuts';
+import { FlowStateContextMenu, TRACK_CONTEXT_MENU_ITEMS } from './FlowStateContextMenu';
 import { AIGeneratorDialog } from './AIGeneratorDialog';
 import { cn } from '@/lib/utils';
 
@@ -99,9 +106,19 @@ export function FlowStateStudioPro({
   const [show3DWorkspace, setShow3DWorkspace] = useState(false);
   const [showSpectralVisualizer, setShowSpectralVisualizer] = useState(false);
   const [showAIGeneratorDialog, setShowAIGeneratorDialog] = useState(false);
+  const [showAddTrackDialog, setShowAddTrackDialog] = useState(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [activeTool, setActiveTool] = useState('pointer');
   const [chromeVisible, setChromeVisible] = useState(true);
   const [masterPlugins, setMasterPlugins] = useState<PluginNode[]>([]);
+  const [timelineZoom, setTimelineZoom] = useState(1);
+  const [loopStart, setLoopStart] = useState(0);
+  const [loopEnd, setLoopEnd] = useState(8);
+  const [contextMenu, setContextMenu] = useState<{ isOpen: boolean; position: { x: number; y: number }; trackId: string | null }>({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    trackId: null,
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -150,6 +167,23 @@ export function FlowStateStudioPro({
           if (modes[modeIndex]) {
             adapter.setMode(modes[modeIndex]);
           }
+          break;
+        case 'Slash':
+          if (e.shiftKey) {
+            e.preventDefault();
+            setShowKeyboardShortcuts(prev => !prev);
+          }
+          break;
+        case 'KeyN':
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            setShowAddTrackDialog(true);
+          }
+          break;
+        case 'Escape':
+          setShowKeyboardShortcuts(false);
+          setShowAddTrackDialog(false);
+          setContextMenu(prev => ({ ...prev, isOpen: false }));
           break;
       }
     };
@@ -266,6 +300,43 @@ export function FlowStateStudioPro({
         console.log('[FlowState] Toolbar action:', actionId);
     }
   }, [adapter, context]);
+
+  const handleAddTrack = useCallback((type: string, name: string) => {
+    console.log('[FlowState] Add track:', type, name);
+    adapter.addTrack(type, name);
+  }, [adapter]);
+
+  const handleTrackContextMenu = useCallback((e: React.MouseEvent, trackId: string) => {
+    e.preventDefault();
+    setContextMenu({
+      isOpen: true,
+      position: { x: e.clientX, y: e.clientY },
+      trackId,
+    });
+  }, []);
+
+  const getTrackContextMenuItems = useCallback(() => {
+    const track = tracks.find(t => t.id === contextMenu.trackId);
+    if (!track) return [];
+    
+    return TRACK_CONTEXT_MENU_ITEMS({
+      onDuplicate: () => adapter.duplicateTrack(track.id),
+      onDelete: () => adapter.deleteTrack(track.id),
+      onMute: () => adapter.toggleTrackMute(track.id),
+      onSolo: () => adapter.toggleTrackSolo(track.id),
+      onRename: () => console.log('[FlowState] Rename track:', track.id),
+      onChangeColor: () => console.log('[FlowState] Change color:', track.id),
+      onMoveUp: () => console.log('[FlowState] Move up:', track.id),
+      onMoveDown: () => console.log('[FlowState] Move down:', track.id),
+      onFreeze: () => console.log('[FlowState] Freeze:', track.id),
+      onAIProcess: () => console.log('[FlowState] AI Process:', track.id),
+      isMuted: track.mute,
+      isSolo: track.solo,
+      isFrozen: false,
+    });
+  }, [adapter, tracks, contextMenu.trackId]);
+
+  const pixelsPerSecond = 50 * timelineZoom;
 
   return (
     <div
@@ -431,8 +502,29 @@ export function FlowStateStudioPro({
                 className="p-2 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                title="Export"
               >
                 <Download className="w-4 h-4" />
+              </motion.button>
+              
+              <motion.button
+                onClick={() => setShowAddTrackDialog(true)}
+                className="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Add Track (⌘N)"
+              >
+                <Plus className="w-4 h-4" />
+              </motion.button>
+              
+              <motion.button
+                onClick={() => setShowKeyboardShortcuts(true)}
+                className="p-2 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Keyboard Shortcuts (?)"
+              >
+                <HelpCircle className="w-4 h-4" />
               </motion.button>
             </div>
           </motion.header>
@@ -504,23 +596,45 @@ export function FlowStateStudioPro({
                 onAction={handleToolbarAction}
               />
 
+              <FlowStateTimeline
+                currentTime={transport.currentTime}
+                duration={60}
+                tempo={transport.tempo}
+                timeSignature={transport.timeSignature}
+                isPlaying={transport.isPlaying}
+                loopEnabled={transport.loopEnabled}
+                loopStart={loopStart}
+                loopEnd={loopEnd}
+                zoom={timelineZoom}
+                onTimeChange={(time) => adapter.seek(time)}
+                onZoomChange={setTimelineZoom}
+                onLoopChange={(start, end) => { setLoopStart(start); setLoopEnd(end); }}
+                onLoopToggle={adapter.toggleLoop}
+              />
+
               <div className="flex-1 bg-gradient-to-b from-slate-900/50 to-slate-950/50 overflow-hidden relative">
                 <div className="absolute inset-0 overflow-auto">
-                  <div className="min-w-full min-h-full p-4">
+                  <div className="min-w-full min-h-full p-4 relative">
+                    <FlowStatePlayhead 
+                      position={transport.currentTime * pixelsPerSecond + 180}
+                      height={tracks.length * 112 + 100}
+                      isPlaying={transport.isPlaying}
+                    />
+                    
                     {tracks.length === 0 ? (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-center text-white/50">
-                          <Music className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                          <p className="text-lg font-medium">No tracks yet</p>
-                          <p className="text-sm mt-1">Create or import tracks to get started</p>
-                        </div>
-                      </div>
+                      <FlowStateEmptyState
+                        onAddTrack={() => setShowAddTrackDialog(true)}
+                        onImportAudio={() => console.log('[FlowState] Import audio')}
+                        onOpenTemplate={() => console.log('[FlowState] Open template')}
+                        onGenerateAI={() => setShowAIGeneratorDialog(true)}
+                      />
                     ) : (
                       <div className="space-y-2">
                         {tracks.map((track) => (
                           <motion.div
                             key={track.id}
                             onClick={() => adapter.selectTrack(track.id)}
+                            onContextMenu={(e) => handleTrackContextMenu(e, track.id)}
                             className={cn(
                               "h-24 rounded-xl border transition-all cursor-pointer",
                               context.selectedTrackIds.includes(track.id)
@@ -632,6 +746,10 @@ export function FlowStateStudioPro({
                             </div>
                           </motion.div>
                         ))}
+                        
+                        <div className="mt-4">
+                          <AddTrackButton onClick={() => setShowAddTrackDialog(true)} />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -826,7 +944,45 @@ export function FlowStateStudioPro({
           </motion.button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {onAIMix && (
+            <motion.button
+              onClick={onAIMix}
+              disabled={isAIMixing}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
+                isAIMixing
+                  ? "bg-blue-600 text-white animate-pulse"
+                  : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white"
+              )}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Wand2 className="w-4 h-4" />
+              {isAIMixing ? 'Mixing...' : 'AI Mix'}
+            </motion.button>
+          )}
+          
+          {onAIMaster && (
+            <motion.button
+              onClick={onAIMaster}
+              disabled={isAIMastering}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
+                isAIMastering
+                  ? "bg-amber-600 text-white animate-pulse"
+                  : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white"
+              )}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Sparkles className="w-4 h-4" />
+              {isAIMastering ? 'Mastering...' : 'AI Master'}
+            </motion.button>
+          )}
+          
+          <div className="w-px h-8 bg-white/10" />
+          
           <div className="bg-black/50 rounded-lg px-4 py-2 border border-white/10 flex items-center gap-2">
             <span className="text-white/50 text-xs">BPM</span>
             <input
@@ -859,6 +1015,24 @@ export function FlowStateStudioPro({
           }}
         />
       )}
+
+      <FlowStateAddTrack
+        isOpen={showAddTrackDialog}
+        onClose={() => setShowAddTrackDialog(false)}
+        onAddTrack={handleAddTrack}
+      />
+
+      <FlowStateKeyboardShortcuts
+        isOpen={showKeyboardShortcuts}
+        onClose={() => setShowKeyboardShortcuts(false)}
+      />
+
+      <FlowStateContextMenu
+        isOpen={contextMenu.isOpen}
+        position={contextMenu.position}
+        items={getTrackContextMenuItems()}
+        onClose={() => setContextMenu(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
