@@ -149,7 +149,8 @@ export default function Projects() {
 
   const deleteMutation = useMutation({
     mutationFn: async (projectId: string) => {
-      await apiRequest('DELETE', `/api/studio/projects/${projectId}`, {});
+      const response = await apiRequest('DELETE', `/api/studio/projects/${projectId}`);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
@@ -245,6 +246,15 @@ export default function Projects() {
       toast({
         title: 'Missing Information',
         description: 'Please provide a title.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!editingProject) {
+      toast({
+        title: 'Error',
+        description: 'No project selected for editing.',
         variant: 'destructive',
       });
       return;

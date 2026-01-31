@@ -2510,6 +2510,7 @@ export default function Studio() {
                 showLauncher={showLauncher}
                 onToggleLauncher={toggleLauncher}
                 onOpenShowMode={toggleShowPage}
+                onOpenProjectHub={() => setLocation('/studio')}
               />
             }
               transport={

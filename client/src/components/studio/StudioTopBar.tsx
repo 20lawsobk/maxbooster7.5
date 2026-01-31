@@ -42,6 +42,7 @@ import {
   Disc3,
   LayoutGrid,
   Radio,
+  Home,
 } from 'lucide-react';
 
 interface Project {
@@ -78,6 +79,7 @@ interface StudioTopBarProps {
   showLauncher?: boolean;
   onToggleLauncher?: () => void;
   onOpenShowMode?: () => void;
+  onOpenProjectHub?: () => void;
 }
 
 /**
@@ -111,6 +113,7 @@ export function StudioTopBar({
   showLauncher,
   onToggleLauncher,
   onOpenShowMode,
+  onOpenProjectHub,
 }: StudioTopBarProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newProjectTitle, setNewProjectTitle] = useState('');
@@ -162,6 +165,33 @@ export function StudioTopBar({
           </Select>
 
           <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="h-9 w-9 rounded-md flex items-center justify-center transition-all"
+                  style={{
+                    background: 'var(--studio-surface)',
+                    color: 'var(--studio-text-muted)',
+                    border: '1px solid var(--studio-border-subtle)',
+                    boxShadow: 'var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)',
+                  }}
+                  onClick={onOpenProjectHub}
+                  data-testid="button-project-hub"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--studio-surface-elevated)';
+                    e.currentTarget.style.color = 'var(--studio-accent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'var(--studio-surface)';
+                    e.currentTarget.style.color = 'var(--studio-text-muted)';
+                  }}
+                >
+                  <Home className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Project Hub</TooltipContent>
+            </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
