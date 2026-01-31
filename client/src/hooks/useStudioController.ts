@@ -76,6 +76,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     setIsPlaying: setStoreIsPlaying,
     setIsRecording: setStoreIsRecording,
     setTempo: setStoreTempo,
+    setTracks: setStoreTracks,
   } = useStudioStore();
 
   // Track state
@@ -460,6 +461,26 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
   const loadTracks = useCallback(
     async (tracksData: StudioTrack[]) => {
       setTracks(tracksData);
+      
+      // Sync tracks to Zustand store for FlowState adapter
+      setStoreTracks(tracksData.map(t => ({
+        id: t.id,
+        name: t.name,
+        trackType: t.trackType,
+        trackNumber: t.trackNumber,
+        volume: t.volume,
+        pan: t.pan,
+        mute: t.mute,
+        solo: t.solo,
+        armed: t.armed,
+        recordEnabled: t.recordEnabled,
+        inputMonitoring: t.inputMonitoring,
+        color: t.color,
+        height: t.height,
+        collapsed: t.collapsed,
+        outputBus: t.outputBus,
+        groupId: t.groupId,
+      })));
 
       const clipsMap = new Map<string, AudioClipData[]>();
 
@@ -489,7 +510,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
 
       setTrackClips(clipsMap);
     },
-    [onError]
+    [onError, setStoreTracks]
   );
 
   const createTrack = useCallback(

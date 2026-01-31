@@ -313,9 +313,9 @@ export function useFlowStateAdapter(projectId: string | null): UseFlowStateAdapt
       color: track.color || `hsl(${(index * 40) % 360}, 70%, 50%)`,
       volume: track.volume ?? 0.8,
       pan: track.pan ?? 0,
-      mute: track.isMuted ?? false,
-      solo: track.isSolo ?? false,
-      armed: track.isArmed ?? false,
+      mute: track.mute ?? false,
+      solo: track.solo ?? false,
+      armed: track.armed ?? false,
       meterLevel: meterLevels.get(track.id) || [0, 0],
       clips: [],
       spatialPosition: {

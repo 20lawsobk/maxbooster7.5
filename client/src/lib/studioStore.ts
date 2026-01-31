@@ -129,6 +129,26 @@ export interface FrozenTrackState {
   frozenDuration: number;
 }
 
+// Store Track Type (for FlowState adapter)
+export interface StoreTrack {
+  id: string;
+  name: string;
+  trackType: string;
+  trackNumber?: number;
+  volume: number;
+  pan: number;
+  mute: boolean;
+  solo: boolean;
+  armed: boolean;
+  recordEnabled?: boolean;
+  inputMonitoring?: boolean;
+  color: string;
+  height?: number;
+  collapsed?: boolean;
+  outputBus?: string;
+  groupId?: string;
+}
+
 // Autoscroll modes matching Studio One Pro 7.2+
 export type AutoscrollMode = 'off' | 'turnover' | 'continuous-centered' | 'continuous-left';
 
@@ -352,6 +372,9 @@ export interface StudioState {
   selectedTrackId: string | null; // Single selection for Inspector
   selectedClipId: string | null; // Single selection for Inspector
 
+  // Tracks (for FlowState adapter)
+  tracks: StoreTrack[];
+
   // Browser State
   browserVisible: boolean;
   browserSearchQuery: string;
@@ -513,6 +536,14 @@ export interface StudioState {
   selectClip: (clipId: string, multi?: boolean) => void;
   selectMarker: (markerId: string | null) => void;
   clearSelection: () => void;
+
+  // Track Actions (for FlowState adapter)
+  setTracks: (tracks: StoreTrack[]) => void;
+  setTrackVolume: (trackId: string, volume: number) => void;
+  setTrackPan: (trackId: string, pan: number) => void;
+  setTrackMute: (trackId: string, mute: boolean) => void;
+  setTrackSolo: (trackId: string, solo: boolean) => void;
+  setTrackArmed: (trackId: string, armed: boolean) => void;
 
   // Browser Actions
   toggleBrowser: () => void;
@@ -737,6 +768,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   selectedMarkerId: null,
   selectedTrackId: null,
   selectedClipId: null,
+
+  // Tracks (for FlowState adapter)
+  tracks: [],
 
   // Browser State
   browserVisible: true,
@@ -964,6 +998,39 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       selectedTrackId: null,
       selectedClipId: null,
     }),
+
+  // Track Actions (for FlowState adapter)
+  setTracks: (tracks) => set({ tracks }),
+  setTrackVolume: (trackId, volume) =>
+    set((state) => ({
+      tracks: state.tracks.map((t) =>
+        t.id === trackId ? { ...t, volume: Math.max(0, Math.min(1, volume)) } : t
+      ),
+    })),
+  setTrackPan: (trackId, pan) =>
+    set((state) => ({
+      tracks: state.tracks.map((t) =>
+        t.id === trackId ? { ...t, pan: Math.max(-1, Math.min(1, pan)) } : t
+      ),
+    })),
+  setTrackMute: (trackId, mute) =>
+    set((state) => ({
+      tracks: state.tracks.map((t) =>
+        t.id === trackId ? { ...t, mute } : t
+      ),
+    })),
+  setTrackSolo: (trackId, solo) =>
+    set((state) => ({
+      tracks: state.tracks.map((t) =>
+        t.id === trackId ? { ...t, solo } : t
+      ),
+    })),
+  setTrackArmed: (trackId, armed) =>
+    set((state) => ({
+      tracks: state.tracks.map((t) =>
+        t.id === trackId ? { ...t, armed } : t
+      ),
+    })),
 
   // Browser Actions
   toggleBrowser: () => set((state) => ({ browserVisible: !state.browserVisible })),
