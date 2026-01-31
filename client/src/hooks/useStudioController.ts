@@ -461,26 +461,6 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
   const loadTracks = useCallback(
     async (tracksData: StudioTrack[]) => {
       setTracks(tracksData);
-      
-      // Sync tracks to Zustand store for FlowState adapter
-      setStoreTracks(tracksData.map(t => ({
-        id: t.id,
-        name: t.name,
-        trackType: t.trackType,
-        trackNumber: t.trackNumber,
-        volume: t.volume,
-        pan: t.pan,
-        mute: t.mute,
-        solo: t.solo,
-        armed: t.armed,
-        recordEnabled: t.recordEnabled,
-        inputMonitoring: t.inputMonitoring,
-        color: t.color,
-        height: t.height,
-        collapsed: t.collapsed,
-        outputBus: t.outputBus,
-        groupId: t.groupId,
-      })));
 
       const clipsMap = new Map<string, AudioClipData[]>();
 
@@ -510,8 +490,30 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
 
       setTrackClips(clipsMap);
     },
-    [onError, setStoreTracks]
+    [onError]
   );
+
+  // Sync local tracks to Zustand store for FlowState adapter (separate effect to avoid render loops)
+  useEffect(() => {
+    setStoreTracks(tracks.map(t => ({
+      id: t.id,
+      name: t.name,
+      trackType: t.trackType,
+      trackNumber: t.trackNumber,
+      volume: t.volume,
+      pan: t.pan,
+      mute: t.mute,
+      solo: t.solo,
+      armed: t.armed,
+      recordEnabled: t.recordEnabled,
+      inputMonitoring: t.inputMonitoring,
+      color: t.color,
+      height: t.height,
+      collapsed: t.collapsed,
+      outputBus: t.outputBus,
+      groupId: t.groupId,
+    })));
+  }, [tracks, setStoreTracks]);
 
   const createTrack = useCallback(
     async (trackData: Partial<InsertStudioTrack>) => {
