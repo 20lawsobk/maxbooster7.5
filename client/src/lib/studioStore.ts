@@ -320,6 +320,10 @@ export function formatChord(chordRoot: string, chordQuality: string, key: Musica
 }
 
 export interface StudioState {
+  // Current Project
+  currentProjectId: string | null;
+  setCurrentProjectId: (projectId: string | null) => void;
+
   // Playhead and Navigation
   currentTime: number;
   isPlaying: boolean;
@@ -704,6 +708,10 @@ export interface StudioState {
 }
 
 export const useStudioStore = create<StudioState>((set, get) => ({
+  // Current Project
+  currentProjectId: null,
+  setCurrentProjectId: (projectId: string | null) => set({ currentProjectId: projectId }),
+
   // Initial State
   currentTime: 0,
   isPlaying: false,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useStudioStore } from '@/lib/studioStore';
 import {
   Play,
   Pause,
@@ -90,6 +91,13 @@ export function FlowStateStudio({
   
   // Advanced tool panels
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  
+  // Set currentProjectId in store when component mounts/project changes
+  const setCurrentProjectId = useStudioStore((state) => state.setCurrentProjectId);
+  useEffect(() => {
+    setCurrentProjectId(projectId || null);
+    return () => setCurrentProjectId(null);
+  }, [projectId, setCurrentProjectId]);
   
   const togglePanel = (panel: string) => {
     setActivePanel(prev => prev === panel ? null : panel);

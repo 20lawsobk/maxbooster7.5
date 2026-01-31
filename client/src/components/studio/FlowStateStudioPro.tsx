@@ -64,6 +64,7 @@ import { FlowStateInstrumentDialog, type InstrumentInstance, type InstrumentType
 import { PluginControlDialog } from './PluginControlDialog';
 import { AIGeneratorDialog } from './AIGeneratorDialog';
 import { cn } from '@/lib/utils';
+import { useStudioStore } from '@/lib/studioStore';
 import type { PluginInstance, PluginType } from './PluginRack';
 
 interface FlowStateStudioProProps {
@@ -106,6 +107,13 @@ export function FlowStateStudioPro({
   const adapter = useFlowStateAdapter(projectId);
   const { tracks, transport, context, suggestions } = adapter;
   const collaboration = useCollaborationPresence(projectId);
+
+  // Set currentProjectId in store when component mounts/project changes
+  const setCurrentProjectId = useStudioStore((state) => state.setCurrentProjectId);
+  useEffect(() => {
+    setCurrentProjectId(projectId);
+    return () => setCurrentProjectId(null);
+  }, [projectId, setCurrentProjectId]);
 
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [showMixer, setShowMixer] = useState(false);
