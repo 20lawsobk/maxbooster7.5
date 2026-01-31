@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../auth';
 import { db } from '../db';
 import { projects, studioTracks, audioClips, studioTemplates, users } from '@shared/schema';
-import { eq, and, or, desc, isNull } from 'drizzle-orm';
+import { eq, and, or, desc, isNull, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { studioService } from '../services/studioService';
 import { logger } from '../logger.js';
@@ -96,7 +96,7 @@ router.get('/projects', requireAuth, async (req: Request, res: Response) => {
 router.post('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { title, tempo, timeSignature, sampleRate, bitDepth } = req.body;
+    const { title, tempo, timeSignature, sampleRate, bitDepth, workflowStage, status } = req.body;
     const projectId = nanoid();
     
     const [project] = await db.insert(projects).values({
@@ -108,6 +108,8 @@ router.post('/projects', requireAuth, async (req: Request, res: Response) => {
       sampleRate: sampleRate || 44100,
       bitDepth: bitDepth || 24,
       isStudioProject: true,
+      workflowStage: workflowStage || 'writing',
+      status: status || 'draft',
     }).returning();
     
     res.status(201).json(project);
@@ -1244,52 +1246,154 @@ router.post('/projects/:projectId/export-stems', requireAuth, async (req: Reques
 import { studioRecentFiles, studioPinnedFolders } from '@shared/schema';
 import { sql as drizzleSql } from 'drizzle-orm';
 
-// GET Start Hub summary - main data for the start page
+// GET Start Hub summary - main data for the start page (Studio One-style)
 router.get('/start-hub/summary', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     
-    // Get recent projects (last 10, ordered by lastOpenedAt) - include ALL user projects
-    const recentProjects = await db.query.projects.findMany({
+    // Get user info for profile section
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    
+    // Get all user projects for categorization
+    const allProjects = await db.query.projects.findMany({
       where: eq(projects.userId, userId),
       orderBy: [desc(projects.lastOpenedAt), desc(projects.updatedAt)],
-      limit: 10,
     });
     
-    // Get favorite projects - include ALL user favorites
-    const favoriteProjects = await db.query.projects.findMany({
-      where: and(
-        eq(projects.userId, userId), 
-        eq(projects.favorite, true)
-      ),
-      orderBy: [desc(projects.updatedAt)],
-      limit: 5,
-    });
+    // Categorize projects by type (Songs, Projects, Shows)
+    const songs = allProjects.filter(p => 
+      p.workflowStage !== 'mastering' && p.workflowStage !== 'show'
+    );
+    const masteringProjects = allProjects.filter(p => 
+      p.workflowStage === 'mastering'
+    );
+    const shows = allProjects.filter(p => 
+      p.workflowStage === 'show'
+    );
     
-    // Get project count - count ALL user projects
-    const projectCount = await db.select({ count: drizzleSql<number>`count(*)` })
-      .from(projects)
-      .where(eq(projects.userId, userId));
+    // Get recent projects (last 12)
+    const recentProjects = allProjects.slice(0, 12);
     
-    // Get available templates (built-in + user's)
+    // Get favorite projects
+    const favoriteProjects = allProjects.filter(p => p.favorite).slice(0, 8);
+    
+    // Get all project IDs for batched queries
+    const projectIds = recentProjects.map(p => p.id);
+    
+    // Batch query: Get track counts grouped by projectId (avoid N+1)
+    const trackCounts = projectIds.length > 0 
+      ? await db.select({ 
+          projectId: studioTracks.projectId, 
+          count: drizzleSql<number>`count(*)` 
+        })
+        .from(studioTracks)
+        .where(inArray(studioTracks.projectId, projectIds))
+        .groupBy(studioTracks.projectId)
+      : [];
+    
+    // Batch query: Get clip counts grouped by projectId (avoid N+1)
+    const clipCounts = projectIds.length > 0 
+      ? await db.select({ 
+          projectId: audioClips.projectId, 
+          count: drizzleSql<number>`count(*)` 
+        })
+        .from(audioClips)
+        .where(inArray(audioClips.projectId, projectIds))
+        .groupBy(audioClips.projectId)
+      : [];
+    
+    // Map counts to lookup objects
+    const trackCountMap = new Map(trackCounts.map(t => [t.projectId, Number(t.count)]));
+    const clipCountMap = new Map(clipCounts.map(c => [c.projectId, Number(c.count)]));
+    
+    // Combine projects with stats
+    const projectsWithStats = recentProjects.map(project => ({
+      ...project,
+      trackCount: trackCountMap.get(project.id) || 0,
+      clipCount: clipCountMap.get(project.id) || 0,
+    }));
+    
+    // Get available templates (built-in + user's) with categories
     const templates = await db.query.studioTemplates.findMany({
       where: or(
         eq(studioTemplates.userId, userId),
         eq(studioTemplates.isBuiltIn, true)
       ),
       orderBy: [desc(studioTemplates.usageCount)],
-      limit: 20,
+      limit: 30,
     });
     
+    // Group templates by category
+    const templatesByCategory = {
+      recording: templates.filter(t => t.category === 'recording'),
+      production: templates.filter(t => t.category === 'production'),
+      mastering: templates.filter(t => t.category === 'mastering'),
+      user: templates.filter(t => t.userId === userId && !t.isBuiltIn),
+    };
+    
+    // Calculate total clips across all user projects using proper join
+    const allProjectIds = allProjects.map(p => p.id);
+    const totalClipsResult = allProjectIds.length > 0
+      ? await db.select({ count: drizzleSql<number>`count(*)` })
+          .from(audioClips)
+          .where(inArray(audioClips.projectId, allProjectIds))
+      : [{ count: 0 }];
+    const totalClips = totalClipsResult;
+    
+    // Demo songs (featured examples)
+    const demoSongs = [
+      { id: 'demo-1', title: 'Hip Hop Beat Demo', genre: 'Hip Hop', bpm: 95, coverImageUrl: null },
+      { id: 'demo-2', title: 'Electronic Production', genre: 'Electronic', bpm: 128, coverImageUrl: null },
+      { id: 'demo-3', title: 'Acoustic Session', genre: 'Acoustic', bpm: 72, coverImageUrl: null },
+    ];
+    
+    // Tips & learning content
+    const tips = [
+      { id: 'tip-1', title: 'Getting Started', description: 'Learn the basics of music production', icon: 'book' },
+      { id: 'tip-2', title: 'Recording Tips', description: 'Professional recording techniques', icon: 'mic' },
+      { id: 'tip-3', title: 'Mixing Fundamentals', description: 'Create balanced mixes', icon: 'sliders' },
+      { id: 'tip-4', title: 'AI-Powered Features', description: 'Let AI assist your workflow', icon: 'sparkles' },
+    ];
+    
     res.json({
-      recentProjects,
-      favoriteProjects,
-      projectCount: Number(projectCount[0]?.count || 0),
+      // Project sections (Studio One-style)
+      recentProjects: projectsWithStats,
+      favoriteProjects: favoriteProjects.map(p => {
+        const stats = projectsWithStats.find(ps => ps.id === p.id);
+        return stats || { ...p, trackCount: 0, clipCount: 0 };
+      }),
+      songs: { count: songs.length, items: songs.slice(0, 6) },
+      masteringProjects: { count: masteringProjects.length, items: masteringProjects.slice(0, 6) },
+      shows: { count: shows.length, items: shows.slice(0, 6) },
+      
+      // Statistics
+      stats: {
+        totalProjects: allProjects.length,
+        totalSongs: songs.length,
+        totalMasteringProjects: masteringProjects.length,
+        totalShows: shows.length,
+        totalClips: Number(totalClips[0]?.count || 0),
+      },
+      
+      // Templates
       templates,
+      templatesByCategory,
+      
+      // User profile
       user: {
         id: userId,
-        name: (req as any).user.username || (req as any).user.email,
+        name: user?.username || user?.email || 'Artist',
+        email: user?.email,
+        avatar: user?.avatarUrl,
+        subscriptionTier: user?.subscriptionTier || 'free',
+        createdAt: user?.createdAt,
       },
+      
+      // Learning & demos
+      demoSongs,
+      tips,
     });
   } catch (error: unknown) {
     logger.error('Error fetching start hub summary:', error);

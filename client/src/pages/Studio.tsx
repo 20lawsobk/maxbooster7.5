@@ -522,11 +522,12 @@ export default function Studio() {
   });
 
   const createProjectMutation = useMutation({
-    mutationFn: async (title: string) => {
+    mutationFn: async (data: { title: string; workflowStage?: string }) => {
       const res = await apiRequest('POST', '/api/studio/projects', {
-        title,
+        title: data.title,
         bpm: 120,
         status: 'draft',
+        workflowStage: data.workflowStage || 'writing',
       });
       return await res.json();
     },
@@ -2390,8 +2391,8 @@ export default function Studio() {
     setLocation(`/studio/${projectId}`);
   }, [setLocation]);
 
-  const handleStartHubCreateProject = useCallback((title: string, templateId?: string) => {
-    createProjectMutation.mutate(title);
+  const handleStartHubCreateProject = useCallback((title: string, templateId?: string, workflowStage?: string) => {
+    createProjectMutation.mutate({ title, workflowStage });
   }, [createProjectMutation]);
 
   const proDAWContent = (
@@ -2497,7 +2498,7 @@ export default function Studio() {
                 onShowTutorial={() => setShowTutorial(true)}
                 onZoomReset={() => setZoom(1)}
                 onProjectChange={(projectId) => setLocation(`/studio/${projectId}`)}
-                onCreateProject={(title) => createProjectMutation.mutate(title)}
+                onCreateProject={(title) => createProjectMutation.mutate({ title })}
                 onUploadFile={() => setShowFullscreenUpload(true)}
                 onSaveProject={handleSaveProject}
                 onOpenAIGenerator={() => setShowAIGeneratorDialog(true)}
