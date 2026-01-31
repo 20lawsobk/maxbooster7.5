@@ -72,11 +72,13 @@ interface FlowStateAddTrackProps {
   onClose: () => void;
   isOpen: boolean;
   projectId?: string;
+  onCreateProject?: (title: string) => Promise<{ id: string }>;
 }
 
-export function FlowStateAddTrack({ onAddTrack, onClose, isOpen, projectId }: FlowStateAddTrackProps) {
+export function FlowStateAddTrack({ onAddTrack, onClose, isOpen, projectId, onCreateProject }: FlowStateAddTrackProps) {
   const [selectedType, setSelectedType] = useState<TrackType | null>(null);
   const [trackName, setTrackName] = useState('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -102,7 +104,7 @@ export function FlowStateAddTrack({ onAddTrack, onClose, isOpen, projectId }: Fl
     },
   });
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!selectedType) return;
 
     const name = trackName.trim() || `${selectedType.name} ${Date.now().toString(36).slice(-4).toUpperCase()}`;
@@ -114,7 +116,33 @@ export function FlowStateAddTrack({ onAddTrack, onClose, isOpen, projectId }: Fl
         trackType: selectedType.backendType,
         color: TYPE_COLORS[selectedType.id],
       });
+    } else if (onCreateProject) {
+      setIsCreatingProject(true);
+      try {
+        const project = await onCreateProject('New Project');
+        if (project?.id) {
+          createTrackMutation.mutate({
+            projectId: project.id,
+            name,
+            trackType: selectedType.backendType,
+            color: TYPE_COLORS[selectedType.id],
+          });
+        }
+      } catch (error) {
+        toast({
+          title: 'Failed to Create Project',
+          description: error instanceof Error ? error.message : 'Unknown error',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsCreatingProject(false);
+      }
     } else {
+      toast({
+        title: 'No Project Selected',
+        description: 'Please create or select a project first',
+        variant: 'destructive',
+      });
       onAddTrack(selectedType.id, name);
       setSelectedType(null);
       setTrackName('');
@@ -211,19 +239,24 @@ export function FlowStateAddTrack({ onAddTrack, onClose, isOpen, projectId }: Fl
                     
                     <motion.button
                       onClick={handleCreate}
-                      disabled={createTrackMutation.isPending}
+                      disabled={createTrackMutation.isPending || isCreatingProject}
                       className={cn(
                         "w-full py-3 rounded-lg font-medium text-white bg-gradient-to-r flex items-center justify-center gap-2",
                         selectedType.color,
-                        createTrackMutation.isPending && "opacity-70 cursor-not-allowed"
+                        (createTrackMutation.isPending || isCreatingProject) && "opacity-70 cursor-not-allowed"
                       )}
-                      whileHover={!createTrackMutation.isPending ? { scale: 1.01 } : undefined}
-                      whileTap={!createTrackMutation.isPending ? { scale: 0.99 } : undefined}
+                      whileHover={!(createTrackMutation.isPending || isCreatingProject) ? { scale: 1.01 } : undefined}
+                      whileTap={!(createTrackMutation.isPending || isCreatingProject) ? { scale: 0.99 } : undefined}
                     >
-                      {createTrackMutation.isPending ? (
+                      {isCreatingProject ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Creating...
+                          Creating Project...
+                        </>
+                      ) : createTrackMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Creating Track...
                         </>
                       ) : (
                         <>

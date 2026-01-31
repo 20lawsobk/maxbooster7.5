@@ -76,6 +76,7 @@ interface FlowStateStudioProProps {
   onAIMaster?: () => void;
   isAIMixing?: boolean;
   isAIMastering?: boolean;
+  onCreateProject?: (title: string) => Promise<{ id: string }> | void;
 }
 
 const MODE_CONFIG: Record<FlowStateMode, { label: string; icon: typeof Music; color: string; description: string }> = {
@@ -103,6 +104,7 @@ export function FlowStateStudioPro({
   onAIMaster,
   isAIMixing = false,
   isAIMastering = false,
+  onCreateProject,
 }: FlowStateStudioProProps) {
   const adapter = useFlowStateAdapter(projectId);
   const { tracks, transport, context, suggestions } = adapter;
@@ -1120,6 +1122,7 @@ export function FlowStateStudioPro({
         onClose={() => setShowAddTrackDialog(false)}
         onAddTrack={handleAddTrack}
         projectId={projectId || undefined}
+        onCreateProject={onCreateProject}
       />
 
       <FlowStateKeyboardShortcuts

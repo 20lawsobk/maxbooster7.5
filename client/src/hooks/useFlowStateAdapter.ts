@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useRef, useEffect, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStudioStore } from '@/lib/studioStore';
 import AudioEngine from '@/lib/audioEngine';
 import { logger } from '@/lib/logger';
+import { apiRequest } from '@/lib/queryClient';
 
 export type FlowStateMode = 'create' | 'record' | 'mix' | 'master' | 'perform';
 export type SelectionType = 'none' | 'track' | 'clip' | 'range' | 'automation' | 'midi';
@@ -78,6 +80,10 @@ export interface UseFlowStateAdapterReturn {
   seek: (time: number) => void;
   setTempo: (bpm: number) => void;
   
+  addTrack: (type: string, name: string) => void;
+  duplicateTrack: (trackId: string) => void;
+  deleteTrack: (trackId: string) => void;
+  
   setTrackVolume: (trackId: string, volume: number) => void;
   setTrackPan: (trackId: string, pan: number) => void;
   toggleTrackMute: (trackId: string) => void;
@@ -136,6 +142,62 @@ export function useFlowStateAdapter(projectId: string | null): UseFlowStateAdapt
     setTrackSolo: setStoreTrackSolo,
     setTrackArmed: setStoreTrackArmed,
   } = useStudioStore();
+
+  const queryClient = useQueryClient();
+
+  const createTrackMutation = useMutation({
+    mutationFn: async ({ name, trackType, color }: { name: string; trackType: string; color?: string }) => {
+      if (!projectId) throw new Error('No project selected');
+      return await apiRequest('POST', '/api/studio/tracks', {
+        projectId,
+        name,
+        trackType,
+        color,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+      logger.info('[FlowStateAdapter] Track created successfully');
+    },
+    onError: (error) => {
+      logger.error('[FlowStateAdapter] Failed to create track:', error);
+    },
+  });
+
+  const deleteTrackMutation = useMutation({
+    mutationFn: async (trackId: string) => {
+      return await apiRequest('DELETE', `/api/studio/tracks/${trackId}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+      logger.info('[FlowStateAdapter] Track deleted successfully');
+    },
+    onError: (error) => {
+      logger.error('[FlowStateAdapter] Failed to delete track:', error);
+    },
+  });
+
+  const duplicateTrackMutation = useMutation({
+    mutationFn: async (trackId: string) => {
+      const trackToDuplicate = storeTracks.find(t => t.id === trackId);
+      if (!trackToDuplicate || !projectId) throw new Error('Track or project not found');
+      return await apiRequest('POST', '/api/studio/tracks', {
+        projectId,
+        name: `${trackToDuplicate.name} (Copy)`,
+        trackType: trackToDuplicate.trackType,
+        color: trackToDuplicate.color,
+        volume: trackToDuplicate.volume,
+        pan: trackToDuplicate.pan,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+      logger.info('[FlowStateAdapter] Track duplicated successfully');
+    },
+    onError: (error) => {
+      logger.error('[FlowStateAdapter] Failed to duplicate track:', error);
+    },
+  });
 
   useEffect(() => {
     if (AudioEngine.isSupported()) {
@@ -412,6 +474,50 @@ export function useFlowStateAdapter(projectId: string | null): UseFlowStateAdapt
   const getMeterLevels = useCallback(() => meterLevels, [meterLevels]);
   const getMasterMeterLevels = useCallback(() => masterMeterLevels, [masterMeterLevels]);
 
+  const trackTypeMap: Record<string, string> = {
+    audio: 'audio',
+    instrument: 'midi',
+    vocal: 'audio',
+    drum: 'midi',
+    guitar: 'audio',
+    bus: 'aux',
+    folder: 'aux',
+    midi: 'midi',
+  };
+
+  const trackColorMap: Record<string, string> = {
+    audio: '#3b82f6',
+    instrument: '#a855f7',
+    vocal: '#f43f5e',
+    drum: '#f59e0b',
+    guitar: '#10b981',
+    bus: '#64748b',
+    folder: '#6366f1',
+    midi: '#a855f7',
+  };
+
+  const addTrack = useCallback((type: string, name: string) => {
+    if (!projectId) {
+      logger.warn('[FlowStateAdapter] Cannot add track - no project selected');
+      return;
+    }
+    const backendType = trackTypeMap[type] || 'audio';
+    const color = trackColorMap[type] || '#3b82f6';
+    createTrackMutation.mutate({ name, trackType: backendType, color });
+  }, [projectId, createTrackMutation]);
+
+  const duplicateTrack = useCallback((trackId: string) => {
+    if (!projectId) {
+      logger.warn('[FlowStateAdapter] Cannot duplicate track - no project selected');
+      return;
+    }
+    duplicateTrackMutation.mutate(trackId);
+  }, [projectId, duplicateTrackMutation]);
+
+  const deleteTrack = useCallback((trackId: string) => {
+    deleteTrackMutation.mutate(trackId);
+  }, [deleteTrackMutation]);
+
   return {
     tracks,
     transport,
@@ -425,6 +531,9 @@ export function useFlowStateAdapter(projectId: string | null): UseFlowStateAdapt
     toggleMetronome,
     seek,
     setTempo,
+    addTrack,
+    duplicateTrack,
+    deleteTrack,
     setTrackVolume,
     setTrackPan,
     toggleTrackMute,

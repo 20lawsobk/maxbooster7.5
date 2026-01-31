@@ -2757,6 +2757,18 @@ export default function Studio() {
           onAIMaster={handleAIMaster}
           isAIMixing={isAIMixing}
           isAIMastering={isAIMastering}
+          onCreateProject={async (title: string) => {
+            const res = await apiRequest('POST', '/api/studio/projects', {
+              title,
+              bpm: 120,
+              status: 'draft',
+            });
+            const data = await res.json();
+            queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+            setLocation(`/studio/${data.id}`);
+            toast({ title: 'Project created successfully' });
+            return data;
+          }}
         />
       </div>
     </AppLayout>
