@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../auth';
 import { db } from '../db';
-import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects } from '@shared/schema';
-import { eq, and, or, desc, isNull, inArray } from 'drizzle-orm';
+import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects, studioRecentFiles, studioPinnedFolders } from '@shared/schema';
+import { eq, and, or, desc, isNull, inArray, sql as drizzleSql } from 'drizzle-orm';
 import { z } from 'zod';
 import { studioService } from '../services/studioService';
 import { logger } from '../logger.js';
@@ -2569,11 +2569,238 @@ router.get('/projects/:projectId/mix-snapshots/:snapshotId/compare/:compareSnaps
 });
 
 // ============================================================================
-// START HUB API ENDPOINTS (Studio One-inspired project management)
+// PROJECT STATISTICS API
 // ============================================================================
 
-import { studioRecentFiles, studioPinnedFolders } from '@shared/schema';
-import { sql as drizzleSql } from 'drizzle-orm';
+// GET detailed project statistics
+router.get('/projects/:projectId/statistics', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId } = req.params;
+
+    // Verify access
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const project = await db.query.projects.findFirst({
+      where: eq(projects.id, projectId),
+    });
+
+    const studioProject = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    // Get tracks
+    const tracks = await db.query.studioTracks.findMany({
+      where: eq(studioTracks.projectId, projectId),
+    });
+
+    // Get clips
+    const clips = await db.query.audioClips.findMany({
+      where: eq(audioClips.projectId, projectId),
+    });
+
+    // Calculate statistics
+    const tracksByType: Record<string, number> = {};
+    for (const track of tracks) {
+      const type = track.trackType || 'audio';
+      tracksByType[type] = (tracksByType[type] || 0) + 1;
+    }
+
+    const metadata = (studioProject?.metadata as any) || {};
+    const mixSnapshots = metadata.mixSnapshots || [];
+    const mixBusConfig = metadata.mixBusConfig || { busses: [] };
+
+    // Calculate total audio duration from clips
+    let totalDuration = 0;
+    for (const clip of clips) {
+      if (clip.duration) {
+        totalDuration += Number(clip.duration);
+      }
+    }
+
+    // Count plugins across all tracks
+    let totalPlugins = 0;
+    const pluginCounts: Record<string, number> = {};
+    for (const track of tracks) {
+      const plugins = track.plugins as any[] || [];
+      totalPlugins += plugins.length;
+      for (const plugin of plugins) {
+        const name = plugin.name || 'Unknown';
+        pluginCounts[name] = (pluginCounts[name] || 0) + 1;
+      }
+    }
+
+    // Count folders
+    const folderCount = tracks.filter(t => t.trackType === 'folder').length;
+    const trackFolders = metadata.trackFolders || {};
+    const organizedTrackCount = Object.keys(trackFolders).length;
+
+    res.json({
+      projectId,
+      projectTitle: project.title,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      lastOpenedAt: project.lastOpenedAt,
+      bpm: project.bpm,
+      genre: project.genre,
+      tracks: {
+        total: tracks.length,
+        byType: tracksByType,
+        folderCount,
+        organizedInFolders: organizedTrackCount,
+      },
+      clips: {
+        total: clips.length,
+        totalDurationSeconds: Math.round(totalDuration * 100) / 100,
+        totalDurationFormatted: formatDuration(totalDuration),
+      },
+      mixing: {
+        busCount: mixBusConfig.busses?.length || 0,
+        snapshotCount: mixSnapshots.length,
+        latestSnapshot: mixSnapshots.length > 0 
+          ? { name: mixSnapshots[mixSnapshots.length - 1].name, createdAt: mixSnapshots[mixSnapshots.length - 1].createdAt }
+          : null,
+      },
+      plugins: {
+        totalInstances: totalPlugins,
+        uniquePlugins: Object.keys(pluginCounts).length,
+        mostUsed: Object.entries(pluginCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([name, count]) => ({ name, count })),
+      },
+      template: metadata.createdFromTemplate 
+        ? { id: metadata.createdFromTemplate, name: metadata.createdFromTemplateName }
+        : null,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching project statistics:', error);
+    res.status(500).json({ error: 'Failed to fetch project statistics' });
+  }
+});
+
+// Helper function to format duration
+function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${secs}s`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  } else {
+    return `${secs}s`;
+  }
+}
+
+// GET overall user studio statistics (for dashboard)
+router.get('/user-statistics', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+
+    // Get all user projects
+    const allProjects = await db.query.projects.findMany({
+      where: eq(projects.userId, userId),
+    });
+
+    // Get all tracks across all projects
+    const projectIds = allProjects.map(p => p.id);
+    const allTracks = projectIds.length > 0
+      ? await db.query.studioTracks.findMany({
+          where: inArray(studioTracks.projectId, projectIds),
+        })
+      : [];
+
+    // Get all clips
+    const allClips = projectIds.length > 0
+      ? await db.query.audioClips.findMany({
+          where: inArray(audioClips.projectId, projectIds),
+        })
+      : [];
+
+    // Get templates
+    const templates = await db.query.studioTemplates.findMany({
+      where: eq(studioTemplates.userId, userId),
+    });
+
+    // Calculate project stats by type
+    const projectsByType = {
+      songs: allProjects.filter(p => p.workflowStage !== 'mastering' && p.workflowStage !== 'show').length,
+      mastering: allProjects.filter(p => p.workflowStage === 'mastering').length,
+      shows: allProjects.filter(p => p.workflowStage === 'show').length,
+    };
+
+    // Calculate total duration
+    let totalDuration = 0;
+    for (const clip of allClips) {
+      if (clip.duration) {
+        totalDuration += Number(clip.duration);
+      }
+    }
+
+    // Get recent activity (last 7 days)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const recentlyUpdated = allProjects.filter(p => 
+      p.updatedAt && new Date(p.updatedAt) > oneWeekAgo
+    ).length;
+
+    // Calculate averages
+    const avgTracksPerProject = allProjects.length > 0 
+      ? Math.round(allTracks.length / allProjects.length * 10) / 10 
+      : 0;
+    const avgClipsPerProject = allProjects.length > 0 
+      ? Math.round(allClips.length / allProjects.length * 10) / 10 
+      : 0;
+
+    res.json({
+      userId,
+      projects: {
+        total: allProjects.length,
+        byType: projectsByType,
+        recentlyUpdated,
+        favorites: allProjects.filter(p => p.favorite).length,
+      },
+      tracks: {
+        total: allTracks.length,
+        averagePerProject: avgTracksPerProject,
+      },
+      clips: {
+        total: allClips.length,
+        averagePerProject: avgClipsPerProject,
+        totalDurationSeconds: Math.round(totalDuration * 100) / 100,
+        totalDurationFormatted: formatDuration(totalDuration),
+      },
+      templates: {
+        created: templates.length,
+        totalUsage: templates.reduce((sum, t) => sum + (t.usageCount || 0), 0),
+      },
+      activity: {
+        projectsUpdatedThisWeek: recentlyUpdated,
+        mostRecentProject: allProjects.length > 0 ? {
+          id: allProjects[0].id,
+          title: allProjects[0].title,
+          updatedAt: allProjects[0].updatedAt,
+        } : null,
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching user statistics:', error);
+    res.status(500).json({ error: 'Failed to fetch user statistics' });
+  }
+});
+
+// ============================================================================
+// START HUB API ENDPOINTS (Studio One-inspired project management)
+// ============================================================================
 
 // GET Start Hub summary - main data for the start page (Studio One-style)
 router.get('/start-hub/summary', requireAuth, async (req: Request, res: Response) => {
