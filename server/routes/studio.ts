@@ -2836,7 +2836,29 @@ router.get('/templates', requireAuth, async (req: Request, res: Response) => {
 router.post('/templates', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { name, description, category, genre, bpm, timeSignature, templateData, coverImageUrl } = req.body;
+    const { 
+      name, 
+      description, 
+      category, 
+      genre, 
+      bpm, 
+      timeSignature, 
+      templateData, 
+      coverImageUrl,
+      trackLayout,
+      pluginConfigs,
+      mixBusConfig,
+      tags,
+    } = req.body;
+    
+    // Build enhanced template data with track layouts and plugin configs
+    const enhancedTemplateData = {
+      ...(templateData || {}),
+      trackLayout: trackLayout || [],
+      pluginConfigs: pluginConfigs || {},
+      mixBusConfig: mixBusConfig || null,
+      tags: tags || [],
+    };
     
     const templateId = nanoid();
     const [template] = await db.insert(studioTemplates).values({
@@ -2848,56 +2870,354 @@ router.post('/templates', requireAuth, async (req: Request, res: Response) => {
       genre,
       bpm: bpm || 120,
       timeSignature: timeSignature || '4/4',
-      templateData,
+      templateData: enhancedTemplateData,
       coverImageUrl,
       isBuiltIn: false,
     }).returning();
     
-    res.status(201).json(template);
+    res.status(201).json({
+      ...template,
+      trackCount: (trackLayout || []).length,
+      hasMixBusConfig: !!mixBusConfig,
+      tags: tags || [],
+    });
   } catch (error: unknown) {
     logger.error('Error creating template:', error);
     res.status(500).json({ error: 'Failed to create template' });
   }
 });
 
-// POST create project from template
+// POST create template from existing project (capture current state)
+router.post('/projects/:projectId/save-as-template', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { projectId } = req.params;
+    const { name, description, category, tags } = req.body;
+
+    // Ensure studioProject exists
+    const hasAccess = await ensureStudioProject(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const studioProject = await db.query.studioProjects.findFirst({
+      where: eq(studioProjects.id, projectId),
+    });
+
+    const project = await db.query.projects.findFirst({
+      where: eq(projects.id, projectId),
+    });
+
+    if (!studioProject || !project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    // Get all tracks from the project
+    const tracks = await db.query.studioTracks.findMany({
+      where: eq(studioTracks.projectId, projectId),
+      orderBy: studioTracks.trackNumber,
+    });
+
+    // Create track layout from current tracks
+    const trackLayout = tracks.map(track => ({
+      name: track.name,
+      trackType: track.trackType,
+      color: track.color,
+      volume: track.volume,
+      pan: track.pan,
+      muted: track.muted,
+      soloed: track.soloed,
+      plugins: track.plugins,
+      routingBus: track.routingBus,
+    }));
+
+    // Get metadata including mix bus config
+    const metadata = (studioProject.metadata as any) || {};
+
+    // Create the template
+    const templateId = nanoid();
+    const templateData = {
+      trackLayout,
+      mixBusConfig: metadata.mixBusConfig || null,
+      tempo: project.bpm || 120,
+      timeSignature: metadata.timeSignature || '4/4',
+      pluginConfigs: metadata.pluginConfigs || {},
+      tags: tags || [],
+    };
+
+    const [template] = await db.insert(studioTemplates).values({
+      id: templateId,
+      userId,
+      name: name || `Template from ${project.title}`,
+      description: description || `Created from project "${project.title}"`,
+      category: category || 'user',
+      genre: project.genre,
+      bpm: project.bpm || 120,
+      timeSignature: metadata.timeSignature || '4/4',
+      templateData,
+      isBuiltIn: false,
+    }).returning();
+
+    res.status(201).json({
+      ...template,
+      trackCount: trackLayout.length,
+      hasMixBusConfig: !!metadata.mixBusConfig,
+    });
+  } catch (error: unknown) {
+    logger.error('Error saving project as template:', error);
+    res.status(500).json({ error: 'Failed to save as template' });
+  }
+});
+
+// POST create project from template (creates project with preconfigured tracks)
 router.post('/templates/:templateId/create-project', requireAuth, async (req: Request, res: Response) => {
   try {
     const { templateId } = req.params;
     const userId = (req as any).user.id;
     const { title } = req.body;
     
-    // Get template
+    // Get template with access check (built-in OR owned by user)
     const template = await db.query.studioTemplates.findFirst({
-      where: eq(studioTemplates.id, templateId),
+      where: and(
+        eq(studioTemplates.id, templateId),
+        or(
+          eq(studioTemplates.isBuiltIn, true),
+          eq(studioTemplates.userId, userId)
+        )
+      ),
     });
     
     if (!template) {
       return res.status(404).json({ error: 'Template not found' });
     }
     
-    // Create project from template
+    const templateData = (template.templateData as any) || {};
+    const trackLayout = templateData.trackLayout || [];
+    const mixBusConfig = templateData.mixBusConfig || null;
+    
+    // Validate track layout entries
+    const validTrackTypes = ['audio', 'instrument', 'vocal', 'drums', 'guitar', 'bus', 'folder', 'midi'];
+    const validatedTrackLayout = trackLayout.map((track: any) => ({
+      name: String(track.name || 'Untitled Track').slice(0, 100),
+      trackType: validTrackTypes.includes(track.trackType) ? track.trackType : 'audio',
+      color: typeof track.color === 'string' && track.color.match(/^#[0-9A-Fa-f]{6}$/) ? track.color : '#3B82F6',
+      volume: typeof track.volume === 'number' ? Math.max(0, Math.min(1, track.volume)) : 0.8,
+      pan: typeof track.pan === 'number' ? Math.max(-1, Math.min(1, track.pan)) : 0,
+      muted: Boolean(track.muted),
+      soloed: Boolean(track.soloed),
+      plugins: Array.isArray(track.plugins) ? track.plugins.slice(0, 20) : [],
+      routingBus: typeof track.routingBus === 'string' ? track.routingBus : 'master',
+    }));
+    
+    // Create the base project with cleanup on failure
     const projectId = nanoid();
-    const [project] = await db.insert(projects).values({
-      id: projectId,
-      userId,
-      title: title || `New ${template.name} Project`,
-      genre: template.genre,
-      bpm: template.bpm,
-      isStudioProject: true,
-      metadata: template.templateData,
-      lastOpenedAt: new Date(),
-    }).returning();
+    let project: any = null;
     
-    // Increment template usage count
-    await db.update(studioTemplates)
-      .set({ usageCount: drizzleSql`${studioTemplates.usageCount} + 1` })
-      .where(eq(studioTemplates.id, templateId));
-    
-    res.status(201).json(project);
+    try {
+      // Step 1: Create project
+      const [newProject] = await db.insert(projects).values({
+        id: projectId,
+        userId,
+        title: title || `New ${template.name} Project`,
+        genre: template.genre,
+        bpm: template.bpm,
+        isStudioProject: true,
+        metadata: {
+          ...templateData,
+          createdFromTemplate: templateId,
+          createdFromTemplateName: template.name,
+        },
+        lastOpenedAt: new Date(),
+      }).returning();
+      project = newProject;
+      
+      // Step 2: Create studioProject entry for metadata persistence
+      await db.insert(studioProjects).values({
+        id: projectId,
+        userId,
+        title: project.title,
+        genre: template.genre,
+        bpm: template.bpm,
+        metadata: {
+          mixBusConfig: mixBusConfig || {
+            busses: [
+              { id: 'master', name: 'Master', type: 'master', volume: 1, pan: 0, muted: false, soloed: false },
+              { id: 'mix-a', name: 'Mix A', type: 'submix', volume: 1, pan: 0, muted: false, soloed: false },
+              { id: 'mix-b', name: 'Mix B', type: 'submix', volume: 1, pan: 0, muted: false, soloed: false },
+            ],
+          },
+          timeSignature: template.timeSignature || '4/4',
+          createdFromTemplate: templateId,
+        },
+      });
+      
+      // Step 3: Create tracks from validated template layout
+      let tracksCreated = 0;
+      for (let i = 0; i < validatedTrackLayout.length; i++) {
+        const trackDef = validatedTrackLayout[i];
+        const trackId = nanoid();
+        
+        await db.insert(studioTracks).values({
+          id: trackId,
+          projectId,
+          name: trackDef.name || `Track ${i + 1}`,
+          trackNumber: i + 1,
+          trackType: trackDef.trackType,
+          color: trackDef.color,
+          volume: trackDef.volume,
+          pan: trackDef.pan,
+          muted: trackDef.muted,
+          soloed: trackDef.soloed,
+          armed: false,
+          plugins: trackDef.plugins,
+          routingBus: trackDef.routingBus,
+        });
+        
+        tracksCreated++;
+      }
+      
+      // Step 4: Increment template usage count
+      await db.update(studioTemplates)
+        .set({ usageCount: drizzleSql`${studioTemplates.usageCount} + 1` })
+        .where(eq(studioTemplates.id, templateId));
+      
+      res.status(201).json({
+        ...project,
+        tracksCreated,
+        templateUsed: template.name,
+      });
+    } catch (innerError) {
+      // Cleanup on failure: remove partially created records
+      logger.error('Error during project creation, cleaning up:', innerError);
+      try {
+        await db.delete(studioTracks).where(eq(studioTracks.projectId, projectId));
+        await db.delete(studioProjects).where(eq(studioProjects.id, projectId));
+        await db.delete(projects).where(eq(projects.id, projectId));
+      } catch (cleanupError) {
+        logger.error('Error during cleanup:', cleanupError);
+      }
+      throw innerError;
+    }
   } catch (error: unknown) {
     logger.error('Error creating project from template:', error);
     res.status(500).json({ error: 'Failed to create project' });
+  }
+});
+
+// GET template details by ID
+router.get('/templates/:templateId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { templateId } = req.params;
+    const userId = (req as any).user.id;
+    
+    // Query only templates user has access to (built-in OR owned)
+    const template = await db.query.studioTemplates.findFirst({
+      where: and(
+        eq(studioTemplates.id, templateId),
+        or(
+          eq(studioTemplates.isBuiltIn, true),
+          eq(studioTemplates.userId, userId)
+        )
+      ),
+    });
+    
+    if (!template) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+    
+    const templateData = (template.templateData as any) || {};
+    
+    res.json({
+      ...template,
+      trackLayout: templateData.trackLayout || [],
+      trackCount: (templateData.trackLayout || []).length,
+      hasMixBusConfig: !!templateData.mixBusConfig,
+      tags: templateData.tags || [],
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching template:', error);
+    res.status(500).json({ error: 'Failed to fetch template' });
+  }
+});
+
+// GET template categories with counts
+router.get('/template-categories', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    
+    // Define all available categories with their metadata
+    const categories = [
+      { id: 'recording', name: 'Recording', description: 'Templates for recording sessions', icon: 'mic' },
+      { id: 'production', name: 'Production', description: 'Music production and beatmaking', icon: 'music' },
+      { id: 'mastering', name: 'Mastering', description: 'Final mix mastering templates', icon: 'volume' },
+      { id: 'podcast', name: 'Podcast', description: 'Podcast and voice recording', icon: 'podcast' },
+      { id: 'film-scoring', name: 'Film Scoring', description: 'Film and video soundtrack', icon: 'film' },
+      { id: 'live-performance', name: 'Live Performance', description: 'Live show and performance', icon: 'radio' },
+      { id: 'remix', name: 'Remix', description: 'Remix and DJ production', icon: 'shuffle' },
+      { id: 'orchestral', name: 'Orchestral', description: 'Classical and orchestral', icon: 'piano' },
+      { id: 'user', name: 'My Templates', description: 'Your custom templates', icon: 'user' },
+    ];
+    
+    // Get template counts per category
+    const templates = await db.query.studioTemplates.findMany({
+      where: or(
+        eq(studioTemplates.userId, userId),
+        eq(studioTemplates.isBuiltIn, true)
+      ),
+    });
+    
+    const categoriesWithCounts = categories.map(cat => ({
+      ...cat,
+      count: templates.filter(t => t.category === cat.id).length,
+    }));
+    
+    res.json({ categories: categoriesWithCounts });
+  } catch (error: unknown) {
+    logger.error('Error fetching template categories:', error);
+    res.status(500).json({ error: 'Failed to fetch template categories' });
+  }
+});
+
+// PATCH update template
+router.patch('/templates/:templateId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { templateId } = req.params;
+    const userId = (req as any).user.id;
+    const { name, description, category, tags, coverImageUrl } = req.body;
+    
+    // Verify ownership
+    const template = await db.query.studioTemplates.findFirst({
+      where: and(eq(studioTemplates.id, templateId), eq(studioTemplates.userId, userId)),
+    });
+    
+    if (!template) {
+      return res.status(404).json({ error: 'Template not found or access denied' });
+    }
+    
+    if (template.isBuiltIn) {
+      return res.status(403).json({ error: 'Cannot modify built-in templates' });
+    }
+    
+    const templateData = (template.templateData as any) || {};
+    const updateData: any = { updatedAt: new Date() };
+    
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (category !== undefined) updateData.category = category;
+    if (coverImageUrl !== undefined) updateData.coverImageUrl = coverImageUrl;
+    if (tags !== undefined) {
+      updateData.templateData = { ...templateData, tags };
+    }
+    
+    const [updated] = await db.update(studioTemplates)
+      .set(updateData)
+      .where(eq(studioTemplates.id, templateId))
+      .returning();
+    
+    res.json(updated);
+  } catch (error: unknown) {
+    logger.error('Error updating template:', error);
+    res.status(500).json({ error: 'Failed to update template' });
   }
 });
 
