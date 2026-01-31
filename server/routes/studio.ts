@@ -150,13 +150,178 @@ router.get('/recent-files', requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-// GET samples
+// ============================================================================
+// SAMPLE LIBRARY SYSTEM
+// ============================================================================
+
+interface SampleMetadata {
+  id: string;
+  name: string;
+  category: 'drums' | 'bass' | 'synths' | 'fx' | 'vocals' | 'loops' | 'oneshots' | 'foley';
+  subcategory?: string;
+  tags: string[];
+  tempo?: number;
+  key?: string;
+  duration: number;
+  previewUrl?: string;
+  audioUrl: string;
+  waveformData?: number[];
+  isBuiltIn: boolean;
+  userId?: string;
+  createdAt: string;
+}
+
+const SAMPLE_CATEGORIES = [
+  { id: 'drums', name: 'Drums', icon: 'drum', subcategories: ['kicks', 'snares', 'hi-hats', 'cymbals', 'toms', 'percussion', 'full-kits'] },
+  { id: 'bass', name: 'Bass', icon: 'speaker', subcategories: ['808s', 'sub-bass', 'synth-bass', 'acoustic-bass'] },
+  { id: 'synths', name: 'Synths', icon: 'waves', subcategories: ['leads', 'pads', 'plucks', 'arps', 'stabs'] },
+  { id: 'fx', name: 'FX', icon: 'sparkles', subcategories: ['risers', 'impacts', 'sweeps', 'textures', 'glitches'] },
+  { id: 'vocals', name: 'Vocals', icon: 'mic', subcategories: ['chops', 'phrases', 'ad-libs', 'hooks'] },
+  { id: 'loops', name: 'Loops', icon: 'repeat', subcategories: ['drum-loops', 'melody-loops', 'bass-loops', 'full-loops'] },
+  { id: 'oneshots', name: 'One Shots', icon: 'zap', subcategories: ['instruments', 'effects', 'hits'] },
+  { id: 'foley', name: 'Foley', icon: 'volume-2', subcategories: ['ambient', 'nature', 'urban', 'mechanical'] },
+];
+
+const BUILT_IN_SAMPLES: SampleMetadata[] = [
+  { id: 'kick-808-hard', name: '808 Kick Hard', category: 'drums', subcategory: 'kicks', tags: ['808', 'hard', 'trap'], tempo: undefined, duration: 0.8, audioUrl: '/samples/drums/808-kick-hard.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'kick-808-soft', name: '808 Kick Soft', category: 'drums', subcategory: 'kicks', tags: ['808', 'soft', 'rnb'], duration: 0.6, audioUrl: '/samples/drums/808-kick-soft.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'kick-punchy', name: 'Punchy Kick', category: 'drums', subcategory: 'kicks', tags: ['punchy', 'hip-hop'], duration: 0.4, audioUrl: '/samples/drums/punchy-kick.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'snare-trap', name: 'Trap Snare', category: 'drums', subcategory: 'snares', tags: ['trap', 'crisp'], duration: 0.3, audioUrl: '/samples/drums/trap-snare.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'snare-rnb', name: 'R&B Snare', category: 'drums', subcategory: 'snares', tags: ['rnb', 'smooth'], duration: 0.35, audioUrl: '/samples/drums/rnb-snare.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'hihat-closed', name: 'Closed Hi-Hat', category: 'drums', subcategory: 'hi-hats', tags: ['closed', 'crisp'], duration: 0.1, audioUrl: '/samples/drums/hihat-closed.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'hihat-open', name: 'Open Hi-Hat', category: 'drums', subcategory: 'hi-hats', tags: ['open', 'shimmer'], duration: 0.5, audioUrl: '/samples/drums/hihat-open.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'clap-thick', name: 'Thick Clap', category: 'drums', subcategory: 'percussion', tags: ['clap', 'thick', 'layered'], duration: 0.25, audioUrl: '/samples/drums/clap-thick.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'bass-808-c', name: '808 Bass C', category: 'bass', subcategory: '808s', tags: ['808', 'deep'], key: 'C', duration: 2.0, audioUrl: '/samples/bass/808-c.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'bass-sub-d', name: 'Sub Bass D', category: 'bass', subcategory: 'sub-bass', tags: ['sub', 'deep'], key: 'D', duration: 1.5, audioUrl: '/samples/bass/sub-d.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'synth-lead-pluck', name: 'Pluck Lead', category: 'synths', subcategory: 'plucks', tags: ['pluck', 'bright'], key: 'A', duration: 0.8, audioUrl: '/samples/synths/pluck-lead.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'synth-pad-warm', name: 'Warm Pad', category: 'synths', subcategory: 'pads', tags: ['pad', 'warm', 'ambient'], key: 'E', duration: 4.0, audioUrl: '/samples/synths/warm-pad.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'fx-riser-white', name: 'White Noise Riser', category: 'fx', subcategory: 'risers', tags: ['riser', 'tension'], duration: 4.0, audioUrl: '/samples/fx/riser-white.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'fx-impact-cinematic', name: 'Cinematic Impact', category: 'fx', subcategory: 'impacts', tags: ['impact', 'cinematic', 'big'], duration: 2.0, audioUrl: '/samples/fx/impact-cinematic.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'vocal-chop-ah', name: 'Vocal Chop Ah', category: 'vocals', subcategory: 'chops', tags: ['chop', 'female'], key: 'G', duration: 0.5, audioUrl: '/samples/vocals/chop-ah.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'loop-trap-140', name: 'Trap Drum Loop 140', category: 'loops', subcategory: 'drum-loops', tags: ['trap', 'drums'], tempo: 140, duration: 4.0, audioUrl: '/samples/loops/trap-140.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'loop-rnb-90', name: 'R&B Groove 90', category: 'loops', subcategory: 'drum-loops', tags: ['rnb', 'groove'], tempo: 90, duration: 4.0, audioUrl: '/samples/loops/rnb-90.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'loop-hiphop-95', name: 'Hip Hop Beat 95', category: 'loops', subcategory: 'drum-loops', tags: ['hip-hop', 'boom-bap'], tempo: 95, duration: 4.0, audioUrl: '/samples/loops/hiphop-95.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+  { id: 'oneshot-brass-stab', name: 'Brass Stab', category: 'oneshots', subcategory: 'hits', tags: ['brass', 'stab', 'orchestral'], key: 'F', duration: 0.6, audioUrl: '/samples/oneshots/brass-stab.wav', isBuiltIn: true, createdAt: '2024-01-01' },
+];
+
+// GET samples library with filtering
 router.get('/samples', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ samples: [] });
+    const userId = (req as any).user.id;
+    const { category, subcategory, search, tags, tempo, key, limit = '50', offset = '0' } = req.query;
+
+    let samples = [...BUILT_IN_SAMPLES];
+
+    if (category) {
+      samples = samples.filter(s => s.category === category);
+    }
+    if (subcategory) {
+      samples = samples.filter(s => s.subcategory === subcategory);
+    }
+    if (search) {
+      const searchLower = (search as string).toLowerCase();
+      samples = samples.filter(s => 
+        s.name.toLowerCase().includes(searchLower) ||
+        s.tags.some(t => t.toLowerCase().includes(searchLower))
+      );
+    }
+    if (tags) {
+      const tagList = (tags as string).split(',');
+      samples = samples.filter(s => 
+        tagList.some(tag => s.tags.includes(tag.trim().toLowerCase()))
+      );
+    }
+    if (tempo) {
+      const targetTempo = parseInt(tempo as string);
+      samples = samples.filter(s => s.tempo && Math.abs(s.tempo - targetTempo) <= 10);
+    }
+    if (key) {
+      samples = samples.filter(s => s.key === key);
+    }
+
+    const total = samples.length;
+    const limitNum = Math.min(parseInt(limit as string), 100);
+    const offsetNum = parseInt(offset as string);
+    samples = samples.slice(offsetNum, offsetNum + limitNum);
+
+    res.json({
+      samples,
+      categories: SAMPLE_CATEGORIES,
+      total,
+      limit: limitNum,
+      offset: offsetNum,
+    });
   } catch (error: unknown) {
     logger.error('Error fetching samples:', error);
     res.status(500).json({ error: 'Failed to fetch samples' });
+  }
+});
+
+// GET sample categories
+router.get('/samples/categories', requireAuth, async (_req: Request, res: Response) => {
+  try {
+    res.json({ categories: SAMPLE_CATEGORIES });
+  } catch (error: unknown) {
+    logger.error('Error fetching sample categories:', error);
+    res.status(500).json({ error: 'Failed to fetch sample categories' });
+  }
+});
+
+// GET single sample by ID
+router.get('/samples/:sampleId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { sampleId } = req.params;
+    const sample = BUILT_IN_SAMPLES.find(s => s.id === sampleId);
+    
+    if (!sample) {
+      return res.status(404).json({ error: 'Sample not found' });
+    }
+
+    res.json(sample);
+  } catch (error: unknown) {
+    logger.error('Error fetching sample:', error);
+    res.status(500).json({ error: 'Failed to fetch sample' });
+  }
+});
+
+// POST search samples (advanced search)
+router.post('/samples/search', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { query, filters } = req.body;
+    let samples = [...BUILT_IN_SAMPLES];
+
+    if (query) {
+      const queryLower = query.toLowerCase();
+      samples = samples.filter(s =>
+        s.name.toLowerCase().includes(queryLower) ||
+        s.category.includes(queryLower) ||
+        s.tags.some(t => t.includes(queryLower))
+      );
+    }
+
+    if (filters) {
+      if (filters.categories?.length) {
+        samples = samples.filter(s => filters.categories.includes(s.category));
+      }
+      if (filters.tempoRange) {
+        samples = samples.filter(s => 
+          s.tempo && s.tempo >= filters.tempoRange[0] && s.tempo <= filters.tempoRange[1]
+        );
+      }
+      if (filters.keys?.length) {
+        samples = samples.filter(s => s.key && filters.keys.includes(s.key));
+      }
+      if (filters.durationRange) {
+        samples = samples.filter(s => 
+          s.duration >= filters.durationRange[0] && s.duration <= filters.durationRange[1]
+        );
+      }
+    }
+
+    res.json({ samples, total: samples.length });
+  } catch (error: unknown) {
+    logger.error('Error searching samples:', error);
+    res.status(500).json({ error: 'Failed to search samples' });
   }
 });
 
@@ -731,18 +896,6 @@ router.post('/record/upload', requireAuth, async (req: Request, res: Response) =
   } catch (error: unknown) {
     logger.error('Error uploading recording:', error);
     res.status(500).json({ error: 'Failed to upload recording' });
-  }
-});
-
-router.get('/samples', requireAuth, async (req: Request, res: Response) => {
-  try {
-    res.json({
-      samples: [],
-      categories: ['Drums', 'Bass', 'Synths', 'FX', 'Vocals'],
-    });
-  } catch (error: unknown) {
-    logger.error('Error fetching samples:', error);
-    res.status(500).json({ error: 'Failed to fetch samples' });
   }
 });
 
