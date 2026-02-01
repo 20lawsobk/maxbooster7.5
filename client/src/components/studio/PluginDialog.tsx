@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Power, RotateCcw, ChevronDown, Save, Folder, Volume2, Activity, Waves, Music, Sliders as SlidersIcon } from 'lucide-react';
 
 export interface PluginParameter {
@@ -544,7 +545,7 @@ function GenericSection({ params, values, onChange, color }: { params: PluginPar
   );
 }
 
-export function PluginDialog({ plugin, instanceId, values, bypassed, onClose, onParameterChange, onBypassToggle, onReset }: PluginDialogProps) {
+function PluginDialogContent({ plugin, instanceId, values, bypassed, onClose, onParameterChange, onBypassToggle, onReset }: PluginDialogProps) {
   const color = TYPE_COLORS[plugin.type] || TYPE_COLORS.default;
   const isCompressor = plugin.type === 'compressor' || plugin.type === 'limiter' || plugin.type === 'gate';
   const isReverb = plugin.type === 'reverb';
@@ -560,28 +561,82 @@ export function PluginDialog({ plugin, instanceId, values, bypassed, onClose, on
   };
   
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm" onClick={onClose}>
-      <div className={`bg-gradient-to-b from-slate-800 to-slate-900 rounded-xl border shadow-2xl min-w-[480px] max-w-[720px] max-h-[85vh] overflow-hidden flex flex-col ${bypassed ? 'opacity-60' : ''}`}
-        style={{ borderColor: `${color}40` }} onClick={(e) => e.stopPropagation()}>
-        
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700" style={{ background: `linear-gradient(to right, ${color}15, transparent)` }}>
+    <motion.div 
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm" 
+      onClick={onClose}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+    >
+      <motion.div 
+        className={`bg-gradient-to-b from-slate-800 to-slate-900 rounded-xl border shadow-2xl min-w-[480px] max-w-[720px] max-h-[85vh] overflow-hidden flex flex-col ${bypassed ? 'opacity-60' : ''}`}
+        style={{ borderColor: `${color}40` }} 
+        onClick={(e) => e.stopPropagation()}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+      >
+        <motion.div 
+          className="flex items-center justify-between px-4 py-3 border-b border-slate-700" 
+          style={{ background: `linear-gradient(to right, ${color}15, transparent)` }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}20`, color }}>{getCategoryIcon()}</div>
+            <motion.div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center" 
+              style={{ backgroundColor: `${color}20`, color }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {getCategoryIcon()}
+            </motion.div>
             <div>
               <h3 className="text-lg font-semibold text-white">{plugin.name}</h3>
               <p className="text-[10px] text-slate-400">{plugin.description}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={onBypassToggle} className={`p-2 rounded-lg transition-colors ${bypassed ? 'bg-amber-500/20 text-amber-400' : 'text-emerald-400'}`} style={!bypassed ? { backgroundColor: `${color}20` } : {}} title={bypassed ? 'Enable' : 'Bypass'}>
+            <motion.button 
+              onClick={onBypassToggle} 
+              className={`p-2 rounded-lg transition-colors ${bypassed ? 'bg-amber-500/20 text-amber-400' : 'text-emerald-400'}`} 
+              style={!bypassed ? { backgroundColor: `${color}20` } : {}} 
+              title={bypassed ? 'Enable' : 'Bypass'}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
               <Power className="w-4 h-4" />
-            </button>
-            <button onClick={onReset} className="p-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600" title="Reset"><RotateCcw className="w-4 h-4" /></button>
-            <button onClick={onClose} className="p-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600"><X className="w-4 h-4" /></button>
+            </motion.button>
+            <motion.button 
+              onClick={onReset} 
+              className="p-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600" 
+              title="Reset"
+              whileHover={{ scale: 1.1, rotate: -180 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+            >
+              <RotateCcw className="w-4 h-4" />
+            </motion.button>
+            <motion.button 
+              onClick={onClose} 
+              className="p-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <X className="w-4 h-4" />
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
         
-        <div className="flex-1 overflow-y-auto p-4">
+        <motion.div 
+          className="flex-1 overflow-y-auto p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+        >
           {isCompressor && <CompressorSection params={plugin.parameters} values={values} onChange={onParameterChange} color={color} />}
           {isReverb && <ReverbSection params={plugin.parameters} values={values} onChange={onParameterChange} color={color} />}
           {isDelay && <DelaySection params={plugin.parameters} values={values} onChange={onParameterChange} color={color} />}
@@ -590,23 +645,60 @@ export function PluginDialog({ plugin, instanceId, values, bypassed, onClose, on
           {!isCompressor && !isReverb && !isDelay && !isEQ && !isInstrument && (
             <GenericSection params={plugin.parameters} values={values} onChange={onParameterChange} color={color} />
           )}
-        </div>
+        </motion.div>
         
-        <div className="flex items-center justify-between px-4 py-2 border-t border-slate-700 bg-slate-900/50">
+        <motion.div 
+          className="flex items-center justify-between px-4 py-2 border-t border-slate-700 bg-slate-900/50"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="flex items-center gap-2 text-[10px] text-slate-500">
             <span>{plugin.author}</span>
             <span className="text-slate-700">|</span>
             <span>v{plugin.version}</span>
-            <span className="px-1.5 py-0.5 rounded text-slate-400" style={{ backgroundColor: `${color}15`, color }}>{plugin.type}</span>
+            <motion.span 
+              className="px-1.5 py-0.5 rounded text-slate-400" 
+              style={{ backgroundColor: `${color}15`, color }}
+              whileHover={{ scale: 1.05 }}
+            >
+              {plugin.type}
+            </motion.span>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 text-xs"><Folder className="w-3 h-3" />Presets</button>
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs" style={{ backgroundColor: `${color}20`, color }}><Save className="w-3 h-3" />Save</button>
+            <motion.button 
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 text-xs"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Folder className="w-3 h-3" />Presets
+            </motion.button>
+            <motion.button 
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs" 
+              style={{ backgroundColor: `${color}20`, color }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Save className="w-3 h-3" />Save
+            </motion.button>
           </div>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }
 
+interface PluginDialogWrapperProps extends PluginDialogProps {
+  isOpen: boolean;
+}
+
+export function PluginDialog({ isOpen, ...props }: PluginDialogWrapperProps) {
+  return (
+    <AnimatePresence mode="wait">
+      {isOpen && <PluginDialogContent key="plugin-dialog" {...props} />}
+    </AnimatePresence>
+  );
+}
+
+export { PluginDialogContent };
 export default PluginDialog;

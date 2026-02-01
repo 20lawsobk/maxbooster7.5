@@ -1614,18 +1614,17 @@ export function HighPerformanceDAW() {
         onSelect={handleAddPlugin}
       />
       
-      {activePlugin && activePlugin.pluginDef && (
-        <PluginDialog
-          plugin={activePlugin.pluginDef}
-          instanceId={activePlugin.instanceId}
-          values={activePlugin.params}
-          bypassed={!activePlugin.enabled}
-          onClose={() => setActivePlugin(null)}
-          onParameterChange={(paramId, value) => handlePluginParameterChange(activePlugin.instanceId, paramId, value)}
-          onBypassToggle={() => handlePluginBypassToggle(activePlugin.instanceId)}
-          onReset={() => handlePluginReset(activePlugin.instanceId)}
-        />
-      )}
+      <PluginDialog
+        isOpen={!!(activePlugin && activePlugin.pluginDef)}
+        plugin={activePlugin?.pluginDef || { id: '', slug: '', name: '', category: 'effect', type: '', version: '', description: '', author: '', parameters: [], defaultPreset: {} }}
+        instanceId={activePlugin?.instanceId || ''}
+        values={activePlugin?.params || {}}
+        bypassed={!activePlugin?.enabled}
+        onClose={() => setActivePlugin(null)}
+        onParameterChange={(paramId, value) => activePlugin && handlePluginParameterChange(activePlugin.instanceId, paramId, value)}
+        onBypassToggle={() => activePlugin && handlePluginBypassToggle(activePlugin.instanceId)}
+        onReset={() => activePlugin && handlePluginReset(activePlugin.instanceId)}
+      />
     </div>
   );
 }

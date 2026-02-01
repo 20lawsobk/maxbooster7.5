@@ -231,8 +231,8 @@ interface StudioState {
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-const createDefaultTrack = (type: TrackType, name: string, index: number): Track => ({
-  id: generateId(),
+const createDefaultTrack = (type: TrackType, name: string, index: number, id?: string): Track => ({
+  id: id || generateId(),
   name,
   type,
   color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6],
@@ -396,7 +396,7 @@ export const useStudioStore = create<StudioState>()(
             const { tracks } = get();
             const trackName = name || `${type.charAt(0).toUpperCase() + type.slice(1)} ${tracks.filter(t => t.type === type).length + 1}`;
             set((state) => ({
-              tracks: [...state.tracks, createDefaultTrack(type, trackName, state.tracks.length)],
+              tracks: [...state.tracks, createDefaultTrack(type, trackName, state.tracks.length, id)],
               project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
             }));
             get().pushHistory(`Add ${type} track: ${trackName}`);
@@ -660,8 +660,18 @@ export const useStudioStore = create<StudioState>()(
           name: 'studio-storage',
           partialize: (state) => ({
             project: state.project,
-            tracks: state.tracks,
-            masterTrack: state.masterTrack,
+            tracks: state.tracks.map(track => ({
+              ...track,
+              audioClips: track.audioClips.map(clip => ({
+                ...clip,
+                waveformData: undefined,
+              })),
+              meterLevel: { left: -60, right: -60 },
+            })),
+            masterTrack: {
+              ...state.masterTrack,
+              meterLevel: { left: -60, right: -60 },
+            },
             mixer: state.mixer,
             view: {
               zoom: state.view.zoom,
