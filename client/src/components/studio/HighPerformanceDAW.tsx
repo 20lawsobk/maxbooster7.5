@@ -4,8 +4,10 @@ import {
   Play, Pause, Square, Circle, Plus, Volume2, Trash2, 
   ZoomIn, ZoomOut, Grip, Settings, ChevronRight, Repeat,
   SkipBack, SkipForward, Mic, Headphones, Music, Waves,
-  Sliders, Activity, X, Copy, Scissors, MoreVertical
+  Sliders, Activity, X, Copy, Scissors, MoreVertical, Library
 } from 'lucide-react';
+import { PluginDialog, type PluginDefinition, type PluginParameter } from './PluginDialog';
+import { PluginBrowser } from './PluginBrowser';
 
 // =============================================================================
 // STATE TYPES
@@ -22,10 +24,12 @@ interface Clip {
 
 interface Plugin {
   id: string;
+  instanceId: string;
+  pluginDef: PluginDefinition | null;
   name: string;
-  type: 'volume' | 'eq' | 'compressor' | 'reverb' | 'delay' | 'limiter' | 'gate';
+  type: string;
   enabled: boolean;
-  params: Record<string, number>;
+  params: Record<string, number | boolean | string>;
 }
 
 interface Track {
@@ -882,21 +886,23 @@ function ArrangementView({
 interface SignalPathMixerProps {
   selectedTrack: Track | null;
   onTogglePlugin: (pluginId: string) => void;
-  onAddPlugin: (type: Plugin['type']) => void;
+  onAddPlugin: (plugin: PluginDefinition) => void;
   onRemovePlugin: (pluginId: string) => void;
+  onOpenPlugin: (plugin: Plugin) => void;
+  onOpenBrowser: () => void;
 }
 
-function SignalPathMixer({ selectedTrack, onTogglePlugin, onAddPlugin, onRemovePlugin }: SignalPathMixerProps) {
-  const [showAddMenu, setShowAddMenu] = useState(false);
-  
-  const pluginTypes: { type: Plugin['type']; name: string }[] = [
-    { type: 'eq', name: 'EQ' },
-    { type: 'compressor', name: 'Compressor' },
-    { type: 'reverb', name: 'Reverb' },
-    { type: 'delay', name: 'Delay' },
-    { type: 'limiter', name: 'Limiter' },
-    { type: 'gate', name: 'Gate' },
-  ];
+function SignalPathMixer({ selectedTrack, onTogglePlugin, onAddPlugin, onRemovePlugin, onOpenPlugin, onOpenBrowser }: SignalPathMixerProps) {
+  const getTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+      reverb: '#8b5cf6', delay: '#3b82f6', chorus: '#06b6d4', flanger: '#06b6d4',
+      phaser: '#f59e0b', compressor: '#10b981', eq: '#3b82f6', limiter: '#ef4444',
+      gate: '#6366f1', distortion: '#ef4444', piano: '#1e1e1e', strings: '#8b5cf6',
+      drums: '#ef4444', bass: '#f97316', pad: '#a855f7', synth: '#f59e0b',
+      analog: '#f59e0b', fm: '#3b82f6', wavetable: '#8b5cf6', sampler: '#06b6d4',
+    };
+    return colors[type] || '#64748b';
+  };
   
   if (!selectedTrack) {
     return (
@@ -922,32 +928,34 @@ function SignalPathMixer({ selectedTrack, onTogglePlugin, onAddPlugin, onRemoveP
         
         {selectedTrack.plugins.map((plugin, index) => (
           <div key={plugin.id} className="flex items-center gap-2">
-            <div 
-              className={`flex-shrink-0 w-28 h-20 rounded-lg border transition-all ${
+            <button 
+              onClick={() => onOpenPlugin(plugin)}
+              className={`flex-shrink-0 w-28 h-20 rounded-lg border transition-all cursor-pointer hover:scale-105 ${
                 plugin.enabled 
                   ? 'bg-slate-800 border-emerald-500/50 shadow-lg shadow-emerald-500/10' 
                   : 'bg-slate-800/50 border-slate-700'
               }`}
+              style={{ borderLeftColor: getTypeColor(plugin.type), borderLeftWidth: 3 }}
             >
               <div className="flex items-center justify-between px-2 py-1 border-b border-slate-700/50">
-                <span className={`text-[10px] font-medium ${plugin.enabled ? 'text-emerald-400' : 'text-slate-500'}`}>
+                <span className={`text-[10px] font-medium truncate ${plugin.enabled ? 'text-emerald-400' : 'text-slate-500'}`}>
                   {plugin.name}
                 </span>
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => onTogglePlugin(plugin.id)}
+                  <span
+                    onClick={(e) => { e.stopPropagation(); onTogglePlugin(plugin.id); }}
                     className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] transition-all ${
                       plugin.enabled ? 'bg-emerald-500 text-white' : 'bg-slate-600 text-slate-400'
                     }`}
                   >
                     {plugin.enabled ? '●' : '○'}
-                  </button>
-                  <button
-                    onClick={() => onRemovePlugin(plugin.id)}
+                  </span>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); onRemovePlugin(plugin.id); }}
                     className="text-slate-500 hover:text-red-400"
                   >
                     <X className="w-3 h-3" />
-                  </button>
+                  </span>
                 </div>
               </div>
               
@@ -955,17 +963,17 @@ function SignalPathMixer({ selectedTrack, onTogglePlugin, onAddPlugin, onRemoveP
                 {Object.entries(plugin.params).slice(0, 3).map(([key]) => (
                   <div key={key} className="flex flex-col items-center">
                     <div 
-                      className={`w-6 h-6 rounded-full border-2 cursor-pointer transition-colors ${
+                      className={`w-6 h-6 rounded-full border-2 transition-colors ${
                         plugin.enabled 
-                          ? 'bg-slate-700 border-emerald-500/30 hover:border-emerald-400' 
+                          ? 'bg-slate-700 border-emerald-500/30' 
                           : 'bg-slate-800 border-slate-600'
                       }`}
                     />
-                    <span className="text-[7px] text-slate-500 mt-0.5 capitalize">{key.slice(0, 4)}</span>
+                    <span className="text-[7px] text-slate-500 mt-0.5 capitalize">{String(key).slice(0, 4)}</span>
                   </div>
                 ))}
               </div>
-            </div>
+            </button>
             
             {index < selectedTrack.plugins.length - 1 && (
               <ChevronRight className="w-4 h-4 text-slate-600 flex-shrink-0" />
@@ -973,29 +981,13 @@ function SignalPathMixer({ selectedTrack, onTogglePlugin, onAddPlugin, onRemoveP
           </div>
         ))}
         
-        <div className="relative">
-          <button 
-            onClick={() => setShowAddMenu(!showAddMenu)}
-            className="flex-shrink-0 w-20 h-20 rounded-lg border border-dashed border-slate-600 flex flex-col items-center justify-center text-slate-500 hover:border-emerald-500 hover:text-emerald-400 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            <span className="text-[9px] mt-1">Add Plugin</span>
-          </button>
-          
-          {showAddMenu && (
-            <div className="absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-50 min-w-[120px]">
-              {pluginTypes.map(({ type, name }) => (
-                <button
-                  key={type}
-                  onClick={() => { onAddPlugin(type); setShowAddMenu(false); }}
-                  className="w-full px-3 py-1.5 text-left text-sm text-slate-300 hover:bg-slate-700 hover:text-emerald-400"
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <button 
+          onClick={onOpenBrowser}
+          className="flex-shrink-0 w-20 h-20 rounded-lg border border-dashed border-slate-600 flex flex-col items-center justify-center text-slate-500 hover:border-emerald-500 hover:text-emerald-400 transition-colors"
+        >
+          <Library className="w-5 h-5" />
+          <span className="text-[9px] mt-1">Browse 219+</span>
+        </button>
         
         <ChevronRight className="w-4 h-4 text-slate-600 flex-shrink-0" />
         
@@ -1120,6 +1112,8 @@ export function HighPerformanceDAW() {
   const masterMeterRef = useRef<Tone.Meter | null>(null);
   const masterChannelRef = useRef<Tone.Channel | null>(null);
   const [showAddTrackDialog, setShowAddTrackDialog] = useState(false);
+  const [showPluginBrowser, setShowPluginBrowser] = useState(false);
+  const [activePlugin, setActivePlugin] = useState<Plugin | null>(null);
   
   const [state, setState] = useState<DAWState>({
     tracks: [],
@@ -1408,14 +1402,14 @@ export function HighPerformanceDAW() {
     }));
   }, []);
   
-  const handleTogglePlugin = useCallback((pluginId: string) => {
+  const handleTogglePlugin = useCallback((instanceId: string) => {
     setState(prev => ({
       ...prev,
       tracks: prev.tracks.map(t => {
         if (t.id === prev.selectedTrackId) {
           return {
             ...t,
-            plugins: t.plugins.map(p => p.id === pluginId ? { ...p, enabled: !p.enabled } : p)
+            plugins: t.plugins.map(p => p.instanceId === instanceId ? { ...p, enabled: !p.enabled } : p)
           };
         }
         return t;
@@ -1423,43 +1417,92 @@ export function HighPerformanceDAW() {
     }));
   }, []);
   
-  const handleAddPlugin = useCallback((type: Plugin['type']) => {
+  const handleAddPlugin = useCallback((pluginDef: PluginDefinition) => {
     setState(prev => ({
       ...prev,
       tracks: prev.tracks.map(t => {
         if (t.id === prev.selectedTrackId) {
-          const name = type.charAt(0).toUpperCase() + type.slice(1);
+          const instanceId = generateId();
+          const params: Record<string, number | boolean | string> = {};
+          pluginDef.parameters.forEach(p => {
+            params[p.id] = p.defaultValue;
+          });
           const newPlugin: Plugin = {
-            id: generateId(),
-            name,
-            type,
+            id: pluginDef.id,
+            instanceId,
+            pluginDef,
+            name: pluginDef.name,
+            type: pluginDef.type,
             enabled: true,
-            params: type === 'eq' ? { low: 0, mid: 0, high: 0 } :
-                    type === 'compressor' ? { threshold: -24, ratio: 4, attack: 0.003 } :
-                    type === 'reverb' ? { decay: 2.5, wet: 0.3 } :
-                    type === 'delay' ? { time: 0.25, feedback: 0.3, wet: 0.3 } :
-                    type === 'limiter' ? { threshold: -1 } :
-                    type === 'gate' ? { threshold: -40, attack: 0.01 } :
-                    { gain: 0 }
+            params,
           };
           return { ...t, plugins: [...t.plugins, newPlugin] };
         }
         return t;
       })
     }));
+    setShowPluginBrowser(false);
   }, []);
   
-  const handleRemovePlugin = useCallback((pluginId: string) => {
+  const handlePluginParameterChange = useCallback((pluginInstanceId: string, paramId: string, value: number | boolean | string) => {
+    setState(prev => ({
+      ...prev,
+      tracks: prev.tracks.map(t => ({
+        ...t,
+        plugins: t.plugins.map(p => 
+          p.instanceId === pluginInstanceId 
+            ? { ...p, params: { ...p.params, [paramId]: value } }
+            : p
+        )
+      }))
+    }));
+  }, []);
+  
+  const handlePluginBypassToggle = useCallback((pluginInstanceId: string) => {
+    setState(prev => ({
+      ...prev,
+      tracks: prev.tracks.map(t => ({
+        ...t,
+        plugins: t.plugins.map(p => 
+          p.instanceId === pluginInstanceId ? { ...p, enabled: !p.enabled } : p
+        )
+      }))
+    }));
+  }, []);
+  
+  const handlePluginReset = useCallback((pluginInstanceId: string) => {
+    setState(prev => ({
+      ...prev,
+      tracks: prev.tracks.map(t => ({
+        ...t,
+        plugins: t.plugins.map(p => {
+          if (p.instanceId === pluginInstanceId && p.pluginDef) {
+            const params: Record<string, number | boolean | string> = {};
+            p.pluginDef.parameters.forEach(param => {
+              params[param.id] = param.defaultValue;
+            });
+            return { ...p, params };
+          }
+          return p;
+        })
+      }))
+    }));
+  }, []);
+  
+  const handleRemovePlugin = useCallback((instanceId: string) => {
     setState(prev => ({
       ...prev,
       tracks: prev.tracks.map(t => {
         if (t.id === prev.selectedTrackId) {
-          return { ...t, plugins: t.plugins.filter(p => p.id !== pluginId) };
+          return { ...t, plugins: t.plugins.filter(p => p.instanceId !== instanceId) };
         }
         return t;
       })
     }));
-  }, []);
+    if (activePlugin?.instanceId === instanceId) {
+      setActivePlugin(null);
+    }
+  }, [activePlugin]);
   
   const selectedTrack = state.tracks.find(t => t.id === state.selectedTrackId) || null;
   
@@ -1552,9 +1595,11 @@ export function HighPerformanceDAW() {
       
       <SignalPathMixer
         selectedTrack={selectedTrack}
-        onTogglePlugin={handleTogglePlugin}
+        onTogglePlugin={(id) => handleTogglePlugin(id)}
         onAddPlugin={handleAddPlugin}
-        onRemovePlugin={handleRemovePlugin}
+        onRemovePlugin={(id) => handleRemovePlugin(id)}
+        onOpenPlugin={(plugin) => setActivePlugin(plugin)}
+        onOpenBrowser={() => setShowPluginBrowser(true)}
       />
       
       <AddTrackDialog
@@ -1562,6 +1607,25 @@ export function HighPerformanceDAW() {
         onClose={() => setShowAddTrackDialog(false)}
         onAdd={handleAddTrack}
       />
+      
+      <PluginBrowser
+        isOpen={showPluginBrowser}
+        onClose={() => setShowPluginBrowser(false)}
+        onSelect={handleAddPlugin}
+      />
+      
+      {activePlugin && activePlugin.pluginDef && (
+        <PluginDialog
+          plugin={activePlugin.pluginDef}
+          instanceId={activePlugin.instanceId}
+          values={activePlugin.params}
+          bypassed={!activePlugin.enabled}
+          onClose={() => setActivePlugin(null)}
+          onParameterChange={(paramId, value) => handlePluginParameterChange(activePlugin.instanceId, paramId, value)}
+          onBypassToggle={() => handlePluginBypassToggle(activePlugin.instanceId)}
+          onReset={() => handlePluginReset(activePlugin.instanceId)}
+        />
+      )}
     </div>
   );
 }

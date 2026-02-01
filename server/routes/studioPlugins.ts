@@ -44,7 +44,7 @@ const savePresetSchema = z.object({
   isPublic: z.boolean().optional(),
 });
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const category = req.query.category as PluginCategory | undefined;
     
