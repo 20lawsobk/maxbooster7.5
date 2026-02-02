@@ -75,8 +75,10 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
   const { tracks, masterTrack, transport, view, project, canUndo, canRedo } = store;
   
   const { toast } = useToast();
-  const { forceSave, invalidateProjectQueries } = useProjectSync(projectId);
+  const { forceSave, invalidateProjectQueries, loadProjectData } = useProjectSync(projectId);
   const [mode, setMode] = useState<FlowStateMode>('create');
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
+  const projectLoadedRef = useRef<string | null>(null);
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('arrange');
   const [activeTool, setActiveTool] = useState('pointer');
   const [showAIPanel, setShowAIPanel] = useState(false);
@@ -97,6 +99,16 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
   const [lyrics, setLyrics] = useState<LyricLine[]>([
     { id: 'intro-1', text: 'Click Edit to add your lyrics...', startTime: 0, endTime: 4, type: 'intro' },
   ]);
+
+  useEffect(() => {
+    if (projectId && projectId !== projectLoadedRef.current) {
+      projectLoadedRef.current = projectId;
+      setIsLoadingProject(true);
+      loadProjectData().finally(() => {
+        setIsLoadingProject(false);
+      });
+    }
+  }, [projectId, loadProjectData]);
 
   const handleAIMix = useCallback(async () => {
     if (!projectId) return;
