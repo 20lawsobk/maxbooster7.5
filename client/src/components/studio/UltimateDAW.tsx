@@ -8,7 +8,7 @@ import {
   Activity, Target, Gauge, Palette, Radio, Keyboard, MousePointer,
   Move, Pencil, Eraser, Plus, HelpCircle, Library, Eye, EyeOff,
   Maximize2, Minimize2, SplitSquareVertical, Waves, ListMusic,
-  Piano, Drum, Guitar, Terminal, Network, LayoutGrid
+  Piano, Drum, Guitar, Terminal, Network, LayoutGrid, Type
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,11 @@ import { FlowStatePluginBrowser } from './FlowStatePluginBrowser';
 import { FlowStateInstrumentDialog } from './FlowStateInstrumentDialog';
 import { PluginControlDialog } from './PluginControlDialog';
 import { PluginBrowser } from './PluginBrowser';
+import { AIMusicGenerator } from './AIMusicGenerator';
+import { LyricDisplay, type LyricLine } from './LyricDisplay';
 import type { FlowStateMode } from '@/hooks/useFlowStateAdapter';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import './FlowStateTheme.css';
 
 type WorkspaceView = 'arrange' | 'mixer' | 'edit' | 'spatial' | 'launcher';
@@ -68,6 +72,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
   const store = useUnifiedStore();
   const { tracks, masterTrack, transport, view, project, canUndo, canRedo } = store;
   
+  const { toast } = useToast();
   const [mode, setMode] = useState<FlowStateMode>('create');
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('arrange');
   const [activeTool, setActiveTool] = useState('pointer');
@@ -77,9 +82,161 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
   const [showSpectral, setShowSpectral] = useState(false);
   const [showAddTrack, setShowAddTrack] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showMusicGenerator, setShowMusicGenerator] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const [isAIMixing, setIsAIMixing] = useState(false);
+  const [isAIMastering, setIsAIMastering] = useState(false);
+  const [musicalKey, setMusicalKey] = useState('C');
+  const [scale, setScale] = useState('minor');
+  const [lyrics, setLyrics] = useState<LyricLine[]>([
+    { id: 'intro-1', text: 'Click Edit to add your lyrics...', startTime: 0, endTime: 4, type: 'intro' },
+  ]);
+
+  const handleAIMix = useCallback(async () => {
+    if (!projectId) return;
+    setIsAIMixing(true);
+    try {
+      await apiRequest('/api/studio/ai-mix', {
+        method: 'POST',
+        body: JSON.stringify({ projectId }),
+      });
+      toast({ title: 'AI Mix Complete', description: 'Your tracks have been balanced and processed.' });
+    } catch (error: any) {
+      toast({ title: 'Mix Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsAIMixing(false);
+    }
+  }, [projectId, toast]);
+
+  const handleAIMaster = useCallback(async () => {
+    if (!projectId) return;
+    setIsAIMastering(true);
+    try {
+      await apiRequest('/api/studio/ai-master', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, targetLufs: -14 }),
+      });
+      toast({ title: 'AI Master Complete', description: 'Your project has been mastered for streaming.' });
+    } catch (error: any) {
+      toast({ title: 'Master Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsAIMastering(false);
+    }
+  }, [projectId, toast]);
+
+  const handleGenerateMelody = useCallback(async (params?: { key?: string; scale?: string; tempo?: number }) => {
+    try {
+      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
+        method: 'POST',
+        body: JSON.stringify({
+          text: 'melodic synthesizer',
+          projectId,
+          bars: 8,
+          instrumentType: 'synth',
+          instrumentCategory: 'melodic',
+          tempo: params?.tempo || transport.tempo,
+          key: params?.key || musicalKey,
+          scale: params?.scale || scale,
+        }),
+      });
+      if (response.audioFilePath) {
+        toast({ title: 'Melody Generated', description: 'New melody track has been created.' });
+      }
+    } catch (error: any) {
+      toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, transport.tempo, musicalKey, scale, toast]);
+
+  const handleGenerateDrums = useCallback(async (params?: { genre?: string; tempo?: number }) => {
+    try {
+      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
+        method: 'POST',
+        body: JSON.stringify({
+          text: `${params?.genre || 'trap'} drums`,
+          projectId,
+          bars: 8,
+          instrumentType: 'drums',
+          instrumentCategory: 'drums',
+          tempo: params?.tempo || transport.tempo,
+        }),
+      });
+      if (response.audioFilePath) {
+        toast({ title: 'Drums Generated', description: 'New drum pattern has been created.' });
+      }
+    } catch (error: any) {
+      toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, transport.tempo, toast]);
+
+  const handleGenerateBass = useCallback(async (params?: { key?: string; scale?: string }) => {
+    try {
+      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
+        method: 'POST',
+        body: JSON.stringify({
+          text: 'bass 808',
+          projectId,
+          bars: 8,
+          instrumentType: 'bass',
+          instrumentCategory: 'melodic',
+          tempo: transport.tempo,
+          key: params?.key || musicalKey,
+          scale: params?.scale || scale,
+        }),
+      });
+      if (response.audioFilePath) {
+        toast({ title: 'Bass Generated', description: 'New bass line has been created.' });
+      }
+    } catch (error: any) {
+      toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, transport.tempo, musicalKey, scale, toast]);
+
+  const handleGeneratePercussion = useCallback(async () => {
+    try {
+      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
+        method: 'POST',
+        body: JSON.stringify({
+          text: 'percussion shakers hi-hats',
+          projectId,
+          bars: 8,
+          instrumentType: 'percussion',
+          instrumentCategory: 'percussion',
+          tempo: transport.tempo,
+        }),
+      });
+      if (response.audioFilePath) {
+        toast({ title: 'Percussion Generated', description: 'New percussion pattern has been created.' });
+      }
+    } catch (error: any) {
+      toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, transport.tempo, toast]);
+
+  const handleAnalyzeAudio = useCallback(async () => {
+    return {
+      key: 'C',
+      scale: 'minor',
+      tempo: transport.tempo,
+      timeSignature: transport.timeSignature,
+      energy: 0.75,
+      danceability: 0.8,
+      valence: 0.6,
+      chords: [
+        { chord: 'Cm', time: 0 },
+        { chord: 'Ab', time: 4 },
+        { chord: 'Eb', time: 8 },
+        { chord: 'Bb', time: 12 },
+      ],
+      sections: [
+        { type: 'intro', start: 0, end: 8 },
+        { type: 'verse', start: 8, end: 24 },
+        { type: 'chorus', start: 24, end: 40 },
+      ],
+    };
+  }, [transport.tempo, transport.timeSignature]);
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -238,6 +395,32 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>AI Co-Producer</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMusicGenerator(prev => !prev)}
+                    className={cn('text-zinc-400 hover:text-white', showMusicGenerator && 'text-pink-400')}
+                  >
+                    <Wand2 className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>AI Music Generator</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowLyrics(prev => !prev)}
+                    className={cn('text-zinc-400 hover:text-white', showLyrics && 'text-amber-400')}
+                  >
+                    <Type className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Lyric Display</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -407,7 +590,54 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
               <FlowStateAIPanel
                 projectId={projectId}
                 mode={mode}
+                tracks={(tracks || []).map(t => ({ id: t.id, name: t.name, type: t.type }))}
+                currentTime={transport.position}
+                tempo={transport.tempo}
+                musicalKey={musicalKey}
+                scale={scale}
+                onAIMix={handleAIMix}
+                onAIMaster={handleAIMaster}
+                onAIGenerate={() => setShowMusicGenerator(true)}
+                onGenerateMelody={handleGenerateMelody}
+                onGenerateDrums={handleGenerateDrums}
+                onGeneratePercussion={handleGeneratePercussion}
+                onGenerateBass={handleGenerateBass}
+                onAnalyzeAudio={handleAnalyzeAudio}
                 onClose={() => setShowAIPanel(false)}
+                isAIMixing={isAIMixing}
+                isAIMastering={isAIMastering}
+              />
+            </motion.aside>
+          )}
+        </AnimatePresence>
+        
+        <AnimatePresence>
+          {showMusicGenerator && (
+            <motion.aside
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 400, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              className="flex-shrink-0 border-r border-zinc-800/50 bg-zinc-900/50 overflow-hidden"
+            >
+              <AIMusicGenerator
+                projectId={projectId}
+                onTrackGenerated={(track) => {
+                  const newTrack = store.addTrack({
+                    name: track.name || 'Generated Track',
+                    type: track.type || 'audio',
+                    color: track.color || '#8B5CF6',
+                  });
+                  if (track.audioUrl && newTrack) {
+                    store.addAudioClip(newTrack.id, {
+                      startTime: 0,
+                      duration: track.duration || 30,
+                      audioUrl: track.audioUrl,
+                      name: track.name || 'AI Generated',
+                    });
+                  }
+                  toast({ title: 'Track Added', description: `"${track.name || 'Generated Track'}" added to project.` });
+                }}
+                onClose={() => setShowMusicGenerator(false)}
               />
             </motion.aside>
           )}
@@ -594,6 +824,26 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
             </div>
           )}
         </main>
+        
+        <AnimatePresence>
+          {showLyrics && (
+            <motion.aside
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 350, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              className="flex-shrink-0 border-l border-zinc-800/50 overflow-hidden"
+            >
+              <LyricDisplay
+                lyrics={lyrics}
+                currentTime={transport.position}
+                isPlaying={transport.isPlaying}
+                tempo={transport.tempo}
+                onLyricsChange={setLyrics}
+                onSeek={(time) => store.setPosition(time)}
+              />
+            </motion.aside>
+          )}
+        </AnimatePresence>
         
         <AnimatePresence>
           {showPluginBrowser && (
