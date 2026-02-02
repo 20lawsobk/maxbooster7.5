@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { FlowStateTrack } from '@/hooks/useFlowStateAdapter';
 
 interface FlowState3DWorkspaceProps {
-  tracks: FlowStateTrack[];
-  isPlaying: boolean;
-  currentTime: number;
-  onTrackSelect: (trackId: string) => void;
-  selectedTrackIds: string[];
+  tracks?: FlowStateTrack[];
+  projectId?: string | null;
+  isPlaying?: boolean;
+  currentTime?: number;
+  onTrackSelect?: (trackId: string) => void;
+  selectedTrackIds?: string[];
 }
 
 interface Particle {
@@ -39,11 +40,12 @@ interface TrackNode {
 }
 
 export function FlowState3DWorkspace({
-  tracks,
-  isPlaying,
-  currentTime,
-  onTrackSelect,
-  selectedTrackIds,
+  tracks = [],
+  projectId,
+  isPlaying = false,
+  currentTime = 0,
+  onTrackSelect = () => {},
+  selectedTrackIds = [],
 }: FlowState3DWorkspaceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,41 +93,47 @@ export function FlowState3DWorkspace({
   }, [cameraAngle, cameraDistance]);
 
   const initializeTrackNodes = useCallback(() => {
-    tracks.forEach((track, index) => {
+    const trackList = tracks || [];
+    const selectedIds = selectedTrackIds || [];
+    const trackCount = trackList.length || 1;
+    
+    trackList.forEach((track, index) => {
       const existing = trackNodesRef.current.get(track.id);
       
       let targetX: number, targetY: number, targetZ: number;
       
       switch (viewMode) {
         case 'circular':
-          const angle = (index / tracks.length) * Math.PI * 2;
+          const angle = (index / trackCount) * Math.PI * 2;
           const radius = 6;
           targetX = Math.cos(angle) * radius;
           targetY = 0;
           targetZ = Math.sin(angle) * radius;
           break;
         case 'grid':
-          const cols = Math.ceil(Math.sqrt(tracks.length));
+          const cols = Math.ceil(Math.sqrt(trackCount));
           targetX = (index % cols - cols / 2) * 3;
           targetY = 0;
-          targetZ = (Math.floor(index / cols) - Math.floor(tracks.length / cols) / 2) * 3;
+          targetZ = (Math.floor(index / cols) - Math.floor(trackCount / cols) / 2) * 3;
           break;
         case 'spatial':
         default:
           targetX = (track.pan ?? 0) * 6;
           targetY = ((track.volume ?? 0.8) - 0.5) * 4;
-          targetZ = index * 2 - tracks.length;
+          targetZ = index * 2 - trackCount;
           break;
       }
 
+      const meterLevelArr = track.meterLevel || [0, 0];
+      
       if (existing) {
         existing.targetX = targetX;
         existing.targetY = targetY;
         existing.targetZ = targetZ;
         existing.color = track.color;
         existing.name = track.name;
-        existing.meterLevel = Math.max(track.meterLevel[0], track.meterLevel[1]);
-        existing.isSelected = selectedTrackIds.includes(track.id);
+        existing.meterLevel = Math.max(meterLevelArr[0], meterLevelArr[1]);
+        existing.isSelected = selectedIds.includes(track.id);
       } else {
         trackNodesRef.current.set(track.id, {
           id: track.id,
@@ -138,12 +146,12 @@ export function FlowState3DWorkspace({
           color: track.color,
           name: track.name,
           meterLevel: 0,
-          isSelected: selectedTrackIds.includes(track.id),
+          isSelected: selectedIds.includes(track.id),
         });
       }
     });
 
-    const validIds = new Set(tracks.map(t => t.id));
+    const validIds = new Set(trackList.map(t => t.id));
     trackNodesRef.current.forEach((_, id) => {
       if (!validIds.has(id)) {
         trackNodesRef.current.delete(id);
@@ -288,9 +296,10 @@ export function FlowState3DWorkspace({
     });
 
     trackNodesRef.current.forEach((node, id) => {
-      const track = tracks.find(t => t.id === id);
+      const track = (tracks || []).find(t => t.id === id);
       if (track) {
-        node.meterLevel = Math.max(track.meterLevel[0], track.meterLevel[1]);
+        const meterArr = track.meterLevel || [0, 0];
+        node.meterLevel = Math.max(meterArr[0], meterArr[1]);
       }
     });
 
@@ -412,7 +421,7 @@ export function FlowState3DWorkspace({
       <div className="absolute bottom-4 left-4 text-xs text-white/50 backdrop-blur-sm bg-black/20 px-3 py-2 rounded-lg">
         <div>Drag to rotate • Scroll to zoom • Click to select</div>
         <div className="mt-1 text-white/30">
-          {tracks.length} tracks in 3D space
+          {(tracks || []).length} tracks in 3D space
         </div>
       </div>
 
@@ -424,7 +433,7 @@ export function FlowState3DWorkspace({
             exit={{ opacity: 0, y: 10 }}
             className="absolute top-4 right-4 bg-black/60 backdrop-blur-md rounded-lg p-3 text-white text-sm"
           >
-            {tracks.find(t => t.id === hoveredTrack)?.name}
+            {(tracks || []).find(t => t.id === hoveredTrack)?.name}
           </motion.div>
         )}
       </AnimatePresence>

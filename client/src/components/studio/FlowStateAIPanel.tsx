@@ -37,9 +37,9 @@ interface AISuggestion {
 }
 
 interface FlowStateAIPanelProps {
-  suggestions: AISuggestion[];
-  mode: FlowStateMode;
-  projectId: string | null;
+  suggestions?: AISuggestion[];
+  mode?: FlowStateMode;
+  projectId?: string | null;
   onAIMix?: () => void;
   onAIMaster?: () => void;
   onAIGenerate?: () => void;
@@ -107,8 +107,8 @@ const MODE_ICONS: Record<FlowStateMode, React.ElementType> = {
 };
 
 export function FlowStateAIPanel({
-  suggestions,
-  mode,
+  suggestions = [],
+  mode = 'create',
   projectId,
   onAIMix,
   onAIMaster,
@@ -126,7 +126,7 @@ export function FlowStateAIPanel({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'suggestions' | 'generate' | 'process'>('suggestions');
 
-  const activeSuggestions = suggestions.filter(s => !dismissedSuggestions.has(s.id));
+  const activeSuggestions = (suggestions || []).filter(s => !dismissedSuggestions.has(s.id));
   const tips = MODE_TIPS[mode] || [];
   const ModeIcon = MODE_ICONS[mode];
 

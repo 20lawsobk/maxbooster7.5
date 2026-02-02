@@ -527,13 +527,50 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
           
           {workspaceView === 'mixer' && (
             <div className="flex-1">
-              <FlowStateMixer projectId={projectId} />
+              <FlowStateMixer 
+                projectId={projectId}
+                tracks={(tracks || []).map(t => ({
+                  id: t.id,
+                  name: t.name,
+                  color: t.color,
+                  volume: t.volume ?? 0.8,
+                  pan: t.pan ?? 0,
+                  mute: t.muted ?? false,
+                  solo: t.solo ?? false,
+                  armed: t.armed ?? false,
+                  meterLevel: [Math.random() * 0.8, Math.random() * 0.8] as [number, number],
+                }))}
+                onVolumeChange={(id, vol) => store.setTrackVolume(id, vol)}
+                onPanChange={(id, pan) => store.setTrackPan(id, pan)}
+                onMuteToggle={(id) => store.toggleTrackMute(id)}
+                onSoloToggle={(id) => store.toggleTrackSolo(id)}
+              />
             </div>
           )}
           
           {workspaceView === 'spatial' && (
             <div className="flex-1">
-              <FlowState3DWorkspace projectId={projectId} />
+              <FlowState3DWorkspace 
+                projectId={projectId}
+                tracks={(tracks || []).map(t => ({
+                  id: t.id,
+                  name: t.name,
+                  type: t.type,
+                  color: t.color,
+                  volume: t.volume ?? 0.8,
+                  pan: t.pan ?? 0,
+                  muted: t.muted ?? false,
+                  solo: t.solo ?? false,
+                  armed: t.armed ?? false,
+                  meterLevel: [Math.random() * 0.6, Math.random() * 0.6] as [number, number],
+                  audioClips: t.audioClips || [],
+                  midiClips: t.midiClips || [],
+                }))}
+                isPlaying={transport.isPlaying}
+                currentTime={transport.position}
+                onTrackSelect={(id) => setSelectedTrackId(id)}
+                selectedTrackIds={selectedTrackId ? [selectedTrackId] : []}
+              />
             </div>
           )}
           

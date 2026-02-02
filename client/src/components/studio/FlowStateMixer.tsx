@@ -21,26 +21,28 @@ interface MixerTrack {
 }
 
 interface FlowStateMixerProps {
-  tracks: MixerTrack[];
-  onVolumeChange: (trackId: string, volume: number) => void;
-  onPanChange: (trackId: string, pan: number) => void;
-  onMuteToggle: (trackId: string) => void;
-  onSoloToggle: (trackId: string) => void;
+  tracks?: MixerTrack[];
+  projectId?: string | null;
+  onVolumeChange?: (trackId: string, volume: number) => void;
+  onPanChange?: (trackId: string, pan: number) => void;
+  onMuteToggle?: (trackId: string) => void;
+  onSoloToggle?: (trackId: string) => void;
   masterMeterLevel?: [number, number];
 }
 
 export function FlowStateMixer({
-  tracks,
-  onVolumeChange,
-  onPanChange,
-  onMuteToggle,
-  onSoloToggle,
+  tracks = [],
+  projectId,
+  onVolumeChange = () => {},
+  onPanChange = () => {},
+  onMuteToggle = () => {},
+  onSoloToggle = () => {},
   masterMeterLevel = [0.6, 0.55],
 }: FlowStateMixerProps) {
   return (
     <div className="h-full flex bg-gradient-to-b from-slate-900/90 to-slate-950/90 backdrop-blur-xl">
       <div className="flex overflow-x-auto py-3 px-2 gap-1">
-        {tracks.map((track) => (
+        {(tracks || []).map((track) => (
           <MixerChannel
             key={track.id}
             track={track}
