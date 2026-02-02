@@ -1,10 +1,13 @@
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { HighPerformanceDAW } from '@/components/studio/HighPerformanceDAW';
+import { UltimateDAW } from '@/components/studio/UltimateDAW';
 import { Loader2 } from 'lucide-react';
+import { useParams } from 'wouter';
 
 export default function Studio() {
   const { user, isLoading } = useRequireSubscription();
+  const params = useParams<{ projectId?: string }>();
+  const projectId = params.projectId || null;
 
   if (isLoading) {
     return (
@@ -23,7 +26,7 @@ export default function Studio() {
   return (
     <AppLayout noPadding title="Studio">
       <div className="h-full w-full relative">
-        <HighPerformanceDAW />
+        <UltimateDAW projectId={projectId} />
       </div>
     </AppLayout>
   );
