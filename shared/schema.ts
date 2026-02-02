@@ -197,6 +197,38 @@ export type InsertStudioPinnedFolder = z.infer<typeof insertStudioPinnedFolderSc
 export type StudioPinnedFolder = typeof studioPinnedFolders.$inferSelect;
 
 // ============================================================================
+// STUDIO PROJECTS (DAW Project State)
+// ============================================================================
+export const studioProjects = pgTable("studio_projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull().default("Untitled"),
+  title: text("title"),
+  description: text("description"),
+  genre: text("genre"),
+  bpm: integer("bpm").default(120),
+  key: text("key"),
+  timeSignature: text("time_signature").default("4/4"),
+  sampleRate: integer("sample_rate").default(44100),
+  bitDepth: integer("bit_depth").default(24),
+  metadata: jsonb("metadata"),
+  mixBusConfig: jsonb("mix_bus_config"),
+  masterSettings: jsonb("master_settings"),
+  automationData: jsonb("automation_data"),
+  markerData: jsonb("marker_data"),
+  isTemplate: boolean("is_template").default(false),
+  templateId: varchar("template_id"),
+  status: text("status").default("active"),
+  lastSavedAt: timestamp("last_saved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertStudioProjectSchema = createInsertSchema(studioProjects).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertStudioProject = z.infer<typeof insertStudioProjectSchema>;
+export type StudioProject = typeof studioProjects.$inferSelect;
+
+// ============================================================================
 // RELEASES (Distribution)
 // ============================================================================
 export const releases = pgTable("releases", {
