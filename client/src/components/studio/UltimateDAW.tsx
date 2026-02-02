@@ -30,6 +30,7 @@ import { PluginControlDialog } from './PluginControlDialog';
 import { PluginBrowser } from './PluginBrowser';
 import { AIMusicGenerator } from './AIMusicGenerator';
 import { LyricDisplay, type LyricLine } from './LyricDisplay';
+import { ProjectSelector } from './ProjectSelector';
 import type { FlowStateMode } from '@/hooks/useFlowStateAdapter';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -326,14 +327,12 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
             exit={{ y: -60, opacity: 0 }}
             className="flex-shrink-0 h-14 border-b border-zinc-800/50 bg-zinc-900/80 backdrop-blur-xl flex items-center px-4 gap-4"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${currentModeConfig.color} flex items-center justify-center`}>
                 <currentModeConfig.icon className="w-4 h-4 text-white" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold">{projectName || project.name}</span>
-                <span className="text-xs text-zinc-500">{currentModeConfig.label} Mode</span>
-              </div>
+              <ProjectSelector currentProjectId={projectId} />
+              <span className="text-xs text-zinc-500 px-2 py-1 bg-zinc-800 rounded">{currentModeConfig.label} Mode</span>
             </div>
             
             <div className="flex items-center gap-1 ml-4">
