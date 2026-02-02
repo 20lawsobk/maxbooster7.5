@@ -4,10 +4,13 @@ import {
   Play, Pause, Square, Circle, Plus, Volume2, Trash2, 
   ZoomIn, ZoomOut, Grip, Settings, ChevronRight, Repeat,
   SkipBack, SkipForward, Mic, Headphones, Music, Waves,
-  Sliders, Activity, X, Copy, Scissors, MoreVertical, Library
+  Sliders, Activity, X, Copy, Scissors, MoreVertical, Library,
+  Cpu, GitBranch, Layers
 } from 'lucide-react';
 import { PluginDialog, type PluginDefinition, type PluginParameter } from './PluginDialog';
 import { PluginBrowser } from './PluginBrowser';
+import { PixiWaveformRenderer, type WaveformClipData } from './PixiWaveformRenderer';
+import { RoutingFlowPanel } from './RoutingFlowPanel';
 
 // =============================================================================
 // STATE TYPES
@@ -1108,12 +1111,15 @@ function AddTrackDialog({ isOpen, onClose, onAdd }: AddTrackDialogProps) {
 // MAIN DAW COMPONENT
 // =============================================================================
 
+type ViewMode = 'standard' | 'routing';
+
 export function HighPerformanceDAW() {
   const masterMeterRef = useRef<Tone.Meter | null>(null);
   const masterChannelRef = useRef<Tone.Channel | null>(null);
   const [showAddTrackDialog, setShowAddTrackDialog] = useState(false);
   const [showPluginBrowser, setShowPluginBrowser] = useState(false);
   const [activePlugin, setActivePlugin] = useState<Plugin | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('standard');
   
   const [state, setState] = useState<DAWState>({
     tracks: [],
@@ -1566,6 +1572,21 @@ export function HighPerformanceDAW() {
           {state.tracks.length} track{state.tracks.length !== 1 ? 's' : ''}
         </span>
         
+        <div className="h-5 w-px bg-slate-700" />
+        
+        <button
+          onClick={() => setViewMode(viewMode === 'routing' ? 'standard' : 'routing')}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            viewMode === 'routing' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+          }`}
+          title="Toggle Signal Routing Panel"
+        >
+          <GitBranch className="w-3.5 h-3.5" />
+          {viewMode === 'routing' ? 'Hide Routing' : 'Show Routing'}
+        </button>
+        
         <div className="flex-1" />
         
         <div className="text-[10px] text-slate-600 space-x-3">
@@ -1577,21 +1598,34 @@ export function HighPerformanceDAW() {
         </div>
       </div>
       
-      <ArrangementView
-        state={state}
-        onSelectTrack={handleSelectTrack}
-        onSelectClip={handleSelectClip}
-        onMuteTrack={handleMuteTrack}
-        onSoloTrack={handleSoloTrack}
-        onArmTrack={handleArmTrack}
-        onTrackVolumeChange={handleTrackVolumeChange}
-        onTrackPanChange={handleTrackPanChange}
-        onDeleteTrack={handleDeleteTrack}
-        onRenameTrack={handleRenameTrack}
-        onClipMove={handleClipMove}
-        onZoom={handleZoom}
-        onSeek={handleSeek}
-      />
+      <div className="flex-1 flex overflow-hidden">
+        <div className={`flex-1 flex flex-col overflow-hidden transition-all ${viewMode === 'routing' ? 'w-1/2' : 'w-full'}`}>
+          <ArrangementView
+            state={state}
+            onSelectTrack={handleSelectTrack}
+            onSelectClip={handleSelectClip}
+            onMuteTrack={handleMuteTrack}
+            onSoloTrack={handleSoloTrack}
+            onArmTrack={handleArmTrack}
+            onTrackVolumeChange={handleTrackVolumeChange}
+            onTrackPanChange={handleTrackPanChange}
+            onDeleteTrack={handleDeleteTrack}
+            onRenameTrack={handleRenameTrack}
+            onClipMove={handleClipMove}
+            onZoom={handleZoom}
+            onSeek={handleSeek}
+          />
+        </div>
+        
+        {viewMode === 'routing' && (
+          <div className="w-1/2 border-l border-slate-700 overflow-hidden">
+            <RoutingFlowPanel 
+              projectId={null}
+              onClose={() => setViewMode('standard')}
+            />
+          </div>
+        )}
+      </div>
       
       <SignalPathMixer
         selectedTrack={selectedTrack}
