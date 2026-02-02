@@ -33,6 +33,7 @@ import { LyricDisplay, type LyricLine } from './LyricDisplay';
 import type { FlowStateMode } from '@/hooks/useFlowStateAdapter';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useProjectSync } from '@/hooks/useProjectSync';
 import './FlowStateTheme.css';
 
 type WorkspaceView = 'arrange' | 'mixer' | 'edit' | 'spatial' | 'launcher';
@@ -73,6 +74,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
   const { tracks, masterTrack, transport, view, project, canUndo, canRedo } = store;
   
   const { toast } = useToast();
+  const { forceSave, invalidateProjectQueries } = useProjectSync(projectId);
   const [mode, setMode] = useState<FlowStateMode>('create');
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('arrange');
   const [activeTool, setActiveTool] = useState('pointer');
@@ -280,7 +282,10 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
         case 'KeyS':
           if (e.metaKey || e.ctrlKey) {
             e.preventDefault();
-            onSave?.();
+            forceSave().then(() => {
+              toast({ title: 'Saved', description: 'Project synced successfully.' });
+              onSave?.();
+            });
           }
           break;
         case 'Slash':
@@ -300,7 +305,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [transport.isPlaying, store, onSave]);
+  }, [transport.isPlaying, store, onSave, forceSave, toast]);
   
   const formatTime = useCallback((seconds: number) => {
     const bars = Math.floor(seconds * transport.tempo / 240) + 1;
@@ -374,7 +379,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
                 <Redo className="w-4 h-4" />
               </Button>
               <div className="w-px h-6 bg-zinc-700" />
-              <Button variant="ghost" size="sm" onClick={onSave} className="text-zinc-400 hover:text-white">
+              <Button variant="ghost" size="sm" onClick={() => forceSave().then(() => { toast({ title: 'Saved' }); onSave?.(); })} className="text-zinc-400 hover:text-white">
                 <Save className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={onExport} className="text-zinc-400 hover:text-white">

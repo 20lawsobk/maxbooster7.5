@@ -443,6 +443,63 @@ router.patch('/projects/:projectId', requireAuth, async (req: Request, res: Resp
   }
 });
 
+router.post('/projects/:projectId/sync', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+
+    if (!await verifyProjectOwnership(projectId, userId)) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const { tracks, transport } = req.body;
+
+    const updates: Record<string, unknown> = {
+      updatedAt: new Date(),
+    };
+
+    if (transport?.tempo) {
+      updates.bpm = transport.tempo;
+    }
+
+    if (transport?.timeSignature) {
+      updates.timeSignature = transport.timeSignature;
+    }
+
+    const [updated] = await db
+      .update(projects)
+      .set(updates)
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+      .returning();
+
+    if (tracks && Array.isArray(tracks)) {
+      for (const track of tracks) {
+        if (track.id) {
+          await db
+            .update(studioTracks)
+            .set({
+              name: track.name,
+              volume: track.volume?.toString(),
+              pan: track.pan?.toString(),
+              muted: track.muted,
+              solo: track.solo,
+              updatedAt: new Date(),
+            })
+            .where(and(
+              eq(studioTracks.id, track.id),
+              eq(studioTracks.projectId, projectId)
+            ));
+        }
+      }
+    }
+
+    res.json({ success: true, project: updated });
+  } catch (error: unknown) {
+    logger.error('Error syncing project:', error);
+    res.status(500).json({ error: 'Failed to sync project' });
+  }
+});
+
 router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
