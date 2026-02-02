@@ -164,7 +164,7 @@ export function useUnifiedStore(): UnifiedStoreState {
   
   useEffect(() => {
     const unsubscribe = useNewStore.subscribe(
-      (state) => state.selection.trackIds,
+      (state) => state.selection?.trackIds ?? [],
       (selectedTrackIds) => {
         if (legacyStore.selectedTrackIds?.join(',') !== selectedTrackIds.join(',')) {
           legacyStore.setSelectedTracks?.(selectedTrackIds);
