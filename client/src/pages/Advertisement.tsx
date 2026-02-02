@@ -581,10 +581,6 @@ export default function Advertisement() {
 
   if (!user) return null;
 
-  if (user.role !== 'admin') {
-    return <ComingSoonAdvertisement />;
-  }
-
   return (
     <AppLayout>
       {authLoading ? (

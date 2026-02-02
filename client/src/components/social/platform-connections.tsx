@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle, Clock } from 'lucide-react';
 import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon } from '@/components/ui/brand-icons';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
@@ -16,6 +16,8 @@ interface Platform {
   connected: boolean;
   username?: string;
   oauth: boolean;
+  comingSoon?: boolean;
+  comingSoonDate?: string;
 }
 
 /**
@@ -124,6 +126,8 @@ export function PlatformConnections() {
       connected: connections.some((c: unknown) => c.platform === 'threads'),
       username: connections.find((c: unknown) => c.platform === 'threads')?.username,
       oauth: true,
+      comingSoon: true,
+      comingSoonDate: 'March 1st, 2026',
     },
     {
       id: 'tiktok',
@@ -133,6 +137,8 @@ export function PlatformConnections() {
       connected: connections.some((c: unknown) => c.platform === 'tiktok'),
       username: connections.find((c: unknown) => c.platform === 'tiktok')?.username,
       oauth: true,
+      comingSoon: true,
+      comingSoonDate: 'March 1st, 2026',
     },
     {
       id: 'youtube',
@@ -184,7 +190,7 @@ export function PlatformConnections() {
             {platforms.map((platform) => {
               const IconComponent = platform.icon;
               return (
-                <Card key={platform.id} className={platform.connected ? 'border-green-500/50' : ''}>
+                <Card key={platform.id} className={platform.connected ? 'border-green-500/50' : platform.comingSoon ? 'border-amber-500/30 bg-amber-500/5' : ''}>
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -192,9 +198,19 @@ export function PlatformConnections() {
                           <IconComponent className="h-6 w-6" />
                         </div>
                         <div>
-                          <p className="font-medium">{platform.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{platform.name}</p>
+                            {platform.comingSoon && (
+                              <Badge variant="outline" className="text-amber-500 border-amber-500/50 text-[10px] px-1.5 py-0">
+                                <Clock className="h-2.5 w-2.5 mr-0.5" />
+                                Coming Soon
+                              </Badge>
+                            )}
+                          </div>
                           {platform.connected && platform.username ? (
                             <p className="text-xs text-muted-foreground">@{platform.username}</p>
+                          ) : platform.comingSoon ? (
+                            <p className="text-xs text-amber-500/80">{platform.comingSoonDate}</p>
                           ) : (
                             <p className="text-xs text-muted-foreground">
                               {platform.oauth ? 'OAuth Connection' : 'Not connected'}
@@ -203,7 +219,17 @@ export function PlatformConnections() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {platform.connected ? (
+                        {platform.comingSoon && !platform.connected ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            className="opacity-50"
+                          >
+                            <Clock className="h-4 w-4 mr-1" />
+                            Coming Soon
+                          </Button>
+                        ) : platform.connected ? (
                           <>
                             <CheckCircle className="h-5 w-5 text-green-600" />
                             <Button
