@@ -1600,21 +1600,65 @@ export function HighPerformanceDAW() {
       
       <div className="flex-1 flex overflow-hidden">
         <div className={`flex-1 flex flex-col overflow-hidden transition-all ${viewMode === 'routing' ? 'w-1/2' : 'w-full'}`}>
-          <ArrangementView
-            state={state}
-            onSelectTrack={handleSelectTrack}
-            onSelectClip={handleSelectClip}
-            onMuteTrack={handleMuteTrack}
-            onSoloTrack={handleSoloTrack}
-            onArmTrack={handleArmTrack}
-            onTrackVolumeChange={handleTrackVolumeChange}
-            onTrackPanChange={handleTrackPanChange}
-            onDeleteTrack={handleDeleteTrack}
-            onRenameTrack={handleRenameTrack}
-            onClipMove={handleClipMove}
-            onZoom={handleZoom}
-            onSeek={handleSeek}
-          />
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            <ArrangementView
+              state={state}
+              onSelectTrack={handleSelectTrack}
+              onSelectClip={handleSelectClip}
+              onMuteTrack={handleMuteTrack}
+              onSoloTrack={handleSoloTrack}
+              onArmTrack={handleArmTrack}
+              onTrackVolumeChange={handleTrackVolumeChange}
+              onTrackPanChange={handleTrackPanChange}
+              onDeleteTrack={handleDeleteTrack}
+              onRenameTrack={handleRenameTrack}
+              onClipMove={handleClipMove}
+              onZoom={handleZoom}
+              onSeek={handleSeek}
+            />
+            
+            {state.tracks.length > 0 && state.tracks.some(t => t.clips.length > 0) && (
+              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-950 to-transparent pointer-events-none">
+                <div className="absolute bottom-2 left-2 right-2 h-20 pointer-events-auto">
+                  <PixiWaveformRenderer
+                    clips={state.tracks.flatMap(track => 
+                      track.clips.map(clip => ({
+                        id: clip.id,
+                        name: clip.name,
+                        trackId: track.id,
+                        startTime: clip.startTime,
+                        duration: clip.duration,
+                        color: clip.color,
+                        waveformData: clip.waveformData,
+                      }))
+                    )}
+                    pixelsPerSecond={state.pixelsPerSecond}
+                    height={80}
+                    playheadPosition={state.currentTime}
+                    loopStart={state.loopStart}
+                    loopEnd={state.loopEnd}
+                    loopEnabled={state.loopEnabled}
+                    selectedClipIds={state.selectedClipId ? [state.selectedClipId] : []}
+                    onClipClick={(clipId) => handleSelectClip(clipId)}
+                    onClipDrag={(clipId, newStartTime) => {
+                      const trackWithClip = state.tracks.find(t => t.clips.some(c => c.id === clipId));
+                      if (trackWithClip) {
+                        handleClipMove(clipId, trackWithClip.id, newStartTime);
+                      }
+                    }}
+                    backgroundColor="#0f172a"
+                    waveformColor="#4ade80"
+                    playheadColor="#ef4444"
+                    className="w-full rounded-lg border border-slate-700/50"
+                  />
+                  <div className="absolute top-1 right-1 bg-purple-500/80 rounded px-1.5 py-0.5 flex items-center gap-1">
+                    <Cpu className="w-3 h-3 text-white" />
+                    <span className="text-[9px] text-white font-medium">GPU</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         
         {viewMode === 'routing' && (
