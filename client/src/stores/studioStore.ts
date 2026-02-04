@@ -223,6 +223,7 @@ interface StudioState {
   undo: () => void;
   redo: () => void;
   pushHistory: (action: string) => void;
+  markSaved: () => void;
   
   setAudioEngine: (engine: 'webaudio' | 'elementary' | 'tonejs') => void;
   setEngineReady: (ready: boolean) => void;
@@ -649,6 +650,10 @@ export const useStudioStore = create<StudioState>()(
               historyIndex: Math.min(s.historyIndex + 1, 49)
             }));
           },
+          
+          markSaved: () => set((state) => ({
+            project: { ...state.project, isDirty: false }
+          })),
           
           setAudioEngine: (engine) => set({ audioEngine: engine }),
           

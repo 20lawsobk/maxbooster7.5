@@ -22,6 +22,11 @@ import { FlowStateAIPanel } from './FlowStateAIPanel';
 import { AIMusicGenerator } from './AIMusicGenerator';
 import { FlowStateKeyboardShortcuts } from './FlowStateKeyboardShortcuts';
 import { StudioProjectDialog } from './StudioProjectDialog';
+import { SaveAsDialog } from './SaveAsDialog';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { ProjectSettingsDialog } from './ProjectSettingsDialog';
+import { CrashRecoveryDialog } from './CrashRecoveryDialog';
+import { VersionManagementDialog } from './VersionManagementDialog';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -65,6 +70,23 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [showMusicGenerator, setShowMusicGenerator] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  const [showProjectSettings, setShowProjectSettings] = useState(false);
+  const [showVersionManagement, setShowVersionManagement] = useState(false);
+  const [projectVersions, setProjectVersions] = useState<Array<{ 
+    id: string; 
+    name: string; 
+    description: string; 
+    createdAt: number;
+    snapshot?: {
+      project: any;
+      transport: any;
+      tracks: any[];
+    };
+  }>>([]);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [isAIMixing, setIsAIMixing] = useState(false);
   const [isAIMastering, setIsAIMastering] = useState(false);
@@ -78,6 +100,100 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       loadProjectData().finally(() => setIsLoading(false));
     }
   }, [projectId, loadProjectData]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (project.isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [project.isDirty]);
+
+  // Autosave recovery data to localStorage every 30 seconds when dirty
+  useEffect(() => {
+    if (!projectId || !project.isDirty) return;
+
+    const saveRecoveryData = () => {
+      const recoveryData = {
+        projectId,
+        projectName: project.name,
+        projectDescription: project.description,
+        transport: {
+          tempo: transport.tempo,
+          timeSignatureNumerator: transport.timeSignatureNumerator,
+          timeSignatureDenominator: transport.timeSignatureDenominator,
+          position: transport.position,
+          loopStart: transport.loopStart,
+          loopEnd: transport.loopEnd,
+          isLooping: transport.isLooping,
+        },
+        tracks: store.tracks.map(t => ({
+          id: t.id,
+          name: t.name,
+          type: t.type,
+          volume: t.volume,
+          pan: t.pan,
+          muted: t.muted,
+          solo: t.solo,
+        })),
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('studio_recovery_data', JSON.stringify(recoveryData));
+    };
+
+    // Save immediately on first dirty change
+    saveRecoveryData();
+
+    // Then autosave every 30 seconds
+    const interval = setInterval(saveRecoveryData, 30000);
+    return () => clearInterval(interval);
+  }, [
+    projectId, 
+    project.isDirty, 
+    project.name, 
+    project.description, 
+    transport.tempo, 
+    transport.timeSignatureNumerator,
+    transport.timeSignatureDenominator,
+    transport.position,
+    transport.loopStart,
+    transport.loopEnd,
+    transport.isLooping,
+    store.tracks
+  ]);
+
+  // Clear recovery data after successful save
+  useEffect(() => {
+    if (!project.isDirty && projectId) {
+      localStorage.removeItem('studio_recovery_data');
+    }
+  }, [project.isDirty, projectId]);
+
+  // Load versions from localStorage on mount
+  useEffect(() => {
+    if (projectId) {
+      const storedVersions = localStorage.getItem(`studio_versions_${projectId}`);
+      if (storedVersions) {
+        try {
+          setProjectVersions(JSON.parse(storedVersions));
+        } catch (e) {
+          console.error('Failed to parse stored versions:', e);
+        }
+      }
+    }
+  }, [projectId]);
+
+  // Persist versions to localStorage when they change
+  useEffect(() => {
+    if (projectId && projectVersions.length > 0) {
+      localStorage.setItem(`studio_versions_${projectId}`, JSON.stringify(projectVersions));
+    }
+  }, [projectId, projectVersions]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -133,7 +249,10 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         e.preventDefault();
         setShowProjectDialog(true);
       }
-      if (e.ctrlKey && e.key === 's') {
+      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        setShowSaveAsDialog(true);
+      } else if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         handleSave();
       }
@@ -156,6 +275,14 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (e.key === 'e' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
         setShowEditor(prev => !prev);
+      }
+      if (e.ctrlKey && e.key === ',') {
+        e.preventDefault();
+        setShowProjectSettings(true);
+      }
+      if (e.ctrlKey && e.altKey && e.key === 'v') {
+        e.preventDefault();
+        setShowVersionManagement(true);
       }
     };
 
@@ -527,6 +654,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         project={project}
         canUndo={canUndo}
         canRedo={canRedo}
+        isDirty={project.isDirty}
         formatTime={formatTime}
         formatBars={formatBars}
         onPlay={handlePlay}
@@ -680,6 +808,237 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
         }}
       />
+
+      <SaveAsDialog
+        open={showSaveAsDialog}
+        onOpenChange={setShowSaveAsDialog}
+        currentProjectId={projectId}
+        currentTitle={project.name}
+        currentDescription={project.description}
+        onSaved={(newProjectId) => {
+          queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+        }}
+      />
+
+      <UnsavedChangesDialog
+        open={showUnsavedChangesDialog}
+        onOpenChange={setShowUnsavedChangesDialog}
+        projectName={project.name}
+        isSaving={isSaving}
+        onSave={async () => {
+          setIsSaving(true);
+          try {
+            await forceSave();
+            store.markSaved();
+            if (pendingNavigation) {
+              window.location.href = pendingNavigation;
+            }
+          } finally {
+            setIsSaving(false);
+            setPendingNavigation(null);
+          }
+        }}
+        onDiscard={() => {
+          store.markSaved();
+          if (pendingNavigation) {
+            window.location.href = pendingNavigation;
+          }
+          setPendingNavigation(null);
+        }}
+        onCancel={() => {
+          setPendingNavigation(null);
+        }}
+      />
+
+      <ProjectSettingsDialog
+        open={showProjectSettings}
+        onOpenChange={setShowProjectSettings}
+        projectId={projectId}
+        project={{
+          name: project.name,
+          description: project.description,
+          tempo: transport.tempo,
+          timeSignatureNumerator: transport.timeSignatureNumerator,
+          timeSignatureDenominator: transport.timeSignatureDenominator,
+          sampleRate: project.sampleRate,
+          bitDepth: project.bitDepth,
+        }}
+        onUpdate={(updates) => {
+          if (updates.name) store.setProject({ name: updates.name });
+          if (updates.description !== undefined) store.setProject({ description: updates.description });
+          if (updates.tempo) store.setTempo(updates.tempo);
+          if (updates.timeSignatureNumerator !== undefined || updates.timeSignatureDenominator !== undefined) {
+            store.setTransport({
+              timeSignatureNumerator: updates.timeSignatureNumerator ?? transport.timeSignatureNumerator,
+              timeSignatureDenominator: updates.timeSignatureDenominator ?? transport.timeSignatureDenominator,
+            });
+          }
+          if (updates.sampleRate) store.setProject({ sampleRate: updates.sampleRate });
+          if (updates.bitDepth) store.setProject({ bitDepth: updates.bitDepth });
+        }}
+      />
+
+      <CrashRecoveryDialog
+        onRecover={(data) => {
+          try {
+            const parsed = JSON.parse(data);
+            // Restore project metadata
+            if (parsed.projectName || parsed.projectDescription) {
+              store.setProject({
+                name: parsed.projectName || 'Recovered Project',
+                description: parsed.projectDescription || '',
+              });
+            }
+            // Restore transport state
+            if (parsed.transport) {
+              store.setTempo(parsed.transport.tempo || 120);
+              store.setTransport({
+                timeSignatureNumerator: parsed.transport.timeSignatureNumerator || 4,
+                timeSignatureDenominator: parsed.transport.timeSignatureDenominator || 4,
+                loopStart: parsed.transport.loopStart || 0,
+                loopEnd: parsed.transport.loopEnd || 16,
+                isLooping: parsed.transport.isLooping || false,
+              });
+              if (parsed.transport.position) {
+                store.setPosition(parsed.transport.position);
+              }
+            }
+            // Restore track states (volume, pan, mute, solo)
+            if (parsed.tracks && Array.isArray(parsed.tracks)) {
+              parsed.tracks.forEach((recoveredTrack: any) => {
+                const existingTrack = store.tracks.find(t => t.id === recoveredTrack.id);
+                if (existingTrack) {
+                  store.updateTrack(recoveredTrack.id, {
+                    volume: recoveredTrack.volume ?? existingTrack.volume,
+                    pan: recoveredTrack.pan ?? existingTrack.pan,
+                    muted: recoveredTrack.muted ?? existingTrack.muted,
+                    solo: recoveredTrack.solo ?? existingTrack.solo,
+                  });
+                }
+              });
+            }
+            // Clear recovery data after successful restore
+            localStorage.removeItem('studio_recovery_data');
+            toast({
+              title: 'Work Recovered',
+              description: 'Your previous session has been restored.',
+            });
+          } catch (error) {
+            console.error('[CrashRecovery] Failed to parse recovery data:', error);
+            toast({
+              title: 'Recovery Failed',
+              description: 'Unable to restore previous session.',
+              variant: 'destructive',
+            });
+          }
+        }}
+        onDiscard={() => {
+          localStorage.removeItem('studio_recovery_data');
+          toast({
+            title: 'Recovery Discarded',
+            description: 'Starting fresh session.',
+          });
+        }}
+      />
+
+      <VersionManagementDialog
+        open={showVersionManagement}
+        onOpenChange={setShowVersionManagement}
+        projectName={project.name}
+        versions={projectVersions}
+        onCreateVersion={(name, description) => {
+          // Create a full snapshot of current project state
+          const snapshot = {
+            project: {
+              name: project.name,
+              description: project.description,
+              sampleRate: project.sampleRate,
+              bitDepth: project.bitDepth,
+            },
+            transport: {
+              tempo: transport.tempo,
+              timeSignatureNumerator: transport.timeSignatureNumerator,
+              timeSignatureDenominator: transport.timeSignatureDenominator,
+              loopStart: transport.loopStart,
+              loopEnd: transport.loopEnd,
+              isLooping: transport.isLooping,
+            },
+            tracks: store.tracks.map(t => ({
+              id: t.id,
+              name: t.name,
+              type: t.type,
+              volume: t.volume,
+              pan: t.pan,
+              muted: t.muted,
+              solo: t.solo,
+            })),
+          };
+          const newVersion = {
+            id: `ver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name,
+            description,
+            createdAt: Date.now(),
+            snapshot,
+          };
+          setProjectVersions(prev => [newVersion, ...prev].slice(0, 20));
+          toast({
+            title: 'Version Created',
+            description: `Saved "${name}" snapshot.`,
+          });
+        }}
+        onLoadVersion={(versionId) => {
+          const version = projectVersions.find(v => v.id === versionId) as any;
+          if (version?.snapshot) {
+            // Restore project state
+            if (version.snapshot.project) {
+              store.setProject(version.snapshot.project);
+            }
+            // Restore transport state
+            if (version.snapshot.transport) {
+              store.setTempo(version.snapshot.transport.tempo);
+              store.setTransport({
+                timeSignatureNumerator: version.snapshot.transport.timeSignatureNumerator,
+                timeSignatureDenominator: version.snapshot.transport.timeSignatureDenominator,
+                loopStart: version.snapshot.transport.loopStart,
+                loopEnd: version.snapshot.transport.loopEnd,
+                isLooping: version.snapshot.transport.isLooping,
+              });
+            }
+            // Restore track states
+            if (version.snapshot.tracks && Array.isArray(version.snapshot.tracks)) {
+              version.snapshot.tracks.forEach((snapshotTrack: any) => {
+                const existingTrack = store.tracks.find(t => t.id === snapshotTrack.id);
+                if (existingTrack) {
+                  store.updateTrack(snapshotTrack.id, {
+                    volume: snapshotTrack.volume,
+                    pan: snapshotTrack.pan,
+                    muted: snapshotTrack.muted,
+                    solo: snapshotTrack.solo,
+                  });
+                }
+              });
+            }
+            toast({
+              title: 'Version Loaded',
+              description: `Restored to "${version.name}"`,
+            });
+          } else {
+            toast({
+              title: 'Version Not Found',
+              description: 'Unable to restore this version.',
+              variant: 'destructive',
+            });
+          }
+        }}
+        onDeleteVersion={(versionId) => {
+          setProjectVersions(prev => prev.filter(v => v.id !== versionId));
+          toast({
+            title: 'Version Deleted',
+            description: 'The version has been removed.',
+          });
+        }}
+      />
     </div>
   );
 }
@@ -689,6 +1048,7 @@ interface TransportBarProps {
   project: any;
   canUndo: boolean;
   canRedo: boolean;
+  isDirty: boolean;
   formatTime: (s: number) => string;
   formatBars: (s: number) => string;
   onPlay: () => void;
@@ -708,7 +1068,7 @@ interface TransportBarProps {
 }
 
 function TransportBar({
-  transport, project, canUndo, canRedo, formatTime, formatBars,
+  transport, project, canUndo, canRedo, isDirty, formatTime, formatBars,
   onPlay, onPause, onStop, onRecord, onRewind, onToggleLoop,
   onUndo, onRedo, onSave, onTempoChange, onOpenPlugins, onOpenAI, onOpenGenerator, showAIPanel
 }: TransportBarProps) {
@@ -733,11 +1093,14 @@ function TransportBar({
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" onClick={onSave} className="h-8 w-8 p-0">
+            <Button variant="ghost" size="sm" onClick={onSave} className={cn("h-8 w-8 p-0 relative", isDirty && "text-amber-400")}>
               <Save className="h-4 w-4" />
+              {isDirty && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-amber-400 rounded-full" />
+              )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Save (Ctrl+S)</TooltipContent>
+          <TooltipContent>{isDirty ? 'Save Changes (Ctrl+S)' : 'Saved (Ctrl+S)'}</TooltipContent>
         </Tooltip>
       </div>
 

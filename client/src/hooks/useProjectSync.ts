@@ -75,12 +75,15 @@ export function useProjectSync(projectId: string | null) {
         },
       };
 
-      await fetch(`/api/studio/projects/${projectId}/sync`, {
+      const response = await fetch(`/api/studio/projects/${projectId}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(projectData),
       });
 
+      if (response.ok) {
+        store.getState().markSaved();
+      }
       invalidateProjectQueries();
     } catch (error) {
       console.error('[ProjectSync] Failed to sync:', error);
