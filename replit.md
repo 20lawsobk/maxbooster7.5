@@ -46,35 +46,11 @@ The platform supports Progressive Web App features, including an install banner,
 - **User Retention**: Incorporates guided onboarding, progressive feature discovery, an achievement system, and an AI career coach.
 - **Security Hardening**: Includes session fixation prevention, password change session invalidation, circuit breakers, webhook idempotency, rate limiting, token encryption, and input validation.
 - **KYC/Identity Verification**: Provides an end-to-end workflow for identity document submission and admin review.
-- **Professional DAW Architecture (Phases 1-5 Complete)**:
-  - **Command Pattern**: Full undo/redo with batch operations, command merging, immutable state via structuredClone
-  - **Timeline Engine**: Tempo map with linear/exponential ramps, time signature-aware bar/beat math, quantization, markers
-  - **Transport Authority**: Sample-accurate positioning, count-in, preroll, loop support, tempo map integration
-  - **Routing Graph**: Cycle detection, topological ordering, edge latencies, latency compensation calculation
-  - **Automation System**: Lanes, points, read/write/touch/latch modes, range replacement
-  - **MIDI Engine**: Clips with notes/CC events, 480 PPQ tick-based timing, velocity lanes, quantization, transposition, humanization, note splitting/gluing, CC interpolation
-  - **AI Command Integration**: AI music generation (chords, melodies, drums, basslines, mix suggestions) routed through command manager for proper undo/redo support
-  - **Project Management**: Autosave (interval-based with max 10 entries), crash recovery (beforeunload handler + localStorage), media pool (usage tracking, cleanup), project export/import
 - **HyperLearning Engine**: An AI-powered learning system that analyzes social media performance, detecting micro-patterns, performing cross-platform synthesis, and offering predictive modeling for optimal content and timing.
 - **Advanced AI Engines (GPT-5.2 Level)**: Custom-built, in-house AI engines for music generation and social media content creation. The **Advanced Music AI Engine** provides text-to-music generation with deep semantic understanding, music theory reasoning, and multi-dimensional synthesis. The **Advanced Social AI Engine** generates social media content with GPT-5.2 level understanding, platform-specific optimization, audience psychology modeling, viral pattern recognition, and A/B variant generation.
 
 ### System Design Choices
 The backend is conceptually microservices-oriented. The system prioritizes robust error handling (try-catch, retries, circuit breakers, validation), scalability (Redis for session/queue management, asynchronous operations), and data integrity (Drizzle ORM, input validation).
-
-### Hybrid Storage System
-The platform uses a sophisticated hybrid storage architecture combining two technologies:
-- **Replit Object Storage (GCS-backed)**: Fast CDN-backed cloud storage for public assets, uploads, and streaming media. Primary bucket: `replit-objstore-97079a38-bcc2-4973-b983-6be5afb7f969`.
-- **Pocket Dimension Storage**: Custom virtualized infinite-capacity storage with advanced compression, content-addressed chunking, per-pocket encryption, deduplication, and nested dimension support.
-
-Storage tiers are automatically selected based on file characteristics:
-- **CLOUD tier**: Public files, media (audio/video), and CDN-ready assets
-- **POCKET tier**: Large files (>50MB), text/documents, and user-private data benefiting from compression
-- **HYBRID tier**: Metadata in cloud for discoverability, content in pocket for compression
-
-Key services:
-- `HybridStorageService` (`server/services/hybridStorageService.ts`): Unified interface for tier selection, storage, retrieval, and migration
-- `UserPocketDimensionService` (`server/services/userPocketDimensionService.ts`): Per-user infinite storage initialization with default folders (audio, artwork, documents, beats, stems, exports)
-- `ObjectStorageService` (`server/replit_integrations/object_storage/`): Replit GCS integration with presigned URLs and ACL policies
 
 ## External Dependencies
 - **Stripe**: Payment processing, including Stripe Connect.
@@ -82,8 +58,7 @@ Key services:
 - **Redis Cloud**: Session storage, caching, and distributed task management.
 - **Sentry**: Error tracking and monitoring.
 - **LabelGrid**: Music distribution, content ID, and sync licensing.
-- **Replit Object Storage**: Cloud file storage (GCS-backed) with presigned URL uploads.
-- **Pocket Dimension**: Custom infinite-capacity compressed storage engine.
+- **Replit Object Storage**: File asset storage.
 - **Meta Graph API**: Unified Facebook and Instagram integration via single Meta OAuth.
 - **music-metadata library**: Audio metadata extraction.
 - **Y.js**: Real-time collaboration in the AI Studio.

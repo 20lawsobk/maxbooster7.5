@@ -2859,15 +2859,6 @@ export async function registerRoutes(
     }
   }
 
-  // Register Object Storage routes (Hybrid Storage System)
-  try {
-    const { registerObjectStorageRoutes } = await import('./replit_integrations/object_storage/index.js');
-    registerObjectStorageRoutes(app);
-    log('Object Storage routes registered');
-  } catch (e: any) {
-    log(`Warning: Failed to register Object Storage routes - ${e.message}`);
-  }
-
   // OAuth callback routes - maps new URL structure to existing handlers
   // These routes redirect to the socialOAuth callback handler
   const oauthCallbackPaths = [
