@@ -471,6 +471,132 @@ export class ProjectManager {
     return JSON.stringify(projectState, null, 2);
   }
 
+  async saveToBackend(projectId?: string): Promise<{ success: boolean; projectId: string }> {
+    const projectState = this.serializeProject();
+    const metadata = this.state.currentProject;
+    
+    const payload = {
+      title: metadata?.name || 'Untitled Project',
+      tempo: metadata?.tempo || 120,
+      timeSignature: metadata?.timeSignature ? 
+        `${metadata.timeSignature.numerator}/${metadata.timeSignature.denominator}` : '4/4',
+      sampleRate: metadata?.sampleRate || 48000,
+      bitDepth: metadata?.bitDepth || 24,
+      description: metadata?.description || '',
+      dawState: JSON.stringify(projectState),
+      version: metadata?.version || 1,
+    };
+
+    try {
+      if (projectId) {
+        const response = await fetch(`/api/studio/projects/${projectId}/save-daw-state`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) throw new Error('Failed to save project');
+        
+        this.state.isDirty = false;
+        if (this.state.currentProject) {
+          this.state.currentProject.lastSavedAt = Date.now();
+        }
+        this.notify();
+        
+        return { success: true, projectId };
+      } else {
+        const response = await fetch('/api/studio/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) throw new Error('Failed to create project');
+        
+        const data = await response.json();
+        const newProjectId = data.id;
+        
+        if (this.state.currentProject) {
+          this.state.currentProject.id = newProjectId;
+          this.state.currentProject.lastSavedAt = Date.now();
+        }
+        this.state.isDirty = false;
+        this.notify();
+        
+        return { success: true, projectId: newProjectId };
+      }
+    } catch (error) {
+      console.error('[ProjectManager] Backend save failed:', error);
+      throw error;
+    }
+  }
+
+  async loadFromBackend(projectId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`/api/studio/projects/${projectId}/daw-state`);
+      if (!response.ok) {
+        console.warn('[ProjectManager] No DAW state found for project');
+        return false;
+      }
+
+      const data = await response.json();
+      
+      if (data.dawState) {
+        const projectState: ProjectState = JSON.parse(data.dawState);
+        this.deserializeProject(projectState);
+        this.state.currentProject = projectState.metadata;
+        this.state.isDirty = false;
+        this.takeSnapshot();
+        this.startAutosave();
+        this.notify();
+        return true;
+      }
+      
+      if (data.project) {
+        this.state.currentProject = {
+          id: data.project.id,
+          name: data.project.title || 'Untitled',
+          version: 1,
+          createdAt: new Date(data.project.createdAt).getTime(),
+          modifiedAt: data.project.updatedAt ? new Date(data.project.updatedAt).getTime() : Date.now(),
+          lastSavedAt: null,
+          sampleRate: data.project.sampleRate || 48000,
+          bitDepth: data.project.bitDepth || 24,
+          tempo: data.project.bpm || data.project.tempo || 120,
+          timeSignature: { numerator: 4, denominator: 4 },
+          duration: 300,
+          author: '',
+          description: data.project.description || '',
+          tags: data.project.tags || [],
+        };
+        this.state.isDirty = false;
+        this.startAutosave();
+        this.notify();
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[ProjectManager] Backend load failed:', error);
+      return false;
+    }
+  }
+
+  async listBackendProjects(): Promise<Array<{ id: string; name: string; updatedAt: string }>> {
+    try {
+      const response = await fetch('/api/studio/projects');
+      if (!response.ok) throw new Error('Failed to fetch projects');
+      const projects = await response.json();
+      return projects.map((p: any) => ({
+        id: p.id,
+        name: p.title,
+        updatedAt: p.updatedAt || p.createdAt,
+      }));
+    } catch (error) {
+      console.error('[ProjectManager] Failed to list projects:', error);
+      return [];
+    }
+  }
+
   getProjectStats(): {
     trackCount: number;
     clipCount: number;

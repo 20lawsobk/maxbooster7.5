@@ -443,6 +443,93 @@ router.patch('/projects/:projectId', requireAuth, async (req: Request, res: Resp
   }
 });
 
+router.post('/projects/:projectId/save-daw-state', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+
+    if (!await verifyProjectOwnership(projectId, userId)) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const { dawState, title, tempo, timeSignature, sampleRate, bitDepth, description, version } = req.body;
+
+    const metadata = await db.query.projects.findFirst({
+      where: eq(projects.id, projectId),
+      columns: { metadata: true }
+    });
+
+    const existingMetadata = (metadata?.metadata as Record<string, unknown>) || {};
+
+    const [updated] = await db
+      .update(projects)
+      .set({
+        title: title || undefined,
+        bpm: tempo || undefined,
+        timeSignature: timeSignature || undefined,
+        sampleRate: sampleRate || undefined,
+        bitDepth: bitDepth || undefined,
+        description: description || undefined,
+        metadata: {
+          ...existingMetadata,
+          dawState,
+          dawVersion: version,
+          dawSavedAt: new Date().toISOString(),
+        },
+        updatedAt: new Date(),
+      })
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+      .returning();
+
+    logger.info(`[Studio] DAW state saved for project ${projectId}`);
+    res.json({ success: true, project: updated });
+  } catch (error: unknown) {
+    logger.error('Error saving DAW state:', error);
+    res.status(500).json({ error: 'Failed to save DAW state' });
+  }
+});
+
+router.get('/projects/:projectId/daw-state', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const metadata = (project.metadata as Record<string, unknown>) || {};
+    const dawState = metadata.dawState as string | undefined;
+    const dawVersion = metadata.dawVersion as number | undefined;
+    const dawSavedAt = metadata.dawSavedAt as string | undefined;
+
+    res.json({
+      project: {
+        id: project.id,
+        title: project.title,
+        bpm: project.bpm,
+        tempo: project.bpm,
+        timeSignature: project.timeSignature,
+        sampleRate: project.sampleRate,
+        bitDepth: project.bitDepth,
+        description: project.description,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+      },
+      dawState,
+      dawVersion,
+      dawSavedAt,
+    });
+  } catch (error: unknown) {
+    logger.error('Error getting DAW state:', error);
+    res.status(500).json({ error: 'Failed to get DAW state' });
+  }
+});
+
 router.post('/projects/:projectId/sync', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;

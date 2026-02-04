@@ -83,6 +83,9 @@ export interface UseDAWCoreReturn {
   newProject: (name?: string) => void;
   saveProject: () => void;
   loadProject: (data: string) => void;
+  saveToBackend: (projectId?: string) => Promise<{ success: boolean; projectId: string }>;
+  loadFromBackend: (projectId: string) => Promise<boolean>;
+  listBackendProjects: () => Promise<Array<{ id: string; name: string; updatedAt: string }>>;
   
   suggestChords: () => Chord[];
   analyzeMix: () => MixSuggestion[];
@@ -274,6 +277,18 @@ export function useDAWCore(): UseDAWCoreReturn {
     dawCore.loadProject(data);
   }, []);
 
+  const saveToBackend = useCallback(async (projectId?: string) => {
+    return dawCore.project.saveToBackend(projectId);
+  }, []);
+
+  const loadFromBackend = useCallback(async (projectId: string) => {
+    return dawCore.project.loadFromBackend(projectId);
+  }, []);
+
+  const listBackendProjects = useCallback(async () => {
+    return dawCore.project.listBackendProjects();
+  }, []);
+
   const suggestChords = useCallback(() => {
     return dawCore.suggestChords();
   }, []);
@@ -368,6 +383,9 @@ export function useDAWCore(): UseDAWCoreReturn {
     newProject,
     saveProject,
     loadProject,
+    saveToBackend,
+    loadFromBackend,
+    listBackendProjects,
 
     suggestChords,
     analyzeMix,
@@ -417,6 +435,9 @@ export function useDAWCore(): UseDAWCoreReturn {
     newProject,
     saveProject,
     loadProject,
+    saveToBackend,
+    loadFromBackend,
+    listBackendProjects,
     suggestChords,
     analyzeMix,
     suggestArrangement,
