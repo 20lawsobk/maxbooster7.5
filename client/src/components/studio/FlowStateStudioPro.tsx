@@ -63,7 +63,9 @@ import { FlowStateAIGenerate } from './FlowStateAIGenerate';
 import { FlowStateInstrumentDialog, type InstrumentInstance, type InstrumentType } from './FlowStateInstrumentDialog';
 import { PluginControlDialog } from './PluginControlDialog';
 import { AIGeneratorDialog } from './AIGeneratorDialog';
+import { FlowStateProjectSelector } from './FlowStateProjectSelector';
 import { cn } from '@/lib/utils';
+import { dawCore } from '@/lib/daw';
 import { useStudioStore } from '@/lib/studioStore';
 import type { PluginInstance, PluginType } from './PluginRack';
 
@@ -77,6 +79,7 @@ interface FlowStateStudioProProps {
   isAIMixing?: boolean;
   isAIMastering?: boolean;
   onCreateProject?: (title: string) => Promise<{ id: string }> | void;
+  onProjectChange?: (projectId: string, projectName: string) => void;
 }
 
 const MODE_CONFIG: Record<FlowStateMode, { label: string; icon: typeof Music; color: string; description: string }> = {
@@ -105,6 +108,7 @@ export function FlowStateStudioPro({
   isAIMixing = false,
   isAIMastering = false,
   onCreateProject,
+  onProjectChange,
 }: FlowStateStudioProProps) {
   const adapter = useFlowStateAdapter(projectId);
   const { tracks, transport, context, suggestions } = adapter;
@@ -474,10 +478,27 @@ export function FlowStateStudioPro({
               <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${currentModeConfig.color} flex items-center justify-center`}>
                 <currentModeConfig.icon className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <h1 className="text-sm font-semibold text-white">{projectName}</h1>
-                <p className="text-[10px] text-white/50">{currentModeConfig.label} Mode</p>
-              </div>
+              <FlowStateProjectSelector
+                currentProjectId={projectId}
+                currentProjectName={projectName}
+                onProjectSelect={(id, name) => {
+                  if (onProjectChange) {
+                    onProjectChange(id, name);
+                  }
+                }}
+                onNewProject={async (title) => {
+                  if (onCreateProject) {
+                    return onCreateProject(title);
+                  }
+                }}
+                onSaveProject={async () => {
+                  if (projectId) {
+                    await dawCore.project.saveToBackend(projectId);
+                  }
+                }}
+                isDirty={dawCore.project.getState().isDirty}
+              />
+              <p className="text-[10px] text-white/50">{currentModeConfig.label} Mode</p>
             </div>
 
             <div className="flex-1 flex justify-center">

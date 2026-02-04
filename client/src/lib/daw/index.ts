@@ -96,3 +96,17 @@ export type { CommandHistoryState } from './CommandSystem';
 
 export { DAWCore, dawCore } from './DAWCore';
 export type { DAWTrack, DAWCoreState } from './DAWCore';
+
+export { AudioRenderEngine, audioRenderEngine, RENDER_PRESETS, DEFAULT_RENDER_SETTINGS } from './AudioRenderEngine';
+export type { 
+  AudioFormat,
+  BitDepth,
+  SampleRate,
+  DitherType,
+  NormalizationType,
+  LimiterType,
+  RenderMetadata,
+  RenderSettings,
+  RenderProgress,
+  RenderResult
+} from './AudioRenderEngine';
