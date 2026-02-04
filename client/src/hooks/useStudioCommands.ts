@@ -35,8 +35,21 @@ import {
   SetAutomationModeCommand,
   WriteAutomationCommand,
 } from '@/lib/studio/commands/automationCommands';
+import {
+  AddMidiClipCommand,
+  RemoveMidiClipCommand,
+  AddMidiNoteCommand,
+  RemoveMidiNoteCommand,
+  UpdateMidiNoteCommand,
+  TransposeNotesCommand,
+  QuantizeNotesCommand,
+  SetNoteVelocitiesCommand,
+  AddCCEventCommand,
+  RemoveCCEventCommand,
+} from '@/lib/studio/commands/midiCommands';
 import { timelineEngine } from '@/lib/studio/timeline/TimelineEngine';
 import { transportAuthority } from '@/lib/studio/transport/TransportAuthority';
+import { midiEngine } from '@/lib/studio/midi/MidiEngine';
 
 export function useStudioCommands() {
   const store = useStudioStore();
@@ -283,6 +296,85 @@ export function useStudioCommands() {
     executeCommand(new WriteAutomationCommand(trackId, laneId, normalizedPoints, replaceRange));
   }, [executeCommand]);
   
+  const addMidiClip = useCallback((
+    trackId: string,
+    clipData: { name: string; startTick: number; durationTicks: number; notes?: any[]; ccEvents?: any[] }
+  ) => {
+    const cmd = new AddMidiClipCommand(trackId, clipData);
+    executeCommand(cmd);
+    return cmd.createdClipId;
+  }, [executeCommand]);
+  
+  const removeMidiClip = useCallback((trackId: string, clipId: string) => {
+    executeCommand(new RemoveMidiClipCommand(trackId, clipId));
+  }, [executeCommand]);
+  
+  const addMidiNote = useCallback((
+    trackId: string,
+    clipId: string,
+    noteData: { pitch: number; velocity: number; startTick: number; durationTicks: number; channel?: number }
+  ) => {
+    const cmd = new AddMidiNoteCommand(trackId, clipId, noteData);
+    executeCommand(cmd);
+    return cmd.createdNoteId;
+  }, [executeCommand]);
+  
+  const removeMidiNote = useCallback((trackId: string, clipId: string, noteId: string) => {
+    executeCommand(new RemoveMidiNoteCommand(trackId, clipId, noteId));
+  }, [executeCommand]);
+  
+  const updateMidiNote = useCallback((
+    trackId: string,
+    clipId: string,
+    noteId: string,
+    updates: { pitch?: number; velocity?: number; startTick?: number; durationTicks?: number },
+    description?: string
+  ) => {
+    executeCommand(new UpdateMidiNoteCommand(trackId, clipId, noteId, updates, description));
+  }, [executeCommand]);
+  
+  const transposeNotes = useCallback((
+    trackId: string,
+    clipId: string,
+    noteIds: string[],
+    semitones: number
+  ) => {
+    executeCommand(new TransposeNotesCommand(trackId, clipId, noteIds, semitones));
+  }, [executeCommand]);
+  
+  const quantizeNotes = useCallback((
+    trackId: string,
+    clipId: string,
+    noteIds: string[],
+    gridDivision: number,
+    strength: number = 1
+  ) => {
+    executeCommand(new QuantizeNotesCommand(trackId, clipId, noteIds, gridDivision, strength));
+  }, [executeCommand]);
+  
+  const setNoteVelocities = useCallback((
+    trackId: string,
+    clipId: string,
+    noteIds: string[],
+    velocity: number
+  ) => {
+    executeCommand(new SetNoteVelocitiesCommand(trackId, clipId, noteIds, velocity));
+  }, [executeCommand]);
+  
+  const addCCEvent = useCallback((
+    trackId: string,
+    clipId: string,
+    eventData: { controller: number; value: number; tick: number; channel?: number }
+  ) => {
+    const cmd = new AddCCEventCommand(trackId, clipId, eventData);
+    executeCommand(cmd);
+    return cmd.createdEventId;
+  }, [executeCommand]);
+  
+  const removeCCEvent = useCallback((trackId: string, clipId: string, eventId: string) => {
+    executeCommand(new RemoveCCEventCommand(trackId, clipId, eventId));
+  }, [executeCommand]);
+  
   return {
     canUndo,
     canRedo,
@@ -320,8 +412,20 @@ export function useStudioCommands() {
     setAutomationMode,
     writeAutomation,
     
+    addMidiClip,
+    removeMidiClip,
+    addMidiNote,
+    removeMidiNote,
+    updateMidiNote,
+    transposeNotes,
+    quantizeNotes,
+    setNoteVelocities,
+    addCCEvent,
+    removeCCEvent,
+    
     timeline: timelineEngine,
     transport: transportAuthority,
+    midi: midiEngine,
     commandManager,
   };
 }
