@@ -212,6 +212,23 @@ interface StudioState {
   updateAudioClip: (trackId: string, clipId: string, updates: Partial<AudioClip>) => void;
   moveClip: (fromTrackId: string, toTrackId: string, clipId: string, newStartTime: number) => void;
   
+  addMidiClip: (trackId: string, clip: Omit<MidiClip, 'id'>) => string;
+  removeMidiClip: (trackId: string, clipId: string) => void;
+  updateMidiClip: (trackId: string, clipId: string, updates: Partial<MidiClip>) => void;
+  addMidiNote: (trackId: string, clipId: string, note: Omit<MidiNote, 'id'>) => string;
+  removeMidiNote: (trackId: string, clipId: string, noteId: string) => void;
+  updateMidiNote: (trackId: string, clipId: string, noteId: string, updates: Partial<MidiNote>) => void;
+  
+  addSend: (trackId: string, send: Omit<TrackSend, 'id'>) => string;
+  removeSend: (trackId: string, sendId: string) => void;
+  updateSend: (trackId: string, sendId: string, updates: Partial<TrackSend>) => void;
+  
+  addAutomationLane: (trackId: string, parameterId: string, parameterName: string) => string;
+  removeAutomationLane: (trackId: string, laneId: string) => void;
+  addAutomationPoint: (trackId: string, laneId: string, time: number, value: number, curve?: AutomationPoint['curve']) => void;
+  removeAutomationPoint: (trackId: string, laneId: string, index: number) => void;
+  updateAutomationPoint: (trackId: string, laneId: string, index: number, updates: Partial<AutomationPoint>) => void;
+  
   selectTracks: (trackIds: string[]) => void;
   selectClips: (clipIds: string[]) => void;
   clearSelection: () => void;
@@ -593,6 +610,205 @@ export const useStudioStore = create<StudioState>()(
               project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
             };
           }),
+
+          addMidiClip: (trackId, clip) => {
+            const clipId = generateId();
+            set((state) => ({
+              tracks: state.tracks.map(t => 
+                t.id === trackId 
+                  ? { ...t, midiClips: [...t.midiClips, { ...clip, id: clipId }] }
+                  : t
+              ),
+              project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+            }));
+            return clipId;
+          },
+
+          removeMidiClip: (trackId, clipId) => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { ...t, midiClips: t.midiClips.filter(c => c.id !== clipId) }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          updateMidiClip: (trackId, clipId, updates) => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { ...t, midiClips: t.midiClips.map(c => c.id === clipId ? { ...c, ...updates } : c) }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          addMidiNote: (trackId, clipId, note) => {
+            const noteId = generateId();
+            set((state) => ({
+              tracks: state.tracks.map(t => 
+                t.id === trackId 
+                  ? { 
+                      ...t, 
+                      midiClips: t.midiClips.map(c => 
+                        c.id === clipId 
+                          ? { ...c, notes: [...c.notes, { ...note, id: noteId }] }
+                          : c
+                      ) 
+                    }
+                  : t
+              ),
+              project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+            }));
+            return noteId;
+          },
+
+          removeMidiNote: (trackId, clipId, noteId) => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { 
+                    ...t, 
+                    midiClips: t.midiClips.map(c => 
+                      c.id === clipId 
+                        ? { ...c, notes: c.notes.filter(n => n.id !== noteId) }
+                        : c
+                    ) 
+                  }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          updateMidiNote: (trackId, clipId, noteId, updates) => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { 
+                    ...t, 
+                    midiClips: t.midiClips.map(c => 
+                      c.id === clipId 
+                        ? { ...c, notes: c.notes.map(n => n.id === noteId ? { ...n, ...updates } : n) }
+                        : c
+                    ) 
+                  }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          addSend: (trackId, send) => {
+            const sendId = generateId();
+            set((state) => ({
+              tracks: state.tracks.map(t => 
+                t.id === trackId 
+                  ? { ...t, sends: [...t.sends, { ...send, id: sendId }] }
+                  : t
+              ),
+              project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+            }));
+            return sendId;
+          },
+
+          removeSend: (trackId, sendId) => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { ...t, sends: t.sends.filter(s => s.id !== sendId) }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          updateSend: (trackId, sendId, updates) => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { ...t, sends: t.sends.map(s => s.id === sendId ? { ...s, ...updates } : s) }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          addAutomationLane: (trackId, parameterId, parameterName) => {
+            const laneId = generateId();
+            set((state) => ({
+              tracks: state.tracks.map(t => 
+                t.id === trackId 
+                  ? { 
+                      ...t, 
+                      automationLanes: [...t.automationLanes, { 
+                        id: laneId, 
+                        parameterId, 
+                        parameterName, 
+                        visible: true, 
+                        points: [] 
+                      }] 
+                    }
+                  : t
+              ),
+              project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+            }));
+            return laneId;
+          },
+
+          removeAutomationLane: (trackId, laneId) => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { ...t, automationLanes: t.automationLanes.filter(l => l.id !== laneId) }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          addAutomationPoint: (trackId, laneId, time, value, curve = 'linear') => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { 
+                    ...t, 
+                    automationLanes: t.automationLanes.map(l => 
+                      l.id === laneId 
+                        ? { 
+                            ...l, 
+                            points: [...l.points, { time, value, curve }].sort((a, b) => a.time - b.time) 
+                          }
+                        : l
+                    ) 
+                  }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          removeAutomationPoint: (trackId, laneId, index) => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { 
+                    ...t, 
+                    automationLanes: t.automationLanes.map(l => 
+                      l.id === laneId 
+                        ? { ...l, points: l.points.filter((_, i) => i !== index) }
+                        : l
+                    ) 
+                  }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          updateAutomationPoint: (trackId, laneId, index, updates) => set((state) => ({
+            tracks: state.tracks.map(t => 
+              t.id === trackId 
+                ? { 
+                    ...t, 
+                    automationLanes: t.automationLanes.map(l => 
+                      l.id === laneId 
+                        ? { 
+                            ...l, 
+                            points: l.points.map((p, i) => i === index ? { ...p, ...updates } : p) 
+                          }
+                        : l
+                    ) 
+                  }
+                : t
+            ),
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
           
           selectTracks: (trackIds) => set((state) => ({
             view: { ...state.view, selectedTrackIds: trackIds, focusedTrackId: trackIds[0] || null }
