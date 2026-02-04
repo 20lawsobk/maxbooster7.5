@@ -825,7 +825,13 @@ router.post('/upload', upload.fields([
 
 router.get('/audio/:path(*)', async (req: Request, res: Response) => {
   try {
-    const fileKey = req.params.path;
+    let fileKey = req.params.path;
+    
+    // Strip 'uploads/' prefix if present - the storage key doesn't include this prefix
+    // The 'uploads/' prefix is added by LocalStorageProvider.getDownloadUrl for URLs
+    if (fileKey.startsWith('uploads/')) {
+      fileKey = fileKey.substring('uploads/'.length);
+    }
     
     const exists = await storageService.fileExists(fileKey);
     if (!exists) {
