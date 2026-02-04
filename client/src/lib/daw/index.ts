@@ -110,3 +110,11 @@ export type {
   RenderProgress,
   RenderResult
 } from './AudioRenderEngine';
+
+export { AudioWorkletEngine, audioWorkletEngine } from './AudioWorkletEngine';
+export type {
+  AudioEngineConfig,
+  PlaybackState,
+  MeteringData,
+  ScheduledClip
+} from './AudioWorkletEngine';
