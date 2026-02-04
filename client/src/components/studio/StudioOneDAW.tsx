@@ -61,8 +61,10 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const formatBars = useCallback((seconds: number) => {
     const beatsPerSecond = transport.tempo / 60;
     const totalBeats = seconds * beatsPerSecond;
-    const bars = Math.floor(totalBeats / transport.timeSignature?.numerator || 4) + 1;
-    const beats = Math.floor(totalBeats % (transport.timeSignature?.numerator || 4)) + 1;
+    const timeSigParts = transport.timeSignature?.split('/') || ['4', '4'];
+    const numerator = parseInt(timeSigParts[0], 10) || 4;
+    const bars = Math.floor(totalBeats / numerator) + 1;
+    const beats = Math.floor(totalBeats % numerator) + 1;
     const ticks = Math.floor((totalBeats % 1) * 480);
     return `${bars}.${beats}.${ticks.toString().padStart(3, '0')}`;
   }, [transport.tempo, transport.timeSignature]);
@@ -327,7 +329,7 @@ function TransportBar({
 
       <div className="flex items-center gap-2">
         <span className="text-xs text-gray-400">Time Sig</span>
-        <span className="font-mono text-sm">{transport.timeSignature?.numerator || 4}/{transport.timeSignature?.denominator || 4}</span>
+        <span className="font-mono text-sm">{transport.timeSignature || '4/4'}</span>
       </div>
 
       <div className="flex-1" />
