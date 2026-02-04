@@ -240,6 +240,47 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     }
   }, [projectId, toast, loadProjectData]);
 
+  const handleGeneratePercussion = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      await apiRequest('/api/studio/ai/generate-percussion', {
+        method: 'POST',
+        body: JSON.stringify({ projectId }),
+      });
+      toast({ title: 'Percussion Generated', description: 'AI has created a percussion pattern for your project.' });
+      loadProjectData();
+    } catch (error: any) {
+      toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, toast, loadProjectData]);
+
+  const handleSuggestChords = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const result = await apiRequest('/api/studio/ai/suggest-chords', {
+        method: 'POST',
+        body: JSON.stringify({ projectId }),
+      });
+      toast({ title: 'Chord Suggestions Ready', description: `Suggested progression: ${result.progression || 'I-V-vi-IV'}` });
+    } catch (error: any) {
+      toast({ title: 'Suggestion Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, toast]);
+
+  const handleAnalyzeAudio = useCallback(async () => {
+    if (!projectId) return null;
+    try {
+      const result = await apiRequest('/api/studio/ai/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ projectId }),
+      });
+      return result;
+    } catch (error: any) {
+      toast({ title: 'Analysis Failed', description: error.message, variant: 'destructive' });
+      return null;
+    }
+  }, [projectId, toast]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -373,8 +414,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             onAIGenerate={() => setShowAIGenerator(true)}
             onGenerateMelody={handleGenerateMelody}
             onGenerateDrums={handleGenerateDrums}
+            onGeneratePercussion={handleGeneratePercussion}
             onGenerateBass={handleGenerateBass}
             onGenerateChords={handleGenerateChords}
+            onSuggestChords={handleSuggestChords}
+            onAnalyzeAudio={handleAnalyzeAudio}
             onDetectKey={handleDetectKey}
             onAutoArrange={handleAutoArrange}
             onClose={() => setShowAIPanel(false)}
