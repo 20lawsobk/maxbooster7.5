@@ -91,8 +91,8 @@ export type {
   ProjectManagerState 
 } from './ProjectManager';
 
-export { Command, CommandHistory, BatchCommand, commandHistory, createCommand } from './CommandSystem';
-export type { CommandHistoryState } from './CommandSystem';
+export { CommandHistory, BatchCommand, commandHistory, createCommand } from './CommandSystem';
+export type { Command, CommandHistoryState } from './CommandSystem';
 
 export { DAWCore, dawCore } from './DAWCore';
 export type { DAWTrack, DAWCoreState } from './DAWCore';
