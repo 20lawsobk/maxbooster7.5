@@ -902,7 +902,26 @@ router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res:
       }
     }
 
-    res.json(tracks);
+    // Fetch all clips for this project to include in the response
+    const clips = await db.query.audioClips.findMany({
+      where: eq(audioClips.projectId, projectId),
+    });
+
+    // Map clips to use filePath for frontend compatibility
+    const mappedClips = clips.map(clip => ({
+      id: clip.id,
+      trackId: clip.trackId,
+      name: clip.name,
+      filePath: clip.audioUrl, // audioUrl stored in DB, but frontend expects filePath
+      startTime: clip.startTime || 0,
+      duration: clip.duration || 0,
+      offset: clip.offset || 0,
+      gain: clip.gain || 1,
+      fadeIn: clip.fadeIn || 0,
+      fadeOut: clip.fadeOut || 0,
+    }));
+
+    res.json({ tracks, clips: mappedClips });
   } catch (error: unknown) {
     logger.error('Error getting tracks:', error);
     res.status(500).json({ error: 'Failed to get tracks' });

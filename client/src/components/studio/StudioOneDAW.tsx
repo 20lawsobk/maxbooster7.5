@@ -21,7 +21,10 @@ import { FlowStatePluginBrowser } from './FlowStatePluginBrowser';
 import { FlowStateAIPanel } from './FlowStateAIPanel';
 import { AIMusicGenerator } from './AIMusicGenerator';
 import { FlowStateKeyboardShortcuts } from './FlowStateKeyboardShortcuts';
+import { StudioProjectDialog } from './StudioProjectDialog';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAudioEngine } from '@/hooks/useAudioEngine';
 
 interface StudioOneDAWProps {
   projectId: string | null;
@@ -39,7 +42,13 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const store = useUnifiedStore();
   const { tracks, masterTrack, transport, view, project, canUndo, canRedo } = store;
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { forceSave, loadProjectData } = useProjectSync(projectId);
+  const audioEngine = useAudioEngine();
+  const audioInitializedRef = useRef(false);
+  const loadedClipsRef = useRef<Set<string>>(new Set());
+  const loadedTracksRef = useRef<Set<string>>(new Set());
+  const prevProjectIdRef = useRef<string | null>(null);
   
   const [isLoading, setIsLoading] = useState(false);
   const [showInspector, setShowInspector] = useState(true);
@@ -48,6 +57,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [scrollX, setScrollX] = useState(0);
+  const [showProjectDialog, setShowProjectDialog] = useState(false);
   const projectLoadedRef = useRef<string | null>(null);
 
   const [showPluginBrowser, setShowPluginBrowser] = useState(false);
@@ -102,7 +112,13 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       }
       if (e.key === ' ' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
-        transport.isPlaying ? store.pause() : store.play();
+        if (transport.isPlaying) {
+          store.pause();
+          if (audioInitializedRef.current) audioEngine.pause();
+        } else {
+          store.play();
+          if (audioInitializedRef.current) audioEngine.play();
+        }
       }
       if (e.key === 'r' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
@@ -111,6 +127,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (e.key === 'l' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
         store.toggleLoop();
+        // Audio engine loop sync would go here if needed
+      }
+      if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        setShowProjectDialog(true);
       }
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
@@ -140,7 +161,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [store, transport.isPlaying]);
+  }, [store, transport.isPlaying, audioEngine]);
 
   const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -160,11 +181,133 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     return `${bars}.${beats}.${ticks.toString().padStart(3, '0')}`;
   }, [transport.tempo, transport.timeSignature]);
 
-  const handlePlay = useCallback(() => store.play(), [store]);
-  const handlePause = useCallback(() => store.pause(), [store]);
-  const handleStop = useCallback(() => store.stop(), [store]);
+  // Clear audio engine state when project changes
+  useEffect(() => {
+    if (projectId !== prevProjectIdRef.current && audioInitializedRef.current) {
+      console.log('[DAW] Project changed, clearing audio engine state');
+      audioEngine.stop();
+      audioEngine.setPositionTime(0);
+      
+      // Remove all previously loaded clips
+      for (const clipId of loadedClipsRef.current) {
+        audioEngine.removeClip(clipId);
+      }
+      loadedClipsRef.current.clear();
+      
+      // Remove all previously loaded tracks
+      for (const trackId of loadedTracksRef.current) {
+        audioEngine.removeTrack(trackId);
+      }
+      loadedTracksRef.current.clear();
+    }
+    prevProjectIdRef.current = projectId;
+  }, [projectId, audioEngine]);
+
+  // Initialize audio engine and load clips when tracks change
+  useEffect(() => {
+    const initAndLoadAudio = async () => {
+      if (!audioInitializedRef.current) {
+        try {
+          await audioEngine.initialize();
+          audioInitializedRef.current = true;
+        } catch (err) {
+          console.error('[DAW] Failed to initialize audio engine:', err);
+          return;
+        }
+      }
+
+      // Create tracks in audio engine
+      for (const track of tracks) {
+        if (!loadedTracksRef.current.has(track.id)) {
+          audioEngine.createTrack(track.id);
+          loadedTracksRef.current.add(track.id);
+        }
+        audioEngine.setTrackVolume(track.id, track.volume ?? 0.8);
+        audioEngine.setTrackPan(track.id, track.pan ?? 0);
+        audioEngine.setTrackMute(track.id, track.muted ?? false);
+        audioEngine.setTrackSolo(track.id, track.solo ?? false);
+      }
+
+      // Load and schedule audio clips
+      for (const track of tracks) {
+        for (const clip of (track.audioClips || [])) {
+          if (loadedClipsRef.current.has(clip.id)) continue;
+          if (!clip.filePath) continue;
+
+          try {
+            const buffer = await audioEngine.loadAudioFile(clip.filePath);
+            const sampleRate = audioEngine.sampleRate || 48000;
+            const startSample = Math.floor((clip.startTime || 0) * sampleRate);
+            const durationSeconds = clip.duration || buffer.duration;
+
+            audioEngine.scheduleClip({
+              id: clip.id,
+              trackId: track.id,
+              buffer,
+              startSample,
+              offsetSamples: Math.floor((clip.offset || 0) * sampleRate),
+              durationSamples: Math.floor(durationSeconds * sampleRate),
+              gain: clip.gain ?? 1,
+              fadeInSamples: Math.floor((clip.fadeIn || 0) * sampleRate),
+              fadeOutSamples: Math.floor((clip.fadeOut || 0) * sampleRate),
+            });
+
+            loadedClipsRef.current.add(clip.id);
+            console.log(`[DAW] Loaded clip: ${clip.name} on track ${track.name}`);
+          } catch (err) {
+            console.error(`[DAW] Failed to load clip ${clip.name}:`, err);
+          }
+        }
+      }
+    };
+
+    if (tracks.length > 0) {
+      initAndLoadAudio();
+    }
+  }, [tracks, audioEngine]);
+
+  // Sync transport position to audio engine
+  const prevPositionRef = useRef(transport.position);
+  useEffect(() => {
+    if (audioInitializedRef.current && transport.position !== prevPositionRef.current) {
+      // Only sync if not playing (to avoid fighting with playback position)
+      if (!transport.isPlaying) {
+        audioEngine.setPositionTime(transport.position);
+      }
+      prevPositionRef.current = transport.position;
+    }
+  }, [transport.position, transport.isPlaying, audioEngine]);
+
+  const handlePlay = useCallback(() => {
+    store.play();
+    if (audioInitializedRef.current) {
+      audioEngine.play();
+    }
+  }, [store, audioEngine]);
+
+  const handlePause = useCallback(() => {
+    store.pause();
+    if (audioInitializedRef.current) {
+      audioEngine.pause();
+    }
+  }, [store, audioEngine]);
+
+  const handleStop = useCallback(() => {
+    store.stop();
+    if (audioInitializedRef.current) {
+      audioEngine.stop();
+    }
+  }, [store, audioEngine]);
+
   const handleRecord = useCallback(() => store.record(), [store]);
-  const handleRewind = useCallback(() => store.setPosition(0), [store]);
+  
+  const handleRewind = useCallback(() => {
+    store.setPosition(0);
+    if (audioInitializedRef.current) {
+      audioEngine.setPositionTime(0);
+    }
+  }, [store, audioEngine]);
+  
   const handleToggleLoop = useCallback(() => store.toggleLoop(), [store]);
 
   const handleAddTrack = useCallback((type: 'audio' | 'instrument' | 'midi' | 'bus') => {
@@ -418,6 +561,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             onZoomIn={() => setZoom(z => Math.min(z * 1.25, 4))}
             onZoomOut={() => setZoom(z => Math.max(z / 1.25, 0.25))}
             onAddTrack={handleAddTrack}
+            onNewProject={() => setShowProjectDialog(true)}
             showInspector={showInspector}
             showEditor={showEditor}
             showMixer={showMixer}
@@ -526,6 +670,15 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       <FlowStateKeyboardShortcuts
         isOpen={showKeyboardShortcuts}
         onClose={() => setShowKeyboardShortcuts(false)}
+      />
+
+      <StudioProjectDialog
+        open={showProjectDialog}
+        onOpenChange={setShowProjectDialog}
+        onProjectCreated={(newProjectId) => {
+          queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+        }}
       />
     </div>
   );
@@ -743,6 +896,7 @@ interface ToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onAddTrack: (type: 'audio' | 'instrument' | 'midi' | 'bus') => void;
+  onNewProject: () => void;
   showInspector: boolean;
   showEditor: boolean;
   showMixer: boolean;
@@ -756,7 +910,7 @@ interface ToolbarProps {
 }
 
 function Toolbar({
-  zoom, onZoomIn, onZoomOut, onAddTrack,
+  zoom, onZoomIn, onZoomOut, onAddTrack, onNewProject,
   showInspector, showEditor, showMixer,
   onToggleInspector, onToggleEditor, onToggleMixer,
   onOpenAllPlugins, onOpenInstruments, onOpenEffects, onOpenShortcuts
@@ -765,6 +919,23 @@ function Toolbar({
 
   return (
     <div className="h-10 bg-[#1f1f23] border-b border-[#333] flex items-center px-3 gap-2 shrink-0">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onNewProject}
+            className="h-7 gap-1.5 text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400"
+          >
+            <FolderOpen className="h-3.5 w-3.5" />
+            New Project
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Create New Project (Ctrl+N)</TooltipContent>
+      </Tooltip>
+
+      <div className="h-5 w-px bg-[#444]" />
+
       <div className="relative">
         <Button
           variant="ghost"

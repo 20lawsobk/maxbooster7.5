@@ -178,6 +178,18 @@ export function useProjectSync(projectId: string | null) {
       const state = store.getState();
       const existingTrackIds = new Set(state.tracks.map(t => t.id));
 
+      // Helper to normalize audio URLs for playback
+      const normalizeAudioUrl = (url: string): string => {
+        if (!url) return url;
+        // If it already starts with /api/, it's already normalized
+        if (url.startsWith('/api/')) return url;
+        // If it starts with http, it's an absolute URL
+        if (url.startsWith('http')) return url;
+        // Otherwise, prepend the marketplace audio endpoint
+        const cleanPath = url.replace(/^\/+/, '');
+        return `/api/marketplace/audio/${cleanPath}`;
+      };
+
       for (const track of backendTracks) {
         if (!existingTrackIds.has(track.id)) {
           const trackType = (track.type || 'audio') as TrackType;
@@ -185,9 +197,10 @@ export function useProjectSync(projectId: string | null) {
           
           const trackClips = backendClips.filter(c => c.trackId === track.id);
           for (const clip of trackClips) {
+            const normalizedPath = normalizeAudioUrl(clip.filePath);
             store.addAudioClip(newTrackId, {
               name: clip.name || 'Audio Clip',
-              filePath: clip.filePath,
+              filePath: normalizedPath,
               startTime: clip.startTime || 0,
               duration: clip.duration || 10,
               offset: clip.offset || 0,
