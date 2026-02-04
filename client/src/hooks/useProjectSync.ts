@@ -148,6 +148,9 @@ export function useProjectSync(projectId: string | null) {
   const loadProjectData = useCallback(async () => {
     if (!projectId) return false;
 
+    // Reset store state before loading new project to prevent data bleed
+    store.resetForNewProject();
+
     try {
       const [projectRes, tracksRes] = await Promise.all([
         fetch(`/api/studio/projects/${projectId}`),
@@ -225,6 +228,8 @@ export function useProjectSync(projectId: string | null) {
         }
       }
 
+      // Mark project as saved after loading to clear isDirty flag
+      store.markSaved();
       console.log(`[ProjectSync] Loaded project ${projectId} with ${backendTracks.length} tracks`);
       return true;
     } catch (error) {

@@ -224,6 +224,7 @@ interface StudioState {
   redo: () => void;
   pushHistory: (action: string) => void;
   markSaved: () => void;
+  resetForNewProject: () => void;
   
   setAudioEngine: (engine: 'webaudio' | 'elementary' | 'tonejs') => void;
   setEngineReady: (ready: boolean) => void;
@@ -654,6 +655,56 @@ export const useStudioStore = create<StudioState>()(
           markSaved: () => set((state) => ({
             project: { ...state.project, isDirty: false }
           })),
+          
+          resetForNewProject: () => set({
+            project: {
+              id: generateId(),
+              name: 'Untitled Project',
+              sampleRate: 48000,
+              bitDepth: 32,
+              duration: 300,
+              createdAt: Date.now(),
+              modifiedAt: Date.now(),
+              isDirty: false,
+            },
+            transport: {
+              isPlaying: false,
+              isRecording: false,
+              isPaused: false,
+              isLooping: false,
+              position: 0,
+              loopStart: 0,
+              loopEnd: 16,
+              tempo: 120,
+              timeSignatureNumerator: 4,
+              timeSignatureDenominator: 4,
+              metronomeEnabled: false,
+              countInEnabled: false,
+              countInBars: 1,
+              prerollEnabled: false,
+              prerollBars: 1,
+            },
+            view: {
+              zoom: 1,
+              scrollX: 0,
+              scrollY: 0,
+              snapToGrid: true,
+              gridSize: 0.25,
+              showMixer: true,
+              showPluginBrowser: false,
+              showPianoRoll: false,
+              selectedTrackIds: [],
+              selectedClipIds: [],
+              focusedTrackId: null,
+              editMode: 'select' as const,
+              timeDisplay: 'bars' as const,
+              showWaveforms: true,
+              showAutomation: false,
+            },
+            tracks: [],
+            history: [],
+            historyIndex: -1,
+          }),
           
           setAudioEngine: (engine) => set({ audioEngine: engine }),
           

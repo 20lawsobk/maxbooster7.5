@@ -95,6 +95,12 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   useEffect(() => {
     if (projectId && projectId !== projectLoadedRef.current) {
+      // Clear previous project's loaded clips/tracks refs
+      loadedClipsRef.current.clear();
+      loadedTracksRef.current.clear();
+      // Clear version history for new project (will be loaded from localStorage in separate effect)
+      setProjectVersions([]);
+      
       projectLoadedRef.current = projectId;
       setIsLoading(true);
       loadProjectData().finally(() => setIsLoading(false));
