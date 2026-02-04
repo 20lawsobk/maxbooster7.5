@@ -31,7 +31,18 @@ import {
   Eye,
   EyeOff,
   Link as LinkIcon,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Loader2,
+  Crown,
+  Calendar,
+  Receipt,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
@@ -351,19 +362,79 @@ export default function Settings() {
 
   const handleCancelSubscription = async () => {
     try {
-      await apiRequest('POST', '/api/billing/cancel-subscription');
+      const response = await apiRequest('POST', '/api/billing/cancel-subscription');
+      const data = await response.json();
+      
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+      
       toast({
         title: 'Subscription Cancelled',
-        description: 'Your subscription will remain active until the end of the billing period',
+        description: data.cancelAt 
+          ? `Your subscription will remain active until ${new Date(data.cancelAt).toLocaleDateString()}`
+          : 'Your subscription will remain active until the end of the billing period',
       });
       setCancelSubscriptionOpen(false);
-    } catch (error: unknown) {
+    } catch (error: any) {
+      const errorData = error.body || error;
+      const errorMessage = errorData.code === 'SUBSCRIPTION_ALREADY_CANCELLED' 
+        ? 'Your subscription is already cancelled'
+        : errorData.code === 'SUBSCRIPTION_ALREADY_CANCELLING'
+        ? `Your subscription is already set to cancel on ${errorData.cancelAt ? new Date(errorData.cancelAt).toLocaleDateString() : 'the end of your billing period'}`
+        : errorData.code === 'LIFETIME_CANNOT_CANCEL'
+        ? 'Lifetime subscriptions cannot be cancelled'
+        : errorData.message || 'Failed to cancel subscription';
+      
       toast({
         title: 'Error',
-        description: 'Failed to cancel subscription',
+        description: errorMessage,
         variant: 'destructive',
       });
+    }
+  };
+
+  const [reactivating, setReactivating] = useState(false);
+  
+  const handleReactivateSubscription = async () => {
+    setReactivating(true);
+    try {
+      const response = await apiRequest('POST', '/api/billing/reactivate-subscription');
+      const data = await response.json();
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+      
+      toast({
+        title: 'Subscription Reactivated',
+        description: data.nextBillingDate 
+          ? `Your subscription will renew on ${new Date(data.nextBillingDate).toLocaleDateString()}`
+          : 'Your subscription has been reactivated!',
+      });
+    } catch (error: any) {
+      const errorData = error.body || error;
+      
+      if (errorData.code === 'PAYMENT_METHOD_REQUIRED') {
+        toast({
+          title: 'Payment Method Required',
+          description: 'Please add a payment method before reactivating your subscription.',
+          variant: 'destructive',
+        });
+        setPaymentUpdateOpen(true);
+      } else if (errorData.code === 'SUBSCRIPTION_FULLY_CANCELLED') {
+        toast({
+          title: 'Cannot Reactivate',
+          description: 'Your subscription has been fully cancelled. Please create a new subscription.',
+        });
+        navigate('/pricing');
+      } else {
+        toast({
+          title: 'Reactivation Failed',
+          description: errorData.message || 'Failed to reactivate subscription. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setReactivating(false);
     }
   };
 
@@ -962,44 +1033,147 @@ export default function Settings() {
           <TabsContent value="billing" className="space-y-6">
             <Card className="glassmorphism">
               <CardHeader>
-                <CardTitle>Billing & Subscription</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Billing & Subscription
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {subscriptionData?.syncError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Sync Issue</AlertTitle>
+                    <AlertDescription>
+                      {subscriptionData.syncError}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="ml-2"
+                        onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] })}
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {subscriptionData?.isPastDue && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Payment Past Due</AlertTitle>
+                    <AlertDescription>
+                      Your payment is past due. Please update your payment method to continue using Max Booster Pro features.
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="ml-2"
+                        onClick={() => setPaymentUpdateOpen(true)}
+                      >
+                        Update Payment
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {subscriptionData?.cancelAtPeriodEnd && (
+                  <Alert className="mb-4 border-orange-200 bg-orange-50 dark:bg-orange-900/20">
+                    <Clock className="h-4 w-4 text-orange-600" />
+                    <AlertTitle className="text-orange-800 dark:text-orange-400">Subscription Ending</AlertTitle>
+                    <AlertDescription className="text-orange-700 dark:text-orange-300">
+                      Your subscription will end on {subscriptionData.currentPeriodEnd ? new Date(subscriptionData.currentPeriodEnd).toLocaleDateString() : 'the end of your billing period'}.
+                      {subscriptionData.daysUntilRenewal && ` (${subscriptionData.daysUntilRenewal} days remaining)`}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {/* Current Plan */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Current Plan</h3>
-                  <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    Current Plan
+                    {subscriptionData?.statusBadge && (
+                      <Badge 
+                        variant={subscriptionData.statusColor === 'green' ? 'default' : 
+                                subscriptionData.statusColor === 'red' ? 'destructive' : 
+                                subscriptionData.statusColor === 'orange' ? 'secondary' : 
+                                subscriptionData.statusColor === 'gold' ? 'default' : 'outline'}
+                        className={subscriptionData.statusColor === 'gold' ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-black' : ''}
+                      >
+                        {subscriptionData.statusColor === 'gold' && <Crown className="h-3 w-3 mr-1" />}
+                        {subscriptionData.statusColor === 'green' && <CheckCircle className="h-3 w-3 mr-1" />}
+                        {subscriptionData.statusColor === 'orange' && <Clock className="h-3 w-3 mr-1" />}
+                        {subscriptionData.statusColor === 'red' && <XCircle className="h-3 w-3 mr-1" />}
+                        {subscriptionData.statusBadge}
+                      </Badge>
+                    )}
+                  </h3>
+                  <div className={`p-4 rounded-lg border ${
+                    subscriptionData?.isLifetime ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-yellow-300' :
+                    subscriptionData?.tier !== 'free' ? 'bg-primary/10 border-primary/20' : 'bg-muted/20 border-muted/40'
+                  }`}>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-primary">
-                          {subscriptionData?.planName || 'Free Plan'}
+                        <p className={`font-medium ${subscriptionData?.isLifetime ? 'text-yellow-700 dark:text-yellow-400' : 'text-primary'}`}>
+                          {subscriptionData?.isLifetime ? 'Lifetime Access' :
+                           subscriptionData?.tier === 'yearly' ? 'Yearly Plan' :
+                           subscriptionData?.tier === 'monthly' ? 'Monthly Plan' : 'Free Plan'}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {subscriptionData?.description || 'Limited access'}
+                          {subscriptionData?.isLifetime ? 'Permanent access to all features' :
+                           subscriptionData?.tier !== 'free' ? 'Full access to all features' : 'Limited access'}
                         </p>
+                        {subscriptionData?.currentPeriodEnd && !subscriptionData?.isLifetime && (
+                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {subscriptionData.cancelAtPeriodEnd ? 'Ends' : 'Renews'}: {new Date(subscriptionData.currentPeriodEnd).toLocaleDateString()}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold">${subscriptionData?.price || 0}</p>
-                        <p className="text-sm text-muted-foreground">
-                          per {subscriptionData?.interval || 'month'}
-                        </p>
+                        {subscriptionData?.isLifetime ? (
+                          <p className="text-xl font-bold text-yellow-700 dark:text-yellow-400">Lifetime</p>
+                        ) : (
+                          <>
+                            <p className="text-2xl font-bold">
+                              ${subscriptionData?.pricing?.[subscriptionData?.tier as keyof typeof subscriptionData.pricing] || subscriptionData?.price || 0}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              per {subscriptionData?.tier === 'yearly' ? 'month (billed yearly)' : 'month'}
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="mt-4 flex space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => navigate('/pricing')}
-                        data-testid="button-change-plan"
-                      >
-                        Change Plan
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => setCancelSubscriptionOpen(true)}
-                        data-testid="button-cancel-subscription"
-                      >
-                        Cancel Subscription
-                      </Button>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {subscriptionData?.canReactivate ? (
+                        <Button
+                          onClick={handleReactivateSubscription}
+                          className="bg-green-600 hover:bg-green-700"
+                          data-testid="button-reactivate-subscription"
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Reactivate Subscription
+                        </Button>
+                      ) : !subscriptionData?.isLifetime && (
+                        <>
+                          <Button
+                            variant="outline"
+                            onClick={() => navigate('/pricing')}
+                            data-testid="button-change-plan"
+                          >
+                            {subscriptionData?.tier === 'free' ? 'Upgrade Plan' : 'Change Plan'}
+                          </Button>
+                          {subscriptionData?.tier !== 'free' && (
+                            <Button
+                              variant="ghost"
+                              onClick={() => setCancelSubscriptionOpen(true)}
+                              data-testid="button-cancel-subscription"
+                            >
+                              Cancel Subscription
+                            </Button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1040,7 +1214,10 @@ export default function Settings() {
 
                 {/* Billing History */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Billing History</h3>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Receipt className="h-4 w-4" />
+                    Billing History
+                  </h3>
                   {billingLoading ? (
                     <div className="space-y-3">
                       {[...Array(3)].map((_, i) => (
@@ -1051,29 +1228,67 @@ export default function Settings() {
                       ))}
                     </div>
                   ) : billingHistory.length === 0 ? (
-                    <div className="text-center py-8">
+                    <div className="text-center py-8 bg-muted/10 rounded-lg">
+                      <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                       <p className="text-gray-500 dark:text-gray-400">No billing history yet</p>
+                      <p className="text-sm text-muted-foreground">Your payment history will appear here</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {billingHistory.map((billing: unknown) => (
+                      {billingHistory.map((billing: any) => (
                         <div
                           key={billing.id || billing.invoiceId}
-                          className="flex items-center justify-between p-3 bg-muted/20 rounded"
+                          className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20 hover:bg-muted/20 transition-colors"
                           data-testid={`billing-${billing.invoiceId}`}
                         >
-                          <div>
-                            <p className="font-medium">
-                              {new Date(billing.date).toLocaleDateString()}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{billing.invoiceId}</p>
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${
+                              billing.status === 'paid' ? 'bg-green-100 dark:bg-green-900/30' :
+                              billing.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30' :
+                              billing.status === 'failed' ? 'bg-red-100 dark:bg-red-900/30' :
+                              'bg-muted'
+                            }`}>
+                              {billing.status === 'paid' ? (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              ) : billing.status === 'pending' ? (
+                                <Clock className="h-4 w-4 text-yellow-600" />
+                              ) : billing.status === 'failed' ? (
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              ) : (
+                                <Receipt className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">
+                                {new Date(billing.date).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </p>
+                              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                {billing.description || billing.invoiceId}
+                                {billing.status && (
+                                  <Badge 
+                                    variant={billing.status === 'paid' ? 'default' : 
+                                            billing.status === 'failed' ? 'destructive' : 'secondary'}
+                                    className="text-xs"
+                                  >
+                                    {billing.status.charAt(0).toUpperCase() + billing.status.slice(1)}
+                                  </Badge>
+                                )}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-medium">${billing.amount.toFixed(2)}</p>
+                          <div className="flex items-center gap-3">
+                            <p className="font-semibold text-lg">
+                              ${typeof billing.amount === 'number' ? billing.amount.toFixed(2) : billing.amount}
+                            </p>
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
                               onClick={() => handleDownloadInvoice(billing.invoiceId)}
+                              title="Download Invoice"
                               data-testid={`button-download-invoice-${billing.invoiceId}`}
                             >
                               <Download className="w-4 h-4" />

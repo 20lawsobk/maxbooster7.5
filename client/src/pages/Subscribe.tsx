@@ -1,23 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, StripeError } from '@stripe/stripe-js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Logo } from '@/components/ui/Logo';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Check, ArrowLeft, Shield, CreditCard } from 'lucide-react';
+import { Check, ArrowLeft, Shield, CreditCard, AlertTriangle, RefreshCw, ServerCrash, Loader2 } from 'lucide-react';
 import { Link } from 'wouter';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const stripePromise = STRIPE_PUBLIC_KEY ? loadStripe(STRIPE_PUBLIC_KEY) : null;
+
+interface BillingError {
+  message: string;
+  code?: string;
+  retryable?: boolean;
+  suggestedAction?: string;
 }
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
+const getPaymentErrorMessage = (error: StripeError | BillingError): { message: string; canRetry: boolean } => {
+  const errorCode = (error as any).code || (error as StripeError).type;
+  
+  switch (errorCode) {
+    case 'card_declined':
+    case 'PAYMENT_DECLINED':
+      return { message: 'Your card was declined. Please try a different payment method.', canRetry: true };
+    case 'incorrect_cvc':
+    case 'CARD_VALIDATION_ERROR':
+      return { message: 'Your card information is incorrect. Please check and try again.', canRetry: true };
+    case 'expired_card':
+    case 'CARD_EXPIRED':
+      return { message: 'Your card has expired. Please use a different payment method.', canRetry: true };
+    case 'insufficient_funds':
+    case 'INSUFFICIENT_FUNDS':
+      return { message: 'Insufficient funds. Please try a different payment method.', canRetry: true };
+    case 'authentication_required':
+    case 'REQUIRES_3D_SECURE':
+      return { message: 'Additional authentication is required. Please complete the verification.', canRetry: true };
+    case 'processing_error':
+      return { message: 'An error occurred while processing your payment. Please try again.', canRetry: true };
+    case 'STRIPE_NOT_CONFIGURED':
+      return { message: 'Payment service is temporarily unavailable. Please try again later.', canRetry: false };
+    case 'RATE_LIMITED':
+      return { message: 'Too many requests. Please wait a moment and try again.', canRetry: true };
+    default:
+      return { message: error.message || 'An unexpected error occurred.', canRetry: (error as BillingError).retryable ?? true };
+  }
+};
 
 const plans = {
   monthly: {
@@ -80,53 +114,123 @@ const plans = {
   },
 };
 
-const SubscribeForm = ({ plan }: { plan: any }) => {
+const SubscribeForm = ({ plan, onRetry }: { plan: any; onRetry?: () => void }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<{ message: string; canRetry: boolean } | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPaymentError(null);
 
     if (!stripe || !elements) {
+      setPaymentError({ message: 'Payment system is not ready. Please wait a moment.', canRetry: true });
       return;
     }
 
     setIsProcessing(true);
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/dashboard`,
-      },
-    });
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/dashboard?payment=success`,
+        },
+        redirect: 'if_required',
+      });
 
-    if (error) {
+      if (error) {
+        const errorInfo = getPaymentErrorMessage(error);
+        setPaymentError(errorInfo);
+        setRetryCount(prev => prev + 1);
+        
+        toast({
+          title: 'Payment Failed',
+          description: errorInfo.message,
+          variant: 'destructive',
+        });
+      } else if (paymentIntent?.status === 'succeeded') {
+        toast({
+          title: 'Payment Successful!',
+          description: `Welcome to Max Booster ${plan.name}!`,
+        });
+        navigate('/dashboard?payment=success');
+      } else if (paymentIntent?.status === 'processing') {
+        toast({
+          title: 'Payment Processing',
+          description: 'Your payment is being processed. You will be notified once complete.',
+        });
+        navigate('/dashboard?payment=processing');
+      } else if (paymentIntent?.status === 'requires_action') {
+        toast({
+          title: 'Additional Verification Required',
+          description: 'Please complete the verification in the popup window.',
+        });
+      }
+    } catch (err: any) {
+      const errorInfo = getPaymentErrorMessage(err);
+      setPaymentError(errorInfo);
       toast({
-        title: 'Payment Failed',
-        description: error.message,
+        title: 'Payment Error',
+        description: errorInfo.message,
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Payment Successful',
-        description: `Welcome to Max Booster ${plan.name}!`,
-      });
-      navigate('/dashboard');
+    } finally {
+      setIsProcessing(false);
     }
+  };
 
-    setIsProcessing(false);
+  const handleRetry = () => {
+    setPaymentError(null);
+    if (onRetry) {
+      onRetry();
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <PaymentElement />
+      {paymentError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Payment Failed</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>{paymentError.message}</p>
+            {paymentError.canRetry && retryCount < 3 && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRetry}
+                className="mt-2"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Try Again
+              </Button>
+            )}
+            {retryCount >= 3 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Multiple payment attempts failed. Please try a different payment method or{' '}
+                <Link href="/contact" className="underline">contact support</Link>.
+              </p>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <PaymentElement 
+          options={{
+            layout: 'tabs',
+            paymentMethodOrder: ['card', 'apple_pay', 'google_pay'],
+          }}
+        />
       </div>
 
-      <div className="flex items-center space-x-2 text-sm text-gray-600">
+      <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
         <Shield className="h-4 w-4" />
         <span>Your payment information is secure and encrypted</span>
       </div>
@@ -135,11 +239,12 @@ const SubscribeForm = ({ plan }: { plan: any }) => {
         type="submit"
         className="w-full py-3 text-lg gradient-bg"
         disabled={!stripe || isProcessing}
+        data-testid="button-submit-payment"
       >
         {isProcessing ? (
           <>
-            <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-            Processing...
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Processing Payment...
           </>
         ) : (
           <>
@@ -151,7 +256,7 @@ const SubscribeForm = ({ plan }: { plan: any }) => {
         )}
       </Button>
 
-      <p className="text-xs text-gray-500 text-center">
+      <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
         By subscribing, you agree to our Terms of Service and Privacy Policy.
         {plan.period !== 'once' && ' You can cancel anytime.'}
       </p>
@@ -159,15 +264,94 @@ const SubscribeForm = ({ plan }: { plan: any }) => {
   );
 };
 
+const StripeUnavailableFallback = () => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <Card className="max-w-md">
+      <CardContent className="p-8 text-center">
+        <ServerCrash className="h-16 w-16 text-orange-500 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Payment Service Unavailable</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          Our payment processing service is temporarily unavailable. This is usually resolved within a few minutes.
+        </p>
+        <div className="space-y-3">
+          <Button onClick={() => window.location.reload()} className="w-full">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+          <Link href="/pricing">
+            <Button variant="outline" className="w-full">
+              Back to Pricing
+            </Button>
+          </Link>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-500 mt-6">
+          If this issue persists, please contact support at support@maxbooster.com
+        </p>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 export default function Subscribe() {
   const { tier } = useParams();
   const { user } = useAuth();
   const [clientSecret, setClientSecret] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [setupError, setSetupError] = useState<BillingError | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
   const plan = plans[tier as keyof typeof plans];
+
+  const createSubscription = useCallback(async () => {
+    if (!plan) return;
+    
+    setIsLoading(true);
+    setSetupError(null);
+    
+    try {
+      const response = await apiRequest('POST', '/api/create-subscription', {
+        priceId: plan.priceId,
+      });
+      const data = await response.json();
+      
+      if (data.code === 'STRIPE_NOT_CONFIGURED') {
+        setSetupError({
+          message: 'Payment service is temporarily unavailable.',
+          code: 'STRIPE_NOT_CONFIGURED',
+          retryable: false,
+        });
+        return;
+      }
+      
+      setClientSecret(data.clientSecret);
+    } catch (error: any) {
+      const errorData = error.body || error;
+      
+      if (errorData.code === 'STRIPE_NOT_CONFIGURED' || error.status === 503) {
+        setSetupError({
+          message: 'Payment service is temporarily unavailable. Please try again later.',
+          code: 'STRIPE_NOT_CONFIGURED',
+          retryable: false,
+        });
+      } else {
+        setSetupError({
+          message: errorData.message || 'Failed to setup payment. Please try again.',
+          code: errorData.code || 'SETUP_FAILED',
+          retryable: errorData.retryable ?? true,
+        });
+        
+        toast({
+          title: 'Setup Failed',
+          description: errorData.message || 'Failed to setup payment. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [plan, toast]);
 
   useEffect(() => {
     if (!user) {
@@ -180,28 +364,17 @@ export default function Subscribe() {
       return;
     }
 
-    // Create subscription intent
-    const createSubscription = async () => {
-      try {
-        const response = await apiRequest('POST', '/api/create-subscription', {
-          priceId: plan.priceId,
-        });
-        const data = await response.json();
-        setClientSecret(data.clientSecret);
-      } catch (error: unknown) {
-        toast({
-          title: 'Setup Failed',
-          description: error.message || 'Failed to setup payment. Please try again.',
-          variant: 'destructive',
-        });
-        navigate('/pricing');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     createSubscription();
-  }, [user, plan, navigate, toast]);
+  }, [user, plan, navigate, createSubscription]);
+
+  const handleRetry = useCallback(() => {
+    setRetryCount(prev => prev + 1);
+    createSubscription();
+  }, [createSubscription]);
+
+  if (!stripePromise) {
+    return <StripeUnavailableFallback />;
+  }
 
   if (!user) {
     return (
@@ -245,18 +418,59 @@ export default function Subscribe() {
     );
   }
 
+  if (setupError) {
+    if (setupError.code === 'STRIPE_NOT_CONFIGURED') {
+      return <StripeUnavailableFallback />;
+    }
+    
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="max-w-md">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Setup Error</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{setupError.message}</p>
+            <div className="space-y-3">
+              {setupError.retryable && retryCount < 3 && (
+                <Button onClick={handleRetry} className="w-full">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
+              )}
+              <Link href="/pricing">
+                <Button variant="outline" className="w-full">Back to Pricing</Button>
+              </Link>
+            </div>
+            {retryCount >= 3 && (
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
+                Multiple attempts failed. Please try again later or contact support.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!clientSecret) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <Card className="max-w-md mx-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="max-w-md">
           <CardContent className="p-8 text-center">
+            <AlertTriangle className="h-16 w-16 text-orange-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Setup Error</h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               We couldn't set up your subscription. Please try again.
             </p>
-            <Link href="/pricing">
-              <Button>Back to Pricing</Button>
-            </Link>
+            <div className="space-y-3">
+              <Button onClick={handleRetry} className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+              <Link href="/pricing">
+                <Button variant="outline" className="w-full">Back to Pricing</Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -354,7 +568,7 @@ export default function Subscribe() {
               </CardHeader>
               <CardContent>
                 <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <SubscribeForm plan={plan} />
+                  <SubscribeForm plan={plan} onRetry={handleRetry} />
                 </Elements>
               </CardContent>
             </Card>

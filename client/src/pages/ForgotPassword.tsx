@@ -5,17 +5,58 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/ui/Logo';
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const { toast } = useToast();
+
+  const validateEmail = (value: string): string | undefined => {
+    if (!value.trim()) return 'Email is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
+    return undefined;
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (emailError) {
+      const error = validateEmail(value);
+      setEmailError(error || '');
+    }
+  };
+
+  const handleEmailBlur = () => {
+    const error = validateEmail(email);
+    setEmailError(error || '');
+  };
+
+  const startResendCooldown = () => {
+    setResendCooldown(60);
+    const interval = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const error = validateEmail(email);
+    if (error) {
+      setEmailError(error);
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -29,20 +70,66 @@ export default function ForgotPassword() {
 
       const data = await response.json();
 
+      if (response.status === 429) {
+        toast({
+          title: 'Too Many Requests',
+          description: 'You have made too many password reset requests. Please wait a few minutes before trying again.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to send reset link');
       }
 
       setSubmitted(true);
+      startResendCooldown();
       toast({
         title: 'Reset Link Sent',
-        description: data.message || 'Check your email for password reset instructions.',
+        description: 'Check your email for password reset instructions.',
       });
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send reset link. Please try again.';
       toast({
-        title: 'Error',
-        description: errorMessage,
+        title: 'Request Sent',
+        description: 'If an account exists with this email, you will receive a password reset link.',
+      });
+      setSubmitted(true);
+      startResendCooldown();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.status === 429) {
+        toast({
+          title: 'Too Many Requests',
+          description: 'Please wait before requesting another reset link.',
+          variant: 'destructive',
+        });
+      } else {
+        startResendCooldown();
+        toast({
+          title: 'Email Resent',
+          description: 'A new password reset link has been sent to your email.',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Resend Failed',
+        description: 'Could not resend the reset link. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -80,7 +167,7 @@ export default function ForgotPassword() {
           <CardContent>
             {!submitted ? (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
+                <div className="space-y-1">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
                     id="email"
@@ -88,16 +175,26 @@ export default function ForgotPassword() {
                     placeholder="you@example.com"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    onBlur={handleEmailBlur}
                     disabled={loading}
                     autoComplete="email"
                     data-testid="input-forgot-password-email"
+                    className={emailError ? 'border-destructive' : ''}
+                    aria-invalid={!!emailError}
+                    aria-describedby={emailError ? 'email-error' : undefined}
                   />
+                  {emailError && (
+                    <p id="email-error" className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {emailError}
+                    </p>
+                  )}
                 </div>
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={loading}
+                  disabled={loading || !!emailError}
                   data-testid="button-send-reset-link"
                 >
                   {loading ? 'Sending...' : 'Send Reset Link'}
@@ -117,9 +214,17 @@ export default function ForgotPassword() {
                 <div>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">We've sent a password reset link to:</p>
                   <p className="font-medium text-gray-900 dark:text-white mb-6">{email}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                    The link will expire in 1 hour. Check your spam folder if you don't see it.
-                  </p>
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-left">
+                    <div className="flex items-start gap-2">
+                      <Clock className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm">
+                        <p className="font-medium text-amber-800 dark:text-amber-300">Link expires in 1 hour</p>
+                        <p className="text-amber-700 dark:text-amber-400 mt-1">
+                          Can't find it? Check your spam folder or request a new link below.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Link href="/login">
@@ -130,13 +235,34 @@ export default function ForgotPassword() {
                   <Button
                     variant="outline"
                     className="w-full"
+                    onClick={handleResend}
+                    disabled={loading || resendCooldown > 0}
+                    data-testid="button-resend-email"
+                  >
+                    {resendCooldown > 0 ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Resend in {resendCooldown}s
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Resend Email
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-muted-foreground"
                     onClick={() => {
                       setSubmitted(false);
                       setEmail('');
+                      setEmailError('');
                     }}
-                    data-testid="button-resend-email"
+                    data-testid="button-try-different-email"
                   >
-                    Resend Email
+                    Try a different email
                   </Button>
                 </div>
               </div>

@@ -26,6 +26,7 @@ import SoloFounderStory from '@/pages/SoloFounderStory';
 import SecurityPage from '@/pages/SecurityPage';
 import DMCA from '@/pages/DMCA';
 import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import NotFound from '@/pages/not-found';
 
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
       <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/register" component={Register} />
       <Route path="/register/payment/:tier" component={RegisterPayment} />
       <Route path="/register/success" component={RegisterSuccess} />
