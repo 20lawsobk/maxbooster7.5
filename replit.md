@@ -23,6 +23,19 @@ The frontend utilizes shadcn/ui for a modern and accessible experience, focusing
 The platform supports Progressive Web App features, including an install banner, deep linking via `web+maxbooster://` protocol, a service worker for caching, and an external link opener with URL sanitization.
 
 ### Technical Implementations
+- **Professional DAW Engine Architecture** (Studio One Paradigm): Complete 10-engine DAW core following professional DAW patterns. Located in `client/src/lib/daw/`:
+  - **TransportEngine**: Sample-accurate timing with tempo maps, time signatures, pre-roll/count-in, latency compensation hooks
+  - **TimelineEngine**: Musical time ↔ absolute time conversion, event quantization, 4 edit modes (slip/ripple/shuffle/spot)
+  - **AutomationEngine**: Read/Write/Touch/Latch modes, bezier curve interpolation, point reduction, write buffering
+  - **RoutingEngine**: Full routing graph with sends, buses, aux, sidechains, pre/post fader, cycle detection, latency compensation
+  - **MIDIEngine**: Web MIDI API integration, quantization, humanize, velocity editing, legato, transposition
+  - **NonDestructiveAudio**: Clip gain, fades (5 curve types), time-stretch/pitch metadata, split/consolidate
+  - **PluginStateManager**: Per-plugin presets, automation bindings, copy/paste state, factory preset import
+  - **MusicalIntelligence**: Key detection, chord suggestion, melody/bassline/drum generation, mix analysis
+  - **ProjectManager**: Save/load, versions, autosave, crash recovery, media pool, missing file resolution
+  - **DAWCore**: Central orchestrator with CommandSystem for undo/redo, integrates all engines
+  - **useDAWCore hook**: React hook for UI integration with real-time position tracking
+  - **DAWEngineControls**: Professional transport bar with tempo display, edit modes, automation modes
 - **FlowState Studio** (Unified, Permanent Interface): Revolutionary next-gen DAW interface that combines all AI Studio features with innovative UX. FlowState is now the sole, permanent interface for the Studio - no classic mode toggle. Features include:
   - **3D Spatial Workspace**: Canvas-based 3D visualization with particle systems, track nodes in spatial 3D coordinates (pan=X, volume=Y, index=Z), multiple view modes (spatial/circular/grid), and auto-orbit camera.
   - **GPU-Accelerated Spectral Visualizer**: WebGL shader-based audio visualization with spectrum, waveform, and circular modes. Includes proper resource cleanup, context loss handling, and shader compile/link error checking.
