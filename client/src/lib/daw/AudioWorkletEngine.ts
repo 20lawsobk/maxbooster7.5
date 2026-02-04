@@ -622,7 +622,15 @@ export class AudioWorkletEngine {
       throw new Error('AudioContext not initialized');
     }
     
-    const response = await fetch(url);
+    // Normalize the URL to use proper API endpoint for audio files
+    let normalizedUrl = url;
+    if (!url.startsWith('http') && !url.startsWith('/api/')) {
+      // Handle relative paths like "uploads/..." or "/uploads/..."
+      const cleanPath = url.replace(/^\//, '');
+      normalizedUrl = `/api/marketplace/audio/${cleanPath}`;
+    }
+    
+    const response = await fetch(normalizedUrl);
     const arrayBuffer = await response.arrayBuffer();
     return await this.audioContext.decodeAudioData(arrayBuffer);
   }

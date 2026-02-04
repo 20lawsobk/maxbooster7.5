@@ -1084,8 +1084,15 @@ export default function Marketplace() {
       return;
     }
 
-    // Convert relative URL to absolute URL
-    if (audioUrl.startsWith('/')) {
+    // Convert relative URL to absolute URL with proper API endpoint
+    if (!audioUrl.startsWith('http')) {
+      // Handle URLs without leading slash (e.g., "uploads/...")
+      if (!audioUrl.startsWith('/')) {
+        audioUrl = `/api/marketplace/audio/${audioUrl}`;
+      } else if (!audioUrl.startsWith('/api/')) {
+        // Has leading slash but not going through API
+        audioUrl = `/api/marketplace/audio${audioUrl}`;
+      }
       audioUrl = `${window.location.origin}${audioUrl}`;
     }
 

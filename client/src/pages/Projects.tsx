@@ -212,7 +212,13 @@ export default function Projects() {
 
     // Create new audio element
     if (project.audioUrl) {
-      const audio = new Audio(project.audioUrl);
+      // Ensure the URL is properly formatted for the audio endpoint
+      let audioSrc = project.audioUrl;
+      if (!audioSrc.startsWith('http') && !audioSrc.startsWith('/api/')) {
+        // Remove leading slash if present, then prepend API endpoint
+        audioSrc = `/api/marketplace/audio/${audioSrc.replace(/^\//, '')}`;
+      }
+      const audio = new Audio(audioSrc);
       audio.play();
       setAudioElement(audio);
       setCurrentlyPlaying(project.id);
