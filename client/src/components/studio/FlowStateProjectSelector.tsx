@@ -11,6 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -216,8 +221,8 @@ export function FlowStateProjectSelector({
 
   return (
     <>
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
@@ -233,10 +238,11 @@ export function FlowStateProjectSelector({
             </div>
             <ChevronDown className="h-3 w-3 text-white/50" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
+        </PopoverTrigger>
+        <PopoverContent
           align="start"
           className="w-80 p-0 bg-slate-950 border-slate-800"
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <div className="p-3 border-b border-slate-800">
             <div className="relative">
@@ -371,8 +377,8 @@ export function FlowStateProjectSelector({
               </div>
             )}
           </ScrollArea>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </PopoverContent>
+      </Popover>
 
       <Dialog open={showNewProject} onOpenChange={setShowNewProject}>
         <DialogContent className="max-w-md bg-slate-950 border-slate-800">
