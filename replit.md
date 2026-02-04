@@ -52,13 +52,29 @@ The platform supports Progressive Web App features, including an install banner,
 ### System Design Choices
 The backend is conceptually microservices-oriented. The system prioritizes robust error handling (try-catch, retries, circuit breakers, validation), scalability (Redis for session/queue management, asynchronous operations), and data integrity (Drizzle ORM, input validation).
 
+### Hybrid Storage System
+The platform uses a sophisticated hybrid storage architecture combining two technologies:
+- **Replit Object Storage (GCS-backed)**: Fast CDN-backed cloud storage for public assets, uploads, and streaming media. Primary bucket: `replit-objstore-97079a38-bcc2-4973-b983-6be5afb7f969`.
+- **Pocket Dimension Storage**: Custom virtualized infinite-capacity storage with advanced compression, content-addressed chunking, per-pocket encryption, deduplication, and nested dimension support.
+
+Storage tiers are automatically selected based on file characteristics:
+- **CLOUD tier**: Public files, media (audio/video), and CDN-ready assets
+- **POCKET tier**: Large files (>50MB), text/documents, and user-private data benefiting from compression
+- **HYBRID tier**: Metadata in cloud for discoverability, content in pocket for compression
+
+Key services:
+- `HybridStorageService` (`server/services/hybridStorageService.ts`): Unified interface for tier selection, storage, retrieval, and migration
+- `UserPocketDimensionService` (`server/services/userPocketDimensionService.ts`): Per-user infinite storage initialization with default folders (audio, artwork, documents, beats, stems, exports)
+- `ObjectStorageService` (`server/replit_integrations/object_storage/`): Replit GCS integration with presigned URLs and ACL policies
+
 ## External Dependencies
 - **Stripe**: Payment processing, including Stripe Connect.
 - **SendGrid**: Transactional email delivery.
 - **Redis Cloud**: Session storage, caching, and distributed task management.
 - **Sentry**: Error tracking and monitoring.
 - **LabelGrid**: Music distribution, content ID, and sync licensing.
-- **Replit Object Storage**: File asset storage.
+- **Replit Object Storage**: Cloud file storage (GCS-backed) with presigned URL uploads.
+- **Pocket Dimension**: Custom infinite-capacity compressed storage engine.
 - **Meta Graph API**: Unified Facebook and Instagram integration via single Meta OAuth.
 - **music-metadata library**: Audio metadata extraction.
 - **Y.js**: Real-time collaboration in the AI Studio.
