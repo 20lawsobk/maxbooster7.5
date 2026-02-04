@@ -1,6 +1,6 @@
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { UltimateDAW } from '@/components/studio/UltimateDAW';
+import { StudioOneDAW } from '@/components/studio/StudioOneDAW';
 import { Loader2 } from 'lucide-react';
 import { useParams } from 'wouter';
 
@@ -26,7 +26,7 @@ export default function Studio() {
   return (
     <AppLayout noPadding title="Studio">
       <div className="h-full w-full relative">
-        <UltimateDAW projectId={projectId} />
+        <StudioOneDAW projectId={projectId} />
       </div>
     </AppLayout>
   );
