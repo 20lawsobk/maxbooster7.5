@@ -6,7 +6,8 @@ import {
   Layers, Mic, Music, Drum, Guitar, FolderOpen, ChevronDown,
   ChevronRight, MoreHorizontal, Lock, Unlock, Eye, EyeOff,
   Trash2, Copy, Scissors, ZoomIn, ZoomOut, Grid3X3, Wand2,
-  PanelBottomOpen, PanelBottomClose, PanelRightOpen, PanelRightClose
+  PanelBottomOpen, PanelBottomClose, PanelRightOpen, PanelRightClose,
+  Brain, Sparkles, AudioWaveform, Keyboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,9 @@ import { useUnifiedStore } from '@/stores/unifiedStoreAdapter';
 import { useToast } from '@/hooks/use-toast';
 import { useProjectSync } from '@/hooks/useProjectSync';
 import { apiRequest } from '@/lib/queryClient';
+import { PluginBrowser } from './PluginBrowser';
+import { AIGeneratorDialog } from './AIGeneratorDialog';
+import { FlowStateAIPanel } from './FlowStateAIPanel';
 
 interface StudioOneDAWProps {
   projectId: string | null;
@@ -38,6 +42,12 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [showInspector, setShowInspector] = useState(true);
   const [showEditor, setShowEditor] = useState(false);
   const [showMixer, setShowMixer] = useState(false);
+  const [showPluginBrowser, setShowPluginBrowser] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [pluginFilterCategory, setPluginFilterCategory] = useState<'instrument' | 'effect' | null>(null);
+  const [isAIMixing, setIsAIMixing] = useState(false);
+  const [isAIMastering, setIsAIMastering] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [scrollX, setScrollX] = useState(0);
@@ -91,6 +101,173 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     }
   }, [forceSave, toast]);
 
+  const handleOpenPluginBrowser = useCallback((category?: 'instrument' | 'effect') => {
+    setPluginFilterCategory(category || null);
+    setShowPluginBrowser(true);
+  }, []);
+
+  const handlePluginSelect = useCallback((plugin: any) => {
+    if (selectedTrackId) {
+      apiRequest(`/api/studio/tracks/${selectedTrackId}/plugins`, {
+        method: 'POST',
+        body: JSON.stringify({ pluginId: plugin.id, parameters: plugin.defaultPreset || {} }),
+      }).then(() => {
+        toast({ title: 'Plugin Added', description: `${plugin.name} added to track.` });
+        loadProjectData();
+      }).catch((error: any) => {
+        toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+      });
+    } else {
+      toast({ title: 'Select a Track', description: 'Please select a track first to add plugins.', variant: 'destructive' });
+    }
+    setShowPluginBrowser(false);
+  }, [selectedTrackId, toast, loadProjectData]);
+
+  const handleAIMix = useCallback(async () => {
+    if (!projectId) return;
+    setIsAIMixing(true);
+    try {
+      await apiRequest('/api/studio/ai/mix', {
+        method: 'POST',
+        body: JSON.stringify({ projectId }),
+      });
+      toast({ title: 'AI Mix Complete', description: 'Your mix has been optimized by AI.' });
+      loadProjectData();
+    } catch (error: any) {
+      toast({ title: 'AI Mix Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsAIMixing(false);
+    }
+  }, [projectId, toast, loadProjectData]);
+
+  const handleAIMaster = useCallback(async () => {
+    if (!projectId) return;
+    setIsAIMastering(true);
+    try {
+      await apiRequest('/api/studio/ai/master', {
+        method: 'POST',
+        body: JSON.stringify({ projectId }),
+      });
+      toast({ title: 'AI Mastering Complete', description: 'Your track has been mastered by AI.' });
+      loadProjectData();
+    } catch (error: any) {
+      toast({ title: 'AI Mastering Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsAIMastering(false);
+    }
+  }, [projectId, toast, loadProjectData]);
+
+  const handleGenerateMelody = useCallback(async (params?: { key?: string; scale?: string; tempo?: number }) => {
+    if (!projectId) return;
+    try {
+      await apiRequest('/api/studio/ai/generate-melody', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, ...params }),
+      });
+      toast({ title: 'Melody Generated', description: 'AI has created a melody for your project.' });
+      loadProjectData();
+    } catch (error: any) {
+      toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, toast, loadProjectData]);
+
+  const handleGenerateDrums = useCallback(async (params?: { genre?: string; tempo?: number }) => {
+    if (!projectId) return;
+    try {
+      await apiRequest('/api/studio/ai/generate-drums', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, ...params }),
+      });
+      toast({ title: 'Drums Generated', description: 'AI has created a drum pattern for your project.' });
+      loadProjectData();
+    } catch (error: any) {
+      toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, toast, loadProjectData]);
+
+  const handleGenerateBass = useCallback(async (params?: { key?: string; scale?: string }) => {
+    if (!projectId) return;
+    try {
+      await apiRequest('/api/studio/ai/generate-bass', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, ...params }),
+      });
+      toast({ title: 'Bass Generated', description: 'AI has created a bassline for your project.' });
+      loadProjectData();
+    } catch (error: any) {
+      toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, toast, loadProjectData]);
+
+  const handleGenerateChords = useCallback(async (params?: { progression?: string; key?: string }) => {
+    if (!projectId) return;
+    try {
+      await apiRequest('/api/studio/ai/generate-chords', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, ...params }),
+      });
+      toast({ title: 'Chords Generated', description: 'AI has created a chord progression for your project.' });
+      loadProjectData();
+    } catch (error: any) {
+      toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, toast, loadProjectData]);
+
+  const handleDetectKey = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const result = await apiRequest('/api/studio/ai/detect-key', {
+        method: 'POST',
+        body: JSON.stringify({ projectId }),
+      });
+      toast({ title: 'Key Detected', description: `Detected key: ${result.key} ${result.scale}` });
+    } catch (error: any) {
+      toast({ title: 'Detection Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, toast]);
+
+  const handleAutoArrange = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      await apiRequest('/api/studio/ai/auto-arrange', {
+        method: 'POST',
+        body: JSON.stringify({ projectId }),
+      });
+      toast({ title: 'Auto-Arrange Complete', description: 'AI has arranged your project structure.' });
+      loadProjectData();
+    } catch (error: any) {
+      toast({ title: 'Arrange Failed', description: error.message, variant: 'destructive' });
+    }
+  }, [projectId, toast, loadProjectData]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      
+      const key = e.key.toLowerCase();
+      
+      if (e.shiftKey && key === 'p') {
+        e.preventDefault();
+        handleOpenPluginBrowser();
+      } else if (e.shiftKey && key === 'i') {
+        e.preventDefault();
+        handleOpenPluginBrowser('instrument');
+      } else if (e.shiftKey && key === 'e') {
+        e.preventDefault();
+        handleOpenPluginBrowser('effect');
+      } else if (key === 'a' && e.altKey) {
+        e.preventDefault();
+        setShowAIPanel(!showAIPanel);
+      } else if (key === 'g' && e.altKey) {
+        e.preventDefault();
+        setShowAIGenerator(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleOpenPluginBrowser, showAIPanel]);
+
   const selectedTrack = tracks.find(t => t.id === selectedTrackId);
 
   return (
@@ -112,6 +289,10 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         onRedo={() => store.redo()}
         onSave={handleSave}
         onTempoChange={(tempo) => store.setTempo(tempo)}
+        onOpenPlugins={() => handleOpenPluginBrowser()}
+        onOpenAIGenerator={() => setShowAIGenerator(true)}
+        onToggleAIPanel={() => setShowAIPanel(!showAIPanel)}
+        showAIPanel={showAIPanel}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -120,6 +301,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             track={selectedTrack}
             onClose={() => setShowInspector(false)}
             onUpdate={(updates) => store.updateTrack(selectedTrackId!, updates)}
+            onOpenPlugins={() => handleOpenPluginBrowser('effect')}
           />
         )}
 
@@ -135,6 +317,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             onToggleInspector={() => setShowInspector(!showInspector)}
             onToggleEditor={() => setShowEditor(!showEditor)}
             onToggleMixer={() => setShowMixer(!showMixer)}
+            onOpenPlugins={() => handleOpenPluginBrowser()}
+            onOpenInstruments={() => handleOpenPluginBrowser('instrument')}
+            onOpenEffects={() => handleOpenPluginBrowser('effect')}
           />
 
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -173,6 +358,45 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           onClose={() => setShowMixer(false)}
         />
       )}
+
+      {showAIPanel && (
+        <div className="absolute right-0 top-14 bottom-0 w-80 bg-[#1a1a1e] border-l border-[#333] z-30 overflow-hidden">
+          <FlowStateAIPanel
+            projectId={projectId}
+            tracks={tracks.map(t => ({ id: t.id, name: t.name, type: t.type }))}
+            currentTime={transport.position}
+            tempo={transport.tempo}
+            musicalKey={project?.key}
+            scale={project?.scale}
+            onAIMix={handleAIMix}
+            onAIMaster={handleAIMaster}
+            onAIGenerate={() => setShowAIGenerator(true)}
+            onGenerateMelody={handleGenerateMelody}
+            onGenerateDrums={handleGenerateDrums}
+            onGenerateBass={handleGenerateBass}
+            onGenerateChords={handleGenerateChords}
+            onDetectKey={handleDetectKey}
+            onAutoArrange={handleAutoArrange}
+            onClose={() => setShowAIPanel(false)}
+            isAIMixing={isAIMixing}
+            isAIMastering={isAIMastering}
+          />
+        </div>
+      )}
+
+      <PluginBrowser
+        isOpen={showPluginBrowser}
+        onClose={() => setShowPluginBrowser(false)}
+        onSelect={handlePluginSelect}
+        filterCategory={pluginFilterCategory}
+      />
+
+      <AIGeneratorDialog
+        isOpen={showAIGenerator}
+        onClose={() => setShowAIGenerator(false)}
+        projectId={projectId}
+        onGenerated={() => loadProjectData()}
+      />
     </div>
   );
 }
@@ -194,12 +418,17 @@ interface TransportBarProps {
   onRedo: () => void;
   onSave: () => void;
   onTempoChange: (tempo: number) => void;
+  onOpenPlugins: () => void;
+  onOpenAIGenerator: () => void;
+  onToggleAIPanel: () => void;
+  showAIPanel: boolean;
 }
 
 function TransportBar({
   transport, project, canUndo, canRedo, formatTime, formatBars,
   onPlay, onPause, onStop, onRecord, onRewind, onToggleLoop,
-  onUndo, onRedo, onSave, onTempoChange
+  onUndo, onRedo, onSave, onTempoChange, onOpenPlugins, onOpenAIGenerator,
+  onToggleAIPanel, showAIPanel
 }: TransportBarProps) {
   return (
     <div className="h-14 bg-[#252529] border-b border-[#333] flex items-center px-4 gap-4 shrink-0">
@@ -332,6 +561,45 @@ function TransportBar({
         <span className="font-mono text-sm">{transport.timeSignature || '4/4'}</span>
       </div>
 
+      <div className="h-6 w-px bg-[#444]" />
+
+      <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onOpenPlugins} className="h-8 gap-1.5 px-2 text-xs">
+              <Keyboard className="h-3.5 w-3.5" />
+              Plugins
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Browse 200+ Plugins (Shift+P)</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onOpenAIGenerator} className="h-8 gap-1.5 px-2 text-xs text-purple-400 hover:text-purple-300">
+              <Sparkles className="h-3.5 w-3.5" />
+              Generate
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>AI Music Generator (Alt+G)</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleAIPanel}
+              className={cn("h-8 gap-1.5 px-2 text-xs", showAIPanel && "bg-purple-600/20 text-purple-400")}
+            >
+              <Brain className="h-3.5 w-3.5" />
+              AI
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>AI Assistant Panel (Alt+A)</TooltipContent>
+        </Tooltip>
+      </div>
+
       <div className="flex-1" />
 
       <div className="text-sm text-gray-400 truncate max-w-48">
@@ -352,12 +620,16 @@ interface ToolbarProps {
   onToggleInspector: () => void;
   onToggleEditor: () => void;
   onToggleMixer: () => void;
+  onOpenPlugins: () => void;
+  onOpenInstruments: () => void;
+  onOpenEffects: () => void;
 }
 
 function Toolbar({
   zoom, onZoomIn, onZoomOut, onAddTrack,
   showInspector, showEditor, showMixer,
-  onToggleInspector, onToggleEditor, onToggleMixer
+  onToggleInspector, onToggleEditor, onToggleMixer,
+  onOpenPlugins, onOpenInstruments, onOpenEffects
 }: ToolbarProps) {
   const [showAddMenu, setShowAddMenu] = useState(false);
 
@@ -421,6 +693,40 @@ function Toolbar({
         <Grid3X3 className="h-3.5 w-3.5" />
         Snap
       </Button>
+
+      <div className="h-5 w-px bg-[#444]" />
+
+      <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onOpenPlugins} className="h-7 gap-1 px-2 text-xs">
+              <Keyboard className="h-3.5 w-3.5" />
+              All Plugins
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Browse All 200+ Plugins (Shift+P)</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onOpenInstruments} className="h-7 gap-1 px-2 text-xs">
+              <Piano className="h-3.5 w-3.5" />
+              Instruments
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Browse Instruments (Shift+I)</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onOpenEffects} className="h-7 gap-1 px-2 text-xs">
+              <AudioWaveform className="h-3.5 w-3.5" />
+              Effects
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Browse Effects (Shift+E)</TooltipContent>
+        </Tooltip>
+      </div>
 
       <div className="flex-1" />
 
@@ -731,9 +1037,10 @@ interface TrackInspectorProps {
   track: any;
   onClose: () => void;
   onUpdate: (updates: any) => void;
+  onOpenPlugins: () => void;
 }
 
-function TrackInspector({ track, onClose, onUpdate }: TrackInspectorProps) {
+function TrackInspector({ track, onClose, onUpdate, onOpenPlugins }: TrackInspectorProps) {
   return (
     <div className="w-64 bg-[#1f1f23] border-r border-[#333] flex flex-col shrink-0 overflow-hidden">
       <div className="h-10 flex items-center justify-between px-3 border-b border-[#333]">
@@ -800,7 +1107,18 @@ function TrackInspector({ track, onClose, onUpdate }: TrackInspectorProps) {
         </div>
 
         <div className="pt-2 border-t border-[#333]">
-          <label className="text-[10px] text-gray-500 uppercase">Plugins ({track.plugins?.length || 0})</label>
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] text-gray-500 uppercase">Plugins ({track.plugins?.length || 0})</label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onOpenPlugins}
+              className="h-5 px-1.5 text-[10px] text-purple-400 hover:text-purple-300"
+            >
+              <Plus className="h-3 w-3 mr-0.5" />
+              Add
+            </Button>
+          </div>
           <div className="mt-2 space-y-1">
             {track.plugins?.map((plugin: any) => (
               <div
@@ -821,7 +1139,7 @@ function TrackInspector({ track, onClose, onUpdate }: TrackInspectorProps) {
               </div>
             ))}
             {(!track.plugins || track.plugins.length === 0) && (
-              <p className="text-xs text-gray-500 italic">No plugins</p>
+              <p className="text-xs text-gray-500 italic">No plugins added yet</p>
             )}
           </div>
         </div>
