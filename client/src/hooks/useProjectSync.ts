@@ -292,80 +292,122 @@ export function useProjectSync(projectId: string | null) {
       });
     }
 
-    const existingTracks = state.tracks;
-    for (const track of existingTracks) {
-      store.removeTrack(track.id);
-    }
-
     if (dawState.tracks) {
-      for (const serializedTrack of dawState.tracks) {
-        const trackId = store.addTrack(serializedTrack.type, serializedTrack.name);
-        
-        store.updateTrack(trackId, {
-          color: serializedTrack.color,
-          volume: serializedTrack.volume,
-          pan: serializedTrack.pan,
-          muted: serializedTrack.muted,
-          solo: serializedTrack.solo,
-          armed: serializedTrack.armed,
-          frozen: serializedTrack.frozen,
-          height: serializedTrack.height,
-          collapsed: serializedTrack.collapsed,
-          inputSource: serializedTrack.inputSource,
-          outputTarget: serializedTrack.outputTarget,
-          automationLanes: serializedTrack.automationLanes || [],
-        });
-
-        if (serializedTrack.plugins) {
-          for (const plugin of serializedTrack.plugins) {
-            store.addPlugin(trackId, {
-              pluginId: plugin.pluginId,
-              pluginSlug: plugin.pluginSlug,
-              name: plugin.name,
-              bypassed: plugin.bypassed,
-              parameters: plugin.parameters,
-              presetName: plugin.presetName,
-            });
-          }
-        }
-
-        if (serializedTrack.audioClips) {
-          for (const clip of serializedTrack.audioClips) {
-            store.addAudioClip(trackId, {
-              trackId: trackId,
-              name: clip.name,
-              startTime: clip.startTime,
-              duration: clip.duration,
-              offset: clip.offset,
-              gain: clip.gain,
-              fadeIn: clip.fadeIn,
-              fadeOut: clip.fadeOut,
-              color: clip.color,
-              sourceUrl: clip.sourceUrl,
-              muted: clip.muted,
-              locked: clip.locked,
-            });
-          }
-        }
-      }
+      const restoredTracks: Track[] = dawState.tracks.map((serializedTrack, index) => ({
+        id: serializedTrack.id,
+        name: serializedTrack.name,
+        type: serializedTrack.type,
+        color: serializedTrack.color || '#3b82f6',
+        volume: serializedTrack.volume ?? 0,
+        pan: serializedTrack.pan ?? 0,
+        muted: serializedTrack.muted ?? false,
+        solo: serializedTrack.solo ?? false,
+        armed: serializedTrack.armed ?? false,
+        frozen: serializedTrack.frozen ?? false,
+        height: serializedTrack.height ?? 80,
+        collapsed: serializedTrack.collapsed ?? false,
+        inputSource: serializedTrack.inputSource ?? null,
+        outputTarget: serializedTrack.outputTarget ?? 'master',
+        meterLevel: { left: 0, right: 0 },
+        plugins: (serializedTrack.plugins || []).map(p => ({
+          id: p.id,
+          pluginId: p.pluginId,
+          pluginSlug: p.pluginSlug,
+          name: p.name,
+          bypassed: p.bypassed ?? false,
+          parameters: p.parameters || {},
+          presetName: p.presetName,
+        })),
+        audioClips: (serializedTrack.audioClips || []).map(c => ({
+          id: c.id,
+          trackId: serializedTrack.id,
+          name: c.name,
+          startTime: c.startTime,
+          duration: c.duration,
+          offset: c.offset ?? 0,
+          gain: c.gain ?? 0,
+          fadeIn: c.fadeIn ?? 0,
+          fadeOut: c.fadeOut ?? 0,
+          color: c.color,
+          sourceUrl: c.sourceUrl,
+          muted: c.muted ?? false,
+          locked: c.locked ?? false,
+        })),
+        midiClips: (serializedTrack.midiClips || []).map(c => ({
+          id: c.id,
+          trackId: serializedTrack.id,
+          name: c.name,
+          startTime: c.startTime,
+          duration: c.duration,
+          notes: c.notes || [],
+          color: c.color,
+          muted: c.muted ?? false,
+          locked: c.locked ?? false,
+        })),
+        sends: (serializedTrack.sends || []).map(s => ({
+          id: s.id,
+          targetTrackId: s.targetTrackId,
+          gain: s.gain ?? 0,
+          preFader: s.preFader ?? false,
+          muted: s.muted ?? false,
+        })),
+        automationLanes: (serializedTrack.automationLanes || []).map(l => ({
+          id: l.id,
+          parameterId: l.parameterId,
+          parameterName: l.parameterName,
+          visible: l.visible ?? true,
+          points: l.points || [],
+        })),
+      }));
+      
+      store.setTracksDirectly(restoredTracks);
     }
 
     if (dawState.masterTrack) {
-      store.setTrackVolume('master', dawState.masterTrack.volume ?? 0);
-      store.setTrackPan('master', dawState.masterTrack.pan ?? 0);
+      const mt = dawState.masterTrack;
+      const restoredMaster: Track = {
+        id: mt.id || 'master',
+        name: mt.name || 'Master',
+        type: 'master',
+        color: mt.color || '#64748b',
+        volume: mt.volume ?? 0,
+        pan: mt.pan ?? 0,
+        muted: mt.muted ?? false,
+        solo: mt.solo ?? false,
+        armed: false,
+        frozen: false,
+        height: mt.height ?? 80,
+        collapsed: mt.collapsed ?? false,
+        outputTarget: mt.outputTarget || 'output',
+        meterLevel: { left: -60, right: -60 },
+        plugins: (mt.plugins || []).map(p => ({
+          id: p.id,
+          pluginId: p.pluginId,
+          pluginSlug: p.pluginSlug,
+          name: p.name,
+          bypassed: p.bypassed ?? false,
+          parameters: p.parameters || {},
+          presetName: p.presetName,
+        })),
+        audioClips: [],
+        midiClips: [],
+        sends: (mt.sends || []).map(s => ({
+          id: s.id,
+          targetTrackId: s.targetTrackId,
+          gain: s.gain ?? 0,
+          preFader: s.preFader ?? false,
+          muted: s.muted ?? false,
+        })),
+        automationLanes: (mt.automationLanes || []).map(l => ({
+          id: l.id,
+          parameterId: l.parameterId,
+          parameterName: l.parameterName,
+          visible: l.visible ?? true,
+          points: l.points || [],
+        })),
+      };
       
-      if (dawState.masterTrack.plugins) {
-        for (const plugin of dawState.masterTrack.plugins) {
-          store.addPlugin('master', {
-            pluginId: plugin.pluginId,
-            pluginSlug: plugin.pluginSlug,
-            name: plugin.name,
-            bypassed: plugin.bypassed,
-            parameters: plugin.parameters,
-            presetName: plugin.presetName,
-          });
-        }
-      }
+      store.setMasterTrackDirectly(restoredMaster);
     }
   }, [store]);
 

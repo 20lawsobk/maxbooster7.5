@@ -189,6 +189,8 @@ interface StudioState {
   setTempo: (tempo: number) => void;
   
   addTrack: (type: TrackType, name?: string) => string;
+  setTracksDirectly: (tracks: Track[]) => void;
+  setMasterTrackDirectly: (masterTrack: Track) => void;
   removeTrack: (trackId: string) => void;
   updateTrack: (trackId: string, updates: Partial<Track>) => void;
   duplicateTrack: (trackId: string) => string;
@@ -421,6 +423,16 @@ export const useStudioStore = create<StudioState>()(
             get().pushHistory(`Add ${type} track: ${trackName}`);
             return id;
           },
+
+          setTracksDirectly: (tracks) => set((state) => ({
+            tracks,
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
+
+          setMasterTrackDirectly: (masterTrack) => set((state) => ({
+            masterTrack,
+            project: { ...state.project, isDirty: true, modifiedAt: Date.now() }
+          })),
           
           removeTrack: (trackId) => {
             const track = get().tracks.find(t => t.id === trackId);
