@@ -6,6 +6,222 @@ const DEFAULT_TIMEOUT_MS = 30000;
 const CSRF_COOKIE = 'csrf-token';
 const CSRF_HEADER = 'x-csrf-token';
 
+export type ApiErrorCode =
+  | 'NETWORK_ERROR'
+  | 'TIMEOUT'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'VALIDATION_ERROR'
+  | 'RATE_LIMITED'
+  | 'SERVER_ERROR'
+  | 'SERVICE_UNAVAILABLE'
+  | 'UNKNOWN';
+
+export interface StructuredApiError {
+  code: ApiErrorCode;
+  message: string;
+  userMessage: string;
+  status?: number;
+  retryAfter?: number;
+  retryable: boolean;
+  details?: Record<string, unknown>;
+  suggestions: string[];
+}
+
+export class ApiError extends Error {
+  public readonly code: ApiErrorCode;
+  public readonly status?: number;
+  public readonly retryAfter?: number;
+  public readonly retryable: boolean;
+  public readonly userMessage: string;
+  public readonly details?: Record<string, unknown>;
+  public readonly suggestions: string[];
+
+  constructor(structured: StructuredApiError) {
+    super(structured.message);
+    this.name = 'ApiError';
+    this.code = structured.code;
+    this.status = structured.status;
+    this.retryAfter = structured.retryAfter;
+    this.retryable = structured.retryable;
+    this.userMessage = structured.userMessage;
+    this.details = structured.details;
+    this.suggestions = structured.suggestions;
+  }
+
+  static fromResponse(res: Response, body: string): ApiError {
+    const status = res.status;
+    let parsed: Record<string, unknown> = {};
+    
+    try {
+      parsed = JSON.parse(body);
+    } catch {
+      parsed = { message: body || res.statusText };
+    }
+
+    const serverMessage = (parsed.error || parsed.message || body || res.statusText) as string;
+    
+    switch (status) {
+      case 401:
+        return new ApiError({
+          code: 'UNAUTHORIZED',
+          message: serverMessage,
+          userMessage: 'Your session has expired. Please log in again.',
+          status,
+          retryable: false,
+          suggestions: ['Log in again', 'Check your credentials'],
+        });
+        
+      case 403:
+        return new ApiError({
+          code: 'FORBIDDEN',
+          message: serverMessage,
+          userMessage: "You don't have permission to perform this action.",
+          status,
+          retryable: false,
+          suggestions: ['Contact your administrator', 'Check your subscription status'],
+        });
+        
+      case 404:
+        return new ApiError({
+          code: 'NOT_FOUND',
+          message: serverMessage,
+          userMessage: 'The requested resource was not found.',
+          status,
+          retryable: false,
+          suggestions: ['Check the URL', 'The item may have been deleted'],
+        });
+        
+      case 422:
+        return new ApiError({
+          code: 'VALIDATION_ERROR',
+          message: serverMessage,
+          userMessage: 'Please check your input and try again.',
+          status,
+          retryable: false,
+          details: parsed.errors as Record<string, unknown> | undefined,
+          suggestions: ['Review the form for errors', 'Check required fields'],
+        });
+        
+      case 429:
+        const retryAfter = parseInt(res.headers.get('Retry-After') || '60', 10);
+        return new ApiError({
+          code: 'RATE_LIMITED',
+          message: serverMessage,
+          userMessage: `Too many requests. Please wait ${retryAfter} seconds before trying again.`,
+          status,
+          retryAfter,
+          retryable: true,
+          suggestions: [
+            `Wait ${retryAfter} seconds`,
+            'Reduce request frequency',
+            'Contact support if this persists',
+          ],
+        });
+        
+      case 500:
+        return new ApiError({
+          code: 'SERVER_ERROR',
+          message: serverMessage,
+          userMessage: 'Something went wrong on our end. Please try again later.',
+          status,
+          retryable: true,
+          suggestions: ['Wait a moment and try again', 'Contact support if this persists'],
+        });
+        
+      case 502:
+      case 503:
+      case 504:
+        return new ApiError({
+          code: 'SERVICE_UNAVAILABLE',
+          message: serverMessage,
+          userMessage: 'Our service is temporarily unavailable. Please try again in a moment.',
+          status,
+          retryable: true,
+          suggestions: ['Wait a moment and try again', 'Check our status page'],
+        });
+        
+      default:
+        if (status >= 400 && status < 500) {
+          return new ApiError({
+            code: 'UNKNOWN',
+            message: serverMessage,
+            userMessage: 'There was a problem with your request.',
+            status,
+            retryable: false,
+            suggestions: ['Try again', 'Contact support if this persists'],
+          });
+        }
+        return new ApiError({
+          code: 'SERVER_ERROR',
+          message: serverMessage,
+          userMessage: 'An unexpected error occurred.',
+          status,
+          retryable: true,
+          suggestions: ['Try again', 'Contact support if this persists'],
+        });
+    }
+  }
+
+  static networkError(url: string): ApiError {
+    return new ApiError({
+      code: 'NETWORK_ERROR',
+      message: `Network error while fetching ${url}`,
+      userMessage: 'Unable to connect. Please check your internet connection.',
+      retryable: true,
+      suggestions: [
+        'Check your internet connection',
+        'Try disabling VPN or proxy',
+        'Wait a moment and try again',
+      ],
+    });
+  }
+
+  static timeoutError(url: string, timeoutMs: number): ApiError {
+    return new ApiError({
+      code: 'TIMEOUT',
+      message: `Request to ${url} timed out after ${timeoutMs}ms`,
+      userMessage: 'The request took too long. Please try again.',
+      retryable: true,
+      suggestions: [
+        'Check your internet connection',
+        'Try with a smaller file or request',
+        'Wait a moment and try again',
+      ],
+    });
+  }
+}
+
+let rateLimitState: {
+  isRateLimited: boolean;
+  retryAfter: number | null;
+  resetTime: number | null;
+} = {
+  isRateLimited: false,
+  retryAfter: null,
+  resetTime: null,
+};
+
+export function getRateLimitState() {
+  if (rateLimitState.resetTime && Date.now() > rateLimitState.resetTime) {
+    rateLimitState = { isRateLimited: false, retryAfter: null, resetTime: null };
+  }
+  return { ...rateLimitState };
+}
+
+export function clearRateLimitState() {
+  rateLimitState = { isRateLimited: false, retryAfter: null, resetTime: null };
+}
+
+function setRateLimited(retryAfter: number) {
+  rateLimitState = {
+    isRateLimited: true,
+    retryAfter,
+    resetTime: Date.now() + retryAfter * 1000,
+  };
+}
+
 function getCsrfToken(): string | null {
   const cookies = document.cookie.split(';');
   for (const cookie of cookies) {
@@ -58,25 +274,26 @@ function createAbortControllerWithTimeout(timeoutMs: number = DEFAULT_TIMEOUT_MS
   return { controller, cleanup, wasTimeout };
 }
 
-/**
- * TODO: Add function documentation
- */
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
-    const error = new Error(`${res.status}: ${text}`);
+    const apiError = ApiError.fromResponse(res, text);
 
-    // Capture error to our error service
-    captureException(error, {
+    if (apiError.code === 'RATE_LIMITED' && apiError.retryAfter) {
+      setRateLimited(apiError.retryAfter);
+    }
+
+    captureException(apiError, {
       action: 'api-response-error',
       metadata: {
         status: res.status,
         url: res.url,
         statusText: res.statusText,
+        errorCode: apiError.code,
       },
     });
 
-    throw error;
+    throw apiError;
   }
 }
 
@@ -132,9 +349,14 @@ export async function apiRequest(
     return res;
   } catch (error: unknown) {
     controllerWithCleanup?.cleanup();
+    
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
     const err = error as Error;
     if (err?.name === 'AbortError' || err?.message?.includes('timeout')) {
-      const timeoutError = new Error(`Request to ${url} timed out`);
+      const timeoutError = ApiError.timeoutError(url, options?.timeout || DEFAULT_TIMEOUT_MS);
       captureException(timeoutError, {
         action: 'api-timeout',
         metadata: { method, url },
@@ -142,11 +364,13 @@ export async function apiRequest(
       throw timeoutError;
     }
 
-    if (err?.message?.includes('NetworkError') || err?.message?.includes('fetch')) {
-      captureException(error, {
+    if (err?.message?.includes('NetworkError') || err?.message?.includes('fetch') || err?.name === 'TypeError') {
+      const networkError = ApiError.networkError(url);
+      captureException(networkError, {
         action: 'api-network-error',
         metadata: { method, url },
       });
+      throw networkError;
     }
 
     throw error;

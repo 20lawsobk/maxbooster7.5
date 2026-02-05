@@ -1,15 +1,16 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, XCircle, AlertTriangle, Shield, User, Bell, Eye, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, Shield, User, Bell, Eye, Link as LinkIcon, Loader2, Key, Mail, Cookie } from 'lucide-react';
 
-export type SettingsCategory = 'profile' | 'security' | 'notifications' | 'privacy' | 'connected_accounts';
+export type SettingsCategory = 'profile' | 'security' | 'notifications' | 'privacy' | 'connected_accounts' | 'api_keys';
 
 export type OutcomeType = 
-  | 'profile_updated' | 'avatar_uploaded' | 'avatar_removed' | 'username_changed' | 'username_unavailable' | 'bio_updated' | 'display_name_changed'
-  | 'password_changed' | 'password_change_failed' | 'password_requirements_not_met' | '2fa_enabled' | '2fa_disabled' | 'session_terminated' | 'all_sessions_terminated' | 'suspicious_activity_detected' | 'security_alerts_configured' | 'recovery_email_added' | 'recovery_codes_generated'
+  | 'profile_updated' | 'avatar_uploaded' | 'avatar_removed' | 'username_changed' | 'username_unavailable' | 'bio_updated' | 'display_name_changed' | 'email_verification_sent' | 'email_verified' | 'email_verification_failed'
+  | 'password_changed' | 'password_change_failed' | 'password_requirements_not_met' | '2fa_enabled' | '2fa_disabled' | 'session_terminated' | 'all_sessions_terminated' | 'suspicious_activity_detected' | 'security_alerts_configured' | 'recovery_email_added' | 'recovery_codes_generated' | 'recovery_codes_low' | 'recovery_codes_used'
   | 'email_preferences_saved' | 'push_notification_toggled' | 'frequency_updated' | 'unsubscribed' | 'marketing_preferences_updated'
-  | 'visibility_changed' | 'data_export_requested' | 'data_export_ready' | 'account_deletion_initiated' | 'account_deletion_cancelled' | 'gdpr_consent_updated'
-  | 'account_connected' | 'account_disconnected' | 'connection_expired' | 'permissions_updated' | 'connection_refreshed';
+  | 'visibility_changed' | 'data_export_requested' | 'data_export_ready' | 'account_deletion_initiated' | 'account_deletion_cancelled' | 'gdpr_consent_updated' | 'cookie_preferences_saved'
+  | 'account_connected' | 'account_disconnected' | 'connection_expired' | 'permissions_updated' | 'connection_refreshed' | 'connection_failed'
+  | 'api_key_created' | 'api_key_revoked' | 'api_key_regenerated' | 'api_key_copied' | 'rate_limit_warning' | 'rate_limit_exceeded';
 
 interface OutcomeConfig {
   title: string;
@@ -257,6 +258,97 @@ const outcomeConfigs: Record<OutcomeType, OutcomeConfig> = {
     icon: <CheckCircle className="h-4 w-4" />,
     variant: 'default',
     category: 'connected_accounts',
+  },
+  connection_failed: {
+    title: 'Connection Failed',
+    description: 'Could not connect to the account. Please try again later.',
+    icon: <XCircle className="h-4 w-4" />,
+    variant: 'destructive',
+    category: 'connected_accounts',
+  },
+  email_verification_sent: {
+    title: 'Verification Email Sent',
+    description: 'A verification email has been sent to your new address.',
+    icon: <Mail className="h-4 w-4" />,
+    variant: 'default',
+    category: 'profile',
+  },
+  email_verified: {
+    title: 'Email Verified',
+    description: 'Your email address has been verified successfully.',
+    icon: <CheckCircle className="h-4 w-4" />,
+    variant: 'default',
+    category: 'profile',
+  },
+  email_verification_failed: {
+    title: 'Verification Failed',
+    description: 'The verification link is invalid or expired. Please request a new one.',
+    icon: <XCircle className="h-4 w-4" />,
+    variant: 'destructive',
+    category: 'profile',
+  },
+  recovery_codes_low: {
+    title: 'Recovery Codes Running Low',
+    description: 'You have few recovery codes remaining. Consider generating new ones.',
+    icon: <AlertTriangle className="h-4 w-4" />,
+    variant: 'default',
+    category: 'security',
+  },
+  recovery_codes_used: {
+    title: 'Recovery Code Used',
+    description: 'A recovery code was used to access your account.',
+    icon: <Shield className="h-4 w-4" />,
+    variant: 'default',
+    category: 'security',
+  },
+  cookie_preferences_saved: {
+    title: 'Cookie Preferences Saved',
+    description: 'Your cookie consent preferences have been updated.',
+    icon: <Cookie className="h-4 w-4" />,
+    variant: 'default',
+    category: 'privacy',
+  },
+  api_key_created: {
+    title: 'API Key Created',
+    description: 'Your new API key has been generated. Copy it now, as it won\'t be shown again.',
+    icon: <Key className="h-4 w-4" />,
+    variant: 'default',
+    category: 'api_keys',
+  },
+  api_key_revoked: {
+    title: 'API Key Revoked',
+    description: 'The API key has been permanently revoked and can no longer be used.',
+    icon: <CheckCircle className="h-4 w-4" />,
+    variant: 'default',
+    category: 'api_keys',
+  },
+  api_key_regenerated: {
+    title: 'API Key Regenerated',
+    description: 'A new API key has been generated. The old key is no longer valid.',
+    icon: <Key className="h-4 w-4" />,
+    variant: 'default',
+    category: 'api_keys',
+  },
+  api_key_copied: {
+    title: 'API Key Copied',
+    description: 'The API key has been copied to your clipboard.',
+    icon: <CheckCircle className="h-4 w-4" />,
+    variant: 'default',
+    category: 'api_keys',
+  },
+  rate_limit_warning: {
+    title: 'Rate Limit Warning',
+    description: 'You are approaching your API rate limit. Consider upgrading your plan.',
+    icon: <AlertTriangle className="h-4 w-4" />,
+    variant: 'default',
+    category: 'api_keys',
+  },
+  rate_limit_exceeded: {
+    title: 'Rate Limit Exceeded',
+    description: 'You have exceeded your API rate limit. Requests will be rejected until the limit resets.',
+    icon: <XCircle className="h-4 w-4" />,
+    variant: 'destructive',
+    category: 'api_keys',
   },
 };
 

@@ -3077,6 +3077,15 @@ export async function registerRoutes(
 
     // Career Coach - AI-powered personalized recommendations
     { path: "/api/career-coach", name: "careerCoach", loader: () => import("./routes/careerCoach") },
+
+    // User API Keys Management
+    { path: "/api/auth/api-keys", name: "apiKeys", loader: () => import("./routes/apiKeys") },
+
+    // Recovery Codes for 2FA Backup
+    { path: "/api/auth/recovery-codes", name: "recoveryCodes", loader: () => import("./routes/recoveryCodes") },
+
+    // Connected Accounts Management
+    { path: "/api/auth/connected-accounts", name: "connectedAccounts", loader: () => import("./routes/connectedAccounts") },
   ];
 
   for (const { path, name, loader } of routeModules) {

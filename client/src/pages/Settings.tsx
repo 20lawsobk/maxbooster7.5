@@ -73,6 +73,9 @@ import PaymentUpdateDialog from '@/components/dialogs/PaymentUpdateDialog';
 import DeleteAccountDialog from '@/components/dialogs/DeleteAccountDialog';
 import { LoginHistory } from '@/components/settings/LoginHistory';
 import { PrivacySettings } from '@/components/settings/PrivacySettings';
+import { ApiKeyManagement } from '@/components/settings/ApiKeyManagement';
+import { RecoveryCodes } from '@/components/settings/RecoveryCodes';
+import { ConnectedAccountsManager } from '@/components/settings/ConnectedAccountsManager';
 import { useSettingsOutcomes } from '@/components/settings/SettingsOutcomeHandler';
 import {
   AlertDialog,
@@ -1547,7 +1550,12 @@ export default function Settings() {
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
-            <LoginHistory />
+            <div className="grid gap-6">
+              <LoginHistory />
+              <RecoveryCodes />
+              <ApiKeyManagement />
+              <ConnectedAccountsManager />
+            </div>
           </TabsContent>
 
           <TabsContent value="privacy" className="space-y-6">
