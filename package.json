@@ -3,7 +3,10 @@
   "productName": "Max Booster",
   "version": "2.0.0",
   "description": "AI-Powered Music Career Management Platform",
-  "author": "B-Lawz Music",
+  "author": {
+    "name": "B-Lawz Music",
+    "email": "blawzmusic@gmail.com"
+  },
   "type": "module",
   "license": "MIT",
   "main": "electron/main.js",
@@ -40,14 +43,24 @@
   "build": {
     "appId": "com.blawzmusic.maxbooster",
     "productName": "Max Booster",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/sharp/**/*",
+      "node_modules/@tensorflow/**/*"
+    ],
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "!node_modules/@tensorflow/**",
-      "!node_modules/sharp/**"
+      "!node_modules/@img/sharp-*/**",
+      "!node_modules/@msgpackr-extract/**",
+      "!**/*.{ts,tsx,map,md}",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/.bin"
     ],
     "directories": {
-      "output": "dist-installers"
+      "output": "dist-installers",
+      "buildResources": "electron/assets"
     },
     "win": {
       "target": [
@@ -62,7 +75,12 @@
         "zip"
       ],
       "icon": "electron/assets/icon.png",
-      "category": "public.app-category.music"
+      "category": "public.app-category.music",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "electron/assets/entitlements.mac.plist",
+      "entitlementsInherit": "electron/assets/entitlements.mac.plist",
+      "identity": null
     },
     "linux": {
       "target": [
@@ -71,7 +89,8 @@
         "tar.gz"
       ],
       "icon": "electron/assets/icon.png",
-      "category": "Audio"
+      "category": "Audio",
+      "maintainer": "B-Lawz Music <blawzmusic@gmail.com>"
     },
     "nsis": {
       "oneClick": false,
