@@ -90,6 +90,7 @@ export function DistributionDialog({
   const [artworkPreview, setArtworkPreview] = useState<string>('');
   const [exportProgress, setExportProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState<string>('');
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -673,7 +674,7 @@ export function DistributionDialog({
                 <div className="flex gap-2 mt-4">
                   <Button
                     onClick={handleExport}
-                    disabled={!existingPackage?.id || exportMutation.isPending}
+                    disabled={!existingPackage?.id || exportMutation.isPending || !rightsConfirmed}
                     data-testid="button-export"
                   >
                     {exportMutation.isPending ? (
@@ -715,6 +716,27 @@ export function DistributionDialog({
                   <li>artwork.jpg/png - Album artwork (if provided)</li>
                   <li>README.txt - Package information</li>
                 </ul>
+              </div>
+
+              <div className="p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20 space-y-3">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="rights-confirm-export"
+                    checked={rightsConfirmed}
+                    onCheckedChange={(checked) => setRightsConfirmed(checked as boolean)}
+                    data-testid="checkbox-rights-confirm-export"
+                  />
+                  <label htmlFor="rights-confirm-export" className="text-sm leading-tight cursor-pointer">
+                    I confirm I own or have obtained all necessary rights, licenses, and permissions 
+                    to distribute this content. I understand that submitting content I don't have rights 
+                    to may result in takedowns, legal liability, and account termination.
+                  </label>
+                </div>
+                {!rightsConfirmed && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 ml-6">
+                    You must confirm your rights before exporting for distribution.
+                  </p>
+                )}
               </div>
             </div>
           </TabsContent>

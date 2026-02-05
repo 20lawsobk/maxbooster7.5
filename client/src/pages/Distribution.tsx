@@ -261,6 +261,10 @@ interface UploadForm {
     role: string;
     percentage: number;
   }[];
+
+  // Legal Confirmations
+  rightsConfirmed: boolean;
+  contentOriginal: boolean;
 }
 
 // API Response Types
@@ -518,6 +522,8 @@ export default function Distribution() {
     leaveALegacy: false,
     legacyPrice: 29,
     collaborators: [],
+    rightsConfirmed: false,
+    contentOriginal: false,
   });
 
   // Chunked Upload State
@@ -3757,6 +3763,63 @@ export default function Distribution() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-blue-800 dark:text-blue-200">
+                          Rights Confirmation Required
+                        </p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                          Please confirm the following before submitting your release:
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 ml-8">
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id="rights-confirmed"
+                          checked={uploadForm.rightsConfirmed}
+                          onCheckedChange={(checked) =>
+                            setUploadForm((prev) => ({ ...prev, rightsConfirmed: checked as boolean }))
+                          }
+                          data-testid="checkbox-rights-confirmed"
+                        />
+                        <Label htmlFor="rights-confirmed" className="text-sm leading-tight cursor-pointer">
+                          I confirm that I own or have obtained all necessary rights, licenses, and permissions 
+                          to distribute this content. I have cleared all samples, interpolations, and third-party 
+                          elements. I have mechanical licenses for any cover songs.
+                        </Label>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id="content-original"
+                          checked={uploadForm.contentOriginal}
+                          onCheckedChange={(checked) =>
+                            setUploadForm((prev) => ({ ...prev, contentOriginal: checked as boolean }))
+                          }
+                          data-testid="checkbox-content-original"
+                        />
+                        <Label htmlFor="content-original" className="text-sm leading-tight cursor-pointer">
+                          I understand that submitting content I don't have rights to may result in takedowns, 
+                          legal liability, and account termination. I agree to the{' '}
+                          <a href="/terms" target="_blank" className="text-blue-600 hover:underline">
+                            Terms of Service
+                          </a>{' '}
+                          including the indemnification clause.
+                        </Label>
+                      </div>
+                    </div>
+
+                    {(!uploadForm.rightsConfirmed || !uploadForm.contentOriginal) && (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 ml-8">
+                        You must confirm both statements above to submit your release.
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -3772,7 +3835,10 @@ export default function Distribution() {
                 </Button>
                 <Button
                   onClick={currentStep === 5 ? handleUploadSubmit : nextStep}
-                  disabled={uploadReleaseMutation.isPending}
+                  disabled={
+                    uploadReleaseMutation.isPending ||
+                    (currentStep === 5 && (!uploadForm.rightsConfirmed || !uploadForm.contentOriginal))
+                  }
                   className="bg-blue-600 hover:bg-blue-700"
                   data-testid={currentStep === 5 ? 'button-submit-release' : 'button-next-step'}
                 >

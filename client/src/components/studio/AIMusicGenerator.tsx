@@ -192,6 +192,22 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="p-3 rounded-lg bg-amber-900/20 border border-amber-700/30">
+          <div className="flex items-start gap-2">
+            <div className="w-5 h-5 rounded-full bg-amber-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-amber-400 text-xs">!</span>
+            </div>
+            <div>
+              <p className="text-xs text-amber-300 font-medium">AI Copyright Notice</p>
+              <p className="text-xs text-amber-200/70 mt-1">
+                AI-generated melodies and patterns are creative starting points. For full copyright protection, 
+                add substantial human creative input (arrangement, lyrics, production). Pure AI output alone 
+                may not be copyrightable under current law.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-2">
           <label className="text-sm font-medium text-zinc-400">Describe your music</label>
           <div className="relative">
