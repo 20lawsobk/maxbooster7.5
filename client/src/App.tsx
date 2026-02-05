@@ -8,6 +8,11 @@ import { AIAssistantPublic } from '@/components/support/AIAssistantPublic';
 import { AIAssistantPersonalized } from '@/components/support/AIAssistantPersonalized';
 import { InstallBanner } from '@/components/pwa/InstallBanner';
 import { DeepLinkHandler } from '@/components/DeepLinkHandler';
+import { UndoProvider } from '@/contexts/UndoContext';
+import { UndoToast } from '@/components/undo/UndoToast';
+import { ShortcutProvider } from '@/contexts/ShortcutContext';
+import { CommandPalette } from '@/components/commands/CommandPalette';
+import { ShortcutGuide, QuickActionBar } from '@/components/shortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
 import Landing from '@/pages/Landing';
@@ -251,28 +256,34 @@ function AIAssistantManager() {
 
 function App() {
   return (
-    <>
-      <Toaster />
-      <CookieConsentBanner />
-      <InstallBanner />
-      <DeepLinkHandler />
-      <AIAssistantManager />
-      <div id="main-content" role="main" tabIndex={-1}>
-        <Suspense
-          fallback={
-            <div
-              className="min-h-screen flex items-center justify-center"
-              role="status"
-              aria-label="Loading application"
-            >
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-            </div>
-          }
-        >
-          <AppWithKeyboardShortcuts />
-        </Suspense>
-      </div>
-    </>
+    <UndoProvider maxHistorySize={100} persistToStorage={true}>
+      <ShortcutProvider persistConfig={true}>
+        <Toaster />
+        <CookieConsentBanner />
+        <InstallBanner />
+        <DeepLinkHandler />
+        <AIAssistantManager />
+        <UndoToast />
+        <CommandPalette />
+        <ShortcutGuide />
+        <QuickActionBar position="bottom-right" />
+        <div id="main-content" role="main" tabIndex={-1}>
+          <Suspense
+            fallback={
+              <div
+                className="min-h-screen flex items-center justify-center"
+                role="status"
+                aria-label="Loading application"
+              >
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+              </div>
+            }
+          >
+            <AppWithKeyboardShortcuts />
+          </Suspense>
+        </div>
+      </ShortcutProvider>
+    </UndoProvider>
   );
 }
 

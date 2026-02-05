@@ -2914,11 +2914,17 @@ export async function registerRoutes(
   const { default: artistProgressRouter } = await import("./routes/artistProgress.ts");
   const { default: revenueForecastRouter } = await import("./routes/revenueForecast.ts");
   const { default: filesRouter } = await import("./routes/files.ts");
+  const { default: preferencesRouter } = await import("./routes/preferences.ts");
   app.use("/api/admin", adminRouter);
   app.use("/api/paid", paidRouter);
   app.use("/api/artist-progress", artistProgressRouter);
   app.use("/api/revenue-forecast", revenueForecastRouter);
   app.use("/api/files", filesRouter);
+  app.use("/api/preferences", preferencesRouter);
+
+  // Undo system routes
+  const { default: undoRouter } = await import("./routes/undo.ts");
+  app.use("/api/undo", undoRouter);
 
   // AI: Optimize content
   app.post("/api/ai/optimize-content", async (req: Request, res: Response) => {
@@ -2970,6 +2976,7 @@ export async function registerRoutes(
     // Core Platform Routes
     { path: "/api/achievements", name: "achievements", loader: () => import("./routes/achievements") },
     { path: "/api/onboarding", name: "onboarding", loader: () => import("./routes/onboarding") },
+    { path: "/api/personalization", name: "personalization", loader: () => import("./routes/personalization") },
     { path: "/api/distribution", name: "distribution", loader: () => import("./routes/distribution") },
     { path: "/api/countdowns", name: "releaseCountdown", loader: () => import("./routes/releaseCountdown") },
     { path: "/api/storefront", name: "storefront", loader: () => import("./routes/storefront") },
@@ -3018,6 +3025,7 @@ export async function registerRoutes(
 
     // Offline Mode
     { path: "/api/offline", name: "offline", loader: () => import("./routes/offline") },
+    { path: "/api/sync", name: "sync", loader: () => import("./routes/sync") },
 
     // Workspace & Developer
     { path: "/api/workspace", name: "workspace", loader: () => import("./routes/workspace") },

@@ -363,6 +363,7 @@ export default function PaymentUpdateDialog({ open, onOpenChange }: PaymentUpdat
             </Button>
           </div>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -1130,8 +1130,6 @@ export default function Royalties() {
                       Add Collaborator
                     </Button>
                   </div>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>

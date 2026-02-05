@@ -1,64 +1,147 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { announcePolite } from '@/lib/a11y/screenReader';
 
-interface SkipLink {
+export interface SkipLink {
   id: string;
   label: string;
+  shortcut?: string;
+  priority?: number;
 }
 
 const defaultLinks: SkipLink[] = [
-  { id: 'main-content', label: 'Skip to main content' },
-  { id: 'navigation', label: 'Skip to navigation' },
-  { id: 'search', label: 'Skip to search' },
+  { id: 'main-content', label: 'Skip to main content', shortcut: 'Alt+1', priority: 1 },
+  { id: 'navigation', label: 'Skip to navigation', shortcut: 'Alt+2', priority: 2 },
+  { id: 'search', label: 'Skip to search', shortcut: 'Alt+3', priority: 3 },
+  { id: 'sidebar', label: 'Skip to sidebar', shortcut: 'Alt+4', priority: 4 },
+  { id: 'footer', label: 'Skip to footer', shortcut: 'Alt+5', priority: 5 },
+  { id: 'breadcrumb', label: 'Skip to breadcrumb', priority: 6 },
+  { id: 'actions', label: 'Skip to actions', priority: 7 },
+  { id: 'filters', label: 'Skip to filters', priority: 8 },
 ];
 
-interface SkipLinksProps {
+export interface SkipLinksProps {
   links?: SkipLink[];
+  showShortcuts?: boolean;
+  respectReducedMotion?: boolean;
 }
 
-/**
- * TODO: Add function documentation
- */
-export function SkipLinks({ links = defaultLinks }: SkipLinksProps) {
+export function SkipLinks({ 
+  links = defaultLinks,
+  showShortcuts = true,
+  respectReducedMotion = true,
+}: SkipLinksProps) {
   const [focused, setFocused] = useState(false);
+  const [activeLinks, setActiveLinks] = useState<SkipLink[]>([]);
 
-  const handleSkip = (targetId: string) => {
+  useEffect(() => {
+    const checkAvailableTargets = () => {
+      const available = links.filter(link => {
+        const element = document.getElementById(link.id);
+        if (!element) return false;
+        const style = window.getComputedStyle(element);
+        return style.display !== 'none' && style.visibility !== 'hidden';
+      });
+      
+      setActiveLinks(available.sort((a, b) => (a.priority || 99) - (b.priority || 99)));
+    };
+
+    checkAvailableTargets();
+    
+    const observer = new MutationObserver(checkAvailableTargets);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    return () => observer.disconnect();
+  }, [links]);
+
+  const handleSkip = useCallback((targetId: string, label: string) => {
     const element = document.getElementById(targetId);
     if (element) {
-      element.tabIndex = -1;
-      element.focus();
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.setAttribute('tabindex', '-1');
+      element.focus({ preventScroll: false });
+      
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      element.scrollIntoView({ 
+        behavior: respectReducedMotion && prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+      
+      announcePolite(`Navigated to ${label.replace('Skip to ', '')}`);
+      
+      const handleBlur = () => {
+        if (!element.hasAttribute('data-original-tabindex')) {
+          element.removeAttribute('tabindex');
+        }
+        element.removeEventListener('blur', handleBlur);
+      };
+      element.addEventListener('blur', handleBlur);
+    } else {
+      announcePolite(`${label.replace('Skip to ', '')} section not found`);
     }
-  };
+  }, [respectReducedMotion]);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      if (!event.altKey) return;
+
+      const numKey = parseInt(event.key, 10);
+      if (numKey >= 1 && numKey <= activeLinks.length && numKey <= 9) {
+        const link = activeLinks.find(l => l.shortcut === `Alt+${numKey}`);
+        if (link) {
+          event.preventDefault();
+          handleSkip(link.id, link.label);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [activeLinks, handleSkip]);
+
+  if (activeLinks.length === 0) return null;
 
   return (
     <div
       className={`
-        fixed top-0 left-0 z-[9999] bg-background p-4 transform transition-transform
+        fixed top-0 left-0 z-[9999] bg-background border-b shadow-lg p-4 
+        transform transition-transform duration-200 ease-in-out
         ${focused ? 'translate-y-0' : '-translate-y-full'}
+        focus-within:translate-y-0
       `}
       onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setFocused(false);
+        }
+      }}
     >
-      <nav aria-label="Skip links" className="flex gap-2">
-        {links.map((link) => (
+      <nav aria-label="Skip navigation links" role="navigation" className="flex flex-wrap gap-2">
+        {activeLinks.map((link) => (
           <Button
             key={link.id}
             variant="secondary"
             size="sm"
-            onClick={() => handleSkip(link.id)}
+            onClick={() => handleSkip(link.id, link.label)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                handleSkip(link.id);
+                handleSkip(link.id, link.label);
               }
             }}
-            className="focus-visible:outline-offset-2"
+            className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-keyshortcuts={link.shortcut}
           >
             {link.label}
+            {showShortcuts && link.shortcut && (
+              <span className="ml-2 text-xs opacity-70 hidden sm:inline">
+                ({link.shortcut})
+              </span>
+            )}
           </Button>
         ))}
       </nav>
     </div>
   );
 }
+
+export default SkipLinks;
