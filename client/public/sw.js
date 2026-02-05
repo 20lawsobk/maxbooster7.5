@@ -14,14 +14,32 @@ const API_CACHE_ENDPOINTS = [
   '/api/analytics',
   '/api/dashboard',
   '/api/user/preferences',
-  '/api/projects'
+  '/api/projects',
+  '/api/studio',
+  '/api/settings',
+  '/api/posts',
+  '/api/releases',
+  '/api/distribution'
 ];
 
 const CACHE_TTL = {
   api: 5 * 60 * 1000,
   analytics: 15 * 60 * 1000,
   dashboard: 5 * 60 * 1000,
-  static: 7 * 24 * 60 * 60 * 1000
+  static: 7 * 24 * 60 * 60 * 1000,
+  studio: 30 * 60 * 1000,
+  settings: 60 * 60 * 1000,
+  posts: 10 * 60 * 1000,
+  projects: 20 * 60 * 1000
+};
+
+const OFFLINE_DRAFT_CACHE = 'max-booster-drafts-v1';
+const OFFLINE_MEDIA_CACHE = 'max-booster-media-v1';
+
+const MAX_CACHE_ITEMS = {
+  api: 100,
+  drafts: 50,
+  media: 200
 };
 
 self.addEventListener('install', (event) => {
@@ -357,14 +375,71 @@ self.addEventListener('message', (event) => {
       event.source?.postMessage({ type: 'CACHE_STATS', stats });
     });
   }
+
+  if (event.data && event.data.type === 'PREFETCH_CRITICAL') {
+    prefetchCriticalData().then(() => {
+      event.source?.postMessage({ type: 'PREFETCH_COMPLETE' });
+    });
+  }
+
+  if (event.data && event.data.type === 'CACHE_ENDPOINTS') {
+    const endpoints = event.data.endpoints || [];
+    cacheEndpoints(endpoints).then(() => {
+      event.source?.postMessage({ type: 'ENDPOINTS_CACHED', count: endpoints.length });
+    });
+  }
+
+  if (event.data && event.data.type === 'CLEANUP_CACHE') {
+    cleanupExpiredCache().then(() => {
+      event.source?.postMessage({ type: 'CACHE_CLEANED' });
+    });
+  }
+
+  if (event.data && event.data.type === 'GET_OFFLINE_STATUS') {
+    Promise.all([
+      getCacheStats(),
+      getBackgroundSyncQueue()
+    ]).then(([stats, queue]) => {
+      event.source?.postMessage({
+        type: 'OFFLINE_STATUS',
+        stats,
+        pendingSync: queue.length,
+        cacheReady: stats.api > 0 || stats.static > 0
+      });
+    });
+  }
 });
+
+async function cacheEndpoints(endpoints) {
+  const cache = await caches.open(API_CACHE);
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, { credentials: 'include' });
+      if (response.ok) {
+        const headers = new Headers(response.headers);
+        headers.set('sw-cached-at', Date.now().toString());
+        const body = await response.blob();
+        const cachedResponse = new Response(body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers
+        });
+        cache.put(endpoint, cachedResponse);
+      }
+    } catch (error) {
+      console.warn('[SW] Failed to cache endpoint:', endpoint);
+    }
+  }
+}
 
 async function getCacheStats() {
   const stats = {
     static: 0,
     dynamic: 0,
     api: 0,
-    syncQueue: 0
+    syncQueue: 0,
+    drafts: 0,
+    media: 0
   };
   
   try {
@@ -379,9 +454,84 @@ async function getCacheStats() {
     
     const syncQueue = await getBackgroundSyncQueue();
     stats.syncQueue = syncQueue.length;
+
+    try {
+      const draftsCache = await caches.open(OFFLINE_DRAFT_CACHE);
+      stats.drafts = (await draftsCache.keys()).length;
+    } catch (e) {}
+
+    try {
+      const mediaCache = await caches.open(OFFLINE_MEDIA_CACHE);
+      stats.media = (await mediaCache.keys()).length;
+    } catch (e) {}
   } catch (error) {
     console.error('[SW] Error getting cache stats:', error);
   }
   
   return stats;
 }
+
+function getCacheTTL(url) {
+  const pathname = new URL(url).pathname;
+  if (pathname.includes('/analytics')) return CACHE_TTL.analytics;
+  if (pathname.includes('/dashboard')) return CACHE_TTL.dashboard;
+  if (pathname.includes('/studio')) return CACHE_TTL.studio;
+  if (pathname.includes('/settings')) return CACHE_TTL.settings;
+  if (pathname.includes('/posts')) return CACHE_TTL.posts;
+  if (pathname.includes('/projects')) return CACHE_TTL.projects;
+  return CACHE_TTL.api;
+}
+
+async function prefetchCriticalData() {
+  const criticalEndpoints = [
+    '/api/user/preferences',
+    '/api/settings',
+    '/api/dashboard/summary'
+  ];
+
+  for (const endpoint of criticalEndpoints) {
+    try {
+      const response = await fetch(endpoint, { credentials: 'include' });
+      if (response.ok) {
+        const cache = await caches.open(API_CACHE);
+        const headers = new Headers(response.headers);
+        headers.set('sw-cached-at', Date.now().toString());
+        const body = await response.blob();
+        const cachedResponse = new Response(body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers
+        });
+        cache.put(endpoint, cachedResponse);
+        console.log('[SW] Prefetched:', endpoint);
+      }
+    } catch (error) {
+      console.warn('[SW] Prefetch failed for:', endpoint);
+    }
+  }
+}
+
+async function cleanupExpiredCache() {
+  const cache = await caches.open(API_CACHE);
+  const keys = await cache.keys();
+  const now = Date.now();
+  let cleaned = 0;
+
+  for (const request of keys) {
+    const response = await cache.match(request);
+    if (response) {
+      const cachedAt = parseInt(response.headers.get('sw-cached-at') || '0');
+      const ttl = getCacheTTL(request.url);
+      if (now - cachedAt > ttl) {
+        await cache.delete(request);
+        cleaned++;
+      }
+    }
+  }
+
+  if (cleaned > 0) {
+    console.log('[SW] Cleaned', cleaned, 'expired cache entries');
+  }
+}
+
+setInterval(cleanupExpiredCache, 5 * 60 * 1000);

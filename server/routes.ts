@@ -2284,6 +2284,15 @@ export async function registerRoutes(
     }
   });
 
+  // Accessibility preferences endpoints
+  try {
+    const accessibilityRouter = (await import('./routes/accessibility.js')).default;
+    app.use('/api/user', accessibilityRouter);
+    log('Accessibility routes registered');
+  } catch (error: any) {
+    log(`Warning: Could not load accessibility routes - ${error.message}`);
+  }
+
   // User preferences endpoints
   app.get("/api/user/preferences", async (req: Request, res: Response) => {
     if (!req.user) {
@@ -2915,16 +2924,22 @@ export async function registerRoutes(
   const { default: revenueForecastRouter } = await import("./routes/revenueForecast.ts");
   const { default: filesRouter } = await import("./routes/files.ts");
   const { default: preferencesRouter } = await import("./routes/preferences.ts");
+  const { default: shortcutsRouter } = await import("./routes/shortcuts.ts");
   app.use("/api/admin", adminRouter);
   app.use("/api/paid", paidRouter);
   app.use("/api/artist-progress", artistProgressRouter);
   app.use("/api/revenue-forecast", revenueForecastRouter);
   app.use("/api/files", filesRouter);
   app.use("/api/preferences", preferencesRouter);
+  app.use("/api/shortcuts", shortcutsRouter);
 
   // Undo system routes
   const { default: undoRouter } = await import("./routes/undo.ts");
   app.use("/api/undo", undoRouter);
+
+  // Batch operations routes
+  const { default: batchRouter } = await import("./routes/batch.ts");
+  app.use("/api/batch", batchRouter);
 
   // AI: Optimize content
   app.post("/api/ai/optimize-content", async (req: Request, res: Response) => {

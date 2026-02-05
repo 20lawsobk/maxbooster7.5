@@ -8,10 +8,12 @@ export type ActionType =
   | 'move'
   | 'copy'
   | 'rename'
+  | 'batch'
   | 'settings_change'
   | 'file_upload'
   | 'file_delete'
   | 'track_edit'
+  | 'track_remove'
   | 'release_edit'
   | 'post_create'
   | 'post_delete'
@@ -135,7 +137,7 @@ export function createGroupId(): string {
 }
 
 export function isDestructiveAction(type: ActionType): boolean {
-  return ['delete', 'file_delete', 'post_delete', 'collaboration_remove'].includes(type);
+  return ['delete', 'file_delete', 'post_delete', 'track_remove', 'collaboration_remove'].includes(type);
 }
 
 export function getActionLabel(action: UndoableAction): string {
@@ -150,10 +152,12 @@ export function getActionLabel(action: UndoableAction): string {
     move: 'Moved',
     copy: 'Copied',
     rename: 'Renamed',
+    batch: 'Batch operation',
     settings_change: 'Changed settings',
     file_upload: 'Uploaded file',
     file_delete: 'Deleted file',
     track_edit: 'Edited track',
+    track_remove: 'Removed track',
     release_edit: 'Edited release',
     post_create: 'Created post',
     post_delete: 'Deleted post',

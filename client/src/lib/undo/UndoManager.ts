@@ -8,7 +8,7 @@ import {
 } from './types';
 
 const DEFAULT_CONFIG: UndoManagerConfig = {
-  maxHistorySize: 100,
+  maxHistorySize: 50,
   persistToStorage: true,
   storageKey: 'maxbooster_undo_history',
 };
@@ -30,7 +30,7 @@ export class UndoManager {
     if (!this.config.persistToStorage) return;
 
     try {
-      const stored = localStorage.getItem(this.config.storageKey);
+      const stored = sessionStorage.getItem(this.config.storageKey);
       if (stored) {
         const parsed: SerializedAction[] = JSON.parse(stored);
         parsed.forEach((serialized) => {
@@ -56,7 +56,7 @@ export class UndoManager {
         groupId: action.groupId,
         isUndone: action.isUndone,
       }));
-      localStorage.setItem(this.config.storageKey, JSON.stringify(serialized));
+      sessionStorage.setItem(this.config.storageKey, JSON.stringify(serialized));
     } catch (error) {
       console.warn('Failed to save undo history to storage:', error);
     }
@@ -240,7 +240,7 @@ export class UndoManager {
     this.currentGroupId = null;
 
     if (this.config.persistToStorage) {
-      localStorage.removeItem(this.config.storageKey);
+      sessionStorage.removeItem(this.config.storageKey);
     }
 
     this.notifyHistoryChange();

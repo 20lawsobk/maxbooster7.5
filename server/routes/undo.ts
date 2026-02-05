@@ -414,4 +414,341 @@ router.post('/batch', async (req: Request, res: Response) => {
   }
 });
 
+interface RestorePoint {
+  id: string;
+  userId: string;
+  name: string;
+  description?: string;
+  actionId: string;
+  createdAt: Date;
+}
+
+interface DeletedItem {
+  id: string;
+  userId: string;
+  actionId: string;
+  type: string;
+  name: string;
+  data: unknown;
+  deletedAt: Date;
+  expiresAt: Date;
+}
+
+const restorePointCache = new Map<string, RestorePoint>();
+const deletedItemCache = new Map<string, DeletedItem>();
+
+function generateRestorePointId(): string {
+  return `restore_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+function generateDeletedItemId(): string {
+  return `deleted_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+router.post('/track-action', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const {
+      type,
+      category = 'other',
+      module,
+      description,
+      entityId,
+      entityType,
+      previousState,
+      newState,
+      isDestructive = false,
+    } = req.body;
+
+    if (!type || !module || !description) {
+      return res.status(400).json({
+        message: 'Missing required fields: type, module, description',
+      });
+    }
+
+    const action: UndoAction = {
+      id: generateActionId(),
+      userId: req.user.id,
+      type,
+      category,
+      module,
+      description,
+      entityId,
+      entityType,
+      previousState,
+      newState,
+      isUndone: false,
+      createdAt: new Date(),
+    };
+
+    actionCache.set(action.id, action);
+
+    if (isDestructive && previousState) {
+      const deletedItem: DeletedItem = {
+        id: generateDeletedItemId(),
+        userId: req.user.id,
+        actionId: action.id,
+        type: entityType || 'unknown',
+        name: description,
+        data: previousState,
+        deletedAt: new Date(),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      };
+      deletedItemCache.set(deletedItem.id, deletedItem);
+    }
+
+    const userActions = Array.from(actionCache.values()).filter(
+      (a) => a.userId === req.user!.id
+    );
+    if (userActions.length > 100) {
+      const oldest = userActions.sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+      )[0];
+      actionCache.delete(oldest.id);
+    }
+
+    return res.json({
+      success: true,
+      actionId: action.id,
+      message: 'Action tracked successfully',
+    });
+  } catch (error) {
+    console.error('Error tracking action:', error);
+    return res.status(500).json({ message: 'Failed to track action' });
+  }
+});
+
+router.post('/create-restore-point', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const { name, description } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: 'name is required' });
+    }
+
+    const userActions = Array.from(actionCache.values())
+      .filter((a) => a.userId === req.user!.id)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    
+    const lastAction = userActions[0];
+
+    const restorePoint: RestorePoint = {
+      id: generateRestorePointId(),
+      userId: req.user.id,
+      name,
+      description,
+      actionId: lastAction?.id || '',
+      createdAt: new Date(),
+    };
+
+    restorePointCache.set(restorePoint.id, restorePoint);
+
+    const userRestorePoints = Array.from(restorePointCache.values()).filter(
+      (rp) => rp.userId === req.user!.id
+    );
+    if (userRestorePoints.length > 20) {
+      const oldest = userRestorePoints.sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+      )[0];
+      restorePointCache.delete(oldest.id);
+    }
+
+    return res.json({
+      success: true,
+      restorePointId: restorePoint.id,
+      message: 'Restore point created successfully',
+    });
+  } catch (error) {
+    console.error('Error creating restore point:', error);
+    return res.status(500).json({ message: 'Failed to create restore point' });
+  }
+});
+
+router.get('/restore-points', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const userRestorePoints = Array.from(restorePointCache.values())
+      .filter((rp) => rp.userId === req.user!.id)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return res.json({
+      success: true,
+      restorePoints: userRestorePoints.map((rp) => ({
+        id: rp.id,
+        name: rp.name,
+        description: rp.description,
+        actionId: rp.actionId,
+        createdAt: rp.createdAt.toISOString(),
+      })),
+    });
+  } catch (error) {
+    console.error('Error fetching restore points:', error);
+    return res.status(500).json({ message: 'Failed to fetch restore points' });
+  }
+});
+
+router.post('/restore/:pointId', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const { pointId } = req.params;
+    const restorePoint = restorePointCache.get(pointId);
+
+    if (!restorePoint) {
+      return res.status(404).json({ message: 'Restore point not found' });
+    }
+
+    if (restorePoint.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to use this restore point' });
+    }
+
+    const userActions = Array.from(actionCache.values())
+      .filter((a) => a.userId === req.user!.id)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const restorePointAction = actionCache.get(restorePoint.actionId);
+    const undoneActions: string[] = [];
+
+    for (const action of userActions) {
+      if (restorePointAction && action.createdAt > restorePointAction.createdAt) {
+        if (!action.isUndone) {
+          action.isUndone = true;
+          action.undoneAt = new Date();
+          undoneActions.push(action.id);
+        }
+      }
+    }
+
+    return res.json({
+      success: true,
+      restorePointId: pointId,
+      undoneActions,
+      message: `Restored to "${restorePoint.name}" - ${undoneActions.length} actions undone`,
+    });
+  } catch (error) {
+    console.error('Error restoring to point:', error);
+    return res.status(500).json({ message: 'Failed to restore to point' });
+  }
+});
+
+router.delete('/restore-points/:pointId', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const { pointId } = req.params;
+    const restorePoint = restorePointCache.get(pointId);
+
+    if (!restorePoint) {
+      return res.status(404).json({ message: 'Restore point not found' });
+    }
+
+    if (restorePoint.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this restore point' });
+    }
+
+    restorePointCache.delete(pointId);
+
+    return res.json({
+      success: true,
+      message: 'Restore point deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting restore point:', error);
+    return res.status(500).json({ message: 'Failed to delete restore point' });
+  }
+});
+
+router.get('/deleted-items', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const { type, limit = 50 } = req.query;
+    const now = new Date();
+
+    let userDeletedItems = Array.from(deletedItemCache.values())
+      .filter((item) => item.userId === req.user!.id && item.expiresAt > now);
+
+    if (type) {
+      userDeletedItems = userDeletedItems.filter((item) => item.type === type);
+    }
+
+    userDeletedItems.sort((a, b) => b.deletedAt.getTime() - a.deletedAt.getTime());
+
+    const limitNum = Math.min(parseInt(limit as string) || 50, 100);
+
+    return res.json({
+      success: true,
+      items: userDeletedItems.slice(0, limitNum).map((item) => ({
+        id: item.id,
+        actionId: item.actionId,
+        type: item.type,
+        name: item.name,
+        deletedAt: item.deletedAt.toISOString(),
+        expiresAt: item.expiresAt.toISOString(),
+      })),
+      total: userDeletedItems.length,
+    });
+  } catch (error) {
+    console.error('Error fetching deleted items:', error);
+    return res.status(500).json({ message: 'Failed to fetch deleted items' });
+  }
+});
+
+router.post('/recover/:itemId', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const { itemId } = req.params;
+    const deletedItem = deletedItemCache.get(itemId);
+
+    if (!deletedItem) {
+      return res.status(404).json({ message: 'Deleted item not found' });
+    }
+
+    if (deletedItem.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to recover this item' });
+    }
+
+    if (deletedItem.expiresAt < new Date()) {
+      deletedItemCache.delete(itemId);
+      return res.status(410).json({ message: 'Item has expired and cannot be recovered' });
+    }
+
+    const action = actionCache.get(deletedItem.actionId);
+    if (action) {
+      action.isUndone = true;
+      action.undoneAt = new Date();
+    }
+
+    deletedItemCache.delete(itemId);
+
+    return res.json({
+      success: true,
+      recoveredData: deletedItem.data,
+      message: 'Item recovered successfully',
+    });
+  } catch (error) {
+    console.error('Error recovering item:', error);
+    return res.status(500).json({ message: 'Failed to recover item' });
+  }
+});
+
 export default router;

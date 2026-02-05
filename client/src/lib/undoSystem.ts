@@ -59,7 +59,7 @@ export class UndoStack {
     if (!this.config.persistToStorage || typeof window === 'undefined') return;
 
     try {
-      const stored = localStorage.getItem(this.config.storageKey);
+      const stored = sessionStorage.getItem(this.config.storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         this.history = parsed.history || [];
@@ -94,7 +94,7 @@ export class UndoStack {
           timestamp: a.timestamp,
         })),
       };
-      localStorage.setItem(this.config.storageKey, JSON.stringify(serialized));
+      sessionStorage.setItem(this.config.storageKey, JSON.stringify(serialized));
     } catch (error) {
       console.warn('Failed to save undo stack to storage:', error);
     }
@@ -290,7 +290,7 @@ export class UndoStack {
     this.currentGroupId = null;
 
     if (this.config.persistToStorage) {
-      localStorage.removeItem(this.config.storageKey);
+      sessionStorage.removeItem(this.config.storageKey);
     }
 
     this.config.onClear?.();

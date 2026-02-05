@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { randomUUID } from 'crypto';
 import { storageService } from '../services/storageService.js';
+import { hybridStorageService } from '../services/hybridStorageService.js';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import path from 'path';
@@ -501,5 +502,262 @@ function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
+
+router.post('/hybrid/upload', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    const { folder, forceTier, isPublic } = req.body;
+    const userId = req.session.userId!;
+
+    const result = await hybridStorageService.upload(
+      userId,
+      req.file.originalname,
+      req.file.buffer,
+      req.file.mimetype,
+      {
+        folder,
+        forceTier: forceTier as 'hot' | 'cold' | undefined,
+        isPublic: isPublic === 'true',
+        metadata: req.body.metadata ? JSON.parse(req.body.metadata) : undefined,
+      }
+    );
+
+    logger.info(`[HybridStorage] Uploaded: ${result.key} (${result.tier} tier)`);
+
+    res.json({
+      success: true,
+      file: {
+        key: result.key,
+        tier: result.tier,
+        size: result.sizeBytes,
+        compressedSize: result.compressedSize,
+        contentHash: result.contentHash,
+        isDeduplicated: result.isDeduplicated,
+        compressionRatio: result.compressionRatio,
+        url: `/api/storage/hybrid/file/${encodeURIComponent(result.key)}`,
+      },
+    });
+  } catch (error) {
+    logger.error('[HybridStorage] Upload failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Upload failed' 
+    });
+  }
+});
+
+router.get('/hybrid/file/:key(*)', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { key } = req.params;
+    const userId = req.session.userId!;
+    
+    const buffer = await hybridStorageService.read(userId, key);
+    const metadata = hybridStorageService.getMetadata(key);
+    
+    const ext = path.extname(key).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.wav': 'audio/wav',
+      '.mp3': 'audio/mpeg',
+      '.flac': 'audio/flac',
+      '.ogg': 'audio/ogg',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+    };
+
+    res.setHeader('Content-Type', metadata?.mimeType || mimeTypes[ext] || 'application/octet-stream');
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('X-Storage-Tier', metadata?.tier || 'unknown');
+    res.send(buffer);
+  } catch (error) {
+    logger.error('[HybridStorage] Download failed:', error);
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
+router.delete('/hybrid/file/:key(*)', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { key } = req.params;
+    const userId = req.session.userId!;
+
+    const success = await hybridStorageService.delete(userId, key);
+
+    if (success) {
+      logger.info(`[HybridStorage] Deleted: ${key}`);
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: 'File not found' });
+    }
+  } catch (error) {
+    logger.error('[HybridStorage] Delete failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Delete failed' 
+    });
+  }
+});
+
+router.get('/hybrid/list', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const { tier, folder, includePublic } = req.query;
+
+    const files = hybridStorageService.listFiles(userId, {
+      tier: tier as 'hot' | 'cold' | undefined,
+      folder: folder as string | undefined,
+      includePublic: includePublic === 'true',
+    });
+
+    res.json({
+      success: true,
+      files: files.map(f => ({
+        key: f.key,
+        name: f.originalName,
+        tier: f.tier,
+        size: f.sizeBytes,
+        compressedSize: f.compressedSize,
+        mimeType: f.mimeType,
+        accessCount: f.accessCount,
+        lastAccessed: f.lastAccessed,
+        createdAt: f.createdAt,
+        isDeduplicated: f.isDeduplicated,
+        isPublic: f.isPublic,
+      })),
+    });
+  } catch (error) {
+    logger.error('[HybridStorage] List failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'List failed' 
+    });
+  }
+});
+
+router.get('/hybrid/analytics', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const analytics = await hybridStorageService.getAnalytics(userId);
+
+    res.json(analytics);
+  } catch (error) {
+    logger.error('[HybridStorage] Analytics failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Analytics failed' 
+    });
+  }
+});
+
+router.get('/hybrid/tier-breakdown', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const breakdown = await hybridStorageService.getTierBreakdown(userId);
+
+    res.json(breakdown);
+  } catch (error) {
+    logger.error('[HybridStorage] Tier breakdown failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Failed to get tier breakdown' 
+    });
+  }
+});
+
+router.get('/hybrid/deduplication', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const stats = await hybridStorageService.getDeduplicationStats(userId);
+
+    res.json(stats);
+  } catch (error) {
+    logger.error('[HybridStorage] Deduplication stats failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Failed to get deduplication stats' 
+    });
+  }
+});
+
+router.post('/hybrid/tier-down/:key(*)', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { key } = req.params;
+    const userId = req.session.userId!;
+
+    const metadata = hybridStorageService.getMetadata(key);
+    if (!metadata || metadata.userId !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const success = await hybridStorageService.tierDown(key);
+
+    if (success) {
+      logger.info(`[HybridStorage] Tiered down: ${key}`);
+      res.json({ success: true, message: 'File moved to cold storage' });
+    } else {
+      res.status(400).json({ error: 'Unable to tier down file' });
+    }
+  } catch (error) {
+    logger.error('[HybridStorage] Tier down failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Tier down failed' 
+    });
+  }
+});
+
+router.post('/hybrid/auto-tier', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await hybridStorageService.runAutoTiering();
+
+    logger.info(`[HybridStorage] Auto-tiering: ${result.tieredDown} down, ${result.tieredUp} up`);
+
+    res.json({
+      success: true,
+      tieredDown: result.tieredDown,
+      tieredUp: result.tieredUp,
+      message: `Moved ${result.tieredDown} files to cold storage, ${result.tieredUp} files to hot storage`,
+    });
+  } catch (error) {
+    logger.error('[HybridStorage] Auto-tier failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Auto-tiering failed' 
+    });
+  }
+});
+
+router.get('/hybrid/metadata/:key(*)', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { key } = req.params;
+    const userId = req.session.userId!;
+
+    const metadata = hybridStorageService.getMetadata(key);
+    if (!metadata) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    if (metadata.userId !== userId && !metadata.isPublic) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.json({
+      key: metadata.key,
+      name: metadata.originalName,
+      tier: metadata.tier,
+      size: metadata.sizeBytes,
+      compressedSize: metadata.compressedSize,
+      mimeType: metadata.mimeType,
+      contentHash: metadata.contentHash,
+      accessCount: metadata.accessCount,
+      lastAccessed: metadata.lastAccessed,
+      createdAt: metadata.createdAt,
+      isDeduplicated: metadata.isDeduplicated,
+      isPublic: metadata.isPublic,
+      compressionRatio: metadata.sizeBytes / metadata.compressedSize,
+    });
+  } catch (error) {
+    logger.error('[HybridStorage] Metadata fetch failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Failed to get metadata' 
+    });
+  }
+});
 
 export default router;

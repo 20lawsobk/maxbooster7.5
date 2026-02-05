@@ -228,7 +228,7 @@ export function ShortcutGuide({ className }: ShortcutGuideProps) {
 
             <div className="flex items-center justify-between p-3 border-t border-zinc-800 text-xs text-zinc-500">
               <p>
-                Press <ShortcutHint shortcut="cmd+/" size="xs" /> anytime to show this guide
+                Press <ShortcutHint shortcut="?" size="xs" /> or <ShortcutHint shortcut="cmd+/" size="xs" /> anytime to show this guide
               </p>
               <Badge variant="outline">{filteredShortcuts.length} shortcuts</Badge>
             </div>

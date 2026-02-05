@@ -8,7 +8,10 @@ export type ShortcutCategory =
   | 'transport'
   | 'track'
   | 'view'
-  | 'file';
+  | 'file'
+  | 'search'
+  | 'settings'
+  | 'help';
 
 export type ShortcutContext = 
   | 'global'

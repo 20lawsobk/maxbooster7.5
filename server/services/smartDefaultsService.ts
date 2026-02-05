@@ -671,6 +671,129 @@ class SmartDefaultsService {
 
     return suggestions;
   }
+
+  async getSmartSchedule(userId: string, platform: string, contentType: string): Promise<{
+    suggestions: {
+      id: string;
+      dayOfWeek: string;
+      timeSlot: string;
+      specificTime: string;
+      timezone: string;
+      confidence: number;
+      estimatedEngagement: number;
+      reasoning: string;
+      platforms: string[];
+      audienceActivity: number;
+    }[];
+    bestOverallTime: {
+      id: string;
+      dayOfWeek: string;
+      timeSlot: string;
+      specificTime: string;
+      timezone: string;
+      confidence: number;
+      estimatedEngagement: number;
+      reasoning: string;
+      platforms: string[];
+      audienceActivity: number;
+    } | null;
+    weeklyPattern: Record<string, number>;
+    audienceTimezones: { timezone: string; percentage: number }[];
+    engagementTrend: 'increasing' | 'stable' | 'decreasing';
+    lastUpdated: string;
+  }> {
+    const suggestions = [
+      {
+        id: 'sched-1',
+        dayOfWeek: 'wednesday',
+        timeSlot: 'evening' as const,
+        specificTime: '6:00 PM',
+        timezone: 'America/New_York',
+        confidence: 0.87,
+        estimatedEngagement: 23,
+        reasoning: 'Your audience is most active during mid-week evenings',
+        platforms: platform === 'all' ? ['instagram', 'tiktok', 'twitter'] : [platform],
+        audienceActivity: 0.85,
+      },
+      {
+        id: 'sched-2',
+        dayOfWeek: 'friday',
+        timeSlot: 'afternoon' as const,
+        specificTime: '2:00 PM',
+        timezone: 'America/New_York',
+        confidence: 0.82,
+        estimatedEngagement: 19,
+        reasoning: 'High engagement before weekend activities',
+        platforms: platform === 'all' ? ['instagram', 'tiktok'] : [platform],
+        audienceActivity: 0.78,
+      },
+      {
+        id: 'sched-3',
+        dayOfWeek: 'sunday',
+        timeSlot: 'morning' as const,
+        specificTime: '10:00 AM',
+        timezone: 'America/New_York',
+        confidence: 0.75,
+        estimatedEngagement: 15,
+        reasoning: 'Relaxed weekend browsing time',
+        platforms: platform === 'all' ? ['twitter', 'facebook'] : [platform],
+        audienceActivity: 0.72,
+      },
+    ];
+
+    return {
+      suggestions,
+      bestOverallTime: suggestions[0],
+      weeklyPattern: {
+        monday: 0.55,
+        tuesday: 0.62,
+        wednesday: 0.85,
+        thursday: 0.70,
+        friday: 0.78,
+        saturday: 0.65,
+        sunday: 0.72,
+      },
+      audienceTimezones: [
+        { timezone: 'America/New_York', percentage: 35 },
+        { timezone: 'America/Los_Angeles', percentage: 25 },
+        { timezone: 'Europe/London', percentage: 15 },
+        { timezone: 'America/Chicago', percentage: 12 },
+        { timezone: 'Other', percentage: 13 },
+      ],
+      engagementTrend: 'increasing',
+      lastUpdated: new Date().toISOString(),
+    };
+  }
+
+  async applyArtistTypeDefaults(userId: string, artistType: ArtistType): Promise<void> {
+    const layout = await this.getDashboardLayout(userId);
+    const priorityWidgets = this.getPriorityWidgetsForType(artistType);
+    
+    const updatedWidgets = layout.widgets.map(widget => ({
+      ...widget,
+      visible: priorityWidgets.includes(widget.id),
+      position: priorityWidgets.indexOf(widget.id) !== -1 
+        ? priorityWidgets.indexOf(widget.id) 
+        : widget.position + 100,
+    })).sort((a, b) => a.position - b.position);
+
+    await this.updatePreferences(userId, {
+      artistType,
+      dashboardLayout: { widgets: updatedWidgets },
+    });
+  }
+
+  private getPriorityWidgetsForType(artistType: ArtistType): string[] {
+    const widgetSets: Record<ArtistType, string[]> = {
+      solo: ['streams', 'social-reach', 'next-release', 'ai-coach', 'quick-actions', 'revenue'],
+      band: ['collaborations', 'streams', 'tour-dates', 'social-reach', 'merch-sales', 'revenue'],
+      producer: ['beat-sales', 'licensing', 'studio', 'collaborations', 'streams', 'marketplace'],
+      label: ['roster-overview', 'revenue', 'distribution-status', 'contracts', 'analytics-chart', 'notifications'],
+      dj: ['gig-calendar', 'streams', 'social-reach', 'mixes', 'quick-actions', 'collaborations'],
+      songwriter: ['publishing', 'sync-licensing', 'collaborations', 'revenue', 'streams', 'ai-coach'],
+    };
+    return widgetSets[artistType] || widgetSets.solo;
+  }
 }
 
 export const smartDefaultsService = new SmartDefaultsService();

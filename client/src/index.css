@@ -1,8 +1,19 @@
+@import './styles/high-contrast.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  /* Accessibility Variables */
+  --a11y-font-size: 16px;
+  --a11y-font-scale: 1;
+  --a11y-focus-ring-width: 2px;
+  --a11y-focus-ring-offset: 2px;
+  --a11y-focus-ring-color: hsl(214, 100%, 50%);
+  --a11y-animation-duration: 200ms;
+  --a11y-min-touch-target: 44px;
+  
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(222, 84%, 4.9%);
   --muted: hsl(210, 40%, 98%);
@@ -1377,4 +1388,697 @@ img[loading="lazy"]:not([src=""]) {
 [data-layout] {
   max-width: 100vw;
   overflow-x: hidden;
+}
+
+/* ============================================
+   ACCESSIBILITY (A11Y) STYLES
+   ============================================ */
+
+/* Screen Reader Only - visually hidden but accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only-focusable:focus,
+.sr-only-focusable:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Focus Indicators - Enhanced for keyboard navigation */
+:root {
+  --a11y-focus-width: 2px;
+  --a11y-focus-offset: 2px;
+  --a11y-focus-color: hsl(var(--primary));
+  --a11y-font-size: 16px;
+  --a11y-font-scale: 1;
+}
+
+/* Keyboard navigation focus styles */
+[data-keyboard-navigating="true"] *:focus {
+  outline: var(--a11y-focus-width) solid var(--a11y-focus-color);
+  outline-offset: var(--a11y-focus-offset);
+}
+
+[data-keyboard-navigating="true"] *:focus:not(:focus-visible) {
+  outline: none;
+}
+
+[data-keyboard-navigating="true"] *:focus-visible {
+  outline: var(--a11y-focus-width) solid var(--a11y-focus-color);
+  outline-offset: var(--a11y-focus-offset);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Skip link styles */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  text-decoration: none;
+  border-radius: 0.25rem;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+  left: 0.5rem;
+}
+
+/* Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* High Contrast Mode */
+.contrast-high {
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #0000ff;
+  --primary-foreground: #ffffff;
+  --destructive: #cc0000;
+  --border: #000000;
+  --ring: #0000ff;
+}
+
+.contrast-more {
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #000099;
+  --primary-foreground: #ffffff;
+  --destructive: #990000;
+  --border: #000000;
+  --ring: #000000;
+}
+
+[data-high-contrast="high"],
+[data-high-contrast="more"] {
+  filter: contrast(1.2);
+}
+
+[data-high-contrast="high"] button,
+[data-high-contrast="high"] a,
+[data-high-contrast="more"] button,
+[data-high-contrast="more"] a {
+  border-width: 2px !important;
+}
+
+/* Font Size Scaling */
+[data-font-size="small"] {
+  font-size: 14px;
+}
+
+[data-font-size="medium"] {
+  font-size: 16px;
+}
+
+[data-font-size="large"] {
+  font-size: 18px;
+}
+
+[data-font-size="x-large"] {
+  font-size: 20px;
+}
+
+/* Apply font scaling to body text */
+[data-font-size] body {
+  font-size: var(--a11y-font-size, 16px);
+}
+
+/* Scale all rem-based typography */
+[data-font-size="small"] :where(h1, h2, h3, h4, h5, h6, p, span, label, button, a) {
+  font-size: calc(1em * 0.875);
+}
+
+[data-font-size="large"] :where(h1, h2, h3, h4, h5, h6, p, span, label, button, a) {
+  font-size: calc(1em * 1.125);
+}
+
+[data-font-size="x-large"] :where(h1, h2, h3, h4, h5, h6, p, span, label, button, a) {
+  font-size: calc(1em * 1.25);
+}
+
+/* Color Blind Friendly Palettes */
+
+/* Protanopia (Red-Blind) */
+.cb-protanopia {
+  --destructive: #e69f00;
+  --success: #009e73;
+  --warning: #f0e442;
+  --primary: #0072b2;
+  --accent: #56b4e9;
+}
+
+.cb-protanopia .text-red-500,
+.cb-protanopia .text-red-600,
+.cb-protanopia .bg-red-500,
+.cb-protanopia .bg-red-600 {
+  --tw-text-opacity: 1;
+  color: rgb(230 159 0 / var(--tw-text-opacity));
+}
+
+.cb-protanopia .text-green-500,
+.cb-protanopia .text-green-600,
+.cb-protanopia .bg-green-500,
+.cb-protanopia .bg-green-600 {
+  --tw-text-opacity: 1;
+  color: rgb(0 158 115 / var(--tw-text-opacity));
+}
+
+/* Deuteranopia (Green-Blind) */
+.cb-deuteranopia {
+  --destructive: #d55e00;
+  --success: #cc79a7;
+  --warning: #f0e442;
+  --primary: #0072b2;
+  --accent: #56b4e9;
+}
+
+.cb-deuteranopia .text-green-500,
+.cb-deuteranopia .text-green-600,
+.cb-deuteranopia .bg-green-500,
+.cb-deuteranopia .bg-green-600 {
+  --tw-text-opacity: 1;
+  color: rgb(204 121 167 / var(--tw-text-opacity));
+}
+
+/* Tritanopia (Blue-Blind) */
+.cb-tritanopia {
+  --destructive: #d55e00;
+  --success: #009e73;
+  --warning: #e69f00;
+  --primary: #cc79a7;
+  --accent: #cc79a7;
+}
+
+.cb-tritanopia .text-blue-500,
+.cb-tritanopia .text-blue-600,
+.cb-tritanopia .bg-blue-500,
+.cb-tritanopia .bg-blue-600 {
+  --tw-text-opacity: 1;
+  color: rgb(204 121 167 / var(--tw-text-opacity));
+}
+
+/* Achromatopsia (Complete Color Blindness - Monochrome) */
+.cb-achromatopsia {
+  filter: grayscale(100%);
+  --destructive: #333333;
+  --success: #666666;
+  --warning: #888888;
+  --primary: #000000;
+}
+
+/* Focus trap container */
+[data-focus-trap="true"] {
+  position: relative;
+}
+
+/* Live region styles */
+[aria-live] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Visible focus indicators for interactive elements */
+.focus-visible-ring:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Enhanced button focus for accessibility */
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Dialog/Modal accessibility */
+[role="dialog"],
+[role="alertdialog"] {
+  position: fixed;
+  z-index: 50;
+}
+
+[role="dialog"]:focus,
+[role="alertdialog"]:focus {
+  outline: none;
+}
+
+/* Menu accessibility */
+[role="menu"] {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+[role="menuitem"]:focus {
+  background-color: hsl(var(--accent));
+  outline: none;
+}
+
+/* Tab list accessibility */
+[role="tablist"] {
+  display: flex;
+  gap: 0.25rem;
+}
+
+[role="tab"][aria-selected="true"] {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+[role="tab"]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Listbox accessibility */
+[role="listbox"] {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+[role="option"][aria-selected="true"] {
+  background-color: hsl(var(--accent));
+}
+
+[role="option"]:focus {
+  background-color: hsl(var(--accent));
+  outline: none;
+}
+
+/* Progress bar accessibility */
+[role="progressbar"] {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Slider accessibility */
+[role="slider"] {
+  cursor: pointer;
+}
+
+[role="slider"]:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Tooltip accessibility */
+[role="tooltip"] {
+  position: absolute;
+  z-index: 50;
+}
+
+/* Alert accessibility */
+[role="alert"] {
+  padding: 1rem;
+  border-radius: 0.375rem;
+}
+
+/* Status accessibility */
+[role="status"] {
+  padding: 0.5rem;
+}
+
+/* Grid accessibility */
+[role="grid"] {
+  display: grid;
+}
+
+[role="gridcell"]:focus {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: -2px;
+}
+
+/* Tree accessibility */
+[role="tree"] {
+  list-style: none;
+  padding: 0;
+}
+
+[role="treeitem"]:focus {
+  background-color: hsl(var(--accent));
+  outline: none;
+}
+
+[role="treeitem"][aria-expanded="true"]::before {
+  content: "▼ ";
+}
+
+[role="treeitem"][aria-expanded="false"]::before {
+  content: "▶ ";
+}
+
+/* Animation classes that respect reduced motion */
+.animate-safe {
+  animation-duration: var(--animation-duration, 0.3s);
+}
+
+.transition-safe {
+  transition-duration: var(--transition-duration, 0.15s);
+}
+
+/* Dark mode high contrast adjustments */
+.dark.contrast-high,
+.dark.contrast-more {
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary: #66b0ff;
+  --primary-foreground: #000000;
+  --destructive: #ff6666;
+  --border: #ffffff;
+  --ring: #66b0ff;
+}
+
+/* Print styles for accessibility */
+@media print {
+  .sr-only {
+    display: none;
+  }
+  
+  [aria-hidden="true"] {
+    display: none;
+  }
+  
+  a[href]::after {
+    content: " (" attr(href) ")";
+  }
+}
+
+/* High contrast mode forced colors support */
+@media (forced-colors: active) {
+  button,
+  input,
+  select,
+  textarea {
+    border: 2px solid ButtonText;
+  }
+  
+  button:focus,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 3px solid Highlight;
+  }
+  
+  a:focus {
+    outline: 3px solid LinkText;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY ENHANCEMENTS - WCAG 2.1 AA
+   ============================================ */
+
+/* Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Keyboard Navigation Focus Styles */
+[data-keyboard-navigating="true"] *:focus {
+  outline: var(--a11y-focus-ring-width, 2px) solid var(--a11y-focus-ring-color, hsl(214, 100%, 50%));
+  outline-offset: var(--a11y-focus-ring-offset, 2px);
+}
+
+[data-keyboard-navigating="true"] button:focus-visible,
+[data-keyboard-navigating="true"] a:focus-visible,
+[data-keyboard-navigating="true"] [role="button"]:focus-visible,
+[data-keyboard-navigating="true"] [tabindex]:focus-visible {
+  outline: 3px solid var(--a11y-focus-ring-color, hsl(214, 100%, 50%));
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+/* Text Scaling Support */
+[data-font-size="small"] {
+  font-size: 87.5%;
+}
+
+[data-font-size="medium"] {
+  font-size: 100%;
+}
+
+[data-font-size="large"] {
+  font-size: 112.5%;
+}
+
+[data-font-size="x-large"] {
+  font-size: 125%;
+}
+
+[data-font-size="150"] {
+  font-size: 150%;
+}
+
+[data-font-size="175"] {
+  font-size: 175%;
+}
+
+[data-font-size="200"] {
+  font-size: 200%;
+}
+
+/* Color Blind Mode Filters */
+.cb-protanopia {
+  filter: url('#protanopia-filter') !important;
+}
+
+.cb-deuteranopia {
+  filter: url('#deuteranopia-filter') !important;
+}
+
+.cb-tritanopia {
+  filter: url('#tritanopia-filter') !important;
+}
+
+.cb-achromatopsia {
+  filter: grayscale(100%) !important;
+}
+
+/* SVG Filters for Color Blindness */
+.color-blind-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Skip Link Styles */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.2s ease-in-out;
+}
+
+.skip-link:focus {
+  top: 1rem;
+  outline: 3px solid var(--a11y-focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Screen Reader Only - Visually Hidden */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus Trap Container */
+.focus-trap-container:focus {
+  outline: none;
+}
+
+/* Minimum Touch Target Size */
+button,
+[role="button"],
+a,
+input[type="checkbox"],
+input[type="radio"],
+[role="checkbox"],
+[role="radio"],
+[role="switch"] {
+  min-height: var(--a11y-min-touch-target, 44px);
+  min-width: var(--a11y-min-touch-target, 44px);
+}
+
+/* Ensure links have underlines for visibility */
+[data-high-contrast="high"] a,
+[data-high-contrast="more"] a {
+  text-decoration: underline;
+}
+
+/* High visibility cursor */
+[data-high-contrast="high"] button,
+[data-high-contrast="more"] button,
+[data-high-contrast="high"] a,
+[data-high-contrast="more"] a,
+[data-high-contrast="high"] [role="button"],
+[data-high-contrast="more"] [role="button"] {
+  cursor: pointer;
+}
+
+/* Ensure adequate line height for readability */
+body {
+  line-height: 1.5;
+}
+
+p, li, td, th, label, span {
+  line-height: 1.5;
+}
+
+/* Increased spacing for large text */
+[data-font-size="150"],
+[data-font-size="175"],
+[data-font-size="200"] {
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+  line-height: 1.6;
+}
+
+/* Live Region Styles */
+[aria-live="polite"],
+[aria-live="assertive"],
+[role="alert"],
+[role="status"] {
+  position: relative;
+}
+
+/* Focus visible for all interactive elements */
+:focus-visible {
+  outline: var(--a11y-focus-ring-width, 2px) solid var(--a11y-focus-ring-color, hsl(214, 100%, 50%));
+  outline-offset: var(--a11y-focus-ring-offset, 2px);
+}
+
+/* Remove focus outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure form labels are visible */
+label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* Error state accessibility */
+[aria-invalid="true"] {
+  border-color: var(--destructive) !important;
+}
+
+[aria-invalid="true"]:focus {
+  outline-color: var(--destructive) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Required field indicator */
+[aria-required="true"]::after {
+  content: " *";
+  color: var(--destructive);
+}
+
+/* Disabled state */
+[aria-disabled="true"],
+[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Loading state */
+[aria-busy="true"] {
+  cursor: wait;
+}
+
+/* Expanded/Collapsed state indicators */
+[aria-expanded="true"]::before {
+  content: "";
+}
+
+[aria-expanded="false"]::before {
+  content: "";
 }

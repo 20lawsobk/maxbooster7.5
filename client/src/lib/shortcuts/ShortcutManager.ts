@@ -439,6 +439,46 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     context: 'social',
     action: 'viewAnalytics',
   },
+  {
+    id: 'social.preview',
+    key: 'p',
+    description: 'Preview post',
+    category: 'actions',
+    context: 'social',
+    action: 'previewPost',
+  },
+  {
+    id: 'distribution.new-release',
+    key: 'n',
+    description: 'New release',
+    category: 'actions',
+    context: 'distribution',
+    action: 'newRelease',
+  },
+  {
+    id: 'distribution.submit',
+    key: 'Enter',
+    description: 'Submit release',
+    category: 'actions',
+    context: 'distribution',
+    action: 'submitRelease',
+  },
+  {
+    id: 'analytics.refresh',
+    key: 'r',
+    description: 'Refresh data',
+    category: 'actions',
+    context: 'analytics',
+    action: 'refreshData',
+  },
+  {
+    id: 'analytics.export',
+    key: 'e',
+    description: 'Export report',
+    category: 'actions',
+    context: 'analytics',
+    action: 'exportReport',
+  },
 ];
 
 export type { ShortcutManagerImpl as ShortcutManager };

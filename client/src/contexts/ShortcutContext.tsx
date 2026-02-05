@@ -98,6 +98,15 @@ export function ShortcutProvider({
       action: () => setIsShortcutGuideOpen(true),
     };
 
+    const showHelpQuestionMark: ShortcutDefinition = {
+      id: 'internal.show-shortcuts-question',
+      key: '?',
+      description: 'Show keyboard shortcuts',
+      category: 'global',
+      context: 'global',
+      action: () => setIsShortcutGuideOpen(true),
+    };
+
     const escapeShortcut: ShortcutDefinition = {
       id: 'internal.escape',
       key: 'Escape',
@@ -113,6 +122,7 @@ export function ShortcutProvider({
 
     shortcutManagerRef.current.register(openPaletteShortcut);
     shortcutManagerRef.current.register(showHelpShortcut);
+    shortcutManagerRef.current.register(showHelpQuestionMark);
     shortcutManagerRef.current.register(escapeShortcut);
 
     setRecentCommands(commandRegistryRef.current.getRecentCommands(5));
@@ -120,6 +130,7 @@ export function ShortcutProvider({
     return () => {
       shortcutManagerRef.current?.unregister('internal.open-command-palette');
       shortcutManagerRef.current?.unregister('internal.show-shortcuts');
+      shortcutManagerRef.current?.unregister('internal.show-shortcuts-question');
       shortcutManagerRef.current?.unregister('internal.escape');
     };
   }, [persistConfig]);
