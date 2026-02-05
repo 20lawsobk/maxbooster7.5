@@ -250,6 +250,35 @@ const PLAN_BENEFITS = {
   },
 };
 
+router.get('/plans', async (req: Request, res: Response) => {
+  res.json({
+    plans: [
+      {
+        id: 'monthly',
+        name: 'Monthly',
+        price: 49,
+        interval: 'month',
+        features: ['Unlimited distributions', 'AI Studio access', 'Social media tools', 'Analytics dashboard']
+      },
+      {
+        id: 'yearly',
+        name: 'Yearly',
+        price: 468,
+        interval: 'year',
+        savings: '20%',
+        features: ['Everything in Monthly', 'Priority support', 'Advanced analytics', 'Collaboration tools']
+      },
+      {
+        id: 'lifetime',
+        name: 'Lifetime',
+        price: 699,
+        interval: 'lifetime',
+        features: ['Everything in Yearly', 'Forever access', 'All future features', 'VIP support']
+      }
+    ]
+  });
+});
+
 router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
