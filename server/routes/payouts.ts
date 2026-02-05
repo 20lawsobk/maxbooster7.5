@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { instantPayoutService } from '../services/instantPayoutService';
-import { requestInstantPayoutSchema } from '@shared/schema';
+import { requestInstantPayoutSchema, users } from '@shared/schema';
 import { z } from 'zod';
 import { logger } from '../logger.js';
+import { db } from '../db.js';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -173,7 +175,7 @@ router.post('/setup', async (req, res) => {
 
 /**
  * GET /api/payouts/verify
- * Verify Stripe Connect account status
+ * Verify payout account status (Stripe, Bank, or PayPal)
  */
 router.get('/verify', async (req, res) => {
   try {
@@ -181,12 +183,147 @@ router.get('/verify', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const verification = await instantPayoutService.verifyStripeAccount(req.user.id);
-    res.json(verification);
+    const user = req.user as any;
+    const prefs = user.preferences?.payout || {};
+    const methods: string[] = [];
+    
+    if (prefs.paypalEmail) methods.push('paypal');
+    if (prefs.bankDetails && Object.keys(prefs.bankDetails).length > 0) methods.push('bank_transfer');
+    
+    const stripeVerification = await instantPayoutService.verifyStripeAccount(req.user.id);
+    if (stripeVerification.verified) methods.push('stripe');
+    
+    if (methods.length > 0) {
+      return res.json({
+        verified: true,
+        requiresOnboarding: false,
+        methods,
+        primaryMethod: methods[0],
+        message: `Payout methods configured: ${methods.join(', ')}`
+      });
+    }
+    
+    res.json(stripeVerification);
   } catch (error: unknown) {
     logger.error('Error verifying payout account:', error);
     const message = error instanceof Error ? error.message : 'Failed to verify account';
     res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * GET /api/payouts/preferences
+ * Get current payment preferences
+ */
+router.get('/preferences', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const user = req.user as any;
+    const prefs = user.preferences?.payout || {};
+    res.json({
+      paypalEmail: prefs.paypalEmail || null,
+      bankDetails: prefs.bankDetails || null,
+      stripeConnected: !!(user.stripeConnectedAccountId),
+      preferredMethod: prefs.bankDetails ? 'bank_transfer' : prefs.paypalEmail ? 'paypal' : 'stripe'
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching preferences:', error);
+    res.status(500).json({ error: 'Failed to fetch preferences' });
+  }
+});
+
+/**
+ * POST /api/payouts/preferences/paypal
+ * Configure PayPal for payouts
+ */
+router.post('/preferences/paypal', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Valid PayPal email required' });
+    }
+    
+    const user = req.user as any;
+    const currentPrefs = user.preferences || {};
+    const updatedPrefs = {
+      ...currentPrefs,
+      payout: {
+        ...(currentPrefs.payout || {}),
+        paypalEmail: email
+      }
+    };
+    
+    await db.update(users)
+      .set({ preferences: updatedPrefs })
+      .where(eq(users.id, req.user.id));
+    
+    logger.info(`PayPal configured for user ${req.user.id}`);
+    res.json({ success: true, method: 'paypal', email });
+  } catch (error: unknown) {
+    logger.error('Error configuring PayPal:', error);
+    res.status(500).json({ error: 'Failed to configure PayPal' });
+  }
+});
+
+/**
+ * POST /api/payouts/preferences/bank
+ * Configure bank transfer for payouts
+ */
+router.post('/preferences/bank', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const { accountHolderName, bankName, accountNumber, routingNumber, accountType, country } = req.body;
+    
+    if (!accountHolderName || !bankName || !accountNumber || !routingNumber) {
+      return res.status(400).json({ error: 'All bank details required' });
+    }
+    
+    const bankDetailsData = {
+      accountHolderName,
+      bankName,
+      accountNumber: accountNumber.slice(-4).padStart(accountNumber.length, '*'),
+      accountNumberFull: accountNumber,
+      routingNumber,
+      accountType: accountType || 'checking',
+      country: country || 'US',
+      verified: true,
+      addedAt: new Date().toISOString()
+    };
+    
+    const user = req.user as any;
+    const currentPrefs = user.preferences || {};
+    const updatedPrefs = {
+      ...currentPrefs,
+      payout: {
+        ...(currentPrefs.payout || {}),
+        bankDetails: bankDetailsData
+      }
+    };
+    
+    await db.update(users)
+      .set({ preferences: updatedPrefs })
+      .where(eq(users.id, req.user.id));
+    
+    logger.info(`Bank account configured for user ${req.user.id}`);
+    res.json({ 
+      success: true, 
+      method: 'bank_transfer',
+      bankName,
+      accountNumber: bankDetailsData.accountNumber
+    });
+  } catch (error: unknown) {
+    logger.error('Error configuring bank:', error);
+    res.status(500).json({ error: 'Failed to configure bank account' });
   }
 });
 
