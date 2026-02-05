@@ -26,7 +26,7 @@ on:
 
 env:
   NODE_VERSION: '20'
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '21'
   APP_NAME: 'Max Booster'
   APP_ID: 'com.blawzmusic.maxbooster'
 
