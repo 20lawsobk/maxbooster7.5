@@ -180,6 +180,76 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
   }
 }
 
+const PLAN_BENEFITS = {
+  monthly: {
+    name: 'Monthly',
+    price: 49,
+    period: 'month',
+    features: [
+      'Professional AI Music Studio (DAW)',
+      'Autonomous Social Media Autopilot (24/7)',
+      'AI-Enhanced Organic Advertisement Autopilot',
+      'Beat Marketplace & Licensing',
+      'Professional Analytics Dashboard',
+      'Distribution to 150+ Platforms',
+      'AI Mixing & Mastering',
+      'Royalty Tracking & Splits',
+      'Email Marketing System',
+      'Unlimited Active Projects',
+      'Premium Content Library',
+      'Cloud Storage (50GB)',
+      'Email Support',
+    ],
+    cloudStorage: '50GB',
+    support: 'Email',
+  },
+  yearly: {
+    name: 'Yearly',
+    price: 39,
+    originalPrice: 49,
+    period: 'month',
+    annualTotal: 468,
+    savings: 120,
+    features: [
+      'Everything in Monthly',
+      'Priority Support (Email & Chat)',
+      'Cloud Storage (100GB)',
+      'Early Access to New Features',
+      'Advanced Analytics',
+    ],
+    cloudStorage: '100GB',
+    support: 'Priority Email & Chat',
+  },
+  lifetime: {
+    name: 'Lifetime',
+    price: 699,
+    period: 'once',
+    features: [
+      'Everything in Yearly',
+      'Lifetime Access - No Recurring Fees',
+      'Unlimited Cloud Storage',
+      'Premium Support (Phone & Video)',
+      'Personal Account Manager',
+      'Custom Enterprise Integrations',
+      'Early Access to Beta Features',
+    ],
+    cloudStorage: 'Unlimited',
+    support: 'Premium (Phone & Video)',
+  },
+  free: {
+    name: 'Free',
+    price: 0,
+    period: 'forever',
+    features: [
+      'Basic Studio Access',
+      'Up to 3 Projects',
+      'Limited Distribution',
+    ],
+    cloudStorage: '1GB',
+    support: 'Community',
+  },
+};
+
 router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -233,6 +303,11 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
     let statusBadge = 'inactive';
     let statusColor = 'gray';
     
+    // Trial information
+    let isTrialing = false;
+    let trialEndsAt: Date | null = null;
+    let trialDaysRemaining: number | null = null;
+    
     if (user.subscriptionTier === 'lifetime') {
       computedStatus = 'active';
       statusBadge = 'Lifetime Access';
@@ -240,7 +315,14 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
     } else if (stripeSubscription) {
       computedStatus = stripeSubscription.status;
       
-      if (stripeSubscription.cancel_at_period_end) {
+      // Check for trial
+      if (stripeSubscription.status === 'trialing' && stripeSubscription.trial_end) {
+        isTrialing = true;
+        trialEndsAt = new Date(stripeSubscription.trial_end * 1000);
+        trialDaysRemaining = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        statusBadge = `Trial (${trialDaysRemaining} days left)`;
+        statusColor = 'blue';
+      } else if (stripeSubscription.cancel_at_period_end) {
         statusBadge = 'Cancelling';
         statusColor = 'orange';
       } else if (stripeSubscription.status === 'active') {
@@ -270,8 +352,27 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
       ? Math.ceil((subscriptionEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       : null;
     
+    // Get current plan benefits
+    const currentTier = user.subscriptionTier || 'free';
+    const planBenefits = PLAN_BENEFITS[currentTier as keyof typeof PLAN_BENEFITS] || PLAN_BENEFITS.free;
+    
+    // Determine available upgrades/downgrades
+    const upgradeOptions: string[] = [];
+    const downgradeOptions: string[] = [];
+    
+    if (currentTier === 'free') {
+      upgradeOptions.push('monthly', 'yearly', 'lifetime');
+    } else if (currentTier === 'monthly') {
+      upgradeOptions.push('yearly', 'lifetime');
+      downgradeOptions.push('free');
+    } else if (currentTier === 'yearly') {
+      upgradeOptions.push('lifetime');
+      downgradeOptions.push('monthly', 'free');
+    }
+    // Lifetime has no upgrades or downgrades
+    
     res.json({
-      tier: user.subscriptionTier || 'free',
+      tier: currentTier,
       status: computedStatus,
       statusBadge,
       statusColor,
@@ -285,6 +386,21 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
       canReactivate: stripeSubscription?.cancel_at_period_end === true,
       stripeConfigured: !!stripe,
       syncError: subscriptionError,
+      // Trial information
+      isTrialing,
+      trialEndsAt: trialEndsAt?.toISOString() || null,
+      trialDaysRemaining,
+      // Plan benefits and options
+      planBenefits,
+      upgradeOptions: upgradeOptions.map(tier => ({
+        tier,
+        ...PLAN_BENEFITS[tier as keyof typeof PLAN_BENEFITS]
+      })),
+      downgradeOptions: downgradeOptions.map(tier => ({
+        tier,
+        ...PLAN_BENEFITS[tier as keyof typeof PLAN_BENEFITS]
+      })),
+      allPlans: PLAN_BENEFITS,
       pricing: {
         monthly: 49,
         yearly: 39,
@@ -821,6 +937,242 @@ router.get('/ledger', requireAuth, async (req: AuthenticatedRequest, res: Respon
   } catch (error) {
     logger.error('[Billing] Failed to get ledger history:', error);
     res.status(500).json({ message: 'Failed to get ledger history' });
+  }
+});
+
+router.post('/retry-payment', requireAuth, requireStripe, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user?.stripeCustomerId) {
+      return res.status(404).json({ 
+        message: 'No billing account found',
+        code: 'NO_BILLING_ACCOUNT',
+        retryable: false
+      });
+    }
+    
+    const subscriptions = await stripe!.subscriptions.list({
+      customer: user.stripeCustomerId,
+      status: 'past_due',
+      limit: 1,
+    });
+    
+    if (subscriptions.data.length === 0) {
+      const unpaidSubs = await stripe!.subscriptions.list({
+        customer: user.stripeCustomerId,
+        status: 'unpaid',
+        limit: 1,
+      });
+      
+      if (unpaidSubs.data.length === 0) {
+        return res.status(400).json({ 
+          message: 'No past due payments found',
+          code: 'NO_PAST_DUE_PAYMENT',
+          retryable: false
+        });
+      }
+    }
+    
+    const subscription = subscriptions.data[0];
+    const latestInvoice = await stripe!.invoices.retrieve(subscription.latest_invoice as string);
+    
+    if (latestInvoice.status === 'paid') {
+      return res.json({ 
+        success: true, 
+        message: 'Payment has already been processed',
+        code: 'ALREADY_PAID'
+      });
+    }
+    
+    try {
+      const paidInvoice = await stripe!.invoices.pay(latestInvoice.id);
+      
+      if (paidInvoice.status === 'paid') {
+        await db
+          .update(users)
+          .set({ subscriptionStatus: 'active' })
+          .where(eq(users.id, userId));
+        
+        logger.info(`[Billing] Payment retry successful for user ${userId}`);
+        
+        return res.json({
+          success: true,
+          message: 'Payment successful! Your subscription is now active.',
+          code: 'PAYMENT_SUCCESS',
+          status: 'active'
+        });
+      }
+    } catch (payError: any) {
+      const mappedError = mapStripeError(payError);
+      
+      if (mappedError.code === 'REQUIRES_3D_SECURE') {
+        const paymentIntent = await stripe!.paymentIntents.retrieve(
+          (latestInvoice.payment_intent as string)
+        );
+        
+        return res.status(402).json({
+          message: 'Additional authentication required',
+          code: 'REQUIRES_3D_SECURE',
+          requires_action: true,
+          clientSecret: paymentIntent.client_secret,
+          retryable: true
+        });
+      }
+      
+      return res.status(mappedError.status).json({
+        message: mappedError.message,
+        code: mappedError.code,
+        retryable: mappedError.retryable,
+        suggestedAction: mappedError.code === 'PAYMENT_DECLINED' 
+          ? 'Please update your payment method and try again.'
+          : undefined
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Payment retry failed',
+      code: 'RETRY_FAILED',
+      retryable: true
+    });
+  } catch (error: any) {
+    logger.error('[Billing] Failed to retry payment:', error);
+    const mappedError = mapStripeError(error);
+    res.status(mappedError.status).json({ 
+      message: mappedError.message,
+      code: mappedError.code,
+      retryable: mappedError.retryable
+    });
+  }
+});
+
+router.delete('/payment-method', requireAuth, requireStripe, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user?.stripeCustomerId) {
+      return res.status(404).json({ 
+        message: 'No billing account found',
+        code: 'NO_BILLING_ACCOUNT'
+      });
+    }
+    
+    const subscriptions = await stripe!.subscriptions.list({
+      customer: user.stripeCustomerId,
+      status: 'active',
+      limit: 1,
+    });
+    
+    if (subscriptions.data.length > 0 && !user.subscriptionTier?.includes('lifetime')) {
+      return res.status(400).json({ 
+        message: 'Cannot remove payment method with an active subscription. Please cancel your subscription first or add a new payment method before removing this one.',
+        code: 'ACTIVE_SUBSCRIPTION_EXISTS',
+        retryable: false,
+        hasActiveSubscription: true,
+        subscriptionTier: user.subscriptionTier
+      });
+    }
+    
+    const paymentMethods = await stripe!.paymentMethods.list({
+      customer: user.stripeCustomerId,
+      type: 'card',
+    });
+    
+    if (paymentMethods.data.length === 0) {
+      return res.status(404).json({ 
+        message: 'No payment method found',
+        code: 'NO_PAYMENT_METHOD'
+      });
+    }
+    
+    for (const pm of paymentMethods.data) {
+      await stripe!.paymentMethods.detach(pm.id);
+    }
+    
+    logger.info(`[Billing] Payment method removed for user ${userId}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Payment method removed successfully',
+      code: 'PAYMENT_METHOD_REMOVED'
+    });
+  } catch (error: any) {
+    logger.error('[Billing] Failed to remove payment method:', error);
+    const mappedError = mapStripeError(error);
+    res.status(mappedError.status).json({ 
+      message: mappedError.message,
+      code: mappedError.code
+    });
+  }
+});
+
+router.get('/refunds', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user?.stripeCustomerId || !stripe) {
+      return res.json({ refunds: [], hasMore: false });
+    }
+    
+    try {
+      const charges = await stripe.charges.list({
+        customer: user.stripeCustomerId,
+        limit: 50,
+      });
+      
+      const refunds: any[] = [];
+      
+      for (const charge of charges.data) {
+        if (charge.refunds && charge.refunds.data.length > 0) {
+          for (const refund of charge.refunds.data) {
+            refunds.push({
+              id: refund.id,
+              amount: refund.amount / 100,
+              status: refund.status,
+              reason: refund.reason,
+              created: new Date(refund.created * 1000).toISOString(),
+              chargeId: charge.id,
+              description: charge.description || 'Max Booster Subscription',
+              statusDisplay: refund.status === 'succeeded' ? 'Completed' :
+                            refund.status === 'pending' ? 'Processing' :
+                            refund.status === 'failed' ? 'Failed' : 'Requested',
+              statusColor: refund.status === 'succeeded' ? 'green' :
+                          refund.status === 'pending' ? 'yellow' :
+                          refund.status === 'failed' ? 'red' : 'blue',
+            });
+          }
+        }
+      }
+      
+      refunds.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+      
+      return res.json({ 
+        refunds: refunds.slice(0, 20),
+        hasMore: refunds.length > 20 
+      });
+    } catch (err) {
+      logger.warn('[Billing] Failed to fetch refunds:', err);
+    }
+    
+    res.json({ refunds: [], hasMore: false });
+  } catch (error) {
+    logger.error('[Billing] Failed to get refunds:', error);
+    res.status(500).json({ message: 'Failed to get refunds' });
   }
 });
 

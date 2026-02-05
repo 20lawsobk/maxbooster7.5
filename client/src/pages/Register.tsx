@@ -16,6 +16,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Logo } from '@/components/ui/Logo';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
@@ -41,6 +42,7 @@ interface FieldErrors {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  termsAccepted?: string;
 }
 
 interface PasswordStrength {
@@ -101,6 +103,7 @@ export default function Register() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -163,9 +166,10 @@ export default function Register() {
       email: validateField('email', formData.email),
       password: validateField('password', formData.password),
       confirmPassword: validateField('confirmPassword', formData.confirmPassword),
+      termsAccepted: !termsAccepted ? 'You must accept the Terms of Service and Privacy Policy' : undefined,
     };
     setFieldErrors(errors);
-    setTouched({ username: true, email: true, password: true, confirmPassword: true });
+    setTouched({ username: true, email: true, password: true, confirmPassword: true, termsAccepted: true });
     return !Object.values(errors).some(error => error !== undefined);
   };
 
@@ -465,10 +469,44 @@ export default function Register() {
                 )}
               </div>
 
+              <div className="space-y-1">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="terms"
+                    checked={termsAccepted}
+                    onCheckedChange={(checked) => {
+                      setTermsAccepted(checked === true);
+                      if (fieldErrors.termsAccepted) {
+                        setFieldErrors(prev => ({ ...prev, termsAccepted: undefined }));
+                      }
+                    }}
+                    data-testid="checkbox-terms"
+                    aria-describedby={fieldErrors.termsAccepted ? 'terms-error' : undefined}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor="terms" className="text-sm font-normal leading-tight cursor-pointer">
+                    I agree to the{' '}
+                    <Link href="/terms" className="text-primary hover:underline">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link href="/privacy" className="text-primary hover:underline">
+                      Privacy Policy
+                    </Link>
+                  </Label>
+                </div>
+                {fieldErrors.termsAccepted && touched.termsAccepted && (
+                  <p id="terms-error" className="text-sm text-destructive flex items-center gap-1 ml-6">
+                    <AlertCircle className="h-3 w-3" />
+                    {fieldErrors.termsAccepted}
+                  </p>
+                )}
+              </div>
+
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-                disabled={isLoading || (Object.keys(touched).length > 0 && Object.values(fieldErrors).some(e => e))}
+                disabled={isLoading || !termsAccepted || (Object.keys(touched).length > 0 && Object.values(fieldErrors).some(e => e))}
                 data-testid="button-create-account"
               >
                 {isLoading ? 'Creating Account...' : 'Create Your Account'}

@@ -1126,6 +1126,61 @@ export type InsertTaxForm = typeof taxForms.$inferInsert;
 export const insertTaxFormSchema = createInsertSchema(taxForms).omit({ id: true, createdAt: true });
 
 // ============================================================================
+// ROYALTY STATEMENTS
+// ============================================================================
+export const royaltyStatements = pgTable("royalty_statements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  label: text("label"),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  totalEarnings: text("total_earnings").default("0"),
+  status: text("status").default("available"),
+  downloadUrl: text("download_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type RoyaltyStatement = typeof royaltyStatements.$inferSelect;
+export type InsertRoyaltyStatement = typeof royaltyStatements.$inferInsert;
+
+// ============================================================================
+// ROYALTY DISPUTES
+// ============================================================================
+export const royaltyDisputes = pgTable("royalty_disputes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull(),
+  status: text("status").default("open"),
+  subject: text("subject").notNull(),
+  description: text("description").notNull(),
+  amount: text("amount"),
+  period: text("period"),
+  resolution: text("resolution"),
+  outcome: text("outcome"),
+  evidenceCount: integer("evidence_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type RoyaltyDispute = typeof royaltyDisputes.$inferSelect;
+export type InsertRoyaltyDispute = typeof royaltyDisputes.$inferInsert;
+
+// ============================================================================
+// DISPUTE MESSAGES
+// ============================================================================
+export const disputeMessages = pgTable("dispute_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  disputeId: varchar("dispute_id").notNull(),
+  sender: text("sender").notNull(),
+  content: text("content").notNull(),
+  attachments: jsonb("attachments"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type DisputeMessage = typeof disputeMessages.$inferSelect;
+export type InsertDisputeMessage = typeof disputeMessages.$inferInsert;
+
+// ============================================================================
 // INVOICES (Persistent Invoice Storage)
 // ============================================================================
 export const invoices = pgTable("invoices", {

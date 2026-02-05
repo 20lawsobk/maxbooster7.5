@@ -118,7 +118,16 @@ import {
   GitBranch,
   Layers,
   Percent,
+  FileDown,
+  BarChart2,
 } from 'lucide-react';
+
+import { StreamingAnalytics } from './analytics/StreamingAnalytics';
+import { RevenueAnalytics } from './analytics/RevenueAnalytics';
+import { AudienceInsights } from './analytics/AudienceInsights';
+import { PlaylistTracking } from './analytics/PlaylistTracking';
+import { CrossPlatformComparison } from './analytics/CrossPlatformComparison';
+import { ExportAnalytics } from './analytics/ExportAnalytics';
 
 interface AnalyticsWebSocketMessage {
   type: string;
@@ -1631,7 +1640,7 @@ export default function Analytics() {
         </StatCardRow>
 
         <Tabs value={selectedTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className={`grid w-full h-auto ${user?.role === 'admin' ? 'grid-cols-12' : 'grid-cols-10'}`}>
+          <TabsList className="flex flex-wrap w-full h-auto gap-1">
             <TabsTrigger value="overview" data-testid="tab-overview" className="text-xs px-2">
               Overview
             </TabsTrigger>
@@ -1668,6 +1677,19 @@ export default function Analytics() {
             </TabsTrigger>
             <TabsTrigger value="alerts" data-testid="tab-alerts" className="text-xs px-2 relative">
               Alerts
+            </TabsTrigger>
+            <TabsTrigger value="streaming-enhanced" data-testid="tab-streaming-enhanced" className="text-xs px-2">
+              Streaming+
+            </TabsTrigger>
+            <TabsTrigger value="revenue-enhanced" data-testid="tab-revenue-enhanced" className="text-xs px-2">
+              Revenue+
+            </TabsTrigger>
+            <TabsTrigger value="audience-enhanced" data-testid="tab-audience-enhanced" className="text-xs px-2">
+              Audience+
+            </TabsTrigger>
+            <TabsTrigger value="export" data-testid="tab-export" className="text-xs px-2">
+              <FileDown className="h-3 w-3 mr-1" />
+              Export
             </TabsTrigger>
             {user?.role === 'admin' && (
               <TabsTrigger value="anomalies" data-testid="tab-anomalies" className="text-xs px-2 relative">
@@ -2143,6 +2165,34 @@ export default function Analytics() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="streaming-enhanced" className="space-y-6">
+            <StreamingAnalytics
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
+          </TabsContent>
+
+          <TabsContent value="revenue-enhanced" className="space-y-6">
+            <RevenueAnalytics
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
+          </TabsContent>
+
+          <TabsContent value="audience-enhanced" className="space-y-6">
+            <AudienceInsights
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
+          </TabsContent>
+
+          <TabsContent value="export" className="space-y-6">
+            <ExportAnalytics
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
           </TabsContent>
 
           <TabsContent value="fan-journey" className="space-y-6">

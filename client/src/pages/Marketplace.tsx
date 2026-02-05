@@ -49,6 +49,27 @@ import { StemsManager } from '@/components/StemsManager';
 import { PayoutDashboard } from '@/components/marketplace/PayoutDashboard';
 import StorefrontBuilder from '@/components/marketplace/StorefrontBuilder';
 import {
+  MarketplaceOutcomeHandler,
+  useMarketplaceOutcome,
+  WaveformAudioPlayer,
+  LicenseComparisonCard,
+  PurchaseConfirmationFlow,
+  BeatGridSkeleton,
+  ProducerGridSkeleton,
+  AnalyticsDashboardSkeleton,
+  PurchaseHistorySkeleton,
+  NoBeatsFoundEmptyState,
+  EmptyCartState,
+  NoPurchasesState,
+  NoMyBeatsState,
+  NoProducersFoundState,
+  NoAnalyticsDataState,
+  NoEscrowTransactionsState,
+  NoContractsState,
+  NoCollaborationsState,
+  FilterResultsHeader,
+} from '@/components/marketplace';
+import {
   Music,
   Play,
   Pause,
@@ -1574,45 +1595,36 @@ export default function Marketplace() {
           </TabsList>
 
           <TabsContent value="browse" className="space-y-6">
+            {(searchQuery || selectedGenre !== 'all' || selectedMood !== 'all') && !beatsLoading && beats.length > 0 && (
+              <FilterResultsHeader
+                resultCount={beats.length}
+                filterName={searchQuery || (selectedGenre !== 'all' ? selectedGenre : selectedMood !== 'all' ? selectedMood : undefined)}
+                onClear={() => {
+                  setSearchQuery('');
+                  setSelectedGenre('all');
+                  setSelectedMood('all');
+                }}
+              />
+            )}
             {beatsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {[...Array(12)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-0">
-                      <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
-                      <div className="p-4">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <BeatGridSkeleton count={12} viewMode={viewMode as 'grid' | 'list'} />
             ) : beats.length === 0 ? (
-              <Card className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
-                <CardContent className="p-12 text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Music className="w-12 h-12 text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    No Beats Found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                    Try adjusting your search criteria or browse different genres and moods.
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSelectedGenre('');
-                      setSelectedMood('');
-                    }}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 py-3"
-                  >
-                    <RefreshCw className="w-5 h-5 mr-2" />
-                    Clear Filters
-                  </Button>
-                </CardContent>
-              </Card>
+              <NoBeatsFoundEmptyState
+                searchQuery={searchQuery}
+                suggestions={['Trap', 'Hip-Hop', 'R&B', 'Lo-Fi', 'Pop', 'Drill']}
+                filterApplied={selectedGenre !== 'all' || selectedMood !== 'all'}
+                onAction={(action) => {
+                  if (action === 'clear_filters') {
+                    setSearchQuery('');
+                    setSelectedGenre('all');
+                    setSelectedMood('all');
+                  } else if (action.startsWith('search:')) {
+                    setSearchQuery(action.replace('search:', ''));
+                    setSelectedGenre('all');
+                    setSelectedMood('all');
+                  }
+                }}
+              />
             ) : (
               <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
                 {beats.map((beat) => (
@@ -1842,9 +1854,7 @@ export default function Marketplace() {
 
           <TabsContent value="my-beats">
             {myBeatsLoading ? (
-              <div className="flex justify-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <BeatGridSkeleton count={6} viewMode="grid" />
             ) : myBeats.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {myBeats.map((beat: Beat) => (
@@ -1879,17 +1889,13 @@ export default function Marketplace() {
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Music className="w-16 h-16 text-muted-foreground mb-4" />
-                  <p className="text-lg font-semibold mb-2">No Beats Uploaded Yet</p>
-                  <p className="text-sm text-muted-foreground mb-4">Upload your first beat to get started</p>
-                  <Button onClick={() => setShowUploadModal(true)}>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Beat
-                  </Button>
-                </CardContent>
-              </Card>
+              <NoMyBeatsState
+                onAction={(action) => {
+                  if (action === 'upload' || action === 'bulk_upload') {
+                    setShowUploadModal(true);
+                  }
+                }}
+              />
             )}
           </TabsContent>
 
@@ -1899,9 +1905,7 @@ export default function Marketplace() {
 
           <TabsContent value="purchases">
             {purchasesLoading ? (
-              <div className="flex justify-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <PurchaseHistorySkeleton />
             ) : purchases.length > 0 ? (
               <div className="space-y-4">
                 {purchases.map((purchase: Purchase) => (
@@ -1932,17 +1936,13 @@ export default function Marketplace() {
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />
-                  <p className="text-lg font-semibold mb-2">No Purchases Yet</p>
-                  <p className="text-sm text-muted-foreground mb-4">Browse beats to make your first purchase</p>
-                  <Button onClick={() => setActiveTab('browse')}>
-                    <Music className="w-4 h-4 mr-2" />
-                    Browse Beats
-                  </Button>
-                </CardContent>
-              </Card>
+              <NoPurchasesState
+                onAction={(action) => {
+                  if (action === 'browse') {
+                    setActiveTab('browse');
+                  }
+                }}
+              />
             )}
           </TabsContent>
 
@@ -2164,10 +2164,7 @@ export default function Marketplace() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No escrow transactions yet</p>
-                  </div>
+                  <NoEscrowTransactionsState />
                 )}
               </CardContent>
             </Card>
@@ -2414,17 +2411,15 @@ export default function Marketplace() {
                   </Card>
                 ))
               ) : (
-                <Card className="col-span-full">
-                  <CardContent className="text-center py-12">
-                    <FileSignature className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Contract Templates</h3>
-                    <p className="text-muted-foreground mb-4">Create your first contract template to automate licensing</p>
-                    <Button onClick={() => setShowContractModal(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Contract Template
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="col-span-full">
+                  <NoContractsState
+                    onAction={(action) => {
+                      if (action === 'create_contract') {
+                        setShowContractModal(true);
+                      }
+                    }}
+                  />
+                </div>
               )}
             </div>
           </TabsContent>
@@ -2525,13 +2520,13 @@ export default function Marketplace() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Handshake className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No collaboration offers yet</p>
-                    <Button className="mt-4" onClick={() => setShowCollaborationModal(true)}>
-                      Send Your First Offer
-                    </Button>
-                  </div>
+                  <NoCollaborationsState
+                    onAction={(action) => {
+                      if (action === 'find_collaborators') {
+                        setShowCollaborationModal(true);
+                      }
+                    }}
+                  />
                 )}
               </CardContent>
             </Card>

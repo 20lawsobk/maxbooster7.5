@@ -561,6 +561,218 @@ export async function registerRoutes(
     }
   });
 
+  // Auth: Terminate all other sessions
+  app.post("/api/auth/sessions/terminate-all", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const currentSessionId = req.session.id;
+      const userSessions = await storage.getSessionsByUserId(req.user.id);
+      let terminatedCount = 0;
+
+      for (const session of userSessions) {
+        if (session.id !== currentSessionId) {
+          const deleted = await storage.deleteSession(session.id);
+          if (deleted) {
+            terminatedCount++;
+            try {
+              const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
+              const redisClient = await getRedisClient();
+              if (redisClient) {
+                await redisClient.del(`maxbooster:sess:${session.id}`);
+              }
+            } catch (redisError) {
+              // Redis deletion is best-effort
+            }
+          }
+        }
+      }
+
+      console.log(`[Security] Terminated ${terminatedCount} sessions for user ${req.user.id}`);
+      return res.json({ success: true, message: `${terminatedCount} session(s) terminated` });
+    } catch (error) {
+      console.error("Terminate all sessions error:", error);
+      return res.status(500).json({ message: "Failed to terminate sessions" });
+    }
+  });
+
+  // Auth: Get login history
+  app.get("/api/auth/login-history", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      // Get login events from security threats table
+      const { securityThreats } = await import('../shared/schema.ts');
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const loginEvents = await db.select()
+        .from(securityThreats)
+        .where(
+          and(
+            eq(securityThreats.userId, req.user.id),
+            gte(securityThreats.detectedAt, thirtyDaysAgo)
+          )
+        )
+        .orderBy(desc(securityThreats.detectedAt))
+        .limit(50);
+
+      // Also get successful logins from sessions
+      const userSessions = await storage.getSessionsByUserId(req.user.id);
+      
+      // Format events for frontend
+      const formattedEvents = loginEvents.map(event => {
+        const metadata = event.metadata as Record<string, any> || {};
+        const indicators = event.indicators as Record<string, any> || {};
+        
+        return {
+          id: event.id,
+          timestamp: event.detectedAt?.toISOString() || new Date().toISOString(),
+          ipAddress: metadata.ipAddress || indicators.ipAddress || 'Unknown',
+          location: metadata.location || indicators.location || 'Unknown',
+          device: metadata.userAgent || indicators.userAgent || 'Unknown Device',
+          browser: metadata.browser || 'Unknown',
+          success: event.threatType !== 'failed_login',
+          suspicious: event.severity === 'high' || event.severity === 'critical',
+          reason: event.severity === 'high' || event.severity === 'critical' 
+            ? `${event.threatType}: ${metadata.description || 'Unusual activity detected'}`
+            : undefined,
+        };
+      });
+
+      // Add recent successful logins from sessions
+      const sessionEvents = userSessions
+        .filter(s => s.createdAt)
+        .map(session => ({
+          id: `session-${session.id}`,
+          timestamp: session.createdAt?.toISOString() || new Date().toISOString(),
+          ipAddress: 'Unknown',
+          location: 'Unknown',
+          device: session.userAgent || 'Unknown Device',
+          browser: 'Unknown',
+          success: true,
+          suspicious: false,
+        }));
+
+      // Combine and sort by timestamp
+      const allEvents = [...formattedEvents, ...sessionEvents]
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 20);
+
+      return res.json(allEvents);
+    } catch (error) {
+      console.error("Get login history error:", error);
+      return res.json([]);
+    }
+  });
+
+  // Auth: Get privacy settings
+  app.get("/api/auth/privacy-settings", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      // Return user's privacy settings from their profile
+      const settings = {
+        profileVisibility: req.user.profileVisibility || 'public',
+        showEmail: req.user.showEmail ?? false,
+        showLocation: req.user.showLocation ?? true,
+        allowMessages: req.user.allowMessages ?? true,
+        allowSearchIndexing: req.user.allowSearchIndexing ?? true,
+        gdprDataProcessing: true, // Required for service
+        gdprMarketing: req.user.gdprMarketing ?? false,
+        gdprAnalytics: req.user.gdprAnalytics ?? true,
+      };
+      return res.json(settings);
+    } catch (error) {
+      console.error("Get privacy settings error:", error);
+      return res.status(500).json({ message: "Failed to get privacy settings" });
+    }
+  });
+
+  // Auth: Update privacy settings
+  app.put("/api/auth/privacy-settings", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const allowedFields = [
+        'profileVisibility', 'showEmail', 'showLocation', 
+        'allowMessages', 'allowSearchIndexing', 'gdprMarketing', 'gdprAnalytics'
+      ];
+      
+      const updates: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await storage.updateUser(req.user.id, updates);
+      }
+
+      return res.json({ success: true, message: "Privacy settings updated" });
+    } catch (error) {
+      console.error("Update privacy settings error:", error);
+      return res.status(500).json({ message: "Failed to update privacy settings" });
+    }
+  });
+
+  // Auth: Request data export
+  app.post("/api/auth/request-data-export", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      // Store export request timestamp
+      await storage.updateUser(req.user.id, { 
+        dataExportRequestedAt: new Date(),
+        dataExportStatus: 'pending'
+      });
+
+      // In production, this would trigger an async job
+      // For now, simulate immediate completion
+      setTimeout(async () => {
+        try {
+          await storage.updateUser(req.user.id, { 
+            dataExportStatus: 'ready',
+            dataExportExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          });
+        } catch (e) {
+          console.error("Failed to update export status:", e);
+        }
+      }, 5000);
+
+      return res.json({ 
+        success: true, 
+        message: "Data export requested. You will receive an email when it's ready."
+      });
+    } catch (error) {
+      console.error("Request data export error:", error);
+      return res.status(500).json({ message: "Failed to request data export" });
+    }
+  });
+
+  // Auth: Get data export status
+  app.get("/api/auth/data-export-status", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const status = {
+        status: req.user.dataExportStatus || 'none',
+        requestedAt: req.user.dataExportRequestedAt?.toISOString(),
+        expiresAt: req.user.dataExportExpiresAt?.toISOString(),
+      };
+      return res.json(status);
+    } catch (error) {
+      console.error("Get data export status error:", error);
+      return res.status(500).json({ message: "Failed to get export status" });
+    }
+  });
+
   // Auth: Change password
   // SECURITY: Invalidates all other sessions after password change
   app.post("/api/auth/change-password", async (req: Request, res: Response) => {
@@ -904,6 +1116,34 @@ export async function registerRoutes(
       enabled: req.user.twoFactorEnabled || false,
       hasSecret: !!req.user.twoFactorSecret,
     });
+  });
+
+  // Auth: 2FA disable - Disable two-factor authentication
+  app.post("/api/auth/2fa/disable", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      if (!req.user.twoFactorEnabled) {
+        return res.status(400).json({ message: "Two-factor authentication is not enabled" });
+      }
+
+      await storage.updateUser(req.user.id, { 
+        twoFactorEnabled: false,
+        twoFactorSecret: null
+      });
+
+      console.log(`[2FA] Disabled for user ${req.user.id}`);
+
+      return res.json({ 
+        success: true, 
+        message: "Two-factor authentication has been disabled" 
+      });
+    } catch (error) {
+      console.error("2FA disable error:", error);
+      return res.status(500).json({ message: "Failed to disable 2FA" });
+    }
   });
 
   // Auth: Demo login - Read-only showcase of all features

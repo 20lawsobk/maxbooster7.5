@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRequireAdmin } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -26,6 +29,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -53,6 +64,29 @@ import {
   Ban,
   Shield,
   CreditCard,
+  Activity,
+  Server,
+  Database,
+  Cpu,
+  HardDrive,
+  Wifi,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Power,
+  PowerOff,
+  Flag,
+  MessageSquare,
+  AlertCircle,
+  RefreshCw,
+  Clock,
+  Zap,
+  BarChart3,
+  Settings,
+  UserCog,
+  FileWarning,
+  Globe,
+  LayoutDashboard,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -66,7 +100,7 @@ interface AdminUser {
   subscriptionTier: string | null;
   subscriptionStatus: string | null;
   createdAt: string;
-  password?: undefined;
+  isSuspended?: boolean;
 }
 
 interface Pagination {
@@ -81,30 +115,57 @@ interface UsersResponse {
   pagination: Pagination;
 }
 
-interface SubscriptionStat {
-  plan: string;
-  count: number;
-}
-
-interface UserGrowthData {
-  date: string;
-  count: number;
-}
-
-interface StreamGrowthData {
-  date: string;
-  count: number;
-}
-
-interface TopArtistData {
+interface ModerationReport {
   id: string;
-  name: string;
-  streams: number;
+  contentType: string;
+  contentId: string;
+  contentTitle: string;
+  reportedBy: string;
+  reportedByUsername: string;
+  reason: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  targetUserId: string;
+  targetUsername: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  resolution?: string;
 }
 
-interface PlatformStatData {
-  label: string;
-  value: number;
+interface SystemHealth {
+  server: {
+    uptime: number;
+    uptimeFormatted: string;
+    memory: {
+      heapUsed: number;
+      heapTotal: number;
+      rss: number;
+      percentUsed: number;
+    };
+    cpu: number;
+    disk: number;
+  };
+  database: {
+    status: string;
+    latency: number | null;
+    connectionPool: {
+      active: number;
+      idle: number;
+      max: number;
+    };
+  };
+  externalApis: Record<string, { status: string; latency: number }>;
+  killSwitch: {
+    globalKilled: boolean;
+    systemStates: Record<string, boolean>;
+    lastAction: string | null;
+  };
+  errorTracking: {
+    last24h: number;
+    last7d: number;
+    errorRate: string;
+  };
 }
 
 interface AdminAnalytics {
@@ -116,42 +177,46 @@ interface AdminAnalytics {
   revenueGrowth: number;
   projectsGrowth: number;
   userGrowthRate: number;
-  userGrowth: UserGrowthData[];
-  streamGrowth: StreamGrowthData[];
-  topArtists: TopArtistData[];
-  platformStats: PlatformStatData[];
-  subscriptionStats: SubscriptionStat[];
+  subscriptionStats: { plan: string; count: number }[];
+  featureUsage: { feature: string; usage: number; percentage: number }[];
   newUsers: number;
 }
 
-interface AdminSettings {
-  emailNotifications: boolean;
-  maintenanceMode: boolean;
-  userRegistrationEnabled: boolean;
-  apiRateLimit: number;
-  webhookEndpoint: string | null;
-}
+const ADMIN_NAV_ITEMS = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'users', label: 'User Management', icon: Users },
+  { id: 'moderation', label: 'Content Moderation', icon: Flag },
+  { id: 'system', label: 'System Health', icon: Server },
+  { id: 'analytics', label: 'Platform Analytics', icon: BarChart3 },
+  { id: 'killswitch', label: 'Kill Switch', icon: Power },
+  { id: 'settings', label: 'Settings', icon: Settings },
+];
 
 export default function Admin() {
   const { user, isLoading: authLoading } = useRequireAdmin();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [activeSection, setActiveSection] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [planFilter, setPlanFilter] = useState('all');
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [showRateLimitDialog, setShowRateLimitDialog] = useState(false);
-  const [showWebhookDialog, setShowWebhookDialog] = useState(false);
+  const [moderationFilter, setModerationFilter] = useState('pending');
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [showDeleteUserDialog, setShowDeleteUserDialog] = useState(false);
+  const [showModerationDialog, setShowModerationDialog] = useState(false);
+  const [showKillSwitchDialog, setShowKillSwitchDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [selectedReport, setSelectedReport] = useState<ModerationReport | null>(null);
   const [editUserRole, setEditUserRole] = useState('user');
   const [editUserPlan, setEditUserPlan] = useState('free');
   const [editUserStatus, setEditUserStatus] = useState('active');
+  const [moderationAction, setModerationAction] = useState('');
+  const [moderationNotes, setModerationNotes] = useState('');
+  const [killSwitchReason, setKillSwitchReason] = useState('');
+  const [killSwitchTarget, setKillSwitchTarget] = useState<'all' | string>('all');
 
-  const { data: platformSettings } = useQuery<AdminSettings>({
-    queryKey: ['/api/admin/settings'],
+  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery<UsersResponse>({
+    queryKey: ['/api/admin/users', { search: searchTerm, status: statusFilter, plan: planFilter }],
     enabled: !!user,
   });
 
@@ -160,107 +225,20 @@ export default function Admin() {
     enabled: !!user,
   });
 
-  const { data: usersData, isLoading: usersLoading } = useQuery<UsersResponse>({
-    queryKey: ['/api/admin/users'],
+  const { data: systemHealth, isLoading: healthLoading, refetch: refetchHealth } = useQuery<SystemHealth>({
+    queryKey: ['/api/admin/system-health'],
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+
+  const { data: moderationReports, isLoading: moderationLoading, refetch: refetchModeration } = useQuery({
+    queryKey: ['/api/admin/moderation/reports', { status: moderationFilter }],
     enabled: !!user,
   });
 
-  const users = usersData?.users || [];
-
-  // Update state when platformSettings loads
-  useEffect(() => {
-    if (platformSettings) {
-      setEmailNotifications(platformSettings.emailNotifications ?? true);
-      setMaintenanceMode(platformSettings.maintenanceMode ?? false);
-    }
-  }, [platformSettings]);
-
-  // Mutations
-  const exportUsersMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('GET', '/api/admin/users/export');
-      return response.json();
-    },
-    onSuccess: (data) => {
-      // Create download link
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `users-export-${new Date().toISOString()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: 'Export Successful',
-        description: 'User data has been exported.',
-      });
-    },
-  });
-
-  const sendEmailMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      const response = await apiRequest('POST', `/api/admin/users/${userId}/email`, {
-        subject: 'Message from Max Booster',
-        message: 'Hello from Max Booster! We wanted to reach out about your account.',
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Email Sent',
-        description: 'Email has been sent to the user.',
-      });
-    },
-  });
-
-  const toggleNotificationsMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const response = await apiRequest('POST', '/api/admin/settings/notifications', { enabled });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setEmailNotifications(data.enabled);
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/settings'] });
-      toast({
-        title: 'Settings Updated',
-        description: `Email notifications ${data.enabled ? 'enabled' : 'disabled'}.`,
-      });
-    },
-  });
-
-  const toggleMaintenanceMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const response = await apiRequest('POST', '/api/admin/settings/maintenance', { enabled });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setMaintenanceMode(data.enabled);
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/settings'] });
-      toast({
-        title: 'Maintenance Mode',
-        description: data.enabled
-          ? 'Platform is now in maintenance mode.'
-          : 'Platform is now accessible to users.',
-        variant: data.enabled ? 'destructive' : 'default',
-      });
-    },
-  });
-
-  const toggleUserRegistrationMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const response = await apiRequest('POST', '/api/admin/settings/registration', { enabled });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/settings'] });
-      toast({
-        title: 'Settings Updated',
-        description: `User registration ${data.enabled ? 'enabled' : 'disabled'}.`,
-      });
-    },
+  const { data: platformSettings } = useQuery({
+    queryKey: ['/api/admin/settings'],
+    enabled: !!user,
   });
 
   const updateUserMutation = useMutation({
@@ -272,17 +250,32 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       setShowEditUserDialog(false);
       setSelectedUser(null);
-      toast({
-        title: 'User Updated',
-        description: 'User details have been updated successfully.',
-      });
+      toast({ title: 'User Updated', description: 'User details have been updated successfully.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Update Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Update Failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const suspendUserMutation = useMutation({
+    mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
+      const response = await apiRequest('POST', `/api/admin/users/${userId}/suspend`, { reason });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({ title: 'User Suspended', description: 'User has been suspended successfully.' });
+    },
+  });
+
+  const reactivateUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest('POST', `/api/admin/users/${userId}/reactivate`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({ title: 'User Reactivated', description: 'User has been reactivated successfully.' });
     },
   });
 
@@ -295,138 +288,67 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       setShowDeleteUserDialog(false);
       setSelectedUser(null);
-      toast({
-        title: 'User Deleted',
-        description: 'User has been deleted from the platform.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Delete Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'User Deleted', description: 'User has been deleted from the platform.' });
     },
   });
 
-  const { data: paymentBypassStatus } = useQuery<{ isActive: boolean; expiresAt?: string; activatedBy?: string }>({
-    queryKey: ['/api/payment-bypass/status'],
-    enabled: !!user,
-  });
-
-  const activatePaymentBypassMutation = useMutation({
-    mutationFn: async ({ durationHours, reason }: { durationHours: number; reason: string }) => {
-      const response = await apiRequest('POST', '/api/payment-bypass/activate', { durationHours, reason });
+  const reviewReportMutation = useMutation({
+    mutationFn: async ({ reportId, action, notes }: { reportId: string; action: string; notes: string }) => {
+      const response = await apiRequest('POST', `/api/admin/moderation/reports/${reportId}/review`, { action, notes });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/payment-bypass/status'] });
-      toast({
-        title: 'Payment Bypass Activated',
-        description: 'Payment requirements have been temporarily bypassed.',
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/moderation/reports'] });
+      setShowModerationDialog(false);
+      setSelectedReport(null);
+      setModerationAction('');
+      setModerationNotes('');
+      toast({ title: 'Report Reviewed', description: 'The moderation report has been processed.' });
     },
   });
 
-  const deactivatePaymentBypassMutation = useMutation({
+  const killAllMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const response = await apiRequest('POST', '/api/kill-switch/kill-all', { reason });
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchHealth();
+      setShowKillSwitchDialog(false);
+      setKillSwitchReason('');
+      toast({ title: 'Emergency Stop Activated', description: 'All autonomous systems have been stopped.', variant: 'destructive' });
+    },
+  });
+
+  const resumeAllMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const response = await apiRequest('POST', '/api/kill-switch/resume-all', { reason });
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchHealth();
+      toast({ title: 'Systems Resumed', description: 'All autonomous systems have been resumed.' });
+    },
+  });
+
+  const exportUsersMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/payment-bypass/deactivate', { reason: 'Admin deactivation' });
+      const response = await apiRequest('GET', '/api/admin/users/export');
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/payment-bypass/status'] });
-      toast({
-        title: 'Payment Bypass Deactivated',
-        description: 'Payment requirements are now enforced.',
-      });
+    onSuccess: (data) => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users-export-${new Date().toISOString()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Export Successful', description: 'User data has been exported.' });
     },
   });
-
-  // Handlers
-  const handleExportUsers = () => {
-    exportUsersMutation.mutate();
-  };
-
-  const handleSendEmail = (userId: string) => {
-    sendEmailMutation.mutate(userId);
-  };
-
-  const handleViewUser = (userId: string) => {
-    const foundUser = users.find(u => u.id === userId);
-    if (foundUser) {
-      toast({
-        title: `User: ${foundUser.username || foundUser.email}`,
-        description: `Plan: ${foundUser.subscriptionTier || 'None'} | Status: ${foundUser.subscriptionStatus || 'Unknown'} | Role: ${foundUser.role || 'user'}`,
-      });
-    }
-  };
-
-  const handleEditUser = (userId: string) => {
-    const foundUser = users.find(u => u.id === userId);
-    if (foundUser) {
-      setSelectedUser(foundUser);
-      setEditUserRole(foundUser.role || 'user');
-      setEditUserPlan(foundUser.subscriptionTier || 'free');
-      setEditUserStatus(foundUser.subscriptionStatus || 'active');
-      setShowEditUserDialog(true);
-    }
-  };
-
-  const handleBanUser = (userId: string) => {
-    const foundUser = users.find(u => u.id === userId);
-    if (foundUser) {
-      if (foundUser.subscriptionStatus === 'banned') {
-        updateUserMutation.mutate({ userId, subscriptionStatus: 'inactive' });
-      } else {
-        updateUserMutation.mutate({ userId, subscriptionStatus: 'banned' });
-      }
-    }
-  };
-
-  const handleDeleteUser = (userId: string) => {
-    const foundUser = users.find(u => u.id === userId);
-    if (foundUser) {
-      setSelectedUser(foundUser);
-      setShowDeleteUserDialog(true);
-    }
-  };
-
-  const handleSaveUserEdit = () => {
-    if (selectedUser) {
-      updateUserMutation.mutate({
-        userId: selectedUser.id,
-        role: editUserRole,
-        subscriptionTier: editUserPlan,
-        subscriptionStatus: editUserStatus,
-      });
-    }
-  };
-
-  const handleConfirmDeleteUser = () => {
-    if (selectedUser) {
-      deleteUserMutation.mutate(selectedUser.id);
-    }
-  };
-
-  const handleToggleNotifications = () => {
-    toggleNotificationsMutation.mutate(!emailNotifications);
-  };
-
-  const handleToggleMaintenance = () => {
-    if (
-      maintenanceMode ||
-      confirm(
-        'Are you sure you want to enable maintenance mode? Users will not be able to access the platform.'
-      )
-    ) {
-      toggleMaintenanceMutation.mutate(!maintenanceMode);
-    }
-  };
-
-  const handleToggleUserRegistration = () => {
-    const currentState = platformSettings?.userRegistrationEnabled ?? true;
-    toggleUserRegistrationMutation.mutate(!currentState);
-  };
 
   if (authLoading) {
     return (
@@ -436,708 +358,919 @@ export default function Admin() {
     );
   }
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      (user.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || user.subscriptionStatus === statusFilter;
-    const matchesPlan = planFilter === 'all' || user.subscriptionTier === planFilter;
+  if (!user) return null;
 
-    return matchesSearch && matchesStatus && matchesPlan;
-  });
-
-  const statsCards = [
-    {
-      title: 'Total Users',
-      value: adminAnalytics?.totalUsers?.toLocaleString() || '0',
-      change: `+${adminAnalytics?.recentSignups || 0} this month`,
-      icon: Users,
-      color: 'from-blue-500 to-cyan-500',
-    },
-    {
-      title: 'Total Revenue',
-      value: `$${adminAnalytics?.totalRevenue?.toLocaleString() || '0'}`,
-      change: adminAnalytics?.revenueGrowth
-        ? `${adminAnalytics.revenueGrowth > 0 ? '+' : ''}${adminAnalytics.revenueGrowth.toFixed(1)}% from last month`
-        : 'No data',
-      icon: DollarSign,
-      color: 'from-green-500 to-emerald-500',
-    },
-    {
-      title: 'Total Projects',
-      value: adminAnalytics?.totalProjects?.toLocaleString() || '0',
-      change: adminAnalytics?.projectsGrowth
-        ? `${adminAnalytics.projectsGrowth > 0 ? '+' : ''}${adminAnalytics.projectsGrowth.toFixed(1)}% from last month`
-        : 'No data',
-      icon: Music,
-      color: 'from-purple-500 to-indigo-500',
-    },
-    {
-      title: 'Growth Rate',
-      value: adminAnalytics?.userGrowthRate ? `${adminAnalytics.userGrowthRate.toFixed(1)}%` : '0%',
-      change: 'Monthly active users',
-      icon: TrendingUp,
-      color: 'from-pink-500 to-rose-500',
-    },
-  ];
-
-  const subscriptionStats = adminAnalytics?.subscriptionStats || [];
+  const users = usersData?.users || [];
+  const reports = moderationReports?.reports || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'past_due':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'banned':
-        return 'bg-red-200 text-red-900 border-red-400';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'suspended': case 'banned': return 'bg-red-200 text-red-900';
+      case 'past_due': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getPlanColor = (plan: string) => {
-    switch (plan) {
-      case 'lifetime':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'yearly':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'monthly':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'free':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+  const getApiStatusColor = (status: string) => {
+    switch (status) {
+      case 'operational': return 'text-green-600';
+      case 'degraded': return 'text-yellow-600';
+      case 'down': return 'text-red-600';
+      default: return 'text-gray-600';
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Crown className="h-4 w-4 text-yellow-600" />;
-      case 'user':
-        return <UserCheck className="h-4 w-4 text-green-600" />;
-      default:
-        return <UserX className="h-4 w-4 text-gray-600" />;
+  const getApiStatusIcon = (status: string) => {
+    switch (status) {
+      case 'operational': return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'degraded': return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+      case 'down': return <XCircle className="h-4 w-4 text-red-600" />;
+      default: return <AlertCircle className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const renderSidebar = () => (
+    <div className="w-64 bg-gray-900 text-white min-h-screen p-4 flex-shrink-0">
+      <div className="mb-8">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Shield className="h-6 w-6 text-blue-400" />
+          Admin Panel
+        </h2>
+        <p className="text-gray-400 text-sm mt-1">Max Booster Control Center</p>
+      </div>
+      <nav className="space-y-1">
+        {ADMIN_NAV_ITEMS.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveSection(item.id)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+              activeSection === item.id
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+            }`}
+          >
+            <item.icon className="h-5 w-5" />
+            <span className="text-sm font-medium">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+      {systemHealth?.killSwitch?.globalKilled && (
+        <div className="mt-8 p-3 bg-red-900/50 border border-red-700 rounded-lg">
+          <div className="flex items-center gap-2 text-red-400">
+            <PowerOff className="h-4 w-4" />
+            <span className="text-sm font-medium">Kill Switch Active</span>
+          </div>
+          <p className="text-xs text-red-300 mt-1">All systems are paused</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderOverview = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm">Total Users</p>
+                <p className="text-3xl font-bold">{adminAnalytics?.totalUsers?.toLocaleString() || '0'}</p>
+                <p className="text-blue-200 text-sm">+{adminAnalytics?.recentSignups || 0} this month</p>
+              </div>
+              <Users className="h-12 w-12 text-blue-200" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm">Total Revenue</p>
+                <p className="text-3xl font-bold">${adminAnalytics?.totalRevenue?.toLocaleString() || '0'}</p>
+                <p className="text-green-200 text-sm">+{adminAnalytics?.revenueGrowth || 0}% growth</p>
+              </div>
+              <DollarSign className="h-12 w-12 text-green-200" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-100 text-sm">Total Projects</p>
+                <p className="text-3xl font-bold">{adminAnalytics?.totalProjects?.toLocaleString() || '0'}</p>
+                <p className="text-purple-200 text-sm">+{adminAnalytics?.projectsGrowth || 0}% growth</p>
+              </div>
+              <Music className="h-12 w-12 text-purple-200" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-100 text-sm">System Uptime</p>
+                <p className="text-3xl font-bold">{systemHealth?.server?.uptimeFormatted || 'N/A'}</p>
+                <p className="text-orange-200 text-sm">99.9% availability</p>
+              </div>
+              <Activity className="h-12 w-12 text-orange-200" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Server className="h-5 w-5" />
+              Quick System Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {healthLoading ? (
+              <Skeleton className="h-32" />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Database</span>
+                  <Badge variant={systemHealth?.database?.status === 'connected' ? 'default' : 'destructive'}>
+                    {systemHealth?.database?.status || 'Unknown'}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">CPU Usage</span>
+                  <span className="text-sm font-medium">{systemHealth?.server?.cpu || 0}%</span>
+                </div>
+                <Progress value={systemHealth?.server?.cpu || 0} className="h-2" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Memory Usage</span>
+                  <span className="text-sm font-medium">{systemHealth?.server?.memory?.percentUsed || 0}%</span>
+                </div>
+                <Progress value={systemHealth?.server?.memory?.percentUsed || 0} className="h-2" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Error Rate (24h)</span>
+                  <Badge variant="outline">{systemHealth?.errorTracking?.errorRate || '0%'}</Badge>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Flag className="h-5 w-5" />
+              Moderation Queue
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {moderationLoading ? (
+              <Skeleton className="h-32" />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                    <span className="font-medium">Pending Reports</span>
+                  </div>
+                  <Badge variant="outline" className="bg-yellow-100">
+                    {moderationReports?.stats?.pending || 0}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-blue-600" />
+                    <span className="font-medium">Reviewed Today</span>
+                  </div>
+                  <Badge variant="outline" className="bg-blue-100">
+                    {moderationReports?.stats?.reviewed || 0}
+                  </Badge>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setActiveSection('moderation')}
+                >
+                  View All Reports
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderUserManagement = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">User Management</h2>
+          <p className="text-gray-500">Manage platform users and subscriptions</p>
+        </div>
+        <Button onClick={() => exportUsersMutation.mutate()} disabled={exportUsersMutation.isPending}>
+          <Download className="h-4 w-4 mr-2" />
+          Export Users
+        </Button>
+      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="banned">Banned</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={planFilter} onValueChange={setPlanFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Plan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Plans</SelectItem>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
+                <SelectItem value="lifetime">Lifetime</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {usersLoading ? (
+            <Skeleton className="h-64" />
+          ) : (
+            <ScrollArea className="h-[500px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{u.username || 'N/A'}</p>
+                          <p className="text-sm text-gray-500">{u.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
+                          {u.role === 'admin' && <Crown className="h-3 w-3 mr-1" />}
+                          {u.role || 'user'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{u.subscriptionTier || 'free'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(u.subscriptionStatus || 'inactive')}>
+                          {u.subscriptionStatus || 'inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setEditUserRole(u.role || 'user');
+                              setEditUserPlan(u.subscriptionTier || 'free');
+                              setEditUserStatus(u.subscriptionStatus || 'active');
+                              setShowEditUserDialog(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {u.subscriptionStatus === 'suspended' || u.isSuspended ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => reactivateUserMutation.mutate(u.id)}
+                            >
+                              <UserCheck className="h-4 w-4 text-green-600" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => suspendUserMutation.mutate({ userId: u.id })}
+                            >
+                              <Ban className="h-4 w-4 text-yellow-600" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setShowDeleteUserDialog(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          )}
+          {usersData?.pagination && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-gray-500">
+                Showing {users.length} of {usersData.pagination.total} users
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={usersData.pagination.page <= 1}>
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={usersData.pagination.page >= usersData.pagination.totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderModeration = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Content Moderation</h2>
+          <p className="text-gray-500">Review and manage reported content</p>
+        </div>
+        <div className="flex gap-2">
+          <Select value={moderationFilter} onValueChange={setModerationFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Reports</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="reviewed">Reviewed</SelectItem>
+              <SelectItem value="resolved">Resolved</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={() => refetchModeration()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-yellow-800 font-medium">Pending</p>
+              <p className="text-2xl font-bold text-yellow-900">{moderationReports?.stats?.pending || 0}</p>
+            </div>
+            <AlertTriangle className="h-8 w-8 text-yellow-600" />
+          </CardContent>
+        </Card>
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-blue-800 font-medium">Reviewed</p>
+              <p className="text-2xl font-bold text-blue-900">{moderationReports?.stats?.reviewed || 0}</p>
+            </div>
+            <Eye className="h-8 w-8 text-blue-600" />
+          </CardContent>
+        </Card>
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-green-800 font-medium">Resolved</p>
+              <p className="text-2xl font-bold text-green-900">{moderationReports?.stats?.resolved || 0}</p>
+            </div>
+            <CheckCircle className="h-8 w-8 text-green-600" />
+          </CardContent>
+        </Card>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Reported Content Queue</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {moderationLoading ? (
+            <Skeleton className="h-64" />
+          ) : reports.length > 0 ? (
+            <div className="space-y-4">
+              {reports.map((report: ModerationReport) => (
+                <div
+                  key={report.id}
+                  className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline">{report.contentType}</Badge>
+                        <Badge variant={report.status === 'pending' ? 'destructive' : 'default'}>
+                          {report.status}
+                        </Badge>
+                        <Badge variant="secondary">{report.reason.replace('_', ' ')}</Badge>
+                      </div>
+                      <h4 className="font-medium">{report.contentTitle}</h4>
+                      <p className="text-sm text-gray-600 mt-1">{report.description}</p>
+                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                        <span>Reported by: {report.reportedByUsername}</span>
+                        <span>Target: {report.targetUsername}</span>
+                        <span>{new Date(report.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedReport(report);
+                        setShowModerationDialog(true);
+                      }}
+                    >
+                      Review
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <p className="text-gray-600">No pending reports</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderSystemHealth = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">System Health</h2>
+          <p className="text-gray-500">Monitor platform infrastructure and services</p>
+        </div>
+        <Button variant="outline" onClick={() => refetchHealth()}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
+      {healthLoading ? (
+        <Skeleton className="h-96" />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <Cpu className="h-8 w-8 text-blue-600" />
+                  <span className="text-2xl font-bold">{systemHealth?.server?.cpu || 0}%</span>
+                </div>
+                <p className="text-sm text-gray-500">CPU Usage</p>
+                <Progress value={systemHealth?.server?.cpu || 0} className="mt-2" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <HardDrive className="h-8 w-8 text-green-600" />
+                  <span className="text-2xl font-bold">{systemHealth?.server?.memory?.percentUsed || 0}%</span>
+                </div>
+                <p className="text-sm text-gray-500">Memory Usage</p>
+                <Progress value={systemHealth?.server?.memory?.percentUsed || 0} className="mt-2" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <Database className="h-8 w-8 text-purple-600" />
+                  <span className="text-2xl font-bold">{systemHealth?.server?.disk || 0}%</span>
+                </div>
+                <p className="text-sm text-gray-500">Disk Usage</p>
+                <Progress value={systemHealth?.server?.disk || 0} className="mt-2" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <Clock className="h-8 w-8 text-orange-600" />
+                  <span className="text-xl font-bold">{systemHealth?.server?.uptimeFormatted || 'N/A'}</span>
+                </div>
+                <p className="text-sm text-gray-500">Server Uptime</p>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Database Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span>Connection Status</span>
+                    <Badge variant={systemHealth?.database?.status === 'connected' ? 'default' : 'destructive'}>
+                      {systemHealth?.database?.status === 'connected' ? (
+                        <><CheckCircle className="h-3 w-3 mr-1" /> Connected</>
+                      ) : (
+                        <><XCircle className="h-3 w-3 mr-1" /> Disconnected</>
+                      )}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span>Query Latency</span>
+                    <span className="font-medium">{systemHealth?.database?.latency || 0}ms</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span>Connection Pool</span>
+                    <span className="font-medium">
+                      {systemHealth?.database?.connectionPool?.active || 0} / {systemHealth?.database?.connectionPool?.max || 20}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  External API Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {systemHealth?.externalApis && Object.entries(systemHealth.externalApis).map(([api, data]) => (
+                    <div key={api} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                      <div className="flex items-center gap-2">
+                        {getApiStatusIcon(data.status)}
+                        <span className="capitalize">{api.replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={getApiStatusColor(data.status)}>
+                          {data.status}
+                        </Badge>
+                        <span className="text-sm text-gray-500">{data.latency}ms</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Error Tracking
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-red-50 rounded-lg">
+                  <p className="text-red-800 text-sm">Last 24 Hours</p>
+                  <p className="text-3xl font-bold text-red-900">{systemHealth?.errorTracking?.last24h || 0}</p>
+                </div>
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <p className="text-orange-800 text-sm">Last 7 Days</p>
+                  <p className="text-3xl font-bold text-orange-900">{systemHealth?.errorTracking?.last7d || 0}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-gray-800 text-sm">Error Rate</p>
+                  <p className="text-3xl font-bold text-gray-900">{systemHealth?.errorTracking?.errorRate || '0%'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+
+  const renderAnalytics = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Platform Analytics</h2>
+        <p className="text-gray-500">Revenue, growth, and feature usage metrics</p>
+      </div>
+      {analyticsLoading ? (
+        <Skeleton className="h-96" />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-sm text-gray-500">Monthly Revenue</p>
+                <p className="text-3xl font-bold">${adminAnalytics?.totalRevenue?.toLocaleString() || '0'}</p>
+                <p className="text-sm text-green-600">+{adminAnalytics?.revenueGrowth || 0}% from last month</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-sm text-gray-500">New Users (30d)</p>
+                <p className="text-3xl font-bold">{adminAnalytics?.newUsers || 0}</p>
+                <p className="text-sm text-green-600">+{adminAnalytics?.userGrowthRate?.toFixed(1) || 0}% growth rate</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-sm text-gray-500">Total Streams</p>
+                <p className="text-3xl font-bold">{adminAnalytics?.totalStreams?.toLocaleString() || '0'}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-sm text-gray-500">Active Projects</p>
+                <p className="text-3xl font-bold">{adminAnalytics?.totalProjects?.toLocaleString() || '0'}</p>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Subscription Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {adminAnalytics?.subscriptionStats?.map((stat) => (
+                    <div key={stat.plan} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${
+                          stat.plan === 'lifetime' ? 'bg-purple-500' :
+                          stat.plan === 'yearly' ? 'bg-blue-500' :
+                          stat.plan === 'monthly' ? 'bg-green-500' : 'bg-gray-400'
+                        }`} />
+                        <span className="capitalize">{stat.plan || 'free'}</span>
+                      </div>
+                      <span className="font-medium">{stat.count} users</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Feature Usage</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {adminAnalytics?.featureUsage?.map((feature) => (
+                    <div key={feature.feature}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm">{feature.feature}</span>
+                        <span className="text-sm font-medium">{feature.percentage}%</span>
+                      </div>
+                      <Progress value={feature.percentage} className="h-2" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  const renderKillSwitch = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-red-600 flex items-center gap-2">
+          <Power className="h-6 w-6" />
+          Kill Switch Control
+        </h2>
+        <p className="text-gray-500">Emergency controls for autonomous systems</p>
+      </div>
+      <Card className={systemHealth?.killSwitch?.globalKilled ? 'border-red-500 bg-red-50' : ''}>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Global Kill Switch</span>
+            <Badge variant={systemHealth?.killSwitch?.globalKilled ? 'destructive' : 'default'}>
+              {systemHealth?.killSwitch?.globalKilled ? 'ACTIVATED' : 'INACTIVE'}
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Emergency stop for all autonomous systems. Use with caution.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {systemHealth?.killSwitch?.globalKilled ? (
+              <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
+                <div className="flex items-center gap-2 text-red-800 mb-2">
+                  <PowerOff className="h-5 w-5" />
+                  <span className="font-medium">All Systems Stopped</span>
+                </div>
+                <p className="text-sm text-red-700">
+                  All autonomous operations are currently paused.
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 bg-green-100 border border-green-300 rounded-lg">
+                <div className="flex items-center gap-2 text-green-800 mb-2">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">Systems Operational</span>
+                </div>
+                <p className="text-sm text-green-700">
+                  All autonomous systems are running normally.
+                </p>
+              </div>
+            )}
+            <div className="flex gap-4">
+              {systemHealth?.killSwitch?.globalKilled ? (
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    setKillSwitchTarget('all');
+                    setShowKillSwitchDialog(true);
+                  }}
+                >
+                  <Power className="h-4 w-4 mr-2" />
+                  Resume All Systems
+                </Button>
+              ) : (
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => {
+                    setKillSwitchTarget('all');
+                    setShowKillSwitchDialog(true);
+                  }}
+                >
+                  <PowerOff className="h-4 w-4 mr-2" />
+                  Emergency Stop All
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Individual System Controls</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {systemHealth?.killSwitch?.systemStates && Object.entries(systemHealth.killSwitch.systemStates).map(([system, isKilled]) => (
+              <div
+                key={system}
+                className={`p-4 border rounded-lg ${isKilled ? 'border-red-300 bg-red-50' : 'border-green-300 bg-green-50'}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {isKilled ? (
+                      <XCircle className="h-5 w-5 text-red-600" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    )}
+                    <span className="font-medium capitalize">{system.replace('_', ' ')}</span>
+                  </div>
+                  <Badge variant={isKilled ? 'destructive' : 'default'}>
+                    {isKilled ? 'Stopped' : 'Running'}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Platform Settings</h2>
+        <p className="text-gray-500">Configure global platform settings</p>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>General Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium">Maintenance Mode</p>
+                <p className="text-sm text-gray-500">Disable access for non-admin users</p>
+              </div>
+              <Badge variant={platformSettings?.maintenanceMode ? 'destructive' : 'secondary'}>
+                {platformSettings?.maintenanceMode ? 'Enabled' : 'Disabled'}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium">User Registration</p>
+                <p className="text-sm text-gray-500">Allow new user signups</p>
+              </div>
+              <Badge variant={platformSettings?.userRegistrationEnabled ? 'default' : 'secondary'}>
+                {platformSettings?.userRegistrationEnabled ? 'Enabled' : 'Disabled'}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium">Email Notifications</p>
+                <p className="text-sm text-gray-500">Send system emails</p>
+              </div>
+              <Badge variant={platformSettings?.emailNotifications ? 'default' : 'secondary'}>
+                {platformSettings?.emailNotifications ? 'Enabled' : 'Disabled'}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/admin/kyc')}>
+              <Shield className="h-4 w-4 mr-2" />
+              KYC Verification Review
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/admin/security')}>
+              <Shield className="h-4 w-4 mr-2" />
+              Security Dashboard
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/admin/support')}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Support Dashboard
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/admin/autonomy')}>
+              <Zap className="h-4 w-4 mr-2" />
+              Autonomy Controls
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'overview': return renderOverview();
+      case 'users': return renderUserManagement();
+      case 'moderation': return renderModeration();
+      case 'system': return renderSystemHealth();
+      case 'analytics': return renderAnalytics();
+      case 'killswitch': return renderKillSwitch();
+      case 'settings': return renderSettings();
+      default: return renderOverview();
     }
   };
 
   return (
-    <AppLayout title="Admin Portal" subtitle="Manage users, analytics, and platform settings">
-      <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statsCards.map((stat, index) => (
-            <Card
-              key={index}
-              className="hover-lift transition-all duration-200"
-              data-testid={`card-stat-${stat.title.toLowerCase().replace(/\s+/g, '-')}`}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-500 text-sm font-medium">{stat.title}</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                    <p className="text-green-600 text-sm font-medium">{stat.change}</p>
-                  </div>
-                  <div
-                    className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center`}
-                  >
-                    <stat.icon className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Quick Links */}
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" onClick={() => setLocation('/admin/kyc')} className="gap-2">
-            <Shield className="h-4 w-4" />
-            KYC Verification Review
-          </Button>
-          <Button variant="outline" onClick={() => setLocation('/admin/security')} className="gap-2">
-            <Shield className="h-4 w-4" />
-            Security Dashboard
-          </Button>
-          <Button variant="outline" onClick={() => setLocation('/admin/support')} className="gap-2">
-            <Mail className="h-4 w-4" />
-            Support Dashboard
-          </Button>
-        </div>
-
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="users" data-testid="tab-users">
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="analytics" data-testid="tab-analytics">
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="subscriptions" data-testid="tab-subscriptions">
-              Subscriptions
-            </TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">
-              Settings
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <CardTitle>User Management</CardTitle>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExportUsers}
-                      disabled={exportUsersMutation.isPending}
-                      data-testid="button-export-users"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Search users..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-search-users"
-                    />
-                  </div>
-
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all" data-testid="select-status-all">
-                        All Status
-                      </SelectItem>
-                      <SelectItem value="active" data-testid="select-status-active">
-                        Active
-                      </SelectItem>
-                      <SelectItem value="inactive" data-testid="select-status-inactive">
-                        Inactive
-                      </SelectItem>
-                      <SelectItem value="cancelled" data-testid="select-status-cancelled">
-                        Cancelled
-                      </SelectItem>
-                      <SelectItem value="past_due" data-testid="select-status-past-due">
-                        Past Due
-                      </SelectItem>
-                      <SelectItem value="banned" data-testid="select-status-banned">
-                        Banned
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={planFilter} onValueChange={setPlanFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Filter by plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all" data-testid="select-plan-all">
-                        All Plans
-                      </SelectItem>
-                      <SelectItem value="free" data-testid="select-plan-free">
-                        Free
-                      </SelectItem>
-                      <SelectItem value="monthly" data-testid="select-plan-monthly">
-                        Monthly
-                      </SelectItem>
-                      <SelectItem value="yearly" data-testid="select-plan-yearly">
-                        Yearly
-                      </SelectItem>
-                      <SelectItem value="lifetime" data-testid="select-plan-lifetime">
-                        Lifetime
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {usersLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-4">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <Skeleton className="h-4 w-48" />
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-4 w-24" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>User</TableHead>
-                          <TableHead>Plan</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Joined</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredUsers.map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell>
-                              <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                  {user.username?.charAt(0)?.toUpperCase() || 'U'}
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">
-                                    {user.username || 'Unknown'}
-                                  </p>
-                                  <p className="text-sm text-gray-500">
-                                    {user.email || 'No email'}
-                                  </p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant="secondary"
-                                className={getPlanColor(user.subscriptionTier ?? '')}
-                              >
-                                {user.subscriptionTier?.toUpperCase() || 'FREE'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant="secondary"
-                                className={getStatusColor(user.subscriptionStatus ?? '')}
-                              >
-                                {user.subscriptionStatus?.toUpperCase() || 'INACTIVE'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                {getRoleIcon(user.role)}
-                                <span className="capitalize">{user.role}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-1 text-sm text-gray-500">
-                                <Calendar className="h-3 w-3" />
-                                <span>{new Date(user.createdAt).toLocaleDateString()}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewUser(user.id)}
-                                  data-testid={`button-view-${user.id}`}
-                                  title="View user details"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditUser(user.id)}
-                                  data-testid={`button-edit-${user.id}`}
-                                  title="Edit user"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleSendEmail(user.id)}
-                                  disabled={sendEmailMutation.isPending}
-                                  data-testid={`button-email-${user.id}`}
-                                  title="Send email"
-                                >
-                                  <Mail className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleBanUser(user.id)}
-                                  disabled={updateUserMutation.isPending}
-                                  data-testid={`button-ban-${user.id}`}
-                                  title={user.subscriptionStatus === 'banned' ? 'Unban user' : 'Ban user'}
-                                  className={user.subscriptionStatus === 'banned' ? 'text-green-600' : 'text-orange-600'}
-                                >
-                                  <Ban className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteUser(user.id)}
-                                  data-testid={`button-delete-${user.id}`}
-                                  title="Delete user"
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Platform Growth</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center border">
-                    <div className="text-center">
-                      <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">User Growth Chart</h3>
-                      <p className="text-gray-500 mb-4">Track platform growth over time</p>
-                      <div className="text-sm text-gray-600">
-                        <p>• {adminAnalytics?.totalUsers || 0} total users</p>
-                        <p>• {adminAnalytics?.recentSignups || 0} new signups this month</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenue Analytics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center border">
-                    <div className="text-center">
-                      <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Revenue Breakdown</h3>
-                      <p className="text-gray-500 mb-4">Monthly recurring revenue and growth</p>
-                      <div className="text-sm text-gray-600">
-                        <p>
-                          • ${adminAnalytics?.totalRevenue?.toLocaleString() || 0} total revenue
-                        </p>
-                        <p>• Monthly recurring revenue tracking</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Subscriptions Tab */}
-          <TabsContent value="subscriptions" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscription Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {subscriptionStats.map((stat, index) => (
-                    <div key={index} className="text-center p-6 bg-gray-50 rounded-lg">
-                      <h3 className="text-lg font-semibold text-gray-900 capitalize">
-                        {stat.plan} Plan
-                      </h3>
-                      <p className="text-3xl font-bold text-primary mt-2">{stat.count}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {((stat.count / (adminAnalytics?.totalUsers || 1)) * 100).toFixed(1)}% of
-                        users
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-8">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Plan Distribution</h4>
-                  <div className="space-y-3">
-                    {subscriptionStats.map((stat, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`w-4 h-4 rounded-full ${
-                              stat.plan === 'lifetime'
-                                ? 'bg-purple-500'
-                                : stat.plan === 'yearly'
-                                  ? 'bg-blue-500'
-                                  : stat.plan === 'monthly'
-                                    ? 'bg-green-500'
-                                    : 'bg-gray-500'
-                            }`}
-                          />
-                          <span className="capitalize font-medium">{stat.plan} Plan</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-bold">{stat.count} users</span>
-                          <span className="text-sm text-gray-500 ml-2">
-                            ({((stat.count / (adminAnalytics?.totalUsers || 1)) * 100).toFixed(1)}%)
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Settings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">General Settings</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">User Registration</h4>
-                          <p className="text-sm text-gray-500">Allow new users to register</p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleToggleUserRegistration}
-                          disabled={toggleUserRegistrationMutation.isPending}
-                          data-testid="toggle-user-registration"
-                        >
-                          {((platformSettings as any)?.userRegistrationEnabled ?? true)
-                            ? 'Enabled'
-                            : 'Disabled'}
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Email Notifications</h4>
-                          <p className="text-sm text-gray-500">
-                            Send system notifications via email
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleToggleNotifications}
-                          disabled={toggleNotificationsMutation.isPending}
-                          data-testid="toggle-email-notifications"
-                        >
-                          {emailNotifications ? 'Enabled' : 'Disabled'}
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Maintenance Mode</h4>
-                          <p className="text-sm text-gray-500">Put platform in maintenance mode</p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleToggleMaintenance}
-                          disabled={toggleMaintenanceMutation.isPending}
-                          data-testid="toggle-maintenance-mode"
-                        >
-                          {maintenanceMode ? 'Enabled' : 'Disabled'}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Bypass Controls</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className={`p-3 rounded-full ${paymentBypassStatus?.isActive ? 'bg-yellow-200' : 'bg-green-200'}`}>
-                            <CreditCard className={`h-5 w-5 ${paymentBypassStatus?.isActive ? 'text-yellow-700' : 'text-green-700'}`} />
-                          </div>
-                          <div>
-                            <h4 className="font-medium">Payment Requirements</h4>
-                            <p className="text-sm text-gray-500">
-                              {paymentBypassStatus?.isActive 
-                                ? `Bypassed until ${paymentBypassStatus.expiresAt ? new Date(paymentBypassStatus.expiresAt).toLocaleString() : 'manually disabled'}`
-                                : 'Payment requirements are enforced'}
-                            </p>
-                          </div>
-                        </div>
-                        {paymentBypassStatus?.isActive ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deactivatePaymentBypassMutation.mutate()}
-                            disabled={deactivatePaymentBypassMutation.isPending}
-                            data-testid="button-deactivate-payment-bypass"
-                          >
-                            Re-enable Payments
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => activatePaymentBypassMutation.mutate({ durationHours: 2, reason: 'Admin bypass' })}
-                            disabled={activatePaymentBypassMutation.isPending}
-                            className="text-yellow-700 border-yellow-400 hover:bg-yellow-50"
-                            data-testid="button-activate-payment-bypass"
-                          >
-                            Bypass for 2 Hours
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">API Settings</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">API Rate Limiting</h4>
-                          <p className="text-sm text-gray-500">Limit API requests per user</p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowRateLimitDialog(true)}
-                          data-testid="button-configure-rate-limiting"
-                        >
-                          Configure
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Webhook Endpoints</h4>
-                          <p className="text-sm text-gray-500">Manage webhook configurations</p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowWebhookDialog(true)}
-                          data-testid="button-manage-webhooks"
-                        >
-                          Manage
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+    <div className="flex min-h-screen">
+      {renderSidebar()}
+      <div className="flex-1 bg-gray-50 p-6 overflow-auto">
+        {renderContent()}
       </div>
 
-      {/* API Rate Limiting Dialog */}
-      <AlertDialog open={showRateLimitDialog} onOpenChange={setShowRateLimitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Configure API Rate Limiting</AlertDialogTitle>
-            <AlertDialogDescription>
-              Set the maximum number of API requests per user per minute.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Label>Requests per minute</Label>
-            <Input type="number" defaultValue="100" className="mt-2" />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                toast({
-                  title: 'Rate Limit Updated',
-                  description: 'API rate limiting has been configured',
-                });
-                setShowRateLimitDialog(false);
-              }}
-            >
-              Save Changes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Webhook Endpoints Dialog */}
-      <AlertDialog open={showWebhookDialog} onOpenChange={setShowWebhookDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Manage Webhook Endpoints</AlertDialogTitle>
-            <AlertDialogDescription>
-              Configure webhook endpoints for platform events.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4 space-y-4">
-            <div>
-              <Label>Webhook URL</Label>
-              <Input type="url" placeholder="https://api.example.com/webhook" className="mt-2" />
-            </div>
-            <div>
-              <Label>Events</Label>
-              <Select defaultValue="all">
-                <SelectTrigger className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Events</SelectItem>
-                  <SelectItem value="user">User Events</SelectItem>
-                  <SelectItem value="payment">Payment Events</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                toast({
-                  title: 'Webhook Configured',
-                  description: 'Webhook endpoint has been saved',
-                });
-                setShowWebhookDialog(false);
-              }}
-            >
-              Save Webhook
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Edit User Dialog */}
-      <AlertDialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Edit User</AlertDialogTitle>
-            <AlertDialogDescription>
-              Update user role and subscription settings for {selectedUser?.username || selectedUser?.email}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4 space-y-4">
+      <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update settings for {selectedUser?.username || selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
             <div>
               <Label>Role</Label>
               <Select value={editUserRole} onValueChange={setEditUserRole}>
@@ -1165,7 +1298,7 @@ export default function Admin() {
               </Select>
             </div>
             <div>
-              <Label>Subscription Status</Label>
+              <Label>Status</Label>
               <Select value={editUserStatus} onValueChange={setEditUserStatus}>
                 <SelectTrigger className="mt-2">
                   <SelectValue />
@@ -1173,47 +1306,158 @@ export default function Admin() {
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="past_due">Past Due</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                   <SelectItem value="banned">Banned</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedUser(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleSaveUserEdit}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditUserDialog(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (selectedUser) {
+                  updateUserMutation.mutate({
+                    userId: selectedUser.id,
+                    role: editUserRole,
+                    subscriptionTier: editUserPlan,
+                    subscriptionStatus: editUserStatus,
+                  });
+                }
+              }}
               disabled={updateUserMutation.isPending}
             >
               {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Delete User Confirmation Dialog */}
       <AlertDialog open={showDeleteUserDialog} onOpenChange={setShowDeleteUserDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete User</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the user "{selectedUser?.username || selectedUser?.email}"? 
-              This action cannot be undone and will permanently remove all user data.
+              Are you sure you want to delete "{selectedUser?.username || selectedUser?.email}"?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedUser(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleConfirmDeleteUser}
-              disabled={deleteUserMutation.isPending}
+              onClick={() => selectedUser && deleteUserMutation.mutate(selectedUser.id)}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleteUserMutation.isPending ? 'Deleting...' : 'Delete User'}
+              Delete User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AppLayout>
+
+      <Dialog open={showModerationDialog} onOpenChange={setShowModerationDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Review Report</DialogTitle>
+            <DialogDescription>
+              Take action on this moderation report
+            </DialogDescription>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="space-y-4 py-4">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="font-medium">{selectedReport.contentTitle}</p>
+                <p className="text-sm text-gray-600">{selectedReport.description}</p>
+                <div className="flex gap-2 mt-2">
+                  <Badge variant="outline">{selectedReport.reason.replace('_', ' ')}</Badge>
+                  <Badge variant="secondary">by {selectedReport.reportedByUsername}</Badge>
+                </div>
+              </div>
+              <div>
+                <Label>Action</Label>
+                <Select value={moderationAction} onValueChange={setModerationAction}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select action" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dismiss">Dismiss Report</SelectItem>
+                    <SelectItem value="warn_user">Warn User</SelectItem>
+                    <SelectItem value="remove_content">Remove Content</SelectItem>
+                    <SelectItem value="ban_user">Ban User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Notes</Label>
+                <Textarea
+                  value={moderationNotes}
+                  onChange={(e) => setModerationNotes(e.target.value)}
+                  placeholder="Add notes about this decision..."
+                  className="mt-2"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowModerationDialog(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (selectedReport && moderationAction) {
+                  reviewReportMutation.mutate({
+                    reportId: selectedReport.id,
+                    action: moderationAction,
+                    notes: moderationNotes,
+                  });
+                }
+              }}
+              disabled={!moderationAction || reviewReportMutation.isPending}
+            >
+              {reviewReportMutation.isPending ? 'Processing...' : 'Submit Review'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={showKillSwitchDialog} onOpenChange={setShowKillSwitchDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {systemHealth?.killSwitch?.globalKilled ? 'Resume Systems' : 'Emergency Stop'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {systemHealth?.killSwitch?.globalKilled
+                ? 'Provide a reason to resume all autonomous systems.'
+                : 'This will immediately stop all autonomous systems. Provide a reason for the emergency stop.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label>Reason (required)</Label>
+            <Textarea
+              value={killSwitchReason}
+              onChange={(e) => setKillSwitchReason(e.target.value)}
+              placeholder="Enter reason for this action..."
+              className="mt-2"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (killSwitchReason.length >= 5) {
+                  if (systemHealth?.killSwitch?.globalKilled) {
+                    resumeAllMutation.mutate(killSwitchReason);
+                  } else {
+                    killAllMutation.mutate(killSwitchReason);
+                  }
+                }
+              }}
+              disabled={killSwitchReason.length < 5}
+              className={systemHealth?.killSwitch?.globalKilled ? '' : 'bg-red-600 hover:bg-red-700'}
+            >
+              {systemHealth?.killSwitch?.globalKilled ? 'Resume Systems' : 'Activate Kill Switch'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }

@@ -39,11 +39,26 @@ import {
   Banknote,
   PieChart,
   Shield,
+  Scale,
+  FileText,
+  Zap,
 } from 'lucide-react';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useToast } from '@/hooks/use-toast';
 import { isUnauthorizedError } from '@/lib/authUtils';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import {
+  SplitVisualizationPieChart,
+  PayoutHistoryTimeline,
+  TaxFormWizard,
+  StatementDateRangePicker,
+  DisputeTracker,
+  useRoyaltyOutcome,
+  type PayoutHistoryItem,
+  type StatementPeriod,
+  type Dispute,
+  type TaxFormData,
+} from '@/components/royalties';
 
 interface Royalty {
   id: string;
@@ -206,6 +221,37 @@ export default function Royalties() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: payoutHistoryData, isLoading: payoutHistoryLoading } = useQuery<{ payouts: PayoutHistoryItem[] }>({
+    queryKey: ['/api/payouts/history'],
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+  const payoutHistory = payoutHistoryData?.payouts ?? [];
+
+  const { data: statementsData, isLoading: statementsLoading } = useQuery<{ statements: StatementPeriod[] }>({
+    queryKey: ['/api/payouts/statements'],
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+  const statements = statementsData?.statements ?? [];
+
+  const { data: disputesData, isLoading: disputesLoading } = useQuery<{ disputes: Dispute[] }>({
+    queryKey: ['/api/payouts/disputes'],
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+  const disputes = disputesData?.disputes ?? [];
+
+  const { data: taxFormsData, isLoading: taxFormsLoading } = useQuery<{ forms: any[] }>({
+    queryKey: ['/api/payouts/tax-forms'],
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+  const taxForms = taxFormsData?.forms ?? [];
+
+  const [selectedStatement, setSelectedStatement] = useState<StatementPeriod | null>(null);
+  const { showOutcome } = useRoyaltyOutcome();
+
   // Mutations
   const exportRoyaltiesMutation = useMutation({
     mutationFn: async () => {
@@ -352,6 +398,119 @@ export default function Royalties() {
       toast({
         title: 'Update Failed',
         description: 'Failed to update collaborator',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const submitTaxFormMutation = useMutation({
+    mutationFn: async (formData: TaxFormData) => {
+      const response = await apiRequest('POST', '/api/payouts/tax-form/submit', formData);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      showOutcome('tax_form_submitted', { formType: data.formType || 'tax form' });
+      queryClient.invalidateQueries({ queryKey: ['/api/payouts/tax-forms'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Submission Failed',
+        description: 'Failed to submit tax form',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const fileDisputeMutation = useMutation({
+    mutationFn: async (data: { type: string; subject: string; description: string; amount?: number; period?: string }) => {
+      const response = await apiRequest('POST', '/api/payouts/disputes', data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      showOutcome('dispute_filed', { disputeId: data.disputeId, reviewDays: 5 });
+      queryClient.invalidateQueries({ queryKey: ['/api/payouts/disputes'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Filing Failed',
+        description: 'Failed to file dispute',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const submitEvidenceMutation = useMutation({
+    mutationFn: async ({ disputeId, evidence }: { disputeId: string; evidence: { description: string; files?: File[] } }) => {
+      const response = await apiRequest('POST', `/api/payouts/disputes/${disputeId}/evidence`, evidence);
+      return response.json();
+    },
+    onSuccess: () => {
+      showOutcome('dispute_evidence_submitted', {});
+      queryClient.invalidateQueries({ queryKey: ['/api/payouts/disputes'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Submission Failed',
+        description: 'Failed to submit evidence',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const sendDisputeMessageMutation = useMutation({
+    mutationFn: async ({ disputeId, message }: { disputeId: string; message: string }) => {
+      const response = await apiRequest('POST', `/api/payouts/disputes/${disputeId}/message`, { message });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/payouts/disputes'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Send Failed',
+        description: 'Failed to send message',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const generateStatementMutation = useMutation({
+    mutationFn: async ({ startDate, endDate }: { startDate: Date; endDate: Date }) => {
+      const response = await apiRequest('POST', '/api/payouts/statements/generate', {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      showOutcome('statement_generated', { period: data.statement?.label });
+      queryClient.invalidateQueries({ queryKey: ['/api/payouts/statements'] });
+      if (data.statement) {
+        setSelectedStatement(data.statement);
+      }
+    },
+    onError: () => {
+      toast({
+        title: 'Generation Failed',
+        description: 'Failed to generate statement',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const retryPayoutMutation = useMutation({
+    mutationFn: async (payoutId: string) => {
+      const response = await apiRequest('POST', `/api/payouts/retry/${payoutId}`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Payout Retry', description: 'Payout retry initiated successfully' });
+      queryClient.invalidateQueries({ queryKey: ['/api/payouts/history'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Retry Failed',
+        description: 'Failed to retry payout',
         variant: 'destructive',
       });
     },
@@ -574,15 +733,23 @@ export default function Royalties() {
 
         {/* Main Content */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" data-testid="tab-overview">
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="payouts" data-testid="tab-payouts">
+              <Zap className="w-4 h-4 mr-1" />
+              Payouts
             </TabsTrigger>
             <TabsTrigger value="statements" data-testid="tab-statements">
               Statements
             </TabsTrigger>
             <TabsTrigger value="splits" data-testid="tab-splits">
               Collaborators
+            </TabsTrigger>
+            <TabsTrigger value="disputes" data-testid="tab-disputes">
+              <Scale className="w-4 h-4 mr-1" />
+              Disputes
             </TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">
               Settings
@@ -710,9 +877,67 @@ export default function Royalties() {
             </div>
           </TabsContent>
 
+          <TabsContent value="payouts" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PayoutHistoryTimeline
+                payouts={payoutHistory.map((p: any) => ({
+                  ...p,
+                  requestedAt: new Date(p.requestedAt),
+                  completedAt: p.completedAt ? new Date(p.completedAt) : undefined,
+                  estimatedArrival: p.estimatedArrival ? new Date(p.estimatedArrival) : undefined,
+                }))}
+                isLoading={payoutHistoryLoading}
+                onRetry={(payoutId) => retryPayoutMutation.mutate(payoutId)}
+                onViewDetails={(payoutId) => {
+                  window.open(`/api/payouts/status/${payoutId}`, '_blank');
+                }}
+                showInstantPayoutInfo={true}
+                instantPayoutFeePercentage={1.5}
+              />
+
+              <TaxFormWizard
+                currentFormType={taxForms[0]?.formType || null}
+                currentStatus={taxForms[0]?.status || 'not_started'}
+                rejectionReason={taxForms[0]?.rejectionReason}
+                onSubmit={async (formData) => {
+                  await submitTaxFormMutation.mutateAsync(formData);
+                }}
+                isUSPerson={payoutSettings?.taxCountry === 'United States'}
+              />
+            </div>
+          </TabsContent>
+
           <TabsContent value="statements" className="space-y-6">
-            {/* Monthly Statements */}
-            <Card className="glassmorphism">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1">
+                <StatementDateRangePicker
+                  statements={statements.map((s: any) => ({
+                    ...s,
+                    startDate: new Date(s.startDate),
+                    endDate: new Date(s.endDate),
+                  }))}
+                  selectedPeriod={selectedStatement}
+                  onPeriodSelect={(period) => {
+                    setSelectedStatement(period);
+                    showOutcome('statement_period_selected', {
+                      startDate: period.startDate.toLocaleDateString(),
+                      endDate: period.endDate.toLocaleDateString(),
+                    });
+                  }}
+                  onDownload={(period) => {
+                    handleDownloadStatement(period.id);
+                    showOutcome('statement_downloaded', { period: period.label });
+                  }}
+                  onGenerate={(startDate, endDate) => {
+                    generateStatementMutation.mutate({ startDate, endDate });
+                  }}
+                  isLoading={statementsLoading || generateStatementMutation.isPending}
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                {/* Monthly Statements Table */}
+                <Card className="glassmorphism">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Royalty Statements</CardTitle>
@@ -796,19 +1021,45 @@ export default function Royalties() {
                 </div>
               </CardContent>
             </Card>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="splits" className="space-y-6">
-            {/* Royalty Splits Management */}
-            <Card className="glassmorphism">
-              <CardHeader>
-                <CardTitle>Royalty Splits</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Current Collaborators */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Current Collaborators</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SplitVisualizationPieChart
+                participants={splits.map((s: RoyaltySplit) => ({
+                  id: s.id,
+                  name: s.name,
+                  role: s.role,
+                  email: s.email,
+                  percentage: s.percentage,
+                  avatar: s.avatar,
+                  status: 'accepted' as const,
+                }))}
+                totalAmount={totalEarnings}
+                currency="USD"
+                showLegend={true}
+                showValidation={true}
+                onParticipantClick={(participant) => {
+                  const split = splits.find((s) => s.id === participant.id);
+                  if (split) {
+                    setEditingSplit(split);
+                    setIsEditSplitDialogOpen(true);
+                  }
+                }}
+              />
+
+              {/* Royalty Splits Management */}
+              <Card className="glassmorphism">
+                <CardHeader>
+                  <CardTitle>Manage Collaborators</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Current Collaborators */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Current Collaborators</h3>
                     {splitsLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <RefreshCw className="w-8 h-8 animate-spin" />
@@ -879,9 +1130,36 @@ export default function Royalties() {
                       Add Collaborator
                     </Button>
                   </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="disputes" className="space-y-6">
+            <DisputeTracker
+              disputes={disputes.map((d: any) => ({
+                ...d,
+                createdAt: new Date(d.createdAt),
+                updatedAt: new Date(d.updatedAt),
+                messages: d.messages?.map((m: any) => ({
+                  ...m,
+                  timestamp: new Date(m.timestamp),
+                })) || [],
+              }))}
+              isLoading={disputesLoading}
+              onFileDispute={async (data) => {
+                await fileDisputeMutation.mutateAsync(data as any);
+              }}
+              onSubmitEvidence={async (disputeId, evidence) => {
+                await submitEvidenceMutation.mutateAsync({ disputeId, evidence });
+              }}
+              onSendMessage={async (disputeId, message) => {
+                await sendDisputeMessageMutation.mutateAsync({ disputeId, message });
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

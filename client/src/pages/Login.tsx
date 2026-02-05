@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/ui/Logo';
-import { Eye, EyeOff, AlertCircle, Shield, Clock } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Shield, Clock, Play, Loader2, Mail } from 'lucide-react';
 import { GoogleIcon } from '@/components/ui/brand-icons';
 
 const OAUTH_ERROR_MESSAGES: Record<string, { title: string; description: string }> = {
@@ -42,6 +42,10 @@ const OAUTH_ERROR_MESSAGES: Record<string, { title: string; description: string 
     title: 'OAuth Error', 
     description: 'An error occurred during Google sign-in. Please try again.' 
   },
+  account_not_verified: {
+    title: 'Account Not Verified',
+    description: 'Please verify your email address before logging in. Check your inbox for a verification link.'
+  },
 };
 
 export default function Login() {
@@ -54,6 +58,8 @@ export default function Login() {
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [twoFactorError, setTwoFactorError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
+  const [accountLockedUntil, setAccountLockedUntil] = useState<Date | null>(null);
   const { login } = useAuth();
   const [location, navigate] = useLocation();
   const { toast } = useToast();
@@ -110,8 +116,16 @@ export default function Login() {
     if (lowerMessage.includes('locked') || lowerMessage.includes('suspended')) {
       return {
         title: 'Account Locked',
-        description: 'Your account has been temporarily locked due to security concerns. Please contact support or wait before trying again.',
+        description: 'Your account has been temporarily locked due to too many failed login attempts. Please wait 15 minutes or contact support.',
         icon: <Shield className="h-4 w-4" />,
+      };
+    }
+    
+    if (lowerMessage.includes('not verified') || lowerMessage.includes('verify your email')) {
+      return {
+        title: 'Email Not Verified',
+        description: 'Please verify your email address before logging in. Check your inbox for the verification link.',
+        icon: <Mail className="h-4 w-4" />,
       };
     }
     
@@ -226,6 +240,42 @@ export default function Login() {
 
   const handleGoogleLogin = () => {
     window.location.href = '/api/auth/google';
+  };
+
+  const handleDemoLogin = async () => {
+    setIsDemoLoading(true);
+    try {
+      const response = await fetch('/api/auth/demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        toast({
+          title: 'Demo Login Failed',
+          description: data.message || 'Could not start demo mode. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      toast({
+        title: 'Welcome to Demo Mode!',
+        description: 'Explore all Max Booster features with sample data.',
+      });
+      window.location.href = '/dashboard';
+    } catch (error) {
+      toast({
+        title: 'Connection Error',
+        description: 'Unable to connect to the server. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDemoLoading(false);
+    }
   };
 
   return (
@@ -384,6 +434,27 @@ export default function Login() {
           >
             <GoogleIcon className="mr-2 h-4 w-4" />
             Continue with Google
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full border border-dashed border-gray-300 dark:border-gray-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+            onClick={handleDemoLogin}
+            disabled={isDemoLoading}
+            data-testid="button-demo-login"
+          >
+            {isDemoLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Starting Demo...
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" />
+                Try Demo Mode
+              </>
+            )}
           </Button>
 
           <div className="text-center text-sm text-gray-600 dark:text-gray-400">

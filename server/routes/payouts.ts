@@ -435,4 +435,491 @@ router.get('/tax-forms', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/payouts/tax-form/submit
+ * Submit tax form (W-9, W-8BEN, W-8BEN-E)
+ */
+router.post('/tax-form/submit', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { formType, name, businessName, taxClassification, address, tinType, tin, countryOfCitizenship, claimTreatyBenefits, treatyCountry, certify, signature } = req.body;
+
+    if (!formType || !name || !address || !tin || !certify || !signature) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const { db } = await import('../db');
+    const { taxForms } = await import('@shared/schema');
+    const { v4: uuidv4 } = await import('uuid');
+
+    const formId = uuidv4();
+    const now = new Date();
+
+    await db.insert(taxForms).values({
+      id: formId,
+      userId: req.user.id,
+      formType,
+      status: 'pending_review',
+      taxYear: now.getFullYear(),
+      formData: {
+        name,
+        businessName: businessName || null,
+        taxClassification: taxClassification || null,
+        address,
+        tinType,
+        countryOfCitizenship: countryOfCitizenship || null,
+        claimTreatyBenefits: claimTreatyBenefits || false,
+        treatyCountry: treatyCountry || null,
+        signature,
+        signatureDate: now.toISOString(),
+      },
+      submittedAt: now,
+      createdAt: now,
+    });
+
+    res.json({
+      success: true,
+      formId,
+      status: 'pending_review',
+      message: 'Tax form submitted for review. You will be notified once it is approved.',
+    });
+  } catch (error: unknown) {
+    logger.error('Error submitting tax form:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to submit tax form' });
+  }
+});
+
+/**
+ * GET /api/payouts/statements
+ * Get all statements for user
+ */
+router.get('/statements', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { db } = await import('../db');
+    const { royaltyStatements } = await import('@shared/schema');
+    const { eq, desc } = await import('drizzle-orm');
+
+    const statements = await db
+      .select()
+      .from(royaltyStatements)
+      .where(eq(royaltyStatements.userId, req.user.id))
+      .orderBy(desc(royaltyStatements.periodEnd));
+
+    res.json({
+      statements: statements.map((s) => ({
+        id: s.id,
+        label: s.label || `${new Date(s.periodStart).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+        startDate: s.periodStart,
+        endDate: s.periodEnd,
+        earnings: parseFloat(s.totalEarnings || '0'),
+        status: s.status,
+        downloadUrl: s.downloadUrl,
+      })),
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching statements:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to fetch statements' });
+  }
+});
+
+/**
+ * POST /api/payouts/statements/generate
+ * Generate statement for custom date range
+ */
+router.post('/statements/generate', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { startDate, endDate } = req.body;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate required' });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (start >= end) {
+      return res.status(400).json({ error: 'startDate must be before endDate' });
+    }
+
+    const { db } = await import('../db');
+    const { royaltyStatements, royalties } = await import('@shared/schema');
+    const { eq, and, gte, lte, sum } = await import('drizzle-orm');
+    const { v4: uuidv4 } = await import('uuid');
+
+    const earningsResult = await db
+      .select({ total: sum(royalties.amount) })
+      .from(royalties)
+      .where(
+        and(
+          eq(royalties.userId, req.user.id),
+          gte(royalties.createdAt, start),
+          lte(royalties.createdAt, end)
+        )
+      );
+
+    const totalEarnings = earningsResult[0]?.total || '0';
+
+    const statementId = uuidv4();
+    const label = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+    await db.insert(royaltyStatements).values({
+      id: statementId,
+      userId: req.user.id,
+      periodStart: start,
+      periodEnd: end,
+      totalEarnings,
+      label,
+      status: parseFloat(totalEarnings) > 0 ? 'available' : 'no_data',
+      createdAt: new Date(),
+    });
+
+    res.json({
+      success: true,
+      statement: {
+        id: statementId,
+        label,
+        startDate: start,
+        endDate: end,
+        earnings: parseFloat(totalEarnings),
+        status: parseFloat(totalEarnings) > 0 ? 'available' : 'no_data',
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error generating statement:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to generate statement' });
+  }
+});
+
+/**
+ * GET /api/payouts/statements/:id/download
+ * Download statement PDF
+ */
+router.get('/statements/:id/download', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    const { db } = await import('../db');
+    const { royaltyStatements } = await import('@shared/schema');
+    const { eq, and } = await import('drizzle-orm');
+
+    const [statement] = await db
+      .select()
+      .from(royaltyStatements)
+      .where(and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, req.user.id)));
+
+    if (!statement) {
+      return res.status(404).json({ error: 'Statement not found' });
+    }
+
+    res.json({
+      success: true,
+      downloadUrl: statement.downloadUrl || `/api/payouts/statements/${id}/pdf`,
+      filename: `statement-${statement.label?.replace(/\s+/g, '-').toLowerCase()}.pdf`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error downloading statement:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to download statement' });
+  }
+});
+
+/**
+ * GET /api/payouts/disputes
+ * Get all disputes for user
+ */
+router.get('/disputes', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { db } = await import('../db');
+    const { royaltyDisputes, disputeMessages } = await import('@shared/schema');
+    const { eq, desc } = await import('drizzle-orm');
+
+    const disputes = await db
+      .select()
+      .from(royaltyDisputes)
+      .where(eq(royaltyDisputes.userId, req.user.id))
+      .orderBy(desc(royaltyDisputes.createdAt));
+
+    const disputesWithMessages = await Promise.all(
+      disputes.map(async (dispute) => {
+        const messages = await db
+          .select()
+          .from(disputeMessages)
+          .where(eq(disputeMessages.disputeId, dispute.id))
+          .orderBy(desc(disputeMessages.createdAt));
+
+        return {
+          id: dispute.id,
+          type: dispute.type,
+          status: dispute.status,
+          subject: dispute.subject,
+          description: dispute.description,
+          amount: dispute.amount ? parseFloat(dispute.amount) : undefined,
+          period: dispute.period,
+          createdAt: dispute.createdAt,
+          updatedAt: dispute.updatedAt,
+          resolution: dispute.resolution,
+          outcome: dispute.outcome,
+          evidenceCount: dispute.evidenceCount || 0,
+          messages: messages.map((m) => ({
+            id: m.id,
+            sender: m.sender,
+            content: m.content,
+            timestamp: m.createdAt,
+            attachments: m.attachments,
+          })),
+        };
+      })
+    );
+
+    res.json({ disputes: disputesWithMessages });
+  } catch (error: unknown) {
+    logger.error('Error fetching disputes:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to fetch disputes' });
+  }
+});
+
+/**
+ * POST /api/payouts/disputes
+ * File a new dispute
+ */
+router.post('/disputes', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { type, subject, description, amount, period } = req.body;
+
+    if (!type || !subject || !description) {
+      return res.status(400).json({ error: 'type, subject, and description are required' });
+    }
+
+    const { db } = await import('../db');
+    const { royaltyDisputes } = await import('@shared/schema');
+    const { v4: uuidv4 } = await import('uuid');
+
+    const disputeId = uuidv4();
+    const now = new Date();
+
+    await db.insert(royaltyDisputes).values({
+      id: disputeId,
+      userId: req.user.id,
+      type,
+      status: 'open',
+      subject,
+      description,
+      amount: amount ? String(amount) : null,
+      period: period || null,
+      evidenceCount: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    res.json({
+      success: true,
+      disputeId,
+      status: 'open',
+      message: 'Dispute filed successfully. We will review within 5 business days.',
+    });
+  } catch (error: unknown) {
+    logger.error('Error filing dispute:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to file dispute' });
+  }
+});
+
+/**
+ * POST /api/payouts/disputes/:id/evidence
+ * Submit evidence for a dispute
+ */
+router.post('/disputes/:id/evidence', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    const { description, files } = req.body;
+
+    if (!description) {
+      return res.status(400).json({ error: 'description is required' });
+    }
+
+    const { db } = await import('../db');
+    const { royaltyDisputes, disputeMessages } = await import('@shared/schema');
+    const { eq, and, sql } = await import('drizzle-orm');
+    const { v4: uuidv4 } = await import('uuid');
+
+    const [dispute] = await db
+      .select()
+      .from(royaltyDisputes)
+      .where(and(eq(royaltyDisputes.id, id), eq(royaltyDisputes.userId, req.user.id)));
+
+    if (!dispute) {
+      return res.status(404).json({ error: 'Dispute not found' });
+    }
+
+    const messageId = uuidv4();
+    const now = new Date();
+
+    await db.insert(disputeMessages).values({
+      id: messageId,
+      disputeId: id,
+      sender: 'user',
+      content: `[Evidence] ${description}`,
+      attachments: files || null,
+      createdAt: now,
+    });
+
+    await db
+      .update(royaltyDisputes)
+      .set({
+        evidenceCount: sql`${royaltyDisputes.evidenceCount} + 1`,
+        updatedAt: now,
+      })
+      .where(eq(royaltyDisputes.id, id));
+
+    res.json({
+      success: true,
+      message: 'Evidence submitted successfully.',
+    });
+  } catch (error: unknown) {
+    logger.error('Error submitting evidence:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to submit evidence' });
+  }
+});
+
+/**
+ * POST /api/payouts/disputes/:id/message
+ * Send message for a dispute
+ */
+router.post('/disputes/:id/message', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: 'message is required' });
+    }
+
+    const { db } = await import('../db');
+    const { royaltyDisputes, disputeMessages } = await import('@shared/schema');
+    const { eq, and } = await import('drizzle-orm');
+    const { v4: uuidv4 } = await import('uuid');
+
+    const [dispute] = await db
+      .select()
+      .from(royaltyDisputes)
+      .where(and(eq(royaltyDisputes.id, id), eq(royaltyDisputes.userId, req.user.id)));
+
+    if (!dispute) {
+      return res.status(404).json({ error: 'Dispute not found' });
+    }
+
+    const messageId = uuidv4();
+    const now = new Date();
+
+    await db.insert(disputeMessages).values({
+      id: messageId,
+      disputeId: id,
+      sender: 'user',
+      content: message,
+      createdAt: now,
+    });
+
+    await db
+      .update(royaltyDisputes)
+      .set({ updatedAt: now })
+      .where(eq(royaltyDisputes.id, id));
+
+    res.json({
+      success: true,
+      messageId,
+    });
+  } catch (error: unknown) {
+    logger.error('Error sending message:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to send message' });
+  }
+});
+
+/**
+ * POST /api/payouts/retry/:payoutId
+ * Retry a failed payout
+ */
+router.post('/retry/:payoutId', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { payoutId } = req.params;
+    
+    const result = await instantPayoutService.retryFailedPayout(req.user.id, payoutId);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({
+      success: true,
+      newPayoutId: result.payoutId,
+      message: 'Payout retry initiated successfully.',
+    });
+  } catch (error: unknown) {
+    logger.error('Error retrying payout:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to retry payout' });
+  }
+});
+
+/**
+ * GET /api/payouts/instant-fee
+ * Get instant payout fee calculation
+ */
+router.get('/instant-fee', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const amount = parseFloat(req.query.amount as string);
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ error: 'Valid positive amount is required' });
+    }
+
+    const feePercentage = 1.5;
+    const fee = amount * (feePercentage / 100);
+    const netAmount = amount - fee;
+
+    res.json({
+      amount,
+      feePercentage,
+      fee: parseFloat(fee.toFixed(2)),
+      netAmount: parseFloat(netAmount.toFixed(2)),
+    });
+  } catch (error: unknown) {
+    logger.error('Error calculating instant fee:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to calculate fee' });
+  }
+});
+
 export default router;

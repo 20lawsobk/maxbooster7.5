@@ -3,16 +3,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Upload, X, FileAudio, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Upload, X, FileAudio, AlertCircle, CheckCircle, RotateCcw, ChevronDown, Music, User, Disc, Tag, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
+
+interface AudioMetadata {
+  title?: string;
+  artist?: string;
+  album?: string;
+  genre?: string;
+  year?: string;
+  trackNumber?: number;
+  bpm?: number;
+  key?: string;
+}
 
 interface AudioFile {
   file: File;
   id: string;
   duration?: number;
   waveform?: number[];
-  status: 'pending' | 'uploading' | 'processing' | 'complete' | 'error';
+  metadata?: AudioMetadata;
+  status: 'pending' | 'uploading' | 'processing' | 'analyzing' | 'complete' | 'error';
   progress: number;
   error?: string;
 }
@@ -68,6 +83,65 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
     });
   }, []);
 
+  const generateWaveform = useCallback(async (file: File): Promise<number[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          const channelData = audioBuffer.getChannelData(0);
+          const samples = 100;
+          const blockSize = Math.floor(channelData.length / samples);
+          const waveform: number[] = [];
+          for (let i = 0; i < samples; i++) {
+            let sum = 0;
+            for (let j = 0; j < blockSize; j++) {
+              sum += Math.abs(channelData[i * blockSize + j]);
+            }
+            waveform.push(sum / blockSize);
+          }
+          const max = Math.max(...waveform);
+          const normalized = waveform.map((v) => v / max);
+          audioContext.close();
+          resolve(normalized);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }, []);
+
+  const extractMetadataFromFilename = useCallback((filename: string): AudioMetadata => {
+    const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+    const patterns = [
+      /^(\d+)[\s._-]+(.+)$/,
+      /^(.+?)[\s._-]+[-–][\s._-]+(.+)$/,
+      /^(.+)$/,
+    ];
+    let trackNumber: number | undefined;
+    let title = nameWithoutExt;
+    let artist: string | undefined;
+    const match1 = nameWithoutExt.match(/^(\d+)[\s._-]+(.+)$/);
+    if (match1) {
+      trackNumber = parseInt(match1[1], 10);
+      title = match1[2];
+    }
+    const match2 = title.match(/^(.+?)[\s._-]+[-–][\s._-]+(.+)$/);
+    if (match2) {
+      artist = match2[1].trim();
+      title = match2[2].trim();
+    }
+    return {
+      title: title.replace(/[_-]/g, ' ').trim(),
+      artist,
+      trackNumber,
+    };
+  }, []);
+
   const handleFilesInternal = useCallback(async (fileArray: File[]) => {
     const currentFiles = filesRef.current;
     const currentOnChange = onChangeRef.current;
@@ -99,29 +173,47 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
       const audioFile: AudioFile = {
         file,
         id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        status: 'complete',
-        progress: 100,
+        status: 'analyzing',
+        progress: 50,
+        metadata: extractMetadataFromFilename(file.name),
       };
-
-      try {
-        const duration = await getAudioDuration(file);
-        audioFile.duration = duration;
-      } catch (err: unknown) {
-        logger.error('Error getting audio duration:', err);
-      }
 
       audioFiles.push(audioFile);
     }
 
     currentOnChange([...currentFiles, ...audioFiles]);
 
+    for (const audioFile of audioFiles) {
+      try {
+        const [duration, waveform] = await Promise.all([
+          getAudioDuration(audioFile.file),
+          generateWaveform(audioFile.file),
+        ]);
+        
+        const updatedFiles = filesRef.current.map((f) =>
+          f.id === audioFile.id
+            ? { ...f, duration, waveform, status: 'complete' as const, progress: 100 }
+            : f
+        );
+        onChangeRef.current(updatedFiles);
+      } catch (err: unknown) {
+        logger.error('Error analyzing audio:', err);
+        const updatedFiles = filesRef.current.map((f) =>
+          f.id === audioFile.id
+            ? { ...f, status: 'complete' as const, progress: 100 }
+            : f
+        );
+        onChangeRef.current(updatedFiles);
+      }
+    }
+
     if (audioFiles.length > 0) {
       toast({
         title: 'Files added',
-        description: `${audioFiles.length} track(s) ready for upload`,
+        description: `${audioFiles.length} track(s) added with waveform analysis`,
       });
     }
-  }, [toast, validateFile, getAudioDuration]);
+  }, [toast, validateFile, getAudioDuration, generateWaveform, extractMetadataFromFilename]);
 
   const handleFiles = async (newFiles: FileList | null) => {
     if (!newFiles) return;
@@ -259,51 +351,123 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
               <h3 className="font-medium">Uploaded Tracks ({files.length})</h3>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {files.map((audioFile, index) => (
                 <div
                   key={audioFile.id}
-                  className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                  className="p-3 bg-muted/50 rounded-lg space-y-3"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
-                    <span className="text-sm font-medium">{index + 1}</span>
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{audioFile.file.name}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>{formatFileSize(audioFile.file.size)}</span>
-                      <span>{formatDuration(audioFile.duration)}</span>
-                      <span className="capitalize">
-                        {audioFile.file.type.split('/')[1] || 'audio'}
-                      </span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
+                      <span className="text-sm font-medium">{index + 1}</span>
                     </div>
 
-                    {audioFile.status === 'uploading' && (
-                      <Progress value={audioFile.progress} className="h-1 mt-2" />
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{audioFile.metadata?.title || audioFile.file.name}</p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>{formatFileSize(audioFile.file.size)}</span>
+                        <span>{formatDuration(audioFile.duration)}</span>
+                        <span className="capitalize">
+                          {audioFile.file.type.split('/')[1] || 'audio'}
+                        </span>
+                        {audioFile.metadata?.artist && (
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {audioFile.metadata.artist}
+                          </span>
+                        )}
+                      </div>
 
-                    {audioFile.error && (
-                      <p className="text-xs text-destructive mt-1">{audioFile.error}</p>
-                    )}
+                      {audioFile.status === 'uploading' && (
+                        <Progress value={audioFile.progress} className="h-1 mt-2" />
+                      )}
+
+                      {audioFile.status === 'analyzing' && (
+                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Analyzing audio...
+                        </div>
+                      )}
+
+                      {audioFile.error && (
+                        <p className="text-xs text-destructive mt-1">{audioFile.error}</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {audioFile.status === 'complete' && (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      )}
+                      {audioFile.status === 'analyzing' && (
+                        <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+                      )}
+                      {audioFile.status === 'error' && (
+                        <AlertCircle className="h-4 w-4 text-destructive" />
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(audioFile.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {audioFile.status === 'complete' && (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    )}
-                    {audioFile.status === 'error' && (
-                      <AlertCircle className="h-4 w-4 text-destructive" />
-                    )}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(audioFile.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {audioFile.waveform && audioFile.waveform.length > 0 && (
+                    <div className="h-12 flex items-end gap-[2px] px-2 bg-background/50 rounded">
+                      {audioFile.waveform.map((value, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 bg-primary/60 rounded-t transition-all hover:bg-primary"
+                          style={{ height: `${Math.max(value * 100, 4)}%` }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {audioFile.metadata && (audioFile.metadata.title || audioFile.metadata.artist) && (
+                    <Collapsible>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-full justify-between">
+                          <span className="flex items-center gap-2">
+                            <Tag className="h-3 w-3" />
+                            Detected Metadata
+                          </span>
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-2">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          {audioFile.metadata.title && (
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Title</Label>
+                              <p className="truncate">{audioFile.metadata.title}</p>
+                            </div>
+                          )}
+                          {audioFile.metadata.artist && (
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Artist</Label>
+                              <p className="truncate">{audioFile.metadata.artist}</p>
+                            </div>
+                          )}
+                          {audioFile.metadata.album && (
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Album</Label>
+                              <p className="truncate">{audioFile.metadata.album}</p>
+                            </div>
+                          )}
+                          {audioFile.metadata.trackNumber && (
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Track #</Label>
+                              <p>{audioFile.metadata.trackNumber}</p>
+                            </div>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
                 </div>
               ))}
             </div>

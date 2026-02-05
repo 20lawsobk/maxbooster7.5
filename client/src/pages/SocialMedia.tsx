@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { useLocation } from 'wouter';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -90,6 +91,14 @@ import { SocialListening } from '@/components/social/SocialListening';
 import { CompetitorBenchmarking } from '@/components/social/CompetitorBenchmarking';
 import { UnifiedCalendar } from '@/components/social/UnifiedCalendar';
 import { VideoContentGenerator, Platform as VideoGeneratorPlatform } from '@/components/content/VideoContentGenerator';
+import {
+  SocialOutcomeHandler,
+  useOutcomeHandler,
+  OAuthStatusGrid,
+  NoPlatformsConnected,
+  NoScheduledPosts,
+  NoAnalyticsData,
+} from '@/components/social';
 
 // Social Media Platform Interfaces
 interface SocialPlatform {
@@ -382,11 +391,24 @@ export default function SocialMedia() {
   const { user, isLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [location] = useLocation();
   const { 
     trackSocialAccountConnected, 
     trackSocialAutopilotActivated,
     trackFirstPostScheduled 
   } = useOnboardingProgress();
+  const {
+    outcome,
+    showOutcome,
+    clearOutcome,
+    handleOAuthSuccess,
+    handleOAuthDenied,
+    handleOAuthExpired,
+    handlePlatformUnavailable,
+    handlePostScheduled,
+    handleContentGenerated,
+    handleContentGenerationFailed,
+  } = useOutcomeHandler();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [postContent, setPostContent] = useState('');
@@ -417,6 +439,69 @@ export default function SocialMedia() {
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
   };
+
+  // Handle OAuth callback URL parameters
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+    const platform = searchParams.get('platform');
+    const username = searchParams.get('username');
+    const errorMessage = searchParams.get('message');
+
+    if (success === 'connected' && platform) {
+      const platformNames = platform.split(',').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' & ');
+      handleOAuthSuccess(platformNames, username || undefined);
+      trackSocialAccountConnected();
+      queryClient.invalidateQueries({ queryKey: ['/api/social/platform-status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/social/connections'] });
+      window.history.replaceState({}, '', '/social-media');
+    }
+
+    if (error) {
+      const platformName = platform ? platform.charAt(0).toUpperCase() + platform.slice(1) : 'Platform';
+      
+      switch (error) {
+        case 'oauth_denied':
+          handleOAuthDenied(platformName);
+          break;
+        case 'token_exchange_failed':
+          handlePlatformUnavailable(platformName);
+          break;
+        case 'callback_failed':
+          showOutcome({
+            status: 'error',
+            category: 'oauth',
+            title: 'Connection Failed',
+            message: errorMessage || `Failed to connect to ${platformName}. Please try again.`,
+            platformId: platform || undefined,
+            retryable: true,
+            actionLabel: 'Try Again',
+          });
+          break;
+        case 'invalid_state':
+        case 'platform_mismatch':
+          showOutcome({
+            status: 'error',
+            category: 'oauth',
+            title: 'Connection Error',
+            message: 'The connection session expired. Please try connecting again.',
+            retryable: true,
+            actionLabel: 'Try Again',
+          });
+          break;
+        default:
+          showOutcome({
+            status: 'error',
+            category: 'oauth',
+            title: 'Connection Error',
+            message: `An error occurred: ${error}. Please try again.`,
+            retryable: true,
+          });
+      }
+      window.history.replaceState({}, '', '/social-media');
+    }
+  }, [location, handleOAuthSuccess, handleOAuthDenied, handlePlatformUnavailable, showOutcome, trackSocialAccountConnected, queryClient]);
 
   // Data Queries
   const { data: platformsFromApi = [], isLoading: platformsLoading } = useQuery<SocialPlatform[]>({
@@ -493,26 +578,28 @@ export default function SocialMedia() {
       } else {
         setUrlGeneratedContent([]);
       }
-      const formatLabel =
-        regularContentFormat === 'text'
-          ? 'text'
-          : regularContentFormat === 'image'
-            ? 'image'
-            : regularContentFormat === 'audio'
-              ? 'audio'
-              : 'video';
-      toast({
-        title: 'Content Generated!',
-        description: `AI has created ${formatLabel} content for your selected platforms.`,
-      });
+      
+      if (data.outcome) {
+        const { variationsCount, hasHashtags, optimalTime } = data.outcome;
+        handleContentGenerated(variationsCount || data.generatedContent?.length || 1, hasHashtags, optimalTime);
+      } else {
+        const formatLabel =
+          regularContentFormat === 'text'
+            ? 'text'
+            : regularContentFormat === 'image'
+              ? 'image'
+              : regularContentFormat === 'audio'
+                ? 'audio'
+                : 'video';
+        toast({
+          title: 'Content Generated!',
+          description: `AI has created ${formatLabel} content for your selected platforms.`,
+        });
+      }
       setIsGeneratingContent(false);
     },
     onError: () => {
-      toast({
-        title: 'Generation Failed',
-        description: 'Failed to generate content. Please try again.',
-        variant: 'destructive',
-      });
+      handleContentGenerationFailed('Failed to generate content. The AI service may be temporarily unavailable.');
       setIsGeneratingContent(false);
     },
   });
@@ -1088,6 +1175,17 @@ export default function SocialMedia() {
             </Button>
           </div>
         </div>
+
+        {/* OAuth/Action Outcome Display */}
+        {outcome && (
+          <SocialOutcomeHandler
+            outcome={outcome}
+            onDismiss={clearOutcome}
+            showInline={false}
+            autoHide={outcome.status === 'success'}
+            autoHideDelay={6000}
+          />
+        )}
 
         {/* Platform Connection Status */}
         <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">

@@ -40,7 +40,25 @@ import {
   Crown,
   Calendar,
   Receipt,
+  Zap,
+  ArrowUpRight,
+  ArrowDownRight,
+  Info,
+  DollarSign,
+  TrendingUp,
+  HardDrive,
+  Headphones,
+  Check,
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
@@ -53,6 +71,9 @@ import ChangePasswordDialog from '@/components/dialogs/ChangePasswordDialog';
 import TwoFactorSetupDialog from '@/components/dialogs/TwoFactorSetupDialog';
 import PaymentUpdateDialog from '@/components/dialogs/PaymentUpdateDialog';
 import DeleteAccountDialog from '@/components/dialogs/DeleteAccountDialog';
+import { LoginHistory } from '@/components/settings/LoginHistory';
+import { PrivacySettings } from '@/components/settings/PrivacySettings';
+import { useSettingsOutcomes } from '@/components/settings/SettingsOutcomeHandler';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,7 +99,14 @@ export default function Settings() {
   const [paymentUpdateOpen, setPaymentUpdateOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [cancelSubscriptionOpen, setCancelSubscriptionOpen] = useState(false);
+  const [terminateSessionOpen, setTerminateSessionOpen] = useState(false);
+  const [sessionToTerminate, setSessionToTerminate] = useState<string | null>(null);
+  const [terminatingSession, setTerminatingSession] = useState(false);
+  const [twoFactorDisableOpen, setTwoFactorDisableOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user?.profileImageUrl || '');
+  const [planComparisonOpen, setPlanComparisonOpen] = useState(false);
+  const [retryingPayment, setRetryingPayment] = useState(false);
+  const [refundsExpanded, setRefundsExpanded] = useState(false);
 
   // Query for full profile data
   const { data: fullProfile } = useQuery({
@@ -114,6 +142,12 @@ export default function Settings() {
   const { data: billingHistory = [], isLoading: billingLoading } = useQuery({
     queryKey: ['/api/billing/history'],
     enabled: !!user,
+  });
+
+  // Query for refunds
+  const { data: refundsData, isLoading: refundsLoading } = useQuery({
+    queryKey: ['/api/billing/refunds'],
+    enabled: !!user && refundsExpanded,
   });
 
   // Query for login sessions
@@ -438,6 +472,54 @@ export default function Settings() {
     }
   };
 
+  const handleRetryPayment = async () => {
+    setRetryingPayment(true);
+    try {
+      const response = await apiRequest('POST', '/api/billing/retry-payment');
+      const data = await response.json();
+      
+      if (data.code === 'REQUIRES_3D_SECURE' && data.clientSecret) {
+        toast({
+          title: '3D Secure Required',
+          description: 'Your bank requires additional verification. Please complete authentication.',
+        });
+        return;
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/history'] });
+      
+      toast({
+        title: 'Payment Successful',
+        description: data.message || 'Your payment has been processed successfully.',
+      });
+    } catch (error: any) {
+      const errorData = error.body || error;
+      
+      if (errorData.code === 'PAYMENT_DECLINED') {
+        toast({
+          title: 'Payment Declined',
+          description: 'Your card was declined. Please update your payment method.',
+          variant: 'destructive',
+        });
+        setPaymentUpdateOpen(true);
+      } else if (errorData.code === 'NO_PAST_DUE_PAYMENT') {
+        toast({
+          title: 'No Payment Due',
+          description: 'There are no outstanding payments to retry.',
+        });
+      } else {
+        toast({
+          title: 'Payment Failed',
+          description: errorData.message || 'Failed to retry payment. Please try again or update your payment method.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setRetryingPayment(false);
+    }
+  };
+
   const handleDownloadInvoice = async (invoiceId: string) => {
     try {
       const response = await fetch(`/api/billing/invoices/${invoiceId}/download`, {
@@ -469,23 +551,34 @@ export default function Settings() {
     }
   };
 
-  const handleTerminateSession = async (sessionId: string) => {
-    try {
-      await apiRequest('POST', '/api/auth/sessions/terminate', { sessionId });
+  const openTerminateConfirmation = (sessionId: string) => {
+    setSessionToTerminate(sessionId);
+    setTerminateSessionOpen(true);
+  };
 
-      // CRITICAL: Invalidate cache to refetch updated sessions list
+  const handleTerminateSession = async () => {
+    if (!sessionToTerminate) return;
+    
+    setTerminatingSession(true);
+    try {
+      await apiRequest('POST', '/api/auth/sessions/terminate', { sessionId: sessionToTerminate });
+
       queryClient.invalidateQueries({ queryKey: ['/api/auth/sessions'] });
 
       toast({
-        title: 'Success',
-        description: 'Session terminated successfully',
+        title: 'Session Terminated',
+        description: 'The device has been logged out successfully.',
       });
+      setTerminateSessionOpen(false);
+      setSessionToTerminate(null);
     } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: 'Failed to terminate session',
+        description: 'Failed to terminate session. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setTerminatingSession(false);
     }
   };
 
@@ -569,6 +662,10 @@ export default function Settings() {
             <TabsTrigger value="security" data-testid="tab-security">
               <Shield className="w-4 h-4 mr-2" />
               Security
+            </TabsTrigger>
+            <TabsTrigger value="privacy" data-testid="tab-privacy">
+              <Eye className="w-4 h-4 mr-2" />
+              Privacy
             </TabsTrigger>
             <TabsTrigger value="platforms" data-testid="tab-platforms">
               <LinkIcon className="w-4 h-4 mr-2" />
@@ -718,47 +815,19 @@ export default function Settings() {
                 {/* Change Password */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Change Password</h3>
-                  <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg">
                     <div>
-                      <Label htmlFor="currentPassword">Current Password</Label>
-                      <div className="relative">
-                        <Input
-                          id="currentPassword"
-                          type={showPassword ? 'text' : 'password'}
-                          data-testid="input-current-password"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                          onClick={() => setShowPassword(!showPassword)}
-                          data-testid="button-toggle-password"
-                        >
-                          {showPassword ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="newPassword">New Password</Label>
-                      <Input id="newPassword" type="password" data-testid="input-new-password" />
-                    </div>
-                    <div>
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        data-testid="input-confirm-password"
-                      />
+                      <p className="font-medium">Password</p>
+                      <p className="text-sm text-muted-foreground">
+                        Secure your account with a strong password
+                      </p>
                     </div>
                     <Button
+                      variant="outline"
                       onClick={() => setChangePasswordOpen(true)}
                       data-testid="button-change-password"
                     >
+                      <Lock className="w-4 h-4 mr-2" />
                       Change Password
                     </Button>
                   </div>
@@ -768,19 +837,45 @@ export default function Settings() {
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Two-Factor Authentication</h3>
                   <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg">
-                    <div>
-                      <p className="font-medium">Authenticator App</p>
-                      <p className="text-sm text-muted-foreground">
-                        Use an authenticator app for additional security
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${user?.twoFactorEnabled ? 'bg-green-100 dark:bg-green-900/30' : 'bg-muted'}`}>
+                        <Shield className={`w-5 h-5 ${user?.twoFactorEnabled ? 'text-green-600' : 'text-muted-foreground'}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">Authenticator App</p>
+                          {user?.twoFactorEnabled && (
+                            <Badge variant="default" className="bg-green-600">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Enabled
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {user?.twoFactorEnabled 
+                            ? 'Your account is protected with 2FA'
+                            : 'Use an authenticator app for additional security'}
+                        </p>
+                      </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => setTwoFactorOpen(true)}
-                      data-testid="button-setup-2fa"
-                    >
-                      Setup
-                    </Button>
+                    {user?.twoFactorEnabled ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => setTwoFactorDisableOpen(true)}
+                        data-testid="button-disable-2fa"
+                      >
+                        Disable 2FA
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => setTwoFactorOpen(true)}
+                        data-testid="button-setup-2fa"
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Setup
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -1062,16 +1157,59 @@ export default function Settings() {
                   <Alert variant="destructive" className="mb-4">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Payment Past Due</AlertTitle>
-                    <AlertDescription>
-                      Your payment is past due. Please update your payment method to continue using Max Booster Pro features.
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="ml-2"
-                        onClick={() => setPaymentUpdateOpen(true)}
-                      >
-                        Update Payment
-                      </Button>
+                    <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span>Your payment is past due. Please retry or update your payment method to continue using Max Booster Pro features.</span>
+                      <div className="flex gap-2 mt-2 sm:mt-0">
+                        <Button 
+                          size="sm" 
+                          onClick={handleRetryPayment}
+                          disabled={retryingPayment}
+                          className="bg-white text-red-600 hover:bg-red-50"
+                        >
+                          {retryingPayment ? (
+                            <>
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              Retrying...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Retry Payment
+                            </>
+                          )}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setPaymentUpdateOpen(true)}
+                        >
+                          <CreditCard className="h-3 w-3 mr-1" />
+                          Update Card
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {subscriptionData?.isTrialing && (
+                  <Alert className="mb-4 border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+                    <Zap className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-800 dark:text-blue-400">Trial Active</AlertTitle>
+                    <AlertDescription className="text-blue-700 dark:text-blue-300">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="flex-1">
+                          <p>Your free trial ends in <strong>{subscriptionData.trialDaysRemaining} days</strong> ({subscriptionData.trialEndsAt ? new Date(subscriptionData.trialEndsAt).toLocaleDateString() : 'soon'}).</p>
+                          {subscriptionData.trialDaysRemaining && subscriptionData.trialDaysRemaining <= 3 && (
+                            <p className="text-sm mt-1">Your card will be charged after the trial ends. Update your plan anytime.</p>
+                          )}
+                        </div>
+                        {subscriptionData.trialDaysRemaining && (
+                          <Progress 
+                            value={Math.max(0, 100 - (subscriptionData.trialDaysRemaining / 14) * 100)} 
+                            className="w-full sm:w-24 h-2 mt-2 sm:mt-0"
+                          />
+                        )}
+                      </div>
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1299,107 +1437,121 @@ export default function Settings() {
                     </div>
                   )}
                 </div>
+
+                {/* Refund History */}
+                <div>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full flex items-center justify-between py-2 px-0 hover:bg-transparent"
+                    onClick={() => setRefundsExpanded(!refundsExpanded)}
+                  >
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Refund History
+                    </h3>
+                    <ArrowDownRight className={`h-4 w-4 transition-transform ${refundsExpanded ? 'rotate-180' : ''}`} />
+                  </Button>
+                  
+                  {refundsExpanded && (
+                    <div className="mt-4">
+                      {refundsLoading ? (
+                        <div className="space-y-3">
+                          {[...Array(2)].map((_, i) => (
+                            <div key={i} className="animate-pulse p-3 bg-muted/20 rounded">
+                              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-2"></div>
+                              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/4"></div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : !refundsData?.refunds || refundsData.refunds.length === 0 ? (
+                        <div className="text-center py-6 bg-muted/10 rounded-lg">
+                          <DollarSign className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-gray-500 dark:text-gray-400">No refunds yet</p>
+                          <p className="text-sm text-muted-foreground">Your refund history will appear here</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {refundsData.refunds.map((refund: any) => (
+                            <div
+                              key={refund.id}
+                              className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-full ${
+                                  refund.statusColor === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                                  refund.statusColor === 'yellow' ? 'bg-yellow-100 dark:bg-yellow-900/30' :
+                                  refund.statusColor === 'red' ? 'bg-red-100 dark:bg-red-900/30' :
+                                  'bg-blue-100 dark:bg-blue-900/30'
+                                }`}>
+                                  {refund.status === 'succeeded' ? (
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  ) : refund.status === 'pending' ? (
+                                    <Clock className="h-4 w-4 text-yellow-600" />
+                                  ) : refund.status === 'failed' ? (
+                                    <XCircle className="h-4 w-4 text-red-600" />
+                                  ) : (
+                                    <RefreshCw className="h-4 w-4 text-blue-600" />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium">
+                                    {new Date(refund.created).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric'
+                                    })}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                    {refund.description}
+                                    <Badge 
+                                      variant={refund.status === 'succeeded' ? 'default' : 
+                                              refund.status === 'failed' ? 'destructive' : 'secondary'}
+                                      className="text-xs"
+                                    >
+                                      {refund.statusDisplay}
+                                    </Badge>
+                                  </p>
+                                  {refund.reason && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Reason: {refund.reason}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="font-semibold text-lg text-green-600">
+                                +${refund.amount.toFixed(2)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Plan Comparison Button */}
+                {!subscriptionData?.isLifetime && subscriptionData?.tier !== 'free' && (
+                  <div className="pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setPlanComparisonOpen(true)}
+                    >
+                      <Info className="h-4 w-4 mr-2" />
+                      View Plan Benefits & Compare
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
-            <Card className="glassmorphism">
-              <CardHeader>
-                <CardTitle>Security & Privacy</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Login Activity */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Recent Login Activity</h3>
-                  {sessionsLoading ? (
-                    <div className="space-y-3">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="animate-pulse p-3 bg-muted/20 rounded">
-                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-2/3 mb-2"></div>
-                          <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : loginSessions.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500 dark:text-gray-400">No recent login activity</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {loginSessions.map((session: unknown) => (
-                        <div
-                          key={session.id}
-                          className="flex items-center justify-between p-3 bg-muted/20 rounded"
-                          data-testid={`session-${session.id}`}
-                        >
-                          <div>
-                            <p className="font-medium">{session.device || 'Unknown Device'}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {session.location || 'Unknown'} • {session.time || 'Unknown'}
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {session.current && (
-                              <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded">
-                                Current
-                              </span>
-                            )}
-                            {!session.current && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleTerminateSession(session.id)}
-                                data-testid={`button-terminate-session-${session.id}`}
-                              >
-                                Terminate
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+            <LoginHistory />
+          </TabsContent>
 
-                {/* Data Export */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Data & Privacy</h3>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-muted/20 rounded-lg">
-                      <p className="font-medium mb-2">Export Your Data</p>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Download a copy of all your data including projects, tracks, and analytics.
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={handleExportData}
-                        data-testid="button-export-data"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Request Data Export
-                      </Button>
-                    </div>
-
-                    <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
-                      <p className="font-medium mb-2 text-destructive">Delete Account</p>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Permanently delete your account and all associated data. This action cannot
-                        be undone.
-                      </p>
-                      <Button
-                        variant="destructive"
-                        onClick={() => setDeleteAccountOpen(true)}
-                        data-testid="button-delete-account"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Account
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="privacy" className="space-y-6">
+            <PrivacySettings />
           </TabsContent>
 
           <TabsContent value="platforms" className="space-y-6">
@@ -1433,6 +1585,229 @@ export default function Settings() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <AlertDialog open={terminateSessionOpen} onOpenChange={setTerminateSessionOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Terminate Session</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will immediately log out the selected device. The user will need to sign in again to access the account.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={terminatingSession}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleTerminateSession}
+                disabled={terminatingSession}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {terminatingSession ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Terminating...
+                  </>
+                ) : (
+                  'Terminate Session'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={twoFactorDisableOpen} onOpenChange={setTwoFactorDisableOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Disable Two-Factor Authentication
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-3">
+                <p>
+                  Disabling 2FA will make your account less secure. You will only need your password to log in.
+                </p>
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                  <p className="text-sm text-amber-800 dark:text-amber-300">
+                    <strong>Warning:</strong> Anyone who obtains your password will be able to access your account without additional verification.
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep 2FA Enabled</AlertDialogCancel>
+              <AlertDialogAction 
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  try {
+                    await apiRequest('POST', '/api/auth/2fa/disable');
+                    queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+                    toast({
+                      title: '2FA Disabled',
+                      description: 'Two-factor authentication has been disabled on your account.',
+                    });
+                    setTwoFactorDisableOpen(false);
+                  } catch (error) {
+                    toast({
+                      title: 'Error',
+                      description: 'Failed to disable 2FA. Please try again.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+              >
+                Disable 2FA
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Plan Comparison Dialog */}
+        <Dialog open={planComparisonOpen} onOpenChange={setPlanComparisonOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Your Plan Benefits
+              </DialogTitle>
+              <DialogDescription>
+                Compare features across all available plans
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Current Plan Benefits */}
+              {subscriptionData?.planBenefits && (
+                <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Crown className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold text-lg">Current: {subscriptionData.planBenefits.name} Plan</h3>
+                    </div>
+                    <Badge variant="default">Active</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <HardDrive className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Storage: {subscriptionData.planBenefits.cloudStorage}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Headphones className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Support: {subscriptionData.planBenefits.support}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {subscriptionData.planBenefits.features?.slice(0, 5).map((feature: string, index: number) => (
+                      <div key={index} className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                    {subscriptionData.planBenefits.features?.length > 5 && (
+                      <p className="text-sm text-muted-foreground ml-6">
+                        + {subscriptionData.planBenefits.features.length - 5} more features
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Upgrade Options */}
+              {subscriptionData?.upgradeOptions && subscriptionData.upgradeOptions.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <ArrowUpRight className="h-4 w-4 text-green-500" />
+                    Upgrade Options
+                  </h4>
+                  <div className="grid gap-3">
+                    {subscriptionData.upgradeOptions.map((option: any) => (
+                      <div key={option.tier} className="p-4 rounded-lg border bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-medium">{option.name} Plan</h5>
+                            <p className="text-sm text-muted-foreground">
+                              {option.period === 'once' ? `$${option.price} one-time` : `$${option.price}/${option.period}`}
+                              {option.savings && <span className="text-green-600 ml-2">Save ${option.savings}/year</span>}
+                            </p>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            onClick={() => {
+                              setPlanComparisonOpen(false);
+                              navigate(`/subscribe?plan=${option.tier}`);
+                            }}
+                          >
+                            Upgrade
+                            <ArrowUpRight className="h-3 w-3 ml-1" />
+                          </Button>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {option.features?.slice(0, 3).map((feature: string, index: number) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {feature}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Downgrade Options */}
+              {subscriptionData?.downgradeOptions && subscriptionData.downgradeOptions.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <ArrowDownRight className="h-4 w-4 text-orange-500" />
+                    Downgrade Options
+                  </h4>
+                  <div className="grid gap-3">
+                    {subscriptionData.downgradeOptions.map((option: any) => (
+                      <div key={option.tier} className="p-4 rounded-lg border bg-orange-50/50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-medium">{option.name} Plan</h5>
+                            <p className="text-sm text-muted-foreground">
+                              {option.price === 0 ? 'Free' : `$${option.price}/${option.period}`}
+                            </p>
+                          </div>
+                          <Button 
+                            variant="outline"
+                            size="sm" 
+                            onClick={() => {
+                              setPlanComparisonOpen(false);
+                              if (option.tier === 'free') {
+                                setCancelSubscriptionOpen(true);
+                              } else {
+                                navigate(`/subscribe?plan=${option.tier}`);
+                              }
+                            }}
+                          >
+                            Downgrade
+                            <ArrowDownRight className="h-3 w-3 ml-1" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                          You may lose access to: {subscriptionData.planBenefits.cloudStorage} storage, {subscriptionData.planBenefits.support} support
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={() => setPlanComparisonOpen(false)}>
+                Close
+              </Button>
+              <Button onClick={() => {
+                setPlanComparisonOpen(false);
+                navigate('/pricing');
+              }}>
+                View All Plans
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
       )}
     </AppLayout>

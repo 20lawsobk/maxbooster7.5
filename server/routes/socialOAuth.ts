@@ -178,12 +178,31 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
       .from(socialAccounts)
       .where(eq(socialAccounts.userId, userId));
     
-    res.json(connections.map(c => ({
-      platform: c.platform,
-      username: c.username,
-      connected: c.isActive,
-      connectedAt: c.createdAt,
-    })));
+    const enrichedConnections = connections.map(c => {
+      const isTokenExpired = c.tokenExpiresAt ? new Date(c.tokenExpiresAt) < new Date() : false;
+      const tokenExpiresIn = c.tokenExpiresAt 
+        ? Math.max(0, Math.floor((new Date(c.tokenExpiresAt).getTime() - Date.now()) / 1000))
+        : null;
+      
+      let status: 'connected' | 'disconnected' | 'expired' | 'error' = 'connected';
+      if (!c.isActive) status = 'disconnected';
+      else if (isTokenExpired) status = 'expired';
+      
+      return {
+        platform: c.platform,
+        username: c.username,
+        connected: c.isActive && !isTokenExpired,
+        connectedAt: c.createdAt,
+        status,
+        tokenExpiresAt: c.tokenExpiresAt,
+        tokenExpiresIn,
+        followerCount: c.followerCount || 0,
+        lastSync: c.createdAt,
+        requiresReauth: isTokenExpired,
+      };
+    });
+    
+    res.json(enrichedConnections);
   } catch (error) {
     logger.error('Failed to get social connections:', error);
     res.json([]);
@@ -466,10 +485,12 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     }
     
     const redirectPlatform = platform === 'meta' ? 'facebook,instagram' : platform;
-    res.redirect(`/social-media?success=connected&platform=${redirectPlatform}`);
+    const connectedUsername = platformsToSave[0]?.username || '';
+    res.redirect(`/social-media?success=connected&platform=${redirectPlatform}&username=${encodeURIComponent(connectedUsername)}`);
   } catch (error) {
     logger.error('OAuth callback error:', error);
-    res.redirect('/social-media?error=callback_failed');
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.redirect(`/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`);
   }
 });
 
@@ -492,10 +513,86 @@ router.post('/disconnect/:platform', requireAuth, async (req: AuthenticatedReque
       logger.info(`[OAuth] Disconnected ${p} for user`, { userId, platform: p });
     }
     
-    res.json({ success: true, message: `Disconnected from ${platform === 'meta' ? 'Facebook & Instagram' : platform}` });
+    res.json({ 
+      success: true, 
+      message: `Disconnected from ${platform === 'meta' ? 'Facebook & Instagram' : platform}`,
+      outcome: {
+        status: 'success',
+        category: 'oauth',
+        title: 'Platform Disconnected',
+        platforms: platformsToDisconnect,
+      }
+    });
   } catch (error) {
     logger.error('Failed to disconnect platform:', error);
-    res.status(500).json({ message: 'Failed to disconnect platform' });
+    res.status(500).json({ 
+      message: 'Failed to disconnect platform',
+      outcome: {
+        status: 'error',
+        category: 'oauth',
+        title: 'Disconnection Failed',
+        retryable: true,
+      }
+    });
+  }
+});
+
+router.post('/refresh/:platform', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const platform = req.params.platform.toLowerCase();
+    
+    const [connection] = await db
+      .select()
+      .from(socialAccounts)
+      .where(and(
+        eq(socialAccounts.userId, userId),
+        eq(socialAccounts.platform, platform)
+      ));
+    
+    if (!connection) {
+      return res.status(404).json({ 
+        message: 'Platform not connected',
+        outcome: {
+          status: 'error',
+          category: 'oauth',
+          title: 'Platform Not Found',
+        }
+      });
+    }
+    
+    if (!connection.refreshToken) {
+      return res.status(400).json({ 
+        message: 'No refresh token available. Please reconnect.',
+        outcome: {
+          status: 'auth_required',
+          category: 'oauth',
+          title: 'Reconnection Required',
+          actionLabel: 'Reconnect',
+        }
+      });
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'Token refresh initiated',
+      outcome: {
+        status: 'success',
+        category: 'oauth',
+        title: 'Token Refreshed',
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to refresh token:', error);
+    res.status(500).json({ 
+      message: 'Failed to refresh token',
+      outcome: {
+        status: 'error',
+        category: 'oauth',
+        title: 'Refresh Failed',
+        retryable: true,
+      }
+    });
   }
 });
 

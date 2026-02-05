@@ -514,7 +514,37 @@ router.post('/inbox/:id/reply', requireAuth, async (req: AuthenticatedRequest, r
     const { content } = req.body;
 
     if (!content) {
-      return res.status(400).json({ error: 'Reply content is required' });
+      return res.status(400).json({ 
+        error: 'Reply content is required',
+        outcome: {
+          status: 'error',
+          category: 'inbox',
+          title: 'Reply Failed',
+          message: 'Please enter a reply message.',
+        }
+      });
+    }
+
+    const [message] = await db
+      .select()
+      .from(socialInboxMessages)
+      .where(
+        and(
+          eq(socialInboxMessages.id, id),
+          eq(socialInboxMessages.userId, userId)
+        )
+      );
+
+    if (!message) {
+      return res.status(404).json({ 
+        error: 'Message not found',
+        outcome: {
+          status: 'error',
+          category: 'inbox',
+          title: 'Message Not Found',
+          message: 'The message you are trying to reply to was not found.',
+        }
+      });
     }
 
     await db
@@ -530,10 +560,29 @@ router.post('/inbox/:id/reply', requireAuth, async (req: AuthenticatedRequest, r
         )
       );
 
-    res.json({ success: true });
+    res.json({ 
+      success: true,
+      outcome: {
+        status: 'success',
+        category: 'inbox',
+        title: 'Reply Sent',
+        message: `Your reply to @${message.authorHandle} on ${message.platform} has been sent.`,
+        platform: message.platform,
+        author: message.authorHandle,
+      }
+    });
   } catch (error) {
     logger.error('Failed to reply to message:', error);
-    res.status(500).json({ error: 'Failed to reply to message' });
+    res.status(500).json({ 
+      error: 'Failed to reply to message',
+      outcome: {
+        status: 'error',
+        category: 'inbox',
+        title: 'Reply Failed',
+        message: 'Failed to send your reply. Please try again.',
+        retryable: true,
+      }
+    });
   }
 });
 
@@ -542,7 +591,7 @@ router.post('/inbox/:id/assign', requireAuth, async (req: AuthenticatedRequest, 
   try {
     const userId = req.user!.id;
     const { id } = req.params;
-    const { assigneeId } = req.body;
+    const { assigneeId, assigneeName } = req.body;
 
     await db
       .update(socialInboxMessages)
@@ -554,10 +603,28 @@ router.post('/inbox/:id/assign', requireAuth, async (req: AuthenticatedRequest, 
         )
       );
 
-    res.json({ success: true });
+    res.json({ 
+      success: true,
+      outcome: {
+        status: 'success',
+        category: 'inbox',
+        title: 'Message Assigned',
+        message: `Message has been assigned to ${assigneeName || 'team member'}.`,
+        assigneeName: assigneeName || 'Team Member',
+      }
+    });
   } catch (error) {
     logger.error('Failed to assign message:', error);
-    res.status(500).json({ error: 'Failed to assign message' });
+    res.status(500).json({ 
+      error: 'Failed to assign message',
+      outcome: {
+        status: 'error',
+        category: 'inbox',
+        title: 'Assignment Failed',
+        message: 'Failed to assign the message. Please try again.',
+        retryable: true,
+      }
+    });
   }
 });
 
@@ -811,42 +878,92 @@ router.post('/generate-content', requireAuth, async (req: AuthenticatedRequest, 
     };
 
     const generatedContent = [];
+    const failedPlatforms = [];
 
     for (const platform of platforms) {
       if (!validPlatforms.includes(platform)) continue;
 
-      const result = await unifiedAIController.generateContent({
-        tone: validTones.includes(tone) ? tone : 'energetic',
-        platform,
-        topic: topic || 'music',
-        contentType: contentTypeMap[contentType] || 'engagement',
-        includeHashtags: true,
-        includeEmojis: true,
-      });
-
-      if (result.success && result.data) {
-        generatedContent.push({
+      try {
+        const result = await unifiedAIController.generateContent({
+          tone: validTones.includes(tone) ? tone : 'energetic',
           platform,
-          caption: result.data.caption,
-          hashtags: result.data.hashtags,
-          emojis: result.data.emojis,
-          characterCount: result.data.characterCount,
-          estimatedEngagement: result.data.estimatedEngagement,
+          topic: topic || 'music',
+          contentType: contentTypeMap[contentType] || 'engagement',
+          includeHashtags: true,
+          includeEmojis: true,
         });
+
+        if (result.success && result.data) {
+          generatedContent.push({
+            platform,
+            caption: result.data.caption,
+            hashtags: result.data.hashtags,
+            emojis: result.data.emojis,
+            characterCount: result.data.characterCount,
+            estimatedEngagement: result.data.estimatedEngagement,
+            optimalPostTime: getOptimalPostTime(platform),
+          });
+        } else {
+          failedPlatforms.push({ platform, error: 'Generation failed' });
+        }
+      } catch (err) {
+        failedPlatforms.push({ platform, error: 'Service temporarily unavailable' });
       }
     }
 
+    const hasVariations = generatedContent.length > 1;
+    const hasHashtags = generatedContent.some(c => c.hashtags && c.hashtags.length > 0);
+    const optimalTime = generatedContent[0]?.optimalPostTime || null;
+
     res.json({
-      success: true,
+      success: generatedContent.length > 0,
       generatedContent,
       platforms,
       contentType,
+      failedPlatforms,
+      outcome: {
+        status: generatedContent.length > 0 
+          ? (failedPlatforms.length > 0 ? 'partial' : 'success') 
+          : 'error',
+        category: 'content',
+        title: generatedContent.length > 0 ? 'Content Generated' : 'Generation Failed',
+        message: generatedContent.length > 0
+          ? `Generated ${generatedContent.length} content variation${generatedContent.length > 1 ? 's' : ''}.${hasHashtags ? ' Hashtag suggestions included.' : ''}${optimalTime ? ` Best posting time: ${optimalTime}.` : ''}`
+          : 'Failed to generate content. Please try again.',
+        variationsCount: generatedContent.length,
+        hasHashtags,
+        optimalTime,
+        fallbackAvailable: failedPlatforms.length > 0,
+      },
     });
   } catch (error) {
     logger.error('Failed to generate social content:', error);
-    res.status(500).json({ message: 'Failed to generate content' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to generate content',
+      outcome: {
+        status: 'error',
+        category: 'content',
+        title: 'Generation Failed',
+        message: 'AI content generation service is temporarily unavailable. Please try again or use a template.',
+        retryable: true,
+        fallbackAvailable: true,
+      }
+    });
   }
 });
+
+function getOptimalPostTime(platform: string): string {
+  const optimalTimes: Record<string, string> = {
+    instagram: 'Today at 11:00 AM',
+    twitter: 'Today at 9:00 AM',
+    facebook: 'Today at 1:00 PM',
+    linkedin: 'Today at 8:00 AM',
+    tiktok: 'Today at 7:00 PM',
+    youtube: 'Today at 3:00 PM',
+  };
+  return optimalTimes[platform] || 'Today at 12:00 PM';
+}
 
 // Helper function to fetch and extract metadata from any URL
 async function extractUrlMetadata(url: string): Promise<{

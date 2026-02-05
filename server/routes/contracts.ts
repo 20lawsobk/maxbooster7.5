@@ -184,6 +184,178 @@ router.get('/:contractId/pdf', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/validate', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { templateId, variables } = req.body;
+
+    if (!templateId) {
+      return res.status(400).json({ error: 'templateId is required' });
+    }
+
+    const validation = contractTemplateService.validateContractVariables(
+      templateId,
+      variables as ContractVariables
+    );
+
+    return res.json({
+      outcome: validation.valid ? 'validation_passed' : 'validation_errors',
+      ...validation,
+    });
+  } catch (error: any) {
+    logger.error('Error validating contract:', error);
+    res.status(500).json({ error: 'Failed to validate contract' });
+  }
+});
+
+router.post('/preview', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { templateId, variables } = req.body;
+
+    if (!templateId) {
+      return res.status(400).json({ error: 'templateId is required' });
+    }
+
+    const content = contractTemplateService.getContractPreview(
+      templateId,
+      variables as ContractVariables
+    );
+
+    return res.json({
+      outcome: 'preview_generated',
+      content,
+    });
+  } catch (error: any) {
+    logger.error('Error generating preview:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate preview' });
+  }
+});
+
+router.patch('/:contractId/draft', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { contractId } = req.params;
+    const { variables } = req.body;
+
+    const contract = contractTemplateService.updateContractDraft(contractId, variables);
+
+    return res.json({
+      outcome: 'contract_customization_saved',
+      contract,
+    });
+  } catch (error: any) {
+    logger.error('Error updating contract draft:', error);
+    res.status(500).json({ error: error.message || 'Failed to update contract draft' });
+  }
+});
+
+router.post('/:contractId/send-for-signature', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { contractId } = req.params;
+
+    const contract = contractTemplateService.sendForSignature(contractId);
+
+    return res.json({
+      outcome: 'signature_requested',
+      message: 'Contract sent for signature',
+      contract,
+    });
+  } catch (error: any) {
+    logger.error('Error sending for signature:', error);
+    res.status(500).json({ error: error.message || 'Failed to send for signature' });
+  }
+});
+
+router.get('/:contractId/signature-status', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { contractId } = req.params;
+
+    const status = contractTemplateService.getSignatureStatus(contractId);
+
+    let outcome = 'signature_pending';
+    if (status.allSigned) {
+      outcome = 'contract_executed';
+    } else if (status.signed > 0) {
+      outcome = 'partially_signed';
+    }
+
+    return res.json({
+      outcome,
+      ...status,
+    });
+  } catch (error: any) {
+    logger.error('Error getting signature status:', error);
+    res.status(500).json({ error: error.message || 'Failed to get signature status' });
+  }
+});
+
+router.post('/:contractId/decline', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { contractId } = req.params;
+    const { partyName, reason } = req.body;
+
+    if (!partyName || !reason) {
+      return res.status(400).json({ error: 'partyName and reason are required' });
+    }
+
+    const contract = contractTemplateService.declineSignature(contractId, partyName, reason);
+
+    return res.json({
+      outcome: 'signature_declined',
+      reason,
+      contract,
+    });
+  } catch (error: any) {
+    logger.error('Error declining signature:', error);
+    res.status(500).json({ error: error.message || 'Failed to decline signature' });
+  }
+});
+
+router.post('/:contractId/void', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { contractId } = req.params;
+    const { reason } = req.body;
+
+    const contract = contractTemplateService.voidContract(contractId, reason || 'No reason provided');
+
+    return res.json({
+      outcome: 'contract_terminated',
+      contract,
+    });
+  } catch (error: any) {
+    logger.error('Error voiding contract:', error);
+    res.status(500).json({ error: error.message || 'Failed to void contract' });
+  }
+});
+
+router.get('/:contractId/timeline', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { contractId } = req.params;
+
+    const timeline = contractTemplateService.getContractTimeline(contractId);
+
+    return res.json({
+      outcome: 'timeline_loaded',
+      timeline,
+    });
+  } catch (error: any) {
+    logger.error('Error getting contract timeline:', error);
+    res.status(500).json({ error: error.message || 'Failed to get timeline' });
+  }
+});
+
+router.get('/stats/summary', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const stats = contractTemplateService.getContractStats(req.user!.id);
+
+    return res.json({
+      outcome: 'stats_loaded',
+      stats,
+    });
+  } catch (error: any) {
+    logger.error('Error getting contract stats:', error);
+    res.status(500).json({ error: 'Failed to get contract stats' });
+  }
+});
+
 router.get('/invoices/list', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {

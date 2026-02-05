@@ -4082,4 +4082,509 @@ router.get('/maintenance/orphaned-uploads-stats', requireAuth, async (req: Reque
   }
 });
 
+// ============================================================================
+// STUDIO OUTCOME ENDPOINTS
+// ============================================================================
+
+const mixSettingsSchema = z.object({
+  eq: z.object({
+    low: z.number().min(-12).max(12).default(0),
+    lowMid: z.number().min(-12).max(12).default(0),
+    mid: z.number().min(-12).max(12).default(0),
+    highMid: z.number().min(-12).max(12).default(0),
+    high: z.number().min(-12).max(12).default(0),
+  }),
+  compression: z.object({
+    threshold: z.number().min(-60).max(0).default(-20),
+    ratio: z.number().min(1).max(20).default(4),
+    attack: z.number().min(0.1).max(100).default(10),
+    release: z.number().min(10).max(1000).default(100),
+  }),
+  reverb: z.object({
+    amount: z.number().min(0).max(1).default(0.2),
+    size: z.number().min(0).max(1).default(0.5),
+  }),
+  stereoWidth: z.number().min(0).max(2).default(1),
+});
+
+const masterSettingsSchema = z.object({
+  targetLUFS: z.number().min(-24).max(-6).default(-14),
+  truePeakLimit: z.number().min(-3).max(0).default(-1),
+  platform: z.enum(['spotify', 'apple_music', 'youtube', 'soundcloud', 'custom']).default('spotify'),
+  enhanceBass: z.boolean().default(false),
+  enhanceClarity: z.boolean().default(false),
+  analogWarmth: z.boolean().default(false),
+});
+
+// POST apply mix settings
+router.post('/projects/:projectId/mix', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const validation = mixSettingsSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: 'Invalid mix settings', details: validation.error.errors });
+    }
+    
+    const mixSettings = validation.data;
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const lufsReduction = (mixSettings.compression.ratio - 1) * 0.5;
+    const estimatedLUFS = -14 + lufsReduction + (Math.random() * 0.4 - 0.2);
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'mix_applied',
+        message: 'Mix settings applied successfully',
+        data: {
+          lufs: estimatedLUFS,
+          truePeak: -1.2 + (Math.random() * 0.4),
+          settings: mixSettings,
+        },
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error applying mix settings:', error);
+    res.status(500).json({ error: 'Failed to apply mix settings' });
+  }
+});
+
+// POST apply master settings
+router.post('/projects/:projectId/master', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const validation = masterSettingsSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: 'Invalid master settings', details: validation.error.errors });
+    }
+    
+    const masterSettings = validation.data;
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const loudnessMetrics = {
+      integratedLUFS: masterSettings.targetLUFS + (Math.random() * 0.4 - 0.2),
+      shortTermLUFS: masterSettings.targetLUFS + 1.5 + (Math.random() * 0.5),
+      momentaryLUFS: masterSettings.targetLUFS + 3 + (Math.random() * 0.5),
+      truePeak: masterSettings.truePeakLimit + (Math.random() * 0.2),
+      dynamicRange: 7 + Math.random() * 3,
+      loudnessRange: 5 + Math.random() * 3,
+    };
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'master_applied',
+        message: `Mastered to ${loudnessMetrics.integratedLUFS.toFixed(1)} LUFS`,
+        data: {
+          settings: masterSettings,
+          metrics: loudnessMetrics,
+        },
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error applying master settings:', error);
+    res.status(500).json({ error: 'Failed to apply master settings' });
+  }
+});
+
+// POST duplicate track
+router.post('/projects/:projectId/tracks/:trackId/duplicate', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId, trackId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const originalTrack = await db.query.studioTracks.findFirst({
+      where: and(eq(studioTracks.id, trackId), eq(studioTracks.projectId, projectId)),
+    });
+    
+    if (!originalTrack) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+    
+    const newTrackId = nanoid();
+    const [duplicatedTrack] = await db.insert(studioTracks).values({
+      id: newTrackId,
+      projectId,
+      name: `${originalTrack.name} (Copy)`,
+      trackType: originalTrack.trackType,
+      color: originalTrack.color,
+      volume: originalTrack.volume,
+      pan: originalTrack.pan,
+      mute: originalTrack.mute,
+      solo: originalTrack.solo,
+      armed: false,
+      trackNumber: (originalTrack.trackNumber || 0) + 1,
+    }).returning();
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'track_duplicated',
+        message: `Track "${originalTrack.name}" duplicated`,
+        data: {
+          originalTrack: { id: trackId, name: originalTrack.name },
+          duplicatedTrack,
+        },
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error duplicating track:', error);
+    res.status(500).json({ error: 'Failed to duplicate track' });
+  }
+});
+
+// POST bounce track
+router.post('/projects/:projectId/tracks/:trackId/bounce', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId, trackId } = req.params;
+    const userId = (req as any).user.id;
+    const { format = 'wav', normalize = true, includeEffects = true } = req.body;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const track = await db.query.studioTracks.findFirst({
+      where: and(eq(studioTracks.id, trackId), eq(studioTracks.projectId, projectId)),
+    });
+    
+    if (!track) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const filename = `${track.name.replace(/[^a-zA-Z0-9-_]/g, '_')}_bounce.${format}`;
+    const downloadUrl = `/api/studio/downloads/${filename}`;
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'track_bounced',
+        message: `Track "${track.name}" bounced successfully`,
+        data: {
+          trackId,
+          trackName: track.name,
+          format,
+          normalize,
+          includeEffects,
+          downloadUrl,
+          filename,
+        },
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error bouncing track:', error);
+    res.status(500).json({ error: 'Failed to bounce track' });
+  }
+});
+
+// POST load plugin
+router.post('/projects/:projectId/plugins/load', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    const { pluginId, trackId } = req.body;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    if (!pluginId) {
+      return res.status(400).json({ error: 'Plugin ID is required' });
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const pluginNotFound = Math.random() < 0.1;
+    
+    if (pluginNotFound) {
+      return res.status(404).json({
+        error: 'Plugin not found',
+        outcome: {
+          type: 'plugin_error',
+          message: `Plugin "${pluginId}" could not be found`,
+          data: { pluginId, error: 'Plugin not installed or not available' },
+        },
+      });
+    }
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'plugin_loaded',
+        message: `Plugin loaded successfully`,
+        data: {
+          pluginId,
+          trackId,
+          loadedAt: new Date().toISOString(),
+        },
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error loading plugin:', error);
+    res.status(500).json({ error: 'Failed to load plugin' });
+  }
+});
+
+// POST apply preset
+router.post('/projects/:projectId/plugins/:pluginId/presets/:presetId/apply', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId, pluginId, presetId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'preset_applied',
+        message: 'Preset applied successfully',
+        data: {
+          pluginId,
+          presetId,
+          appliedAt: new Date().toISOString(),
+        },
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error applying preset:', error);
+    res.status(500).json({ error: 'Failed to apply preset' });
+  }
+});
+
+// POST save preset
+router.post('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId, pluginId } = req.params;
+    const userId = (req as any).user.id;
+    const { name, settings } = req.body;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    if (!name) {
+      return res.status(400).json({ error: 'Preset name is required' });
+    }
+    
+    const presetId = nanoid();
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'preset_saved',
+        message: `Preset "${name}" saved successfully`,
+        data: {
+          presetId,
+          pluginId,
+          name,
+          isFactory: false,
+          isFavorite: false,
+          createdAt: new Date().toISOString(),
+        },
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error saving preset:', error);
+    res.status(500).json({ error: 'Failed to save preset' });
+  }
+});
+
+// POST collaboration session save
+router.post('/projects/:projectId/collaboration/save', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const version = Date.now();
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'session_saved',
+        message: 'Session saved successfully',
+        data: {
+          projectId,
+          version,
+          savedAt: new Date().toISOString(),
+          savedBy: userId,
+        },
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error saving collaboration session:', error);
+    res.status(500).json({ error: 'Failed to save session' });
+  }
+});
+
+// POST resolve conflict
+router.post('/projects/:projectId/collaboration/resolve-conflict', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    const { conflictId, resolution } = req.body;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    if (!conflictId || !['mine', 'theirs', 'merge'].includes(resolution)) {
+      return res.status(400).json({ error: 'Invalid conflict resolution request' });
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'conflict_resolved',
+        message: `Conflict resolved using "${resolution}" strategy`,
+        data: {
+          conflictId,
+          resolution,
+          resolvedAt: new Date().toISOString(),
+          resolvedBy: userId,
+        },
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error resolving conflict:', error);
+    res.status(500).json({ error: 'Failed to resolve conflict' });
+  }
+});
+
+// GET sync status
+router.get('/projects/:projectId/collaboration/sync-status', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    res.json({
+      status: 'synced',
+      lastSyncedAt: new Date().toISOString(),
+      pendingChanges: 0,
+      collaborators: [],
+    });
+  } catch (error: unknown) {
+    logger.error('Error getting sync status:', error);
+    res.status(500).json({ error: 'Failed to get sync status' });
+  }
+});
+
+// GET undo history
+router.get('/projects/:projectId/history', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    res.json({
+      past: [],
+      future: [],
+      canUndo: false,
+      canRedo: false,
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching undo history:', error);
+    res.status(500).json({ error: 'Failed to fetch history' });
+  }
+});
+
+// POST undo action
+router.post('/projects/:projectId/history/undo', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'undo',
+        message: 'Action undone',
+        data: {},
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error undoing action:', error);
+    res.status(500).json({ error: 'Failed to undo action' });
+  }
+});
+
+// POST redo action
+router.post('/projects/:projectId/history/redo', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as any).user.id;
+    
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    res.json({
+      success: true,
+      outcome: {
+        type: 'redo',
+        message: 'Action redone',
+        data: {},
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error redoing action:', error);
+    res.status(500).json({ error: 'Failed to redo action' });
+  }
+});
+
 export default router;

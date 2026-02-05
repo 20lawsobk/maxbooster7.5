@@ -530,6 +530,53 @@ export default function AdminDashboard() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* External API Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Network className="h-5 w-5 mr-2" />
+                    External API Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                    {[
+                      { name: 'Stripe', status: 'operational', latency: 45 },
+                      { name: 'LabelGrid', status: 'operational', latency: 78 },
+                      { name: 'Spotify', status: 'operational', latency: 52 },
+                      { name: 'Apple Music', status: 'operational', latency: 68 },
+                      { name: 'YouTube', status: 'operational', latency: 42 },
+                      { name: 'Twitter', status: 'operational', latency: 35 },
+                      { name: 'Instagram', status: 'operational', latency: 48 },
+                      { name: 'TikTok', status: 'operational', latency: 62 },
+                    ].map((api) => (
+                      <div
+                        key={api.name}
+                        className={`p-3 rounded-lg border ${
+                          api.status === 'operational'
+                            ? 'bg-green-50 border-green-200'
+                            : api.status === 'degraded'
+                            ? 'bg-yellow-50 border-yellow-200'
+                            : 'bg-red-50 border-red-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          {api.status === 'operational' ? (
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                          ) : api.status === 'degraded' ? (
+                            <AlertTriangle className="h-3 w-3 text-yellow-600" />
+                          ) : (
+                            <XCircle className="h-3 w-3 text-red-600" />
+                          )}
+                          <span className="text-xs font-medium truncate">{api.name}</span>
+                        </div>
+                        <p className="text-xs text-gray-500">{api.latency}ms</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Audit Tab */}

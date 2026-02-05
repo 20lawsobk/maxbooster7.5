@@ -561,6 +561,227 @@ router.post('/:id/approvals/:requestId/decide', requireAuth, requireWorkspaceMem
   }
 });
 
+router.get('/:id/activity', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+    const activities = await workspaceService.getAuditLog(req.params.id, limit, offset);
+    
+    const formattedActivities = activities.map(log => ({
+      id: log.id,
+      type: log.action,
+      userId: log.userId,
+      userName: log.userName || 'Unknown',
+      timestamp: log.createdAt,
+      resourceType: log.resourceType,
+      resourceId: log.resourceId,
+      previousValues: log.previousValues,
+      newValues: log.newValues,
+      metadata: log.changes,
+    }));
+    
+    res.json({ activities: formattedActivities });
+  } catch (error) {
+    logger.error('Get activity error:', error);
+    res.status(500).json({ error: 'Failed to get activity' });
+  }
+});
+
+router.get('/:id/audit/export', requireAuth, requireWorkspaceAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const format = req.query.format as string || 'json';
+    const startDate = req.query.startDate as string;
+    const endDate = req.query.endDate as string;
+    
+    const logs = await workspaceService.getAuditLog(req.params.id, 1000, 0);
+    
+    let filteredLogs = logs;
+    if (startDate) {
+      filteredLogs = filteredLogs.filter(log => new Date(log.createdAt) >= new Date(startDate));
+    }
+    if (endDate) {
+      filteredLogs = filteredLogs.filter(log => new Date(log.createdAt) <= new Date(endDate));
+    }
+    
+    await workspaceService.logAuditEvent({
+      workspaceId: req.params.id,
+      userId: req.user!.id,
+      action: 'audit.exported',
+      resourceType: 'audit',
+      resourceId: req.params.id,
+      newValues: { format, recordCount: filteredLogs.length },
+    });
+    
+    if (format === 'csv') {
+      const csvHeaders = 'id,action,resourceType,resourceId,userId,userName,timestamp\n';
+      const csvRows = filteredLogs.map(log => 
+        `${log.id},${log.action},${log.resourceType || ''},${log.resourceId || ''},${log.userId},${log.userName || ''},${log.createdAt}`
+      ).join('\n');
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=audit-log-${req.params.id}.csv`);
+      res.send(csvHeaders + csvRows);
+    } else {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename=audit-log-${req.params.id}.json`);
+      res.json({ logs: filteredLogs, exportedAt: new Date().toISOString() });
+    }
+  } catch (error) {
+    logger.error('Export audit log error:', error);
+    res.status(500).json({ error: 'Failed to export audit log' });
+  }
+});
+
+const shareProjectSchema = z.object({
+  memberIds: z.array(z.string()),
+  permission: z.enum(['view', 'comment', 'edit', 'admin']),
+});
+
+router.post('/:id/projects/:projectId/share', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const validatedData = shareProjectSchema.parse(req.body);
+    
+    const result = await workspaceService.shareProject({
+      workspaceId: req.params.id,
+      projectId: req.params.projectId,
+      memberIds: validatedData.memberIds,
+      permission: validatedData.permission,
+      sharedBy: req.user!.id,
+    });
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({ shares: result.shares });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+    }
+    logger.error('Share project error:', error);
+    res.status(500).json({ error: 'Failed to share project' });
+  }
+});
+
+router.get('/:id/projects/:projectId/shares', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const shares = await workspaceService.getProjectShares(req.params.projectId);
+    res.json({ shares });
+  } catch (error) {
+    logger.error('Get project shares error:', error);
+    res.status(500).json({ error: 'Failed to get project shares' });
+  }
+});
+
+router.put('/:id/projects/:projectId/shares/:shareId', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { permission } = req.body;
+    const result = await workspaceService.updateSharePermission(
+      req.params.shareId,
+      permission,
+      req.user!.id
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Update share permission error:', error);
+    res.status(500).json({ error: 'Failed to update share permission' });
+  }
+});
+
+router.delete('/:id/projects/:projectId/shares/:shareId', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await workspaceService.revokeShare(
+      req.params.shareId,
+      req.user!.id
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Revoke share error:', error);
+    res.status(500).json({ error: 'Failed to revoke share' });
+  }
+});
+
+const createShareLinkSchema = z.object({
+  permission: z.enum(['view', 'comment', 'edit', 'admin']),
+  expirationDays: z.number().optional(),
+  password: z.string().optional(),
+  allowDownload: z.boolean().optional(),
+  requireSignIn: z.boolean().optional(),
+});
+
+router.post('/:id/projects/:projectId/share-links', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const validatedData = createShareLinkSchema.parse(req.body);
+    
+    const result = await workspaceService.createShareLink({
+      workspaceId: req.params.id,
+      projectId: req.params.projectId,
+      ...validatedData,
+      createdBy: req.user!.id,
+    });
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.status(201).json({ link: result.link });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+    }
+    logger.error('Create share link error:', error);
+    res.status(500).json({ error: 'Failed to create share link' });
+  }
+});
+
+router.get('/:id/projects/:projectId/share-links', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const links = await workspaceService.getShareLinks(req.params.projectId);
+    res.json({ links });
+  } catch (error) {
+    logger.error('Get share links error:', error);
+    res.status(500).json({ error: 'Failed to get share links' });
+  }
+});
+
+router.delete('/:id/projects/:projectId/share-links/:linkId', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await workspaceService.revokeShareLink(
+      req.params.linkId,
+      req.user!.id
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Revoke share link error:', error);
+    res.status(500).json({ error: 'Failed to revoke share link' });
+  }
+});
+
+router.get('/:id/presence', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const presence = await workspaceService.getWorkspacePresence(req.params.id);
+    res.json({ presence });
+  } catch (error) {
+    logger.error('Get workspace presence error:', error);
+    res.status(500).json({ error: 'Failed to get presence' });
+  }
+});
+
 router.get('/:id/sso/config', requireAuth, requireWorkspaceAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const config = await ssoService.getSSOConfig(req.params.id);

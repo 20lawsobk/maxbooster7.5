@@ -107,6 +107,9 @@ import { DataTransferWizard } from '@/components/distribution/DataTransferWizard
 import { RoyaltySplitManager } from '@/components/distribution/RoyaltySplitManager';
 import { ReleaseDateScheduler } from '@/components/distribution/ReleaseDateScheduler';
 import { HyperFollowBuilder } from '@/components/distribution/HyperFollowBuilder';
+import { SubmissionStatusTracker } from '@/components/distribution/SubmissionStatusTracker';
+import { ContentIDManager } from '@/components/distribution/ContentIDManager';
+import { DistributionOutcomeHandler } from '@/components/distribution/DistributionOutcomeHandler';
 
 // DistroKid Clone Interfaces
 interface Release {
@@ -1317,6 +1320,30 @@ export default function Distribution() {
               >
                 <Link2 className="w-4 h-4 mr-1" />
                 Data Transfer
+              </TabsTrigger>
+              <TabsTrigger
+                value="submission-status"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-submission-status"
+              >
+                <Globe className="w-4 h-4 mr-1" />
+                Status
+              </TabsTrigger>
+              <TabsTrigger
+                value="content-id"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-content-id"
+              >
+                <Shield className="w-4 h-4 mr-1" />
+                Content ID
+              </TabsTrigger>
+              <TabsTrigger
+                value="outcomes"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-outcomes"
+              >
+                <TrendingUp className="w-4 h-4 mr-1" />
+                Outcomes
               </TabsTrigger>
             </TabsList>
           </div>
@@ -2907,6 +2934,204 @@ export default function Distribution() {
           {/* Data Transfer Tab */}
           <TabsContent value="transfer" className="space-y-6">
             <DataTransferWizard />
+          </TabsContent>
+
+          {/* Submission Status Tab */}
+          <TabsContent value="submission-status" className="space-y-6">
+            {selectedRelease ? (
+              <SubmissionStatusTracker
+                releaseId={selectedRelease.id}
+                releaseTitle={selectedRelease.title}
+                onRetry={(platform) => {
+                  toast({
+                    title: 'Retry Initiated',
+                    description: `Retrying submission to ${platform}...`,
+                  });
+                }}
+              />
+            ) : releases.length > 0 ? (
+              <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                    <Globe className="w-5 h-5 mr-2 text-blue-600" />
+                    Submission Status Tracker
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Select a release to view its submission status across platforms.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {releases.slice(0, 6).map((release: Release) => (
+                      <Card
+                        key={release.id}
+                        className="cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => setSelectedRelease(release)}
+                      >
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <Music className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{release.title}</p>
+                            <p className="text-sm text-muted-foreground">{release.artistName}</p>
+                          </div>
+                          <Badge
+                            variant={release.status === 'live' ? 'default' : release.status === 'processing' ? 'secondary' : 'outline'}
+                          >
+                            {release.status}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-white dark:bg-gray-800">
+                <CardContent className="p-12 text-center">
+                  <Globe className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Releases Yet</h3>
+                  <p className="text-gray-500 mb-4">Create a release to track its submission status.</p>
+                  <Button onClick={() => setActiveTab('new-release')}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Release
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Content ID Tab */}
+          <TabsContent value="content-id" className="space-y-6">
+            {selectedRelease ? (
+              <ContentIDManager
+                releaseId={selectedRelease.id}
+                tracks={(selectedRelease.tracksData || []).map((t: Track) => ({
+                  id: t.id,
+                  title: t.title,
+                  audioUrl: t.audioFile,
+                }))}
+                onComplete={() => {
+                  toast({
+                    title: 'Content ID Complete',
+                    description: 'All tracks have been registered for Content ID protection.',
+                  });
+                }}
+              />
+            ) : releases.length > 0 ? (
+              <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                    <Shield className="w-5 h-5 mr-2 text-green-600" />
+                    Content ID Protection
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Select a release to manage Content ID protection for its tracks.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {releases.slice(0, 6).map((release: Release) => (
+                      <Card
+                        key={release.id}
+                        className="cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => setSelectedRelease(release)}
+                      >
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-600 rounded-lg flex items-center justify-center">
+                            <Shield className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{release.title}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {(release.tracksData || []).length} track(s)
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-white dark:bg-gray-800">
+                <CardContent className="p-12 text-center">
+                  <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Releases Yet</h3>
+                  <p className="text-gray-500 mb-4">Create a release to protect your content.</p>
+                  <Button onClick={() => setActiveTab('new-release')}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Release
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Outcomes Tab */}
+          <TabsContent value="outcomes" className="space-y-6">
+            {selectedRelease ? (
+              <DistributionOutcomeHandler
+                releaseId={selectedRelease.id}
+                onAction={(action, data) => {
+                  toast({
+                    title: 'Action Triggered',
+                    description: `${action} action initiated`,
+                  });
+                }}
+              />
+            ) : releases.length > 0 ? (
+              <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                    <TrendingUp className="w-5 h-5 mr-2 text-purple-600" />
+                    Distribution Outcomes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Select a release to view all distribution outcomes and activities.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {releases.slice(0, 6).map((release: Release) => (
+                      <Card
+                        key={release.id}
+                        className="cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => setSelectedRelease(release)}
+                      >
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                            <TrendingUp className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{release.title}</p>
+                            <p className="text-sm text-muted-foreground">{release.artistName}</p>
+                          </div>
+                          <Badge
+                            variant={release.status === 'live' ? 'default' : release.status === 'processing' ? 'secondary' : 'outline'}
+                          >
+                            {release.status}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-white dark:bg-gray-800">
+                <CardContent className="p-12 text-center">
+                  <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Releases Yet</h3>
+                  <p className="text-gray-500 mb-4">Create a release to track distribution outcomes.</p>
+                  <Button onClick={() => setActiveTab('new-release')}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Release
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
 

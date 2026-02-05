@@ -126,6 +126,8 @@ router.get('/status', async (req, res) => {
       return res.json({
         status: 'not_started',
         message: 'No verification in progress. Start a new verification to receive payouts.',
+        supportContact: kycService.getSupportContact(),
+        nextSteps: ['Start your identity verification to enable payouts and advanced features'],
       });
     }
 
@@ -135,6 +137,45 @@ router.get('/status', async (req, res) => {
     const message = error instanceof Error ? error.message : 'Failed to fetch verification status';
     res.status(500).json({ error: message });
   }
+});
+
+router.get('/support', async (req, res) => {
+  res.json({
+    supportContact: kycService.getSupportContact(),
+    faq: [
+      {
+        question: 'How long does verification take?',
+        answer: 'Verification typically takes 1-2 business days after all documents are submitted.',
+      },
+      {
+        question: 'What documents are accepted?',
+        answer: 'We accept government-issued IDs (passport, driver\'s license, national ID), proof of address (utility bill, bank statement), and business registration documents.',
+      },
+      {
+        question: 'Why was my document rejected?',
+        answer: 'Documents may be rejected if they are blurry, expired, or do not match the information provided. Check the rejection reason and re-upload a clearer document.',
+      },
+      {
+        question: 'Can I update my information after submission?',
+        answer: 'You can update your information before final submission. Once under review, contact support for any changes.',
+      },
+    ],
+  });
+});
+
+router.get('/document-types', async (req, res) => {
+  const documentTypes = [
+    { type: 'government_id', ...kycService.getDocumentInfo('government_id') },
+    { type: 'passport', ...kycService.getDocumentInfo('passport') },
+    { type: 'drivers_license', ...kycService.getDocumentInfo('drivers_license') },
+    { type: 'proof_of_address', ...kycService.getDocumentInfo('proof_of_address') },
+    { type: 'bank_statement', ...kycService.getDocumentInfo('bank_statement') },
+    { type: 'business_registration', ...kycService.getDocumentInfo('business_registration') },
+    { type: 'articles_of_incorporation', ...kycService.getDocumentInfo('articles_of_incorporation') },
+    { type: 'tax_id_document', ...kycService.getDocumentInfo('tax_id_document') },
+    { type: 'selfie', ...kycService.getDocumentInfo('selfie') },
+  ];
+  res.json({ documentTypes });
 });
 
 router.put('/individual', async (req, res) => {
@@ -302,13 +343,33 @@ router.post('/documents/upload', upload.single('file'), async (req, res) => {
     }
 
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ 
+        error: 'No file uploaded',
+        errorCode: 'NO_FILE',
+        suggestion: 'Please select a document to upload (JPG, PNG, or PDF format).',
+      });
     }
 
     const { verificationId, documentType } = req.body;
 
     if (!verificationId || !documentType) {
-      return res.status(400).json({ error: 'Verification ID and document type are required' });
+      return res.status(400).json({ 
+        error: 'Verification ID and document type are required',
+        errorCode: 'MISSING_PARAMS',
+      });
+    }
+
+    const fileValidation = kycService.validateFile(req.file.size, req.file.mimetype);
+    if (!fileValidation.valid) {
+      return res.status(400).json({
+        error: fileValidation.error,
+        errorCode: fileValidation.errorCode,
+        suggestion: fileValidation.errorCode === 'FILE_TOO_LARGE' 
+          ? 'Try compressing the image or using a lower resolution scanner.'
+          : fileValidation.errorCode === 'INVALID_FORMAT'
+          ? 'Convert your document to JPG, PNG, or PDF format before uploading.'
+          : 'Ensure you have selected a valid document file.',
+      });
     }
 
     const storagePath = await storageService.uploadFile(
@@ -328,16 +389,86 @@ router.post('/documents/upload', upload.single('file'), async (req, res) => {
       userId: req.user.id,
     });
 
+    const docInfo = kycService.getDocumentInfo(documentType);
+
     logger.info(`KYC document uploaded: ${documentType} for verification ${verificationId}`);
 
     res.status(201).json({
       success: true,
       document,
-      message: 'Document uploaded successfully. It will be reviewed shortly.',
+      documentInfo: docInfo,
+      message: `${docInfo.name} uploaded successfully. It will be reviewed shortly.`,
+      estimatedReviewTime: '1-2 business days',
     });
   } catch (error: unknown) {
     logger.error('Error uploading document:', error);
     const message = error instanceof Error ? error.message : 'Failed to upload document';
+    res.status(500).json({ 
+      error: message,
+      suggestion: 'Please try again or contact support if the issue persists.',
+      supportContact: kycService.getSupportContact(),
+    });
+  }
+});
+
+router.post('/documents/resubmit', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ 
+        error: 'No file uploaded',
+        suggestion: 'Please select a replacement document to upload.',
+      });
+    }
+
+    const { verificationId, documentType, previousDocumentId } = req.body;
+
+    if (!verificationId || !documentType) {
+      return res.status(400).json({ error: 'Verification ID and document type are required' });
+    }
+
+    const fileValidation = kycService.validateFile(req.file.size, req.file.mimetype);
+    if (!fileValidation.valid) {
+      return res.status(400).json({
+        error: fileValidation.error,
+        errorCode: fileValidation.errorCode,
+      });
+    }
+
+    const storagePath = await storageService.uploadFile(
+      req.file.buffer,
+      'kyc-documents',
+      req.file.originalname,
+      req.file.mimetype
+    );
+
+    const document = await kycService.uploadDocument({
+      verificationId,
+      documentType,
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      storagePath,
+      userId: req.user.id,
+    });
+
+    const docInfo = kycService.getDocumentInfo(documentType);
+
+    logger.info(`KYC document resubmitted: ${documentType} for verification ${verificationId}`);
+
+    res.status(201).json({
+      success: true,
+      document,
+      documentInfo: docInfo,
+      message: `${docInfo.name} resubmitted successfully. Thank you for providing a new document.`,
+      isResubmission: true,
+    });
+  } catch (error: unknown) {
+    logger.error('Error resubmitting document:', error);
+    const message = error instanceof Error ? error.message : 'Failed to resubmit document';
     res.status(500).json({ error: message });
   }
 });

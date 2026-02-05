@@ -74,6 +74,24 @@ export interface DocumentUploadRequest {
   expirationDate?: Date;
 }
 
+export interface DocumentInfo {
+  type: DocumentType;
+  name: string;
+  description: string;
+  required: boolean;
+  status: 'not_uploaded' | 'pending' | 'approved' | 'rejected';
+  fileName?: string;
+  rejectionReason?: string;
+  uploadedAt?: Date;
+}
+
+export interface SupportContact {
+  email: string;
+  phone?: string;
+  hours: string;
+  responseTime: string;
+}
+
 export interface VerificationResult {
   verificationId: string;
   status: KYCStatus;
@@ -83,11 +101,21 @@ export interface VerificationResult {
   documentsRequired: DocumentType[];
   documentsSubmitted: DocumentType[];
   documentsPending: DocumentType[];
+  documentsRejected: DocumentType[];
+  documentsApproved: DocumentType[];
   allDocumentsUploaded: boolean;
   taxFormRequired: boolean;
   taxFormSubmitted: boolean;
   payoutEligible: boolean;
   message?: string;
+  estimatedReviewTime?: string;
+  submittedAt?: string;
+  reviewStartedAt?: string;
+  rejectionReason?: string;
+  resubmissionRequired: boolean;
+  documentChecklist: DocumentInfo[];
+  supportContact: SupportContact;
+  nextSteps: string[];
 }
 
 export interface TaxFormSubmission {
@@ -119,6 +147,44 @@ const PAYOUT_THRESHOLDS: Record<KYCLevel, number> = {
 };
 
 const VERIFICATION_EXPIRY_DAYS = 365;
+
+const DOCUMENT_NAMES: Record<DocumentType, { name: string; description: string }> = {
+  government_id: { name: 'Government ID', description: 'Valid government-issued photo ID (national ID card)' },
+  passport: { name: 'Passport', description: 'Valid passport with photo page clearly visible' },
+  drivers_license: { name: "Driver's License", description: "Valid driver's license (front and back)" },
+  proof_of_address: { name: 'Proof of Address', description: 'Utility bill or bank statement from the last 3 months' },
+  bank_statement: { name: 'Bank Statement', description: 'Recent bank statement showing your name and address' },
+  business_registration: { name: 'Business Registration', description: 'Official business registration certificate' },
+  articles_of_incorporation: { name: 'Articles of Incorporation', description: 'Company articles of incorporation or formation documents' },
+  tax_id_document: { name: 'Tax ID Document', description: 'EIN letter or tax registration certificate' },
+  selfie: { name: 'Selfie Verification', description: 'Clear selfie holding your ID next to your face' },
+  w9: { name: 'W-9 Form', description: 'IRS W-9 form for US tax purposes' },
+  w8ben: { name: 'W-8BEN Form', description: 'IRS W-8BEN form for non-US individuals' },
+  w8bene: { name: 'W-8BEN-E Form', description: 'IRS W-8BEN-E form for non-US entities' },
+  other: { name: 'Other Document', description: 'Additional supporting document' },
+};
+
+const SUPPORT_CONTACT: SupportContact = {
+  email: 'kyc-support@maxbooster.com',
+  phone: '+1 (888) 555-0123',
+  hours: 'Monday - Friday, 9:00 AM - 6:00 PM EST',
+  responseTime: 'Within 24 hours',
+};
+
+const FILE_SIZE_LIMITS = {
+  minBytes: 10 * 1024,
+  maxBytes: 10 * 1024 * 1024,
+  minMB: 0.01,
+  maxMB: 10,
+};
+
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+
+export interface FileValidationResult {
+  valid: boolean;
+  error?: string;
+  errorCode?: 'FILE_TOO_SMALL' | 'FILE_TOO_LARGE' | 'INVALID_FORMAT' | 'EMPTY_FILE';
+}
 
 interface KYCMetadata {
   level?: KYCLevel;
@@ -425,6 +491,8 @@ export class KYCService {
     const requiredDocs = DOCUMENT_REQUIREMENTS[level][verificationType];
     const submittedTypes = documents.map(d => d.documentType);
     const pendingTypes = documents.filter(d => d.status === 'pending').map(d => d.documentType);
+    const rejectedTypes = documents.filter(d => d.status === 'rejected').map(d => d.documentType);
+    const approvedTypes = documents.filter(d => d.status === 'approved').map(d => d.documentType);
 
     const taxFormRequired = this.isTaxFormRequired(verification);
     
@@ -433,6 +501,27 @@ export class KYCService {
       : !!(metadata.businessInfo?.businessName);
     
     const allDocumentsUploaded = requiredDocs.every(docType => submittedTypes.includes(docType));
+    const hasRejectedDocs = rejectedTypes.length > 0;
+    const resubmissionRequired = hasRejectedDocs || verification.status === 'rejected';
+
+    const documentChecklist: DocumentInfo[] = requiredDocs.map(docType => {
+      const doc = documents.find(d => d.documentType === docType);
+      const docMeta = (doc?.metadata as Record<string, any>) || {};
+      const nameInfo = DOCUMENT_NAMES[docType] || { name: docType, description: '' };
+      
+      return {
+        type: docType,
+        name: nameInfo.name,
+        description: nameInfo.description,
+        required: true,
+        status: doc ? (doc.status as 'pending' | 'approved' | 'rejected') : 'not_uploaded',
+        fileName: docMeta.fileName,
+        rejectionReason: docMeta.rejectionReason,
+        uploadedAt: doc?.createdAt,
+      };
+    });
+
+    const nextSteps = this.getNextSteps(verification, infoSubmitted, allDocumentsUploaded, hasRejectedDocs, documents);
 
     return {
       verificationId: verification.id,
@@ -443,12 +532,130 @@ export class KYCService {
       documentsRequired: requiredDocs,
       documentsSubmitted: submittedTypes as DocumentType[],
       documentsPending: pendingTypes as DocumentType[],
+      documentsRejected: rejectedTypes as DocumentType[],
+      documentsApproved: approvedTypes as DocumentType[],
       allDocumentsUploaded,
       taxFormRequired,
       taxFormSubmitted: metadata.taxFormSubmitted || false,
       payoutEligible: this.isPayoutEligible(verification),
       message: this.getStatusMessage(verification),
+      estimatedReviewTime: this.getEstimatedReviewTime(verification, documents.length),
+      submittedAt: metadata.submittedAt,
+      reviewStartedAt: metadata.reviewStartedAt,
+      rejectionReason: metadata.rejectionReason,
+      resubmissionRequired,
+      documentChecklist,
+      supportContact: SUPPORT_CONTACT,
+      nextSteps,
     };
+  }
+
+  private getNextSteps(
+    verification: KYCVerification,
+    infoSubmitted: boolean,
+    allDocumentsUploaded: boolean,
+    hasRejectedDocs: boolean,
+    documents: KYCDocument[]
+  ): string[] {
+    const steps: string[] = [];
+    const status = verification.status as KYCStatus;
+
+    if (status === 'rejected') {
+      steps.push('Your verification was rejected. Please review the rejection reason and start a new verification.');
+      steps.push('Contact support if you have questions about the rejection.');
+      return steps;
+    }
+
+    if (status === 'verified') {
+      steps.push('Your account is verified! You can now receive payouts.');
+      return steps;
+    }
+
+    if (status === 'under_review') {
+      steps.push('Your documents are being reviewed by our team.');
+      steps.push('You will receive an email notification once the review is complete.');
+      steps.push('Typical review time is 1-2 business days.');
+      return steps;
+    }
+
+    if (!infoSubmitted) {
+      steps.push('Complete your personal/business information form.');
+    }
+
+    if (hasRejectedDocs) {
+      const rejectedDocs = documents.filter(d => d.status === 'rejected');
+      rejectedDocs.forEach(doc => {
+        const docMeta = (doc.metadata as Record<string, any>) || {};
+        const nameInfo = DOCUMENT_NAMES[doc.documentType as DocumentType] || { name: doc.documentType };
+        steps.push(`Re-upload ${nameInfo.name}: ${docMeta.rejectionReason || 'Document was rejected'}`);
+      });
+    }
+
+    if (!allDocumentsUploaded && infoSubmitted) {
+      steps.push('Upload all required documents to proceed.');
+    }
+
+    if (allDocumentsUploaded && infoSubmitted && !hasRejectedDocs) {
+      steps.push('Submit your verification for review.');
+    }
+
+    return steps;
+  }
+
+  private getEstimatedReviewTime(verification: KYCVerification, documentCount: number): string {
+    const status = verification.status as KYCStatus;
+    
+    if (status === 'verified') return 'Complete';
+    if (status === 'rejected') return 'N/A';
+    if (status !== 'under_review') return 'Submit documents to see estimate';
+
+    if (documentCount <= 2) return '1 business day';
+    if (documentCount <= 4) return '1-2 business days';
+    return '2-3 business days';
+  }
+
+  validateFile(fileSize: number, mimeType: string): FileValidationResult {
+    if (fileSize === 0) {
+      return {
+        valid: false,
+        error: 'File is empty. Please upload a valid document.',
+        errorCode: 'EMPTY_FILE',
+      };
+    }
+
+    if (fileSize < FILE_SIZE_LIMITS.minBytes) {
+      return {
+        valid: false,
+        error: `File is too small (${(fileSize / 1024).toFixed(2)} KB). Minimum size is ${FILE_SIZE_LIMITS.minMB} MB. The document may not be readable.`,
+        errorCode: 'FILE_TOO_SMALL',
+      };
+    }
+
+    if (fileSize > FILE_SIZE_LIMITS.maxBytes) {
+      return {
+        valid: false,
+        error: `File is too large (${(fileSize / (1024 * 1024)).toFixed(2)} MB). Maximum size is ${FILE_SIZE_LIMITS.maxMB} MB. Please compress the file or use a lower resolution.`,
+        errorCode: 'FILE_TOO_LARGE',
+      };
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+      return {
+        valid: false,
+        error: `Invalid file format (${mimeType}). Accepted formats: JPG, PNG, or PDF.`,
+        errorCode: 'INVALID_FORMAT',
+      };
+    }
+
+    return { valid: true };
+  }
+
+  getDocumentInfo(documentType: DocumentType): { name: string; description: string } {
+    return DOCUMENT_NAMES[documentType] || { name: documentType, description: '' };
+  }
+
+  getSupportContact(): SupportContact {
+    return SUPPORT_CONTACT;
   }
 
   async getVerification(verificationId: string): Promise<KYCVerification | null> {

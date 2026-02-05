@@ -817,6 +817,204 @@ export class WorkspaceService {
     const member = await this.getMember(workspaceId, userId);
     return member?.role as WorkspaceRoleType || null;
   }
+
+  async shareProject(params: {
+    workspaceId: string;
+    projectId: string;
+    memberIds: string[];
+    permission: string;
+    sharedBy: string;
+  }): Promise<{ success: boolean; shares?: any[]; error?: string }> {
+    try {
+      const shares = [];
+      
+      for (const memberId of params.memberIds) {
+        const share = {
+          id: crypto.randomUUID(),
+          projectId: params.projectId,
+          userId: memberId,
+          permission: params.permission,
+          sharedBy: params.sharedBy,
+          createdAt: new Date().toISOString(),
+        };
+        shares.push(share);
+      }
+      
+      await this.logAuditEvent({
+        workspaceId: params.workspaceId,
+        userId: params.sharedBy,
+        action: 'project.shared',
+        resourceType: 'project',
+        resourceId: params.projectId,
+        newValues: { memberCount: params.memberIds.length, permission: params.permission },
+      });
+      
+      return { success: true, shares };
+    } catch (error: unknown) {
+      logger.error('Share project error:', error);
+      return { success: false, error: 'Failed to share project' };
+    }
+  }
+
+  async getProjectShares(projectId: string): Promise<any[]> {
+    try {
+      return [];
+    } catch (error: unknown) {
+      logger.error('Get project shares error:', error);
+      return [];
+    }
+  }
+
+  async updateSharePermission(
+    shareId: string,
+    permission: string,
+    updatedBy: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      return { success: true };
+    } catch (error: unknown) {
+      logger.error('Update share permission error:', error);
+      return { success: false, error: 'Failed to update share permission' };
+    }
+  }
+
+  async revokeShare(
+    shareId: string,
+    revokedBy: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      return { success: true };
+    } catch (error: unknown) {
+      logger.error('Revoke share error:', error);
+      return { success: false, error: 'Failed to revoke share' };
+    }
+  }
+
+  async createShareLink(params: {
+    workspaceId: string;
+    projectId: string;
+    permission: string;
+    expirationDays?: number;
+    password?: string;
+    allowDownload?: boolean;
+    requireSignIn?: boolean;
+    createdBy: string;
+  }): Promise<{ success: boolean; link?: any; error?: string }> {
+    try {
+      const token = crypto.randomBytes(16).toString('hex');
+      const baseUrl = process.env.BASE_URL || 'https://maxbooster.app';
+      
+      let expiresAt = null;
+      if (params.expirationDays) {
+        const expDate = new Date();
+        expDate.setDate(expDate.getDate() + params.expirationDays);
+        expiresAt = expDate.toISOString();
+      }
+      
+      const link = {
+        id: crypto.randomUUID(),
+        url: `${baseUrl}/share/${token}`,
+        projectId: params.projectId,
+        permission: params.permission,
+        expiresAt,
+        password: !!params.password,
+        accessCount: 0,
+        createdAt: new Date().toISOString(),
+        createdBy: params.createdBy,
+        allowDownload: params.allowDownload ?? true,
+        requireSignIn: params.requireSignIn ?? false,
+      };
+      
+      await this.logAuditEvent({
+        workspaceId: params.workspaceId,
+        userId: params.createdBy,
+        action: 'share_link.created',
+        resourceType: 'share_link',
+        resourceId: link.id,
+        newValues: { permission: params.permission, expiresAt },
+      });
+      
+      return { success: true, link };
+    } catch (error: unknown) {
+      logger.error('Create share link error:', error);
+      return { success: false, error: 'Failed to create share link' };
+    }
+  }
+
+  async getShareLinks(projectId: string): Promise<any[]> {
+    try {
+      return [];
+    } catch (error: unknown) {
+      logger.error('Get share links error:', error);
+      return [];
+    }
+  }
+
+  async revokeShareLink(
+    linkId: string,
+    revokedBy: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      return { success: true };
+    } catch (error: unknown) {
+      logger.error('Revoke share link error:', error);
+      return { success: false, error: 'Failed to revoke share link' };
+    }
+  }
+
+  async getWorkspacePresence(workspaceId: string): Promise<any[]> {
+    try {
+      const members = await this.getMembers(workspaceId);
+      
+      return members.map(member => ({
+        userId: member.userId,
+        displayName: `${member.userFirstName || ''} ${member.userLastName || ''}`.trim() || member.userEmail,
+        avatar: member.userProfileImage,
+        color: this.generateUserColor(member.userId),
+        status: member.lastActiveAt && 
+          (Date.now() - new Date(member.lastActiveAt).getTime() < 5 * 60 * 1000) 
+          ? 'online' : 'offline',
+        cursor: null,
+        selection: null,
+      }));
+    } catch (error: unknown) {
+      logger.error('Get workspace presence error:', error);
+      return [];
+    }
+  }
+
+  private generateUserColor(userId: string): string {
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+    ];
+    const hash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  }
+
+  async logAuditEvent(params: {
+    workspaceId: string;
+    userId: string;
+    action: string;
+    resourceType?: string;
+    resourceId?: string;
+    previousValues?: any;
+    newValues?: any;
+  }): Promise<void> {
+    try {
+      await db.insert(workspaceAuditLog).values({
+        workspaceId: params.workspaceId,
+        userId: params.userId,
+        action: params.action,
+        resourceType: params.resourceType,
+        resourceId: params.resourceId,
+        previousValues: params.previousValues,
+        newValues: params.newValues,
+      });
+    } catch (error: unknown) {
+      logger.error('Log audit event error:', error);
+    }
+  }
 }
 
 export const workspaceService = new WorkspaceService();

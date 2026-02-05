@@ -1077,6 +1077,264 @@ ${vars.producerName || '[PRODUCER NAME]'}
 
     return Buffer.from(doc.output('arraybuffer'));
   }
+
+  validateContractVariables(templateId: string, variables: ContractVariables): {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+  } {
+    const template = this.getTemplateById(templateId);
+    if (!template) {
+      return { valid: false, errors: ['Template not found'], warnings: [] };
+    }
+
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    for (const requiredVar of template.variables) {
+      const value = variables[requiredVar as keyof ContractVariables];
+      if (value === undefined || value === null || value === '') {
+        if (['artistName', 'producerName', 'beatTitle', 'projectTitle'].includes(requiredVar)) {
+          errors.push(`${requiredVar.replace(/([A-Z])/g, ' $1').trim()} is required`);
+        } else {
+          warnings.push(`${requiredVar.replace(/([A-Z])/g, ' $1').trim()} is not set`);
+        }
+      }
+    }
+
+    if (variables.purchasePrice !== undefined && variables.purchasePrice < 0) {
+      errors.push('Purchase price cannot be negative');
+    }
+
+    if (variables.royaltyPercentage !== undefined) {
+      if (variables.royaltyPercentage < 0 || variables.royaltyPercentage > 100) {
+        errors.push('Royalty percentage must be between 0 and 100');
+      }
+    }
+
+    if (variables.splits) {
+      const totalSplit = variables.splits.reduce((sum, s) => sum + s.percentage, 0);
+      if (Math.abs(totalSplit - 100) > 0.01) {
+        errors.push(`Split percentages must total 100%, got ${totalSplit.toFixed(2)}%`);
+      }
+    }
+
+    if (variables.effectiveDate && variables.expirationDate) {
+      const effective = new Date(variables.effectiveDate);
+      const expiration = new Date(variables.expirationDate);
+      if (expiration <= effective) {
+        errors.push('Expiration date must be after effective date');
+      }
+    }
+
+    return { valid: errors.length === 0, errors, warnings };
+  }
+
+  updateContractDraft(contractId: string, variables: Partial<ContractVariables>): GeneratedContract {
+    const contract = this.contracts.get(contractId);
+    if (!contract) {
+      throw new Error('Contract not found');
+    }
+
+    if (contract.status !== 'draft') {
+      throw new Error('Can only update contracts in draft status');
+    }
+
+    const updatedVariables = { ...contract.variables, ...variables };
+    const template = this.getTemplateById(contract.templateId);
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    const content = this.generateContractContent(template.type, updatedVariables);
+    const parties = this.extractParties(template.type, updatedVariables);
+
+    const updatedContract: GeneratedContract = {
+      ...contract,
+      content,
+      variables: updatedVariables,
+      parties,
+      signatures: parties.map(p => ({ partyName: p.name })),
+    };
+
+    this.contracts.set(contractId, updatedContract);
+    logger.info(`Contract ${contractId} draft updated`);
+    return updatedContract;
+  }
+
+  sendForSignature(contractId: string): GeneratedContract {
+    const contract = this.contracts.get(contractId);
+    if (!contract) {
+      throw new Error('Contract not found');
+    }
+
+    if (contract.status !== 'draft') {
+      throw new Error('Contract must be in draft status to send for signature');
+    }
+
+    if (contract.parties.length === 0) {
+      throw new Error('Contract must have at least one party');
+    }
+
+    contract.status = 'pending_signature';
+    this.contracts.set(contractId, contract);
+    logger.info(`Contract ${contractId} sent for signature`);
+    return contract;
+  }
+
+  declineSignature(contractId: string, partyName: string, reason: string): GeneratedContract {
+    const contract = this.contracts.get(contractId);
+    if (!contract) {
+      throw new Error('Contract not found');
+    }
+
+    const signatureIndex = contract.signatures.findIndex(s => s.partyName === partyName);
+    if (signatureIndex === -1) {
+      throw new Error('Party not found in contract');
+    }
+
+    contract.status = 'voided';
+    this.contracts.set(contractId, contract);
+    logger.info(`Contract ${contractId} declined by ${partyName}. Reason: ${reason}`);
+    return contract;
+  }
+
+  voidContract(contractId: string, reason: string): GeneratedContract {
+    const contract = this.contracts.get(contractId);
+    if (!contract) {
+      throw new Error('Contract not found');
+    }
+
+    if (contract.status === 'fully_executed') {
+      throw new Error('Cannot void a fully executed contract');
+    }
+
+    contract.status = 'voided';
+    this.contracts.set(contractId, contract);
+    logger.info(`Contract ${contractId} voided. Reason: ${reason}`);
+    return contract;
+  }
+
+  getContractTimeline(contractId: string): Array<{
+    event: string;
+    timestamp: Date;
+    actor?: string;
+    details?: string;
+  }> {
+    const contract = this.contracts.get(contractId);
+    if (!contract) {
+      throw new Error('Contract not found');
+    }
+
+    const timeline: Array<{
+      event: string;
+      timestamp: Date;
+      actor?: string;
+      details?: string;
+    }> = [];
+
+    timeline.push({
+      event: 'contract_created',
+      timestamp: contract.createdAt,
+      actor: contract.createdBy,
+      details: `Contract created from template: ${contract.templateId}`,
+    });
+
+    for (const sig of contract.signatures) {
+      if (sig.signedAt) {
+        timeline.push({
+          event: 'signature_added',
+          timestamp: new Date(sig.signedAt),
+          actor: sig.partyName,
+          details: `Signed from IP: ${sig.ipAddress?.substring(0, 8)}...`,
+        });
+      }
+    }
+
+    if (contract.status === 'fully_executed') {
+      const lastSignature = contract.signatures
+        .filter(s => s.signedAt)
+        .sort((a, b) => new Date(b.signedAt!).getTime() - new Date(a.signedAt!).getTime())[0];
+      if (lastSignature?.signedAt) {
+        timeline.push({
+          event: 'contract_executed',
+          timestamp: new Date(lastSignature.signedAt),
+          details: 'All parties have signed',
+        });
+      }
+    }
+
+    return timeline.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+
+  getSignatureStatus(contractId: string): {
+    total: number;
+    signed: number;
+    pending: number;
+    signers: Array<{
+      name: string;
+      role: string;
+      status: 'signed' | 'pending';
+      signedAt?: Date;
+    }>;
+    allSigned: boolean;
+  } {
+    const contract = this.contracts.get(contractId);
+    if (!contract) {
+      throw new Error('Contract not found');
+    }
+
+    const signers = contract.parties.map(party => {
+      const signature = contract.signatures.find(s => s.partyName === party.name);
+      return {
+        name: party.name,
+        role: party.role,
+        status: (signature?.signedAt ? 'signed' : 'pending') as 'signed' | 'pending',
+        signedAt: signature?.signedAt ? new Date(signature.signedAt) : undefined,
+      };
+    });
+
+    const signed = signers.filter(s => s.status === 'signed').length;
+    const pending = signers.filter(s => s.status === 'pending').length;
+
+    return {
+      total: signers.length,
+      signed,
+      pending,
+      signers,
+      allSigned: pending === 0,
+    };
+  }
+
+  getContractStats(userId: string): {
+    total: number;
+    draft: number;
+    pendingSignature: number;
+    partiallySigned: number;
+    fullyExecuted: number;
+    voided: number;
+    expired: number;
+  } {
+    const userContracts = this.getContractsByUser(userId);
+    return {
+      total: userContracts.length,
+      draft: userContracts.filter(c => c.status === 'draft').length,
+      pendingSignature: userContracts.filter(c => c.status === 'pending_signature').length,
+      partiallySigned: userContracts.filter(c => c.status === 'partially_signed').length,
+      fullyExecuted: userContracts.filter(c => c.status === 'fully_executed').length,
+      voided: userContracts.filter(c => c.status === 'voided').length,
+      expired: userContracts.filter(c => c.status === 'expired').length,
+    };
+  }
+
+  getContractPreview(templateId: string, variables: ContractVariables): string {
+    const template = this.getTemplateById(templateId);
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    return this.generateContractContent(template.type, variables);
+  }
 }
 
 export const contractTemplateService = new ContractTemplateService();

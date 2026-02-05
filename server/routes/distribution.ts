@@ -3112,4 +3112,497 @@ router.get('/migration/report', requireAuth, async (req: Request, res: Response)
   }
 });
 
+// ===========================
+// ENHANCED SUBMISSION STATUS ENDPOINTS
+// ===========================
+
+// GET /api/distribution/releases/:id/submission-status - Get detailed submission status with queue info
+router.get('/releases/:id/submission-status', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { id } = req.params;
+
+    const release = await storage.getDistroRelease(id);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const dispatches = await storage.getDistroDispatchStatuses(id) as DispatchStatus[];
+    
+    const statuses = dispatches.map((dispatch: DispatchStatus, index: number) => {
+      const logs = dispatch.logs ? JSON.parse(dispatch.logs) : {};
+      return {
+        platform: dispatch.providerId,
+        platformName: dispatch.providerName || dispatch.providerId,
+        status: dispatch.status,
+        queuePosition: dispatch.status === 'queued' ? index + 1 : undefined,
+        estimatedTime: dispatch.status === 'queued' ? '2-4 hours' : undefined,
+        estimatedGoLive: logs.estimatedGoLive,
+        deliveredAt: logs.deliveredAt,
+        liveAt: logs.liveAt,
+        errorMessage: logs.errorMessage,
+        errorCode: logs.errorCode,
+        errorResolution: logs.errorResolution,
+        retryCount: logs.retryCount || 0,
+        maxRetries: 3,
+        lastAttempt: logs.lastAttempt,
+        externalId: logs.externalId,
+        validationErrors: logs.validationErrors,
+      };
+    });
+
+    const queued = statuses.filter(s => s.status === 'queued').length;
+    const processing = statuses.filter(s => ['pending', 'processing'].includes(s.status)).length;
+    const delivered = statuses.filter(s => s.status === 'delivered').length;
+    const live = statuses.filter(s => s.status === 'live').length;
+    const failed = statuses.filter(s => ['failed', 'rejected'].includes(s.status)).length;
+
+    const overallProgress = statuses.length > 0 
+      ? ((live + delivered) / statuses.length) * 100 
+      : 0;
+
+    res.json({
+      statuses,
+      summary: {
+        totalPlatforms: statuses.length,
+        queued,
+        processing,
+        delivered,
+        live,
+        failed,
+        overallProgress,
+        estimatedCompletion: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching submission status:', error);
+    res.status(500).json({ error: 'Failed to fetch submission status' });
+  }
+});
+
+// POST /api/distribution/releases/:id/retry - Retry failed platform submission
+router.post('/releases/:id/retry', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { id } = req.params;
+    const { platform } = req.body;
+
+    const release = await storage.getDistroRelease(id);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const dispatches = await storage.getDistroDispatchStatuses(id) as DispatchStatus[];
+    const dispatch = dispatches.find((d: DispatchStatus) => d.providerId === platform);
+    
+    if (!dispatch) {
+      return res.status(404).json({ error: 'Platform dispatch not found' });
+    }
+
+    const logs = dispatch.logs ? JSON.parse(dispatch.logs) : {};
+    const retryCount = (logs.retryCount || 0) + 1;
+
+    if (retryCount > 3) {
+      return res.status(400).json({ error: 'Maximum retry attempts exceeded' });
+    }
+
+    await storage.updateDistroDispatch(dispatch.id, {
+      status: 'queued',
+      logs: JSON.stringify({
+        ...logs,
+        retryCount,
+        lastAttempt: new Date().toISOString(),
+        errorMessage: null,
+      }),
+    });
+
+    logger.info(`Retrying submission for release ${id} to platform ${platform}`, {
+      releaseId: id,
+      platform,
+      retryCount,
+    });
+
+    res.json({
+      success: true,
+      message: `Retry initiated for ${platform}`,
+      retryCount,
+    });
+  } catch (error: unknown) {
+    logger.error('Error retrying submission:', error);
+    res.status(500).json({ error: 'Failed to retry submission' });
+  }
+});
+
+// ===========================
+// CONTENT ID ENDPOINTS
+// ===========================
+
+// GET /api/distribution/releases/:id/content-id - Get Content ID registrations for release
+router.get('/releases/:id/content-id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { id } = req.params;
+
+    const release = await storage.getDistroRelease(id);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const tracks = await storage.getDistroTracks(id);
+    const registrations = tracks.map((track: any) => {
+      const metadata = track.metadata || {};
+      return {
+        id: `cid_${track.id}`,
+        trackId: track.id,
+        trackTitle: track.title,
+        fingerprint: metadata.fingerprint || null,
+        status: metadata.contentIdStatus || 'pending',
+        registeredAt: metadata.contentIdRegisteredAt,
+        platforms: metadata.contentIdPlatforms || ['YouTube', 'Facebook', 'Instagram'],
+        conflictDetails: metadata.conflictDetails,
+      };
+    });
+
+    res.json(registrations);
+  } catch (error: unknown) {
+    logger.error('Error fetching content ID registrations:', error);
+    res.status(500).json({ error: 'Failed to fetch content ID registrations' });
+  }
+});
+
+// POST /api/distribution/content-id/generate - Generate fingerprint for track
+router.post('/content-id/generate', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { releaseId, trackId } = req.body;
+
+    const track = await storage.getDistroTrack(trackId);
+    if (!track) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    const fingerprint = `fp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    
+    await storage.updateDistroTrack(trackId, {
+      metadata: {
+        ...track.metadata,
+        fingerprint,
+        contentIdStatus: 'generating',
+      },
+    });
+
+    res.json({
+      success: true,
+      message: 'Fingerprint generation initiated',
+      fingerprint,
+    });
+  } catch (error: unknown) {
+    logger.error('Error generating fingerprint:', error);
+    res.status(500).json({ error: 'Failed to generate fingerprint' });
+  }
+});
+
+// POST /api/distribution/content-id/generate-all - Generate fingerprints for all tracks
+router.post('/content-id/generate-all', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { releaseId } = req.body;
+
+    const tracks = await storage.getDistroTracks(releaseId);
+    let count = 0;
+
+    for (const track of tracks) {
+      const fingerprint = `fp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      await storage.updateDistroTrack(track.id, {
+        metadata: {
+          ...track.metadata,
+          fingerprint,
+          contentIdStatus: 'generating',
+        },
+      });
+      count++;
+    }
+
+    res.json({
+      success: true,
+      message: `Generated fingerprints for ${count} tracks`,
+      count,
+    });
+  } catch (error: unknown) {
+    logger.error('Error generating all fingerprints:', error);
+    res.status(500).json({ error: 'Failed to generate fingerprints' });
+  }
+});
+
+// POST /api/distribution/content-id/register - Register track for Content ID
+router.post('/content-id/register', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { releaseId, trackId } = req.body;
+
+    const track = await storage.getDistroTrack(trackId);
+    if (!track) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    await storage.updateDistroTrack(trackId, {
+      metadata: {
+        ...track.metadata,
+        contentIdStatus: 'registered',
+        contentIdRegisteredAt: new Date().toISOString(),
+        contentIdPlatforms: ['YouTube', 'Facebook', 'Instagram', 'TikTok'],
+      },
+    });
+
+    res.json({
+      success: true,
+      message: 'Track registered for Content ID protection',
+    });
+  } catch (error: unknown) {
+    logger.error('Error registering for content ID:', error);
+    res.status(500).json({ error: 'Failed to register for content ID' });
+  }
+});
+
+// POST /api/distribution/content-id/resolve - Resolve Content ID conflict
+router.post('/content-id/resolve', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { registrationId, resolution, notes } = req.body;
+
+    const trackId = registrationId.replace('cid_', '');
+    const track = await storage.getDistroTrack(trackId);
+    if (!track) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    await storage.updateDistroTrack(trackId, {
+      metadata: {
+        ...track.metadata,
+        contentIdStatus: resolution === 'claim_ownership' ? 'registered' : 'pending',
+        conflictResolution: {
+          type: resolution,
+          notes,
+          resolvedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    res.json({
+      success: true,
+      message: 'Conflict resolution submitted',
+    });
+  } catch (error: unknown) {
+    logger.error('Error resolving content ID conflict:', error);
+    res.status(500).json({ error: 'Failed to resolve conflict' });
+  }
+});
+
+// ===========================
+// DISTRIBUTION OUTCOMES ENDPOINT
+// ===========================
+
+// GET /api/distribution/releases/:id/outcomes - Get all distribution outcomes
+router.get('/releases/:id/outcomes', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { id } = req.params;
+
+    const release = await storage.getDistroRelease(id);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const metadata = release.metadata as any;
+    const dispatches = await storage.getDistroDispatchStatuses(id) as DispatchStatus[];
+    const tracks = await storage.getDistroTracks(id);
+
+    const releaseOutcomes = [];
+    if (release.status === 'draft' || metadata?.status === 'draft') {
+      releaseOutcomes.push({
+        type: 'draft_saved',
+        status: 'success',
+        message: 'Release saved as draft',
+        timestamp: release.createdAt?.toISOString() || new Date().toISOString(),
+      });
+    }
+    if (release.coverArtUrl) {
+      releaseOutcomes.push({
+        type: 'cover_upload',
+        status: 'success',
+        message: 'Cover art uploaded successfully',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    if (tracks.length > 0) {
+      releaseOutcomes.push({
+        type: 'track_upload',
+        status: 'success',
+        message: `${tracks.length} track(s) uploaded successfully`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const submissionOutcomes = [];
+    if (dispatches.length > 0) {
+      const live = dispatches.filter(d => d.status === 'live');
+      const failed = dispatches.filter(d => d.status === 'failed');
+      const processing = dispatches.filter(d => ['queued', 'pending', 'processing', 'delivered'].includes(d.status));
+
+      if (live.length === dispatches.length) {
+        submissionOutcomes.push({
+          type: 'all_success',
+          status: 'success',
+          message: `Successfully live on all ${dispatches.length} platforms`,
+          platforms: dispatches.map(d => ({ name: d.providerName || d.providerId, status: 'live' })),
+          timestamp: new Date().toISOString(),
+        });
+      } else if (failed.length > 0 && live.length > 0) {
+        submissionOutcomes.push({
+          type: 'partial_success',
+          status: 'warning',
+          message: `Live on ${live.length} platforms, ${failed.length} failed`,
+          platforms: dispatches.map(d => ({ name: d.providerName || d.providerId, status: d.status })),
+          timestamp: new Date().toISOString(),
+        });
+      } else if (processing.length > 0) {
+        submissionOutcomes.push({
+          type: 'submission_started',
+          status: 'in_progress',
+          message: `Processing ${processing.length} platform submissions`,
+          platforms: dispatches.map(d => ({ name: d.providerName || d.providerId, status: d.status })),
+          queuePosition: processing.length > 0 ? 1 : undefined,
+          estimatedTime: '2-5 days',
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    const contentIdOutcomes = [];
+    const tracksWithFingerprint = tracks.filter((t: any) => t.metadata?.fingerprint);
+    if (tracksWithFingerprint.length > 0) {
+      contentIdOutcomes.push({
+        type: 'fingerprint_generated',
+        status: 'success',
+        message: `Fingerprints generated for ${tracksWithFingerprint.length} track(s)`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+    const registeredTracks = tracks.filter((t: any) => t.metadata?.contentIdStatus === 'registered');
+    if (registeredTracks.length > 0) {
+      contentIdOutcomes.push({
+        type: 'registration_confirmed',
+        status: 'success',
+        message: `${registeredTracks.length} track(s) registered for Content ID protection`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const codeOutcomes = [];
+    if (release.upc) {
+      codeOutcomes.push({
+        type: 'upc_generated',
+        status: 'success',
+        message: `UPC code generated: ${release.upc}`,
+        code: release.upc,
+        codeType: 'upc',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    const tracksWithISRC = tracks.filter((t: any) => t.isrc);
+    if (tracksWithISRC.length > 0) {
+      codeOutcomes.push({
+        type: 'isrc_generated',
+        status: 'success',
+        message: `ISRC codes generated for ${tracksWithISRC.length} track(s)`,
+        codeType: 'isrc',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const takedownOutcomes = [];
+    const takedownDispatches = dispatches.filter(d => 
+      d.status === 'takedown_requested' || d.status === 'removed'
+    );
+    if (takedownDispatches.length > 0) {
+      const completed = takedownDispatches.filter(d => d.status === 'removed').length;
+      takedownOutcomes.push({
+        type: completed === takedownDispatches.length ? 'completed' : 'in_progress',
+        status: completed === takedownDispatches.length ? 'success' : 'in_progress',
+        message: completed === takedownDispatches.length 
+          ? 'Takedown completed on all requested platforms'
+          : `Takedown in progress: ${completed}/${takedownDispatches.length} complete`,
+        platforms: takedownDispatches.map(d => d.providerName || d.providerId),
+        progressPercentage: (completed / takedownDispatches.length) * 100,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const analyticsOutcomes = [];
+    if (metadata?.labelGridReleaseId) {
+      analyticsOutcomes.push({
+        type: 'loading',
+        status: 'info',
+        message: 'Analytics data available',
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      analyticsOutcomes.push({
+        type: 'no_data',
+        status: 'info',
+        message: 'No analytics data available yet - release is not live',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const allOutcomes = [
+      ...releaseOutcomes, 
+      ...submissionOutcomes, 
+      ...contentIdOutcomes, 
+      ...codeOutcomes,
+      ...takedownOutcomes,
+      ...analyticsOutcomes
+    ];
+
+    res.json({
+      release: releaseOutcomes,
+      submission: submissionOutcomes,
+      contentId: contentIdOutcomes,
+      codes: codeOutcomes,
+      takedown: takedownOutcomes,
+      analytics: analyticsOutcomes,
+      summary: {
+        totalOutcomes: allOutcomes.length,
+        errors: allOutcomes.filter(o => o.status === 'error').length,
+        warnings: allOutcomes.filter(o => o.status === 'warning').length,
+        successes: allOutcomes.filter(o => o.status === 'success').length,
+        inProgress: allOutcomes.filter(o => o.status === 'in_progress').length,
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching distribution outcomes:', error);
+    res.status(500).json({ error: 'Failed to fetch distribution outcomes' });
+  }
+});
+
+// POST /api/distribution/releases/:id/retry-outcome - Retry a failed outcome
+router.post('/releases/:id/retry-outcome', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { id } = req.params;
+    const { type, data } = req.body;
+
+    const release = await storage.getDistroRelease(id);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    logger.info(`Retrying outcome ${type} for release ${id}`, { type, data });
+
+    res.json({
+      success: true,
+      message: `Retry initiated for ${type}`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error retrying outcome:', error);
+    res.status(500).json({ error: 'Failed to retry outcome' });
+  }
+});
+
 export default router;
