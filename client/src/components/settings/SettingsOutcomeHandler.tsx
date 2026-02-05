@@ -5,11 +5,11 @@ import { CheckCircle, XCircle, AlertTriangle, Shield, User, Bell, Eye, Link as L
 export type SettingsCategory = 'profile' | 'security' | 'notifications' | 'privacy' | 'connected_accounts';
 
 export type OutcomeType = 
-  | 'profile_updated' | 'avatar_uploaded' | 'avatar_removed' | 'username_changed' | 'username_unavailable' | 'bio_updated'
-  | 'password_changed' | 'password_requirements_not_met' | '2fa_enabled' | '2fa_disabled' | 'session_terminated' | 'all_sessions_terminated' | 'suspicious_activity_detected'
-  | 'email_preferences_saved' | 'push_notification_toggled' | 'frequency_updated' | 'unsubscribed'
-  | 'visibility_changed' | 'data_export_requested' | 'account_deletion_initiated' | 'gdpr_consent_updated'
-  | 'account_connected' | 'account_disconnected' | 'connection_expired' | 'permissions_updated';
+  | 'profile_updated' | 'avatar_uploaded' | 'avatar_removed' | 'username_changed' | 'username_unavailable' | 'bio_updated' | 'display_name_changed'
+  | 'password_changed' | 'password_change_failed' | 'password_requirements_not_met' | '2fa_enabled' | '2fa_disabled' | 'session_terminated' | 'all_sessions_terminated' | 'suspicious_activity_detected' | 'security_alerts_configured' | 'recovery_email_added' | 'recovery_codes_generated'
+  | 'email_preferences_saved' | 'push_notification_toggled' | 'frequency_updated' | 'unsubscribed' | 'marketing_preferences_updated'
+  | 'visibility_changed' | 'data_export_requested' | 'data_export_ready' | 'account_deletion_initiated' | 'account_deletion_cancelled' | 'gdpr_consent_updated'
+  | 'account_connected' | 'account_disconnected' | 'connection_expired' | 'permissions_updated' | 'connection_refreshed';
 
 interface OutcomeConfig {
   title: string;
@@ -62,11 +62,25 @@ const outcomeConfigs: Record<OutcomeType, OutcomeConfig> = {
     variant: 'default',
     category: 'profile',
   },
+  display_name_changed: {
+    title: 'Display Name Updated',
+    description: 'Your display name has been changed successfully.',
+    icon: <User className="h-4 w-4" />,
+    variant: 'default',
+    category: 'profile',
+  },
   password_changed: {
     title: 'Password Changed',
     description: 'Your password has been updated. Other sessions have been logged out.',
     icon: <Shield className="h-4 w-4" />,
     variant: 'default',
+    category: 'security',
+  },
+  password_change_failed: {
+    title: 'Password Change Failed',
+    description: 'Your current password is incorrect. Please try again.',
+    icon: <XCircle className="h-4 w-4" />,
+    variant: 'destructive',
     category: 'security',
   },
   password_requirements_not_met: {
@@ -111,6 +125,27 @@ const outcomeConfigs: Record<OutcomeType, OutcomeConfig> = {
     variant: 'destructive',
     category: 'security',
   },
+  security_alerts_configured: {
+    title: 'Security Alerts Updated',
+    description: 'Your security notification preferences have been saved.',
+    icon: <Shield className="h-4 w-4" />,
+    variant: 'default',
+    category: 'security',
+  },
+  recovery_email_added: {
+    title: 'Recovery Email Added',
+    description: 'A recovery email has been added to your account for extra security.',
+    icon: <CheckCircle className="h-4 w-4" />,
+    variant: 'default',
+    category: 'security',
+  },
+  recovery_codes_generated: {
+    title: 'Recovery Codes Generated',
+    description: 'New backup codes have been generated. Store them in a safe place.',
+    icon: <Shield className="h-4 w-4" />,
+    variant: 'default',
+    category: 'security',
+  },
   email_preferences_saved: {
     title: 'Email Preferences Saved',
     description: 'Your email notification preferences have been updated.',
@@ -139,6 +174,13 @@ const outcomeConfigs: Record<OutcomeType, OutcomeConfig> = {
     variant: 'default',
     category: 'notifications',
   },
+  marketing_preferences_updated: {
+    title: 'Marketing Preferences Updated',
+    description: 'Your marketing communication preferences have been saved.',
+    icon: <Bell className="h-4 w-4" />,
+    variant: 'default',
+    category: 'notifications',
+  },
   visibility_changed: {
     title: 'Profile Visibility Changed',
     description: 'Your profile visibility settings have been updated.',
@@ -153,11 +195,25 @@ const outcomeConfigs: Record<OutcomeType, OutcomeConfig> = {
     variant: 'default',
     category: 'privacy',
   },
+  data_export_ready: {
+    title: 'Data Export Ready',
+    description: 'Your data export is ready for download. Check your email for the link.',
+    icon: <CheckCircle className="h-4 w-4" />,
+    variant: 'default',
+    category: 'privacy',
+  },
   account_deletion_initiated: {
     title: 'Account Deletion Initiated',
     description: 'Your account deletion request has been submitted. You have 30 days to cancel.',
     icon: <AlertTriangle className="h-4 w-4" />,
     variant: 'destructive',
+    category: 'privacy',
+  },
+  account_deletion_cancelled: {
+    title: 'Account Deletion Cancelled',
+    description: 'Your account deletion request has been cancelled. Your account will remain active.',
+    icon: <CheckCircle className="h-4 w-4" />,
+    variant: 'default',
     category: 'privacy',
   },
   gdpr_consent_updated: {
@@ -191,6 +247,13 @@ const outcomeConfigs: Record<OutcomeType, OutcomeConfig> = {
   permissions_updated: {
     title: 'Permissions Updated',
     description: 'The permissions for this connected account have been updated.',
+    icon: <CheckCircle className="h-4 w-4" />,
+    variant: 'default',
+    category: 'connected_accounts',
+  },
+  connection_refreshed: {
+    title: 'Connection Refreshed',
+    description: 'The connection has been refreshed and is now active.',
     icon: <CheckCircle className="h-4 w-4" />,
     variant: 'default',
     category: 'connected_accounts',
