@@ -4,6 +4,12 @@
 Max Booster is an AI-powered platform for musicians, producers, and labels, offering a comprehensive solution for music career management.
 
 ## Recent Changes (February 5, 2026)
+**Legal Integration Enhancements:**
+- **Distribution Upload**: Two required checkboxes in step 5 (Review & Submit) confirming rights ownership and liability acknowledgment
+- **AI Music Generator**: Copyright notice disclaimer explaining AI-generated content may not be copyrightable without human input
+- **Distribution Dialog**: Rights confirmation checkbox required before exporting packages for distribution
+- All confirmation checkboxes properly gate submit/export actions (buttons disabled until confirmed)
+
 Comprehensive outcome handling enhancements across all 14 major platform modules:
 - **Settings/Security**: Added API key management, recovery codes, connected accounts management
 - **Global Error Handling**: Network status detection, structured API errors, retry toasts, enhanced error boundaries
