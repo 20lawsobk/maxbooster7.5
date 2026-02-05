@@ -31,6 +31,8 @@ type EngagementData = {
   impressions?: number;
   retweets?: number;
   replies?: number;
+  not_available?: boolean;
+  not_available_reason?: string;
 };
 
 export const platformAPI = {
@@ -213,8 +215,24 @@ export const platformAPI = {
         case 'threads':
           return await this.getThreadsEngagement(postId, token);
 
+        case 'tiktok':
+          return await this.getTikTokEngagement(postId, token);
+
+        case 'youtube':
+          return await this.getYouTubeEngagement(postId, token);
+
         default:
-          throw new Error(`Analytics not yet implemented for ${platform}`);
+          logger.warn(`Analytics not available for platform: ${platform}`);
+          return {
+            likes: 0,
+            shares: 0,
+            comments: 0,
+            views: 0,
+            reach: 0,
+            engagementRate: 0,
+            not_available: true,
+            not_available_reason: `Analytics API not supported for ${platform}`,
+          };
       }
     } catch (error: unknown) {
       logger.error(`Failed to collect engagement data for ${platform}:`, error.message);
@@ -623,6 +641,106 @@ export const platformAPI = {
     } catch (error: unknown) {
       if (error.response?.status === 401 || error.response?.status === 403) {
         throw new Error('Threads OAuth token expired or invalid');
+      }
+      throw error;
+    }
+  },
+
+  async getTikTokEngagement(videoId: string, token: string): Promise<EngagementData> {
+    try {
+      const response = await axios.post(
+        'https://open.tiktokapis.com/v2/video/query/',
+        {
+          filters: {
+            video_ids: [videoId],
+          },
+          fields: ['like_count', 'comment_count', 'share_count', 'view_count'],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const video = response.data?.data?.videos?.[0];
+
+      if (!video) {
+        logger.warn(`TikTok video not found: ${videoId}`);
+        return {
+          likes: 0,
+          shares: 0,
+          comments: 0,
+          views: 0,
+          engagementRate: 0,
+        };
+      }
+
+      const views = video.view_count || 0;
+      const likes = video.like_count || 0;
+      const comments = video.comment_count || 0;
+      const shares = video.share_count || 0;
+
+      return {
+        likes,
+        shares,
+        comments,
+        views,
+        engagementRate: views > 0 ? (likes + comments + shares) / views : 0,
+      };
+    } catch (error: unknown) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        throw new Error('TikTok OAuth token expired or invalid');
+      }
+      if (error.response?.status === 429) {
+        throw new Error('TikTok API rate limit exceeded');
+      }
+      throw error;
+    }
+  },
+
+  async getYouTubeEngagement(videoId: string, token: string): Promise<EngagementData> {
+    try {
+      const response = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
+        params: {
+          part: 'statistics',
+          id: videoId,
+          access_token: token,
+        },
+      });
+
+      const video = response.data?.items?.[0];
+
+      if (!video) {
+        logger.warn(`YouTube video not found: ${videoId}`);
+        return {
+          likes: 0,
+          shares: 0,
+          comments: 0,
+          views: 0,
+          engagementRate: 0,
+        };
+      }
+
+      const stats = video.statistics || {};
+      const views = parseInt(stats.viewCount, 10) || 0;
+      const likes = parseInt(stats.likeCount, 10) || 0;
+      const comments = parseInt(stats.commentCount, 10) || 0;
+
+      return {
+        likes,
+        shares: 0,
+        comments,
+        views,
+        engagementRate: views > 0 ? (likes + comments) / views : 0,
+      };
+    } catch (error: unknown) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        throw new Error('YouTube OAuth token expired or invalid');
+      }
+      if (error.response?.status === 429) {
+        throw new Error('YouTube API rate limit exceeded');
       }
       throw error;
     }

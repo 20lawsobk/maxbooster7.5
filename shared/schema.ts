@@ -2513,6 +2513,7 @@ export const userStorageFiles = pgTable("user_storage_files", {
   metadata: jsonb("metadata"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export type UserStorageFile = typeof userStorageFiles.$inferSelect;

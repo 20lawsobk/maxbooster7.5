@@ -7,8 +7,50 @@ import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import path from 'path';
 import fs from 'fs/promises';
+import { db } from '../db.js';
+import { userStorageFiles } from '../../shared/schema.js';
+import { eq, and, isNull, lt, isNotNull, sql } from 'drizzle-orm';
 
 const router = Router();
+
+// Cleanup soft-deleted files older than 30 days (permanent deletion)
+const PERMANENT_DELETE_DAYS = 30;
+
+async function cleanupOldDeletedFiles() {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - PERMANENT_DELETE_DAYS);
+    
+    const oldDeletedFiles = await db.select()
+      .from(userStorageFiles)
+      .where(and(
+        isNotNull(userStorageFiles.deletedAt),
+        lt(userStorageFiles.deletedAt, cutoffDate)
+      ));
+    
+    for (const file of oldDeletedFiles) {
+      try {
+        await storageService.deleteFile(file.fileKey);
+        await db.delete(userStorageFiles).where(eq(userStorageFiles.id, file.id));
+        logger.info(`[SoftDelete] Permanently deleted expired file: ${file.fileKey}`);
+      } catch (err) {
+        logger.error(`[SoftDelete] Failed to permanently delete file ${file.fileKey}:`, err);
+      }
+    }
+    
+    if (oldDeletedFiles.length > 0) {
+      logger.info(`[SoftDelete] Cleanup completed: ${oldDeletedFiles.length} files permanently deleted`);
+    }
+  } catch (error) {
+    logger.error('[SoftDelete] Cleanup job failed:', error);
+  }
+}
+
+// Run cleanup job every hour
+setInterval(cleanupOldDeletedFiles, 60 * 60 * 1000);
+
+// Run cleanup on startup
+cleanupOldDeletedFiles();
 
 const ALLOWED_AUDIO_TYPES = [
   'audio/wav', 'audio/x-wav', 'audio/wave',
@@ -277,20 +319,106 @@ router.delete('/file/:key(*)', requireAuth, async (req: Request, res: Response) 
   try {
     const { key } = req.params;
     const userId = req.session.userId!;
+    const { permanent } = req.query;
 
     if (!key.includes(`users/${userId}/`)) {
       return res.status(403).json({ error: 'Not authorized to delete this file' });
     }
 
-    await storageService.deleteFile(key);
+    // Find the file in database
+    const [file] = await db.select()
+      .from(userStorageFiles)
+      .where(and(
+        eq(userStorageFiles.fileKey, key),
+        eq(userStorageFiles.userId, userId),
+        isNull(userStorageFiles.deletedAt)
+      ))
+      .limit(1);
 
-    logger.info(`File deleted: ${key} by user ${userId}`);
+    if (!file) {
+      return res.status(404).json({ error: 'File not found' });
+    }
 
-    res.json({ success: true });
+    if (permanent === 'true') {
+      // Permanent delete: remove from storage and database
+      await storageService.deleteFile(key);
+      await db.delete(userStorageFiles).where(eq(userStorageFiles.id, file.id));
+      logger.info(`[SoftDelete] File permanently deleted: ${key} by user ${userId}`);
+      res.json({ success: true, restorable: false });
+    } else {
+      // Soft delete: mark as deleted in database, keep the storage object
+      await db.update(userStorageFiles)
+        .set({ deletedAt: new Date() })
+        .where(eq(userStorageFiles.id, file.id));
+
+      logger.info(`[SoftDelete] File soft deleted: ${key} by user ${userId}`);
+      res.json({ 
+        success: true, 
+        restorable: true, 
+        restoreKey: key,
+        restoreExpiresIn: PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000
+      });
+    }
   } catch (error) {
     logger.error('File deletion failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Deletion failed' 
+    });
+  }
+});
+
+// Restore a deleted file (undo delete)
+router.post('/restore/:key(*)', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { key } = req.params;
+    const userId = req.session.userId!;
+
+    // Find the soft-deleted file in database
+    const [deletedFile] = await db.select()
+      .from(userStorageFiles)
+      .where(and(
+        eq(userStorageFiles.fileKey, key),
+        eq(userStorageFiles.userId, userId),
+        isNotNull(userStorageFiles.deletedAt)
+      ))
+      .limit(1);
+    
+    if (!deletedFile) {
+      return res.status(404).json({ 
+        error: 'File not found or has already been permanently deleted.' 
+      });
+    }
+
+    // Check if the file is older than 30 days (should have been cleaned up)
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - PERMANENT_DELETE_DAYS);
+    if (deletedFile.deletedAt && deletedFile.deletedAt < cutoffDate) {
+      return res.status(410).json({ 
+        error: 'Restoration window has expired. The file can no longer be recovered.' 
+      });
+    }
+
+    // Restore: simply clear the deleted_at flag
+    await db.update(userStorageFiles)
+      .set({ deletedAt: null })
+      .where(eq(userStorageFiles.id, deletedFile.id));
+
+    logger.info(`[SoftDelete] File restored: ${key} by user ${userId}`);
+
+    res.json({
+      success: true,
+      message: 'File restored successfully',
+      file: {
+        key,
+        name: deletedFile.fileName,
+        size: deletedFile.sizeBytes,
+        type: deletedFile.mimeType,
+      },
+    });
+  } catch (error) {
+    logger.error('File restoration failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Restoration failed' 
     });
   }
 });

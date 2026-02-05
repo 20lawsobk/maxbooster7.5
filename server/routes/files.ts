@@ -1,11 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db.js';
 import { userStorage, userStorageFiles } from '../../shared/schema.js';
-import { eq, and, desc, sql, like } from 'drizzle-orm';
+import { eq, and, desc, sql, like, isNull, isNotNull, lt } from 'drizzle-orm';
 import { storageService } from '../services/storageService.js';
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
+
+const PERMANENT_DELETE_DAYS = 30;
 
 const router = Router();
 
@@ -256,6 +258,115 @@ router.post('/upload/chunk', upload.single('chunk'), async (req: Request, res: R
   }
 });
 
+router.get('/trash', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { limit = 50, offset = 0 } = req.query;
+
+    const deletedFiles = await db.select()
+      .from(userStorageFiles)
+      .where(and(
+        eq(userStorageFiles.userId, req.user.id),
+        isNotNull(userStorageFiles.deletedAt)
+      ))
+      .orderBy(desc(userStorageFiles.deletedAt))
+      .limit(Number(limit))
+      .offset(Number(offset));
+
+    // Calculate expiry dates for each file
+    const cutoffMs = PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000;
+    
+    return res.json({
+      success: true,
+      files: deletedFiles.map(f => ({
+        id: f.id,
+        name: f.fileName,
+        size: f.sizeBytes,
+        sizeFormatted: formatBytes(f.sizeBytes || 0),
+        type: f.mimeType,
+        folder: f.folder,
+        deletedAt: f.deletedAt,
+        expiresAt: f.deletedAt ? new Date(f.deletedAt.getTime() + cutoffMs) : null,
+        canRestore: f.deletedAt ? (Date.now() - f.deletedAt.getTime()) < cutoffMs : false,
+      })),
+      retentionDays: PERMANENT_DELETE_DAYS,
+    });
+
+  } catch (error) {
+    console.error('Trash list error:', error);
+    return res.status(500).json({ error: 'Failed to list trash' });
+  }
+});
+
+router.post('/bulk-restore', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { fileIds } = req.body;
+
+    if (!Array.isArray(fileIds) || fileIds.length === 0) {
+      return res.status(400).json({ error: 'No files specified' });
+    }
+
+    const results = {
+      success: [] as string[],
+      failed: [] as { id: string; error: string }[],
+    };
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - PERMANENT_DELETE_DAYS);
+
+    for (const fileId of fileIds) {
+      try {
+        const [file] = await db.select()
+          .from(userStorageFiles)
+          .where(and(
+            eq(userStorageFiles.id, fileId),
+            eq(userStorageFiles.userId, req.user.id),
+            isNotNull(userStorageFiles.deletedAt)
+          ))
+          .limit(1);
+
+        if (!file) {
+          results.failed.push({ id: fileId, error: 'File not found in trash' });
+          continue;
+        }
+
+        if (file.deletedAt && file.deletedAt < cutoffDate) {
+          results.failed.push({ id: fileId, error: 'Restoration window expired' });
+          continue;
+        }
+
+        await db.update(userStorageFiles)
+          .set({ deletedAt: null })
+          .where(eq(userStorageFiles.id, fileId));
+
+        results.success.push(fileId);
+      } catch (err) {
+        results.failed.push({ id: fileId, error: err instanceof Error ? err.message : 'Unknown error' });
+      }
+    }
+
+    return res.json({
+      success: true,
+      outcome: 'bulk_restore_complete',
+      results,
+      totalRequested: fileIds.length,
+      totalRestored: results.success.length,
+      totalFailed: results.failed.length,
+    });
+
+  } catch (error) {
+    console.error('Bulk restore error:', error);
+    return res.status(500).json({ error: 'Bulk restore failed' });
+  }
+});
+
 router.get('/storage-usage', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
@@ -264,9 +375,13 @@ router.get('/storage-usage', async (req: Request, res: Response) => {
 
     const storage = await getOrCreateUserStorage(req.user.id);
 
+    // Only count non-deleted files for storage usage
     const files = await db.select()
       .from(userStorageFiles)
-      .where(eq(userStorageFiles.userId, req.user.id));
+      .where(and(
+        eq(userStorageFiles.userId, req.user.id),
+        isNull(userStorageFiles.deletedAt)
+      ));
 
     const categories = {
       audio: { name: 'Audio', used: 0, count: 0 },
@@ -341,13 +456,16 @@ router.get('/list', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { folder = '/', type, sort = 'uploadedAt', order = 'desc', limit = 50, offset = 0 } = req.query;
+    const { folder = '/', type, sort = 'uploadedAt', order = 'desc', limit = 50, offset = 0, includeDeleted = 'false' } = req.query;
 
-    let query = db.select()
+    // Filter out soft-deleted files unless explicitly requested
+    const baseConditions = includeDeleted === 'true' 
+      ? eq(userStorageFiles.userId, req.user.id)
+      : and(eq(userStorageFiles.userId, req.user.id), isNull(userStorageFiles.deletedAt));
+
+    const files = await db.select()
       .from(userStorageFiles)
-      .where(eq(userStorageFiles.userId, req.user.id));
-
-    const files = await query
+      .where(baseConditions)
       .orderBy(desc(userStorageFiles.uploadedAt))
       .limit(Number(limit))
       .offset(Number(offset));
@@ -363,6 +481,7 @@ router.get('/list', async (req: Request, res: Response) => {
         folder: f.folder,
         isPublic: f.isPublic,
         uploadedAt: f.uploadedAt,
+        deletedAt: f.deletedAt,
         metadata: f.metadata,
       })),
       pagination: {
@@ -385,13 +504,14 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const { permanent = false } = req.query;
+    const { permanent = 'false' } = req.query;
 
     const [file] = await db.select()
       .from(userStorageFiles)
       .where(and(
         eq(userStorageFiles.id, id),
-        eq(userStorageFiles.userId, req.user.id)
+        eq(userStorageFiles.userId, req.user.id),
+        isNull(userStorageFiles.deletedAt)
       ))
       .limit(1);
 
@@ -404,29 +524,46 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     if (permanent === 'true') {
+      // Permanent delete: remove from storage and database
       await storageService.deleteFile(file.fileKey);
+      await db.delete(userStorageFiles).where(eq(userStorageFiles.id, id));
+      
+      // Update storage usage
+      await db.update(userStorage)
+        .set({
+          totalBytes: sql`GREATEST(${userStorage.totalBytes} - ${file.sizeBytes || 0}, 0)`,
+          fileCount: sql`GREATEST(${userStorage.fileCount} - 1, 0)`,
+        })
+        .where(eq(userStorage.userId, req.user.id));
+      
+      return res.json({
+        success: true,
+        outcome: 'file_permanently_deleted',
+        file: {
+          id: file.id,
+          name: file.fileName,
+          size: file.sizeBytes,
+        },
+        canUndo: false,
+      });
+    } else {
+      // Soft delete: mark as deleted in database, keep the storage object
+      await db.update(userStorageFiles)
+        .set({ deletedAt: new Date() })
+        .where(eq(userStorageFiles.id, id));
+
+      return res.json({
+        success: true,
+        outcome: 'file_deleted',
+        file: {
+          id: file.id,
+          name: file.fileName,
+          size: file.sizeBytes,
+        },
+        canUndo: true,
+        undoExpiresIn: PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000,
+      });
     }
-
-    await db.delete(userStorageFiles).where(eq(userStorageFiles.id, id));
-
-    await db.update(userStorage)
-      .set({
-        totalBytes: sql`GREATEST(${userStorage.totalBytes} - ${file.sizeBytes || 0}, 0)`,
-        fileCount: sql`GREATEST(${userStorage.fileCount} - 1, 0)`,
-      })
-      .where(eq(userStorage.userId, req.user.id));
-
-    return res.json({
-      success: true,
-      outcome: 'file_deleted',
-      file: {
-        id: file.id,
-        name: file.fileName,
-        size: file.sizeBytes,
-      },
-      canUndo: permanent !== 'true',
-      undoExpiresIn: permanent !== 'true' ? 30000 : 0,
-    });
 
   } catch (error) {
     console.error('Delete file error:', error);
@@ -461,7 +598,8 @@ router.post('/bulk-delete', async (req: Request, res: Response) => {
           .from(userStorageFiles)
           .where(and(
             eq(userStorageFiles.id, fileId),
-            eq(userStorageFiles.userId, req.user.id)
+            eq(userStorageFiles.userId, req.user.id),
+            isNull(userStorageFiles.deletedAt)
           ))
           .limit(1);
 
@@ -471,17 +609,22 @@ router.post('/bulk-delete', async (req: Request, res: Response) => {
         }
 
         if (permanent) {
+          // Permanent delete
           await storageService.deleteFile(file.fileKey);
+          await db.delete(userStorageFiles).where(eq(userStorageFiles.id, fileId));
+          
+          await db.update(userStorage)
+            .set({
+              totalBytes: sql`GREATEST(${userStorage.totalBytes} - ${file.sizeBytes || 0}, 0)`,
+              fileCount: sql`GREATEST(${userStorage.fileCount} - 1, 0)`,
+            })
+            .where(eq(userStorage.userId, req.user.id));
+        } else {
+          // Soft delete
+          await db.update(userStorageFiles)
+            .set({ deletedAt: new Date() })
+            .where(eq(userStorageFiles.id, fileId));
         }
-
-        await db.delete(userStorageFiles).where(eq(userStorageFiles.id, fileId));
-
-        await db.update(userStorage)
-          .set({
-            totalBytes: sql`GREATEST(${userStorage.totalBytes} - ${file.sizeBytes || 0}, 0)`,
-            fileCount: sql`GREATEST(${userStorage.fileCount} - 1, 0)`,
-          })
-          .where(eq(userStorage.userId, req.user.id));
 
         results.success.push(fileId);
       } catch (err) {
@@ -496,6 +639,8 @@ router.post('/bulk-delete', async (req: Request, res: Response) => {
       totalRequested: fileIds.length,
       totalDeleted: results.success.length,
       totalFailed: results.failed.length,
+      canUndo: !permanent,
+      undoExpiresIn: !permanent ? PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000 : 0,
     });
 
   } catch (error) {
@@ -718,10 +863,52 @@ router.post('/:id/restore', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
+    const { id } = req.params;
+
+    // Find the soft-deleted file
+    const [deletedFile] = await db.select()
+      .from(userStorageFiles)
+      .where(and(
+        eq(userStorageFiles.id, id),
+        eq(userStorageFiles.userId, req.user.id),
+        isNotNull(userStorageFiles.deletedAt)
+      ))
+      .limit(1);
+
+    if (!deletedFile) {
+      return res.status(404).json({
+        success: false,
+        error: 'File not found or has already been permanently deleted.',
+        outcome: 'not_found',
+      });
+    }
+
+    // Check if file is older than 30 days
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - PERMANENT_DELETE_DAYS);
+    if (deletedFile.deletedAt && deletedFile.deletedAt < cutoffDate) {
+      return res.status(410).json({
+        success: false,
+        error: 'Restoration window has expired. The file can no longer be recovered.',
+        outcome: 'expired',
+      });
+    }
+
+    // Restore: clear the deleted_at flag
+    await db.update(userStorageFiles)
+      .set({ deletedAt: null })
+      .where(eq(userStorageFiles.id, id));
+
     return res.json({
       success: true,
       outcome: 'file_restored',
       message: 'File has been restored from trash',
+      file: {
+        id: deletedFile.id,
+        name: deletedFile.fileName,
+        size: deletedFile.sizeBytes,
+        type: deletedFile.mimeType,
+      },
     });
 
   } catch (error) {

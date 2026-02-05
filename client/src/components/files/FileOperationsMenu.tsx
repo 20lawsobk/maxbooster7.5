@@ -155,11 +155,39 @@ export function FileOperationsMenu({
       await onDelete(file.id);
       setShowDeleteDialog(false);
       
-      const undoAction = () => {
-        toast({
-          title: 'Undo Delete',
-          description: 'File restoration is not yet implemented',
-        });
+      const undoAction = async () => {
+        try {
+          const response = await fetch(`/api/files/${file.id}/restore`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok && data.success) {
+            toast({
+              title: 'File Restored',
+              description: `"${file.name}" has been restored successfully`,
+            });
+            queryClient.invalidateQueries({ queryKey: ['files'] });
+            queryClient.invalidateQueries({ queryKey: ['storage'] });
+          } else {
+            toast({
+              title: 'Restore Failed',
+              description: data.error || 'Could not restore file',
+              variant: 'destructive',
+            });
+          }
+        } catch (error) {
+          toast({
+            title: 'Restore Failed',
+            description: error instanceof Error ? error.message : 'Could not restore file',
+            variant: 'destructive',
+          });
+        }
       };
 
       toast({

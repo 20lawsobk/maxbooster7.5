@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db.ts';
 import { storage } from '../storage.ts';
-import { eq, ilike, or, and, desc, sql, count, gte, lte, asc } from 'drizzle-orm';
-import { users, projects, beats, releases, studioProjects, storefronts } from '../../shared/schema.ts';
+import { eq, ilike, or, and, desc, sql, count, gte, lte, asc, sum } from 'drizzle-orm';
+import { users, projects, beats, releases, studioProjects, storefronts, analytics } from '../../shared/schema.ts';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -1029,23 +1029,103 @@ router.get('/analytics/search', async (req: Request, res: Response) => {
     const platforms = platform ? [platform as string] : ['spotify', 'apple_music', 'youtube', 'soundcloud'];
     const metrics = metric ? [metric as string] : ['streams', 'downloads', 'revenue', 'listeners'];
     
-    const mockData = platforms.map(p => ({
-      platform: p,
-      metrics: metrics.reduce((acc, m) => {
-        acc[m] = {
-          current: Math.floor(Math.random() * 10000),
-          previous: Math.floor(Math.random() * 10000),
-          change: (Math.random() - 0.5) * 50,
+    const endDate = new Date();
+    const previousStartDate = new Date(startDate);
+    previousStartDate.setDate(previousStartDate.getDate() - days);
+    
+    const platformData = await Promise.all(
+      platforms.map(async (p) => {
+        const currentPeriodData = await db.select({
+          totalStreams: sum(analytics.streams),
+          totalRevenue: sum(analytics.revenue),
+          totalListeners: sum(analytics.totalListeners),
+        })
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              eq(analytics.platform, p),
+              gte(analytics.date, startDate),
+              lte(analytics.date, endDate)
+            )
+          );
+        
+        const previousPeriodData = await db.select({
+          totalStreams: sum(analytics.streams),
+          totalRevenue: sum(analytics.revenue),
+          totalListeners: sum(analytics.totalListeners),
+        })
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              eq(analytics.platform, p),
+              gte(analytics.date, previousStartDate),
+              lte(analytics.date, startDate)
+            )
+          );
+        
+        const current = currentPeriodData[0] || { totalStreams: null, totalRevenue: null, totalListeners: null };
+        const previous = previousPeriodData[0] || { totalStreams: null, totalRevenue: null, totalListeners: null };
+        
+        const calculateChange = (curr: number, prev: number): number => {
+          if (prev === 0) return curr > 0 ? 100 : 0;
+          return ((curr - prev) / prev) * 100;
         };
-        return acc;
-      }, {} as any),
-    }));
+        
+        const currentStreams = Number(current.totalStreams) || 0;
+        const previousStreams = Number(previous.totalStreams) || 0;
+        const currentRevenue = Number(current.totalRevenue) || 0;
+        const previousRevenue = Number(previous.totalRevenue) || 0;
+        const currentListeners = Number(current.totalListeners) || 0;
+        const previousListeners = Number(previous.totalListeners) || 0;
+        
+        const metricsResult: Record<string, { current: number; previous: number; change: number }> = {};
+        
+        if (metrics.includes('streams')) {
+          metricsResult.streams = {
+            current: currentStreams,
+            previous: previousStreams,
+            change: calculateChange(currentStreams, previousStreams),
+          };
+        }
+        
+        if (metrics.includes('downloads')) {
+          metricsResult.downloads = {
+            current: 0,
+            previous: 0,
+            change: 0,
+          };
+        }
+        
+        if (metrics.includes('revenue')) {
+          metricsResult.revenue = {
+            current: currentRevenue,
+            previous: previousRevenue,
+            change: calculateChange(currentRevenue, previousRevenue),
+          };
+        }
+        
+        if (metrics.includes('listeners')) {
+          metricsResult.listeners = {
+            current: currentListeners,
+            previous: previousListeners,
+            change: calculateChange(currentListeners, previousListeners),
+          };
+        }
+        
+        return {
+          platform: p,
+          metrics: metricsResult,
+        };
+      })
+    );
     
     res.json({
       dateRange: dateRange || '30d',
       startDate: startDate.toISOString(),
-      endDate: new Date().toISOString(),
-      platforms: mockData,
+      endDate: endDate.toISOString(),
+      platforms: platformData,
       availablePlatforms: ['spotify', 'apple_music', 'youtube', 'soundcloud', 'amazon_music', 'tidal'],
       availableMetrics: ['streams', 'downloads', 'revenue', 'listeners', 'saves', 'shares'],
     });
