@@ -41,7 +41,7 @@ import {
   Share2,
   Headphones,
 } from 'lucide-react';
-import { SiSpotify, SiApplemusic, SiSoundcloud, SiYoutube, SiInstagram, SiTiktok, SiFacebook, SiTwitter, SiGoogle } from '@icons-pack/react-simple-icons';
+import { SiSpotify, SiApplemusic, SiSoundcloud, SiYoutube, SiInstagram, SiTiktok, SiFacebook, SiX, SiGoogle } from '@icons-pack/react-simple-icons';
 
 interface ConnectedAccount {
   id: string;
@@ -73,7 +73,7 @@ const providerIcons: Record<string, React.ReactNode> = {
   instagram: <SiInstagram className="h-5 w-5" color="#E4405F" />,
   tiktok: <SiTiktok className="h-5 w-5" />,
   facebook: <SiFacebook className="h-5 w-5" color="#1877F2" />,
-  twitter: <SiTwitter className="h-5 w-5" color="#1DA1F2" />,
+  twitter: <SiX className="h-5 w-5" color="#000000" />,
   google: <SiGoogle className="h-5 w-5" color="#4285F4" />,
 };
 
