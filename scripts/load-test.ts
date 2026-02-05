@@ -57,11 +57,11 @@ interface LoadTestReport {
 const BASE_URL = 'http://localhost:5000';
 
 const ENDPOINTS = [
-  { path: '/api/system/health', method: 'GET', critical: true },
-  { path: '/api/system/status', method: 'GET', critical: true },
-  { path: '/api/health/circuits', method: 'GET', critical: false },
-  { path: '/', method: 'GET', critical: true },
-  { path: '/api/auth/check', method: 'GET', critical: false },
+  { path: '/api/system/health', method: 'GET', critical: true, expectAuth: false },
+  { path: '/api/system/status', method: 'GET', critical: true, expectAuth: false },
+  { path: '/api/health/circuits', method: 'GET', critical: false, expectAuth: false },
+  { path: '/', method: 'GET', critical: true, expectAuth: false },
+  { path: '/api/auth/check', method: 'GET', critical: false, expectAuth: true },
 ];
 
 const CONFIG = {
@@ -92,12 +92,15 @@ async function makeRequest(endpoint: typeof ENDPOINTS[0]): Promise<TestResult> {
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
         const responseTime = performance.now() - startTime;
+        const statusCode = res.statusCode || 0;
+        const isSuccess = statusCode >= 200 && statusCode < 400;
+        const isExpectedAuthResponse = endpoint.expectAuth && statusCode === 401;
         resolve({
           endpoint: endpoint.path,
           method: endpoint.method,
-          statusCode: res.statusCode || 0,
+          statusCode,
           responseTime,
-          success: res.statusCode !== undefined && res.statusCode >= 200 && res.statusCode < 400,
+          success: isSuccess || isExpectedAuthResponse,
         });
       });
     });

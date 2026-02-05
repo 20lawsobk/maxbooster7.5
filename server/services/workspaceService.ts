@@ -992,29 +992,6 @@ export class WorkspaceService {
     return colors[hash % colors.length];
   }
 
-  async logAuditEvent(params: {
-    workspaceId: string;
-    userId: string;
-    action: string;
-    resourceType?: string;
-    resourceId?: string;
-    previousValues?: any;
-    newValues?: any;
-  }): Promise<void> {
-    try {
-      await db.insert(workspaceAuditLog).values({
-        workspaceId: params.workspaceId,
-        userId: params.userId,
-        action: params.action,
-        resourceType: params.resourceType,
-        resourceId: params.resourceId,
-        previousValues: params.previousValues,
-        newValues: params.newValues,
-      });
-    } catch (error: unknown) {
-      logger.error('Log audit event error:', error);
-    }
-  }
 }
 
 export const workspaceService = new WorkspaceService();

@@ -172,14 +172,13 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
 
   // 3. Helmet security headers (required)
   try {
-    const isDev = process.env.NODE_ENV !== 'production';
     app.use(helmet({
-      contentSecurityPolicy: isDev ? false : {
+      contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
           fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
           imgSrc: ["'self'", "data:", "https:", "blob:"],
           connectSrc: ["'self'", "https://api.stripe.com", "wss:", "https:"],
           frameSrc: ["'self'", "https://js.stripe.com"],
@@ -190,7 +189,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
       crossOriginEmbedderPolicy: false,
     }));
     loadedMiddleware.push('helmet');
-    logger.info(`   ✓ Helmet security headers (CSP: ${isDev ? 'disabled in dev' : 'enabled'})`);
+    logger.info('   ✓ Helmet security headers (CSP: enabled)');
   } catch (error) {
     failedMiddleware.push('helmet');
     logger.error('   ✗ Helmet middleware FAILED', error);
