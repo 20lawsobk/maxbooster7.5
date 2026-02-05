@@ -26,7 +26,7 @@ interface ReleaseInfo {
     mac: { dmg?: ReleaseAsset; zip?: ReleaseAsset };
     linux: { appimage?: ReleaseAsset; deb?: ReleaseAsset; tarball?: ReleaseAsset };
     ios: { ipa?: ReleaseAsset };
-    android: { apk?: ReleaseAsset };
+    android: { apk?: ReleaseAsset; aab?: ReleaseAsset };
   };
 }
 
@@ -44,7 +44,9 @@ function classifyAsset(asset: { name: string; browser_download_url: string; size
   if (name.endsWith('.deb')) return { platform: 'linux', type: 'deb' } as const;
   if (name.endsWith('.tar.gz') || name.endsWith('.tgz')) return { platform: 'linux', type: 'tarball' } as const;
   if (name.endsWith('.ipa')) return { platform: 'ios', type: 'ipa' } as const;
+  if (name.endsWith('.zip') && name.includes('ios')) return { platform: 'ios', type: 'ipa' } as const;
   if (name.endsWith('.apk')) return { platform: 'android', type: 'apk' } as const;
+  if (name.endsWith('.aab')) return { platform: 'android', type: 'aab' } as const;
   return null;
 }
 
