@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { isrcRegistry, upcRegistry } from '@shared/schema';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql, desc, like } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
 
@@ -98,11 +98,11 @@ class IdentifierService {
     try {
       const prefix = '619' + this.generateRandomDigits(8);
       const checkDigit = this.calculateUPCCheckDigit(prefix);
-      const upc = prefix + checkDigit;
+      const upcCode = prefix + checkDigit;
 
       const existing = await db.select()
         .from(upcRegistry)
-        .where(eq(upcRegistry.code, upc))
+        .where(eq(upcRegistry.upc, upcCode))
         .limit(1);
 
       if (existing.length > 0) {
@@ -110,16 +110,14 @@ class IdentifierService {
       }
 
       await db.insert(upcRegistry).values({
-        code: upc,
-        userId: options.userId,
-        releaseId: options.releaseId || null,
-        metadata: options.metadata || {},
-        status: 'reserved',
-        issuedAt: new Date()
+        upc: upcCode,
+        releaseId: options.releaseId || 'pending',
+        artistId: options.userId,
+        title: options.metadata?.title || 'Generated UPC'
       });
 
-      logger.info(`Generated UPC: ${upc} for user ${options.userId}`);
-      return upc;
+      logger.info(`Generated UPC: ${upcCode} for user ${options.userId}`);
+      return upcCode;
     } catch (error) {
       logger.error('Error generating UPC:', error);
       throw new Error('Failed to generate UPC');
@@ -198,17 +196,16 @@ class IdentifierService {
       const rc = registrantCode.toUpperCase().padEnd(3, '0').slice(0, 3);
       const yr = (year || new Date().getFullYear()).toString().slice(-2);
 
+      const prefix = `${cc}${rc}${yr}`;
       const lastIsrc = await db.select()
         .from(isrcRegistry)
-        .where(
-          sql`${isrcRegistry.code} LIKE ${`${cc}${rc}${yr}%`}`
-        )
-        .orderBy(desc(isrcRegistry.code))
+        .where(like(isrcRegistry.isrc, `${prefix}%`))
+        .orderBy(desc(isrcRegistry.isrc))
         .limit(1);
 
       let nextDesignation = 1;
       if (lastIsrc.length > 0) {
-        const lastDesignation = parseInt(lastIsrc[0].code.slice(-5), 10);
+        const lastDesignation = parseInt(lastIsrc[0].isrc.slice(-5), 10);
         nextDesignation = lastDesignation + 1;
       }
 
@@ -217,23 +214,17 @@ class IdentifierService {
       }
 
       const designation = nextDesignation.toString().padStart(5, '0');
-      const isrc = `${cc}${rc}${yr}${designation}`;
+      const isrcCode = `${cc}${rc}${yr}${designation}`;
 
       await db.insert(isrcRegistry).values({
-        code: isrc,
-        userId: options?.userId || 'system',
-        trackId: options?.trackId || null,
-        countryCode: cc,
-        registrantCode: rc,
-        year: parseInt(yr, 10),
-        designation: parseInt(designation, 10),
-        metadata: options?.metadata || {},
-        status: 'reserved',
-        issuedAt: new Date()
+        isrc: isrcCode,
+        trackId: options?.trackId || 'pending',
+        artistId: options?.userId || 'system',
+        title: options?.metadata?.title || 'Generated ISRC'
       });
 
-      logger.info(`Generated ISRC: ${this.formatISRC(isrc)} for user ${options?.userId || 'system'}`);
-      return isrc;
+      logger.info(`Generated ISRC: ${this.formatISRC(isrcCode)} for user ${options?.userId || 'system'}`);
+      return isrcCode;
     } catch (error) {
       logger.error('Error generating ISRC:', error);
       throw new Error('Failed to generate ISRC');
