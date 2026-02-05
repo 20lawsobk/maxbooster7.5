@@ -1,13 +1,74 @@
-import { Download, Monitor, Zap, Shield, Cpu, HardDrive, Globe, AlertCircle, FileText, CheckCircle, Smartphone, Tablet } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Monitor, Zap, Shield, Cpu, HardDrive, Globe, AlertCircle, FileText, CheckCircle, Smartphone, Tablet, ExternalLink, Loader2, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+interface DownloadAsset {
+  platform: string;
+  downloadUrl: string;
+  fileName: string;
+  fileSize: string;
+  fallbackUrl?: string;
+  fallbackName?: string;
+  extras?: Array<{ label: string; url: string; name: string; size: string }>;
+}
+
+interface ReleaseData {
+  available: boolean;
+  version?: string;
+  publishedAt?: string;
+  releasesPageUrl?: string;
+  allReleasesUrl?: string;
+  desktop?: DownloadAsset[];
+  mobile?: DownloadAsset[];
+  fallbackUrl?: string;
+  message?: string;
+}
+
+const GITHUB_RELEASES_URL = 'https://github.com/20lawsobk/maxbooster7.5/releases';
+
+const platformIcons: Record<string, string> = {
+  Windows: '\u{1FA9F}',
+  macOS: '\u{1F34E}',
+  Linux: '\u{1F427}',
+  iOS: '\u{1F4F1}',
+  Android: '\u{1F4F1}',
+};
+
+const platformStoreIcons: Record<string, string> = {
+  iOS: '\u{1F34E}',
+  Android: '\u{1F916}',
+};
 
 export default function DesktopApp() {
   const { t } = useTranslation();
   const { user, isLoading } = useRequireSubscription();
+  const [releaseData, setReleaseData] = useState<ReleaseData | null>(null);
+  const [loadingRelease, setLoadingRelease] = useState(true);
+  const [expandedLinux, setExpandedLinux] = useState(false);
+
+  useEffect(() => {
+    async function fetchRelease() {
+      try {
+        const response = await fetch('/api/downloads/latest');
+        if (response.ok) {
+          const data = await response.json();
+          setReleaseData(data);
+        } else {
+          setReleaseData({ available: false, fallbackUrl: GITHUB_RELEASES_URL });
+        }
+      } catch {
+        setReleaseData({ available: false, fallbackUrl: GITHUB_RELEASES_URL });
+      } finally {
+        setLoadingRelease(false);
+      }
+    }
+    fetchRelease();
+  }, []);
 
   if (isLoading) {
     return (
@@ -53,53 +114,88 @@ export default function DesktopApp() {
     },
   ];
 
-  const GITHUB_RELEASES_URL = 'https://github.com/20lawsobk/maxbooster7.5/releases/latest/download';
-  
-  const desktopPlatforms = [
-    {
-      name: 'Windows',
-      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-Setup-1.0.0.exe`,
-      fallbackUrl: `${GITHUB_RELEASES_URL}/Max-Booster-1.0.0-win.zip`,
-      icon: '🪟',
-      requirements: t('desktopApp.requirements.windows'),
-      available: true,
-    },
-    {
-      name: 'macOS',
-      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-1.0.0.dmg`,
-      fallbackUrl: `${GITHUB_RELEASES_URL}/Max-Booster-1.0.0-mac.zip`,
-      icon: '🍎',
-      requirements: t('desktopApp.requirements.mac'),
-      available: true,
-    },
-    {
-      name: 'Linux',
-      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-1.0.0.AppImage`,
-      fallbackUrl: `${GITHUB_RELEASES_URL}/max-booster-1.0.0.tar.gz`,
-      icon: '🐧',
-      requirements: t('desktopApp.requirements.linux'),
-      available: true,
-    },
-  ];
+  const version = releaseData?.version || 'latest';
+  const hasDesktop = releaseData?.available && releaseData.desktop && releaseData.desktop.length > 0;
+  const hasMobile = releaseData?.available && releaseData.mobile && releaseData.mobile.length > 0;
 
-  const mobilePlatforms = [
-    {
-      name: 'iOS',
-      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-iOS-1.0.0.ipa`,
-      icon: '📱',
-      storeIcon: '🍎',
-      requirements: 'iOS 15.0 or later',
-      available: true,
-    },
-    {
-      name: 'Android',
-      downloadUrl: `${GITHUB_RELEASES_URL}/Max-Booster-Android-1.0.0.apk`,
-      icon: '📱',
-      storeIcon: '🤖',
-      requirements: 'Android 8.0 or later',
-      available: true,
-    },
-  ];
+  function renderDownloadButton(asset: DownloadAsset, isMobile = false) {
+    return (
+      <div className="space-y-3">
+        <Button
+          className={`w-full ${isMobile ? 'bg-green-600 hover:bg-green-700' : ''}`}
+          size="lg"
+          asChild
+        >
+          <a href={asset.downloadUrl} rel="noopener noreferrer">
+            <Download className="w-4 h-4 mr-2" />
+            Download {asset.platform}
+          </a>
+        </Button>
+        <div className="text-center space-y-1">
+          <p className="text-xs text-muted-foreground">
+            {asset.fileName} ({asset.fileSize})
+          </p>
+        </div>
+        {asset.fallbackUrl && (
+          <Button variant="ghost" size="sm" className="w-full text-xs" asChild>
+            <a href={asset.fallbackUrl} rel="noopener noreferrer">
+              <Download className="w-3 h-3 mr-1" />
+              Alt: {asset.fallbackName || 'Alternative download'}
+            </a>
+          </Button>
+        )}
+        {asset.extras && asset.extras.length > 0 && asset.platform === 'Linux' && (
+          <div className="space-y-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => setExpandedLinux(!expandedLinux)}
+            >
+              <ChevronDown className={`w-3 h-3 mr-1 transition-transform ${expandedLinux ? 'rotate-180' : ''}`} />
+              More formats
+            </Button>
+            {expandedLinux && (
+              <div className="space-y-1">
+                {asset.extras.map((extra) => (
+                  <Button key={extra.url} variant="outline" size="sm" className="w-full text-xs justify-between" asChild>
+                    <a href={extra.url} rel="noopener noreferrer">
+                      <span>{extra.label}</span>
+                      <span className="text-muted-foreground">({extra.size})</span>
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderFallbackButton(platform: string, isMobile = false) {
+    const url = releaseData?.allReleasesUrl || GITHUB_RELEASES_URL;
+    return (
+      <div className="space-y-3">
+        <Button
+          className={`w-full ${isMobile ? 'bg-green-600 hover:bg-green-700' : ''}`}
+          size="lg"
+          asChild
+        >
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Download {platform}
+          </a>
+        </Button>
+        <p className="text-xs text-muted-foreground text-center">
+          Opens releases page
+        </p>
+      </div>
+    );
+  }
+
+  const desktopPlatformNames = ['Windows', 'macOS', 'Linux'];
+  const mobilePlatformNames = ['iOS', 'Android'];
 
   return (
     <AppLayout>
@@ -119,9 +215,16 @@ export default function DesktopApp() {
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Take Max Booster everywhere. Native apps for your computer, phone, and tablet - all synced with your account.
         </p>
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
-          <Zap className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium">Included with your subscription</span>
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
+            <Zap className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Included with your subscription</span>
+          </div>
+          {releaseData?.available && (
+            <Badge variant="secondary" className="text-sm px-3 py-1">
+              v{version}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -151,32 +254,38 @@ export default function DesktopApp() {
             Desktop Apps
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {desktopPlatforms.map((platform) => (
-            <Card key={platform.name} className="border-2">
-              <CardHeader className="text-center">
-                <div className="mb-4">
-                  <Monitor className="w-16 h-16 mx-auto text-primary" />
-                </div>
-                <CardTitle className="text-2xl">{platform.name}</CardTitle>
-                <CardDescription className="text-sm">
-                  {platform.requirements}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button className="w-full" size="lg" asChild>
-                  <a href={platform.downloadUrl} download>
-                    <Download className="w-4 h-4 mr-2" />
-                    {t('desktopApp.downloadButton')} {platform.name}
-                  </a>
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  {t('desktopApp.version')}: 1.0.0
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+
+        {loadingRelease ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <span className="ml-3 text-muted-foreground">Checking for latest version...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {desktopPlatformNames.map((platformName) => {
+              const asset = releaseData?.desktop?.find(d => d.platform === platformName);
+              return (
+                <Card key={platformName} className="border-2">
+                  <CardHeader className="text-center">
+                    <div className="mb-4">
+                      <Monitor className="w-16 h-16 mx-auto text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl">{platformName}</CardTitle>
+                    <CardDescription className="text-sm">
+                      {t(`desktopApp.requirements.${platformName === 'macOS' ? 'mac' : platformName.toLowerCase()}`)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {asset ? renderDownloadButton(asset) : renderFallbackButton(platformName)}
+                    <p className="text-xs text-muted-foreground text-center">
+                      {t('desktopApp.version')}: {version}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -189,35 +298,41 @@ export default function DesktopApp() {
         <p className="text-center text-muted-foreground max-w-2xl mx-auto">
           Access Max Booster on your phone or tablet. The same powerful features with a touch-optimized interface that adapts to any screen size.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-          {mobilePlatforms.map((platform) => (
-            <Card key={platform.name} className="border-2 hover:border-green-500/50 transition-colors">
-              <CardHeader className="text-center">
-                <div className="mb-4">
-                  <Smartphone className="w-16 h-16 mx-auto text-green-500" />
-                </div>
-                <CardTitle className="text-2xl flex items-center justify-center gap-2">
-                  <span>{platform.storeIcon}</span>
-                  {platform.name}
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  {platform.requirements}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" asChild>
-                  <a href={platform.downloadUrl} download>
-                    <Download className="w-4 h-4 mr-2" />
-                    Download {platform.name}
-                  </a>
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Version: 1.0.0
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+
+        {loadingRelease ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+            <span className="ml-3 text-muted-foreground">Checking for latest version...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            {mobilePlatformNames.map((platformName) => {
+              const asset = releaseData?.mobile?.find(d => d.platform === platformName);
+              return (
+                <Card key={platformName} className="border-2 hover:border-green-500/50 transition-colors">
+                  <CardHeader className="text-center">
+                    <div className="mb-4">
+                      <Smartphone className="w-16 h-16 mx-auto text-green-500" />
+                    </div>
+                    <CardTitle className="text-2xl flex items-center justify-center gap-2">
+                      <span>{platformStoreIcons[platformName]}</span>
+                      {platformName}
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      {platformName === 'iOS' ? 'iOS 15.0 or later' : 'Android 8.0 or later'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {asset ? renderDownloadButton(asset, true) : renderFallbackButton(platformName, true)}
+                    <p className="text-xs text-muted-foreground text-center">
+                      Version: {version}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
         
         <Card className="border-2 border-green-500/20 bg-green-500/5 max-w-2xl mx-auto">
           <CardContent className="p-6">
@@ -236,6 +351,17 @@ export default function DesktopApp() {
         </Card>
       </div>
 
+      {releaseData?.allReleasesUrl && (
+        <div className="flex justify-center">
+          <Button variant="outline" size="lg" asChild>
+            <a href={releaseData.allReleasesUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View All Releases on GitHub
+            </a>
+          </Button>
+        </div>
+      )}
+
       <Card className="border-2 border-amber-500/30 bg-amber-500/5">
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -245,7 +371,7 @@ export default function DesktopApp() {
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-muted-foreground">
-            Max Booster v1.0 is <strong>unsigned indie software</strong>. Your operating system will show a security warning on first launch. 
+            Max Booster is <strong>unsigned indie software</strong>. Your operating system will show a security warning on first launch. 
             This is normal and safe - it's the same code as the web version!
           </p>
 
@@ -256,10 +382,10 @@ export default function DesktopApp() {
                 <h4 className="font-semibold">Windows</h4>
               </div>
               <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                <li>Extract ZIP file to a folder</li>
-                <li>Right-click <code className="px-1 py-0.5 bg-muted rounded text-xs">Max Booster.exe</code></li>
-                <li>Select "Run as administrator"</li>
-                <li>Click "More info" → "Run anyway"</li>
+                <li>Run the installer (.exe)</li>
+                <li>Click "More info" on SmartScreen</li>
+                <li>Click "Run anyway"</li>
+                <li>Follow the installation wizard</li>
               </ol>
               <a 
                 href="/downloads/README-Windows.md" 
@@ -277,10 +403,10 @@ export default function DesktopApp() {
                 <h4 className="font-semibold">macOS</h4>
               </div>
               <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                <li>Extract ZIP and move to Applications</li>
-                <li><strong>Right-click</strong> Max Booster.app</li>
-                <li>Select "Open" from menu</li>
-                <li>Click "Open" in confirmation dialog</li>
+                <li>Open the .dmg file</li>
+                <li>Drag Max Booster to Applications</li>
+                <li><strong>Right-click</strong> the app, select "Open"</li>
+                <li>Click "Open" in the confirmation dialog</li>
               </ol>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">
@@ -303,10 +429,10 @@ export default function DesktopApp() {
                 <h4 className="font-semibold">Linux</h4>
               </div>
               <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                <li>Extract tar.gz file</li>
-                <li>Make executable: <code className="px-1 py-0.5 bg-muted rounded text-xs">chmod +x</code></li>
-                <li>Run <code className="px-1 py-0.5 bg-muted rounded text-xs">./launch.sh</code></li>
-                <li>Or double-click in file manager</li>
+                <li>Download the AppImage</li>
+                <li>Make executable: <code className="px-1 py-0.5 bg-muted rounded text-xs">chmod +x *.AppImage</code></li>
+                <li>Double-click or run from terminal</li>
+                <li>Or install the .deb package</li>
               </ol>
               <a 
                 href="/downloads/README-Linux.md" 
