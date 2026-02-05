@@ -107,7 +107,7 @@ const PLATFORMS = {
     name: 'LinkedIn',
     authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
     tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
-    scope: 'openid profile email w_member_social r_basicprofile r_organization_social rw_organization_admin',
+    scope: 'openid profile email w_member_social',
     clientId: process.env.LINKEDIN_CLIENT_ID,
     clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
     usePKCE: false,

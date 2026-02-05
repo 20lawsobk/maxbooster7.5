@@ -314,7 +314,7 @@ export class SocialOAuthService {
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET || '',
       authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
       tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
-      scopes: ['r_liteprofile', 'w_member_social'],
+      scopes: ['openid', 'profile', 'email', 'w_member_social'],
       redirectUri: `${getOAuthDomain()}/auth/linkedin/callback`,
     });
 
