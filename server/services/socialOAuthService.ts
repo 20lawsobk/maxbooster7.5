@@ -328,7 +328,7 @@ export class SocialOAuthService {
       redirectUri: `${getOAuthDomain()}/auth/google-business/callback`,
     });
 
-    // Threads OAuth (Coming March 1st, 2026)
+    // Threads OAuth
     this.oauthConfigs.set('threads', {
       clientId: process.env.THREADS_APP_ID || process.env.FACEBOOK_APP_ID || '',
       clientSecret: process.env.THREADS_APP_SECRET || process.env.FACEBOOK_APP_SECRET || '',

@@ -135,8 +135,6 @@ export function PlatformConnections() {
       connected: connections.some((c: unknown) => c.platform === 'tiktok'),
       username: connections.find((c: unknown) => c.platform === 'tiktok')?.username,
       oauth: true,
-      comingSoon: true,
-      comingSoonDate: 'March 1st, 2026',
     },
     {
       id: 'youtube',

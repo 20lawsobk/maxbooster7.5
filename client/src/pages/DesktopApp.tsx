@@ -35,12 +35,10 @@ const platformIcons: Record<string, string> = {
   Windows: '\u{1FA9F}',
   macOS: '\u{1F34E}',
   Linux: '\u{1F427}',
-  iOS: '\u{1F4F1}',
   Android: '\u{1F4F1}',
 };
 
 const platformStoreIcons: Record<string, string> = {
-  iOS: '\u{1F34E}',
   Android: '\u{1F916}',
 };
 
@@ -195,7 +193,7 @@ export default function DesktopApp() {
   }
 
   const desktopPlatformNames = ['Windows', 'macOS', 'Linux'];
-  const mobilePlatformNames = ['iOS', 'Android'];
+  const mobilePlatformNames = ['Android'];
 
   return (
     <AppLayout>
@@ -292,11 +290,11 @@ export default function DesktopApp() {
         <div className="flex items-center justify-center gap-3">
           <Smartphone className="w-8 h-8 text-green-500" />
           <h2 className="text-3xl font-bold text-center">
-            Mobile Apps
+            Mobile App
           </h2>
         </div>
         <p className="text-center text-muted-foreground max-w-2xl mx-auto">
-          Access Max Booster on your phone or tablet. The same powerful features with a touch-optimized interface that adapts to any screen size.
+          Access Max Booster on your Android phone or tablet. The same powerful features with a touch-optimized interface that adapts to any screen size.
         </p>
 
         {loadingRelease ? (
@@ -319,7 +317,7 @@ export default function DesktopApp() {
                       {platformName}
                     </CardTitle>
                     <CardDescription className="text-sm">
-                      {platformName === 'iOS' ? 'iOS 15.0 or later' : 'Android 8.0 or later'}
+                      Android 8.0 or later
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">

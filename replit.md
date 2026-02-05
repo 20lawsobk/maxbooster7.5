@@ -109,4 +109,4 @@ The backend is conceptually microservices-oriented. The system prioritizes robus
 - **Meta Graph API**: Unified Facebook and Instagram integration via single Meta OAuth.
 - **music-metadata library**: Audio metadata extraction.
 - **Y.js**: Real-time collaboration in the AI Studio.
-- **OAuth connections for Social Media Platforms**: Meta (Facebook + Instagram), Twitter/X, YouTube, Google, LinkedIn, Google Business. Threads and TikTok are planned for March 1st, 2026.
+- **OAuth connections for Social Media Platforms**: Meta (Facebook + Instagram), Twitter/X, YouTube, Google, LinkedIn, Google Business, Threads, TikTok.

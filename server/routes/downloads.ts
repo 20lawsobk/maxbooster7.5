@@ -25,7 +25,6 @@ interface ReleaseInfo {
     windows: { installer?: ReleaseAsset; portable?: ReleaseAsset };
     mac: { dmg?: ReleaseAsset; zip?: ReleaseAsset };
     linux: { appimage?: ReleaseAsset; deb?: ReleaseAsset; tarball?: ReleaseAsset };
-    ios: { ipa?: ReleaseAsset };
     android: { apk?: ReleaseAsset; aab?: ReleaseAsset };
   };
 }
@@ -43,8 +42,6 @@ function classifyAsset(asset: { name: string; browser_download_url: string; size
   if (name.endsWith('.appimage')) return { platform: 'linux', type: 'appimage' } as const;
   if (name.endsWith('.deb')) return { platform: 'linux', type: 'deb' } as const;
   if (name.endsWith('.tar.gz') || name.endsWith('.tgz')) return { platform: 'linux', type: 'tarball' } as const;
-  if (name.endsWith('.ipa')) return { platform: 'ios', type: 'ipa' } as const;
-  if (name.endsWith('.zip') && name.includes('ios')) return { platform: 'ios', type: 'ipa' } as const;
   if (name.endsWith('.apk')) return { platform: 'android', type: 'apk' } as const;
   if (name.endsWith('.aab')) return { platform: 'android', type: 'aab' } as const;
   return null;
@@ -102,7 +99,6 @@ function processRelease(data: any): ReleaseInfo {
     windows: {},
     mac: {},
     linux: {},
-    ios: {},
     android: {},
   };
 
@@ -201,16 +197,6 @@ router.get('/latest', async (_req, res) => {
           ...(tarball ? [{ label: 'tar.gz Archive', url: tarball.browser_download_url, name: tarball.name, size: formatSize(tarball.size) }] : []),
           ...(release.platforms.linux.appimage && primary !== release.platforms.linux.appimage ? [{ label: 'AppImage', url: release.platforms.linux.appimage.browser_download_url, name: release.platforms.linux.appimage.name, size: formatSize(release.platforms.linux.appimage.size) }] : []),
         ].filter(e => e),
-      });
-    }
-
-    if (release.platforms.ios.ipa) {
-      const asset = release.platforms.ios.ipa;
-      mobileDownloads.push({
-        platform: 'iOS',
-        downloadUrl: asset.browser_download_url,
-        fileName: asset.name,
-        fileSize: formatSize(asset.size),
       });
     }
 
