@@ -338,7 +338,6 @@ export class SocialOAuthService {
       redirectUri: `${getOAuthDomain()}/auth/threads/callback`,
     });
 
-    // TikTok OAuth (Coming March 1st, 2026)
     this.oauthConfigs.set('tiktok', {
       clientId: process.env.TIKTOK_CLIENT_KEY || '',
       clientSecret: process.env.TIKTOK_CLIENT_SECRET || '',
@@ -348,7 +347,6 @@ export class SocialOAuthService {
       redirectUri: `${getOAuthDomain()}/auth/tiktok/callback`,
     });
 
-    // TikTok OAuth (Sandbox)
     if (process.env.TIKTOK_CLIENT_KEY1 && process.env.TIKTOK_CLIENT_SECRET1) {
       this.oauthConfigs.set('tiktok_sandbox', {
         clientId: process.env.TIKTOK_CLIENT_KEY1,
@@ -365,20 +363,26 @@ export class SocialOAuthService {
    * Get OAuth authorization URL
    */
   getAuthorizationUrl(platform: string, userId: string): string {
-    const config = this.oauthConfigs.get(platform);
+    const actualPlatform = platform === 'tiktok_sandbox' ? 'tiktok_sandbox' : platform;
+    const config = this.oauthConfigs.get(actualPlatform);
     if (!config) {
       throw new Error(`OAuth not configured for platform: ${platform}`);
     }
 
+    const isTikTok = platform === 'tiktok' || platform === 'tiktok_sandbox';
+
     const params = new URLSearchParams({
-      client_id: config.clientId,
+      [isTikTok ? 'client_key' : 'client_id']: config.clientId,
       redirect_uri: config.redirectUri,
-      scope: config.scopes.join(' '),
+      scope: isTikTok ? config.scopes.join(',') : config.scopes.join(' '),
       response_type: 'code',
-      state: `${userId}:${platform}:${Date.now()}`, // Include user ID in state
-      access_type: 'offline', // For refresh tokens
-      prompt: 'consent',
+      state: `${userId}:${platform}:${Date.now()}`,
     });
+
+    if (!isTikTok) {
+      params.set('access_type', 'offline');
+      params.set('prompt', 'consent');
+    }
 
     return `${config.authUrl}?${params.toString()}`;
   }
@@ -397,15 +401,19 @@ export class SocialOAuthService {
     }
 
     try {
+      const isTikTok = platform === 'tiktok' || platform === 'tiktok_sandbox';
+
+      const tokenParams: Record<string, string> = {
+        [isTikTok ? 'client_key' : 'client_id']: config.clientId,
+        client_secret: config.clientSecret,
+        code,
+        redirect_uri: config.redirectUri,
+        grant_type: 'authorization_code',
+      };
+
       const response = await axios.post(
         config.tokenUrl,
-        {
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
-          code,
-          redirect_uri: config.redirectUri,
-          grant_type: 'authorization_code',
-        },
+        new URLSearchParams(tokenParams).toString(),
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -413,13 +421,17 @@ export class SocialOAuthService {
         }
       );
 
-      const { access_token, refresh_token, expires_in } = response.data;
+      const tokenData = response.data;
+      const access_token = tokenData.access_token;
+      const refresh_token = tokenData.refresh_token;
+      const expires_in = tokenData.expires_in;
+      const open_id = tokenData.open_id;
 
-      // Store tokens in database
       await this.saveTokens(userId, platform, {
         accessToken: access_token,
         refreshToken: refresh_token,
         expiresAt: expires_in ? new Date(Date.now() + expires_in * 1000) : undefined,
+        ...(open_id ? { platformUserId: open_id } : {}),
       });
 
       logger.info(`OAuth tokens saved for user ${userId} on platform ${platform}`);
@@ -463,12 +475,24 @@ export class SocialOAuthService {
         refreshToken = tokens.refreshToken;
       }
 
-      const response = await axios.post(config.tokenUrl, {
-        client_id: config.clientId,
+      const isTikTok = platform === 'tiktok' || platform === 'tiktok_sandbox';
+
+      const refreshParams: Record<string, string> = {
+        [isTikTok ? 'client_key' : 'client_id']: config.clientId,
         client_secret: config.clientSecret,
         refresh_token: refreshToken,
         grant_type: 'refresh_token',
-      });
+      };
+
+      const response = await axios.post(
+        config.tokenUrl,
+        new URLSearchParams(refreshParams).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
 
       const { access_token, expires_in } = response.data;
 
@@ -506,7 +530,7 @@ export class SocialOAuthService {
    * Get connected platforms for a user
    */
   async getConnectedPlatforms(userId: string): Promise<string[]> {
-    const platforms = ['facebook', 'instagram', 'twitter', 'youtube', 'linkedin', 'googlebusiness', 'google'];
+    const platforms = ['facebook', 'instagram', 'twitter', 'youtube', 'linkedin', 'googlebusiness', 'google', 'threads', 'tiktok'];
     const connected: string[] = [];
 
     for (const platform of platforms) {
