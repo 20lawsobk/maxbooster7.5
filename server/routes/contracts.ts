@@ -114,6 +114,20 @@ router.get('/my-contracts', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/my', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const contracts = contractTemplateService.getContractsByUser(req.user!.id);
+    return res.json({ contracts });
+  } catch (error: any) {
+    logger.error('Error fetching user contracts:', error);
+    res.status(500).json({ error: 'Failed to fetch contracts' });
+  }
+});
+
 router.get('/:contractId', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {

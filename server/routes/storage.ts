@@ -138,7 +138,11 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
     }
 
     const { category = 'files', fileId } = req.body;
-    const userId = req.session.userId!;
+    const userId = (req as any).user?.id || req.session?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const key = await storageService.uploadFile(
       req.file.buffer,

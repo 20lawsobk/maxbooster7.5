@@ -3,6 +3,7 @@ import { storage } from '../storage';
 import { db } from '../db';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { notifications } from '../../shared/schema';
+import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 
@@ -572,5 +573,29 @@ function getCategory(type: string): string {
 
   return categoryMap[type] || 'system';
 }
+
+router.get('/unread-count', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  try {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.isRead, false)
+      ));
+
+    const count = result[0]?.count || 0;
+
+    return res.json({ count });
+  } catch (error) {
+    console.error('Get unread count error:', error);
+    return res.json({ count: 0 });
+  }
+});
 
 export default router;

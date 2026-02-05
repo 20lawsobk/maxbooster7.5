@@ -3626,4 +3626,58 @@ router.post('/releases/:id/retry-outcome', requireAuth, async (req: Request, res
   }
 });
 
+// POST /api/distribution/isrc/generate - Generate ISRC code
+router.post('/isrc/generate', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { artist, title, trackId } = req.body;
+
+    if (!artist || !title) {
+      return res.status(400).json({ error: 'artist and title are required' });
+    }
+
+    const result = await labelGridService.generateISRC(artist, title);
+
+    if (trackId && trackId !== `temp_${Date.now()}`) {
+      await codeGenerationService.generateISRC(userId, trackId, artist, title);
+    }
+
+    res.json({ 
+      success: true,
+      isrc: result.code, 
+      assignedTo: result.assignedTo 
+    });
+  } catch (error: unknown) {
+    logger.error('Error generating ISRC:', error);
+    res.status(500).json({ error: 'Failed to generate ISRC' });
+  }
+});
+
+// POST /api/distribution/upc/generate - Generate UPC code
+router.post('/upc/generate', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { title, releaseId } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: 'title is required' });
+    }
+
+    const result = await labelGridService.generateUPC(title);
+
+    if (releaseId && releaseId !== `temp_${Date.now()}`) {
+      await codeGenerationService.generateUPC(userId, releaseId, title);
+    }
+
+    res.json({ 
+      success: true,
+      upc: result.code, 
+      assignedTo: result.assignedTo 
+    });
+  } catch (error: unknown) {
+    logger.error('Error generating UPC:', error);
+    res.status(500).json({ error: 'Failed to generate UPC' });
+  }
+});
+
 export default router;

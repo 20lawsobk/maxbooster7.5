@@ -1833,4 +1833,50 @@ router.get('/refunds', requireAuth, async (req: AuthenticatedRequest, res: Respo
   }
 });
 
+router.get('/usage', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    const tier = user?.subscriptionTier || 'free';
+    
+    const usageStats = {
+      tier,
+      period: {
+        start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+        end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString(),
+      },
+      distributions: {
+        used: 0,
+        limit: tier === 'free' ? 3 : tier === 'lifetime' ? -1 : 100,
+        unlimited: tier === 'lifetime',
+      },
+      storage: {
+        usedBytes: 0,
+        limitBytes: tier === 'free' ? 1024 * 1024 * 1024 : tier === 'lifetime' ? -1 : 50 * 1024 * 1024 * 1024,
+        unlimited: tier === 'lifetime',
+      },
+      aiGenerations: {
+        used: 0,
+        limit: tier === 'free' ? 10 : tier === 'lifetime' ? -1 : 500,
+        unlimited: tier === 'lifetime',
+      },
+      socialPosts: {
+        used: 0,
+        limit: tier === 'free' ? 5 : tier === 'lifetime' ? -1 : 200,
+        unlimited: tier === 'lifetime',
+      },
+    };
+    
+    res.json(usageStats);
+  } catch (error) {
+    logger.error('[Billing] Failed to get usage stats:', error);
+    res.status(500).json({ message: 'Failed to get usage stats' });
+  }
+});
+
 export default router;

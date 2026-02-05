@@ -1131,4 +1131,47 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
   }
 });
 
+// GET /api/social/scheduled - Get scheduled posts
+router.get('/scheduled', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const scheduledPosts = await storage.getScheduledPosts?.(userId) || [];
+    res.json(scheduledPosts);
+  } catch (error) {
+    logger.error('Failed to get scheduled posts:', error);
+    res.json([]);
+  }
+});
+
+// GET /api/social/analytics - Get social analytics
+router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { platform, period = '30d' } = req.query;
+    
+    const analytics = {
+      period,
+      platform: platform || 'all',
+      metrics: {
+        totalFollowers: 0,
+        followersGrowth: 0,
+        totalEngagement: 0,
+        engagementRate: 0,
+        totalReach: 0,
+        totalImpressions: 0,
+        postsPublished: 0,
+        topPerformingPost: null,
+      },
+      platformBreakdown: [],
+      dailyMetrics: [],
+      topPosts: [],
+    };
+    
+    res.json(analytics);
+  } catch (error) {
+    logger.error('Failed to get social analytics:', error);
+    res.status(500).json({ message: 'Failed to get analytics' });
+  }
+});
+
 export default router;

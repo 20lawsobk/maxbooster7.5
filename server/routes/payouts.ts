@@ -1059,4 +1059,37 @@ router.get('/instant-fee', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/payouts/currencies
+ * Get supported payout currencies
+ */
+router.get('/currencies', async (req, res) => {
+  try {
+    const currencies = [
+      { code: 'USD', name: 'US Dollar', symbol: '$', supported: true, default: true },
+      { code: 'EUR', name: 'Euro', symbol: '€', supported: true, default: false },
+      { code: 'GBP', name: 'British Pound', symbol: '£', supported: true, default: false },
+      { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', supported: true, default: false },
+      { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', supported: true, default: false },
+      { code: 'JPY', name: 'Japanese Yen', symbol: '¥', supported: true, default: false },
+      { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', supported: true, default: false },
+      { code: 'NZD', name: 'New Zealand Dollar', symbol: 'NZ$', supported: true, default: false },
+      { code: 'SEK', name: 'Swedish Krona', symbol: 'kr', supported: true, default: false },
+      { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr', supported: true, default: false },
+      { code: 'DKK', name: 'Danish Krone', symbol: 'kr', supported: true, default: false },
+      { code: 'MXN', name: 'Mexican Peso', symbol: '$', supported: true, default: false },
+      { code: 'BRL', name: 'Brazilian Real', symbol: 'R$', supported: true, default: false },
+      { code: 'INR', name: 'Indian Rupee', symbol: '₹', supported: true, default: false },
+    ];
+
+    res.json({ 
+      currencies,
+      defaultCurrency: 'USD',
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching currencies:', error);
+    res.status(500).json({ error: (error as Error).message || 'Failed to fetch currencies' });
+  }
+});
+
 export default router;

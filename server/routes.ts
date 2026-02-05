@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { storage } from "./storage.ts";
 import { db } from "./db.ts";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users } from "../shared/schema.ts";
+import { analytics, userStorage, userStorageFiles, users, notifications } from "../shared/schema.ts";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.ts";
 import Stripe from "stripe";
@@ -1674,6 +1674,27 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Update notification preferences error:", error);
       return res.status(500).json({ message: "Failed to update preferences" });
+    }
+  });
+
+  // Notifications: Get unread count
+  app.get("/api/notifications/unread-count", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const result = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(notifications)
+        .where(and(
+          eq(notifications.userId, req.user.id),
+          eq(notifications.isRead, false)
+        ));
+      const count = result[0]?.count || 0;
+      return res.json({ count });
+    } catch (error) {
+      console.error("Get unread count error:", error);
+      return res.json({ count: 0 });
     }
   });
 

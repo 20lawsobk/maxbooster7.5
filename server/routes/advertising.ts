@@ -358,4 +358,30 @@ router.post('/generate-content', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/advertising/budget - Get advertising budget summary
+router.get('/budget', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    const budget = {
+      totalBudget: 0,
+      spent: 0,
+      remaining: 0,
+      currency: 'USD',
+      period: 'monthly',
+      periodStart: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+      periodEnd: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString(),
+      dailyBudget: 0,
+      dailySpent: 0,
+      campaigns: [],
+      alerts: [],
+    };
+
+    res.json(budget);
+  } catch (error) {
+    logger.error('Failed to get advertising budget:', error);
+    res.status(500).json({ error: 'Failed to get budget' });
+  }
+});
+
 export default router;
