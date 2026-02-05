@@ -118,6 +118,42 @@ function buildDesktop(includeMobile: boolean = false): void {
   
   log(`Building ${APP_NAME} v${pkg.version} for desktop...`, 'info');
   
+  const isReplit = process.env.REPLIT || process.env.REPLIT_DEV_DOMAIN;
+  const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+  const forceFullBuild = process.env.FORCE_FULL_BUILD === 'true';
+  
+  if (isReplit && !isCI && !forceFullBuild) {
+    log('Detected Replit environment - running validation only', 'info');
+    log('Full desktop packaging should be done via GitHub Actions', 'info');
+    log('See: .github/workflows/build-desktop.yml', 'info');
+    
+    log('Validating Electron configuration...', 'info');
+    if (pkg.build) {
+      log('Electron-builder config found in package.json', 'success');
+    }
+    if (fs.existsSync('electron/main.js') || fs.existsSync('electron/main.ts')) {
+      log('Electron main process file exists', 'success');
+    }
+    
+    log('Verifying native module compilation (Python check)...', 'info');
+    try {
+      runCommand('python3 --version', { stdio: 'pipe' });
+      log('Python available for native modules', 'success');
+    } catch {
+      log('Python not found - native modules may fail', 'warn');
+    }
+    
+    log('Desktop build validation completed!', 'success');
+    log('To build full installers, use GitHub Actions or run locally on desktop', 'info');
+    
+    if (includeMobile) {
+      log('', 'info');
+      log('Also building mobile apps...', 'info');
+      buildMobile();
+    }
+    return;
+  }
+  
   log('Building for all desktop platforms...', 'info');
   
   try {

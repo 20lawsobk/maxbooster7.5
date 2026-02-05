@@ -16,6 +16,7 @@
     "electron:dev": "electron .",
     "electron:build": "electron-builder",
     "build:desktop": "tsx scripts/build-apps.ts desktop",
+    "build:desktop:full": "FORCE_FULL_BUILD=true tsx scripts/build-apps.ts desktop",
     "build:mobile": "tsx scripts/build-apps.ts mobile",
     "build:desktop+mobile": "tsx scripts/build-apps.ts desktop+mobile",
     "build:apps": "tsx scripts/build-apps.ts all",

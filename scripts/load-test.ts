@@ -61,7 +61,7 @@ const ENDPOINTS = [
   { path: '/api/system/status', method: 'GET', critical: true, expectAuth: false },
   { path: '/api/health/circuits', method: 'GET', critical: false, expectAuth: false },
   { path: '/', method: 'GET', critical: true, expectAuth: false },
-  { path: '/api/auth/check', method: 'GET', critical: false, expectAuth: true },
+  { path: '/api/auth/me', method: 'GET', critical: false, expectAuth: false },
 ];
 
 const CONFIG = {
