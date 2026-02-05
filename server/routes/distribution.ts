@@ -2076,14 +2076,35 @@ router.post('/catalog/import', requireAuth, catalogUpload.single('file'), async 
     );
 
     let rows;
-    const content = file.buffer.toString('utf-8');
     
     if (fileType === 'csv') {
+      const content = file.buffer.toString('utf-8');
       rows = await catalogImporter.parseCSV(content);
     } else if (fileType === 'ddex') {
+      const content = file.buffer.toString('utf-8');
       rows = await catalogImporter.parseDDEX(content);
+    } else if (fileType === 'xlsx') {
+      rows = await catalogImporter.parseXLSX(file.buffer);
     } else {
-      return res.status(400).json({ error: 'XLSX parsing not yet implemented. Please use CSV format.' });
+      return res.status(400).json({ error: 'Unsupported file format' });
+    }
+
+    if (rows.length === 0) {
+      return res.status(400).json({ 
+        error: 'No valid data rows found',
+        message: 'The file must contain at least one row with title or track title'
+      });
+    }
+
+    const preValidation = await catalogImporter.validateRows(rows, jobId);
+    
+    if (preValidation.validRows.length === 0) {
+      return res.status(400).json({
+        error: 'Schema validation failed',
+        message: 'No valid rows found after validation',
+        errors: preValidation.errors,
+        warnings: preValidation.warnings
+      });
     }
 
     const result = await catalogImporter.importRows(jobId, userId, rows);

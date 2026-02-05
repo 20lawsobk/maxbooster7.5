@@ -171,6 +171,20 @@ app.use((req, res, next) => {
   // Load optional modules first
   await loadOptionalModules();
 
+  // Initialize database log transport for automatic log persistence
+  // Only persists warn+ level logs to avoid performance impact
+  try {
+    const { initializeDatabaseLogTransport } = await import('./services/databaseLogTransport.js');
+    initializeDatabaseLogTransport({
+      minLevel: 'warn',
+      batchSize: 10,
+      flushIntervalMs: 5000,
+    });
+    logger.info('✅ Database log transport initialized');
+  } catch (error) {
+    logger.warn('⚠️ Database log transport not initialized:', error instanceof Error ? error.message : String(error));
+  }
+
   // ========================================
   // SESSION STORE INITIALIZATION (PRODUCTION-READY)
   // ========================================

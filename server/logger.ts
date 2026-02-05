@@ -1,4 +1,4 @@
-import { structuredLogger, createLogger, StructuredLogger } from './services/structuredLogger.ts';
+import { structuredLogger, createLogger, StructuredLogger, addLogTransport, removeLogTransport, type LogEntry, type LogTransport } from './services/structuredLogger.ts';
 
 export const logger = {
   info: (message: string, ...args: unknown[]) => {
@@ -46,7 +46,8 @@ export const logger = {
   },
 };
 
-export { structuredLogger, createLogger, StructuredLogger };
+export { structuredLogger, createLogger, StructuredLogger, addLogTransport, removeLogTransport };
+export type { LogEntry, LogTransport };
 
 export function log(message: string, source = 'express') {
   const formattedTime = new Date().toLocaleTimeString('en-US', {

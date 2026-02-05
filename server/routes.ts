@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { storage } from "./storage.ts";
 import { db } from "./db.ts";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles } from "../shared/schema.ts";
+import { analytics, userStorage, userStorageFiles, users } from "../shared/schema.ts";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.ts";
 import Stripe from "stripe";
@@ -2312,10 +2312,7 @@ export async function registerRoutes(
     }
     try {
       const preferences = { ...(req.user.preferences || {}), ...req.body };
-      // Fix: users should be imported or referenced correctly
-      // TODO: Adjust this line to match your ORM/database API for updating user preferences
-      // Example for drizzle-orm:
-      // await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
+      await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, preferences });
     } catch (error) {
       console.error("Error updating user preferences:", error);
@@ -2343,9 +2340,7 @@ export async function registerRoutes(
     try {
       const currentPrefs = (req.user.preferences as any) || {};
       const preferences = { ...currentPrefs, studio: req.body };
-      // TODO: Adjust this line to match your ORM/database API for updating studio preferences
-      // Example for drizzle-orm:
-      // await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
+      await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, studio: req.body });
     } catch (error) {
       console.error("Error updating studio preferences:", error);

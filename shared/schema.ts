@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, jsonb, real, date, bigint } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, jsonb, real, date, bigint, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -3762,6 +3762,24 @@ export const autopilotPreferences = pgTable("autopilot_preferences", {
 export type AutopilotPreference = typeof autopilotPreferences.$inferSelect;
 export const insertAutopilotPreferenceSchema = createInsertSchema(autopilotPreferences).omit({ id: true, createdAt: true, lastUpdated: true });
 export type InsertAutopilotPreference = z.infer<typeof insertAutopilotPreferenceSchema>;
+
+// ============================================================================
+// SYSTEM LOGS - Structured logging storage for queryable logs
+// ============================================================================
+export const systemLogs = pgTable("system_logs", {
+  id: serial("id").primaryKey(),
+  level: varchar("level", { length: 10 }).notNull(), // debug, info, warn, error, fatal
+  service: varchar("service", { length: 50 }).notNull(), // api, auth, database, ai, storage, queue, email, social
+  message: text("message").notNull(),
+  metadata: jsonb("metadata"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  userId: varchar("user_id"),
+  requestId: varchar("request_id"),
+});
+
+export type SystemLog = typeof systemLogs.$inferSelect;
+export const insertSystemLogSchema = createInsertSchema(systemLogs).omit({ id: true });
+export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
 
 // ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)

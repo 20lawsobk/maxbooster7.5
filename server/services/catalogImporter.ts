@@ -9,6 +9,7 @@ import { eq, and, sql, desc } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { identifierService } from './identifierService.js';
 import { labelCopyLinter, LabelCopyLinter } from './labelCopyLinter.js';
+import * as XLSX from 'xlsx';
 
 export interface ImportRow {
   title: string;
@@ -277,6 +278,43 @@ class CatalogImporter {
       }
     }
 
+    return rows;
+  }
+
+  async parseXLSX(buffer: Buffer): Promise<ImportRow[]> {
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    
+    if (!sheetName) {
+      throw new Error('XLSX file contains no sheets');
+    }
+    
+    const sheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+    
+    if (jsonData.length === 0) {
+      throw new Error('XLSX file contains no data rows');
+    }
+    
+    const rows: ImportRow[] = [];
+    
+    for (const rawRow of jsonData) {
+      const row: ImportRow = {} as ImportRow;
+      
+      for (const [key, value] of Object.entries(rawRow)) {
+        const normalizedHeader = this.normalizeHeader(key);
+        const mappedField = CSV_COLUMN_MAPPINGS[normalizedHeader] || normalizedHeader;
+        
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+          row[mappedField] = this.parseValue(mappedField, String(value).trim());
+        }
+      }
+      
+      if (row.title || row.trackTitle) {
+        rows.push(row);
+      }
+    }
+    
     return rows;
   }
 

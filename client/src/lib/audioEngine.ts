@@ -1562,7 +1562,28 @@ class AudioEngine {
 
     if (params.bypass !== undefined) {
       trackNode.effects.eq!.bypass = params.bypass;
-      // TODO: Implement bypass routing
+      
+      if (params.bypass) {
+        // Disconnect all EQ chain connections (entry, internal, and exit)
+        try { trackNode.inputGain.disconnect(trackNode.eqLow); } catch (e) {}
+        try { trackNode.eqLow.disconnect(trackNode.eqMid); } catch (e) {}
+        try { trackNode.eqMid.disconnect(trackNode.eqHigh); } catch (e) {}
+        try { trackNode.eqHigh.disconnect(trackNode.gate); } catch (e) {}
+        try { trackNode.eqHigh.disconnect(trackNode.gateAnalyser); } catch (e) {}
+        // Connect bypass path: inputGain directly to gate
+        try { trackNode.inputGain.connect(trackNode.gate); } catch (e) {}
+        try { trackNode.inputGain.connect(trackNode.gateAnalyser); } catch (e) {}
+      } else {
+        // Disconnect bypass path first
+        try { trackNode.inputGain.disconnect(trackNode.gate); } catch (e) {}
+        try { trackNode.inputGain.disconnect(trackNode.gateAnalyser); } catch (e) {}
+        // Reconnect full EQ chain: inputGain → eqLow → eqMid → eqHigh → gate
+        try { trackNode.inputGain.connect(trackNode.eqLow); } catch (e) {}
+        try { trackNode.eqLow.connect(trackNode.eqMid); } catch (e) {}
+        try { trackNode.eqMid.connect(trackNode.eqHigh); } catch (e) {}
+        try { trackNode.eqHigh.connect(trackNode.gate); } catch (e) {}
+        try { trackNode.eqHigh.connect(trackNode.gateAnalyser); } catch (e) {}
+      }
     }
   }
 
@@ -1609,7 +1630,23 @@ class AudioEngine {
 
     if (params.bypass !== undefined) {
       trackNode.effects.compressor!.bypass = params.bypass;
-      // TODO: Implement bypass routing
+      
+      if (params.bypass) {
+        // Disconnect full chain: gate→compressor and compressor→limiter
+        try { trackNode.gate.disconnect(trackNode.compressor); } catch (e) {}
+        try { trackNode.compressor.disconnect(trackNode.limiter); } catch (e) {}
+        // Connect bypass path: gate directly to limiter
+        try { trackNode.gate.connect(trackNode.limiter); } catch (e) {}
+      } else {
+        // Disconnect bypass path first
+        try { trackNode.gate.disconnect(trackNode.limiter); } catch (e) {}
+        // Disconnect any existing connections to prevent duplicates
+        try { trackNode.gate.disconnect(trackNode.compressor); } catch (e) {}
+        try { trackNode.compressor.disconnect(trackNode.limiter); } catch (e) {}
+        // Reconnect full chain: gate→compressor→limiter
+        try { trackNode.gate.connect(trackNode.compressor); } catch (e) {}
+        try { trackNode.compressor.connect(trackNode.limiter); } catch (e) {}
+      }
     }
   }
 
@@ -1669,7 +1706,39 @@ class AudioEngine {
 
     if (params.bypass !== undefined) {
       trackNode.effects.reverb!.bypass = params.bypass;
-      // TODO: Implement bypass routing
+      
+      if (params.bypass) {
+        // Disconnect reverb wet path but maintain dry path (analyser→panNode is always connected)
+        try { trackNode.analyser.disconnect(trackNode.reverbSend); } catch (e) {}
+        try { trackNode.reverbSend.disconnect(trackNode.reverbDelayNode); } catch (e) {}
+        if (trackNode.reverbConvolver) {
+          try { trackNode.reverbDelayNode.disconnect(trackNode.reverbConvolver); } catch (e) {}
+          try { trackNode.reverbConvolver.disconnect(trackNode.reverbWetGain); } catch (e) {}
+        }
+        try { trackNode.reverbWetGain.disconnect(trackNode.panNode); } catch (e) {}
+        // Ensure dry path remains connected (analyser→panNode should already be connected from track creation)
+        try { trackNode.analyser.connect(trackNode.panNode); } catch (e) {}
+      } else {
+        // Reconnect full reverb wet path
+        // First disconnect any existing connections to prevent duplicates
+        try { trackNode.analyser.disconnect(trackNode.reverbSend); } catch (e) {}
+        try { trackNode.reverbSend.disconnect(trackNode.reverbDelayNode); } catch (e) {}
+        if (trackNode.reverbConvolver) {
+          try { trackNode.reverbDelayNode.disconnect(trackNode.reverbConvolver); } catch (e) {}
+          try { trackNode.reverbConvolver.disconnect(trackNode.reverbWetGain); } catch (e) {}
+        }
+        try { trackNode.reverbWetGain.disconnect(trackNode.panNode); } catch (e) {}
+        // Connect full reverb chain: analyser→reverbSend→delayNode→convolver→wetGain→panNode
+        try { trackNode.analyser.connect(trackNode.reverbSend); } catch (e) {}
+        try { trackNode.reverbSend.connect(trackNode.reverbDelayNode); } catch (e) {}
+        if (trackNode.reverbConvolver) {
+          try { trackNode.reverbDelayNode.connect(trackNode.reverbConvolver); } catch (e) {}
+          try { trackNode.reverbConvolver.connect(trackNode.reverbWetGain); } catch (e) {}
+        }
+        try { trackNode.reverbWetGain.connect(trackNode.panNode); } catch (e) {}
+        // Ensure dry path also remains connected
+        try { trackNode.analyser.connect(trackNode.panNode); } catch (e) {}
+      }
     }
   }
 

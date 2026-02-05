@@ -14,10 +14,14 @@ export interface LogEntry {
   error?: { message: string; stack?: string; code?: string };
 }
 
+export type LogTransport = (entry: LogEntry) => void | Promise<void>;
+
 interface LoggerOptions {
   service?: string;
   defaultMetadata?: Record<string, unknown>;
 }
+
+const globalTransports: LogTransport[] = [];
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
@@ -146,6 +150,19 @@ class StructuredLogger {
     } else {
       process.stdout.write(formattedMessage + '\n');
     }
+
+    for (const transport of globalTransports) {
+      try {
+        const result = transport(entry);
+        if (result instanceof Promise) {
+          result.catch((err) => {
+            process.stderr.write(`[LogTransport Error] ${err.message}\n`);
+          });
+        }
+      } catch (err) {
+        process.stderr.write(`[LogTransport Error] ${err instanceof Error ? err.message : String(err)}\n`);
+      }
+    }
   }
 
   private formatError(error: unknown): { message: string; stack?: string; code?: string } {
@@ -240,6 +257,19 @@ export const structuredLogger = new StructuredLogger({ service: 'max-booster' })
 
 export function createLogger(service: string): StructuredLogger {
   return new StructuredLogger({ service });
+}
+
+export function addLogTransport(transport: LogTransport): void {
+  globalTransports.push(transport);
+}
+
+export function removeLogTransport(transport: LogTransport): boolean {
+  const index = globalTransports.indexOf(transport);
+  if (index > -1) {
+    globalTransports.splice(index, 1);
+    return true;
+  }
+  return false;
 }
 
 export { StructuredLogger };
