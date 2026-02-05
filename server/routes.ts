@@ -2913,10 +2913,12 @@ export async function registerRoutes(
   const { default: paidRouter } = await import("./routes/paid.ts");
   const { default: artistProgressRouter } = await import("./routes/artistProgress.ts");
   const { default: revenueForecastRouter } = await import("./routes/revenueForecast.ts");
+  const { default: filesRouter } = await import("./routes/files.ts");
   app.use("/api/admin", adminRouter);
   app.use("/api/paid", paidRouter);
   app.use("/api/artist-progress", artistProgressRouter);
   app.use("/api/revenue-forecast", revenueForecastRouter);
+  app.use("/api/files", filesRouter);
 
   // AI: Optimize content
   app.post("/api/ai/optimize-content", async (req: Request, res: Response) => {
@@ -3069,6 +3071,9 @@ export async function registerRoutes(
     // Marketplace with Discovery Algorithm
     { path: "/api/marketplace", name: "marketplace", loader: () => import("./routes/marketplace") },
 
+    // Search & Discovery
+    { path: "/api/search", name: "search", loader: () => import("./routes/search") },
+
     // Contracts, Invoices, Tax Forms & Split Sheets
     { path: "/api/contracts", name: "contracts", loader: () => import("./routes/contracts") },
 
@@ -3086,6 +3091,15 @@ export async function registerRoutes(
 
     // Connected Accounts Management
     { path: "/api/auth/connected-accounts", name: "connectedAccounts", loader: () => import("./routes/connectedAccounts") },
+
+    // Session & Token Management
+    { path: "/api/auth", name: "auth", loader: () => import("./routes/auth") },
+
+    // File Storage Management
+    { path: "/api/storage", name: "storage", loader: () => import("./routes/storage") },
+
+    // Export & Download Management
+    { path: "/api/export", name: "export", loader: () => import("./routes/export") },
   ];
 
   for (const { path, name, loader } of routeModules) {
@@ -3397,6 +3411,15 @@ export async function registerRoutes(
     log('Infrastructure scaling routes registered');
   } catch (error: any) {
     log(`Warning: Could not load infrastructure routes - ${error.message}`);
+  }
+
+  // Collaboration routes
+  try {
+    const collaborationRouter = (await import('./routes/collaboration.js')).default;
+    app.use('/api/collaboration', collaborationRouter);
+    log('Collaboration routes registered');
+  } catch (error: any) {
+    log(`Warning: Could not load collaboration routes - ${error.message}`);
   }
 
   return httpServer;

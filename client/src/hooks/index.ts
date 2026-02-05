@@ -1,3 +1,4 @@
+export { useDebounce, useDebouncedCallback } from './useDebounce';
 export { useNetworkStatus, useRetryWithBackoff } from './useNetworkStatus';
 export type { NetworkState, NetworkStatus, UseNetworkStatusOptions } from './useNetworkStatus';
 

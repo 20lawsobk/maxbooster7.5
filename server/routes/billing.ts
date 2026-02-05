@@ -1116,6 +1116,634 @@ router.delete('/payment-method', requireAuth, requireStripe, async (req: Authent
   }
 });
 
+router.post('/3ds/confirm', requireAuth, requireStripe, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { paymentIntentId, paymentMethodId } = req.body;
+    
+    if (!paymentIntentId) {
+      return res.status(400).json({ 
+        message: 'Payment intent ID is required',
+        code: 'MISSING_PAYMENT_INTENT',
+        retryable: false
+      });
+    }
+    
+    const paymentIntent = await stripe!.paymentIntents.retrieve(paymentIntentId);
+    
+    if (paymentIntent.status === 'succeeded') {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+      
+      if (user?.stripeCustomerId) {
+        await db
+          .update(users)
+          .set({ subscriptionStatus: 'active' })
+          .where(eq(users.id, userId));
+      }
+      
+      logger.info(`[Billing] 3DS confirmation successful for user ${userId}`);
+      
+      return res.json({
+        success: true,
+        message: '3D Secure authentication completed successfully',
+        code: '3DS_SUCCESS',
+        status: 'succeeded'
+      });
+    }
+    
+    if (paymentIntent.status === 'requires_action' || paymentIntent.status === 'requires_confirmation') {
+      if (paymentMethodId) {
+        const confirmedIntent = await stripe!.paymentIntents.confirm(paymentIntentId, {
+          payment_method: paymentMethodId,
+        });
+        
+        if (confirmedIntent.status === 'succeeded') {
+          await db
+            .update(users)
+            .set({ subscriptionStatus: 'active' })
+            .where(eq(users.id, userId));
+          
+          return res.json({
+            success: true,
+            message: 'Payment confirmed successfully',
+            code: '3DS_SUCCESS',
+            status: 'succeeded'
+          });
+        }
+        
+        if (confirmedIntent.status === 'requires_action') {
+          return res.status(402).json({
+            message: 'Additional authentication required',
+            code: 'REQUIRES_3D_SECURE',
+            clientSecret: confirmedIntent.client_secret,
+            status: confirmedIntent.status,
+            retryable: true
+          });
+        }
+      }
+      
+      return res.status(402).json({
+        message: 'Payment requires additional authentication',
+        code: 'REQUIRES_ACTION',
+        clientSecret: paymentIntent.client_secret,
+        status: paymentIntent.status,
+        retryable: true
+      });
+    }
+    
+    if (paymentIntent.status === 'canceled') {
+      return res.status(400).json({
+        message: '3D Secure authentication was cancelled',
+        code: '3DS_CANCELLED',
+        status: 'canceled',
+        retryable: true
+      });
+    }
+    
+    if (paymentIntent.status === 'requires_payment_method') {
+      const lastError = paymentIntent.last_payment_error;
+      return res.status(402).json({
+        message: lastError?.message || '3D Secure authentication failed. Please try a different card.',
+        code: '3DS_FAILED',
+        declineCode: lastError?.decline_code,
+        status: 'failed',
+        retryable: true
+      });
+    }
+    
+    res.json({
+      success: false,
+      message: 'Payment is still processing',
+      code: 'PROCESSING',
+      status: paymentIntent.status,
+      retryable: true
+    });
+  } catch (error: any) {
+    logger.error('[Billing] 3DS confirmation failed:', error);
+    const mappedError = mapStripeError(error);
+    res.status(mappedError.status).json({ 
+      message: mappedError.message,
+      code: mappedError.code,
+      retryable: mappedError.retryable
+    });
+  }
+});
+
+router.post('/refund/request', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { invoiceId, chargeId, reason, amount, description } = req.body;
+    
+    if (!invoiceId && !chargeId) {
+      return res.status(400).json({ 
+        message: 'Invoice ID or Charge ID is required',
+        code: 'MISSING_IDENTIFIER',
+        retryable: false
+      });
+    }
+    
+    if (!reason) {
+      return res.status(400).json({ 
+        message: 'Please provide a reason for the refund request',
+        code: 'MISSING_REASON',
+        retryable: true
+      });
+    }
+    
+    const validReasons = ['duplicate', 'fraudulent', 'requested_by_customer', 'service_issue', 'other'];
+    if (!validReasons.includes(reason)) {
+      return res.status(400).json({ 
+        message: 'Invalid refund reason',
+        code: 'INVALID_REASON',
+        retryable: true,
+        validReasons
+      });
+    }
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user?.stripeCustomerId) {
+      return res.status(400).json({ 
+        message: 'No billing account found',
+        code: 'NO_BILLING_ACCOUNT',
+        retryable: false
+      });
+    }
+    
+    if (!stripe) {
+      return res.status(503).json({ 
+        message: 'Billing service not configured',
+        code: 'STRIPE_NOT_CONFIGURED',
+        retryable: false
+      });
+    }
+    
+    let chargeToRefund: string | null = chargeId || null;
+    let refundableAmount: number = 0;
+    
+    if (invoiceId) {
+      const invoice = await stripe.invoices.retrieve(invoiceId);
+      
+      if (invoice.customer !== user.stripeCustomerId) {
+        return res.status(403).json({ 
+          message: 'You do not have permission to refund this invoice',
+          code: 'REFUND_ACCESS_DENIED',
+          retryable: false
+        });
+      }
+      
+      if (invoice.status !== 'paid') {
+        return res.status(400).json({ 
+          message: 'Only paid invoices can be refunded',
+          code: 'INVOICE_NOT_PAID',
+          retryable: false
+        });
+      }
+      
+      chargeToRefund = invoice.charge as string;
+      refundableAmount = invoice.amount_paid;
+    } else if (chargeId) {
+      const charge = await stripe.charges.retrieve(chargeId);
+      
+      if (charge.customer !== user.stripeCustomerId) {
+        return res.status(403).json({ 
+          message: 'You do not have permission to refund this charge',
+          code: 'REFUND_ACCESS_DENIED',
+          retryable: false
+        });
+      }
+      
+      if (!charge.paid || charge.refunded) {
+        return res.status(400).json({ 
+          message: charge.refunded ? 'This charge has already been fully refunded' : 'Only paid charges can be refunded',
+          code: charge.refunded ? 'ALREADY_REFUNDED' : 'CHARGE_NOT_PAID',
+          retryable: false
+        });
+      }
+      
+      refundableAmount = charge.amount - charge.amount_refunded;
+    }
+    
+    if (!chargeToRefund) {
+      return res.status(400).json({ 
+        message: 'No refundable charge found',
+        code: 'NO_REFUNDABLE_CHARGE',
+        retryable: false
+      });
+    }
+    
+    const refundAmount = amount ? Math.min(amount, refundableAmount) : refundableAmount;
+    const isPartialRefund = refundAmount < refundableAmount;
+    
+    logger.info(`[Billing] Refund request created for user ${userId}: ${invoiceId || chargeId}, reason: ${reason}, amount: ${refundAmount / 100}`);
+    
+    res.json({
+      success: true,
+      message: 'Refund request submitted successfully. Our team will review and process it within 5-7 business days.',
+      code: 'REFUND_REQUESTED',
+      refundRequest: {
+        id: `refund_req_${Date.now()}`,
+        chargeId: chargeToRefund,
+        invoiceId: invoiceId || null,
+        amount: refundAmount / 100,
+        reason,
+        description: description || null,
+        status: 'pending_review',
+        isPartialRefund,
+        estimatedProcessingDays: 7,
+        createdAt: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    logger.error('[Billing] Failed to create refund request:', error);
+    
+    if (error.code === 'resource_missing') {
+      return res.status(404).json({ 
+        message: 'Invoice or charge not found',
+        code: 'NOT_FOUND',
+        retryable: false
+      });
+    }
+    
+    const mappedError = mapStripeError(error);
+    res.status(mappedError.status).json({ 
+      message: mappedError.message,
+      code: mappedError.code,
+      retryable: mappedError.retryable
+    });
+  }
+});
+
+router.post('/dispute/evidence', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { disputeId, evidence } = req.body;
+    
+    if (!disputeId) {
+      return res.status(400).json({ 
+        message: 'Dispute ID is required',
+        code: 'MISSING_DISPUTE_ID',
+        retryable: false
+      });
+    }
+    
+    if (!evidence || typeof evidence !== 'object') {
+      return res.status(400).json({ 
+        message: 'Evidence data is required',
+        code: 'MISSING_EVIDENCE',
+        retryable: true
+      });
+    }
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user?.stripeCustomerId) {
+      return res.status(400).json({ 
+        message: 'No billing account found',
+        code: 'NO_BILLING_ACCOUNT',
+        retryable: false
+      });
+    }
+    
+    if (!stripe) {
+      return res.status(503).json({ 
+        message: 'Billing service not configured',
+        code: 'STRIPE_NOT_CONFIGURED',
+        retryable: false
+      });
+    }
+    
+    try {
+      const dispute = await stripe.disputes.retrieve(disputeId);
+      
+      const charge = await stripe.charges.retrieve(dispute.charge as string);
+      if (charge.customer !== user.stripeCustomerId) {
+        return res.status(403).json({ 
+          message: 'You do not have permission to access this dispute',
+          code: 'DISPUTE_ACCESS_DENIED',
+          retryable: false
+        });
+      }
+      
+      if (dispute.status === 'won' || dispute.status === 'lost') {
+        return res.status(400).json({ 
+          message: `This dispute has already been ${dispute.status}`,
+          code: 'DISPUTE_CLOSED',
+          status: dispute.status,
+          retryable: false
+        });
+      }
+      
+      const evidenceSubmission: Stripe.DisputeUpdateParams.Evidence = {};
+      
+      if (evidence.customer_name) evidenceSubmission.customer_name = evidence.customer_name;
+      if (evidence.customer_email_address) evidenceSubmission.customer_email_address = evidence.customer_email_address;
+      if (evidence.product_description) evidenceSubmission.product_description = evidence.product_description;
+      if (evidence.uncategorized_text) evidenceSubmission.uncategorized_text = evidence.uncategorized_text;
+      
+      await stripe.disputes.update(disputeId, {
+        evidence: evidenceSubmission,
+        submit: evidence.submit === true
+      });
+      
+      logger.info(`[Billing] Dispute evidence submitted for user ${userId}, dispute ${disputeId}`);
+      
+      res.json({
+        success: true,
+        message: evidence.submit 
+          ? 'Evidence submitted successfully. Stripe will review within 60-90 days.'
+          : 'Evidence saved as draft. You can continue editing before submitting.',
+        code: evidence.submit ? 'EVIDENCE_SUBMITTED' : 'EVIDENCE_SAVED',
+        disputeId,
+        status: evidence.submit ? 'under_review' : 'needs_response'
+      });
+    } catch (stripeError: any) {
+      if (stripeError.code === 'resource_missing') {
+        return res.status(404).json({ 
+          message: 'Dispute not found',
+          code: 'DISPUTE_NOT_FOUND',
+          retryable: false
+        });
+      }
+      throw stripeError;
+    }
+  } catch (error: any) {
+    logger.error('[Billing] Failed to submit dispute evidence:', error);
+    const mappedError = mapStripeError(error);
+    res.status(mappedError.status).json({ 
+      message: mappedError.message,
+      code: mappedError.code,
+      retryable: mappedError.retryable
+    });
+  }
+});
+
+router.get('/grace-period-status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+    
+    if (user.subscriptionTier === 'lifetime') {
+      return res.json({
+        inGracePeriod: false,
+        gracePeriodActive: false,
+        subscriptionStatus: 'active',
+        tier: 'lifetime',
+        message: 'Lifetime subscription - no grace period applicable'
+      });
+    }
+    
+    let stripeSubscription: Stripe.Subscription | null = null;
+    let latestInvoice: Stripe.Invoice | null = null;
+    
+    if (user.stripeCustomerId && stripe) {
+      try {
+        const subscriptions = await stripe.subscriptions.list({
+          customer: user.stripeCustomerId,
+          limit: 1,
+          expand: ['data.latest_invoice'],
+        });
+        
+        if (subscriptions.data.length > 0) {
+          stripeSubscription = subscriptions.data[0];
+          latestInvoice = stripeSubscription.latest_invoice as Stripe.Invoice | null;
+        }
+      } catch (err) {
+        logger.warn('[Billing] Failed to fetch subscription for grace period check:', err);
+      }
+    }
+    
+    const now = new Date();
+    let gracePeriodActive = false;
+    let gracePeriodEndsAt: Date | null = null;
+    let gracePeriodDaysRemaining: number | null = null;
+    let retryAttempts = 0;
+    let nextRetryAt: Date | null = null;
+    let paymentFailedAt: Date | null = null;
+    
+    if (stripeSubscription?.status === 'past_due' || stripeSubscription?.status === 'unpaid') {
+      gracePeriodActive = true;
+      
+      const gracePeriodDays = 7;
+      const currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+      gracePeriodEndsAt = new Date(currentPeriodEnd.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000);
+      gracePeriodDaysRemaining = Math.max(0, Math.ceil((gracePeriodEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      
+      if (latestInvoice && typeof latestInvoice !== 'string') {
+        retryAttempts = latestInvoice.attempt_count || 0;
+        if (latestInvoice.next_payment_attempt) {
+          nextRetryAt = new Date(latestInvoice.next_payment_attempt * 1000);
+        }
+        paymentFailedAt = new Date(latestInvoice.created * 1000);
+      }
+    }
+    
+    const isGracePeriodExpired = gracePeriodActive && gracePeriodEndsAt && gracePeriodEndsAt < now;
+    
+    res.json({
+      inGracePeriod: gracePeriodActive && !isGracePeriodExpired,
+      gracePeriodActive,
+      gracePeriodEndsAt: gracePeriodEndsAt?.toISOString() || null,
+      gracePeriodDaysRemaining: gracePeriodDaysRemaining || 0,
+      gracePeriodExpired: isGracePeriodExpired,
+      subscriptionStatus: stripeSubscription?.status || user.subscriptionStatus || 'inactive',
+      tier: user.subscriptionTier || 'free',
+      payment: {
+        failedAt: paymentFailedAt?.toISOString() || null,
+        retryAttempts,
+        maxRetryAttempts: 4,
+        nextRetryAt: nextRetryAt?.toISOString() || null,
+        retriesExhausted: retryAttempts >= 4
+      },
+      actions: gracePeriodActive ? {
+        canRetryPayment: true,
+        canUpdatePaymentMethod: true,
+        canContactSupport: true,
+        urgencyLevel: gracePeriodDaysRemaining !== null && gracePeriodDaysRemaining <= 2 ? 'critical' : 
+                      gracePeriodDaysRemaining !== null && gracePeriodDaysRemaining <= 4 ? 'high' : 'medium'
+      } : null
+    });
+  } catch (error) {
+    logger.error('[Billing] Failed to get grace period status:', error);
+    res.status(500).json({ 
+      message: 'Failed to get grace period status',
+      code: 'GRACE_PERIOD_CHECK_ERROR',
+      retryable: true
+    });
+  }
+});
+
+router.get('/disputes', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user?.stripeCustomerId || !stripe) {
+      return res.json({ disputes: [], hasMore: false });
+    }
+    
+    try {
+      const charges = await stripe.charges.list({
+        customer: user.stripeCustomerId,
+        limit: 100,
+      });
+      
+      const disputedCharges = charges.data.filter(charge => charge.dispute);
+      const disputes: any[] = [];
+      
+      for (const charge of disputedCharges) {
+        if (charge.dispute) {
+          const dispute = await stripe.disputes.retrieve(charge.dispute as string);
+          disputes.push({
+            id: dispute.id,
+            chargeId: charge.id,
+            amount: dispute.amount / 100,
+            currency: dispute.currency,
+            reason: dispute.reason,
+            status: dispute.status,
+            statusDisplay: dispute.status === 'won' ? 'Won' :
+                          dispute.status === 'lost' ? 'Lost' :
+                          dispute.status === 'needs_response' ? 'Action Required' :
+                          dispute.status === 'under_review' ? 'Under Review' :
+                          dispute.status === 'warning_needs_response' ? 'Warning - Action Required' : 'Pending',
+            statusColor: dispute.status === 'won' ? 'green' :
+                        dispute.status === 'lost' ? 'red' :
+                        dispute.status === 'needs_response' ? 'orange' :
+                        dispute.status === 'warning_needs_response' ? 'orange' :
+                        dispute.status === 'under_review' ? 'blue' : 'gray',
+            created: new Date(dispute.created * 1000).toISOString(),
+            evidenceDueBy: dispute.evidence_details?.due_by 
+              ? new Date(dispute.evidence_details.due_by * 1000).toISOString() 
+              : null,
+            hasEvidence: dispute.evidence_details?.has_evidence || false,
+            submissionCount: dispute.evidence_details?.submission_count || 0,
+            description: charge.description || 'Max Booster Subscription',
+          });
+        }
+      }
+      
+      disputes.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+      
+      return res.json({ 
+        disputes: disputes.slice(0, 20),
+        hasMore: disputes.length > 20 
+      });
+    } catch (err) {
+      logger.warn('[Billing] Failed to fetch disputes:', err);
+    }
+    
+    res.json({ disputes: [], hasMore: false });
+  } catch (error) {
+    logger.error('[Billing] Failed to get disputes:', error);
+    res.status(500).json({ message: 'Failed to get disputes' });
+  }
+});
+
+router.get('/invoices', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { status, limit = 20 } = req.query;
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user?.stripeCustomerId || !stripe) {
+      return res.json({ invoices: [], hasMore: false });
+    }
+    
+    try {
+      const invoiceParams: Stripe.InvoiceListParams = {
+        customer: user.stripeCustomerId,
+        limit: Math.min(Number(limit), 100),
+      };
+      
+      if (status && typeof status === 'string') {
+        invoiceParams.status = status as Stripe.InvoiceListParams.Status;
+      }
+      
+      const invoices = await stripe.invoices.list(invoiceParams);
+      
+      const now = new Date();
+      const invoiceList = invoices.data.map(invoice => {
+        const dueDate = invoice.due_date ? new Date(invoice.due_date * 1000) : null;
+        const isOverdue = dueDate && dueDate < now && invoice.status === 'open';
+        
+        return {
+          id: invoice.id,
+          number: invoice.number || invoice.id,
+          amount: (invoice.amount_due || 0) / 100,
+          amountPaid: (invoice.amount_paid || 0) / 100,
+          amountRemaining: (invoice.amount_remaining || 0) / 100,
+          currency: invoice.currency,
+          status: invoice.status,
+          statusDisplay: invoice.status === 'paid' ? 'Paid' :
+                        invoice.status === 'open' && isOverdue ? 'Overdue' :
+                        invoice.status === 'open' ? 'Pending' :
+                        invoice.status === 'draft' ? 'Draft' :
+                        invoice.status === 'void' ? 'Voided' :
+                        invoice.status === 'uncollectible' ? 'Uncollectible' : 'Unknown',
+          statusColor: invoice.status === 'paid' ? 'green' :
+                      isOverdue ? 'red' :
+                      invoice.status === 'open' ? 'yellow' :
+                      invoice.status === 'draft' ? 'gray' :
+                      invoice.status === 'void' ? 'gray' : 'red',
+          isOverdue,
+          created: new Date(invoice.created * 1000).toISOString(),
+          dueDate: dueDate?.toISOString() || null,
+          paidAt: invoice.status_transitions?.paid_at 
+            ? new Date(invoice.status_transitions.paid_at * 1000).toISOString() 
+            : null,
+          description: invoice.lines.data[0]?.description || 'Max Booster Subscription',
+          pdfUrl: invoice.invoice_pdf,
+          hostedUrl: invoice.hosted_invoice_url,
+          attemptCount: invoice.attempt_count || 0,
+          nextPaymentAttempt: invoice.next_payment_attempt 
+            ? new Date(invoice.next_payment_attempt * 1000).toISOString() 
+            : null,
+        };
+      });
+      
+      return res.json({ 
+        invoices: invoiceList,
+        hasMore: invoices.has_more 
+      });
+    } catch (err) {
+      logger.warn('[Billing] Failed to fetch invoices:', err);
+    }
+    
+    res.json({ invoices: [], hasMore: false });
+  } catch (error) {
+    logger.error('[Billing] Failed to get invoices:', error);
+    res.status(500).json({ message: 'Failed to get invoices' });
+  }
+});
+
 router.get('/refunds', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;

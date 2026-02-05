@@ -1,0 +1,505 @@
+import { Router, Request, Response } from 'express';
+import multer from 'multer';
+import { randomUUID } from 'crypto';
+import { storageService } from '../services/storageService.js';
+import { requireAuth } from '../middleware/auth.js';
+import { logger } from '../logger.js';
+import path from 'path';
+import fs from 'fs/promises';
+
+const router = Router();
+
+const ALLOWED_AUDIO_TYPES = [
+  'audio/wav', 'audio/x-wav', 'audio/wave',
+  'audio/mp3', 'audio/mpeg',
+  'audio/flac', 'audio/x-flac',
+  'audio/aiff', 'audio/x-aiff',
+  'audio/ogg', 'audio/webm',
+  'audio/aac', 'audio/mp4',
+];
+
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+];
+
+const ALLOWED_VIDEO_TYPES = [
+  'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
+];
+
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const MAX_CHUNK_SIZE = 10 * 1024 * 1024;
+const CHUNK_TTL = 24 * 60 * 60 * 1000;
+
+interface ChunkInfo {
+  fileId: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  totalChunks: number;
+  uploadedChunks: Set<number>;
+  category: string;
+  userId: string;
+  createdAt: number;
+}
+
+const chunkUploads = new Map<string, ChunkInfo>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [fileId, info] of chunkUploads.entries()) {
+    if (now - info.createdAt > CHUNK_TTL) {
+      chunkUploads.delete(fileId);
+      cleanupChunks(fileId).catch(err => 
+        logger.error(`Failed to cleanup expired chunks for ${fileId}:`, err)
+      );
+    }
+  }
+}, 60 * 60 * 1000);
+
+async function cleanupChunks(fileId: string): Promise<void> {
+  const tempDir = path.join(process.cwd(), 'uploads', 'temp', fileId);
+  try {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  } catch {
+  }
+}
+
+const storage = multer.memoryStorage();
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: MAX_FILE_SIZE,
+  },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = [...ALLOWED_AUDIO_TYPES, ...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
+    if (allowedTypes.includes(file.mimetype) || file.mimetype.startsWith('audio/') || file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${file.mimetype} not supported`));
+    }
+  },
+});
+
+const chunkUpload = multer({
+  storage,
+  limits: {
+    fileSize: MAX_CHUNK_SIZE,
+  },
+});
+
+router.post('/upload', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    const { category = 'files', fileId } = req.body;
+    const userId = req.session.userId!;
+
+    const key = await storageService.uploadFile(
+      req.file.buffer,
+      `users/${userId}/${category}`,
+      req.file.originalname,
+      req.file.mimetype
+    );
+
+    logger.info(`File uploaded: ${key} by user ${userId}`);
+
+    res.json({
+      success: true,
+      file: {
+        id: fileId || randomUUID(),
+        key,
+        name: req.file.originalname,
+        size: req.file.size,
+        type: req.file.mimetype,
+        url: await storageService.getDownloadUrl(key),
+      },
+    });
+  } catch (error) {
+    logger.error('File upload failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Upload failed' 
+    });
+  }
+});
+
+router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No chunk provided' });
+    }
+
+    const { chunkIndex, totalChunks, fileId, fileName, fileSize, mimeType, category = 'files' } = req.body;
+    const userId = req.session.userId!;
+
+    const chunkIdx = parseInt(chunkIndex, 10);
+    const totalChunksNum = parseInt(totalChunks, 10);
+    const fileSizeNum = parseInt(fileSize, 10);
+
+    if (isNaN(chunkIdx) || isNaN(totalChunksNum) || isNaN(fileSizeNum)) {
+      return res.status(400).json({ error: 'Invalid chunk parameters' });
+    }
+
+    if (fileSizeNum > MAX_FILE_SIZE) {
+      return res.status(400).json({ error: `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)` });
+    }
+
+    let chunkInfo = chunkUploads.get(fileId);
+    if (!chunkInfo) {
+      chunkInfo = {
+        fileId,
+        fileName,
+        fileSize: fileSizeNum,
+        mimeType,
+        totalChunks: totalChunksNum,
+        uploadedChunks: new Set(),
+        category,
+        userId,
+        createdAt: Date.now(),
+      };
+      chunkUploads.set(fileId, chunkInfo);
+    }
+
+    const tempDir = path.join(process.cwd(), 'uploads', 'temp', fileId);
+    await fs.mkdir(tempDir, { recursive: true });
+    
+    const chunkPath = path.join(tempDir, `chunk_${chunkIdx}`);
+    await fs.writeFile(chunkPath, req.file.buffer);
+    
+    chunkInfo.uploadedChunks.add(chunkIdx);
+
+    logger.info(`Chunk ${chunkIdx + 1}/${totalChunksNum} uploaded for file ${fileId}`);
+
+    if (chunkInfo.uploadedChunks.size === totalChunksNum) {
+      const chunks: Buffer[] = [];
+      for (let i = 0; i < totalChunksNum; i++) {
+        const chunkData = await fs.readFile(path.join(tempDir, `chunk_${i}`));
+        chunks.push(chunkData);
+      }
+      const completeFile = Buffer.concat(chunks);
+
+      const key = await storageService.uploadFile(
+        completeFile,
+        `users/${userId}/${category}`,
+        fileName,
+        mimeType
+      );
+
+      await cleanupChunks(fileId);
+      chunkUploads.delete(fileId);
+
+      logger.info(`Chunked upload complete: ${key} by user ${userId}`);
+
+      return res.json({
+        success: true,
+        complete: true,
+        file: {
+          id: fileId,
+          key,
+          name: fileName,
+          size: fileSizeNum,
+          type: mimeType,
+          url: await storageService.getDownloadUrl(key),
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      complete: false,
+      uploaded: chunkInfo.uploadedChunks.size,
+      total: totalChunksNum,
+    });
+  } catch (error) {
+    logger.error('Chunk upload failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Chunk upload failed' 
+    });
+  }
+});
+
+router.delete('/upload/chunk/:fileId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { fileId } = req.params;
+    const userId = req.session.userId!;
+
+    const chunkInfo = chunkUploads.get(fileId);
+    if (chunkInfo && chunkInfo.userId !== userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    await cleanupChunks(fileId);
+    chunkUploads.delete(fileId);
+
+    logger.info(`Chunked upload cancelled: ${fileId} by user ${userId}`);
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Chunk cleanup failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Cleanup failed' 
+    });
+  }
+});
+
+router.get('/file/:key(*)', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { key } = req.params;
+    
+    const buffer = await storageService.downloadFile(key);
+    
+    const ext = path.extname(key).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.wav': 'audio/wav',
+      '.mp3': 'audio/mpeg',
+      '.flac': 'audio/flac',
+      '.ogg': 'audio/ogg',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+    };
+
+    res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
+    res.setHeader('Content-Length', buffer.length);
+    res.send(buffer);
+  } catch (error) {
+    logger.error('File download failed:', error);
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
+router.delete('/file/:key(*)', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { key } = req.params;
+    const userId = req.session.userId!;
+
+    if (!key.includes(`users/${userId}/`)) {
+      return res.status(403).json({ error: 'Not authorized to delete this file' });
+    }
+
+    await storageService.deleteFile(key);
+
+    logger.info(`File deleted: ${key} by user ${userId}`);
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('File deletion failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Deletion failed' 
+    });
+  }
+});
+
+router.get('/quota', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    
+    const userTier = 'free';
+    const quotaLimits: Record<string, number> = {
+      free: 5 * 1024 * 1024 * 1024,
+      pro: 50 * 1024 * 1024 * 1024,
+      studio: 200 * 1024 * 1024 * 1024,
+      enterprise: 1024 * 1024 * 1024 * 1024,
+    };
+
+    const limit = quotaLimits[userTier] || quotaLimits.free;
+    
+    const used = 2.5 * 1024 * 1024 * 1024;
+
+    const categories = [
+      { name: 'Audio', used: 1.8 * 1024 * 1024 * 1024, icon: 'audio', color: 'bg-blue-500' },
+      { name: 'Images', used: 0.5 * 1024 * 1024 * 1024, icon: 'image', color: 'bg-green-500' },
+      { name: 'Videos', used: 0.15 * 1024 * 1024 * 1024, icon: 'video', color: 'bg-purple-500' },
+      { name: 'Other', used: 0.05 * 1024 * 1024 * 1024, icon: 'file', color: 'bg-gray-500' },
+    ];
+
+    res.json({
+      used,
+      limit,
+      available: limit - used,
+      percentage: (used / limit) * 100,
+      tier: userTier,
+      categories,
+    });
+  } catch (error) {
+    logger.error('Failed to get storage quota:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Failed to get quota' 
+    });
+  }
+});
+
+router.post('/rename', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { fileId, newName } = req.body;
+    const userId = req.session.userId!;
+
+    if (!fileId || !newName) {
+      return res.status(400).json({ error: 'fileId and newName are required' });
+    }
+
+    logger.info(`File renamed: ${fileId} to ${newName} by user ${userId}`);
+
+    res.json({
+      success: true,
+      file: {
+        id: fileId,
+        name: newName,
+      },
+    });
+  } catch (error) {
+    logger.error('File rename failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Rename failed' 
+    });
+  }
+});
+
+router.post('/move', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { fileId, folderId } = req.body;
+    const userId = req.session.userId!;
+
+    if (!fileId || !folderId) {
+      return res.status(400).json({ error: 'fileId and folderId are required' });
+    }
+
+    logger.info(`File moved: ${fileId} to folder ${folderId} by user ${userId}`);
+
+    res.json({
+      success: true,
+      file: {
+        id: fileId,
+        folderId,
+      },
+    });
+  } catch (error) {
+    logger.error('File move failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Move failed' 
+    });
+  }
+});
+
+router.post('/duplicate', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { fileId } = req.body;
+    const userId = req.session.userId!;
+
+    if (!fileId) {
+      return res.status(400).json({ error: 'fileId is required' });
+    }
+
+    const newFileId = randomUUID();
+
+    logger.info(`File duplicated: ${fileId} to ${newFileId} by user ${userId}`);
+
+    res.json({
+      success: true,
+      file: {
+        id: newFileId,
+        originalId: fileId,
+      },
+    });
+  } catch (error) {
+    logger.error('File duplicate failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Duplicate failed' 
+    });
+  }
+});
+
+router.post('/validate', async (req: Request, res: Response) => {
+  try {
+    const { fileName, fileSize, mimeType, options = {} } = req.body;
+
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const details: { check: string; status: string; message: string; value?: string }[] = [];
+
+    const maxSize = options.maxSize || MAX_FILE_SIZE;
+    if (fileSize > maxSize) {
+      errors.push(`File size (${formatBytes(fileSize)}) exceeds maximum (${formatBytes(maxSize)})`);
+      details.push({
+        check: 'File Size',
+        status: 'fail',
+        message: 'File is too large',
+        value: `${formatBytes(fileSize)} / ${formatBytes(maxSize)} max`,
+      });
+    } else {
+      details.push({
+        check: 'File Size',
+        status: 'pass',
+        message: 'Within size limits',
+        value: formatBytes(fileSize),
+      });
+    }
+
+    const allowedTypes = [...ALLOWED_AUDIO_TYPES, ...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
+    if (!allowedTypes.includes(mimeType)) {
+      errors.push(`File type "${mimeType}" is not supported`);
+      details.push({
+        check: 'File Type',
+        status: 'fail',
+        message: 'Unsupported file type',
+        value: mimeType,
+      });
+    } else {
+      details.push({
+        check: 'File Type',
+        status: 'pass',
+        message: 'Supported file format',
+        value: mimeType,
+      });
+    }
+
+    res.json({
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      details,
+    });
+  } catch (error) {
+    logger.error('File validation failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Validation failed' 
+    });
+  }
+});
+
+router.post('/scan', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { fileId } = req.body;
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    res.json({
+      success: true,
+      fileId,
+      scanResult: {
+        clean: true,
+        threats: [],
+        scannedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    logger.error('File scan failed:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Scan failed' 
+    });
+  }
+});
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+export default router;

@@ -412,4 +412,183 @@ router.get('/threats', async (req: Request, res: Response) => {
   }
 });
 
+const userAlertsRouter = Router();
+
+userAlertsRouter.get('/alerts', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const userId = req.user!.id;
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const userThreats = await db.select()
+      .from(securityThreats)
+      .where(
+        and(
+          eq(securityThreats.userId, userId),
+          gte(securityThreats.detectedAt, sevenDaysAgo)
+        )
+      )
+      .orderBy(desc(securityThreats.detectedAt))
+      .limit(50);
+
+    const alerts = userThreats.map(threat => {
+      const metadata = threat.metadata as Record<string, any> || {};
+      const indicators = threat.indicators as Record<string, any> || {};
+
+      let type: string = 'security_alert';
+      let title = 'Security Alert';
+      let message = 'A security event was detected on your account.';
+      let action: string | null = null;
+      let actionLabel: string | null = null;
+
+      switch (threat.threatType) {
+        case 'suspicious_login':
+          type = 'suspicious_login_attempt';
+          title = 'Suspicious Login Attempt';
+          message = `A login attempt from ${indicators.location || 'an unknown location'} was detected.`;
+          action = 'review_sessions';
+          actionLabel = 'Review Sessions';
+          break;
+        case 'new_device_login':
+          type = 'login_from_new_device';
+          title = 'New Device Login';
+          message = `Your account was accessed from a new device: ${indicators.device || 'Unknown device'}.`;
+          action = 'manage_devices';
+          actionLabel = 'Manage Devices';
+          break;
+        case 'new_location_login':
+          type = 'login_from_new_location';
+          title = 'Login from New Location';
+          message = `Your account was accessed from a new location: ${indicators.location || 'Unknown location'}.`;
+          action = 'review_sessions';
+          actionLabel = 'Review Sessions';
+          break;
+        case 'failed_login':
+        case 'brute_force':
+          type = 'failed_login_attempts';
+          title = 'Failed Login Attempts';
+          message = `Multiple failed login attempts were detected on your account.`;
+          action = 'change_password';
+          actionLabel = 'Change Password';
+          break;
+        case 'account_locked':
+          type = 'account_locked';
+          title = 'Account Locked';
+          message = 'Your account has been temporarily locked due to too many failed login attempts.';
+          action = 'unlock_account';
+          actionLabel = 'Unlock Account';
+          break;
+        case 'account_unlocked':
+          type = 'account_unlocked';
+          title = 'Account Unlocked';
+          message = 'Your account has been unlocked and is accessible again.';
+          break;
+        case 'password_change_required':
+          type = 'password_change_required';
+          title = 'Password Change Required';
+          message = 'For security reasons, you must change your password.';
+          action = 'change_password';
+          actionLabel = 'Change Password';
+          break;
+        case 'session_hijack_detected':
+          type = 'session_hijack_detected';
+          title = 'Session Hijack Detected';
+          message = 'We detected potential unauthorized access to your session.';
+          action = 'logout_all';
+          actionLabel = 'Logout All Sessions';
+          break;
+        case 'remote_session_terminated':
+          type = 'remote_session_terminated';
+          title = 'Session Terminated';
+          message = 'A session was remotely terminated.';
+          break;
+        case 'all_other_sessions_logged_out':
+          type = 'all_sessions_logged_out';
+          title = 'All Other Sessions Logged Out';
+          message = 'All other sessions have been logged out.';
+          break;
+        case 'concurrent_session_detected':
+          type = 'concurrent_session_detected';
+          title = 'Concurrent Session Detected';
+          message = 'Your account is logged in from multiple devices.';
+          action = 'manage_sessions';
+          actionLabel = 'Manage Sessions';
+          break;
+        case 'max_sessions_exceeded':
+          type = 'max_sessions_exceeded';
+          title = 'Maximum Sessions Exceeded';
+          message = 'You have exceeded the maximum number of concurrent sessions.';
+          action = 'manage_sessions';
+          actionLabel = 'Manage Sessions';
+          break;
+        default:
+          type = threat.threatType;
+          title = threat.threatType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      }
+
+      return {
+        id: threat.id,
+        type,
+        title,
+        message,
+        severity: threat.severity,
+        timestamp: threat.detectedAt?.toISOString(),
+        resolved: threat.status === 'resolved' || threat.status === 'healed',
+        action,
+        actionLabel,
+        metadata: {
+          ip: threat.sourceIp,
+          ...indicators,
+          ...metadata
+        }
+      };
+    });
+
+    const unresolvedCount = alerts.filter(a => !a.resolved).length;
+    const criticalCount = alerts.filter(a => a.severity === 'critical' && !a.resolved).length;
+
+    res.json({
+      alerts,
+      summary: {
+        total: alerts.length,
+        unresolved: unresolvedCount,
+        critical: criticalCount,
+        requiresAction: alerts.filter(a => a.action && !a.resolved).length
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching user security alerts:', error);
+    res.status(500).json({ error: 'Failed to fetch security alerts' });
+  }
+});
+
+userAlertsRouter.post('/alerts/:alertId/dismiss', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const userId = req.user!.id;
+    const { alertId } = req.params;
+
+    await db.update(securityThreats)
+      .set({ status: 'resolved' })
+      .where(
+        and(
+          eq(securityThreats.id, alertId),
+          eq(securityThreats.userId, userId)
+        )
+      );
+
+    res.json({ success: true, message: 'Alert dismissed' });
+  } catch (error) {
+    logger.error('Error dismissing alert:', error);
+    res.status(500).json({ error: 'Failed to dismiss alert' });
+  }
+});
+
+export { userAlertsRouter };
 export default router;
