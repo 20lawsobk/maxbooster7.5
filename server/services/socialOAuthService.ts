@@ -274,7 +274,7 @@ export class SocialOAuthService {
       clientSecret: process.env.FACEBOOK_APP_SECRET || process.env.FACEBOOK_CLIENT_SECRET || '',
       authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
       tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-      scopes: ['public_profile', 'email', 'pages_show_list', 'pages_read_engagement', 'pages_manage_posts', 'pages_read_user_content', 'business_management', 'instagram_basic', 'instagram_content_publish', 'instagram_manage_comments', 'instagram_manage_insights'],
+      scopes: ['public_profile', 'email', 'pages_show_list', 'pages_read_engagement', 'business_management', 'instagram_basic', 'instagram_content_publish', 'instagram_manage_comments'],
       redirectUri: `${getOAuthDomain()}/auth/meta/callback`,
     });
 
