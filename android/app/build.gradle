@@ -7,17 +7,28 @@ android {
         applicationId "com.blawzmusic.maxbooster"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 30000
+        versionName "3.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("KEYSTORE_PATH") ?: "${System.getProperty('user.home')}/maxbooster-release.keystore"
+            def keystorePass = System.getenv("KEYSTORE_PASSWORD") ?: "maxbooster2026"
+            def keyAliasName = System.getenv("KEY_ALIAS") ?: "maxbooster"
+            def keyPass = System.getenv("KEY_PASSWORD") ?: "maxbooster2026"
+            storeFile file(keystorePath)
+            storePassword keystorePass
+            keyAlias keyAliasName
+            keyPassword keyPass
         }
     }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
