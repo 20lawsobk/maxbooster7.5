@@ -61,7 +61,6 @@ adminRouter.get("/users", async (req, res) => {
         subscriptionTier: users.subscriptionTier,
         subscriptionStatus: users.subscriptionStatus,
         createdAt: users.createdAt,
-        isSuspended: users.isSuspended,
       })
         .from(users)
         .where(whereClause)
@@ -102,7 +101,6 @@ adminRouter.get("/users/:userId", async (req, res) => {
         subscriptionTier: users.subscriptionTier,
         subscriptionStatus: users.subscriptionStatus,
         createdAt: users.createdAt,
-        isSuspended: users.isSuspended,
         stripeCustomerId: users.stripeCustomerId,
       })
       .from(users)
@@ -169,7 +167,6 @@ adminRouter.post("/users/:userId/suspend", async (req, res) => {
     }
 
     await db.update(users).set({ 
-      isSuspended: true, 
       subscriptionStatus: "suspended" 
     }).where(eq(users.id, userId));
 
@@ -187,7 +184,6 @@ adminRouter.post("/users/:userId/reactivate", async (req, res) => {
     const { userId } = req.params;
 
     await db.update(users).set({ 
-      isSuspended: false, 
       subscriptionStatus: "active" 
     }).where(eq(users.id, userId));
 
@@ -463,7 +459,6 @@ adminRouter.post("/moderation/users/:userId/ban", async (req, res) => {
 
     await db.update(users).set({
       subscriptionStatus: "banned",
-      isSuspended: true,
     }).where(eq(users.id, userId));
 
     logger.info(`Admin ${req.user?.email} banned user ${userId}. Duration: ${duration || "permanent"}. Reason: ${reason}`);
