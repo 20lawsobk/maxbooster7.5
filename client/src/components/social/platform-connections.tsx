@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle, Clock, Users, RefreshCw } from 'lucide-react';
 import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon } from '@/components/ui/brand-icons';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
@@ -18,11 +18,17 @@ interface Platform {
   oauth: boolean;
   comingSoon?: boolean;
   comingSoonDate?: string;
+  followers?: number;
+  profileUrl?: string;
+  metadata?: Record<string, any>;
 }
 
-/**
- * TODO: Add function documentation
- */
+function formatCompactNumber(num: number): string {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toString();
+}
+
 export function PlatformConnections() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -61,7 +67,7 @@ export function PlatformConnections() {
     onError: (error: unknown) => {
       toast({
         title: 'Connection Failed',
-        description: error.message || 'Failed to connect platform',
+        description: (error as Error).message || 'Failed to connect platform',
         variant: 'destructive',
       });
     },
@@ -95,9 +101,45 @@ export function PlatformConnections() {
     },
   });
 
-  const metaConnected = connections.some((c: unknown) => c.platform === 'facebook' || c.platform === 'instagram');
-  const metaUsername = connections.find((c: unknown) => c.platform === 'facebook')?.username || 
-                       connections.find((c: unknown) => c.platform === 'instagram')?.username;
+  const syncPlatformMutation = useMutation({
+    mutationFn: async (platform: string) => {
+      const response = await fetch(`/api/social/sync/${platform}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to sync platform stats');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, platform) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/social/connections'] });
+      toast({
+        title: 'Stats Synced',
+        description: `Successfully synced ${platform} stats`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Sync Failed',
+        description: 'Failed to sync platform stats',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const metaConnected = connections.some((c: any) => c.platform === 'facebook' || c.platform === 'instagram');
+  const metaUsername = connections.find((c: any) => c.platform === 'facebook')?.username || 
+                       connections.find((c: any) => c.platform === 'instagram')?.username;
+  const metaFollowers = (connections.find((c: any) => c.platform === 'facebook')?.followers || 0) +
+                        (connections.find((c: any) => c.platform === 'instagram')?.followers || 0);
+  const metaMetadata = {
+    ...(connections.find((c: any) => c.platform === 'facebook')?.metadata || {}),
+    ...(connections.find((c: any) => c.platform === 'instagram')?.metadata || {}),
+  };
+  const metaProfileUrl = connections.find((c: any) => c.platform === 'instagram')?.profileUrl ||
+                         connections.find((c: any) => c.platform === 'facebook')?.profileUrl || '';
 
   const platforms: Platform[] = [
     {
@@ -108,60 +150,81 @@ export function PlatformConnections() {
       connected: metaConnected,
       username: metaUsername,
       oauth: true,
+      followers: metaFollowers,
+      profileUrl: metaProfileUrl,
+      metadata: metaMetadata,
     },
     {
       id: 'twitter',
       name: 'Twitter/X',
       icon: TwitterIcon,
       color: 'text-black dark:text-white',
-      connected: connections.some((c: unknown) => c.platform === 'twitter'),
-      username: connections.find((c: unknown) => c.platform === 'twitter')?.username,
+      connected: connections.some((c: any) => c.platform === 'twitter'),
+      username: connections.find((c: any) => c.platform === 'twitter')?.username,
       oauth: true,
+      followers: connections.find((c: any) => c.platform === 'twitter')?.followers || 0,
+      profileUrl: connections.find((c: any) => c.platform === 'twitter')?.profileUrl || '',
+      metadata: connections.find((c: any) => c.platform === 'twitter')?.metadata || {},
     },
     {
       id: 'threads',
       name: 'Threads',
       icon: ThreadsIcon,
       color: 'text-black dark:text-white',
-      connected: connections.some((c: unknown) => c.platform === 'threads'),
-      username: connections.find((c: unknown) => c.platform === 'threads')?.username,
+      connected: connections.some((c: any) => c.platform === 'threads'),
+      username: connections.find((c: any) => c.platform === 'threads')?.username,
       oauth: true,
+      followers: connections.find((c: any) => c.platform === 'threads')?.followers || 0,
+      profileUrl: connections.find((c: any) => c.platform === 'threads')?.profileUrl || '',
+      metadata: connections.find((c: any) => c.platform === 'threads')?.metadata || {},
     },
     {
       id: 'tiktok',
       name: 'TikTok',
       icon: TikTokIcon,
       color: 'text-black dark:text-white',
-      connected: connections.some((c: unknown) => c.platform === 'tiktok'),
-      username: connections.find((c: unknown) => c.platform === 'tiktok')?.username,
+      connected: connections.some((c: any) => c.platform === 'tiktok'),
+      username: connections.find((c: any) => c.platform === 'tiktok')?.username,
       oauth: true,
+      followers: connections.find((c: any) => c.platform === 'tiktok')?.followers || 0,
+      profileUrl: connections.find((c: any) => c.platform === 'tiktok')?.profileUrl || '',
+      metadata: connections.find((c: any) => c.platform === 'tiktok')?.metadata || {},
     },
     {
       id: 'youtube',
       name: 'YouTube',
       icon: YouTubeIcon,
       color: 'text-red-600',
-      connected: connections.some((c: unknown) => c.platform === 'youtube'),
-      username: connections.find((c: unknown) => c.platform === 'youtube')?.username,
+      connected: connections.some((c: any) => c.platform === 'youtube'),
+      username: connections.find((c: any) => c.platform === 'youtube')?.username,
       oauth: true,
+      followers: connections.find((c: any) => c.platform === 'youtube')?.followers || 0,
+      profileUrl: connections.find((c: any) => c.platform === 'youtube')?.profileUrl || '',
+      metadata: connections.find((c: any) => c.platform === 'youtube')?.metadata || {},
     },
     {
       id: 'linkedin',
       name: 'LinkedIn',
       icon: LinkedInIcon,
       color: 'text-blue-600',
-      connected: connections.some((c: unknown) => c.platform === 'linkedin'),
-      username: connections.find((c: unknown) => c.platform === 'linkedin')?.username,
+      connected: connections.some((c: any) => c.platform === 'linkedin'),
+      username: connections.find((c: any) => c.platform === 'linkedin')?.username,
       oauth: true,
+      followers: connections.find((c: any) => c.platform === 'linkedin')?.followers || 0,
+      profileUrl: connections.find((c: any) => c.platform === 'linkedin')?.profileUrl || '',
+      metadata: connections.find((c: any) => c.platform === 'linkedin')?.metadata || {},
     },
     {
       id: 'googlebusiness',
       name: 'Google Business',
       icon: GoogleIcon,
       color: 'text-blue-500',
-      connected: connections.some((c: unknown) => c.platform === 'googlebusiness'),
-      username: connections.find((c: unknown) => c.platform === 'googlebusiness')?.username,
+      connected: connections.some((c: any) => c.platform === 'googlebusiness'),
+      username: connections.find((c: any) => c.platform === 'googlebusiness')?.username,
       oauth: true,
+      followers: connections.find((c: any) => c.platform === 'googlebusiness')?.followers || 0,
+      profileUrl: connections.find((c: any) => c.platform === 'googlebusiness')?.profileUrl || '',
+      metadata: connections.find((c: any) => c.platform === 'googlebusiness')?.metadata || {},
     },
   ];
 
@@ -212,6 +275,25 @@ export function PlatformConnections() {
                               {platform.oauth ? 'OAuth Connection' : 'Not connected'}
                             </p>
                           )}
+                          {platform.connected && (
+                            <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                              {(platform.followers || 0) > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  {formatCompactNumber(platform.followers || 0)} followers
+                                </span>
+                              )}
+                              {platform.metadata?.videoCount && (
+                                <span>{formatCompactNumber(platform.metadata.videoCount)} videos</span>
+                              )}
+                              {platform.metadata?.tweetCount && (
+                                <span>{formatCompactNumber(platform.metadata.tweetCount)} posts</span>
+                              )}
+                              {platform.metadata?.mediaCount && (
+                                <span>{formatCompactNumber(platform.metadata.mediaCount)} posts</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -227,6 +309,16 @@ export function PlatformConnections() {
                           </Button>
                         ) : platform.connected ? (
                           <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => syncPlatformMutation.mutate(platform.id)}
+                              disabled={syncPlatformMutation.isPending}
+                              title="Sync stats"
+                            >
+                              <RefreshCw className={`h-4 w-4 ${syncPlatformMutation.isPending ? 'animate-spin' : ''}`} />
+                            </Button>
                             <CheckCircle className="h-5 w-5 text-green-600" />
                             <Button
                               variant="outline"

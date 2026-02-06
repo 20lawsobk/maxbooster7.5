@@ -196,7 +196,11 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
         status,
         tokenExpiresAt: c.tokenExpiresAt,
         tokenExpiresIn,
+        followers: c.followerCount || 0,
         followerCount: c.followerCount || 0,
+        profileUrl: c.profileUrl || '',
+        platformUserId: c.platformUserId || '',
+        metadata: c.metadata || {},
         lastSync: c.createdAt,
         requiresReauth: isTokenExpired,
       };
@@ -382,13 +386,32 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     let facebookUsername = 'Facebook User';
     let instagramUsername = 'Instagram User';
     let username = 'Connected User';
+    let followerCount = 0;
+    let profileUrl = '';
+    let platformUserId = '';
+    let metadata: Record<string, any> = {};
+    let facebookFollowers = 0;
+    let instagramFollowers = 0;
+    let facebookMetadata: Record<string, any> = {};
+    let instagramMetadata: Record<string, any> = {};
+    let facebookProfileUrl = '';
+    let instagramProfileUrl = '';
+    let facebookPlatformUserId = '';
+    let instagramPlatformUserId = '';
     
     try {
       if (platform === 'meta') {
-        const userResponse = await fetch(`https://graph.facebook.com/me?access_token=${tokenData.access_token}`);
-        const userData = await userResponse.json();
-        facebookUsername = userData.name || 'Facebook User';
-        username = facebookUsername;
+        try {
+          const userResponse = await fetch(`https://graph.facebook.com/me?fields=id,name,picture&access_token=${tokenData.access_token}`);
+          const userData = await userResponse.json();
+          facebookUsername = userData.name || 'Facebook User';
+          username = facebookUsername;
+          facebookPlatformUserId = userData.id || '';
+          facebookProfileUrl = `https://www.facebook.com/${userData.id}`;
+          facebookMetadata = { picture: userData.picture?.data?.url };
+        } catch (fbErr) {
+          logger.warn('Failed to fetch Facebook user info:', fbErr);
+        }
         
         try {
           const igResponse = await fetch(`https://graph.facebook.com/me/accounts?access_token=${tokenData.access_token}`);
@@ -401,44 +424,116 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             );
             const igAccountData = await igAccountResponse.json();
             if (igAccountData.instagram_business_account) {
-              const igUsernameResponse = await fetch(
-                `https://graph.facebook.com/${igAccountData.instagram_business_account.id}?fields=username&access_token=${pageToken}`
+              const igUserResponse = await fetch(
+                `https://graph.facebook.com/${igAccountData.instagram_business_account.id}?fields=username,followers_count,media_count&access_token=${pageToken}`
               );
-              const igUsernameData = await igUsernameResponse.json();
-              instagramUsername = igUsernameData.username || 'Instagram User';
+              const igUserData = await igUserResponse.json();
+              instagramUsername = igUserData.username || 'Instagram User';
+              instagramFollowers = igUserData.followers_count || 0;
+              instagramPlatformUserId = igAccountData.instagram_business_account.id || '';
+              instagramProfileUrl = `https://www.instagram.com/${igUserData.username}`;
+              instagramMetadata = { mediaCount: igUserData.media_count || 0 };
             }
           }
         } catch (igErr) {
           logger.warn('Failed to fetch Instagram username:', igErr);
         }
       } else if (platform === 'twitter') {
-        const userResponse = await fetch('https://api.twitter.com/2/users/me', {
-          headers: { Authorization: `Bearer ${tokenData.access_token}` },
-        });
-        const userData = await userResponse.json();
-        username = userData.data?.username || 'Twitter User';
+        try {
+          const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=public_metrics,profile_image_url,description', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+          });
+          const userData = await userResponse.json();
+          username = userData.data?.username || 'Twitter User';
+          followerCount = userData.data?.public_metrics?.followers_count || 0;
+          platformUserId = userData.data?.id || '';
+          profileUrl = `https://x.com/${userData.data?.username}`;
+          metadata = { followingCount: userData.data?.public_metrics?.following_count || 0, tweetCount: userData.data?.public_metrics?.tweet_count || 0, listedCount: userData.data?.public_metrics?.listed_count || 0, profileImageUrl: userData.data?.profile_image_url };
+        } catch (twitterErr) {
+          logger.warn('Failed to fetch Twitter user info:', twitterErr);
+        }
       } else if (platform === 'youtube') {
-        const userResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
-          headers: { Authorization: `Bearer ${tokenData.access_token}` },
-        });
-        const userData = await userResponse.json();
-        username = userData.items?.[0]?.snippet?.title || 'YouTube Channel';
+        try {
+          const userResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+          });
+          const userData = await userResponse.json();
+          const channel = userData.items?.[0];
+          username = channel?.snippet?.title || 'YouTube Channel';
+          followerCount = parseInt(channel?.statistics?.subscriberCount || '0');
+          platformUserId = channel?.id || '';
+          profileUrl = `https://www.youtube.com/channel/${channel?.id}`;
+          metadata = { viewCount: parseInt(channel?.statistics?.viewCount || '0'), videoCount: parseInt(channel?.statistics?.videoCount || '0'), customUrl: channel?.snippet?.customUrl, thumbnailUrl: channel?.snippet?.thumbnails?.default?.url };
+        } catch (ytErr) {
+          logger.warn('Failed to fetch YouTube channel info:', ytErr);
+        }
       } else if (platform === 'tiktok' || platform === 'tiktok_sandbox') {
-        username = 'TikTok User';
+        try {
+          const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count', {
+            headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
+          });
+          const userData = await userResponse.json();
+          const tiktokData = userData.data?.user;
+          username = tiktokData?.display_name || 'TikTok User';
+          followerCount = tiktokData?.follower_count || 0;
+          profileUrl = tiktokData?.avatar_url || '';
+          platformUserId = tiktokData?.open_id || tokenData.open_id || '';
+          metadata = { followingCount: tiktokData?.following_count || 0, likesCount: tiktokData?.likes_count || 0, videoCount: tiktokData?.video_count || 0 };
+        } catch (tiktokErr) {
+          logger.warn('Failed to fetch TikTok user info:', tiktokErr);
+          username = 'TikTok User';
+        }
       } else if (platform === 'linkedin') {
-        username = 'LinkedIn User';
+        try {
+          const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+            headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
+          });
+          const userData = await userResponse.json();
+          username = userData.name || 'LinkedIn User';
+          platformUserId = userData.sub || '';
+          profileUrl = `https://www.linkedin.com/in/${userData.sub}`;
+          metadata = { email: userData.email, picture: userData.picture };
+        } catch (linkedinErr) {
+          logger.warn('Failed to fetch LinkedIn user info:', linkedinErr);
+          username = 'LinkedIn User';
+        }
       } else if (platform === 'threads') {
-        username = 'Threads User';
+        try {
+          const userResponse = await fetch(`https://graph.threads.net/me?fields=id,username,threads_profile_picture_url&access_token=${tokenData.access_token}`);
+          const userData = await userResponse.json();
+          username = userData.username || 'Threads User';
+          platformUserId = userData.id || '';
+          profileUrl = `https://www.threads.net/@${userData.username}`;
+          metadata = { profilePictureUrl: userData.threads_profile_picture_url };
+        } catch (threadsErr) {
+          logger.warn('Failed to fetch Threads user info:', threadsErr);
+          username = 'Threads User';
+        }
       } else if (platform === 'google' || platform === 'googlebusiness') {
-        username = 'Google User';
+        try {
+          const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+          });
+          const userData = await userResponse.json();
+          username = userData.name || 'Google User';
+          platformUserId = userData.id || '';
+          profileUrl = '';
+          metadata = { email: userData.email, picture: userData.picture };
+        } catch (googleErr) {
+          logger.warn('Failed to fetch Google user info:', googleErr);
+          username = 'Google User';
+        }
       }
     } catch (err) {
       logger.warn(`Failed to fetch user info for ${platform}:`, err);
     }
     
     const platformsToSave = platform === 'meta' 
-      ? [{ name: 'facebook', username: facebookUsername }, { name: 'instagram', username: instagramUsername }]
-      : [{ name: platform, username }];
+      ? [
+          { name: 'facebook', username: facebookUsername, followerCount: facebookFollowers, profileUrl: facebookProfileUrl, platformUserId: facebookPlatformUserId, metadata: facebookMetadata },
+          { name: 'instagram', username: instagramUsername, followerCount: instagramFollowers, profileUrl: instagramProfileUrl, platformUserId: instagramPlatformUserId, metadata: instagramMetadata },
+        ]
+      : [{ name: platform, username, followerCount, profileUrl, platformUserId, metadata }];
     
     for (const p of platformsToSave) {
       const existingConnection = await db
@@ -459,6 +554,10 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
               ? new Date(Date.now() + tokenData.expires_in * 1000)
               : null,
             username: p.username,
+            followerCount: p.followerCount,
+            profileUrl: p.profileUrl,
+            platformUserId: p.platformUserId,
+            metadata: p.metadata,
             isActive: true,
           })
           .where(eq(socialAccounts.id, existingConnection[0].id));
@@ -472,7 +571,10 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             ? new Date(Date.now() + tokenData.expires_in * 1000)
             : null,
           username: p.username,
-          platformUserId: tokenData.user_id || null,
+          followerCount: p.followerCount,
+          profileUrl: p.profileUrl,
+          platformUserId: p.platformUserId,
+          metadata: p.metadata,
           isActive: true,
         });
       }
@@ -534,6 +636,148 @@ router.post('/disconnect/:platform', requireAuth, async (req: AuthenticatedReque
         retryable: true,
       }
     });
+  }
+});
+
+router.post('/sync/:platform', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const platform = req.params.platform.toLowerCase();
+
+    const platformsToSync = platform === 'meta' ? ['facebook', 'instagram'] : [platform];
+    const results: Record<string, any> = {};
+
+    for (const p of platformsToSync) {
+      const [connection] = await db
+        .select()
+        .from(socialAccounts)
+        .where(and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, p)
+        ));
+
+      if (!connection || !connection.accessToken) {
+        results[p] = { error: 'Not connected or no access token' };
+        continue;
+      }
+
+      let syncedFollowerCount = connection.followerCount || 0;
+      let syncedProfileUrl = connection.profileUrl || '';
+      let syncedPlatformUserId = connection.platformUserId || '';
+      let syncedMetadata: Record<string, any> = (connection.metadata as Record<string, any>) || {};
+      let syncedUsername = connection.username || '';
+
+      try {
+        if (p === 'facebook') {
+          const userResponse = await fetch(`https://graph.facebook.com/me?fields=id,name,picture&access_token=${connection.accessToken}`);
+          const userData = await userResponse.json();
+          syncedUsername = userData.name || syncedUsername;
+          syncedPlatformUserId = userData.id || syncedPlatformUserId;
+          syncedProfileUrl = `https://www.facebook.com/${userData.id}`;
+          syncedMetadata = { ...syncedMetadata, picture: userData.picture?.data?.url };
+        } else if (p === 'instagram') {
+          const igResponse = await fetch(`https://graph.facebook.com/me/accounts?access_token=${connection.accessToken}`);
+          const igData = await igResponse.json();
+          if (igData.data && igData.data.length > 0) {
+            const pageId = igData.data[0].id;
+            const pageToken = igData.data[0].access_token;
+            const igAccountResponse = await fetch(`https://graph.facebook.com/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
+            const igAccountData = await igAccountResponse.json();
+            if (igAccountData.instagram_business_account) {
+              const igUserResponse = await fetch(`https://graph.facebook.com/${igAccountData.instagram_business_account.id}?fields=username,followers_count,media_count&access_token=${pageToken}`);
+              const igUserData = await igUserResponse.json();
+              syncedUsername = igUserData.username || syncedUsername;
+              syncedFollowerCount = igUserData.followers_count || 0;
+              syncedPlatformUserId = igAccountData.instagram_business_account.id || syncedPlatformUserId;
+              syncedProfileUrl = `https://www.instagram.com/${igUserData.username}`;
+              syncedMetadata = { ...syncedMetadata, mediaCount: igUserData.media_count || 0 };
+            }
+          }
+        } else if (p === 'twitter') {
+          const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=public_metrics,profile_image_url,description', {
+            headers: { Authorization: `Bearer ${connection.accessToken}` },
+          });
+          const userData = await userResponse.json();
+          syncedUsername = userData.data?.username || syncedUsername;
+          syncedFollowerCount = userData.data?.public_metrics?.followers_count || 0;
+          syncedPlatformUserId = userData.data?.id || syncedPlatformUserId;
+          syncedProfileUrl = `https://x.com/${userData.data?.username}`;
+          syncedMetadata = { followingCount: userData.data?.public_metrics?.following_count || 0, tweetCount: userData.data?.public_metrics?.tweet_count || 0, listedCount: userData.data?.public_metrics?.listed_count || 0, profileImageUrl: userData.data?.profile_image_url };
+        } else if (p === 'youtube') {
+          const userResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
+            headers: { Authorization: `Bearer ${connection.accessToken}` },
+          });
+          const userData = await userResponse.json();
+          const channel = userData.items?.[0];
+          syncedUsername = channel?.snippet?.title || syncedUsername;
+          syncedFollowerCount = parseInt(channel?.statistics?.subscriberCount || '0');
+          syncedPlatformUserId = channel?.id || syncedPlatformUserId;
+          syncedProfileUrl = `https://www.youtube.com/channel/${channel?.id}`;
+          syncedMetadata = { viewCount: parseInt(channel?.statistics?.viewCount || '0'), videoCount: parseInt(channel?.statistics?.videoCount || '0'), customUrl: channel?.snippet?.customUrl, thumbnailUrl: channel?.snippet?.thumbnails?.default?.url };
+        } else if (p === 'tiktok' || p === 'tiktok_sandbox') {
+          const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count', {
+            headers: { 'Authorization': `Bearer ${connection.accessToken}` },
+          });
+          const userData = await userResponse.json();
+          const tiktokData = userData.data?.user;
+          syncedUsername = tiktokData?.display_name || syncedUsername;
+          syncedFollowerCount = tiktokData?.follower_count || 0;
+          syncedProfileUrl = tiktokData?.avatar_url || syncedProfileUrl;
+          syncedPlatformUserId = tiktokData?.open_id || syncedPlatformUserId;
+          syncedMetadata = { followingCount: tiktokData?.following_count || 0, likesCount: tiktokData?.likes_count || 0, videoCount: tiktokData?.video_count || 0 };
+        } else if (p === 'linkedin') {
+          const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+            headers: { 'Authorization': `Bearer ${connection.accessToken}` },
+          });
+          const userData = await userResponse.json();
+          syncedUsername = userData.name || syncedUsername;
+          syncedPlatformUserId = userData.sub || syncedPlatformUserId;
+          syncedProfileUrl = `https://www.linkedin.com/in/${userData.sub}`;
+          syncedMetadata = { email: userData.email, picture: userData.picture };
+        } else if (p === 'threads') {
+          const userResponse = await fetch(`https://graph.threads.net/me?fields=id,username,threads_profile_picture_url&access_token=${connection.accessToken}`);
+          const userData = await userResponse.json();
+          syncedUsername = userData.username || syncedUsername;
+          syncedPlatformUserId = userData.id || syncedPlatformUserId;
+          syncedProfileUrl = `https://www.threads.net/@${userData.username}`;
+          syncedMetadata = { profilePictureUrl: userData.threads_profile_picture_url };
+        } else if (p === 'google' || p === 'googlebusiness') {
+          const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${connection.accessToken}` },
+          });
+          const userData = await userResponse.json();
+          syncedUsername = userData.name || syncedUsername;
+          syncedPlatformUserId = userData.id || syncedPlatformUserId;
+          syncedMetadata = { email: userData.email, picture: userData.picture };
+        }
+      } catch (apiErr) {
+        logger.warn(`Failed to sync ${p} stats:`, apiErr);
+      }
+
+      await db
+        .update(socialAccounts)
+        .set({
+          username: syncedUsername,
+          followerCount: syncedFollowerCount,
+          profileUrl: syncedProfileUrl,
+          platformUserId: syncedPlatformUserId,
+          metadata: syncedMetadata,
+        })
+        .where(eq(socialAccounts.id, connection.id));
+
+      results[p] = {
+        username: syncedUsername,
+        followerCount: syncedFollowerCount,
+        profileUrl: syncedProfileUrl,
+        platformUserId: syncedPlatformUserId,
+        metadata: syncedMetadata,
+      };
+    }
+
+    res.json({ success: true, results });
+  } catch (error) {
+    logger.error('Failed to sync platform stats:', error);
+    res.status(500).json({ message: 'Failed to sync platform stats' });
   }
 });
 

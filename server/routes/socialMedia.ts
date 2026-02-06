@@ -186,6 +186,9 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
         lastSync: conn?.createdAt?.toISOString() || '',
         status: conn ? 'active' : 'inactive',
         username: conn?.username || undefined,
+        profileUrl: conn?.profileUrl || '',
+        platformUserId: conn?.platformUserId || '',
+        metadata: conn?.metadata || {},
       };
     });
     
@@ -694,12 +697,15 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
       .from(socialAccounts)
       .where(eq(socialAccounts.userId, userId));
     
-    res.json(connections.map(c => ({
+    res.json(connections.filter(c => c.isActive).map(c => ({
       platform: c.platform,
       username: c.username,
       connected: c.isActive,
       connectedAt: c.createdAt,
       followers: c.followerCount || 0,
+      profileUrl: c.profileUrl || '',
+      platformUserId: c.platformUserId || '',
+      metadata: c.metadata || {},
     })));
   } catch (error) {
     logger.error('Failed to get connections:', error);
