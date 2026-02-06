@@ -220,24 +220,27 @@ router.get('/users', async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
+    const baseSelect = db.select({
+      id: users.id,
+      email: users.email,
+      username: users.username,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      role: users.role,
+      subscriptionTier: users.subscriptionTier,
+      subscriptionStatus: users.subscriptionStatus,
+      createdAt: users.createdAt,
+    }).from(users);
+
+    const countSelect = db.select({ count: count() }).from(users);
+
     const [usersList, totalResult] = await Promise.all([
-      db.select({
-        id: users.id,
-        email: users.email,
-        username: users.username,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        subscriptionTier: users.subscriptionTier,
-        subscriptionStatus: users.subscriptionStatus,
-        createdAt: users.createdAt,
-      })
-        .from(users)
-        .where(whereClause)
-        .orderBy(desc(users.createdAt))
-        .limit(limitNum)
-        .offset(offset),
-      db.select({ count: count() }).from(users).where(whereClause)
+      whereClause
+        ? baseSelect.where(whereClause).orderBy(desc(users.createdAt)).limit(limitNum).offset(offset)
+        : baseSelect.orderBy(desc(users.createdAt)).limit(limitNum).offset(offset),
+      whereClause
+        ? countSelect.where(whereClause)
+        : countSelect
     ]);
 
     const total = totalResult[0]?.count || 0;
