@@ -1,5 +1,6 @@
 import { db } from "../db";
 import { eq, and, desc, sql, gte, lte, lt, gt, or } from "drizzle-orm";
+import { dspAnalytics } from "@shared/schema";
 import { logger } from "../logger";
 
 type AlertType = 'milestone' | 'playlist_add' | 'playlist_remove' | 'trigger_city' | 'growth_spike' | 'viral_alert' | 'decline_warning';
@@ -97,11 +98,91 @@ class AnalyticsAlertService {
     try {
       logger.info(`Detecting trigger cities for user ${userId}`);
 
-      const mockCities = this.generateMockTriggerCities();
-      
-      const triggerCities = mockCities.filter(city => city.isHotspot);
-      
-      for (const city of triggerCities) {
+      const halfPeriod = new Date(period.start.getTime() + (period.end.getTime() - period.start.getTime()) / 2);
+
+      const [currentData, previousData] = await Promise.all([
+        db.select().from(dspAnalytics).where(
+          and(eq(dspAnalytics.userId, userId), gte(dspAnalytics.date, halfPeriod), lte(dspAnalytics.date, period.end))
+        ),
+        db.select().from(dspAnalytics).where(
+          and(eq(dspAnalytics.userId, userId), gte(dspAnalytics.date, period.start), lte(dspAnalytics.date, halfPeriod))
+        ),
+      ]);
+
+      if (!currentData || currentData.length === 0) {
+        logger.info(`No geographic data available for user ${userId}`);
+        return [];
+      }
+
+      const currentCityMap = new Map<string, { streams: number; listeners: number; country: string; region: string; lat: number; lon: number; platforms: Set<string> }>();
+      const previousCityMap = new Map<string, number>();
+
+      for (const record of currentData) {
+        const geography = record.geography as any;
+        if (!geography?.cities) continue;
+        for (const city of geography.cities) {
+          if (!city.name || !city.streams) continue;
+          const key = `${city.name}-${city.country || ''}`;
+          const existing = currentCityMap.get(key);
+          if (existing) {
+            existing.streams += city.streams || 0;
+            existing.listeners += city.listeners || 0;
+            existing.platforms.add(record.platform);
+          } else {
+            currentCityMap.set(key, {
+              streams: city.streams || 0,
+              listeners: city.listeners || 0,
+              country: city.country || '',
+              region: city.region || '',
+              lat: city.latitude || 0,
+              lon: city.longitude || 0,
+              platforms: new Set([record.platform]),
+            });
+          }
+        }
+      }
+
+      for (const record of previousData) {
+        const geography = record.geography as any;
+        if (!geography?.cities) continue;
+        for (const city of geography.cities) {
+          if (!city.name || !city.streams) continue;
+          const key = `${city.name}-${city.country || ''}`;
+          previousCityMap.set(key, (previousCityMap.get(key) || 0) + city.streams);
+        }
+      }
+
+      const triggerCities: TriggerCity[] = [];
+
+      for (const [key, data] of currentCityMap) {
+        const previousStreams = previousCityMap.get(key) || 0;
+        const growthPercentage = previousStreams > 0
+          ? ((data.streams - previousStreams) / previousStreams) * 100
+          : (data.streams > 0 ? 100 : 0);
+        const isHotspot = growthPercentage >= this.hotspotThreshold;
+        const trendDirection = growthPercentage > 10 ? 'rising' as const : growthPercentage < -10 ? 'declining' as const : 'stable' as const;
+
+        triggerCities.push({
+          city: key.split('-')[0],
+          country: data.country,
+          region: data.region,
+          latitude: data.lat,
+          longitude: data.lon,
+          growthRate: growthPercentage,
+          streamCount: data.streams,
+          listenerCount: data.listeners,
+          previousWeekStreams: previousStreams,
+          growthPercentage,
+          isHotspot,
+          detectedAt: new Date(),
+          trendDirection,
+          platforms: Array.from(data.platforms) as Platform[],
+        });
+      }
+
+      const hotspots = triggerCities.filter(city => city.isHotspot);
+
+      for (const city of hotspots) {
         await this.createAlert({
           userId,
           type: 'trigger_city',
@@ -113,7 +194,7 @@ class AnalyticsAlertService {
       }
 
       this.triggerCityCache.set(userId, triggerCities);
-      
+
       return triggerCities;
     } catch (error) {
       logger.error('Error detecting trigger cities:', error);
@@ -121,124 +202,30 @@ class AnalyticsAlertService {
     }
   }
 
+  // @deprecated - No longer used. Mock data replaced with real DB queries.
   private generateMockTriggerCities(): TriggerCity[] {
-    const cities = [
-      { city: 'Jakarta', country: 'Indonesia', region: 'Southeast Asia', lat: -6.2088, lon: 106.8456 },
-      { city: 'São Paulo', country: 'Brazil', region: 'South America', lat: -23.5505, lon: -46.6333 },
-      { city: 'Mexico City', country: 'Mexico', region: 'North America', lat: 19.4326, lon: -99.1332 },
-      { city: 'Lagos', country: 'Nigeria', region: 'West Africa', lat: 6.5244, lon: 3.3792 },
-      { city: 'Manila', country: 'Philippines', region: 'Southeast Asia', lat: 14.5995, lon: 120.9842 },
-      { city: 'Buenos Aires', country: 'Argentina', region: 'South America', lat: -34.6037, lon: -58.3816 },
-      { city: 'Delhi', country: 'India', region: 'South Asia', lat: 28.7041, lon: 77.1025 },
-      { city: 'Cairo', country: 'Egypt', region: 'North Africa', lat: 30.0444, lon: 31.2357 },
-      { city: 'Berlin', country: 'Germany', region: 'Europe', lat: 52.5200, lon: 13.4050 },
-      { city: 'Tokyo', country: 'Japan', region: 'East Asia', lat: 35.6762, lon: 139.6503 },
-      { city: 'London', country: 'UK', region: 'Europe', lat: 51.5074, lon: -0.1278 },
-      { city: 'Los Angeles', country: 'USA', region: 'North America', lat: 34.0522, lon: -118.2437 },
-      { city: 'Paris', country: 'France', region: 'Europe', lat: 48.8566, lon: 2.3522 },
-      { city: 'Toronto', country: 'Canada', region: 'North America', lat: 43.6532, lon: -79.3832 },
-      { city: 'Sydney', country: 'Australia', region: 'Oceania', lat: -33.8688, lon: 151.2093 },
-    ];
-
-    return cities.map(c => {
-      const growthRate = -20 + Math.random() * 150;
-      const streamCount = Math.floor(Math.random() * 50000) + 1000;
-      const previousWeekStreams = Math.floor(streamCount / (1 + growthRate / 100));
-      
-      return {
-        city: c.city,
-        country: c.country,
-        region: c.region,
-        latitude: c.lat,
-        longitude: c.lon,
-        growthRate,
-        streamCount,
-        listenerCount: Math.floor(streamCount * 0.4),
-        previousWeekStreams,
-        growthPercentage: growthRate,
-        isHotspot: growthRate >= this.hotspotThreshold,
-        detectedAt: new Date(),
-        trendDirection: growthRate > 10 ? 'rising' : growthRate < -10 ? 'declining' : 'stable',
-        platforms: this.getRandomPlatforms(),
-      };
-    });
+    return [];
   }
 
+  // @deprecated - No longer used.
   private getRandomPlatforms(): Platform[] {
-    const allPlatforms: Platform[] = ['spotify', 'apple', 'youtube', 'tiktok', 'instagram'];
-    const count = Math.floor(Math.random() * 3) + 1;
-    return allPlatforms.sort(() => Math.random() - 0.5).slice(0, count);
+    return [];
   }
 
   async trackPlaylistChanges(userId: string): Promise<PlaylistChange[]> {
     try {
       logger.info(`Tracking playlist changes for user ${userId}`);
-
-      const changes = this.generateMockPlaylistChanges(userId);
-      
-      for (const change of changes) {
-        const priority: AlertPriority = change.followerCount > 100000 ? 'critical' : 
-                                         change.followerCount > 50000 ? 'high' : 
-                                         change.followerCount > 10000 ? 'medium' : 'low';
-        
-        await this.createAlert({
-          userId,
-          type: change.changeType === 'added' ? 'playlist_add' : 'playlist_remove',
-          priority,
-          title: change.changeType === 'added' 
-            ? `🎵 Added to Playlist: ${change.playlistName}`
-            : `❌ Removed from Playlist: ${change.playlistName}`,
-          message: change.changeType === 'added'
-            ? `"${change.trackName}" was added to "${change.playlistName}" (${change.followerCount.toLocaleString()} followers). Estimated reach: ${change.estimatedReach.toLocaleString()} listeners.`
-            : `"${change.trackName}" was removed from "${change.playlistName}". This playlist had ${change.followerCount.toLocaleString()} followers.`,
-          data: change,
-          platform: change.platform,
-        });
-      }
-
-      return changes;
+      logger.info('No real playlist tracking integration available. Returning empty results.');
+      return [];
     } catch (error) {
       logger.error('Error tracking playlist changes:', error);
       return [];
     }
   }
 
+  // @deprecated - No longer used. Playlist tracking requires real integration.
   private generateMockPlaylistChanges(userId: string): PlaylistChange[] {
-    const playlists = [
-      { name: 'Today\'s Top Hits', platform: 'spotify' as Platform, followers: 35000000 },
-      { name: 'New Music Friday', platform: 'spotify' as Platform, followers: 12500000 },
-      { name: 'RapCaviar', platform: 'spotify' as Platform, followers: 15200000 },
-      { name: 'Today Hits', platform: 'apple' as Platform, followers: 8500000 },
-      { name: 'A-List Pop', platform: 'apple' as Platform, followers: 6200000 },
-      { name: 'Hot Rotation', platform: 'amazon' as Platform, followers: 2100000 },
-      { name: 'Indie Chill', platform: 'spotify' as Platform, followers: 890000 },
-      { name: 'Chill Vibes', platform: 'spotify' as Platform, followers: 2400000 },
-      { name: 'Discover Weekly', platform: 'spotify' as Platform, followers: 500000 },
-    ];
-
-    const numChanges = Math.floor(Math.random() * 3) + 1;
-    const changes: PlaylistChange[] = [];
-
-    for (let i = 0; i < numChanges; i++) {
-      const playlist = playlists[Math.floor(Math.random() * playlists.length)];
-      const isAdded = Math.random() > 0.3;
-      
-      changes.push({
-        playlistId: `pl_${Math.random().toString(36).substr(2, 9)}`,
-        playlistName: playlist.name,
-        platform: playlist.platform,
-        trackId: `track_${Math.random().toString(36).substr(2, 9)}`,
-        trackName: `Track ${Math.floor(Math.random() * 100)}`,
-        artistName: 'Your Artist',
-        changeType: isAdded ? 'added' : 'removed',
-        position: isAdded ? Math.floor(Math.random() * 50) + 1 : undefined,
-        followerCount: playlist.followers,
-        estimatedReach: Math.floor(playlist.followers * (0.1 + Math.random() * 0.3)),
-        detectedAt: new Date(),
-      });
-    }
-
-    return changes;
+    return [];
   }
 
   async checkMilestones(userId: string, platform: Platform, metrics: Record<string, number>): Promise<MilestoneAlert[]> {
@@ -368,36 +355,46 @@ class AnalyticsAlertService {
   async getCrossPlatformComparison(userId: string): Promise<CrossPlatformComparison> {
     try {
       const platforms: Platform[] = ['spotify', 'apple', 'youtube', 'tiktok', 'instagram'];
-      
-      const metrics = platforms.map(platform => ({
-        platform,
-        streams: Math.floor(Math.random() * 500000) + 10000,
-        listeners: Math.floor(Math.random() * 200000) + 5000,
-        engagement: 2 + Math.random() * 15,
-        revenue: Math.floor(Math.random() * 5000) + 100,
-        growthRate: -10 + Math.random() * 50,
-      }));
+
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const analyticsData = await db
+        .select()
+        .from(dspAnalytics)
+        .where(
+          and(
+            eq(dspAnalytics.userId, userId),
+            gte(dspAnalytics.date, thirtyDaysAgo),
+            lte(dspAnalytics.date, now)
+          )
+        )
+        .orderBy(desc(dspAnalytics.date));
+
+      const metrics = platforms.map(platform => {
+        const platformData = analyticsData.filter(d => d.platform === platform);
+        const totalStreams = platformData.reduce((sum, d) => sum + (d.streams || 0), 0);
+        const totalListeners = platformData.reduce((sum, d) => sum + (d.listeners || 0), 0);
+        const totalRevenue = platformData.reduce((sum, d) => sum + (d.revenue ? parseFloat(d.revenue) : 0), 0);
+
+        return {
+          platform,
+          streams: totalStreams,
+          listeners: totalListeners,
+          engagement: 0,
+          revenue: totalRevenue,
+          growthRate: 0,
+        };
+      });
 
       metrics.sort((a, b) => b.streams - a.streams);
       const topPerformer = metrics[0].platform;
 
       const recommendations: string[] = [];
-      
-      const tiktokData = metrics.find(m => m.platform === 'tiktok');
-      const spotifyData = metrics.find(m => m.platform === 'spotify');
-      
-      if (tiktokData && spotifyData && tiktokData.growthRate > spotifyData.growthRate) {
-        recommendations.push('Your TikTok growth is outpacing Spotify. Consider creating more short-form content to convert TikTok followers to streaming platforms.');
-      }
-      
-      const lowEngagement = metrics.filter(m => m.engagement < 5);
-      if (lowEngagement.length > 0) {
-        recommendations.push(`Engagement is low on ${lowEngagement.map(m => m.platform).join(', ')}. Try posting more interactive content like polls, Q&As, or behind-the-scenes footage.`);
-      }
 
-      const negativeGrowth = metrics.filter(m => m.growthRate < 0);
-      if (negativeGrowth.length > 0) {
-        recommendations.push(`Consider focusing on ${negativeGrowth.map(m => m.platform).join(', ')} where growth has declined. Fresh content or a new release could help reverse this trend.`);
+      const lowEngagement = metrics.filter(m => m.streams === 0);
+      if (lowEngagement.length > 0) {
+        recommendations.push(`No data available on ${lowEngagement.map(m => m.platform).join(', ')}. Connect these platforms to see cross-platform analytics.`);
       }
 
       return {

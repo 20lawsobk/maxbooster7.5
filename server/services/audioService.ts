@@ -196,8 +196,8 @@ export class AudioService {
   private async generateWaveformFromFile(filePath: string): Promise<number[]> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      logger.warn('FFmpeg not available - using mock waveform data');
-      return this.generateMockWaveform();
+      logger.warn('FFmpeg not available - using fallback waveform data');
+      return this.generateFallbackWaveform();
     }
     const tempWavPath = path.join(os.tmpdir(), `waveform_${randomUUID()}.wav`);
     
@@ -225,8 +225,7 @@ export class AudioService {
       return downsampledData;
     } catch (error: unknown) {
       logger.error('Error generating waveform:', error);
-      // Fallback to mock data
-      return this.generateMockWaveform();
+      return this.generateFallbackWaveform();
     } finally {
       // Clean up temp file
       try {
@@ -237,7 +236,7 @@ export class AudioService {
     }
   }
 
-  private generateMockWaveform(): number[] {
+  private generateFallbackWaveform(): number[] {
     const waveform = [];
     for (let i = 0; i < 2000; i++) {
       waveform.push(Math.sin(i * 0.1) * Math.random() * 0.8);

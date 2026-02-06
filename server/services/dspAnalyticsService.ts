@@ -144,29 +144,42 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<SpotifyArtistAnalytics | null> {
+    if (!credentials.accessToken) {
+      logger.info(`No Spotify access token for user ${userId}, skipping fetch`);
+      return null;
+    }
+
     try {
       logger.info(`Fetching Spotify analytics for user ${userId}`);
-      
+      const config = this.platformConfigs.get('spotify');
+      if (!config) return null;
+
+      const profileRes = await fetch(`${config.apiBaseUrl}/me`, {
+        headers: { 'Authorization': `Bearer ${credentials.accessToken}` },
+      });
+
+      if (!profileRes.ok) {
+        logger.error(`Spotify profile API error: ${profileRes.status} ${profileRes.statusText}`);
+        return null;
+      }
+
+      const profile = await profileRes.json();
+
+      const topTracksRes = await fetch(`${config.apiBaseUrl}/me/top/tracks?limit=50&time_range=short_term`, {
+        headers: { 'Authorization': `Bearer ${credentials.accessToken}` },
+      });
+      const topTracks = topTracksRes.ok ? await topTracksRes.json() : { items: [] };
+
+      const totalPopularity = topTracks.items?.reduce((sum: number, t: any) => sum + (t.popularity || 0), 0) || 0;
+      const avgPopularity = topTracks.items?.length > 0 ? Math.round(totalPopularity / topTracks.items.length) : 0;
+
       return {
-        streams: Math.floor(Math.random() * 100000) + 10000,
-        listeners: Math.floor(Math.random() * 50000) + 5000,
-        saves: Math.floor(Math.random() * 5000) + 500,
-        popularity: Math.floor(Math.random() * 100),
-        demographics: [
-          { age: '18-24', gender: 'male', percentage: 25 },
-          { age: '18-24', gender: 'female', percentage: 20 },
-          { age: '25-34', gender: 'male', percentage: 18 },
-          { age: '25-34', gender: 'female', percentage: 15 },
-          { age: '35-44', gender: 'male', percentage: 12 },
-          { age: '35-44', gender: 'female', percentage: 10 },
-        ],
-        topCities: [
-          { city: 'Los Angeles', country: 'US', listeners: 5000 },
-          { city: 'New York', country: 'US', listeners: 4500 },
-          { city: 'London', country: 'GB', listeners: 3500 },
-          { city: 'Tokyo', country: 'JP', listeners: 2800 },
-          { city: 'Sydney', country: 'AU', listeners: 2200 },
-        ],
+        streams: profile.followers?.total || 0,
+        listeners: profile.followers?.total || 0,
+        saves: 0,
+        popularity: avgPopularity || profile.popularity || 0,
+        demographics: [],
+        topCities: [],
       };
     } catch (error) {
       logger.error('Error fetching Spotify analytics:', error);
@@ -180,15 +193,34 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<AppleMusicAnalytics | null> {
+    if (!credentials.accessToken) {
+      logger.info(`No Apple Music access token for user ${userId}, skipping fetch`);
+      return null;
+    }
+
     try {
       logger.info(`Fetching Apple Music analytics for user ${userId}`);
-      
+      const config = this.platformConfigs.get('apple');
+      if (!config) return null;
+
+      const response = await fetch(`${config.apiBaseUrl}/me/recent/played/tracks?limit=50`, {
+        headers: { 'Authorization': `Bearer ${credentials.accessToken}` },
+      });
+
+      if (!response.ok) {
+        logger.error(`Apple Music API error: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const data = await response.json();
+      const trackCount = data.data?.length || 0;
+
       return {
-        plays: Math.floor(Math.random() * 80000) + 8000,
-        listeners: Math.floor(Math.random() * 40000) + 4000,
-        downloads: Math.floor(Math.random() * 2000) + 200,
-        shares: Math.floor(Math.random() * 1000) + 100,
-        playlistAdds: Math.floor(Math.random() * 3000) + 300,
+        plays: trackCount,
+        listeners: 0,
+        downloads: 0,
+        shares: 0,
+        playlistAdds: 0,
       };
     } catch (error) {
       logger.error('Error fetching Apple Music analytics:', error);
@@ -202,16 +234,39 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<YouTubeAnalytics | null> {
+    if (!credentials.accessToken) {
+      logger.info(`No YouTube access token for user ${userId}, skipping fetch`);
+      return null;
+    }
+
     try {
       logger.info(`Fetching YouTube analytics for user ${userId}`);
-      
+      const config = this.platformConfigs.get('youtube');
+      if (!config) return null;
+
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+
+      const response = await fetch(
+        `${config.apiBaseUrl}/reports?ids=channel==MINE&startDate=${startDateStr}&endDate=${endDateStr}&metrics=views,estimatedMinutesWatched,subscribersGained,likes,comments,averageViewDuration`,
+        { headers: { 'Authorization': `Bearer ${credentials.accessToken}` } }
+      );
+
+      if (!response.ok) {
+        logger.error(`YouTube Analytics API error: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const data = await response.json();
+      const row = data.rows?.[0] || [];
+
       return {
-        views: Math.floor(Math.random() * 200000) + 20000,
-        watchTimeMinutes: Math.floor(Math.random() * 500000) + 50000,
-        subscribers: Math.floor(Math.random() * 10000) + 1000,
-        likes: Math.floor(Math.random() * 15000) + 1500,
-        comments: Math.floor(Math.random() * 2000) + 200,
-        averageViewDuration: Math.floor(Math.random() * 180) + 60,
+        views: row[0] || 0,
+        watchTimeMinutes: row[1] || 0,
+        subscribers: row[2] || 0,
+        likes: row[3] || 0,
+        comments: row[4] || 0,
+        averageViewDuration: row[5] || 0,
       };
     } catch (error) {
       logger.error('Error fetching YouTube analytics:', error);
@@ -225,18 +280,31 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<AmazonMusicAnalytics | null> {
+    if (!credentials.accessToken) {
+      logger.info(`No Amazon Music access token for user ${userId}, skipping fetch`);
+      return null;
+    }
+
     try {
       logger.info(`Fetching Amazon Music analytics for user ${userId}`);
-      
+      const config = this.platformConfigs.get('amazon');
+      if (!config) return null;
+
+      const response = await fetch(`${config.apiBaseUrl}/analytics/streams`, {
+        headers: { 'Authorization': `Bearer ${credentials.accessToken}` },
+      });
+
+      if (!response.ok) {
+        logger.error(`Amazon Music API error: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const data = await response.json();
+
       return {
-        streams: Math.floor(Math.random() * 50000) + 5000,
-        listeners: Math.floor(Math.random() * 25000) + 2500,
-        deviceBreakdown: [
-          { deviceType: 'Echo', percentage: 45 },
-          { deviceType: 'Mobile', percentage: 30 },
-          { deviceType: 'Web', percentage: 15 },
-          { deviceType: 'Desktop', percentage: 10 },
-        ],
+        streams: data.streams || 0,
+        listeners: data.listeners || 0,
+        deviceBreakdown: data.deviceBreakdown || [],
       };
     } catch (error) {
       logger.error('Error fetching Amazon Music analytics:', error);
@@ -250,19 +318,45 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<TikTokAnalytics | null> {
+    if (!credentials.accessToken) {
+      logger.info(`No TikTok access token for user ${userId}, skipping fetch`);
+      return null;
+    }
+
     try {
       logger.info(`Fetching TikTok analytics for user ${userId}`);
-      
+      const config = this.platformConfigs.get('tiktok');
+      if (!config) return null;
+
+      const response = await fetch(`${config.apiBaseUrl}/user/info/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${credentials.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fields: ['follower_count', 'likes_count', 'video_count'],
+        }),
+      });
+
+      if (!response.ok) {
+        logger.error(`TikTok API error: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const data = await response.json();
+      const userInfo = data.data?.user || {};
+
       return {
-        views: Math.floor(Math.random() * 500000) + 50000,
-        likes: Math.floor(Math.random() * 50000) + 5000,
-        comments: Math.floor(Math.random() * 8000) + 800,
-        shares: Math.floor(Math.random() * 15000) + 1500,
-        followers: Math.floor(Math.random() * 100000) + 10000,
-        engagementRate: 5 + Math.random() * 10,
-        avgWatchTime: Math.floor(Math.random() * 30) + 10,
-        soundUsages: Math.floor(Math.random() * 10000) + 1000,
-        virality: Math.random() * 100,
+        views: 0,
+        likes: userInfo.likes_count || 0,
+        comments: 0,
+        shares: 0,
+        followers: userInfo.follower_count || 0,
+        engagementRate: 0,
+        avgWatchTime: 0,
+        soundUsages: 0,
+        virality: 0,
       };
     } catch (error) {
       logger.error('Error fetching TikTok analytics:', error);
@@ -276,20 +370,56 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<InstagramAnalytics | null> {
+    if (!credentials.accessToken) {
+      logger.info(`No Instagram access token for user ${userId}, skipping fetch`);
+      return null;
+    }
+
     try {
       logger.info(`Fetching Instagram analytics for user ${userId}`);
-      
+      const config = this.platformConfigs.get('instagram');
+      if (!config) return null;
+
+      const response = await fetch(
+        `${config.apiBaseUrl}/me?fields=followers_count,media_count&access_token=${credentials.accessToken}`
+      );
+
+      if (!response.ok) {
+        logger.error(`Instagram API error: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const userData = await response.json();
+
+      const insightsResponse = await fetch(
+        `${config.apiBaseUrl}/me/insights?metric=reach,impressions&period=day&since=${Math.floor(startDate.getTime() / 1000)}&until=${Math.floor(endDate.getTime() / 1000)}&access_token=${credentials.accessToken}`
+      );
+
+      let reach = 0;
+      let impressions = 0;
+      if (insightsResponse.ok) {
+        const insightsData = await insightsResponse.json();
+        for (const metric of insightsData.data || []) {
+          if (metric.name === 'reach') {
+            reach = metric.values?.reduce((sum: number, v: any) => sum + (v.value || 0), 0) || 0;
+          }
+          if (metric.name === 'impressions') {
+            impressions = metric.values?.reduce((sum: number, v: any) => sum + (v.value || 0), 0) || 0;
+          }
+        }
+      }
+
       return {
-        reach: Math.floor(Math.random() * 200000) + 20000,
-        impressions: Math.floor(Math.random() * 400000) + 40000,
-        likes: Math.floor(Math.random() * 30000) + 3000,
-        comments: Math.floor(Math.random() * 5000) + 500,
-        shares: Math.floor(Math.random() * 8000) + 800,
-        saves: Math.floor(Math.random() * 6000) + 600,
-        followers: Math.floor(Math.random() * 80000) + 8000,
-        engagementRate: 3 + Math.random() * 8,
-        reelsViews: Math.floor(Math.random() * 150000) + 15000,
-        storiesViews: Math.floor(Math.random() * 50000) + 5000,
+        reach,
+        impressions,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        saves: 0,
+        followers: userData.followers_count || 0,
+        engagementRate: 0,
+        reelsViews: 0,
+        storiesViews: 0,
       };
     } catch (error) {
       logger.error('Error fetching Instagram analytics:', error);
@@ -306,8 +436,8 @@ class DSPAnalyticsService {
       saves: data.likes,
       playlistAdds: data.soundUsages,
       shares: data.shares,
-      skips: Math.floor(data.views * 0.3),
-      completionRate: 0.4 + Math.random() * 0.3,
+      skips: data.views > 0 ? Math.floor(data.views * (1 - (data.avgWatchTime / Math.max(data.avgWatchTime + 10, 30)))) : 0,
+      completionRate: data.views > 0 ? Math.max(0, Math.min(1, data.avgWatchTime / Math.max(data.avgWatchTime + 10, 30))) : 0,
       avgListenDuration: data.avgWatchTime,
       revenue: data.views * 0.00015,
       sourceBreakdown: {
@@ -339,7 +469,7 @@ class DSPAnalyticsService {
       playlistAdds: Math.floor(data.saves * 0.3),
       shares: data.shares,
       skips: Math.floor(data.impressions * 0.2),
-      completionRate: 0.35 + Math.random() * 0.25,
+      completionRate: data.impressions > 0 ? Math.max(0, Math.min(1, 1 - (Math.floor(data.impressions * 0.2) / data.impressions))) : 0,
       avgListenDuration: 25,
       revenue: data.impressions * 0.00008,
       sourceBreakdown: {
@@ -400,7 +530,7 @@ class DSPAnalyticsService {
       playlistAdds: Math.floor(data.saves * 0.3),
       shares: Math.floor(data.saves * 0.1),
       skips: Math.floor(data.streams * 0.15),
-      completionRate: 0.75 + Math.random() * 0.2,
+      completionRate: data.streams > 0 ? Math.max(0, Math.min(1, 1 - (Math.floor(data.streams * 0.15) / data.streams))) : 0,
       avgListenDuration: 180,
       revenue: data.streams * 0.004,
       demographics,
@@ -434,7 +564,7 @@ class DSPAnalyticsService {
       playlistAdds: data.playlistAdds,
       shares: data.shares,
       skips: Math.floor(data.plays * 0.12),
-      completionRate: 0.78 + Math.random() * 0.15,
+      completionRate: data.plays > 0 ? Math.max(0, Math.min(1, 1 - (Math.floor(data.plays * 0.12) / data.plays))) : 0,
       avgListenDuration: 195,
       revenue: data.plays * 0.01,
       sourceBreakdown: {
@@ -514,7 +644,7 @@ class DSPAnalyticsService {
       playlistAdds: Math.floor(data.streams * 0.01),
       shares: Math.floor(data.streams * 0.005),
       skips: Math.floor(data.streams * 0.1),
-      completionRate: 0.82 + Math.random() * 0.1,
+      completionRate: data.streams > 0 ? Math.max(0, Math.min(1, 1 - (Math.floor(data.streams * 0.1) / data.streams))) : 0,
       avgListenDuration: 200,
       revenue: data.streams * 0.004,
       deviceBreakdown,
@@ -642,34 +772,56 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<NormalizedDSPAnalytics> {
+    try {
+      const existingData = await db
+        .select()
+        .from(dspAnalytics)
+        .where(
+          and(
+            eq(dspAnalytics.userId, userId),
+            eq(dspAnalytics.platform, platform),
+            gte(dspAnalytics.date, startDate),
+            lte(dspAnalytics.date, endDate)
+          )
+        )
+        .orderBy(desc(dspAnalytics.date))
+        .limit(1);
+
+      if (existingData.length > 0) {
+        const record = existingData[0];
+        return {
+          platform,
+          period: { start: startDate, end: endDate },
+          streams: record.streams || 0,
+          listeners: record.listeners || 0,
+          saves: record.saves || 0,
+          playlistAdds: record.playlistAdds || 0,
+          shares: record.shares || 0,
+          skips: record.skips || 0,
+          completionRate: record.completionRate || 0,
+          avgListenDuration: record.avgListenDuration || 0,
+          revenue: record.revenue ? parseFloat(record.revenue) : 0,
+          sourceBreakdown: (record.sourceBreakdown as SourceBreakdown) || undefined,
+          deviceBreakdown: (record.deviceBreakdown as DeviceBreakdown) || undefined,
+        };
+      }
+    } catch (error) {
+      logger.error(`Error querying existing data for ${platform}:`, error);
+    }
+
+    logger.info(`No existing data found for platform ${platform}, user ${userId}. Returning zeroed result.`);
     return {
       platform,
       period: { start: startDate, end: endDate },
-      streams: Math.floor(Math.random() * 30000) + 3000,
-      listeners: Math.floor(Math.random() * 15000) + 1500,
-      saves: Math.floor(Math.random() * 2000) + 200,
-      playlistAdds: Math.floor(Math.random() * 1000) + 100,
-      shares: Math.floor(Math.random() * 500) + 50,
-      skips: Math.floor(Math.random() * 3000) + 300,
-      completionRate: 0.7 + Math.random() * 0.25,
-      avgListenDuration: 150 + Math.floor(Math.random() * 60),
-      revenue: Math.floor(Math.random() * 100) + 10,
-      sourceBreakdown: {
-        playlist: 35,
-        search: 25,
-        library: 15,
-        radio: 10,
-        artist: 10,
-        other: 5,
-      },
-      deviceBreakdown: {
-        mobile: 50,
-        desktop: 25,
-        tablet: 10,
-        smartSpeaker: 8,
-        tv: 5,
-        other: 2,
-      },
+      streams: 0,
+      listeners: 0,
+      saves: 0,
+      playlistAdds: 0,
+      shares: 0,
+      skips: 0,
+      completionRate: 0,
+      avgListenDuration: 0,
+      revenue: 0,
     };
   }
 

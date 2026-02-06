@@ -194,14 +194,8 @@ class SocialListeningService {
       }
 
       if (allMentions.length === 0) {
-        logger.info('No real platform data available, using demo data for social listening');
-        const mockMentions = this.generateMockMentions(100, options);
-        const filtered = mockMentions.slice(offset, offset + limit);
-        return {
-          mentions: filtered,
-          total: mockMentions.length,
-          hasMore: offset + limit < mockMentions.length,
-        };
+        logger.info('No real platform data available for social listening');
+        return { mentions: [], total: 0, hasMore: false };
       }
 
       allMentions.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
@@ -223,13 +217,7 @@ class SocialListeningService {
       };
     } catch (error) {
       logger.error('Error fetching social mentions:', error);
-      const mockMentions = this.generateMockMentions(100, options);
-      const filtered = mockMentions.slice(offset, offset + limit);
-      return {
-        mentions: filtered,
-        total: mockMentions.length,
-        hasMore: offset + limit < mockMentions.length,
-      };
+      return { mentions: [], total: 0, hasMore: false };
     }
   }
 
@@ -413,6 +401,7 @@ class SocialListeningService {
     return 'neutral';
   }
 
+  // @deprecated - No longer used. Kept for reference only.
   private generateMockMentions(count: number, options: any): Mention[] {
     const platforms = ['twitter', 'instagram', 'facebook', 'tiktok', 'youtube', 'linkedin'] as const;
     const sentiments = ['positive', 'neutral', 'negative'] as const;

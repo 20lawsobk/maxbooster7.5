@@ -145,7 +145,7 @@ class ArtistProgressService {
         .orderBy(artistProgressSnapshots.snapshotDate);
 
       if (history.length === 0) {
-        return this.generateSampleHistory(days);
+        return [];
       }
 
       return history.map(snapshot => ({
@@ -159,7 +159,7 @@ class ArtistProgressService {
       }));
     } catch (error) {
       logger.error(`Error getting progress history for user ${userId}:`, error);
-      return this.generateSampleHistory(days);
+      return [];
     }
   }
 
@@ -398,7 +398,7 @@ class ArtistProgressService {
           title: `${this.formatNumber(threshold)} ${label}`,
           description: `Reached ${this.formatNumber(threshold)} ${label.toLowerCase()}!`,
           value: threshold,
-          achievedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+          achievedAt: new Date(),
           icon,
         });
       }
@@ -411,91 +411,42 @@ class ArtistProgressService {
     return num.toString();
   }
 
+  // @deprecated - No longer used. Empty array returned instead.
   private generateSampleHistory(days: number): any[] {
-    const history = [];
-    const baseStreams = 1000;
-    const baseFollowers = 100;
-    const baseRevenue = 50;
-
-    for (let i = days; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const growthFactor = 1 + (days - i) * 0.02;
-      const randomVariation = 0.9 + Math.random() * 0.2;
-
-      history.push({
-        date: date.toISOString().split('T')[0],
-        streams: Math.round(baseStreams * growthFactor * randomVariation),
-        followers: Math.round(baseFollowers * growthFactor * randomVariation),
-        revenue: Math.round(baseRevenue * growthFactor * randomVariation * 100) / 100,
-        releases: Math.floor((days - i) / 10) + 1,
-        engagementScore: Math.round(50 + Math.random() * 30),
-        growthRate: Math.round((Math.random() * 10 - 2) * 10) / 10,
-      });
-    }
-
-    return history;
+    return [];
   }
 
   private getDefaultGrowthMetrics(): GrowthMetrics {
     return {
-      weekOverWeek: { streams: 5.2, followers: 3.8, revenue: 7.1, engagement: 2.5 },
-      monthOverMonth: { streams: 12.5, followers: 8.3, revenue: 15.2, engagement: 6.7 },
-      trend: 'rising',
-      velocity: 8.5,
+      weekOverWeek: { streams: 0, followers: 0, revenue: 0, engagement: 0 },
+      monthOverMonth: { streams: 0, followers: 0, revenue: 0, engagement: 0 },
+      trend: 'stable',
+      velocity: 0,
     };
   }
 
   private getDefaultMilestones(): CareerMilestone[] {
-    return [
-      {
-        id: 'streams-1000',
-        type: 'streams',
-        title: '1K Streams',
-        description: 'Reached 1,000 total streams!',
-        value: 1000,
-        achievedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        icon: '🎵',
-      },
-      {
-        id: 'followers-100',
-        type: 'followers',
-        title: '100 Followers',
-        description: 'Gained your first 100 followers!',
-        value: 100,
-        achievedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-        icon: '👥',
-      },
-      {
-        id: 'releases-1',
-        type: 'releases',
-        title: 'First Release',
-        description: 'Published your first release!',
-        value: 1,
-        achievedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        icon: '💿',
-      },
-    ];
+    return [];
   }
 
   private getDefaultDashboardData(): DashboardData {
     return {
-      careerScore: 35,
+      careerScore: 0,
       currentSnapshot: {
-        totalStreams: 1250,
-        totalFollowers: 156,
-        totalRevenue: 87.50,
-        totalReleases: 3,
-        engagementScore: 42,
-        growthRate: 5.2,
+        totalStreams: 0,
+        totalFollowers: 0,
+        totalRevenue: 0,
+        totalReleases: 0,
+        engagementScore: 0,
+        growthRate: 0,
       },
       previousPeriod: {
-        totalStreams: 980,
-        totalFollowers: 128,
-        totalRevenue: 62.30,
-        engagementScore: 38,
+        totalStreams: 0,
+        totalFollowers: 0,
+        totalRevenue: 0,
+        engagementScore: 0,
       },
-      percentileRank: 30,
+      percentileRank: 0,
       growthMetrics: this.getDefaultGrowthMetrics(),
     };
   }
