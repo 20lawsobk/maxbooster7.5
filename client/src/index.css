@@ -396,11 +396,6 @@
     transform: rotate(180deg);
   }
   
-  [aria-pressed="true"] {
-    background-color: var(--blue-primary);
-    color: white;
-  }
-  
   [aria-selected="true"] {
     background-color: rgba(59, 130, 246, 0.1);
     font-weight: 600;
@@ -418,17 +413,6 @@
   
   [aria-invalid="true"] {
     border-color: var(--destructive) !important;
-  }
-  
-  /* Touch Target Sizing - Minimum 44x44px */
-  button,
-  a,
-  [role="button"],
-  [role="link"],
-  [role="checkbox"],
-  [role="radio"] {
-    min-height: 44px;
-    min-width: 44px;
   }
   
   /* Small buttons adjustment */
@@ -669,7 +653,7 @@
   
   /* Focus States */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
   }
   
   /* Text Styles */
@@ -799,16 +783,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: var(--muted);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground));
+  background: var(--muted-foreground);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary));
+  background: var(--primary);
 }
 
 /* Mobile-First Spacing Improvements */
@@ -1000,7 +984,7 @@ button, a, [role="button"] {
 
 /* Loading States */
 .skeleton {
-  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.1) 50%, hsl(var(--muted)) 75%);
+  background: linear-gradient(90deg, var(--muted) 25%, var(--muted-foreground) 50%, var(--muted) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
 }
@@ -1041,7 +1025,7 @@ img[loading="lazy"]:not([src=""]) {
   
   .skeleton {
     animation: none;
-    background: hsl(var(--muted));
+    background: var(--muted);
   }
 }
 
@@ -1423,7 +1407,7 @@ img[loading="lazy"]:not([src=""]) {
 :root {
   --a11y-focus-width: 2px;
   --a11y-focus-offset: 2px;
-  --a11y-focus-color: hsl(var(--primary));
+  --a11y-focus-color: var(--primary);
   --a11y-font-size: 16px;
   --a11y-font-scale: 1;
 }
@@ -1451,8 +1435,8 @@ img[loading="lazy"]:not([src=""]) {
   left: 0;
   z-index: 9999;
   padding: 0.5rem 1rem;
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background: var(--primary);
+  color: var(--primary-foreground);
   text-decoration: none;
   border-radius: 0.25rem;
   transition: top 0.2s ease;
@@ -1649,18 +1633,7 @@ img[loading="lazy"]:not([src=""]) {
 
 /* Visible focus indicators for interactive elements */
 .focus-visible-ring:focus-visible {
-  outline: 2px solid hsl(var(--primary));
-  outline-offset: 2px;
-}
-
-/* Enhanced button focus for accessibility */
-button:focus-visible,
-[role="button"]:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid hsl(var(--primary));
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -1683,8 +1656,8 @@ textarea:focus-visible {
   margin: 0;
 }
 
-[role="menuitem"]:focus {
-  background-color: hsl(var(--accent));
+[role="menuitem"]:focus-visible {
+  background-color: var(--accent);
   outline: none;
 }
 
@@ -1694,13 +1667,8 @@ textarea:focus-visible {
   gap: 0.25rem;
 }
 
-[role="tab"][aria-selected="true"] {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-}
-
 [role="tab"]:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -1712,11 +1680,11 @@ textarea:focus-visible {
 }
 
 [role="option"][aria-selected="true"] {
-  background-color: hsl(var(--accent));
+  background-color: var(--accent);
 }
 
-[role="option"]:focus {
-  background-color: hsl(var(--accent));
+[role="option"]:focus-visible {
+  background-color: var(--accent);
   outline: none;
 }
 
@@ -1732,7 +1700,7 @@ textarea:focus-visible {
 }
 
 [role="slider"]:focus-visible {
-  outline: 2px solid hsl(var(--primary));
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -1758,8 +1726,8 @@ textarea:focus-visible {
   display: grid;
 }
 
-[role="gridcell"]:focus {
-  outline: 2px solid hsl(var(--primary));
+[role="gridcell"]:focus-visible {
+  outline: 2px solid var(--primary);
   outline-offset: -2px;
 }
 
@@ -1769,8 +1737,8 @@ textarea:focus-visible {
   padding: 0;
 }
 
-[role="treeitem"]:focus {
-  background-color: hsl(var(--accent));
+[role="treeitem"]:focus-visible {
+  background-color: var(--accent);
   outline: none;
 }
 

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
@@ -70,6 +71,26 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   const [location] = useLocation();
   const { t } = useTranslation();
 
+  useEffect(() => {
+    if (!isMobileOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onMobileClose) {
+        onMobileClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMobileOpen, onMobileClose]);
+
   if (!user) {
     return null;
   }
@@ -84,6 +105,10 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onMobileClose}
+          onTouchEnd={(e) => { e.preventDefault(); onMobileClose?.(); }}
+          role="button"
+          tabIndex={-1}
+          aria-label="Close sidebar"
           data-testid="sidebar-overlay"
         />
       )}
@@ -94,6 +119,9 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
           'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-background border-r border-gray-200 dark:border-border flex flex-col h-full transition-transform duration-300 lg:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        role="navigation"
+        aria-label="Main navigation"
+        aria-hidden={!isMobileOpen}
       >
         <div className="p-4 border-b border-gray-200 dark:border-border">
           <div className="flex items-center justify-between gap-2">
