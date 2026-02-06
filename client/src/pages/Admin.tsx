@@ -474,7 +474,7 @@ export default function Admin() {
               <div>
                 <p className="text-orange-100 text-sm">System Uptime</p>
                 <p className="text-3xl font-bold">{systemHealth?.server?.uptimeFormatted || 'N/A'}</p>
-                <p className="text-orange-200 text-sm">99.9% availability</p>
+                <p className="text-orange-200 text-sm">{systemHealth?.server?.uptime ? `Since last restart` : 'Checking...'}</p>
               </div>
               <Activity className="h-12 w-12 text-orange-200" />
             </div>

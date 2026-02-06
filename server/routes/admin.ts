@@ -4,8 +4,24 @@ import { users, projects, releases, analytics, posts, orders, systemSettings } f
 import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { killSwitch } from "../safety/killSwitch.js";
+import * as os from 'os';
 
 const adminRouter = Router();
+
+const errorCounter = { last24h: 0, last7d: 0 };
+
+function getRealCpuUsage(): number {
+  const cpus = os.cpus();
+  if (cpus.length === 0) return 0;
+  let totalUsage = 0;
+  for (const cpu of cpus) {
+    const { user, nice, sys, idle, irq } = cpu.times;
+    const total = user + nice + sys + idle + irq;
+    const used = user + nice + sys + irq;
+    totalUsage += (used / total) * 100;
+  }
+  return Math.round(totalUsage / cpus.length);
+}
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
@@ -239,24 +255,28 @@ adminRouter.get("/system-health", async (req, res) => {
     const uptime = process.uptime();
 
     let dbStatus = "connected";
+    let dbLatency: number | null = null;
     try {
+      const dbStart = Date.now();
       await db.select({ count: count() }).from(users).limit(1);
+      dbLatency = Date.now() - dbStart;
     } catch {
       dbStatus = "disconnected";
     }
 
     const externalApis = {
-      stripe: { status: "operational", latency: Math.floor(Math.random() * 50 + 20) },
-      labelgrid: { status: "operational", latency: Math.floor(Math.random() * 100 + 50) },
-      spotify: { status: "operational", latency: Math.floor(Math.random() * 80 + 30) },
-      apple_music: { status: "operational", latency: Math.floor(Math.random() * 90 + 40) },
-      youtube: { status: "operational", latency: Math.floor(Math.random() * 70 + 25) },
-      twitter: { status: "operational", latency: Math.floor(Math.random() * 60 + 20) },
-      instagram: { status: "operational", latency: Math.floor(Math.random() * 65 + 25) },
-      tiktok: { status: "operational", latency: Math.floor(Math.random() * 85 + 35) },
+      stripe: { status: "unknown" as const, latency: null as number | null },
+      labelgrid: { status: "unknown" as const, latency: null as number | null },
+      spotify: { status: "unknown" as const, latency: null as number | null },
+      apple_music: { status: "unknown" as const, latency: null as number | null },
+      youtube: { status: "unknown" as const, latency: null as number | null },
+      twitter: { status: "unknown" as const, latency: null as number | null },
+      instagram: { status: "unknown" as const, latency: null as number | null },
+      tiktok: { status: "unknown" as const, latency: null as number | null },
     };
 
     const killSwitchState = killSwitch.getState();
+    const cpuUsage = getRealCpuUsage();
 
     res.json({
       server: {
@@ -268,16 +288,16 @@ adminRouter.get("/system-health", async (req, res) => {
           rss: Math.round(memUsage.rss / 1024 / 1024),
           percentUsed: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
         },
-        cpu: Math.floor(Math.random() * 30 + 10),
-        disk: Math.floor(Math.random() * 40 + 20),
+        cpu: cpuUsage,
+        disk: 0,
       },
       database: {
         status: dbStatus,
-        latency: dbStatus === "connected" ? Math.floor(Math.random() * 10 + 2) : null,
+        latency: dbLatency,
         connectionPool: {
-          active: 5,
-          idle: 15,
-          max: 20,
+          active: 0,
+          idle: 0,
+          max: 0,
         },
       },
       externalApis,
@@ -287,9 +307,9 @@ adminRouter.get("/system-health", async (req, res) => {
         lastAction: killSwitchState.lastKillTime || killSwitchState.lastResumeTime,
       },
       errorTracking: {
-        last24h: Math.floor(Math.random() * 50),
-        last7d: Math.floor(Math.random() * 200),
-        errorRate: (Math.random() * 0.5).toFixed(2) + "%",
+        last24h: errorCounter.last24h,
+        last7d: errorCounter.last7d,
+        errorRate: "0.00%",
       },
       timestamp: new Date().toISOString(),
     });
@@ -301,74 +321,22 @@ adminRouter.get("/system-health", async (req, res) => {
 
 adminRouter.get("/moderation/reports", async (req, res) => {
   try {
-    const { status = "pending", page = "1", limit = "20" } = req.query;
+    const { page = "1", limit = "20" } = req.query;
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
 
-    const reports = [
-      {
-        id: "report-1",
-        contentType: "project",
-        contentId: "proj-123",
-        contentTitle: "Suspicious Beat Pack",
-        reportedBy: "user-456",
-        reportedByUsername: "john_doe",
-        reason: "copyright_infringement",
-        description: "This beat appears to sample a copyrighted song without permission",
-        status: "pending",
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-        targetUserId: "user-789",
-        targetUsername: "beat_maker",
-      },
-      {
-        id: "report-2",
-        contentType: "post",
-        contentId: "post-456",
-        contentTitle: "Promotional spam post",
-        reportedBy: "user-111",
-        reportedByUsername: "jane_smith",
-        reason: "spam",
-        description: "User is posting repeated promotional content",
-        status: "pending",
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
-        targetUserId: "user-222",
-        targetUsername: "spammer_account",
-      },
-      {
-        id: "report-3",
-        contentType: "comment",
-        contentId: "comment-789",
-        contentTitle: "Offensive comment",
-        reportedBy: "user-333",
-        reportedByUsername: "music_lover",
-        reason: "harassment",
-        description: "User is leaving hateful comments on multiple posts",
-        status: "reviewed",
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        targetUserId: "user-444",
-        targetUsername: "troll_user",
-        reviewedBy: "admin@maxbooster.com",
-        reviewedAt: new Date(Date.now() - 43200000).toISOString(),
-        resolution: "warning_issued",
-      },
-    ];
-
-    const filteredReports = status === "all" 
-      ? reports 
-      : reports.filter(r => r.status === status);
-
     res.json({
-      reports: filteredReports.slice((pageNum - 1) * limitNum, pageNum * limitNum),
+      reports: [],
       pagination: {
-        total: filteredReports.length,
+        total: 0,
         page: pageNum,
         limit: limitNum,
-        totalPages: Math.ceil(filteredReports.length / limitNum),
+        totalPages: 0,
       },
       stats: {
-        pending: reports.filter(r => r.status === "pending").length,
-        reviewed: reports.filter(r => r.status === "reviewed").length,
-        resolved: reports.filter(r => r.status === "resolved").length,
+        pending: 0,
+        reviewed: 0,
+        resolved: 0,
       },
     });
   } catch (error) {
@@ -482,12 +450,23 @@ adminRouter.get("/analytics", async (req, res) => {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
     const [
       totalUsersResult,
       newUsersResult,
       totalProjectsResult,
       totalReleasesResult,
       subscriptionStatsResult,
+      totalRevenueResult,
+      totalStreamsResult,
+      thisMonthRevenueResult,
+      lastMonthRevenueResult,
+      thisMonthProjectsResult,
+      lastMonthProjectsResult,
+      userGrowthResult,
     ] = await Promise.all([
       db.select({ count: count() }).from(users),
       db.select({ count: count() }).from(users).where(gte(users.createdAt, thirtyDaysAgo)),
@@ -497,12 +476,32 @@ adminRouter.get("/analytics", async (req, res) => {
         plan: users.subscriptionTier,
         count: count(),
       }).from(users).groupBy(users.subscriptionTier),
+      db.select({ total: sql<number>`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where(eq(orders.status, 'completed')),
+      db.select({ total: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics),
+      db.select({ total: sql<number>`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where(and(eq(orders.status, 'completed'), gte(orders.createdAt, thisMonthStart))),
+      db.select({ total: sql<number>`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where(and(eq(orders.status, 'completed'), gte(orders.createdAt, lastMonthStart), lte(orders.createdAt, lastMonthEnd))),
+      db.select({ count: count() }).from(projects).where(gte(projects.createdAt, thisMonthStart)),
+      db.select({ count: count() }).from(projects).where(and(gte(projects.createdAt, lastMonthStart), lte(projects.createdAt, lastMonthEnd))),
+      db.select({
+        date: sql<string>`DATE(${users.createdAt})`,
+        count: count(),
+      }).from(users).where(gte(users.createdAt, thirtyDaysAgo)).groupBy(sql`DATE(${users.createdAt})`),
     ]);
 
     const totalUsers = totalUsersResult[0]?.count || 0;
     const newUsers = newUsersResult[0]?.count || 0;
     const totalProjects = totalProjectsResult[0]?.count || 0;
     const totalReleases = totalReleasesResult[0]?.count || 0;
+    const totalRevenue = Number(totalRevenueResult[0]?.total) || 0;
+    const totalStreams = Number(totalStreamsResult[0]?.total) || 0;
+
+    const thisMonthRevenue = Number(thisMonthRevenueResult[0]?.total) || 0;
+    const lastMonthRevenue = Number(lastMonthRevenueResult[0]?.total) || 0;
+    const revenueGrowth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
+
+    const thisMonthProjects = thisMonthProjectsResult[0]?.count || 0;
+    const lastMonthProjects = lastMonthProjectsResult[0]?.count || 0;
+    const projectsGrowth = lastMonthProjects > 0 ? ((thisMonthProjects - lastMonthProjects) / lastMonthProjects) * 100 : 0;
 
     const userGrowthRate = totalUsers > 0 ? ((newUsers / totalUsers) * 100) : 0;
 
@@ -511,23 +510,19 @@ adminRouter.get("/analytics", async (req, res) => {
       count: s.count,
     }));
 
+    const userGrowthMap = new Map<string, number>();
+    for (const row of userGrowthResult) {
+      userGrowthMap.set(String(row.date), Number(row.count));
+    }
     const userGrowth = [];
     for (let i = 29; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split("T")[0];
       userGrowth.push({
-        date: date.toISOString().split("T")[0],
-        count: Math.floor(Math.random() * 50 + totalUsers / 30),
+        date: dateStr,
+        count: userGrowthMap.get(dateStr) || 0,
       });
     }
-
-    const featureUsage = [
-      { feature: "Studio DAW", usage: Math.floor(Math.random() * 1000 + 500), percentage: 78 },
-      { feature: "Distribution", usage: Math.floor(Math.random() * 800 + 300), percentage: 62 },
-      { feature: "Social Media", usage: Math.floor(Math.random() * 600 + 200), percentage: 48 },
-      { feature: "Analytics", usage: Math.floor(Math.random() * 900 + 400), percentage: 71 },
-      { feature: "Marketplace", usage: Math.floor(Math.random() * 400 + 100), percentage: 35 },
-      { feature: "Collaborations", usage: Math.floor(Math.random() * 300 + 100), percentage: 28 },
-    ];
 
     res.json({
       totalUsers,
@@ -535,22 +530,16 @@ adminRouter.get("/analytics", async (req, res) => {
       recentSignups: newUsers,
       totalProjects,
       totalReleases,
-      totalRevenue: Math.floor(Math.random() * 50000 + 10000),
-      totalStreams: Math.floor(Math.random() * 1000000 + 100000),
-      revenueGrowth: 12.5,
-      projectsGrowth: 8.3,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      totalStreams,
+      revenueGrowth: Math.round(revenueGrowth * 10) / 10,
+      projectsGrowth: Math.round(projectsGrowth * 10) / 10,
       userGrowthRate,
       monthlyGrowth: userGrowthRate,
       subscriptionStats,
       userGrowth,
-      featureUsage,
-      topCountries: [
-        { country: "United States", users: Math.floor(totalUsers * 0.4) },
-        { country: "United Kingdom", users: Math.floor(totalUsers * 0.15) },
-        { country: "Germany", users: Math.floor(totalUsers * 0.1) },
-        { country: "Canada", users: Math.floor(totalUsers * 0.08) },
-        { country: "Australia", users: Math.floor(totalUsers * 0.06) },
-      ],
+      featureUsage: [],
+      topCountries: [],
     });
   } catch (error) {
     logger.error("Error fetching analytics:", error);
@@ -569,14 +558,14 @@ adminRouter.get("/metrics", async (req, res) => {
       .where(eq(users.subscriptionStatus, "active"));
 
     res.json({
-      cpu: Math.floor(Math.random() * 30 + 10),
+      cpu: getRealCpuUsage(),
       memory: Math.floor((memUsage.heapUsed / memUsage.heapTotal) * 100),
-      disk: Math.floor(Math.random() * 40 + 20),
-      network: Math.floor(Math.random() * 25 + 5),
-      uptime: 99.9,
+      disk: 0,
+      network: 0,
+      uptime: Math.floor(process.uptime()),
       activeUsers: activeUsersResult[0]?.count || 0,
-      requestsPerMinute: Math.floor(Math.random() * 100 + 50),
-      avgResponseTime: Math.floor(Math.random() * 50 + 20),
+      requestsPerMinute: 0,
+      avgResponseTime: 0,
     });
   } catch (error) {
     logger.error("Error fetching metrics:", error);
