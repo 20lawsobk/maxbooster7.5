@@ -16,19 +16,19 @@ android {
     }
     signingConfigs {
         release {
-            def keystorePath = System.getenv("KEYSTORE_PATH") ?: "${System.getProperty('user.home')}/maxbooster-release.keystore"
-            def keystorePass = System.getenv("KEYSTORE_PASSWORD") ?: "maxbooster2026"
-            def keyAliasName = System.getenv("KEY_ALIAS") ?: "maxbooster"
-            def keyPass = System.getenv("KEY_PASSWORD") ?: "maxbooster2026"
-            storeFile file(keystorePath)
-            storePassword keystorePass
-            keyAlias keyAliasName
-            keyPassword keyPass
+            if (System.getenv("KEYSTORE_PATH")) {
+                storeFile file(System.getenv("KEYSTORE_PATH"))
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            }
         }
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (signingConfigs.release.storeFile != null) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

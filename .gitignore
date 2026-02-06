@@ -32,3 +32,4 @@ release/
 electron-out/
 dist-installers/
 dist-portable/
+*.keystore
