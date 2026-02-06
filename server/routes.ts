@@ -3040,6 +3040,7 @@ export async function registerRoutes(
     { path: "/api/auto/social", name: "autonomousSocial", loader: () => import("./routes/autonomousSocial") },
     { path: "/api/auto-updates", name: "autoUpdates", loader: () => import("./routes/autoUpdates") },
     { path: "/api/downloads", name: "downloads", loader: () => import("./routes/downloads") },
+    { path: "/api/platform-sync", name: "platformSync", loader: () => import("./routes/platformSync") },
     { path: "/api/autopilot/preferences", name: "autopilotPreferences", loader: () => import("./routes/autopilotPreferences") },
 
     // Studio/DAW Routes

@@ -77,6 +77,7 @@ import { ApiKeyManagement } from '@/components/settings/ApiKeyManagement';
 import { RecoveryCodes } from '@/components/settings/RecoveryCodes';
 import { ConnectedAccountsManager } from '@/components/settings/ConnectedAccountsManager';
 import { useSettingsOutcomes } from '@/components/settings/SettingsOutcomeHandler';
+import CrossPlatformSync from '@/components/settings/CrossPlatformSync';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -673,6 +674,10 @@ export default function Settings() {
             <TabsTrigger value="platforms" data-testid="tab-platforms">
               <LinkIcon className="w-4 h-4 mr-2" />
               Platforms
+            </TabsTrigger>
+            <TabsTrigger value="sync" data-testid="tab-sync">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Sync
             </TabsTrigger>
           </TabsList>
 
@@ -1564,6 +1569,10 @@ export default function Settings() {
 
           <TabsContent value="platforms" className="space-y-6">
             <PlatformConnections />
+          </TabsContent>
+
+          <TabsContent value="sync" className="space-y-6">
+            <CrossPlatformSync />
           </TabsContent>
         </Tabs>
 
