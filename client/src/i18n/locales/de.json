@@ -36,7 +36,9 @@
     "analytics": "Analytik",
     "settings": "Einstellungen",
     "help": "Hilfe",
-    "desktopApp": "Desktop-App"
+    "desktopApp": "Desktop-App",
+    "adminPanel": "Admin-Panel",
+    "adminSecurity": "Admin-Sicherheit"
   },
   "auth": {
     "loginTitle": "Anmelden bei Max Booster",

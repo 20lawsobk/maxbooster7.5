@@ -46,7 +46,9 @@
     "releaseCountdown": "Release Countdown",
     "careerCoach": "Career Coach",
     "invoices": "Invoices",
-    "verification": "Verification"
+    "verification": "Verification",
+    "adminPanel": "Admin Panel",
+    "adminSecurity": "Admin Security"
   },
   "auth": {
     "loginTitle": "Login to Max Booster",

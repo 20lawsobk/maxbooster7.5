@@ -36,7 +36,9 @@
     "analytics": "分析",
     "settings": "設定",
     "help": "ヘルプ",
-    "desktopApp": "デスクトップアプリ"
+    "desktopApp": "デスクトップアプリ",
+    "adminPanel": "管理パネル",
+    "adminSecurity": "管理セキュリティ"
   },
   "auth": {
     "loginTitle": "Max Boosterにログイン",

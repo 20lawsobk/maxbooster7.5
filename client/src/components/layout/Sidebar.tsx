@@ -54,8 +54,8 @@ const navItems: NavItem[] = [
   { labelKey: 'navigation.careerCoach', path: '/career-coach', icon: Brain },
   { labelKey: 'navigation.invoices', path: '/invoices', icon: Receipt },
   { labelKey: 'navigation.verification', path: '/verification', icon: ShieldCheck },
-  { labelKey: 'settings.title', path: '/admin', icon: Shield, adminOnly: true },
-  { labelKey: 'settings.security', path: '/admin/security', icon: Shield, adminOnly: true },
+  { labelKey: 'navigation.adminPanel', path: '/admin', icon: Shield, adminOnly: true },
+  { labelKey: 'navigation.adminSecurity', path: '/admin/security', icon: Shield, adminOnly: true },
 ];
 
 interface SidebarProps {

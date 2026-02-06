@@ -36,7 +36,9 @@
     "analytics": "Analytique",
     "settings": "Paramètres",
     "help": "Aide",
-    "desktopApp": "Application de Bureau"
+    "desktopApp": "Application de Bureau",
+    "adminPanel": "Panneau Admin",
+    "adminSecurity": "Sécurité Admin"
   },
   "auth": {
     "loginTitle": "Connexion à Max Booster",

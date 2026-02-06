@@ -36,7 +36,9 @@
     "analytics": "Analítica",
     "settings": "Configuración",
     "help": "Ayuda",
-    "desktopApp": "Aplicación de Escritorio"
+    "desktopApp": "Aplicación de Escritorio",
+    "adminPanel": "Panel de Administración",
+    "adminSecurity": "Seguridad Admin"
   },
   "auth": {
     "loginTitle": "Iniciar sesión en Max Booster",

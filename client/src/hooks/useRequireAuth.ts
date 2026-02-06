@@ -65,11 +65,7 @@ export function useRedirectIfAuthenticated() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     }
   }, [user, isLoading, navigate]);
 
