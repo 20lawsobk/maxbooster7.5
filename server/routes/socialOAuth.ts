@@ -46,7 +46,7 @@ const PLATFORMS = {
     name: 'TikTok',
     authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
     tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-    scope: 'user.info.basic,user.info.profile,user.info.stats,video.list,video.publish,video.upload',
+    scope: 'user.info.basic,user.info.profile,user.info.stats,video.list',
     clientId: process.env.TIKTOK_CLIENT_KEY,
     clientSecret: process.env.TIKTOK_CLIENT_SECRET,
     usePKCE: true,
@@ -57,7 +57,7 @@ const PLATFORMS = {
     name: 'TikTok (Sandbox)',
     authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
     tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-    scope: 'user.info.basic,user.info.profile,user.info.stats,video.list,video.publish,video.upload',
+    scope: 'user.info.basic,user.info.profile,user.info.stats,video.list',
     clientId: process.env.TIKTOK_CLIENT_KEY1,
     clientSecret: process.env.TIKTOK_CLIENT_SECRET1,
     usePKCE: true,
@@ -130,11 +130,17 @@ const PLATFORMS = {
 const oauthStates = new Map<string, { userId: string; platform: string; createdAt: Date; codeVerifier?: string }>();
 
 function generateCodeVerifier(): string {
-  return crypto.randomBytes(32).toString('base64url');
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  let result = '';
+  const bytes = crypto.randomBytes(64);
+  for (let i = 0; i < 64; i++) {
+    result += chars.charAt(bytes[i] % chars.length);
+  }
+  return result;
 }
 
-function generateCodeChallenge(verifier: string): string {
-  return crypto.createHash('sha256').update(verifier).digest('base64url');
+function generateCodeChallenge(verifier: string, encoding: 'hex' | 'base64url' = 'base64url'): string {
+  return crypto.createHash('sha256').update(verifier).digest(encoding);
 }
 
 setInterval(() => {
@@ -256,9 +262,9 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     
     if (config.usePKCE) {
       codeVerifier = generateCodeVerifier();
-      const codeChallenge = generateCodeChallenge(codeVerifier);
       
       if (platform === 'twitter') {
+        const codeChallenge = generateCodeChallenge(codeVerifier, 'base64url');
         params.set('response_type', 'code');
         params.set('client_id', config.clientId);
         params.set('redirect_uri', redirectUri);
@@ -267,6 +273,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
         params.set('code_challenge', codeChallenge);
         params.set('code_challenge_method', 'S256');
       } else if (platform === 'tiktok' || platform === 'tiktok_sandbox') {
+        const codeChallenge = generateCodeChallenge(codeVerifier, 'hex');
         params.set('client_key', config.clientId);
         params.set('scope', config.scope);
         params.set('response_type', 'code');
