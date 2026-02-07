@@ -22,6 +22,7 @@ const contentAnalysisLimiter = rateLimit({
   message: 'Too many content analysis requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
 });
 
 // Middleware to check if user has a paid subscription (required for content analysis)

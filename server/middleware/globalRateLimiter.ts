@@ -14,6 +14,7 @@ export const globalRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   skip: (req: Request) => {
     const isDevelopment = process.env.NODE_ENV === 'development';
     const isMonitoringEndpoint = req.path.startsWith('/api/monitoring/') || req.path.startsWith('/api/system/');
@@ -57,4 +58,5 @@ export const criticalEndpointLimiter = rateLimit({
     error: 'Too many requests to critical endpoint',
     message: 'This endpoint is rate-limited. Please try again later.',
   },
+  validate: { trustProxy: false },
 });

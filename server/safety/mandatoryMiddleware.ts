@@ -278,6 +278,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
       },
       standardHeaders: true,
       legacyHeaders: false,
+      validate: { trustProxy: false },
       skip: (req) => {
         // Skip rate limiting in development and load test modes
         if (isDev || isLoadTest) return true;
@@ -306,6 +307,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
         success: false,
         error: 'Too many authentication attempts, please try again later',
       },
+      validate: { trustProxy: false },
       skip: () => isDev || isLoadTest,
     });
     app.use('/api/auth', strictLimiter);
