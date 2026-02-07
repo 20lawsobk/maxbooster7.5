@@ -6,6 +6,7 @@ import { unifiedAIController } from '../services/unifiedAIController';
 import { db } from '../db';
 import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
+import { syncPlatformData } from '../services/socialSyncService';
 
 const router = Router();
 
@@ -155,11 +156,38 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
       .from(socialAccounts)
       .where(eq(socialAccounts.userId, userId));
     
-    // Build a map of connected platforms
     const connectionMap = new Map<string, typeof connections[0]>();
     for (const conn of connections) {
       if (conn.isActive) {
         connectionMap.set(conn.platform, conn);
+      }
+    }
+
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const now = Date.now();
+    const stalePlatforms: string[] = [];
+    for (const conn of connections) {
+      if (conn.isActive && conn.createdAt) {
+        const lastSync = new Date(conn.createdAt).getTime();
+        if (now - lastSync > ONE_HOUR_MS) {
+          stalePlatforms.push(conn.platform);
+        }
+      }
+    }
+
+    if (stalePlatforms.length > 0) {
+      const uniquePlatforms = new Set<string>();
+      for (const p of stalePlatforms) {
+        if (p === 'facebook' || p === 'instagram') {
+          uniquePlatforms.add('meta');
+        } else {
+          uniquePlatforms.add(p);
+        }
+      }
+      for (const p of uniquePlatforms) {
+        syncPlatformData(userId, p).catch(err => {
+          logger.warn(`Background sync failed for ${p}:`, err);
+        });
       }
     }
     
@@ -214,6 +242,44 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
   } catch (error) {
     logger.error('Failed to get platform status:', error);
     res.json([]);
+  }
+});
+
+router.post('/sync-all', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    const connections = await db
+      .select()
+      .from(socialAccounts)
+      .where(eq(socialAccounts.userId, userId));
+
+    const activePlatforms = new Set<string>();
+    for (const conn of connections) {
+      if (conn.isActive) {
+        if (conn.platform === 'facebook' || conn.platform === 'instagram') {
+          activePlatforms.add('meta');
+        } else {
+          activePlatforms.add(conn.platform);
+        }
+      }
+    }
+
+    const allResults: Record<string, any> = {};
+    for (const p of activePlatforms) {
+      try {
+        const result = await syncPlatformData(userId, p);
+        Object.assign(allResults, result);
+      } catch (err) {
+        logger.warn(`sync-all: failed to sync ${p}:`, err);
+        allResults[p] = { error: 'Sync failed' };
+      }
+    }
+
+    res.json({ success: true, results: allResults });
+  } catch (error) {
+    logger.error('Failed to sync all platforms:', error);
+    res.status(500).json({ message: 'Failed to sync all platforms' });
   }
 });
 

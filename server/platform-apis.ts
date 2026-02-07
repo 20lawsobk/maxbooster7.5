@@ -178,12 +178,12 @@ export const platformAPI = {
         'platformAPI.collectEngagementData called without userId - using simulation mode'
       );
       return {
-        likes: Math.floor(Math.random() * 500),
-        shares: Math.floor(Math.random() * 100),
-        comments: Math.floor(Math.random() * 80),
-        views: Math.floor(Math.random() * 10000),
-        reach: Math.floor(Math.random() * 20000),
-        engagementRate: Number((Math.random() * 0.08).toFixed(4)),
+        likes: 0,
+        shares: 0,
+        comments: 0,
+        views: 0,
+        reach: 0,
+        engagementRate: 0,
       };
     }
 

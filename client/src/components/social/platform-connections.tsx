@@ -115,6 +115,7 @@ export function PlatformConnections() {
     },
     onSuccess: (_, platform) => {
       queryClient.invalidateQueries({ queryKey: ['/api/social/connections'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/social/platform-status'] });
       toast({
         title: 'Stats Synced',
         description: `Successfully synced ${platform} stats`,
