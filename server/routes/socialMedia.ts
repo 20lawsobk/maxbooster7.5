@@ -957,7 +957,7 @@ router.post('/generate-content', requireAuth, async (req: AuthenticatedRequest, 
   try {
     const { platforms = ['instagram'], contentType = 'post', topic = 'new music', tone = 'energetic' } = req.body;
 
-    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin'];
+    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'];
     const validTones = ['professional', 'casual', 'energetic', 'promotional'];
     const contentTypeMap: Record<string, string> = {
       'post': 'engagement',
@@ -965,6 +965,32 @@ router.post('/generate-content', requireAuth, async (req: AuthenticatedRequest, 
       'behind-the-scenes': 'behind-the-scenes',
       'promotional': 'promotional',
       'release': 'release',
+      'story': 'engagement',
+      'reel': 'behind-the-scenes',
+      'carousel': 'engagement',
+      'thread': 'engagement',
+      'poll': 'engagement',
+      'live-announcement': 'announcement',
+      'short': 'behind-the-scenes',
+      'pin': 'promotional',
+      'newsletter': 'announcement',
+      'collab-post': 'engagement',
+      'remix': 'engagement',
+      'duet': 'engagement',
+      'challenge': 'engagement',
+      'giveaway': 'promotional',
+      'ama': 'engagement',
+      'tutorial': 'engagement',
+      'review': 'engagement',
+      'testimonial': 'promotional',
+      'milestone': 'announcement',
+      'throwback': 'engagement',
+      'teaser': 'promotional',
+      'countdown': 'announcement',
+      'fan-spotlight': 'engagement',
+      'meme': 'engagement',
+      'infographic': 'engagement',
+      'quote': 'engagement',
     };
 
     const generatedContent = [];
@@ -1090,8 +1116,30 @@ async function extractUrlMetadata(url: string): Promise<{
     
     const urlLower = url.toLowerCase();
     
+    // Playlists
+    if (urlLower.includes('playlist') || urlLower.includes('/playlists/') ||
+        urlLower.includes('open.spotify.com/playlist')) {
+      type = 'playlist';
+      contentType = 'engagement';
+    }
+    // Podcasts
+    else if (urlLower.includes('podcasts.apple.com') || urlLower.includes('anchor.fm') || 
+             urlLower.includes('spotify.com/show') || urlLower.includes('spotify.com/episode') ||
+             urlLower.includes('podbean') || urlLower.includes('buzzsprout') ||
+             urlLower.includes('transistor.fm') || urlLower.includes('overcast.fm') ||
+             urlLower.includes('castbox') || urlLower.includes('pocketcasts')) {
+      type = 'podcast';
+      contentType = 'announcement';
+    }
+    // Livestreams
+    else if (urlLower.includes('twitch.tv') || urlLower.includes('kick.com') ||
+             urlLower.includes('live.') || urlLower.includes('/live') ||
+             urlLower.includes('livestream')) {
+      type = 'livestream';
+      contentType = 'announcement';
+    }
     // Music platforms
-    if (urlLower.includes('spotify') || urlLower.includes('apple.com/music') || 
+    else if (urlLower.includes('spotify') || urlLower.includes('apple.com/music') || 
         urlLower.includes('soundcloud') || urlLower.includes('tidal') ||
         urlLower.includes('deezer') || urlLower.includes('bandcamp')) {
       type = 'music';
@@ -1102,6 +1150,55 @@ async function extractUrlMetadata(url: string): Promise<{
              urlLower.includes('vimeo') || urlLower.includes('tiktok')) {
       type = 'video';
       contentType = 'release';
+    }
+    // Crowdfunding
+    else if (urlLower.includes('kickstarter') || urlLower.includes('indiegogo') ||
+             urlLower.includes('gofundme') || urlLower.includes('patreon') ||
+             urlLower.includes('buymeacoffee') || urlLower.includes('ko-fi')) {
+      type = 'crowdfunding';
+      contentType = 'promotional';
+    }
+    // Merch / physical products
+    else if (urlLower.includes('merch') || urlLower.includes('merchbar') ||
+             urlLower.includes('bonfire.com') || urlLower.includes('printful') ||
+             urlLower.includes('teespring') || urlLower.includes('redbubble')) {
+      type = 'merch';
+      contentType = 'promotional';
+    }
+    // Press / Media features
+    else if (urlLower.includes('press') || urlLower.includes('pitchfork') ||
+             urlLower.includes('billboard') || urlLower.includes('rollingstone') ||
+             urlLower.includes('complex.com') || urlLower.includes('hypebeast') ||
+             urlLower.includes('hotnewhiphop') || urlLower.includes('interview')) {
+      type = 'press';
+      contentType = 'announcement';
+    }
+    // NFTs / Web3
+    else if (urlLower.includes('opensea') || urlLower.includes('rarible') ||
+             urlLower.includes('foundation.app') || urlLower.includes('nft') ||
+             urlLower.includes('mint') || urlLower.includes('zora.co')) {
+      type = 'nft';
+      contentType = 'promotional';
+    }
+    // Portfolios / personal websites
+    else if (urlLower.includes('linktr.ee') || urlLower.includes('bio.link') ||
+             urlLower.includes('carrd.co') || urlLower.includes('about.me') ||
+             urlLower.includes('portfolio') || urlLower.includes('linkin.bio')) {
+      type = 'portfolio';
+      contentType = 'engagement';
+    }
+    // Collaboration / features
+    else if (urlLower.includes('feat') || urlLower.includes('collab') ||
+             urlLower.includes('splice.com')) {
+      type = 'collaboration';
+      contentType = 'announcement';
+    }
+    // Education / tutorials
+    else if (urlLower.includes('udemy') || urlLower.includes('skillshare') ||
+             urlLower.includes('masterclass') || urlLower.includes('coursera') ||
+             urlLower.includes('tutorial') || urlLower.includes('lesson')) {
+      type = 'education';
+      contentType = 'engagement';
     }
     // News/articles
     else if (ogType.includes('article') || urlLower.includes('/blog') || 
@@ -1148,7 +1245,7 @@ async function extractUrlMetadata(url: string): Promise<{
 // Generate content from any URL (websites, music, videos, articles, products, etc.)
 router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { url, platforms = ['instagram'], tone = 'energetic' } = req.body;
+    const { url, platforms = ['instagram'], tone = 'energetic', format = 'text', targetAudience = '' } = req.body;
 
     if (!url) {
       return res.status(400).json({ message: 'URL is required' });
@@ -1169,11 +1266,27 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
       'event': `${topic} - get tickets`,
       'social': `${topic} - follow for more`,
       'website': topic,
+      'podcast': `${topic} - listen now`,
+      'livestream': `${topic} - tune in live`,
+      'crowdfunding': `${topic} - support now`,
+      'merch': `${topic} - grab yours`,
+      'playlist': `${topic} - add to your library`,
+      'nft': `${topic} - collect now`,
+      'press': `${topic} - read the feature`,
+      'portfolio': `${topic} - explore more`,
+      'collaboration': `${topic} - check out our collab`,
+      'education': `${topic} - learn more`,
     };
     
     topic = typeMessages[metadata.type] || topic;
 
-    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin'];
+    const topicWithAudience = targetAudience 
+      ? `${topic} (targeting: ${targetAudience})` 
+      : topic;
+
+    const formatPrefix = format !== 'text' ? `[${format.toUpperCase()} content] ` : '';
+
+    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'];
     const validTones = ['professional', 'casual', 'energetic', 'promotional'];
     const generatedContent = [];
 
@@ -1183,7 +1296,7 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
       const result = await unifiedAIController.generateContent({
         tone: validTones.includes(tone) ? tone : 'energetic',
         platform,
-        topic: topic.substring(0, 150),
+        topic: (formatPrefix + topicWithAudience).substring(0, 150),
         contentType: metadata.contentType,
         includeHashtags: true,
         includeEmojis: true,
@@ -1200,6 +1313,8 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
           sourceUrl: url,
           extractedTitle: metadata.title,
           contentType: metadata.type,
+          format,
+          targetAudience: targetAudience || undefined,
         });
       }
     }

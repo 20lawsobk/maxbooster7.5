@@ -539,7 +539,7 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       tone = 'energetic'
     } = req.body;
 
-    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin'];
+    const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'];
     const validTones = ['professional', 'casual', 'energetic', 'promotional'];
     const validContentTypes = ['release', 'behind-the-scenes', 'announcement', 'engagement', 'promotional'];
 

@@ -133,6 +133,7 @@ export async function syncPlatformData(
         profileUrl: syncedProfileUrl,
         platformUserId: syncedPlatformUserId,
         metadata: syncedMetadata,
+        createdAt: new Date(),
       })
       .where(eq(socialAccounts.id, connection.id));
 
