@@ -54,23 +54,20 @@ function createRedisConnection(): Redis | null {
   const redisClient = new Redis(redisUrl, {
     maxRetriesPerRequest: null, // BullMQ requirement
     retryStrategy: (times) => {
-      if (times > config.redis.maxRetries) {
-        return null; // Stop retrying
+      if (times > 5) {
+        return null;
       }
-      return Math.min(times * config.redis.retryDelay, 3000);
+      return Math.min(times * 500, 5000);
     },
     lazyConnect: true,
-    showFriendlyErrorStack: false, // Suppress internal ioredis error logging
+    connectTimeout: 10000,
+    showFriendlyErrorStack: false,
   });
 
   redisClient.on('error', (err) => {
-    if (isDevelopment) {
-      if (!hasLoggedWarning) {
-        logger.warn(`⚠️  Workers: Redis unavailable (${err.message}), workers will use fallback behavior`);
-        hasLoggedWarning = true;
-      }
-    } else {
-      logger.error(`❌ Workers Redis Error:`, err.message);
+    if (!hasLoggedWarning) {
+      logger.warn(`⚠️  Workers: Redis unavailable (${err.message}), workers will use fallback behavior`);
+      hasLoggedWarning = true;
     }
   });
 

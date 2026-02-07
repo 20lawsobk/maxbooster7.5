@@ -70,20 +70,21 @@ class RedisConnectionFactory {
       this.primaryClient = createClient({
         url: config.redis.url,
         socket: {
+          connectTimeout: 10000,
           reconnectStrategy: (retries: number) => {
-            if (retries > 10) {
-              logger.error('❌ Redis connection failed after 10 retries');
-              return new Error('Too many retries');
+            if (retries > 5) {
+              logger.warn('⚠️ Redis connection failed after 5 retries - falling back to in-memory');
+              return false;
             }
-            // Exponential backoff: 50ms, 100ms, 200ms, 400ms, ...
-            const delay = Math.min(retries * 50, 2000);
-            logger.info(`🔄 Redis reconnecting in ${delay}ms (attempt ${retries})`);
+            const delay = Math.min(Math.pow(2, retries) * 100, 5000);
+            if (retries <= 1) {
+              logger.info(`🔄 Redis reconnecting in ${delay}ms (attempt ${retries})`);
+            }
             return delay;
           },
         },
       });
 
-      // Connection event handlers
       this.primaryClient.on('connect', () => {
         logger.info('✅ Redis primary client connected');
       });
@@ -94,27 +95,23 @@ class RedisConnectionFactory {
       });
 
       this.primaryClient.on('error', (error) => {
-        // Only log if we haven't gracefully degraded
-        if (!error.message.includes('ECONNREFUSED') && !error.message.includes('ECONNRESET')) {
+        if (!error.message.includes('ECONNREFUSED') && 
+            !error.message.includes('ECONNRESET') && 
+            !error.message.includes('ETIMEDOUT') &&
+            !error.message.includes('Connection is closed')) {
           logger.error('❌ Redis primary client error:', error.message);
         }
       });
 
       this.primaryClient.on('end', () => {
-        logger.info('🔌 Redis primary client connection closed');
+        this.isInitialized = false;
       });
 
-      this.primaryClient.on('reconnecting', () => {
-        logger.info('🔄 Redis primary client reconnecting...');
-      });
-
-      // Connect to Redis
       await this.primaryClient.connect();
     } catch (error: unknown) {
-      logger.error('❌ Failed to initialize Redis primary client:', error.message);
+      logger.warn('⚠️ Redis unavailable - using in-memory fallback. Error:', (error as Error).message);
       this.primaryClient = null;
       this.isInitialized = false;
-      throw error;
     }
   }
 

@@ -33,25 +33,22 @@ export class ScalabilitySystem {
       this.redis = new Redis(process.env.REDIS_URL, {
         maxRetriesPerRequest: 3,
         lazyConnect: true,
-        showFriendlyErrorStack: false, // Suppress internal ioredis error logging
+        connectTimeout: 10000,
+        enableOfflineQueue: false,
+        showFriendlyErrorStack: false,
         retryStrategy(times: number) {
-          if (times > 10) return null;
-          const delay = Math.min(times * 50, 2000);
-          return delay;
+          if (times > 5) return null;
+          return Math.min(times * 500, 5000);
         },
       });
 
       // Add graceful error handling
       this.redis.on('error', (err) => {
-        if (isDevelopment) {
-          if (!hasLoggedWarning) {
-            logger.warn(
-              `⚠️  Scalability System: Redis unavailable (${err.message}), using degraded mode`
-            );
-            hasLoggedWarning = true;
-          }
-        } else {
-          logger.error(`❌ Scalability System Redis Error:`, err.message);
+        if (!hasLoggedWarning) {
+          logger.warn(
+            `⚠️  Scalability System: Redis unavailable (${err.message}), using degraded mode`
+          );
+          hasLoggedWarning = true;
         }
       });
 
