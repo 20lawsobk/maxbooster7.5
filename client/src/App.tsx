@@ -15,24 +15,25 @@ import { CommandPalette } from '@/components/commands/CommandPalette';
 import { ShortcutGuide, QuickActionBar } from '@/components/shortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
+import { prefetchRoute } from '@/lib/prefetch';
 import Landing from '@/pages/Landing';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import RegisterPayment from '@/pages/RegisterPayment';
-import RegisterSuccess from '@/pages/RegisterSuccess';
-import Terms from '@/pages/Terms';
-import Privacy from '@/pages/Privacy';
-import Features from '@/pages/Features';
-import API from '@/pages/API';
-import Documentation from '@/pages/Documentation';
-import About from '@/pages/About';
-import Blog from '@/pages/Blog';
-import SoloFounderStory from '@/pages/SoloFounderStory';
-import SecurityPage from '@/pages/SecurityPage';
-import DMCA from '@/pages/DMCA';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
-import NotFound from '@/pages/not-found';
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
+const RegisterPayment = lazy(() => import('@/pages/RegisterPayment'));
+const RegisterSuccess = lazy(() => import('@/pages/RegisterSuccess'));
+const Terms = lazy(() => import('@/pages/Terms'));
+const Privacy = lazy(() => import('@/pages/Privacy'));
+const Features = lazy(() => import('@/pages/Features'));
+const API = lazy(() => import('@/pages/API'));
+const Documentation = lazy(() => import('@/pages/Documentation'));
+const About = lazy(() => import('@/pages/About'));
+const Blog = lazy(() => import('@/pages/Blog'));
+const SoloFounderStory = lazy(() => import('@/pages/SoloFounderStory'));
+const SecurityPage = lazy(() => import('@/pages/SecurityPage'));
+const DMCA = lazy(() => import('@/pages/DMCA'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const NotFound = lazy(() => import('@/pages/not-found'));
 
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -238,6 +239,16 @@ function AppWithKeyboardShortcuts() {
       window.removeEventListener('dragover', preventDragOver);
       window.removeEventListener('drop', preventDefaultDrop);
     };
+  }, []);
+
+  useEffect(() => {
+    const prefetchTimer = setTimeout(() => {
+      prefetchRoute(() => import('@/pages/Dashboard'));
+      prefetchRoute(() => import('@/pages/Login'));
+      prefetchRoute(() => import('@/pages/Register'));
+      prefetchRoute(() => import('@/pages/Studio'));
+    }, 2000);
+    return () => clearTimeout(prefetchTimer);
   }, []);
 
   return (

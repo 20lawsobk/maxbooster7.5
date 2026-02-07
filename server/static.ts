@@ -18,9 +18,11 @@ export function serveStatic(app: Express) {
         // HTML should never be cached
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       } else if (filePath.match(/\.(js|css)$/)) {
-        // Short cache for JS/CSS to ensure updates are picked up after deploy
-        // Vite adds content hashes but Replit edge cache can still serve stale files
-        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+        if (filePath.match(/assets\/.*-[a-f0-9]{8}\.(js|css)$/)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+        }
       } else if (filePath.match(/\.(woff2?|ttf|eot)$/)) {
         // Fonts can be cached longer as they rarely change
         res.setHeader('Cache-Control', 'public, max-age=604800');

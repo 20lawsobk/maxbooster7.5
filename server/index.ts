@@ -6,6 +6,7 @@ import session from "express-session";
 import { registerRoutes } from "./routes.ts";
 import { serveStatic } from "./static.ts";
 import { createServer } from "http";
+import compression from "compression";
 import { logger } from "./logger.ts";
 import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
 import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
@@ -56,6 +57,7 @@ async function loadOptionalModules() {
 }
 
 const app = express();
+app.use(compression());
 const httpServer = createServer(app);
 
 // Trust proxy - REQUIRED for secure cookies and rate limiting behind Replit's reverse proxy

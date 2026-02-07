@@ -26,14 +26,42 @@ export default defineConfig({
     minify: "esbuild",
     cssMinify: true,
     sourcemap: false,
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom"],
-          router: ["wouter"],
-          ui: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-tooltip"],
-          charts: ["recharts"],
-          query: ["@tanstack/react-query"],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+              return 'vendor-react';
+            }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('@tanstack')) {
+              return 'vendor-query';
+            }
+            if (id.includes('framer-motion')) {
+              return 'vendor-animation';
+            }
+            if (id.includes('i18next') || id.includes('react-i18next')) {
+              return 'vendor-i18n';
+            }
+            if (id.includes('stripe') || id.includes('@stripe')) {
+              return 'vendor-stripe';
+            }
+            if (id.includes('zustand')) {
+              return 'vendor-state';
+            }
+          }
+          if (id.includes('client/src/components/studio/')) {
+            return 'studio';
+          }
+          if (id.includes('client/src/components/admin/') || id.includes('client/src/pages/admin/')) {
+            return 'admin';
+          }
         },
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
