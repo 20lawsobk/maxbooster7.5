@@ -479,27 +479,33 @@ export class SocialOAuthService {
 
       const refreshParams: Record<string, string> = {
         [isTikTok ? 'client_key' : 'client_id']: config.clientId,
-        client_secret: config.clientSecret,
         refresh_token: refreshToken,
         grant_type: 'refresh_token',
       };
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      };
+
+      if (platform === 'twitter') {
+        const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
+        headers['Authorization'] = `Basic ${credentials}`;
+      } else {
+        refreshParams.client_secret = config.clientSecret;
+      }
+
       const response = await axios.post(
         config.tokenUrl,
         new URLSearchParams(refreshParams).toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
+        { headers }
       );
 
-      const { access_token, expires_in } = response.data;
+      const { access_token, expires_in, refresh_token: new_refresh_token } = response.data;
 
-      // Update access token in database
       await this.updateAccessToken(userId, platform, {
         accessToken: access_token,
         expiresAt: expires_in ? new Date(Date.now() + expires_in * 1000) : undefined,
+        refreshToken: new_refresh_token,
       });
 
       logger.info(`Access token refreshed for user ${userId} on platform ${platform}`);
@@ -601,6 +607,7 @@ export class SocialOAuthService {
     update: {
       accessToken: string;
       expiresAt?: Date;
+      refreshToken?: string;
     }
   ): Promise<void> {
     const existing = await this.getStoredTokens(userId, platform);
@@ -611,6 +618,7 @@ export class SocialOAuthService {
       accessToken: update.accessToken,
       expiresAt: update.expiresAt?.toISOString(),
       updatedAt: new Date().toISOString(),
+      ...(update.refreshToken ? { refreshToken: update.refreshToken } : {}),
     };
 
     // Encrypt updated token data before storing

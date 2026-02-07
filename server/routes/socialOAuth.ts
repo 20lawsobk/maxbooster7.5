@@ -697,9 +697,14 @@ router.post('/refresh/:platform', requireAuth, async (req: AuthenticatedRequest,
       });
     }
     
+    const { socialOAuth } = await import('../services/socialOAuthService');
+    const result = await socialOAuth.refreshAccessToken(userId, platform);
+    
     res.json({ 
       success: true,
-      message: 'Token refresh initiated',
+      message: 'Token refreshed successfully',
+      accessToken: result.accessToken,
+      expiresIn: result.expiresIn,
       outcome: {
         status: 'success',
         category: 'oauth',
