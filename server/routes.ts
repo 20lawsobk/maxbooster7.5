@@ -1853,11 +1853,11 @@ export async function registerRoutes(
           totalRevenue: parseFloat(String(stats.totalRevenue)) || 0,
           totalListeners: Number(stats.totalListeners) || 0,
           totalPlays: Number(stats.totalStreams) || 0,
-          avgListenTime: 3.5,
-          completionRate: 72,
-          skipRate: 18,
-          shareRate: 5,
-          likeRate: 12,
+          avgListenTime: 0,
+          completionRate: 0,
+          skipRate: 0,
+          shareRate: 0,
+          likeRate: 0,
           growthRate: dailyData.length > 1 ?
             ((Number(dailyData[dailyData.length - 1]?.streams) - Number(dailyData[0]?.streams)) / (Number(dailyData[0]?.streams) || 1) * 100) : 0,
         },
@@ -1904,9 +1904,9 @@ export async function registerRoutes(
           totalListeners: Number(stats.totalListeners) || 0,
           newListeners: 0,
           returningListeners: 0,
-          listenerRetention: 65,
-          avgSessionDuration: 12,
-          sessionsPerListener: 3,
+          listenerRetention: 0,
+          avgSessionDuration: 0,
+          sessionsPerListener: 0,
           listenerGrowth: 0,
           topListeners: [],
           listenerSegments: [],
@@ -1921,7 +1921,7 @@ export async function registerRoutes(
           listenerPredictions: {
             nextMonthListeners: 0,
             nextMonthRevenue: 0,
-            churnRisk: 15,
+            churnRisk: 0,
             growthPotential: 0,
           },
         },
@@ -1931,7 +1931,7 @@ export async function registerRoutes(
           yearlyRevenue: 0,
           revenueGrowth: 0,
           revenuePerStream: (Number(stats.totalStreams) > 0) ?
-            (parseFloat(String(stats.totalRevenue)) / Number(stats.totalStreams)) : 0.004,
+            (parseFloat(String(stats.totalRevenue)) / Number(stats.totalStreams)) : 0,
           revenuePerListener: 0,
           revenueByPlatform: platformData.map(p => ({
             platform: p.platform || 'Unknown',
@@ -1956,17 +1956,17 @@ export async function registerRoutes(
         },
         fanJourney: {
           stages: [
-            { stage: 'Awareness', count: Number(stats.totalListeners) || 0, percentage: 100, conversionRate: 100, dropOffRate: 0 },
-            { stage: 'Discovery', count: Math.round((Number(stats.totalListeners) || 0) * 0.6), percentage: 60, conversionRate: 60, dropOffRate: 40 },
-            { stage: 'Engagement', count: Math.round((Number(stats.totalListeners) || 0) * 0.35), percentage: 35, conversionRate: 58, dropOffRate: 25 },
-            { stage: 'Conversion', count: Math.round((Number(stats.totalListeners) || 0) * 0.15), percentage: 15, conversionRate: 43, dropOffRate: 20 },
-            { stage: 'Advocacy', count: Math.round((Number(stats.totalListeners) || 0) * 0.05), percentage: 5, conversionRate: 33, dropOffRate: 10 },
+            { stage: 'Awareness', count: 0, percentage: 0, conversionRate: 0, dropOffRate: 0 },
+            { stage: 'Discovery', count: 0, percentage: 0, conversionRate: 0, dropOffRate: 0 },
+            { stage: 'Engagement', count: 0, percentage: 0, conversionRate: 0, dropOffRate: 0 },
+            { stage: 'Conversion', count: 0, percentage: 0, conversionRate: 0, dropOffRate: 0 },
+            { stage: 'Advocacy', count: 0, percentage: 0, conversionRate: 0, dropOffRate: 0 },
           ],
           funnelMetrics: {
-            awarenessToEngagement: 35,
-            engagementToConversion: 43,
-            conversionToAdvocacy: 33,
-            overallConversion: 5,
+            awarenessToEngagement: 0,
+            engagementToConversion: 0,
+            conversionToAdvocacy: 0,
+            overallConversion: 0,
           },
           journeyInsights: [],
         },
@@ -1992,7 +1992,7 @@ export async function registerRoutes(
           streams: Number(p.streams),
           growth: 0,
           avgPerStream: Number(p.streams) > 0 ?
-            (parseFloat(String(p.revenue)) / Number(p.streams)) : 0.004,
+            (parseFloat(String(p.revenue)) / Number(p.streams)) : 0,
         })),
         geographic: [],
         demographics: [],
@@ -2010,7 +2010,7 @@ export async function registerRoutes(
             viralPotential: 0,
             growthTrend: 'stable',
             marketOpportunity: 0,
-            competitivePosition: 50,
+            competitivePosition: 0,
             contentGaps: [],
             audienceExpansion: [],
             platformOptimization: [],
@@ -2281,18 +2281,8 @@ export async function registerRoutes(
             priority: 'medium',
           },
         ],
-        trends: [
-          { name: 'Engagement', direction: 'up', change: 12 },
-          { name: 'Reach', direction: 'stable', change: 0 },
-        ],
-        opportunities: [
-          {
-            id: 'playlist-pitch',
-            title: 'Playlist Pitching',
-            description: 'Submit your tracks to curated playlists',
-            potential: 'high',
-          },
-        ],
+        trends: [],
+        opportunities: [],
       });
     } catch (error) {
       console.error("AI insights error:", error);
