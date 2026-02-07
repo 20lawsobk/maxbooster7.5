@@ -3,7 +3,7 @@
  * Max Booster - Desktop & Mobile App Build Script
  * 
  * RECOMMENDED: Use GitHub Actions for production builds
- * - Push a tag (v2.0.0) to trigger automated builds on all platforms
+ * - Push a tag (v3.0.0) to trigger automated builds on all platforms
  * - See .github/workflows/build-desktop.yml and build-mobile.yml
  * - See .github/SECRETS_SETUP.md for required secrets
  * 
@@ -384,8 +384,8 @@ RECOMMENDED: Use GitHub Actions for production builds across all platforms.
 2. TRIGGER BUILDS
 
    Automatic (push a version tag):
-   $ git tag v2.0.1
-   $ git push origin v2.0.1
+   $ git tag v3.0.0
+   $ git push origin v3.0.0
 
    Manual:
    - Go to Actions tab in GitHub
