@@ -66,6 +66,10 @@ export class DatabaseBackupService {
       throw new Error('DATABASE_URL not configured');
     }
 
+    if (!fs.existsSync(BACKUP_DIR)) {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupFile = path.join(BACKUP_DIR, `backup-${timestamp}.sql`);
 
