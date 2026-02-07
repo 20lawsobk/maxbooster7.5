@@ -1,10 +1,9 @@
-const CACHE_NAME = 'max-booster-v2';
-const STATIC_CACHE = 'max-booster-static-v2';
-const DYNAMIC_CACHE = 'max-booster-dynamic-v2';
-const API_CACHE = 'max-booster-api-v2';
+const CACHE_NAME = 'max-booster-v3';
+const STATIC_CACHE = 'max-booster-static-v3';
+const DYNAMIC_CACHE = 'max-booster-dynamic-v3';
+const API_CACHE = 'max-booster-api-v3';
 
 const STATIC_ASSETS = [
-  '/',
   '/manifest.json',
   '/offline.html',
   '/favicon.png'
@@ -100,8 +99,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
   if (url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|gif|woff|woff2)$/)) {
-    event.respondWith(cacheFirst(request));
+    if (url.pathname.match(/assets\/.*-[a-f0-9]+\.(js|css)$/)) {
+      event.respondWith(cacheFirst(request));
+    } else {
+      event.respondWith(networkFirst(request));
+    }
     return;
   }
 
