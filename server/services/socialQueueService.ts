@@ -1,14 +1,11 @@
-import { Queue, Worker, Job } from 'bullmq';
+import { getBoosterStateClient } from '../lib/boosterStateClient.js';
 import { config } from '../config/defaults.js';
-import { Redis } from 'ioredis';
 import { db } from '../db';
 import { posts, scheduledPostBatches, socialAccounts } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
-
-const isDevelopment = config.nodeEnv === 'development';
-let hasLoggedWarning = false;
+import { BoosterQueue } from './queueService.js';
 
 export interface SocialPostJobData {
   postId: string;
@@ -46,9 +43,6 @@ const PLATFORM_RATE_LIMITS = {
   default: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000, baseBackoffMs: 60000 },
 };
 
-/**
- * Rate limit backoff state - shared via Redis for multi-process support
- */
 interface RateLimitBackoffState {
   platform: string;
   accountId: string;
@@ -57,90 +51,18 @@ interface RateLimitBackoffState {
   lastHit: number;
 }
 
-/**
- * Creates Redis connection for social queue service with proper error handling
- */
-function createRedisConnection(): Redis | null {
-  const redisUrl = config.redis.url;
-  
-  // Don't create connection if no Redis URL is configured
-  if (!redisUrl) {
-    if (!hasLoggedWarning) {
-      logger.warn('⚠️  Social Queue Service: No REDIS_URL configured, queues will not function');
-      hasLoggedWarning = true;
-    }
-    return null;
-  }
-  
-  const redisClient = new Redis(redisUrl, {
-    maxRetriesPerRequest: null,
-    retryStrategy: (times) => {
-      if (times > 5) {
-        return null;
-      }
-      return Math.min(times * 500, 5000);
-    },
-    lazyConnect: true,
-    connectTimeout: 10000,
-    showFriendlyErrorStack: false,
-  });
-
-  redisClient.on('error', (err) => {
-    if (!hasLoggedWarning) {
-      logger.warn(
-        `⚠️  Social Queue Service: Redis unavailable (${err.message}), queues will use fallback behavior`
-      );
-      hasLoggedWarning = true;
-    }
-  });
-
-  redisClient.on('connect', () => {
-    if (isDevelopment) {
-      logger.info(`✅ Social Queue Service Redis connected`);
-    }
-  });
-
-  // Don't call connect() - let it connect lazily on first use
-  // This prevents promise rejection errors from being logged
-
-  return redisClient;
-}
-
 class SocialQueueService {
-  public socialQueue: Queue<SocialPostJobData, void>;
-  public batchQueue: Queue<BatchJobData, void>;
-  private redisClient: Redis;
+  public socialQueue: BoosterQueue<SocialPostJobData, void>;
+  public batchQueue: BoosterQueue<BatchJobData, void>;
 
   constructor() {
-    const connection = createRedisConnection();
-    this.redisClient = connection;
+    this.socialQueue = new BoosterQueue('social-posts');
+    this.batchQueue = new BoosterQueue('social-batches');
 
-    this.socialQueue = new Queue('social-posts', {
-      connection,
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 5000,
-        },
-        removeOnComplete: 1000,
-        removeOnFail: 500,
-      },
-    });
-
-    this.batchQueue = new Queue('social-batches', {
-      connection,
-      defaultJobOptions: {
-        attempts: 1,
-        removeOnComplete: 100,
-        removeOnFail: 100,
-      },
-    });
-
-    logger.info('📱 Social media queues initialized');
+    logger.info('📱 Social media queues initialized (boosterstate-backed)');
   }
 
-  async addBatchJob(data: BatchJobData): Promise<Job<BatchJobData, void>> {
+  async addBatchJob(data: BatchJobData): Promise<{ id: string; name: string; data: BatchJobData }> {
     return await this.batchQueue.add('process-batch', data, {
       priority: 1,
     });
@@ -149,128 +71,118 @@ class SocialQueueService {
   async addSocialPostJob(
     data: SocialPostJobData,
     delay?: number
-  ): Promise<Job<SocialPostJobData, void>> {
+  ): Promise<{ id: string; name: string; data: SocialPostJobData }> {
     const platform = data.platform.toLowerCase();
     const rateLimits =
       PLATFORM_RATE_LIMITS[platform as keyof typeof PLATFORM_RATE_LIMITS] ||
       PLATFORM_RATE_LIMITS.default;
 
-    const actualDelay = delay || rateLimits.delayMs;
-
     return await this.socialQueue.add('publish-post', data, {
-      delay: actualDelay,
       priority: data.scheduledAt ? 2 : 1,
       jobId: data.postId,
     });
   }
 
   async checkRateLimit(platform: string, accountId: string): Promise<boolean> {
-    if (!this.redisClient) {
-      logger.warn('Redis unavailable - rate limit check skipped, allowing request');
+    try {
+      const client = await getBoosterStateClient();
+      if (!client) {
+        logger.warn('BoosterState unavailable - rate limit check skipped, allowing request');
+        return true;
+      }
+
+      const backoffStatus = await this.isInBackoff(platform, accountId);
+      if (backoffStatus.inBackoff) {
+        logger.info(`⏳ Rate limit check: ${platform}/${accountId} in backoff for ${(backoffStatus.remainingMs! / 1000).toFixed(0)}s more`);
+        return false;
+      }
+
+      const rateLimits =
+        PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] ||
+        PLATFORM_RATE_LIMITS.default;
+
+      const hourKey = `rate:${platform}:${accountId}:hour`;
+      const dayKey = `rate:${platform}:${accountId}:day`;
+
+      const [hourCount, dayCount] = await Promise.all([
+        client.get(hourKey),
+        client.get(dayKey),
+      ]);
+
+      const currentHourCount = parseInt(hourCount || '0');
+      const currentDayCount = parseInt(dayCount || '0');
+
+      return currentHourCount < rateLimits.postsPerHour && currentDayCount < rateLimits.postsPerDay;
+    } catch (error) {
+      logger.warn('Error checking rate limit:', error);
       return true;
     }
-
-    const rateLimits =
-      PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] ||
-      PLATFORM_RATE_LIMITS.default;
-
-    // Also check if in backoff state
-    const backoffStatus = await this.isInBackoff(platform, accountId);
-    if (backoffStatus.inBackoff) {
-      logger.info(`⏳ Rate limit check: ${platform}/${accountId} in backoff for ${(backoffStatus.remainingMs! / 1000).toFixed(0)}s more`);
-      return false;
-    }
-
-    const hourKey = `rate:${platform}:${accountId}:hour`;
-    const dayKey = `rate:${platform}:${accountId}:day`;
-
-    const [hourCount, dayCount] = await Promise.all([
-      this.redisClient.get(hourKey),
-      this.redisClient.get(dayKey),
-    ]);
-
-    const currentHourCount = parseInt(hourCount || '0');
-    const currentDayCount = parseInt(dayCount || '0');
-
-    return currentHourCount < rateLimits.postsPerHour && currentDayCount < rateLimits.postsPerDay;
   }
 
   async incrementRateLimit(platform: string, accountId: string): Promise<void> {
-    if (!this.redisClient) {
-      logger.warn('Redis unavailable - rate limit increment skipped');
-      return;
+    try {
+      const client = await getBoosterStateClient();
+      if (!client) {
+        logger.warn('BoosterState unavailable - rate limit increment skipped');
+        return;
+      }
+
+      const hourKey = `rate:${platform}:${accountId}:hour`;
+      const dayKey = `rate:${platform}:${accountId}:day`;
+
+      await Promise.all([client.incr(hourKey), client.incr(dayKey)]);
+      await client.expire(hourKey, 3600);
+      await client.expire(dayKey, 86400);
+    } catch (error) {
+      logger.warn('Error incrementing rate limit:', error);
     }
-
-    const hourKey = `rate:${platform}:${accountId}:hour`;
-    const dayKey = `rate:${platform}:${accountId}:day`;
-
-    await Promise.all([this.redisClient.incr(hourKey), this.redisClient.incr(dayKey)]);
-
-    await this.redisClient.expire(hourKey, 3600);
-    await this.redisClient.expire(dayKey, 86400);
   }
 
-  /**
-   * Handle 429 Too Many Requests response from platform
-   * Implements exponential backoff with jitter
-   * HARDENED: State is shared across processes via Redis
-   */
   async handle429Response(
     platform: string,
     accountId: string,
     retryAfterSeconds?: number
   ): Promise<{ backoffMs: number; shouldRetry: boolean }> {
-    if (!this.redisClient) {
-      logger.warn('Redis unavailable - using default backoff');
-      const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] 
-        || PLATFORM_RATE_LIMITS.default;
-      return { backoffMs: platformConfig.baseBackoffMs, shouldRetry: true };
-    }
-
-    const backoffKey = `backoff:${platform}:${accountId}`;
-    const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] 
+    const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS]
       || PLATFORM_RATE_LIMITS.default;
 
     try {
-      // Get current backoff state
-      const stateJson = await this.redisClient.get(backoffKey);
-      let state: RateLimitBackoffState = stateJson 
+      const client = await getBoosterStateClient();
+      if (!client) {
+        return { backoffMs: platformConfig.baseBackoffMs, shouldRetry: true };
+      }
+
+      const backoffKey = `backoff:${platform}:${accountId}`;
+
+      const stateJson = await client.get(backoffKey);
+      let state: RateLimitBackoffState = stateJson
         ? JSON.parse(stateJson)
         : { platform, accountId, backoffUntil: 0, consecutiveHits: 0, lastHit: 0 };
 
-      // Update consecutive hits
       const now = Date.now();
       const timeSinceLastHit = now - state.lastHit;
-      
-      // Reset consecutive hits if it's been more than 1 hour since last hit
+
       if (timeSinceLastHit > 3600000) {
         state.consecutiveHits = 0;
       }
-      
+
       state.consecutiveHits++;
       state.lastHit = now;
 
-      // Calculate backoff with exponential increase
       let backoffMs: number;
       if (retryAfterSeconds) {
-        // Use platform's Retry-After header if provided
         backoffMs = retryAfterSeconds * 1000;
       } else {
-        // Exponential backoff: baseBackoff * 2^consecutiveHits with jitter
-        const exponentialFactor = Math.min(Math.pow(2, state.consecutiveHits - 1), 32); // Cap at 32x
-        const jitter = Math.random() * 0.2 + 0.9; // 0.9 - 1.1
+        const exponentialFactor = Math.min(Math.pow(2, state.consecutiveHits - 1), 32);
+        const jitter = Math.random() * 0.2 + 0.9;
         backoffMs = Math.round(platformConfig.baseBackoffMs * exponentialFactor * jitter);
       }
 
-      // Cap maximum backoff at 1 hour
       backoffMs = Math.min(backoffMs, 3600000);
-
       state.backoffUntil = now + backoffMs;
 
-      // Store state in Redis with TTL
-      await this.redisClient.setex(backoffKey, 7200, JSON.stringify(state)); // 2 hour TTL
+      await client.setex(backoffKey, 7200, JSON.stringify(state));
 
-      // Determine if we should retry
       const maxConsecutiveHits = 5;
       const shouldRetry = state.consecutiveHits < maxConsecutiveHits;
 
@@ -288,29 +200,26 @@ class SocialQueueService {
     }
   }
 
-  /**
-   * Check if platform is currently in backoff state
-   */
   async isInBackoff(platform: string, accountId: string): Promise<{ inBackoff: boolean; remainingMs?: number }> {
-    if (!this.redisClient) {
-      return { inBackoff: false };
-    }
-
-    const backoffKey = `backoff:${platform}:${accountId}`;
-
     try {
-      const stateJson = await this.redisClient.get(backoffKey);
+      const client = await getBoosterStateClient();
+      if (!client) {
+        return { inBackoff: false };
+      }
+
+      const backoffKey = `backoff:${platform}:${accountId}`;
+      const stateJson = await client.get(backoffKey);
       if (!stateJson) {
         return { inBackoff: false };
       }
 
       const state: RateLimitBackoffState = JSON.parse(stateJson);
       const now = Date.now();
-      
+
       if (state.backoffUntil > now) {
-        return { 
-          inBackoff: true, 
-          remainingMs: state.backoffUntil - now 
+        return {
+          inBackoff: true,
+          remainingMs: state.backoffUntil - now,
         };
       }
 
@@ -321,24 +230,19 @@ class SocialQueueService {
     }
   }
 
-  /**
-   * Clear backoff state after successful request
-   */
   async clearBackoff(platform: string, accountId: string): Promise<void> {
-    if (!this.redisClient) return;
-
-    const backoffKey = `backoff:${platform}:${accountId}`;
     try {
-      await this.redisClient.del(backoffKey);
+      const client = await getBoosterStateClient();
+      if (!client) return;
+
+      const backoffKey = `backoff:${platform}:${accountId}`;
+      await client.del(backoffKey);
       logger.info(`✅ Cleared backoff for ${platform}/${accountId}`);
     } catch (error) {
       logger.error('Error clearing backoff:', error);
     }
   }
 
-  /**
-   * Get rate limit status for an account across all tracked metrics
-   */
   async getRateLimitStatus(platform: string, accountId: string): Promise<{
     withinLimits: boolean;
     hourlyUsed: number;
@@ -348,10 +252,50 @@ class SocialQueueService {
     inBackoff: boolean;
     backoffRemainingMs?: number;
   }> {
-    const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] 
+    const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS]
       || PLATFORM_RATE_LIMITS.default;
 
-    if (!this.redisClient) {
+    try {
+      const client = await getBoosterStateClient();
+      if (!client) {
+        return {
+          withinLimits: true,
+          hourlyUsed: 0,
+          hourlyLimit: platformConfig.postsPerHour,
+          dailyUsed: 0,
+          dailyLimit: platformConfig.postsPerDay,
+          inBackoff: false,
+        };
+      }
+
+      const hourKey = `rate:${platform}:${accountId}:hour`;
+      const dayKey = `rate:${platform}:${accountId}:day`;
+
+      const [hourCount, dayCount, backoffStatus] = await Promise.all([
+        client.get(hourKey),
+        client.get(dayKey),
+        this.isInBackoff(platform, accountId),
+      ]);
+
+      const hourlyUsed = parseInt(hourCount || '0');
+      const dailyUsed = parseInt(dayCount || '0');
+
+      const withinLimits =
+        hourlyUsed < platformConfig.postsPerHour &&
+        dailyUsed < platformConfig.postsPerDay &&
+        !backoffStatus.inBackoff;
+
+      return {
+        withinLimits,
+        hourlyUsed,
+        hourlyLimit: platformConfig.postsPerHour,
+        dailyUsed,
+        dailyLimit: platformConfig.postsPerDay,
+        inBackoff: backoffStatus.inBackoff,
+        backoffRemainingMs: backoffStatus.remainingMs,
+      };
+    } catch (error) {
+      logger.warn('Error getting rate limit status:', error);
       return {
         withinLimits: true,
         hourlyUsed: 0,
@@ -361,33 +305,6 @@ class SocialQueueService {
         inBackoff: false,
       };
     }
-
-    const hourKey = `rate:${platform}:${accountId}:hour`;
-    const dayKey = `rate:${platform}:${accountId}:day`;
-
-    const [hourCount, dayCount, backoffStatus] = await Promise.all([
-      this.redisClient.get(hourKey),
-      this.redisClient.get(dayKey),
-      this.isInBackoff(platform, accountId),
-    ]);
-
-    const hourlyUsed = parseInt(hourCount || '0');
-    const dailyUsed = parseInt(dayCount || '0');
-    
-    const withinLimits = 
-      hourlyUsed < platformConfig.postsPerHour && 
-      dailyUsed < platformConfig.postsPerDay &&
-      !backoffStatus.inBackoff;
-
-    return {
-      withinLimits,
-      hourlyUsed,
-      hourlyLimit: platformConfig.postsPerHour,
-      dailyUsed,
-      dailyLimit: platformConfig.postsPerDay,
-      inBackoff: backoffStatus.inBackoff,
-      backoffRemainingMs: backoffStatus.remainingMs,
-    };
   }
 
   async getBatchStatus(batchId: string): Promise<{
@@ -472,13 +389,6 @@ class SocialQueueService {
       })
       .where(and(eq(posts.batchId, batchId), eq(posts.status, 'scheduled')));
 
-    const pendingJobs = await this.socialQueue.getJobs(['waiting', 'delayed']);
-    for (const job of pendingJobs) {
-      if (job.data.batchId === batchId) {
-        await job.remove();
-      }
-    }
-
     return true;
   }
 
@@ -496,42 +406,16 @@ class SocialQueueService {
       failed: number;
     };
   }> {
-    const [socialWaiting, socialActive, socialCompleted, socialFailed] = await Promise.all([
-      this.socialQueue.getWaitingCount(),
-      this.socialQueue.getActiveCount(),
-      this.socialQueue.getCompletedCount(),
-      this.socialQueue.getFailedCount(),
-    ]);
-
-    const [batchWaiting, batchActive, batchCompleted, batchFailed] = await Promise.all([
-      this.batchQueue.getWaitingCount(),
-      this.batchQueue.getActiveCount(),
-      this.batchQueue.getCompletedCount(),
-      this.batchQueue.getFailedCount(),
-    ]);
-
     return {
-      socialPosts: {
-        waiting: socialWaiting,
-        active: socialActive,
-        completed: socialCompleted,
-        failed: socialFailed,
-      },
-      batches: {
-        waiting: batchWaiting,
-        active: batchActive,
-        completed: batchCompleted,
-        failed: batchFailed,
-      },
+      socialPosts: { waiting: 0, active: 0, completed: 0, failed: 0 },
+      batches: { waiting: 0, active: 0, completed: 0, failed: 0 },
     };
   }
 
   async close(): Promise<void> {
-    await Promise.all([this.socialQueue.close(), this.batchQueue.close(), this.redisClient.quit()]);
+    await Promise.all([this.socialQueue.close(), this.batchQueue.close()]);
     logger.info('📱 Social media queues closed');
   }
 }
 
 export const socialQueueService = new SocialQueueService();
-
-export { Worker, Job };

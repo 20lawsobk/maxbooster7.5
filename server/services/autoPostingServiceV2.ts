@@ -1,16 +1,9 @@
-import { Queue, Worker, QueueEvents } from 'bullmq';
+import { getBoosterStateClient } from '../lib/boosterStateClient.js';
+import { BoosterQueue } from './queueService.js';
 import { storage } from '../storage.js';
 import { logger } from '../logger.js';
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
-import { queueMonitor } from '../monitoring/queueMonitor.js';
 import axios from 'axios';
 import type { User } from '../../shared/schema.js';
-
-/**
- * Production-Ready Auto-Posting Service
- * Uses BullMQ with Redis for durable, horizontally-scalable job processing
- * Fixes: In-memory volatility, data loss on restart, horizontal scaling issues
- */
 
 export interface PostContent {
   text: string;
@@ -48,139 +41,69 @@ export interface PostResult {
 }
 
 class AutoPostingServiceV2 {
-  private postQueue: Queue;
-  private worker: Worker | null = null;
-  private queueEvents: QueueEvents;
+  private postQueue: BoosterQueue;
+  private workerInterval: NodeJS.Timeout | null = null;
   private isInitialized: boolean = false;
 
   constructor() {
-    const connection = getRedisClient();
-    
-    // Create BullMQ queue for scheduled posts
-    this.postQueue = new Queue('scheduled-posts', {
-      connection,
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 2000,
-        },
-        removeOnComplete: {
-          count: 100, // Keep last 100 completed jobs
-        },
-        removeOnFail: {
-          count: 500, // Keep last 500 failed jobs for debugging
-        },
-      },
-    });
-
-    // Queue events for monitoring
-    this.queueEvents = new QueueEvents('scheduled-posts', { connection });
-
-    this.queueEvents.on('completed', ({ jobId }) => {
-      logger.info(`✅ Auto-post job ${jobId} completed successfully`);
-    });
-
-    this.queueEvents.on('failed', ({ jobId, failedReason }) => {
-      logger.error(`❌ Auto-post job ${jobId} failed: ${failedReason}`);
-    });
+    this.postQueue = new BoosterQueue('scheduled-posts');
   }
 
-  /**
-   * Initialize service: start worker and reload pending jobs from database
-   * CRITICAL: This fixes the data loss on restart issue
-   */
   async initialize() {
     if (this.isInitialized) return;
 
-    // Start worker for processing jobs
     this.startWorker();
-
-    // Reload pending jobs from database
     await this.reloadPendingJobs();
 
-    // Register queue for monitoring
-    queueMonitor.registerQueue('scheduled-posts', this.postQueue);
-    queueMonitor.startMonitoring();
-
     this.isInitialized = true;
-    logger.info('✅ Auto-posting service initialized with BullMQ (production-ready)');
+    logger.info('✅ Auto-posting service initialized (boosterstate-backed)');
   }
 
-  /**
-   * Reload pending jobs from database on startup
-   * CRITICAL FIX: Prevents data loss on restart
-   * HARDENED: Added idempotency check to prevent duplicate jobs
-   */
   private async reloadPendingJobs() {
     try {
       const pendingPosts = await storage.getScheduledPosts({ status: 'pending' });
-      
-      let reloadedCount = 0;
-      let skippedCount = 0;
-      
-      for (const post of pendingPosts) {
-        // IDEMPOTENCY CHECK: Skip if job already exists in queue
-        const existingJob = await this.postQueue.getJob(post.id);
-        if (existingJob) {
-          skippedCount++;
-          continue;
-        }
 
+      let reloadedCount = 0;
+
+      for (const post of pendingPosts) {
         const delay = new Date(post.scheduledTime).getTime() - Date.now();
-        
-        if (delay > 0) {
-          // Re-schedule the job
-          await this.postQueue.add(
-            'auto-post',
-            post,
-            {
-              jobId: post.id,
-              delay,
-            }
-          );
-          reloadedCount++;
-        } else {
-          // Past due - schedule immediately
-          await this.postQueue.add('auto-post', post, { jobId: post.id });
-          reloadedCount++;
-        }
+
+        await this.postQueue.add('auto-post', post, {
+          jobId: post.id,
+          delay: delay > 0 ? delay : 0,
+        });
+        reloadedCount++;
       }
 
-      logger.info(`✅ Reloaded ${reloadedCount} pending posts (${skippedCount} already in queue)`);
+      logger.info(`✅ Reloaded ${reloadedCount} pending posts`);
     } catch (error) {
       logger.error('Failed to reload pending jobs:', error);
     }
   }
 
-  /**
-   * Start BullMQ worker for processing jobs
-   * Runs in separate process for horizontal scaling
-   */
   private startWorker() {
-    const connection = getRedisClient();
+    this.workerInterval = setInterval(async () => {
+      try {
+        const client = await getBoosterStateClient();
+        if (!client) return;
 
-    this.worker = new Worker(
-      'scheduled-posts',
-      async (job) => {
-        const post: ScheduledPost = job.data;
-        
+        const item = await client.queuePop('scheduled-posts');
+        if (!item) return;
+
+        const parsed = JSON.parse(item.data);
+        const post: ScheduledPost = parsed.data || parsed;
+
         logger.info(`🚀 Processing auto-post job ${post.id} for user ${post.userId}`);
 
         try {
-          // Update status to posting
           await storage.updateScheduledPost(post.id, { status: 'posting' });
-
-          // Execute the posting
           const results = await this.executePost(post);
 
-          // Update with results
           await storage.updateScheduledPost(post.id, {
             status: results.every(r => r.success) ? 'completed' : 'failed',
             results,
           });
 
-          // Track for analytics
           await storage.trackSocialPost({
             userId: post.userId,
             content: post.content,
@@ -188,28 +111,18 @@ class AutoPostingServiceV2 {
             createdBy: post.createdBy,
             results,
           });
-
-          return { success: true, results };
         } catch (error: any) {
           logger.error(`Failed to process auto-post ${post.id}:`, error);
           await storage.updateScheduledPost(post.id, { status: 'failed' });
-          throw error;
         }
-      },
-      {
-        connection,
-        concurrency: 5, // Process up to 5 posts concurrently
+      } catch (error: any) {
+        logger.warn('⚠️  Auto-posting worker poll error:', error?.message || error);
       }
-    );
+    }, 2000);
 
-    logger.info('✅ Auto-posting worker started (concurrency: 5)');
+    logger.info('✅ Auto-posting worker started (poll interval: 2s)');
   }
 
-  /**
-   * Schedule a post for auto-posting
-   * FIXED: Now uses durable Redis queue instead of in-memory Map
-   * HARDENED: Added duplicate prevention with idempotency check
-   */
   async schedulePost(
     userId: string,
     platforms: string[],
@@ -219,26 +132,16 @@ class AutoPostingServiceV2 {
     viralPrediction?: any,
     idempotencyKey?: string
   ): Promise<ScheduledPost> {
-    // Generate deterministic ID if idempotency key provided
-    const postId = idempotencyKey 
+    const postId = idempotencyKey
       ? `post_${idempotencyKey}`
       : `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // DUPLICATE PREVENTION: Check if post already exists
     if (idempotencyKey) {
       const existingPost = await storage.getScheduledPostById(postId);
       if (existingPost) {
         logger.info(`📋 Returning existing post ${postId} (idempotency key: ${idempotencyKey})`);
         return existingPost as ScheduledPost;
       }
-    }
-
-    // Also check if job already exists in queue
-    const existingJob = await this.postQueue.getJob(postId);
-    if (existingJob) {
-      logger.info(`📋 Post ${postId} already in queue, returning existing`);
-      const existingData = existingJob.data as ScheduledPost;
-      return existingData;
     }
 
     const scheduledPost: ScheduledPost = {
@@ -252,28 +155,19 @@ class AutoPostingServiceV2 {
       viralPrediction,
     };
 
-    // Save to database FIRST (durability)
     await storage.createScheduledPost(scheduledPost);
 
-    // Add to BullMQ queue with delay
     const delay = scheduledTime.getTime() - Date.now();
-    await this.postQueue.add(
-      'auto-post',
-      scheduledPost,
-      {
-        jobId: postId,
-        delay: delay > 0 ? delay : 0,
-      }
-    );
+    await this.postQueue.add('auto-post', scheduledPost, {
+      jobId: postId,
+      delay: delay > 0 ? delay : 0,
+    });
 
     logger.info(`📅 Scheduled post ${postId} for ${scheduledTime.toISOString()} (${delay}ms delay)`);
 
     return scheduledPost;
   }
 
-  /**
-   * Post immediately to specified platforms
-   */
   async postNow(
     userId: string,
     platforms: string[],
@@ -282,7 +176,6 @@ class AutoPostingServiceV2 {
   ): Promise<PostResult[]> {
     logger.info(`🚀 Posting immediately to ${platforms.join(', ')} for user ${userId}`);
 
-    // Create temporary post object
     const tempPost: ScheduledPost = {
       id: `immediate_${Date.now()}`,
       userId,
@@ -296,19 +189,14 @@ class AutoPostingServiceV2 {
     return await this.executePost(tempPost);
   }
 
-  /**
-   * Execute posting to platforms
-   */
   private async executePost(post: ScheduledPost): Promise<PostResult[]> {
     const results: PostResult[] = [];
 
-    // Get user's connected platforms and tokens
     const user = await storage.getUserById(post.userId);
     if (!user) {
       throw new Error('User not found');
     }
 
-    // Post to each platform in parallel
     const postPromises = post.platforms.map(async (platform) => {
       try {
         const result = await this.postToPlatform(user, platform, post.content);
@@ -331,16 +219,13 @@ class AutoPostingServiceV2 {
     return results;
   }
 
-  /**
-   * Post to a specific platform
-   */
   private async postToPlatform(
     user: User,
     platform: string,
     content: PostContent
   ): Promise<PostResult> {
     const tokens = await storage.getSocialTokens(user.id);
-    
+
     switch (platform) {
       case 'instagram':
         return await this.postToInstagram(user, tokens.instagram, content);
@@ -363,7 +248,6 @@ class AutoPostingServiceV2 {
     }
   }
 
-  // Platform-specific posting methods (unchanged from original)
   private async postToInstagram(user: User, accessToken: string | undefined, content: PostContent): Promise<PostResult> {
     if (!accessToken) {
       throw new Error('Instagram not connected');
@@ -466,7 +350,7 @@ class AutoPostingServiceV2 {
 
     const publishId = initResponse.data.data?.publish_id;
     const uploadUrl = initResponse.data.data?.upload_url;
-    
+
     if (!publishId) {
       throw new Error('TikTok video init failed: no publish_id returned');
     }
@@ -499,7 +383,7 @@ class AutoPostingServiceV2 {
     const maxAttempts = 60;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 3000));
-      
+
       const statusResponse = await axios.post(
         'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
         { publish_id: publishId },
@@ -596,7 +480,7 @@ class AutoPostingServiceV2 {
         { headers: { 'Authorization': `Bearer ${accessToken}` } }
       );
       const channelId = channelResponse.data.items?.[0]?.id;
-      
+
       if (!channelId) {
         throw new Error('YouTube channel not found');
       }
@@ -644,7 +528,7 @@ class AutoPostingServiceV2 {
     const personUrn = `urn:li:person:${profileResponse.data.sub}`;
 
     let mediaAssets: any[] = [];
-    
+
     if (content.mediaUrl && content.mediaType === 'image') {
       const registerResponse = await axios.post(
         'https://api.linkedin.com/v2/assets?action=registerUpload',
@@ -672,7 +556,7 @@ class AutoPostingServiceV2 {
 
       if (uploadUrl && assetUrn) {
         const imageResponse = await axios.get(content.mediaUrl, { responseType: 'arraybuffer' });
-        
+
         await axios.put(uploadUrl, imageResponse.data, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -776,11 +660,11 @@ class AutoPostingServiceV2 {
       const maxAttempts = 30;
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
         const statusResponse = await axios.get(
           `https://graph.threads.net/v1.0/${creationId}?access_token=${accessToken}&fields=status`
         );
-        
+
         if (statusResponse.data.status === 'FINISHED') {
           break;
         } else if (statusResponse.data.status === 'ERROR') {
@@ -872,44 +756,26 @@ class AutoPostingServiceV2 {
     };
   }
 
-  /**
-   * Get scheduled posts for a user
-   */
   async getScheduledPosts(userId: string): Promise<ScheduledPost[]> {
     return await storage.getScheduledPosts({ userId, status: 'pending' });
   }
 
-  /**
-   * Cancel a scheduled post
-   */
   async cancelScheduledPost(postId: string): Promise<void> {
-    // Remove from BullMQ queue
-    const job = await this.postQueue.getJob(postId);
-    if (job) {
-      await job.remove();
-    }
-
-    // Update database
     await storage.deleteScheduledPost(postId);
-
     logger.info(`❌ Cancelled scheduled post ${postId}`);
   }
 
-  /**
-   * Clean shutdown
-   */
   async shutdown() {
     logger.info('Shutting down auto-posting service...');
-    
-    if (this.worker) {
-      await this.worker.close();
+
+    if (this.workerInterval) {
+      clearInterval(this.workerInterval);
+      this.workerInterval = null;
     }
     await this.postQueue.close();
-    await this.queueEvents.close();
 
     logger.info('✅ Auto-posting service shut down gracefully');
   }
 }
 
-// Export singleton instance
 export const autoPostingServiceV2 = new AutoPostingServiceV2();

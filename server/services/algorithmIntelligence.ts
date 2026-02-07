@@ -1,6 +1,5 @@
 import { logger } from '../logger.js';
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
-import type { RedisClientType } from 'redis';
+import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
 import { nanoid } from 'nanoid';
 
 export interface AlgorithmHealth {

@@ -3,8 +3,7 @@
 // Implements deterministic AI processing for social content, advertising, and audio analysis
 
 import { nanoid } from 'nanoid';
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
-import type { RedisClientType } from 'redis';
+import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
 import { logger } from '../logger.js';
 
 interface SocialContentOptions {

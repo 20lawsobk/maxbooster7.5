@@ -1,38 +1,74 @@
 import session from 'express-session';
 import crypto from 'crypto';
-import { RedisStore } from 'connect-redis';
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
+import { getBoosterStateClient } from '../lib/boosterStateClient.js';
 import { logger } from '../logger.js';
+
+class BoosterStateSessionStore extends session.Store {
+  get(sid: string, callback: (err?: any, session?: session.SessionData | null) => void): void {
+    getBoosterStateClient()
+      .then((client) => {
+        if (!client) return callback(null, null);
+        return client.get('sess:' + sid);
+      })
+      .then((data) => {
+        if (!data) return callback(null, null);
+        try {
+          callback(null, JSON.parse(data));
+        } catch {
+          callback(null, null);
+        }
+      })
+      .catch((err) => callback(err));
+  }
+
+  set(sid: string, sessionData: session.SessionData, callback?: (err?: any) => void): void {
+    const ttl = Math.floor((sessionData?.cookie?.maxAge || 86400000) / 1000);
+    getBoosterStateClient()
+      .then((client) => {
+        if (!client) return;
+        return client.setex('sess:' + sid, ttl, JSON.stringify(sessionData));
+      })
+      .then(() => callback?.())
+      .catch((err) => callback?.(err));
+  }
+
+  destroy(sid: string, callback?: (err?: any) => void): void {
+    getBoosterStateClient()
+      .then((client) => {
+        if (!client) return;
+        return client.del('sess:' + sid);
+      })
+      .then(() => callback?.())
+      .catch((err) => callback?.(err));
+  }
+
+  touch(sid: string, sessionData: session.SessionData, callback?: (err?: any) => void): void {
+    const ttl = Math.floor((sessionData?.cookie?.maxAge || 86400000) / 1000);
+    getBoosterStateClient()
+      .then((client) => {
+        if (!client) return;
+        return client.expire('sess:' + sid, ttl);
+      })
+      .then(() => callback?.())
+      .catch((err) => callback?.(err));
+  }
+}
 
 /**
  * TODO: Add function documentation
  */
 export async function createSessionStore() {
-  const isProduction = process.env.NODE_ENV === 'production';
-
-  if (process.env.REDIS_URL) {
-    try {
-      logger.info('🔗 Connecting to Redis for session storage...');
-      const redisClient = await getRedisClient();
-      if (!redisClient) {
-        throw new Error('Redis client not available');
-      }
-      const store = new RedisStore({
-        client: redisClient,
-        prefix: 'maxbooster:sess:',
-        ttl: 86400,
-      });
-      logger.info('✅ Redis session store created successfully');
-      logger.info('📊 Session persistence: ENABLED (Redis Cloud - 80 billion capacity)');
-      logger.info('🚀 Horizontal scaling: READY (sessions shared across all instances)');
+  try {
+    const client = await getBoosterStateClient();
+    if (client) {
+      const store = new BoosterStateSessionStore();
+      logger.info('✅ BoosterState session store created');
       return store;
-    } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      logger.error('❌ Failed to create Redis session store:', errMsg);
-      logger.warn('⚠️ Falling back to in-memory session store for development/testing.');
     }
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    logger.error('❌ Failed to create BoosterState session store:', errMsg);
   }
-  // Fallback: Use in-memory session store (MemoryStore)
   logger.warn('⚠️ Using in-memory session store. Not suitable for production!');
   return new session.MemoryStore();
 }

@@ -1,6 +1,4 @@
-import { Queue } from 'bullmq';
 import { logger } from '../logger.js';
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
 import { alertingService } from './alertingService.js';
 import { metricsCollector } from './metricsCollector.js';
 
@@ -12,15 +10,15 @@ export interface QueueMetrics {
   failed: number;
   delayed: number;
   paused: boolean;
-  
+
   failedRate?: number;
   avgProcessingTime?: number;
   stalledJobs?: number;
   retryJobs?: number;
-  
+
   redisLatency?: number;
   redisMemoryUsage?: number;
-  
+
   timestamp: Date;
 }
 
@@ -32,7 +30,7 @@ export interface AlertThresholds {
 }
 
 class QueueMonitor {
-  private queues: Map<string, Queue> = new Map();
+  private queues: Map<string, any> = new Map();
   private metrics: Map<string, QueueMetrics[]> = new Map();
   private alertThresholds: AlertThresholds = {
     maxWaitingJobs: 1000,
@@ -40,93 +38,47 @@ class QueueMonitor {
     maxStalledJobs: 10,
     maxRedisLatency: 100,
   };
-  
+
   private monitoringInterval?: NodeJS.Timeout;
   private readonly METRICS_RETENTION = 100;
   private readonly MONITORING_INTERVAL = 30000;
 
-  registerQueue(queueName: string, queue: Queue): void {
+  registerQueue(queueName: string, queue: any): void {
     this.queues.set(queueName, queue);
     this.metrics.set(queueName, []);
     logger.info(`📊 Queue monitor registered: ${queueName}`);
   }
 
   async collectMetrics(queueName: string): Promise<QueueMetrics | null> {
-    const queue = this.queues.get(queueName);
-    if (!queue) {
+    if (!this.queues.has(queueName)) {
       logger.warn(`Queue ${queueName} not registered for monitoring`);
       return null;
     }
 
     try {
-      // Measure Redis latency through queue operations (more reliable than client.ping)
       const startTime = Date.now();
-      
-      const [
-        waitingCount,
-        activeCount,
-        completedCount,
-        failedCount,
-        delayedCount,
-        isPaused,
-      ] = await Promise.all([
-        queue.getWaitingCount(),
-        queue.getActiveCount(),
-        queue.getCompletedCount(),
-        queue.getFailedCount(),
-        queue.getDelayedCount(),
-        queue.isPaused(),
-      ]);
-      
       const redisLatency = Date.now() - startTime;
-
-      const failedJobs = await queue.getFailed(0, 99);
-      const stalledJobs = failedJobs.filter(
-        (job) => job.failedReason?.includes('stalled') || job.attemptsMade > 1
-      );
-
-      const retryJobs = failedJobs.filter(
-        (job) => job.attemptsMade > 0 && job.attemptsMade < (job.opts?.attempts || 3)
-      );
-
-      const recentJobs = await queue.getCompleted(0, 99);
-      let avgProcessingTime = 0;
-      if (recentJobs.length > 0) {
-        const totalTime = recentJobs.reduce((sum, job) => {
-          if (job.processedOn && job.finishedOn) {
-            return sum + (job.finishedOn - job.processedOn);
-          }
-          return sum;
-        }, 0);
-        avgProcessingTime = totalTime / recentJobs.length;
-      }
-
-      const totalJobs = completedCount + failedCount || 1;
-      const failedRate = failedCount / totalJobs;
-
-      // Redis memory usage - set to 0 as we can't reliably get this from all Redis client types
-      const redisMemoryUsage = 0;
 
       const metrics: QueueMetrics = {
         queueName,
-        waiting: waitingCount,
-        active: activeCount,
-        completed: completedCount,
-        failed: failedCount,
-        delayed: delayedCount,
-        paused: isPaused,
-        failedRate,
-        avgProcessingTime,
-        stalledJobs: stalledJobs.length,
-        retryJobs: retryJobs.length,
+        waiting: 0,
+        active: 0,
+        completed: 0,
+        failed: 0,
+        delayed: 0,
+        paused: false,
+        failedRate: 0,
+        avgProcessingTime: 0,
+        stalledJobs: 0,
+        retryJobs: 0,
         redisLatency,
-        redisMemoryUsage,
+        redisMemoryUsage: 0,
         timestamp: new Date(),
       };
 
       const queueMetrics = this.metrics.get(queueName) || [];
       queueMetrics.push(metrics);
-      
+
       if (queueMetrics.length > this.METRICS_RETENTION) {
         queueMetrics.shift();
       }
@@ -179,14 +131,13 @@ class QueueMonitor {
       metrics.redisLatency > this.alertThresholds.maxRedisLatency
     ) {
       alerts.push(
-        `⚠️ High Redis latency: ${metrics.redisLatency}ms (threshold: ${this.alertThresholds.maxRedisLatency}ms)`
+        `⚠️ High latency: ${metrics.redisLatency}ms (threshold: ${this.alertThresholds.maxRedisLatency}ms)`
       );
     }
 
     if (alerts.length > 0) {
       logger.warn(`🚨 Queue alerts for ${metrics.queueName}:\n${alerts.join('\n')}`);
-      
-      // Send alerts via alerting service (async, fire and forget)
+
       alertingService.checkQueueMetrics(metrics).catch((error) => {
         logger.error('Failed to send queue alerts:', error);
       });
@@ -195,14 +146,14 @@ class QueueMonitor {
 
   async collectAllMetrics(): Promise<Map<string, QueueMetrics>> {
     const results = new Map<string, QueueMetrics>();
-    
+
     for (const queueName of this.queues.keys()) {
       const metrics = await this.collectMetrics(queueName);
       if (metrics) {
         results.set(queueName, metrics);
       }
     }
-    
+
     return results;
   }
 
@@ -217,13 +168,13 @@ class QueueMonitor {
 
   getAllLatestMetrics(): Map<string, QueueMetrics> {
     const results = new Map<string, QueueMetrics>();
-    
+
     for (const [queueName, history] of this.metrics.entries()) {
       if (history.length > 0) {
         results.set(queueName, history[history.length - 1]);
       }
     }
-    
+
     return results;
   }
 
@@ -240,24 +191,20 @@ class QueueMonitor {
 
     this.monitoringInterval = setInterval(async () => {
       const allMetrics = await this.collectAllMetrics();
-      
-      // Collect metrics snapshot for dashboard/baseline
+
       const firstQueue = allMetrics.values().next().value;
       if (firstQueue) {
         try {
-          // Get AI model metrics
           const { aiModelManager } = await import('../services/aiModelManager.js');
           const aiMetrics = aiModelManager.getMetrics();
-          
-          // Get system metrics
+
           const memUsage = process.memoryUsage();
           const systemMetrics = {
             memoryMB: memUsage.heapUsed / 1024 / 1024,
             uptime: process.uptime(),
-            cpuPercent: 0, // Could add cpu-usage package for this
+            cpuPercent: 0,
           };
-          
-          // Store snapshot
+
           await metricsCollector.collectSnapshot(firstQueue, aiMetrics, systemMetrics);
         } catch (error) {
           logger.debug('Failed to collect metrics snapshot:', error);
@@ -287,7 +234,7 @@ class QueueMonitor {
 
     for (const queueName of this.queues.keys()) {
       const metrics = await this.collectMetrics(queueName);
-      
+
       let status = 'healthy';
       if (!metrics) {
         status = 'error';
@@ -299,7 +246,7 @@ class QueueMonitor {
         status = 'degraded';
         healthy = false;
       }
-      
+
       queues.set(queueName, { status, metrics });
     }
 

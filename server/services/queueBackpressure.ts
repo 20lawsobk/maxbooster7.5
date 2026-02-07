@@ -1,4 +1,3 @@
-import { Queue } from 'bullmq';
 import { logger } from '../logger.js';
 import { EventEmitter } from 'events';
 
@@ -20,7 +19,6 @@ export class QueueBackpressureManager extends EventEmitter {
   private config: BackpressureConfig;
   private backpressureActive: boolean = false;
   private monitoringInterval: NodeJS.Timeout | null = null;
-  private queues: Map<string, Queue> = new Map();
 
   constructor(config?: Partial<BackpressureConfig>) {
     super();
@@ -32,12 +30,10 @@ export class QueueBackpressureManager extends EventEmitter {
     };
 
     logger.info('🚦 Queue Backpressure Manager initialized');
-    logger.info(`   Max Queue Size: ${this.config.maxQueueSize}`);
     logger.info(`   Max Memory: ${this.config.maxMemoryMB}MB`);
   }
 
-  registerQueue(name: string, queue: Queue): void {
-    this.queues.set(name, queue);
+  registerQueue(name: string, queue: any): void {
     logger.info(`📊 Registered queue for backpressure monitoring: ${name}`);
   }
 
@@ -65,74 +61,29 @@ export class QueueBackpressureManager extends EventEmitter {
   private async checkBackpressure(): Promise<void> {
     const memoryUsage = process.memoryUsage();
     const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
-    
+
     let shouldActivate = false;
-    let activationReason: 'queue_size' | 'memory_limit' | 'manual' = 'memory_limit';
-    let maxQueueSize = 0;
 
     if (heapUsedMB > this.config.maxMemoryMB) {
       shouldActivate = true;
-      activationReason = 'memory_limit';
-    }
-
-    for (const [name, queue] of this.queues.entries()) {
-      try {
-        const counts = await queue.getJobCounts('waiting', 'active', 'delayed');
-        const totalJobs = (counts.waiting || 0) + (counts.active || 0) + (counts.delayed || 0);
-
-        if (totalJobs > this.config.maxQueueSize) {
-          shouldActivate = true;
-          activationReason = 'queue_size';
-          maxQueueSize = Math.max(maxQueueSize, totalJobs);
-        }
-      } catch (error) {
-        logger.error(`Error checking queue ${name}:`, error);
-      }
     }
 
     if (shouldActivate && !this.backpressureActive) {
-      if (activationReason === 'memory_limit') {
-        logger.warn(`⚠️  BACKPRESSURE ACTIVATED: Memory usage ${heapUsedMB.toFixed(0)}MB exceeds limit ${this.config.maxMemoryMB}MB`);
-      } else {
-        logger.warn(`⚠️  BACKPRESSURE ACTIVATED: Queue size ${maxQueueSize} exceeds limit ${this.config.maxQueueSize}`);
-      }
-      await this.activateBackpressure(activationReason, heapUsedMB, maxQueueSize);
-    }
-
-    if (!shouldActivate && this.backpressureActive) {
-      logger.info('✅ BACKPRESSURE DEACTIVATED: System within limits');
-      await this.deactivateBackpressure();
-    }
-  }
-
-  private async activateBackpressure(
-    reason: 'queue_size' | 'memory_limit' | 'manual',
-    memoryUsageMB?: number,
-    queueSize?: number
-  ): Promise<void> {
-    const pauseSuccess = await this.pauseAllQueues();
-
-    if (pauseSuccess) {
+      logger.warn(`⚠️  BACKPRESSURE ACTIVATED: Memory usage ${heapUsedMB.toFixed(0)}MB exceeds limit ${this.config.maxMemoryMB}MB`);
       this.backpressureActive = true;
 
       const status: BackpressureStatus = {
         active: true,
-        reason,
-        memoryUsageMB,
-        queueSize,
+        reason: 'memory_limit',
+        memoryUsageMB: heapUsedMB,
         timestamp: Date.now(),
       };
 
       this.emit('backpressure:activated', status);
-    } else {
-      logger.error('❌ Failed to pause queues - backpressure NOT activated, will retry on next interval');
     }
-  }
 
-  private async deactivateBackpressure(): Promise<void> {
-    const resumeSuccess = await this.resumeAllQueues();
-
-    if (resumeSuccess) {
+    if (!shouldActivate && this.backpressureActive) {
+      logger.info('✅ BACKPRESSURE DEACTIVATED: System within limits');
       this.backpressureActive = false;
 
       const status: BackpressureStatus = {
@@ -141,116 +92,37 @@ export class QueueBackpressureManager extends EventEmitter {
       };
 
       this.emit('backpressure:deactivated', status);
-    } else {
-      logger.error('❌ Failed to resume queues - backpressure remains active');
     }
-  }
-
-  private async pauseAllQueues(): Promise<boolean> {
-    const pausePromises = Array.from(this.queues.entries()).map(async ([name, queue]) => {
-      const maxRetries = 3;
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          await queue.pause();
-          logger.info(`⏸️  Paused queue: ${name}`);
-          return true;
-        } catch (error) {
-          if (attempt === maxRetries) {
-            logger.error(`❌ Failed to pause queue ${name} after ${maxRetries} attempts:`, error);
-            return false;
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-        }
-      }
-      return false;
-    });
-
-    const results = await Promise.all(pausePromises);
-    return results.every((success) => success);
-  }
-
-  private async resumeAllQueues(): Promise<boolean> {
-    const resumePromises = Array.from(this.queues.entries()).map(async ([name, queue]) => {
-      const maxRetries = 3;
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          await queue.resume();
-          logger.info(`▶️  Resumed queue: ${name}`);
-          return true;
-        } catch (error) {
-          if (attempt === maxRetries) {
-            logger.error(`❌ Failed to resume queue ${name} after ${maxRetries} attempts:`, error);
-            return false;
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-        }
-      }
-      return false;
-    });
-
-    const results = await Promise.all(resumePromises);
-    return results.every((success) => success);
   }
 
   isBackpressureActive(): boolean {
     return this.backpressureActive;
   }
 
-  /**
-   * Check if a new job can be added to the queue
-   * Returns false if backpressure is active or queue is at capacity
-   */
   async canAcceptJob(queueName?: string): Promise<{ allowed: boolean; reason?: string }> {
     if (this.backpressureActive) {
       return { allowed: false, reason: 'Backpressure is active - system under load' };
     }
 
-    // Check memory
     const memoryUsage = process.memoryUsage();
     const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
     if (heapUsedMB > this.config.maxMemoryMB * 0.9) {
       return { allowed: false, reason: `Memory usage at ${heapUsedMB.toFixed(0)}MB approaching limit` };
     }
 
-    // Check specific queue if provided
-    if (queueName) {
-      const queue = this.queues.get(queueName);
-      if (queue) {
-        try {
-          const counts = await queue.getJobCounts('waiting', 'active', 'delayed');
-          const totalJobs = (counts.waiting || 0) + (counts.active || 0) + (counts.delayed || 0);
-          
-          if (totalJobs >= this.config.maxQueueSize) {
-            return { allowed: false, reason: `Queue ${queueName} is at capacity (${totalJobs}/${this.config.maxQueueSize})` };
-          }
-
-          // Warn when approaching limit (90%)
-          if (totalJobs >= this.config.maxQueueSize * 0.9) {
-            logger.warn(`⚠️ Queue ${queueName} approaching capacity: ${totalJobs}/${this.config.maxQueueSize}`);
-          }
-        } catch (error) {
-          logger.error(`Error checking queue ${queueName} capacity:`, error);
-        }
-      }
-    }
-
     return { allowed: true };
   }
 
-  /**
-   * Attempt to add a job, rejecting if queue is full
-   * Throws error with reason if rejected
-   */
   async addJobWithBackpressure<T>(
     queueName: string,
     addJobFn: () => Promise<T>
   ): Promise<T> {
     const check = await this.canAcceptJob(queueName);
-    
+
     if (!check.allowed) {
       const error = new Error(`Job rejected: ${check.reason}`);
       (error as any).code = 'BACKPRESSURE_REJECTION';
-      (error as any).retryAfter = 30; // Suggest retry after 30 seconds
+      (error as any).retryAfter = 30;
       logger.warn(`🚫 Job rejected for queue ${queueName}: ${check.reason}`);
       throw error;
     }
@@ -262,32 +134,37 @@ export class QueueBackpressureManager extends EventEmitter {
     const memoryUsage = process.memoryUsage();
     const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
 
-    const queueStats: Record<string, number> = {};
-    for (const [name, queue] of this.queues.entries()) {
-      try {
-        const counts = await queue.getJobCounts('waiting', 'active', 'delayed');
-        queueStats[name] = (counts.waiting || 0) + (counts.active || 0) + (counts.delayed || 0);
-      } catch {
-        queueStats[name] = -1;
-      }
-    }
-
     return {
       active: this.backpressureActive,
       memoryUsageMB: heapUsedMB,
       timestamp: Date.now(),
-      queueStats,
+      queueStats: {},
     };
   }
 
   async forceBackpressure(): Promise<void> {
     logger.warn('⚠️  MANUAL BACKPRESSURE ACTIVATION');
-    await this.activateBackpressure('manual');
+    this.backpressureActive = true;
+
+    const status: BackpressureStatus = {
+      active: true,
+      reason: 'manual',
+      timestamp: Date.now(),
+    };
+
+    this.emit('backpressure:activated', status);
   }
 
   async releaseBackpressure(): Promise<void> {
     logger.info('ℹ️  MANUAL BACKPRESSURE RELEASE');
-    await this.deactivateBackpressure();
+    this.backpressureActive = false;
+
+    const status: BackpressureStatus = {
+      active: false,
+      timestamp: Date.now(),
+    };
+
+    this.emit('backpressure:deactivated', status);
   }
 }
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import Redis from 'ioredis';
+import { getBoosterStateClient, BoosterStateClient } from './lib/boosterStateClient.js';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import cluster from 'cluster';
@@ -14,8 +14,8 @@ let hasLoggedWarning = false;
 // Scalability Optimization System
 export class ScalabilitySystem {
   private static instance: ScalabilitySystem;
-  private redis: Redis | null;
-  private redisAvailable: boolean = false;
+  private client: BoosterStateClient | null;
+  private clientAvailable: boolean = false;
   private loadBalancer: LoadBalancer;
   private cacheManager: CacheManager;
   private performanceMonitor: PerformanceMonitor;
@@ -24,43 +24,11 @@ export class ScalabilitySystem {
   private isOptimized: boolean = false;
 
   private constructor() {
-    // Try to connect to Redis, but don't fail if unavailable
-    this.redis = null;
-    this.redisAvailable = false;
-
-    // Only create Redis client if REDIS_URL is configured (use same connection as other services)
-    if (process.env.REDIS_URL) {
-      this.redis = new Redis(process.env.REDIS_URL, {
-        maxRetriesPerRequest: 3,
-        lazyConnect: true,
-        connectTimeout: 10000,
-        enableOfflineQueue: false,
-        showFriendlyErrorStack: false,
-        retryStrategy(times: number) {
-          if (times > 5) return null;
-          return Math.min(times * 500, 5000);
-        },
-      });
-
-      // Add graceful error handling
-      this.redis.on('error', (err) => {
-        if (!hasLoggedWarning) {
-          logger.warn(
-            `⚠️  Scalability System: Redis unavailable (${err.message}), using degraded mode`
-          );
-          hasLoggedWarning = true;
-        }
-      });
-
-      this.redis.on('connect', () => {
-        if (isDevelopment) {
-          logger.info(`✅ Scalability System Redis connected`);
-        }
-      });
-    }
+    this.client = null;
+    this.clientAvailable = false;
 
     this.loadBalancer = new LoadBalancer();
-    this.cacheManager = new CacheManager(this.redis);
+    this.cacheManager = new CacheManager();
     this.performanceMonitor = new PerformanceMonitor();
     this.autoScaler = new AutoScaler();
     this.metrics = {
@@ -89,28 +57,29 @@ export class ScalabilitySystem {
   // Initialize scalability system
   private async initializeSystem(): Promise<void> {
     try {
-      // Try to connect to Redis if configured
-      if (this.redis) {
-        try {
-          await this.redis.connect();
-          this.redisAvailable = true;
-          logger.info('✅ Redis connected for caching');
-        } catch (redisError: unknown) {
-          logger.warn('⚠️  Redis unavailable - running without caching/autoscaling:', redisError);
-          this.redis = null;
-          this.redisAvailable = false;
+      try {
+        const bsClient = await getBoosterStateClient();
+        if (bsClient) {
+          this.client = bsClient;
+          this.clientAvailable = true;
+          this.cacheManager = new CacheManager(this.client);
+          logger.info('✅ BoosterState connected for caching');
+        } else {
+          logger.warn('⚠️  BoosterState unavailable - running without caching/autoscaling');
         }
-      } else {
-        logger.warn('⚠️  Redis not configured - running without caching/autoscaling');
+      } catch (error: unknown) {
+        logger.warn('⚠️  BoosterState unavailable - running without caching/autoscaling:', error);
+        this.client = null;
+        this.clientAvailable = false;
       }
 
-      // Start performance monitoring (works without Redis)
+      // Start performance monitoring (works without BoosterState)
       this.startPerformanceMonitoring();
 
-      // Start auto-scaling (works without Redis)
+      // Start auto-scaling (works without BoosterState)
       this.startAutoScaling();
 
-      // Start optimization (works without Redis)
+      // Start optimization (works without BoosterState)
       this.startOptimization();
 
       // Setup cluster if in production
@@ -120,7 +89,7 @@ export class ScalabilitySystem {
 
       logger.info(
         '🚀 Scalability system initialized' +
-        (this.redisAvailable ? ' with Redis' : ' (degraded mode)')
+        (this.clientAvailable ? ' with BoosterState' : ' (degraded mode)')
       );
     } catch (error: unknown) {
       logger.error('❌ Failed to initialize scalability system:', error);
@@ -205,9 +174,9 @@ export class ScalabilitySystem {
       const errorRate = await this.getErrorRate();
       this.metrics.errorRate = errorRate;
 
-      // Store metrics in Redis if available
-      if (this.redis && this.redisAvailable) {
-        await this.redis.setex('scalability:metrics', 300, JSON.stringify(this.metrics));
+      // Store metrics in BoosterState if available
+      if (this.client && this.clientAvailable) {
+        await this.client.setex('scalability:metrics', 300, JSON.stringify(this.metrics));
       }
     } catch (error: unknown) {
       logger.error('Error collecting metrics:', error);
@@ -250,7 +219,7 @@ export class ScalabilitySystem {
 
   // Get throughput
   private async getThroughput(): Promise<number> {
-    if (!this.redis || !this.redisAvailable) {
+    if (!this.client || !this.clientAvailable) {
       return 0;
     }
 
@@ -258,12 +227,12 @@ export class ScalabilitySystem {
       // Calculate requests per second
       const currentTime = Date.now();
       const timeWindow = 60000; // 1 minute
-      const requests = await this.redis.get('scalability:requests:count');
-      const lastReset = await this.redis.get('scalability:requests:last_reset');
+      const requests = await this.client.get('scalability:requests:count');
+      const lastReset = await this.client.get('scalability:requests:last_reset');
 
       if (!lastReset || currentTime - parseInt(lastReset) > timeWindow) {
-        await this.redis.set('scalability:requests:count', '0');
-        await this.redis.set('scalability:requests:last_reset', currentTime.toString());
+        await this.client.set('scalability:requests:count', '0');
+        await this.client.set('scalability:requests:last_reset', currentTime.toString());
         return 0;
       }
 
@@ -275,13 +244,13 @@ export class ScalabilitySystem {
 
   // Get error rate
   private async getErrorRate(): Promise<number> {
-    if (!this.redis || !this.redisAvailable) {
+    if (!this.client || !this.clientAvailable) {
       return 0;
     }
 
     try {
-      const totalRequests = await this.redis.get('scalability:requests:total');
-      const errorRequests = await this.redis.get('scalability:requests:errors');
+      const totalRequests = await this.client.get('scalability:requests:total');
+      const errorRequests = await this.client.get('scalability:requests:errors');
 
       const total = parseInt(totalRequests || '0');
       const errors = parseInt(errorRequests || '0');
@@ -478,10 +447,10 @@ export class ScalabilitySystem {
     // Track request
     this.metrics.totalRequests++;
 
-    // Track in Redis if available
-    if (this.redis && this.redisAvailable) {
-      this.redis.incr('scalability:requests:count');
-      this.redis.incr('scalability:requests:total');
+    // Track in BoosterState if available
+    if (this.client && this.clientAvailable) {
+      this.client.incr('scalability:requests:count');
+      this.client.incr('scalability:requests:total');
     }
 
     // Track response time
@@ -490,8 +459,8 @@ export class ScalabilitySystem {
       this.metrics.averageResponseTime = (this.metrics.averageResponseTime + responseTime) / 2;
 
       // Track errors
-      if (res.statusCode >= 400 && this.redis && this.redisAvailable) {
-        await this.redis.incr('scalability:requests:errors');
+      if (res.statusCode >= 400 && this.client && this.clientAvailable) {
+        await this.client.incr('scalability:requests:errors');
       }
     });
 
@@ -501,30 +470,32 @@ export class ScalabilitySystem {
   // Cache middleware
   public cacheMiddleware = (ttl: number = 300) => {
     return async (req: Request, res: Response, next: NextFunction) => {
-      // Skip caching if Redis is unavailable
-      if (!this.redis || !this.redisAvailable) {
+      // Skip caching if BoosterState is unavailable
+      if (!this.client || !this.clientAvailable) {
         return next();
       }
 
       const cacheKey = `cache:${req.method}:${req.url}`;
 
       try {
-        const cached = await this.redis.get(cacheKey);
+        const cached = await this.client.get(cacheKey);
         if (cached) {
           return res.json(JSON.parse(cached));
         }
 
         // Store original send method
         const originalSend = res.send;
+        const client = this.client;
+        const available = this.clientAvailable;
 
         // Override send method to cache response
         res.send = function (data) {
           // Cache successful responses
-          if (res.statusCode === 200 && this.redis && this.redisAvailable) {
-            this.redis.setex(cacheKey, ttl, data);
+          if (res.statusCode === 200 && client && available) {
+            client.setex(cacheKey, ttl, typeof data === 'string' ? data : JSON.stringify(data));
           }
           return originalSend.call(this, data);
-        }.bind(this);
+        };
 
         next();
       } catch (error: unknown) {
@@ -536,8 +507,8 @@ export class ScalabilitySystem {
   // Rate limiting middleware
   public rateLimitMiddleware = (maxRequests: number = 100, windowMs: number = 60000) => {
     return async (req: Request, res: Response, next: NextFunction) => {
-      // Skip rate limiting if Redis is unavailable
-      if (!this.redis || !this.redisAvailable) {
+      // Skip rate limiting if BoosterState is unavailable
+      if (!this.client || !this.clientAvailable) {
         return next();
       }
 
@@ -545,10 +516,10 @@ export class ScalabilitySystem {
       const key = `rate_limit:${clientId}`;
 
       try {
-        const current = await this.redis.incr(key);
+        const current = await this.client.incr(key);
 
         if (current === 1) {
-          await this.redis.expire(key, Math.ceil(windowMs / 1000));
+          await this.client.expire(key, Math.ceil(windowMs / 1000));
         }
 
         if (current > maxRequests) {
@@ -586,22 +557,22 @@ class LoadBalancer {
 }
 
 class CacheManager {
-  private redis: Redis | null;
+  private client: BoosterStateClient | null;
   private hitCount: number = 0;
   private missCount: number = 0;
 
-  constructor(redis: Redis | null) {
-    this.redis = redis;
+  constructor(client?: BoosterStateClient | null) {
+    this.client = client ?? null;
   }
 
   async get(key: string): Promise<string | null> {
-    if (!this.redis) {
+    if (!this.client) {
       this.missCount++;
       return null;
     }
 
     try {
-      const value = await this.redis.get(key);
+      const value = await this.client.get(key);
       if (value) {
         this.hitCount++;
       } else {
@@ -615,15 +586,15 @@ class CacheManager {
   }
 
   async set(key: string, value: string, ttl?: number): Promise<void> {
-    if (!this.redis) {
+    if (!this.client) {
       return;
     }
 
     try {
       if (ttl) {
-        await this.redis.setex(key, ttl, value);
+        await this.client.setex(key, ttl, value);
       } else {
-        await this.redis.set(key, value);
+        await this.client.set(key, value);
       }
     } catch (error: unknown) {
       logger.error('Cache set error:', error);
