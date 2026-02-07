@@ -224,7 +224,15 @@ export class UnifiedAIController {
     await this.ensureInitialized();
 
     try {
-      const result = this.contentGenerator.generateCaption(options);
+      const platformAliases: Record<string, string> = {
+        threads: 'instagram',
+        googlebusiness: 'facebook',
+      };
+      const generatorOptions = options.platform && platformAliases[options.platform]
+        ? { ...options, platform: platformAliases[options.platform] as any }
+        : options;
+
+      const result = this.contentGenerator.generateCaption(generatorOptions);
       
       return {
         success: true,

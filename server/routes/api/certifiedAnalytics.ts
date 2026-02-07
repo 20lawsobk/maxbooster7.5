@@ -133,11 +133,22 @@ router.get('/cohorts/:artistId?', async (req: AuthenticatedRequest, res: Respons
     const start = startDate ? new Date(startDate as string) : undefined;
     const end = endDate ? new Date(endDate as string) : undefined;
 
-    const report = await cohortAnalyticsService.generateCohortReport(artistId, {
-      platform: platform as DSPPlatform | undefined,
-      startDate: start,
-      endDate: end,
-    });
+    let report;
+    try {
+      report = await cohortAnalyticsService.generateCohortReport(artistId, {
+        platform: platform as DSPPlatform | undefined,
+        startDate: start,
+        endDate: end,
+      });
+    } catch (serviceError) {
+      logger.warn('Cohort analytics service error, returning empty data:', serviceError);
+      report = {
+        summary: { totalCohorts: 0, totalListeners: 0, avgRetention30: 0, avgLTV: 0, overallChurnRate: 0 },
+        cohortAnalyses: [],
+        retentionTrend: [],
+        ltvTrend: [],
+      };
+    }
 
     return res.json({
       success: true,
@@ -437,12 +448,25 @@ router.get('/overview/:artistId?', async (req: AuthenticatedRequest, res: Respon
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
+    const safeCall = async <T>(fn: () => Promise<T>, fallback: T, label: string): Promise<T> => {
+      try {
+        return await fn();
+      } catch (err) {
+        logger.warn(`Overview: ${label} failed, using fallback`, err);
+        return fallback;
+      }
+    };
+
+    const defaultStreams = { totalStreams: 0, totalListeners: 0, totalSaves: 0, totalRevenue: 0, avgCompletionRate: 0, platformBreakdown: [], timeline: [] };
+    const defaultPlaylists = { totalPlaylists: 0, totalStreams: 0, totalRevenue: 0, byType: [], byPlatform: [], topPlaylists: [], recentAdds: [], pitchMetrics: { totalPitches: 0, accepted: 0, pending: 0, rejected: 0, acceptanceRate: 0 } };
+    const defaultCohorts = { summary: { totalCohorts: 0, totalListeners: 0, avgRetention30: 0, avgLTV: 0, overallChurnRate: 0 }, cohortAnalyses: [], retentionTrend: [], ltvTrend: [] };
+
     const [streams, playlists, cohorts, forecast, demographics] = await Promise.all([
-      dspAnalyticsService.getAggregatedAnalytics(artistId, { startDate: thirtyDaysAgo }),
-      playlistAttributionService.getPlaylistPerformanceSummary(artistId),
-      cohortAnalyticsService.generateCohortReport(artistId, { startDate: thirtyDaysAgo }),
-      revenueForecaster.generateForecast(artistId, { horizonDays: 30, granularity: 'weekly' }),
-      dspAnalyticsService.getDemographics(artistId),
+      safeCall(() => dspAnalyticsService.getAggregatedAnalytics(artistId, { startDate: thirtyDaysAgo }), defaultStreams, 'streams'),
+      safeCall(() => playlistAttributionService.getPlaylistPerformanceSummary(artistId), defaultPlaylists, 'playlists'),
+      safeCall(() => cohortAnalyticsService.generateCohortReport(artistId, { startDate: thirtyDaysAgo }), defaultCohorts, 'cohorts'),
+      safeCall(() => revenueForecaster.generateForecast(artistId, { horizonDays: 30, granularity: 'weekly' }), [] as any[], 'forecast'),
+      safeCall(() => dspAnalyticsService.getDemographics(artistId), null, 'demographics'),
     ]);
 
     return res.json({

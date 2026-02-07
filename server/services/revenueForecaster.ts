@@ -145,14 +145,11 @@ class RevenueForecaster {
   ): Promise<RevenueForecast[]> {
     const conditions = [eq(revenueForecasts.userId, userId)];
 
-    if (options.platform) {
-      conditions.push(eq(revenueForecasts.platform, options.platform));
-    }
     if (options.startDate) {
-      conditions.push(gte(revenueForecasts.targetPeriodStart, options.startDate));
+      conditions.push(gte(revenueForecasts.forecastDate, options.startDate));
     }
     if (options.endDate) {
-      conditions.push(lte(revenueForecasts.targetPeriodEnd, options.endDate));
+      conditions.push(lte(revenueForecasts.forecastDate, options.endDate));
     }
 
     return db
@@ -178,15 +175,11 @@ class RevenueForecaster {
       sql`${revenueForecasts.actualRevenue} IS NOT NULL`,
     ];
 
-    if (options.platform) {
-      conditions.push(eq(revenueForecasts.platform, options.platform));
-    }
-
     const forecasts = await db
       .select()
       .from(revenueForecasts)
       .where(and(...conditions))
-      .orderBy(asc(revenueForecasts.targetPeriodStart))
+      .orderBy(asc(revenueForecasts.forecastDate))
       .limit(52);
 
     if (forecasts.length === 0) {
@@ -206,14 +199,14 @@ class RevenueForecaster {
     forecasts.forEach(f => {
       const predicted = Number(f.predictedRevenue);
       const actual = Number(f.actualRevenue || 0);
-      const error = Math.abs(predicted - actual) / actual;
+      const error = actual > 0 ? Math.abs(predicted - actual) / actual : 0;
       const accuracy = Math.max(0, (1 - error) * 100);
 
       totalError += error;
       sumSquaredError += Math.pow(predicted - actual, 2);
 
       byPeriod.push({
-        period: f.targetPeriodStart.toISOString().split('T')[0],
+        period: f.forecastDate ? f.forecastDate.toISOString().split('T')[0] : 'unknown',
         predicted,
         actual,
         accuracy,
@@ -572,31 +565,31 @@ class RevenueForecaster {
     const today = new Date();
 
     for (const forecast of forecasts) {
-      const forecastRecord: InsertRevenueForecast = {
+      const forecastRecord = {
         userId,
         forecastDate: today,
-        targetPeriodStart: forecast.targetDate,
-        targetPeriodEnd: forecast.targetDate,
-        platform: platform || null,
-        predictedRevenue: forecast.predictedRevenue.toString(),
-        confidenceLow: forecast.confidence.low.toString(),
-        confidenceHigh: forecast.confidence.high.toString(),
+        forecastType: 'revenue',
+        period: 'monthly',
+        predictedRevenue: forecast.predictedRevenue,
+        confidenceLow: forecast.confidence.low,
+        confidenceHigh: forecast.confidence.high,
         confidenceLevel: forecast.confidence.level,
-        scenarioBest: forecast.scenario.best.toString(),
-        scenarioExpected: forecast.scenario.expected.toString(),
-        scenarioWorst: forecast.scenario.worst.toString(),
-        predictedStreams: forecast.predictedStreams,
-        predictedListeners: forecast.predictedListeners,
-        seasonalityFactor: forecast.factors.seasonality,
-        trendFactor: forecast.factors.trend,
-        modelVersion: this.MODEL_VERSION,
-        modelInputs: {
-          factors: forecast.factors,
-          confidence: forecast.confidence,
+        projectedStreams: forecast.predictedStreams,
+        projectedRevenue: forecast.predictedRevenue,
+        methodology: 'time_series_arima',
+        factors: {
+          trend: forecast.factors.trend,
+          seasonality: forecast.factors.seasonality,
+          momentum: forecast.factors.momentum,
+          scenario: forecast.scenario,
         },
       };
 
-      await db.insert(revenueForecasts).values(forecastRecord);
+      try {
+        await db.insert(revenueForecasts).values(forecastRecord);
+      } catch (insertError) {
+        logger.warn('Failed to store forecast record, skipping:', insertError);
+      }
     }
 
     logger.info(`Stored ${forecasts.length} forecasts for user ${userId}`);

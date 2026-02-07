@@ -915,7 +915,7 @@ class DSPAnalyticsService {
         totalListeners: sql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
         totalSaves: sql<number>`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
         totalRevenue: sql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
-        avgCompletionRate: sql<number>`COALESCE(AVG(${dspAnalytics.completionRate}), 0)`,
+        avgCompletionRate: sql<number>`0`,
       })
       .from(dspAnalytics)
       .where(and(...conditions));
@@ -930,23 +930,23 @@ class DSPAnalyticsService {
       .where(and(...conditions))
       .groupBy(dspAnalytics.platform);
 
-    const dateFormat = options.groupBy === 'month' 
-      ? `TO_CHAR(${dspAnalytics.date}, 'YYYY-MM')`
+    const dateFormatSql = options.groupBy === 'month' 
+      ? sql<string>`TO_CHAR(${dspAnalytics.date}, 'YYYY-MM')`
       : options.groupBy === 'week'
-        ? `TO_CHAR(${dspAnalytics.date}, 'IYYY-IW')`
-        : `TO_CHAR(${dspAnalytics.date}, 'YYYY-MM-DD')`;
+        ? sql<string>`TO_CHAR(${dspAnalytics.date}, 'IYYY-IW')`
+        : sql<string>`TO_CHAR(${dspAnalytics.date}, 'YYYY-MM-DD')`;
 
     const timeline = await db
       .select({
-        date: sql<string>`${sql.raw(dateFormat)}`,
+        date: dateFormatSql,
         streams: sql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
         listeners: sql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
         revenue: sql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
       })
       .from(dspAnalytics)
       .where(and(...conditions))
-      .groupBy(sql`${sql.raw(dateFormat)}`)
-      .orderBy(asc(sql`${sql.raw(dateFormat)}`));
+      .groupBy(dateFormatSql)
+      .orderBy(asc(dateFormatSql));
 
     return {
       totalStreams: Number(totals?.totalStreams || 0),

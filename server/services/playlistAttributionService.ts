@@ -221,7 +221,7 @@ class PlaylistAttributionService {
       .select({
         totalPlaylists: sql<number>`COUNT(DISTINCT ${playlistAttributions.playlistId})`,
         totalStreams: sql<number>`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
-        totalRevenue: sql<number>`COALESCE(SUM(${playlistAttributions.revenue}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions));
@@ -231,7 +231,7 @@ class PlaylistAttributionService {
         type: playlistAttributions.playlistType,
         count: sql<number>`COUNT(DISTINCT ${playlistAttributions.playlistId})`,
         streams: sql<number>`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
-        revenue: sql<number>`COALESCE(SUM(${playlistAttributions.revenue}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions))
@@ -242,7 +242,7 @@ class PlaylistAttributionService {
         platform: playlistAttributions.platform,
         count: sql<number>`COUNT(DISTINCT ${playlistAttributions.playlistId})`,
         streams: sql<number>`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
-        revenue: sql<number>`COALESCE(SUM(${playlistAttributions.revenue}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions))
@@ -390,7 +390,7 @@ class PlaylistAttributionService {
 
     const [totals] = await db
       .select({
-        totalRevenue: sql<number>`COALESCE(SUM(${playlistAttributions.revenue}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions));
@@ -400,7 +400,7 @@ class PlaylistAttributionService {
     const byTypeRaw = await db
       .select({
         type: playlistAttributions.playlistType,
-        revenue: sql<number>`COALESCE(SUM(${playlistAttributions.revenue}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions))
@@ -409,7 +409,7 @@ class PlaylistAttributionService {
     const byPlatformRaw = await db
       .select({
         platform: playlistAttributions.platform,
-        revenue: sql<number>`COALESCE(SUM(${playlistAttributions.revenue}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions))
@@ -463,7 +463,7 @@ class PlaylistAttributionService {
         totalPlacements: sql<number>`COUNT(*)`,
         activePlacements: sql<number>`COUNT(*) FILTER (WHERE ${playlistAttributions.isActive} = true)`,
         totalStreams: sql<number>`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
-        totalRevenue: sql<number>`COALESCE(SUM(${playlistAttributions.revenue}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions));
