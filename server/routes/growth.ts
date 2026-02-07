@@ -150,7 +150,7 @@ router.get('/optimal-timing/:platform', requireAuth, asyncHandler(async (req, re
   const { platform } = req.params;
   const { timezone = 'America/New_York' } = req.query;
 
-  const validPlatforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin'];
+  const validPlatforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'spotify', 'apple_music', 'soundcloud', 'threads'];
   if (!validPlatforms.includes(platform)) {
     return res.status(400).json({ error: 'Invalid platform' });
   }
@@ -350,7 +350,7 @@ router.get('/algorithm-health/:platform', requireAuth, asyncHandler(async (req, 
   const userId = req.user!.id;
   const { platform } = req.params;
 
-  const validPlatforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin'];
+  const validPlatforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'spotify', 'apple_music', 'soundcloud', 'threads'];
   if (!validPlatforms.includes(platform)) {
     return res.status(400).json({ error: 'Invalid platform' });
   }
