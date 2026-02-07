@@ -163,10 +163,8 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
       }
     }
     
-    // Return array format matching SocialPlatform interface expected by frontend
     const supportedPlatforms = [
-      { id: 'facebook', name: 'Facebook' },
-      { id: 'instagram', name: 'Instagram' },
+      { id: 'meta', name: 'Meta (Facebook + Instagram)' },
       { id: 'twitter', name: 'Twitter (X)' },
       { id: 'youtube', name: 'YouTube' },
       { id: 'tiktok', name: 'TikTok' },
@@ -176,6 +174,26 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
     ];
     
     const platformStatus = supportedPlatforms.map(platform => {
+      if (platform.id === 'meta') {
+        const fb = connectionMap.get('facebook');
+        const ig = connectionMap.get('instagram');
+        const isConnected = !!(fb || ig);
+        const followers = (fb?.followerCount || 0) + (ig?.followerCount || 0);
+        const primaryConn = fb || ig;
+        return {
+          id: 'meta',
+          name: platform.name,
+          isConnected,
+          followers,
+          engagement: 0,
+          lastSync: primaryConn?.createdAt?.toISOString() || '',
+          status: isConnected ? 'active' : 'inactive',
+          username: primaryConn?.username || undefined,
+          profileUrl: primaryConn?.profileUrl || '',
+          platformUserId: primaryConn?.platformUserId || '',
+          metadata: primaryConn?.metadata || {},
+        };
+      }
       const conn = connectionMap.get(platform.id);
       return {
         id: platform.id,

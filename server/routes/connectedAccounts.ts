@@ -1,6 +1,8 @@
 import { Router, Request, Response, RequestHandler } from 'express';
 import { logger } from '../logger.js';
-import crypto from 'crypto';
+import { db } from '../db';
+import { socialAccounts } from '@shared/schema';
+import { eq, and } from 'drizzle-orm';
 
 const router = Router();
 
@@ -12,31 +14,6 @@ const requireAuth: RequestHandler = (req, res, next) => {
 };
 
 router.use(requireAuth);
-
-interface ConnectedAccount {
-  id: string;
-  userId: string;
-  provider: string;
-  providerAccountId: string;
-  username?: string;
-  displayName?: string;
-  email?: string;
-  avatarUrl?: string;
-  connectedAt: Date;
-  lastSyncedAt?: Date;
-  expiresAt?: Date;
-  status: 'connected' | 'expired' | 'error';
-  scopes: string[];
-  permissions: {
-    id: string;
-    label: string;
-    description: string;
-    enabled: boolean;
-    required: boolean;
-  }[];
-}
-
-const userConnectedAccounts: Map<string, ConnectedAccount[]> = new Map();
 
 const getDefaultPermissions = (provider: string) => {
   const basePermissions = [
@@ -92,25 +69,34 @@ const getDefaultPermissions = (provider: string) => {
   return basePermissions;
 };
 
+function getAccountStatus(account: any): 'connected' | 'expired' | 'error' {
+  if (!account.isActive) return 'error';
+  if (account.tokenExpiresAt && new Date(account.tokenExpiresAt) < new Date()) return 'expired';
+  return 'connected';
+}
+
 router.get('/', async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
-    const accounts = userConnectedAccounts.get(userId) || [];
+    const accounts = await db
+      .select()
+      .from(socialAccounts)
+      .where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.isActive, true)));
     
     const safeAccounts = accounts.map(account => ({
       id: account.id,
-      provider: account.provider,
-      providerAccountId: account.providerAccountId,
-      username: account.username,
-      displayName: account.displayName,
-      email: account.email,
-      avatarUrl: account.avatarUrl,
-      connectedAt: account.connectedAt.toISOString(),
-      lastSyncedAt: account.lastSyncedAt?.toISOString(),
-      expiresAt: account.expiresAt?.toISOString(),
-      status: account.status,
-      scopes: account.scopes,
-      permissions: account.permissions,
+      provider: account.platform,
+      providerAccountId: account.platformUserId || '',
+      username: account.username || undefined,
+      displayName: account.username || account.platform,
+      email: undefined,
+      avatarUrl: undefined,
+      connectedAt: account.createdAt?.toISOString() || new Date().toISOString(),
+      lastSyncedAt: account.createdAt?.toISOString(),
+      expiresAt: account.tokenExpiresAt?.toISOString(),
+      status: getAccountStatus(account),
+      scopes: [],
+      permissions: getDefaultPermissions(account.platform),
     }));
     
     res.json(safeAccounts);
@@ -125,14 +111,15 @@ router.delete('/:accountId', async (req: Request, res: Response) => {
     const userId = req.user.id;
     const { accountId } = req.params;
     
-    const accounts = userConnectedAccounts.get(userId) || [];
-    const filteredAccounts = accounts.filter(a => a.id !== accountId);
+    const result = await db
+      .update(socialAccounts)
+      .set({ isActive: false })
+      .where(and(eq(socialAccounts.id, accountId), eq(socialAccounts.userId, userId)))
+      .returning({ id: socialAccounts.id });
     
-    if (accounts.length === filteredAccounts.length) {
+    if (result.length === 0) {
       return res.status(404).json({ error: 'Connected account not found' });
     }
-    
-    userConnectedAccounts.set(userId, filteredAccounts);
     
     res.json({ message: 'Account disconnected successfully' });
   } catch (error) {
@@ -146,25 +133,23 @@ router.post('/:accountId/refresh', async (req: Request, res: Response) => {
     const userId = req.user.id;
     const { accountId } = req.params;
     
-    const accounts = userConnectedAccounts.get(userId) || [];
-    const accountIndex = accounts.findIndex(a => a.id === accountId);
+    const now = new Date();
+    const result = await db
+      .update(socialAccounts)
+      .set({ createdAt: now })
+      .where(and(eq(socialAccounts.id, accountId), eq(socialAccounts.userId, userId)))
+      .returning({ id: socialAccounts.id });
     
-    if (accountIndex === -1) {
+    if (result.length === 0) {
       return res.status(404).json({ error: 'Connected account not found' });
     }
-    
-    accounts[accountIndex].status = 'connected';
-    accounts[accountIndex].lastSyncedAt = new Date();
-    accounts[accountIndex].expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    
-    userConnectedAccounts.set(userId, accounts);
     
     res.json({ 
       message: 'Connection refreshed successfully',
       account: {
-        id: accounts[accountIndex].id,
-        status: accounts[accountIndex].status,
-        lastSyncedAt: accounts[accountIndex].lastSyncedAt?.toISOString(),
+        id: accountId,
+        status: 'connected',
+        lastSyncedAt: now.toISOString(),
       },
     });
   } catch (error) {
@@ -179,62 +164,32 @@ router.put('/:accountId/permissions', async (req: Request, res: Response) => {
     const { accountId } = req.params;
     const permissionUpdates = req.body;
     
-    const accounts = userConnectedAccounts.get(userId) || [];
-    const accountIndex = accounts.findIndex(a => a.id === accountId);
+    const accounts = await db
+      .select()
+      .from(socialAccounts)
+      .where(and(eq(socialAccounts.id, accountId), eq(socialAccounts.userId, userId)));
     
-    if (accountIndex === -1) {
+    if (accounts.length === 0) {
       return res.status(404).json({ error: 'Connected account not found' });
     }
     
-    const account = accounts[accountIndex];
+    const account = accounts[0];
+    const permissions = getDefaultPermissions(account.platform);
     
     for (const [permId, enabled] of Object.entries(permissionUpdates)) {
-      const permission = account.permissions.find(p => p.id === permId);
+      const permission = permissions.find(p => p.id === permId);
       if (permission && !permission.required) {
         permission.enabled = !!enabled;
       }
     }
     
-    userConnectedAccounts.set(userId, accounts);
-    
     res.json({ 
       message: 'Permissions updated successfully',
-      permissions: account.permissions,
+      permissions,
     });
   } catch (error) {
     logger.error('Error updating account permissions:', error);
     res.status(500).json({ error: 'Failed to update account permissions' });
-  }
-});
-
-router.get('/connect/:provider', async (req: Request, res: Response) => {
-  try {
-    const { provider } = req.params;
-    const userId = req.user.id;
-    
-    const mockAccount: ConnectedAccount = {
-      id: crypto.randomUUID(),
-      userId,
-      provider,
-      providerAccountId: `${provider}_${crypto.randomBytes(8).toString('hex')}`,
-      username: `user_${provider}`,
-      displayName: `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
-      connectedAt: new Date(),
-      lastSyncedAt: new Date(),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      status: 'connected',
-      scopes: ['read', 'profile'],
-      permissions: getDefaultPermissions(provider),
-    };
-    
-    const accounts = userConnectedAccounts.get(userId) || [];
-    accounts.push(mockAccount);
-    userConnectedAccounts.set(userId, accounts);
-    
-    res.redirect('/settings?tab=security&connected=' + provider);
-  } catch (error) {
-    logger.error('Error connecting account:', error);
-    res.redirect('/settings?tab=security&error=connection_failed');
   }
 });
 
