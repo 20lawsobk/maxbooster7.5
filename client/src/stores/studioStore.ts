@@ -127,7 +127,7 @@ export interface ViewState {
   selectedClipIds: string[];
   focusedTrackId: string | null;
   editMode: 'select' | 'draw' | 'erase' | 'slice' | 'stretch' | 'automation';
-  timeDisplay: 'bars' | 'time' | 'samples';
+  timeDisplay: 'bars' | 'seconds' | 'time' | 'samples' | 'bars+seconds' | 'bars+time';
   showWaveforms: boolean;
   showAutomation: boolean;
 }

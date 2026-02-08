@@ -7,14 +7,18 @@ import {
   ChevronRight, MoreHorizontal, Lock, Unlock, Eye, EyeOff,
   Trash2, Copy, Scissors, ZoomIn, ZoomOut, Grid3X3, Wand2,
   PanelBottomOpen, PanelBottomClose, PanelRightOpen, PanelRightClose,
-  Brain, Sparkles, Library, Keyboard, HelpCircle, X, Camera
+  Brain, Sparkles, Library, Keyboard, HelpCircle, X, Camera, Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStudioScale } from '@/hooks/useStudioScale';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem,
+} from '@/components/ui/context-menu';
 import { useUnifiedStore } from '@/stores/unifiedStoreAdapter';
+import { useStudioStore } from '@/stores/studioStore';
 import { useToast } from '@/hooks/use-toast';
 import { useProjectSync } from '@/hooks/useProjectSync';
 import { apiRequest } from '@/lib/queryClient';
@@ -822,7 +826,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           />
 
           <div className="flex-1 flex flex-col overflow-hidden">
-            <TimelineRuler zoom={zoom} scrollX={scrollX} tempo={transport.tempo} />
+            <TimelineRuler zoom={zoom} scrollX={scrollX} tempo={transport.tempo} timeSignature={`${transport.timeSignatureNumerator}/${transport.timeSignatureDenominator}`} />
 
             <div className="flex-1 overflow-auto" onScroll={(e) => setScrollX(e.currentTarget.scrollLeft)}>
               <ArrangeView
@@ -1627,36 +1631,172 @@ interface TimelineRulerProps {
   zoom: number;
   scrollX: number;
   tempo: number;
+  sampleRate?: number;
+  timeSignature?: string;
 }
 
-function TimelineRuler({ zoom, scrollX, tempo }: TimelineRulerProps) {
+type TimeDisplayMode = 'bars' | 'seconds' | 'time' | 'samples' | 'bars+seconds' | 'bars+time';
+
+const TIME_DISPLAY_LABELS: Record<TimeDisplayMode, string> = {
+  'bars': 'Bars',
+  'seconds': 'Seconds',
+  'time': 'Timecode (SMPTE)',
+  'samples': 'Samples',
+  'bars+seconds': 'Bars + Seconds',
+  'bars+time': 'Bars + Timecode',
+};
+
+function formatSecondsLabel(totalSeconds: number): string {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  const secsStr = secs < 10 && mins > 0 ? `0${secs.toFixed(secs % 1 === 0 ? 0 : 1)}` : secs.toFixed(secs % 1 === 0 ? 0 : 1);
+  return `${mins}:${secsStr.padStart(2, '0')}`;
+}
+
+function formatSMPTE(totalSeconds: number, fps: number = 30): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = Math.floor(totalSeconds % 60);
+  const frames = Math.floor((totalSeconds % 1) * fps);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
+}
+
+function getTimeInterval(pixelsPerSecond: number): number {
+  const minPixelGap = 80;
+  const candidates = [0.5, 1, 2, 5, 10, 15, 30, 60];
+  for (const c of candidates) {
+    if (c * pixelsPerSecond >= minPixelGap) return c;
+  }
+  return 60;
+}
+
+function TimelineRuler({ zoom, scrollX, tempo, sampleRate = 44100, timeSignature = '4/4' }: TimelineRulerProps) {
+  const timeDisplay = useStudioStore((state) => state.view.timeDisplay) as TimeDisplayMode;
+  const setView = useStudioStore((state) => state.setView);
+
+  const [numerator] = timeSignature.split('/').map(Number);
+  const beatsPerBar = numerator || 4;
   const pixelsPerBeat = 40 * zoom;
-  const beatsPerBar = 4;
   const pixelsPerBar = pixelsPerBeat * beatsPerBar;
+  const pixelsPerSecond = pixelsPerBeat * (tempo / 60);
+
+  const isDualMode = timeDisplay === 'bars+seconds' || timeDisplay === 'bars+time';
+  const rulerHeight = isDualMode ? 'h-8' : 'h-6';
+
+  const renderBars = () => {
+    const visibleBars = Math.ceil(1200 / pixelsPerBar) + 2;
+    const startBar = Math.max(1, Math.floor(scrollX / pixelsPerBar) + 1);
+    return Array.from({ length: visibleBars + 50 }).map((_, i) => {
+      const bar = startBar + i;
+      return (
+        <div
+          key={bar}
+          className="absolute bottom-0 flex flex-col items-center"
+          style={{ left: `${(bar - 1) * pixelsPerBar}px` }}
+        >
+          <span className="text-[10px] text-gray-500 mb-0.5">{bar}</span>
+          <div className="h-2 w-px bg-[#555]" />
+        </div>
+      );
+    });
+  };
+
+  const renderTimeMarks = (mode: 'seconds' | 'time' | 'samples') => {
+    const interval = getTimeInterval(pixelsPerSecond);
+    const totalWidth = 1200 + scrollX + 500;
+    const maxTime = totalWidth / pixelsPerSecond;
+    const startTime = Math.floor((scrollX / pixelsPerSecond) / interval) * interval;
+    const marks: JSX.Element[] = [];
+    for (let t = Math.max(0, startTime); t <= maxTime; t += interval) {
+      const px = t * pixelsPerSecond;
+      let label: string;
+      if (mode === 'seconds') {
+        label = formatSecondsLabel(t);
+      } else if (mode === 'time') {
+        label = formatSMPTE(t);
+      } else {
+        label = Math.floor(t * sampleRate).toLocaleString();
+      }
+      marks.push(
+        <div
+          key={t}
+          className="absolute bottom-0 flex flex-col items-center"
+          style={{ left: `${px}px` }}
+        >
+          <span className="text-[10px] text-gray-500 mb-0.5 whitespace-nowrap">{label}</span>
+          <div className="h-2 w-px bg-[#555]" />
+        </div>
+      );
+    }
+    return marks;
+  };
+
+  const renderDual = (secondaryMode: 'seconds' | 'time') => {
+    const visibleBars = Math.ceil(1200 / pixelsPerBar) + 2;
+    const startBar = Math.max(1, Math.floor(scrollX / pixelsPerBar) + 1);
+    return Array.from({ length: visibleBars + 50 }).map((_, i) => {
+      const bar = startBar + i;
+      const px = (bar - 1) * pixelsPerBar;
+      const timeAtPx = px / pixelsPerSecond;
+      const secondary = secondaryMode === 'seconds'
+        ? formatSecondsLabel(timeAtPx)
+        : formatSMPTE(timeAtPx);
+      return (
+        <div
+          key={bar}
+          className="absolute bottom-0 flex flex-col items-center"
+          style={{ left: `${px}px` }}
+        >
+          <span className="text-[10px] text-gray-500 leading-tight">{bar}</span>
+          <span className="text-[8px] text-gray-600 leading-tight whitespace-nowrap">{secondary}</span>
+          <div className="h-1.5 w-px bg-[#555]" />
+        </div>
+      );
+    });
+  };
+
+  const getContent = () => {
+    switch (timeDisplay) {
+      case 'bars': return renderBars();
+      case 'seconds': return renderTimeMarks('seconds');
+      case 'time': return renderTimeMarks('time');
+      case 'samples': return renderTimeMarks('samples');
+      case 'bars+seconds': return renderDual('seconds');
+      case 'bars+time': return renderDual('time');
+      default: return renderBars();
+    }
+  };
+
   const visibleBars = Math.ceil(1200 / pixelsPerBar) + 2;
   const startBar = Math.max(1, Math.floor(scrollX / pixelsPerBar) + 1);
+  const containerWidth = Math.max(200, (startBar + visibleBars + 50) * pixelsPerBar);
 
   return (
-    <div className="h-6 bg-[#1f1f23] border-b border-[#333] flex items-end overflow-hidden shrink-0" style={{ marginLeft: 'var(--track-header-w)' }}>
-      <div
-        className="relative h-full"
-        style={{ width: `${Math.max(200, (startBar + visibleBars + 50) * pixelsPerBar)}px` }}
-      >
-        {Array.from({ length: visibleBars + 50 }).map((_, i) => {
-          const bar = startBar + i;
-          return (
-            <div
-              key={bar}
-              className="absolute bottom-0 flex flex-col items-center"
-              style={{ left: `${(bar - 1) * pixelsPerBar}px` }}
-            >
-              <span className="text-[10px] text-gray-500 mb-0.5">{bar}</span>
-              <div className="h-2 w-px bg-[#555]" />
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className={`${rulerHeight} bg-[#1f1f23] border-b border-[#333] flex items-end overflow-hidden shrink-0`} style={{ marginLeft: 'var(--track-header-w)' }}>
+          <div
+            className="relative h-full"
+            style={{ width: `${containerWidth}px` }}
+          >
+            {getContent()}
+          </div>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        {(Object.keys(TIME_DISPLAY_LABELS) as TimeDisplayMode[]).map((mode) => (
+          <ContextMenuItem
+            key={mode}
+            onClick={() => setView({ timeDisplay: mode })}
+          >
+            <span className="w-5 inline-flex items-center justify-center mr-1">
+              {timeDisplay === mode && <Check className="h-3.5 w-3.5" />}
+            </span>
+            {TIME_DISPLAY_LABELS[mode]}
+          </ContextMenuItem>
+        ))}
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
