@@ -332,21 +332,31 @@ app.use((req, res, next) => {
     app.use('/api', invalidateCacheOnMutation());
     
     // Apply response caching to high-traffic read endpoints
-    const cachedRoutes: Array<{ path: string; ttl: number }> = [
-      { path: '/api/auth/me', ttl: 15 },
-      { path: '/api/projects', ttl: 20 },
-      { path: '/api/studio/projects', ttl: 20 },
-      { path: '/api/analytics/overview', ttl: 60 },
-      { path: '/api/marketplace/beats', ttl: 30 },
-      { path: '/api/notifications', ttl: 10 },
-      { path: '/api/royalties/summary', ttl: 60 },
-      { path: '/api/achievements', ttl: 120 },
-    ];
-    for (const route of cachedRoutes) {
-      app.get(route.path, cacheMiddleware({ ttlSeconds: route.ttl, varyByUser: true }));
-    }
+    const cachedRoutes: Record<string, number> = {
+      '/api/auth/me': 15,
+      '/api/projects': 20,
+      '/api/studio/projects': 20,
+      '/api/analytics/dashboard': 60,
+      '/api/marketplace/beats': 30,
+      '/api/notifications': 10,
+      '/api/royalties/summary': 60,
+      '/api/achievements': 120,
+    };
     
-    logger.info(`✅ API response cache initialized (${cachedRoutes.length} cached routes)`);
+    // Single middleware that handles all cached routes
+    // Uses req.path (without query string) for route matching, but cache key includes query
+    const routeCacheMiddleware = (req: any, res: any, next: any) => {
+      if (req.method !== 'GET') return next();
+      const basePath = req.path.replace(/\/$/, '') || req.path;
+      const ttl = cachedRoutes[basePath];
+      if (ttl) {
+        return cacheMiddleware({ ttlSeconds: ttl, varyByUser: true })(req, res, next);
+      }
+      next();
+    };
+    app.use(routeCacheMiddleware);
+    
+    logger.info(`✅ API response cache initialized (${Object.keys(cachedRoutes).length} cached routes)`);
   } catch (e: any) {
     logger.warn(`⚠️ API cache middleware: ${e.message}`);
   }

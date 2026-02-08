@@ -33,12 +33,12 @@ const routeImportMap: Record<string, () => Promise<any>> = {
 
 // API endpoints to prefetch per route
 const routeDataMap: Record<string, string[]> = {
-  '/dashboard': ['/api/user', '/api/projects?limit=5', '/api/analytics/overview'],
+  '/dashboard': ['/api/auth/me', '/api/projects?limit=5'],
   '/projects': ['/api/projects'],
   '/studio': ['/api/studio/projects'],
   '/marketplace': ['/api/marketplace/beats?limit=12'],
-  '/analytics': ['/api/analytics/overview'],
-  '/settings': ['/api/user'],
+  '/analytics': ['/api/analytics/dashboard'],
+  '/settings': ['/api/auth/me'],
   '/royalties': ['/api/royalties/summary'],
 };
 
