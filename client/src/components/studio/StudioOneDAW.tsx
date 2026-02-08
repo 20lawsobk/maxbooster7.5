@@ -7,7 +7,8 @@ import {
   ChevronRight, MoreHorizontal, Lock, Unlock, Eye, EyeOff,
   Trash2, Copy, Scissors, ZoomIn, ZoomOut, Grid3X3, Wand2,
   PanelBottomOpen, PanelBottomClose, PanelRightOpen, PanelRightClose,
-  Brain, Sparkles, Library, Keyboard, HelpCircle, X, Camera, Check
+  Brain, Sparkles, Library, Keyboard, HelpCircle, X, Camera, Check,
+  MousePointer2, Pencil, Eraser
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStudioScale } from '@/hooks/useStudioScale';
@@ -71,6 +72,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [showEditor, setShowEditor] = useState(false);
   const [showMixer, setShowMixer] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const copiedClipRef = useRef<{ clip: any; trackId: string; type: 'audio' | 'midi' } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [scrollX, setScrollX] = useState(0);
   const [showProjectDialog, setShowProjectDialog] = useState(false);
@@ -334,11 +337,91 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         e.preventDefault();
         setShowStemExport(true);
       }
+
+      const currentSelectedClipId = selectedClipId;
+      if (currentSelectedClipId) {
+        const s = useStudioStore.getState();
+        let clipTrack: any = null;
+        let clipData: any = null;
+        let clipType: 'audio' | 'midi' = 'audio';
+        for (const t of s.tracks) {
+          const ac = t.audioClips.find((c: any) => c.id === currentSelectedClipId);
+          if (ac) { clipTrack = t; clipData = ac; clipType = 'audio'; break; }
+          const mc = t.midiClips.find((c: any) => c.id === currentSelectedClipId);
+          if (mc) { clipTrack = t; clipData = mc; clipType = 'midi'; break; }
+        }
+
+        if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey) {
+          e.preventDefault();
+          if (clipTrack && clipData) {
+            if (clipType === 'audio') s.removeAudioClip(clipTrack.id, clipData.id);
+            else s.removeMidiClip(clipTrack.id, clipData.id);
+            setSelectedClipId(null);
+          }
+        }
+
+        if ((e.key === 's' && !e.ctrlKey && !e.altKey && !e.shiftKey) || (e.ctrlKey && e.key === 'b')) {
+          if (clipTrack && clipData && clipType === 'audio') {
+            const playheadTime = livePosition;
+            const clipStart = clipData.startTime || 0;
+            const clipEnd = clipStart + (clipData.duration || 0);
+            if (playheadTime > clipStart && playheadTime < clipEnd) {
+              e.preventDefault();
+              const firstDuration = playheadTime - clipStart;
+              const secondDuration = clipEnd - playheadTime;
+              const secondOffset = (clipData.offset || 0) + firstDuration;
+              s.updateAudioClip(clipTrack.id, clipData.id, { duration: firstDuration });
+              const { id: _id, waveformData: _wd, ...clipProps } = clipData;
+              s.addAudioClip(clipTrack.id, {
+                ...clipProps,
+                name: `${clipData.name} (split)`,
+                startTime: playheadTime,
+                duration: secondDuration,
+                offset: secondOffset,
+              });
+            }
+          }
+        }
+
+        if (e.ctrlKey && e.key === 'd') {
+          e.preventDefault();
+          if (clipTrack && clipData) {
+            const { id: _id, waveformData: _wd, ...clipProps } = clipData;
+            const newStart = (clipData.startTime || 0) + (clipData.duration || 1);
+            if (clipType === 'audio') {
+              s.addAudioClip(clipTrack.id, { ...clipProps, name: `${clipData.name} (copy)`, startTime: newStart });
+            } else {
+              s.addMidiClip(clipTrack.id, { ...clipProps, name: `${clipData.name} (copy)`, startTime: newStart });
+            }
+          }
+        }
+
+        if (e.ctrlKey && e.key === 'c') {
+          e.preventDefault();
+          if (clipTrack && clipData) {
+            copiedClipRef.current = { clip: { ...clipData }, trackId: clipTrack.id, type: clipType };
+          }
+        }
+      }
+
+      if (e.ctrlKey && e.key === 'v') {
+        e.preventDefault();
+        const copied = copiedClipRef.current;
+        if (copied) {
+          const s = useStudioStore.getState();
+          const { id: _id, waveformData: _wd, ...clipProps } = copied.clip;
+          if (copied.type === 'audio') {
+            s.addAudioClip(copied.trackId, { ...clipProps, name: `${copied.clip.name} (paste)`, startTime: livePosition });
+          } else {
+            s.addMidiClip(copied.trackId, { ...clipProps, name: `${copied.clip.name} (paste)`, startTime: livePosition });
+          }
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [store, audioEngine]);
+  }, [store, audioEngine, selectedClipId, livePosition]);
 
   const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -430,6 +513,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
               fadeOutSamples: Math.floor((clip.fadeOut || 0) * sampleRate),
             });
 
+            const peakData = audioEngine.extractPeakData(buffer, 256);
+            useStudioStore.getState().updateAudioClip(track.id, clip.id, { waveformData: peakData });
+
             loadedClipsRef.current.add(clip.id);
             console.log(`[DAW] Loaded clip: ${clip.name} on track ${track.name}`);
           } catch (err) {
@@ -454,6 +540,68 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       prevPositionRef.current = transport.position;
     }
   }, [transport.position, transport.isPlaying, audioEngine]);
+
+  const meteringRafRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!transport.isPlaying) {
+      if (meteringRafRef.current) cancelAnimationFrame(meteringRafRef.current);
+      return;
+    }
+    const updateMeters = () => {
+      const mData = audioEngine.meteringData;
+      if (mData && mData.size > 0) {
+        mData.forEach((meter, trackId) => {
+          useStudioStore.getState().setTrackMeterLevel(trackId, meter.left, meter.right);
+        });
+      }
+      meteringRafRef.current = requestAnimationFrame(updateMeters);
+    };
+    meteringRafRef.current = requestAnimationFrame(updateMeters);
+    return () => {
+      if (meteringRafRef.current) cancelAnimationFrame(meteringRafRef.current);
+    };
+  }, [transport.isPlaying, audioEngine]);
+
+  const [followPlayhead, setFollowPlayhead] = useState(true);
+  const arrangeScrollRef = useRef<HTMLDivElement>(null);
+  const userScrollingRef = useRef(false);
+
+  useEffect(() => {
+    if (transport.isPlaying) {
+      setFollowPlayhead(true);
+    }
+  }, [transport.isPlaying]);
+
+  useEffect(() => {
+    if (!transport.isPlaying || !followPlayhead) return;
+    const container = arrangeScrollRef.current;
+    if (!container) return;
+    const pixelsPerSecond = 40 * zoom * (transport.tempo / 60);
+    const playheadPx = livePosition * pixelsPerSecond + trackHeaderWidth;
+    const containerWidth = container.clientWidth;
+    const scrollLeft = container.scrollLeft;
+    const threshold = scrollLeft + containerWidth * 0.8;
+    if (playheadPx > threshold || playheadPx < scrollLeft) {
+      userScrollingRef.current = true;
+      container.scrollTo({ left: Math.max(0, playheadPx - containerWidth * 0.3), behavior: 'smooth' });
+      setTimeout(() => { userScrollingRef.current = false; }, 500);
+    }
+  }, [livePosition, transport.isPlaying, followPlayhead, zoom, transport.tempo, trackHeaderWidth]);
+
+  const handleArrangeScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollX(e.currentTarget.scrollLeft);
+    if (transport.isPlaying && !userScrollingRef.current) {
+      setFollowPlayhead(false);
+    }
+  }, [transport.isPlaying]);
+
+  const handleSeek = useCallback((seconds: number) => {
+    useStudioStore.getState().setPosition(seconds);
+    if (audioInitializedRef.current) {
+      audioEngine.setPositionTime(seconds);
+    }
+    setLivePosition(seconds);
+  }, [audioEngine]);
 
   const handlePlay = useCallback(() => {
     store.play();
@@ -826,12 +974,13 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           />
 
           <div className="flex-1 flex flex-col overflow-hidden">
-            <TimelineRuler zoom={zoom} scrollX={scrollX} tempo={transport.tempo} timeSignature={`${transport.timeSignatureNumerator}/${transport.timeSignatureDenominator}`} />
+            <TimelineRuler zoom={zoom} scrollX={scrollX} tempo={transport.tempo} timeSignature={`${transport.timeSignatureNumerator}/${transport.timeSignatureDenominator}`} onSeek={handleSeek} />
 
-            <div className="flex-1 overflow-auto" onScroll={(e) => setScrollX(e.currentTarget.scrollLeft)}>
+            <div className="flex-1 overflow-auto" ref={arrangeScrollRef} onScroll={handleArrangeScroll}>
               <ArrangeView
                 tracks={tracks}
                 selectedTrackId={selectedTrackId}
+                selectedClipId={selectedClipId}
                 zoom={zoom}
                 scrollX={scrollX}
                 tempo={transport.tempo}
@@ -839,7 +988,10 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 isPlaying={transport.isPlaying}
                 trackHeaderWidth={trackHeaderWidth}
                 onSelectTrack={setSelectedTrackId}
+                onSelectClip={setSelectedClipId}
                 onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
+                onDeleteTrack={handleDeleteTrack}
+                onDuplicateTrack={(id) => { store.duplicateTrack(id); toast({ title: 'Track Duplicated' }); }}
               />
             </div>
           </div>
@@ -1561,10 +1713,53 @@ function Toolbar({
 
       <div className="h-5 w-px bg-[#444]" />
 
-      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs">
-        <Grid3X3 className="h-3.5 w-3.5" />
-        Snap
-      </Button>
+      {(() => {
+        const editMode = useStudioStore((s) => s.view.editMode);
+        const setEditMode = useStudioStore((s) => s.setEditMode);
+        const modes = [
+          { mode: 'select', icon: MousePointer2, label: 'Select' },
+          { mode: 'draw', icon: Pencil, label: 'Draw' },
+          { mode: 'erase', icon: Eraser, label: 'Erase' },
+          { mode: 'slice', icon: Scissors, label: 'Slice' },
+        ] as const;
+        return (
+          <div className="flex items-center gap-0.5">
+            {modes.map(({ mode, icon: MIcon, label }) => (
+              <Tooltip key={mode}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditMode(mode)}
+                    className={cn("h-7 w-7 p-0", editMode === mode && "bg-blue-600/20 text-blue-400")}
+                  >
+                    <MIcon className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{label}</TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        );
+      })()}
+
+      <div className="h-5 w-px bg-[#444]" />
+
+      {(() => {
+        const snapToGrid = useStudioStore((s) => s.view.snapToGrid);
+        const setView = useStudioStore((s) => s.setView);
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setView({ snapToGrid: !snapToGrid })}
+            className={cn("h-7 gap-1.5 text-xs", snapToGrid && "bg-blue-600/20 text-blue-400")}
+          >
+            <Grid3X3 className="h-3.5 w-3.5" />
+            Snap
+          </Button>
+        );
+      })()}
 
       <div className="h-5 w-px bg-[#444]" />
 
@@ -1662,6 +1857,7 @@ interface TimelineRulerProps {
   tempo: number;
   sampleRate?: number;
   timeSignature?: string;
+  onSeek?: (seconds: number) => void;
 }
 
 type TimeDisplayMode = 'bars' | 'seconds' | 'time' | 'samples' | 'bars+seconds' | 'bars+time';
@@ -1699,7 +1895,7 @@ function getTimeInterval(pixelsPerSecond: number): number {
   return 60;
 }
 
-function TimelineRuler({ zoom, scrollX, tempo, sampleRate = 44100, timeSignature = '4/4' }: TimelineRulerProps) {
+function TimelineRuler({ zoom, scrollX, tempo, sampleRate = 44100, timeSignature = '4/4', onSeek }: TimelineRulerProps) {
   const timeDisplay = useStudioStore((state) => state.view.timeDisplay) as TimeDisplayMode;
   const setView = useStudioStore((state) => state.setView);
 
@@ -1800,13 +1996,25 @@ function TimelineRuler({ zoom, scrollX, tempo, sampleRate = 44100, timeSignature
   const startBar = Math.max(1, Math.floor(scrollX / pixelsPerBar) + 1);
   const containerWidth = Math.max(200, (startBar + visibleBars + 50) * pixelsPerBar);
 
+  const handleRulerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onSeek) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left + scrollX;
+    const seconds = Math.max(0, clickX / pixelsPerSecond);
+    onSeek(seconds);
+  }, [onSeek, scrollX, pixelsPerSecond]);
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className={`${rulerHeight} bg-[#1f1f23] border-b border-[#333] flex items-end overflow-hidden shrink-0`} style={{ marginLeft: 'var(--track-header-w)' }}>
+        <div
+          className={`${rulerHeight} bg-[#1f1f23] border-b border-[#333] flex items-end overflow-hidden shrink-0 cursor-pointer`}
+          style={{ marginLeft: 'var(--track-header-w)' }}
+          onClick={handleRulerClick}
+        >
           <div
             className="relative h-full"
-            style={{ width: `${containerWidth}px` }}
+            style={{ width: `${containerWidth}px`, transform: `translateX(-${scrollX}px)` }}
           >
             {getContent()}
           </div>
@@ -1832,6 +2040,7 @@ function TimelineRuler({ zoom, scrollX, tempo, sampleRate = 44100, timeSignature
 interface ArrangeViewProps {
   tracks: any[];
   selectedTrackId: string | null;
+  selectedClipId: string | null;
   zoom: number;
   scrollX: number;
   tempo: number;
@@ -1839,12 +2048,15 @@ interface ArrangeViewProps {
   isPlaying: boolean;
   trackHeaderWidth: number;
   onSelectTrack: (id: string) => void;
+  onSelectClip: (id: string | null) => void;
   onUpdateTrack: (id: string, updates: any) => void;
+  onDeleteTrack: (id: string) => void;
+  onDuplicateTrack: (id: string) => void;
 }
 
 function ArrangeView({
-  tracks, selectedTrackId, zoom, scrollX, tempo, playheadPosition, isPlaying,
-  trackHeaderWidth, onSelectTrack, onUpdateTrack
+  tracks, selectedTrackId, selectedClipId, zoom, scrollX, tempo, playheadPosition, isPlaying,
+  trackHeaderWidth, onSelectTrack, onSelectClip, onUpdateTrack, onDeleteTrack, onDuplicateTrack
 }: ArrangeViewProps) {
   const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const playheadX = playheadPosition * pixelsPerSecond;
@@ -1866,10 +2078,14 @@ function ArrangeView({
             track={track}
             index={index}
             isSelected={track.id === selectedTrackId}
+            selectedClipId={selectedClipId}
             zoom={zoom}
             tempo={tempo}
             onSelect={() => onSelectTrack(track.id)}
+            onSelectClip={onSelectClip}
             onUpdate={(updates) => onUpdateTrack(track.id, updates)}
+            onDelete={() => onDeleteTrack(track.id)}
+            onDuplicate={() => onDuplicateTrack(track.id)}
           />
         ))
       )}
@@ -1888,13 +2104,17 @@ interface TrackLaneProps {
   track: any;
   index: number;
   isSelected: boolean;
+  selectedClipId: string | null;
   zoom: number;
   tempo: number;
   onSelect: () => void;
+  onSelectClip: (id: string | null) => void;
   onUpdate: (updates: any) => void;
+  onDelete: () => void;
+  onDuplicate: () => void;
 }
 
-function TrackLane({ track, index, isSelected, zoom, tempo, onSelect, onUpdate }: TrackLaneProps) {
+function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSelect, onSelectClip, onUpdate, onDelete, onDuplicate }: TrackLaneProps) {
   const height = track.collapsed ? 24 : (track.height || 80);
 
   const trackTypeIcon = {
@@ -1909,71 +2129,102 @@ function TrackLane({ track, index, isSelected, zoom, tempo, onSelect, onUpdate }
   const Icon = trackTypeIcon;
 
   return (
-    <div
-      className={cn(
-        "flex border-b border-[#333] transition-colors cursor-pointer",
-        isSelected ? "bg-[#2a2a3a]" : "hover:bg-[#232328]"
-      )}
-      style={{ height }}
-      onClick={onSelect}
-    >
-      <div
-        className="shrink-0 flex items-center gap-2 px-3 border-r border-[#333] relative"
-        style={{ width: 'var(--track-header-w)', backgroundColor: `${track.color}15` }}
-      >
-        <div className="w-1 h-full absolute left-0 top-0" style={{ backgroundColor: track.color }} />
-        
-        <button
-          onClick={(e) => { e.stopPropagation(); onUpdate({ collapsed: !track.collapsed }); }}
-          className="hover:bg-white/10 rounded p-0.5"
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          className={cn(
+            "flex border-b border-[#333] transition-colors cursor-pointer",
+            isSelected ? "bg-[#2a2a3a]" : "hover:bg-[#232328]"
+          )}
+          style={{ height }}
+          onClick={onSelect}
         >
-          {track.collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </button>
-
-        <Icon className="h-4 w-4" style={{ color: track.color }} />
-
-        <span className="text-sm truncate flex-1">{track.name}</span>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={(e) => { e.stopPropagation(); onUpdate({ muted: !track.muted }); }}
-            className={cn(
-              "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
-              track.muted ? "bg-orange-600 text-white" : "bg-[#333] hover:bg-[#444]"
-            )}
+          <div
+            className="shrink-0 flex items-center gap-2 px-3 border-r border-[#333] relative"
+            style={{ width: 'var(--track-header-w)', backgroundColor: `${track.color}15` }}
           >
-            M
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onUpdate({ solo: !track.solo }); }}
-            className={cn(
-              "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
-              track.solo ? "bg-yellow-600 text-white" : "bg-[#333] hover:bg-[#444]"
-            )}
-          >
-            S
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onUpdate({ armed: !track.armed }); }}
-            className={cn(
-              "h-5 w-5 flex items-center justify-center rounded text-[10px]",
-              track.armed ? "bg-red-600 text-white" : "bg-[#333] hover:bg-[#444]"
-            )}
-          >
-            <Circle className="h-2.5 w-2.5" fill={track.armed ? "white" : "none"} />
-          </button>
+            <div className="w-1 h-full absolute left-0 top-0" style={{ backgroundColor: track.color }} />
+            
+            {(() => {
+              const tMeterDb = track.meterLevel?.left ?? -60;
+              const tMeterPct = Math.max(0, Math.min(100, ((tMeterDb + 60) / 60) * 100));
+              return (
+                <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-[#1a1a1e]">
+                  <div
+                    className="absolute bottom-0 left-0 right-0"
+                    style={{
+                      height: `${tMeterPct}%`,
+                      background: tMeterPct > 90 ? '#ef4444' : tMeterPct > 70 ? '#eab308' : '#22c55e',
+                      transition: 'height 75ms',
+                    }}
+                  />
+                </div>
+              );
+            })()}
+
+            <button
+              onClick={(e) => { e.stopPropagation(); onUpdate({ collapsed: !track.collapsed }); }}
+              className="hover:bg-white/10 rounded p-0.5"
+            >
+              {track.collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </button>
+
+            <Icon className="h-4 w-4" style={{ color: track.color }} />
+
+            <span className="text-sm truncate flex-1">{track.name}</span>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); onUpdate({ muted: !track.muted }); }}
+                className={cn(
+                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                  track.muted ? "bg-orange-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                )}
+              >
+                M
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onUpdate({ solo: !track.solo }); }}
+                className={cn(
+                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                  track.solo ? "bg-yellow-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                )}
+              >
+                S
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onUpdate({ armed: !track.armed }); }}
+                className={cn(
+                  "h-5 w-5 flex items-center justify-center rounded text-[10px]",
+                  track.armed ? "bg-red-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                )}
+              >
+                <Circle className="h-2.5 w-2.5" fill={track.armed ? "white" : "none"} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 relative bg-[#1a1a1e] overflow-hidden">
+            {!track.collapsed && track.audioClips?.map((clip: any) => (
+              <AudioClipView key={clip.id} clip={clip} zoom={zoom} tempo={tempo} trackColor={track.color} trackId={track.id} isSelected={clip.id === selectedClipId} onSelect={() => onSelectClip(clip.id)} />
+            ))}
+            {!track.collapsed && track.midiClips?.map((clip: any) => (
+              <MidiClipView key={clip.id} clip={clip} zoom={zoom} tempo={tempo} trackColor={track.color} trackId={track.id} isSelected={clip.id === selectedClipId} onSelect={() => onSelectClip(clip.id)} />
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className="flex-1 relative bg-[#1a1a1e] overflow-hidden">
-        {!track.collapsed && track.audioClips?.map((clip: any) => (
-          <AudioClipView key={clip.id} clip={clip} zoom={zoom} tempo={tempo} trackColor={track.color} />
-        ))}
-        {!track.collapsed && track.midiClips?.map((clip: any) => (
-          <MidiClipView key={clip.id} clip={clip} zoom={zoom} tempo={tempo} trackColor={track.color} />
-        ))}
-      </div>
-    </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={onDuplicate}>
+          <Copy className="h-3.5 w-3.5 mr-2" />
+          Duplicate Track
+        </ContextMenuItem>
+        <ContextMenuItem onClick={onDelete} className="text-red-400">
+          <Trash2 className="h-3.5 w-3.5 mr-2" />
+          Delete Track
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
@@ -1982,37 +2233,164 @@ interface AudioClipViewProps {
   zoom: number;
   tempo: number;
   trackColor: string;
+  trackId: string;
+  isSelected: boolean;
+  onSelect: () => void;
 }
 
-function AudioClipView({ clip, zoom, tempo, trackColor }: AudioClipViewProps) {
+function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onSelect }: AudioClipViewProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const left = clip.startTime * pixelsPerSecond;
   const isLoading = !clip.duration || clip.duration <= 0;
   const width = isLoading ? 100 : clip.duration * pixelsPerSecond;
+  const clampedWidth = Math.max(width, 20);
+
+  const [drag, setDrag] = useState<{
+    type: 'move' | 'trim-start' | 'trim-end';
+    startX: number;
+    origStart: number;
+    origDuration: number;
+    origOffset: number;
+    deltaX: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!drag) return;
+    const onMouseMove = (e: MouseEvent) => {
+      setDrag(prev => prev ? { ...prev, deltaX: e.clientX - prev.startX } : null);
+    };
+    const onMouseUp = () => {
+      setDrag(prev => {
+        if (!prev) return null;
+        const deltaSec = prev.deltaX / pixelsPerSecond;
+        const s = useStudioStore.getState();
+        const snapEnabled = s.view.snapToGrid;
+        const gridSizeSec = (s.view.gridSize || 1) * 60 / (s.transport.tempo || 120);
+        const snap = (v: number) => snapEnabled ? Math.round(v / gridSizeSec) * gridSizeSec : v;
+
+        if (prev.type === 'move') {
+          const newStart = snap(Math.max(0, prev.origStart + deltaSec));
+          s.updateAudioClip(trackId, clip.id, { startTime: newStart });
+        } else if (prev.type === 'trim-start') {
+          const rawDelta = deltaSec;
+          const maxDelta = prev.origDuration - (20 / pixelsPerSecond);
+          const clampedDelta = Math.min(Math.max(rawDelta, -prev.origStart), maxDelta);
+          const newStart = snap(prev.origStart + clampedDelta);
+          const actualDelta = newStart - prev.origStart;
+          s.updateAudioClip(trackId, clip.id, {
+            startTime: newStart,
+            duration: prev.origDuration - actualDelta,
+            offset: (prev.origOffset || 0) + actualDelta,
+          });
+        } else if (prev.type === 'trim-end') {
+          const newDur = Math.max(20 / pixelsPerSecond, prev.origDuration + deltaSec);
+          s.updateAudioClip(trackId, clip.id, { duration: snap(prev.origStart + newDur) - prev.origStart });
+        }
+        return null;
+      });
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [drag, pixelsPerSecond, trackId, clip.id]);
+
+  const handleMouseDown = (e: React.MouseEvent, type: 'move' | 'trim-start' | 'trim-end') => {
+    e.stopPropagation();
+    onSelect();
+    setDrag({
+      type,
+      startX: e.clientX,
+      origStart: clip.startTime || 0,
+      origDuration: clip.duration || 0,
+      origOffset: clip.offset || 0,
+      deltaX: 0,
+    });
+  };
+
+  const dragOffset = drag ? drag.deltaX : 0;
+  const displayLeft = drag?.type === 'move' ? left + dragOffset : drag?.type === 'trim-start' ? left + dragOffset : left;
+  const displayWidth = drag?.type === 'trim-end' ? clampedWidth + dragOffset : drag?.type === 'trim-start' ? clampedWidth - dragOffset : clampedWidth;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const drawW = Math.floor(Math.max(displayWidth, 20));
+    const drawH = canvas.clientHeight;
+    canvas.width = drawW * dpr;
+    canvas.height = drawH * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, drawW, drawH);
+
+    const waveform = clip.waveformData;
+    if (!waveform || waveform.length === 0) {
+      ctx.fillStyle = `${trackColor}50`;
+      const barCount = Math.min(50, Math.floor(drawW / 4));
+      const barW = Math.max(1, drawW / barCount);
+      for (let i = 0; i < barCount; i++) {
+        const h = drawH * (0.2 + Math.random() * 0.5);
+        ctx.fillRect(i * barW, (drawH - h) / 2, Math.max(barW - 1, 1), h);
+      }
+      return;
+    }
+
+    const peakCount = waveform.length;
+    const step = Math.max(1, Math.floor(peakCount / drawW));
+    const barsToRender = Math.min(drawW, peakCount);
+
+    ctx.fillStyle = `${trackColor}90`;
+    for (let i = 0; i < barsToRender; i++) {
+      const peakIdx = Math.floor((i / barsToRender) * peakCount);
+      let maxVal = 0;
+      for (let j = 0; j < step && peakIdx + j < peakCount; j++) {
+        const v = Math.abs(waveform[peakIdx + j]);
+        if (v > maxVal) maxVal = v;
+      }
+      const h = Math.max(1, maxVal * drawH);
+      const x = (i / barsToRender) * drawW;
+      ctx.fillRect(x, (drawH - h) / 2, Math.max(drawW / barsToRender, 1), h);
+    }
+  }, [clip.waveformData, displayWidth, trackColor, zoom]);
 
   return (
     <div
-      className="absolute top-1 bottom-1 rounded overflow-hidden"
+      className={cn("absolute top-1 bottom-1 rounded overflow-hidden group", drag && "opacity-80")}
       style={{
-        left,
-        width: Math.max(width, 20),
-        backgroundColor: `${trackColor}40`,
+        left: Math.max(0, displayLeft),
+        width: Math.max(displayWidth, 20),
+        backgroundColor: `${trackColor}${isSelected ? '60' : '40'}`,
         borderLeft: `2px solid ${trackColor}`,
+        borderRight: isSelected ? `2px solid ${trackColor}` : undefined,
+        boxShadow: isSelected ? `0 0 8px ${trackColor}80, inset 0 0 0 1px ${trackColor}60` : undefined,
         opacity: isLoading ? 0.6 : 1,
+        zIndex: isSelected ? 10 : 1,
       }}
+      onMouseDown={(e) => handleMouseDown(e, 'move')}
+      onClick={(e) => { e.stopPropagation(); onSelect(); }}
     >
-      <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80">
+      <div
+        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
+        onMouseDown={(e) => handleMouseDown(e, 'trim-start')}
+      />
+      <div
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
+        onMouseDown={(e) => handleMouseDown(e, 'trim-end')}
+      />
+      <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80 pointer-events-none">
         {clip.name}{isLoading ? ' (loading...)' : ''}
       </div>
-      <div className="absolute inset-x-0 bottom-0 h-8 flex items-end justify-around px-1">
-        {Array.from({ length: Math.min(50, Math.floor(width / 4)) }).map((_, i) => (
-          <div
-            key={i}
-            className="w-px bg-white/30"
-            style={{ height: `${20 + Math.random() * 60}%` }}
-          />
-        ))}
-      </div>
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-x-0 bottom-0 w-full pointer-events-none"
+        style={{ height: 'calc(100% - 18px)' }}
+      />
     </div>
   );
 }
@@ -2022,25 +2400,109 @@ interface MidiClipViewProps {
   zoom: number;
   tempo: number;
   trackColor: string;
+  trackId: string;
+  isSelected: boolean;
+  onSelect: () => void;
 }
 
-function MidiClipView({ clip, zoom, tempo, trackColor }: MidiClipViewProps) {
+function MidiClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onSelect }: MidiClipViewProps) {
   const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const left = clip.startTime * pixelsPerSecond;
   const width = clip.duration * pixelsPerSecond;
+  const clampedWidth = Math.max(width, 20);
+
+  const [drag, setDrag] = useState<{
+    type: 'move' | 'trim-start' | 'trim-end';
+    startX: number;
+    origStart: number;
+    origDuration: number;
+    origOffset: number;
+    deltaX: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!drag) return;
+    const onMouseMove = (e: MouseEvent) => {
+      setDrag(prev => prev ? { ...prev, deltaX: e.clientX - prev.startX } : null);
+    };
+    const onMouseUp = () => {
+      setDrag(prev => {
+        if (!prev) return null;
+        const deltaSec = prev.deltaX / pixelsPerSecond;
+        const s = useStudioStore.getState();
+        const snapEnabled = s.view.snapToGrid;
+        const gridSizeSec = (s.view.gridSize || 1) * 60 / (s.transport.tempo || 120);
+        const snap = (v: number) => snapEnabled ? Math.round(v / gridSizeSec) * gridSizeSec : v;
+
+        if (prev.type === 'move') {
+          const newStart = snap(Math.max(0, prev.origStart + deltaSec));
+          s.updateMidiClip(trackId, clip.id, { startTime: newStart });
+        } else if (prev.type === 'trim-start') {
+          const maxDelta = prev.origDuration - (20 / pixelsPerSecond);
+          const clampedDelta = Math.min(Math.max(deltaSec, -prev.origStart), maxDelta);
+          const newStart = snap(prev.origStart + clampedDelta);
+          const actualDelta = newStart - prev.origStart;
+          s.updateMidiClip(trackId, clip.id, {
+            startTime: newStart,
+            duration: prev.origDuration - actualDelta,
+          });
+        } else if (prev.type === 'trim-end') {
+          const newDur = Math.max(20 / pixelsPerSecond, prev.origDuration + deltaSec);
+          s.updateMidiClip(trackId, clip.id, { duration: snap(prev.origStart + newDur) - prev.origStart });
+        }
+        return null;
+      });
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [drag, pixelsPerSecond, trackId, clip.id]);
+
+  const handleMouseDown = (e: React.MouseEvent, type: 'move' | 'trim-start' | 'trim-end') => {
+    e.stopPropagation();
+    onSelect();
+    setDrag({
+      type,
+      startX: e.clientX,
+      origStart: clip.startTime || 0,
+      origDuration: clip.duration || 0,
+      origOffset: clip.offset || 0,
+      deltaX: 0,
+    });
+  };
+
+  const dragOffset = drag ? drag.deltaX : 0;
+  const displayLeft = drag?.type === 'move' ? left + dragOffset : drag?.type === 'trim-start' ? left + dragOffset : left;
+  const displayWidth = drag?.type === 'trim-end' ? clampedWidth + dragOffset : drag?.type === 'trim-start' ? clampedWidth - dragOffset : clampedWidth;
 
   return (
     <div
-      className="absolute top-1 bottom-1 rounded overflow-hidden"
+      className={cn("absolute top-1 bottom-1 rounded overflow-hidden group", drag && "opacity-80")}
       style={{
-        left,
-        width: Math.max(width, 20),
-        backgroundColor: `${trackColor}40`,
+        left: Math.max(0, displayLeft),
+        width: Math.max(displayWidth, 20),
+        backgroundColor: `${trackColor}${isSelected ? '60' : '40'}`,
         borderLeft: `2px solid ${trackColor}`,
+        borderRight: isSelected ? `2px solid ${trackColor}` : undefined,
+        boxShadow: isSelected ? `0 0 8px ${trackColor}80, inset 0 0 0 1px ${trackColor}60` : undefined,
+        zIndex: isSelected ? 10 : 1,
       }}
+      onMouseDown={(e) => handleMouseDown(e, 'move')}
+      onClick={(e) => { e.stopPropagation(); onSelect(); }}
     >
-      <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80">{clip.name}</div>
-      <div className="absolute inset-x-1 bottom-1 top-5 flex flex-col gap-px overflow-hidden">
+      <div
+        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
+        onMouseDown={(e) => handleMouseDown(e, 'trim-start')}
+      />
+      <div
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
+        onMouseDown={(e) => handleMouseDown(e, 'trim-end')}
+      />
+      <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80 pointer-events-none">{clip.name}</div>
+      <div className="absolute inset-x-1 bottom-1 top-5 flex flex-col gap-px overflow-hidden pointer-events-none">
         {clip.notes?.slice(0, 8).map((note: any, i: number) => (
           <div
             key={i}
@@ -2147,7 +2609,7 @@ function TrackInspector({ track, onClose, onUpdate, onOpenPlugins }: TrackInspec
                 <Wand2 className="h-3.5 w-3.5 text-purple-400" />
                 <span className="truncate flex-1">{plugin.name}</span>
                 <button
-                  onClick={() => {}}
+                  onClick={() => useStudioStore.getState().togglePluginBypass(track.id, plugin.id)}
                   className={cn(
                     "text-[10px] px-1.5 py-0.5 rounded",
                     plugin.bypassed ? "bg-gray-600" : "bg-green-600/30 text-green-400"
@@ -2361,7 +2823,24 @@ interface ChannelStripProps {
 }
 
 function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate }: ChannelStripProps) {
-  const meterLevel = track.meterLevel?.left || 0;
+  const leftDb = track.meterLevel?.left ?? -60;
+  const rightDb = track.meterLevel?.right ?? -60;
+  const leftPct = Math.max(0, Math.min(100, ((leftDb + 60) / 60) * 100));
+  const rightPct = Math.max(0, Math.min(100, ((rightDb + 60) / 60) * 100));
+  const peakHoldRef = useRef({ left: 0, right: 0, leftTime: 0, rightTime: 0 });
+  const [peakHold, setPeakHold] = useState({ left: 0, right: 0 });
+
+  useEffect(() => {
+    const now = Date.now();
+    const ph = peakHoldRef.current;
+    if (leftPct >= ph.left) { ph.left = leftPct; ph.leftTime = now; }
+    if (rightPct >= ph.right) { ph.right = rightPct; ph.rightTime = now; }
+    if (now - ph.leftTime > 2000) ph.left = Math.max(leftPct, ph.left - 2);
+    if (now - ph.rightTime > 2000) ph.right = Math.max(rightPct, ph.right - 2);
+    setPeakHold({ left: ph.left, right: ph.right });
+  }, [leftPct, rightPct]);
+
+  const meterGradient = 'linear-gradient(to top, #22c55e 0%, #22c55e 60%, #eab308 75%, #ef4444 95%, #ef4444 100%)';
 
   return (
     <div
@@ -2377,11 +2856,25 @@ function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate }: Chann
         {track.name}
       </div>
 
-      <div className="flex-1 flex items-center justify-center py-2">
-        <div className="h-full w-3 bg-[#1a1a1e] rounded relative overflow-hidden">
+      <div className="flex-1 flex items-center justify-center py-2 gap-0.5">
+        <div className="h-full w-1.5 bg-[#1a1a1e] rounded relative overflow-hidden">
           <div
-            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 transition-all"
-            style={{ height: `${meterLevel * 100}%` }}
+            className="absolute bottom-0 left-0 right-0 transition-all duration-75"
+            style={{ height: `${leftPct}%`, background: meterGradient }}
+          />
+          <div
+            className="absolute left-0 right-0 bg-white"
+            style={{ bottom: `${peakHold.left}%`, height: '1px', opacity: peakHold.left > 0 ? 0.8 : 0 }}
+          />
+        </div>
+        <div className="h-full w-1.5 bg-[#1a1a1e] rounded relative overflow-hidden">
+          <div
+            className="absolute bottom-0 left-0 right-0 transition-all duration-75"
+            style={{ height: `${rightPct}%`, background: meterGradient }}
+          />
+          <div
+            className="absolute left-0 right-0 bg-white"
+            style={{ bottom: `${peakHold.right}%`, height: '1px', opacity: peakHold.right > 0 ? 0.8 : 0 }}
           />
         </div>
       </div>
