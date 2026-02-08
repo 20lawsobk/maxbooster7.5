@@ -42,7 +42,9 @@ import {
   Clock,
   FileAudio,
   Sparkles,
+  Plus,
 } from 'lucide-react';
+import { StudioProjectDialog } from '@/components/studio/StudioProjectDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -101,6 +103,7 @@ export default function Projects() {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editForm, setEditForm] = useState({
     title: '',
@@ -374,21 +377,26 @@ export default function Projects() {
             </p>
           </div>
 
-          <Dialog open={isUploadOpen} onOpenChange={(open) => {
-            // Prevent closing while upload is in progress
-            if (!open && uploadMutation.isPending) return;
-            setIsUploadOpen(open);
-          }}>
-            <DialogTrigger asChild>
-              <Button
-                className="gradient-bg"
-                data-testid="button-upload-project"
-                aria-label="Upload new project"
-              >
-                <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
-                Upload Project
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Project
+            </Button>
+            <Dialog open={isUploadOpen} onOpenChange={(open) => {
+              // Prevent closing while upload is in progress
+              if (!open && uploadMutation.isPending) return;
+              setIsUploadOpen(open);
+            }}>
+              <DialogTrigger asChild>
+                <Button
+                  className="gradient-bg"
+                  data-testid="button-upload-project"
+                  aria-label="Upload new project"
+                >
+                  <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
+                  Upload Project
+                </Button>
+              </DialogTrigger>
             <DialogContent 
               className="max-w-md"
               onInteractOutside={(e) => {
@@ -487,6 +495,17 @@ export default function Projects() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
+
+          <StudioProjectDialog
+            open={isCreateOpen}
+            onOpenChange={setIsCreateOpen}
+            onProjectCreated={(newProjectId) => {
+              queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+            }}
+          />
 
           {/* Edit Project Dialog */}
           <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -573,11 +592,11 @@ export default function Projects() {
           <EmptyState
             icon={Sparkles}
             title="No projects yet. Create your first masterpiece!"
-            description="Upload your first audio project to get started with AI-powered music tools, professional mixing, and real-time analytics."
-            actionLabel="Upload Your First Project"
-            onAction={() => setIsUploadOpen(true)}
-            secondaryActionLabel="Learn More"
-            onSecondaryAction={() => setLocation('/help')}
+            description="Start a new studio project or upload your first audio to get started with AI-powered music tools."
+            actionLabel="New Project"
+            onAction={() => setIsCreateOpen(true)}
+            secondaryActionLabel="Upload Audio"
+            onSecondaryAction={() => setIsUploadOpen(true)}
             size="lg"
             variant="card"
           />
@@ -588,7 +607,7 @@ export default function Projects() {
             aria-label="Projects grid"
           >
             {projects.map((project: Project) => (
-              <Card key={project.id} className="hover:shadow-lg transition-shadow duration-200">
+              <Card key={project.id} className="hover:shadow-lg transition-shadow duration-200 cursor-pointer" onClick={() => setLocation(`/studio/${project.id}`)}>
                 <CardContent className="p-6">
                   {/* Project Header */}
                   <div className="flex items-start justify-between mb-4">
@@ -608,7 +627,7 @@ export default function Projects() {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" data-testid={`button-menu-${project.id}`}>
+                        <Button variant="ghost" size="sm" data-testid={`button-menu-${project.id}`} onClick={(e) => e.stopPropagation()}>
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -702,7 +721,7 @@ export default function Projects() {
                   )}
 
                   {/* Action Buttons */}
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="outline"
                       size="sm"
