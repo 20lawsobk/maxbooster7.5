@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { Switch, Route, useLocation } from 'wouter';
 import { Toaster } from '@/components/ui/toaster';
+import { InstantSkeleton } from '@/components/ui/instant-skeleton';
 import { KeyboardShortcutsDialog } from '@/components/dialogs/KeyboardShortcutsDialog';
 import { SkipLinks } from '@/components/SkipLinks';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
@@ -15,7 +16,7 @@ import { CommandPalette } from '@/components/commands/CommandPalette';
 import { ShortcutGuide, QuickActionBar } from '@/components/shortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
-import { prefetchRoute } from '@/lib/prefetch';
+import { setupLinkPrefetching, prefetchAdjacentRoutes } from '@/lib/prefetch';
 import Landing from '@/pages/Landing';
 const Login = lazy(() => import('@/pages/Login'));
 const Register = lazy(() => import('@/pages/Register'));
@@ -242,14 +243,19 @@ function AppWithKeyboardShortcuts() {
   }, []);
 
   useEffect(() => {
+    const cleanup = setupLinkPrefetching();
     const prefetchTimer = setTimeout(() => {
-      prefetchRoute(() => import('@/pages/Dashboard'));
-      prefetchRoute(() => import('@/pages/Login'));
-      prefetchRoute(() => import('@/pages/Register'));
-      prefetchRoute(() => import('@/pages/Studio'));
-    }, 2000);
-    return () => clearTimeout(prefetchTimer);
+      prefetchAdjacentRoutes(location);
+    }, 1500);
+    return () => {
+      cleanup();
+      clearTimeout(prefetchTimer);
+    };
   }, []);
+
+  useEffect(() => {
+    prefetchAdjacentRoutes(location);
+  }, [location]);
 
   return (
     <>
@@ -281,12 +287,8 @@ function App() {
         <div id="main-content" role="main" tabIndex={-1}>
           <Suspense
             fallback={
-              <div
-                className="min-h-screen flex items-center justify-center"
-                role="status"
-                aria-label="Loading application"
-              >
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+              <div role="status" aria-label="Loading application">
+                <InstantSkeleton variant="page" />
               </div>
             }
           >

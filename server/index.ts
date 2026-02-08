@@ -326,6 +326,31 @@ app.use((req, res, next) => {
     logger.warn(`⚠️ Rate limiter not available: ${e.message}`);
   }
 
+  // API response cache - invalidate on mutations, cache on reads
+  try {
+    const { invalidateCacheOnMutation, cacheMiddleware } = await import('./middleware/apiCache.js');
+    app.use('/api', invalidateCacheOnMutation());
+    
+    // Apply response caching to high-traffic read endpoints
+    const cachedRoutes: Array<{ path: string; ttl: number }> = [
+      { path: '/api/auth/me', ttl: 15 },
+      { path: '/api/projects', ttl: 20 },
+      { path: '/api/studio/projects', ttl: 20 },
+      { path: '/api/analytics/overview', ttl: 60 },
+      { path: '/api/marketplace/beats', ttl: 30 },
+      { path: '/api/notifications', ttl: 10 },
+      { path: '/api/royalties/summary', ttl: 60 },
+      { path: '/api/achievements', ttl: 120 },
+    ];
+    for (const route of cachedRoutes) {
+      app.get(route.path, cacheMiddleware({ ttlSeconds: route.ttl, varyByUser: true }));
+    }
+    
+    logger.info(`✅ API response cache initialized (${cachedRoutes.length} cached routes)`);
+  } catch (e: any) {
+    logger.warn(`⚠️ API cache middleware: ${e.message}`);
+  }
+
   // Initialize Stripe products and prices before routes
   try {
     const priceIds = await ensureStripeProductsAndPrices();

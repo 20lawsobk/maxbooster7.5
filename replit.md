@@ -34,6 +34,14 @@ The frontend uses shadcn/ui for a modern, accessible, and intuitive user experie
 - **HyperLearning Engine**: An AI-powered system for analyzing social media performance, identifying micro-patterns, and providing predictive modeling for content optimization.
 - **Advanced AI Engines**: Custom-built, in-house AI engines providing GPT-5.2 level capabilities for text-to-music generation (Advanced Music AI Engine) and social media content creation with platform-specific optimization and audience psychology modeling (Advanced Social AI Engine).
 
+### Performance Optimization System (v3.0)
+- **Vite Build Optimization**: Manual chunk splitting separates vendor-react, vendor-ui, vendor-animation, vendor-state, vendor-utils, and studio into parallel-loadable chunks. Module preload polyfill disabled for modern browsers.
+- **Smart Prefetching**: `client/src/lib/prefetch.ts` provides intelligent route+data prefetching with hover detection (65ms delay), adjacent route preloading based on current location, and API data prefetching for 7 key routes.
+- **Server-Side API Cache**: `server/middleware/apiCache.ts` provides in-memory response caching with ETag support, 304 Not Modified responses, per-user cache isolation, and automatic invalidation on mutations. 8 high-traffic routes cached with configurable TTLs (10-120s).
+- **Instant Page Transitions**: Skeleton-based loading states via `client/src/components/ui/instant-skeleton.tsx` with page/card/list/table variants replace spinner during Suspense transitions.
+- **Static Asset Caching**: Production builds use immutable cache headers (1 year) for hashed assets, proper ETag/Last-Modified headers, and compression via Express middleware.
+- **Audio Streaming**: HTTP Range request support with in-memory LRU caching for faster audio playback on Projects page.
+
 ## External Dependencies
 - **Stripe**: Payment processing, including Stripe Connect.
 - **SendGrid**: Transactional email delivery.

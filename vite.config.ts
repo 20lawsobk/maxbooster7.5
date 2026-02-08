@@ -32,9 +32,60 @@ export default defineConfig({
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash].[ext]",
+        manualChunks: (id) => {
+          // Studio chunk (heaviest page)
+          if (id.includes('/studio/')) {
+            return 'studio';
+          }
+
+          if (id.includes('node_modules/')) {
+            // React packages - check specific ones before generic 'react'
+            if (id.includes('react/jsx-runtime') || id.includes('react/jsx-dev-runtime')) {
+              return 'vendor-react';
+            }
+            if (id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'vendor-react';
+            }
+            if (id.includes('wouter')) {
+              return 'vendor-react';
+            }
+            if (id.includes('react')) {
+              return 'vendor-react';
+            }
+
+            // UI packages
+            if (id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('class-variance-authority') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('lucide-react') || id.includes('cmdk')) {
+              return 'vendor-ui';
+            }
+
+            // Animation
+            if (id.includes('framer-motion')) {
+              return 'vendor-animation';
+            }
+
+            // State management
+            if (id.includes('zustand') || id.includes('i18next') || id.includes('react-i18next') || id.includes('immer')) {
+              return 'vendor-state';
+            }
+
+            // Utils
+            if (id.includes('date-fns') || id.includes('zod') || id.includes('recharts')) {
+              return 'vendor-utils';
+            }
+          }
+        },
       },
     },
     chunkSizeWarningLimit: 1000,
+    modulePreload: {
+      polyfill: false,
+    },
   },
   server: {
     host: "0.0.0.0",
