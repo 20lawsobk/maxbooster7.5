@@ -101,7 +101,7 @@ router.get('/projects', requireAuth, async (req: Request, res: Response) => {
 router.post('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { title, description, genre, tempo, key, timeSignature, sampleRate, bitDepth, workflowStage, status } = req.body;
+    const { title, description, genre, tempo, bpm, key, timeSignature, sampleRate, bitDepth, workflowStage, status } = req.body;
     const projectId = nanoid();
     
     const [project] = await db.insert(projects).values({
@@ -111,7 +111,7 @@ router.post('/projects', requireAuth, async (req: Request, res: Response) => {
       description: description || null,
       genre: genre || null,
       key: key || null,
-      bpm: tempo || 120,
+      bpm: bpm ?? tempo ?? 120,
       timeSignature: timeSignature || '4/4',
       sampleRate: sampleRate || 44100,
       bitDepth: bitDepth || 24,
