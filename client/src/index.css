@@ -14,25 +14,25 @@
   --a11y-animation-duration: 200ms;
   --a11y-min-touch-target: 44px;
   
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(222, 84%, 4.9%);
-  --muted: hsl(210, 40%, 98%);
-  --muted-foreground: hsl(215.4, 16.3%, 46.9%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(222, 84%, 4.9%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(222, 84%, 4.9%);
-  --border: hsl(214.3, 31.8%, 91.4%);
-  --input: hsl(214.3, 31.8%, 91.4%);
-  --primary: hsl(214, 100%, 50%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(210, 40%, 96%);
-  --secondary-foreground: hsl(222, 47%, 11%);
-  --accent: hsl(210, 40%, 96%);
-  --accent-foreground: hsl(222, 47%, 11%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(214, 100%, 50%);
+  --background: 0 0% 100%;
+  --foreground: 222 84% 4.9%;
+  --muted: 210 40% 98%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 84% 4.9%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --primary: 214 100% 50%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 214 100% 50%;
   --radius: 0.5rem;
   
   /* Max Booster Professional Blue Color Scheme */
@@ -177,25 +177,25 @@
 
 .dark {
   /* Dark Mode: Deep Navy with Gold/Purple B-Lawz Music Branding */
-  --background: hsl(230, 25%, 8%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(230, 20%, 16%);
-  --muted-foreground: hsl(230, 10%, 72%);
-  --popover: hsl(230, 25%, 6%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(230, 22%, 14%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(230, 20%, 28%);
-  --input: hsl(230, 20%, 22%);
-  --primary: hsl(43, 96%, 58%);
-  --primary-foreground: hsl(230, 25%, 8%);
-  --secondary: hsl(265, 55%, 55%);
-  --secondary-foreground: hsl(0, 0%, 100%);
-  --accent: hsl(265, 50%, 45%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 100%);
-  --ring: hsl(43, 96%, 58%);
+  --background: 230 25% 8%;
+  --foreground: 0 0% 98%;
+  --muted: 230 20% 16%;
+  --muted-foreground: 230 10% 72%;
+  --popover: 230 25% 6%;
+  --popover-foreground: 0 0% 98%;
+  --card: 230 22% 14%;
+  --card-foreground: 0 0% 98%;
+  --border: 230 20% 28%;
+  --input: 230 20% 22%;
+  --primary: 43 96% 58%;
+  --primary-foreground: 230 25% 8%;
+  --secondary: 265 55% 55%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 265 50% 45%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 43 96% 58%;
   
   /* B-Lawz Music Gold/Purple Premium Accents */
   --gold: hsl(43, 96%, 58%);
@@ -402,7 +402,7 @@
   }
   
   [aria-invalid="true"] {
-    border-color: var(--destructive) !important;
+    border-color: hsl(var(--destructive)) !important;
   }
   
   /* Small buttons adjustment */
@@ -482,12 +482,12 @@
   
   /* Error States */
   .error-field {
-    border-color: var(--destructive) !important;
+    border-color: hsl(var(--destructive)) !important;
     background-color: rgba(239, 68, 68, 0.05);
   }
   
   .error-message {
-    color: var(--destructive);
+    color: hsl(var(--destructive));
     font-size: 0.875rem;
     margin-top: 0.25rem;
     role: alert;
@@ -773,16 +773,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--muted);
+  background: hsl(var(--muted));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--muted-foreground);
+  background: hsl(var(--muted-foreground));
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: hsl(var(--primary));
 }
 
 /* Mobile-First Spacing Improvements */
@@ -974,7 +974,7 @@ button, a, [role="button"] {
 
 /* Loading States */
 .skeleton {
-  background: linear-gradient(90deg, var(--muted) 25%, var(--muted-foreground) 50%, var(--muted) 75%);
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground)) 50%, hsl(var(--muted)) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
 }
@@ -1015,7 +1015,7 @@ img[loading="lazy"]:not([src=""]) {
   
   .skeleton {
     animation: none;
-    background: var(--muted);
+    background: hsl(var(--muted));
   }
 }
 
@@ -1397,7 +1397,7 @@ img[loading="lazy"]:not([src=""]) {
 :root {
   --a11y-focus-width: 2px;
   --a11y-focus-offset: 2px;
-  --a11y-focus-color: var(--primary);
+  --a11y-focus-color: hsl(var(--primary));
   --a11y-font-size: 16px;
   --a11y-font-scale: 1;
 }
@@ -1425,8 +1425,8 @@ img[loading="lazy"]:not([src=""]) {
   left: 0;
   z-index: 9999;
   padding: 0.5rem 1rem;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   text-decoration: none;
   border-radius: 0.25rem;
   transition: top 0.2s ease;
@@ -1623,7 +1623,7 @@ img[loading="lazy"]:not([src=""]) {
 
 /* Visible focus indicators for interactive elements */
 .focus-visible-ring:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
 }
 
@@ -1791,8 +1791,8 @@ img[loading="lazy"]:not([src=""]) {
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   font-weight: 600;
@@ -1898,18 +1898,18 @@ label {
 
 /* Error state accessibility */
 [aria-invalid="true"] {
-  border-color: var(--destructive) !important;
+  border-color: hsl(var(--destructive)) !important;
 }
 
 [aria-invalid="true"]:focus {
-  outline-color: var(--destructive) !important;
+  outline-color: hsl(var(--destructive)) !important;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
 }
 
 /* Required field indicator */
 [aria-required="true"]::after {
   content: " *";
-  color: var(--destructive);
+  color: hsl(var(--destructive));
 }
 
 /* Disabled state */
