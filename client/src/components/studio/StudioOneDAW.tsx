@@ -1395,7 +1395,6 @@ interface ToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onAddTrack: (type: 'audio' | 'instrument' | 'midi' | 'bus') => void;
-  onNewProject: () => void;
   showInspector: boolean;
   showEditor: boolean;
   showMixer: boolean;
@@ -1412,7 +1411,7 @@ interface ToolbarProps {
 }
 
 function Toolbar({
-  zoom, onZoomIn, onZoomOut, onAddTrack, onNewProject,
+  zoom, onZoomIn, onZoomOut, onAddTrack,
   showInspector, showEditor, showMixer,
   onToggleInspector, onToggleEditor, onToggleMixer,
   onOpenAllPlugins, onOpenInstruments, onOpenEffects, onOpenShortcuts,
@@ -1422,23 +1421,6 @@ function Toolbar({
 
   return (
     <div className="h-10 bg-[#1f1f23] border-b border-[#333] flex items-center px-3 gap-2 shrink-0">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onNewProject}
-            className="h-7 gap-1.5 text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400"
-          >
-            <FolderOpen className="h-3.5 w-3.5" />
-            New Project
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Create New Project (Ctrl+N)</TooltipContent>
-      </Tooltip>
-
-      <div className="h-5 w-px bg-[#444]" />
-
       <div className="relative">
         <Button
           variant="ghost"

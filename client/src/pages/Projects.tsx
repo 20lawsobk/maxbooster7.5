@@ -576,11 +576,9 @@ export default function Projects() {
           <EmptyState
             icon={Sparkles}
             title="No projects yet. Create your first masterpiece!"
-            description="Start a new studio project or upload your first audio to get started with AI-powered music tools."
-            actionLabel="New Project"
-            onAction={() => setIsCreateOpen(true)}
-            secondaryActionLabel="Upload Audio"
-            onSecondaryAction={() => setIsUploadOpen(true)}
+            description="Upload your first audio to get started with AI-powered music tools."
+            actionLabel="Upload Project"
+            onAction={() => setIsUploadOpen(true)}
             size="lg"
             variant="card"
           />
