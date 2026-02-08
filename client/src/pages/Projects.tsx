@@ -42,9 +42,7 @@ import {
   Clock,
   FileAudio,
   Sparkles,
-  Plus,
 } from 'lucide-react';
-import { StudioProjectDialog } from '@/components/studio/StudioProjectDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,7 +101,7 @@ export default function Projects() {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editForm, setEditForm] = useState({
     title: '',
@@ -378,10 +376,6 @@ export default function Projects() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
-            </Button>
             <Dialog open={isUploadOpen} onOpenChange={(open) => {
               // Prevent closing while upload is in progress
               if (!open && uploadMutation.isPending) return;
@@ -496,16 +490,6 @@ export default function Projects() {
             </DialogContent>
           </Dialog>
           </div>
-
-          <StudioProjectDialog
-            open={isCreateOpen}
-            onOpenChange={setIsCreateOpen}
-            onProjectCreated={(newProjectId) => {
-              queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-              queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
-              queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
-            }}
-          />
 
           {/* Edit Project Dialog */}
           <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
