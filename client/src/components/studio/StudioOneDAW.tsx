@@ -61,6 +61,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const prevProjectIdRef = useRef<string | null>(null);
   
   const [isLoading, setIsLoading] = useState(false);
+  const [livePosition, setLivePosition] = useState(0);
   const [showInspector, setShowInspector] = useState(true);
   const [showEditor, setShowEditor] = useState(false);
   const [showMixer, setShowMixer] = useState(false);
@@ -204,6 +205,28 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const isPlayingRef = useRef(transport.isPlaying);
   useEffect(() => { isPlayingRef.current = transport.isPlaying; }, [transport.isPlaying]);
+
+  const audioEngineRef = useRef(audioEngine);
+  useEffect(() => { audioEngineRef.current = audioEngine; });
+
+  useEffect(() => {
+    if (!transport.isPlaying) {
+      setLivePosition(transport.position);
+      return;
+    }
+    let rafId: number;
+    const syncPosition = () => {
+      const engine = audioEngineRef.current;
+      setLivePosition(engine.currentTime);
+      rafId = requestAnimationFrame(syncPosition);
+    };
+    rafId = requestAnimationFrame(syncPosition);
+    return () => {
+      cancelAnimationFrame(rafId);
+      const finalTime = audioEngineRef.current.currentTime;
+      storeRef.current.setPosition(finalTime);
+    };
+  }, [transport.isPlaying]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -415,13 +438,12 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     }
   }, [tracks, audioEngine]);
 
-  // Sync transport position to audio engine
   const prevPositionRef = useRef(transport.position);
   useEffect(() => {
     if (audioInitializedRef.current && transport.position !== prevPositionRef.current) {
-      // Only sync if not playing (to avoid fighting with playback position)
       if (!transport.isPlaying) {
         audioEngine.setPositionTime(transport.position);
+        setLivePosition(transport.position);
       }
       prevPositionRef.current = transport.position;
     }
@@ -805,7 +827,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 selectedTrackId={selectedTrackId}
                 zoom={zoom}
                 scrollX={scrollX}
-                playheadPosition={transport.position}
+                playheadPosition={livePosition}
                 isPlaying={transport.isPlaying}
                 onSelectTrack={setSelectedTrackId}
                 onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
@@ -833,7 +855,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
               <FlowStateAIPanel
                 projectId={projectId}
                 tracks={tracks}
-                currentTime={transport.position}
+                currentTime={livePosition}
                 tempo={transport.tempo}
                 musicalKey={musicalKey}
                 scale={scale}
@@ -874,7 +896,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           projectId={projectId}
           armedTracks={tracks.filter(t => t.armed).map(t => ({ id: t.id, name: t.name }))}
           inputMonitoringMode="auto"
-          currentTransportTime={transport.position}
+          currentTransportTime={livePosition}
           onRecordingStart={() => store.record()}
           onRecordingStop={() => store.stop()}
           onClipUploaded={(trackId, clip) => {
@@ -1308,11 +1330,11 @@ function TransportBar({
       <div className="flex items-center gap-4">
         <div className="flex flex-col items-center">
           <span className="text-[10px] text-gray-500 uppercase">Time</span>
-          <span className="font-mono text-sm text-white">{formatTime(transport.position)}</span>
+          <span className="font-mono text-sm text-white">{formatTime(livePosition)}</span>
         </div>
         <div className="flex flex-col items-center">
           <span className="text-[10px] text-gray-500 uppercase">Bars</span>
-          <span className="font-mono text-sm text-white">{formatBars(transport.position)}</span>
+          <span className="font-mono text-sm text-white">{formatBars(livePosition)}</span>
         </div>
       </div>
 

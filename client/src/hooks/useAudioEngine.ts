@@ -54,6 +54,7 @@ export function useAudioEngine(): AudioEngineHook {
   const [latency, setLatency] = useState(0);
   
   const positionRef = useRef({ sample: 0, time: 0 });
+  const positionUpdateScheduledRef = useRef(false);
   
   useEffect(() => {
     const unsubscribe = audioWorkletEngine.on((event) => {
@@ -73,11 +74,18 @@ export function useAudioEngine(): AudioEngineHook {
         case 'position-update':
           const pos = event.data as { sample: number; time: number };
           positionRef.current = pos;
-          setPlaybackState(prev => ({
-            ...prev,
-            currentSample: pos.sample,
-            currentTime: pos.time,
-          }));
+          if (!positionUpdateScheduledRef.current) {
+            positionUpdateScheduledRef.current = true;
+            requestAnimationFrame(() => {
+              positionUpdateScheduledRef.current = false;
+              const latestPos = positionRef.current;
+              setPlaybackState(prev => ({
+                ...prev,
+                currentSample: latestPos.sample,
+                currentTime: latestPos.time,
+              }));
+            });
+          }
           break;
           
         case 'metering-update':

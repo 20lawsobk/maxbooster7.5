@@ -87,6 +87,7 @@ export class AudioWorkletEngine {
   private scheduleAheadTime: number = 0.1;
   private lookAhead: number = 25;
   private nextClipTime: number = 0;
+  private schedulerTimeoutId: ReturnType<typeof setTimeout> | null = null;
   
   private meteringInterval: number | null = null;
   private meteringData: Map<string, MeteringData> = new Map();
@@ -581,13 +582,17 @@ export class AudioWorkletEngine {
         }
       });
       
-      setTimeout(scheduler, this.lookAhead);
+      this.schedulerTimeoutId = setTimeout(scheduler, this.lookAhead);
     };
     
     scheduler();
   }
   
   private stopSchedulerLoop(): void {
+    if (this.schedulerTimeoutId) {
+      clearTimeout(this.schedulerTimeoutId);
+      this.schedulerTimeoutId = null;
+    }
   }
   
   private scheduleAllClips(): void {

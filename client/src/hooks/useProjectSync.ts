@@ -523,7 +523,9 @@ export function useProjectSync(projectId: string | null) {
     const unsubscribe = useStudioStore.subscribe(
       (state) => ({
         tracks: state.tracks,
-        transport: state.transport,
+        tempo: state.transport.tempo,
+        isLooping: state.transport.isLooping,
+        timeSignature: state.transport.timeSignature,
         view: state.view,
         mixer: state.mixer,
         masterTrack: state.masterTrack,
