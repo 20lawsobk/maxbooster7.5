@@ -1,7 +1,6 @@
 import { logger } from '../logger.js';
 
 interface ClusterSessionConfig {
-  redisUrl?: string;
   sessionSecret: string;
   sessionName: string;
   maxAge: number;
@@ -11,17 +10,16 @@ interface ClusterSessionConfig {
 class ClusterSessionManager {
   private static instance: ClusterSessionManager;
   private config: ClusterSessionConfig;
-  private isDistributedMode: boolean = false;
+  private isDistributedMode: boolean = true;
 
   private constructor() {
     this.config = {
-      redisUrl: process.env.REDIS_URL,
       sessionSecret: process.env.SESSION_SECRET || 'max-booster-session-secret-change-in-production',
       sessionName: 'maxbooster.sid',
       maxAge: parseInt(process.env.SESSION_MAX_AGE || '86400000'),
       secure: process.env.NODE_ENV === 'production',
     };
-    this.isDistributedMode = !!this.config.redisUrl;
+    this.isDistributedMode = true;
   }
 
   static getInstance(): ClusterSessionManager {
@@ -32,7 +30,7 @@ class ClusterSessionManager {
   }
 
   async initialize(): Promise<void> {
-    logger.info(`Cluster session manager ready (${this.isDistributedMode ? 'redis' : 'memory'} mode)`);
+    logger.info(`Cluster session manager ready (boosterstate mode)`);
   }
 
   isDistributed(): boolean {
@@ -41,8 +39,8 @@ class ClusterSessionManager {
 
   getStatus(): { mode: string; connected: boolean; prefix: string } {
     return {
-      mode: this.isDistributedMode ? 'redis' : 'memory',
-      connected: this.isDistributedMode,
+      mode: 'boosterstate',
+      connected: true,
       prefix: 'maxbooster:sess:',
     };
   }

@@ -148,9 +148,15 @@ export const config: AppConfig = {
   },
 
   redis: {
-    url: process.env.REDIS_URL || undefined, // Only use Redis if REDIS_URL is configured
-    maxRetries: parseEnvInt('REDIS_MAX_RETRIES', 3),
-    retryDelay: parseEnvInt('REDIS_RETRY_DELAY', 1000),
+    url: undefined,
+    maxRetries: 3,
+    retryDelay: 1000,
+  },
+
+  boosterState: {
+    port: parseEnvInt('BOOSTERSTATE_PORT', 9877),
+    shards: parseEnvInt('BOOSTERSTATE_SHARDS', 4),
+    dataDir: process.env.BOOSTERSTATE_DATA_DIR || './boosterstate-data',
   },
 
   session: {

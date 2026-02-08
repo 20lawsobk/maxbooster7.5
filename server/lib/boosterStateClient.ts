@@ -80,6 +80,10 @@ export class BoosterStateClient {
     }
   }
 
+  async setEx(key: string, ttl: number, value: string): Promise<void> {
+    return this.setex(key, ttl, value);
+  }
+
   async del(...keys: (string | string[])[]): Promise<number> {
     const flatKeys: string[] = [];
     for (const k of keys) {

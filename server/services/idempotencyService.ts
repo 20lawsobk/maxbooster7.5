@@ -221,11 +221,10 @@ class IdempotencyService {
       const redis = await getRedisClient();
 
       if (redis) {
-        const result = await redis.set(fullKey, 'processing', {
-          NX: true,
-          EX: ttlSeconds,
-        });
-        return result === 'OK';
+        const existing = await redis.get(fullKey);
+        if (existing) return false;
+        await redis.setex(fullKey, ttlSeconds, 'processing');
+        return true;
       }
     } catch (error: unknown) {
       logger.warn(`Redis unavailable for markProcessing: ${(error as Error).message}`);

@@ -1,7 +1,6 @@
 import { logger } from '../logger.js';
 
 interface CacheConfig {
-  redisUrl?: string;
   defaultTTL: number;
   maxMemoryMB: number;
   enableCompression: boolean;
@@ -62,11 +61,8 @@ export class DistributedCache {
   private fallbackCache: InMemoryCache;
   private config: CacheConfig;
   private stats: CacheStats = { hits: 0, misses: 0, size: 0, memoryUsage: 0 };
-  private isRedisConnected: boolean = false;
-
   private constructor(config: Partial<CacheConfig> = {}) {
     this.config = {
-      redisUrl: process.env.REDIS_URL,
       defaultTTL: config.defaultTTL || 300,
       maxMemoryMB: config.maxMemoryMB || 512,
       enableCompression: config.enableCompression ?? true,
@@ -82,7 +78,7 @@ export class DistributedCache {
   }
 
   async connect(): Promise<void> {
-    logger.info('Distributed cache initialized (in-memory mode, Redis available when configured)');
+    logger.info('Distributed cache initialized (in-memory mode)');
   }
 
   async get<T>(key: string): Promise<T | null> {

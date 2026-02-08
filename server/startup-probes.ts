@@ -94,38 +94,35 @@ class StartupProbeManager {
     return false;
   }
 
-  // Check Redis connection with fallback
   async checkRedis(): Promise<boolean> {
     this.status.probes.redis.status = 'checking';
     const startTime = Date.now();
     
     try {
-      // Import Redis client dynamically to avoid circular dependencies
       const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
-      const redis = await getRedisClient();
+      const client = await getRedisClient();
       
-      if (!redis) {
-        // No Redis configured - this is OK, we use memory fallback
+      if (!client) {
         this.status.probes.redis.status = 'degraded';
         this.status.probes.redis.lastCheck = new Date();
-        this.status.probes.redis.error = 'Using memory fallback (REDIS_URL not configured)';
-        logger.warn('⚠️ Redis probe: Using memory fallback');
-        return true; // Degraded but functional
+        this.status.probes.redis.error = 'BoosterState not available';
+        logger.warn('⚠️ BoosterState probe: not available');
+        return true;
       }
       
-      await redis.ping();
+      await client.ping();
       this.status.probes.redis.status = 'ready';
       this.status.probes.redis.lastCheck = new Date();
       this.status.probes.redis.latencyMs = Date.now() - startTime;
       this.status.probes.redis.error = undefined;
-      logger.info(`✅ Redis probe ready (${this.status.probes.redis.latencyMs}ms)`);
+      logger.info(`✅ BoosterState probe ready (${this.status.probes.redis.latencyMs}ms)`);
       return true;
     } catch (error) {
       this.status.probes.redis.status = 'degraded';
       this.status.probes.redis.lastCheck = new Date();
       this.status.probes.redis.error = error instanceof Error ? error.message : String(error);
-      logger.warn(`⚠️ Redis probe failed, using memory fallback: ${this.status.probes.redis.error}`);
-      return true; // Degraded but functional
+      logger.warn(`⚠️ BoosterState probe failed: ${this.status.probes.redis.error}`);
+      return true;
     }
   }
 

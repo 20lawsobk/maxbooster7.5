@@ -14,7 +14,7 @@ When making changes, always consider the impact on performance and user experien
 Always ask for confirmation before making significant architectural changes or adding new external dependencies.
 
 ## System Architecture
-Max Booster employs a modern web stack consisting of a React 18 frontend with TypeScript, Vite, TailwindCSS, and shadcn/ui. The backend is built with Express.js in TypeScript. Data persistence is managed by PostgreSQL with Drizzle ORM, and Redis Cloud is utilized for session management and distributed tasks. The architecture is conceptually microservices-oriented, prioritizing robust error handling, scalability through asynchronous operations, and data integrity.
+Max Booster employs a modern web stack consisting of a React 18 frontend with TypeScript, Vite, TailwindCSS, and shadcn/ui. The backend is built with Express.js in TypeScript. Data persistence is managed by PostgreSQL with Drizzle ORM. Session management, caching, queues, and distributed tasks are handled by BoosterState — a custom Rust-based WAL-backed sharded in-memory store (replaces Redis/BullMQ). The architecture is conceptually microservices-oriented, prioritizing robust error handling, scalability through asynchronous operations, and data integrity.
 
 ### UI/UX Decisions
 The frontend uses shadcn/ui for a modern, accessible, and intuitive user experience. The design principles are inspired by professional DAWs like Studio One, featuring dynamic layout systems with `useDynamicLayout`, `useFluidLayout`, `DynamicGrid`, `DynamicFlex`, and `DynamicContainer` for responsive design across various screen sizes. The platform also supports Progressive Web App (PWA) features including an install banner, deep linking, and service worker caching.
@@ -37,7 +37,7 @@ The frontend uses shadcn/ui for a modern, accessible, and intuitive user experie
 ## External Dependencies
 - **Stripe**: Payment processing, including Stripe Connect.
 - **SendGrid**: Transactional email delivery.
-- **Redis Cloud**: Session storage, caching, and distributed task management.
+- **BoosterState**: Custom Rust-based in-memory store (WAL-backed, sharded) for session storage, caching, queues, rate limiting, and sorted sets. Binary at `boosterstate/target/release/boosterstate`, HTTP API on port 9877. Node.js client at `server/lib/boosterStateClient.ts`.
 - **Sentry**: Error tracking and monitoring.
 - **LabelGrid**: Music distribution, content ID, and sync licensing.
 - **Replit Object Storage**: File asset storage.

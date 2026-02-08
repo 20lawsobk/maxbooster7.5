@@ -73,13 +73,13 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     validator: (v) => v.includes('sentry.io'),
   },
 
-  // Redis - Required for queues and caching
+  // BoosterState - Custom in-memory store (replaces Redis)
   {
-    name: 'REDIS_URL',
-    required: false, // Falls back to in-memory
+    name: 'BOOSTERSTATE_PORT',
+    required: false,
     category: 'optional',
-    description: 'Redis connection URL',
-    validator: (v) => v.startsWith('redis://') || v.startsWith('rediss://'),
+    description: 'BoosterState server port (default: 9877)',
+    validator: (v) => !isNaN(parseInt(v)) && parseInt(v) > 0,
   },
 
   // Social Media APIs - Optional but needed for social features

@@ -205,7 +205,7 @@ async function setCachedData<T>(key: string, data: T, ttl: number = CACHE_TTL): 
     const redis = await getRedisClient();
     if (!redis) return;
 
-    await redis.set(`${CACHE_PREFIX}${key}`, JSON.stringify(data), { EX: ttl });
+    await redis.setex(`${CACHE_PREFIX}${key}`, ttl, JSON.stringify(data));
   } catch (error) {
     logger.debug(`Cache write error for ${key}:`, error);
   }

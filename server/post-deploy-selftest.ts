@@ -82,37 +82,35 @@ class PostDeploySelfTest {
     }
   }
 
-  // Test Redis connectivity
   async testRedis(): Promise<SelfTestResult> {
     const startTime = Date.now();
     try {
       const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
-      const redis = await getRedisClient();
+      const client = await getRedisClient();
       
-      if (!redis) {
+      if (!client) {
         return {
-          name: 'redis',
+          name: 'boosterstate',
           status: 'skip',
           durationMs: Date.now() - startTime,
-          details: { reason: 'Redis not configured' },
+          details: { reason: 'BoosterState not available' },
         };
       }
       
-      // Test set/get/delete cycle
       const testKey = `selftest:${Date.now()}`;
-      await redis.set(testKey, 'test', 'EX', 10);
-      const value = await redis.get(testKey);
-      await redis.del(testKey);
+      await client.setex(testKey, 10, 'test');
+      const value = await client.get(testKey);
+      await client.del(testKey);
       
       return {
-        name: 'redis',
+        name: 'boosterstate',
         status: value === 'test' ? 'pass' : 'fail',
         durationMs: Date.now() - startTime,
         details: { valueMatch: value === 'test' },
       };
     } catch (error) {
       return {
-        name: 'redis',
+        name: 'boosterstate',
         status: 'fail',
         durationMs: Date.now() - startTime,
         error: error instanceof Error ? error.message : String(error),
