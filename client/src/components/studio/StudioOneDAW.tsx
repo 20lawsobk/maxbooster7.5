@@ -92,6 +92,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   }>>([]);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [pendingProjectTitle, setPendingProjectTitle] = useState('');
 
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportAudio, setShowImportAudio] = useState(false);
@@ -723,15 +724,21 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             window.location.href = `/studio/${id}`;
           }}
           onCreateProject={(title, templateId) => {
+            setPendingProjectTitle(title || '');
             setShowProjectDialog(true);
           }}
         />
         <StudioProjectDialog
           open={showProjectDialog}
-          onOpenChange={setShowProjectDialog}
+          onOpenChange={(open) => {
+            setShowProjectDialog(open);
+            if (!open) setPendingProjectTitle('');
+          }}
+          initialTitle={pendingProjectTitle}
           onProjectCreated={(newProjectId) => {
             queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
             queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
           }}
         />
       </div>

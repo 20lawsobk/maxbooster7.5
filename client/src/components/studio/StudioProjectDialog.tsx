@@ -38,6 +38,7 @@ interface StudioProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onProjectCreated?: (projectId: string) => void;
+  initialTitle?: string;
 }
 
 const GENRES = [
@@ -61,6 +62,7 @@ export function StudioProjectDialog({
   open,
   onOpenChange,
   onProjectCreated,
+  initialTitle,
 }: StudioProjectDialogProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -68,13 +70,21 @@ export function StudioProjectDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
-    title: '',
+    title: initialTitle || '',
     description: '',
     genre: '',
     bpm: 120,
     key: 'C',
     scale: 'Minor',
   });
+
+  const prevOpenRef = useRef(false);
+  if (open && !prevOpenRef.current) {
+    if (initialTitle && form.title !== initialTitle) {
+      setForm(prev => ({ ...prev, title: initialTitle }));
+    }
+  }
+  prevOpenRef.current = open;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
