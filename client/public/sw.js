@@ -1,7 +1,7 @@
-const CACHE_NAME = 'max-booster-v3';
-const STATIC_CACHE = 'max-booster-static-v3';
-const DYNAMIC_CACHE = 'max-booster-dynamic-v3';
-const API_CACHE = 'max-booster-api-v3';
+const CACHE_NAME = 'max-booster-v4';
+const STATIC_CACHE = 'max-booster-static-v4';
+const DYNAMIC_CACHE = 'max-booster-dynamic-v4';
+const API_CACHE = 'max-booster-api-v4';
 
 const STATIC_ASSETS = [
   '/manifest.json',

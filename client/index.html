@@ -52,6 +52,49 @@
   </head>
   <body class="bg-background text-foreground">
     <div id="root"></div>
+    <noscript>
+      <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Inter,sans-serif;padding:20px;text-align:center;">
+        <div>
+          <h1 style="font-size:24px;margin-bottom:16px;">JavaScript Required</h1>
+          <p>Please enable JavaScript to use Max Booster.</p>
+        </div>
+      </div>
+    </noscript>
+    <script>
+      window.__MB_BOOT = Date.now();
+      window.addEventListener('error', function(e) {
+        if (document.getElementById('root') && document.getElementById('root').children.length === 0) {
+          var d = document.createElement('div');
+          d.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif;padding:20px;z-index:99999;text-align:center;';
+          d.innerHTML = '<div style="max-width:500px"><h1 style="font-size:20px;color:#f87171;margin-bottom:12px">Loading Error</h1><p style="margin-bottom:8px;font-size:14px;line-height:1.5">' + (e.message || 'Unknown error') + '</p><p style="font-size:12px;color:#94a3b8;margin-bottom:16px">' + (e.filename || '') + (e.lineno ? ':' + e.lineno : '') + '</p><button onclick="location.reload()" style="background:#3b82f6;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px">Reload</button></div>';
+          document.body.appendChild(d);
+        }
+      });
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        if (root && root.children.length === 0 && !document.querySelector('[data-reactroot]')) {
+          var d = document.createElement('div');
+          d.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif;padding:20px;z-index:99999;text-align:center;';
+          d.innerHTML = '<div style="max-width:500px"><h1 style="font-size:20px;color:#f59e0b;margin-bottom:12px">App Initialization Timeout</h1><p style="font-size:14px;line-height:1.5;margin-bottom:16px">The app is taking too long to load. This may be due to a cached version. Clearing site data and reloading...</p><p id="mb-status" style="font-size:12px;color:#94a3b8;margin-bottom:16px">Clearing caches...</p><button onclick="location.reload()" style="background:#3b82f6;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px">Reload Now</button></div>';
+          document.body.appendChild(d);
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              return Promise.all(names.map(function(n) { return caches.delete(n); }));
+            }).then(function() {
+              if (navigator.serviceWorker) {
+                return navigator.serviceWorker.getRegistrations().then(function(regs) {
+                  return Promise.all(regs.map(function(r) { return r.unregister(); }));
+                });
+              }
+            }).then(function() {
+              var s = document.getElementById('mb-status');
+              if (s) s.textContent = 'Caches cleared. Reloading in 2 seconds...';
+              setTimeout(function() { location.reload(); }, 2000);
+            });
+          }
+        }
+      }, 10000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
@@ -59,6 +102,7 @@
           navigator.serviceWorker.register('/sw.js')
             .then(function(registration) {
               console.log('[PWA] Service Worker registered:', registration.scope);
+              registration.update();
             })
             .catch(function(error) {
               console.log('[PWA] Service Worker registration failed:', error);
