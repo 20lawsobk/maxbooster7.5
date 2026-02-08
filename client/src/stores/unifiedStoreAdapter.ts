@@ -196,7 +196,19 @@ export function useUnifiedStore(): UnifiedStoreState {
     tempo: newStore.transport.tempo,
     timeSignature: `${newStore.transport.timeSignatureNumerator}/${newStore.transport.timeSignatureDenominator}`,
     metronomeEnabled: newStore.transport.metronomeEnabled,
-  }), [newStore.transport]);
+  }), [
+    newStore.transport.isPlaying,
+    newStore.transport.isRecording,
+    newStore.transport.isPaused,
+    newStore.transport.isLooping,
+    newStore.transport.position,
+    newStore.transport.loopStart,
+    newStore.transport.loopEnd,
+    newStore.transport.tempo,
+    newStore.transport.timeSignatureNumerator,
+    newStore.transport.timeSignatureDenominator,
+    newStore.transport.metronomeEnabled,
+  ]);
   
   const view = useMemo(() => newStore.view, [newStore.view]);
   
@@ -210,13 +222,11 @@ export function useUnifiedStore(): UnifiedStoreState {
   
   const play = useCallback(() => {
     newStore.play();
-    legacyStore.setIsPlaying(true);
-  }, [newStore, legacyStore]);
+  }, [newStore]);
   
   const pause = useCallback(() => {
     newStore.pause();
-    legacyStore.setIsPlaying(false);
-  }, [newStore, legacyStore]);
+  }, [newStore]);
   
   const stop = useCallback(() => {
     newStore.stop();
@@ -226,24 +236,19 @@ export function useUnifiedStore(): UnifiedStoreState {
   
   const record = useCallback(() => {
     newStore.record();
-    legacyStore.setIsRecording(true);
-    legacyStore.setIsPlaying(true);
-  }, [newStore, legacyStore]);
+  }, [newStore]);
   
   const toggleLoop = useCallback(() => {
     newStore.toggleLoop();
-    legacyStore.setLoopEnabled(!legacyStore.loopEnabled);
-  }, [newStore, legacyStore]);
+  }, [newStore]);
   
   const setPosition = useCallback((position: number) => {
     newStore.setPosition(position);
-    legacyStore.setCurrentTime(position);
-  }, [newStore, legacyStore]);
+  }, [newStore]);
   
   const setTempo = useCallback((tempo: number) => {
     newStore.setTempo(tempo);
-    legacyStore.setTempo(tempo);
-  }, [newStore, legacyStore]);
+  }, [newStore]);
   
   const canUndo = newStore.historyIndex > 0;
   const canRedo = newStore.historyIndex < newStore.history.length - 1;

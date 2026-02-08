@@ -130,25 +130,31 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [project.isDirty]);
 
-  // Autosave recovery data to localStorage every 30 seconds when dirty
+  const storeRef = useRef(store);
+  useEffect(() => { storeRef.current = store; });
+  const transportRef = useRef(transport);
+  useEffect(() => { transportRef.current = transport; });
+
   useEffect(() => {
     if (!projectId || !project.isDirty) return;
 
     const saveRecoveryData = () => {
+      const t = transportRef.current;
+      const s = storeRef.current;
       const recoveryData = {
         projectId,
         projectName: project.name,
         projectDescription: project.description,
         transport: {
-          tempo: transport.tempo,
-          timeSignatureNumerator: transport.timeSignatureNumerator,
-          timeSignatureDenominator: transport.timeSignatureDenominator,
-          position: transport.position,
-          loopStart: transport.loopStart,
-          loopEnd: transport.loopEnd,
-          isLooping: transport.isLooping,
+          tempo: t.tempo,
+          timeSignatureNumerator: t.timeSignatureNumerator,
+          timeSignatureDenominator: t.timeSignatureDenominator,
+          position: t.position,
+          loopStart: t.loopStart,
+          loopEnd: t.loopEnd,
+          isLooping: t.isLooping,
         },
-        tracks: store.tracks.map(t => ({
+        tracks: s.tracks.map(t => ({
           id: t.id,
           name: t.name,
           type: t.type,
@@ -162,26 +168,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       localStorage.setItem('studio_recovery_data', JSON.stringify(recoveryData));
     };
 
-    // Save immediately on first dirty change
     saveRecoveryData();
 
-    // Then autosave every 30 seconds
     const interval = setInterval(saveRecoveryData, 30000);
     return () => clearInterval(interval);
-  }, [
-    projectId, 
-    project.isDirty, 
-    project.name, 
-    project.description, 
-    transport.tempo, 
-    transport.timeSignatureNumerator,
-    transport.timeSignatureDenominator,
-    transport.position,
-    transport.loopStart,
-    transport.loopEnd,
-    transport.isLooping,
-    store.tracks
-  ]);
+  }, [projectId, project.isDirty, project.name, project.description]);
 
   // Clear recovery data after successful save
   useEffect(() => {
@@ -210,6 +201,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       localStorage.setItem(`studio_versions_${projectId}`, JSON.stringify(projectVersions));
     }
   }, [projectId, projectVersions]);
+
+  const isPlayingRef = useRef(transport.isPlaying);
+  useEffect(() => { isPlayingRef.current = transport.isPlaying; }, [transport.isPlaying]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -244,7 +238,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       }
       if (e.key === ' ' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
-        if (transport.isPlaying) {
+        if (isPlayingRef.current) {
           store.pause();
           if (audioInitializedRef.current) audioEngine.pause();
         } else {
@@ -259,7 +253,6 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (e.key === 'l' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
         store.toggleLoop();
-        // Audio engine loop sync would go here if needed
       }
       if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();
@@ -316,7 +309,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [store, transport.isPlaying, audioEngine]);
+  }, [store, audioEngine]);
 
   const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);
