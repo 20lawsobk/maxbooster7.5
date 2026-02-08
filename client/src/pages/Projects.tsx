@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useLocation } from 'wouter';
@@ -99,7 +99,8 @@ export default function Projects() {
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioProjectRef = useRef<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -198,35 +199,68 @@ export default function Projects() {
     },
   });
 
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
   const handlePlayProject = (project: Project) => {
-    // If already playing this project, pause it
-    if (currentlyPlaying === project.id && audioElement) {
-      audioElement.pause();
+    if (currentlyPlaying === project.id && audioRef.current) {
+      audioRef.current.pause();
       setCurrentlyPlaying(null);
+      audioProjectRef.current = null;
       return;
     }
 
-    // Stop current audio if any
-    if (audioElement) {
-      audioElement.pause();
+    if (audioRef.current) {
+      audioRef.current.pause();
     }
 
-    // Create new audio element
     if (project.audioUrl) {
-      // Ensure the URL is properly formatted for the audio endpoint
       let audioSrc = project.audioUrl;
       if (!audioSrc.startsWith('http') && !audioSrc.startsWith('/api/')) {
-        // Remove leading slash if present, then prepend API endpoint
         audioSrc = `/api/marketplace/audio/${audioSrc.replace(/^\//, '')}`;
       }
-      const audio = new Audio(audioSrc);
-      audio.play();
-      setAudioElement(audio);
-      setCurrentlyPlaying(project.id);
 
-      audio.onended = () => {
-        setCurrentlyPlaying(null);
-      };
+      setCurrentlyPlaying(project.id);
+      audioProjectRef.current = project.id;
+
+      if (audioRef.current && audioRef.current.src.endsWith(audioSrc)) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {
+          setCurrentlyPlaying(null);
+          audioProjectRef.current = null;
+        });
+      } else {
+        const audio = audioRef.current || new Audio();
+        audio.preload = 'auto';
+        audio.src = audioSrc;
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          if (audioProjectRef.current === project.id) {
+            setCurrentlyPlaying(null);
+            audioProjectRef.current = null;
+          }
+        };
+
+        audio.onerror = () => {
+          if (audioProjectRef.current === project.id) {
+            setCurrentlyPlaying(null);
+            audioProjectRef.current = null;
+          }
+        };
+
+        audio.play().catch(() => {
+          setCurrentlyPlaying(null);
+          audioProjectRef.current = null;
+        });
+      }
     } else {
       toast({
         title: 'No Audio File',
