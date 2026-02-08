@@ -140,6 +140,8 @@ export function useProjectSync(projectId: string | null) {
   const lastSyncRef = useRef<number>(0);
   const stateVersionRef = useRef<number>(0);
 
+  const getStoreState = useCallback(() => useStudioStore.getState(), []);
+
   const invalidateProjectQueries = useCallback(() => {
     PROJECT_QUERY_KEYS.forEach(key => {
       queryClient.invalidateQueries({ queryKey: [key] });
@@ -188,7 +190,7 @@ export function useProjectSync(projectId: string | null) {
   };
 
   const serializeFullState = useCallback((): SerializedDAWState => {
-    const state = store.getState();
+    const state = getStoreState();
     stateVersionRef.current += 1;
     
     return {
@@ -234,10 +236,9 @@ export function useProjectSync(projectId: string | null) {
         duration: state.project.duration,
       },
     };
-  }, [store]);
+  }, [getStoreState]);
 
   const deserializeAndRestoreState = useCallback((dawState: SerializedDAWState) => {
-    const state = store.getState();
     
     if (dawState.transport) {
       store.setTransport({
@@ -420,7 +421,7 @@ export function useProjectSync(projectId: string | null) {
 
     try {
       const dawState = serializeFullState();
-      const state = store.getState();
+      const state = getStoreState();
       
       const response = await fetch(`/api/studio/projects/${projectId}/save-daw-state`, {
         method: 'POST',
@@ -438,7 +439,7 @@ export function useProjectSync(projectId: string | null) {
       });
 
       if (response.ok) {
-        store.getState().markSaved();
+        getStoreState().markSaved();
         console.log(`[ProjectSync] Full DAW state saved for project ${projectId}`);
         invalidateProjectQueries();
         return true;
@@ -450,7 +451,7 @@ export function useProjectSync(projectId: string | null) {
       console.error('[ProjectSync] Failed to save full state:', error);
       return false;
     }
-  }, [projectId, store, serializeFullState, invalidateProjectQueries]);
+  }, [projectId, getStoreState, serializeFullState, invalidateProjectQueries]);
 
   const loadFullState = useCallback(async (): Promise<boolean> => {
     if (!projectId) return false;
@@ -609,8 +610,8 @@ export function useProjectSync(projectId: string | null) {
       const backendTracks: BackendTrack[] = tracksData.tracks || tracksData || [];
       const backendClips: BackendClip[] = tracksData.clips || [];
 
-      const state = store.getState();
-      const existingTrackIds = new Set(state.tracks.map(t => t.id));
+      const currentState = getStoreState();
+      const existingTrackIds = new Set(currentState.tracks.map(t => t.id));
 
       const normalizeAudioUrl = (url: string): string => {
         if (!url) return url;
@@ -659,7 +660,7 @@ export function useProjectSync(projectId: string | null) {
       console.error('[ProjectSync] Failed to load project data:', error);
       return false;
     }
-  }, [projectId, store, loadFullState]);
+  }, [projectId, store, loadFullState, getStoreState]);
 
   return {
     forceSave,
