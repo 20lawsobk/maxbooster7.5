@@ -631,7 +631,7 @@ export function useProjectSync(projectId: string | null) {
           const trackClips = backendClips.filter(c => c.trackId === track.id);
           for (const clip of trackClips) {
             const normalizedPath = normalizeAudioUrl(clip.filePath);
-            const clipDuration = clip.duration > 0 ? clip.duration : 30;
+            const clipDuration = clip.duration > 0 ? clip.duration : 0;
             store.addAudioClip(newTrackId, {
               trackId: newTrackId,
               name: clip.name || 'Audio Clip',
@@ -654,6 +654,26 @@ export function useProjectSync(projectId: string | null) {
           if (track.solo || track.isSolo) store.toggleTrackSolo(newTrackId);
         }
       }
+
+      setTimeout(async () => {
+        const currentTracks = getStoreState().tracks;
+        for (const track of currentTracks) {
+          for (const clip of track.audioClips) {
+            if (clip.duration <= 0 && clip.sourceUrl) {
+              try {
+                const response = await fetch(clip.sourceUrl);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                store.updateAudioClip(track.id, clip.id, { duration: audioBuffer.duration });
+                audioContext.close();
+              } catch (e) {
+                console.error('[ProjectSync] Failed to detect clip duration:', e);
+              }
+            }
+          }
+        }
+      }, 100);
 
       store.markSaved();
       console.log(`[ProjectSync] Loaded project ${projectId} with ${backendTracks.length} tracks from database`);

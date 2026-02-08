@@ -21,6 +21,7 @@ interface UploadedFile {
   status: 'pending' | 'uploading' | 'success' | 'error';
   progress?: number;
   url?: string;
+  duration?: number;
   error?: string;
 }
 
@@ -46,7 +47,7 @@ async function uploadAudioFile(file: File, projectId: string): Promise<{ fileId:
 interface FlowStateImportAudioProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onImportComplete: (files: { id: string; name: string; url: string }[]) => void;
+  onImportComplete: (files: { id: string; name: string; url: string; duration?: number }[]) => void;
   projectId?: string;
 }
 
@@ -69,7 +70,7 @@ export function FlowStateImportAudio({
     onSuccess: (result, variables) => {
       setFiles(prev => prev.map(f => 
         f.id === variables.fileId 
-          ? { ...f, status: 'success' as const, url: result.url }
+          ? { ...f, status: 'success' as const, url: result.url, duration: result.duration }
           : f
       ));
     },
@@ -137,7 +138,7 @@ export function FlowStateImportAudio({
   const handleComplete = () => {
     const successfulFiles = files
       .filter(f => f.status === 'success' && f.url)
-      .map(f => ({ id: f.id, name: f.name, url: f.url! }));
+      .map(f => ({ id: f.id, name: f.name, url: f.url!, duration: f.duration }));
     
     if (successfulFiles.length > 0) {
       onImportComplete(successfulFiles);

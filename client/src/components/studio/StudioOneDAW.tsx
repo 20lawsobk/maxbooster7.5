@@ -1186,10 +1186,39 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         open={showImportAudio}
         onOpenChange={setShowImportAudio}
         projectId={projectId || undefined}
-        onImportComplete={(files) => {
-          files.forEach(file => {
-            store.addTrack('audio', file.name);
-          });
+        onImportComplete={async (files) => {
+          await loadProjectData();
+          
+          await Promise.resolve();
+          const freshState = useStudioStore.getState();
+          for (const file of files) {
+            for (const track of freshState.tracks) {
+              for (const clip of track.audioClips) {
+                const urlMatch = clip.sourceUrl === file.url || 
+                  (clip.sourceUrl && file.url && clip.sourceUrl.includes(file.url.split('/').pop() || ''));
+                if (urlMatch && clip.duration <= 0) {
+                  try {
+                    const response = await fetch(file.url);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    useStudioStore.getState().updateAudioClip(track.id, clip.id, { 
+                      duration: audioBuffer.duration 
+                    });
+                    audioContext.close();
+                  } catch (e) {
+                    console.error('[DAW] Failed to detect audio duration:', e);
+                    if (file.duration && file.duration > 0) {
+                      useStudioStore.getState().updateAudioClip(track.id, clip.id, { 
+                        duration: file.duration 
+                      });
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
           toast({ title: 'Audio Imported', description: `${files.length} file(s) imported successfully.` });
         }}
       />
@@ -1958,7 +1987,8 @@ interface AudioClipViewProps {
 function AudioClipView({ clip, zoom, tempo, trackColor }: AudioClipViewProps) {
   const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const left = clip.startTime * pixelsPerSecond;
-  const width = clip.duration * pixelsPerSecond;
+  const isLoading = !clip.duration || clip.duration <= 0;
+  const width = isLoading ? 100 : clip.duration * pixelsPerSecond;
 
   return (
     <div
@@ -1968,9 +1998,12 @@ function AudioClipView({ clip, zoom, tempo, trackColor }: AudioClipViewProps) {
         width: Math.max(width, 20),
         backgroundColor: `${trackColor}40`,
         borderLeft: `2px solid ${trackColor}`,
+        opacity: isLoading ? 0.6 : 1,
       }}
     >
-      <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80">{clip.name}</div>
+      <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80">
+        {clip.name}{isLoading ? ' (loading...)' : ''}
+      </div>
       <div className="absolute inset-x-0 bottom-0 h-8 flex items-end justify-around px-1">
         {Array.from({ length: Math.min(50, Math.floor(width / 4)) }).map((_, i) => (
           <div
