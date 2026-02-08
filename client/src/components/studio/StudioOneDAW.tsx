@@ -830,6 +830,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 selectedTrackId={selectedTrackId}
                 zoom={zoom}
                 scrollX={scrollX}
+                tempo={transport.tempo}
                 playheadPosition={livePosition}
                 isPlaying={transport.isPlaying}
                 trackHeaderWidth={trackHeaderWidth}
@@ -1633,7 +1634,7 @@ function TimelineRuler({ zoom, scrollX, tempo }: TimelineRulerProps) {
   const beatsPerBar = 4;
   const pixelsPerBar = pixelsPerBeat * beatsPerBar;
   const visibleBars = Math.ceil(1200 / pixelsPerBar) + 2;
-  const startBar = Math.floor(scrollX / pixelsPerBar);
+  const startBar = Math.max(1, Math.floor(scrollX / pixelsPerBar) + 1);
 
   return (
     <div className="h-6 bg-[#1f1f23] border-b border-[#333] flex items-end overflow-hidden shrink-0" style={{ marginLeft: 'var(--track-header-w)' }}>
@@ -1643,12 +1644,11 @@ function TimelineRuler({ zoom, scrollX, tempo }: TimelineRulerProps) {
       >
         {Array.from({ length: visibleBars + 50 }).map((_, i) => {
           const bar = startBar + i;
-          if (bar < 1) return null;
           return (
             <div
               key={bar}
               className="absolute bottom-0 flex flex-col items-center"
-              style={{ left: `${bar * pixelsPerBar}px` }}
+              style={{ left: `${(bar - 1) * pixelsPerBar}px` }}
             >
               <span className="text-[10px] text-gray-500 mb-0.5">{bar}</span>
               <div className="h-2 w-px bg-[#555]" />
@@ -1665,6 +1665,7 @@ interface ArrangeViewProps {
   selectedTrackId: string | null;
   zoom: number;
   scrollX: number;
+  tempo: number;
   playheadPosition: number;
   isPlaying: boolean;
   trackHeaderWidth: number;
@@ -1673,10 +1674,10 @@ interface ArrangeViewProps {
 }
 
 function ArrangeView({
-  tracks, selectedTrackId, zoom, scrollX, playheadPosition, isPlaying,
+  tracks, selectedTrackId, zoom, scrollX, tempo, playheadPosition, isPlaying,
   trackHeaderWidth, onSelectTrack, onUpdateTrack
 }: ArrangeViewProps) {
-  const pixelsPerSecond = 40 * zoom;
+  const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const playheadX = playheadPosition * pixelsPerSecond;
 
   return (
@@ -1697,6 +1698,7 @@ function ArrangeView({
             index={index}
             isSelected={track.id === selectedTrackId}
             zoom={zoom}
+            tempo={tempo}
             onSelect={() => onSelectTrack(track.id)}
             onUpdate={(updates) => onUpdateTrack(track.id, updates)}
           />
@@ -1718,11 +1720,12 @@ interface TrackLaneProps {
   index: number;
   isSelected: boolean;
   zoom: number;
+  tempo: number;
   onSelect: () => void;
   onUpdate: (updates: any) => void;
 }
 
-function TrackLane({ track, index, isSelected, zoom, onSelect, onUpdate }: TrackLaneProps) {
+function TrackLane({ track, index, isSelected, zoom, tempo, onSelect, onUpdate }: TrackLaneProps) {
   const height = track.collapsed ? 24 : (track.height || 80);
 
   const trackTypeIcon = {
@@ -1795,10 +1798,10 @@ function TrackLane({ track, index, isSelected, zoom, onSelect, onUpdate }: Track
 
       <div className="flex-1 relative bg-[#1a1a1e] overflow-hidden">
         {!track.collapsed && track.audioClips?.map((clip: any) => (
-          <AudioClipView key={clip.id} clip={clip} zoom={zoom} trackColor={track.color} />
+          <AudioClipView key={clip.id} clip={clip} zoom={zoom} tempo={tempo} trackColor={track.color} />
         ))}
         {!track.collapsed && track.midiClips?.map((clip: any) => (
-          <MidiClipView key={clip.id} clip={clip} zoom={zoom} trackColor={track.color} />
+          <MidiClipView key={clip.id} clip={clip} zoom={zoom} tempo={tempo} trackColor={track.color} />
         ))}
       </div>
     </div>
@@ -1808,11 +1811,12 @@ function TrackLane({ track, index, isSelected, zoom, onSelect, onUpdate }: Track
 interface AudioClipViewProps {
   clip: any;
   zoom: number;
+  tempo: number;
   trackColor: string;
 }
 
-function AudioClipView({ clip, zoom, trackColor }: AudioClipViewProps) {
-  const pixelsPerSecond = 40 * zoom;
+function AudioClipView({ clip, zoom, tempo, trackColor }: AudioClipViewProps) {
+  const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const left = clip.startTime * pixelsPerSecond;
   const width = clip.duration * pixelsPerSecond;
 
@@ -1843,11 +1847,12 @@ function AudioClipView({ clip, zoom, trackColor }: AudioClipViewProps) {
 interface MidiClipViewProps {
   clip: any;
   zoom: number;
+  tempo: number;
   trackColor: string;
 }
 
-function MidiClipView({ clip, zoom, trackColor }: MidiClipViewProps) {
-  const pixelsPerSecond = 40 * zoom;
+function MidiClipView({ clip, zoom, tempo, trackColor }: MidiClipViewProps) {
+  const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const left = clip.startTime * pixelsPerSecond;
   const width = clip.duration * pixelsPerSecond;
 
