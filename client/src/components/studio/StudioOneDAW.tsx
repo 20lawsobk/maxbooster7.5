@@ -916,15 +916,6 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         onClose={() => setShowKeyboardShortcuts(false)}
       />
 
-      <StudioProjectDialog
-        open={showProjectDialog}
-        onOpenChange={setShowProjectDialog}
-        onProjectCreated={(newProjectId) => {
-          queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-          queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
-        }}
-      />
-
       <SaveAsDialog
         open={showSaveAsDialog}
         onOpenChange={setShowSaveAsDialog}
