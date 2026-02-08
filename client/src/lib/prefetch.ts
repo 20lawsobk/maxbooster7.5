@@ -64,13 +64,15 @@ export function prefetchRouteByPath(path: string) {
     prefetchRoute(importFn);
   }
 
-  // Prefetch the route data
+  // Prefetch the route data (only for authenticated routes when user has session)
   const endpoints = routeDataMap[normalizedPath];
   if (endpoints) {
     for (const endpoint of endpoints) {
       if (prefetchedData.has(endpoint)) continue;
       prefetchedData.add(endpoint);
-      fetch(endpoint, { credentials: 'include' }).catch(() => {});
+      fetch(endpoint, { credentials: 'include' })
+        .then(r => { if (r.status === 401) prefetchedData.delete(endpoint); })
+        .catch(() => { prefetchedData.delete(endpoint); });
     }
   }
 }

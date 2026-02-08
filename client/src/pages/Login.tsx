@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRedirectIfAuthenticated } from '@/hooks/useRequireAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +60,7 @@ export default function Login() {
   const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [accountLockedUntil, setAccountLockedUntil] = useState<Date | null>(null);
-  const { login } = useAuth();
+  const queryClient = useQueryClient();
   const [location, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -218,7 +218,8 @@ export default function Login() {
         title: 'Welcome back!',
         description: "You've successfully signed in.",
       });
-      window.location.href = '/dashboard';
+      queryClient.setQueryData(['/api/auth/me'], data);
+      navigate('/dashboard');
     } catch (error: unknown) {
       const err = error as Error;
       toast({
@@ -262,11 +263,12 @@ export default function Login() {
         return;
       }
       
+      queryClient.setQueryData(['/api/auth/me'], data);
       toast({
         title: 'Welcome to Demo Mode!',
         description: 'Explore all Max Booster features with sample data.',
       });
-      window.location.href = '/dashboard';
+      navigate('/dashboard');
     } catch (error) {
       toast({
         title: 'Connection Error',

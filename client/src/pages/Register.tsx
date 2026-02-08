@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLocation } from 'wouter';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useRedirectIfAuthenticated } from '@/hooks/useRequireAuth';
 import { Button } from '@/components/ui/button';
@@ -88,6 +89,7 @@ const OAUTH_ERROR_MESSAGES: Record<string, { title: string; description: string 
 export default function Register() {
   const [, navigate] = useLocation();
   const { register } = useAuth();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   useRedirectIfAuthenticated();
 
@@ -219,6 +221,7 @@ export default function Register() {
         title: 'Account created successfully!',
         description: "Welcome to Max Booster! Let's get started.",
       });
+      queryClient.setQueryData(['/api/auth/me'], data);
       navigate('/dashboard');
     } catch (error) {
       setError('Unable to connect to the server. Please check your internet connection and try again.');
