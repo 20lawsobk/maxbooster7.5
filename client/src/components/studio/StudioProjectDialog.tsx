@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import {
@@ -78,16 +78,15 @@ export function StudioProjectDialog({
     scale: 'Minor',
   });
 
-  const prevOpenRef = useRef(false);
-  if (open && !prevOpenRef.current) {
-    if (initialTitle && form.title !== initialTitle) {
-      setForm(prev => ({ ...prev, title: initialTitle }));
-    }
-  }
-  prevOpenRef.current = open;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (open && initialTitle) {
+      setForm(prev => ({ ...prev, title: initialTitle }));
+    }
+  }, [open, initialTitle]);
 
   const resetForm = useCallback(() => {
     setForm({
