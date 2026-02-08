@@ -10,6 +10,7 @@ import {
   Brain, Sparkles, Library, Keyboard, HelpCircle, X, Camera
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStudioScale } from '@/hooks/useStudioScale';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -102,7 +103,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [isAIMixing, setIsAIMixing] = useState(false);
   const [isAIMastering, setIsAIMastering] = useState(false);
   const [musicalKey, setMusicalKey] = useState('C');
-  const [scale, setScale] = useState('minor');
+  const [musicalScale, setMusicalScale] = useState('minor');
+  const { ref: containerRef, scale: uiScale, cssVars, trackHeaderWidth, aiPanelWidth } = useStudioScale();
 
   useEffect(() => {
     if (projectId && projectId !== projectLoadedRef.current) {
@@ -589,7 +591,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         instrumentCategory: 'melodic',
         tempo: params?.tempo || transport.tempo,
         key: params?.key || musicalKey,
-        scale: params?.scale || scale,
+        scale: params?.scale || musicalScale,
       });
       const response = await res.json();
       if (response.audioFilePath) {
@@ -598,7 +600,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     } catch (error: any) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
-  }, [projectId, transport.tempo, musicalKey, scale, toast]);
+  }, [projectId, transport.tempo, musicalKey, musicalScale, toast]);
 
   const handleGenerateDrums = useCallback(async (params?: { genre?: string; tempo?: number }) => {
     try {
@@ -629,7 +631,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         instrumentCategory: 'melodic',
         tempo: transport.tempo,
         key: params?.key || musicalKey,
-        scale: params?.scale || scale,
+        scale: params?.scale || musicalScale,
       });
       const response = await res.json();
       if (response.audioFilePath) {
@@ -638,7 +640,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     } catch (error: any) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
-  }, [projectId, transport.tempo, musicalKey, scale, toast]);
+  }, [projectId, transport.tempo, musicalKey, musicalScale, toast]);
 
   const handleGeneratePercussion = useCallback(async () => {
     try {
@@ -669,7 +671,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         instrumentCategory: 'melodic',
         tempo: transport.tempo,
         key: params?.key || musicalKey,
-        scale: scale,
+        scale: musicalScale,
       });
       const response = await res.json();
       if (response.audioFilePath) {
@@ -678,12 +680,12 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     } catch (error: any) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
-  }, [projectId, transport.tempo, musicalKey, scale, toast]);
+  }, [projectId, transport.tempo, musicalKey, musicalScale, toast]);
 
   const handleAnalyzeAudio = useCallback(async () => {
     return {
       key: musicalKey,
-      scale: scale,
+      scale: musicalScale,
       tempo: transport.tempo,
       timeSignature: transport.timeSignature || '4/4',
       energy: 0.75,
@@ -701,11 +703,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         { type: 'chorus', start: 24, end: 40 },
       ],
     };
-  }, [musicalKey, scale, transport.tempo, transport.timeSignature]);
+  }, [musicalKey, musicalScale, transport.tempo, transport.timeSignature]);
 
   const handleDetectKey = useCallback(async () => {
-    toast({ title: 'Key Detection', description: `Detected key: ${musicalKey} ${scale}` });
-  }, [musicalKey, scale, toast]);
+    toast({ title: 'Key Detection', description: `Detected key: ${musicalKey} ${musicalScale}` });
+  }, [musicalKey, musicalScale, toast]);
 
   const handleAutoArrange = useCallback(async () => {
     toast({ title: 'Auto-Arrange', description: 'AI arrangement suggestions applied.' });
@@ -762,7 +764,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-[#1a1a1e] text-white overflow-hidden select-none">
+    <div ref={containerRef} style={cssVars as React.CSSProperties} className="h-full w-full flex flex-col bg-[#1a1a1e] text-white overflow-hidden select-none">
       <TransportBar
         transport={transport}
         project={project}
@@ -830,6 +832,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 scrollX={scrollX}
                 playheadPosition={livePosition}
                 isPlaying={transport.isPlaying}
+                trackHeaderWidth={trackHeaderWidth}
                 onSelectTrack={setSelectedTrackId}
                 onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
               />
@@ -848,7 +851,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           {showAIPanel && (
             <motion.div
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 320, opacity: 1 }}
+              animate={{ width: aiPanelWidth, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="shrink-0 border-l border-[#333] overflow-hidden"
@@ -859,7 +862,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 currentTime={livePosition}
                 tempo={transport.tempo}
                 musicalKey={musicalKey}
-                scale={scale}
+                scale={musicalScale}
                 onAIMix={handleAIMix}
                 onAIMaster={handleAIMaster}
                 onGenerateMelody={handleGenerateMelody}
@@ -1226,7 +1229,7 @@ function TransportBar({
   onUndo, onRedo, onSave, onTempoChange, onOpenPlugins, onOpenAI, onOpenGenerator, showAIPanel
 }: TransportBarProps) {
   return (
-    <div className="h-14 bg-[#252529] border-b border-[#333] flex items-center px-4 gap-4 shrink-0">
+    <div className="bg-[#252529] border-b border-[#333] flex items-center px-4 gap-4 shrink-0 flex-wrap" style={{ height: 'var(--transport-h)' }}>
       <div className="flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -1437,7 +1440,7 @@ function Toolbar({
   const [showAddMenu, setShowAddMenu] = useState(false);
 
   return (
-    <div className="h-10 bg-[#1f1f23] border-b border-[#333] flex items-center px-3 gap-2 shrink-0">
+    <div className="bg-[#1f1f23] border-b border-[#333] flex items-center px-3 gap-2 shrink-0 flex-wrap" style={{ height: 'var(--toolbar-h)' }}>
       <div className="relative">
         <Button
           variant="ghost"
@@ -1633,7 +1636,7 @@ function TimelineRuler({ zoom, scrollX, tempo }: TimelineRulerProps) {
   const startBar = Math.floor(scrollX / pixelsPerBar);
 
   return (
-    <div className="h-6 bg-[#1f1f23] border-b border-[#333] flex items-end overflow-hidden shrink-0 ml-48">
+    <div className="h-6 bg-[#1f1f23] border-b border-[#333] flex items-end overflow-hidden shrink-0" style={{ marginLeft: 'var(--track-header-w)' }}>
       <div
         className="relative h-full"
         style={{ width: `${Math.max(200, (startBar + visibleBars + 50) * pixelsPerBar)}px` }}
@@ -1664,13 +1667,14 @@ interface ArrangeViewProps {
   scrollX: number;
   playheadPosition: number;
   isPlaying: boolean;
+  trackHeaderWidth: number;
   onSelectTrack: (id: string) => void;
   onUpdateTrack: (id: string, updates: any) => void;
 }
 
 function ArrangeView({
   tracks, selectedTrackId, zoom, scrollX, playheadPosition, isPlaying,
-  onSelectTrack, onUpdateTrack
+  trackHeaderWidth, onSelectTrack, onUpdateTrack
 }: ArrangeViewProps) {
   const pixelsPerSecond = 40 * zoom;
   const playheadX = playheadPosition * pixelsPerSecond;
@@ -1701,7 +1705,7 @@ function ArrangeView({
 
       <div
         className="absolute top-0 bottom-0 w-px bg-red-500 z-20 pointer-events-none"
-        style={{ left: `${playheadX + 192}px` }}
+        style={{ left: `${playheadX + trackHeaderWidth}px` }}
       >
         <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rotate-45" />
       </div>
@@ -1742,8 +1746,8 @@ function TrackLane({ track, index, isSelected, zoom, onSelect, onUpdate }: Track
       onClick={onSelect}
     >
       <div
-        className="w-48 shrink-0 flex items-center gap-2 px-3 border-r border-[#333] relative"
-        style={{ backgroundColor: `${track.color}15` }}
+        className="shrink-0 flex items-center gap-2 px-3 border-r border-[#333] relative"
+        style={{ width: 'var(--track-header-w)', backgroundColor: `${track.color}15` }}
       >
         <div className="w-1 h-full absolute left-0 top-0" style={{ backgroundColor: track.color }} />
         
@@ -1884,7 +1888,7 @@ interface TrackInspectorProps {
 
 function TrackInspector({ track, onClose, onUpdate, onOpenPlugins }: TrackInspectorProps) {
   return (
-    <div className="w-64 bg-[#1f1f23] border-r border-[#333] flex flex-col shrink-0 overflow-hidden">
+    <div className="bg-[#1f1f23] border-r border-[#333] flex flex-col shrink-0 overflow-hidden" style={{ width: 'var(--inspector-w)' }}>
       <div className="h-10 flex items-center justify-between px-3 border-b border-[#333]">
         <span className="text-sm font-medium">Inspector</span>
         <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
@@ -1992,7 +1996,7 @@ interface EditorPanelProps {
 
 function EditorPanel({ track, onClose }: EditorPanelProps) {
   return (
-    <div className="h-48 bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0">
+    <div className="bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0" style={{ height: 'var(--editor-h)' }}>
       <div className="h-8 flex items-center justify-between px-3 bg-[#1f1f23] border-b border-[#333]">
         <span className="text-sm font-medium">
           {track ? `Editing: ${track.name}` : 'Editor'}
@@ -2077,7 +2081,7 @@ function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpd
   });
 
   return (
-    <div className="h-64 bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0">
+    <div className="bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0" style={{ height: 'var(--mixer-h)' }}>
       <div className="h-8 flex items-center justify-between px-3 bg-[#1f1f23] border-b border-[#333]">
         <span className="text-sm font-medium">Mixer</span>
         <div className="flex items-center gap-1">
@@ -2184,10 +2188,11 @@ function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate }: Chann
   return (
     <div
       className={cn(
-        "w-16 shrink-0 flex flex-col rounded overflow-hidden cursor-pointer transition-colors",
+        "shrink-0 flex flex-col rounded overflow-hidden cursor-pointer transition-colors",
         isSelected ? "bg-[#2a2a3a]" : "bg-[#252529] hover:bg-[#2a2a2e]",
         isMaster && "bg-[#2a2a35]"
       )}
+      style={{ width: 'var(--strip-w)' }}
       onClick={onSelect}
     >
       <div className="text-[10px] text-center py-1 truncate px-1 border-b border-[#333]" style={{ color: track.color }}>
