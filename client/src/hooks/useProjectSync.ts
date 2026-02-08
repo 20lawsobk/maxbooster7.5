@@ -25,12 +25,16 @@ const PROJECT_QUERY_KEYS = [
 interface BackendTrack {
   id: string;
   name: string;
-  type: string;
+  type?: string;
+  trackType?: string;
   color?: string;
   volume?: number;
   pan?: number;
   muted?: boolean;
   solo?: boolean;
+  isMuted?: boolean;
+  isSolo?: boolean;
+  isArmed?: boolean;
   order?: number;
 }
 
@@ -420,6 +424,7 @@ export function useProjectSync(projectId: string | null) {
       
       const response = await fetch(`/api/studio/projects/${projectId}/save-daw-state`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dawState: JSON.stringify(dawState),
@@ -451,7 +456,7 @@ export function useProjectSync(projectId: string | null) {
     if (!projectId) return false;
 
     try {
-      const response = await fetch(`/api/studio/projects/${projectId}/daw-state`);
+      const response = await fetch(`/api/studio/projects/${projectId}/daw-state`, { credentials: 'include' });
       
       if (!response.ok) {
         console.error('[ProjectSync] Failed to load DAW state');
@@ -547,7 +552,7 @@ export function useProjectSync(projectId: string | null) {
     if (!projectId) return;
 
     try {
-      const response = await fetch(`/api/studio/projects/${projectId}`);
+      const response = await fetch(`/api/studio/projects/${projectId}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         if (data.project) {
@@ -576,8 +581,8 @@ export function useProjectSync(projectId: string | null) {
     
     try {
       const [projectRes, tracksRes] = await Promise.all([
-        fetch(`/api/studio/projects/${projectId}`),
-        fetch(`/api/studio/projects/${projectId}/tracks`),
+        fetch(`/api/studio/projects/${projectId}`, { credentials: 'include' }),
+        fetch(`/api/studio/projects/${projectId}/tracks`, { credentials: 'include' }),
       ]);
 
       if (!projectRes.ok || !tracksRes.ok) {
@@ -617,33 +622,33 @@ export function useProjectSync(projectId: string | null) {
 
       for (const track of backendTracks) {
         if (!existingTrackIds.has(track.id)) {
-          const trackType = (track.type || 'audio') as TrackType;
+          const trackType = (track.trackType || track.type || 'audio') as TrackType;
           const newTrackId = store.addTrack(trackType, track.name);
           
           const trackClips = backendClips.filter(c => c.trackId === track.id);
           for (const clip of trackClips) {
             const normalizedPath = normalizeAudioUrl(clip.filePath);
+            const clipDuration = clip.duration > 0 ? clip.duration : 30;
             store.addAudioClip(newTrackId, {
+              trackId: newTrackId,
               name: clip.name || 'Audio Clip',
-              filePath: normalizedPath,
+              sourceUrl: normalizedPath,
               startTime: clip.startTime || 0,
-              duration: clip.duration || 10,
+              duration: clipDuration,
               offset: clip.offset || 0,
               gain: clip.gain || 1,
               fadeIn: clip.fadeIn || 0,
               fadeOut: clip.fadeOut || 0,
               color: track.color || '#3b82f6',
-              waveformData: [],
-              isLooping: false,
-              loopStart: 0,
-              loopEnd: clip.duration || 10,
+              muted: false,
+              locked: false,
             });
           }
 
           if (track.volume !== undefined) store.setTrackVolume(newTrackId, track.volume);
           if (track.pan !== undefined) store.setTrackPan(newTrackId, track.pan);
-          if (track.muted) store.toggleTrackMute(newTrackId);
-          if (track.solo) store.toggleTrackSolo(newTrackId);
+          if (track.muted || track.isMuted) store.toggleTrackMute(newTrackId);
+          if (track.solo || track.isSolo) store.toggleTrackSolo(newTrackId);
         }
       }
 

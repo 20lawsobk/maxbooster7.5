@@ -380,10 +380,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       for (const track of tracks) {
         for (const clip of (track.audioClips || [])) {
           if (loadedClipsRef.current.has(clip.id)) continue;
-          if (!clip.filePath) continue;
+          const clipUrl = clip.sourceUrl || clip.filePath;
+          if (!clipUrl) continue;
 
           try {
-            const buffer = await audioEngine.loadAudioFile(clip.filePath);
+            const buffer = await audioEngine.loadAudioFile(clipUrl);
             const sampleRate = audioEngine.sampleRate || 48000;
             const startSample = Math.floor((clip.startTime || 0) * sampleRate);
             const durationSeconds = clip.duration || buffer.duration;
