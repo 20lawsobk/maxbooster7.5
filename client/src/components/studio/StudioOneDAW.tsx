@@ -766,6 +766,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       <TransportBar
         transport={transport}
         project={project}
+        livePosition={livePosition}
         canUndo={canUndo}
         canRedo={canRedo}
         isDirty={project.isDirty}
@@ -1197,6 +1198,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 interface TransportBarProps {
   transport: any;
   project: any;
+  livePosition: number;
   canUndo: boolean;
   canRedo: boolean;
   isDirty: boolean;
@@ -1219,7 +1221,7 @@ interface TransportBarProps {
 }
 
 function TransportBar({
-  transport, project, canUndo, canRedo, isDirty, formatTime, formatBars,
+  transport, project, livePosition, canUndo, canRedo, isDirty, formatTime, formatBars,
   onPlay, onPause, onStop, onRecord, onRewind, onToggleLoop,
   onUndo, onRedo, onSave, onTempoChange, onOpenPlugins, onOpenAI, onOpenGenerator, showAIPanel
 }: TransportBarProps) {
