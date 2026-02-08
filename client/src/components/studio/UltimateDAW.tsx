@@ -114,10 +114,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
     if (!projectId) return;
     setIsAIMixing(true);
     try {
-      await apiRequest('/api/studio/ai-mix', {
-        method: 'POST',
-        body: JSON.stringify({ projectId }),
-      });
+      await apiRequest('POST', `/api/studio/ai-mix/${projectId}`);
       toast({ title: 'AI Mix Complete', description: 'Your tracks have been balanced and processed.' });
     } catch (error: any) {
       toast({ title: 'Mix Failed', description: error.message, variant: 'destructive' });
@@ -130,10 +127,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
     if (!projectId) return;
     setIsAIMastering(true);
     try {
-      await apiRequest('/api/studio/ai-master', {
-        method: 'POST',
-        body: JSON.stringify({ projectId, targetLufs: -14 }),
-      });
+      await apiRequest('POST', `/api/studio/ai-master/${projectId}`, { targetLufs: -14 });
       toast({ title: 'AI Master Complete', description: 'Your project has been mastered for streaming.' });
     } catch (error: any) {
       toast({ title: 'Master Failed', description: error.message, variant: 'destructive' });
@@ -144,19 +138,17 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
 
   const handleGenerateMelody = useCallback(async (params?: { key?: string; scale?: string; tempo?: number }) => {
     try {
-      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: 'melodic synthesizer',
-          projectId,
-          bars: 8,
-          instrumentType: 'synth',
-          instrumentCategory: 'melodic',
-          tempo: params?.tempo || transport.tempo,
-          key: params?.key || musicalKey,
-          scale: params?.scale || scale,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: 'melodic synthesizer',
+        projectId,
+        bars: 8,
+        instrumentType: 'synth',
+        instrumentCategory: 'melodic',
+        tempo: params?.tempo || transport.tempo,
+        key: params?.key || musicalKey,
+        scale: params?.scale || scale,
       });
+      const response = await res.json();
       if (response.audioFilePath) {
         toast({ title: 'Melody Generated', description: 'New melody track has been created.' });
       }
@@ -167,17 +159,15 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
 
   const handleGenerateDrums = useCallback(async (params?: { genre?: string; tempo?: number }) => {
     try {
-      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: `${params?.genre || 'trap'} drums`,
-          projectId,
-          bars: 8,
-          instrumentType: 'drums',
-          instrumentCategory: 'drums',
-          tempo: params?.tempo || transport.tempo,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: `${params?.genre || 'trap'} drums`,
+        projectId,
+        bars: 8,
+        instrumentType: 'drums',
+        instrumentCategory: 'drums',
+        tempo: params?.tempo || transport.tempo,
       });
+      const response = await res.json();
       if (response.audioFilePath) {
         toast({ title: 'Drums Generated', description: 'New drum pattern has been created.' });
       }
@@ -188,19 +178,17 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
 
   const handleGenerateBass = useCallback(async (params?: { key?: string; scale?: string }) => {
     try {
-      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: 'bass 808',
-          projectId,
-          bars: 8,
-          instrumentType: 'bass',
-          instrumentCategory: 'melodic',
-          tempo: transport.tempo,
-          key: params?.key || musicalKey,
-          scale: params?.scale || scale,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: 'bass 808',
+        projectId,
+        bars: 8,
+        instrumentType: 'bass',
+        instrumentCategory: 'melodic',
+        tempo: transport.tempo,
+        key: params?.key || musicalKey,
+        scale: params?.scale || scale,
       });
+      const response = await res.json();
       if (response.audioFilePath) {
         toast({ title: 'Bass Generated', description: 'New bass line has been created.' });
       }
@@ -211,17 +199,15 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
 
   const handleGeneratePercussion = useCallback(async () => {
     try {
-      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: 'percussion shakers hi-hats',
-          projectId,
-          bars: 8,
-          instrumentType: 'percussion',
-          instrumentCategory: 'percussion',
-          tempo: transport.tempo,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: 'percussion shakers hi-hats',
+        projectId,
+        bars: 8,
+        instrumentType: 'percussion',
+        instrumentCategory: 'percussion',
+        tempo: transport.tempo,
       });
+      const response = await res.json();
       if (response.audioFilePath) {
         toast({ title: 'Percussion Generated', description: 'New percussion pattern has been created.' });
       }

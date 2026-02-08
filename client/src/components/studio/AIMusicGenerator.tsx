@@ -97,21 +97,19 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
     try {
       const instrument = INSTRUMENTS.find(i => i.id === selectedInstrument);
       
-      const response = await apiRequest<GeneratedTrack>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: prompt || `${selectedGenre} ${selectedInstrument}`,
-          projectId,
-          bars,
-          instrumentType: selectedInstrument,
-          instrumentCategory: instrument?.category || 'melodic',
-          genre: selectedGenre,
-          tempo,
-          key,
-          scale: scale.toLowerCase(),
-          complexity,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: prompt || `${selectedGenre} ${selectedInstrument}`,
+        projectId,
+        bars,
+        instrumentType: selectedInstrument,
+        instrumentCategory: instrument?.category || 'melodic',
+        genre: selectedGenre,
+        tempo,
+        key,
+        scale: scale.toLowerCase(),
+        complexity,
       });
+      const response = await res.json() as GeneratedTrack;
 
       if (response.audioFilePath) {
         setGeneratedTrack(response);

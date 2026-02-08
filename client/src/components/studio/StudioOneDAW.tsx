@@ -7,7 +7,7 @@ import {
   ChevronRight, MoreHorizontal, Lock, Unlock, Eye, EyeOff,
   Trash2, Copy, Scissors, ZoomIn, ZoomOut, Grid3X3, Wand2,
   PanelBottomOpen, PanelBottomClose, PanelRightOpen, PanelRightClose,
-  Brain, Sparkles, Library, Keyboard, HelpCircle, X
+  Brain, Sparkles, Library, Keyboard, HelpCircle, X, Camera
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,8 +27,13 @@ import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { ProjectSettingsDialog } from './ProjectSettingsDialog';
 import { CrashRecoveryDialog } from './CrashRecoveryDialog';
 import { VersionManagementDialog } from './VersionManagementDialog';
+import { FlowStateExport } from './FlowStateExport';
+import { RecordingPanel } from './RecordingPanel';
+import { FlowStateImportAudio } from './FlowStateImportAudio';
+import { StemExportDialog } from './StemExportDialog';
+import { StudioStartHub } from './StudioStartHub';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 
 interface StudioOneDAWProps {
@@ -87,6 +92,10 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   }>>([]);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showImportAudio, setShowImportAudio] = useState(false);
+  const [showStemExport, setShowStemExport] = useState(false);
 
   const [isAIMixing, setIsAIMixing] = useState(false);
   const [isAIMastering, setIsAIMastering] = useState(false);
@@ -290,6 +299,18 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         e.preventDefault();
         setShowVersionManagement(true);
       }
+      if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        setShowExportDialog(true);
+      }
+      if (e.ctrlKey && e.key === 'i') {
+        e.preventDefault();
+        setShowImportAudio(true);
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        setShowStemExport(true);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -443,11 +464,68 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   
   const handleToggleLoop = useCallback(() => store.toggleLoop(), [store]);
 
+  const trackUpdateTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const debouncedTrackUpdate = useCallback((trackId: string, updates: Record<string, unknown>) => {
+    if (!projectId) return;
+    if (trackUpdateTimersRef.current[trackId]) {
+      clearTimeout(trackUpdateTimersRef.current[trackId]);
+    }
+    trackUpdateTimersRef.current[trackId] = setTimeout(() => {
+      delete trackUpdateTimersRef.current[trackId];
+      const patchData: Record<string, unknown> = {};
+      if (updates.volume !== undefined) patchData.volume = updates.volume;
+      if (updates.pan !== undefined) patchData.pan = updates.pan;
+      if (updates.muted !== undefined) patchData.isMuted = updates.muted;
+      if (updates.solo !== undefined) patchData.isSolo = updates.solo;
+      if (updates.armed !== undefined) patchData.isArmed = updates.armed;
+      if (updates.name !== undefined) patchData.name = updates.name;
+      if (updates.color !== undefined) patchData.color = updates.color;
+      if (Object.keys(patchData).length === 0) return;
+      apiRequest('PATCH', `/api/studio/tracks/${trackId}`, patchData).catch((err: any) => {
+        console.error('[DAW] Failed to update track on backend:', err);
+      });
+    }, 500);
+  }, [projectId]);
+
+  const handleTrackUpdate = useCallback((trackId: string, updates: any) => {
+    store.updateTrack(trackId, updates);
+    debouncedTrackUpdate(trackId, updates);
+  }, [store, debouncedTrackUpdate]);
+
+  const handleDeleteTrack = useCallback((trackId: string) => {
+    store.removeTrack(trackId);
+    toast({ title: 'Track Removed', description: 'Track has been deleted.' });
+    if (projectId) {
+      apiRequest('DELETE', `/api/studio/tracks/${trackId}`).catch((err: any) => {
+        console.error('[DAW] Failed to delete track on backend:', err);
+        toast({ title: 'Sync Error', description: 'Failed to delete track on server.', variant: 'destructive' });
+      });
+    }
+  }, [store, projectId, toast]);
+
   const handleAddTrack = useCallback((type: 'audio' | 'instrument' | 'midi' | 'bus') => {
     const color = TRACK_COLORS[tracks.length % TRACK_COLORS.length];
-    store.addTrack(type, `${type.charAt(0).toUpperCase() + type.slice(1)} ${tracks.length + 1}`);
+    const name = `${type.charAt(0).toUpperCase() + type.slice(1)} ${tracks.length + 1}`;
+    store.addTrack(type, name);
     toast({ title: 'Track Added', description: `New ${type} track created.` });
-  }, [store, tracks.length, toast]);
+    if (projectId) {
+      apiRequest('POST', '/api/studio/tracks', {
+        projectId,
+        name,
+        trackType: type,
+        color,
+        volume: 0.8,
+        pan: 0,
+        mute: false,
+        solo: false,
+        armed: false,
+      }).catch((err: any) => {
+        console.error('[DAW] Failed to sync new track to backend:', err);
+        toast({ title: 'Sync Error', description: 'Track created locally but failed to sync to server.', variant: 'destructive' });
+      });
+    }
+  }, [store, tracks.length, toast, projectId]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -462,10 +540,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     if (!projectId) return;
     setIsAIMixing(true);
     try {
-      await apiRequest('/api/studio/ai-mix', {
-        method: 'POST',
-        body: JSON.stringify({ projectId }),
-      });
+      await apiRequest('POST', `/api/studio/ai-mix/${projectId}`);
       toast({ title: 'AI Mix Complete', description: 'Your tracks have been balanced and processed.' });
     } catch (error: any) {
       toast({ title: 'Mix Failed', description: error.message, variant: 'destructive' });
@@ -478,10 +553,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     if (!projectId) return;
     setIsAIMastering(true);
     try {
-      await apiRequest('/api/studio/ai-master', {
-        method: 'POST',
-        body: JSON.stringify({ projectId, targetLufs: -14 }),
-      });
+      await apiRequest('POST', `/api/studio/ai-master/${projectId}`, { targetLufs: -14 });
       toast({ title: 'AI Master Complete', description: 'Your project has been mastered for streaming.' });
     } catch (error: any) {
       toast({ title: 'Master Failed', description: error.message, variant: 'destructive' });
@@ -492,19 +564,17 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const handleGenerateMelody = useCallback(async (params?: { key?: string; scale?: string; tempo?: number }) => {
     try {
-      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: 'melodic synthesizer',
-          projectId,
-          bars: 8,
-          instrumentType: 'synth',
-          instrumentCategory: 'melodic',
-          tempo: params?.tempo || transport.tempo,
-          key: params?.key || musicalKey,
-          scale: params?.scale || scale,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: 'melodic synthesizer',
+        projectId,
+        bars: 8,
+        instrumentType: 'synth',
+        instrumentCategory: 'melodic',
+        tempo: params?.tempo || transport.tempo,
+        key: params?.key || musicalKey,
+        scale: params?.scale || scale,
       });
+      const response = await res.json();
       if (response.audioFilePath) {
         toast({ title: 'Melody Generated', description: 'New melody track has been created.' });
       }
@@ -515,17 +585,15 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const handleGenerateDrums = useCallback(async (params?: { genre?: string; tempo?: number }) => {
     try {
-      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: `${params?.genre || 'trap'} drums`,
-          projectId,
-          bars: 8,
-          instrumentType: 'drums',
-          instrumentCategory: 'drums',
-          tempo: params?.tempo || transport.tempo,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: `${params?.genre || 'trap'} drums`,
+        projectId,
+        bars: 8,
+        instrumentType: 'drums',
+        instrumentCategory: 'drums',
+        tempo: params?.tempo || transport.tempo,
       });
+      const response = await res.json();
       if (response.audioFilePath) {
         toast({ title: 'Drums Generated', description: 'New drum pattern has been created.' });
       }
@@ -536,19 +604,17 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const handleGenerateBass = useCallback(async (params?: { key?: string; scale?: string }) => {
     try {
-      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: 'bass 808',
-          projectId,
-          bars: 8,
-          instrumentType: 'bass',
-          instrumentCategory: 'melodic',
-          tempo: transport.tempo,
-          key: params?.key || musicalKey,
-          scale: params?.scale || scale,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: 'bass 808',
+        projectId,
+        bars: 8,
+        instrumentType: 'bass',
+        instrumentCategory: 'melodic',
+        tempo: transport.tempo,
+        key: params?.key || musicalKey,
+        scale: params?.scale || scale,
       });
+      const response = await res.json();
       if (response.audioFilePath) {
         toast({ title: 'Bass Generated', description: 'New bass line has been created.' });
       }
@@ -559,17 +625,15 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const handleGeneratePercussion = useCallback(async () => {
     try {
-      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: 'percussion shakers hi-hats',
-          projectId,
-          bars: 8,
-          instrumentType: 'percussion',
-          instrumentCategory: 'percussion',
-          tempo: transport.tempo,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: 'percussion shakers hi-hats',
+        projectId,
+        bars: 8,
+        instrumentType: 'percussion',
+        instrumentCategory: 'percussion',
+        tempo: transport.tempo,
       });
+      const response = await res.json();
       if (response.audioFilePath) {
         toast({ title: 'Percussion Generated', description: 'New percussion pattern has been created.' });
       }
@@ -580,19 +644,17 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const handleGenerateChords = useCallback(async (params?: { progression?: string; key?: string }) => {
     try {
-      const response = await apiRequest<{ audioFilePath: string }>('/api/studio/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: `chord progression ${params?.progression || 'I-V-vi-IV'}`,
-          projectId,
-          bars: 8,
-          instrumentType: 'piano',
-          instrumentCategory: 'melodic',
-          tempo: transport.tempo,
-          key: params?.key || musicalKey,
-          scale: scale,
-        }),
+      const res = await apiRequest('POST', '/api/studio/generation/text', {
+        text: `chord progression ${params?.progression || 'I-V-vi-IV'}`,
+        projectId,
+        bars: 8,
+        instrumentType: 'piano',
+        instrumentCategory: 'melodic',
+        tempo: transport.tempo,
+        key: params?.key || musicalKey,
+        scale: scale,
       });
+      const response = await res.json();
       if (response.audioFilePath) {
         toast({ title: 'Chords Generated', description: 'New chord progression has been created.' });
       }
@@ -653,6 +715,29 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const selectedTrack = tracks.find(t => t.id === selectedTrackId);
 
+  if (!projectId && !isLoading) {
+    return (
+      <div className="h-full w-full bg-[#1a1a1e] text-white">
+        <StudioStartHub
+          onProjectSelect={(id) => {
+            window.location.href = `/studio/${id}`;
+          }}
+          onCreateProject={(title, templateId) => {
+            setShowProjectDialog(true);
+          }}
+        />
+        <StudioProjectDialog
+          open={showProjectDialog}
+          onOpenChange={setShowProjectDialog}
+          onProjectCreated={(newProjectId) => {
+            queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full flex flex-col bg-[#1a1a1e] text-white overflow-hidden select-none">
       <TransportBar
@@ -684,7 +769,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           <TrackInspector
             track={selectedTrack}
             onClose={() => setShowInspector(false)}
-            onUpdate={(updates) => store.updateTrack(selectedTrackId!, updates)}
+            onUpdate={(updates) => handleTrackUpdate(selectedTrackId!, updates)}
             onOpenPlugins={() => { setPluginFilter('all'); setShowPluginBrowser(true); }}
           />
         )}
@@ -706,6 +791,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             onOpenInstruments={() => { setPluginFilter('instruments'); setShowPluginBrowser(true); }}
             onOpenEffects={() => { setPluginFilter('effects'); setShowPluginBrowser(true); }}
             onOpenShortcuts={() => setShowKeyboardShortcuts(true)}
+            onExport={() => setShowExportDialog(true)}
+            onImportAudio={() => setShowImportAudio(true)}
+            onStemExport={() => setShowStemExport(true)}
           />
 
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -720,7 +808,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 playheadPosition={transport.position}
                 isPlaying={transport.isPlaying}
                 onSelectTrack={setSelectedTrackId}
-                onUpdateTrack={(id, updates) => store.updateTrack(id, updates)}
+                onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
               />
             </div>
           </div>
@@ -775,8 +863,23 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           masterTrack={masterTrack}
           selectedTrackId={selectedTrackId}
           onSelectTrack={setSelectedTrackId}
-          onUpdateTrack={(id, updates) => store.updateTrack(id, updates)}
+          onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
           onClose={() => setShowMixer(false)}
+          projectId={projectId || ''}
+        />
+      )}
+
+      {tracks.some(t => t.armed) && projectId && (
+        <RecordingPanel
+          projectId={projectId}
+          armedTracks={tracks.filter(t => t.armed).map(t => ({ id: t.id, name: t.name }))}
+          inputMonitoringMode="auto"
+          currentTransportTime={transport.position}
+          onRecordingStart={() => store.record()}
+          onRecordingStop={() => store.stop()}
+          onClipUploaded={(trackId, clip) => {
+            toast({ title: 'Recording Saved', description: `Clip "${clip.name}" added to track.` });
+          }}
         />
       )}
 
@@ -1045,6 +1148,35 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           });
         }}
       />
+
+      <FlowStateExport
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        projectId={projectId || ''}
+        projectName={project.name}
+        duration={project.duration || 0}
+        onExportComplete={(url) => {
+          toast({ title: 'Export Complete', description: 'Your audio file is ready for download.' });
+        }}
+      />
+
+      <FlowStateImportAudio
+        open={showImportAudio}
+        onOpenChange={setShowImportAudio}
+        projectId={projectId || undefined}
+        onImportComplete={(files) => {
+          files.forEach(file => {
+            store.addTrack('audio', file.name);
+          });
+          toast({ title: 'Audio Imported', description: `${files.length} file(s) imported successfully.` });
+        }}
+      />
+
+      <StemExportDialog
+        open={showStemExport}
+        onOpenChange={setShowStemExport}
+        projectId={projectId}
+      />
     </div>
   );
 }
@@ -1276,13 +1408,17 @@ interface ToolbarProps {
   onOpenInstruments: () => void;
   onOpenEffects: () => void;
   onOpenShortcuts: () => void;
+  onExport: () => void;
+  onImportAudio: () => void;
+  onStemExport: () => void;
 }
 
 function Toolbar({
   zoom, onZoomIn, onZoomOut, onAddTrack, onNewProject,
   showInspector, showEditor, showMixer,
   onToggleInspector, onToggleEditor, onToggleMixer,
-  onOpenAllPlugins, onOpenInstruments, onOpenEffects, onOpenShortcuts
+  onOpenAllPlugins, onOpenInstruments, onOpenEffects, onOpenShortcuts,
+  onExport, onImportAudio, onStemExport
 }: ToolbarProps) {
   const [showAddMenu, setShowAddMenu] = useState(false);
 
@@ -1395,6 +1531,38 @@ function Toolbar({
         <Grid3X3 className="h-3.5 w-3.5" />
         Snap
       </Button>
+
+      <div className="h-5 w-px bg-[#444]" />
+
+      <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onExport} className="h-7 gap-1 text-xs">
+              <Save className="h-3.5 w-3.5" />
+              Export
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Export Audio (Ctrl+Shift+E)</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onImportAudio} className="h-7 gap-1 text-xs">
+              <FolderOpen className="h-3.5 w-3.5" />
+              Import
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Import Audio (Ctrl+I)</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onStemExport} className="h-7 gap-1 text-xs">
+              <Layers className="h-3.5 w-3.5" />
+              Stems
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Export Stems (Ctrl+Shift+S)</TooltipContent>
+        </Tooltip>
+      </div>
 
       <div className="flex-1" />
 
@@ -1860,16 +2028,126 @@ interface MixerPanelProps {
   onSelectTrack: (id: string) => void;
   onUpdateTrack: (id: string, updates: any) => void;
   onClose: () => void;
+  projectId: string;
 }
 
-function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpdateTrack, onClose }: MixerPanelProps) {
+function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpdateTrack, onClose, projectId }: MixerPanelProps) {
+  const [showSnapshotMenu, setShowSnapshotMenu] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: snapshotsData } = useQuery({
+    queryKey: ['mix-snapshots', projectId],
+    queryFn: async () => {
+      if (!projectId) return { snapshots: [] };
+      const res = await apiRequest('GET', `/api/studio/projects/${projectId}/mix-snapshots`);
+      return res.json();
+    },
+    enabled: !!projectId,
+  });
+
+  const snapshots = snapshotsData?.snapshots || [];
+
+  const saveSnapshotMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/studio/projects/${projectId}/mix-snapshots`, {
+        name: `Mix Snapshot ${new Date().toLocaleTimeString()}`,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mix-snapshots', projectId] });
+    },
+  });
+
+  const recallSnapshotMutation = useMutation({
+    mutationFn: async (snapshotId: string) => {
+      const res = await apiRequest('POST', `/api/studio/projects/${projectId}/mix-snapshots/${snapshotId}/recall`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mix-snapshots', projectId] });
+    },
+  });
+
+  const deleteSnapshotMutation = useMutation({
+    mutationFn: async (snapshotId: string) => {
+      const res = await apiRequest('DELETE', `/api/studio/projects/${projectId}/mix-snapshots/${snapshotId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mix-snapshots', projectId] });
+    },
+  });
+
   return (
     <div className="h-64 bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0">
       <div className="h-8 flex items-center justify-between px-3 bg-[#1f1f23] border-b border-[#333]">
         <span className="text-sm font-medium">Mixer</span>
-        <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
-          <PanelBottomClose className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {projectId && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => saveSnapshotMutation.mutate()}
+                    disabled={saveSnapshotMutation.isPending}
+                    className="h-6 px-2 text-[10px] gap-1"
+                  >
+                    <Camera className="h-3 w-3" />
+                    Save Snapshot
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Save current mix as snapshot</TooltipContent>
+              </Tooltip>
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSnapshotMenu(!showSnapshotMenu)}
+                  className="h-6 px-2 text-[10px] gap-1"
+                >
+                  <ChevronDown className="h-3 w-3" />
+                  Snapshots {snapshots.length > 0 && `(${snapshots.length})`}
+                </Button>
+                {showSnapshotMenu && (
+                  <div className="absolute right-0 top-7 z-50 w-56 bg-[#252529] border border-[#444] rounded shadow-lg py-1 max-h-48 overflow-y-auto">
+                    {snapshots.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-gray-500">No snapshots saved</div>
+                    ) : (
+                      snapshots.map((snap: any) => (
+                        <div key={snap.id} className="flex items-center justify-between px-3 py-1.5 hover:bg-[#333] group">
+                          <button
+                            className="flex-1 text-left text-xs truncate"
+                            onClick={() => {
+                              recallSnapshotMutation.mutate(snap.id);
+                              setShowSnapshotMenu(false);
+                            }}
+                          >
+                            {snap.name}
+                          </button>
+                          <button
+                            className="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 ml-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteSnapshotMutation.mutate(snap.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
+            <PanelBottomClose className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
       <div className="flex-1 flex overflow-x-auto p-2 gap-1">
         {tracks.map((track) => (
