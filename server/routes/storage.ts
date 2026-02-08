@@ -13,6 +13,27 @@ import { eq, and, isNull, lt, isNotNull, sql } from 'drizzle-orm';
 
 const router = Router();
 
+const audioCache = new Map<string, { buffer: Buffer; timestamp: number }>();
+const AUDIO_CACHE_MAX_SIZE = 5;
+const AUDIO_CACHE_TTL = 300000;
+
+function getCachedAudio(key: string): Buffer | null {
+  const entry = audioCache.get(key);
+  if (entry && Date.now() - entry.timestamp < AUDIO_CACHE_TTL) {
+    return entry.buffer;
+  }
+  if (entry) audioCache.delete(key);
+  return null;
+}
+
+function setCachedAudio(key: string, buffer: Buffer) {
+  if (audioCache.size >= AUDIO_CACHE_MAX_SIZE) {
+    const oldest = audioCache.keys().next().value;
+    if (oldest) audioCache.delete(oldest);
+  }
+  audioCache.set(key, { buffer, timestamp: Date.now() });
+}
+
 // Cleanup soft-deleted files older than 30 days (permanent deletion)
 const PERMANENT_DELETE_DAYS = 30;
 
@@ -295,7 +316,14 @@ router.get('/file/:key(*)', requireAuth, async (req: Request, res: Response) => 
   try {
     const { key } = req.params;
     
-    const buffer = await storageService.downloadFile(key);
+    let buffer = getCachedAudio(key);
+    if (!buffer) {
+      buffer = await storageService.downloadFile(key);
+      const ext = path.extname(key).toLowerCase();
+      if (['.wav', '.mp3', '.flac', '.ogg', '.aac', '.m4a', '.webm', '.aiff', '.aif'].includes(ext)) {
+        setCachedAudio(key, buffer);
+      }
+    }
     
     const ext = path.extname(key).toLowerCase();
     const mimeTypes: Record<string, string> = {
@@ -303,6 +331,11 @@ router.get('/file/:key(*)', requireAuth, async (req: Request, res: Response) => 
       '.mp3': 'audio/mpeg',
       '.flac': 'audio/flac',
       '.ogg': 'audio/ogg',
+      '.aac': 'audio/aac',
+      '.m4a': 'audio/mp4',
+      '.webm': 'audio/webm',
+      '.aiff': 'audio/aiff',
+      '.aif': 'audio/aiff',
       '.jpg': 'image/jpeg',
       '.jpeg': 'image/jpeg',
       '.png': 'image/png',
@@ -310,9 +343,28 @@ router.get('/file/:key(*)', requireAuth, async (req: Request, res: Response) => 
       '.webp': 'image/webp',
     };
 
-    res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
-    res.setHeader('Content-Length', buffer.length);
-    res.send(buffer);
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    const total = buffer.length;
+
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : Math.min(start + 1024 * 1024 - 1, total - 1);
+      const chunkSize = end - start + 1;
+
+      res.status(206);
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
+      res.setHeader('Content-Length', chunkSize);
+      res.end(buffer.subarray(start, end + 1));
+    } else {
+      res.setHeader('Content-Length', total);
+      res.send(buffer);
+    }
   } catch (error) {
     logger.error('File download failed:', error);
     res.status(404).json({ error: 'File not found' });

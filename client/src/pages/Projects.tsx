@@ -34,6 +34,7 @@ import {
   Upload,
   Play,
   Pause,
+  Loader2,
   MoreVertical,
   Edit,
   Trash2,
@@ -99,6 +100,7 @@ export default function Projects() {
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const [audioLoading, setAudioLoading] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioProjectRef = useRef<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -213,6 +215,7 @@ export default function Projects() {
     if (currentlyPlaying === project.id && audioRef.current) {
       audioRef.current.pause();
       setCurrentlyPlaying(null);
+      setAudioLoading(null);
       audioProjectRef.current = null;
       return;
     }
@@ -227,10 +230,50 @@ export default function Projects() {
         audioSrc = `/api/marketplace/audio/${audioSrc.replace(/^\//, '')}`;
       }
 
-      setCurrentlyPlaying(project.id);
       audioProjectRef.current = project.id;
+      setAudioLoading(project.id);
+      setCurrentlyPlaying(project.id);
+
+      const startPlayback = (audio: HTMLAudioElement) => {
+        audio.oncanplay = () => {
+          if (audioProjectRef.current === project.id) {
+            setAudioLoading(null);
+          }
+          audio.oncanplay = null;
+        };
+
+        audio.onended = () => {
+          if (audioProjectRef.current === project.id) {
+            setCurrentlyPlaying(null);
+            setAudioLoading(null);
+            audioProjectRef.current = null;
+          }
+        };
+
+        audio.onerror = () => {
+          if (audioProjectRef.current === project.id) {
+            setCurrentlyPlaying(null);
+            setAudioLoading(null);
+            audioProjectRef.current = null;
+            toast({
+              title: 'Playback Error',
+              description: 'Could not load audio file.',
+              variant: 'destructive',
+            });
+          }
+        };
+
+        audio.play().catch(() => {
+          if (audioProjectRef.current === project.id) {
+            setCurrentlyPlaying(null);
+            setAudioLoading(null);
+            audioProjectRef.current = null;
+          }
+        });
+      };
 
       if (audioRef.current && audioRef.current.src.endsWith(audioSrc)) {
+        setAudioLoading(null);
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {
           setCurrentlyPlaying(null);
@@ -241,25 +284,7 @@ export default function Projects() {
         audio.preload = 'auto';
         audio.src = audioSrc;
         audioRef.current = audio;
-
-        audio.onended = () => {
-          if (audioProjectRef.current === project.id) {
-            setCurrentlyPlaying(null);
-            audioProjectRef.current = null;
-          }
-        };
-
-        audio.onerror = () => {
-          if (audioProjectRef.current === project.id) {
-            setCurrentlyPlaying(null);
-            audioProjectRef.current = null;
-          }
-        };
-
-        audio.play().catch(() => {
-          setCurrentlyPlaying(null);
-          audioProjectRef.current = null;
-        });
+        startPlayback(audio);
       }
     } else {
       toast({
@@ -652,12 +677,14 @@ export default function Projects() {
                           onClick={() => handlePlayProject(project)}
                           data-testid={`button-play-${project.id}`}
                         >
-                          {currentlyPlaying === project.id ? (
+                          {audioLoading === project.id ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : currentlyPlaying === project.id ? (
                             <Pause className="h-4 w-4 mr-2" />
                           ) : (
                             <Play className="h-4 w-4 mr-2" />
                           )}
-                          {currentlyPlaying === project.id ? 'Pause' : 'Play'}
+                          {audioLoading === project.id ? 'Loading...' : currentlyPlaying === project.id ? 'Pause' : 'Play'}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setLocation(`/studio/${project.id}`)}
@@ -745,12 +772,14 @@ export default function Projects() {
                       onClick={() => handlePlayProject(project)}
                       data-testid={`button-play-bottom-${project.id}`}
                     >
-                      {currentlyPlaying === project.id ? (
+                      {audioLoading === project.id ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : currentlyPlaying === project.id ? (
                         <Pause className="h-4 w-4 mr-2" />
                       ) : (
                         <Play className="h-4 w-4 mr-2" />
                       )}
-                      {currentlyPlaying === project.id ? 'Pause' : 'Play'}
+                      {audioLoading === project.id ? 'Loading...' : currentlyPlaying === project.id ? 'Pause' : 'Play'}
                     </Button>
                     {project.workflowStage === 'delivery' || project.status === 'completed' ? (
                       <Button
