@@ -29,37 +29,6 @@ export default defineConfig({
     cssCodeSplit: true,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
-              return 'vendor-react';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'vendor-ui';
-            }
-            if (id.includes('@tanstack')) {
-              return 'vendor-query';
-            }
-            if (id.includes('framer-motion')) {
-              return 'vendor-animation';
-            }
-            if (id.includes('i18next') || id.includes('react-i18next')) {
-              return 'vendor-i18n';
-            }
-            if (id.includes('stripe') || id.includes('@stripe')) {
-              return 'vendor-stripe';
-            }
-            if (id.includes('zustand')) {
-              return 'vendor-state';
-            }
-          }
-          if (id.includes('client/src/components/studio/')) {
-            return 'studio';
-          }
-          if (id.includes('client/src/components/admin/') || id.includes('client/src/pages/admin/')) {
-            return 'admin';
-          }
-        },
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash].[ext]",
