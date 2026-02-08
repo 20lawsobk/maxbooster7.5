@@ -787,7 +787,6 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             onZoomIn={() => setZoom(z => Math.min(z * 1.25, 4))}
             onZoomOut={() => setZoom(z => Math.max(z / 1.25, 0.25))}
             onAddTrack={handleAddTrack}
-            onNewProject={() => setShowProjectDialog(true)}
             showInspector={showInspector}
             showEditor={showEditor}
             showMixer={showMixer}
