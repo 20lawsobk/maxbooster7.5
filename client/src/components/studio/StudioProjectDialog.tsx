@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { uploadWithProgress } from '@/lib/queryClient';
+import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import {
   Upload,
   FileAudio,
@@ -159,18 +159,13 @@ export function StudioProjectDialog({
           timeout: 300000,
         });
       } else {
-        const response = await fetch('/api/studio/projects', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: form.title || 'Untitled Project',
-            description: form.description,
-            genre: form.genre,
-            tempo: form.bpm,
-            key: `${form.key} ${form.scale}`,
-          }),
+        const response = await apiRequest('POST', '/api/studio/projects', {
+          title: form.title || 'Untitled Project',
+          description: form.description,
+          genre: form.genre,
+          tempo: form.bpm,
+          key: `${form.key} ${form.scale}`,
         });
-        if (!response.ok) throw new Error('Failed to create project');
         return response.json();
       }
     },
