@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "bash -c './boosterstate/target/release/boosterstate & sleep 1 && NODE_ENV=development tsx server/index.ts'",
     "build": "tsx script/build.ts",
-    "start": "bash -c './boosterstate/target/release/boosterstate & sleep 1 && NODE_ENV=production node dist/index.cjs'",
+    "start": "bash -c './boosterstate/target/release/boosterstate & sleep 3 && NODE_ENV=production node dist/index.cjs'",
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "electron:dev": "electron .",
