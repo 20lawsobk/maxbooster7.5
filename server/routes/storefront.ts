@@ -257,6 +257,26 @@ router.delete('/:id', async (req, res) => {
 });
 
 /**
+ * GET /api/storefront/:storefrontId/membership-tiers
+ * Get all membership tiers for a storefront (owner view)
+ */
+router.get('/:storefrontId/membership-tiers', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { storefrontId } = req.params;
+    const tiers = await storefrontService.getMembershipTiers(storefrontId);
+    res.json(tiers);
+  } catch (error: unknown) {
+    logger.error('Error fetching membership tiers:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch membership tiers';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
  * POST /api/storefront/:storefrontId/membership-tiers
  * Create a new membership tier for a storefront
  */
