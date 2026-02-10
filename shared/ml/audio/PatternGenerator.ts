@@ -21,6 +21,17 @@ import {
 } from './SynthesizerEngine.js';
 
 // ============================================================================
+// AUDIO UTILITIES
+// ============================================================================
+
+function softLimitMaster(x: number): number {
+  if (Math.abs(x) < 0.75) return x;
+  const sign = x > 0 ? 1 : -1;
+  const abs = Math.abs(x);
+  return sign * (0.75 + Math.tanh((abs - 0.75) * 2.5) * 0.23);
+}
+
+// ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
 
@@ -481,16 +492,8 @@ export class PatternRenderer {
       }
     }
 
-    // Normalize to prevent clipping
-    let maxAmp = 0;
     for (let i = 0; i < output.length; i++) {
-      maxAmp = Math.max(maxAmp, Math.abs(output[i]));
-    }
-    if (maxAmp > 0.9) {
-      const scale = 0.9 / maxAmp;
-      for (let i = 0; i < output.length; i++) {
-        output[i] *= scale;
-      }
+      output[i] = softLimitMaster(output[i]);
     }
 
     return output;
@@ -523,16 +526,8 @@ export class PatternRenderer {
       }
     }
 
-    // Normalize
-    let maxAmp = 0;
     for (let i = 0; i < output.length; i++) {
-      maxAmp = Math.max(maxAmp, Math.abs(output[i]));
-    }
-    if (maxAmp > 0.9) {
-      const scale = 0.9 / maxAmp;
-      for (let i = 0; i < output.length; i++) {
-        output[i] *= scale;
-      }
+      output[i] = softLimitMaster(output[i]);
     }
 
     return output;
@@ -585,23 +580,14 @@ export class PatternRenderer {
       }
     }
 
-    let maxAmp = 0;
     for (let i = 0; i < output.length; i++) {
-      maxAmp = Math.max(maxAmp, Math.abs(output[i]));
-    }
-    if (maxAmp > 0.9) {
-      const scale = 0.9 / maxAmp;
-      for (let i = 0; i < output.length; i++) {
-        output[i] *= scale;
-      }
+      output[i] = softLimitMaster(output[i]);
     }
 
     return output;
   }
 
-  // Combine multiple patterns into one output
   mixPatterns(patterns: Float32Array[], gains: number[] = []): Float32Array {
-    // Find max length
     let maxLength = 0;
     for (const pattern of patterns) {
       maxLength = Math.max(maxLength, pattern.length);
@@ -616,15 +602,19 @@ export class PatternRenderer {
       }
     }
 
-    // Normalize
-    let maxAmp = 0;
     for (let i = 0; i < output.length; i++) {
-      maxAmp = Math.max(maxAmp, Math.abs(output[i]));
+      output[i] = softLimitMaster(output[i]);
     }
-    if (maxAmp > 0.9) {
-      const scale = 0.9 / maxAmp;
-      for (let i = 0; i < output.length; i++) {
-        output[i] *= scale;
+
+    const fadeOutSamples = Math.min(Math.floor(output.length * 0.02), 2048);
+    for (let i = 0; i < fadeOutSamples; i++) {
+      const fadeGain = i / fadeOutSamples;
+      const endIdx = output.length - 1 - i;
+      if (endIdx >= 0) {
+        output[endIdx] *= fadeGain;
+      }
+      if (i < output.length) {
+        output[i] *= Math.min(1, i / Math.min(fadeOutSamples, 256));
       }
     }
 

@@ -173,49 +173,95 @@ class SeededRandom {
 }
 
 // ============================================================================
-// OSCILLATOR GENERATORS
+// OSCILLATOR GENERATORS (with polyBLEP anti-aliasing)
 // ============================================================================
+
+function polyBlep(t: number, dt: number): number {
+  if (t < dt) {
+    const tn = t / dt;
+    return tn + tn - tn * tn - 1;
+  } else if (t > 1 - dt) {
+    const tn = (t - 1) / dt;
+    return tn * tn + tn + tn + 1;
+  }
+  return 0;
+}
 
 function generateSine(phase: number): number {
   return Math.sin(2 * Math.PI * phase);
 }
 
-function generateSquare(phase: number, pulseWidth: number = 0.5): number {
-  return (phase % 1) < pulseWidth ? 1 : -1;
-}
-
-function generateSawtooth(phase: number): number {
-  return 2 * (phase % 1) - 1;
-}
-
-function generateTriangle(phase: number): number {
+function generateSquare(phase: number, pulseWidth: number = 0.5, dt: number = 0): number {
   const t = phase % 1;
-  return 4 * Math.abs(t - 0.5) - 1;
+  let sample = t < pulseWidth ? 1 : -1;
+  if (dt > 0) {
+    sample += polyBlep(t, dt);
+    sample -= polyBlep((t - pulseWidth + 1) % 1, dt);
+  }
+  return sample;
+}
+
+function generateSawtooth(phase: number, dt: number = 0): number {
+  const t = phase % 1;
+  let sample = 2 * t - 1;
+  if (dt > 0) {
+    sample -= polyBlep(t, dt);
+  }
+  return sample;
+}
+
+function polyBlamp(t: number, dt: number): number {
+  if (t < dt) {
+    const tn = t / dt;
+    return -dt * (tn * tn * tn / 3 - tn * tn / 2 + tn - 1.0 / 3.0);
+  } else if (t > 1 - dt) {
+    const tn = (t - 1) / dt;
+    return dt * (tn * tn * tn / 3 + tn * tn / 2 + tn + 1.0 / 3.0);
+  }
+  return 0;
+}
+
+function generateTriangle(phase: number, dt: number = 0): number {
+  const t = phase % 1;
+  let sample = 4 * Math.abs(t - 0.5) - 1;
+  if (dt > 0) {
+    sample += polyBlamp(t, dt) * 4;
+    sample += polyBlamp((t + 0.5) % 1, dt) * -4;
+  }
+  return sample;
 }
 
 function generateNoise(rng: SeededRandom): number {
   return rng.next() * 2 - 1;
 }
 
-function generatePulse(phase: number, width: number): number {
-  return (phase % 1) < width ? 1 : -1;
+function generatePulse(phase: number, width: number, dt: number = 0): number {
+  return generateSquare(phase, width, dt);
 }
 
 function generateOscillator(
   type: OscillatorType,
   phase: number,
   rng: SeededRandom,
-  pulseWidth: number = 0.5
+  pulseWidth: number = 0.5,
+  dt: number = 0
 ): number {
   switch (type) {
     case 'sine': return generateSine(phase);
-    case 'square': return generateSquare(phase, pulseWidth);
-    case 'sawtooth': return generateSawtooth(phase);
-    case 'triangle': return generateTriangle(phase);
+    case 'square': return generateSquare(phase, pulseWidth, dt);
+    case 'sawtooth': return generateSawtooth(phase, dt);
+    case 'triangle': return generateTriangle(phase, dt);
     case 'noise': return generateNoise(rng);
-    case 'pulse': return generatePulse(phase, pulseWidth);
+    case 'pulse': return generatePulse(phase, pulseWidth, dt);
     default: return generateSine(phase);
   }
+}
+
+function softLimit(x: number): number {
+  if (Math.abs(x) < 0.7) return x;
+  const sign = x > 0 ? 1 : -1;
+  const abs = Math.abs(x);
+  return sign * (0.7 + Math.tanh((abs - 0.7) * 2) * 0.28);
 }
 
 // ============================================================================
@@ -508,60 +554,69 @@ function generateExponentialEnvelope(
   }
 }
 
-// Schroeder Reverb Implementation
+// Schroeder Reverb Implementation (improved with damping filters and longer tails)
 class SchroederReverb {
-  private combFilters: { delay: Float32Array; index: number; feedback: number }[] = [];
-  private allpassFilters: { delay: Float32Array; index: number }[] = [];
+  private combFilters: { delay: Float32Array; index: number; feedback: number; damp: number; dampState: number }[] = [];
+  private allpassFilters: { delay: Float32Array; index: number; gain: number }[] = [];
+  private preDelay: Float32Array;
+  private preDelayIndex: number = 0;
+  private preDelayLength: number;
   private sampleRate: number;
   
   constructor(sampleRate: number, roomSize: number = 0.5, damping: number = 0.5) {
     this.sampleRate = sampleRate;
     
-    // Comb filter delay times (prime numbers for less metallic sound)
-    const combDelays = [1557, 1617, 1491, 1422, 1277, 1356].map(d => 
-      Math.floor(d * roomSize * sampleRate / 44100)
+    this.preDelayLength = Math.floor(sampleRate * 0.012);
+    this.preDelay = new Float32Array(Math.max(1, this.preDelayLength));
+    
+    const combDelays = [2281, 2467, 2647, 2803, 2999, 3169, 3373, 3547].map(d => 
+      Math.max(1, Math.floor(d * roomSize * sampleRate / 44100))
     );
     
-    // Allpass delay times
-    const allpassDelays = [225, 556, 441].map(d => 
-      Math.floor(d * sampleRate / 44100)
+    const allpassDelays = [347, 521, 797, 1117].map(d => 
+      Math.max(1, Math.floor(d * sampleRate / 44100))
     );
     
-    // Initialize comb filters
+    const feedback = Math.min(0.95, 0.80 + roomSize * 0.15 - damping * 0.15);
     for (const delay of combDelays) {
       this.combFilters.push({
         delay: new Float32Array(delay),
         index: 0,
-        feedback: 0.84 - damping * 0.25,
+        feedback,
+        damp: 0.2 + damping * 0.4,
+        dampState: 0,
       });
     }
     
-    // Initialize allpass filters
-    for (const delay of allpassDelays) {
+    for (let i = 0; i < allpassDelays.length; i++) {
       this.allpassFilters.push({
-        delay: new Float32Array(delay),
+        delay: new Float32Array(allpassDelays[i]),
         index: 0,
+        gain: 0.5,
       });
     }
   }
   
   process(input: number, wet: number = 0.3): number {
-    // Parallel comb filters
+    let preDelayed = this.preDelay[this.preDelayIndex];
+    this.preDelay[this.preDelayIndex] = input;
+    this.preDelayIndex = (this.preDelayIndex + 1) % this.preDelayLength;
+    
     let combOutput = 0;
     for (const comb of this.combFilters) {
       const delayed = comb.delay[comb.index];
-      comb.delay[comb.index] = input + delayed * comb.feedback;
+      comb.dampState = delayed * (1 - comb.damp) + comb.dampState * comb.damp;
+      comb.delay[comb.index] = preDelayed + comb.dampState * comb.feedback;
       comb.index = (comb.index + 1) % comb.delay.length;
       combOutput += delayed;
     }
     combOutput /= this.combFilters.length;
     
-    // Series allpass filters
     let output = combOutput;
     for (const allpass of this.allpassFilters) {
       const delayed = allpass.delay[allpass.index];
-      const temp = -0.5 * output + delayed;
-      allpass.delay[allpass.index] = output + 0.5 * delayed;
+      const temp = -allpass.gain * output + delayed;
+      allpass.delay[allpass.index] = output + allpass.gain * delayed;
       allpass.index = (allpass.index + 1) % allpass.delay.length;
       output = temp;
     }
@@ -665,7 +720,6 @@ function oversample2x(samples: Float32Array): Float32Array {
   const output = new Float32Array(samples.length * 2);
   for (let i = 0; i < samples.length; i++) {
     output[i * 2] = samples[i];
-    // Linear interpolation for intermediate sample
     if (i < samples.length - 1) {
       output[i * 2 + 1] = (samples[i] + samples[i + 1]) * 0.5;
     } else {
@@ -678,23 +732,26 @@ function oversample2x(samples: Float32Array): Float32Array {
 function downsample2x(samples: Float32Array): Float32Array {
   const output = new Float32Array(Math.floor(samples.length / 2));
   
-  // Apply 4-tap FIR anti-aliasing filter before decimation
-  // Coefficients for a simple windowed-sinc low-pass filter
-  const coeffs = [0.1, 0.4, 0.4, 0.1]; // Approximate half-band filter
+  const coeffs = [
+    -0.0080, 0.0, 0.0488, 0.0, -0.1562, 0.0, 0.6152,
+    1.0,
+    0.6152, 0.0, -0.1562, 0.0, 0.0488, 0.0, -0.0080,
+  ];
+  const halfLen = Math.floor(coeffs.length / 2);
+  const normFactor = 1 / coeffs.reduce((a, b) => a + Math.abs(b), 0) * 2;
   
   for (let i = 0; i < output.length; i++) {
-    const srcIdx = i * 2;
+    const center = i * 2;
     let sum = 0;
     
-    // Apply FIR filter centered on the output sample
     for (let j = 0; j < coeffs.length; j++) {
-      const readIdx = srcIdx - 1 + j;
+      const readIdx = center - halfLen + j;
       if (readIdx >= 0 && readIdx < samples.length) {
         sum += samples[readIdx] * coeffs[j];
       }
     }
     
-    output[i] = sum;
+    output[i] = sum * normFactor;
   }
   
   return output;
@@ -989,74 +1046,87 @@ export function synthesizeBass(
   const baseFreq = getNoteFrequency(params.note, params.octave);
   const { type, filter, distortion = 0, subOscMix = 0.3 } = params;
 
-  // Main filter
   const mainFilter = new BiquadFilter();
   
-  // For 808, add sub oscillator
   const useSubOsc = type === '808' || type === 'sub';
+  
+  let phaseAcc = 0;
+  let phaseAcc2 = 0;
+  let phaseAcc3 = 0;
+  let phase808Acc = 0;
+  let modPhaseAcc = 0;
   
   for (let i = 0; i < samples; i++) {
     const t = i / sampleRate;
-    const phase = baseFreq * t;
+    const baseDt = baseFreq / sampleRate;
+    phaseAcc += baseDt;
+    if (phaseAcc > 1e6) phaseAcc -= Math.floor(phaseAcc);
     
-    // Filter envelope
     const filterEnv = generateEnvelope(filter.envelope, t, null, sampleRate);
     const filterCutoff = filter.cutoff + filter.envAmount * filterEnv * filter.cutoff;
     mainFilter.setParams(filter.type, clamp(filterCutoff, 20, 20000), filter.resonance, sampleRate);
     
-    // Amplitude envelope
-    const ampEnv = generateADEnvelope(0.01, duration - 0.01, t);
+    const noteOffTime = Math.max(duration * 0.85, duration - 0.08);
+    const ampEnv = generateADEnvelope(0.005, noteOffTime, t);
     
     let sample = 0;
     
     switch (type) {
       case 'sub':
-        // Pure sub bass
-        sample = generateSine(phase);
+        sample = generateSine(phaseAcc);
         break;
         
-      case '808':
-        // 808-style: sine with pitch envelope + distortion
+      case '808': {
         const pitchEnv808 = Math.exp(-t / 0.1);
         const freq808 = baseFreq + baseFreq * 2 * pitchEnv808;
-        sample = generateSine(freq808 * t);
+        const dt808 = freq808 / sampleRate;
+        phase808Acc += dt808;
+        if (phase808Acc > 1e6) phase808Acc -= Math.floor(phase808Acc);
+        sample = generateSine(phase808Acc);
         if (distortion > 0) {
           sample = softClip(sample * (1 + distortion * 3), 1);
         }
         break;
+      }
         
       case 'synth':
-        // Saw bass
-        sample = generateSawtooth(phase);
+        sample = generateSawtooth(phaseAcc, baseDt);
         sample = mainFilter.process(sample);
         break;
         
-      case 'reese':
-        // Detuned saws (reese bass)
-        sample = generateSawtooth(phase);
-        sample += generateSawtooth(phase * 1.005) * 0.7;
-        sample += generateSawtooth(phase * 0.995) * 0.7;
+      case 'reese': {
+        const dt2 = baseFreq * 1.005 / sampleRate;
+        const dt3 = baseFreq * 0.995 / sampleRate;
+        phaseAcc2 += dt2;
+        phaseAcc3 += dt3;
+        if (phaseAcc2 > 1e6) phaseAcc2 -= Math.floor(phaseAcc2);
+        if (phaseAcc3 > 1e6) phaseAcc3 -= Math.floor(phaseAcc3);
+        sample = generateSawtooth(phaseAcc, baseDt);
+        sample += generateSawtooth(phaseAcc2, dt2) * 0.7;
+        sample += generateSawtooth(phaseAcc3, dt3) * 0.7;
         sample = mainFilter.process(sample / 2);
         break;
+      }
         
-      case 'growl':
-        // FM growl bass
-        const modPhase = phase * 0.5;
-        const modAmount = 2 + Math.sin(2 * Math.PI * t * 4) * 1.5; // LFO on FM
-        sample = generateSine(phase + generateSine(modPhase) * modAmount);
+      case 'growl': {
+        const modDt = baseFreq * 0.5 / sampleRate;
+        modPhaseAcc += modDt;
+        if (modPhaseAcc > 1e6) modPhaseAcc -= Math.floor(modPhaseAcc);
+        const modAmount = 2 + Math.sin(2 * Math.PI * t * 4) * 1.5;
+        sample = generateSine(phaseAcc + generateSine(modPhaseAcc) * modAmount);
         sample = mainFilter.process(sample);
         if (distortion > 0) {
           sample = softClip(sample * (1 + distortion * 2), 1);
         }
         break;
+      }
     }
     
-    // Add sub oscillator
     if (useSubOsc && type !== 'sub') {
-      sample = sample * (1 - subOscMix) + generateSine(phase / 2) * subOscMix;
+      sample = sample * (1 - subOscMix) + generateSine(phaseAcc * 0.5) * subOscMix;
     }
     
-    output[i] = sample * ampEnv;
+    output[i] = softLimit(sample * ampEnv);
   }
 
   return output;
@@ -1080,23 +1150,26 @@ export function synthesizeSynth(
   const baseFreq = getNoteFrequency(note, octave);
   const { oscillators, filter, ampEnvelope, lfo, unison } = params;
 
-  // Main filter
   const mainFilter = new BiquadFilter();
   
-  // Unison detuning
   const unisonVoices = unison?.voices || 1;
   const unisonDetune = unison?.detune || 0;
+  
+  const totalOscPhases: number[][] = [];
+  for (let v = 0; v < unisonVoices; v++) {
+    totalOscPhases.push(new Array(oscillators.length).fill(0));
+  }
+  
+  const noteOffTime = Math.max(duration * 0.85, duration - 0.1);
   
   for (let i = 0; i < samples; i++) {
     const t = i / sampleRate;
     
-    // LFO
     let lfoValue = 0;
     if (lfo) {
       lfoValue = Math.sin(2 * Math.PI * lfo.rate * t) * lfo.depth;
     }
     
-    // Filter envelope
     const filterEnv = generateEnvelope(filter.envelope, t, null, sampleRate);
     let filterCutoff = filter.cutoff + filter.envAmount * filterEnv * filter.cutoff;
     if (lfo?.target === 'filter') {
@@ -1104,51 +1177,48 @@ export function synthesizeSynth(
     }
     mainFilter.setParams(filter.type, clamp(filterCutoff, 20, 20000), filter.resonance, sampleRate);
     
-    // Amplitude envelope
-    const ampEnv = generateEnvelope(ampEnvelope, t, duration * 0.8, sampleRate);
+    const ampEnv = generateEnvelope(ampEnvelope, t, noteOffTime, sampleRate);
     
     let sample = 0;
     
-    // Generate oscillators with unison
     for (let v = 0; v < unisonVoices; v++) {
-      const detuneAmount = unisonVoices > 1 
+      const detuneAmt = unisonVoices > 1 
         ? (v / (unisonVoices - 1) - 0.5) * 2 * unisonDetune
         : 0;
-      const voiceFreq = baseFreq * Math.pow(2, detuneAmount / 1200); // Cents to ratio
+      const voiceFreq = baseFreq * Math.pow(2, detuneAmt / 1200);
       
       let pitchMod = 1;
       if (lfo?.target === 'pitch') {
-        pitchMod = 1 + lfoValue * 0.1; // Subtle pitch mod
+        pitchMod = 1 + lfoValue * 0.1;
       }
       
-      for (const osc of oscillators) {
-        const oscFreq = voiceFreq * pitchMod * Math.pow(2, osc.detune / 1200);
-        const phase = oscFreq * t;
+      for (let oIdx = 0; oIdx < oscillators.length; oIdx++) {
+        const osc = oscillators[oIdx];
+        let oscFreq = voiceFreq * pitchMod * Math.pow(2, osc.detune / 1200);
         
-        // Pitch envelope for oscillator
-        let freqWithPitchEnv = oscFreq;
         if (osc.pitchEnvelope) {
           const pitchEnv = Math.exp(-t / osc.pitchEnvelope.decay);
-          freqWithPitchEnv *= Math.pow(2, osc.pitchEnvelope.amount * pitchEnv / 12);
+          oscFreq *= Math.pow(2, osc.pitchEnvelope.amount * pitchEnv / 12);
         }
         
-        sample += generateOscillator(osc.type, freqWithPitchEnv * t, rng, osc.pulseWidth);
+        const dt = oscFreq / sampleRate;
+        totalOscPhases[v][oIdx] += dt;
+        if (totalOscPhases[v][oIdx] > 1e6) totalOscPhases[v][oIdx] -= Math.floor(totalOscPhases[v][oIdx]);
+        
+        sample += generateOscillator(osc.type, totalOscPhases[v][oIdx], rng, osc.pulseWidth, dt);
       }
     }
     
-    // Normalize by voice count
     sample /= (unisonVoices * oscillators.length);
     
-    // Apply filter
     sample = mainFilter.process(sample);
     
-    // Apply amplitude LFO (tremolo)
     let ampMod = 1;
     if (lfo?.target === 'amplitude') {
       ampMod = 1 + lfoValue * 0.3;
     }
     
-    output[i] = sample * ampEnv * ampMod;
+    output[i] = softLimit(sample * ampEnv * ampMod);
   }
 
   return output;
@@ -1609,109 +1679,118 @@ export class SynthesizerEngine {
       warmthAmount = 0.35;
     }
     
-    // Initialize professional audio processors at oversampled rate
     const ladderFilter = new LadderFilter();
     const dcBlocker = new DCBlocker();
-    const reverb = new SchroederReverb(internalSampleRate, 0.5, 0.4);
+    const reverb = new SchroederReverb(internalSampleRate, 0.6, 0.35);
     const chorus = new StereoChorus(internalSampleRate);
     
-    const cutoff = 500 + brightness * 7500;
-    const resonance = 0.2 + brightness * 0.6;
+    const cutoff = 800 + brightness * 6000;
+    const resonance = 0.15 + brightness * 0.45;
     
-    // Envelope parameters with exponential curves
-    const ampEnv: EnvelopeParams = { attack, decay: decay * 0.3, sustain, release: decay };
-    const filterEnv: EnvelopeParams = { attack: attack * 0.5, decay: decay * 0.5, sustain: 0.5, release: decay };
+    const releaseTime = Math.max(0.05, decay * 0.4);
+    const noteOffTime = Math.max(duration * 0.85, duration - releaseTime - 0.02);
+    const ampEnv: EnvelopeParams = { attack: Math.max(0.003, attack), decay: decay * 0.4, sustain, release: releaseTime };
+    const filterEnv: EnvelopeParams = { attack: Math.max(0.003, attack * 0.5), decay: decay * 0.6, sustain: 0.4, release: releaseTime * 1.2 };
     
-    // Get harmonic structure
     const harmonics = HARMONIC_STRUCTURES[harmonicType] || HARMONIC_STRUCTURES.piano;
     
-    // Generate at oversampled rate for anti-aliasing
+    const phaseAccum: number[] = new Array(Math.max(1, unisonVoices)).fill(0);
+    const phaseAccum2: number[] = new Array(Math.max(1, unisonVoices)).fill(0);
+    const dt = 1 / internalSampleRate;
+    
     for (let i = 0; i < samples; i++) {
       const t = i / internalSampleRate;
       
-      // Vibrato LFO
       let pitchMod = 1;
       if (vibratoRate > 0 && t > attack) {
-        const vibratoEnv = Math.min(1, (t - attack) / 0.5);
+        const vibratoEnv = Math.min(1, (t - attack) / 0.3);
         pitchMod = 1 + Math.sin(2 * Math.PI * vibratoRate * t) * vibratoDepth * vibratoEnv;
       }
       
-      // Generate sound
       let sample = 0;
       
       if (useHarmonics) {
-        // Use harmonic overtone synthesis for realistic timbres
-        sample = generateWithHarmonics(baseFreq * pitchMod, t, harmonics);
+        const timeDecay = Math.exp(-t * 0.3);
+        const dynamicHarmonics = harmonics.map((h, idx) => ({
+          ...h,
+          amplitude: h.amplitude * (idx === 0 ? 1 : (0.5 + 0.5 * timeDecay)),
+        }));
         
-        // Add unison voices if needed
-        if (unisonVoices > 1) {
-          for (let v = 1; v < unisonVoices; v++) {
-            const detuneRatio = Math.pow(2, ((v - unisonVoices / 2) * unisonDetune) / 1200);
-            sample += generateWithHarmonics(baseFreq * pitchMod * detuneRatio, t, harmonics) * 0.7;
-          }
-          sample /= unisonVoices;
-        }
-      } else {
-        // Use oscillator synthesis with unison
         for (let v = 0; v < Math.max(1, unisonVoices); v++) {
           const detuneRatio = unisonVoices > 1 
-            ? Math.pow(2, ((v - unisonVoices / 2) * unisonDetune) / 1200)
+            ? Math.pow(2, ((v - (unisonVoices - 1) / 2) * unisonDetune) / 1200)
             : 1;
           const voiceFreq = baseFreq * pitchMod * detuneRatio;
-          const phase = voiceFreq * t;
+          phaseAccum[v] += voiceFreq * dt;
+          if (phaseAccum[v] > 1e6) phaseAccum[v] -= Math.floor(phaseAccum[v]);
           
-          sample += generateOscillator(oscType, phase, rng);
-          sample += generateOscillator(secondOscType, phase * Math.pow(2, detuneAmount / 1200), rng) * 0.5;
+          let voiceSample = 0;
+          for (const h of dynamicHarmonics) {
+            const hFreq = voiceFreq * h.ratio;
+            if (hFreq > internalSampleRate * 0.45) continue;
+            voiceSample += Math.sin(2 * Math.PI * phaseAccum[v] * h.ratio) * h.amplitude;
+          }
+          sample += voiceSample * (v === 0 ? 1 : 0.65);
         }
-        sample /= Math.max(1, unisonVoices) * 1.5;
+        if (unisonVoices > 1) sample /= (1 + (unisonVoices - 1) * 0.65);
+      } else {
+        const voiceCount = Math.max(1, unisonVoices);
+        for (let v = 0; v < voiceCount; v++) {
+          const detuneRatio = voiceCount > 1 
+            ? Math.pow(2, ((v - (voiceCount - 1) / 2) * unisonDetune) / 1200)
+            : 1;
+          const voiceFreq = baseFreq * pitchMod * detuneRatio;
+          const voiceDt = voiceFreq / internalSampleRate;
+          
+          phaseAccum[v] += voiceDt;
+          if (phaseAccum[v] > 1e6) phaseAccum[v] -= Math.floor(phaseAccum[v]);
+          
+          const freq2 = voiceFreq * Math.pow(2, detuneAmount / 1200);
+          const dt2 = freq2 / internalSampleRate;
+          phaseAccum2[v] += dt2;
+          if (phaseAccum2[v] > 1e6) phaseAccum2[v] -= Math.floor(phaseAccum2[v]);
+          
+          sample += generateOscillator(oscType, phaseAccum[v], rng, 0.5, voiceDt);
+          sample += generateOscillator(secondOscType, phaseAccum2[v], rng, 0.5, dt2) * 0.4;
+        }
+        sample /= voiceCount * 1.4;
       }
       
-      // Apply exponential amplitude envelope
-      const ampEnvValue = generateExponentialEnvelope(ampEnv, t, duration * 0.8, 2.5);
+      const ampEnvValue = generateExponentialEnvelope(ampEnv, t, noteOffTime, 2.5);
       
-      // Apply filter with envelope modulation at oversampled rate
       const filterEnvValue = generateExponentialEnvelope(filterEnv, t, null, 2);
-      const modulatedCutoff = cutoff + filterEnvValue * cutoff * 0.5;
-      ladderFilter.setCutoff(clamp(modulatedCutoff, 20, 18000), resonance, internalSampleRate);
+      const modulatedCutoff = cutoff * (0.6 + filterEnvValue * 0.8);
+      ladderFilter.setCutoff(clamp(modulatedCutoff, 30, internalSampleRate * 0.42), resonance, internalSampleRate);
       sample = ladderFilter.process(sample);
       
-      // Apply analog warmth (nonlinear, benefits from oversampling)
       if (warmthAmount > 0) {
-        sample = analogWarmth(sample, warmthAmount, 0.5);
+        sample = analogWarmth(sample, warmthAmount * 0.7, 0.4);
       }
       
-      // Apply reverb
       if (reverbAmount > 0) {
-        sample = reverb.process(sample, reverbAmount);
+        sample = reverb.process(sample, reverbAmount * 0.8);
       }
       
-      // Apply chorus for stereo width - store stereo result for width processing
       let sampleLeft = sample;
       let sampleRight = sample;
       if (chorusAmount > 0) {
-        const stereoResult = chorus.process(sample, 0.5, 0.5, chorusAmount);
+        const stereoResult = chorus.process(sample, 0.4, 0.4, chorusAmount * 0.7);
         sampleLeft = stereoResult.left;
         sampleRight = stereoResult.right;
       }
       
-      // Apply stereo width control
       if (stereoWidthAmount !== 1.0) {
         const widthResult = stereoWidth(sampleLeft, sampleRight, stereoWidthAmount);
         sampleLeft = widthResult.left;
         sampleRight = widthResult.right;
       }
       
-      // Sum to mono for final output (system outputs mono audio)
       sample = (sampleLeft + sampleRight) * 0.5;
-      
-      // DC blocking
       sample = dcBlocker.process(sample);
       
-      // Final amplitude and velocity - store in oversampled buffer
-      oversampledOutput[i] = clamp(sample * ampEnvValue * velocityGain * 0.8, -1, 1);
+      oversampledOutput[i] = softLimit(sample * ampEnvValue * velocityGain * 0.75);
     }
     
-    // Downsample from 2x to target sample rate with anti-aliasing
     const output = downsample2x(oversampledOutput);
     
     return output;
