@@ -39,6 +39,11 @@ class QueryTelemetry {
   private queriesSinceLastSample = 0;
   private trackingStartTime = Date.now(); // Fixed timestamp for QPS calculation
 
+  // Connection warmup grace period: first queries include pool/WebSocket setup
+  // latency that isn't representative of actual query performance
+  private readonly warmupGraceMs = 10_000; // 10 seconds after first query
+  private firstQueryTime: number | null = null;
+
   private hashSql(sql: string): string {
     // Cryptographic hash for SQL identification - prevents collision spoofing
     const hash = createHash('sha256').update(sql).digest('hex');
@@ -49,11 +54,17 @@ class QueryTelemetry {
     const now = Date.now();
     const sqlHash = this.hashSql(sql);
 
+    if (this.firstQueryTime === null) {
+      this.firstQueryTime = now;
+    }
+
+    const isWarmingUp = (now - this.firstQueryTime) < this.warmupGraceMs;
+
     // Update running aggregates (always track for accurate lifetime stats)
     this.lifetimeTotal++;
     this.runningSum += duration;
 
-    if (duration > 100) {
+    if (duration > 100 && !isWarmingUp) {
       this.lifetimeSlow++;
       const isDev = process.env.NODE_ENV === 'development';
       const sqlPreview = isDev ? sql.substring(0, 200).replace(/\s+/g, ' ') : '';
