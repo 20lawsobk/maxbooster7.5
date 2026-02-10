@@ -33,3 +33,6 @@ electron-out/
 dist-installers/
 dist-portable/
 *.keystore
+
+# Rust
+boosterstate/target/

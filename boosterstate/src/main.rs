@@ -390,7 +390,7 @@ async fn main() -> anyhow::Result<()> {
         .layer(CorsLayer::permissive())
         .with_state(state);
 
-    let addr = format!("0.0.0.0:{}", port);
+    let addr = format!("127.0.0.1:{}", port);
     println!("BoosterState listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;

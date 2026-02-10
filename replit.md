@@ -1,55 +1,48 @@
 # Max Booster - AI-Powered Music Career Management Platform
 
 ## Overview
-Max Booster is an AI-powered platform designed for musicians, producers, and labels, offering a comprehensive solution for music career management. It integrates AI-assisted music production, global distribution, social media management, a beat marketplace, and advanced analytics. The platform's core purpose is to serve as a one-stop shop for artists to grow their careers, maximize market potential, and streamline operations from creative AI tools to performance tracking.
+Max Booster is a comprehensive music career management platform with AI-powered features including a professional studio, social media management, analytics, distribution, beat marketplace, and more.
 
-## User Preferences
-I prefer clear and concise communication.
-I value iterative development and frequent updates.
-I like detailed explanations for complex features.
-Do not make changes to folder `shared/`.
-Do not make changes to file `shared/schema.ts`.
-Prioritize robust, scalable, and secure solutions.
-When making changes, always consider the impact on performance and user experience.
-Always ask for confirmation before making significant architectural changes or adding new external dependencies.
+## Architecture
+- **Frontend**: React + Vite (TypeScript) in `client/`
+- **Backend**: Express.js (TypeScript) in `server/`, served via `tsx` in dev and bundled with esbuild for production
+- **State Service**: Rust-based key-value store (`boosterstate/`) on port 9877, used as a Redis replacement for sessions, queues, and caching
+- **Database**: PostgreSQL via Drizzle ORM, schema in `shared/schema.ts`
+- **Build**: Vite for frontend, esbuild for server bundling (`script/build.ts`)
 
-## System Architecture
-Max Booster employs a modern web stack consisting of a React 18 frontend with TypeScript, Vite, TailwindCSS, and shadcn/ui. The backend is built with Express.js in TypeScript. Data persistence is managed by PostgreSQL with Drizzle ORM. Session management, caching, queues, and distributed tasks are handled by BoosterState — a custom Rust-based WAL-backed sharded in-memory store (replaces Redis/BullMQ). The architecture is conceptually microservices-oriented, prioritizing robust error handling, scalability through asynchronous operations, and data integrity.
+## Project Structure
+```
+client/          - React frontend (Vite)
+server/          - Express backend
+  routes/        - API route handlers
+  services/      - Business logic services
+  safety/        - Security middleware
+  monitoring/    - Metrics and alerting
+  realtime/      - WebSocket services
+shared/          - Shared types and DB schema
+boosterstate/    - Rust KV store (Axum)
+script/          - Build scripts
+```
 
-### UI/UX Decisions
-The frontend uses shadcn/ui for a modern, accessible, and intuitive user experience. The design principles are inspired by professional DAWs like Studio One, featuring dynamic layout systems with `useDynamicLayout`, `useFluidLayout`, `DynamicGrid`, `DynamicFlex`, and `DynamicContainer` for responsive design across various screen sizes. The platform also supports Progressive Web App (PWA) features including an install banner, deep linking, and service worker caching.
+## Key Configuration
+- Frontend dev server: port 5000 (via Express + Vite middleware in dev)
+- BoosterState: port 9877 (localhost)
+- Database: PostgreSQL via DATABASE_URL env var
+- Drizzle config: `drizzle.config.ts`
 
-### Technical Implementations
-- **Professional DAW Engine Architecture**: A complete 10-engine DAW core (TransportEngine, TimelineEngine, AutomationEngine, RoutingEngine, MIDIEngine, NonDestructiveAudio, PluginStateManager, MusicalIntelligence, ProjectManager, DAWCore) provides sample-accurate timing, advanced editing, and comprehensive audio processing capabilities.
-- **FlowState Studio**: A revolutionary unified DAW interface that combines all AI Studio features with an innovative UX. It features a 3D spatial workspace, GPU-accelerated spectral visualizers, adaptive UI modes (Create/Record/Mix/Master/Perform), an AI Co-Producer for context-aware suggestions, and real-time collaboration presence. It also includes comprehensive plugin and instrument browsers, a professional timeline ruler, and extensive keyboard shortcuts.
-- **Video Creation**: Utilizes an in-house WebGL render engine for custom video generation with advanced visual effects.
-- **Distribution**: Integrates with LabelGrid for global music distribution, Content ID, sync licensing, and automated royalty splits.
-- **Social Media Management**: Provides tools for approval workflows, bulk scheduling, unified inbox, competitor benchmarking, and social listening via OAuth connections to various platforms.
-- **Beat Marketplace**: Features license templates, customizable storefronts, producer analytics, and zero-commission checkout.
-- **Analytics Dashboard**: Offers multi-platform data ingestion and analysis (Spotify, Apple Music, YouTube, TikTok, Instagram) for performance tracking and insights.
-- **Payment & Billing**: Implements Stripe Connect for split payments, instant payouts, and automated invoicing.
-- **User Retention**: Incorporates guided onboarding, progressive feature discovery, an achievement system, and an AI career coach.
-- **Security Hardening**: Includes session fixation prevention, rate limiting, token encryption, and input validation.
-- **KYC/Identity Verification**: Provides an end-to-end workflow for identity document submission.
-- **HyperLearning Engine**: An AI-powered system for analyzing social media performance, identifying micro-patterns, and providing predictive modeling for content optimization.
-- **Advanced AI Engines**: Custom-built, in-house AI engines providing GPT-5.2 level capabilities for text-to-music generation (Advanced Music AI Engine) and social media content creation with platform-specific optimization and audience psychology modeling (Advanced Social AI Engine).
+## Development
+- Dev command: `./boosterstate/target/release/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts`
+- Build: `npm run build` (builds both frontend and server)
+- DB schema push: `npm run db:push`
 
-### Performance Optimization System (v3.0)
-- **Vite Build Optimization**: Manual chunk splitting separates vendor-react, vendor-ui, vendor-animation, vendor-state, vendor-utils, and studio into parallel-loadable chunks. Module preload polyfill disabled for modern browsers.
-- **Smart Prefetching**: `client/src/lib/prefetch.ts` provides intelligent route+data prefetching with hover detection (65ms delay), adjacent route preloading based on current location, and API data prefetching for 7 key routes.
-- **Server-Side API Cache**: `server/middleware/apiCache.ts` provides in-memory response caching with ETag support, 304 Not Modified responses, per-user cache isolation, and automatic invalidation on mutations. 8 high-traffic routes cached with configurable TTLs (10-120s).
-- **Instant Page Transitions**: Skeleton-based loading states via `client/src/components/ui/instant-skeleton.tsx` with page/card/list/table variants replace spinner during Suspense transitions.
-- **Static Asset Caching**: Production builds use immutable cache headers (1 year) for hashed assets, proper ETag/Last-Modified headers, and compression via Express middleware.
-- **Audio Streaming**: HTTP Range request support with in-memory LRU caching for faster audio playback on Projects page.
+## Required Environment Variables (for full functionality)
+- `DATABASE_URL` - PostgreSQL connection string (auto-provisioned)
+- `SESSION_SECRET` - Session encryption key (has dev fallback)
+- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` - Payment processing
+- `SENDGRID_API_KEY` - Email delivery
 
-## External Dependencies
-- **Stripe**: Payment processing, including Stripe Connect.
-- **SendGrid**: Transactional email delivery.
-- **BoosterState**: Custom Rust-based in-memory store (WAL-backed, sharded) for session storage, caching, queues, rate limiting, and sorted sets. Binary at `boosterstate/target/release/boosterstate`, HTTP API on port 9877. Node.js client at `server/lib/boosterStateClient.ts`.
-- **Sentry**: Error tracking and monitoring.
-- **LabelGrid**: Music distribution, content ID, and sync licensing.
-- **Replit Object Storage**: File asset storage.
-- **Meta Graph API**: Unified Facebook and Instagram integration.
-- **music-metadata library**: Audio metadata extraction.
-- **Y.js**: Real-time collaboration in the AI Studio.
-- **OAuth connections for Social Media Platforms**: Meta (Facebook + Instagram), Twitter/X, YouTube, Google, LinkedIn, Google Business, Threads, TikTok.
+## Optional Environment Variables
+- `SENTRY_DSN` - Error tracking
+- Various social media API keys (Twitter, Facebook, Instagram, TikTok, YouTube)
+- `LABELGRID_API_TOKEN` - Distribution features
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` - Admin bootstrap
