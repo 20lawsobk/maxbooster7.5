@@ -304,7 +304,7 @@ export class StorefrontService {
           },
         }),
         db.query.listings.findMany({
-          where: and(eq(listings.ownerId, storefront.userId), eq(listings.isPublished, true)),
+          where: and(eq(listings.userId, storefront.userId), eq(listings.isPublished, true)),
           orderBy: [desc(listings.createdAt)],
           limit: 50,
         }),
@@ -313,7 +313,7 @@ export class StorefrontService {
             eq(membershipTiers.storefrontId, storefront.id),
             eq(membershipTiers.isActive, true)
           ),
-          orderBy: [membershipTiers.sortOrder],
+          orderBy: [membershipTiers.createdAt],
         }),
         storefront.templateId
           ? db.query.storefrontTemplates.findFirst({
@@ -874,7 +874,7 @@ export class StorefrontService {
     try {
       const tiers = await db.query.membershipTiers.findMany({
         where: eq(membershipTiers.storefrontId, storefrontId),
-        orderBy: [membershipTiers.sortOrder],
+        orderBy: [membershipTiers.createdAt],
       });
 
       return tiers;
@@ -899,7 +899,7 @@ export class StorefrontService {
 
       const storefrontListings = await db.query.listings.findMany({
         where: and(
-          eq(listings.ownerId, storefront.userId),
+          eq(listings.userId, storefront.userId),
           eq(listings.isPublished, true)
         ),
         orderBy: [desc(listings.createdAt)],
@@ -1024,7 +1024,7 @@ export class StorefrontService {
           },
         }),
         db.query.listings.findMany({
-          where: and(eq(listings.ownerId, storefront.userId), eq(listings.isPublished, true)),
+          where: and(eq(listings.userId, storefront.userId), eq(listings.isPublished, true)),
           orderBy: [desc(listings.createdAt)],
           limit: 50,
         }),
