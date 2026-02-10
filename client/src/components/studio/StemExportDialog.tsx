@@ -74,10 +74,11 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
   const [exportJobId, setExportJobId] = useState<string | null>(null);
   const [exportStatus, setExportStatus] = useState<StemExport | null>(null);
 
-  const { data: tracks = [], isLoading: isLoadingTracks } = useQuery<Track[]>({
+  const { data: tracksData, isLoading: isLoadingTracks } = useQuery<Track[]>({
     queryKey: ['/api/studio/projects', projectId, 'tracks'],
     enabled: !!projectId && open,
   });
+  const tracks: Track[] = Array.isArray(tracksData) ? tracksData : [];
 
   useEffect(() => {
     if (open && tracks.length > 0) {
