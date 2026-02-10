@@ -45,15 +45,108 @@ interface GenerationResult {
   generatedChords?: any[];
 }
 
-const INSTRUMENT_TYPES = [
+const INSTRUMENT_GROUPS = [
   { id: 'drums', name: 'Drums', icon: Drum, color: 'from-amber-500 to-orange-500', category: 'drums' as const },
   { id: 'bass', name: 'Bass', icon: Guitar, color: 'from-purple-500 to-violet-500', category: 'melodic' as const },
   { id: 'keys', name: 'Keys/Piano', icon: Piano, color: 'from-blue-500 to-cyan-500', category: 'melodic' as const },
   { id: 'synth', name: 'Synth', icon: Waves, color: 'from-pink-500 to-rose-500', category: 'melodic' as const },
   { id: 'guitar', name: 'Guitar', icon: Guitar, color: 'from-emerald-500 to-teal-500', category: 'melodic' as const },
-  { id: 'vocal', name: 'Vocal Chops', icon: Mic2, color: 'from-rose-500 to-red-500', category: 'melodic' as const },
+  { id: 'strings', name: 'Strings', icon: Music, color: 'from-sky-500 to-indigo-500', category: 'melodic' as const },
+  { id: 'brass', name: 'Brass/Wind', icon: Music, color: 'from-orange-500 to-yellow-500', category: 'melodic' as const },
+  { id: 'vocal', name: 'Vocals', icon: Mic2, color: 'from-rose-500 to-red-500', category: 'melodic' as const },
+  { id: 'mallets', name: 'Mallets', icon: Music, color: 'from-teal-500 to-emerald-500', category: 'melodic' as const },
+  { id: 'ethnic', name: 'Ethnic', icon: Music, color: 'from-violet-500 to-purple-500', category: 'melodic' as const },
   { id: 'percussion', name: 'Percussion', icon: Music, color: 'from-yellow-500 to-amber-500', category: 'percussion' as const },
 ];
+
+const SPECIFIC_INSTRUMENTS: Record<string, Array<{ id: string; name: string }>> = {
+  drums: [
+    { id: 'acoustic_kit', name: 'Acoustic Kit' },
+    { id: 'electronic_kit', name: 'Electronic Kit' },
+    { id: '808_kit', name: '808 Kit' },
+    { id: '909_kit', name: '909 Kit' },
+    { id: 'trap_kit', name: 'Trap Kit' },
+    { id: 'jazz_kit', name: 'Jazz Kit' },
+    { id: 'rock_kit', name: 'Rock Kit' },
+    { id: 'lofi_kit', name: 'Lo-Fi Kit' },
+    { id: 'boombap_kit', name: 'Boom Bap Kit' },
+    { id: 'drill_kit', name: 'Drill Kit' },
+    { id: 'house_kit', name: 'House Kit' },
+    { id: 'techno_kit', name: 'Techno Kit' },
+    { id: 'dnb_kit', name: 'D&B Kit' },
+  ],
+  bass: [
+    { id: 'bass_electric', name: 'Electric Bass' },
+    { id: 'bass_acoustic', name: 'Acoustic Bass' },
+    { id: 'bass_synth', name: 'Synth Bass' },
+    { id: 'bass_808', name: '808 Bass' },
+    { id: 'bass_sub', name: 'Sub Bass' },
+  ],
+  keys: [
+    { id: 'piano', name: 'Piano' },
+    { id: 'electric_piano', name: 'Electric Piano' },
+    { id: 'organ', name: 'Organ' },
+    { id: 'harpsichord', name: 'Harpsichord' },
+    { id: 'celesta', name: 'Celesta' },
+  ],
+  synth: [
+    { id: 'synth_lead', name: 'Synth Lead' },
+    { id: 'synth_pad', name: 'Synth Pad' },
+    { id: 'synth_pluck', name: 'Synth Pluck' },
+    { id: 'synth_brass', name: 'Synth Brass' },
+  ],
+  guitar: [
+    { id: 'guitar_acoustic', name: 'Acoustic Guitar' },
+    { id: 'guitar_electric', name: 'Electric Guitar' },
+    { id: 'guitar_nylon', name: 'Nylon Guitar' },
+    { id: 'guitar_jazz', name: 'Jazz Guitar' },
+  ],
+  strings: [
+    { id: 'strings_violin', name: 'Violin' },
+    { id: 'strings_viola', name: 'Viola' },
+    { id: 'strings_cello', name: 'Cello' },
+    { id: 'strings_ensemble', name: 'String Ensemble' },
+  ],
+  brass: [
+    { id: 'brass_trumpet', name: 'Trumpet' },
+    { id: 'brass_trombone', name: 'Trombone' },
+    { id: 'brass_french_horn', name: 'French Horn' },
+    { id: 'woodwind_flute', name: 'Flute' },
+    { id: 'woodwind_saxophone', name: 'Saxophone' },
+    { id: 'woodwind_clarinet', name: 'Clarinet' },
+  ],
+  vocal: [
+    { id: 'vocal_lead', name: 'Vocal Lead' },
+    { id: 'vocal_harmony', name: 'Vocal Harmony' },
+    { id: 'vocal_choir', name: 'Choir' },
+    { id: 'vocal_whisper', name: 'Vocal Whisper' },
+  ],
+  mallets: [
+    { id: 'vibraphone', name: 'Vibraphone' },
+    { id: 'marimba', name: 'Marimba' },
+    { id: 'xylophone', name: 'Xylophone' },
+    { id: 'bells', name: 'Bells' },
+    { id: 'kalimba', name: 'Kalimba' },
+  ],
+  ethnic: [
+    { id: 'ethnic_sitar', name: 'Sitar' },
+    { id: 'ethnic_koto', name: 'Koto' },
+    { id: 'ethnic_erhu', name: 'Erhu' },
+    { id: 'ethnic_oud', name: 'Oud' },
+    { id: 'ethnic_pan_flute', name: 'Pan Flute' },
+    { id: 'ethnic_didgeridoo', name: 'Didgeridoo' },
+  ],
+  percussion: [
+    { id: 'congas', name: 'Congas' },
+    { id: 'bongos', name: 'Bongos' },
+    { id: 'djembe', name: 'Djembe' },
+    { id: 'tabla', name: 'Tabla' },
+    { id: 'cajon', name: 'Cajon' },
+    { id: 'shaker', name: 'Shaker' },
+    { id: 'tambourine', name: 'Tambourine' },
+    { id: 'cowbell', name: 'Cowbell' },
+  ],
+};
 
 const GENRE_PRESETS = [
   { id: 'trap', name: 'Trap', bpm: 140 },
@@ -97,7 +190,8 @@ export function FlowStateAIGenerate({
   projectId,
 }: FlowStateAIGenerateProps) {
   const [prompt, setPrompt] = useState('');
-  const [selectedInstrument, setSelectedInstrument] = useState(INSTRUMENT_TYPES[0]);
+  const [selectedGroup, setSelectedGroup] = useState(INSTRUMENT_GROUPS[0]);
+  const [selectedSpecific, setSelectedSpecific] = useState('acoustic_kit');
   const [selectedGenre, setSelectedGenre] = useState(GENRE_PRESETS[0]);
   const [tempo, setTempo] = useState(120);
   const [bars, setBars] = useState(4);
@@ -111,9 +205,10 @@ export function FlowStateAIGenerate({
   const generateMutation = useMutation({
     mutationFn: generateAudio,
     onSuccess: (result) => {
+      const specificName = SPECIFIC_INSTRUMENTS[selectedGroup.id]?.find(i => i.id === selectedSpecific)?.name || selectedGroup.name;
       toast({
         title: 'Generation Complete',
-        description: `Created ${selectedInstrument.name} in ${selectedGenre.name} style`,
+        description: `Created ${specificName} in ${selectedGenre.name} style`,
       });
       queryClient.invalidateQueries({ queryKey: ['studio-tracks', projectId] });
       onGenerationComplete(result);
@@ -129,8 +224,9 @@ export function FlowStateAIGenerate({
   });
 
   const handleGenerate = () => {
+    const specificName = SPECIFIC_INSTRUMENTS[selectedGroup.id]?.find(i => i.id === selectedSpecific)?.name || selectedGroup.name;
     const fullPrompt = [
-      selectedInstrument.id,
+      specificName,
       selectedGenre.name,
       prompt.trim(),
     ].filter(Boolean).join(' ');
@@ -143,8 +239,8 @@ export function FlowStateAIGenerate({
       key,
       scale,
       complexity,
-      instrumentType: selectedInstrument.id,
-      instrumentCategory: selectedInstrument.category,
+      instrumentType: selectedSpecific,
+      instrumentCategory: selectedGroup.category,
       genre: selectedGenre.id,
     });
   };
@@ -201,33 +297,52 @@ export function FlowStateAIGenerate({
               </div>
 
               <div>
-                <label className="block text-xs text-white/60 mb-2">Instrument Type</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {INSTRUMENT_TYPES.map((inst) => (
-                    <motion.button
+                <label className="block text-xs text-white/60 mb-2">Instrument Family</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {INSTRUMENT_GROUPS.map((inst) => (
+                    <button
                       key={inst.id}
-                      onClick={() => setSelectedInstrument(inst)}
+                      onClick={() => {
+                        setSelectedGroup(inst);
+                        const firstSpecific = SPECIFIC_INSTRUMENTS[inst.id]?.[0];
+                        if (firstSpecific) setSelectedSpecific(firstSpecific.id);
+                      }}
                       className={cn(
-                        "p-3 rounded-lg border text-center transition-all",
-                        selectedInstrument.id === inst.id
-                          ? "border-white/30 bg-white/10"
-                          : "border-white/5 bg-white/5 hover:bg-white/10"
+                        "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border",
+                        selectedGroup.id === inst.id
+                          ? `bg-gradient-to-r ${inst.color} border-transparent text-white`
+                          : "border-white/10 bg-white/5 hover:bg-white/10 text-white/60"
                       )}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                       disabled={generateMutation.isPending}
                     >
-                      <div className={cn(
-                        "w-8 h-8 mx-auto rounded-lg bg-gradient-to-br flex items-center justify-center mb-2",
-                        inst.color
-                      )}>
-                        <inst.icon className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-xs text-white/80">{inst.name}</span>
-                    </motion.button>
+                      {inst.name}
+                    </button>
                   ))}
                 </div>
               </div>
+
+              {SPECIFIC_INSTRUMENTS[selectedGroup.id] && (
+                <div>
+                  <label className="block text-xs text-white/60 mb-2">Specific Instrument</label>
+                  <div className="flex flex-wrap gap-1.5 max-h-[80px] overflow-y-auto">
+                    {SPECIFIC_INSTRUMENTS[selectedGroup.id].map((inst) => (
+                      <button
+                        key={inst.id}
+                        onClick={() => setSelectedSpecific(inst.id)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-xs transition-all border",
+                          selectedSpecific === inst.id
+                            ? "border-white/30 bg-white/15 text-white"
+                            : "border-white/5 bg-white/5 hover:bg-white/10 text-white/50"
+                        )}
+                        disabled={generateMutation.isPending}
+                      >
+                        {inst.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs text-white/60 mb-2">Genre / Style</label>

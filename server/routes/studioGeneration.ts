@@ -58,8 +58,12 @@ router.post('/text', requireAuth, async (req, res) => {
     const textLower = userText.toLowerCase();
     const parts: string[] = [];
     
-    if (validatedData.instrumentType && !textLower.includes(validatedData.instrumentType.toLowerCase())) {
-      parts.push(validatedData.instrumentType);
+    if (validatedData.instrumentType) {
+      const instrumentId = validatedData.instrumentType.toLowerCase();
+      const friendlyName = instrumentId.replace(/_/g, ' ');
+      if (!textLower.includes(friendlyName) && !textLower.includes(instrumentId)) {
+        parts.push(friendlyName);
+      }
     }
     if (validatedData.genre && !textLower.includes(validatedData.genre.toLowerCase())) {
       parts.push(validatedData.genre);

@@ -14,11 +14,6 @@ import {
   Sparkles,
   Sliders,
   ChevronDown,
-  Zap,
-  Radio,
-  Piano,
-  Drum,
-  Guitar,
   MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -61,16 +56,118 @@ const GENRES = [
   { id: 'ambient', name: 'Ambient', icon: '🌊', color: 'from-teal-500 to-cyan-500' },
 ];
 
-const INSTRUMENTS = [
-  { id: 'synth', name: 'Synthesizer', icon: Piano, category: 'melodic' },
-  { id: 'piano', name: 'Piano', icon: Piano, category: 'melodic' },
-  { id: 'guitar', name: 'Guitar', icon: Guitar, category: 'melodic' },
-  { id: 'bass', name: 'Bass', icon: Music, category: 'melodic' },
-  { id: 'strings', name: 'Strings', icon: Music, category: 'melodic' },
-  { id: 'drums', name: 'Drums', icon: Drum, category: 'drums' },
-  { id: 'percussion', name: 'Percussion', icon: Radio, category: 'percussion' },
-  { id: 'pad', name: 'Pad', icon: Music, category: 'melodic' },
+const INSTRUMENT_CATEGORIES = [
+  { id: 'keys', name: 'Keys' },
+  { id: 'synths', name: 'Synths' },
+  { id: 'guitars', name: 'Guitars' },
+  { id: 'bass', name: 'Bass' },
+  { id: 'strings', name: 'Strings' },
+  { id: 'brass', name: 'Brass' },
+  { id: 'woodwinds', name: 'Woodwinds' },
+  { id: 'vocals', name: 'Vocals' },
+  { id: 'mallets', name: 'Mallets' },
+  { id: 'ethnic', name: 'Ethnic' },
+  { id: 'drums', name: 'Drum Kits' },
+  { id: 'percussion', name: 'Percussion' },
 ];
+
+const INSTRUMENTS: Record<string, Array<{ id: string; name: string; category: 'melodic' | 'drums' | 'percussion' }>> = {
+  keys: [
+    { id: 'piano', name: 'Piano', category: 'melodic' },
+    { id: 'electric_piano', name: 'Electric Piano', category: 'melodic' },
+    { id: 'organ', name: 'Organ', category: 'melodic' },
+    { id: 'harpsichord', name: 'Harpsichord', category: 'melodic' },
+    { id: 'celesta', name: 'Celesta', category: 'melodic' },
+    { id: 'music_box', name: 'Music Box', category: 'melodic' },
+  ],
+  synths: [
+    { id: 'synth_lead', name: 'Synth Lead', category: 'melodic' },
+    { id: 'synth_pad', name: 'Synth Pad', category: 'melodic' },
+    { id: 'synth_pluck', name: 'Synth Pluck', category: 'melodic' },
+    { id: 'synth_brass', name: 'Synth Brass', category: 'melodic' },
+  ],
+  guitars: [
+    { id: 'guitar_acoustic', name: 'Acoustic Guitar', category: 'melodic' },
+    { id: 'guitar_electric', name: 'Electric Guitar', category: 'melodic' },
+    { id: 'guitar_nylon', name: 'Nylon Guitar', category: 'melodic' },
+    { id: 'guitar_jazz', name: 'Jazz Guitar', category: 'melodic' },
+  ],
+  bass: [
+    { id: 'bass_electric', name: 'Electric Bass', category: 'melodic' },
+    { id: 'bass_acoustic', name: 'Acoustic Bass', category: 'melodic' },
+    { id: 'bass_synth', name: 'Synth Bass', category: 'melodic' },
+    { id: 'bass_808', name: '808 Bass', category: 'melodic' },
+    { id: 'bass_sub', name: 'Sub Bass', category: 'melodic' },
+  ],
+  strings: [
+    { id: 'strings_violin', name: 'Violin', category: 'melodic' },
+    { id: 'strings_viola', name: 'Viola', category: 'melodic' },
+    { id: 'strings_cello', name: 'Cello', category: 'melodic' },
+    { id: 'strings_ensemble', name: 'String Ensemble', category: 'melodic' },
+  ],
+  brass: [
+    { id: 'brass_trumpet', name: 'Trumpet', category: 'melodic' },
+    { id: 'brass_trombone', name: 'Trombone', category: 'melodic' },
+    { id: 'brass_french_horn', name: 'French Horn', category: 'melodic' },
+    { id: 'brass_tuba', name: 'Tuba', category: 'melodic' },
+  ],
+  woodwinds: [
+    { id: 'woodwind_flute', name: 'Flute', category: 'melodic' },
+    { id: 'woodwind_clarinet', name: 'Clarinet', category: 'melodic' },
+    { id: 'woodwind_oboe', name: 'Oboe', category: 'melodic' },
+    { id: 'woodwind_saxophone', name: 'Saxophone', category: 'melodic' },
+  ],
+  vocals: [
+    { id: 'vocal_lead', name: 'Vocal Lead', category: 'melodic' },
+    { id: 'vocal_harmony', name: 'Vocal Harmony', category: 'melodic' },
+    { id: 'vocal_choir', name: 'Choir', category: 'melodic' },
+    { id: 'vocal_whisper', name: 'Vocal Whisper', category: 'melodic' },
+  ],
+  mallets: [
+    { id: 'vibraphone', name: 'Vibraphone', category: 'melodic' },
+    { id: 'marimba', name: 'Marimba', category: 'melodic' },
+    { id: 'xylophone', name: 'Xylophone', category: 'melodic' },
+    { id: 'bells', name: 'Bells', category: 'melodic' },
+    { id: 'kalimba', name: 'Kalimba', category: 'melodic' },
+  ],
+  ethnic: [
+    { id: 'ethnic_sitar', name: 'Sitar', category: 'melodic' },
+    { id: 'ethnic_koto', name: 'Koto', category: 'melodic' },
+    { id: 'ethnic_erhu', name: 'Erhu', category: 'melodic' },
+    { id: 'ethnic_oud', name: 'Oud', category: 'melodic' },
+    { id: 'ethnic_pan_flute', name: 'Pan Flute', category: 'melodic' },
+    { id: 'ethnic_didgeridoo', name: 'Didgeridoo', category: 'melodic' },
+    { id: 'ethnic_balalaika', name: 'Balalaika', category: 'melodic' },
+  ],
+  drums: [
+    { id: 'acoustic_kit', name: 'Acoustic Kit', category: 'drums' },
+    { id: 'electronic_kit', name: 'Electronic Kit', category: 'drums' },
+    { id: '808_kit', name: '808 Kit', category: 'drums' },
+    { id: '909_kit', name: '909 Kit', category: 'drums' },
+    { id: 'trap_kit', name: 'Trap Kit', category: 'drums' },
+    { id: 'jazz_kit', name: 'Jazz Kit', category: 'drums' },
+    { id: 'rock_kit', name: 'Rock Kit', category: 'drums' },
+    { id: 'metal_kit', name: 'Metal Kit', category: 'drums' },
+    { id: 'lofi_kit', name: 'Lo-Fi Kit', category: 'drums' },
+    { id: 'boombap_kit', name: 'Boom Bap Kit', category: 'drums' },
+    { id: 'drill_kit', name: 'Drill Kit', category: 'drums' },
+    { id: 'house_kit', name: 'House Kit', category: 'drums' },
+    { id: 'techno_kit', name: 'Techno Kit', category: 'drums' },
+    { id: 'dnb_kit', name: 'D&B Kit', category: 'drums' },
+    { id: 'uk_garage_kit', name: 'UK Garage Kit', category: 'drums' },
+  ],
+  percussion: [
+    { id: 'congas', name: 'Congas', category: 'percussion' },
+    { id: 'bongos', name: 'Bongos', category: 'percussion' },
+    { id: 'timbales', name: 'Timbales', category: 'percussion' },
+    { id: 'djembe', name: 'Djembe', category: 'percussion' },
+    { id: 'cajon', name: 'Cajon', category: 'percussion' },
+    { id: 'tabla', name: 'Tabla', category: 'percussion' },
+    { id: 'shaker', name: 'Shaker', category: 'percussion' },
+    { id: 'tambourine', name: 'Tambourine', category: 'percussion' },
+    { id: 'cowbell', name: 'Cowbell', category: 'percussion' },
+  ],
+};
 
 const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const SCALES = ['Major', 'Minor', 'Dorian', 'Mixolydian', 'Phrygian', 'Lydian'];
@@ -79,7 +176,8 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
   const { toast } = useToast();
   const [prompt, setPrompt] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('hip_hop');
-  const [selectedInstrument, setSelectedInstrument] = useState('synth');
+  const [selectedInstrumentCategory, setSelectedInstrumentCategory] = useState('synths');
+  const [selectedInstrument, setSelectedInstrument] = useState('synth_lead');
   const [tempo, setTempo] = useState(120);
   const [key, setKey] = useState('C');
   const [scale, setScale] = useState('Minor');
@@ -95,14 +193,17 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
   const handleGenerate = useCallback(async () => {
     setIsGenerating(true);
     try {
-      const instrument = INSTRUMENTS.find(i => i.id === selectedInstrument);
+      const instrumentList = INSTRUMENTS[selectedInstrumentCategory] || [];
+      const instrument = instrumentList.find(i => i.id === selectedInstrument);
+      const instrumentCategory = instrument?.category || 'melodic';
+      const instrumentName = instrument?.name || selectedInstrument.replace(/_/g, ' ');
       
       const res = await apiRequest('POST', '/api/studio/generation/text', {
-        text: prompt || `${selectedGenre} ${selectedInstrument}`,
+        text: prompt || `${selectedGenre} ${instrumentName}`,
         projectId,
         bars,
         instrumentType: selectedInstrument,
-        instrumentCategory: instrument?.category || 'melodic',
+        instrumentCategory: instrumentCategory,
         genre: selectedGenre,
         tempo,
         key,
@@ -115,7 +216,7 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
         setGeneratedTrack(response);
         toast({
           title: 'Music Generated!',
-          description: `Created ${bars} bars of ${selectedGenre} ${selectedInstrument} at ${tempo} BPM`,
+          description: `Created ${bars} bars of ${selectedGenre} ${instrumentName} at ${tempo} BPM`,
         });
       }
     } catch (error: any) {
@@ -127,7 +228,7 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
     } finally {
       setIsGenerating(false);
     }
-  }, [prompt, selectedGenre, selectedInstrument, projectId, bars, tempo, key, scale, complexity, toast]);
+  }, [prompt, selectedGenre, selectedInstrumentCategory, selectedInstrument, projectId, bars, tempo, key, scale, complexity, toast]);
 
   const handlePlayPause = useCallback(() => {
     if (!generatedTrack) return;
@@ -243,28 +344,48 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
         </div>
 
         <div className="space-y-2">
+          <label className="text-sm font-medium text-zinc-400">Instrument Category</label>
+          <div className="flex flex-wrap gap-1.5">
+            {INSTRUMENT_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setSelectedInstrumentCategory(cat.id);
+                  const firstInstrument = INSTRUMENTS[cat.id]?.[0];
+                  if (firstInstrument) setSelectedInstrument(firstInstrument.id);
+                }}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg border text-xs font-medium transition-all',
+                  selectedInstrumentCategory === cat.id
+                    ? 'bg-purple-600 border-purple-500 text-white'
+                    : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600 text-zinc-400'
+                )}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <label className="text-sm font-medium text-zinc-400">Instrument</label>
-          <div className="grid grid-cols-4 gap-2">
-            {INSTRUMENTS.map((instrument) => {
-              const Icon = instrument.icon;
-              return (
-                <motion.button
-                  key={instrument.id}
-                  onClick={() => setSelectedInstrument(instrument.id)}
-                  className={cn(
-                    'p-3 rounded-xl border text-center transition-all',
-                    selectedInstrument === instrument.id
-                      ? 'bg-purple-600 border-purple-500 text-white'
-                      : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600 text-zinc-300'
-                  )}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Icon className="w-5 h-5 mx-auto" />
-                  <p className="text-[10px] mt-1">{instrument.name}</p>
-                </motion.button>
-              );
-            })}
+          <div className="grid grid-cols-3 gap-1.5 max-h-[140px] overflow-y-auto pr-1">
+            {(INSTRUMENTS[selectedInstrumentCategory] || []).map((instrument) => (
+              <motion.button
+                key={instrument.id}
+                onClick={() => setSelectedInstrument(instrument.id)}
+                className={cn(
+                  'px-3 py-2 rounded-lg border text-left transition-all',
+                  selectedInstrument === instrument.id
+                    ? 'bg-purple-600 border-purple-500 text-white'
+                    : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600 text-zinc-300'
+                )}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <p className="text-xs font-medium truncate">{instrument.name}</p>
+              </motion.button>
+            ))}
           </div>
         </div>
 

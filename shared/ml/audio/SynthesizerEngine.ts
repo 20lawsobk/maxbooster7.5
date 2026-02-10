@@ -1543,6 +1543,47 @@ export class SynthesizerEngine {
       unisonDetune = 15;
       vibratoRate = 6;
       vibratoDepth = 0.03;
+    } else if (name.includes('oud') || name.includes('balalaika')) {
+      harmonicType = 'strings';
+      useHarmonics = true;
+      unisonVoices = 2;
+      unisonDetune = 10;
+      vibratoRate = 4;
+      vibratoDepth = 0.02;
+      warmthAmount = 0.3;
+    } else if (name.includes('didgeridoo')) {
+      harmonicType = 'brass';
+      useHarmonics = true;
+      unisonVoices = 3;
+      unisonDetune = 8;
+      warmthAmount = 0.5;
+      reverbAmount = 0.4;
+    } else if (name.includes('harpsichord')) {
+      harmonicType = 'piano';
+      useHarmonics = true;
+      oscType = 'sawtooth';
+      warmthAmount = 0.1;
+      reverbAmount = 0.15;
+    } else if (name.includes('celesta') || name.includes('music_box') || name.includes('music box') || name.includes('xylophone')) {
+      harmonicType = 'bell';
+      useHarmonics = true;
+      reverbAmount = 0.35;
+      warmthAmount = 0.1;
+    } else if (name.includes('clarinet') || name.includes('oboe')) {
+      harmonicType = 'woodwind';
+      useHarmonics = true;
+      reverbAmount = 0.25;
+      vibratoRate = 4.5;
+      vibratoDepth = 0.012;
+      warmthAmount = 0.25;
+    } else if (name.includes('whisper')) {
+      harmonicType = 'strings';
+      useHarmonics = true;
+      unisonVoices = 3;
+      unisonDetune = 12;
+      reverbAmount = 0.5;
+      warmthAmount = 0.1;
+      oscType = 'triangle';
     } else if (name.includes('synth_lead') || name.includes('lead')) {
       oscType = 'sawtooth';
       secondOscType = 'square';
