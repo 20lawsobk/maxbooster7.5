@@ -16,7 +16,6 @@ import {
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Client } from '@replit/object-storage';
 import { config } from '../config/defaults.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -227,91 +226,108 @@ class S3StorageProvider implements StorageProvider {
 
 /**
  * Replit App Storage Provider
- * Used in production when deployed on Replit, stores files in Replit cloud storage
+ * Uses GCS-backed Replit Object Storage with presigned URLs
  */
 class ReplitStorageProvider implements StorageProvider {
-  private client: Client;
-  private bucketId: string;
+  private bucketName: string = '';
+  private objectPrefix: string = '';
+  private storageClient: any = null;
+  private initPromise: Promise<void>;
 
   constructor() {
-    if (!config.storage.replitBucketId) {
-      throw new Error('REPLIT_BUCKET_ID is required when using replit storage provider');
+    const privateDir = process.env.PRIVATE_OBJECT_DIR || '';
+    if (!privateDir) {
+      throw new Error('PRIVATE_OBJECT_DIR is required for Replit storage provider');
     }
+    const parts = privateDir.replace(/^\//, '').split('/');
+    this.bucketName = parts[0];
+    this.objectPrefix = parts.slice(1).join('/');
 
-    this.bucketId = config.storage.replitBucketId;
-    this.client = new Client();
+    this.initPromise = this.initClient();
+  }
+
+  private async initClient(): Promise<void> {
+    const { Storage } = await import('@google-cloud/storage');
+    this.storageClient = new Storage({
+      credentials: {
+        audience: "replit",
+        subject_token_type: "access_token",
+        token_url: "http://127.0.0.1:1106/token",
+        type: "external_account",
+        credential_source: {
+          url: "http://127.0.0.1:1106/credential",
+          format: { type: "json", subject_token_field_name: "access_token" },
+        },
+        universe_domain: "googleapis.com",
+      },
+      projectId: "",
+    });
+  }
+
+  private async ensureClient(): Promise<void> {
+    await this.initPromise;
+    if (!this.storageClient) {
+      throw new Error('GCS client not initialized');
+    }
+  }
+
+  private getObjectPath(key: string): string {
+    return this.objectPrefix ? `${this.objectPrefix}/${key}` : key;
   }
 
   async uploadFile(file: Buffer, key: string, contentType?: string): Promise<string> {
-    // Write buffer to temp file first (workaround for Replit SDK bug with uploadFromBytes)
-    const tempPath = `/tmp/upload-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    const fs = await import('fs/promises');
-    await fs.writeFile(tempPath, file);
-    
-    try {
-      const result = await this.client.uploadFromFilename(key, tempPath, {
-        contentType: contentType,
-      });
+    await this.ensureClient();
+    const objectPath = this.getObjectPath(key);
+    const bucket = this.storageClient.bucket(this.bucketName);
+    const gcsFile = bucket.file(objectPath);
 
-      if (!result.ok) {
-        throw new Error(`Replit storage upload failed: ${result.error}`);
-      }
+    await gcsFile.save(file, {
+      contentType: contentType || 'application/octet-stream',
+      resumable: false,
+    });
 
-      return key;
-    } finally {
-      // Clean up temp file
-      await fs.unlink(tempPath).catch(() => {});
-    }
+    return key;
   }
 
   async downloadFile(key: string): Promise<Buffer> {
-    // Use downloadToFilename instead of downloadAsBytes (workaround for Replit SDK bug)
-    const tempPath = `/tmp/download-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    const fs = await import('fs/promises');
-    
-    try {
-      const result = await this.client.downloadToFilename(key, tempPath);
+    await this.ensureClient();
+    const objectPath = this.getObjectPath(key);
+    const bucket = this.storageClient.bucket(this.bucketName);
+    const gcsFile = bucket.file(objectPath);
 
-      if (!result.ok) {
-        throw new Error(`Replit storage download failed: ${result.error}`);
-      }
-
-      // Read the file into a buffer
-      return await fs.readFile(tempPath);
-    } finally {
-      // Clean up temp file
-      await fs.unlink(tempPath).catch(() => {});
-    }
+    const [contents] = await gcsFile.download();
+    return Buffer.from(contents);
   }
 
   async deleteFile(key: string): Promise<void> {
-    const result = await this.client.delete(key);
+    await this.ensureClient();
+    const objectPath = this.getObjectPath(key);
+    const bucket = this.storageClient.bucket(this.bucketName);
+    const gcsFile = bucket.file(objectPath);
 
-    if (!result.ok) {
-      throw new Error(`Replit storage delete failed: ${result.error}`);
-    }
+    await gcsFile.delete({ ignoreNotFound: true });
   }
 
   async getUploadUrl(key: string, contentType: string, expiresIn?: number): Promise<string | null> {
-    // Replit storage doesn't support presigned URLs
     return null;
   }
 
   async getDownloadUrl(key: string, expiresIn?: number): Promise<string> {
-    // Replit Object Storage files are private by default
-    // Return a proxy URL that our backend will serve
     const encodedKey = encodeURIComponent(key);
     return `/api/storage/file/${encodedKey}`;
   }
 
   async fileExists(key: string): Promise<boolean> {
-    const result = await this.client.exists(key);
-
-    if (!result.ok) {
+    try {
+      await this.ensureClient();
+      const objectPath = this.getObjectPath(key);
+      const bucket = this.storageClient.bucket(this.bucketName);
+      const gcsFile = bucket.file(objectPath);
+      const [exists] = await gcsFile.exists();
+      return exists;
+    } catch {
       return false;
     }
-
-    return result.value;
   }
 }
 

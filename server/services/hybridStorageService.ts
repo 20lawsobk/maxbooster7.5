@@ -19,7 +19,6 @@
  * - Analytics and optimization recommendations
  */
 
-import { Client } from '@replit/object-storage';
 import { pocketManager, PocketDimension } from '../pocket-dimension/index.js';
 import { createHash } from 'crypto';
 import { logger } from '../logger.js';
@@ -31,6 +30,7 @@ const HOT_ACCESS_COUNT_THRESHOLD = 5;
 const SIZE_THRESHOLD_FOR_COLD = 50 * 1024 * 1024;
 
 export type StorageTier = 'hot' | 'cold';
+export type StorageLocation = 'replit' | 'pocket-dimension';
 
 export interface HybridFileMetadata {
   key: string;
@@ -39,6 +39,7 @@ export interface HybridFileMetadata {
   sizeBytes: number;
   compressedSize: number;
   tier: StorageTier;
+  location: StorageLocation;
   contentHash: string;
   accessCount: number;
   lastAccessed: Date;
@@ -116,7 +117,9 @@ export interface TieringDecision {
 
 export class HybridStorageService {
   private static instance: HybridStorageService;
-  private replitClient: Client | null = null;
+  private replitClient: any = null;
+  private replitBucketName: string = '';
+  private replitObjectPrefix: string = '';
   private coldPocket: PocketDimension | null = null;
   private bucketId: string | null = null;
   private initialized: boolean = false;
@@ -126,7 +129,7 @@ export class HybridStorageService {
   private publicContentHashes: Map<string, string> = new Map();
 
   private constructor() {
-    this.bucketId = process.env.REPLIT_OBJSTORE_BUCKET_ID || process.env.REPLIT_BUCKET_ID || null;
+    this.bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_OBJSTORE_BUCKET_ID || process.env.REPLIT_BUCKET_ID || null;
   }
 
   static getInstance(): HybridStorageService {
@@ -140,9 +143,37 @@ export class HybridStorageService {
     if (this.initialized) return;
 
     try {
-      if (this.bucketId) {
-        this.replitClient = new Client();
-        logger.info(`[HybridStorage] Initialized Replit Object Storage (hot tier)`);
+      const privateDir = process.env.PRIVATE_OBJECT_DIR || '';
+      if (privateDir || this.bucketId) {
+        try {
+          const { Storage } = await import('@google-cloud/storage');
+          if (privateDir) {
+            const parts = privateDir.replace(/^\//, '').split('/');
+            this.replitBucketName = parts[0];
+            this.replitObjectPrefix = parts.slice(1).join('/');
+          } else {
+            this.replitBucketName = this.bucketId || '';
+            this.replitObjectPrefix = '';
+          }
+          this.replitClient = new Storage({
+            credentials: {
+              audience: "replit",
+              subject_token_type: "access_token",
+              token_url: "http://127.0.0.1:1106/token",
+              type: "external_account",
+              credential_source: {
+                url: "http://127.0.0.1:1106/credential",
+                format: { type: "json", subject_token_field_name: "access_token" },
+              },
+              universe_domain: "googleapis.com",
+            },
+            projectId: "",
+          });
+          logger.info(`[HybridStorage] Initialized Replit Object Storage (hot tier)`);
+        } catch (e) {
+          logger.warn('[HybridStorage] Failed to initialize GCS client, falling back to Pocket Dimension');
+          this.replitClient = null;
+        }
       } else {
         logger.warn('[HybridStorage] No Replit bucket ID found, all storage will use Pocket Dimension');
       }
@@ -173,7 +204,7 @@ export class HybridStorageService {
       this.fileIndex = new Map(
         Object.entries(index.files || {}).map(([k, v]: [string, any]) => [
           k,
-          { ...v, createdAt: new Date(v.createdAt), lastAccessed: new Date(v.lastAccessed) }
+          { ...v, createdAt: new Date(v.createdAt), lastAccessed: new Date(v.lastAccessed), location: v.location || (v.tier === 'hot' ? 'replit' : 'pocket-dimension') }
         ])
       );
       this.contentHashIndex = new Map(Object.entries(index.contentHashes || {}));
@@ -256,6 +287,7 @@ export class HybridStorageService {
     options?: {
       folder?: string;
       forceTier?: StorageTier;
+      forceLocation?: StorageLocation;
       isPublic?: boolean;
       metadata?: Record<string, any>;
     }
@@ -277,6 +309,7 @@ export class HybridStorageService {
           sizeBytes: data.length,
           compressedSize: existingEntry.compressedSize,
           tier: existingEntry.tier,
+          location: existingEntry.location,
           contentHash,
           accessCount: 0,
           lastAccessed: new Date(),
@@ -322,6 +355,7 @@ export class HybridStorageService {
             sizeBytes: data.length,
             compressedSize: existingEntry.compressedSize,
             tier: existingEntry.tier,
+            location: existingEntry.location,
             contentHash,
             accessCount: 0,
             lastAccessed: new Date(),
@@ -357,13 +391,24 @@ export class HybridStorageService {
 
     const tier = options?.forceTier || this.determineInitialTier(data.length, mimeType);
     let compressedSize = data.length;
+    let location: StorageLocation;
 
-    if (tier === 'hot' && this.replitClient) {
+    if (options?.forceLocation === 'replit' && !this.replitClient) {
+      throw new Error('Replit Object Storage is not available. Cannot force upload to replit location.');
+    }
+
+    const useReplit = options?.forceLocation === 'replit' || (options?.forceLocation !== 'pocket-dimension' && tier === 'hot' && this.replitClient);
+
+    if (useReplit && this.replitClient) {
       await this.writeToReplit(key, data, mimeType);
+      location = 'replit';
     } else {
       const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
       compressedSize = pocketEntry.compressedSize;
+      location = 'pocket-dimension';
     }
+
+    const actualTier: StorageTier = location === 'replit' ? 'hot' : 'cold';
 
     const entry: HybridFileMetadata = {
       key,
@@ -371,7 +416,8 @@ export class HybridStorageService {
       mimeType,
       sizeBytes: data.length,
       compressedSize,
-      tier: (tier === 'hot' && !this.replitClient) ? 'cold' : tier,
+      tier: actualTier,
+      location,
       contentHash,
       accessCount: 0,
       lastAccessed: new Date(),
@@ -409,20 +455,14 @@ export class HybridStorageService {
   private async writeToReplit(key: string, data: Buffer, contentType?: string): Promise<void> {
     if (!this.replitClient) throw new Error('Replit client not initialized');
 
-    const tempPath = `/tmp/hybrid-upload-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    await fs.writeFile(tempPath, data);
+    const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
+    const bucket = this.replitClient.bucket(this.replitBucketName);
+    const file = bucket.file(objectPath);
 
-    try {
-      const result = await this.replitClient.uploadFromFilename(key, tempPath, {
-        contentType: contentType,
-      });
-
-      if (!result.ok) {
-        throw new Error(`Replit upload failed: ${result.error}`);
-      }
-    } finally {
-      await fs.unlink(tempPath).catch(() => {});
-    }
+    await file.save(data, {
+      contentType: contentType || 'application/octet-stream',
+      resumable: false,
+    });
   }
 
   async read(userId: string, key: string): Promise<Buffer> {
@@ -463,7 +503,7 @@ export class HybridStorageService {
   }
 
   private async readFromStorage(entry: HybridFileMetadata): Promise<Buffer> {
-    if (entry.tier === 'hot' && this.replitClient) {
+    if (entry.location === 'replit' && this.replitClient) {
       return this.readFromReplit(entry.key);
     } else {
       return this.coldPocket!.read(`storage/${entry.key}`);
@@ -473,19 +513,12 @@ export class HybridStorageService {
   private async readFromReplit(key: string): Promise<Buffer> {
     if (!this.replitClient) throw new Error('Replit client not initialized');
 
-    const tempPath = `/tmp/hybrid-download-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
+    const bucket = this.replitClient.bucket(this.replitBucketName);
+    const file = bucket.file(objectPath);
 
-    try {
-      const result = await this.replitClient.downloadToFilename(key, tempPath);
-
-      if (!result.ok) {
-        throw new Error(`Replit download failed: ${result.error}`);
-      }
-
-      return await fs.readFile(tempPath);
-    } finally {
-      await fs.unlink(tempPath).catch(() => {});
-    }
+    const [contents] = await file.download();
+    return Buffer.from(contents);
   }
 
   async delete(userId: string, key: string): Promise<boolean> {
@@ -512,8 +545,10 @@ export class HybridStorageService {
       const otherRefs = hashKeys && hashKeys.length > 0;
       
       if (!otherRefs) {
-        if (entry.tier === 'hot' && this.replitClient) {
-          await this.replitClient.delete(key).catch(() => {});
+        if (entry.location === 'replit' && this.replitClient) {
+          const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
+          const bucket = this.replitClient.bucket(this.replitBucketName);
+          await bucket.file(objectPath).delete({ ignoreNotFound: true }).catch(() => {});
         } else {
           await this.coldPocket!.delete(`storage/${key}`).catch(() => {});
         }
@@ -548,9 +583,14 @@ export class HybridStorageService {
       const data = await this.readFromReplit(key);
       const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
 
-      await this.replitClient?.delete(key).catch(() => {});
+      if (this.replitClient) {
+        const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
+        const bucket = this.replitClient.bucket(this.replitBucketName);
+        await bucket.file(objectPath).delete({ ignoreNotFound: true }).catch(() => {});
+      }
 
       entry.tier = 'cold';
+      entry.location = 'pocket-dimension';
       entry.compressedSize = pocketEntry.compressedSize;
       await this.saveIndex();
 
@@ -572,6 +612,7 @@ export class HybridStorageService {
       await this.coldPocket?.delete(`storage/${key}`).catch(() => {});
 
       entry.tier = 'hot';
+      entry.location = 'replit';
       entry.compressedSize = entry.sizeBytes;
       await this.saveIndex();
 
@@ -760,13 +801,14 @@ export class HybridStorageService {
 
   listFiles(
     userId: string,
-    options?: { tier?: StorageTier; folder?: string; includePublic?: boolean }
+    options?: { tier?: StorageTier; location?: StorageLocation; folder?: string; includePublic?: boolean }
   ): HybridFileMetadata[] {
     const files: HybridFileMetadata[] = [];
 
     for (const entry of this.fileIndex.values()) {
       if (entry.userId !== userId && !(options?.includePublic && entry.isPublic)) continue;
       if (options?.tier && entry.tier !== options.tier) continue;
+      if (options?.location && entry.location !== options.location) continue;
       if (options?.folder && !entry.key.includes(options.folder)) continue;
 
       files.push(entry);
@@ -860,6 +902,127 @@ export class HybridStorageService {
     }
 
     return stats;
+  }
+
+  async migrateFile(
+    userId: string,
+    key: string,
+    targetTier: StorageTier,
+    targetLocation: StorageLocation
+  ): Promise<boolean> {
+    await this.initialize();
+
+    const entry = this.fileIndex.get(key);
+    if (!entry) return false;
+    if (entry.userId !== userId) throw new Error(`Access denied: ${key}`);
+    if (entry.isDeduplicated) return false;
+
+    if (entry.location === targetLocation && entry.tier === targetTier) return true;
+
+    if (targetLocation === 'replit' && !this.replitClient) {
+      throw new Error('Replit Object Storage is not available. Cannot migrate to replit location.');
+    }
+
+    try {
+      const data = await this.readFromStorage(entry);
+
+      if (targetLocation === 'replit' && this.replitClient) {
+        await this.writeToReplit(key, data, entry.mimeType);
+        if (entry.location === 'pocket-dimension') {
+          await this.coldPocket?.delete(`storage/${key}`).catch(() => {});
+        }
+        entry.location = 'replit';
+        entry.tier = 'hot';
+        entry.compressedSize = entry.sizeBytes;
+      } else {
+        const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
+        if (entry.location === 'replit' && this.replitClient) {
+          const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
+          const bucket = this.replitClient.bucket(this.replitBucketName);
+          await bucket.file(objectPath).delete({ ignoreNotFound: true }).catch(() => {});
+        }
+        entry.location = 'pocket-dimension';
+        entry.tier = targetTier;
+        entry.compressedSize = pocketEntry.compressedSize;
+      }
+
+      await this.saveIndex();
+      logger.info(`[HybridStorage] Migrated ${key} to ${targetLocation}/${targetTier}`);
+      return true;
+    } catch (error) {
+      logger.error(`[HybridStorage] Failed to migrate ${key}:`, error);
+      return false;
+    }
+  }
+
+  async optimizeStorage(userId: string): Promise<{ tieredDown: number; tieredUp: number; deduplicated: number }> {
+    await this.initialize();
+
+    const result = await this.runAutoTiering();
+    let deduplicated = 0;
+
+    const userFiles = this.listFiles(userId);
+    const hashGroups = new Map<string, HybridFileMetadata[]>();
+
+    for (const file of userFiles) {
+      if (file.isDeduplicated) continue;
+      const group = hashGroups.get(file.contentHash) || [];
+      group.push(file);
+      hashGroups.set(file.contentHash, group);
+    }
+
+    for (const [, group] of hashGroups) {
+      if (group.length <= 1) continue;
+      const primary = group[0];
+      for (let i = 1; i < group.length; i++) {
+        const dup = group[i];
+        dup.isDeduplicated = true;
+        dup.deduplicationRef = primary.key;
+        deduplicated++;
+      }
+    }
+
+    if (deduplicated > 0) {
+      await this.saveIndex();
+    }
+
+    return { ...result, deduplicated };
+  }
+
+  async cleanup(
+    userId: string,
+    options?: { olderThanDays?: number }
+  ): Promise<{ deletedCount: number; freedBytes: number }> {
+    await this.initialize();
+
+    const thresholdDays = options?.olderThanDays || 90;
+    const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    let deletedCount = 0;
+    let freedBytes = 0;
+    const keysToDelete: string[] = [];
+
+    for (const [key, entry] of this.fileIndex) {
+      if (entry.userId !== userId) continue;
+      const timeSinceAccess = now - new Date(entry.lastAccessed).getTime();
+      if (timeSinceAccess > thresholdMs && entry.accessCount === 0) {
+        keysToDelete.push(key);
+      }
+    }
+
+    for (const key of keysToDelete) {
+      const entry = this.fileIndex.get(key);
+      if (!entry) continue;
+      try {
+        await this.delete(userId, key);
+        deletedCount++;
+        freedBytes += entry.sizeBytes;
+      } catch {
+      }
+    }
+
+    return { deletedCount, freedBytes };
   }
 
   private generateFileKey(userId: string, fileName: string, folder?: string): string {

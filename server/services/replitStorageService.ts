@@ -1,61 +1,89 @@
-import { Client } from '@replit/object-storage';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
 
-/**
- * Replit App Storage Service for production file storage
- * Handles audio files, cover art, and other assets using Replit's built-in cloud storage
- */
+const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+
 export class ReplitStorageService {
-  private client: Client;
-  private bucketId: string;
+  private bucketName: string;
+  private objectPrefix: string;
+  private storageClient: any;
+  private _initPromise: Promise<void>;
 
   constructor() {
-    this.bucketId = process.env.REPLIT_BUCKET_ID || '';
+    const privateDir = process.env.PRIVATE_OBJECT_DIR || '';
+    const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_BUCKET_ID || '';
 
-    if (!this.bucketId) {
-      throw new Error('REPLIT_BUCKET_ID environment variable is required');
+    if (!privateDir && !bucketId) {
+      throw new Error('PRIVATE_OBJECT_DIR or REPLIT_BUCKET_ID environment variable is required');
     }
 
-    // Initialize Replit Storage client (auto-authenticates)
-    this.client = new Client();
+    if (privateDir) {
+      const parts = privateDir.replace(/^\//, '').split('/');
+      this.bucketName = parts[0];
+      this.objectPrefix = parts.slice(1).join('/');
+    } else {
+      this.bucketName = bucketId;
+      this.objectPrefix = '';
+    }
 
-    logger.info(`✅ Replit App Storage initialized for bucket: ${this.bucketId}`);
+    this.storageClient = null;
+    this._initPromise = this._initClient();
+
+    logger.info(`✅ Replit App Storage initialized for bucket: ${this.bucketName}`);
   }
 
-  /**
-   * Upload a file to Replit App Storage
-   */
+  private async _initClient(): Promise<void> {
+    const { Storage } = await import('@google-cloud/storage');
+    this.storageClient = new Storage({
+      credentials: {
+        audience: "replit",
+        subject_token_type: "access_token",
+        token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+        type: "external_account",
+        credential_source: {
+          url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+          format: { type: "json", subject_token_field_name: "access_token" },
+        },
+        universe_domain: "googleapis.com",
+      },
+      projectId: "",
+    });
+  }
+
+  private async ensureClient(): Promise<void> {
+    await this._initPromise;
+  }
+
+  private getObjectPath(key: string): string {
+    return this.objectPrefix ? `${this.objectPrefix}/${key}` : key;
+  }
+
   async uploadFile(
     buffer: Buffer,
     fileName: string,
     mimeType: string,
     folder: string = 'uploads'
   ): Promise<{ url: string; key: string }> {
+    await this.ensureClient();
     try {
-      // Generate unique key with folder structure
       const timestamp = Date.now();
       const hash = crypto.createHash('md5').update(buffer).digest('hex').substring(0, 8);
       const key = `${folder}/${timestamp}-${hash}-${fileName}`;
+      const objectPath = this.getObjectPath(key);
 
-      // Upload to Replit App Storage
-      const result = await this.client.uploadFromBytes(key, buffer, {
+      const bucket = this.storageClient.bucket(this.bucketName);
+      const file = bucket.file(objectPath);
+
+      await file.save(buffer, {
         contentType: mimeType,
+        resumable: false,
       });
-
-      if (!result.ok) {
-        throw new Error(`Upload failed: ${result.error}`);
-      }
 
       logger.info(`✅ File uploaded to Replit App Storage: ${key}`);
 
-      // Generate public URL (Replit storage URLs)
-      const url = `https://storage.replit.com/${this.bucketId}/${key}`;
+      const url = `/objects/${key}`;
 
-      return {
-        url,
-        key,
-      };
+      return { url, key };
     } catch (error: unknown) {
       logger.error('❌ Failed to upload file to Replit App Storage:', error);
       throw new Error(
@@ -64,20 +92,16 @@ export class ReplitStorageService {
     }
   }
 
-  /**
-   * Download a file from Replit App Storage
-   */
   async downloadFile(key: string): Promise<Buffer> {
+    await this.ensureClient();
     try {
-      const result = await this.client.downloadAsBytes(key);
+      const objectPath = this.getObjectPath(key);
+      const bucket = this.storageClient.bucket(this.bucketName);
+      const file = bucket.file(objectPath);
 
-      if (!result.ok) {
-        throw new Error(`Download failed: ${result.error}`);
-      }
-
+      const [contents] = await file.download();
       logger.info(`✅ File downloaded from Replit App Storage: ${key}`);
-      // Ensure we return a proper Node.js Buffer (Replit returns Uint8Array)
-      return Buffer.from(result.value);
+      return Buffer.from(contents);
     } catch (error: unknown) {
       logger.error('❌ Failed to download file from Replit App Storage:', error);
       throw new Error(
@@ -86,17 +110,14 @@ export class ReplitStorageService {
     }
   }
 
-  /**
-   * Delete a file from Replit App Storage
-   */
   async deleteFile(key: string): Promise<void> {
+    await this.ensureClient();
     try {
-      const result = await this.client.delete(key);
+      const objectPath = this.getObjectPath(key);
+      const bucket = this.storageClient.bucket(this.bucketName);
+      const file = bucket.file(objectPath);
 
-      if (!result.ok) {
-        throw new Error(`Delete failed: ${result.error}`);
-      }
-
+      await file.delete({ ignoreNotFound: true });
       logger.info(`✅ File deleted from Replit App Storage: ${key}`);
     } catch (error: unknown) {
       logger.error('❌ Failed to delete file from Replit App Storage:', error);
@@ -106,38 +127,27 @@ export class ReplitStorageService {
     }
   }
 
-  /**
-   * Check if a file exists in Replit App Storage
-   */
   async fileExists(key: string): Promise<boolean> {
+    await this.ensureClient();
     try {
-      const result = await this.client.exists(key);
-
-      if (!result.ok) {
-        return false;
-      }
-
-      return result.value;
+      const objectPath = this.getObjectPath(key);
+      const bucket = this.storageClient.bucket(this.bucketName);
+      const file = bucket.file(objectPath);
+      const [exists] = await file.exists();
+      return exists;
     } catch (error: unknown) {
       logger.error('❌ Failed to check file existence in Replit App Storage:', error);
       return false;
     }
   }
 
-  /**
-   * List files in a folder
-   */
   async listFiles(prefix: string = ''): Promise<string[]> {
+    await this.ensureClient();
     try {
-      const result = await this.client.list({
-        prefix,
-      });
-
-      if (!result.ok) {
-        throw new Error(`List failed: ${result.error}`);
-      }
-
-      return result.value.map((obj) => obj.name);
+      const objectPath = this.getObjectPath(prefix);
+      const bucket = this.storageClient.bucket(this.bucketName);
+      const [files] = await bucket.getFiles({ prefix: objectPath });
+      return files.map((f: any) => f.name);
     } catch (error: unknown) {
       logger.error('❌ Failed to list files in Replit App Storage:', error);
       throw new Error(
@@ -146,20 +156,13 @@ export class ReplitStorageService {
     }
   }
 
-  /**
-   * Get the public URL for a file
-   */
   getPublicUrl(key: string): string {
-    return `https://storage.replit.com/${this.bucketId}/${key}`;
+    return `/objects/${key}`;
   }
 }
 
-// Singleton instance
 let storageInstance: ReplitStorageService | null = null;
 
-/**
- * TODO: Add function documentation
- */
 export function getReplitStorageService(): ReplitStorageService {
   if (!storageInstance) {
     storageInstance = new ReplitStorageService();

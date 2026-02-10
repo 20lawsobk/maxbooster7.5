@@ -10,6 +10,15 @@ Max Booster is a comprehensive music career management platform with AI-powered 
 - **Database**: PostgreSQL via Drizzle ORM, schema in `shared/schema.ts`
 - **Build**: Vite for frontend, esbuild for server bundling (`script/build.ts`)
 
+## Storage Architecture
+- **Hybrid Storage**: Two-tier system combining Replit Object Storage (hot tier) with Pocket Dimension (cold tier)
+  - Hot Tier (Replit Object Storage): Active files, recent uploads, frequently accessed content
+  - Cold Tier (Pocket Dimension): Archives, old versions, rarely accessed files (30+ days idle)
+  - Features: Intelligent auto-tiering, content-hash deduplication, cross-user dedup, compression
+  - API: `/api/hybrid-storage/` endpoints for upload, download, migrate, optimize, cleanup
+  - Services: `hybridStorageService.ts` (main), `replitStorageService.ts` (Replit backend), `pocket-dimension/index.ts` (cold engine)
+  - Each user gets a personal Pocket Dimension with encryption, versioning, and nested dimensions
+
 ## Project Structure
 ```
 client/          - React frontend (Vite)
@@ -19,6 +28,7 @@ server/          - Express backend
   safety/        - Security middleware
   monitoring/    - Metrics and alerting
   realtime/      - WebSocket services
+  pocket-dimension/ - Pocket Dimension storage engine (cold tier)
 shared/          - Shared types and DB schema
 boosterstate/    - Rust KV store (Axum)
 script/          - Build scripts

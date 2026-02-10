@@ -3130,6 +3130,9 @@ export async function registerRoutes(
     // File Storage Management
     { path: "/api/storage", name: "storage", loader: () => import("./routes/storage") },
 
+    // Hybrid Storage (Replit Object Storage + Pocket Dimension)
+    { path: "/api/hybrid-storage", name: "hybridStorage", loader: () => import("./routes/hybridStorage") },
+
     // Export & Download Management
     { path: "/api/export", name: "export", loader: () => import("./routes/export") },
   ];
@@ -3152,6 +3155,15 @@ export async function registerRoutes(
         }
       }
     }
+  }
+
+  // Replit Object Storage routes (presigned URL uploads)
+  try {
+    const { registerObjectStorageRoutes } = await import("./replit_integrations/object_storage/index.js");
+    registerObjectStorageRoutes(app);
+    log('Replit Object Storage routes registered');
+  } catch (e: any) {
+    log(`Warning: Failed to register Object Storage routes - ${e.message}`);
   }
 
   // OAuth callback routes - maps new URL structure to existing handlers
