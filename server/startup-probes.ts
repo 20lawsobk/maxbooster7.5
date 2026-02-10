@@ -143,7 +143,7 @@ class StartupProbeManager {
       try {
         // TensorFlow is initialized during content analysis module load
         // Just check if it's available
-        const tf = await import('@tensorflow/tfjs-node').catch(() => null);
+        const tf = await import('@tensorflow/tfjs-node').catch(() => import('@tensorflow/tfjs')).catch(() => null);
         
         clearTimeout(timeout);
         

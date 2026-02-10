@@ -34,7 +34,7 @@ async function getSharp() {
 // Initialize on module load
 getSharp().catch(() => {});
 
-let tf: typeof import('@tensorflow/tfjs-node') | null = null;
+let tf: typeof import('@tensorflow/tfjs') | null = null;
 let tfAvailable = false;
 let tfInitPromise: Promise<boolean> | null = null;
 
@@ -45,13 +45,20 @@ async function initTensorFlow(): Promise<boolean> {
     try {
       tf = await import('@tensorflow/tfjs-node');
       tfAvailable = true;
-      logger.info('[ContentAnalysis] TensorFlow.js loaded successfully');
+      logger.info('[ContentAnalysis] TensorFlow.js (native) loaded successfully');
       return true;
-    } catch (error) {
-      logger.warn('[ContentAnalysis] TensorFlow.js not available - using fallback analysis');
-      tf = null;
-      tfAvailable = false;
-      return false;
+    } catch (nativeError) {
+      try {
+        tf = await import('@tensorflow/tfjs');
+        tfAvailable = true;
+        logger.info('[ContentAnalysis] TensorFlow.js (pure JS) loaded successfully');
+        return true;
+      } catch (error) {
+        logger.warn('[ContentAnalysis] TensorFlow.js not available - using fallback analysis');
+        tf = null;
+        tfAvailable = false;
+        return false;
+      }
     }
   })();
   
