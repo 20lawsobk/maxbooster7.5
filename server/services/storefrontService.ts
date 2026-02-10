@@ -25,7 +25,6 @@ const MAX_SLUG_LENGTH = 63;
 const MIN_SLUG_LENGTH = 3;
 const RESERVED_SLUGS = ['admin', 'api', 'www', 'app', 'dashboard', 'login', 'signup', 'help', 'support', 'billing', 'settings'];
 
-// Allowed customization keys for sanitization
 const ALLOWED_CUSTOMIZATION_KEYS = [
   'primaryColor', 'secondaryColor', 'backgroundColor', 'textColor',
   'fontFamily', 'headerFont', 'bodyFont',
@@ -34,6 +33,7 @@ const ALLOWED_CUSTOMIZATION_KEYS = [
   'showSocialLinks', 'socialLinks',
   'headerLayout', 'footerLayout', 'gridColumns',
   'accentColor', 'linkColor', 'shadowStyle',
+  'colors', 'fonts', 'layout', 'bio', 'logo', 'banner', 'avatar',
 ];
 
 const ALLOWED_SEO_KEYS = [
@@ -64,17 +64,15 @@ function sanitizeCustomization(customization: any): Record<string, any> {
   const sanitized: Record<string, any> = {};
   for (const [key, value] of Object.entries(customization)) {
     if (!ALLOWED_CUSTOMIZATION_KEYS.includes(key)) {
-      continue; // Skip unknown keys
+      continue;
     }
 
     if (typeof value === 'string') {
-      // Validate URLs
-      if (key.endsWith('Url') || key === 'logoUrl' || key === 'bannerUrl' || key === 'favicon') {
-        if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
+      if (key === 'logo' || key === 'banner' || key === 'avatar' || key.endsWith('Url') || key === 'logoUrl' || key === 'bannerUrl' || key === 'favicon') {
+        if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/') || value === '') {
           sanitized[key] = value;
         }
       } else if (key.includes('Color') || key === 'primaryColor' || key === 'secondaryColor') {
-        // Validate color format (hex, rgb, named colors)
         if (/^#[0-9A-Fa-f]{3,8}$/.test(value) || /^rgba?\(/.test(value) || /^[a-z]+$/i.test(value)) {
           sanitized[key] = value;
         }
@@ -83,8 +81,41 @@ function sanitizeCustomization(customization: any): Record<string, any> {
       }
     } else if (typeof value === 'boolean' || typeof value === 'number') {
       sanitized[key] = value;
+    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      if (key === 'colors') {
+        const colorObj: Record<string, string> = {};
+        for (const [ck, cv] of Object.entries(value)) {
+          if (typeof cv === 'string' && (/^#[0-9A-Fa-f]{3,8}$/.test(cv) || /^rgba?\(/.test(cv) || /^[a-z]+$/i.test(cv))) {
+            colorObj[ck] = cv;
+          }
+        }
+        sanitized[key] = colorObj;
+      } else if (key === 'fonts') {
+        const fontObj: Record<string, string> = {};
+        for (const [fk, fv] of Object.entries(value)) {
+          if (typeof fv === 'string') {
+            fontObj[fk] = sanitizeString(fv);
+          }
+        }
+        sanitized[key] = fontObj;
+      } else if (key === 'layout') {
+        const layoutObj: Record<string, any> = {};
+        for (const [lk, lv] of Object.entries(value)) {
+          if (typeof lv === 'string') layoutObj[lk] = sanitizeString(lv);
+          else if (typeof lv === 'number') layoutObj[lk] = lv;
+          else if (typeof lv === 'boolean') layoutObj[lk] = lv;
+        }
+        sanitized[key] = layoutObj;
+      } else if (key === 'socialLinks') {
+        const linksObj: Record<string, string> = {};
+        for (const [sk, sv] of Object.entries(value)) {
+          if (typeof sv === 'string' && (sv.startsWith('http://') || sv.startsWith('https://') || sv === '')) {
+            linksObj[sk] = sv;
+          }
+        }
+        sanitized[key] = linksObj;
+      }
     } else if (Array.isArray(value) && key === 'socialLinks') {
-      // Validate social links
       sanitized[key] = value.filter((link: any) =>
         typeof link === 'object' &&
         typeof link.platform === 'string' &&
