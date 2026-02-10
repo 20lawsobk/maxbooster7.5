@@ -33,10 +33,10 @@ export {
   NoCollaborationsState,
   FilterResultsHeader,
 } from './MarketplaceEmptyStates';
-export { default as AdvancedBeatSearch } from './AdvancedBeatSearch';
+export { AdvancedBeatSearch } from './AdvancedBeatSearch';
 export { BeatPreviewControls, BeatPreviewBadges } from './BeatPreviewControls';
-export { default as ForYouFeed } from './ForYouFeed';
+export { ForYouFeed } from './ForYouFeed';
 export { PayoutDashboard } from './PayoutDashboard';
-export { default as ProducerAnalyticsDashboard } from './ProducerAnalyticsDashboard';
-export { default as ProducerProfile } from './ProducerProfile';
+export { ProducerAnalyticsDashboard } from './ProducerAnalyticsDashboard';
+export { ProducerProfile, ProducerCard } from './ProducerProfile';
 export { default as StorefrontBuilder } from './StorefrontBuilder';
