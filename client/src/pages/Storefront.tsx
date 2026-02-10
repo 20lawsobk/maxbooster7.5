@@ -22,7 +22,7 @@ import {
   Play,
   Download,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 interface Storefront {
   id: string;
@@ -127,6 +127,7 @@ export default function Storefront() {
 
   const [selectedTier, setSelectedTier] = useState<MembershipTier | null>(null);
   const [cart, setCart] = useState<string[]>([]);
+  const [liked, setLiked] = useState(false);
 
   const { data: storefront, isLoading: storefrontLoading } = useQuery<Storefront>({
     queryKey: [`/api/storefront/public/${slug}`],
@@ -153,6 +154,41 @@ export default function Storefront() {
       return res.json();
     },
   });
+
+  const handleLike = useCallback(() => {
+    setLiked((prev) => !prev);
+    toast({
+      title: liked ? 'Removed from favorites' : 'Added to favorites',
+      description: liked
+        ? `${storefront?.name || 'Storefront'} removed from your favorites`
+        : `${storefront?.name || 'Storefront'} added to your favorites`,
+    });
+  }, [liked, storefront?.name, toast]);
+
+  const handleShare = useCallback(async () => {
+    const url = window.location.href;
+    const title = storefront?.name || 'Check out this storefront';
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch {
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({
+          title: 'Link copied!',
+          description: 'Storefront link has been copied to your clipboard',
+        });
+      } catch {
+        toast({
+          title: 'Share',
+          description: url,
+        });
+      }
+    }
+  }, [storefront?.name, toast]);
 
   const subscribeMutation = useMutation({
     mutationFn: async (tierId: string) => {
@@ -286,10 +322,20 @@ export default function Storefront() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="icon">
-                    <Heart className="w-5 h-5" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleLike}
+                    aria-label={liked ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <Heart className={`w-5 h-5 ${liked ? 'fill-red-500 text-red-500' : ''}`} />
                   </Button>
-                  <Button variant="outline" size="icon">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleShare}
+                    aria-label="Share storefront"
+                  >
                     <Share2 className="w-5 h-5" />
                   </Button>
                 </div>

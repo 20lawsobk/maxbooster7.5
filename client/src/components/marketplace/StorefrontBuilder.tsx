@@ -769,19 +769,29 @@ export default function StorefrontBuilder() {
                           { name: 'Classic Light', primary: '#1E293B', secondary: '#64748B', background: '#FFFFFF', text: '#0F172A' },
                           { name: 'Neon Cyber', primary: '#00FF88', secondary: '#FF00FF', background: '#0A0A0A', text: '#00FF88' },
                           { name: 'Warm Earth', primary: '#D97706', secondary: '#92400E', background: '#1C1917', text: '#FEF3C7' },
-                        ].map((theme) => (
+                        ].map((theme) => {
+                          const isActive =
+                            customization.colors?.primary === theme.primary &&
+                            customization.colors?.secondary === theme.secondary;
+                          return (
                           <button
                             key={theme.name}
-                            onClick={() => setCustomization({
-                              ...customization,
-                              colors: {
-                                primary: theme.primary,
-                                secondary: theme.secondary,
-                                background: theme.background,
-                                text: theme.text,
-                              },
-                            })}
-                            className="p-3 rounded-lg border-2 border-transparent hover:border-primary transition-all text-left group"
+                            onClick={() => {
+                              const newCustomization = {
+                                ...customization,
+                                colors: {
+                                  primary: theme.primary,
+                                  secondary: theme.secondary,
+                                  background: theme.background,
+                                  text: theme.text,
+                                },
+                              };
+                              setCustomization(newCustomization);
+                              if (selectedStorefront) {
+                                updateStorefrontMutation.mutate({ customization: newCustomization });
+                              }
+                            }}
+                            className={`p-3 rounded-lg border-2 transition-all text-left group ${isActive ? 'border-primary ring-2 ring-primary/30' : 'border-transparent hover:border-primary'}`}
                             style={{ backgroundColor: theme.background }}
                           >
                             <div className="flex gap-1 mb-2">
@@ -790,7 +800,8 @@ export default function StorefrontBuilder() {
                             </div>
                             <span className="text-xs font-medium" style={{ color: theme.text }}>{theme.name}</span>
                           </button>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
