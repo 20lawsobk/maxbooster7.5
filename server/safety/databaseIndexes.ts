@@ -166,6 +166,36 @@ const REQUIRED_INDEXES: IndexDefinition[] = [
     columns: ['created_at'],
     description: 'Audit log time range',
   },
+  {
+    name: 'idx_ip_blacklist_expires_at',
+    table: 'ip_blacklist',
+    columns: ['expires_at'],
+    description: 'IP blacklist expiry lookups',
+  },
+  {
+    name: 'idx_ip_blacklist_ip',
+    table: 'ip_blacklist',
+    columns: ['ip'],
+    description: 'IP blacklist IP address lookups',
+  },
+  {
+    name: 'idx_ip_blacklist_is_active',
+    table: 'ip_blacklist',
+    columns: ['is_active'],
+    description: 'IP blacklist active status filter',
+  },
+  {
+    name: 'idx_autopilot_learning_data_created_at',
+    table: 'autopilot_learning_data',
+    columns: ['created_at'],
+    description: 'Autopilot learning data time range queries',
+  },
+  {
+    name: 'idx_autopilot_learning_data_posting_day',
+    table: 'autopilot_learning_data',
+    columns: ['posting_day_of_week', 'posting_hour'],
+    description: 'Autopilot learning data posting schedule lookups',
+  },
 ];
 
 export interface IndexCreationResult {
