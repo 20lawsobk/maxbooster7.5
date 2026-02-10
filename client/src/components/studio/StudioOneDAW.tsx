@@ -8,7 +8,8 @@ import {
   Trash2, Copy, Scissors, ZoomIn, ZoomOut, Grid3X3, Wand2,
   PanelBottomOpen, PanelBottomClose, PanelRightOpen, PanelRightClose,
   Brain, Sparkles, Library, Keyboard, HelpCircle, X, Camera, Check,
-  MousePointer2, Pencil, Eraser
+  MousePointer2, Pencil, Eraser,
+  Film, Radio, Waves, ArrowUpDown, RotateCcw, Activity, Speaker
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStudioScale } from '@/hooks/useStudioScale';
@@ -35,6 +36,9 @@ import { CrashRecoveryDialog } from './CrashRecoveryDialog';
 import { VersionManagementDialog } from './VersionManagementDialog';
 import { FlowStateExport } from './FlowStateExport';
 import { RecordingPanel } from './RecordingPanel';
+import { FlowStateAutomation } from './FlowStateAutomation';
+import { SpatialAudioMixer } from './SpatialAudioMixer';
+import { VideoTrack } from './VideoTrack';
 import { FlowStateImportAudio } from './FlowStateImportAudio';
 import { StemExportDialog } from './StemExportDialog';
 import { StudioStartHub } from './StudioStartHub';
@@ -111,6 +115,31 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [isAIMastering, setIsAIMastering] = useState(false);
   const [musicalKey, setMusicalKey] = useState('C');
   const [musicalScale, setMusicalScale] = useState('minor');
+
+  const [punchIn, setPunchIn] = useState(false);
+  const [punchOut, setPunchOut] = useState(false);
+  const [punchInTime, setPunchInTime] = useState(0);
+  const [punchOutTime, setPunchOutTime] = useState(0);
+  const [loopRecord, setLoopRecord] = useState(false);
+
+  const [showAutomation, setShowAutomation] = useState(false);
+  const [automationLanes, setAutomationLanes] = useState<any[]>([]);
+
+  const [showSurroundPanel, setShowSurroundPanel] = useState(false);
+  const [surroundFormat, setSurroundFormat] = useState<'2.0' | '5.1' | '7.1' | '7.1.4' | 'atmos'>('2.0');
+
+  const [showVideoTrack, setShowVideoTrack] = useState(false);
+
+  const [clipEditParams, setClipEditParams] = useState<Record<string, {
+    timeStretch?: number;
+    pitchShift?: number;
+    reversed?: boolean;
+    normalized?: boolean;
+    fadeIn?: number;
+    fadeOut?: number;
+  }>>({});
+  const [showTimeStretchDialog, setShowTimeStretchDialog] = useState<string | null>(null);
+  const [showPitchShiftDialog, setShowPitchShiftDialog] = useState<string | null>(null);
   const { ref: containerRef, scale: uiScale, cssVars, trackHeaderWidth, aiPanelWidth } = useStudioScale();
 
   useEffect(() => {
@@ -940,6 +969,16 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         onOpenAI={() => setShowAIPanel(!showAIPanel)}
         onOpenGenerator={() => setShowMusicGenerator(true)}
         showAIPanel={showAIPanel}
+        punchIn={punchIn}
+        punchOut={punchOut}
+        punchInTime={punchInTime}
+        punchOutTime={punchOutTime}
+        loopRecord={loopRecord}
+        onTogglePunchIn={() => setPunchIn(!punchIn)}
+        onTogglePunchOut={() => setPunchOut(!punchOut)}
+        onPunchInTimeChange={setPunchInTime}
+        onPunchOutTimeChange={setPunchOutTime}
+        onToggleLoopRecord={() => setLoopRecord(!loopRecord)}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -971,6 +1010,12 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             onExport={() => setShowExportDialog(true)}
             onImportAudio={() => setShowImportAudio(true)}
             onStemExport={() => setShowStemExport(true)}
+            showAutomation={showAutomation}
+            onToggleAutomation={() => setShowAutomation(!showAutomation)}
+            showSurroundPanel={showSurroundPanel}
+            onToggleSurround={() => setShowSurroundPanel(!showSurroundPanel)}
+            showVideoTrack={showVideoTrack}
+            onToggleVideo={() => setShowVideoTrack(!showVideoTrack)}
           />
 
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -992,6 +1037,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
                 onDeleteTrack={handleDeleteTrack}
                 onDuplicateTrack={(id) => { store.duplicateTrack(id); toast({ title: 'Track Duplicated' }); }}
+                showAutomation={showAutomation}
+                automationLanes={automationLanes}
+                onAutomationLanesChange={setAutomationLanes}
+                showVideoTrack={showVideoTrack}
+                allTracks={tracks}
               />
             </div>
           </div>
@@ -1063,8 +1113,66 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           onClipUploaded={(trackId, clip) => {
             toast({ title: 'Recording Saved', description: `Clip "${clip.name}" added to track.` });
           }}
+          punchIn={punchIn}
+          punchOut={punchOut}
+          punchInTime={punchInTime}
+          punchOutTime={punchOutTime}
+          loopRecord={loopRecord}
         />
       )}
+
+      <AnimatePresence>
+        {showSurroundPanel && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute bottom-4 right-4 z-50 w-[480px] max-h-[500px] bg-[#1f1f23] border border-[#444] rounded-lg shadow-2xl overflow-hidden"
+          >
+            <div className="flex items-center justify-between px-3 py-2 bg-[#252529] border-b border-[#333]">
+              <div className="flex items-center gap-2">
+                <Speaker className="h-4 w-4 text-cyan-400" />
+                <span className="text-sm font-medium">Surround / Immersive Audio</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowSurroundPanel(false)} className="h-6 w-6 p-0">
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="p-3">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-gray-400">Format:</span>
+                <select
+                  value={surroundFormat}
+                  onChange={(e) => setSurroundFormat(e.target.value as any)}
+                  className="h-6 bg-[#1a1a1e] border border-[#444] rounded px-2 text-xs text-gray-300"
+                >
+                  <option value="2.0">Stereo (2.0)</option>
+                  <option value="5.1">5.1 Surround</option>
+                  <option value="7.1">7.1 Surround</option>
+                  <option value="7.1.4">7.1.4 Atmos Bed</option>
+                  <option value="atmos">Dolby Atmos</option>
+                </select>
+              </div>
+              <SpatialAudioMixer
+                speakerConfig={surroundFormat}
+                onSpeakerConfigChange={(config) => setSurroundFormat(config)}
+                objects={tracks.map((t, i) => ({
+                  id: t.id,
+                  name: t.name,
+                  x: Math.cos((i / tracks.length) * Math.PI * 2) * 0.5,
+                  y: Math.sin((i / tracks.length) * Math.PI * 2) * 0.5,
+                  z: 0,
+                  size: 1,
+                  color: t.color || '#3b82f6',
+                  mute: t.muted || false,
+                  solo: t.solo || false,
+                  volume: t.volume || 0.8,
+                }))}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <FlowStatePluginBrowser
         open={showPluginBrowser}
@@ -1407,12 +1515,24 @@ interface TransportBarProps {
   onOpenAI: () => void;
   onOpenGenerator: () => void;
   showAIPanel: boolean;
+  punchIn: boolean;
+  punchOut: boolean;
+  punchInTime: number;
+  punchOutTime: number;
+  loopRecord: boolean;
+  onTogglePunchIn: () => void;
+  onTogglePunchOut: () => void;
+  onPunchInTimeChange: (t: number) => void;
+  onPunchOutTimeChange: (t: number) => void;
+  onToggleLoopRecord: () => void;
 }
 
 function TransportBar({
   transport, project, livePosition, canUndo, canRedo, isDirty, formatTime, formatBars,
   onPlay, onPause, onStop, onRecord, onRewind, onToggleLoop,
-  onUndo, onRedo, onSave, onTempoChange, onOpenPlugins, onOpenAI, onOpenGenerator, showAIPanel
+  onUndo, onRedo, onSave, onTempoChange, onOpenPlugins, onOpenAI, onOpenGenerator, showAIPanel,
+  punchIn, punchOut, punchInTime, punchOutTime, loopRecord,
+  onTogglePunchIn, onTogglePunchOut, onPunchInTimeChange, onPunchOutTimeChange, onToggleLoopRecord
 }: TransportBarProps) {
   return (
     <div className="bg-[#252529] border-b border-[#333] flex items-center px-4 gap-4 shrink-0 flex-wrap" style={{ height: 'var(--transport-h)' }}>
@@ -1518,6 +1638,70 @@ function TransportBar({
 
       <div className="h-6 w-px bg-[#444]" />
 
+      <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onTogglePunchIn}
+              className={cn("h-6 px-1.5 text-[10px]", punchIn && "bg-orange-600/20 text-orange-400")}
+            >
+              P.In
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Punch In</TooltipContent>
+        </Tooltip>
+        {punchIn && (
+          <input
+            type="number"
+            value={punchInTime}
+            onChange={(e) => onPunchInTimeChange(Number(e.target.value))}
+            className="w-12 h-5 bg-[#1a1a1e] border border-[#444] rounded px-1 text-[10px] font-mono text-center"
+            min={0}
+            step={0.1}
+          />
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onTogglePunchOut}
+              className={cn("h-6 px-1.5 text-[10px]", punchOut && "bg-orange-600/20 text-orange-400")}
+            >
+              P.Out
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Punch Out</TooltipContent>
+        </Tooltip>
+        {punchOut && (
+          <input
+            type="number"
+            value={punchOutTime}
+            onChange={(e) => onPunchOutTimeChange(Number(e.target.value))}
+            className="w-12 h-5 bg-[#1a1a1e] border border-[#444] rounded px-1 text-[10px] font-mono text-center"
+            min={0}
+            step={0.1}
+          />
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleLoopRecord}
+              className={cn("h-6 px-1.5 text-[10px]", loopRecord && "bg-red-600/20 text-red-400")}
+            >
+              Loop Rec
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Loop Record</TooltipContent>
+        </Tooltip>
+      </div>
+
+      <div className="h-6 w-px bg-[#444]" />
+
       <div className="flex items-center gap-4">
         <div className="flex flex-col items-center">
           <span className="text-[10px] text-gray-500 uppercase">Time</span>
@@ -1614,6 +1798,12 @@ interface ToolbarProps {
   onExport: () => void;
   onImportAudio: () => void;
   onStemExport: () => void;
+  showAutomation: boolean;
+  onToggleAutomation: () => void;
+  showSurroundPanel: boolean;
+  onToggleSurround: () => void;
+  showVideoTrack: boolean;
+  onToggleVideo: () => void;
 }
 
 function Toolbar({
@@ -1621,7 +1811,10 @@ function Toolbar({
   showInspector, showEditor, showMixer,
   onToggleInspector, onToggleEditor, onToggleMixer,
   onOpenAllPlugins, onOpenInstruments, onOpenEffects, onOpenShortcuts,
-  onExport, onImportAudio, onStemExport
+  onExport, onImportAudio, onStemExport,
+  showAutomation, onToggleAutomation,
+  showSurroundPanel, onToggleSurround,
+  showVideoTrack, onToggleVideo
 }: ToolbarProps) {
   const [showAddMenu, setShowAddMenu] = useState(false);
 
@@ -1760,6 +1953,53 @@ function Toolbar({
           </Button>
         );
       })()}
+
+      <div className="h-5 w-px bg-[#444]" />
+
+      <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleAutomation}
+              className={cn("h-7 gap-1 text-xs", showAutomation && "bg-purple-600/20 text-purple-400")}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              Automation
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Toggle Automation Lanes</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleSurround}
+              className={cn("h-7 gap-1 text-xs", showSurroundPanel && "bg-cyan-600/20 text-cyan-400")}
+            >
+              <Speaker className="h-3.5 w-3.5" />
+              Surround
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Surround / Immersive Audio</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleVideo}
+              className={cn("h-7 gap-1 text-xs", showVideoTrack && "bg-green-600/20 text-green-400")}
+            >
+              <Film className="h-3.5 w-3.5" />
+              Video
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Video Track</TooltipContent>
+        </Tooltip>
+      </div>
 
       <div className="h-5 w-px bg-[#444]" />
 
@@ -2052,17 +2292,32 @@ interface ArrangeViewProps {
   onUpdateTrack: (id: string, updates: any) => void;
   onDeleteTrack: (id: string) => void;
   onDuplicateTrack: (id: string) => void;
+  showAutomation?: boolean;
+  automationLanes?: any[];
+  onAutomationLanesChange?: (lanes: any[]) => void;
+  showVideoTrack?: boolean;
+  allTracks?: any[];
 }
 
 function ArrangeView({
   tracks, selectedTrackId, selectedClipId, zoom, scrollX, tempo, playheadPosition, isPlaying,
-  trackHeaderWidth, onSelectTrack, onSelectClip, onUpdateTrack, onDeleteTrack, onDuplicateTrack
+  trackHeaderWidth, onSelectTrack, onSelectClip, onUpdateTrack, onDeleteTrack, onDuplicateTrack,
+  showAutomation, automationLanes = [], onAutomationLanesChange, showVideoTrack, allTracks = []
 }: ArrangeViewProps) {
   const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const playheadX = playheadPosition * pixelsPerSecond;
 
   return (
     <div className="relative min-h-full">
+      {showVideoTrack && (
+        <div className="border-b border-[#444]">
+          <VideoTrack
+            duration={300}
+            isPlaying={isPlaying}
+          />
+        </div>
+      )}
+
       {tracks.length === 0 ? (
         <div className="flex items-center justify-center h-64 text-gray-500">
           <div className="text-center">
@@ -2073,20 +2328,48 @@ function ArrangeView({
         </div>
       ) : (
         tracks.map((track, index) => (
-          <TrackLane
-            key={track.id}
-            track={track}
-            index={index}
-            isSelected={track.id === selectedTrackId}
-            selectedClipId={selectedClipId}
-            zoom={zoom}
-            tempo={tempo}
-            onSelect={() => onSelectTrack(track.id)}
-            onSelectClip={onSelectClip}
-            onUpdate={(updates) => onUpdateTrack(track.id, updates)}
-            onDelete={() => onDeleteTrack(track.id)}
-            onDuplicate={() => onDuplicateTrack(track.id)}
-          />
+          <div key={track.id}>
+            <TrackLane
+              track={track}
+              index={index}
+              isSelected={track.id === selectedTrackId}
+              selectedClipId={selectedClipId}
+              zoom={zoom}
+              tempo={tempo}
+              onSelect={() => onSelectTrack(track.id)}
+              onSelectClip={onSelectClip}
+              onUpdate={(updates) => onUpdateTrack(track.id, updates)}
+              onDelete={() => onDeleteTrack(track.id)}
+              onDuplicate={() => onDuplicateTrack(track.id)}
+              allTracks={allTracks}
+            />
+            {showAutomation && (
+              <div className="border-b border-[#333] bg-[#1a1a1e]" style={{ height: 80 }}>
+                <div className="flex h-full">
+                  <div
+                    className="shrink-0 flex items-center px-3 border-r border-[#333] bg-[#1f1f23]"
+                    style={{ width: 'var(--track-header-w)' }}
+                  >
+                    <Activity className="h-3 w-3 mr-1.5 text-purple-400" />
+                    <span className="text-[10px] text-gray-400 truncate">Automation</span>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <FlowStateAutomation
+                      lanes={automationLanes.filter(l => l.trackId === track.id)}
+                      onLanesChange={(newLanes) => {
+                        const otherLanes = automationLanes.filter(l => l.trackId !== track.id);
+                        onAutomationLanesChange?.([...otherLanes, ...newLanes]);
+                      }}
+                      duration={300}
+                      currentTime={playheadPosition}
+                      zoom={zoom}
+                      isPlaying={isPlaying}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         ))
       )}
 
@@ -2112,9 +2395,10 @@ interface TrackLaneProps {
   onUpdate: (updates: any) => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  allTracks?: any[];
 }
 
-function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSelect, onSelectClip, onUpdate, onDelete, onDuplicate }: TrackLaneProps) {
+function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSelect, onSelectClip, onUpdate, onDelete, onDuplicate, allTracks = [] }: TrackLaneProps) {
   const height = track.collapsed ? 24 : (track.height || 80);
 
   const trackTypeIcon = {
@@ -2202,6 +2486,23 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
                 <Circle className="h-2.5 w-2.5" fill={track.armed ? "white" : "none"} />
               </button>
             </div>
+
+            {track.type === 'bus' && (
+              <div className="flex items-center mt-0.5">
+                <select
+                  value={track.routeTo || ''}
+                  onChange={(e) => { e.stopPropagation(); onUpdate({ routeTo: e.target.value || null }); }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-4 bg-[#1a1a1e] border border-[#444] rounded text-[9px] text-gray-300 px-0.5 w-full max-w-[100px]"
+                >
+                  <option value="">Route To...</option>
+                  <option value="master">Master</option>
+                  {allTracks.filter(t => t.id !== track.id && t.type !== 'master').map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="flex-1 relative bg-[#1a1a1e] overflow-hidden">
@@ -2360,38 +2661,87 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
   }, [clip.waveformData, displayWidth, trackColor, zoom]);
 
   return (
-    <div
-      className={cn("absolute top-1 bottom-1 rounded overflow-hidden group", drag && "opacity-80")}
-      style={{
-        left: Math.max(0, displayLeft),
-        width: Math.max(displayWidth, 20),
-        backgroundColor: `${trackColor}${isSelected ? '60' : '40'}`,
-        borderLeft: `2px solid ${trackColor}`,
-        borderRight: isSelected ? `2px solid ${trackColor}` : undefined,
-        boxShadow: isSelected ? `0 0 8px ${trackColor}80, inset 0 0 0 1px ${trackColor}60` : undefined,
-        opacity: isLoading ? 0.6 : 1,
-        zIndex: isSelected ? 10 : 1,
-      }}
-      onMouseDown={(e) => handleMouseDown(e, 'move')}
-      onClick={(e) => { e.stopPropagation(); onSelect(); }}
-    >
-      <div
-        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
-        onMouseDown={(e) => handleMouseDown(e, 'trim-start')}
-      />
-      <div
-        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
-        onMouseDown={(e) => handleMouseDown(e, 'trim-end')}
-      />
-      <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80 pointer-events-none">
-        {clip.name}{isLoading ? ' (loading...)' : ''}
-      </div>
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-x-0 bottom-0 w-full pointer-events-none"
-        style={{ height: 'calc(100% - 18px)' }}
-      />
-    </div>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          className={cn("absolute top-1 bottom-1 rounded overflow-hidden group", drag && "opacity-80")}
+          style={{
+            left: Math.max(0, displayLeft),
+            width: Math.max(displayWidth, 20),
+            backgroundColor: `${trackColor}${isSelected ? '60' : '40'}`,
+            borderLeft: `2px solid ${trackColor}`,
+            borderRight: isSelected ? `2px solid ${trackColor}` : undefined,
+            boxShadow: isSelected ? `0 0 8px ${trackColor}80, inset 0 0 0 1px ${trackColor}60` : undefined,
+            opacity: isLoading ? 0.6 : 1,
+            zIndex: isSelected ? 10 : 1,
+          }}
+          onMouseDown={(e) => handleMouseDown(e, 'move')}
+          onClick={(e) => { e.stopPropagation(); onSelect(); }}
+        >
+          <div
+            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
+            onMouseDown={(e) => handleMouseDown(e, 'trim-start')}
+          />
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
+            onMouseDown={(e) => handleMouseDown(e, 'trim-end')}
+          />
+          <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80 pointer-events-none">
+            {clip.name}{isLoading ? ' (loading...)' : ''}
+          </div>
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-x-0 bottom-0 w-full pointer-events-none"
+            style={{ height: 'calc(100% - 18px)' }}
+          />
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          const params = (s as any)._clipEditParams?.[clip.id] || {};
+          (s as any)._showTimeStretchDialog = clip.id;
+        }}>
+          <Waves className="h-3.5 w-3.5 mr-2" />
+          Time Stretch...
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          (s as any)._showPitchShiftDialog = clip.id;
+        }}>
+          <ArrowUpDown className="h-3.5 w-3.5 mr-2" />
+          Pitch Shift...
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          s.updateAudioClip(trackId, clip.id, { reversed: !clip.reversed });
+        }}>
+          <RotateCcw className="h-3.5 w-3.5 mr-2" />
+          {clip.reversed ? 'Unreverse' : 'Reverse'}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          s.updateAudioClip(trackId, clip.id, { normalized: true, gain: 1.0 });
+        }}>
+          <Activity className="h-3.5 w-3.5 mr-2" />
+          Normalize
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          s.updateAudioClip(trackId, clip.id, { fadeIn: (clip.fadeIn || 0) > 0 ? 0 : 0.5 });
+        }}>
+          <Waves className="h-3.5 w-3.5 mr-2" />
+          {(clip.fadeIn || 0) > 0 ? 'Remove Fade In' : 'Fade In (0.5s)'}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          s.updateAudioClip(trackId, clip.id, { fadeOut: (clip.fadeOut || 0) > 0 ? 0 : 0.5 });
+        }}>
+          <Waves className="h-3.5 w-3.5 mr-2" />
+          {(clip.fadeOut || 0) > 0 ? 'Remove Fade Out' : 'Fade Out (0.5s)'}
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
@@ -2479,43 +2829,77 @@ function MidiClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onSe
   const displayWidth = drag?.type === 'trim-end' ? clampedWidth + dragOffset : drag?.type === 'trim-start' ? clampedWidth - dragOffset : clampedWidth;
 
   return (
-    <div
-      className={cn("absolute top-1 bottom-1 rounded overflow-hidden group", drag && "opacity-80")}
-      style={{
-        left: Math.max(0, displayLeft),
-        width: Math.max(displayWidth, 20),
-        backgroundColor: `${trackColor}${isSelected ? '60' : '40'}`,
-        borderLeft: `2px solid ${trackColor}`,
-        borderRight: isSelected ? `2px solid ${trackColor}` : undefined,
-        boxShadow: isSelected ? `0 0 8px ${trackColor}80, inset 0 0 0 1px ${trackColor}60` : undefined,
-        zIndex: isSelected ? 10 : 1,
-      }}
-      onMouseDown={(e) => handleMouseDown(e, 'move')}
-      onClick={(e) => { e.stopPropagation(); onSelect(); }}
-    >
-      <div
-        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
-        onMouseDown={(e) => handleMouseDown(e, 'trim-start')}
-      />
-      <div
-        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
-        onMouseDown={(e) => handleMouseDown(e, 'trim-end')}
-      />
-      <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80 pointer-events-none">{clip.name}</div>
-      <div className="absolute inset-x-1 bottom-1 top-5 flex flex-col gap-px overflow-hidden pointer-events-none">
-        {clip.notes?.slice(0, 8).map((note: any, i: number) => (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          className={cn("absolute top-1 bottom-1 rounded overflow-hidden group", drag && "opacity-80")}
+          style={{
+            left: Math.max(0, displayLeft),
+            width: Math.max(displayWidth, 20),
+            backgroundColor: `${trackColor}${isSelected ? '60' : '40'}`,
+            borderLeft: `2px solid ${trackColor}`,
+            borderRight: isSelected ? `2px solid ${trackColor}` : undefined,
+            boxShadow: isSelected ? `0 0 8px ${trackColor}80, inset 0 0 0 1px ${trackColor}60` : undefined,
+            zIndex: isSelected ? 10 : 1,
+          }}
+          onMouseDown={(e) => handleMouseDown(e, 'move')}
+          onClick={(e) => { e.stopPropagation(); onSelect(); }}
+        >
           <div
-            key={i}
-            className="h-1.5 rounded-sm"
-            style={{
-              backgroundColor: trackColor,
-              width: `${(note.duration / clip.duration) * 100}%`,
-              marginLeft: `${(note.startTime / clip.duration) * 100}%`,
-            }}
+            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
+            onMouseDown={(e) => handleMouseDown(e, 'trim-start')}
           />
-        ))}
-      </div>
-    </div>
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-white/30"
+            onMouseDown={(e) => handleMouseDown(e, 'trim-end')}
+          />
+          <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80 pointer-events-none">{clip.name}</div>
+          <div className="absolute inset-x-1 bottom-1 top-5 flex flex-col gap-px overflow-hidden pointer-events-none">
+            {clip.notes?.slice(0, 8).map((note: any, i: number) => (
+              <div
+                key={i}
+                className="h-1.5 rounded-sm"
+                style={{
+                  backgroundColor: trackColor,
+                  width: `${(note.duration / clip.duration) * 100}%`,
+                  marginLeft: `${(note.startTime / clip.duration) * 100}%`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          s.updateMidiClip(trackId, clip.id, { reversed: !clip.reversed });
+        }}>
+          <RotateCcw className="h-3.5 w-3.5 mr-2" />
+          {clip.reversed ? 'Unreverse' : 'Reverse'}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          s.updateMidiClip(trackId, clip.id, { normalized: true });
+        }}>
+          <Activity className="h-3.5 w-3.5 mr-2" />
+          Normalize Velocities
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          s.updateMidiClip(trackId, clip.id, { pitchShift: (clip.pitchShift || 0) + 1 });
+        }}>
+          <ArrowUpDown className="h-3.5 w-3.5 mr-2" />
+          Pitch +1 Semitone
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          const s = useStudioStore.getState();
+          s.updateMidiClip(trackId, clip.id, { pitchShift: (clip.pitchShift || 0) - 1 });
+        }}>
+          <ArrowUpDown className="h-3.5 w-3.5 mr-2" />
+          Pitch -1 Semitone
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
@@ -2798,6 +3182,7 @@ function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpd
             isSelected={track.id === selectedTrackId}
             onSelect={() => onSelectTrack(track.id)}
             onUpdate={(updates) => onUpdateTrack(track.id, updates)}
+            allTracks={tracks}
           />
         ))}
         {masterTrack && (
@@ -2820,9 +3205,10 @@ interface ChannelStripProps {
   isMaster?: boolean;
   onSelect: () => void;
   onUpdate: (updates: any) => void;
+  allTracks?: any[];
 }
 
-function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate }: ChannelStripProps) {
+function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate, allTracks = [] }: ChannelStripProps) {
   const leftDb = track.meterLevel?.left ?? -60;
   const rightDb = track.meterLevel?.right ?? -60;
   const leftPct = Math.max(0, Math.min(100, ((leftDb + 60) / 60) * 100));
@@ -2915,6 +3301,23 @@ function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate }: Chann
           S
         </button>
       </div>
+
+      {track.type === 'bus' && (
+        <div className="px-1 pb-1">
+          <select
+            value={track.routeTo || ''}
+            onChange={(e) => { e.stopPropagation(); onUpdate({ routeTo: e.target.value || null }); }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full h-4 bg-[#1a1a1e] border border-[#444] rounded text-[8px] text-gray-400 px-0.5"
+          >
+            <option value="">Route...</option>
+            <option value="master">Master</option>
+            {allTracks.filter(t => t.id !== track.id && t.type !== 'master').map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="text-[10px] text-center py-1 text-gray-400">
         {Math.round(track.volume * 100)}%

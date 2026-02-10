@@ -144,7 +144,7 @@ import {
   Phone,
   Video,
   Camera,
-  Image,
+  Image as ImageIcon,
   File,
   FileText,
   FileAudio,
@@ -353,6 +353,9 @@ interface BulkUploadItem {
   key: string;
   price: number;
   licenseType: string;
+  description: string;
+  tags: string;
+  coverArtFile: File | null;
   status: 'pending' | 'uploading' | 'processing' | 'completed' | 'failed';
   progress: number;
   error?: string;
@@ -1300,21 +1303,55 @@ export default function Marketplace() {
     }
   };
 
+  const [bulkEditMode, setBulkEditMode] = useState(false);
+  const [bulkEditValues, setBulkEditValues] = useState({
+    genre: '',
+    mood: '',
+    tempo: 0,
+    key: '',
+    price: 0,
+    licenseType: '',
+    description: '',
+    tags: '',
+  });
+  const [expandedBulkItem, setExpandedBulkItem] = useState<string | null>(null);
+
   const handleBulkFileSelect = (files: FileList) => {
     const newItems: BulkUploadItem[] = Array.from(files).map((file, index) => ({
       id: `bulk-${Date.now()}-${index}`,
       file,
-      title: file.name.replace(/\.[^/.]+$/, ''),
+      title: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
       genre: 'Hip-Hop',
       mood: 'Chill',
       tempo: 120,
       key: 'C',
       price: 50,
       licenseType: 'basic',
+      description: '',
+      tags: '',
+      coverArtFile: null,
       status: 'pending',
       progress: 0,
     }));
     setBulkUploadItems([...bulkUploadItems, ...newItems]);
+  };
+
+  const applyBulkEdit = () => {
+    setBulkUploadItems(prev => prev.map(item => {
+      if (item.status !== 'pending') return item;
+      const updated = { ...item };
+      if (bulkEditValues.genre) updated.genre = bulkEditValues.genre;
+      if (bulkEditValues.mood) updated.mood = bulkEditValues.mood;
+      if (bulkEditValues.tempo > 0) updated.tempo = bulkEditValues.tempo;
+      if (bulkEditValues.key) updated.key = bulkEditValues.key;
+      if (bulkEditValues.price > 0) updated.price = bulkEditValues.price;
+      if (bulkEditValues.licenseType) updated.licenseType = bulkEditValues.licenseType;
+      if (bulkEditValues.description) updated.description = bulkEditValues.description;
+      if (bulkEditValues.tags) updated.tags = bulkEditValues.tags;
+      return updated;
+    }));
+    setBulkEditMode(false);
+    toast({ title: 'Applied', description: 'Settings applied to all pending beats.' });
   };
 
   const handleBulkUpload = async () => {
@@ -1334,6 +1371,9 @@ export default function Marketplace() {
           formData.append('key', item.key);
           formData.append('price', item.price.toString());
           formData.append('licenseType', item.licenseType);
+          if (item.description) formData.append('description', item.description);
+          if (item.tags) formData.append('tags', item.tags);
+          if (item.coverArtFile) formData.append('coverArt', item.coverArtFile);
 
           await apiRequest('POST', '/api/marketplace/upload', formData);
 
@@ -2795,20 +2835,67 @@ export default function Marketplace() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="coverArt">Cover Art (JPG/PNG) <span className="text-xs text-muted-foreground">Max {MAX_COVER_SIZE_MB}MB</span></Label>
-              <Input
-                id="coverArt"
-                type="file"
-                accept="image/jpeg,image/png,image/jpg"
-                onClick={() => { isPickingFileRef.current = true; }}
-                onBlur={() => { setTimeout(() => { isPickingFileRef.current = false; }, 500); }}
-                onChange={(e) => {
-                  isPickingFileRef.current = false;
-                  e.target.files?.[0] && handleCoverFileSelect(e.target.files[0]);
-                }}
-              />
-              {coverArtFile && (
-                <p className="text-sm text-green-600">{coverArtFile.name} ({(coverArtFile.size / (1024 * 1024)).toFixed(2)} MB)</p>
+              <Label>Cover Art (JPG/PNG) <span className="text-xs text-muted-foreground">Max {MAX_COVER_SIZE_MB}MB - Recommended 3000x3000</span></Label>
+              {coverArtFile ? (
+                <div className="border-2 border-dashed rounded-lg p-4 text-center border-purple-500 bg-purple-50 dark:bg-purple-950">
+                  <div className="flex items-center gap-4">
+                    <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+                      <img
+                        src={URL.createObjectURL(coverArtFile)}
+                        alt="Cover art preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 text-left space-y-1">
+                      <p className="font-medium text-purple-700 dark:text-purple-400 truncate">{coverArtFile.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {(coverArtFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCoverArtFile(null)}
+                      >
+                        <X className="w-4 h-4 mr-1" /> Remove
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <label
+                  htmlFor="cover-art-upload"
+                  className="border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer block border-gray-300 hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/30"
+                  onDragOver={(e) => { e.preventDefault(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files[0];
+                    if (file) handleCoverFileSelect(file);
+                  }}
+                >
+                  <input
+                    id="cover-art-upload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg"
+                    onClick={() => { isPickingFileRef.current = true; }}
+                    onBlur={() => { setTimeout(() => { isPickingFileRef.current = false; }, 500); }}
+                    onChange={(e) => {
+                      isPickingFileRef.current = false;
+                      e.target.files?.[0] && handleCoverFileSelect(e.target.files[0]);
+                    }}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                      <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-sm">Tap to select cover art</p>
+                      <p className="text-xs text-muted-foreground">or drag & drop on desktop</p>
+                      <p className="text-xs text-muted-foreground mt-1">Square image recommended (3000x3000px)</p>
+                    </div>
+                  </div>
+                </label>
               )}
             </div>
           </div>
@@ -2860,19 +2947,26 @@ export default function Marketplace() {
       </Dialog>
 
       <Dialog open={showBulkUploadModal} onOpenChange={setShowBulkUploadModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <FolderUp className="w-5 h-5 mr-2" />
               Bulk Upload
             </DialogTitle>
-            <DialogDescription>Upload multiple beats at once with automated metadata</DialogDescription>
+            <DialogDescription>Upload multiple beats at once. Edit each beat individually or apply settings in bulk.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="border-2 border-dashed rounded-lg p-8 text-center">
-              <UploadCloud className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">Drag & drop audio files here</p>
-              <p className="text-sm text-muted-foreground mb-4">Supports MP3, WAV, FLAC, AAC, OGG, M4A, AIFF</p>
+            <div
+              className="border-2 border-dashed rounded-lg p-6 text-center transition-colors hover:border-blue-400"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (e.dataTransfer.files) handleBulkFileSelect(e.dataTransfer.files);
+              }}
+            >
+              <UploadCloud className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+              <p className="text-lg font-medium mb-1">Drag & drop audio files here</p>
+              <p className="text-sm text-muted-foreground mb-3">Supports MP3, WAV, FLAC, AAC, OGG, M4A, AIFF</p>
               <Input
                 type="file"
                 multiple
@@ -2889,68 +2983,243 @@ export default function Marketplace() {
             </div>
 
             {bulkUploadItems.length > 0 && (
-              <ScrollArea className="h-64">
-                <div className="space-y-2">
-                  {bulkUploadItems.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-4 p-3 border rounded-lg">
-                      <FileAudio className="w-8 h-8 text-blue-500 flex-shrink-0" />
-                      <div className="flex-1">
-                        <Input
-                          value={item.title}
-                          onChange={(e) => setBulkUploadItems(prev =>
-                            prev.map(i => i.id === item.id ? { ...i, title: e.target.value } : i)
-                          )}
-                          className="mb-2"
-                        />
-                        <div className="flex space-x-2">
-                          <Select
-                            value={item.genre}
-                            onValueChange={(value) => setBulkUploadItems(prev =>
-                              prev.map(i => i.id === item.id ? { ...i, genre: value } : i)
-                            )}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {BEAT_GENRES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            type="number"
-                            value={item.price}
-                            onChange={(e) => setBulkUploadItems(prev =>
-                              prev.map(i => i.id === item.id ? { ...i, price: parseInt(e.target.value) } : i)
-                            )}
-                            className="w-24"
-                            placeholder="Price"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex-shrink-0 w-32">
-                        {item.status === 'pending' && <Badge variant="secondary">Pending</Badge>}
-                        {item.status === 'uploading' && <Progress value={item.progress} className="w-full" />}
-                        {item.status === 'completed' && <Badge variant="default">Complete</Badge>}
-                        {item.status === 'failed' && <Badge variant="destructive">Failed</Badge>}
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setBulkUploadItems(prev => prev.filter(i => i.id !== item.id))}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">{bulkUploadItems.length} beats queued</p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={bulkEditMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setBulkEditMode(!bulkEditMode)}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Bulk Edit All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setBulkUploadItems(prev => prev.filter(i => i.status !== 'pending'))}
+                    >
+                      Clear Pending
+                    </Button>
+                  </div>
                 </div>
-              </ScrollArea>
+
+                {bulkEditMode && (
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Apply to all pending beats (leave blank to skip)</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <Label className="text-xs">Genre</Label>
+                        <Select value={bulkEditValues.genre} onValueChange={(v) => setBulkEditValues(prev => ({ ...prev, genre: v }))}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                          <SelectContent>{BEAT_GENRES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Mood</Label>
+                        <Select value={bulkEditValues.mood} onValueChange={(v) => setBulkEditValues(prev => ({ ...prev, mood: v }))}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                          <SelectContent>{BEAT_MOODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Key</Label>
+                        <Select value={bulkEditValues.key} onValueChange={(v) => setBulkEditValues(prev => ({ ...prev, key: v }))}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                          <SelectContent>
+                            {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'].map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">License</Label>
+                        <Select value={bulkEditValues.licenseType} onValueChange={(v) => setBulkEditValues(prev => ({ ...prev, licenseType: v }))}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="basic">Basic</SelectItem>
+                            <SelectItem value="premium">Premium</SelectItem>
+                            <SelectItem value="unlimited">Unlimited</SelectItem>
+                            <SelectItem value="exclusive">Exclusive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">BPM</Label>
+                        <Input type="number" value={bulkEditValues.tempo || ''} onChange={(e) => setBulkEditValues(prev => ({ ...prev, tempo: parseInt(e.target.value) || 0 }))} placeholder="BPM" className="h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Price ($)</Label>
+                        <Input type="number" value={bulkEditValues.price || ''} onChange={(e) => setBulkEditValues(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))} placeholder="Price" className="h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Tags</Label>
+                        <Input value={bulkEditValues.tags} onChange={(e) => setBulkEditValues(prev => ({ ...prev, tags: e.target.value }))} placeholder="tag1, tag2" className="h-8 text-xs" />
+                      </div>
+                      <div className="flex items-end">
+                        <Button size="sm" onClick={applyBulkEdit} className="h-8 bg-gradient-to-r from-blue-600 to-purple-600 w-full">
+                          Apply to All
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <ScrollArea className="max-h-[400px]">
+                  <div className="space-y-2">
+                    {bulkUploadItems.map((item) => (
+                      <div key={item.id} className="border rounded-lg overflow-hidden">
+                        <div
+                          className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50"
+                          onClick={() => setExpandedBulkItem(expandedBulkItem === item.id ? null : item.id)}
+                        >
+                          {item.coverArtFile ? (
+                            <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+                              <img src={URL.createObjectURL(item.coverArtFile)} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <FileAudio className="w-10 h-10 text-blue-500 flex-shrink-0 p-1" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{item.title}</p>
+                            <p className="text-xs text-muted-foreground">{item.genre} &bull; {item.key} &bull; {item.tempo} BPM &bull; ${item.price}</p>
+                          </div>
+                          <div className="flex-shrink-0 w-24">
+                            {item.status === 'pending' && <Badge variant="secondary" className="text-xs">Pending</Badge>}
+                            {item.status === 'uploading' && <Progress value={item.progress} className="w-full h-2" />}
+                            {item.status === 'completed' && <Badge className="text-xs bg-green-600">Done</Badge>}
+                            {item.status === 'failed' && <Badge variant="destructive" className="text-xs">Failed</Badge>}
+                          </div>
+                          <ChevronDown className={`w-4 h-4 transition-transform ${expandedBulkItem === item.id ? 'rotate-180' : ''}`} />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={(e) => { e.stopPropagation(); setBulkUploadItems(prev => prev.filter(i => i.id !== item.id)); }}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+
+                        {expandedBulkItem === item.id && (
+                          <div className="px-3 pb-3 space-y-3 border-t bg-muted/30">
+                            <div className="grid grid-cols-2 gap-3 pt-3">
+                              <div>
+                                <Label className="text-xs">Title</Label>
+                                <Input
+                                  value={item.title}
+                                  onChange={(e) => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, title: e.target.value } : i))}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Genre</Label>
+                                <Select value={item.genre} onValueChange={(v) => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, genre: v } : i))}>
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>{BEAT_GENRES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-xs">Mood</Label>
+                                <Select value={item.mood} onValueChange={(v) => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, mood: v } : i))}>
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>{BEAT_MOODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-xs">Key</Label>
+                                <Select value={item.key} onValueChange={(v) => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, key: v } : i))}>
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'].map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-xs">BPM</Label>
+                                <Input type="number" value={item.tempo} onChange={(e) => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, tempo: parseInt(e.target.value) || 120 } : i))} className="h-8 text-sm" min="60" max="300" />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Price ($)</Label>
+                                <Input type="number" value={item.price} onChange={(e) => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, price: parseInt(e.target.value) || 1 } : i))} className="h-8 text-sm" min="1" />
+                              </div>
+                              <div>
+                                <Label className="text-xs">License</Label>
+                                <Select value={item.licenseType} onValueChange={(v) => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, licenseType: v } : i))}>
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="basic">Basic</SelectItem>
+                                    <SelectItem value="premium">Premium</SelectItem>
+                                    <SelectItem value="unlimited">Unlimited</SelectItem>
+                                    <SelectItem value="exclusive">Exclusive</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-xs">Tags</Label>
+                                <Input value={item.tags} onChange={(e) => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, tags: e.target.value } : i))} placeholder="e.g., dark, trap" className="h-8 text-sm" />
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs">Description</Label>
+                              <Textarea
+                                value={item.description}
+                                onChange={(e) => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
+                                placeholder="Optional description..."
+                                rows={2}
+                                className="text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Cover Art</Label>
+                              {item.coverArtFile ? (
+                                <div className="flex items-center gap-3 mt-1">
+                                  <div className="w-16 h-16 rounded overflow-hidden">
+                                    <img src={URL.createObjectURL(item.coverArtFile)} alt="" className="w-full h-full object-cover" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">{item.coverArtFile.name}</p>
+                                    <Button variant="ghost" size="sm" className="h-6 text-xs mt-1" onClick={() => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, coverArtFile: null } : i))}>
+                                      <X className="w-3 h-3 mr-1" /> Remove
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <label className="border border-dashed rounded-lg p-3 text-center cursor-pointer block mt-1 hover:border-purple-400 transition-colors">
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/png"
+                                    className="sr-only"
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      if (f) {
+                                        const err = validateCoverFile(f);
+                                        if (err) { toast({ title: 'Invalid File', description: err, variant: 'destructive' }); return; }
+                                        setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, coverArtFile: f } : i));
+                                      }
+                                    }}
+                                  />
+                                  <div className="flex items-center gap-2 justify-center">
+                                    <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground">Add cover art (JPG/PNG)</span>
+                                  </div>
+                                </label>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBulkUploadModal(false)}>Cancel</Button>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => { setBulkUploadItems([]); setShowBulkUploadModal(false); }}>Cancel</Button>
             <Button
               onClick={handleBulkUpload}
-              disabled={bulkUploadItems.length === 0}
+              disabled={bulkUploadItems.filter(i => i.status === 'pending').length === 0}
               className="bg-gradient-to-r from-blue-600 to-purple-600"
             >
               <Upload className="w-4 h-4 mr-2" />
