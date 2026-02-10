@@ -471,7 +471,15 @@ export default function StorefrontBuilder() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedStorefront(storefront);
-                        setCustomization(storefront.customization);
+                        setCustomization(storefront.customization || {
+                          bio: '',
+                          socialLinks: {},
+                          theme: 'dark',
+                          accentColor: '#6366f1',
+                          layout: 'grid',
+                          showStats: true,
+                          featuredBeatIds: [],
+                        });
                         setActiveTab('overview');
                       }}
                     >
