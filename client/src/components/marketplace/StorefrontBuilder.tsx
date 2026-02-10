@@ -208,11 +208,10 @@ export default function StorefrontBuilder() {
       formData.append('file', file);
       formData.append('assetType', assetType);
 
-      const response = await uploadWithProgress('/api/storefront/upload-asset', formData, {});
-      const result = await response.json();
+      const result = await uploadWithProgress('/api/storefront/upload-asset', formData, {}) as any;
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Upload failed');
+      if (result.error) {
+        throw new Error(result.error);
       }
 
       setCustomization({
