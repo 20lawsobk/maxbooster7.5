@@ -143,6 +143,42 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     category: 'social',
     description: 'YouTube client secret',
   },
+  {
+    name: 'GOOGLE_BUSINESS_CLIENT_ID',
+    required: false,
+    category: 'social',
+    description: 'Google Business client ID',
+  },
+  {
+    name: 'GOOGLE_BUSINESS_CLIENT_SECRET',
+    required: false,
+    category: 'social',
+    description: 'Google Business client secret',
+  },
+  {
+    name: 'LINKEDIN_CLIENT_ID',
+    required: false,
+    category: 'social',
+    description: 'LinkedIn client ID',
+  },
+  {
+    name: 'LINKEDIN_CLIENT_SECRET',
+    required: false,
+    category: 'social',
+    description: 'LinkedIn client secret',
+  },
+  {
+    name: 'THREADS_APP_ID',
+    required: false,
+    category: 'social',
+    description: 'Threads App ID',
+  },
+  {
+    name: 'THREADS_APP_SECRET',
+    required: false,
+    category: 'social',
+    description: 'Threads App secret',
+  },
 ];
 
 export interface ValidationResult {
