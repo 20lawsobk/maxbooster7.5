@@ -124,6 +124,67 @@ export default function Dashboard() {
   return <DashboardContent user={user} />;
 }
 
+function UpcomingReleasesSection() {
+  const { data, isLoading } = useQuery<{ countdowns: any[] }>({
+    queryKey: ['/api/countdowns'],
+  });
+
+  const countdowns = data?.countdowns ?? [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Calendar className="w-5 h-5 mr-2 text-purple-600" />
+          Upcoming Releases
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ) : countdowns.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <Music className="w-10 h-10 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No upcoming releases yet</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {countdowns.map((countdown: any) => {
+              const releaseDate = new Date(countdown.releaseDate);
+              const now = new Date();
+              const diff = releaseDate.getTime() - now.getTime();
+              const isReleased = diff <= 0;
+              const days = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+              const hours = Math.max(0, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
+              const minutes = Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
+
+              const progress = countdown.progress ?? { completed: 0, total: 1, percentage: 0 };
+
+              return (
+                <CountdownCard
+                  key={countdown.id}
+                  id={String(countdown.id)}
+                  title={countdown.title ?? 'Untitled Release'}
+                  releaseDate={countdown.releaseDate}
+                  artworkUrl={countdown.artworkUrl}
+                  status={countdown.status ?? 'active'}
+                  progress={progress}
+                  timeRemaining={{ days, hours, minutes, isReleased }}
+                  presaveCount={countdown.presaveCount}
+                  compact
+                />
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // Separate component to ensure hooks are only called when user is authenticated
 function DashboardContent({ user }: { user: any }) {
   const { toast } = useToast();
@@ -735,17 +796,7 @@ function DashboardContent({ user }: { user: any }) {
             <RevenueForecast />
 
             {/* Upcoming Releases */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="w-5 h-5 mr-2 text-purple-600" />
-                  Upcoming Releases
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CountdownCard />
-              </CardContent>
-            </Card>
+            <UpcomingReleasesSection />
           </TabsContent>
 
           <TabsContent value="ai-insights" className="space-y-6">
