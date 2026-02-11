@@ -489,7 +489,7 @@ export function CreativeVariantGenerator() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {ctas.map((cta) => (
+                      {CTA_SUGGESTIONS.map((cta) => (
                         <SelectItem key={cta} value={cta}>
                           {cta}
                         </SelectItem>
