@@ -1424,6 +1424,54 @@ export async function registerRoutes(
     }
   });
 
+  // Social Platform Connect - Creates stub social account entries
+  const ALLOWED_CONNECT_PROVIDERS = ['spotify', 'apple_music', 'youtube', 'instagram', 'tiktok', 'soundcloud'];
+
+  app.get("/api/auth/connect/:provider", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.redirect('/auth?redirect=' + encodeURIComponent(req.originalUrl));
+    }
+
+    const { provider } = req.params;
+    if (!ALLOWED_CONNECT_PROVIDERS.includes(provider)) {
+      return res.status(400).json({ error: `Unsupported provider: ${provider}` });
+    }
+
+    try {
+      const { socialAccounts } = await import('@shared/schema');
+      const { eq, and } = await import('drizzle-orm');
+      const { db } = await import('./db');
+
+      const [existing] = await db.select().from(socialAccounts)
+        .where(and(
+          eq(socialAccounts.userId, req.user.id),
+          eq(socialAccounts.platform, provider)
+        )).limit(1);
+
+      if (existing) {
+        await db.update(socialAccounts)
+          .set({ isActive: true, createdAt: new Date() })
+          .where(eq(socialAccounts.id, existing.id));
+      } else {
+        await db.insert(socialAccounts).values({
+          userId: req.user.id,
+          platform: provider,
+          platformUserId: `${provider}_${req.user.id}`,
+          username: req.user.username || req.user.email?.split('@')[0] || provider,
+          accessToken: `stub_${Date.now()}`,
+          tokenExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          isActive: true,
+          followerCount: 0,
+        });
+      }
+
+      return res.redirect('/settings?tab=connected-accounts&connected=' + provider);
+    } catch (error) {
+      console.error(`Error connecting ${provider}:`, error);
+      return res.status(500).json({ error: `Failed to connect ${provider}` });
+    }
+  });
+
   // Dashboard: Comprehensive data
   app.get("/api/dashboard/comprehensive", async (req: Request, res: Response) => {
     if (!req.user) {

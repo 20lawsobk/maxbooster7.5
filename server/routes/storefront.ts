@@ -7,7 +7,13 @@ import {
   updateStorefrontSchema,
   insertMembershipTierSchema,
   updateMembershipTierSchema,
+  storefrontFollows,
+  storefrontLikes,
+  storefrontRatings,
+  listings,
 } from '@shared/schema';
+import { db } from '../db';
+import { eq, and, count, avg, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 
@@ -722,6 +728,172 @@ router.post('/upload-asset', upload.single('file'), async (req, res) => {
     logger.error('Error uploading storefront asset:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to upload asset';
     res.status(500).json({ error: errorMessage });
+  }
+});
+
+// ============================================================================
+// STOREFRONT SOCIAL ROUTES (Likes, Follows, Ratings)
+// ============================================================================
+
+router.get('/:id/social', async (req, res) => {
+  try {
+    const storefrontId = req.params.id;
+    const userId = req.isAuthenticated() ? req.user!.id : null;
+
+    const [likesResult] = await db.select({ count: count() }).from(storefrontLikes).where(eq(storefrontLikes.storefrontId, storefrontId));
+    const [followsResult] = await db.select({ count: count() }).from(storefrontFollows).where(eq(storefrontFollows.storefrontId, storefrontId));
+    const [ratingsResult] = await db.select({ count: count(), avg: avg(storefrontRatings.rating) }).from(storefrontRatings).where(eq(storefrontRatings.storefrontId, storefrontId));
+
+    let userLiked = false;
+    let userFollowing = false;
+    let userRating: number | null = null;
+
+    if (userId) {
+      const [likeRow] = await db.select().from(storefrontLikes).where(and(eq(storefrontLikes.storefrontId, storefrontId), eq(storefrontLikes.userId, userId))).limit(1);
+      const [followRow] = await db.select().from(storefrontFollows).where(and(eq(storefrontFollows.storefrontId, storefrontId), eq(storefrontFollows.userId, userId))).limit(1);
+      const [ratingRow] = await db.select().from(storefrontRatings).where(and(eq(storefrontRatings.storefrontId, storefrontId), eq(storefrontRatings.userId, userId))).limit(1);
+      userLiked = !!likeRow;
+      userFollowing = !!followRow;
+      userRating = ratingRow?.rating ?? null;
+    }
+
+    res.json({
+      likes: likesResult?.count || 0,
+      follows: followsResult?.count || 0,
+      ratingsCount: ratingsResult?.count || 0,
+      avgRating: ratingsResult?.avg ? parseFloat(String(ratingsResult.avg)) : 0,
+      userLiked,
+      userFollowing,
+      userRating,
+    });
+  } catch (error) {
+    logger.error('Error fetching social data:', error);
+    res.status(500).json({ error: 'Failed to fetch social data' });
+  }
+});
+
+router.post('/:id/like', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Login required' });
+    const storefrontId = req.params.id;
+    const userId = req.user!.id;
+
+    const [existing] = await db.select().from(storefrontLikes).where(and(eq(storefrontLikes.storefrontId, storefrontId), eq(storefrontLikes.userId, userId))).limit(1);
+    if (existing) {
+      await db.delete(storefrontLikes).where(eq(storefrontLikes.id, existing.id));
+      res.json({ liked: false });
+    } else {
+      await db.insert(storefrontLikes).values({ userId, storefrontId });
+      res.json({ liked: true });
+    }
+  } catch (error) {
+    logger.error('Error toggling like:', error);
+    res.status(500).json({ error: 'Failed to toggle like' });
+  }
+});
+
+router.post('/:id/follow', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Login required' });
+    const storefrontId = req.params.id;
+    const userId = req.user!.id;
+
+    const [existing] = await db.select().from(storefrontFollows).where(and(eq(storefrontFollows.storefrontId, storefrontId), eq(storefrontFollows.userId, userId))).limit(1);
+    if (existing) {
+      await db.delete(storefrontFollows).where(eq(storefrontFollows.id, existing.id));
+      res.json({ following: false });
+    } else {
+      await db.insert(storefrontFollows).values({ userId, storefrontId });
+      res.json({ following: true });
+    }
+  } catch (error) {
+    logger.error('Error toggling follow:', error);
+    res.status(500).json({ error: 'Failed to toggle follow' });
+  }
+});
+
+router.post('/:id/rate', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Login required' });
+    const storefrontId = req.params.id;
+    const userId = req.user!.id;
+    const { rating, review } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating must be 1-5' });
+
+    const [existing] = await db.select().from(storefrontRatings).where(and(eq(storefrontRatings.storefrontId, storefrontId), eq(storefrontRatings.userId, userId))).limit(1);
+    if (existing) {
+      await db.update(storefrontRatings).set({ rating, review, updatedAt: new Date() }).where(eq(storefrontRatings.id, existing.id));
+    } else {
+      await db.insert(storefrontRatings).values({ userId, storefrontId, rating, review });
+    }
+
+    const [ratingsResult] = await db.select({ count: count(), avg: avg(storefrontRatings.rating) }).from(storefrontRatings).where(eq(storefrontRatings.storefrontId, storefrontId));
+
+    res.json({
+      userRating: rating,
+      ratingsCount: ratingsResult?.count || 0,
+      avgRating: ratingsResult?.avg ? parseFloat(String(ratingsResult.avg)) : 0,
+    });
+  } catch (error) {
+    logger.error('Error submitting rating:', error);
+    res.status(500).json({ error: 'Failed to submit rating' });
+  }
+});
+
+// ============================================================================
+// LISTING DISCOUNT ROUTES
+// ============================================================================
+
+router.put('/:storefrontId/listings/:listingId/discount', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { storefrontId, listingId } = req.params;
+    const { discountPercent, discountExpiresAt } = req.body;
+
+    const [listing] = await db.select().from(listings).where(and(eq(listings.id, listingId), eq(listings.userId, req.user!.id))).limit(1);
+    if (!listing) return res.status(404).json({ error: 'Listing not found' });
+
+    let discountPriceCents: number | null = null;
+    if (discountPercent && discountPercent > 0 && discountPercent <= 100) {
+      discountPriceCents = Math.round(listing.priceCents * (1 - discountPercent / 100));
+    }
+
+    const [updated] = await db.update(listings).set({
+      discountPercent: discountPercent || null,
+      discountPriceCents,
+      discountExpiresAt: discountExpiresAt ? new Date(discountExpiresAt) : null,
+      updatedAt: new Date(),
+    }).where(eq(listings.id, listingId)).returning();
+
+    res.json(updated);
+  } catch (error) {
+    logger.error('Error setting discount:', error);
+    res.status(500).json({ error: 'Failed to set discount' });
+  }
+});
+
+router.delete('/:storefrontId/listings/:listingId/discount', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { listingId } = req.params;
+
+    const [listing] = await db.select().from(listings).where(and(eq(listings.id, listingId), eq(listings.userId, req.user!.id))).limit(1);
+    if (!listing) return res.status(404).json({ error: 'Listing not found' });
+
+    const [updated] = await db.update(listings).set({
+      discountPercent: null,
+      discountPriceCents: null,
+      discountExpiresAt: null,
+      updatedAt: new Date(),
+    }).where(eq(listings.id, listingId)).returning();
+
+    res.json(updated);
+  } catch (error) {
+    logger.error('Error removing discount:', error);
+    res.status(500).json({ error: 'Failed to remove discount' });
   }
 });
 

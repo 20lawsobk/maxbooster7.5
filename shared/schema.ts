@@ -521,6 +521,9 @@ export const listings = pgTable("listings", {
   artworkUrl: text("artwork_url"),
   previewUrl: text("preview_url"),
   isPublished: boolean("is_published").default(false),
+  discountPercent: integer("discount_percent"),
+  discountPriceCents: integer("discount_price_cents"),
+  discountExpiresAt: timestamp("discount_expires_at"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -530,6 +533,33 @@ export const insertListingSchema = createInsertSchema(listings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+// ============================================================================
+// STOREFRONT SOCIAL (Follows, Likes, Ratings)
+// ============================================================================
+export const storefrontFollows = pgTable("storefront_follows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  storefrontId: varchar("storefront_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const storefrontLikes = pgTable("storefront_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  storefrontId: varchar("storefront_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const storefrontRatings = pgTable("storefront_ratings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  storefrontId: varchar("storefront_id").notNull(),
+  rating: integer("rating").notNull(),
+  review: text("review"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // ============================================================================

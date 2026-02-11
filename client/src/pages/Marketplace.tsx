@@ -220,6 +220,9 @@ interface Beat {
   updatedAt: string;
   status: 'active' | 'inactive' | 'pending';
   waveformData?: number[];
+  discountPercent?: number | null;
+  discountPriceCents?: number | null;
+  discountExpiresAt?: string | null;
 }
 
 interface Producer {
@@ -884,6 +887,31 @@ export default function Marketplace() {
         description: error.message || 'Failed to delete beat',
         variant: 'destructive',
       });
+    },
+  });
+
+  const [discountBeat, setDiscountBeat] = useState<Beat | null>(null);
+  const [discountForm, setDiscountForm] = useState({ percent: 10, expiresAt: '' });
+
+  const discountMutation = useMutation({
+    mutationFn: async ({ beatId, discountPercent, discountExpiresAt }: { beatId: string; discountPercent: number | null; discountExpiresAt?: string }) => {
+      if (discountPercent === null) {
+        const response = await apiRequest('DELETE', `/api/storefront/_/listings/${beatId}/discount`);
+        return response.json();
+      }
+      const response = await apiRequest('PUT', `/api/storefront/_/listings/${beatId}/discount`, {
+        discountPercent,
+        discountExpiresAt: discountExpiresAt || null,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Discount Updated', description: 'Beat discount has been updated.' });
+      setDiscountBeat(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Discount Error', description: error.message || 'Failed to update discount', variant: 'destructive' });
     },
   });
 
@@ -1750,8 +1778,20 @@ export default function Marketplace() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-gray-900 dark:text-white">${beat.price}</p>
-                            <p className="text-xs">Starting from</p>
+                            {beat.discountPercent && beat.discountPriceCents != null ? (
+                              <>
+                                <div className="flex items-center gap-1.5 justify-end">
+                                  <p className="font-semibold text-green-600">${(beat.discountPriceCents / 100).toFixed(2)}</p>
+                                  <Badge variant="destructive" className="text-[10px] px-1 py-0">-{beat.discountPercent}%</Badge>
+                                </div>
+                                <p className="text-xs line-through text-muted-foreground">${beat.price}</p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="font-semibold text-gray-900 dark:text-white">${beat.price}</p>
+                                <p className="text-xs">Starting from</p>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -1913,8 +1953,21 @@ export default function Marketplace() {
                         <h3 className="font-semibold text-lg mb-1">{beat.title}</h3>
                         <p className="text-sm text-muted-foreground mb-2">{beat.genre}</p>
                         <div className="flex items-center justify-between">
-                          <span className="text-lg font-bold">${beat.price}</span>
+                          <div>
+                            {beat.discountPercent && beat.discountPriceCents != null ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-lg font-bold text-green-600">${(beat.discountPriceCents / 100).toFixed(2)}</span>
+                                <span className="text-sm line-through text-muted-foreground">${beat.price}</span>
+                                <Badge variant="destructive" className="text-[10px] px-1 py-0">-{beat.discountPercent}%</Badge>
+                              </div>
+                            ) : (
+                              <span className="text-lg font-bold">${beat.price}</span>
+                            )}
+                          </div>
                           <div className="flex space-x-1">
+                            <Button size="sm" variant="outline" onClick={() => { setDiscountBeat(beat); setDiscountForm({ percent: beat.discountPercent || 10, expiresAt: beat.discountExpiresAt || '' }); }} title="Set discount">
+                              <Percent className="w-4 h-4" />
+                            </Button>
                             <Button size="sm" variant="outline" onClick={() => handleEditBeat(beat)}>
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -3701,6 +3754,87 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Discount Dialog */}
+      <Dialog open={!!discountBeat} onOpenChange={(open) => !open && setDiscountBeat(null)}>
+        <DialogContent className="bg-white dark:bg-gray-800">
+          <DialogHeader>
+            <DialogTitle>Set Discount - {discountBeat?.title}</DialogTitle>
+            <DialogDescription>
+              Add a discount to your beat like BeatStars. Current price: ${discountBeat?.price}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Discount Percentage</Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min="1"
+                  max="99"
+                  value={discountForm.percent}
+                  onChange={(e) => setDiscountForm({ ...discountForm, percent: parseInt(e.target.value) || 0 })}
+                  className="w-24"
+                />
+                <span className="text-muted-foreground">%</span>
+                {discountBeat && discountForm.percent > 0 && (
+                  <span className="text-green-600 font-medium">
+                    Sale price: ${((discountBeat.price) * (1 - discountForm.percent / 100)).toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2 mt-2">
+                {[10, 20, 25, 30, 50].map((p) => (
+                  <Button
+                    key={p}
+                    size="sm"
+                    variant={discountForm.percent === p ? 'default' : 'outline'}
+                    onClick={() => setDiscountForm({ ...discountForm, percent: p })}
+                  >
+                    {p}%
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Expiration Date (optional)</Label>
+              <Input
+                type="datetime-local"
+                value={discountForm.expiresAt ? discountForm.expiresAt.slice(0, 16) : ''}
+                onChange={(e) => setDiscountForm({ ...discountForm, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+              />
+              <p className="text-xs text-muted-foreground">Leave empty for no expiration</p>
+            </div>
+          </div>
+          <DialogFooter className="flex justify-between">
+            {discountBeat?.discountPercent && (
+              <Button
+                variant="outline"
+                className="text-red-600"
+                onClick={() => discountBeat && discountMutation.mutate({ beatId: discountBeat.id, discountPercent: null })}
+              >
+                Remove Discount
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setDiscountBeat(null)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (discountBeat && discountForm.percent > 0 && discountForm.percent < 100) {
+                    discountMutation.mutate({
+                      beatId: discountBeat.id,
+                      discountPercent: discountForm.percent,
+                      discountExpiresAt: discountForm.expiresAt || undefined,
+                    });
+                  }
+                }}
+                disabled={discountMutation.isPending || discountForm.percent <= 0 || discountForm.percent >= 100}
+              >
+                {discountMutation.isPending ? 'Saving...' : 'Apply Discount'}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

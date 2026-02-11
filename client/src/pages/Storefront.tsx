@@ -23,6 +23,7 @@ import {
   Download,
 } from 'lucide-react';
 import { useState, useCallback } from 'react';
+import { Star, UserPlus, UserCheck } from 'lucide-react';
 
 interface Storefront {
   id: string;
@@ -117,6 +118,9 @@ interface MarketplaceListing {
   views: number;
   favorites: number;
   sales: number;
+  discountPercent: number | null;
+  discountPriceCents: number | null;
+  discountExpiresAt: string | null;
   createdAt: string;
 }
 
@@ -127,7 +131,9 @@ export default function Storefront() {
 
   const [selectedTier, setSelectedTier] = useState<MembershipTier | null>(null);
   const [cart, setCart] = useState<string[]>([]);
-  const [liked, setLiked] = useState(false);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [userRatingValue, setUserRatingValue] = useState(0);
+  const [userReview, setUserReview] = useState('');
 
   const { data: storefront, isLoading: storefrontLoading } = useQuery<Storefront>({
     queryKey: [`/api/storefront/public/${slug}`],
@@ -155,15 +161,57 @@ export default function Storefront() {
     },
   });
 
+  interface SocialData {
+    likes: number;
+    follows: number;
+    ratingsCount: number;
+    avgRating: number;
+    userLiked: boolean;
+    userFollowing: boolean;
+    userRating: number | null;
+  }
+
+  const { data: socialData } = useQuery<SocialData>({
+    queryKey: [`/api/storefront/${storefront?.id}/social`],
+    enabled: !!storefront?.id,
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', `/api/storefront/${storefront!.id}/like`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/storefront/${storefront?.id}/social`] });
+    },
+  });
+
+  const followMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', `/api/storefront/${storefront!.id}/follow`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/storefront/${storefront?.id}/social`] });
+    },
+  });
+
+  const rateMutation = useMutation({
+    mutationFn: async ({ rating, review }: { rating: number; review?: string }) => {
+      return apiRequest('POST', `/api/storefront/${storefront!.id}/rate`, { rating, review });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/storefront/${storefront?.id}/social`] });
+      setShowRatingDialog(false);
+      toast({ title: 'Rating submitted', description: 'Thank you for your feedback!' });
+    },
+  });
+
   const handleLike = useCallback(() => {
-    setLiked((prev) => !prev);
-    toast({
-      title: liked ? 'Removed from favorites' : 'Added to favorites',
-      description: liked
-        ? `${storefront?.name || 'Storefront'} removed from your favorites`
-        : `${storefront?.name || 'Storefront'} added to your favorites`,
-    });
-  }, [liked, storefront?.name, toast]);
+    likeMutation.mutate();
+  }, [likeMutation]);
+
+  const handleFollow = useCallback(() => {
+    followMutation.mutate();
+  }, [followMutation]);
 
   const handleShare = useCallback(async () => {
     const url = window.location.href;
@@ -323,12 +371,24 @@ export default function Storefront() {
                 </div>
                 <div className="flex gap-2">
                   <Button
+                    variant={socialData?.userFollowing ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={handleFollow}
+                    className="gap-1"
+                  >
+                    {socialData?.userFollowing ? (
+                      <><UserCheck className="w-4 h-4" /> Following</>
+                    ) : (
+                      <><UserPlus className="w-4 h-4" /> Follow</>
+                    )}
+                  </Button>
+                  <Button
                     variant="outline"
                     size="icon"
                     onClick={handleLike}
-                    aria-label={liked ? 'Remove from favorites' : 'Add to favorites'}
+                    aria-label={socialData?.userLiked ? 'Remove from favorites' : 'Add to favorites'}
                   >
-                    <Heart className={`w-5 h-5 ${liked ? 'fill-red-500 text-red-500' : ''}`} />
+                    <Heart className={`w-5 h-5 ${socialData?.userLiked ? 'fill-red-500 text-red-500' : ''}`} />
                   </Button>
                   <Button
                     variant="outline"
@@ -337,6 +397,14 @@ export default function Storefront() {
                     aria-label="Share storefront"
                   >
                     <Share2 className="w-5 h-5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowRatingDialog(!showRatingDialog)}
+                    aria-label="Rate storefront"
+                  >
+                    <Star className={`w-5 h-5 ${socialData?.userRating ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                   </Button>
                 </div>
               </div>
@@ -389,10 +457,65 @@ export default function Storefront() {
                 </div>
               )}
 
-              <div className="flex gap-4 text-sm text-muted-foreground">
+              {showRatingDialog && (
+                <div className="bg-card border rounded-lg p-4 mb-4 max-w-sm">
+                  <h4 className="font-medium mb-2">Rate this storefront</h4>
+                  <div className="flex gap-1 mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setUserRatingValue(star)}
+                        className="p-0.5"
+                      >
+                        <Star
+                          className={`w-6 h-6 cursor-pointer transition-colors ${
+                            star <= userRatingValue ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    placeholder="Write a review (optional)"
+                    value={userReview}
+                    onChange={(e) => setUserReview(e.target.value)}
+                    className="w-full p-2 border rounded text-sm mb-2 bg-background"
+                    rows={2}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      disabled={userRatingValue === 0}
+                      onClick={() => rateMutation.mutate({ rating: userRatingValue, review: userReview || undefined })}
+                    >
+                      Submit
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowRatingDialog(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <span className="font-medium">{storefront.views}</span> views
                 </div>
+                <div className="flex items-center gap-1">
+                  <Heart className="w-3.5 h-3.5" />
+                  <span className="font-medium">{socialData?.likes || 0}</span> likes
+                </div>
+                <div className="flex items-center gap-1">
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span className="font-medium">{socialData?.follows || 0}</span> followers
+                </div>
+                {(socialData?.ratingsCount ?? 0) > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium">{(socialData?.avgRating || 0).toFixed(1)}</span>
+                    <span>({socialData?.ratingsCount} ratings)</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1">
                   <span className="font-medium">{listings.length}</span> products
                 </div>
@@ -580,9 +703,25 @@ export default function Storefront() {
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold">
-                          ${(listing.priceCents / 100).toFixed(2)}
-                        </span>
+                        <div>
+                          {listing.discountPercent && listing.discountPriceCents != null && (!listing.discountExpiresAt || new Date(listing.discountExpiresAt) > new Date()) ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-bold text-green-600">
+                                ${(listing.discountPriceCents / 100).toFixed(2)}
+                              </span>
+                              <span className="text-lg text-muted-foreground line-through">
+                                ${(listing.priceCents / 100).toFixed(2)}
+                              </span>
+                              <Badge variant="destructive" className="text-xs">
+                                -{listing.discountPercent}%
+                              </Badge>
+                            </div>
+                          ) : (
+                            <span className="text-2xl font-bold">
+                              ${(listing.priceCents / 100).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex gap-2">
                           <Button variant="outline" size="icon">
                             <Play className="w-4 h-4" />

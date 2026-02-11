@@ -776,6 +776,9 @@ export class MarketplaceService {
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt || listing.createdAt,
           status: listing.isPublished ? 'active' : 'inactive',
+          discountPercent: (listing as any).discountPercent || null,
+          discountPriceCents: (listing as any).discountPriceCents || null,
+          discountExpiresAt: (listing as any).discountExpiresAt || null,
         };
       });
     } catch (error: unknown) {
@@ -814,6 +817,9 @@ export class MarketplaceService {
           licenseOptions: metadata.licenses || [
             { type: 'basic', price: listing.price, features: ['MP3 Download', 'Non-exclusive rights'] }
           ],
+          discountPercent: (listing as any).discountPercent || null,
+          discountPriceCents: (listing as any).discountPriceCents || null,
+          discountExpiresAt: (listing as any).discountExpiresAt || null,
         };
       });
     } catch (error: unknown) {
