@@ -661,6 +661,8 @@ export default function Marketplace() {
   });
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
+  const bulkFilePickerOpen = useRef(false);
 
   const [bulkUploadItems, setBulkUploadItems] = useState<BulkUploadItem[]>([]);
   const [selectedLicense, setSelectedLicense] = useState<LicenseTemplate | null>(null);
@@ -3001,8 +3003,25 @@ export default function Marketplace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showBulkUploadModal} onOpenChange={setShowBulkUploadModal}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+      <input
+        ref={bulkFileInputRef}
+        type="file"
+        multiple
+        accept="audio/mpeg,audio/wav,audio/flac,audio/aac,audio/ogg,audio/mp4,audio/x-m4a,audio/aiff,audio/webm,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
+        onChange={(e) => {
+          bulkFilePickerOpen.current = false;
+          if (e.target.files && e.target.files.length > 0) {
+            handleBulkFileSelect(e.target.files);
+          }
+          e.target.value = '';
+        }}
+        style={{ position: 'fixed', top: '-9999px', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
+      />
+      <Dialog open={showBulkUploadModal} onOpenChange={(open) => {
+        if (!open && bulkFilePickerOpen.current) return;
+        setShowBulkUploadModal(open);
+      }}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <FolderUp className="w-5 h-5 mr-2" />
@@ -3024,15 +3043,13 @@ export default function Marketplace() {
               <UploadCloud className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
               <p className="text-lg font-medium mb-1">Drag & drop audio files here</p>
               <p className="text-sm text-muted-foreground mb-3">Supports MP3, WAV, FLAC, AAC, OGG, M4A, AIFF</p>
-              <input
-                type="file"
-                multiple
-                accept="audio/mpeg,audio/wav,audio/flac,audio/aac,audio/ogg,audio/mp4,audio/x-m4a,audio/aiff,audio/webm,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
-                onChange={(e) => { if (e.target.files && e.target.files.length > 0) { handleBulkFileSelect(e.target.files); e.target.value = ''; } }}
-                style={{ display: 'none' }}
-                id="bulk-upload-input"
-              />
-              <Button variant="outline" type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); document.getElementById('bulk-upload-input')?.click(); }}>
+              <Button variant="outline" type="button" onClick={() => {
+                bulkFilePickerOpen.current = true;
+                setTimeout(() => {
+                  bulkFileInputRef.current?.click();
+                  setTimeout(() => { bulkFilePickerOpen.current = false; }, 5000);
+                }, 100);
+              }}>
                 Select Files
               </Button>
             </div>
