@@ -686,12 +686,91 @@ export default function Marketplace() {
   const [editForm, setEditForm] = useState({
     title: '',
     genre: '',
+    mood: '',
     tempo: 120,
     key: 'C',
     price: 50,
+    licenseType: 'basic',
     description: '',
     tags: '',
+    coverArtFile: null as File | null,
+    discountPercent: 0,
+    discountExpiresAt: '',
   });
+
+  const [selectedBeats, setSelectedBeats] = useState<Set<string>>(new Set());
+  const [showBulkEditUploaded, setShowBulkEditUploaded] = useState(false);
+  const [bulkEditUploadedValues, setBulkEditUploadedValues] = useState({
+    genre: '',
+    mood: '',
+    tempo: 0,
+    key: '',
+    price: 0,
+    licenseType: '',
+    tags: '',
+    discountAction: 'keep' as 'keep' | 'apply' | 'remove',
+    discountPercent: 0,
+    discountExpiresAt: '',
+    coverArtFile: null as File | null,
+  });
+
+  const toggleBeatSelection = (beatId: string) => {
+    setSelectedBeats(prev => {
+      const next = new Set(prev);
+      if (next.has(beatId)) next.delete(beatId);
+      else next.add(beatId);
+      return next;
+    });
+  };
+
+  const toggleSelectAllBeats = () => {
+    if (selectedBeats.size === myBeats.length) {
+      setSelectedBeats(new Set());
+    } else {
+      setSelectedBeats(new Set(myBeats.map((b: Beat) => b.id)));
+    }
+  };
+
+  const applyBulkEditUploaded = async () => {
+    const selectedIds = Array.from(selectedBeats);
+    let successCount = 0;
+    for (const beatId of selectedIds) {
+      try {
+        const formData = new FormData();
+        const beat = myBeats.find((b: Beat) => b.id === beatId);
+        if (!beat) continue;
+        formData.append('title', beat.title);
+        formData.append('genre', bulkEditUploadedValues.genre || beat.genre || '');
+        formData.append('mood', bulkEditUploadedValues.mood || beat.mood || '');
+        formData.append('tempo', String(bulkEditUploadedValues.tempo > 0 ? bulkEditUploadedValues.tempo : (beat.tempo || 120)));
+        formData.append('key', bulkEditUploadedValues.key || beat.key || 'C');
+        formData.append('price', String(bulkEditUploadedValues.price > 0 ? bulkEditUploadedValues.price : (beat.price || 50)));
+        formData.append('licenseType', bulkEditUploadedValues.licenseType || beat.licenseType || 'basic');
+        formData.append('tags', bulkEditUploadedValues.tags || (beat.tags?.join(', ') || ''));
+        formData.append('description', beat.description || '');
+        if (bulkEditUploadedValues.coverArtFile) formData.append('coverArt', bulkEditUploadedValues.coverArtFile);
+
+        await apiRequest('PUT', `/api/marketplace/listings/${beatId}`, formData, { timeout: 300000 });
+
+        if (bulkEditUploadedValues.discountAction === 'apply' && bulkEditUploadedValues.discountPercent > 0 && bulkEditUploadedValues.discountPercent < 100) {
+          await apiRequest('PUT', `/api/storefront/_/listings/${beatId}/discount`, {
+            discountPercent: bulkEditUploadedValues.discountPercent,
+            discountExpiresAt: bulkEditUploadedValues.discountExpiresAt || null,
+          });
+        } else if (bulkEditUploadedValues.discountAction === 'remove' && beat.discountPercent) {
+          await apiRequest('DELETE', `/api/storefront/_/listings/${beatId}/discount`);
+        }
+
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to update beat ${beatId}:`, err);
+      }
+    }
+    toast({ title: 'Bulk Edit Complete', description: `Updated ${successCount} of ${selectedIds.length} beats.` });
+    setShowBulkEditUploaded(false);
+    setSelectedBeats(new Set());
+    queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+  };
 
   const { data: beats = [], isLoading: beatsLoading } = useQuery<Beat[]>({
     queryKey: ['/api/marketplace/beats', searchQuery, selectedGenre, selectedMood, sortBy],
@@ -920,26 +999,46 @@ export default function Marketplace() {
     setEditForm({
       title: beat.title,
       genre: beat.genre || '',
+      mood: beat.mood || '',
       tempo: beat.tempo || 120,
       key: beat.key || 'C',
       price: beat.price || 50,
+      licenseType: beat.licenseType || 'basic',
       description: beat.description || '',
       tags: beat.tags?.join(', ') || '',
+      coverArtFile: null,
+      discountPercent: beat.discountPercent || 0,
+      discountExpiresAt: beat.discountExpiresAt || '',
     });
     setShowEditModal(true);
   };
 
-  const handleUpdateBeat = () => {
+  const handleUpdateBeat = async () => {
     if (!editingBeat) return;
     const formData = new FormData();
     formData.append('title', editForm.title);
     formData.append('genre', editForm.genre);
+    if (editForm.mood) formData.append('mood', editForm.mood);
     formData.append('tempo', String(editForm.tempo));
     formData.append('key', editForm.key);
     formData.append('price', String(editForm.price));
+    if (editForm.licenseType) formData.append('licenseType', editForm.licenseType);
     formData.append('description', editForm.description);
     formData.append('tags', editForm.tags);
+    if (editForm.coverArtFile) formData.append('coverArt', editForm.coverArtFile);
     updateBeatMutation.mutate({ id: editingBeat.id, data: formData });
+
+    const hadDiscount = editingBeat.discountPercent && editingBeat.discountPercent > 0;
+    const wantsDiscount = editForm.discountPercent > 0 && editForm.discountPercent < 100;
+    if (wantsDiscount) {
+      discountMutation.mutate({
+        beatId: editingBeat.id,
+        discountPercent: editForm.discountPercent,
+        discountExpiresAt: editForm.discountExpiresAt || undefined,
+      });
+    } else if (hadDiscount && !wantsDiscount) {
+      discountMutation.mutate({ beatId: editingBeat.id, discountPercent: null });
+    }
   };
 
   const handleDeleteBeat = (beatId: string) => {
@@ -1940,50 +2039,235 @@ export default function Marketplace() {
             {myBeatsLoading ? (
               <BeatGridSkeleton count={6} viewMode="grid" />
             ) : myBeats.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myBeats.map((beat: Beat) => (
-                  <Card key={beat.id} className="group hover:shadow-xl transition-shadow duration-200">
-                    <CardContent className="p-0">
-                      <div className="relative aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg overflow-hidden">
-                        {beat.coverArt ? (
-                          <img src={beat.coverArt} alt={beat.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <Music className="w-16 h-16 text-white opacity-50" />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedBeats.size === myBeats.length && myBeats.length > 0}
+                        onChange={toggleSelectAllBeats}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {selectedBeats.size > 0 ? `${selectedBeats.size} selected` : 'Select all'}
+                      </span>
+                    </label>
+                  </div>
+                  {selectedBeats.size > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setShowBulkEditUploaded(true);
+                          setBulkEditUploadedValues({ genre: '', mood: '', tempo: 0, key: '', price: 0, licenseType: '', tags: '', discountAction: 'keep', discountPercent: 0, discountExpiresAt: '', coverArtFile: null });
+                        }}
+                      >
+                        <Edit className="w-3 h-3 mr-1" />
+                        Bulk Edit ({selectedBeats.size})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedBeats(new Set())}
+                      >
+                        Clear Selection
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {showBulkEditUploaded && selectedBeats.size > 0 && (
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Bulk Edit {selectedBeats.size} beats (leave blank to skip)</p>
+                      <Button size="sm" variant="ghost" onClick={() => setShowBulkEditUploaded(false)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex items-start gap-4 mb-2">
+                      <div className="flex-shrink-0">
+                        <Label className="text-xs">Cover Art</Label>
+                        {bulkEditUploadedValues.coverArtFile ? (
+                          <div className="relative w-16 h-16 mt-1">
+                            <img src={URL.createObjectURL(bulkEditUploadedValues.coverArtFile)} alt="" className="w-16 h-16 rounded object-cover" />
+                            <button className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs" onClick={() => setBulkEditUploadedValues(prev => ({ ...prev, coverArtFile: null }))}>
+                              <X className="w-2.5 h-2.5" />
+                            </button>
                           </div>
+                        ) : (
+                          <label className="mt-1 w-16 h-16 border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:border-purple-400 transition-colors">
+                            <input type="file" accept="image/jpeg,image/png" className="sr-only" onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) setBulkEditUploadedValues(prev => ({ ...prev, coverArtFile: f }));
+                            }} />
+                            <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-[9px] text-muted-foreground mt-0.5">Add</span>
+                          </label>
                         )}
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-lg mb-1">{beat.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">{beat.genre}</p>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            {beat.discountPercent && beat.discountPriceCents != null ? (
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-lg font-bold text-green-600">${(beat.discountPriceCents / 100).toFixed(2)}</span>
-                                <span className="text-sm line-through text-muted-foreground">${beat.price}</span>
-                                <Badge variant="destructive" className="text-[10px] px-1 py-0">-{beat.discountPercent}%</Badge>
-                              </div>
-                            ) : (
-                              <span className="text-lg font-bold">${beat.price}</span>
-                            )}
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <Label className="text-xs">Genre</Label>
+                        <Select value={bulkEditUploadedValues.genre} onValueChange={(v) => setBulkEditUploadedValues(prev => ({ ...prev, genre: v }))}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                          <SelectContent>{BEAT_GENRES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Mood</Label>
+                        <Select value={bulkEditUploadedValues.mood} onValueChange={(v) => setBulkEditUploadedValues(prev => ({ ...prev, mood: v }))}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                          <SelectContent>{BEAT_MOODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Key</Label>
+                        <Select value={bulkEditUploadedValues.key} onValueChange={(v) => setBulkEditUploadedValues(prev => ({ ...prev, key: v }))}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                          <SelectContent>
+                            {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'].map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">License</Label>
+                        <Select value={bulkEditUploadedValues.licenseType} onValueChange={(v) => setBulkEditUploadedValues(prev => ({ ...prev, licenseType: v }))}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="basic">Basic</SelectItem>
+                            <SelectItem value="premium">Premium</SelectItem>
+                            <SelectItem value="unlimited">Unlimited</SelectItem>
+                            <SelectItem value="exclusive">Exclusive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">BPM</Label>
+                        <Input type="number" value={bulkEditUploadedValues.tempo || ''} onChange={(e) => setBulkEditUploadedValues(prev => ({ ...prev, tempo: parseInt(e.target.value) || 0 }))} placeholder="BPM" className="h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Price ($)</Label>
+                        <Input type="number" value={bulkEditUploadedValues.price || ''} onChange={(e) => setBulkEditUploadedValues(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))} placeholder="Price" className="h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Tags</Label>
+                        <Input value={bulkEditUploadedValues.tags} onChange={(e) => setBulkEditUploadedValues(prev => ({ ...prev, tags: e.target.value }))} placeholder="tag1, tag2" className="h-8 text-xs" />
+                      </div>
+                    </div>
+                    <div className="border-t pt-3 mt-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Percent className="w-4 h-4 text-green-600" />
+                        <Label className="text-xs font-medium">Discount</Label>
+                      </div>
+                      <div className="flex gap-2 flex-wrap mb-2">
+                        {(['keep', 'apply', 'remove'] as const).map(action => (
+                          <Button
+                            key={action}
+                            type="button"
+                            size="sm"
+                            variant={bulkEditUploadedValues.discountAction === action ? 'default' : 'outline'}
+                            className="h-6 text-[10px] px-2"
+                            onClick={() => setBulkEditUploadedValues(prev => ({ ...prev, discountAction: action }))}
+                          >
+                            {action === 'keep' ? 'Keep Existing' : action === 'apply' ? 'Set Discount' : 'Remove Discounts'}
+                          </Button>
+                        ))}
+                      </div>
+                      {bulkEditUploadedValues.discountAction === 'apply' && (
+                        <>
+                          <div className="flex gap-2 flex-wrap mb-2">
+                            {[10, 15, 20, 25, 30, 40, 50].map(p => (
+                              <Button
+                                key={p}
+                                type="button"
+                                size="sm"
+                                variant={bulkEditUploadedValues.discountPercent === p ? 'default' : 'outline'}
+                                className="h-6 text-[10px] px-2"
+                                onClick={() => setBulkEditUploadedValues(prev => ({ ...prev, discountPercent: p }))}
+                              >
+                                {p}%
+                              </Button>
+                            ))}
                           </div>
-                          <div className="flex space-x-1">
-                            <Button size="sm" variant="outline" onClick={() => { setDiscountBeat(beat); setDiscountForm({ percent: beat.discountPercent || 10, expiresAt: beat.discountExpiresAt || '' }); }} title="Set discount">
-                              <Percent className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleEditBeat(beat)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleDeleteBeat(beat.id)} className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-[10px]">Custom %</Label>
+                              <Input type="number" value={bulkEditUploadedValues.discountPercent || ''} onChange={(e) => setBulkEditUploadedValues(prev => ({ ...prev, discountPercent: parseInt(e.target.value) || 0 }))} min={1} max={99} className="h-7 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-[10px]">Expires (optional)</Label>
+                              <Input type="datetime-local" value={bulkEditUploadedValues.discountExpiresAt ? bulkEditUploadedValues.discountExpiresAt.slice(0, 16) : ''} onChange={(e) => setBulkEditUploadedValues(prev => ({ ...prev, discountExpiresAt: e.target.value ? new Date(e.target.value).toISOString() : '' }))} className="h-7 text-xs" />
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button size="sm" variant="outline" onClick={() => setShowBulkEditUploaded(false)}>Cancel</Button>
+                      <Button size="sm" onClick={applyBulkEditUploaded} className="bg-gradient-to-r from-blue-600 to-purple-600">
+                        Apply to {selectedBeats.size} Beats
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {myBeats.map((beat: Beat) => (
+                    <Card key={beat.id} className={`group hover:shadow-xl transition-shadow duration-200 ${selectedBeats.has(beat.id) ? 'ring-2 ring-blue-500' : ''}`}>
+                      <CardContent className="p-0">
+                        <div className="relative aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg overflow-hidden">
+                          <div className="absolute top-2 left-2 z-10">
+                            <input
+                              type="checkbox"
+                              checked={selectedBeats.has(beat.id)}
+                              onChange={() => toggleBeatSelection(beat.id)}
+                              className="w-5 h-5 rounded border-2 border-white bg-black/30 cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          {beat.coverArt ? (
+                            <img src={beat.coverArt} alt={beat.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="flex items-center justify-center h-full">
+                              <Music className="w-16 h-16 text-white opacity-50" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-lg mb-1">{beat.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">{beat.genre}{beat.mood ? ` \u2022 ${beat.mood}` : ''}</p>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              {beat.discountPercent && beat.discountPriceCents != null ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-lg font-bold text-green-600">${(beat.discountPriceCents / 100).toFixed(2)}</span>
+                                  <span className="text-sm line-through text-muted-foreground">${beat.price}</span>
+                                  <Badge variant="destructive" className="text-[10px] px-1 py-0">-{beat.discountPercent}%</Badge>
+                                </div>
+                              ) : (
+                                <span className="text-lg font-bold">${beat.price}</span>
+                              )}
+                            </div>
+                            <div className="flex space-x-1">
+                              <Button size="sm" variant="outline" onClick={() => { setDiscountBeat(beat); setDiscountForm({ percent: beat.discountPercent || 10, expiresAt: beat.discountExpiresAt || '' }); }} title="Set discount">
+                                <Percent className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => handleEditBeat(beat)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => handleDeleteBeat(beat.id)} className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             ) : (
               <NoMyBeatsState
@@ -3555,56 +3839,94 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
       </Dialog>
 
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="bg-background">
+        <DialogContent className="bg-background max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <Edit className="w-5 h-5 mr-2" />
               Edit Beat
             </DialogTitle>
-            <DialogDescription>Update your beat details</DialogDescription>
+            <DialogDescription>Update your beat details, cover art, and discount settings</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input
-                value={editForm.title}
-                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                placeholder="Beat title"
-              />
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <Label className="text-xs">Cover Art</Label>
+                {editForm.coverArtFile ? (
+                  <div className="relative w-24 h-24 mt-1">
+                    <img src={URL.createObjectURL(editForm.coverArtFile)} alt="" className="w-24 h-24 rounded-lg object-cover" />
+                    <button
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                      onClick={() => setEditForm({ ...editForm, coverArtFile: null })}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative mt-1">
+                    {editingBeat?.coverArt ? (
+                      <div className="relative w-24 h-24">
+                        <img src={editingBeat.coverArt} alt="" className="w-24 h-24 rounded-lg object-cover" />
+                        <label className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png"
+                            className="sr-only"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) setEditForm({ ...editForm, coverArtFile: f });
+                            }}
+                          />
+                          <Edit className="w-5 h-5 text-white" />
+                        </label>
+                      </div>
+                    ) : (
+                      <label className="w-24 h-24 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-purple-400 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) setEditForm({ ...editForm, coverArtFile: f });
+                          }}
+                        />
+                        <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground mt-1">Add Art</span>
+                      </label>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <Label>Title</Label>
+                <Input
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  placeholder="Beat title"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Genre</Label>
-                <Select
-                  value={editForm.genre}
-                  onValueChange={(value) => setEditForm({ ...editForm, genre: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select genre" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hip-hop">Hip-Hop</SelectItem>
-                    <SelectItem value="rnb">R&B</SelectItem>
-                    <SelectItem value="pop">Pop</SelectItem>
-                    <SelectItem value="trap">Trap</SelectItem>
-                    <SelectItem value="drill">Drill</SelectItem>
-                    <SelectItem value="afrobeats">Afrobeats</SelectItem>
-                    <SelectItem value="reggaeton">Reggaeton</SelectItem>
-                    <SelectItem value="rock">Rock</SelectItem>
-                    <SelectItem value="electronic">Electronic</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
+                <Select value={editForm.genre} onValueChange={(value) => setEditForm({ ...editForm, genre: value })}>
+                  <SelectTrigger><SelectValue placeholder="Select genre" /></SelectTrigger>
+                  <SelectContent>{BEAT_GENRES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label>Mood</Label>
+                <Select value={editForm.mood} onValueChange={(value) => setEditForm({ ...editForm, mood: value })}>
+                  <SelectTrigger><SelectValue placeholder="Select mood" /></SelectTrigger>
+                  <SelectContent>{BEAT_MOODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
                 <Label>Key</Label>
-                <Select
-                  value={editForm.key}
-                  onValueChange={(value) => setEditForm({ ...editForm, key: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={editForm.key} onValueChange={(value) => setEditForm({ ...editForm, key: value })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'].map((key) => (
                       <SelectItem key={key} value={key}>{key}</SelectItem>
@@ -3612,44 +3934,69 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>BPM</Label>
-                <Input
-                  type="number"
-                  value={editForm.tempo}
-                  onChange={(e) => setEditForm({ ...editForm, tempo: parseInt(e.target.value) || 120 })}
-                  min={60}
-                  max={200}
-                />
+                <Input type="number" value={editForm.tempo} onChange={(e) => setEditForm({ ...editForm, tempo: parseInt(e.target.value) || 120 })} min={60} max={300} />
               </div>
               <div className="space-y-2">
-                <Label>Price ($)</Label>
-                <Input
-                  type="number"
-                  value={editForm.price}
-                  onChange={(e) => setEditForm({ ...editForm, price: parseFloat(e.target.value) || 0 })}
-                  min={0}
-                />
+                <Label>License</Label>
+                <Select value={editForm.licenseType} onValueChange={(value) => setEditForm({ ...editForm, licenseType: value })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Basic</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="unlimited">Unlimited</SelectItem>
+                    <SelectItem value="exclusive">Exclusive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Price ($)</Label>
+              <Input type="number" value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: parseFloat(e.target.value) || 0 })} min={0} />
+            </div>
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Percent className="w-4 h-4 text-green-600" />
+                  Discount
+                </Label>
+                {editForm.discountPercent > 0 && (
+                  <Badge variant="destructive" className="text-xs">-{editForm.discountPercent}% = ${(editForm.price * (1 - editForm.discountPercent / 100)).toFixed(2)}</Badge>
+                )}
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {[0, 10, 15, 20, 25, 30, 40, 50].map(p => (
+                  <Button
+                    key={p}
+                    type="button"
+                    size="sm"
+                    variant={editForm.discountPercent === p ? 'default' : 'outline'}
+                    className="h-7 text-xs"
+                    onClick={() => setEditForm({ ...editForm, discountPercent: p })}
+                  >
+                    {p === 0 ? 'None' : `${p}%`}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <Label className="text-xs">Custom %</Label>
+                  <Input type="number" value={editForm.discountPercent || ''} onChange={(e) => setEditForm({ ...editForm, discountPercent: parseInt(e.target.value) || 0 })} min={0} max={99} className="h-8 text-sm" />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs">Expires (optional)</Label>
+                  <Input type="datetime-local" value={editForm.discountExpiresAt ? editForm.discountExpiresAt.slice(0, 16) : ''} onChange={(e) => setEditForm({ ...editForm, discountExpiresAt: e.target.value ? new Date(e.target.value).toISOString() : '' })} className="h-8 text-sm" />
+                </div>
               </div>
             </div>
             <div className="space-y-2">
               <Label>Description</Label>
-              <Textarea
-                value={editForm.description}
-                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                placeholder="Describe your beat..."
-                rows={3}
-              />
+              <Textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="Describe your beat..." rows={3} />
             </div>
             <div className="space-y-2">
               <Label>Tags (comma-separated)</Label>
-              <Input
-                value={editForm.tags}
-                onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
-                placeholder="dark, melodic, emotional"
-              />
+              <Input value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} placeholder="dark, melodic, emotional" />
             </div>
           </div>
           <DialogFooter>
