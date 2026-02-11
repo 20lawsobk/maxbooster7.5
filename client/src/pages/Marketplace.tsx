@@ -1333,6 +1333,7 @@ export default function Marketplace() {
 
   const [bulkEditMode, setBulkEditMode] = useState(false);
   const [bulkEditValues, setBulkEditValues] = useState({
+    title: '',
     genre: '',
     mood: '',
     tempo: 0,
@@ -1341,6 +1342,7 @@ export default function Marketplace() {
     licenseType: '',
     description: '',
     tags: '',
+    coverArtFile: null as File | null,
   });
   const [expandedBulkItem, setExpandedBulkItem] = useState<string | null>(null);
 
@@ -1368,6 +1370,7 @@ export default function Marketplace() {
     setBulkUploadItems(prev => prev.map(item => {
       if (item.status !== 'pending') return item;
       const updated = { ...item };
+      if (bulkEditValues.title) updated.title = bulkEditValues.title;
       if (bulkEditValues.genre) updated.genre = bulkEditValues.genre;
       if (bulkEditValues.mood) updated.mood = bulkEditValues.mood;
       if (bulkEditValues.tempo > 0) updated.tempo = bulkEditValues.tempo;
@@ -1376,6 +1379,7 @@ export default function Marketplace() {
       if (bulkEditValues.licenseType) updated.licenseType = bulkEditValues.licenseType;
       if (bulkEditValues.description) updated.description = bulkEditValues.description;
       if (bulkEditValues.tags) updated.tags = bulkEditValues.tags;
+      if (bulkEditValues.coverArtFile) updated.coverArtFile = bulkEditValues.coverArtFile;
       return updated;
     }));
     setBulkEditMode(false);
@@ -3075,6 +3079,45 @@ export default function Marketplace() {
                   {bulkEditMode && (
                     <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
                       <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Apply to all pending beats (leave blank to skip)</p>
+                      <div className="flex items-start gap-4 mb-2">
+                        <div className="flex-shrink-0">
+                          <Label className="text-xs">Cover Art</Label>
+                          {bulkEditValues.coverArtFile ? (
+                            <div className="relative w-20 h-20 mt-1">
+                              <img src={URL.createObjectURL(bulkEditValues.coverArtFile)} alt="" className="w-20 h-20 rounded object-cover" />
+                              <button
+                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                                onClick={() => setBulkEditValues(prev => ({ ...prev, coverArtFile: null }))}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="mt-1 w-20 h-20 border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:border-purple-400 transition-colors">
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png"
+                                className="sr-only"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) {
+                                    const err = validateCoverFile(f);
+                                    if (err) { toast({ title: 'Invalid File', description: err, variant: 'destructive' }); return; }
+                                    setBulkEditValues(prev => ({ ...prev, coverArtFile: f }));
+                                  }
+                                }}
+                              />
+                              <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                              <span className="text-[10px] text-muted-foreground mt-1">Add Art</span>
+                            </label>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-xs">Name / Title</Label>
+                          <Input value={bulkEditValues.title} onChange={(e) => setBulkEditValues(prev => ({ ...prev, title: e.target.value }))} placeholder="Beat name..." className="h-8 text-xs mt-1" />
+                          <p className="text-[10px] text-muted-foreground mt-1">Sets the same name for all pending beats</p>
+                        </div>
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
                           <Label className="text-xs">Genre</Label>
