@@ -132,6 +132,12 @@ export function CreativeVariantGenerator() {
     { day: 'Sun', variantA: (variants[0]?.ctr ?? 2.1) * 1.25, variantB: (variants[1]?.ctr ?? 1.8) * 1.18, variantC: (variants[2]?.ctr ?? 1.5) * 1.25 },
   ];
 
+  const predictionDistribution = [
+    { name: 'High Performing', value: variants.filter(v => v.status === 'winner').length || 3, color: '#22c55e' },
+    { name: 'Medium Performing', value: variants.filter(v => v.status === 'active').length || 5, color: '#eab308' },
+    { name: 'Low Performing', value: variants.filter(v => v.status === 'paused' || v.status === 'draft').length || 2, color: '#ef4444' },
+  ];
+
   const [activeTest, setActiveTest] = useState<ABTest | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [autoOptimize, setAutoOptimize] = useState(true);
