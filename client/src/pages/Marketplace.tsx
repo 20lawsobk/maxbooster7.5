@@ -3002,7 +3002,7 @@ export default function Marketplace() {
       </Dialog>
 
       <Dialog open={showBulkUploadModal} onOpenChange={setShowBulkUploadModal}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <FolderUp className="w-5 h-5 mr-2" />
@@ -3013,27 +3013,27 @@ export default function Marketplace() {
           <div className="space-y-4">
             <div
               className="border-2 border-dashed rounded-lg p-6 text-center transition-colors hover:border-blue-400"
-              onDragOver={(e) => e.preventDefault()}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
               onDrop={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 if (e.dataTransfer.files) handleBulkFileSelect(e.dataTransfer.files);
               }}
             >
               <UploadCloud className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
               <p className="text-lg font-medium mb-1">Drag & drop audio files here</p>
               <p className="text-sm text-muted-foreground mb-3">Supports MP3, WAV, FLAC, AAC, OGG, M4A, AIFF</p>
-              <Input
+              <input
                 type="file"
                 multiple
                 accept="audio/mpeg,audio/wav,audio/flac,audio/aac,audio/ogg,audio/mp4,audio/x-m4a,audio/aiff,audio/webm,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
-                onChange={(e) => e.target.files && handleBulkFileSelect(e.target.files)}
-                className="hidden"
+                onChange={(e) => { if (e.target.files && e.target.files.length > 0) { handleBulkFileSelect(e.target.files); e.target.value = ''; } }}
+                style={{ display: 'none' }}
                 id="bulk-upload-input"
               />
-              <Button asChild variant="outline">
-                <label htmlFor="bulk-upload-input" className="cursor-pointer">
-                  Select Files
-                </label>
+              <Button variant="outline" type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); document.getElementById('bulk-upload-input')?.click(); }}>
+                Select Files
               </Button>
             </div>
 
