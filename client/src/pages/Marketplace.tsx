@@ -1984,8 +1984,10 @@ export default function Marketplace() {
             ) : (
               <NoMyBeatsState
                 onAction={(action) => {
-                  if (action === 'upload' || action === 'bulk_upload') {
+                  if (action === 'upload') {
                     setShowUploadModal(true);
+                  } else if (action === 'bulk_upload') {
+                    setShowBulkUploadModal(true);
                   }
                 }}
               />
