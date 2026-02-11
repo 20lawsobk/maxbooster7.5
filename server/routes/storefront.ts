@@ -11,6 +11,7 @@ import {
   storefrontLikes,
   storefrontRatings,
   listings,
+  listingLicenseTiers,
 } from '@shared/schema';
 import { db } from '../db';
 import { eq, and, count, avg, sql } from 'drizzle-orm';
@@ -894,6 +895,156 @@ router.delete('/:storefrontId/listings/:listingId/discount', async (req, res) =>
   } catch (error) {
     logger.error('Error removing discount:', error);
     res.status(500).json({ error: 'Failed to remove discount' });
+  }
+});
+
+// ============================================================================
+// LICENSE TIER ROUTES (Per-license pricing & discounts)
+// ============================================================================
+
+router.get('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
+  try {
+    const { listingId } = req.params;
+    const tiers = await db.select().from(listingLicenseTiers)
+      .where(eq(listingLicenseTiers.listingId, listingId))
+      .orderBy(listingLicenseTiers.sortOrder);
+    res.json(tiers);
+  } catch (error) {
+    logger.error('Error fetching license tiers:', error);
+    res.status(500).json({ error: 'Failed to fetch license tiers' });
+  }
+});
+
+router.put('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const { listingId } = req.params;
+    const { tiers } = req.body as { tiers: Array<{
+      id?: string;
+      licenseType: string;
+      label?: string;
+      priceCents: number;
+      discountType?: string;
+      discountPercent?: number;
+      discountExpiresAt?: string;
+      bogoEnabled?: boolean;
+      bogoGetType?: string;
+      bogoGetPercent?: number;
+      fileFormats?: string[];
+      audioUrls?: Record<string, string>;
+      isActive?: boolean;
+      sortOrder?: number;
+    }> };
+
+    const [listing] = await db.select().from(listings)
+      .where(and(eq(listings.id, listingId), eq(listings.userId, req.user!.id))).limit(1);
+    if (!listing) return res.status(404).json({ error: 'Listing not found' });
+
+    await db.delete(listingLicenseTiers).where(eq(listingLicenseTiers.listingId, listingId));
+
+    const insertedTiers = [];
+    for (let i = 0; i < tiers.length; i++) {
+      const tier = tiers[i];
+      let discountPriceCents: number | null = null;
+      if (tier.discountType === 'percent' && tier.discountPercent && tier.discountPercent > 0 && tier.discountPercent <= 100) {
+        discountPriceCents = Math.round(tier.priceCents * (1 - tier.discountPercent / 100));
+      }
+
+      const [inserted] = await db.insert(listingLicenseTiers).values({
+        listingId,
+        licenseType: tier.licenseType,
+        label: tier.label || tier.licenseType.charAt(0).toUpperCase() + tier.licenseType.slice(1),
+        priceCents: tier.priceCents,
+        discountType: tier.discountType || 'none',
+        discountPercent: tier.discountType === 'percent' ? (tier.discountPercent || null) : null,
+        discountPriceCents,
+        discountExpiresAt: tier.discountExpiresAt ? new Date(tier.discountExpiresAt) : null,
+        bogoEnabled: tier.bogoEnabled || false,
+        bogoGetType: tier.bogoEnabled ? (tier.bogoGetType || null) : null,
+        bogoGetPercent: tier.bogoEnabled ? (tier.bogoGetPercent ?? 100) : 100,
+        fileFormats: tier.fileFormats || ['mp3'],
+        audioUrls: tier.audioUrls || {},
+        isActive: tier.isActive !== false,
+        sortOrder: tier.sortOrder ?? i,
+      }).returning();
+      insertedTiers.push(inserted);
+    }
+
+    const existingMeta = (listing.metadata as any) || {};
+    await db.update(listings).set({
+      metadata: { ...existingMeta, hasLicenseTiers: tiers.length > 0 },
+      updatedAt: new Date(),
+    }).where(eq(listings.id, listingId));
+
+    res.json(insertedTiers);
+  } catch (error) {
+    logger.error('Error saving license tiers:', error);
+    res.status(500).json({ error: 'Failed to save license tiers' });
+  }
+});
+
+router.delete('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const { listingId } = req.params;
+
+    const [listing] = await db.select().from(listings)
+      .where(and(eq(listings.id, listingId), eq(listings.userId, req.user!.id))).limit(1);
+    if (!listing) return res.status(404).json({ error: 'Listing not found' });
+
+    await db.delete(listingLicenseTiers).where(eq(listingLicenseTiers.listingId, listingId));
+
+    const existingMeta = (listing.metadata as any) || {};
+    await db.update(listings).set({
+      metadata: { ...existingMeta, hasLicenseTiers: false },
+      updatedAt: new Date(),
+    }).where(eq(listings.id, listingId));
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error removing license tiers:', error);
+    res.status(500).json({ error: 'Failed to remove license tiers' });
+  }
+});
+
+const tierAudioUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/flac', 'audio/aiff', 'audio/x-aiff', 'audio/mp3'];
+    if (allowed.includes(file.mimetype) || file.originalname.match(/\.(mp3|wav|flac|aiff|aif)$/i)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only MP3, WAV, FLAC, and AIFF audio files are allowed'));
+    }
+  }
+});
+
+router.post('/:storefrontId/listings/:listingId/tier-audio', tierAudioUpload.single('audioFile'), async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const { listingId } = req.params;
+    const { format } = req.body;
+
+    const [listing] = await db.select().from(listings)
+      .where(and(eq(listings.id, listingId), eq(listings.userId, req.user!.id))).limit(1);
+    if (!listing) return res.status(404).json({ error: 'Listing not found' });
+
+    if (!req.file) return res.status(400).json({ error: 'No audio file provided' });
+
+    const path = await import('path');
+    const crypto = await import('crypto');
+    const ext = path.extname(req.file.originalname) || '.mp3';
+    const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
+
+    const storageService = new ReplitStorageService();
+    const key = await storageService.uploadFile(req.file.buffer, 'tier-audio', filename, req.file.mimetype);
+    const audioUrl = `/api/marketplace/audio/${key}`;
+
+    res.json({ url: audioUrl, format: format || ext.replace('.', ''), filename: req.file.originalname });
+  } catch (error) {
+    logger.error('Error uploading tier audio:', error);
+    res.status(500).json({ error: 'Failed to upload tier audio file' });
   }
 });
 

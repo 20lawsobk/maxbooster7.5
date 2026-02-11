@@ -536,6 +536,32 @@ export const insertListingSchema = createInsertSchema(listings).omit({
 });
 
 // ============================================================================
+// LISTING LICENSE TIERS (Per-license pricing & discounts)
+// ============================================================================
+export const listingLicenseTiers = pgTable("listing_license_tiers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  listingId: varchar("listing_id").notNull(),
+  licenseType: text("license_type").notNull(),
+  label: text("label"),
+  priceCents: integer("price_cents").notNull(),
+  discountType: text("discount_type").default("none"),
+  discountPercent: integer("discount_percent"),
+  discountPriceCents: integer("discount_price_cents"),
+  discountExpiresAt: timestamp("discount_expires_at"),
+  bogoEnabled: boolean("bogo_enabled").default(false),
+  bogoGetType: text("bogo_get_type"),
+  bogoGetPercent: integer("bogo_get_percent").default(100),
+  fileFormats: text("file_formats").array(),
+  audioUrls: jsonb("audio_urls"),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type ListingLicenseTier = typeof listingLicenseTiers.$inferSelect;
+
+// ============================================================================
 // STOREFRONT SOCIAL (Follows, Likes, Ratings)
 // ============================================================================
 export const storefrontFollows = pgTable("storefront_follows", {

@@ -2,7 +2,8 @@ import { storage } from '../storage';
 import { db } from '../db';
 import { nanoid } from 'nanoid';
 import Stripe from 'stripe';
-import { type Order as DBOrder } from '@shared/schema';
+import { type Order as DBOrder, listingLicenseTiers } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 import { instantPayoutService } from './instantPayoutService';
 import { logger } from '../logger.js';
 
@@ -746,9 +747,21 @@ export class MarketplaceService {
     try {
       const listings = await storage.getBeatListings({ userId });
       const user = await storage.getUser(userId);
+
+      const listingIds = listings.map(l => l.id);
+      let allTiers: any[] = [];
+      if (listingIds.length > 0) {
+        for (const lid of listingIds) {
+          const tiers = await db.select().from(listingLicenseTiers)
+            .where(eq(listingLicenseTiers.listingId, lid))
+            .orderBy(listingLicenseTiers.sortOrder);
+          allTiers.push(...tiers);
+        }
+      }
       
       return listings.map(listing => {
         const metadata = (listing as any).metadata || {};
+        const tiers = allTiers.filter(t => t.listingId === listing.id);
         return {
           id: listing.id,
           title: listing.title,
@@ -769,7 +782,7 @@ export class MarketplaceService {
           description: listing.description || '',
           isExclusive: false,
           isLease: true,
-          licenseType: 'basic',
+          licenseType: metadata.licenseType || 'basic',
           downloads: 0,
           likes: 0,
           plays: 0,
@@ -779,6 +792,25 @@ export class MarketplaceService {
           discountPercent: (listing as any).discountPercent || null,
           discountPriceCents: (listing as any).discountPriceCents || null,
           discountExpiresAt: (listing as any).discountExpiresAt || null,
+          hasLicenseTiers: metadata.hasLicenseTiers || false,
+          licenseTiers: tiers.map(t => ({
+            id: t.id,
+            licenseType: t.licenseType,
+            label: t.label,
+            priceCents: t.priceCents,
+            price: t.priceCents / 100,
+            discountType: t.discountType,
+            discountPercent: t.discountPercent,
+            discountPriceCents: t.discountPriceCents,
+            discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null,
+            discountExpiresAt: t.discountExpiresAt,
+            bogoEnabled: t.bogoEnabled,
+            bogoGetType: t.bogoGetType,
+            bogoGetPercent: t.bogoGetPercent,
+            fileFormats: t.fileFormats || ['mp3'],
+            audioUrls: t.audioUrls || {},
+            isActive: t.isActive,
+          })),
         };
       });
     } catch (error: unknown) {
@@ -791,9 +823,21 @@ export class MarketplaceService {
     try {
       const listings = await storage.getBeatListings({ userId: producerId });
       const producer = await storage.getUser(producerId);
+
+      const listingIds = listings.map(l => l.id);
+      let allTiers: any[] = [];
+      if (listingIds.length > 0) {
+        for (const lid of listingIds) {
+          const tiers = await db.select().from(listingLicenseTiers)
+            .where(eq(listingLicenseTiers.listingId, lid))
+            .orderBy(listingLicenseTiers.sortOrder);
+          allTiers.push(...tiers);
+        }
+      }
       
       return listings.map(listing => {
         const metadata = (listing as any).metadata || {};
+        const tiers = allTiers.filter(t => t.listingId === listing.id);
         return {
           id: listing.id,
           title: listing.title,
@@ -820,6 +864,25 @@ export class MarketplaceService {
           discountPercent: (listing as any).discountPercent || null,
           discountPriceCents: (listing as any).discountPriceCents || null,
           discountExpiresAt: (listing as any).discountExpiresAt || null,
+          hasLicenseTiers: metadata.hasLicenseTiers || false,
+          licenseTiers: tiers.map(t => ({
+            id: t.id,
+            licenseType: t.licenseType,
+            label: t.label,
+            priceCents: t.priceCents,
+            price: t.priceCents / 100,
+            discountType: t.discountType,
+            discountPercent: t.discountPercent,
+            discountPriceCents: t.discountPriceCents,
+            discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null,
+            discountExpiresAt: t.discountExpiresAt,
+            bogoEnabled: t.bogoEnabled,
+            bogoGetType: t.bogoGetType,
+            bogoGetPercent: t.bogoGetPercent,
+            fileFormats: t.fileFormats || ['mp3'],
+            audioUrls: t.audioUrls || {},
+            isActive: t.isActive,
+          })),
         };
       });
     } catch (error: unknown) {

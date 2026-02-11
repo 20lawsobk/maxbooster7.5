@@ -192,6 +192,25 @@ import {
 } from 'lucide-react';
 
 // BeatStars Clone Interfaces
+interface LicenseTier {
+  id?: string;
+  licenseType: string;
+  label: string;
+  priceCents: number;
+  price: number;
+  discountType: string;
+  discountPercent: number | null;
+  discountPriceCents: number | null;
+  discountPrice: number | null;
+  discountExpiresAt: string | null;
+  bogoEnabled: boolean;
+  bogoGetType: string | null;
+  bogoGetPercent: number;
+  fileFormats: string[];
+  audioUrls: Record<string, string>;
+  isActive: boolean;
+}
+
 interface Beat {
   id: string;
   title: string;
@@ -223,6 +242,8 @@ interface Beat {
   discountPercent?: number | null;
   discountPriceCents?: number | null;
   discountExpiresAt?: string | null;
+  hasLicenseTiers?: boolean;
+  licenseTiers?: LicenseTier[];
 }
 
 interface Producer {
@@ -971,6 +992,21 @@ export default function Marketplace() {
 
   const [discountBeat, setDiscountBeat] = useState<Beat | null>(null);
   const [discountForm, setDiscountForm] = useState({ percent: 10, expiresAt: '' });
+  const [editLicenseTiers, setEditLicenseTiers] = useState<Array<{
+    licenseType: string;
+    label: string;
+    priceCents: number;
+    discountType: string;
+    discountPercent: number;
+    discountExpiresAt: string;
+    bogoEnabled: boolean;
+    bogoGetType: string;
+    bogoGetPercent: number;
+    fileFormats: string[];
+    audioUrls: Record<string, string>;
+    isActive: boolean;
+  }>>([]);
+  const [showLicenseTiers, setShowLicenseTiers] = useState(false);
 
   const discountMutation = useMutation({
     mutationFn: async ({ beatId, discountPercent, discountExpiresAt }: { beatId: string; discountPercent: number | null; discountExpiresAt?: string }) => {
@@ -994,6 +1030,31 @@ export default function Marketplace() {
     },
   });
 
+  const tiersMutation = useMutation({
+    mutationFn: async ({ beatId, tiers }: { beatId: string; tiers: typeof editLicenseTiers }) => {
+      if (tiers.length === 0) {
+        const response = await apiRequest('DELETE', `/api/storefront/_/listings/${beatId}/tiers`);
+        return response.json();
+      }
+      const response = await apiRequest('PUT', `/api/storefront/_/listings/${beatId}/tiers`, { tiers });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'License Tiers Saved', description: 'License pricing has been updated.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message || 'Failed to save license tiers', variant: 'destructive' });
+    },
+  });
+
+  const DEFAULT_LICENSE_TIERS = [
+    { licenseType: 'basic', label: 'Basic', priceCents: 2999, discountType: 'none', discountPercent: 0, discountExpiresAt: '', bogoEnabled: false, bogoGetType: '', bogoGetPercent: 100, fileFormats: ['mp3'], audioUrls: {}, isActive: true },
+    { licenseType: 'premium', label: 'Premium', priceCents: 4999, discountType: 'none', discountPercent: 0, discountExpiresAt: '', bogoEnabled: false, bogoGetType: '', bogoGetPercent: 100, fileFormats: ['mp3', 'wav'], audioUrls: {}, isActive: true },
+    { licenseType: 'unlimited', label: 'Unlimited', priceCents: 9999, discountType: 'none', discountPercent: 0, discountExpiresAt: '', bogoEnabled: false, bogoGetType: '', bogoGetPercent: 100, fileFormats: ['mp3', 'wav', 'stems'], audioUrls: {}, isActive: true },
+    { licenseType: 'exclusive', label: 'Exclusive', priceCents: 29999, discountType: 'none', discountPercent: 0, discountExpiresAt: '', bogoEnabled: false, bogoGetType: '', bogoGetPercent: 100, fileFormats: ['mp3', 'wav', 'stems'], audioUrls: {}, isActive: true },
+  ];
+
   const handleEditBeat = (beat: Beat) => {
     setEditingBeat(beat);
     setEditForm({
@@ -1010,6 +1071,22 @@ export default function Marketplace() {
       discountPercent: beat.discountPercent || 0,
       discountExpiresAt: beat.discountExpiresAt || '',
     });
+    const hasTiers = beat.hasLicenseTiers && beat.licenseTiers && beat.licenseTiers.length > 0;
+    setShowLicenseTiers(!!hasTiers);
+    setEditLicenseTiers(hasTiers ? beat.licenseTiers!.map(t => ({
+      licenseType: t.licenseType,
+      label: t.label,
+      priceCents: t.priceCents,
+      discountType: t.discountType || 'none',
+      discountPercent: t.discountPercent || 0,
+      discountExpiresAt: t.discountExpiresAt || '',
+      bogoEnabled: t.bogoEnabled || false,
+      bogoGetType: t.bogoGetType || '',
+      bogoGetPercent: t.bogoGetPercent ?? 100,
+      fileFormats: t.fileFormats || ['mp3'],
+      audioUrls: t.audioUrls || {},
+      isActive: t.isActive !== false,
+    })) : []);
     setShowEditModal(true);
   };
 
@@ -1028,16 +1105,24 @@ export default function Marketplace() {
     if (editForm.coverArtFile) formData.append('artwork', editForm.coverArtFile);
     updateBeatMutation.mutate({ id: editingBeat.id, data: formData });
 
-    const hadDiscount = editingBeat.discountPercent && editingBeat.discountPercent > 0;
-    const wantsDiscount = editForm.discountPercent > 0 && editForm.discountPercent < 100;
-    if (wantsDiscount) {
-      discountMutation.mutate({
-        beatId: editingBeat.id,
-        discountPercent: editForm.discountPercent,
-        discountExpiresAt: editForm.discountExpiresAt || undefined,
-      });
-    } else if (hadDiscount && !wantsDiscount) {
-      discountMutation.mutate({ beatId: editingBeat.id, discountPercent: null });
+    if (!showLicenseTiers) {
+      const hadDiscount = editingBeat.discountPercent && editingBeat.discountPercent > 0;
+      const wantsDiscount = editForm.discountPercent > 0 && editForm.discountPercent < 100;
+      if (wantsDiscount) {
+        discountMutation.mutate({
+          beatId: editingBeat.id,
+          discountPercent: editForm.discountPercent,
+          discountExpiresAt: editForm.discountExpiresAt || undefined,
+        });
+      } else if (hadDiscount && !wantsDiscount) {
+        discountMutation.mutate({ beatId: editingBeat.id, discountPercent: null });
+      }
+    }
+
+    if (showLicenseTiers && editLicenseTiers.length > 0) {
+      tiersMutation.mutate({ beatId: editingBeat.id, tiers: editLicenseTiers });
+    } else if (!showLicenseTiers && editingBeat.hasLicenseTiers) {
+      tiersMutation.mutate({ beatId: editingBeat.id, tiers: [] });
     }
   };
 
@@ -1400,34 +1485,55 @@ export default function Marketplace() {
   };
 
   const getLicensePrice = (beat: Beat, licenseType: string): number => {
+    if (beat.hasLicenseTiers && beat.licenseTiers?.length) {
+      const tier = beat.licenseTiers.find(t => t.licenseType === licenseType && t.isActive);
+      if (tier) {
+        if (tier.discountType === 'percent' && tier.discountPrice != null) return tier.discountPrice;
+        return tier.price;
+      }
+    }
     const basePrice = beat.price;
     switch (licenseType) {
-      case 'basic':
-        return basePrice;
-      case 'premium':
-        return basePrice * 2;
-      case 'unlimited':
-        return basePrice * 5;
-      case 'exclusive':
-        return basePrice * 20;
-      default:
-        return basePrice;
+      case 'basic': return basePrice;
+      case 'premium': return basePrice * 2;
+      case 'unlimited': return basePrice * 5;
+      case 'exclusive': return basePrice * 20;
+      default: return basePrice;
     }
+  };
+
+  const getLicenseOriginalPrice = (beat: Beat, licenseType: string): number | null => {
+    if (beat.hasLicenseTiers && beat.licenseTiers?.length) {
+      const tier = beat.licenseTiers.find(t => t.licenseType === licenseType && t.isActive);
+      if (tier && tier.discountType === 'percent' && tier.discountPercent && tier.discountPercent > 0) {
+        return tier.price;
+      }
+    }
+    return null;
+  };
+
+  const getLicenseTier = (beat: Beat, licenseType: string): LicenseTier | null => {
+    if (beat.hasLicenseTiers && beat.licenseTiers?.length) {
+      return beat.licenseTiers.find(t => t.licenseType === licenseType && t.isActive) || null;
+    }
+    return null;
   };
 
   const getLicenseDescription = (licenseType: string): string => {
     switch (licenseType) {
-      case 'basic':
-        return 'Basic lease - 5,000 copies, 1 year';
-      case 'premium':
-        return 'Premium lease - 50,000 copies, 2 years';
-      case 'unlimited':
-        return 'Unlimited lease - Unlimited copies, 5 years';
-      case 'exclusive':
-        return 'Exclusive rights - Full ownership';
-      default:
-        return '';
+      case 'basic': return 'Basic lease - 5,000 copies, 1 year';
+      case 'premium': return 'Premium lease - 50,000 copies, 2 years';
+      case 'unlimited': return 'Unlimited lease - Unlimited copies, 5 years';
+      case 'exclusive': return 'Exclusive rights - Full ownership';
+      default: return '';
     }
+  };
+
+  const getAvailableLicenses = (beat: Beat): string[] => {
+    if (beat.hasLicenseTiers && beat.licenseTiers?.length) {
+      return beat.licenseTiers.filter(t => t.isActive).map(t => t.licenseType);
+    }
+    return ['basic', 'premium', 'unlimited'];
   };
 
   const [bulkEditMode, setBulkEditMode] = useState(false);
@@ -1899,20 +2005,43 @@ export default function Marketplace() {
                         </div>
 
                         <div className="space-y-2 mb-4">
-                          {['basic', 'premium', 'unlimited'].map((license) => (
+                          {getAvailableLicenses(beat).map((license) => {
+                            const tier = getLicenseTier(beat, license);
+                            const originalPrice = getLicenseOriginalPrice(beat, license);
+                            return (
                             <div key={license} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
                               <div>
-                                <p className="text-sm font-medium capitalize">{license}</p>
+                                <div className="flex items-center gap-1">
+                                  <p className="text-sm font-medium capitalize">{tier?.label || license}</p>
+                                  {tier?.bogoEnabled && (
+                                    <Badge className="text-[9px] px-1 py-0 bg-orange-500">BOGO</Badge>
+                                  )}
+                                  {tier?.fileFormats && tier.fileFormats.length > 1 && (
+                                    <Badge variant="outline" className="text-[9px] px-1 py-0">{tier.fileFormats.map(f => f.toUpperCase()).join('+')}</Badge>
+                                  )}
+                                </div>
                                 <p className="text-xs text-gray-500">{getLicenseDescription(license)}</p>
+                                {tier?.bogoEnabled && tier.bogoGetType && (
+                                  <p className="text-[10px] text-orange-600">Buy 1, get {tier.bogoGetPercent === 100 ? 'FREE' : `${tier.bogoGetPercent}% off`} {tier.bogoGetType} license</p>
+                                )}
                               </div>
                               <div className="flex items-center space-x-2">
-                                <span className="text-sm font-semibold">${getLicensePrice(beat, license)}</span>
+                                <div className="text-right">
+                                  <span className="text-sm font-semibold">${getLicensePrice(beat, license).toFixed(2)}</span>
+                                  {originalPrice != null && (
+                                    <span className="text-xs line-through text-muted-foreground ml-1">${originalPrice.toFixed(2)}</span>
+                                  )}
+                                  {tier?.discountPercent && tier.discountPercent > 0 && (
+                                    <Badge variant="destructive" className="text-[9px] px-1 py-0 ml-1">-{tier.discountPercent}%</Badge>
+                                  )}
+                                </div>
                                 <Button size="sm" onClick={() => handleAddToCart(beat, license)} className="h-8 px-3">
                                   <Plus className="w-3 h-3" />
                                 </Button>
                               </div>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
 
                         <div className="flex space-x-2">
@@ -3952,9 +4081,197 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Price ($)</Label>
+              <Label>Base Price ($)</Label>
               <Input type="number" value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: parseFloat(e.target.value) || 0 })} min={0} />
             </div>
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-purple-600" />
+                  License Tiers
+                </Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{showLicenseTiers ? 'Per-license pricing' : 'Single price'}</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={showLicenseTiers ? 'default' : 'outline'}
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      if (!showLicenseTiers && editLicenseTiers.length === 0) {
+                        setEditLicenseTiers(DEFAULT_LICENSE_TIERS.map(t => ({ ...t, priceCents: Math.round(editForm.price * 100) || t.priceCents })));
+                      }
+                      setShowLicenseTiers(!showLicenseTiers);
+                    }}
+                  >
+                    {showLicenseTiers ? 'Enabled' : 'Enable'}
+                  </Button>
+                </div>
+              </div>
+              {showLicenseTiers && (
+                <div className="space-y-3 mt-2">
+                  <p className="text-xs text-muted-foreground">Set different prices, discounts, BOGO deals, and file formats for each license type. Each license can have its own discount.</p>
+                  {editLicenseTiers.map((tier, idx) => (
+                    <div key={tier.licenseType} className={`border rounded-lg p-3 space-y-2 ${!tier.isActive ? 'opacity-50' : ''}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" checked={tier.isActive} onChange={(e) => {
+                            const updated = [...editLicenseTiers];
+                            updated[idx] = { ...updated[idx], isActive: e.target.checked };
+                            setEditLicenseTiers(updated);
+                          }} className="rounded" />
+                          <span className="font-medium text-sm">{tier.label}</span>
+                          <Badge variant="outline" className="text-[10px]">{tier.licenseType}</Badge>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">$</span>
+                          <Input
+                            type="number"
+                            value={(tier.priceCents / 100).toFixed(2)}
+                            onChange={(e) => {
+                              const updated = [...editLicenseTiers];
+                              updated[idx] = { ...updated[idx], priceCents: Math.round((parseFloat(e.target.value) || 0) * 100) };
+                              setEditLicenseTiers(updated);
+                            }}
+                            min={0}
+                            className="h-7 w-24 text-xs text-right"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Discount Type</Label>
+                          <Select value={tier.discountType} onValueChange={(value) => {
+                            const updated = [...editLicenseTiers];
+                            updated[idx] = { ...updated[idx], discountType: value };
+                            setEditLicenseTiers(updated);
+                          }}>
+                            <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No Discount</SelectItem>
+                              <SelectItem value="percent">% Off</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {tier.discountType === 'percent' && (
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Discount %</Label>
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                value={tier.discountPercent || ''}
+                                onChange={(e) => {
+                                  const updated = [...editLicenseTiers];
+                                  updated[idx] = { ...updated[idx], discountPercent: parseInt(e.target.value) || 0 };
+                                  setEditLicenseTiers(updated);
+                                }}
+                                min={1} max={99}
+                                className="h-7 text-xs"
+                              />
+                              {tier.discountPercent > 0 && (
+                                <Badge variant="destructive" className="text-[9px] whitespace-nowrap">
+                                  ${((tier.priceCents / 100) * (1 - tier.discountPercent / 100)).toFixed(2)}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {tier.discountType === 'percent' && (
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Discount Expires (optional)</Label>
+                          <Input
+                            type="datetime-local"
+                            value={tier.discountExpiresAt ? tier.discountExpiresAt.slice(0, 16) : ''}
+                            onChange={(e) => {
+                              const updated = [...editLicenseTiers];
+                              updated[idx] = { ...updated[idx], discountExpiresAt: e.target.value ? new Date(e.target.value).toISOString() : '' };
+                              setEditLicenseTiers(updated);
+                            }}
+                            className="h-7 text-xs"
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 pt-1">
+                        <input type="checkbox" checked={tier.bogoEnabled} onChange={(e) => {
+                          const updated = [...editLicenseTiers];
+                          updated[idx] = { ...updated[idx], bogoEnabled: e.target.checked };
+                          setEditLicenseTiers(updated);
+                        }} className="rounded" />
+                        <Label className="text-xs font-medium text-orange-600">BOGO Deal</Label>
+                        {tier.bogoEnabled && (
+                          <span className="text-[10px] text-muted-foreground">Buy this license, get another free/discounted</span>
+                        )}
+                      </div>
+                      {tier.bogoEnabled && (
+                        <div className="grid grid-cols-2 gap-2 pl-5">
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Free License Type</Label>
+                            <Select value={tier.bogoGetType || ''} onValueChange={(value) => {
+                              const updated = [...editLicenseTiers];
+                              updated[idx] = { ...updated[idx], bogoGetType: value };
+                              setEditLicenseTiers(updated);
+                            }}>
+                              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                              <SelectContent>
+                                {editLicenseTiers.filter(t => t.licenseType !== tier.licenseType).map(t => (
+                                  <SelectItem key={t.licenseType} value={t.licenseType}>{t.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">BOGO Discount %</Label>
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                value={tier.bogoGetPercent}
+                                onChange={(e) => {
+                                  const updated = [...editLicenseTiers];
+                                  updated[idx] = { ...updated[idx], bogoGetPercent: parseInt(e.target.value) || 0 };
+                                  setEditLicenseTiers(updated);
+                                }}
+                                min={0} max={100}
+                                className="h-7 text-xs"
+                              />
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">{tier.bogoGetPercent === 100 ? 'FREE' : `${tier.bogoGetPercent}% off`}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <div className="pt-1">
+                        <Label className="text-[10px] text-muted-foreground">Included File Formats</Label>
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          {['mp3', 'wav', 'flac', 'stems'].map(fmt => (
+                            <Button
+                              key={fmt}
+                              type="button"
+                              size="sm"
+                              variant={tier.fileFormats.includes(fmt) ? 'default' : 'outline'}
+                              className="h-6 text-[10px] px-2"
+                              onClick={() => {
+                                const updated = [...editLicenseTiers];
+                                const formats = tier.fileFormats.includes(fmt)
+                                  ? tier.fileFormats.filter(f => f !== fmt)
+                                  : [...tier.fileFormats, fmt];
+                                updated[idx] = { ...updated[idx], fileFormats: formats.length > 0 ? formats : ['mp3'] };
+                                setEditLicenseTiers(updated);
+                              }}
+                            >
+                              {fmt.toUpperCase()}
+                            </Button>
+                          ))}
+                        </div>
+                        {tier.fileFormats.length > 1 && (
+                          <p className="text-[10px] text-green-600 mt-1">Buyer gets {tier.fileFormats.map(f => f.toUpperCase()).join(' + ')} files</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {!showLicenseTiers && (
             <div className="border rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">
@@ -3990,6 +4307,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                 </div>
               </div>
             </div>
+            )}
             <div className="space-y-2">
               <Label>Description</Label>
               <Textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="Describe your beat..." rows={3} />
