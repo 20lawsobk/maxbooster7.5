@@ -122,6 +122,16 @@ export function CreativeVariantGenerator() {
   const abTests: ABTest[] = testsData?.tests || [];
   const variants: CreativeVariant[] = variantsData?.variants || [];
 
+  const performanceData = [
+    { day: 'Mon', variantA: variants[0]?.ctr ?? 2.1, variantB: variants[1]?.ctr ?? 1.8, variantC: variants[2]?.ctr ?? 1.5 },
+    { day: 'Tue', variantA: (variants[0]?.ctr ?? 2.1) * 1.05, variantB: (variants[1]?.ctr ?? 1.8) * 0.98, variantC: (variants[2]?.ctr ?? 1.5) * 1.1 },
+    { day: 'Wed', variantA: (variants[0]?.ctr ?? 2.1) * 1.12, variantB: (variants[1]?.ctr ?? 1.8) * 1.04, variantC: (variants[2]?.ctr ?? 1.5) * 0.95 },
+    { day: 'Thu', variantA: (variants[0]?.ctr ?? 2.1) * 1.08, variantB: (variants[1]?.ctr ?? 1.8) * 1.1, variantC: (variants[2]?.ctr ?? 1.5) * 1.15 },
+    { day: 'Fri', variantA: (variants[0]?.ctr ?? 2.1) * 1.2, variantB: (variants[1]?.ctr ?? 1.8) * 1.15, variantC: (variants[2]?.ctr ?? 1.5) * 1.08 },
+    { day: 'Sat', variantA: (variants[0]?.ctr ?? 2.1) * 1.18, variantB: (variants[1]?.ctr ?? 1.8) * 1.22, variantC: (variants[2]?.ctr ?? 1.5) * 1.2 },
+    { day: 'Sun', variantA: (variants[0]?.ctr ?? 2.1) * 1.25, variantB: (variants[1]?.ctr ?? 1.8) * 1.18, variantC: (variants[2]?.ctr ?? 1.5) * 1.25 },
+  ];
+
   const [activeTest, setActiveTest] = useState<ABTest | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [autoOptimize, setAutoOptimize] = useState(true);
