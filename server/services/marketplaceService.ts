@@ -835,9 +835,11 @@ export class MarketplaceService {
       title?: string;
       description?: string;
       genre?: string;
+      mood?: string;
       bpm?: number;
       key?: string;
       price?: number;
+      licenseType?: string;
       tags?: string[];
       audioUrl?: string;
       artworkUrl?: string;
@@ -876,8 +878,10 @@ export class MarketplaceService {
       updateData.metadata = {
         ...existingMetadata,
         genre: data.genre ?? existingMetadata.genre,
+        mood: data.mood ?? existingMetadata.mood,
         bpm: data.bpm ?? existingMetadata.bpm,
         key: data.key ?? existingMetadata.key,
+        licenseType: data.licenseType ?? existingMetadata.licenseType,
         tags: data.tags ?? existingMetadata.tags ?? [],
       };
 

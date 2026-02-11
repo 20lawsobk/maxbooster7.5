@@ -936,16 +936,18 @@ router.put('/listings/:id', upload.fields([
     }
 
     const { id } = req.params;
-    const { title, description, genre, tempo, key, price, tags } = req.body;
+    const { title, description, genre, mood, tempo, key, price, tags, licenseType } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     const updateData: any = {};
     if (title) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (genre) updateData.genre = genre;
+    if (mood) updateData.mood = mood;
     if (tempo) updateData.bpm = parseInt(tempo);
     if (key) updateData.key = key;
     if (price) updateData.price = parseFloat(price);
+    if (licenseType) updateData.licenseType = licenseType;
     if (tags) updateData.tags = tags.split(',').map((t: string) => t.trim());
 
     if (files?.audio?.[0]) {

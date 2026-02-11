@@ -748,7 +748,7 @@ export default function Marketplace() {
         formData.append('licenseType', bulkEditUploadedValues.licenseType || beat.licenseType || 'basic');
         formData.append('tags', bulkEditUploadedValues.tags || (beat.tags?.join(', ') || ''));
         formData.append('description', beat.description || '');
-        if (bulkEditUploadedValues.coverArtFile) formData.append('coverArt', bulkEditUploadedValues.coverArtFile);
+        if (bulkEditUploadedValues.coverArtFile) formData.append('artwork', bulkEditUploadedValues.coverArtFile);
 
         await apiRequest('PUT', `/api/marketplace/listings/${beatId}`, formData, { timeout: 300000 });
 
@@ -1025,7 +1025,7 @@ export default function Marketplace() {
     if (editForm.licenseType) formData.append('licenseType', editForm.licenseType);
     formData.append('description', editForm.description);
     formData.append('tags', editForm.tags);
-    if (editForm.coverArtFile) formData.append('coverArt', editForm.coverArtFile);
+    if (editForm.coverArtFile) formData.append('artwork', editForm.coverArtFile);
     updateBeatMutation.mutate({ id: editingBeat.id, data: formData });
 
     const hadDiscount = editingBeat.discountPercent && editingBeat.discountPercent > 0;
