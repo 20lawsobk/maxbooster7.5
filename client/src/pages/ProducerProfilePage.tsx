@@ -246,7 +246,19 @@ export default function ProducerProfilePage() {
                     <><UserPlus className="w-4 h-4 mr-2" /> Follow</>
                   )}
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => {
+                  const shareUrl = `${window.location.origin}/marketplace/producer/${id}`;
+                  const shareData = { title: `${producer.displayName || producer.username} on Max Booster`, url: shareUrl };
+                  if (navigator.share) {
+                    navigator.share(shareData).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                      toast({ title: 'Link copied!', description: 'Producer profile link copied to clipboard' });
+                    }).catch(() => {
+                      toast({ title: 'Could not copy link', variant: 'destructive' });
+                    });
+                  }
+                }}>
                   <Share2 className="w-4 h-4" />
                 </Button>
               </div>
