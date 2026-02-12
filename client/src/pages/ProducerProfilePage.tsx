@@ -1,5 +1,5 @@
 import { useParams } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -17,6 +17,8 @@ import {
   Share2,
   Star,
   Users,
+  UserPlus,
+  UserCheck,
   DollarSign,
   CheckCircle,
   MapPin,
@@ -28,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 
 interface Producer {
   id: string;
@@ -65,6 +68,41 @@ export default function ProducerProfilePage() {
   const [, navigate] = useLocation();
   const [playingBeatId, setPlayingBeatId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: followStatus } = useQuery<{ isFollowing: boolean }>({
+    queryKey: ['producer-follow-status', producerId],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/marketplace/producers/${producerId}/follow-status`);
+      return res.json();
+    },
+    enabled: !!producerId,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/marketplace/follow/${producerId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['producer-follow-status', producerId] });
+      queryClient.invalidateQueries({ queryKey: ['producer', producerId] });
+      toast({ title: followStatus?.isFollowing ? 'Unfollowed' : 'Following!', description: followStatus?.isFollowing ? 'You unfollowed this producer' : 'You are now following this producer' });
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/marketplace/unfollow/${producerId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['producer-follow-status', producerId] });
+      queryClient.invalidateQueries({ queryKey: ['producer', producerId] });
+      toast({ title: 'Unfollowed', description: 'You unfollowed this producer' });
+    },
+  });
 
   const { data: producer, isLoading: producerLoading } = useQuery<Producer>({
     queryKey: ['producer', producerId],
@@ -196,9 +234,17 @@ export default function ProducerProfilePage() {
               </div>
 
               <div className="flex gap-2">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-                  <Users className="w-4 h-4 mr-2" />
-                  Follow
+                <Button
+                  className={followStatus?.isFollowing ? '' : 'bg-gradient-to-r from-blue-600 to-purple-600'}
+                  variant={followStatus?.isFollowing ? 'outline' : 'default'}
+                  onClick={() => followStatus?.isFollowing ? unfollowMutation.mutate() : followMutation.mutate()}
+                  disabled={followMutation.isPending || unfollowMutation.isPending}
+                >
+                  {followStatus?.isFollowing ? (
+                    <><UserCheck className="w-4 h-4 mr-2" /> Following</>
+                  ) : (
+                    <><UserPlus className="w-4 h-4 mr-2" /> Follow</>
+                  )}
                 </Button>
                 <Button variant="outline">
                   <Share2 className="w-4 h-4" />

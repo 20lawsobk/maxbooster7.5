@@ -1163,34 +1163,40 @@ router.get('/producers/:producerId', requireAuth, async (req: Request, res: Resp
       return res.status(404).json({ error: 'Producer not found' });
     }
     
-    // Get actual beat count
+    const { storefronts, storefrontFollows, storefrontRatings, orders } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { sql, eq, avg: drizzleAvg } = await import('drizzle-orm');
+
     const producerBeats = await marketplaceService.getListingsByProducer(producerId);
     const beatCount = producerBeats.length;
     
-    // Get follower count by checking all taste profiles
-    const { userTasteProfiles } = await import('@shared/schema');
-    const { db } = await import('../db');
-    const { sql } = await import('drizzle-orm');
-    
-    const followerResult = await db.execute(sql`
-      SELECT COUNT(*) as count FROM user_taste_profiles 
-      WHERE ${producerId} = ANY(followed_producers)
-    `);
-    const followerCount = Number(followerResult.rows[0]?.count || 0);
-    
-    // Calculate average rating from producer's beats
+    const userStorefront = await db.select({ id: storefronts.id })
+      .from(storefronts)
+      .where(eq(storefronts.userId, producerId))
+      .limit(1);
+    const storefrontId = userStorefront[0]?.id;
+
+    let followerCount = 0;
     let avgRating = 0;
-    let totalRatings = 0;
-    for (const beat of producerBeats) {
-      const metadata = (beat.metadata as any) || {};
-      if (metadata.avgRating && metadata.ratingCount) {
-        avgRating += metadata.avgRating * metadata.ratingCount;
-        totalRatings += metadata.ratingCount;
-      }
+    let salesCount = 0;
+
+    if (storefrontId) {
+      const [followResult] = await db.select({ count: sql<number>`count(*)::int` })
+        .from(storefrontFollows)
+        .where(eq(storefrontFollows.storefrontId, storefrontId));
+      followerCount = followResult?.count || 0;
+
+      const [ratingResult] = await db.select({ avg: sql<number>`coalesce(avg(${storefrontRatings.rating}), 0)` })
+        .from(storefrontRatings)
+        .where(eq(storefrontRatings.storefrontId, storefrontId));
+      avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
     }
-    if (totalRatings > 0) {
-      avgRating = Math.round((avgRating / totalRatings) * 10) / 10;
-    }
+
+    const { and: drizzleAnd } = await import('drizzle-orm');
+    const [salesResult] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(orders)
+      .where(drizzleAnd(eq(orders.sellerId, producerId), eq(orders.status, 'completed')));
+    salesCount = salesResult?.count || 0;
     
     res.json({
       id: producer.id,
@@ -1202,6 +1208,7 @@ router.get('/producers/:producerId', requireAuth, async (req: Request, res: Resp
       socialLinks: producer.socialLinks,
       followerCount,
       beatCount,
+      sales: salesCount,
       rating: avgRating,
       verified: producer.role === 'admin' || producer.subscriptionTier === 'lifetime',
     });

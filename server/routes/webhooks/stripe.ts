@@ -24,11 +24,44 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
   logger.info(`[Stripe] Checkout completed: ${session.id}`);
   
   await auditPayment.charge(
-    session.metadata?.userId || 'unknown',
+    session.metadata?.userId || session.metadata?.buyerId || 'unknown',
     session.amount_total || 0,
     session.payment_intent as string || session.id,
     true
   );
+
+  const { beatId, buyerId, sellerId, licenseType } = session.metadata || {};
+  if (beatId && buyerId && sellerId) {
+    try {
+      const { orders } = await import('@shared/schema');
+      const { db } = await import('../../db');
+      const { eq } = await import('drizzle-orm');
+      
+      const paymentRef = session.payment_intent as string || session.id;
+      const [existing] = await db.select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.stripePaymentIntentId, paymentRef))
+        .limit(1);
+
+      if (!existing) {
+        await db.insert(orders).values({
+          userId: buyerId,
+          sellerId,
+          listingId: beatId,
+          amount: (session.amount_total || 0) / 100,
+          currency: session.currency || 'usd',
+          status: 'completed',
+          stripePaymentIntentId: paymentRef,
+          metadata: { licenseType, sessionId: session.id },
+        });
+        logger.info(`[Stripe] Order created for beat ${beatId}, buyer ${buyerId}, seller ${sellerId}`);
+      } else {
+        logger.info(`[Stripe] Order already exists for payment ${paymentRef}, skipping duplicate`);
+      }
+    } catch (orderError) {
+      logger.error('[Stripe] Failed to create order record:', orderError);
+    }
+  }
   
   return { success: true, message: 'Checkout session processed' };
 });

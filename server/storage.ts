@@ -19,6 +19,10 @@ import {
   listings,
   sessions,
   collabSnapshots,
+  storefronts,
+  storefrontFollows,
+  storefrontRatings,
+  orders,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -555,6 +559,33 @@ export class DatabaseStorage implements IStorage {
       const producerData = await Promise.all(allUsers.map(async (u) => {
         const userBeats = await db.select().from(listings).where(eq(listings.userId, u.id));
         const beatsCount = userBeats.length;
+
+        const userStorefront = await db.select({ id: storefronts.id })
+          .from(storefronts)
+          .where(eq(storefronts.userId, u.id))
+          .limit(1);
+        const storefrontId = userStorefront[0]?.id;
+
+        let followersCount = 0;
+        let avgRating = 0;
+        let salesCount = 0;
+
+        if (storefrontId) {
+          const [followResult] = await db.select({ count: sql<number>`count(*)::int` })
+            .from(storefrontFollows)
+            .where(eq(storefrontFollows.storefrontId, storefrontId));
+          followersCount = followResult?.count || 0;
+
+          const [ratingResult] = await db.select({ avg: sql<number>`coalesce(avg(${storefrontRatings.rating}), 0)` })
+            .from(storefrontRatings)
+            .where(eq(storefrontRatings.storefrontId, storefrontId));
+          avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
+        }
+
+        const [salesResult] = await db.select({ count: sql<number>`count(*)::int` })
+          .from(orders)
+          .where(and(eq(orders.sellerId, u.id), eq(orders.status, 'completed')));
+        salesCount = salesResult?.count || 0;
         
         return {
           id: u.id,
@@ -564,10 +595,10 @@ export class DatabaseStorage implements IStorage {
           location: u.location || null,
           website: u.website || null,
           verified: u.role === 'admin' || u.subscriptionTier === 'lifetime',
-          followers: 0,
-          sales: 0,
+          followers: followersCount,
+          sales: salesCount,
           beats: beatsCount,
-          rating: 0,
+          rating: avgRating,
         };
       }));
       

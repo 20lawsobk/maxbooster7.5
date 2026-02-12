@@ -1057,11 +1057,11 @@ export class MarketplaceService {
           },
         ],
         mode: 'payment',
-        success_url: process.env.REPLIT_DEV_DOMAIN 
-          ? `https://${process.env.REPLIT_DEV_DOMAIN}/marketplace?success=true`
+        success_url: (process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN)
+          ? `https://${process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN}/marketplace?success=true`
           : 'http://localhost:5000/marketplace?success=true',
-        cancel_url: process.env.REPLIT_DEV_DOMAIN 
-          ? `https://${process.env.REPLIT_DEV_DOMAIN}/marketplace?canceled=true`
+        cancel_url: (process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN)
+          ? `https://${process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN}/marketplace?canceled=true`
           : 'http://localhost:5000/marketplace?canceled=true',
         metadata: {
           buyerId,

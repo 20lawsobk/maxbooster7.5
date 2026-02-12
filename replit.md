@@ -75,3 +75,8 @@ npm start
 
 ## Recent Changes
 - 2026-02-12: Initial Replit setup - installed toolchains, provisioned database, pushed schema, configured workflow and deployment
+- 2026-02-12: Fixed image rendering for files with spaces (URL-decoded paths in /objects/ route)
+- 2026-02-12: Synced marketplace producer stats with real DB data (followers from storefrontFollows, sales from completed orders, ratings from storefrontRatings)
+- 2026-02-12: Wired social interaction buttons (ForYouFeed like button, ProducerProfilePage follow/unfollow)
+- 2026-02-12: Enhanced Stripe webhook: checkout.session.completed creates order records with idempotency checks
+- 2026-02-12: Updated Stripe checkout URLs to use REPLIT_DEPLOYMENT_URL for production; sales counts filter completed orders only
