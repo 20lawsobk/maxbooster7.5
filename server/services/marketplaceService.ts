@@ -326,6 +326,7 @@ export class MarketplaceService {
    * Browse marketplace listings with filters
    */
   async browseListings(filters: {
+    search?: string;
     genre?: string;
     minPrice?: number;
     maxPrice?: number;

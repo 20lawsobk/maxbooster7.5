@@ -1028,6 +1028,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBeatListings(filters?: {
+    search?: string;
     genre?: string;
     minPrice?: number;
     maxPrice?: number;
@@ -1046,7 +1047,7 @@ export class DatabaseStorage implements IStorage {
         query = db.select().from(listings).where(eq(listings.userId, filters.userId));
       }
       
-      const results = await query.orderBy(desc(listings.createdAt)).limit(filters?.limit || 50);
+      let results = await query.orderBy(desc(listings.createdAt)).limit(filters?.limit || 50);
       
       const userIds = [...new Set(results.map(l => l.userId))];
       const userRows = userIds.length > 0
@@ -1056,7 +1057,7 @@ export class DatabaseStorage implements IStorage {
         : [];
       const userMap = new Map(userRows.map(u => [u.id, u]));
 
-      return results.map(listing => {
+      const mapped = results.map(listing => {
         const meta = (listing.metadata as any) || {};
         const owner = userMap.get(listing.userId);
         const producerName = owner?.username || `${owner?.firstName || ''} ${owner?.lastName || ''}`.trim() || 'Producer';
@@ -1102,6 +1103,20 @@ export class DatabaseStorage implements IStorage {
           ],
         };
       });
+
+      if (filters?.search) {
+        const q = filters.search.toLowerCase();
+        return mapped.filter(b =>
+          b.title?.toLowerCase().includes(q) ||
+          b.description?.toLowerCase().includes(q) ||
+          b.producer?.toLowerCase().includes(q) ||
+          b.genre?.toLowerCase().includes(q) ||
+          b.mood?.toLowerCase().includes(q) ||
+          (b.tags as string[]).some((t: string) => t.toLowerCase().includes(q))
+        );
+      }
+
+      return mapped;
     } catch (error) {
       console.error('Error fetching beat listings:', error);
       return [];

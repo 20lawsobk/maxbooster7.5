@@ -219,17 +219,25 @@ export class DiscoveryAlgorithmService {
           const searchLower = options.search.toLowerCase();
           const titleMatch = beat.title?.toLowerCase().includes(searchLower);
           const descMatch = beat.description?.toLowerCase().includes(searchLower);
-          if (!titleMatch && !descMatch) {
-            return { beat, discoveryScore: discoveryScore * 0.05 };
+          const producerMatch = beat.producerName?.toLowerCase().includes(searchLower);
+          const genreMatch = genre?.toLowerCase().includes(searchLower);
+          const moodMatch = mood?.toLowerCase().includes(searchLower);
+          const tags = (metadata.tags || []) as string[];
+          const tagMatch = tags.some((t: string) => t.toLowerCase().includes(searchLower));
+          if (!titleMatch && !descMatch && !producerMatch && !genreMatch && !moodMatch && !tagMatch) {
+            return { beat, discoveryScore: 0 };
           }
         }
 
         return { beat, discoveryScore };
       });
 
-      scoredBeats.sort((a, b) => b.discoveryScore - a.discoveryScore);
+      const filteredBeats = options.search
+        ? scoredBeats.filter(b => b.discoveryScore > 0)
+        : scoredBeats;
+      filteredBeats.sort((a, b) => b.discoveryScore - a.discoveryScore);
 
-      const paginatedResults = scoredBeats.slice(offset, offset + limit);
+      const paginatedResults = filteredBeats.slice(offset, offset + limit);
 
       return paginatedResults.map(({ beat, discoveryScore }) => {
         const metadata = beat.metadata as any || {};
