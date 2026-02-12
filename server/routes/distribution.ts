@@ -3129,7 +3129,7 @@ router.post('/profiles/sync-all', requireAuth, async (req: Request, res: Respons
     res.json({
       success: true,
       ...result,
-      message: `Synced ${result.successful} of ${result.total} profiles`,
+      message: `Synced ${result.succeeded} of ${result.total} profiles`,
     });
   } catch (error: unknown) {
     logger.error('Error syncing all profiles:', error);

@@ -579,11 +579,13 @@ class DistributionDataTransferService {
   private extractArtistIdFromUrl(platformId: string, url: string): string {
     const patterns: Record<string, RegExp> = {
       spotify: /artist\/([a-zA-Z0-9]+)/,
-      apple_music: /artist\/([0-9]+)/,
+      apple_music: /(?:artist\/[^/]*\/|artist\/)(\d+)/,
       youtube_music: /channel\/([a-zA-Z0-9_-]+)/,
       deezer: /artist\/([0-9]+)/,
+      tidal: /artist\/([0-9]+)/,
       soundcloud: /soundcloud\.com\/([a-zA-Z0-9_-]+)/,
       bandcamp: /([a-zA-Z0-9_-]+)\.bandcamp\.com/,
+      audiomack: /audiomack\.com\/([a-zA-Z0-9_-]+)/,
     };
     
     const pattern = patterns[platformId];
@@ -602,8 +604,9 @@ class DistributionDataTransferService {
       const user = await storage.getUser(userId);
       if (!user) return;
       
-      const existingProfiles = (user as any).streamingProfiles || {};
-      existingProfiles[profile.platformId] = {
+      const existingPrefs = (user.preferences as Record<string, any>) || {};
+      const streamingProfiles = existingPrefs.streamingProfiles || {};
+      streamingProfiles[profile.platformId] = {
         artistId: profile.artistId,
         artistName: profile.artistName,
         profileUrl: profile.profileUrl,
@@ -615,10 +618,11 @@ class DistributionDataTransferService {
         lastSyncStatus: profile.lastSyncStatus,
         lastSyncMethod: profile.lastSyncMethod,
         syncCount: profile.syncCount,
+        consecutiveFailures: profile.consecutiveFailures,
       };
       
       await storage.updateUser(userId, {
-        streamingProfiles: existingProfiles,
+        preferences: { ...existingPrefs, streamingProfiles },
       } as any);
     } catch (error) {
       logger.error(`[DataTransfer] Failed to save profile to storage:`, error);
@@ -645,10 +649,11 @@ class DistributionDataTransferService {
       try {
         const user = await storage.getUser(userId);
         if (user) {
-          const existingProfiles = (user as any).streamingProfiles || {};
-          delete existingProfiles[platformId];
+          const existingPrefs = (user.preferences as Record<string, any>) || {};
+          const streamingProfiles = existingPrefs.streamingProfiles || {};
+          delete streamingProfiles[platformId];
           await storage.updateUser(userId, {
-            streamingProfiles: existingProfiles,
+            preferences: { ...existingPrefs, streamingProfiles },
           } as any);
         }
       } catch (error) {
