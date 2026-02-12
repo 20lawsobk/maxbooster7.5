@@ -165,7 +165,10 @@ function simulateExportProgress(jobId: string): void {
       if (stage.progress === 100) {
         currentJob.completedTime = new Date();
         currentJob.downloadUrl = `/api/export/download/${jobId}`;
-        currentJob.fileSize = Math.floor(Math.random() * 50000000) + 1000000; // 1-50 MB
+        const trackCount = currentJob.tracks?.length || 1;
+        const durationSec = currentJob.duration || 180;
+        const qualityMultiplier = currentJob.format === 'wav' ? 176400 : currentJob.format === 'flac' ? 88200 : 20000;
+        currentJob.fileSize = Math.floor(trackCount * durationSec * qualityMultiplier);
 
         // Add to history
         exportHistory.unshift({

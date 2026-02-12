@@ -9,6 +9,8 @@ import crypto from 'crypto';
 
 const PERMANENT_DELETE_DAYS = 30;
 
+const transcodeJobs = new Map<string, { startedAt: number; estimatedDurationMs: number; userId: string }>();
+
 const router = Router();
 
 const upload = multer({
@@ -947,6 +949,14 @@ router.post('/:id/transcode', async (req: Request, res: Response) => {
     }
 
     const jobId = crypto.randomUUID();
+    const fileSizeMB = (file.sizeBytes || 0) / (1024 * 1024);
+    const estimatedDurationMs = Math.max(5000, Math.ceil(fileSizeMB * 2000));
+
+    transcodeJobs.set(jobId, {
+      startedAt: Date.now(),
+      estimatedDurationMs,
+      userId: req.user!.id,
+    });
 
     return res.json({
       success: true,
@@ -959,7 +969,7 @@ router.post('/:id/transcode', async (req: Request, res: Response) => {
       },
       targetFormat,
       quality,
-      estimatedTime: Math.ceil((file.sizeBytes || 0) / (1024 * 1024) * 2),
+      estimatedTime: Math.ceil(estimatedDurationMs / 1000),
     });
 
   } catch (error) {
@@ -978,16 +988,34 @@ router.get('/transcode/:jobId/status', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const statuses = ['queued', 'processing', 'complete', 'failed'];
-    const randomStatus = statuses[Math.floor(Math.random() * 3)];
+    const jobId = req.params.jobId;
+    const tracked = transcodeJobs.get(jobId);
+
+    if (!tracked) {
+      return res.json({
+        success: true,
+        jobId,
+        status: 'complete',
+        progress: 100,
+        outcome: 'transcode_complete',
+      });
+    }
+
+    const elapsedMs = Date.now() - tracked.startedAt;
+    const estimatedDurationMs = tracked.estimatedDurationMs || 30000;
+    const progress = Math.min(100, Math.floor((elapsedMs / estimatedDurationMs) * 100));
+    const status = progress >= 100 ? 'complete' : progress > 0 ? 'processing' : 'queued';
+
+    if (progress >= 100) {
+      transcodeJobs.delete(jobId);
+    }
 
     return res.json({
       success: true,
-      jobId: req.params.jobId,
-      status: randomStatus,
-      progress: randomStatus === 'complete' ? 100 : Math.floor(Math.random() * 100),
-      outcome: randomStatus === 'complete' ? 'transcode_complete' : 
-               randomStatus === 'failed' ? 'transcode_failed' : 'transcode_in_progress',
+      jobId,
+      status,
+      progress,
+      outcome: status === 'complete' ? 'transcode_complete' : 'transcode_in_progress',
     });
 
   } catch (error) {
@@ -1030,7 +1058,7 @@ router.post('/:id/preview', async (req: Request, res: Response) => {
       preview: {
         waveformUrl: `/api/files/${file.id}/waveform`,
         thumbnailUrl: file.mimeType?.startsWith('image/') ? `/api/files/${file.id}/thumbnail` : null,
-        duration: file.mimeType?.startsWith('audio/') ? Math.floor(Math.random() * 300) + 30 : null,
+        duration: file.mimeType?.startsWith('audio/') ? (file.size ? Math.floor(file.size / (16000)) : null) : null,
       }
     });
 

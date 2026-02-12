@@ -61,9 +61,17 @@ router.post('/analyze-loudness', audioUpload.single('audio'), async (req: Reques
     const targetPlatform = (req.body.platform as string) || 'spotify';
     const targetLufs = LOUDNESS_TARGETS.STREAMING[targetPlatform as keyof typeof LOUDNESS_TARGETS.STREAMING] || -14;
 
-    const estimatedLufs = metadata.lossless
-      ? -14 + (Math.random() * 6 - 3)
-      : -12 + (Math.random() * 4 - 2);
+    const bitrateKbps = metadata.bitrate ? metadata.bitrate / 1000 : 128;
+    const channels = metadata.channels || 2;
+    const sampleRate = metadata.sampleRate || 44100;
+
+    let estimatedLufs: number;
+    if (metadata.lossless) {
+      estimatedLufs = -14 + (sampleRate > 48000 ? -1.0 : 0) + (channels > 2 ? -0.5 : 0);
+    } else {
+      const compressionPenalty = bitrateKbps < 192 ? 2.0 : bitrateKbps < 256 ? 1.0 : 0.5;
+      estimatedLufs = -12 + compressionPenalty + (channels > 2 ? -0.5 : 0);
+    }
 
     const gainNeeded = targetLufs - estimatedLufs;
     const estimatedTruePeak = metadata.lossless ? -1.5 : -0.5;

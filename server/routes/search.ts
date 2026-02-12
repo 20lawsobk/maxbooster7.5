@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db.ts';
 import { storage } from '../storage.ts';
 import { eq, ilike, or, and, desc, sql, count, gte, lte, asc, sum } from 'drizzle-orm';
-import { users, projects, beats, releases, studioProjects, storefronts, analytics } from '../../shared/schema.ts';
+import { users, projects, beats, releases, studioProjects, storefronts, analytics, socialCampaigns } from '../../shared/schema.ts';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -1144,40 +1144,81 @@ router.get('/social/search', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
     
-    const mockPosts = [
-      { id: '1', platform: 'instagram', content: 'New beat dropping soon! 🔥', status: 'published', scheduledFor: null, createdAt: new Date().toISOString() },
-      { id: '2', platform: 'twitter', content: 'Check out my latest track', status: 'scheduled', scheduledFor: new Date(Date.now() + 86400000).toISOString(), createdAt: new Date().toISOString() },
-      { id: '3', platform: 'tiktok', content: 'Beat making tutorial #producer', status: 'draft', scheduledFor: null, createdAt: new Date().toISOString() },
-    ];
-    
-    let filtered = mockPosts;
-    
+    const conditions: any[] = [eq(socialCampaigns.userId, userId)];
+
     if (q) {
-      filtered = filtered.filter(p => p.content.toLowerCase().includes((q as string).toLowerCase()));
+      conditions.push(ilike(socialCampaigns.content, `%${q}%`));
     }
-    
+
     if (platform && platform !== 'all') {
-      filtered = filtered.filter(p => p.platform === platform);
+      conditions.push(eq(socialCampaigns.platform, platform as string));
     }
-    
+
     if (status && status !== 'all') {
-      filtered = filtered.filter(p => p.status === status);
+      conditions.push(eq(socialCampaigns.status, status as string));
     }
-    
-    const trendingHashtags = [
-      { tag: 'newmusic', count: 1523 },
-      { tag: 'producer', count: 987 },
-      { tag: 'beatmaker', count: 876 },
-      { tag: 'hiphop', count: 765 },
-      { tag: 'trap', count: 654 },
-      { tag: 'studio', count: 543 },
-    ];
-    
+
+    if (dateFrom) {
+      conditions.push(gte(socialCampaigns.createdAt, new Date(dateFrom as string)));
+    }
+
+    if (dateTo) {
+      conditions.push(lte(socialCampaigns.createdAt, new Date(dateTo as string)));
+    }
+
+    const posts = await db
+      .select({
+        id: socialCampaigns.id,
+        platform: socialCampaigns.platform,
+        content: socialCampaigns.content,
+        status: socialCampaigns.status,
+        scheduledFor: socialCampaigns.scheduledAt,
+        publishedAt: socialCampaigns.publishedAt,
+        engagement: socialCampaigns.engagement,
+        createdAt: socialCampaigns.createdAt,
+      })
+      .from(socialCampaigns)
+      .where(and(...conditions))
+      .orderBy(desc(socialCampaigns.createdAt))
+      .limit(Number(limit));
+
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(socialCampaigns)
+      .where(and(...conditions));
+
+    const hashtagCounts = await db
+      .select({
+        content: socialCampaigns.content,
+      })
+      .from(socialCampaigns)
+      .where(eq(socialCampaigns.userId, userId))
+      .limit(200);
+
+    const hashtagMap: Record<string, number> = {};
+    for (const row of hashtagCounts) {
+      const tags = (row.content || '').match(/#(\w+)/g) || [];
+      for (const tag of tags) {
+        const clean = tag.replace('#', '').toLowerCase();
+        hashtagMap[clean] = (hashtagMap[clean] || 0) + 1;
+      }
+    }
+
+    const trendingHashtags = Object.entries(hashtagMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([tag, tagCount]) => ({ tag, count: tagCount }));
+
     res.json({
-      posts: filtered.slice(0, Number(limit)),
-      total: filtered.length,
+      posts: posts.map(p => ({
+        ...p,
+        createdAt: p.createdAt?.toISOString() || new Date().toISOString(),
+        scheduledFor: p.scheduledFor?.toISOString() || null,
+        publishedAt: p.publishedAt?.toISOString() || null,
+      })),
+      total,
       trendingHashtags,
-      platforms: ['instagram', 'twitter', 'tiktok', 'facebook', 'youtube'],
+      platforms: ['instagram', 'twitter', 'tiktok', 'facebook', 'youtube', 'linkedin', 'threads'],
       statuses: ['draft', 'scheduled', 'published', 'failed'],
     });
   } catch (error: any) {

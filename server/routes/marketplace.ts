@@ -10,7 +10,7 @@ import { notificationService } from '../services/notificationService';
 import { logger } from '../logger.js';
 import { db } from '../db';
 import { orders, listings, users } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and, gte, sql, desc } from 'drizzle-orm';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -88,6 +88,49 @@ router.get('/producer-analytics', async (req: Request, res: Response) => {
     const conversionRate = totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
     const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
+    const days = timeRange === '7d' ? 7 : timeRange === '90d' ? 90 : timeRange === '1y' ? 365 : 30;
+    const currentPeriodStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const previousPeriodStart = new Date(Date.now() - days * 2 * 24 * 60 * 60 * 1000);
+
+    const now = new Date();
+    const [currentPeriodOrders] = await db
+      .select({
+        count: sql<number>`COUNT(*)`,
+        revenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)`,
+      })
+      .from(orders)
+      .where(and(
+        eq(orders.sellerId, userId),
+        eq(orders.status, 'completed'),
+        gte(orders.createdAt, currentPeriodStart),
+        sql`${orders.createdAt} < ${now}`,
+      ));
+
+    const [previousPeriodOrders] = await db
+      .select({
+        count: sql<number>`COUNT(*)`,
+        revenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)`,
+      })
+      .from(orders)
+      .where(and(
+        eq(orders.sellerId, userId),
+        eq(orders.status, 'completed'),
+        gte(orders.createdAt, previousPeriodStart),
+        sql`${orders.createdAt} < ${currentPeriodStart}`,
+      ));
+
+    const curSales = Number(currentPeriodOrders?.count || 0);
+    const prevSales = Number(previousPeriodOrders?.count || 0);
+    const curRevenue = Number(currentPeriodOrders?.revenue || 0);
+    const prevRevenue = Number(previousPeriodOrders?.revenue || 0);
+
+    const calcChange = (cur: number, prev: number) => prev > 0 ? parseFloat(((cur - prev) / prev * 100).toFixed(1)) : cur > 0 ? 100 : 0;
+
+    const salesChange = calcChange(curSales, prevSales);
+    const revenueChange = calcChange(curRevenue, prevRevenue);
+    const viewsChange = 0;
+    const playsChange = 0;
+
     const licenseBreakdown = userPurchases.reduce((acc, p) => {
       const type = p.licenseType || 'basic';
       if (!acc[type]) acc[type] = { count: 0, revenue: 0 };
@@ -104,12 +147,12 @@ router.get('/producer-analytics', async (req: Request, res: Response) => {
         totalRevenue,
         conversionRate: parseFloat(conversionRate.toFixed(2)),
         avgOrderValue: parseFloat(avgOrderValue.toFixed(2)),
-        viewsChange: 12.5,
-        playsChange: 8.3,
-        salesChange: 15.2,
-        revenueChange: 22.8,
+        viewsChange,
+        playsChange,
+        salesChange,
+        revenueChange,
       },
-      timeline: generateTimelineData(timeRange as string),
+      timeline: await generateTimelineData(timeRange as string, userId),
       topBeats: userListings
         .sort((a, b) => (b.plays || 0) - (a.plays || 0))
         .slice(0, 5)
@@ -144,21 +187,59 @@ router.get('/producer-analytics', async (req: Request, res: Response) => {
   }
 });
 
-function generateTimelineData(timeRange: string) {
+async function generateTimelineData(timeRange: string, userId: string) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const now = new Date();
+  const periodCount = timeRange === '7d' ? 7 : timeRange === '90d' ? 12 : timeRange === '1y' ? 12 : 10;
+
+  const userListingIds = await db
+    .select({ id: listings.id })
+    .from(listings)
+    .where(eq(listings.userId, userId));
+
+  const listingIdSet = new Set(userListingIds.map(l => l.id));
+
   const data = [];
-  const count = timeRange === '7d' ? 7 : timeRange === '90d' ? 12 : timeRange === '1y' ? 12 : 10;
-  
-  for (let i = count - 1; i >= 0; i--) {
-    const date = new Date(now);
-    date.setMonth(date.getMonth() - i);
+  for (let i = periodCount - 1; i >= 0; i--) {
+    const periodStart = new Date(now);
+    const periodEnd = new Date(now);
+
+    if (timeRange === '7d') {
+      periodStart.setDate(periodStart.getDate() - i - 1);
+      periodEnd.setDate(periodEnd.getDate() - i);
+    } else {
+      periodStart.setMonth(periodStart.getMonth() - i - 1);
+      periodEnd.setMonth(periodEnd.getMonth() - i);
+    }
+
+    const periodOrders = await db
+      .select({
+        salesCount: sql<number>`COUNT(*)`,
+        totalRevenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)`,
+      })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.sellerId, userId),
+          eq(orders.status, 'completed'),
+          gte(orders.createdAt, periodStart),
+          sql`${orders.createdAt} < ${periodEnd}`,
+        )
+      );
+
+    const salesCount = Number(periodOrders[0]?.salesCount) || 0;
+    const totalRevenue = Number(periodOrders[0]?.totalRevenue) || 0;
+
+    const label = timeRange === '7d'
+      ? periodEnd.toLocaleDateString('en-US', { weekday: 'short' })
+      : months[periodEnd.getMonth()];
+
     data.push({
-      date: months[date.getMonth()],
-      views: Math.floor(Math.random() * 3000) + 2000,
-      plays: Math.floor(Math.random() * 2000) + 1500,
-      sales: Math.floor(Math.random() * 80) + 40,
-      revenue: Math.floor(Math.random() * 3000) + 2000,
+      date: label,
+      views: 0,
+      plays: 0,
+      sales: salesCount,
+      revenue: Math.round(totalRevenue * 100) / 100,
     });
   }
   return data;

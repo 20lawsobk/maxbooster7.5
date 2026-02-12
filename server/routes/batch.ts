@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { eq, and, inArray, sql } from 'drizzle-orm';
+import { analytics } from '@shared/schema';
 
 const router = Router();
 
@@ -448,18 +449,39 @@ router.post('/analytics/compare', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'No IDs provided' });
     }
 
-    const comparisonData = ids.map((id) => ({
-      id,
-      streams: Math.floor(Math.random() * 100000),
-      revenue: Math.floor(Math.random() * 1000),
-      engagement: Math.random() * 10,
-    }));
+    const userId = req.user!.id;
+
+    const analyticsData = await db
+      .select({
+        platform: analytics.platform,
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+        listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+      })
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .groupBy(analytics.platform);
+
+    const analyticsMap = new Map(analyticsData.map(a => [a.platform, a]));
+
+    const comparisonData = ids.map((id) => {
+      const data = analyticsMap.get(id);
+      const streamCount = Number(data?.streams) || 0;
+      const rev = Number(data?.revenue) || 0;
+      const listeners = Number(data?.listeners) || 0;
+      const engagement = streamCount > 0 && listeners > 0
+        ? Math.round((streamCount / listeners) * 100) / 100
+        : 0;
+      return { id, streams: streamCount, revenue: rev, engagement };
+    });
+
+    const succeeded = comparisonData.map(d => d.id);
 
     res.json({
-      success: ids,
+      success: succeeded,
       failed: [],
       totalRequested: ids.length,
-      totalSucceeded: ids.length,
+      totalSucceeded: succeeded.length,
       totalFailed: 0,
       comparisonData,
     });

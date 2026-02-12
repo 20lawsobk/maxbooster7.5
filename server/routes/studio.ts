@@ -4140,7 +4140,9 @@ router.post('/projects/:projectId/mix', requireAuth, async (req: Request, res: R
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const lufsReduction = (mixSettings.compression.ratio - 1) * 0.5;
-    const estimatedLUFS = -14 + lufsReduction + (Math.random() * 0.4 - 0.2);
+    const eqShift = ((mixSettings.eq?.low || 0) + (mixSettings.eq?.mid || 0) + (mixSettings.eq?.high || 0)) * 0.02;
+    const estimatedLUFS = -14 + lufsReduction + eqShift;
+    const truePeakEstimate = -1.2 + (mixSettings.compression.ratio > 4 ? 0.3 : mixSettings.compression.ratio > 2 ? 0.15 : 0);
     
     res.json({
       success: true,
@@ -4148,8 +4150,8 @@ router.post('/projects/:projectId/mix', requireAuth, async (req: Request, res: R
         type: 'mix_applied',
         message: 'Mix settings applied successfully',
         data: {
-          lufs: estimatedLUFS,
-          truePeak: -1.2 + (Math.random() * 0.4),
+          lufs: parseFloat(estimatedLUFS.toFixed(1)),
+          truePeak: parseFloat(truePeakEstimate.toFixed(2)),
           settings: mixSettings,
         },
       },
@@ -4180,13 +4182,14 @@ router.post('/projects/:projectId/master', requireAuth, async (req: Request, res
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    const limiterGain = masterSettings.limiterCeiling ? Math.abs(masterSettings.limiterCeiling) * 0.1 : 0;
     const loudnessMetrics = {
-      integratedLUFS: masterSettings.targetLUFS + (Math.random() * 0.4 - 0.2),
-      shortTermLUFS: masterSettings.targetLUFS + 1.5 + (Math.random() * 0.5),
-      momentaryLUFS: masterSettings.targetLUFS + 3 + (Math.random() * 0.5),
-      truePeak: masterSettings.truePeakLimit + (Math.random() * 0.2),
-      dynamicRange: 7 + Math.random() * 3,
-      loudnessRange: 5 + Math.random() * 3,
+      integratedLUFS: parseFloat((masterSettings.targetLUFS + limiterGain * 0.1).toFixed(1)),
+      shortTermLUFS: parseFloat((masterSettings.targetLUFS + 1.5 + limiterGain * 0.15).toFixed(1)),
+      momentaryLUFS: parseFloat((masterSettings.targetLUFS + 3 + limiterGain * 0.2).toFixed(1)),
+      truePeak: parseFloat((masterSettings.truePeakLimit + limiterGain * 0.05).toFixed(2)),
+      dynamicRange: parseFloat((8.5 - limiterGain * 0.3).toFixed(1)),
+      loudnessRange: parseFloat((6.5 - limiterGain * 0.2).toFixed(1)),
     };
     
     res.json({
@@ -4322,7 +4325,9 @@ router.post('/projects/:projectId/plugins/load', requireAuth, async (req: Reques
     
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    const pluginNotFound = Math.random() < 0.1;
+    const knownPlugins = ['eq', 'compressor', 'reverb', 'delay', 'chorus', 'limiter', 'gate', 'saturator', 'phaser', 'flanger', 'distortion', 'pitch-shift', 'de-esser', 'multiband-comp'];
+    const normalizedId = pluginId.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const pluginNotFound = !knownPlugins.some(p => normalizedId.includes(p));
     
     if (pluginNotFound) {
       return res.status(404).json({

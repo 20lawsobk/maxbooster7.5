@@ -703,7 +703,7 @@ router.get('/historical/yearly', async (req: Request, res: Response) => {
         revenue: Number(yearStats[0]?.revenue) || 0,
         listeners: Number(yearStats[0]?.listeners) || 0,
         releases: releaseCount[0]?.count || 0,
-        playlistAdds: Math.floor(Math.random() * 50) + 10,
+        playlistAdds: Math.max(0, Math.floor(Number(yearStats[0]?.streams || 0) * 0.002)),
       };
     }));
 
@@ -850,13 +850,53 @@ router.get('/global-ranking', async (req: Request, res: Response) => {
     const baseScore = Math.min(100, Math.floor(Math.log10(streams + 1) * 15));
     const globalRank = Math.max(1000, 500000 - Math.floor(streams / 10));
 
-    const platformScores = [
-      { platform: 'Spotify', score: baseScore + Math.floor(Math.random() * 10), rank: globalRank + Math.floor(Math.random() * 5000), trend: 'up', change: Math.floor(Math.random() * 10), color: '#1DB954' },
-      { platform: 'Apple Music', score: baseScore - 5 + Math.floor(Math.random() * 10), rank: globalRank + 5000 + Math.floor(Math.random() * 5000), trend: 'up', change: Math.floor(Math.random() * 5), color: '#FA2D48' },
-      { platform: 'YouTube Music', score: baseScore - 10 + Math.floor(Math.random() * 10), rank: globalRank + 10000 + Math.floor(Math.random() * 5000), trend: 'stable', change: 0, color: '#FF0000' },
-      { platform: 'Amazon Music', score: baseScore - 15 + Math.floor(Math.random() * 10), rank: globalRank + 15000 + Math.floor(Math.random() * 5000), trend: 'down', change: -Math.floor(Math.random() * 3), color: '#00A8E1' },
-      { platform: 'Deezer', score: baseScore - 20 + Math.floor(Math.random() * 10), rank: globalRank + 25000 + Math.floor(Math.random() * 10000), trend: 'up', change: Math.floor(Math.random() * 8), color: '#FEAA2D' },
+    const platformAnalytics = await db
+      .select({
+        platform: analytics.platform,
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+        listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+      })
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .groupBy(analytics.platform);
+
+    const platformMap: Record<string, { streams: number; revenue: number; listeners: number }> = {};
+    for (const row of platformAnalytics) {
+      if (row.platform) {
+        platformMap[row.platform.toLowerCase()] = {
+          streams: Number(row.streams),
+          revenue: Number(row.revenue),
+          listeners: Number(row.listeners),
+        };
+      }
+    }
+
+    const platformConfigs = [
+      { platform: 'Spotify', key: 'spotify', offset: 0, rankOffset: 0, color: '#1DB954' },
+      { platform: 'Apple Music', key: 'apple_music', offset: -5, rankOffset: 5000, color: '#FA2D48' },
+      { platform: 'YouTube Music', key: 'youtube', offset: -10, rankOffset: 10000, color: '#FF0000' },
+      { platform: 'Amazon Music', key: 'amazon_music', offset: -15, rankOffset: 15000, color: '#00A8E1' },
+      { platform: 'Deezer', key: 'deezer', offset: -20, rankOffset: 25000, color: '#FEAA2D' },
     ];
+
+    const platformScores = platformConfigs.map(cfg => {
+      const data = platformMap[cfg.key];
+      const platformStreams = data?.streams || 0;
+      const platformScore = Math.min(100, Math.floor(Math.log10(platformStreams + 1) * 15) + cfg.offset);
+      const platformRank = globalRank + cfg.rankOffset + Math.max(0, 5000 - Math.floor(platformStreams / 20));
+      const trendDir = platformStreams > streams * 0.15 ? 'up' : platformStreams > streams * 0.05 ? 'stable' : 'down';
+      const change = trendDir === 'up' ? Math.floor(Math.log10(platformStreams + 1)) :
+                     trendDir === 'down' ? -Math.floor(Math.log10(platformStreams + 1) * 0.5) : 0;
+      return {
+        platform: cfg.platform,
+        score: Math.max(0, platformScore),
+        rank: Math.max(1000, platformRank),
+        trend: trendDir,
+        change,
+        color: cfg.color,
+      };
+    });
 
     const rankingHistory = [];
     for (let i = 0; i < 6; i++) {
@@ -941,7 +981,12 @@ router.post('/natural-language-query', async (req: Request, res: Response) => {
           type: 'table',
           title: 'Top Performing Tracks',
           summary: `Your top platforms generated ${Number(stats.totalStreams).toLocaleString()} total streams.`,
-          data: { tracks: topTracks.map((t, i) => ({ name: `Track ${i + 1}`, streams: Number(t.streams), revenue: Number(t.revenue), growth: Math.floor(Math.random() * 30) })) },
+          data: { tracks: topTracks.map((t, i) => {
+            const trackStreams = Number(t.streams);
+            const avgStreams = Number(stats.totalStreams) / (topTracks.length || 1);
+            const growth = avgStreams > 0 ? Math.round(((trackStreams - avgStreams) / avgStreams) * 100) : 0;
+            return { name: t.platform || `Platform ${i + 1}`, streams: trackStreams, revenue: Number(t.revenue), growth: Math.max(0, Math.min(100, growth)) };
+          }) },
         },
       });
     }

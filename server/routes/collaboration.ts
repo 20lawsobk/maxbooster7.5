@@ -811,15 +811,21 @@ router.get('/conflicts/:projectId', requireAuth, async (req: AuthenticatedReques
     const { projectId } = req.params;
     const projectConflicts = conflicts.get(projectId) || [];
 
-    const mockConflict = {
-      id: 'conflict-demo',
-      detected: false,
-      details: null,
-    };
+    const hasUnresolved = projectConflicts.some((c: any) => c.resolvedBy === undefined || c.resolvedBy === null);
 
     res.json({
       conflicts: projectConflicts,
-      pendingConflict: mockConflict,
+      pendingConflict: hasUnresolved
+        ? {
+            id: projectConflicts.find((c: any) => !c.resolvedBy)?.id || null,
+            detected: true,
+            details: projectConflicts.find((c: any) => !c.resolvedBy) || null,
+          }
+        : {
+            id: null,
+            detected: false,
+            details: null,
+          },
     });
   } catch (error) {
     logger.error('Get conflicts error:', error);
