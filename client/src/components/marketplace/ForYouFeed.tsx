@@ -112,15 +112,26 @@ export function ForYouFeed() {
     setSelectedBeat(beat);
   };
 
+  const likeMutation = useMutation({
+    mutationFn: async (beatId: string) => {
+      const response = await apiRequest('POST', `/api/marketplace/beats/${beatId}/like`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['for-you-feed'] });
+    },
+  });
+
   const handleLike = (beat: Beat) => {
     const newLiked = new Set(likedBeats);
     if (likedBeats.has(beat.id)) {
       newLiked.delete(beat.id);
     } else {
       newLiked.add(beat.id);
-      interactionMutation.mutate({ beatId: beat.id, type: 'like' });
     }
     setLikedBeats(newLiked);
+    likeMutation.mutate(beat.id);
+    interactionMutation.mutate({ beatId: beat.id, type: 'like' });
   };
 
   const handleAddToCart = (beat: Beat) => {
