@@ -130,6 +130,9 @@ export class DatabaseBackupService {
 
   private async cleanOldBackups() {
     try {
+      if (!fs.existsSync(BACKUP_DIR)) {
+        return;
+      }
       const files = fs.readdirSync(BACKUP_DIR)
         .filter(f => f.startsWith('backup-') && f.endsWith('.sql'))
         .map(f => ({
@@ -185,6 +188,9 @@ export class DatabaseBackupService {
 
   async listBackups() {
     try {
+      if (!fs.existsSync(BACKUP_DIR)) {
+        return [];
+      }
       const files = fs.readdirSync(BACKUP_DIR)
         .filter(f => f.startsWith('backup-') && f.endsWith('.sql'))
         .map(f => {
