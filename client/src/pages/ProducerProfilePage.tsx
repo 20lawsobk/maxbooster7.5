@@ -124,6 +124,17 @@ export default function ProducerProfilePage() {
 
   const beats = Array.isArray(beatsData) ? beatsData : [];
 
+  const { data: allProducersData } = useQuery<{ producers: any[] }>({
+    queryKey: ['all-producers'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/marketplace/producers');
+      return res.json();
+    },
+    enabled: !!producerId,
+    staleTime: 5 * 60 * 1000,
+  });
+  const allProducers = allProducersData?.producers || [];
+
   const handlePlayBeat = (beat: Beat) => {
     if (playingBeatId === beat.id) {
       audioRef.current?.pause();
@@ -406,6 +417,66 @@ export default function ProducerProfilePage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {allProducers.length > 1 && (
+          <div className="mt-8 space-y-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <Users className="w-5 h-5 text-purple-500" />
+              Similar Producers
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              If you like {producer.name || producer.username}, you might also enjoy these producers
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {allProducers
+                .filter((p: any) => p.id !== producerId)
+                .slice(0, 6)
+                .map((p: any) => (
+                  <Card
+                    key={p.id}
+                    className="hover:shadow-xl transition group cursor-pointer border-2 hover:border-blue-500"
+                    onClick={() => navigate(`/marketplace/producer/${p.id}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="relative flex-shrink-0">
+                          {(p.avatar || p.avatarUrl) ? (
+                            <img
+                              src={p.avatar || p.avatarUrl}
+                              alt={p.displayName || p.username || 'Producer'}
+                              className="w-14 h-14 rounded-full object-cover border-2 border-purple-500/30"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
+                              {(p.displayName || p.username || 'PR').substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          {p.verified && (
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white">
+                              <CheckCircle className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold truncate group-hover:text-blue-600 transition">
+                            {p.displayName || p.username}
+                          </h4>
+                          {p.bio && (
+                            <p className="text-xs text-muted-foreground truncate">{p.bio}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>{p.beats || p.beatCount || 0} beats</span>
+                            <span>{p.followers || p.followerCount || 0} followers</span>
+                            {(p.rating || 0) > 0 && <span>{'★'.repeat(Math.round(p.rating))}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   );
