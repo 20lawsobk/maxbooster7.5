@@ -1163,6 +1163,7 @@ export async function registerRoutes(
       }
       
       req.session.userId = demoUser.id;
+      (req.session as any).isDemo = true;
       const { password, ...userWithoutPassword } = demoUser;
       return res.json(userWithoutPassword);
     } catch (error) {

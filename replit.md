@@ -100,3 +100,4 @@ npm start
 - 2026-02-12: Centralized getBaseUrl() helper (REPLIT_DEPLOYMENT_URL → REPLIT_DEV_DOMAIN → localhost) replacing all localhost:5000 and example.com fallbacks across 7 files
 - 2026-02-12: Eliminated Math.random() mock data from 5 service files (advancedAnalytics, aiInsights, cohortAnalytics, aiMusic, advancedSocialAI) with deterministic hash-based calculations
 - 2026-02-12: Maxed out SEO: comprehensive meta tags, JSON-LD structured data, dynamic sitemap.xml, robots.txt, server-side OG meta injection for shareable pages with XSS-safe escaping
+- 2026-02-12: Made marketplace publicly browsable: removed auth from /api/marketplace/beats, /producers, /producers/:id; fixed sitemap /auth→/login and listings.isPublished filter; implemented demo mode with isDemo session flag + blockDemoWrite middleware; marketplace UI shows browse/producers tabs for all visitors, seller tabs hidden for non-auth users

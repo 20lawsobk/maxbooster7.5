@@ -24,7 +24,7 @@ const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
   next();
 };
 
-router.get('/beats', requireAuth, async (req: Request, res: Response) => {
+router.get('/beats', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const { 
@@ -423,7 +423,7 @@ router.get('/my-beats', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/producers', requireAuth, async (req: Request, res: Response) => {
+router.get('/producers', async (req: Request, res: Response) => {
   try {
     const producers = await storage.getProducers();
     res.json({ producers: producers || [] });
@@ -1390,7 +1390,7 @@ router.post('/collaborations', async (req: Request, res: Response) => {
 });
 
 // Producer by ID endpoint
-router.get('/producers/:producerId', requireAuth, async (req: Request, res: Response) => {
+router.get('/producers/:producerId', async (req: Request, res: Response) => {
   try {
     const { producerId } = req.params;
     const producer = await storage.getUser(producerId);

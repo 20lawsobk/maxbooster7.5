@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Howl } from 'howler';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRequireSubscription } from '@/hooks/useRequireAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -543,7 +543,7 @@ function ProducerFollowButton({ producerId, followMutation, unfollowMutation }: 
 }
 
 export default function Marketplace() {
-  const { user, isLoading: authLoading } = useRequireSubscription();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('browse');
@@ -836,13 +836,11 @@ export default function Marketplace() {
 
       return await res.json();
     },
-    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: producersData, isLoading: producersLoading } = useQuery<ProducersResponse>({
     queryKey: ['/api/marketplace/producers'],
-    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -1698,7 +1696,6 @@ export default function Marketplace() {
 
   return (
     <AppLayout>
-      {!user ? null : (
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200/60 dark:border-gray-700">
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -1962,40 +1959,44 @@ export default function Marketplace() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-11 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <TabsList className={`grid w-full ${user ? 'grid-cols-5 lg:grid-cols-11' : 'grid-cols-2'} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700`}>
             <TabsTrigger value="browse" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
               Browse
             </TabsTrigger>
             <TabsTrigger value="producers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
               Producers
             </TabsTrigger>
-            <TabsTrigger value="my-beats" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-              My Beats
-            </TabsTrigger>
-            <TabsTrigger value="my-store" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-              My Store
-            </TabsTrigger>
-            <TabsTrigger value="purchases" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-              Purchases
-            </TabsTrigger>
-            <TabsTrigger value="sales" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="escrow" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-              Escrow
-            </TabsTrigger>
-            <TabsTrigger value="licenses" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-              Licenses
-            </TabsTrigger>
-            <TabsTrigger value="affiliates" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-              Affiliates
-            </TabsTrigger>
-            <TabsTrigger value="contracts" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-              Contracts
-            </TabsTrigger>
-            <TabsTrigger value="collaborations" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-              Collabs
-            </TabsTrigger>
+            {user && (
+              <>
+                <TabsTrigger value="my-beats" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  My Beats
+                </TabsTrigger>
+                <TabsTrigger value="my-store" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  My Store
+                </TabsTrigger>
+                <TabsTrigger value="purchases" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  Purchases
+                </TabsTrigger>
+                <TabsTrigger value="sales" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  Analytics
+                </TabsTrigger>
+                <TabsTrigger value="escrow" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  Escrow
+                </TabsTrigger>
+                <TabsTrigger value="licenses" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  Licenses
+                </TabsTrigger>
+                <TabsTrigger value="affiliates" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  Affiliates
+                </TabsTrigger>
+                <TabsTrigger value="contracts" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  Contracts
+                </TabsTrigger>
+                <TabsTrigger value="collaborations" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  Collabs
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="browse" className="space-y-6">
@@ -3354,7 +3355,6 @@ export default function Marketplace() {
           </TabsContent>
         </Tabs>
       </div>
-      )}
 
       {showPreviewPlayer && currentBeat && (
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t shadow-lg p-4 z-50">

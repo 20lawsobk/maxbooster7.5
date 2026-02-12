@@ -16,7 +16,7 @@ router.get('/sitemap.xml', async (_req: Request, res: Response) => {
     const staticPages = [
       { loc: '/', changefreq: 'daily', priority: '1.0' },
       { loc: '/marketplace', changefreq: 'daily', priority: '0.9' },
-      { loc: '/auth', changefreq: 'monthly', priority: '0.7' },
+      { loc: '/login', changefreq: 'monthly', priority: '0.7' },
     ];
 
     let beatUrls = '';
@@ -24,7 +24,7 @@ router.get('/sitemap.xml', async (_req: Request, res: Response) => {
       const beats = await db
         .select({ id: listings.id, updatedAt: listings.updatedAt })
         .from(listings)
-        .where(eq(listings.status, 'active'))
+        .where(eq(listings.isPublished, true))
         .orderBy(desc(listings.updatedAt))
         .limit(500);
 

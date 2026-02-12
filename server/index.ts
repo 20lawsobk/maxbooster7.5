@@ -317,6 +317,15 @@ app.use((req, res, next) => {
   // Autonomous systems initialization is deferred to after server starts
   // to ensure fast cold start times for landing page loading
 
+  // Block write operations for demo users (read-only mode)
+  try {
+    const { blockDemoWrite } = await import('./auth.js');
+    app.use('/api', blockDemoWrite);
+    logger.info('✅ Demo write protection applied');
+  } catch (e: any) {
+    logger.warn(`⚠️ Demo write protection not available: ${e.message}`);
+  }
+
   // Apply scalable rate limiter for high-load scenarios
   try {
     const { globalScalableRateLimiter } = await import('./middleware/scalableRateLimiter.js');
