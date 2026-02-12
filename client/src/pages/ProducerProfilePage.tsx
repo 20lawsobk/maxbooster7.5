@@ -247,7 +247,7 @@ export default function ProducerProfilePage() {
                   )}
                 </Button>
                 <Button variant="outline" onClick={() => {
-                  const shareUrl = `${window.location.origin}/marketplace/producer/${id}`;
+                  const shareUrl = `${window.location.origin}/marketplace/producer/${producerId}`;
                   const shareData = { title: `${producer.displayName || producer.username} on Max Booster`, url: shareUrl };
                   if (navigator.share) {
                     navigator.share(shareData).catch(() => {});
