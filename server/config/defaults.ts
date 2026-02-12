@@ -191,7 +191,7 @@ export const config: AppConfig = {
   storage: {
     provider:
       (process.env.STORAGE_PROVIDER as 'local' | 's3' | 'replit') ||
-      (process.env.PRIVATE_OBJECT_DIR ? 'replit' : (process.env.REPLIT_BUCKET_ID ? 'replit' : 'local')),
+      (process.env.PRIVATE_OBJECT_DIR ? 'replit' : 'local'),
     bucket: process.env.S3_BUCKET,
     region: process.env.AWS_REGION || 'us-east-1',
     endpoint: process.env.S3_ENDPOINT,
