@@ -3121,6 +3121,79 @@ router.delete('/profiles/:platformId', requireAuth, async (req: Request, res: Re
   }
 });
 
+// POST /api/distribution/profiles/sync-all - Sync all linked streaming profiles at once
+router.post('/profiles/sync-all', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const result = await distributionDataTransferService.syncAllProfiles(userId);
+    res.json({
+      success: true,
+      ...result,
+      message: `Synced ${result.successful} of ${result.total} profiles`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error syncing all profiles:', error);
+    res.status(500).json({ error: 'Failed to sync all profiles' });
+  }
+});
+
+// POST /api/distribution/profiles/auto-sync/start - Start auto-sync for all linked profiles
+router.post('/profiles/auto-sync/start', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { intervalMinutes } = req.body;
+    distributionDataTransferService.startAutoSync(userId, intervalMinutes || 60);
+    const status = distributionDataTransferService.getAutoSyncStatus(userId);
+    res.json({
+      success: true,
+      status,
+      message: `Auto-sync started (every ${intervalMinutes || 60} minutes)`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error starting auto-sync:', error);
+    res.status(500).json({ error: 'Failed to start auto-sync' });
+  }
+});
+
+// POST /api/distribution/profiles/auto-sync/stop - Stop auto-sync
+router.post('/profiles/auto-sync/stop', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    distributionDataTransferService.stopAutoSync(userId);
+    res.json({
+      success: true,
+      message: 'Auto-sync stopped',
+    });
+  } catch (error: unknown) {
+    logger.error('Error stopping auto-sync:', error);
+    res.status(500).json({ error: 'Failed to stop auto-sync' });
+  }
+});
+
+// GET /api/distribution/profiles/auto-sync/status - Get auto-sync status
+router.get('/profiles/auto-sync/status', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const status = distributionDataTransferService.getAutoSyncStatus(userId);
+    res.json(status);
+  } catch (error: unknown) {
+    logger.error('Error fetching auto-sync status:', error);
+    res.status(500).json({ error: 'Failed to fetch auto-sync status' });
+  }
+});
+
+// GET /api/distribution/profiles/sync-history - Get sync history
+router.get('/profiles/sync-history', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const history = distributionDataTransferService.getSyncHistory(userId);
+    res.json({ history });
+  } catch (error: unknown) {
+    logger.error('Error fetching sync history:', error);
+    res.status(500).json({ error: 'Failed to fetch sync history' });
+  }
+});
+
 // GET /api/distribution/migration/report - Get migration report for user's catalog
 router.get('/migration/report', requireAuth, async (req: Request, res: Response) => {
   try {

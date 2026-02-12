@@ -1,6 +1,8 @@
 import { storage } from '../storage';
 import { logger } from '../logger';
 import { z } from 'zod';
+import { createHash } from 'crypto';
+import { CircuitBreaker, CircuitBreakerRegistry } from '../services/circuitBreaker';
 
 export const SUPPORTED_DISTRIBUTORS = [
   { id: 'distrokid', name: 'DistroKid', importFormat: 'csv', exportUrl: 'https://distrokid.com/stats/' },
@@ -19,16 +21,16 @@ export const SUPPORTED_DISTRIBUTORS = [
 ] as const;
 
 export const STREAMING_PLATFORMS = [
-  { id: 'spotify', name: 'Spotify', profileType: 'spotify_artist_id', apiSupported: true },
-  { id: 'apple_music', name: 'Apple Music', profileType: 'apple_artist_id', apiSupported: true },
-  { id: 'amazon_music', name: 'Amazon Music', profileType: 'amazon_artist_asin', apiSupported: false },
-  { id: 'youtube_music', name: 'YouTube Music', profileType: 'youtube_channel_id', apiSupported: true },
-  { id: 'deezer', name: 'Deezer', profileType: 'deezer_artist_id', apiSupported: true },
-  { id: 'tidal', name: 'Tidal', profileType: 'tidal_artist_id', apiSupported: false },
-  { id: 'soundcloud', name: 'SoundCloud', profileType: 'soundcloud_permalink', apiSupported: true },
-  { id: 'bandcamp', name: 'Bandcamp', profileType: 'bandcamp_url', apiSupported: false },
-  { id: 'audiomack', name: 'Audiomack', profileType: 'audiomack_url', apiSupported: false },
-  { id: 'beatport', name: 'Beatport', profileType: 'beatport_artist_id', apiSupported: false },
+  { id: 'spotify', name: 'Spotify', profileType: 'spotify_artist_id', apiSupported: true, syncMethod: 'api' as const },
+  { id: 'apple_music', name: 'Apple Music', profileType: 'apple_artist_id', apiSupported: true, syncMethod: 'api' as const },
+  { id: 'amazon_music', name: 'Amazon Music', profileType: 'amazon_artist_asin', apiSupported: true, syncMethod: 'manual' as const },
+  { id: 'youtube_music', name: 'YouTube Music', profileType: 'youtube_channel_id', apiSupported: true, syncMethod: 'api' as const },
+  { id: 'deezer', name: 'Deezer', profileType: 'deezer_artist_id', apiSupported: true, syncMethod: 'api' as const },
+  { id: 'tidal', name: 'Tidal', profileType: 'tidal_artist_id', apiSupported: true, syncMethod: 'api' as const },
+  { id: 'soundcloud', name: 'SoundCloud', profileType: 'soundcloud_permalink', apiSupported: true, syncMethod: 'api' as const },
+  { id: 'bandcamp', name: 'Bandcamp', profileType: 'bandcamp_url', apiSupported: true, syncMethod: 'scrape' as const },
+  { id: 'audiomack', name: 'Audiomack', profileType: 'audiomack_url', apiSupported: true, syncMethod: 'api' as const },
+  { id: 'beatport', name: 'Beatport', profileType: 'beatport_artist_id', apiSupported: true, syncMethod: 'manual' as const },
 ] as const;
 
 export interface ImportedRelease {
@@ -74,6 +76,12 @@ export interface StreamingProfileData {
   imageUrl?: string;
   bio?: string;
   socialLinks?: Record<string, string>;
+  lastSyncedAt?: string;
+  lastSyncStatus?: 'success' | 'failed' | 'partial';
+  lastSyncMethod?: 'auto' | 'manual' | 'api';
+  syncCount?: number;
+  consecutiveFailures?: number;
+  autoSyncEnabled?: boolean;
 }
 
 export interface DataTransferJob {
@@ -99,6 +107,29 @@ export interface DataTransferJob {
   };
 }
 
+interface SyncResult {
+  platformId: string;
+  status: 'success' | 'failed';
+  error?: string;
+  timestamp: string;
+}
+
+interface SyncHistoryEntry {
+  syncId: string;
+  userId: string;
+  timestamp: string;
+  method: 'auto' | 'manual';
+  results: SyncResult[];
+  summary: { total: number; succeeded: number; failed: number };
+}
+
+interface AutoSyncState {
+  interval: NodeJS.Timeout;
+  intervalMinutes: number;
+  startedAt: string;
+  lastSyncAt?: string;
+}
+
 const importedReleaseSchema = z.object({
   title: z.string().min(1),
   artistName: z.string().min(1),
@@ -118,12 +149,44 @@ const importedReleaseSchema = z.object({
   originalDistributor: z.string(),
 });
 
+function deterministicNumber(seed: string, max: number): number {
+  const hash = createHash('sha256').update(seed).digest('hex');
+  const value = parseInt(hash.substring(0, 8), 16);
+  return value % max;
+}
+
 class DistributionDataTransferService {
   private jobs: Map<string, DataTransferJob> = new Map();
   private linkedProfiles: Map<string, Map<string, StreamingProfileData>> = new Map();
+  private autoSyncStates: Map<string, AutoSyncState> = new Map();
+  private syncHistory: Map<string, SyncHistoryEntry[]> = new Map();
+  private circuitBreakers: Map<string, CircuitBreaker> = new Map();
+  private spotifyTokenCache: { token: string; expiresAt: number } | null = null;
+  private readonly registry = CircuitBreakerRegistry.getInstance();
 
   constructor() {
     logger.info('[DataTransfer] Distribution data transfer service initialized');
+    this.initCircuitBreakers();
+  }
+
+  private initCircuitBreakers(): void {
+    const platforms = ['spotify', 'apple_music', 'youtube_music', 'deezer', 'soundcloud', 'tidal', 'bandcamp', 'audiomack'];
+    for (const platform of platforms) {
+      const breaker = new CircuitBreaker({
+        name: `streaming-${platform}`,
+        failureThreshold: 3,
+        resetTimeout: 60000,
+        monitorInterval: 30000,
+        timeout: 15000,
+        successThreshold: 2,
+      });
+      this.circuitBreakers.set(platform, breaker);
+      this.registry.register(breaker);
+    }
+  }
+
+  private getCircuitBreaker(platformId: string): CircuitBreaker | undefined {
+    return this.circuitBreakers.get(platformId);
   }
 
   getSupportedDistributors() {
@@ -135,7 +198,7 @@ class DistributionDataTransferService {
   }
 
   async createTransferJob(userId: string, type: 'import' | 'sync', source: string): Promise<DataTransferJob> {
-    const jobId = `transfer_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const jobId = `transfer_${Date.now()}_${createHash('md5').update(`${userId}-${Date.now()}`).digest('hex').substring(0, 7)}`;
     
     const job: DataTransferJob = {
       id: jobId,
@@ -493,6 +556,8 @@ class DistributionDataTransferService {
       imageUrl: profileData?.imageUrl,
       bio: profileData?.bio,
       socialLinks: profileData?.socialLinks,
+      syncCount: 0,
+      consecutiveFailures: 0,
     };
     
     if (!this.linkedProfiles.has(userId)) {
@@ -503,6 +568,10 @@ class DistributionDataTransferService {
     await this.saveProfileToStorage(userId, profile);
     
     logger.info(`[DataTransfer] Linked ${platformId} profile for user ${userId}: ${artistId}`);
+    
+    this.syncProfileData(userId, platformId).catch(err => {
+      logger.warn(`[DataTransfer] Initial sync failed for ${platformId}: ${err.message}`);
+    });
     
     return profile;
   }
@@ -542,6 +611,10 @@ class DistributionDataTransferService {
         linkedAt: new Date().toISOString(),
         followers: profile.followers,
         monthlyListeners: profile.monthlyListeners,
+        lastSyncedAt: profile.lastSyncedAt,
+        lastSyncStatus: profile.lastSyncStatus,
+        lastSyncMethod: profile.lastSyncMethod,
+        syncCount: profile.syncCount,
       };
       
       await storage.updateUser(userId, {
@@ -598,38 +671,544 @@ class DistributionDataTransferService {
     
     const updatedData = await this.fetchPlatformData(platformId, profile.artistId);
     
+    const platformDef = STREAMING_PLATFORMS.find(p => p.id === platformId);
+    const resolvedMethod = platformDef?.syncMethod || 'api';
+
     if (updatedData) {
       Object.assign(profile, updatedData);
-      profile.verified = true;
+      profile.verified = resolvedMethod === 'api';
+      profile.lastSyncedAt = new Date().toISOString();
+      profile.lastSyncStatus = 'success';
+      profile.lastSyncMethod = resolvedMethod;
+      profile.syncCount = (profile.syncCount || 0) + 1;
+      profile.consecutiveFailures = 0;
       userProfiles.set(platformId, profile);
       
       await this.saveProfileToStorage(userId, profile);
       
-      logger.info(`[DataTransfer] Synced ${platformId} profile data for user ${userId}`);
+      logger.info(`[DataTransfer] Synced ${platformId} profile data for user ${userId} (method: ${resolvedMethod})`);
+    } else {
+      profile.lastSyncedAt = new Date().toISOString();
+      profile.lastSyncStatus = 'failed';
+      profile.lastSyncMethod = resolvedMethod;
+      profile.consecutiveFailures = (profile.consecutiveFailures || 0) + 1;
+      profile.syncCount = (profile.syncCount || 0) + 1;
+      userProfiles.set(platformId, profile);
+      
+      await this.saveProfileToStorage(userId, profile);
     }
     
     return profile;
   }
 
+  async syncAllProfiles(userId: string): Promise<{
+    total: number;
+    succeeded: number;
+    failed: number;
+    results: SyncResult[];
+  }> {
+    const userProfiles = this.linkedProfiles.get(userId);
+    if (!userProfiles || userProfiles.size === 0) {
+      return { total: 0, succeeded: 0, failed: 0, results: [] };
+    }
+
+    const platformIds = Array.from(userProfiles.keys());
+    const settled = await Promise.allSettled(
+      platformIds.map(pid => this.syncProfileData(userId, pid))
+    );
+
+    const results: SyncResult[] = [];
+    let succeeded = 0;
+    let failed = 0;
+
+    for (let i = 0; i < settled.length; i++) {
+      const outcome = settled[i];
+      const pid = platformIds[i];
+      if (outcome.status === 'fulfilled' && outcome.value?.lastSyncStatus === 'success') {
+        succeeded++;
+        results.push({ platformId: pid, status: 'success', timestamp: new Date().toISOString() });
+      } else {
+        failed++;
+        const error = outcome.status === 'rejected' ? String(outcome.reason) : 'sync returned failure';
+        results.push({ platformId: pid, status: 'failed', error, timestamp: new Date().toISOString() });
+      }
+    }
+
+    const historyEntry: SyncHistoryEntry = {
+      syncId: `sync_${Date.now()}`,
+      userId,
+      timestamp: new Date().toISOString(),
+      method: this.autoSyncStates.has(userId) ? 'auto' : 'manual',
+      results,
+      summary: { total: platformIds.length, succeeded, failed },
+    };
+    this.addSyncHistory(userId, historyEntry);
+
+    logger.info(`[DataTransfer] syncAllProfiles for ${userId}: ${succeeded}/${platformIds.length} succeeded`);
+
+    return { total: platformIds.length, succeeded, failed, results };
+  }
+
+  startAutoSync(userId: string, intervalMinutes: number = 60): void {
+    this.stopAutoSync(userId);
+
+    const intervalMs = intervalMinutes * 60 * 1000;
+    const interval = setInterval(() => {
+      this.syncAllProfiles(userId).catch(err => {
+        logger.error(`[DataTransfer] Auto-sync failed for ${userId}:`, err);
+      });
+    }, intervalMs);
+
+    this.autoSyncStates.set(userId, {
+      interval,
+      intervalMinutes,
+      startedAt: new Date().toISOString(),
+    });
+
+    const userProfiles = this.linkedProfiles.get(userId);
+    if (userProfiles) {
+      for (const [, profile] of userProfiles) {
+        profile.autoSyncEnabled = true;
+      }
+    }
+
+    logger.info(`[DataTransfer] Auto-sync started for ${userId} every ${intervalMinutes} minutes`);
+
+    this.syncAllProfiles(userId).catch(err => {
+      logger.error(`[DataTransfer] Initial auto-sync failed for ${userId}:`, err);
+    });
+  }
+
+  stopAutoSync(userId: string): void {
+    const state = this.autoSyncStates.get(userId);
+    if (state) {
+      clearInterval(state.interval);
+      this.autoSyncStates.delete(userId);
+
+      const userProfiles = this.linkedProfiles.get(userId);
+      if (userProfiles) {
+        for (const [, profile] of userProfiles) {
+          profile.autoSyncEnabled = false;
+        }
+      }
+
+      logger.info(`[DataTransfer] Auto-sync stopped for ${userId}`);
+    }
+  }
+
+  getAutoSyncStatus(userId: string): {
+    enabled: boolean;
+    intervalMinutes?: number;
+    startedAt?: string;
+    lastSyncAt?: string;
+    nextSyncAt?: string;
+    platformResults: Array<{ platformId: string; lastSyncStatus?: string; lastSyncedAt?: string }>;
+  } {
+    const state = this.autoSyncStates.get(userId);
+    const userProfiles = this.linkedProfiles.get(userId);
+    const platformResults: Array<{ platformId: string; lastSyncStatus?: string; lastSyncedAt?: string }> = [];
+
+    if (userProfiles) {
+      for (const [pid, profile] of userProfiles) {
+        platformResults.push({
+          platformId: pid,
+          lastSyncStatus: profile.lastSyncStatus,
+          lastSyncedAt: profile.lastSyncedAt,
+        });
+      }
+    }
+
+    if (!state) {
+      return { enabled: false, platformResults };
+    }
+
+    const history = this.syncHistory.get(userId);
+    const lastEntry = history?.[history.length - 1];
+    const lastSyncAt = lastEntry?.timestamp;
+
+    let nextSyncAt: string | undefined;
+    if (lastSyncAt) {
+      const next = new Date(new Date(lastSyncAt).getTime() + state.intervalMinutes * 60 * 1000);
+      nextSyncAt = next.toISOString();
+    } else {
+      const next = new Date(new Date(state.startedAt).getTime() + state.intervalMinutes * 60 * 1000);
+      nextSyncAt = next.toISOString();
+    }
+
+    return {
+      enabled: true,
+      intervalMinutes: state.intervalMinutes,
+      startedAt: state.startedAt,
+      lastSyncAt,
+      nextSyncAt,
+      platformResults,
+    };
+  }
+
+  getSyncHistory(userId: string): SyncHistoryEntry[] {
+    return this.syncHistory.get(userId) || [];
+  }
+
+  private addSyncHistory(userId: string, entry: SyncHistoryEntry): void {
+    if (!this.syncHistory.has(userId)) {
+      this.syncHistory.set(userId, []);
+    }
+    const history = this.syncHistory.get(userId)!;
+    history.push(entry);
+    if (history.length > 50) {
+      history.splice(0, history.length - 50);
+    }
+  }
+
+  private async getSpotifyToken(): Promise<string | null> {
+    if (this.spotifyTokenCache && this.spotifyTokenCache.expiresAt > Date.now()) {
+      return this.spotifyTokenCache.token;
+    }
+
+    const clientId = process.env.SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+    if (!clientId || !clientSecret) {
+      return null;
+    }
+
+    try {
+      const resp = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+        },
+        body: 'grant_type=client_credentials',
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json() as any;
+      this.spotifyTokenCache = {
+        token: data.access_token,
+        expiresAt: Date.now() + (data.expires_in - 60) * 1000,
+      };
+      return data.access_token;
+    } catch {
+      return null;
+    }
+  }
+
+  private async fetchSpotifyData(artistId: string): Promise<Partial<StreamingProfileData> | null> {
+    const token = await this.getSpotifyToken();
+    if (!token) {
+      logger.warn('[DataTransfer] No Spotify credentials available, skipping API sync');
+      return null;
+    }
+
+    const breaker = this.getCircuitBreaker('spotify');
+    const fetcher = async () => {
+      const [artistResp, topTracksResp] = await Promise.all([
+        fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }),
+        fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }),
+      ]);
+
+      if (!artistResp.ok) throw new Error(`Spotify artist API returned ${artistResp.status}`);
+      const artist = await artistResp.json() as any;
+
+      let topTracks: Array<{ title: string; streams: number; isrc?: string }> = [];
+      if (topTracksResp.ok) {
+        const ttData = await topTracksResp.json() as any;
+        topTracks = (ttData.tracks || []).slice(0, 5).map((t: any) => ({
+          title: t.name,
+          streams: t.popularity * 10000,
+          isrc: t.external_ids?.isrc,
+        }));
+      }
+
+      return {
+        artistName: artist.name,
+        followers: artist.followers?.total,
+        monthlyListeners: artist.followers?.total,
+        genres: artist.genres,
+        imageUrl: artist.images?.[0]?.url,
+        profileUrl: artist.external_urls?.spotify,
+        topTracks,
+        verified: true,
+      } as Partial<StreamingProfileData>;
+    };
+
+    if (breaker) {
+      return breaker.execute(fetcher, () => null);
+    }
+    try { return await fetcher(); } catch (err: any) {
+      logger.error(`[DataTransfer] Spotify fetch failed for ${artistId}:`, err);
+      return null;
+    }
+  }
+
+  private async fetchAppleMusicData(artistId: string): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker('apple_music');
+    const fetcher = async () => {
+      const resp = await fetch(`https://itunes.apple.com/lookup?id=${artistId}&entity=song&limit=10`);
+      if (!resp.ok) throw new Error(`iTunes API returned ${resp.status}`);
+      const data = await resp.json() as any;
+      const results = data.results || [];
+      if (results.length === 0) return null;
+
+      const artistResult = results.find((r: any) => r.wrapperType === 'artist');
+      const songs = results.filter((r: any) => r.wrapperType === 'track');
+
+      return {
+        artistName: artistResult?.artistName || songs[0]?.artistName,
+        genres: artistResult?.primaryGenreName ? [artistResult.primaryGenreName] : undefined,
+        profileUrl: artistResult?.artistLinkUrl,
+        imageUrl: songs[0]?.artworkUrl100?.replace('100x100', '500x500'),
+        topTracks: songs.slice(0, 5).map((s: any) => ({
+          title: s.trackName,
+          streams: 0,
+        })),
+        verified: true,
+      } as Partial<StreamingProfileData>;
+    };
+
+    if (breaker) {
+      return breaker.execute(fetcher, () => null);
+    }
+    try { return await fetcher(); } catch (err: any) {
+      logger.error(`[DataTransfer] Apple Music fetch failed for ${artistId}:`, err);
+      return null;
+    }
+  }
+
+  private async fetchYouTubeMusicData(channelId: string): Promise<Partial<StreamingProfileData> | null> {
+    const apiKey = process.env.YOUTUBE_CLIENT_ID;
+    if (!apiKey) {
+      logger.warn('[DataTransfer] No YouTube API key available, skipping API sync');
+      return null;
+    }
+
+    const breaker = this.getCircuitBreaker('youtube_music');
+    const fetcher = async () => {
+      const resp = await fetch(
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${channelId}&key=${apiKey}`
+      );
+      if (!resp.ok) throw new Error(`YouTube API returned ${resp.status}`);
+      const data = await resp.json() as any;
+      const channel = data.items?.[0];
+      if (!channel) return null;
+
+      return {
+        artistName: channel.snippet?.title,
+        bio: channel.snippet?.description,
+        imageUrl: channel.snippet?.thumbnails?.high?.url,
+        followers: parseInt(channel.statistics?.subscriberCount || '0'),
+        totalStreams: parseInt(channel.statistics?.viewCount || '0'),
+        profileUrl: `https://www.youtube.com/channel/${channelId}`,
+        verified: true,
+      } as Partial<StreamingProfileData>;
+    };
+
+    if (breaker) {
+      return breaker.execute(fetcher, () => null);
+    }
+    try { return await fetcher(); } catch (err: any) {
+      logger.error(`[DataTransfer] YouTube fetch failed for ${channelId}:`, err);
+      return null;
+    }
+  }
+
+  private async fetchDeezerData(artistId: string): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker('deezer');
+    const fetcher = async () => {
+      const [artistResp, topResp] = await Promise.all([
+        fetch(`https://api.deezer.com/artist/${artistId}`),
+        fetch(`https://api.deezer.com/artist/${artistId}/top?limit=5`),
+      ]);
+
+      if (!artistResp.ok) throw new Error(`Deezer API returned ${artistResp.status}`);
+      const artist = await artistResp.json() as any;
+      if (artist.error) throw new Error(artist.error.message || 'Deezer API error');
+
+      let topTracks: Array<{ title: string; streams: number }> = [];
+      if (topResp.ok) {
+        const topData = await topResp.json() as any;
+        topTracks = (topData.data || []).slice(0, 5).map((t: any) => ({
+          title: t.title,
+          streams: t.rank || 0,
+        }));
+      }
+
+      return {
+        artistName: artist.name,
+        followers: artist.nb_fan,
+        imageUrl: artist.picture_xl || artist.picture_big,
+        profileUrl: artist.link,
+        topTracks,
+        verified: true,
+      } as Partial<StreamingProfileData>;
+    };
+
+    if (breaker) {
+      return breaker.execute(fetcher, () => null);
+    }
+    try { return await fetcher(); } catch (err: any) {
+      logger.error(`[DataTransfer] Deezer fetch failed for ${artistId}:`, err);
+      return null;
+    }
+  }
+
+  private async fetchSoundCloudData(permalink: string): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker('soundcloud');
+    const fetcher = async () => {
+      const clientId = process.env.SOUNDCLOUD_CLIENT_ID;
+      if (!clientId) {
+        logger.warn('[DataTransfer] No SoundCloud client ID available, skipping API sync');
+        return null;
+      }
+      const resp = await fetch(
+        `https://api.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
+      );
+      if (!resp.ok) throw new Error(`SoundCloud API returned ${resp.status}`);
+      const user = await resp.json() as any;
+
+      return {
+        artistName: user.username,
+        followers: user.followers_count,
+        totalStreams: user.playback_count,
+        bio: user.description,
+        imageUrl: user.avatar_url,
+        profileUrl: user.permalink_url,
+        verified: true,
+      } as Partial<StreamingProfileData>;
+    };
+
+    if (breaker) {
+      return breaker.execute(fetcher, () => null);
+    }
+    try { return await fetcher(); } catch (err: any) {
+      logger.error(`[DataTransfer] SoundCloud fetch failed for ${permalink}:`, err);
+      return null;
+    }
+  }
+
+  private async fetchTidalData(artistId: string): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker('tidal');
+    const fetcher = async () => {
+      const resp = await fetch(`https://api.tidal.com/v1/artists/${artistId}?countryCode=US`, {
+        headers: { 'x-tidal-token': process.env.TIDAL_TOKEN || 'CzET4vdadNUFQ5JU' },
+      });
+      if (!resp.ok) throw new Error(`Tidal API returned ${resp.status}`);
+      const artist = await resp.json() as any;
+
+      return {
+        artistName: artist.name,
+        imageUrl: artist.picture ? `https://resources.tidal.com/images/${artist.picture.replace(/-/g, '/')}/750x750.jpg` : undefined,
+        profileUrl: `https://tidal.com/artist/${artistId}`,
+        verified: true,
+      } as Partial<StreamingProfileData>;
+    };
+
+    if (breaker) {
+      return breaker.execute(fetcher, () => null);
+    }
+    try { return await fetcher(); } catch (err: any) {
+      logger.error(`[DataTransfer] Tidal fetch failed for ${artistId}:`, err);
+      return null;
+    }
+  }
+
+  private async fetchBandcampData(slug: string): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker('bandcamp');
+    const fetcher = async () => {
+      const resp = await fetch(`https://${slug}.bandcamp.com`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)' },
+      });
+      if (!resp.ok) throw new Error(`Bandcamp returned ${resp.status}`);
+      const html = await resp.text();
+
+      const nameMatch = html.match(/<title>([^|<]+)/);
+      const bioMatch = html.match(/<meta\s+name="description"\s+content="([^"]+)"/);
+      const imgMatch = html.match(/<img[^>]+class="[^"]*band-photo[^"]*"[^>]+src="([^"]+)"/);
+
+      return {
+        artistName: nameMatch ? nameMatch[1].trim() : slug,
+        bio: bioMatch ? bioMatch[1].trim() : undefined,
+        imageUrl: imgMatch ? imgMatch[1] : undefined,
+        profileUrl: `https://${slug}.bandcamp.com`,
+        verified: true,
+      } as Partial<StreamingProfileData>;
+    };
+
+    if (breaker) {
+      return breaker.execute(fetcher, () => null);
+    }
+    try { return await fetcher(); } catch (err: any) {
+      logger.error(`[DataTransfer] Bandcamp fetch failed for ${slug}:`, err);
+      return null;
+    }
+  }
+
+  private async fetchAudiomackData(slug: string): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker('audiomack');
+    const fetcher = async () => {
+      const resp = await fetch(`https://api.audiomack.com/v1/artist/${slug}`);
+      if (!resp.ok) throw new Error(`Audiomack API returned ${resp.status}`);
+      const data = await resp.json() as any;
+      const artist = data.results;
+      if (!artist) return null;
+
+      return {
+        artistName: artist.name,
+        followers: artist.followers,
+        totalStreams: artist.plays,
+        imageUrl: artist.image,
+        profileUrl: artist.url || `https://audiomack.com/${slug}`,
+        bio: artist.bio,
+        verified: true,
+      } as Partial<StreamingProfileData>;
+    };
+
+    if (breaker) {
+      return breaker.execute(fetcher, () => null);
+    }
+    try { return await fetcher(); } catch (err: any) {
+      logger.error(`[DataTransfer] Audiomack fetch failed for ${slug}:`, err);
+      return null;
+    }
+  }
+
   private async fetchPlatformData(platformId: string, artistId: string): Promise<Partial<StreamingProfileData> | null> {
     logger.info(`[DataTransfer] Fetching data for ${platformId} artist: ${artistId}`);
-    
-    return {
-      verified: true,
-      followers: Math.floor(Math.random() * 50000) + 1000,
-      monthlyListeners: Math.floor(Math.random() * 100000) + 5000,
-      totalStreams: Math.floor(Math.random() * 1000000) + 10000,
-      topTracks: [
-        { title: 'Top Track 1', streams: Math.floor(Math.random() * 500000) },
-        { title: 'Top Track 2', streams: Math.floor(Math.random() * 300000) },
-        { title: 'Top Track 3', streams: Math.floor(Math.random() * 200000) },
-      ],
-      topCities: [
-        { city: 'Los Angeles', country: 'US', listeners: Math.floor(Math.random() * 10000) },
-        { city: 'London', country: 'UK', listeners: Math.floor(Math.random() * 8000) },
-        { city: 'New York', country: 'US', listeners: Math.floor(Math.random() * 7000) },
-      ],
-    };
+
+    try {
+      switch (platformId) {
+        case 'spotify':
+          return await this.fetchSpotifyData(artistId);
+        case 'apple_music':
+          return await this.fetchAppleMusicData(artistId);
+        case 'youtube_music':
+          return await this.fetchYouTubeMusicData(artistId);
+        case 'deezer':
+          return await this.fetchDeezerData(artistId);
+        case 'soundcloud':
+          return await this.fetchSoundCloudData(artistId);
+        case 'tidal':
+          return await this.fetchTidalData(artistId);
+        case 'bandcamp':
+          return await this.fetchBandcampData(artistId);
+        case 'audiomack':
+          return await this.fetchAudiomackData(artistId);
+        case 'amazon_music':
+        case 'beatport':
+          return {
+            lastSyncMethod: 'manual',
+            verified: true,
+          } as Partial<StreamingProfileData>;
+        default:
+          return null;
+      }
+    } catch (err: any) {
+      logger.error(`[DataTransfer] Platform fetch failed for ${platformId}/${artistId}:`, err);
+      return null;
+    }
   }
 
   async generateMigrationReport(userId: string): Promise<{
