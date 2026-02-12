@@ -17,9 +17,10 @@
     }
   ],
   "handle_links": "preferred",
+  "id": "maxbooster",
   "url_handlers": [
     {
-      "origin": "https://*.replit.dev"
+      "origin": "https://maxbooster.replit.app"
     }
   ],
   "icons": [

@@ -6,6 +6,7 @@ import { type Order as DBOrder, listingLicenseTiers } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { instantPayoutService } from './instantPayoutService';
 import { logger } from '../logger.js';
+import { getBaseUrl } from '../config/defaults.js';
 
 // Initialize Stripe
 const stripe = process.env.STRIPE_SECRET_KEY?.startsWith('sk_')
@@ -1087,12 +1088,8 @@ export class MarketplaceService {
           },
         ],
         mode: 'payment',
-        success_url: (process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN)
-          ? `https://${process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN}/marketplace?success=true`
-          : 'http://localhost:5000/marketplace?success=true',
-        cancel_url: (process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN)
-          ? `https://${process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN}/marketplace?canceled=true`
-          : 'http://localhost:5000/marketplace?canceled=true',
+        success_url: `${getBaseUrl()}/marketplace?success=true`,
+        cancel_url: `${getBaseUrl()}/marketplace?canceled=true`,
         metadata: {
           buyerId,
           beatId,

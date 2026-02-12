@@ -16,6 +16,16 @@ export const isReplitWorkspace = !!process.env.REPLIT_DEV_DOMAIN;
 export const isProduction = process.env.NODE_ENV === 'production';
 export const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
 
+export function getBaseUrl(): string {
+  if (process.env.REPLIT_DEPLOYMENT_URL) {
+    return `https://${process.env.REPLIT_DEPLOYMENT_URL}`;
+  }
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  }
+  return `http://localhost:${process.env.PORT || 5000}`;
+}
+
 export interface AppConfig {
   // Environment
   nodeEnv: 'development' | 'production' | 'test';

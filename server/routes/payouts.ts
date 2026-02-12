@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { logger } from '../logger.js';
 import { db } from '../db.js';
 import { eq } from 'drizzle-orm';
+import { getBaseUrl } from '../config/defaults.js';
 
 const router = Router();
 
@@ -151,9 +152,7 @@ router.post('/setup', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : `http://localhost:${process.env.PORT || 5000}`;
+    const baseUrl = getBaseUrl();
 
     const refreshUrl = `${baseUrl}/marketplace?tab=payouts&setup=refresh`;
     const returnUrl = `${baseUrl}/marketplace?tab=payouts&setup=complete`;

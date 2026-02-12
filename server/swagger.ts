@@ -8,6 +8,7 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import type { Express } from 'express';
 import { logger } from './logger.js';
+import { getBaseUrl } from './config/defaults.js';
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -61,7 +62,7 @@ All errors follow this format:
     },
     servers: [
       {
-        url: process.env.DOMAIN || 'http://localhost:5000',
+        url: getBaseUrl(),
         description: 'Max Booster API Server',
       },
     ],

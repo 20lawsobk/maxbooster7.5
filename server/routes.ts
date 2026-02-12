@@ -9,6 +9,7 @@ import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.ts";
 import Stripe from "stripe";
 import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
+import { getBaseUrl } from "./config/defaults.ts";
 import { authenticator } from "otplib";
 import QRCode from "qrcode";
 import { emailService } from "./services/emailService.ts";
@@ -3336,9 +3337,7 @@ export async function registerRoutes(
         return res.status(500).json({ error: 'Stripe prices not configured. Please try again later.' });
       }
 
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : `http://localhost:5000`;
+      const baseUrl = getBaseUrl();
 
       // Generate idempotency key based on email + username + tier
       const crypto = await import('crypto');

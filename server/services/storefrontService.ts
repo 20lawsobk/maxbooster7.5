@@ -1089,7 +1089,7 @@ export class StorefrontService {
    * Get the public URL for a storefront
    */
   getStorefrontUrl(storefront: { subdomain?: string | null; slug: string; isSubdomainActive?: boolean }): string {
-    const baseDomain = process.env.REPLIT_DEV_DOMAIN || 'maxbooster.app';
+    const baseDomain = process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN || 'maxbooster.app';
     
     if (storefront.subdomain && storefront.isSubdomainActive) {
       return `https://${storefront.subdomain}.${baseDomain}`;

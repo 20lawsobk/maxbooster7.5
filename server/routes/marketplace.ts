@@ -11,6 +11,7 @@ import { logger } from '../logger.js';
 import { db } from '../db';
 import { orders, listings, users } from '@shared/schema';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
+import { getBaseUrl } from '../config/defaults.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -1244,9 +1245,7 @@ router.post('/connect-stripe', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : `http://localhost:${process.env.PORT || 5000}`;
+    const baseUrl = getBaseUrl();
 
     const returnUrl = `${baseUrl}/marketplace?tab=payouts&setup=complete`;
     const refreshUrl = `${baseUrl}/marketplace?tab=payouts&setup=refresh`;

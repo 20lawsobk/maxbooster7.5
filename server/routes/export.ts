@@ -4,6 +4,7 @@ import { db } from '../db';
 import { logger } from '../logger.js';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
+import { getBaseUrl } from '../config/defaults.js';
 
 const router = Router();
 
@@ -509,7 +510,7 @@ router.post('/share-links', requireAuth, async (req: Request, res: Response) => 
     const linkId = nanoid();
     const shortCode = generateShortCode();
     
-    const baseUrl = process.env.APP_URL || 'https://example.com';
+    const baseUrl = getBaseUrl();
     const url = `${baseUrl}/share/${shortCode}`;
 
     const link: ShareLink = {
