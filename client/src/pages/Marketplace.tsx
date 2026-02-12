@@ -537,6 +537,8 @@ export default function Marketplace() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('browse');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedMood, setSelectedMood] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -549,6 +551,16 @@ export default function Marketplace() {
   const [hasStems, setHasStems] = useState(false);
   const howlRef = useRef<Howl | null>(null);
   const blobUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     title: '',
@@ -1780,16 +1792,103 @@ export default function Marketplace() {
         <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
           <CardContent className="p-6">
             <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1">
+              <div className="flex-1" ref={searchRef}>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
                   <Input
                     placeholder="Search beats, producers, genres..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setShowSuggestions(e.target.value.length > 0);
+                    }}
+                    onFocus={() => searchQuery.length > 0 && setShowSuggestions(true)}
                     className="pl-10"
                     data-testid="input-search-beats"
                   />
+                  {showSuggestions && searchQuery.length > 0 && (() => {
+                    const q = searchQuery.toLowerCase();
+                    const matchedProducers = producers.filter(p =>
+                      p.displayName?.toLowerCase().includes(q) ||
+                      p.username?.toLowerCase().includes(q) ||
+                      p.bio?.toLowerCase().includes(q)
+                    ).slice(0, 5);
+                    const matchedGenres = BEAT_GENRES.filter(g => g.toLowerCase().includes(q)).slice(0, 4);
+                    const matchedMoods = BEAT_MOODS.filter(m => m.toLowerCase().includes(q)).slice(0, 3);
+                    if (matchedProducers.length === 0 && matchedGenres.length === 0 && matchedMoods.length === 0) return null;
+                    return (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden max-h-80 overflow-y-auto">
+                        {matchedProducers.length > 0 && (
+                          <div>
+                            <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900">Producers</div>
+                            {matchedProducers.map(p => (
+                              <button
+                                key={p.id}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-left"
+                                onClick={() => {
+                                  setShowSuggestions(false);
+                                  window.location.href = `/marketplace/producer/${p.id}`;
+                                }}
+                              >
+                                {p.avatar ? (
+                                  <img src={p.avatar} alt={p.displayName} className="w-8 h-8 rounded-full object-cover border border-purple-500/30" />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                                    {p.displayName?.substring(0, 2)?.toUpperCase() || 'PR'}
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-medium text-sm truncate">{p.displayName}</span>
+                                    {p.verified && <CheckCircle className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />}
+                                  </div>
+                                  <span className="text-xs text-gray-500">{p.beats || 0} beats · {p.followers || 0} followers</span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {matchedGenres.length > 0 && (
+                          <div>
+                            <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900">Genres</div>
+                            {matchedGenres.map(g => (
+                              <button
+                                key={g}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-left"
+                                onClick={() => {
+                                  setShowSuggestions(false);
+                                  setSearchQuery('');
+                                  setSelectedGenre(g);
+                                }}
+                              >
+                                <Music className="w-4 h-4 text-blue-500" />
+                                <span className="text-sm">{g}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {matchedMoods.length > 0 && (
+                          <div>
+                            <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900">Moods</div>
+                            {matchedMoods.map(m => (
+                              <button
+                                key={m}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-left"
+                                onClick={() => {
+                                  setShowSuggestions(false);
+                                  setSearchQuery('');
+                                  setSelectedMood(m);
+                                }}
+                              >
+                                <Sparkles className="w-4 h-4 text-purple-500" />
+                                <span className="text-sm">{m}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
