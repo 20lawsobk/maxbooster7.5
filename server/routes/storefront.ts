@@ -33,7 +33,7 @@ const upload = multer({
 
 let storageService: ReplitStorageService | null = null;
 try {
-  if (process.env.REPLIT_BUCKET_ID) {
+  if (process.env.PRIVATE_OBJECT_DIR || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_BUCKET_ID) {
     storageService = new ReplitStorageService();
   }
 } catch (e) {
