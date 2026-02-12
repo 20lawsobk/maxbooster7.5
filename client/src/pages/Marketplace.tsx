@@ -1887,7 +1887,7 @@ export default function Marketplace() {
           </TabsList>
 
           <TabsContent value="browse" className="space-y-6">
-            {(searchQuery || selectedGenre !== 'all' || selectedMood !== 'all') && !beatsLoading && beats.length > 0 && (
+            {(searchQuery || selectedGenre !== 'all' || selectedMood !== 'all') && !beatsLoading && (beats.length > 0 || producers.length > 0) && (
               <FilterResultsHeader
                 resultCount={beats.length}
                 filterName={searchQuery || (selectedGenre !== 'all' ? selectedGenre : selectedMood !== 'all' ? selectedMood : undefined)}
@@ -1898,6 +1898,69 @@ export default function Marketplace() {
                 }}
               />
             )}
+
+            {searchQuery && (() => {
+              const q = searchQuery.toLowerCase();
+              const matchingProducers = producers.filter(p =>
+                p.displayName?.toLowerCase().includes(q) ||
+                p.username?.toLowerCase().includes(q) ||
+                p.bio?.toLowerCase().includes(q) ||
+                p.location?.toLowerCase().includes(q)
+              );
+              if (matchingProducers.length === 0) return null;
+              return (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Users className="w-5 h-5 text-purple-500" />
+                    Producers ({matchingProducers.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {matchingProducers.map((producer) => (
+                      <Card
+                        key={producer.id}
+                        className="hover:shadow-xl transition group cursor-pointer border-2 hover:border-blue-500"
+                        onClick={() => (window.location.href = `/marketplace/producer/${producer.id}`)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-4">
+                            <div className="relative flex-shrink-0">
+                              {producer.avatar ? (
+                                <img
+                                  src={producer.avatar}
+                                  alt={producer.displayName || 'Producer'}
+                                  className="w-14 h-14 rounded-full object-cover border-2 border-purple-500/30"
+                                />
+                              ) : (
+                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
+                                  {producer.displayName?.substring(0, 2)?.toUpperCase() || 'PR'}
+                                </div>
+                              )}
+                              {producer.verified && (
+                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white">
+                                  <CheckCircle className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold truncate group-hover:text-blue-600 transition">{producer.displayName}</h4>
+                              {producer.bio && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{producer.bio}</p>
+                              )}
+                              <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                <span>{producer.beats || 0} beats</span>
+                                <span>{producer.followers || 0} followers</span>
+                                {producer.rating ? <span>{'★'.repeat(Math.round(producer.rating))}</span> : null}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {beatsLoading ? (
               <BeatGridSkeleton count={12} viewMode={viewMode as 'grid' | 'list'} />
             ) : beats.length === 0 ? (
