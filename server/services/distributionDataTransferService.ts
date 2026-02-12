@@ -984,10 +984,9 @@ class DistributionDataTransferService {
   }
 
   private async fetchYouTubeMusicData(channelId: string): Promise<Partial<StreamingProfileData> | null> {
-    const apiKey = process.env.YOUTUBE_CLIENT_ID;
+    const apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) {
-      logger.warn('[DataTransfer] No YouTube API key available, skipping API sync');
-      return null;
+      return this.fetchYouTubeMusicFallback(channelId);
     }
 
     const breaker = this.getCircuitBreaker('youtube_music');
@@ -1015,7 +1014,49 @@ class DistributionDataTransferService {
       return breaker.execute(fetcher, () => null);
     }
     try { return await fetcher(); } catch (err: any) {
-      logger.error(`[DataTransfer] YouTube fetch failed for ${channelId}:`, err);
+      logger.error(`[DataTransfer] YouTube API fetch failed for ${channelId}:`, err);
+      return this.fetchYouTubeMusicFallback(channelId);
+    }
+  }
+
+  private async fetchYouTubeMusicFallback(channelId: string): Promise<Partial<StreamingProfileData> | null> {
+    try {
+      const resp = await fetch(`https://www.youtube.com/channel/${channelId}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)', 'Accept-Language': 'en-US,en;q=0.9' },
+      });
+      if (!resp.ok) return null;
+      const html = await resp.text();
+
+      const nameMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/);
+      const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/);
+      const imgMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
+      const subsMatch = html.match(/"subscriberCountText":\s*\{"simpleText":\s*"([^"]+)"/);
+
+      let followers = 0;
+      if (subsMatch) {
+        const subText = subsMatch[1].replace(/,/g, '');
+        const numMatch = subText.match(/([\d.]+)\s*(K|M|B)?/i);
+        if (numMatch) {
+          let num = parseFloat(numMatch[1]);
+          const suffix = (numMatch[2] || '').toUpperCase();
+          if (suffix === 'K') num *= 1000;
+          else if (suffix === 'M') num *= 1000000;
+          else if (suffix === 'B') num *= 1000000000;
+          followers = Math.round(num);
+        }
+      }
+
+      return {
+        artistName: nameMatch ? nameMatch[1].trim() : undefined,
+        bio: descMatch ? descMatch[1].trim() : undefined,
+        imageUrl: imgMatch ? imgMatch[1] : undefined,
+        followers,
+        profileUrl: `https://www.youtube.com/channel/${channelId}`,
+        lastSyncMethod: 'scraping',
+        verified: true,
+      } as Partial<StreamingProfileData>;
+    } catch (err: any) {
+      logger.error(`[DataTransfer] YouTube fallback scrape failed for ${channelId}:`, err);
       return null;
     }
   }
@@ -1064,23 +1105,60 @@ class DistributionDataTransferService {
     const breaker = this.getCircuitBreaker('soundcloud');
     const fetcher = async () => {
       const clientId = process.env.SOUNDCLOUD_CLIENT_ID;
-      if (!clientId) {
-        logger.warn('[DataTransfer] No SoundCloud client ID available, skipping API sync');
-        return null;
+      if (clientId) {
+        try {
+          const resp = await fetch(
+            `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
+          );
+          if (resp.ok) {
+            const user = await resp.json() as any;
+            return {
+              artistName: user.username,
+              followers: user.followers_count,
+              totalStreams: user.playback_count,
+              bio: user.description,
+              imageUrl: user.avatar_url,
+              profileUrl: user.permalink_url,
+              verified: true,
+            } as Partial<StreamingProfileData>;
+          }
+        } catch {
+        }
       }
-      const resp = await fetch(
-        `https://api.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
-      );
-      if (!resp.ok) throw new Error(`SoundCloud API returned ${resp.status}`);
-      const user = await resp.json() as any;
+
+      const resp = await fetch(`https://soundcloud.com/${permalink}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+      });
+      if (!resp.ok) throw new Error(`SoundCloud returned ${resp.status}`);
+      const html = await resp.text();
+
+      const nameMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/);
+      const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/);
+      const imgMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
+
+      let followers = 0;
+      const followersMatch = html.match(/"followers_count"\s*:\s*(\d+)/);
+      if (followersMatch) {
+        followers = parseInt(followersMatch[1], 10);
+      }
+
+      let totalStreams = 0;
+      const playsMatch = html.match(/"playback_count"\s*:\s*(\d+)/);
+      if (playsMatch) {
+        totalStreams = parseInt(playsMatch[1], 10);
+      }
 
       return {
-        artistName: user.username,
-        followers: user.followers_count,
-        totalStreams: user.playback_count,
-        bio: user.description,
-        imageUrl: user.avatar_url,
-        profileUrl: user.permalink_url,
+        artistName: nameMatch ? nameMatch[1].replace(/ \| Free Listening.*$/, '').replace(/ \| Listen.*$/, '').trim() : permalink,
+        bio: descMatch ? descMatch[1].trim() : undefined,
+        imageUrl: imgMatch ? imgMatch[1] : undefined,
+        followers,
+        totalStreams,
+        profileUrl: `https://soundcloud.com/${permalink}`,
+        lastSyncMethod: clientId ? 'api' : 'scraping',
         verified: true,
       } as Partial<StreamingProfileData>;
     };
@@ -1097,16 +1175,44 @@ class DistributionDataTransferService {
   private async fetchTidalData(artistId: string): Promise<Partial<StreamingProfileData> | null> {
     const breaker = this.getCircuitBreaker('tidal');
     const fetcher = async () => {
-      const resp = await fetch(`https://api.tidal.com/v1/artists/${artistId}?countryCode=US`, {
-        headers: { 'x-tidal-token': process.env.TIDAL_TOKEN || 'CzET4vdadNUFQ5JU' },
+      const tidalToken = process.env.TIDAL_TOKEN;
+      if (tidalToken) {
+        try {
+          const resp = await fetch(`https://api.tidal.com/v1/artists/${artistId}?countryCode=US`, {
+            headers: { 'x-tidal-token': tidalToken },
+          });
+          if (resp.ok) {
+            const artist = await resp.json() as any;
+            return {
+              artistName: artist.name,
+              imageUrl: artist.picture ? `https://resources.tidal.com/images/${artist.picture.replace(/-/g, '/')}/750x750.jpg` : undefined,
+              profileUrl: `https://tidal.com/artist/${artistId}`,
+              verified: true,
+            } as Partial<StreamingProfileData>;
+          }
+        } catch {
+        }
+      }
+
+      const resp = await fetch(`https://listen.tidal.com/artist/${artistId}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
       });
-      if (!resp.ok) throw new Error(`Tidal API returned ${resp.status}`);
-      const artist = await resp.json() as any;
+      if (!resp.ok) throw new Error(`Tidal returned ${resp.status}`);
+      const html = await resp.text();
+
+      const nameMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/);
+      const imgMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
+      const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/);
 
       return {
-        artistName: artist.name,
-        imageUrl: artist.picture ? `https://resources.tidal.com/images/${artist.picture.replace(/-/g, '/')}/750x750.jpg` : undefined,
+        artistName: nameMatch ? nameMatch[1].trim() : undefined,
+        bio: descMatch ? descMatch[1].trim() : undefined,
+        imageUrl: imgMatch ? imgMatch[1] : undefined,
         profileUrl: `https://tidal.com/artist/${artistId}`,
+        lastSyncMethod: 'scraping',
         verified: true,
       } as Partial<StreamingProfileData>;
     };
