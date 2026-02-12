@@ -1191,6 +1191,14 @@ export default function Marketplace() {
         description: `Your rating has been recorded. Average: ${data.avgRating}/5`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/for-you'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Rating Failed',
+        description: error?.message || 'Could not submit your rating. Please try again.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -1469,17 +1477,24 @@ export default function Marketplace() {
   };
 
   const handleShare = (beat: Beat) => {
+    const beatUrl = `${window.location.origin}/marketplace/beat/${beat.id}`;
     if (navigator.share) {
       navigator.share({
         title: beat.title,
         text: `Check out this beat: ${beat.title} by ${beat.producer}`,
-        url: window.location.href,
-      });
+        url: beatUrl,
+      }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: 'Link Copied!',
-        description: 'Beat link copied to clipboard',
+      navigator.clipboard.writeText(beatUrl).then(() => {
+        toast({
+          title: 'Link Copied!',
+          description: 'Beat link copied to clipboard',
+        });
+      }).catch(() => {
+        toast({
+          title: 'Share',
+          description: beatUrl,
+        });
       });
     }
   };

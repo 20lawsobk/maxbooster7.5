@@ -80,3 +80,4 @@ npm start
 - 2026-02-12: Wired social interaction buttons (ForYouFeed like button, ProducerProfilePage follow/unfollow)
 - 2026-02-12: Enhanced Stripe webhook: checkout.session.completed creates order records with idempotency checks
 - 2026-02-12: Updated Stripe checkout URLs to use REPLIT_DEPLOYMENT_URL for production; sales counts filter completed orders only
+- 2026-02-12: Fixed producer card field name mismatch (backend name/avatarUrl → frontend displayName/avatar); enriched beat listings with producer name, avgRating, genre, mood, tempo from metadata; fixed share button to use beat-specific URLs; added rating error handling

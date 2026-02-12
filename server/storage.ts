@@ -31,7 +31,7 @@ import {
   type InsertCollabSnapshot
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, inArray } from "drizzle-orm";
 
 type Project = typeof projects.$inferSelect;
 type Release = typeof releases.$inferSelect;
@@ -587,18 +587,24 @@ export class DatabaseStorage implements IStorage {
           .where(and(eq(orders.sellerId, u.id), eq(orders.status, 'completed')));
         salesCount = salesResult?.count || 0;
         
+        const displayName = u.username || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Producer';
         return {
           id: u.id,
-          name: u.username || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Producer',
-          avatarUrl: u.avatarUrl || '/logo.png',
-          bio: u.bio || null,
-          location: u.location || null,
-          website: u.website || null,
+          username: u.username || displayName,
+          displayName,
+          avatar: u.avatarUrl || '',
+          avatarUrl: u.avatarUrl || '',
+          bio: u.bio || '',
+          location: u.location || '',
+          website: u.website || '',
           verified: u.role === 'admin' || u.subscriptionTier === 'lifetime',
           followers: followersCount,
+          following: 0,
           sales: salesCount,
           beats: beatsCount,
           rating: avgRating,
+          joinedAt: '',
+          socialLinks: {},
         };
       }));
       
@@ -1042,27 +1048,60 @@ export class DatabaseStorage implements IStorage {
       
       const results = await query.orderBy(desc(listings.createdAt)).limit(filters?.limit || 50);
       
-      return results.map(listing => ({
-        id: listing.id,
-        userId: listing.userId,
-        title: listing.title,
-        description: listing.description,
-        price: (listing.priceCents || 0) / 100,
-        currency: listing.currency || 'usd',
-        category: listing.category,
-        audioUrl: listing.audioUrl,
-        artworkUrl: listing.artworkUrl,
-        coverArt: listing.artworkUrl,
-        previewUrl: listing.previewUrl,
-        isPublished: listing.isPublished,
-        metadata: listing.metadata,
-        createdAt: listing.createdAt,
-        licenses: [
-          { type: 'basic', price: (listing.priceCents || 0) / 100 },
-          { type: 'premium', price: ((listing.priceCents || 0) / 100) * 2 },
-          { type: 'exclusive', price: ((listing.priceCents || 0) / 100) * 5 },
-        ],
-      }));
+      const userIds = [...new Set(results.map(l => l.userId))];
+      const userRows = userIds.length > 0
+        ? await db.select({ id: users.id, username: users.username, firstName: users.firstName, lastName: users.lastName })
+            .from(users)
+            .where(inArray(users.id, userIds))
+        : [];
+      const userMap = new Map(userRows.map(u => [u.id, u]));
+
+      return results.map(listing => {
+        const meta = (listing.metadata as any) || {};
+        const owner = userMap.get(listing.userId);
+        const producerName = owner?.username || `${owner?.firstName || ''} ${owner?.lastName || ''}`.trim() || 'Producer';
+        return {
+          id: listing.id,
+          userId: listing.userId,
+          producerId: listing.userId,
+          producer: producerName,
+          title: listing.title,
+          description: listing.description || '',
+          price: (listing.priceCents || 0) / 100,
+          currency: listing.currency || 'usd',
+          category: listing.category,
+          genre: meta.genre || listing.category || '',
+          mood: meta.mood || '',
+          tempo: meta.bpm || 0,
+          bpm: meta.bpm || 0,
+          key: meta.key || '',
+          duration: meta.duration || 0,
+          audioUrl: listing.audioUrl,
+          artworkUrl: listing.artworkUrl,
+          coverArt: listing.artworkUrl,
+          previewUrl: listing.previewUrl,
+          isPublished: listing.isPublished,
+          status: listing.isPublished ? 'active' : 'inactive',
+          isExclusive: meta.isExclusive || false,
+          isLease: meta.isLease !== false,
+          licenseType: meta.licenseType || 'basic',
+          metadata: listing.metadata,
+          avgRating: meta.avgRating || 0,
+          ratingCount: meta.ratingCount || 0,
+          likes: meta.likes || 0,
+          plays: meta.plays || 0,
+          downloads: meta.downloads || 0,
+          tags: meta.tags || [],
+          waveformData: meta.waveformData || [],
+          createdAt: listing.createdAt,
+          updatedAt: listing.createdAt,
+          licenses: [
+            { type: 'basic', price: (listing.priceCents || 0) / 100 },
+            { type: 'premium', price: ((listing.priceCents || 0) / 100) * 2 },
+            { type: 'exclusive', price: ((listing.priceCents || 0) / 100) * 5 },
+          ],
+        };
+      });
     } catch (error) {
       console.error('Error fetching beat listings:', error);
       return [];
