@@ -283,16 +283,27 @@ interface ProducersResponse {
 interface Purchase {
   id: string;
   beatId: string;
+  listingId: string;
   buyerId: string;
+  userId: string;
   sellerId: string;
   amount: number;
   currency: string;
   licenseType: string;
+  licenseSnapshot?: any;
+  licenseDocumentUrl?: string;
   status: 'pending' | 'completed' | 'failed' | 'refunded';
   createdAt: string;
   completedAt?: string;
   downloadUrl?: string;
   licenseUrl?: string;
+  beatTitle?: string;
+  beatArtworkUrl?: string;
+  beatAudioUrl?: string;
+  beatMetadata?: any;
+  sellerName?: string;
+  sellerUsername?: string;
+  metadata?: any;
 }
 
 interface CartItem {
@@ -681,6 +692,8 @@ export default function Marketplace() {
 
   const [showEscrowModal, setShowEscrowModal] = useState(false);
   const [showLicenseModal, setShowLicenseModal] = useState(false);
+  const [showLicenseViewer, setShowLicenseViewer] = useState(false);
+  const [licenseViewerContent, setLicenseViewerContent] = useState<string | null>(null);
   const [showAffiliateModal, setShowAffiliateModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
   const [showEditContract, setShowEditContract] = useState(false);
@@ -2597,32 +2610,133 @@ export default function Marketplace() {
               <PurchaseHistorySkeleton />
             ) : purchases.length > 0 ? (
               <div className="space-y-4">
-                {purchases.map((purchase: Purchase) => (
-                  <Card key={purchase.id}>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <Music className="w-8 h-8 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-lg">Beat #{purchase.beatId}</h3>
-                            <p className="text-sm text-muted-foreground">{purchase.licenseType} License</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Purchased on {new Date(purchase.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">My Purchases ({purchases.length})</h2>
+                  <Badge variant="outline">{purchases.filter((p: Purchase) => p.status === 'completed').length} completed</Badge>
+                </div>
+                {purchases.map((purchase: Purchase) => {
+                  const licenseLabels: Record<string, string> = {
+                    basic: 'Basic Lease',
+                    premium: 'Premium Lease',
+                    unlimited: 'Unlimited Lease',
+                    exclusive: 'Exclusive Rights',
+                  };
+                  const licenseName = purchase.licenseSnapshot?.label || licenseLabels[purchase.licenseType] || purchase.licenseType;
+                  const snapshot = purchase.licenseSnapshot as any;
+                  const fileFormats = snapshot?.fileFormats?.map((f: string) => f.toUpperCase()) || ['MP3'];
+                  
+                  return (
+                  <Card key={purchase.id} className="overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="flex flex-col md:flex-row">
+                        <div className="w-full md:w-32 h-32 md:h-auto flex-shrink-0">
+                          {purchase.beatArtworkUrl ? (
+                            <img src={purchase.beatArtworkUrl} alt={purchase.beatTitle || ''} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                              <Music className="w-10 h-10 text-white" />
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg font-bold">${purchase.amount}</span>
-                          <Button size="sm" variant="outline">
-                            <Download className="w-4 h-4" />
-                          </Button>
+                        <div className="flex-1 p-5">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h3 className="font-bold text-lg">{purchase.beatTitle || `Beat #${purchase.listingId?.slice(0, 8)}`}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                by {purchase.sellerName || purchase.sellerUsername || 'Producer'}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold">${(purchase.amount || 0).toFixed(2)}</p>
+                              <Badge
+                                variant={purchase.status === 'completed' ? 'default' : purchase.status === 'refunded' ? 'destructive' : 'secondary'}
+                                className={purchase.status === 'completed' ? 'bg-green-600' : ''}
+                              >
+                                {purchase.status}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 mb-3 flex-wrap">
+                            <Badge variant="outline" className="capitalize">
+                              <FileText className="w-3 h-3 mr-1" />
+                              {licenseName}
+                            </Badge>
+                            {fileFormats.map((fmt: string) => (
+                              <Badge key={fmt} variant="secondary" className="text-xs">{fmt}</Badge>
+                            ))}
+                            {snapshot?.bogoEnabled && (
+                              <Badge className="bg-orange-500 text-xs">BOGO</Badge>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-muted-foreground mb-3">
+                            Purchased on {new Date(purchase.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                          </p>
+
+                          {purchase.status === 'completed' && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  try {
+                                    const res = await apiRequest('GET', `/api/marketplace/purchases/${purchase.id}/license-agreement?format=download`);
+                                    const blob = await res.blob();
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `license-agreement-${purchase.id}.txt`;
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                  } catch {
+                                    toast({ title: 'Error', description: 'Failed to download license', variant: 'destructive' });
+                                  }
+                                }}
+                              >
+                                <FileText className="w-4 h-4 mr-1" />
+                                License Agreement
+                              </Button>
+                              {purchase.beatAudioUrl && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const a = document.createElement('a');
+                                    a.href = purchase.beatAudioUrl!;
+                                    a.download = `${purchase.beatTitle || 'beat'}.mp3`;
+                                    a.click();
+                                  }}
+                                >
+                                  <Download className="w-4 h-4 mr-1" />
+                                  Download Beat
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={async () => {
+                                  try {
+                                    const res = await apiRequest('GET', `/api/marketplace/purchases/${purchase.id}/license-agreement`);
+                                    const data = await res.json();
+                                    setLicenseViewerContent(data.agreement);
+                                    setShowLicenseViewer(true);
+                                  } catch {
+                                    toast({ title: 'Error', description: 'Failed to load license', variant: 'destructive' });
+                                  }
+                                }}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View License
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <NoPurchasesState
@@ -2632,6 +2746,24 @@ export default function Marketplace() {
                   }
                 }}
               />
+            )}
+
+            {showLicenseViewer && licenseViewerContent && (
+              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowLicenseViewer(false)}>
+                <Card className="max-w-3xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>License Agreement</CardTitle>
+                    <Button variant="ghost" size="sm" onClick={() => setShowLicenseViewer(false)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[60vh]">
+                      <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-muted rounded-lg">{licenseViewerContent}</pre>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              </div>
             )}
           </TabsContent>
 

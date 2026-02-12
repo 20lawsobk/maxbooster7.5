@@ -30,7 +30,7 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
     true
   );
 
-  const { beatId, buyerId, sellerId, licenseType } = session.metadata || {};
+  const { beatId, buyerId, sellerId, licenseType, licenseSnapshot: snapshotStr } = session.metadata || {};
   if (beatId && buyerId && sellerId) {
     try {
       const { orders } = await import('@shared/schema');
@@ -43,6 +43,11 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
         .where(eq(orders.stripePaymentIntentId, paymentRef))
         .limit(1);
 
+      let parsedSnapshot = null;
+      try {
+        if (snapshotStr) parsedSnapshot = JSON.parse(snapshotStr);
+      } catch {}
+
       if (!existing) {
         await db.insert(orders).values({
           userId: buyerId,
@@ -51,10 +56,12 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
           amount: (session.amount_total || 0) / 100,
           currency: session.currency || 'usd',
           status: 'completed',
+          licenseType: licenseType || 'basic',
+          licenseSnapshot: parsedSnapshot,
           stripePaymentIntentId: paymentRef,
           metadata: { licenseType, sessionId: session.id },
         });
-        logger.info(`[Stripe] Order created for beat ${beatId}, buyer ${buyerId}, seller ${sellerId}`);
+        logger.info(`[Stripe] Order created for beat ${beatId}, buyer ${buyerId}, seller ${sellerId}, license ${licenseType}`);
       } else {
         logger.info(`[Stripe] Order already exists for payment ${paymentRef}, skipping duplicate`);
       }

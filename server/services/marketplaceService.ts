@@ -1037,9 +1037,38 @@ export class MarketplaceService {
         throw new Error('Beat not found');
       }
 
-      const license = beat.licenses.find((l) => l.type === licenseType);
-      if (!license) {
-        throw new Error('Invalid license type');
+      let priceInCents: number;
+      let licenseLabel = licenseType;
+      let licenseSnapshot: any = null;
+
+      if (beat.hasLicenseTiers && beat.licenseTiers?.length) {
+        const tier = beat.licenseTiers.find((t: any) => t.licenseType === licenseType && t.isActive);
+        if (!tier) {
+          throw new Error('Invalid or inactive license type');
+        }
+        priceInCents = tier.discountPriceCents || tier.priceCents;
+        licenseLabel = tier.label || licenseType;
+        licenseSnapshot = {
+          licenseType: tier.licenseType,
+          label: tier.label,
+          priceCents: tier.priceCents,
+          discountPriceCents: tier.discountPriceCents,
+          fileFormats: tier.fileFormats,
+          bogoEnabled: tier.bogoEnabled,
+          bogoGetType: tier.bogoGetType,
+          bogoGetPercent: tier.bogoGetPercent,
+        };
+      } else {
+        const license = beat.licenses.find((l: any) => l.type === licenseType);
+        if (!license) {
+          throw new Error('Invalid license type');
+        }
+        priceInCents = Math.round(license.price * 100);
+        licenseSnapshot = {
+          licenseType,
+          label: license.type,
+          price: license.price,
+        };
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -1049,10 +1078,10 @@ export class MarketplaceService {
             price_data: {
               currency: 'usd',
               product_data: {
-                name: `${beat.title} - ${licenseType} License`,
+                name: `${beat.title} - ${licenseLabel} License`,
                 description: `Beat purchase: ${beat.title}`,
               },
-              unit_amount: Math.round(license.price * 100),
+              unit_amount: priceInCents,
             },
             quantity: 1,
           },
@@ -1069,6 +1098,7 @@ export class MarketplaceService {
           beatId,
           licenseType,
           sellerId: beat.userId,
+          licenseSnapshot: JSON.stringify(licenseSnapshot),
         },
       });
 

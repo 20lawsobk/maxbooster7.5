@@ -8,6 +8,9 @@ import { storage } from '../storage';
 import { storageService } from '../services/storageService';
 import { notificationService } from '../services/notificationService';
 import { logger } from '../logger.js';
+import { db } from '../db';
+import { orders, listings, users } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -591,6 +594,158 @@ router.post('/purchase', async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Error initiating purchase:', error);
     res.status(500).json({ error: error.message || 'Failed to initiate purchase' });
+  }
+});
+
+router.get('/purchases/:orderId/license-agreement', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { orderId } = req.params;
+
+    const [order] = await db.select().from(orders).where(eq(orders.id, orderId));
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    if (order.userId !== req.user!.id && order.sellerId !== req.user!.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const [listing] = await db.select().from(listings).where(eq(listings.id, order.listingId));
+    const [buyer] = await db.select().from(users).where(eq(users.id, order.userId));
+    const [seller] = await db.select().from(users).where(eq(users.id, order.sellerId));
+
+    const licenseType = order.licenseType || 'basic';
+    const templateMap: Record<string, any> = {
+      basic: {
+        name: 'Basic Lease', type: 'non-exclusive',
+        streams: '100,000', copies: '5,000', radioStations: '2', musicVideos: '1',
+        duration: '1 year', broadcast: false, sync: false, fileFormats: 'MP3',
+      },
+      premium: {
+        name: 'Premium Lease', type: 'non-exclusive',
+        streams: '500,000', copies: '25,000', radioStations: '10', musicVideos: '3',
+        duration: '2 years', broadcast: true, sync: true, fileFormats: 'MP3, WAV',
+      },
+      unlimited: {
+        name: 'Unlimited Lease', type: 'unlimited',
+        streams: 'Unlimited', copies: 'Unlimited', radioStations: 'Unlimited', musicVideos: 'Unlimited',
+        duration: 'Lifetime', broadcast: true, sync: true, fileFormats: 'MP3, WAV, Stems',
+      },
+      exclusive: {
+        name: 'Exclusive Rights', type: 'exclusive',
+        streams: 'Unlimited', copies: 'Unlimited', radioStations: 'Unlimited', musicVideos: 'Unlimited',
+        duration: 'Lifetime (Full Ownership)', broadcast: true, sync: true, fileFormats: 'MP3, WAV, Stems, Project Files',
+      },
+    };
+
+    const template = templateMap[licenseType] || templateMap.basic;
+    const snapshot = order.licenseSnapshot as any;
+    const beatTitle = listing?.title || 'Unknown Beat';
+    const producerName = seller?.displayName || seller?.username || 'Producer';
+    const buyerName = buyer?.displayName || buyer?.username || 'Buyer';
+    const purchaseDate = order.createdAt
+      ? new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : new Date().toLocaleDateString();
+    const amountPaid = `$${(order.amount || 0).toFixed(2)}`;
+    const fileFormats = snapshot?.fileFormats?.map((f: string) => f.toUpperCase()).join(', ') || template.fileFormats;
+
+    const isExclusive = licenseType === 'exclusive';
+    const agreement = [
+      '═══════════════════════════════════════════════════════════════',
+      '                    BEAT LICENSE AGREEMENT',
+      `                    ${template.name.toUpperCase()}`,
+      '═══════════════════════════════════════════════════════════════',
+      '',
+      `Agreement ID: ${order.id}`,
+      `Date: ${purchaseDate}`,
+      '',
+      'PARTIES:',
+      `  Producer (Licensor): ${producerName}`,
+      `  Licensee (Buyer): ${buyerName}`,
+      '',
+      'BEAT INFORMATION:',
+      `  Title: "${beatTitle}"`,
+      `  License Type: ${template.name} (${template.type})`,
+      `  Amount Paid: ${amountPaid}`,
+      '',
+      '═══════════════════════════════════════════════════════════════',
+      '                      GRANT OF LICENSE',
+      '═══════════════════════════════════════════════════════════════',
+      '',
+      isExclusive
+        ? `Producer hereby TRANSFERS ALL RIGHTS, title, and interest in the beat titled "${beatTitle}" to ${buyerName}, including full copyright ownership.`
+        : `Producer grants ${buyerName} a ${template.type} license to use the beat titled "${beatTitle}" under the following terms:`,
+      '',
+      'USAGE RIGHTS:',
+      `  • Audio Streams: ${template.streams}`,
+      `  • Physical/Digital Copies: ${template.copies}`,
+      `  • Radio Stations: ${template.radioStations}`,
+      `  • Music Videos: ${template.musicVideos}`,
+      `  • Broadcast Television: ${template.broadcast ? 'Included' : 'Not included'}`,
+      `  • Sync Licensing (Film/TV/Ads): ${template.sync ? 'Included' : 'Not included'}`,
+      `  • License Duration: ${template.duration}`,
+      '',
+      'DELIVERABLES:',
+      `  File Formats: ${fileFormats}`,
+      '',
+      '═══════════════════════════════════════════════════════════════',
+      '                    TERMS AND CONDITIONS',
+      '═══════════════════════════════════════════════════════════════',
+      '',
+      isExclusive
+        ? `1. CREDIT: Credit to ${producerName} is appreciated but not required.`
+        : `1. CREDIT: Licensee must credit ${producerName} as the producer in all works using this beat.`,
+      '',
+      '2. ROYALTIES: Licensee retains 100% of royalties from derivative works.',
+      isExclusive ? '   Full ownership transferred to Licensee.' : `   Producer retains publishing rights to the original composition.`,
+      '',
+      '3. MODIFICATIONS: Licensee may modify the beat for their creative purposes.',
+      '',
+      isExclusive
+        ? '4. DISTRIBUTION: Licensee has full distribution rights with no limitations.'
+        : '4. DISTRIBUTION: Licensee may distribute works incorporating this beat within the usage limits specified above.',
+      '',
+      isExclusive
+        ? '5. TRANSFERABILITY: This license and all associated rights are fully transferable.'
+        : '5. TRANSFERABILITY: This license is non-transferable.',
+      '',
+      ...(isExclusive ? [
+        '6. EXCLUSIVITY: Producer agrees to remove the beat from all platforms and cease all future licensing.',
+        '',
+        '7. COPYRIGHT: Licensee may register the beat with any PRO and copyright offices.',
+        '',
+      ] : []),
+      '═══════════════════════════════════════════════════════════════',
+      '',
+      'This agreement is automatically generated and represents a binding contract.',
+      `Generated by Max Booster • ${purchaseDate}`,
+      `Transaction ID: ${order.stripePaymentIntentId || order.id}`,
+    ].join('\n');
+
+    if (req.query.format === 'download') {
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="license-agreement-${order.id}.txt"`);
+      return res.send(agreement);
+    }
+
+    res.json({
+      orderId: order.id,
+      licenseType,
+      licenseName: template.name,
+      beatTitle,
+      producerName,
+      buyerName,
+      purchaseDate,
+      amountPaid,
+      agreement,
+      template,
+    });
+  } catch (error: any) {
+    logger.error('Error generating license agreement:', error);
+    res.status(500).json({ error: 'Failed to generate license agreement' });
   }
 });
 

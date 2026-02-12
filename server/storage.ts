@@ -1303,10 +1303,32 @@ export class DatabaseStorage implements IStorage {
 
   async getUserOrders(userId: string): Promise<any[]> {
     try {
-      const { orders } = await import("@shared/schema");
+      const { orders, listings, users } = await import("@shared/schema");
       const results = await db
-        .select()
+        .select({
+          id: orders.id,
+          userId: orders.userId,
+          sellerId: orders.sellerId,
+          listingId: orders.listingId,
+          amount: orders.amount,
+          currency: orders.currency,
+          status: orders.status,
+          licenseType: orders.licenseType,
+          licenseSnapshot: orders.licenseSnapshot,
+          licenseDocumentUrl: orders.licenseDocumentUrl,
+          stripePaymentIntentId: orders.stripePaymentIntentId,
+          metadata: orders.metadata,
+          createdAt: orders.createdAt,
+          beatTitle: listings.title,
+          beatArtworkUrl: listings.artworkUrl,
+          beatAudioUrl: listings.audioUrl,
+          beatMetadata: listings.metadata,
+          sellerName: users.displayName,
+          sellerUsername: users.username,
+        })
         .from(orders)
+        .leftJoin(listings, eq(orders.listingId, listings.id))
+        .leftJoin(users, eq(orders.sellerId, users.id))
         .where(eq(orders.userId, userId))
         .orderBy(desc(orders.createdAt));
       return results;

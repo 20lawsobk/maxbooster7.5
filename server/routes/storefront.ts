@@ -1048,4 +1048,107 @@ router.post('/:storefrontId/listings/:listingId/tier-audio', tierAudioUpload.sin
   }
 });
 
+router.put('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { listingId } = req.params;
+    const { tiers } = req.body;
+
+    if (!Array.isArray(tiers)) {
+      return res.status(400).json({ error: 'tiers must be an array' });
+    }
+
+    const [listing] = await db.select().from(listings).where(eq(listings.id, listingId));
+    if (!listing) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+    if (listing.userId !== req.user!.id) {
+      return res.status(403).json({ error: 'You can only edit your own listings' });
+    }
+
+    await db.delete(listingLicenseTiers).where(eq(listingLicenseTiers.listingId, listingId));
+
+    const savedTiers = [];
+    for (let i = 0; i < tiers.length; i++) {
+      const t = tiers[i];
+      const [saved] = await db.insert(listingLicenseTiers).values({
+        listingId,
+        licenseType: t.licenseType,
+        label: t.label || t.licenseType,
+        priceCents: t.priceCents,
+        discountType: t.discountType || 'none',
+        discountPercent: t.discountPercent || 0,
+        discountPriceCents: t.discountType === 'percent' && t.discountPercent
+          ? Math.round(t.priceCents * (1 - (t.discountPercent / 100)))
+          : null,
+        discountExpiresAt: t.discountExpiresAt ? new Date(t.discountExpiresAt) : null,
+        bogoEnabled: t.bogoEnabled || false,
+        bogoGetType: t.bogoGetType || null,
+        bogoGetPercent: t.bogoGetPercent || 100,
+        fileFormats: t.fileFormats || ['mp3'],
+        audioUrls: t.audioUrls || {},
+        isActive: t.isActive !== false,
+        sortOrder: i,
+      }).returning();
+      savedTiers.push(saved);
+    }
+
+    const currentMeta = (listing.metadata as Record<string, any>) || {};
+    await db.update(listings).set({
+      metadata: { ...currentMeta, hasLicenseTiers: true },
+    }).where(eq(listings.id, listingId));
+
+    res.json({ success: true, tiers: savedTiers });
+  } catch (error) {
+    logger.error('Error saving license tiers:', error);
+    res.status(500).json({ error: 'Failed to save license tiers' });
+  }
+});
+
+router.delete('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { listingId } = req.params;
+
+    const [listing] = await db.select().from(listings).where(eq(listings.id, listingId));
+    if (!listing) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+    if (listing.userId !== req.user!.id) {
+      return res.status(403).json({ error: 'You can only edit your own listings' });
+    }
+
+    await db.delete(listingLicenseTiers).where(eq(listingLicenseTiers.listingId, listingId));
+
+    const currentMeta = (listing.metadata as Record<string, any>) || {};
+    await db.update(listings).set({
+      metadata: { ...currentMeta, hasLicenseTiers: false },
+    }).where(eq(listings.id, listingId));
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting license tiers:', error);
+    res.status(500).json({ error: 'Failed to delete license tiers' });
+  }
+});
+
+router.get('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
+  try {
+    const { listingId } = req.params;
+    const tiers = await db.select().from(listingLicenseTiers)
+      .where(eq(listingLicenseTiers.listingId, listingId))
+      .orderBy(listingLicenseTiers.sortOrder);
+    res.json(tiers);
+  } catch (error) {
+    logger.error('Error fetching license tiers:', error);
+    res.status(500).json({ error: 'Failed to fetch license tiers' });
+  }
+});
+
 export default router;
