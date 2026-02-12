@@ -1101,28 +1101,67 @@ class DistributionDataTransferService {
     }
   }
 
+  private soundCloudClientId: string | null = null;
+  private soundCloudClientIdExpiry = 0;
+
+  private async getSoundCloudClientId(): Promise<string | null> {
+    if (process.env.SOUNDCLOUD_CLIENT_ID) {
+      return process.env.SOUNDCLOUD_CLIENT_ID;
+    }
+
+    if (this.soundCloudClientId && this.soundCloudClientIdExpiry > Date.now()) {
+      return this.soundCloudClientId;
+    }
+
+    try {
+      const pageResp = await fetch('https://soundcloud.com', {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+      });
+      if (!pageResp.ok) return null;
+      const html = await pageResp.text();
+
+      const scriptUrls = html.match(/https:\/\/a-v2\.sndcdn\.com\/assets\/[^"]+\.js/g);
+      if (!scriptUrls || scriptUrls.length === 0) return null;
+
+      for (const url of scriptUrls.slice(-3)) {
+        const jsResp = await fetch(url);
+        if (!jsResp.ok) continue;
+        const js = await jsResp.text();
+        const match = js.match(/client_id:"([a-zA-Z0-9]+)"/);
+        if (match) {
+          this.soundCloudClientId = match[1];
+          this.soundCloudClientIdExpiry = Date.now() + 6 * 3600 * 1000;
+          logger.info(`[DataTransfer] Auto-discovered SoundCloud client_id`);
+          return match[1];
+        }
+      }
+    } catch (err: any) {
+      logger.warn(`[DataTransfer] Failed to auto-discover SoundCloud client_id: ${err.message}`);
+    }
+    return null;
+  }
+
   private async fetchSoundCloudData(permalink: string): Promise<Partial<StreamingProfileData> | null> {
     const breaker = this.getCircuitBreaker('soundcloud');
     const fetcher = async () => {
-      const clientId = process.env.SOUNDCLOUD_CLIENT_ID;
+      const clientId = await this.getSoundCloudClientId();
       if (clientId) {
-        try {
-          const resp = await fetch(
-            `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
-          );
-          if (resp.ok) {
-            const user = await resp.json() as any;
+        const resp = await fetch(
+          `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
+        );
+        if (resp.ok) {
+          const user = await resp.json() as any;
+          if (user && user.username) {
             return {
               artistName: user.username,
-              followers: user.followers_count,
-              totalStreams: user.playback_count,
+              followers: user.followers_count || 0,
+              totalStreams: user.playback_count || 0,
               bio: user.description,
               imageUrl: user.avatar_url,
-              profileUrl: user.permalink_url,
+              profileUrl: user.permalink_url || `https://soundcloud.com/${permalink}`,
               verified: true,
             } as Partial<StreamingProfileData>;
           }
-        } catch {
         }
       }
 
@@ -1139,26 +1178,12 @@ class DistributionDataTransferService {
       const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/);
       const imgMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
 
-      let followers = 0;
-      const followersMatch = html.match(/"followers_count"\s*:\s*(\d+)/);
-      if (followersMatch) {
-        followers = parseInt(followersMatch[1], 10);
-      }
-
-      let totalStreams = 0;
-      const playsMatch = html.match(/"playback_count"\s*:\s*(\d+)/);
-      if (playsMatch) {
-        totalStreams = parseInt(playsMatch[1], 10);
-      }
-
       return {
         artistName: nameMatch ? nameMatch[1].replace(/ \| Free Listening.*$/, '').replace(/ \| Listen.*$/, '').trim() : permalink,
         bio: descMatch ? descMatch[1].trim() : undefined,
         imageUrl: imgMatch ? imgMatch[1] : undefined,
-        followers,
-        totalStreams,
         profileUrl: `https://soundcloud.com/${permalink}`,
-        lastSyncMethod: clientId ? 'api' : 'scraping',
+        lastSyncMethod: 'scraping',
         verified: true,
       } as Partial<StreamingProfileData>;
     };
