@@ -74,5 +74,7 @@ boosterstate/    - Rust KV store service
 - Replit Object Storage bucket ID
 
 ## Recent Changes
+- 2026-02-13: Fixed storefront memberships bug - rewrote getCustomerMemberships query to use explicit JOINs instead of Drizzle ORM relations (which were undefined for customerMemberships table), fixed column name mismatch (priceCents vs price)
+- 2026-02-13: Comprehensive platform testing - 138+ API endpoint tests passed across auth, payments, studio, marketplace, distribution, social, analytics, admin, security systems. All 14 frontend pages verified. 172 database tables healthy.
 - 2026-02-13: Set VITE_STRIPE_PUBLIC_KEY, APP_URL, and DOMAIN environment variables - fixed payment page blocking issue and ensured OAuth redirects use correct production URL
 - 2026-02-12: Initial Replit setup - installed Node.js 20, Rust stable, configured PostgreSQL, pushed DB schema, set all API credentials, fixed storage provider detection for Replit environment
