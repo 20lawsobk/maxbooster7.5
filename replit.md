@@ -61,5 +61,18 @@ boosterstate/    - Rust KV store service
 - Sentry (error monitoring)
 - Redis (caching)
 
+## Environment Variables
+- `VITE_STRIPE_PUBLIC_KEY` - Stripe publishable key for frontend payment elements
+- `APP_URL` - Production URL (https://maxbooster.replit.app) for OAuth redirects and Stripe callbacks
+- `DOMAIN` - Domain URL for social OAuth redirects
+- All social API credentials configured (Facebook, Instagram, Twitter, TikTok, YouTube, LinkedIn, Threads, Google Business, Spotify)
+- Stripe (publishable key, secret key, webhook secret)
+- SendGrid API key (from addresses default to @maxbooster.ai subdomains)
+- LabelGrid API token for distribution
+- Sentry DSN for error monitoring
+- Redis URL for caching
+- Replit Object Storage bucket ID
+
 ## Recent Changes
+- 2026-02-13: Set VITE_STRIPE_PUBLIC_KEY, APP_URL, and DOMAIN environment variables - fixed payment page blocking issue and ensured OAuth redirects use correct production URL
 - 2026-02-12: Initial Replit setup - installed Node.js 20, Rust stable, configured PostgreSQL, pushed DB schema, set all API credentials, fixed storage provider detection for Replit environment
