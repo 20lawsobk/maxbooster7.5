@@ -44,6 +44,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
 import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import { StemsManager } from '@/components/StemsManager';
 import { PayoutDashboard } from '@/components/marketplace/PayoutDashboard';
@@ -546,6 +547,7 @@ export default function Marketplace() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { invalidateOnMarketplaceChange } = useAnalyticsInvalidation();
   const [activeTab, setActiveTab] = useState('browse');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -908,6 +910,7 @@ export default function Marketplace() {
           description: `You've successfully purchased the beat. Download link sent to your email.`,
         });
         queryClient.invalidateQueries({ queryKey: ['/api/marketplace/purchases'] });
+        invalidateOnMarketplaceChange();
       }
     },
     onError: (error: Error) => {
@@ -954,6 +957,7 @@ export default function Marketplace() {
       setShowUploadModal(false);
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+      invalidateOnMarketplaceChange();
     },
     onError: (error: Error) => {
       setUploadProgress(0);
@@ -980,6 +984,7 @@ export default function Marketplace() {
       setShowEditModal(false);
       setEditingBeat(null);
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+      invalidateOnMarketplaceChange();
     },
     onError: (error: Error) => {
       toast({
@@ -1003,6 +1008,7 @@ export default function Marketplace() {
       setShowDeleteConfirm(false);
       setDeletingBeatId(null);
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+      invalidateOnMarketplaceChange();
     },
     onError: (error: Error) => {
       toast({
@@ -1047,6 +1053,7 @@ export default function Marketplace() {
       toast({ title: 'Discount Updated', description: 'Beat discount has been updated.' });
       setDiscountBeat(null);
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+      invalidateOnMarketplaceChange();
     },
     onError: (error: Error) => {
       toast({ title: 'Discount Error', description: error.message || 'Failed to update discount', variant: 'destructive' });
@@ -1065,6 +1072,7 @@ export default function Marketplace() {
     onSuccess: () => {
       toast({ title: 'License Tiers Saved', description: 'License pricing has been updated.' });
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+      invalidateOnMarketplaceChange();
     },
     onError: (error: Error) => {
       toast({ title: 'Error', description: error.message || 'Failed to save license tiers', variant: 'destructive' });
@@ -1233,6 +1241,7 @@ export default function Marketplace() {
     onSuccess: () => {
       toast({ title: 'Escrow Released', description: 'Funds have been released to the seller.' });
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/escrow'] });
+      invalidateOnMarketplaceChange();
     },
   });
 

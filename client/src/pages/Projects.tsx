@@ -28,6 +28,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SkeletonProjectCard } from '@/components/ui/skeleton-loader';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
 import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import {
   Music,
@@ -113,6 +114,7 @@ export default function Projects() {
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { invalidateOnProjectChange } = useAnalyticsInvalidation();
 
   const { data: projectsData, isLoading: projectsLoading } = useQuery<ProjectsApiResponse>({
     queryKey: ['/api/projects'],
@@ -132,6 +134,7 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+      invalidateOnProjectChange();
       toast({
         title: 'Success!',
         description: 'Your project has been uploaded successfully.',
@@ -160,6 +163,7 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+      invalidateOnProjectChange();
       toast({
         title: 'Project Deleted',
         description: 'The project has been removed successfully.',
@@ -184,6 +188,7 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+      invalidateOnProjectChange();
       toast({
         title: 'Project Updated',
         description: 'Your project has been updated successfully.',

@@ -43,6 +43,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
 import { apiRequest } from '@/lib/queryClient';
 import {
   Upload,
@@ -478,6 +479,7 @@ export default function Distribution() {
   const { user, isLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { invalidateOnDistributionChange } = useAnalyticsInvalidation();
   const [, navigate] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const albumArtRef = useRef<HTMLInputElement>(null);
@@ -669,6 +671,7 @@ export default function Distribution() {
         collaborators: [],
       });
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      invalidateOnDistributionChange();
     },
     onError: (error: Error) => {
       toast({
@@ -692,6 +695,7 @@ export default function Distribution() {
       setShowEditRelease(false);
       setSelectedRelease(null);
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      invalidateOnDistributionChange();
     },
     onError: (error: Error) => {
       toast({
@@ -715,6 +719,7 @@ export default function Distribution() {
       setShowDeleteConfirm(false);
       setSelectedRelease(null);
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      invalidateOnDistributionChange();
     },
     onError: (error: Error) => {
       toast({
@@ -848,6 +853,7 @@ export default function Distribution() {
         description: data.message,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      invalidateOnDistributionChange();
     },
   });
 
@@ -865,6 +871,7 @@ export default function Distribution() {
         description: data.message,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      invalidateOnDistributionChange();
     },
   });
 
@@ -882,6 +889,7 @@ export default function Distribution() {
         description: data.message,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      invalidateOnDistributionChange();
     },
   });
 
@@ -1725,6 +1733,7 @@ export default function Distribution() {
                 });
                 setActiveTab('releases');
                 queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+                invalidateOnDistributionChange();
               }}
               onCancel={() => setActiveTab('releases')}
             />

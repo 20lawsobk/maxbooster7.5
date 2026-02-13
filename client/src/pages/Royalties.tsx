@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
 import { isUnauthorizedError } from '@/lib/authUtils';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import {
@@ -164,6 +165,7 @@ function ComingSoonRoyalties() {
 export default function Royalties() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
+  const { invalidateOnRevenueChange } = useAnalyticsInvalidation();
 
   const [selectedPeriod, setSelectedPeriod] = useState('current');
   const [selectedPlatform, setSelectedPlatform] = useState('all');
@@ -277,6 +279,7 @@ export default function Royalties() {
     onSuccess: () => {
       toast({ title: 'Payout Requested', description: 'Your payout request has been submitted' });
       queryClient.invalidateQueries({ queryKey: ['/api/royalties'] });
+      invalidateOnRevenueChange();
     },
   });
 
@@ -349,6 +352,7 @@ export default function Royalties() {
     onSuccess: () => {
       toast({ title: 'Collaborator Removed', description: 'The collaborator has been removed' });
       queryClient.invalidateQueries({ queryKey: ['/api/royalties/splits'] });
+      invalidateOnRevenueChange();
     },
     onError: () => {
       toast({
@@ -367,6 +371,7 @@ export default function Royalties() {
     onSuccess: () => {
       toast({ title: 'Collaborator Added', description: 'The collaborator has been added successfully' });
       queryClient.invalidateQueries({ queryKey: ['/api/royalties/splits'] });
+      invalidateOnRevenueChange();
       setIsAddCollaboratorDialogOpen(false);
       setNewCollaboratorName('');
       setNewCollaboratorEmail('');
@@ -391,6 +396,7 @@ export default function Royalties() {
     onSuccess: () => {
       toast({ title: 'Collaborator Updated', description: 'The collaborator has been updated successfully' });
       queryClient.invalidateQueries({ queryKey: ['/api/royalties/splits'] });
+      invalidateOnRevenueChange();
       setIsEditSplitDialogOpen(false);
       setEditingSplit(null);
     },

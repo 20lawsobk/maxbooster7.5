@@ -29,6 +29,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
 import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import { AutonomousDashboard } from '@/components/autonomous/autonomous-dashboard';
 import { ContentAnalyzer } from '@/components/content/ContentAnalyzer';
@@ -324,6 +325,7 @@ export default function Advertisement() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { invalidateOnCampaignChange } = useAnalyticsInvalidation();
   const { trackZeroCostAdvertisingExplored } = useOnboardingProgress();
   const advertisingExploredRef = useRef(false);
 
@@ -481,6 +483,7 @@ export default function Advertisement() {
       setUploadedImage(null);
       setImagePreviewUrl(null);
       queryClient.invalidateQueries({ queryKey: ['/api/advertising/campaigns'] });
+      invalidateOnCampaignChange();
     },
     onError: (error: Error) => {
       toast({

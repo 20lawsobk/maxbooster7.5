@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/skeleton-loader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
 import { apiRequest } from '@/lib/queryClient';
 import {
   Play,
@@ -189,6 +190,7 @@ function UpcomingReleasesSection() {
 function DashboardContent({ user }: { user: any }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { invalidateOnProjectChange, invalidateDashboard } = useAnalyticsInvalidation();
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -262,6 +264,7 @@ function DashboardContent({ user }: { user: any }) {
         description: 'New project created successfully with AI optimization.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      invalidateOnProjectChange();
     },
   });
 
@@ -275,6 +278,7 @@ function DashboardContent({ user }: { user: any }) {
         title: 'Content Optimized',
         description: 'AI has optimized your content for maximum reach.',
       });
+      invalidateDashboard();
     },
   });
 

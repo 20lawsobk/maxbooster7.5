@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
 import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import {
   Share2,
@@ -391,6 +392,7 @@ export default function SocialMedia() {
   const { user, isLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { invalidateOnSocialChange } = useAnalyticsInvalidation();
   const [location] = useLocation();
   const { 
     trackSocialAccountConnected, 
@@ -618,6 +620,7 @@ export default function SocialMedia() {
       setScheduledTime('');
       setSelectedPlatforms([]);
       queryClient.invalidateQueries({ queryKey: ['/api/social/posts'] });
+      invalidateOnSocialChange();
       trackFirstPostScheduled();
     },
     onError: () => {
@@ -676,6 +679,7 @@ export default function SocialMedia() {
         description: 'Scheduled post removed successfully.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/social/posts'] });
+      invalidateOnSocialChange();
     },
     onError: () => {
       toast({
@@ -722,6 +726,7 @@ export default function SocialMedia() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar/stats'] });
+      invalidateOnSocialChange();
       setScheduleDialogOpen(false);
       setEditingCalendarPost(null);
     },
@@ -746,6 +751,7 @@ export default function SocialMedia() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar/stats'] });
+      invalidateOnSocialChange();
       setScheduleDialogOpen(false);
       setEditingCalendarPost(null);
     },
@@ -770,6 +776,7 @@ export default function SocialMedia() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar/stats'] });
+      invalidateOnSocialChange();
     },
     onError: () => {
       toast({
@@ -792,6 +799,7 @@ export default function SocialMedia() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar'] });
       queryClient.invalidateQueries({ queryKey: ['/api/social/calendar/stats'] });
+      invalidateOnSocialChange();
     },
     onError: () => {
       toast({
@@ -820,6 +828,7 @@ export default function SocialMedia() {
         description: 'Your autopilot settings have been updated.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/autopilot/status'] });
+      invalidateOnSocialChange();
     },
     onError: () => {
       toast({
@@ -841,6 +850,7 @@ export default function SocialMedia() {
         description: 'Autopilot is now managing your social media posts.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/autopilot/status'] });
+      invalidateOnSocialChange();
       trackSocialAutopilotActivated();
     },
     onError: () => {
@@ -863,6 +873,7 @@ export default function SocialMedia() {
         description: 'Autopilot has been stopped.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/autopilot/status'] });
+      invalidateOnSocialChange();
     },
     onError: () => {
       toast({
