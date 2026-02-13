@@ -243,6 +243,7 @@
     "twitter-api-v2": "^1.28.0",
     "vaul": "^1.1.2",
     "wavefile": "^11.0.0",
+    "web-push": "^3.6.7",
     "worker-timers": "^8.0.29",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
