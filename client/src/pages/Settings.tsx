@@ -107,10 +107,16 @@ export default function Settings() {
   const [sessionToTerminate, setSessionToTerminate] = useState<string | null>(null);
   const [terminatingSession, setTerminatingSession] = useState(false);
   const [twoFactorDisableOpen, setTwoFactorDisableOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(user?.profileImageUrl || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || user?.profileImageUrl || '');
   const [planComparisonOpen, setPlanComparisonOpen] = useState(false);
   const [retryingPayment, setRetryingPayment] = useState(false);
   const [refundsExpanded, setRefundsExpanded] = useState(false);
+
+  useEffect(() => {
+    if (user?.avatarUrl || user?.profileImageUrl) {
+      setAvatarUrl(user.avatarUrl || user.profileImageUrl || '');
+    }
+  }, [user?.avatarUrl, user?.profileImageUrl]);
 
   // Query for full profile data
   const { data: fullProfile } = useQuery({
@@ -347,7 +353,7 @@ export default function Settings() {
       if (!response.ok) throw new Error('Upload failed');
 
       const data = await response.json();
-      setAvatarUrl(data.profileImageUrl);
+      setAvatarUrl(data.avatarUrl || data.profileImageUrl);
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
 
       toast({
@@ -691,7 +697,7 @@ export default function Settings() {
                   {/* Profile Picture */}
                   <div className="flex items-center space-x-6">
                     <Avatar className="w-24 h-24">
-                      <AvatarImage src={avatarUrl || user?.profileImageUrl} />
+                      <AvatarImage src={avatarUrl || user?.avatarUrl || user?.profileImageUrl} />
                       <AvatarFallback className="text-2xl">
                         {user?.firstName?.[0]}
                         {user?.lastName?.[0]}

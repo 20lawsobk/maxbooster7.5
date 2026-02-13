@@ -872,8 +872,7 @@ export async function registerRoutes(
         try {
           const result = await storeUploadedFile(req.file, req.user!.id, 'avatar');
 
-          // Update user record with new avatar URL
-          await storage.updateUser(req.user!.id, { avatarUrl: result.url });
+          await storage.updateUser(req.user!.id, { avatarUrl: result.url, profileImageUrl: result.url });
 
           return res.json({
             success: true,
@@ -920,8 +919,7 @@ export async function registerRoutes(
         }
       }
 
-      // Clear the avatar URL from user record
-      await storage.updateUser(req.user.id, { avatarUrl: null });
+      await storage.updateUser(req.user.id, { avatarUrl: null, profileImageUrl: null });
 
       return res.json({ success: true, message: "Avatar deleted successfully" });
     } catch (error) {

@@ -106,8 +106,8 @@ class LocalStorageProvider implements StorageProvider {
   }
 
   async getDownloadUrl(key: string, expiresIn?: number): Promise<string> {
-    // Return local file path
-    return this.getFullPath(key);
+    const encodedKey = encodeURIComponent(key);
+    return `/api/storage/file/${encodedKey}`;
   }
 
   async fileExists(key: string): Promise<boolean> {
