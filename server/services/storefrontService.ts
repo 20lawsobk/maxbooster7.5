@@ -824,27 +824,50 @@ export class StorefrontService {
    */
   async getCustomerMemberships(customerId: string) {
     try {
-      const memberships = await db.query.customerMemberships.findMany({
-        where: eq(customerMemberships.customerId, customerId),
-        with: {
-          tier: true,
-          storefront: {
-            with: {
-              user: {
-                columns: {
-                  id: true,
-                  username: true,
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: [desc(customerMemberships.createdAt)],
-      });
+      const results = await db
+        .select({
+          id: customerMemberships.id,
+          customerId: customerMemberships.customerId,
+          tierId: customerMemberships.tierId,
+          storefrontId: customerMemberships.storefrontId,
+          stripeSubscriptionId: customerMemberships.stripeSubscriptionId,
+          status: customerMemberships.status,
+          startDate: customerMemberships.startDate,
+          endDate: customerMemberships.endDate,
+          createdAt: customerMemberships.createdAt,
+          tierName: membershipTiers.name,
+          tierPriceCents: membershipTiers.priceCents,
+          tierDescription: membershipTiers.description,
+          storefrontName: storefronts.name,
+          storefrontSlug: storefronts.slug,
+          ownerUsername: users.username,
+          ownerFirstName: users.firstName,
+          ownerLastName: users.lastName,
+        })
+        .from(customerMemberships)
+        .leftJoin(membershipTiers, eq(customerMemberships.tierId, membershipTiers.id))
+        .leftJoin(storefronts, eq(customerMemberships.storefrontId, storefronts.id))
+        .leftJoin(users, eq(storefronts.userId, users.id))
+        .where(eq(customerMemberships.customerId, customerId))
+        .orderBy(desc(customerMemberships.createdAt));
 
-      return memberships;
+      return results.map(r => ({
+        id: r.id,
+        customerId: r.customerId,
+        tierId: r.tierId,
+        storefrontId: r.storefrontId,
+        stripeSubscriptionId: r.stripeSubscriptionId,
+        status: r.status,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        createdAt: r.createdAt,
+        tier: r.tierName ? { name: r.tierName, priceCents: r.tierPriceCents, description: r.tierDescription } : null,
+        storefront: r.storefrontName ? {
+          name: r.storefrontName,
+          slug: r.storefrontSlug,
+          user: { username: r.ownerUsername, firstName: r.ownerFirstName, lastName: r.ownerLastName },
+        } : null,
+      }));
     } catch (error: unknown) {
       logger.error('Error fetching customer memberships:', error);
       throw error;
