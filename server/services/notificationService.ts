@@ -81,7 +81,7 @@ class NotificationService {
         await this.sendEmail(user, type, title, message, link);
       }
 
-      if (shouldSendBrowser && (user as any).pushSubscription) {
+      if (shouldSendBrowser) {
         await this.sendBrowserNotification(user, title, message, link);
       }
 
@@ -132,7 +132,24 @@ class NotificationService {
     message: string,
     link?: string
   ): Promise<void> {
-    logger.info(`🔔 Browser notification queued for user: ${title}`);
+    try {
+      const { webPushService } = await import('./webPushService.ts');
+      if (!webPushService.isReady()) {
+        logger.info('Web Push not ready, skipping push notification');
+        return;
+      }
+      const result = await webPushService.sendToUser((user as any).id, {
+        title,
+        body: message,
+        url: link || '/',
+        tag: `notification-${Date.now()}`,
+      });
+      if (result.sent > 0) {
+        logger.info(`🔔 Push notification delivered to ${result.sent} device(s)`);
+      }
+    } catch (error) {
+      logger.error('Failed to send push notification:', error);
+    }
   }
 
   private getEmailTemplate(

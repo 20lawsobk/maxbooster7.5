@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { storage } from "./storage.ts";
 import { db } from "./db.ts";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users, notifications } from "../shared/schema.ts";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions } from "../shared/schema.ts";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.ts";
 import Stripe from "stripe";
@@ -1723,6 +1723,131 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Update notification preferences error:", error);
       return res.status(500).json({ message: "Failed to update preferences" });
+    }
+  });
+
+  // Push Notifications: Get VAPID public key
+  app.get("/api/notifications/push-key", async (_req: Request, res: Response) => {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      return res.status(503).json({ message: "Push notifications not configured" });
+    }
+    return res.json({ publicKey });
+  });
+
+  // Push Notifications: Save subscription
+  app.post("/api/notifications/push-subscriptions", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const { endpoint, keys } = req.body;
+      if (!endpoint || !keys?.p256dh || !keys?.auth) {
+        return res.status(400).json({ message: "Invalid push subscription data" });
+      }
+
+      const existing = await db
+        .select()
+        .from(pushSubscriptions)
+        .where(eq(pushSubscriptions.endpoint, endpoint))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db
+          .update(pushSubscriptions)
+          .set({
+            userId: req.user.id,
+            p256dh: keys.p256dh,
+            auth: keys.auth,
+            userAgent: req.headers['user-agent'] || null,
+            updatedAt: new Date(),
+          })
+          .where(eq(pushSubscriptions.endpoint, endpoint));
+      } else {
+        await db.insert(pushSubscriptions).values({
+          userId: req.user.id,
+          endpoint,
+          p256dh: keys.p256dh,
+          auth: keys.auth,
+          userAgent: req.headers['user-agent'] || null,
+        });
+      }
+
+      return res.json({ success: true, message: "Push subscription saved" });
+    } catch (error) {
+      console.error("Save push subscription error:", error);
+      return res.status(500).json({ message: "Failed to save push subscription" });
+    }
+  });
+
+  // Push Notifications: Remove subscription
+  app.delete("/api/notifications/push-subscriptions", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const { endpoint } = req.body;
+      if (endpoint) {
+        await db
+          .delete(pushSubscriptions)
+          .where(and(
+            eq(pushSubscriptions.endpoint, endpoint),
+            eq(pushSubscriptions.userId, req.user.id)
+          ));
+      } else {
+        await db
+          .delete(pushSubscriptions)
+          .where(eq(pushSubscriptions.userId, req.user.id));
+      }
+      return res.json({ success: true, message: "Push subscription removed" });
+    } catch (error) {
+      console.error("Remove push subscription error:", error);
+      return res.status(500).json({ message: "Failed to remove push subscription" });
+    }
+  });
+
+  // Push Notifications: Get subscription status
+  app.get("/api/notifications/push-subscriptions/status", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const subs = await db
+        .select()
+        .from(pushSubscriptions)
+        .where(eq(pushSubscriptions.userId, req.user.id));
+      return res.json({
+        hasSubscriptions: subs.length > 0,
+        count: subs.length,
+        devices: subs.map(s => ({
+          id: s.id,
+          userAgent: s.userAgent,
+          createdAt: s.createdAt,
+        })),
+      });
+    } catch (error) {
+      console.error("Get push subscription status error:", error);
+      return res.status(500).json({ message: "Failed to get subscription status" });
+    }
+  });
+
+  // Push Notifications: Send test push
+  app.post("/api/notifications/push-test", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const { webPushService } = await import('./services/webPushService.ts');
+      const result = await webPushService.sendToUser(req.user.id, {
+        title: 'Max Booster',
+        body: 'Push notifications are working! You will receive alerts about releases, sales, and more.',
+        url: '/dashboard',
+        tag: 'test-notification',
+      });
+      return res.json({ success: true, ...result });
+    } catch (error) {
+      console.error("Test push notification error:", error);
+      return res.status(500).json({ message: "Failed to send test push notification" });
     }
   });
 

@@ -1322,6 +1322,20 @@ export const notifications = pgTable("notifications", {
 });
 
 // ============================================================================
+// PUSH SUBSCRIPTIONS (Web Push Notifications)
+// ============================================================================
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ============================================================================
 // SUPPORT TICKETS
 // ============================================================================
 export const supportTickets = pgTable("support_tickets", {
