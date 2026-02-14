@@ -723,7 +723,7 @@ router.post('/upload-asset', upload.single('file'), async (req, res) => {
       folder
     );
 
-    const url = `/api/storage/file/${encodeURIComponent(key)}`;
+    const url = `/api/storage/file/${key}`;
 
     logger.info(`Uploaded storefront ${assetType} for user ${req.user!.id}: ${key}`);
 

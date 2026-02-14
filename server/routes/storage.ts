@@ -371,6 +371,36 @@ router.get('/file/:key(*)', requireAuth, async (req: Request, res: Response) => 
   }
 });
 
+router.get('/public/:key(*)', async (req: Request, res: Response) => {
+  try {
+    const { key } = req.params;
+
+    if (!key.startsWith('storefronts/')) {
+      return res.status(403).json({ error: 'Only storefront assets are publicly accessible' });
+    }
+
+    const buffer = await storageService.downloadFile(key);
+
+    const ext = path.extname(key).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+    };
+
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Length', buffer.length);
+    res.send(buffer);
+  } catch (error) {
+    logger.error('Public file download failed:', error);
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
 router.delete('/file/:key(*)', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;

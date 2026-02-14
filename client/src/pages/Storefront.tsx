@@ -22,7 +22,7 @@ import {
   Play,
   Download,
 } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Star, UserPlus, UserCheck } from 'lucide-react';
 
 interface Storefront {
@@ -134,6 +134,26 @@ export default function Storefront() {
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [userRatingValue, setUserRatingValue] = useState(0);
   const [userReview, setUserReview] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkoutStatus = params.get('checkout');
+    if (checkoutStatus === 'success') {
+      toast({
+        title: 'Purchase Complete!',
+        description: 'Your beats have been purchased successfully. Check your purchases page for downloads.',
+      });
+      setCart([]);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (checkoutStatus === 'canceled') {
+      toast({
+        title: 'Checkout Canceled',
+        description: 'Your checkout was canceled. Your cart items are still available.',
+        variant: 'destructive',
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [toast]);
 
   const { data: storefront, isLoading: storefrontLoading } = useQuery<Storefront>({
     queryKey: [`/api/storefront/public/${slug}`],

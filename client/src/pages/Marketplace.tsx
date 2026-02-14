@@ -3131,6 +3131,12 @@ export default function Marketplace() {
                         <span className="font-medium">{license.duration}</span>
                       </div>
                     </div>
+                    {(license as any).fileFormats && (
+                      <div className="flex justify-between">
+                        <span>File Formats</span>
+                        <span className="font-medium text-xs">{(license as any).fileFormats}</span>
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-1 pt-2 border-t">
                       {license.allowsBroadcast && <Badge variant="outline" className="text-xs">Broadcast</Badge>}
                       {license.allowsProfit && <Badge variant="outline" className="text-xs">For Profit</Badge>}
