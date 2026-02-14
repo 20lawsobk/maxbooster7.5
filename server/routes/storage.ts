@@ -375,14 +375,12 @@ router.get('/public/:key(*)', async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
 
-    if (!key.startsWith('storefronts/')) {
+    if (!key.startsWith('storefronts/') || key.includes('..') || key.includes('\0')) {
       return res.status(403).json({ error: 'Only storefront assets are publicly accessible' });
     }
 
-    const buffer = await storageService.downloadFile(key);
-
     const ext = path.extname(key).toLowerCase();
-    const mimeTypes: Record<string, string> = {
+    const allowedImageExts: Record<string, string> = {
       '.jpg': 'image/jpeg',
       '.jpeg': 'image/jpeg',
       '.png': 'image/png',
@@ -390,7 +388,12 @@ router.get('/public/:key(*)', async (req: Request, res: Response) => {
       '.webp': 'image/webp',
     };
 
-    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    if (!allowedImageExts[ext]) {
+      return res.status(403).json({ error: 'Only image files are publicly accessible' });
+    }
+
+    const buffer = await storageService.downloadFile(key);
+    const contentType = allowedImageExts[ext];
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.setHeader('Content-Length', buffer.length);
