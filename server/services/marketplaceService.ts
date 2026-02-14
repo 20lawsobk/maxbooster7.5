@@ -114,14 +114,14 @@ export interface Order {
 }
 
 // Helper functions to map between service and database Order types
-function toServiceOrder(dbOrder: DBOrder): Order {
+function toServiceOrder(dbOrder: any): Order {
   return {
     id: dbOrder.id,
     beatId: dbOrder.listingId || '',
-    buyerId: dbOrder.buyerId || '',
+    buyerId: dbOrder.userId || dbOrder.buyerId || '',
     sellerId: dbOrder.sellerId || '',
     licenseType: dbOrder.licenseType || '',
-    amount: (dbOrder.amountCents || 0) / 100,
+    amount: dbOrder.amount ?? ((dbOrder.amountCents || 0) / 100),
     status: dbOrder.status as Order['status'],
     paymentIntentId: dbOrder.stripePaymentIntentId || undefined,
     licenseDocumentUrl: dbOrder.licenseDocumentUrl || undefined,

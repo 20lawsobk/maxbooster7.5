@@ -10,9 +10,14 @@ import {
   storefrontFollows,
   storefrontLikes,
   storefrontRatings,
+  storefrontOrders,
   listings,
   listingLicenseTiers,
+  storefronts,
+  users,
 } from '@shared/schema';
+import Stripe from 'stripe';
+import { getBaseUrl } from '../config/defaults';
 import { db } from '../db';
 import { eq, and, count, avg, sql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -711,18 +716,20 @@ router.post('/upload-asset', upload.single('file'), async (req, res) => {
     }
 
     const folder = `storefronts/${req.user!.id}/${assetType}`;
-    const result = await storageService.uploadFile(
+    const key = await storageService.uploadFile(
       req.file.buffer,
       req.file.originalname,
       req.file.mimetype,
       folder
     );
 
-    logger.info(`Uploaded storefront ${assetType} for user ${req.user!.id}: ${result.key}`);
+    const url = `/api/storage/file/${encodeURIComponent(key)}`;
+
+    logger.info(`Uploaded storefront ${assetType} for user ${req.user!.id}: ${key}`);
 
     res.json({
-      url: result.url,
-      key: result.key,
+      url,
+      key,
       assetType,
     });
   } catch (error: unknown) {
@@ -839,6 +846,123 @@ router.post('/:id/rate', async (req, res) => {
   } catch (error) {
     logger.error('Error submitting rating:', error);
     res.status(500).json({ error: 'Failed to submit rating' });
+  }
+});
+
+// ============================================================================
+// STOREFRONT CHECKOUT
+// ============================================================================
+
+router.post('/:id/checkout', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Login required to purchase' });
+
+    const storefrontId = req.params.id;
+    const { listingIds, licenseType = 'basic' } = req.body;
+
+    if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
+      return res.status(400).json({ error: 'At least one listing is required' });
+    }
+
+    if (listingIds.length > 20) {
+      return res.status(400).json({ error: 'Maximum 20 items per checkout' });
+    }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-06-20' as any });
+
+    const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
+    if (!storefront) return res.status(404).json({ error: 'Storefront not found' });
+
+    if (storefront.userId === req.user!.id) {
+      return res.status(400).json({ error: 'Cannot purchase from your own storefront' });
+    }
+
+    const storefrontListings = await db.select().from(listings)
+      .where(and(eq(listings.userId, storefront.userId), eq(listings.status, 'active')));
+
+    const validListings = storefrontListings.filter(l => listingIds.includes(l.id));
+    if (validListings.length === 0) {
+      return res.status(400).json({ error: 'No valid listings found' });
+    }
+
+    const lineItems = validListings.map(listing => {
+      let priceCents = listing.priceCents;
+      if (listing.discountPercent && listing.discountPriceCents != null) {
+        if (!listing.discountExpiresAt || new Date(listing.discountExpiresAt) > new Date()) {
+          priceCents = listing.discountPriceCents;
+        }
+      }
+
+      return {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: listing.title,
+            description: `${listing.genre || 'Beat'} - ${licenseType} license`,
+          },
+          unit_amount: priceCents,
+        },
+        quantity: 1,
+      };
+    });
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: `${getBaseUrl()}/store/${storefront.slug || storefrontId}?checkout=success`,
+      cancel_url: `${getBaseUrl()}/store/${storefront.slug || storefrontId}?checkout=canceled`,
+      metadata: {
+        type: 'storefront_purchase',
+        buyerId: req.user!.id,
+        storefrontId,
+        sellerId: storefront.userId,
+        listingIds: JSON.stringify(validListings.map(l => l.id)),
+        licenseType,
+      },
+    });
+
+    for (const listing of validListings) {
+      let priceCents = listing.priceCents;
+      if (listing.discountPercent && listing.discountPriceCents != null) {
+        if (!listing.discountExpiresAt || new Date(listing.discountExpiresAt) > new Date()) {
+          priceCents = listing.discountPriceCents;
+        }
+      }
+      await db.insert(storefrontOrders).values({
+        buyerId: req.user!.id,
+        storefrontId,
+        sellerId: storefront.userId,
+        listingId: listing.id,
+        licenseType,
+        amountCents: priceCents,
+        status: 'pending',
+        stripeSessionId: session.id,
+      });
+    }
+
+    res.json({ checkoutUrl: session.url });
+  } catch (error) {
+    logger.error('Error creating storefront checkout:', error);
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+
+router.get('/:id/orders', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const storefrontId = req.params.id;
+
+    const orders = await db.select().from(storefrontOrders)
+      .where(and(
+        eq(storefrontOrders.storefrontId, storefrontId),
+        eq(storefrontOrders.buyerId, req.user!.id)
+      ));
+
+    res.json(orders);
+  } catch (error) {
+    logger.error('Error fetching storefront orders:', error);
+    res.status(500).json({ error: 'Failed to fetch orders' });
   }
 });
 

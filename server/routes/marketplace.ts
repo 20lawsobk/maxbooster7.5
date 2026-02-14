@@ -9,8 +9,8 @@ import { storageService } from '../services/storageService';
 import { notificationService } from '../services/notificationService';
 import { logger } from '../logger.js';
 import { db } from '../db';
-import { orders, listings, users } from '@shared/schema';
-import { eq, and, gte, sql, desc } from 'drizzle-orm';
+import { orders, listings, users, licenseTemplates } from '@shared/schema';
+import { eq, and, gte, sql, desc, asc } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 
 const router = Router();
@@ -248,164 +248,120 @@ async function generateTimelineData(timeRange: string, userId: string) {
 
 router.get('/license-templates', async (req: Request, res: Response) => {
   try {
-    const templates = [
-      {
-        id: 'basic',
-        name: 'Basic Lease',
-        type: 'non-exclusive',
-        price: 29.99,
-        streams: 100000,
-        copies: 5000,
-        radioStations: 2,
-        musicVideos: 1,
-        duration: '1 year',
-        allowsBroadcast: false,
-        allowsProfit: true,
-        allowsSync: false,
-        contractTemplate: `BASIC LEASE AGREEMENT
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userTemplates = await db.select()
+      .from(licenseTemplates)
+      .where(eq(licenseTemplates.userId, req.user!.id))
+      .orderBy(asc(licenseTemplates.sortOrder));
 
-This Beat Lease Agreement ("Agreement") is entered into as of {{date}} between {{producer_name}} ("Producer") and {{buyer_name}} ("Artist").
+    const mapped = userTemplates.map(t => ({
+      id: t.id,
+      name: t.name,
+      type: t.type,
+      price: (t.priceCents || 0) / 100,
+      priceCents: t.priceCents,
+      streams: t.streams === 'unlimited' ? 'unlimited' : parseInt(t.streams || '0'),
+      copies: t.copies === 'unlimited' ? 'unlimited' : parseInt(t.copies || '0'),
+      musicVideos: t.musicVideos === 'unlimited' ? 'unlimited' : parseInt(t.musicVideos || '0'),
+      duration: t.duration || '1 year',
+      allowsBroadcast: t.allowsBroadcast ?? false,
+      allowsProfit: t.allowsProfit ?? true,
+      allowsSync: t.allowsSync ?? false,
+      fileFormats: t.fileFormats || 'MP3',
+      isActive: t.isActive ?? true,
+      sortOrder: t.sortOrder ?? 0,
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+    }));
 
-GRANT OF LICENSE:
-Producer grants Artist a non-exclusive license to use the beat titled "{{beat_title}}" under the following terms:
-
-USAGE RIGHTS:
-- Up to 100,000 audio streams
-- Up to 5,000 physical/digital copies
-- Up to 2 radio stations
-- 1 music video
-- Duration: 1 year from purchase date
-
-RESTRICTIONS:
-- No broadcast television rights
-- No sync licensing rights
-- Artist must credit Producer
-
-ROYALTIES:
-Artist retains 100% of royalties from their derivative works.`,
-      },
-      {
-        id: 'premium',
-        name: 'Premium Lease',
-        type: 'non-exclusive',
-        price: 99.99,
-        streams: 500000,
-        copies: 25000,
-        radioStations: 10,
-        musicVideos: 3,
-        duration: '2 years',
-        allowsBroadcast: true,
-        allowsProfit: true,
-        allowsSync: true,
-        contractTemplate: `PREMIUM LEASE AGREEMENT
-
-This Beat Lease Agreement ("Agreement") is entered into as of {{date}} between {{producer_name}} ("Producer") and {{buyer_name}} ("Artist").
-
-GRANT OF LICENSE:
-Producer grants Artist a non-exclusive license to use the beat titled "{{beat_title}}" under the following terms:
-
-USAGE RIGHTS:
-- Up to 500,000 audio streams
-- Up to 25,000 physical/digital copies
-- Up to 10 radio stations
-- Up to 3 music videos
-- Broadcast television rights included
-- Sync licensing rights included
-- Duration: 2 years from purchase date
-
-DELIVERABLES:
-- High-quality WAV file
-- MP3 file
-
-ROYALTIES:
-Artist retains 100% of royalties from their derivative works.`,
-      },
-      {
-        id: 'unlimited',
-        name: 'Unlimited Lease',
-        type: 'unlimited',
-        price: 199.99,
-        streams: 'unlimited',
-        copies: 'unlimited',
-        radioStations: 'unlimited',
-        musicVideos: 'unlimited',
-        duration: 'Lifetime',
-        allowsBroadcast: true,
-        allowsProfit: true,
-        allowsSync: true,
-        contractTemplate: `UNLIMITED LEASE AGREEMENT
-
-This Beat Lease Agreement ("Agreement") is entered into as of {{date}} between {{producer_name}} ("Producer") and {{buyer_name}} ("Artist").
-
-GRANT OF LICENSE:
-Producer grants Artist a non-exclusive, perpetual license to use the beat titled "{{beat_title}}" under the following terms:
-
-USAGE RIGHTS:
-- Unlimited audio streams
-- Unlimited physical/digital copies
-- Unlimited radio stations
-- Unlimited music videos
-- Full broadcast television rights
-- Full sync licensing rights
-- Duration: Lifetime
-
-DELIVERABLES:
-- High-quality WAV file
-- MP3 file
-- Trackout stems
-
-ROYALTIES:
-Artist retains 100% of royalties from their derivative works.`,
-      },
-      {
-        id: 'exclusive',
-        name: 'Exclusive Rights',
-        type: 'exclusive',
-        price: 999.99,
-        streams: 'unlimited',
-        copies: 'unlimited',
-        radioStations: 'unlimited',
-        musicVideos: 'unlimited',
-        duration: 'Lifetime (Full Ownership)',
-        allowsBroadcast: true,
-        allowsProfit: true,
-        allowsSync: true,
-        contractTemplate: `EXCLUSIVE RIGHTS AGREEMENT
-
-This Exclusive Rights Agreement ("Agreement") is entered into as of {{date}} between {{producer_name}} ("Producer") and {{buyer_name}} ("Artist").
-
-TRANSFER OF RIGHTS:
-Producer hereby transfers all rights, title, and interest in the beat titled "{{beat_title}}" to Artist, including but not limited to:
-
-EXCLUSIVE RIGHTS GRANTED:
-- Full copyright ownership transfer
-- Unlimited audio streams
-- Unlimited physical/digital copies
-- Unlimited radio stations
-- Unlimited music videos
-- Full broadcast television rights
-- Full sync licensing rights
-- Right to register with PROs
-- Duration: Perpetual/Lifetime
-
-DELIVERABLES:
-- High-quality WAV file
-- MP3 file
-- Complete trackout stems
-- Project files (if applicable)
-
-PRODUCER ACKNOWLEDGMENT:
-Producer agrees to remove beat from all platforms and cease all licensing of this beat upon execution of this agreement.
-
-ROYALTIES:
-Artist retains 100% of all royalties. Producer waives all royalty claims.`,
-      },
-    ];
-
-    res.json(templates);
+    res.json(mapped);
   } catch (error: any) {
     logger.error('Error fetching license templates:', error);
     res.status(500).json({ error: 'Failed to fetch license templates' });
+  }
+});
+
+router.post('/license-templates', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { name, type, priceCents, streams, copies, musicVideos, duration, allowsBroadcast, allowsProfit, allowsSync, fileFormats, sortOrder } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'License name is required' });
+    }
+    const [template] = await db.insert(licenseTemplates).values({
+      userId: req.user!.id,
+      name,
+      type: type || 'basic',
+      priceCents: priceCents ?? 2999,
+      streams: String(streams ?? '100000'),
+      copies: String(copies ?? '5000'),
+      musicVideos: String(musicVideos ?? '1'),
+      duration: duration || '1 year',
+      allowsBroadcast: allowsBroadcast ?? false,
+      allowsProfit: allowsProfit ?? true,
+      allowsSync: allowsSync ?? false,
+      fileFormats: fileFormats || 'MP3',
+      sortOrder: sortOrder ?? 0,
+    }).returning();
+    res.status(201).json(template);
+  } catch (error: any) {
+    logger.error('Error creating license template:', error);
+    res.status(500).json({ error: 'Failed to create license template' });
+  }
+});
+
+router.put('/license-templates/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const existing = await db.select().from(licenseTemplates)
+      .where(and(eq(licenseTemplates.id, id), eq(licenseTemplates.userId, req.user!.id)))
+      .limit(1);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'License template not found' });
+    }
+    const { name, type, priceCents, streams, copies, musicVideos, duration, allowsBroadcast, allowsProfit, allowsSync, fileFormats, isActive, sortOrder } = req.body;
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (name !== undefined) updates.name = name;
+    if (type !== undefined) updates.type = type;
+    if (priceCents !== undefined) updates.priceCents = priceCents;
+    if (streams !== undefined) updates.streams = String(streams);
+    if (copies !== undefined) updates.copies = String(copies);
+    if (musicVideos !== undefined) updates.musicVideos = String(musicVideos);
+    if (duration !== undefined) updates.duration = duration;
+    if (allowsBroadcast !== undefined) updates.allowsBroadcast = allowsBroadcast;
+    if (allowsProfit !== undefined) updates.allowsProfit = allowsProfit;
+    if (allowsSync !== undefined) updates.allowsSync = allowsSync;
+    if (fileFormats !== undefined) updates.fileFormats = fileFormats;
+    if (isActive !== undefined) updates.isActive = isActive;
+    if (sortOrder !== undefined) updates.sortOrder = sortOrder;
+
+    const [updated] = await db.update(licenseTemplates)
+      .set(updates)
+      .where(and(eq(licenseTemplates.id, id), eq(licenseTemplates.userId, req.user!.id)))
+      .returning();
+    res.json(updated);
+  } catch (error: any) {
+    logger.error('Error updating license template:', error);
+    res.status(500).json({ error: 'Failed to update license template' });
+  }
+});
+
+router.delete('/license-templates/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const existing = await db.select().from(licenseTemplates)
+      .where(and(eq(licenseTemplates.id, id), eq(licenseTemplates.userId, req.user!.id)))
+      .limit(1);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'License template not found' });
+    }
+    await db.delete(licenseTemplates)
+      .where(and(eq(licenseTemplates.id, id), eq(licenseTemplates.userId, req.user!.id)));
+    res.json({ success: true });
+  } catch (error: any) {
+    logger.error('Error deleting license template:', error);
+    res.status(500).json({ error: 'Failed to delete license template' });
   }
 });
 

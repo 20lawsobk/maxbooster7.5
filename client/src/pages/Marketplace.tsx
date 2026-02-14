@@ -712,6 +712,19 @@ export default function Marketplace() {
 
   const [bulkUploadItems, setBulkUploadItems] = useState<BulkUploadItem[]>([]);
   const [selectedLicense, setSelectedLicense] = useState<LicenseTemplate | null>(null);
+  const [licenseForm, setLicenseForm] = useState({
+    name: '',
+    type: 'non-exclusive' as string,
+    priceCents: 2999,
+    streams: '100000',
+    copies: '5000',
+    musicVideos: '1',
+    duration: '1 year',
+    allowsBroadcast: false,
+    allowsProfit: true,
+    allowsSync: false,
+    fileFormats: 'MP3',
+  });
   const [contractForm, setContractForm] = useState({
     name: '',
     description: '',
@@ -883,6 +896,14 @@ export default function Marketplace() {
     enabled: !!user,
     staleTime: 10 * 60 * 1000,
   });
+
+  const { data: licenseTemplatesData = [] } = useQuery<LicenseTemplate[]>({
+    queryKey: ['/api/marketplace/license-templates'],
+    enabled: !!user && activeTab === 'licenses',
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const activeLicenseTemplates = licenseTemplatesData.length > 0 ? licenseTemplatesData : LICENSE_TYPES;
 
   const { data: contractTemplates = [] } = useQuery<ContractTemplate[]>({
     queryKey: ['/api/marketplace/contracts'],
@@ -1210,6 +1231,69 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/for-you'] });
     },
   });
+
+  const createLicenseTemplateMutation = useMutation({
+    mutationFn: async (data: typeof licenseForm) => {
+      const response = await apiRequest('POST', '/api/marketplace/license-templates', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'License Created', description: 'New license template created successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/license-templates'] });
+      setShowLicenseModal(false);
+      setLicenseForm({ name: '', type: 'non-exclusive', priceCents: 2999, streams: '100000', copies: '5000', musicVideos: '1', duration: '1 year', allowsBroadcast: false, allowsProfit: true, allowsSync: false, fileFormats: 'MP3' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message || 'Failed to create license template', variant: 'destructive' });
+    },
+  });
+
+  const updateLicenseTemplateMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Partial<typeof licenseForm & { isActive: boolean }>) => {
+      const response = await apiRequest('PUT', `/api/marketplace/license-templates/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'License Updated', description: 'License template updated successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/license-templates'] });
+      setSelectedLicense(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message || 'Failed to update license template', variant: 'destructive' });
+    },
+  });
+
+  const deleteLicenseTemplateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/marketplace/license-templates/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'License Deleted', description: 'License template has been removed.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/license-templates'] });
+      setSelectedLicense(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message || 'Failed to delete license template', variant: 'destructive' });
+    },
+  });
+
+  const openEditLicense = (license: LicenseTemplate) => {
+    setSelectedLicense(license);
+    setLicenseForm({
+      name: license.name,
+      type: license.type,
+      priceCents: Math.round(license.price * 100),
+      streams: String(license.streams),
+      copies: String(license.copies),
+      musicVideos: String(license.musicVideos),
+      duration: license.duration,
+      allowsBroadcast: license.allowsBroadcast,
+      allowsProfit: license.allowsProfit,
+      allowsSync: license.allowsSync,
+      fileFormats: 'MP3',
+    });
+  };
 
   const rateBeatMutation = useMutation({
     mutationFn: async ({ beatId, rating }: { beatId: string; rating: number }) => {
@@ -3014,7 +3098,7 @@ export default function Marketplace() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {LICENSE_TYPES.map((license) => (
+              {activeLicenseTemplates.map((license) => (
                 <Card key={license.id} className={`relative ${license.type === 'exclusive' ? 'border-2 border-purple-500' : ''}`}>
                   {license.type === 'exclusive' && (
                     <Badge className="absolute -top-2 -right-2 bg-purple-500">Most Popular</Badge>
@@ -3032,11 +3116,11 @@ export default function Marketplace() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Streams</span>
-                        <span className="font-medium">{license.streams === 'unlimited' ? '∞' : (license.streams ?? 0).toLocaleString()}</span>
+                        <span className="font-medium">{license.streams === 'unlimited' ? '∞' : (typeof license.streams === 'number' ? license.streams : parseInt(String(license.streams)) || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Copies</span>
-                        <span className="font-medium">{license.copies === 'unlimited' ? '∞' : (license.copies ?? 0).toLocaleString()}</span>
+                        <span className="font-medium">{license.copies === 'unlimited' ? '∞' : (typeof license.copies === 'number' ? license.copies : parseInt(String(license.copies)) || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Music Videos</span>
@@ -3052,7 +3136,7 @@ export default function Marketplace() {
                       {license.allowsProfit && <Badge variant="outline" className="text-xs">For Profit</Badge>}
                       {license.allowsSync && <Badge variant="outline" className="text-xs">Sync</Badge>}
                     </div>
-                    <Button variant="outline" className="w-full" onClick={() => setSelectedLicense(license)}>
+                    <Button variant="outline" className="w-full" onClick={() => openEditLicense(license)}>
                       <Edit className="w-4 h-4 mr-2" />
                       Edit License
                     </Button>
@@ -4871,6 +4955,157 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                 disabled={discountMutation.isPending || discountForm.percent <= 0 || discountForm.percent >= 100}
               >
                 {discountMutation.isPending ? 'Saving...' : 'Apply Discount'}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showLicenseModal} onOpenChange={(open) => {
+        setShowLicenseModal(open);
+        if (!open) setLicenseForm({ name: '', type: 'non-exclusive', priceCents: 2999, streams: '100000', copies: '5000', musicVideos: '1', duration: '1 year', allowsBroadcast: false, allowsProfit: true, allowsSync: false, fileFormats: 'MP3' });
+      }}>
+        <DialogContent className="bg-white dark:bg-gray-800 max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create License Template</DialogTitle>
+            <DialogDescription>Define the terms for a custom license type</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-2">
+              <Label>License Name</Label>
+              <Input value={licenseForm.name} onChange={(e) => setLicenseForm({ ...licenseForm, name: e.target.value })} placeholder="e.g. Premium Lease" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={licenseForm.type} onValueChange={(v) => setLicenseForm({ ...licenseForm, type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="non-exclusive">Non-Exclusive</SelectItem>
+                    <SelectItem value="exclusive">Exclusive</SelectItem>
+                    <SelectItem value="unlimited">Unlimited</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Price ($)</Label>
+                <Input type="number" step="0.01" min="0" value={(licenseForm.priceCents / 100).toFixed(2)} onChange={(e) => setLicenseForm({ ...licenseForm, priceCents: Math.round(parseFloat(e.target.value || '0') * 100) })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Streams</Label>
+                <Input value={licenseForm.streams} onChange={(e) => setLicenseForm({ ...licenseForm, streams: e.target.value })} placeholder="100000 or unlimited" />
+              </div>
+              <div className="space-y-2">
+                <Label>Copies</Label>
+                <Input value={licenseForm.copies} onChange={(e) => setLicenseForm({ ...licenseForm, copies: e.target.value })} placeholder="5000 or unlimited" />
+              </div>
+              <div className="space-y-2">
+                <Label>Music Videos</Label>
+                <Input value={licenseForm.musicVideos} onChange={(e) => setLicenseForm({ ...licenseForm, musicVideos: e.target.value })} placeholder="1 or unlimited" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Duration</Label>
+              <Input value={licenseForm.duration} onChange={(e) => setLicenseForm({ ...licenseForm, duration: e.target.value })} placeholder="e.g. 1 year, Lifetime" />
+            </div>
+            <div className="flex gap-6 pt-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={licenseForm.allowsBroadcast} onChange={(e) => setLicenseForm({ ...licenseForm, allowsBroadcast: e.target.checked })} className="rounded" />
+                Broadcast
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={licenseForm.allowsProfit} onChange={(e) => setLicenseForm({ ...licenseForm, allowsProfit: e.target.checked })} className="rounded" />
+                For Profit
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={licenseForm.allowsSync} onChange={(e) => setLicenseForm({ ...licenseForm, allowsSync: e.target.checked })} className="rounded" />
+                Sync
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLicenseModal(false)}>Cancel</Button>
+            <Button onClick={() => createLicenseTemplateMutation.mutate(licenseForm)} disabled={!licenseForm.name || createLicenseTemplateMutation.isPending}>
+              {createLicenseTemplateMutation.isPending ? 'Creating...' : 'Create License'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedLicense} onOpenChange={(open) => !open && setSelectedLicense(null)}>
+        <DialogContent className="bg-white dark:bg-gray-800 max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit License: {selectedLicense?.name}</DialogTitle>
+            <DialogDescription>Update license terms and pricing</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-2">
+              <Label>License Name</Label>
+              <Input value={licenseForm.name} onChange={(e) => setLicenseForm({ ...licenseForm, name: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={licenseForm.type} onValueChange={(v) => setLicenseForm({ ...licenseForm, type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="non-exclusive">Non-Exclusive</SelectItem>
+                    <SelectItem value="exclusive">Exclusive</SelectItem>
+                    <SelectItem value="unlimited">Unlimited</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Price ($)</Label>
+                <Input type="number" step="0.01" min="0" value={(licenseForm.priceCents / 100).toFixed(2)} onChange={(e) => setLicenseForm({ ...licenseForm, priceCents: Math.round(parseFloat(e.target.value || '0') * 100) })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Streams</Label>
+                <Input value={licenseForm.streams} onChange={(e) => setLicenseForm({ ...licenseForm, streams: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Copies</Label>
+                <Input value={licenseForm.copies} onChange={(e) => setLicenseForm({ ...licenseForm, copies: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Music Videos</Label>
+                <Input value={licenseForm.musicVideos} onChange={(e) => setLicenseForm({ ...licenseForm, musicVideos: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Duration</Label>
+              <Input value={licenseForm.duration} onChange={(e) => setLicenseForm({ ...licenseForm, duration: e.target.value })} />
+            </div>
+            <div className="flex gap-6 pt-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={licenseForm.allowsBroadcast} onChange={(e) => setLicenseForm({ ...licenseForm, allowsBroadcast: e.target.checked })} className="rounded" />
+                Broadcast
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={licenseForm.allowsProfit} onChange={(e) => setLicenseForm({ ...licenseForm, allowsProfit: e.target.checked })} className="rounded" />
+                For Profit
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={licenseForm.allowsSync} onChange={(e) => setLicenseForm({ ...licenseForm, allowsSync: e.target.checked })} className="rounded" />
+                Sync
+              </label>
+            </div>
+          </div>
+          <DialogFooter className="flex justify-between">
+            {selectedLicense && licenseTemplatesData.length > 0 && (
+              <Button variant="destructive" size="sm" onClick={() => deleteLicenseTemplateMutation.mutate(selectedLicense.id)} disabled={deleteLicenseTemplateMutation.isPending}>
+                {deleteLicenseTemplateMutation.isPending ? 'Deleting...' : 'Delete'}
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setSelectedLicense(null)}>Cancel</Button>
+              <Button onClick={() => selectedLicense && updateLicenseTemplateMutation.mutate({ id: selectedLicense.id, ...licenseForm })} disabled={!licenseForm.name || updateLicenseTemplateMutation.isPending}>
+                {updateLicenseTemplateMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </DialogFooter>

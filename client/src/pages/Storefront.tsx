@@ -266,6 +266,40 @@ export default function Storefront() {
     },
   });
 
+  const checkoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/storefront/${storefront!.id}/checkout`, {
+        listingIds: cart,
+        licenseType: 'basic',
+      });
+      return response.json();
+    },
+    onSuccess: (data: { checkoutUrl?: string }) => {
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast({
+          title: 'Purchase Complete!',
+          description: 'Your beats are ready for download.',
+        });
+        setCart([]);
+      }
+    },
+    onError: (error: unknown) => {
+      const errorMessage = error instanceof Error ? error.message : 'Checkout failed';
+      toast({
+        title: 'Checkout Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleCheckout = useCallback(() => {
+    if (cart.length === 0) return;
+    checkoutMutation.mutate();
+  }, [cart, checkoutMutation]);
+
   const addToCart = (listingId: string) => {
     if (cart.includes(listingId)) {
       setCart(cart.filter((id) => id !== listingId));
@@ -757,11 +791,36 @@ export default function Storefront() {
           </section>
 
           {cart.length > 0 && (
-            <div className="fixed bottom-8 right-8">
-              <Button size="lg" className="shadow-xl">
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Checkout ({cart.length} items)
-              </Button>
+            <div className="fixed bottom-8 right-8 z-50">
+              <div className="bg-background border rounded-xl shadow-2xl p-4 flex items-center gap-4">
+                <div className="text-sm text-muted-foreground">
+                  {cart.length} item{cart.length > 1 ? 's' : ''} &middot; $
+                  {(listings
+                    .filter(l => cart.includes(l.id))
+                    .reduce((sum, l) => {
+                      const price = l.discountPercent && l.discountPriceCents != null &&
+                        (!l.discountExpiresAt || new Date(l.discountExpiresAt) > new Date())
+                        ? l.discountPriceCents : l.priceCents;
+                      return sum + price;
+                    }, 0) / 100
+                  ).toFixed(2)}
+                </div>
+                <Button
+                  size="lg"
+                  className="shadow-xl"
+                  onClick={handleCheckout}
+                  disabled={checkoutMutation.isPending}
+                >
+                  {checkoutMutation.isPending ? (
+                    <>Processing...</>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-5 h-5 mr-2" />
+                      Checkout
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           )}
         </div>

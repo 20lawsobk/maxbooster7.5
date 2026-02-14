@@ -589,6 +589,58 @@ export const storefrontRatings = pgTable("storefront_ratings", {
 });
 
 // ============================================================================
+// BEAT LIKES (Marketplace)
+// ============================================================================
+export const beatLikes = pgTable("beat_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  beatId: varchar("beat_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============================================================================
+// LICENSE TEMPLATES (Marketplace)
+// ============================================================================
+export const licenseTemplates = pgTable("license_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull().default("basic"),
+  priceCents: integer("price_cents").notNull().default(2999),
+  streams: text("streams").default("100000"),
+  copies: text("copies").default("5000"),
+  musicVideos: text("music_videos").default("1"),
+  duration: text("duration").default("1 year"),
+  allowsBroadcast: boolean("allows_broadcast").default(false),
+  allowsProfit: boolean("allows_profit").default(true),
+  allowsSync: boolean("allows_sync").default(false),
+  fileFormats: text("file_formats").default("MP3"),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ============================================================================
+// STOREFRONT ORDERS (Checkout)
+// ============================================================================
+export const storefrontOrders = pgTable("storefront_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  buyerId: varchar("buyer_id").notNull(),
+  storefrontId: varchar("storefront_id").notNull(),
+  sellerId: varchar("seller_id").notNull(),
+  listingId: varchar("listing_id").notNull(),
+  licenseType: text("license_type").default("basic"),
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").default("usd"),
+  status: text("status").default("pending"),
+  stripeSessionId: text("stripe_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ============================================================================
 // CONTRACT TEMPLATES (Marketplace)
 // ============================================================================
 export const contractTemplates = pgTable("contract_templates", {
