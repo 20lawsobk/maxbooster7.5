@@ -1,6 +1,7 @@
 import { useState, ReactNode, createContext, useContext } from 'react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { MobileBottomNav } from './MobileBottomNav';
 import { BreadcrumbTrail } from './Breadcrumb';
 import { useFluidLayout, LayoutMode, getFluidPadding, getFluidGap } from '@/hooks/useFluidLayout';
 
@@ -73,6 +74,7 @@ export function AppLayout({ title, subtitle, children, noPadding = false }: AppL
 
           <main
             className={`flex-1 ${noPadding ? 'overflow-hidden' : `overflow-y-auto ${getPadding()} pb-safe-bottom`}`}
+            style={isMobile && !noPadding ? { paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 0.5rem)' } : undefined}
           >
             {noPadding ? (
               children
@@ -88,6 +90,10 @@ export function AppLayout({ title, subtitle, children, noPadding = false }: AppL
             )}
           </main>
         </div>
+
+        {isMobile && !noPadding && (
+          <MobileBottomNav onMoreClick={() => setIsMobileMenuOpen(true)} />
+        )}
       </div>
     </FluidLayoutContext.Provider>
   );
