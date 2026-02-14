@@ -131,6 +131,8 @@ export default function StorefrontBuilder() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showTierDialog, setShowTierDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [storefrontToDelete, setStorefrontToDelete] = useState<Storefront | null>(null);
   const [editingTier, setEditingTier] = useState<MembershipTier | null>(null);
 
   const [createForm, setCreateForm] = useState({
@@ -348,6 +350,32 @@ export default function StorefrontBuilder() {
     },
   });
 
+  const deleteStorefrontMutation = useMutation({
+    mutationFn: async (storefrontId: string) => {
+      const response = await apiRequest('DELETE', `/api/storefront/${storefrontId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Storefront Deleted',
+        description: 'The storefront has been permanently removed.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+      if (selectedStorefront?.id === storefrontToDelete?.id) {
+        setSelectedStorefront(null);
+      }
+      setShowDeleteDialog(false);
+      setStorefrontToDelete(null);
+    },
+    onError: (error: unknown) => {
+      toast({
+        title: 'Delete Failed',
+        description: error.message || 'Failed to delete storefront',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const generateSlug = async (name: string) => {
     try {
       const response = await apiRequest('POST', '/api/storefront/generate-slug', { name });
@@ -509,6 +537,18 @@ export default function StorefrontBuilder() {
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStorefrontToDelete(storefront);
+                        setShowDeleteDialog(true);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -1249,6 +1289,39 @@ export default function StorefrontBuilder() {
           )}
         </>
       )}
+
+      <Dialog open={showDeleteDialog} onOpenChange={(open) => {
+        setShowDeleteDialog(open);
+        if (!open) setStorefrontToDelete(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Storefront</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{storefrontToDelete?.name}"? This will permanently remove the storefront, all its customization, and associated data. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowDeleteDialog(false);
+              setStorefrontToDelete(null);
+            }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (storefrontToDelete) {
+                  deleteStorefrontMutation.mutate(storefrontToDelete.id);
+                }
+              }}
+              disabled={deleteStorefrontMutation.isPending}
+            >
+              {deleteStorefrontMutation.isPending ? 'Deleting...' : 'Delete Storefront'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
