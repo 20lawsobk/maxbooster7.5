@@ -238,12 +238,7 @@ export function useMIDIDevices() {
     [getOutputPort]
   );
 
-  /**
-   * Initialize MIDI access on mount
-   */
   useEffect(() => {
-    requestMIDIAccess();
-
     return () => {
       if (midiAccess) {
         midiAccess.removeEventListener('statechange', handleStateChange);

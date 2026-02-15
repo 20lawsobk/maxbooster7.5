@@ -717,20 +717,21 @@ router.post('/upload-asset', upload.single('file'), async (req, res) => {
     }
 
     const folder = `storefronts/${req.user!.id}/${assetType}`;
-    const key = await storageService.uploadFile(
+    const result = await storageService.uploadFile(
       req.file.buffer,
       req.file.originalname,
       req.file.mimetype,
       folder
     );
 
-    const url = `/api/storage/file/${key}`;
+    const fileKey = typeof result === 'string' ? result : (result as any).key || (result as any).url || String(result);
+    const url = `/api/storage/file/${fileKey}`;
 
-    logger.info(`Uploaded storefront ${assetType} for user ${req.user!.id}: ${key}`);
+    logger.info(`Uploaded storefront ${assetType} for user ${req.user!.id}: ${fileKey}`);
 
     res.json({
       url,
-      key,
+      key: fileKey,
       assetType,
     });
   } catch (error: unknown) {

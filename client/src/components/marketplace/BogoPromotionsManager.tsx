@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ import {
   Zap,
   Pause,
   Play,
+  Music,
 } from 'lucide-react';
 
 interface BogoPromotion {
@@ -91,6 +93,8 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
     getQuantity: 1,
     getDiscountPercent: 100,
     appliesTo: 'all',
+    applicableListingIds: [] as string[],
+    applicableGenres: [] as string[],
     maxRedemptions: '',
     perCustomerLimit: '',
     startAt: '',
@@ -102,6 +106,20 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
     queryKey: [`/api/storefront/${storefrontId}/bogo-promotions/all`],
     enabled: !!storefrontId,
   });
+
+  interface StorefrontListing {
+    id: string;
+    title: string;
+    genre: string | null;
+    priceCents: number;
+  }
+
+  const { data: listings = [] } = useQuery<StorefrontListing[]>({
+    queryKey: [`/api/storefront/${storefrontId}/listings`],
+    enabled: !!storefrontId,
+  });
+
+  const availableGenres = [...new Set(listings.map(l => l.genre).filter(Boolean))] as string[];
 
   const createMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', `/api/storefront/${storefrontId}/bogo-promotions`, data),
@@ -153,6 +171,8 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       getQuantity: 1,
       getDiscountPercent: 100,
       appliesTo: 'all',
+      applicableListingIds: [],
+      applicableGenres: [],
       maxRedemptions: '',
       perCustomerLimit: '',
       startAt: '',
@@ -183,6 +203,8 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       getQuantity: promo.getQuantity,
       getDiscountPercent: promo.getDiscountPercent,
       appliesTo: promo.appliesTo,
+      applicableListingIds: promo.applicableListingIds || [],
+      applicableGenres: promo.applicableGenres || [],
       maxRedemptions: promo.maxRedemptions?.toString() || '',
       perCustomerLimit: promo.perCustomerLimit?.toString() || '',
       startAt: promo.startAt ? new Date(promo.startAt).toISOString().slice(0, 16) : '',
@@ -210,6 +232,8 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       getQuantity: form.getQuantity,
       getDiscountPercent: form.getDiscountPercent,
       appliesTo: form.appliesTo,
+      applicableListingIds: form.appliesTo === 'specific' ? form.applicableListingIds : [],
+      applicableGenres: form.appliesTo === 'genre' ? form.applicableGenres : [],
       maxRedemptions: form.maxRedemptions ? parseInt(form.maxRedemptions) : null,
       perCustomerLimit: form.perCustomerLimit ? parseInt(form.perCustomerLimit) : null,
       startAt: form.startAt || null,
@@ -336,7 +360,9 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
                         </span>
                       )}
                       <span className="flex items-center gap-1">
-                        Applies to: {promo.appliesTo === 'all' ? 'All beats' : promo.appliesTo}
+                        Applies to: {promo.appliesTo === 'all' ? 'All beats' : 
+                          promo.appliesTo === 'specific' ? `${promo.applicableListingIds?.length || 0} specific beat${(promo.applicableListingIds?.length || 0) !== 1 ? 's' : ''}` :
+                          promo.appliesTo === 'genre' ? (promo.applicableGenres?.join(', ') || 'No genres') : promo.appliesTo}
                       </span>
                     </div>
                   </div>
@@ -494,7 +520,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
 
             <div>
               <Label>Applies To</Label>
-              <Select value={form.appliesTo} onValueChange={(v) => setForm({ ...form, appliesTo: v })}>
+              <Select value={form.appliesTo} onValueChange={(v) => setForm({ ...form, appliesTo: v, applicableListingIds: [], applicableGenres: [] })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -505,6 +531,71 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
+            {form.appliesTo === 'specific' && (
+              <div>
+                <Label>Select Beats</Label>
+                {listings.length === 0 ? (
+                  <p className="text-sm text-muted-foreground mt-1">No beats available in your storefront yet.</p>
+                ) : (
+                  <div className="mt-2 max-h-48 overflow-y-auto border rounded-lg p-2 space-y-1">
+                    {listings.map((listing) => (
+                      <label key={listing.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted cursor-pointer">
+                        <Checkbox
+                          checked={form.applicableListingIds.includes(listing.id)}
+                          onCheckedChange={(checked) => {
+                            setForm(f => ({
+                              ...f,
+                              applicableListingIds: checked
+                                ? [...f.applicableListingIds, listing.id]
+                                : f.applicableListingIds.filter(id => id !== listing.id),
+                            }));
+                          }}
+                        />
+                        <Music className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-sm flex-1">{listing.title}</span>
+                        <span className="text-xs text-muted-foreground">${(listing.priceCents / 100).toFixed(2)}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {form.applicableListingIds.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">{form.applicableListingIds.length} beat{form.applicableListingIds.length !== 1 ? 's' : ''} selected</p>
+                )}
+              </div>
+            )}
+
+            {form.appliesTo === 'genre' && (
+              <div>
+                <Label>Select Genres</Label>
+                {availableGenres.length === 0 ? (
+                  <p className="text-sm text-muted-foreground mt-1">No genres found. Add beats with genres to your storefront first.</p>
+                ) : (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {availableGenres.map((genre) => (
+                      <Badge
+                        key={genre}
+                        variant={form.applicableGenres.includes(genre) ? 'default' : 'outline'}
+                        className="cursor-pointer px-3 py-1.5 text-sm"
+                        onClick={() => {
+                          setForm(f => ({
+                            ...f,
+                            applicableGenres: f.applicableGenres.includes(genre)
+                              ? f.applicableGenres.filter(g => g !== genre)
+                              : [...f.applicableGenres, genre],
+                          }));
+                        }}
+                      >
+                        {genre}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {form.applicableGenres.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">{form.applicableGenres.length} genre{form.applicableGenres.length !== 1 ? 's' : ''} selected</p>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
