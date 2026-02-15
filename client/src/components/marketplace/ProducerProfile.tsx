@@ -301,7 +301,24 @@ export function ProducerProfile({ producerId, isOpen, onClose }: ProducerProfile
     }
   };
 
-  const displayProducer = producer || fallbackProducer;
+  const displayProducer = producer ? {
+    ...producer,
+    name: producer.name || producer.username,
+    avatar: producer.avatarUrl || producer.avatar,
+    stats: {
+      totalBeats: producer.beatCount ?? 0,
+      totalSales: producer.sales ?? 0,
+      totalPlays: producer.totalPlays ?? 0,
+      totalDownloads: producer.totalDownloads ?? 0,
+      followers: producer.followerCount ?? 0,
+      rating: producer.rating ?? 0,
+      reviewCount: producer.reviewCount ?? 0,
+      responseRate: producer.responseRate ?? 0,
+      responseTime: producer.responseTime || '',
+      memberSince: producer.createdAt || producer.memberSince,
+      location: producer.location || '',
+    },
+  } : fallbackProducer;
 
   useEffect(() => {
     return () => {
@@ -788,13 +805,13 @@ export function ProducerCard({ producer, onClick }: { producer: any; onClick: ()
             <Avatar className="w-16 h-16">
               <AvatarImage src={producer.avatar} />
               <AvatarFallback className="text-lg font-bold bg-primary text-primary-foreground">
-                {producer.name?.charAt(0) || 'P'}
+                {(producer.name || producer.username)?.charAt(0) || 'P'}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold truncate">{producer.name}</h3>
+                <h3 className="font-semibold truncate">{producer.name || producer.username}</h3>
                 {producer.verified && (
                   <CheckCircle className="w-4 h-4 text-blue-500 fill-blue-500 flex-shrink-0" />
                 )}
@@ -811,7 +828,7 @@ export function ProducerCard({ producer, onClick }: { producer: any; onClick: ()
                 </span>
                 <span className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
-                  {formatNumber(producer.followers || 0)}
+                  {formatNumber(producer.followerCount || producer.followers || 0)}
                 </span>
               </div>
             </div>
