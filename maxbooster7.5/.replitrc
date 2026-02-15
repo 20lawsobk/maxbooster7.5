@@ -1,0 +1,21 @@
+# Max Booster Replit Runtime Configuration
+
+# Install dependencies on first run
+if [ ! -d "node_modules" ]; then
+  echo "📦 Installing dependencies..."
+  npm install
+fi
+
+# Build boosterstate if not present
+if [ ! -f "boosterstate/target/release/boosterstate" ]; then
+  echo "🔧 Building boosterstate..."
+  if [ -d "boosterstate" ]; then
+    cd boosterstate && cargo build --release && cd ..
+  fi
+fi
+
+# Set up environment
+export NODE_ENV=production
+export PATH="$PWD/node_modules/.bin:$PATH"
+
+echo "✅ Max Booster 10.0 environment ready!"
