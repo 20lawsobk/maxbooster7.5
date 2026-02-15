@@ -158,7 +158,7 @@ export const config: AppConfig = {
   },
 
   redis: {
-    url: undefined,
+    url: process.env.REDIS_URL,
     maxRetries: 3,
     retryDelay: 1000,
   },
