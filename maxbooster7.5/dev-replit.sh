@@ -1,28 +1,76 @@
 #!/bin/bash
-# Max Booster Development Server for Replit
+# Max Booster - Replit Development Server
 
 set -e
 
-echo "🔨 Starting Max Booster 10.0 (Development Mode)..."
+# Color codes
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+GREEN='\033[0;32m'
+NC='\033[0m'
 
-# Check if boosterstate binary exists (optional)
-if [ -f "./boosterstate/target/release/boosterstate" ]; then
-  echo "🔧 Starting boosterstate service..."
-  ./boosterstate/target/release/boosterstate &
-  BOOSTERSTATE_PID=$!
-  sleep 1
-fi
+echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║        🔨 MAX BOOSTER 10.0 - REPLIT DEV MODE 🔨               ║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
 
-# Set development environment
+# ==========================================
+# ENVIRONMENT
+# ==========================================
 export NODE_ENV=development
 export PORT=${PORT:-5000}
 
-echo "📦 Environment: $NODE_ENV"
-echo "🔌 Port: $PORT"
+echo -e "${BLUE}📦 Environment:${NC}"
+echo -e "   ▸ Platform: ${GREEN}Replit${NC}"
+echo -e "   ▸ NODE_ENV: ${YELLOW}${NODE_ENV}${NC}"
+echo -e "   ▸ PORT: ${GREEN}${PORT}${NC}"
+echo -e "   ▸ Hot Reload: ${GREEN}Enabled${NC}"
+echo ""
 
-# Start the development server with hot reload
-echo "🎵 Starting Max Booster dev server..."
+# ==========================================
+# BOOSTERSTATE (OPTIONAL)
+# ==========================================
+BOOSTERSTATE_PID=""
+
+if [ -f "./boosterstate/target/release/boosterstate" ]; then
+  echo -e "${BLUE}🔧 Starting boosterstate...${NC}"
+  ./boosterstate/target/release/boosterstate &
+  BOOSTERSTATE_PID=$!
+  sleep 1
+  echo -e "${GREEN}✅ boosterstate running${NC}"
+else
+  echo -e "${YELLOW}⚠️  boosterstate not found (optional)${NC}"
+fi
+
+echo ""
+
+# ==========================================
+# CLEANUP
+# ==========================================
+cleanup() {
+  echo ""
+  echo -e "${BLUE}🛑 Shutting down...${NC}"
+  if [ ! -z "$BOOSTERSTATE_PID" ]; then
+    kill $BOOSTERSTATE_PID 2>/dev/null || true
+  fi
+  exit 0
+}
+
+trap cleanup SIGTERM SIGINT EXIT
+
+# ==========================================
+# START DEV SERVER
+# ==========================================
+echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${YELLOW}║          MAX BOOSTER 10.0 - DEVELOPMENT MODE                   ║${NC}"
+echo -e "${YELLOW}║                                                                ║${NC}"
+echo -e "${YELLOW}║  Hot Reload:      Enabled                                      ║${NC}"
+echo -e "${YELLOW}║  TypeScript:      tsx                                          ║${NC}"
+echo -e "${YELLOW}║  Port:            ${PORT}                                            ║${NC}"
+echo -e "${YELLOW}║                                                                ║${NC}"
+echo -e "${YELLOW}║  Press Ctrl+C to stop                                          ║${NC}"
+echo -e "${YELLOW}║                                                                ║${NC}"
+echo -e "${YELLOW}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
 tsx server/index.ts
-
-# Cleanup on exit
-trap "kill $BOOSTERSTATE_PID 2>/dev/null || true" EXIT
