@@ -717,14 +717,13 @@ router.post('/upload-asset', upload.single('file'), async (req, res) => {
     }
 
     const folder = `storefronts/${req.user!.id}/${assetType}`;
-    const result = await storageService.uploadFile(
+    const fileKey = await storageService.uploadFile(
       req.file.buffer,
+      folder,
       req.file.originalname,
-      req.file.mimetype,
-      folder
+      req.file.mimetype
     );
 
-    const fileKey = typeof result === 'string' ? result : (result as any).key || (result as any).url || String(result);
     const url = `/api/storage/file/${fileKey}`;
 
     logger.info(`Uploaded storefront ${assetType} for user ${req.user!.id}: ${fileKey}`);
@@ -917,9 +916,13 @@ router.post('/:id/checkout', async (req, res) => {
     }
     const bogoResult = applyBogoToCart(cartItems, activePromos, customerRedemptions);
 
+    const bogoLicenseType = bogoResult.appliedPromotion?.bogoLicenseType;
+
     const lineItems = cartItems.map((item, index) => {
       let unitAmount = item.priceCents;
-      let desc = `${validListings[index].genre || 'Beat'} - ${licenseType} license`;
+      const isBogo = bogoResult.freeItemIndices.includes(index) || bogoResult.discountedItems.some(d => d.index === index);
+      const itemLicense = (isBogo && bogoLicenseType) ? bogoLicenseType : licenseType;
+      let desc = `${validListings[index].genre || 'Beat'} - ${itemLicense} license`;
 
       if (bogoResult.freeItemIndices.includes(index)) {
         unitAmount = 0;
@@ -978,12 +981,13 @@ router.post('/:id/checkout', async (req, res) => {
         finalAmount = item.priceCents - discountCents;
       }
 
+      const orderLicenseType = ((isFree || discountInfo) && bogoLicenseType) ? bogoLicenseType : licenseType;
       await db.insert(storefrontOrders).values({
         buyerId: req.user!.id,
         storefrontId,
         sellerId: storefront.userId,
         listingId: validListings[i].id,
-        licenseType,
+        licenseType: orderLicenseType,
         amountCents: finalAmount,
         status: 'pending',
         stripeSessionId: session.id,
@@ -1469,8 +1473,8 @@ router.post('/:storefrontId/bogo-promotions', async (req, res) => {
     }
 
     const { name, description, promoType, buyQuantity, getQuantity, getDiscountPercent,
-            appliesTo, applicableListingIds, applicableGenres, maxRedemptions,
-            perCustomerLimit, stackable, priority, status, startAt, endAt } = req.body;
+            appliesTo, applicableListingIds, applicableGenres, bogoLicenseType,
+            maxRedemptions, perCustomerLimit, stackable, priority, status, startAt, endAt } = req.body;
 
     if (!name || !buyQuantity || !getQuantity) {
       return res.status(400).json({ error: 'Name, buy quantity, and get quantity are required' });
@@ -1494,6 +1498,7 @@ router.post('/:storefrontId/bogo-promotions', async (req, res) => {
       appliesTo: appliesTo || 'all',
       applicableListingIds: applicableListingIds || [],
       applicableGenres: applicableGenres || [],
+      bogoLicenseType: bogoLicenseType || null,
       maxRedemptions: maxRedemptions || null,
       perCustomerLimit: perCustomerLimit || null,
       stackable: stackable ?? false,
@@ -1520,8 +1525,8 @@ router.put('/:storefrontId/bogo-promotions/:promoId', async (req, res) => {
     }
 
     const { name, description, promoType, buyQuantity, getQuantity, getDiscountPercent,
-            appliesTo, applicableListingIds, applicableGenres, maxRedemptions,
-            perCustomerLimit, stackable, priority, status, startAt, endAt } = req.body;
+            appliesTo, applicableListingIds, applicableGenres, bogoLicenseType,
+            maxRedemptions, perCustomerLimit, stackable, priority, status, startAt, endAt } = req.body;
 
     const updateData: any = { updatedAt: new Date() };
     if (name !== undefined) updateData.name = name;
@@ -1533,6 +1538,7 @@ router.put('/:storefrontId/bogo-promotions/:promoId', async (req, res) => {
     if (appliesTo !== undefined) updateData.appliesTo = appliesTo;
     if (applicableListingIds !== undefined) updateData.applicableListingIds = applicableListingIds;
     if (applicableGenres !== undefined) updateData.applicableGenres = applicableGenres;
+    if (bogoLicenseType !== undefined) updateData.bogoLicenseType = bogoLicenseType;
     if (maxRedemptions !== undefined) updateData.maxRedemptions = maxRedemptions;
     if (perCustomerLimit !== undefined) updateData.perCustomerLimit = perCustomerLimit;
     if (stackable !== undefined) updateData.stackable = stackable;

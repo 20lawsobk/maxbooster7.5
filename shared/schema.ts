@@ -3141,6 +3141,7 @@ export const bogoPromotions = pgTable("bogo_promotions", {
   appliesTo: text("applies_to").notNull().default("all"),
   applicableListingIds: jsonb("applicable_listing_ids").$type<string[]>().default([]),
   applicableGenres: jsonb("applicable_genres").$type<string[]>().default([]),
+  bogoLicenseType: text("bogo_license_type"),
   maxRedemptions: integer("max_redemptions"),
   redemptionCount: integer("redemption_count").default(0),
   perCustomerLimit: integer("per_customer_limit"),

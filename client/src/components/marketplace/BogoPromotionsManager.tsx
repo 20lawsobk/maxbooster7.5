@@ -53,6 +53,7 @@ interface BogoPromotion {
   appliesTo: string;
   applicableListingIds: string[];
   applicableGenres: string[];
+  bogoLicenseType: string | null;
   maxRedemptions: number | null;
   redemptionCount: number;
   perCustomerLimit: number | null;
@@ -95,6 +96,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
     appliesTo: 'all',
     applicableListingIds: [] as string[],
     applicableGenres: [] as string[],
+    bogoLicenseType: '' as string,
     maxRedemptions: '',
     perCustomerLimit: '',
     startAt: '',
@@ -173,6 +175,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       appliesTo: 'all',
       applicableListingIds: [],
       applicableGenres: [],
+      bogoLicenseType: '',
       maxRedemptions: '',
       perCustomerLimit: '',
       startAt: '',
@@ -205,6 +208,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       appliesTo: promo.appliesTo,
       applicableListingIds: promo.applicableListingIds || [],
       applicableGenres: promo.applicableGenres || [],
+      bogoLicenseType: promo.bogoLicenseType || '',
       maxRedemptions: promo.maxRedemptions?.toString() || '',
       perCustomerLimit: promo.perCustomerLimit?.toString() || '',
       startAt: promo.startAt ? new Date(promo.startAt).toISOString().slice(0, 16) : '',
@@ -234,6 +238,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       appliesTo: form.appliesTo,
       applicableListingIds: form.appliesTo === 'specific' ? form.applicableListingIds : [],
       applicableGenres: form.appliesTo === 'genre' ? form.applicableGenres : [],
+      bogoLicenseType: form.bogoLicenseType || null,
       maxRedemptions: form.maxRedemptions ? parseInt(form.maxRedemptions) : null,
       perCustomerLimit: form.perCustomerLimit ? parseInt(form.perCustomerLimit) : null,
       startAt: form.startAt || null,
@@ -364,6 +369,11 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
                           promo.appliesTo === 'specific' ? `${promo.applicableListingIds?.length || 0} specific beat${(promo.applicableListingIds?.length || 0) !== 1 ? 's' : ''}` :
                           promo.appliesTo === 'genre' ? (promo.applicableGenres?.join(', ') || 'No genres') : promo.appliesTo}
                       </span>
+                      {promo.bogoLicenseType && (
+                        <Badge variant="outline" className="text-xs">
+                          {promo.bogoLicenseType} license
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 ml-4">
@@ -596,6 +606,30 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
                 )}
               </div>
             )}
+
+            <div>
+              <Label>License Type for BOGO Items</Label>
+              <Select value={form.bogoLicenseType} onValueChange={(v) => setForm({ ...form, bogoLicenseType: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Same as purchased license" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Same as purchased license</SelectItem>
+                  <SelectItem value="basic">Basic License</SelectItem>
+                  <SelectItem value="premium">Premium License</SelectItem>
+                  <SelectItem value="exclusive">Exclusive License</SelectItem>
+                  <SelectItem value="unlimited">Unlimited License</SelectItem>
+                  <SelectItem value="wav">WAV License</SelectItem>
+                  <SelectItem value="stems">Stems License</SelectItem>
+                  <SelectItem value="trackout">Trackout License</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {form.bogoLicenseType
+                  ? `Free/discounted items will use the "${form.bogoLicenseType}" license`
+                  : 'Free/discounted items will use the same license as the purchased items'}
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
