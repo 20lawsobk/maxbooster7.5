@@ -1,0 +1,12 @@
+{
+  "id": "test-stats",
+  "name": "test-stats",
+  "createdAt": "2026-02-15T12:17:53.106Z",
+  "updatedAt": "2026-02-15T12:17:53.192Z",
+  "totalSize": 60000,
+  "compressedSize": 530,
+  "chunkCount": 10,
+  "maxDepth": 0,
+  "encrypted": false,
+  "version": 1
+}

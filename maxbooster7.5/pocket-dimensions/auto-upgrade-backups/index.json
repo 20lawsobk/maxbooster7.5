@@ -1,0 +1,30 @@
+{
+  "entries": {
+    "backups/test-component/test-component-v1.0.0-2026-02-15T12-17-52-793Z.json": {
+      "path": "backups/test-component/test-component-v1.0.0-2026-02-15T12-17-52-793Z.json",
+      "type": "file",
+      "size": 4375,
+      "compressedSize": 220,
+      "chunks": [
+        "139972412418791a64cfd12d9ca020bcc1558128b3d8536e92e390706e947dc6"
+      ],
+      "createdAt": "2026-02-15T12:17:52.803Z",
+      "modifiedAt": "2026-02-15T12:17:52.803Z",
+      "version": 1,
+      "metadata": {}
+    }
+  },
+  "chunks": {
+    "139972412418791a64cfd12d9ca020bcc1558128b3d8536e92e390706e947dc6": {
+      "id": "139972412418791a64cfd12d9ca020bcc1558128b3d8536e92e390706e947dc6",
+      "size": 4375,
+      "compressedSize": 220,
+      "compressionRatio": 19.886363636363637,
+      "createdAt": "2026-02-15T12:17:52.803Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:52.803Z",
+      "encrypted": false,
+      "depth": 0
+    }
+  }
+}

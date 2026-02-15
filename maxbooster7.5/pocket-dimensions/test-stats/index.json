@@ -1,0 +1,246 @@
+{
+  "entries": {
+    "file0.txt": {
+      "path": "file0.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "f56976d79b2ed7b676b82a9fbdec4194d21f80d19b48c920791a69970f0f7501"
+      ],
+      "createdAt": "2026-02-15T12:17:53.118Z",
+      "modifiedAt": "2026-02-15T12:17:53.118Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "file1.txt": {
+      "path": "file1.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "8621bf36539ab5bf2f77f8f3c51a1e3be63d213e41ff80e1a4fcc09e1db205cb"
+      ],
+      "createdAt": "2026-02-15T12:17:53.130Z",
+      "modifiedAt": "2026-02-15T12:17:53.130Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "file2.txt": {
+      "path": "file2.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "9a5e3364c382d655bb523cce94a198707c5e29c4d9114469dde505ffc1389e8c"
+      ],
+      "createdAt": "2026-02-15T12:17:53.137Z",
+      "modifiedAt": "2026-02-15T12:17:53.137Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "file3.txt": {
+      "path": "file3.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "6fc81c68a5f87345c3adabc25d3226f1db5b3afa87a4338dc7c83c44a0befcb6"
+      ],
+      "createdAt": "2026-02-15T12:17:53.145Z",
+      "modifiedAt": "2026-02-15T12:17:53.145Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "file4.txt": {
+      "path": "file4.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "8926cda08342834f4f5f76f508b543c1f0256d25f7cb7a1628d22604bbf4f3e1"
+      ],
+      "createdAt": "2026-02-15T12:17:53.153Z",
+      "modifiedAt": "2026-02-15T12:17:53.153Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "file5.txt": {
+      "path": "file5.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "ad4dee534bff0c40f0f2da0b53266e480fce1954f8650a45701a82adcdcc8c39"
+      ],
+      "createdAt": "2026-02-15T12:17:53.162Z",
+      "modifiedAt": "2026-02-15T12:17:53.162Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "file6.txt": {
+      "path": "file6.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "d8bd418c947594b84e5b4b77593f56a10793d169b44293d150c103af859e9e0f"
+      ],
+      "createdAt": "2026-02-15T12:17:53.169Z",
+      "modifiedAt": "2026-02-15T12:17:53.169Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "file7.txt": {
+      "path": "file7.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "a229798e4624a482740ba1c21d5ca95ce732d809210fd3dcf178f1bddf024d67"
+      ],
+      "createdAt": "2026-02-15T12:17:53.177Z",
+      "modifiedAt": "2026-02-15T12:17:53.177Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "file8.txt": {
+      "path": "file8.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "502f4151c47dfadda5eba480e513ecf01980bc11ba2cbae9605160f66850f60a"
+      ],
+      "createdAt": "2026-02-15T12:17:53.183Z",
+      "modifiedAt": "2026-02-15T12:17:53.183Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "file9.txt": {
+      "path": "file9.txt",
+      "type": "file",
+      "size": 6000,
+      "compressedSize": 53,
+      "chunks": [
+        "a2e29122bfd4f064ee81134884865e8739ebe6f64bcd1eacb11f636c8ca5c7be"
+      ],
+      "createdAt": "2026-02-15T12:17:53.192Z",
+      "modifiedAt": "2026-02-15T12:17:53.192Z",
+      "version": 1,
+      "metadata": {}
+    }
+  },
+  "chunks": {
+    "f56976d79b2ed7b676b82a9fbdec4194d21f80d19b48c920791a69970f0f7501": {
+      "id": "f56976d79b2ed7b676b82a9fbdec4194d21f80d19b48c920791a69970f0f7501",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.118Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.118Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "8621bf36539ab5bf2f77f8f3c51a1e3be63d213e41ff80e1a4fcc09e1db205cb": {
+      "id": "8621bf36539ab5bf2f77f8f3c51a1e3be63d213e41ff80e1a4fcc09e1db205cb",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.130Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.130Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "9a5e3364c382d655bb523cce94a198707c5e29c4d9114469dde505ffc1389e8c": {
+      "id": "9a5e3364c382d655bb523cce94a198707c5e29c4d9114469dde505ffc1389e8c",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.137Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.137Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "6fc81c68a5f87345c3adabc25d3226f1db5b3afa87a4338dc7c83c44a0befcb6": {
+      "id": "6fc81c68a5f87345c3adabc25d3226f1db5b3afa87a4338dc7c83c44a0befcb6",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.145Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.145Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "8926cda08342834f4f5f76f508b543c1f0256d25f7cb7a1628d22604bbf4f3e1": {
+      "id": "8926cda08342834f4f5f76f508b543c1f0256d25f7cb7a1628d22604bbf4f3e1",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.153Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.153Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "ad4dee534bff0c40f0f2da0b53266e480fce1954f8650a45701a82adcdcc8c39": {
+      "id": "ad4dee534bff0c40f0f2da0b53266e480fce1954f8650a45701a82adcdcc8c39",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.162Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.162Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "d8bd418c947594b84e5b4b77593f56a10793d169b44293d150c103af859e9e0f": {
+      "id": "d8bd418c947594b84e5b4b77593f56a10793d169b44293d150c103af859e9e0f",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.169Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.169Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "a229798e4624a482740ba1c21d5ca95ce732d809210fd3dcf178f1bddf024d67": {
+      "id": "a229798e4624a482740ba1c21d5ca95ce732d809210fd3dcf178f1bddf024d67",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.177Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.177Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "502f4151c47dfadda5eba480e513ecf01980bc11ba2cbae9605160f66850f60a": {
+      "id": "502f4151c47dfadda5eba480e513ecf01980bc11ba2cbae9605160f66850f60a",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.183Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.183Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "a2e29122bfd4f064ee81134884865e8739ebe6f64bcd1eacb11f636c8ca5c7be": {
+      "id": "a2e29122bfd4f064ee81134884865e8739ebe6f64bcd1eacb11f636c8ca5c7be",
+      "size": 6000,
+      "compressedSize": 53,
+      "compressionRatio": 113.20754716981132,
+      "createdAt": "2026-02-15T12:17:53.192Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:53.192Z",
+      "encrypted": false,
+      "depth": 0
+    }
+  }
+}

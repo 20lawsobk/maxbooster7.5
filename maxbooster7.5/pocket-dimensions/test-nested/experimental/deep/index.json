@@ -1,0 +1,30 @@
+{
+  "entries": {
+    "level3.txt": {
+      "path": "level3.txt",
+      "type": "file",
+      "size": 23,
+      "compressedSize": 43,
+      "chunks": [
+        "5b83d3908f0ae4a1174d1eecaad3d03c5ffecffbc798337bfce115ac9c271f11"
+      ],
+      "createdAt": "2026-02-15T12:17:52.686Z",
+      "modifiedAt": "2026-02-15T12:17:52.686Z",
+      "version": 1,
+      "metadata": {}
+    }
+  },
+  "chunks": {
+    "5b83d3908f0ae4a1174d1eecaad3d03c5ffecffbc798337bfce115ac9c271f11": {
+      "id": "5b83d3908f0ae4a1174d1eecaad3d03c5ffecffbc798337bfce115ac9c271f11",
+      "size": 23,
+      "compressedSize": 43,
+      "compressionRatio": 0.5348837209302325,
+      "createdAt": "2026-02-15T12:17:52.686Z",
+      "accessCount": 2,
+      "lastAccessed": "2026-02-15T12:17:52.690Z",
+      "encrypted": false,
+      "depth": 0
+    }
+  }
+}

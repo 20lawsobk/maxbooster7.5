@@ -1,0 +1,78 @@
+{
+  "entries": {
+    "compression/JSON Config.txt": {
+      "path": "compression/JSON Config.txt",
+      "type": "file",
+      "size": 4018,
+      "compressedSize": 65,
+      "chunks": [
+        "f3f7cd90d6788a34daed0c009cca67762583f4a769cfcc7076ce64e9b3f5ec91"
+      ],
+      "createdAt": "2026-02-15T12:17:52.569Z",
+      "modifiedAt": "2026-02-15T12:17:52.569Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "compression/Repeated Text.txt": {
+      "path": "compression/Repeated Text.txt",
+      "type": "file",
+      "size": 140000,
+      "compressedSize": 405,
+      "chunks": [
+        "8bf3649c0c2676fa35f98a81a9501d06e83e3b3aff52601252c0f508fc11ba01"
+      ],
+      "createdAt": "2026-02-15T12:17:52.584Z",
+      "modifiedAt": "2026-02-15T12:17:52.584Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "compression/Random Data.txt": {
+      "path": "compression/Random Data.txt",
+      "type": "file",
+      "size": 20480,
+      "compressedSize": 11001,
+      "chunks": [
+        "441033b28d4a8448353744729080e67c8febdd904100a274dcb729c421094a6d"
+      ],
+      "createdAt": "2026-02-15T12:17:52.598Z",
+      "modifiedAt": "2026-02-15T12:17:52.598Z",
+      "version": 1,
+      "metadata": {}
+    }
+  },
+  "chunks": {
+    "f3f7cd90d6788a34daed0c009cca67762583f4a769cfcc7076ce64e9b3f5ec91": {
+      "id": "f3f7cd90d6788a34daed0c009cca67762583f4a769cfcc7076ce64e9b3f5ec91",
+      "size": 4018,
+      "compressedSize": 65,
+      "compressionRatio": 61.815384615384616,
+      "createdAt": "2026-02-15T12:17:52.569Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:52.569Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "8bf3649c0c2676fa35f98a81a9501d06e83e3b3aff52601252c0f508fc11ba01": {
+      "id": "8bf3649c0c2676fa35f98a81a9501d06e83e3b3aff52601252c0f508fc11ba01",
+      "size": 140000,
+      "compressedSize": 405,
+      "compressionRatio": 345.679012345679,
+      "createdAt": "2026-02-15T12:17:52.584Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:52.584Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "441033b28d4a8448353744729080e67c8febdd904100a274dcb729c421094a6d": {
+      "id": "441033b28d4a8448353744729080e67c8febdd904100a274dcb729c421094a6d",
+      "size": 20480,
+      "compressedSize": 11001,
+      "compressionRatio": 1.8616489410053632,
+      "createdAt": "2026-02-15T12:17:52.598Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:52.598Z",
+      "encrypted": false,
+      "depth": 0
+    }
+  }
+}

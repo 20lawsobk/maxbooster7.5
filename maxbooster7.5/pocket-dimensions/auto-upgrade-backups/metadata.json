@@ -1,0 +1,12 @@
+{
+  "id": "auto-upgrade-backups",
+  "name": "auto-upgrade-backups",
+  "createdAt": "2026-02-15T12:17:52.772Z",
+  "updatedAt": "2026-02-15T12:17:52.803Z",
+  "totalSize": 4375,
+  "compressedSize": 220,
+  "chunkCount": 1,
+  "maxDepth": 0,
+  "encrypted": false,
+  "version": 1
+}

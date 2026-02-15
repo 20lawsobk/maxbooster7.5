@@ -1,0 +1,616 @@
+import { QueryClient, QueryFunction } from '@tanstack/react-query';
+import { errorService, captureException } from './errorService';
+
+const DEFAULT_TIMEOUT_MS = 30000;
+
+const CSRF_COOKIE = 'csrf-token';
+const CSRF_HEADER = 'x-csrf-token';
+
+export type ApiErrorCode =
+  | 'NETWORK_ERROR'
+  | 'TIMEOUT'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'VALIDATION_ERROR'
+  | 'RATE_LIMITED'
+  | 'SERVER_ERROR'
+  | 'SERVICE_UNAVAILABLE'
+  | 'UNKNOWN';
+
+export interface StructuredApiError {
+  code: ApiErrorCode;
+  message: string;
+  userMessage: string;
+  status?: number;
+  retryAfter?: number;
+  retryable: boolean;
+  details?: Record<string, unknown>;
+  suggestions: string[];
+}
+
+export class ApiError extends Error {
+  public readonly code: ApiErrorCode;
+  public readonly status?: number;
+  public readonly retryAfter?: number;
+  public readonly retryable: boolean;
+  public readonly userMessage: string;
+  public readonly details?: Record<string, unknown>;
+  public readonly suggestions: string[];
+
+  constructor(structured: StructuredApiError) {
+    super(structured.message);
+    this.name = 'ApiError';
+    this.code = structured.code;
+    this.status = structured.status;
+    this.retryAfter = structured.retryAfter;
+    this.retryable = structured.retryable;
+    this.userMessage = structured.userMessage;
+    this.details = structured.details;
+    this.suggestions = structured.suggestions;
+  }
+
+  static fromResponse(res: Response, body: string): ApiError {
+    const status = res.status;
+    let parsed: Record<string, unknown> = {};
+    
+    try {
+      parsed = JSON.parse(body);
+    } catch {
+      parsed = { message: body || res.statusText };
+    }
+
+    const serverMessage = (parsed.error || parsed.message || body || res.statusText) as string;
+    
+    switch (status) {
+      case 401:
+        return new ApiError({
+          code: 'UNAUTHORIZED',
+          message: serverMessage,
+          userMessage: 'Your session has expired. Please log in again.',
+          status,
+          retryable: false,
+          suggestions: ['Log in again', 'Check your credentials'],
+        });
+        
+      case 403:
+        return new ApiError({
+          code: 'FORBIDDEN',
+          message: serverMessage,
+          userMessage: "You don't have permission to perform this action.",
+          status,
+          retryable: false,
+          suggestions: ['Contact your administrator', 'Check your subscription status'],
+        });
+        
+      case 404:
+        return new ApiError({
+          code: 'NOT_FOUND',
+          message: serverMessage,
+          userMessage: 'The requested resource was not found.',
+          status,
+          retryable: false,
+          suggestions: ['Check the URL', 'The item may have been deleted'],
+        });
+        
+      case 422:
+        return new ApiError({
+          code: 'VALIDATION_ERROR',
+          message: serverMessage,
+          userMessage: 'Please check your input and try again.',
+          status,
+          retryable: false,
+          details: parsed.errors as Record<string, unknown> | undefined,
+          suggestions: ['Review the form for errors', 'Check required fields'],
+        });
+        
+      case 429:
+        const retryAfter = parseInt(res.headers.get('Retry-After') || '60', 10);
+        return new ApiError({
+          code: 'RATE_LIMITED',
+          message: serverMessage,
+          userMessage: `Too many requests. Please wait ${retryAfter} seconds before trying again.`,
+          status,
+          retryAfter,
+          retryable: true,
+          suggestions: [
+            `Wait ${retryAfter} seconds`,
+            'Reduce request frequency',
+            'Contact support if this persists',
+          ],
+        });
+        
+      case 500:
+        return new ApiError({
+          code: 'SERVER_ERROR',
+          message: serverMessage,
+          userMessage: 'Something went wrong on our end. Please try again later.',
+          status,
+          retryable: true,
+          suggestions: ['Wait a moment and try again', 'Contact support if this persists'],
+        });
+        
+      case 502:
+      case 503:
+      case 504:
+        return new ApiError({
+          code: 'SERVICE_UNAVAILABLE',
+          message: serverMessage,
+          userMessage: 'Our service is temporarily unavailable. Please try again in a moment.',
+          status,
+          retryable: true,
+          suggestions: ['Wait a moment and try again', 'Check our status page'],
+        });
+        
+      default:
+        if (status >= 400 && status < 500) {
+          return new ApiError({
+            code: 'UNKNOWN',
+            message: serverMessage,
+            userMessage: 'There was a problem with your request.',
+            status,
+            retryable: false,
+            suggestions: ['Try again', 'Contact support if this persists'],
+          });
+        }
+        return new ApiError({
+          code: 'SERVER_ERROR',
+          message: serverMessage,
+          userMessage: 'An unexpected error occurred.',
+          status,
+          retryable: true,
+          suggestions: ['Try again', 'Contact support if this persists'],
+        });
+    }
+  }
+
+  static networkError(url: string): ApiError {
+    return new ApiError({
+      code: 'NETWORK_ERROR',
+      message: `Network error while fetching ${url}`,
+      userMessage: 'Unable to connect. Please check your internet connection.',
+      retryable: true,
+      suggestions: [
+        'Check your internet connection',
+        'Try disabling VPN or proxy',
+        'Wait a moment and try again',
+      ],
+    });
+  }
+
+  static timeoutError(url: string, timeoutMs: number): ApiError {
+    return new ApiError({
+      code: 'TIMEOUT',
+      message: `Request to ${url} timed out after ${timeoutMs}ms`,
+      userMessage: 'The request took too long. Please try again.',
+      retryable: true,
+      suggestions: [
+        'Check your internet connection',
+        'Try with a smaller file or request',
+        'Wait a moment and try again',
+      ],
+    });
+  }
+}
+
+let rateLimitState: {
+  isRateLimited: boolean;
+  retryAfter: number | null;
+  resetTime: number | null;
+} = {
+  isRateLimited: false,
+  retryAfter: null,
+  resetTime: null,
+};
+
+export function getRateLimitState() {
+  if (rateLimitState.resetTime && Date.now() > rateLimitState.resetTime) {
+    rateLimitState = { isRateLimited: false, retryAfter: null, resetTime: null };
+  }
+  return { ...rateLimitState };
+}
+
+export function clearRateLimitState() {
+  rateLimitState = { isRateLimited: false, retryAfter: null, resetTime: null };
+}
+
+function setRateLimited(retryAfter: number) {
+  rateLimitState = {
+    isRateLimited: true,
+    retryAfter,
+    resetTime: Date.now() + retryAfter * 1000,
+  };
+}
+
+function getCsrfToken(): string | null {
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === CSRF_COOKIE) {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+}
+
+async function ensureCsrfToken(): Promise<string | null> {
+  let token = getCsrfToken();
+  if (!token) {
+    try {
+      const response = await fetch('/api/csrf-token', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        token = data.csrfToken;
+      }
+    } catch (error) {
+      console.warn('Failed to fetch CSRF token:', error);
+    }
+  }
+  return token;
+}
+
+// Create an AbortController with timeout - returns controller, cleanup, and timeout flag
+function createAbortControllerWithTimeout(timeoutMs: number = DEFAULT_TIMEOUT_MS): { 
+  controller: AbortController; 
+  cleanup: () => void;
+  wasTimeout: () => boolean;
+} {
+  const controller = new AbortController();
+  let timedOut = false;
+  
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort(new Error(`Request timeout after ${timeoutMs}ms`));
+  }, timeoutMs);
+
+  const cleanup = () => {
+    clearTimeout(timeoutId);
+  };
+  
+  const wasTimeout = () => timedOut;
+
+  return { controller, cleanup, wasTimeout };
+}
+
+async function throwIfResNotOk(res: Response) {
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    const apiError = ApiError.fromResponse(res, text);
+
+    if (apiError.code === 'RATE_LIMITED' && apiError.retryAfter) {
+      setRateLimited(apiError.retryAfter);
+    }
+
+    captureException(apiError, {
+      action: 'api-response-error',
+      metadata: {
+        status: res.status,
+        url: res.url,
+        statusText: res.statusText,
+        errorCode: apiError.code,
+      },
+    });
+
+    throw apiError;
+  }
+}
+
+/**
+ * TODO: Add function documentation
+ */
+export async function apiRequest(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+  options?: {
+    timeout?: number;
+    signal?: AbortSignal;
+    retryCount?: number;
+    maxRetries?: number;
+  }
+): Promise<Response> {
+  const isFormData = data instanceof FormData;
+  const controllerWithCleanup = options?.signal ? null : createAbortControllerWithTimeout(options?.timeout);
+  const signal = options?.signal || controllerWithCleanup?.controller.signal;
+
+  try {
+    errorService.addBreadcrumb('api-request', {
+      method,
+      url,
+      hasData: !!data,
+    });
+
+    const headers: Record<string, string> = {};
+    
+    if (!isFormData && data) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const isMutationMethod = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase());
+    if (isMutationMethod) {
+      const csrfToken = await ensureCsrfToken();
+      if (csrfToken) {
+        headers[CSRF_HEADER] = csrfToken;
+      }
+    }
+
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: isFormData ? data : data ? JSON.stringify(data) : undefined,
+      credentials: 'include',
+      signal,
+    });
+
+    controllerWithCleanup?.cleanup();
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error: unknown) {
+    controllerWithCleanup?.cleanup();
+    
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    const err = error as Error;
+    if (err?.name === 'AbortError' || err?.message?.includes('timeout')) {
+      const timeoutError = ApiError.timeoutError(url, options?.timeout || DEFAULT_TIMEOUT_MS);
+      captureException(timeoutError, {
+        action: 'api-timeout',
+        metadata: { method, url },
+      });
+      throw timeoutError;
+    }
+
+    if (err?.message?.includes('NetworkError') || err?.message?.includes('fetch') || err?.name === 'TypeError') {
+      const networkError = ApiError.networkError(url);
+      captureException(networkError, {
+        action: 'api-network-error',
+        metadata: { method, url },
+      });
+      throw networkError;
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Upload FormData with progress tracking using the same auth/CSRF handling as apiRequest.
+ * Uses XMLHttpRequest internally to support progress events.
+ */
+export async function uploadWithProgress(
+  url: string,
+  data: FormData,
+  options?: {
+    onProgress?: (percent: number) => void;
+    timeout?: number;
+  }
+): Promise<unknown> {
+  const csrfToken = await ensureCsrfToken();
+  const timeoutMs = options?.timeout || 300000; // 5 minutes default for uploads
+  
+  errorService.addBreadcrumb('upload-request', {
+    url,
+    hasData: true,
+  });
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.withCredentials = true;
+    xhr.timeout = timeoutMs;
+    
+    if (csrfToken) {
+      xhr.setRequestHeader(CSRF_HEADER, csrfToken);
+    }
+    
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && options?.onProgress) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        options.onProgress(percentComplete);
+      }
+    });
+    
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch {
+          resolve({ success: true });
+        }
+      } else {
+        let errorMessage = `Upload failed with status ${xhr.status}`;
+        
+        if (xhr.status === 401) {
+          errorMessage = 'Please log in to upload files';
+        } else if (xhr.status === 403) {
+          errorMessage = 'You do not have permission to upload files';
+        } else {
+          try {
+            const errorData = JSON.parse(xhr.responseText);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // Use default error message
+          }
+        }
+        
+        const error = new Error(errorMessage);
+        captureException(error, {
+          action: 'upload-response-error',
+          metadata: { status: xhr.status, url },
+        });
+        reject(error);
+      }
+    });
+    
+    xhr.addEventListener('error', () => {
+      const error = new Error('Network error during upload. Please check your connection.');
+      captureException(error, {
+        action: 'upload-network-error',
+        metadata: { url },
+      });
+      reject(error);
+    });
+    
+    xhr.addEventListener('timeout', () => {
+      const error = new Error('Upload timed out. Try a smaller file or check your connection.');
+      captureException(error, {
+        action: 'upload-timeout',
+        metadata: { url, timeoutMs },
+      });
+      reject(error);
+    });
+    
+    xhr.addEventListener('abort', () => {
+      const error = new Error('Upload was cancelled');
+      reject(error);
+    });
+    
+    xhr.send(data);
+  });
+}
+
+type UnauthorizedBehavior = 'returnNull' | 'throw';
+
+// Helper to build URL from queryKey, handling objects as query parameters
+function buildUrlFromQueryKey(queryKey: readonly unknown[]): string {
+  const urlParts: string[] = [];
+  const queryParams: URLSearchParams = new URLSearchParams();
+  
+  for (const part of queryKey) {
+    if (typeof part === 'string') {
+      urlParts.push(part);
+    } else if (part && typeof part === 'object' && !Array.isArray(part)) {
+      // Object - convert to query parameters
+      for (const [key, value] of Object.entries(part)) {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      }
+    }
+  }
+  
+  const baseUrl = urlParts.join('/');
+  const queryString = queryParams.toString();
+  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+}
+
+export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryFunction<T> =
+  ({ on401: unauthorizedBehavior }) =>
+  async ({ queryKey, signal }) => {
+    const controllerWithCleanup = signal ? null : createAbortControllerWithTimeout();
+    const abortSignal = signal || controllerWithCleanup?.controller.signal;
+
+    try {
+      const url = buildUrlFromQueryKey(queryKey);
+      
+      errorService.addBreadcrumb('query-fetch', {
+        queryKey: url,
+      });
+
+      const res = await fetch(url, {
+        credentials: 'include',
+        signal: abortSignal,
+      });
+
+      controllerWithCleanup?.cleanup();
+
+      if (unauthorizedBehavior === 'returnNull' && res.status === 401) {
+        return null;
+      }
+
+      await throwIfResNotOk(res);
+      return await res.json();
+    } catch (error: unknown) {
+      controllerWithCleanup?.cleanup();
+      const url = buildUrlFromQueryKey(queryKey);
+      const err = error as Error;
+      
+      // Check if this was an AbortError
+      if (err?.name === 'AbortError') {
+        // Only treat as timeout if our timeout actually fired
+        // Otherwise this is a normal React Query cancellation (component unmount, refetch, etc.)
+        if (controllerWithCleanup?.wasTimeout()) {
+          const timeoutError = new Error(`Query ${url} timed out`);
+          captureException(timeoutError, {
+            action: 'query-timeout',
+            metadata: { queryKey: url },
+          });
+          throw timeoutError;
+        }
+        // Normal cancellation - don't log as error, just silently cancel
+        throw error;
+      }
+      
+      // Handle explicit timeout message in error
+      if (err?.message?.includes('timeout')) {
+        const timeoutError = new Error(`Query ${url} timed out`);
+        captureException(timeoutError, {
+          action: 'query-timeout',
+          metadata: { queryKey: url },
+        });
+        throw timeoutError;
+      }
+
+      // Capture other errors
+      captureException(error, {
+        action: 'query-error',
+        metadata: { queryKey: url },
+      });
+
+      throw error;
+    }
+  };
+
+// Enhanced retry logic with exponential backoff
+function retryDelayWithJitter(attemptIndex: number): number {
+  const baseDelay = Math.min(1000 * Math.pow(2, attemptIndex), 30000);
+  const jitter = Math.random() * 1000; // Add up to 1 second of jitter
+  return baseDelay + jitter;
+}
+
+// Determine if error is retryable
+function shouldRetry(error: unknown): boolean {
+  const err = error as Error;
+  // Don't retry on client errors (4xx)
+  if (err?.message?.includes('401') || err?.message?.includes('403')) {
+    return false;
+  }
+  if (err?.message?.match(/4\d{2}/)) {
+    return false;
+  }
+
+  // Don't retry on server errors (5xx) to prevent loading loops
+  if (err?.message?.match(/5\d{2}/)) {
+    return false;
+  }
+
+  // Only retry on network errors and timeouts
+  return (
+    err?.message?.includes('NetworkError') ||
+    err?.message?.includes('fetch') ||
+    err?.message?.includes('timeout') ||
+    err?.name === 'NetworkError' ||
+    err?.name === 'TimeoutError'
+  );
+}
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      queryFn: getQueryFn({ on401: 'throw' }),
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false, // Disable auto-refetch on reconnect
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime in v4)
+      retry: false, // Disable all automatic retries - let users retry manually
+    },
+    mutations: {
+      retry: false, // Disable all automatic retries for mutations
+    },
+  },
+});

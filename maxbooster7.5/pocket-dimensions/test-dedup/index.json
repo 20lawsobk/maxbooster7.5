@@ -1,0 +1,67 @@
+{
+  "entries": {
+    "version1.txt": {
+      "path": "version1.txt",
+      "type": "file",
+      "size": 10000,
+      "compressedSize": 46,
+      "chunks": [
+        "85757d9ef5868bb53472a6be8d81d1e3c398546b69b107141ad336053c40cb54"
+      ],
+      "createdAt": "2026-02-15T12:17:52.747Z",
+      "modifiedAt": "2026-02-15T12:17:52.747Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "version2.txt": {
+      "path": "version2.txt",
+      "type": "file",
+      "size": 10000,
+      "compressedSize": 46,
+      "chunks": [
+        "85757d9ef5868bb53472a6be8d81d1e3c398546b69b107141ad336053c40cb54"
+      ],
+      "createdAt": "2026-02-15T12:17:52.747Z",
+      "modifiedAt": "2026-02-15T12:17:52.747Z",
+      "version": 1,
+      "metadata": {}
+    },
+    "version3.txt": {
+      "path": "version3.txt",
+      "type": "file",
+      "size": 11000,
+      "compressedSize": 49,
+      "chunks": [
+        "a23c5d8130b6361805a58b7e17b711d8f083522365b08a54f8e6af5deb6ca25e"
+      ],
+      "createdAt": "2026-02-15T12:17:52.757Z",
+      "modifiedAt": "2026-02-15T12:17:52.757Z",
+      "version": 1,
+      "metadata": {}
+    }
+  },
+  "chunks": {
+    "85757d9ef5868bb53472a6be8d81d1e3c398546b69b107141ad336053c40cb54": {
+      "id": "85757d9ef5868bb53472a6be8d81d1e3c398546b69b107141ad336053c40cb54",
+      "size": 10000,
+      "compressedSize": 46,
+      "compressionRatio": 217.3913043478261,
+      "createdAt": "2026-02-15T12:17:52.746Z",
+      "accessCount": 2,
+      "lastAccessed": "2026-02-15T12:17:52.747Z",
+      "encrypted": false,
+      "depth": 0
+    },
+    "a23c5d8130b6361805a58b7e17b711d8f083522365b08a54f8e6af5deb6ca25e": {
+      "id": "a23c5d8130b6361805a58b7e17b711d8f083522365b08a54f8e6af5deb6ca25e",
+      "size": 11000,
+      "compressedSize": 49,
+      "compressionRatio": 224.48979591836735,
+      "createdAt": "2026-02-15T12:17:52.757Z",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-15T12:17:52.757Z",
+      "encrypted": false,
+      "depth": 0
+    }
+  }
+}

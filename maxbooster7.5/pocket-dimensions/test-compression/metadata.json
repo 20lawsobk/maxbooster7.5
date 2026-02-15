@@ -1,0 +1,12 @@
+{
+  "id": "test-compression",
+  "name": "test-compression",
+  "createdAt": "2026-02-15T12:17:52.551Z",
+  "updatedAt": "2026-02-15T12:17:52.598Z",
+  "totalSize": 164498,
+  "compressedSize": 11471,
+  "chunkCount": 3,
+  "maxDepth": 0,
+  "encrypted": false,
+  "version": 1
+}

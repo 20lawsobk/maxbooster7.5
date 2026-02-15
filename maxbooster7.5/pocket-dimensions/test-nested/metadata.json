@@ -1,0 +1,12 @@
+{
+  "id": "test-nested",
+  "name": "test-nested",
+  "createdAt": "2026-02-15T12:17:52.643Z",
+  "updatedAt": "2026-02-15T12:17:52.662Z",
+  "totalSize": 12,
+  "compressedSize": 32,
+  "chunkCount": 1,
+  "maxDepth": 1,
+  "encrypted": false,
+  "version": 1
+}

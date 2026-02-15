@@ -37,7 +37,13 @@ export const users = pgTable("users", {
   passwordResetExpires: timestamp("password_reset_expires"),
   googleId: text("google_id"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  emailIdx: { index: true, fields: [table.email] },
+  usernameIdx: { index: true, fields: [table.username] },
+  roleIdx: { index: true, fields: [table.role] },
+  subscriptionStatusIdx: { index: true, fields: [table.subscriptionStatus] },
+  createdAtIdx: { index: true, fields: [table.createdAt] },
+}));
 
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -4154,3 +4160,184 @@ export const upgradeAlerts = pgTable("upgrade_alerts", {
 export type UpgradeAlert = typeof upgradeAlerts.$inferSelect;
 export const insertUpgradeAlertSchema = createInsertSchema(upgradeAlerts).omit({ id: true, createdAt: true });
 export type InsertUpgradeAlert = z.infer<typeof insertUpgradeAlertSchema>;
+
+// ============================================================================
+// AUTO-UPGRADE SYSTEM - ADDITIONAL TABLES
+// ============================================================================
+
+// Auto-upgrade configurations
+export const autoUpgradeConfigs = pgTable("auto_upgrade_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  enabled: boolean("enabled").default(true).notNull(),
+  strategy: text("strategy").notNull(), // 'blue_green', 'canary', 'rolling', 'atomic'
+  autoRollbackEnabled: boolean("auto_rollback_enabled").default(true).notNull(),
+  rollbackThreshold: real("rollback_threshold").default(0.05).notNull(), // 5% error rate
+  healthCheckInterval: integer("health_check_interval").default(30000).notNull(), // 30 seconds
+  healthCheckTimeout: integer("health_check_timeout").default(10000).notNull(), // 10 seconds
+  healthCheckRetries: integer("health_check_retries").default(3).notNull(),
+  deploymentWindow: jsonb("deployment_window"), // {start: '02:00', end: '06:00', timezone: 'UTC'}
+  notificationChannels: jsonb("notification_channels"), // ['slack', 'email', 'pagerduty']
+  allowedDays: jsonb("allowed_days"), // ['monday', 'tuesday', ...]
+  maintenanceMode: boolean("maintenance_mode").default(false).notNull(),
+  parallelDeployments: integer("parallel_deployments").default(1).notNull(),
+  canaryPercentage: integer("canary_percentage").default(10).notNull(), // 10% for canary
+  canaryDuration: integer("canary_duration").default(300000).notNull(), // 5 minutes
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AutoUpgradeConfig = typeof autoUpgradeConfigs.$inferSelect;
+export const insertAutoUpgradeConfigSchema = createInsertSchema(autoUpgradeConfigs).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAutoUpgradeConfig = z.infer<typeof insertAutoUpgradeConfigSchema>;
+
+// Version history
+export const versionHistory = pgTable("version_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  component: text("component").notNull(), // 'api', 'worker', 'frontend', 'database'
+  version: text("version").notNull(),
+  previousVersion: text("previous_version"),
+  deploymentType: text("deployment_type").notNull(), // 'upgrade', 'rollback', 'hotfix'
+  strategy: text("strategy").notNull(), // 'blue_green', 'canary', 'rolling'
+  status: text("status").notNull(), // 'pending', 'in_progress', 'completed', 'failed', 'rolled_back'
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+  duration: integer("duration"), // milliseconds
+  healthChecksPassed: integer("health_checks_passed").default(0),
+  healthChecksFailed: integer("health_checks_failed").default(0),
+  errorRate: real("error_rate"), // percentage
+  rollbackReason: text("rollback_reason"),
+  deployedBy: text("deployed_by").default('automatic').notNull(),
+  gitCommit: text("git_commit"),
+  gitBranch: text("git_branch"),
+  releaseNotes: text("release_notes"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type VersionHistory = typeof versionHistory.$inferSelect;
+export const insertVersionHistorySchema = createInsertSchema(versionHistory).omit({ id: true, createdAt: true });
+export type InsertVersionHistory = z.infer<typeof insertVersionHistorySchema>;
+
+// Deployment pipelines
+export const deploymentPipelines = pgTable("deployment_pipelines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  enabled: boolean("enabled").default(true).notNull(),
+  stages: jsonb("stages").notNull(), // [{name: 'build', steps: [...]}]
+  currentStage: text("current_stage"),
+  currentStep: text("current_step"),
+  status: text("status").notNull(), // 'idle', 'running', 'paused', 'completed', 'failed'
+  triggerType: text("trigger_type").notNull(), // 'manual', 'automatic', 'scheduled', 'webhook'
+  triggerSchedule: text("trigger_schedule"), // cron expression
+  lastRunAt: timestamp("last_run_at"),
+  lastRunStatus: text("last_run_status"),
+  lastRunDuration: integer("last_run_duration"),
+  successCount: integer("success_count").default(0),
+  failureCount: integer("failure_count").default(0),
+  averageDuration: integer("average_duration"),
+  environment: text("environment").notNull(), // 'development', 'staging', 'production'
+  variables: jsonb("variables"), // pipeline variables
+  approvalRequired: boolean("approval_required").default(false),
+  approvers: jsonb("approvers"), // list of user IDs
+  notifyOnSuccess: boolean("notify_on_success").default(true),
+  notifyOnFailure: boolean("notify_on_failure").default(true),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type DeploymentPipeline = typeof deploymentPipelines.$inferSelect;
+export const insertDeploymentPipelineSchema = createInsertSchema(deploymentPipelines).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertDeploymentPipeline = z.infer<typeof insertDeploymentPipelineSchema>;
+
+// Rollback snapshots
+export const rollbackSnapshots = pgTable("rollback_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  component: text("component").notNull(),
+  version: text("version").notNull(),
+  snapshotType: text("snapshot_type").notNull(), // 'database', 'files', 'configuration', 'state'
+  storagePath: text("storage_path").notNull(), // Pocket Dimension path
+  sizeBytes: bigint("size_bytes", { mode: "number" }),
+  compressionRatio: real("compression_ratio"),
+  checksum: text("checksum").notNull(),
+  verified: boolean("verified").default(false),
+  verifiedAt: timestamp("verified_at"),
+  restorable: boolean("restorable").default(true),
+  restoreTimeEstimate: integer("restore_time_estimate"), // seconds
+  dependencies: jsonb("dependencies"), // other snapshots needed for restore
+  tags: jsonb("tags"), // ['pre_upgrade', 'stable', 'tested']
+  retentionDays: integer("retention_days").default(30),
+  expiresAt: timestamp("expires_at"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type RollbackSnapshot = typeof rollbackSnapshots.$inferSelect;
+export const insertRollbackSnapshotSchema = createInsertSchema(rollbackSnapshots).omit({ id: true, createdAt: true });
+export type InsertRollbackSnapshot = z.infer<typeof insertRollbackSnapshotSchema>;
+
+// Deployment approvals
+export const deploymentApprovals = pgTable("deployment_approvals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pipelineId: varchar("pipeline_id").notNull(),
+  versionId: varchar("version_id"),
+  requester: varchar("requester").notNull(),
+  approvers: jsonb("approvers").notNull(), // [{userId, status, timestamp}]
+  requiredApprovals: integer("required_approvals").default(1),
+  currentApprovals: integer("current_approvals").default(0),
+  status: text("status").notNull(), // 'pending', 'approved', 'rejected', 'expired'
+  reason: text("reason"),
+  expiresAt: timestamp("expires_at"),
+  approvedAt: timestamp("approved_at"),
+  rejectedAt: timestamp("rejected_at"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type DeploymentApproval = typeof deploymentApprovals.$inferSelect;
+export const insertDeploymentApprovalSchema = createInsertSchema(deploymentApprovals).omit({ id: true, createdAt: true });
+export type InsertDeploymentApproval = z.infer<typeof insertDeploymentApprovalSchema>;
+
+// Upgrade metrics
+export const upgradeMetrics = pgTable("upgrade_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  versionId: varchar("version_id").notNull(),
+  metricName: text("metric_name").notNull(), // 'response_time', 'error_rate', 'cpu_usage', etc.
+  value: real("value").notNull(),
+  unit: text("unit").notNull(), // 'ms', 'percent', 'count'
+  threshold: real("threshold"),
+  status: text("status").notNull(), // 'normal', 'warning', 'critical'
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  metadata: jsonb("metadata"),
+});
+
+export type UpgradeMetric = typeof upgradeMetrics.$inferSelect;
+export const insertUpgradeMetricSchema = createInsertSchema(upgradeMetrics).omit({ id: true, timestamp: true });
+export type InsertUpgradeMetric = z.infer<typeof insertUpgradeMetricSchema>;
+
+// Canary deployments
+export const canaryDeployments = pgTable("canary_deployments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  versionId: varchar("version_id").notNull(),
+  percentage: integer("percentage").notNull(), // 10, 25, 50, 100
+  status: text("status").notNull(), // 'active', 'promoting', 'rolling_back', 'completed'
+  trafficSplit: jsonb("traffic_split").notNull(), // {canary: 10, stable: 90}
+  successRate: real("success_rate"),
+  errorRate: real("error_rate"),
+  avgResponseTime: integer("avg_response_time"),
+  requestCount: integer("request_count").default(0),
+  errorCount: integer("error_count").default(0),
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  promotedAt: timestamp("promoted_at"),
+  rolledBackAt: timestamp("rolled_back_at"),
+  completedAt: timestamp("completed_at"),
+  metrics: jsonb("metrics"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type CanaryDeployment = typeof canaryDeployments.$inferSelect;
+export const insertCanaryDeploymentSchema = createInsertSchema(canaryDeployments).omit({ id: true, createdAt: true });
+export type InsertCanaryDeployment = z.infer<typeof insertCanaryDeploymentSchema>;

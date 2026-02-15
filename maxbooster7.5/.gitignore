@@ -1,0 +1,40 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+.local/
+logs/
+uploads/
+.replit
+*.log
+.env
+.env.local
+.env.*.local
+*.backup
+attached_assets/
+
+# Electron build cache (not source files)
+.cache/electron/
+
+# Desktop installer outputs (built by GitHub Actions)
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+*.snap
+*.msi
+*.zip
+*.tar.gz
+out/
+release/
+electron-out/
+dist-installers/
+dist-portable/
+*.keystore
+
+# Rust
+boosterstate/target/
+
+.git_disabled/

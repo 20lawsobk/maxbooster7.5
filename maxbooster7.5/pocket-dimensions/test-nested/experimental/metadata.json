@@ -1,0 +1,13 @@
+{
+  "id": "test-nested/experimental",
+  "name": "experimental",
+  "createdAt": "2026-02-15T12:17:52.662Z",
+  "updatedAt": "2026-02-15T12:17:52.674Z",
+  "totalSize": 21,
+  "compressedSize": 41,
+  "chunkCount": 1,
+  "maxDepth": 2,
+  "encrypted": false,
+  "version": 1,
+  "parentDimension": "test-nested"
+}
