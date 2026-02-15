@@ -664,7 +664,7 @@ export const WORKFLOW_TEMPLATES = {
     actions: [
       {
         type: 'generate-analytics-report',
-        parameters: { reportType: 'weekly', recipients: ['admin@maxbooster.com'] },
+        parameters: { reportType: 'weekly', recipients: ['admin@maxbooster.ai'] },
       },
       {
         type: 'send-email',

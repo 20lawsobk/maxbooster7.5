@@ -20,8 +20,8 @@ export const BUSINESS_CONFIG = {
   
   branding: {
     platformName: 'Max Booster',
-    supportEmail: 'support@maxbooster.io',
-    legalEmail: 'legal@maxbooster.io',
+    supportEmail: 'support@maxbooster.ai',
+    legalEmail: 'legal@maxbooster.ai',
     copyrightYear: new Date().getFullYear(),
     copyrightText: `© ${new Date().getFullYear()} B-Lawz Music LLC. All rights reserved.`,
   },

@@ -165,7 +165,7 @@ const DOCUMENT_NAMES: Record<DocumentType, { name: string; description: string }
 };
 
 const SUPPORT_CONTACT: SupportContact = {
-  email: 'kyc-support@maxbooster.com',
+  email: 'kyc-support@maxbooster.ai',
   phone: '+1 (888) 555-0123',
   hours: 'Monday - Friday, 9:00 AM - 6:00 PM EST',
   responseTime: 'Within 24 hours',

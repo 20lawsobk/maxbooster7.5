@@ -54,7 +54,7 @@ All errors follow this format:
       `,
       contact: {
         name: 'Max Booster Support',
-        email: 'support@maxbooster.com',
+        email: 'support@maxbooster.ai',
       },
       license: {
         name: 'Proprietary',

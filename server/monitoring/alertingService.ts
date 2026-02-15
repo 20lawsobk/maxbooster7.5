@@ -126,7 +126,7 @@ export class AlertingService {
 
       const msg = {
         to: this.config.emailRecipients,
-        from: process.env.SENDGRID_FROM_EMAIL || 'alerts@maxbooster.com',
+        from: process.env.SENDGRID_FROM_EMAIL || 'alerts@maxbooster.ai',
         subject: `${severityEmoji[alert.severity]} Max Booster Alert: ${alert.title}`,
         text: `
 ${alert.title}
