@@ -1,5 +1,6 @@
 import { storage } from '../storage';
 import { logger } from '../logger.js';
+import { pocketBackupService } from './pocketBackupService';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -11,6 +12,7 @@ interface BackupOptions {
   backupType: 'full' | 'incremental' | 'model' | 'configuration';
   data: any;
   metadata?: Record<string, unknown>;
+  usePocketDimension?: boolean;
 }
 
 interface RestoreOptions {
@@ -39,6 +41,31 @@ export class BackupRestoreSystem {
     const startTime = Date.now();
     
     try {
+      // Use Pocket Dimension by default for better compression
+      if (options.usePocketDimension !== false) {
+        await pocketBackupService.initialize();
+        const backupId = await pocketBackupService.createBackup({
+          component: options.component,
+          version: options.version,
+          data: options.data,
+          metadata: options.metadata,
+        });
+
+        const backup = await storage.getSystemBackup(backupId);
+        if (!backup) {
+          throw new Error('Failed to retrieve pocket backup from storage');
+        }
+
+        const duration = Date.now() - startTime;
+        logger.info(
+          `Pocket backup created: ${options.component} v${options.version} ` +
+          `(${duration}ms, compression: ${backup.metadata?.compressionRatio?.toFixed(2)}x)`
+        );
+
+        return backup;
+      }
+
+      // Fallback to filesystem backup
       const backupId = crypto.randomUUID();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const fileName = `${options.component}-${options.version}-${timestamp}.json`;
@@ -112,6 +139,27 @@ export class BackupRestoreSystem {
         throw new Error(`Backup status is not completed: ${backup.status}`);
       }
 
+      // Check if this is a pocket dimension backup
+      if (backup.metadata?.pocketStorage === true) {
+        await pocketBackupService.initialize();
+        const data = await pocketBackupService.restoreBackup(options.backupId);
+
+        if (options.validateOnly) {
+          logger.info(`Pocket backup validation successful: ${backup.component} v${backup.version}`);
+          return { valid: true, data };
+        }
+
+        await storage.updateSystemBackup(options.backupId, {
+          restoredAt: new Date(),
+        });
+
+        const duration = Date.now() - startTime;
+        logger.info(`Pocket backup restored: ${backup.component} v${backup.version} (${duration}ms)`);
+
+        return data;
+      }
+
+      // Fallback to filesystem backup
       const backupData = await fs.readFile(backup.backupPath, 'utf8');
       const checksum = crypto.createHash('sha256').update(backupData).digest('hex');
 
@@ -141,7 +189,7 @@ export class BackupRestoreSystem {
   }
 
   async createPreUpgradeBackup(component: string, version: string): Promise<SystemBackup> {
-    logger.info(`Creating pre-upgrade backup: ${component} v${version}`);
+    logger.info(`Creating pre-upgrade pocket backup: ${component} v${version}`);
 
     const data = await this.captureComponentState(component);
 
@@ -154,6 +202,7 @@ export class BackupRestoreSystem {
         purpose: 'pre_upgrade',
         automatic: true,
       },
+      usePocketDimension: true,
     });
   }
 
