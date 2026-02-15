@@ -27,8 +27,6 @@ import {
   modelVersions,
   optimizationTasks,
   aiModelsCatalog,
-  aiModelVersions,
-  inferenceRuns,
   canaryDeployments,
   retrainingSchedules,
   retrainingRuns,
@@ -51,10 +49,6 @@ import {
   type InsertOptimizationTask,
   type AIModelCatalog,
   type InsertAIModelCatalog,
-  type AIModelVersion,
-  type InsertAIModelVersion,
-  type InferenceRun,
-  type InsertInferenceRun,
   type CanaryDeployment,
   type InsertCanaryDeployment,
   type RetrainingSchedule,
@@ -1553,26 +1547,6 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     return model;
-  }
-
-  async createAIModelVersion(data: InsertAIModelVersion): Promise<AIModelVersion> {
-    const [version] = await db.insert(aiModelVersions).values(data).returning();
-    return version;
-  }
-
-  async createInferenceRun(data: InsertInferenceRun): Promise<InferenceRun> {
-    const [run] = await db.insert(inferenceRuns).values(data).returning();
-    return run;
-  }
-
-  async updateInferenceRun(runId: string, data: Partial<InferenceRun>): Promise<InferenceRun | undefined> {
-    const [run] = await db
-      .update(inferenceRuns)
-      .set(data)
-      .where(eq(inferenceRuns.id, runId))
-      .returning();
-    
-    return run;
   }
 
   async createCanaryDeployment(data: InsertCanaryDeployment): Promise<CanaryDeployment> {

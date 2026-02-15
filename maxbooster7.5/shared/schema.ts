@@ -3999,43 +3999,6 @@ export type AIModelCatalog = typeof aiModelsCatalog.$inferSelect;
 export const insertAIModelCatalogSchema = createInsertSchema(aiModelsCatalog).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertAIModelCatalog = z.infer<typeof insertAIModelCatalogSchema>;
 
-// AI model versions for catalog models
-export const aiModelVersions = pgTable("ai_model_versions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  modelId: varchar("model_id").notNull(),
-  version: text("version").notNull(),
-  architecture: jsonb("architecture"),
-  weights: jsonb("weights"),
-  hyperparameters: jsonb("hyperparameters"),
-  trainingMetadata: jsonb("training_metadata"),
-  performanceMetrics: jsonb("performance_metrics"),
-  isActive: boolean("is_active").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export type AIModelVersion = typeof aiModelVersions.$inferSelect;
-export const insertAIModelVersionSchema = createInsertSchema(aiModelVersions).omit({ id: true, createdAt: true });
-export type InsertAIModelVersion = z.infer<typeof insertAIModelVersionSchema>;
-
-// Inference runs tracking
-export const inferenceRuns = pgTable("inference_runs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  modelId: varchar("model_id").notNull(),
-  modelVersionId: varchar("model_version_id").notNull(),
-  input: jsonb("input").notNull(),
-  output: jsonb("output"),
-  inferenceTimeMs: integer("inference_time_ms"),
-  status: text("status").notNull(), // 'running', 'completed', 'failed'
-  errorMessage: text("error_message"),
-  metadata: jsonb("metadata"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  completedAt: timestamp("completed_at"),
-});
-
-export type InferenceRun = typeof inferenceRuns.$inferSelect;
-export const insertInferenceRunSchema = createInsertSchema(inferenceRuns).omit({ id: true, createdAt: true });
-export type InsertInferenceRun = z.infer<typeof insertInferenceRunSchema>;
-
 // Canary deployments
 export const canaryDeployments = pgTable("canary_deployments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
