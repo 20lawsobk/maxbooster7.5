@@ -6,6 +6,8 @@ import {
   beatDiscoveryScores,
   listings,
   users,
+  storefronts,
+  storefrontFollows,
 } from '@shared/schema';
 import { logger } from '../logger.js';
 
@@ -287,6 +289,8 @@ export class DiscoveryAlgorithmService {
           .where(eq(userTasteProfiles.userId, userId));
       }
 
+      await this.syncStorefrontFollow(userId, producerId, true);
+
       return { success: true, following: true };
     } catch (error) {
       logger.error('Error following producer:', error);
@@ -303,10 +307,44 @@ export class DiscoveryAlgorithmService {
         .set({ followedProducers, lastUpdated: new Date() })
         .where(eq(userTasteProfiles.userId, userId));
 
+      await this.syncStorefrontFollow(userId, producerId, false);
+
       return { success: true, following: false };
     } catch (error) {
       logger.error('Error unfollowing producer:', error);
       throw error;
+    }
+  }
+
+  private async syncStorefrontFollow(userId: string, producerId: string, follow: boolean) {
+    try {
+      const userStorefront = await db.select({ id: storefronts.id })
+        .from(storefronts)
+        .where(eq(storefronts.userId, producerId))
+        .limit(1);
+      const storefrontId = userStorefront[0]?.id;
+      if (!storefrontId) return;
+
+      if (follow) {
+        const existing = await db.select({ id: storefrontFollows.id })
+          .from(storefrontFollows)
+          .where(and(
+            eq(storefrontFollows.storefrontId, storefrontId),
+            eq(storefrontFollows.userId, userId)
+          ))
+          .limit(1);
+        if (!existing[0]) {
+          await db.insert(storefrontFollows).values({ userId, storefrontId });
+        }
+      } else {
+        await db.delete(storefrontFollows)
+          .where(and(
+            eq(storefrontFollows.storefrontId, storefrontId),
+            eq(storefrontFollows.userId, userId)
+          ));
+      }
+    } catch (error) {
+      logger.error('Error syncing storefront follow:', error);
     }
   }
 
