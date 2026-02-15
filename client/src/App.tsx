@@ -72,6 +72,7 @@ const CareerCoach = lazy(() => import('@/pages/CareerCoach'));
 const ReleaseCountdown = lazy(() => import('@/pages/ReleaseCountdown'));
 const Invoices = lazy(() => import('@/pages/Invoices'));
 const HandleLink = lazy(() => import('@/pages/HandleLink'));
+const Notifications = lazy(() => import('@/pages/Notifications'));
 
 function Router() {
   return (
@@ -131,6 +132,7 @@ function Router() {
       <Route path="/release-countdown" component={ReleaseCountdown} />
       <Route path="/invoices" component={Invoices} />
       <Route path="/handle-link" component={HandleLink} />
+      <Route path="/notifications" component={Notifications} />
       <Route component={NotFound} />
     </Switch>
   );
