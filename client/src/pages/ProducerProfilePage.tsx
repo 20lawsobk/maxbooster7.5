@@ -295,7 +295,7 @@ export default function ProducerProfilePage() {
           <Card>
             <CardContent className="p-4 text-center">
               <Users className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-              <p className="text-2xl font-bold">{producer.followers || 0}</p>
+              <p className="text-2xl font-bold">{producer.followerCount || producer.followers || 0}</p>
               <p className="text-sm text-muted-foreground">Followers</p>
             </CardContent>
           </Card>
