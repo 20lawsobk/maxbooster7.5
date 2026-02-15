@@ -21,6 +21,8 @@ import {
   Share2,
   Play,
   Download,
+  Gift,
+  Tag,
 } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
 import { Star, UserPlus, UserCheck } from 'lucide-react';
@@ -194,6 +196,37 @@ export default function Storefront() {
   const { data: socialData } = useQuery<SocialData>({
     queryKey: [`/api/storefront/${storefront?.id}/social`],
     enabled: !!storefront?.id,
+  });
+
+  interface BogoPromo {
+    id: string;
+    name: string;
+    buyQuantity: number;
+    getQuantity: number;
+    getDiscountPercent: number;
+    description: string | null;
+  }
+
+  const { data: bogoPromotions = [] } = useQuery<BogoPromo[]>({
+    queryKey: [`/api/storefront/${storefront?.id}/bogo-promotions`],
+    enabled: !!storefront?.id,
+  });
+
+  interface CheckoutPreview {
+    items: Array<{ id: string; title: string; priceCents: number; isFree: boolean; discountPercent: number }>;
+    subtotalCents: number;
+    discountCents: number;
+    totalCents: number;
+    promotionApplied: { id: string; name: string; summary: string } | null;
+  }
+
+  const { data: checkoutPreview } = useQuery<CheckoutPreview>({
+    queryKey: [`/api/storefront/${storefront?.id}/checkout/preview`, cart],
+    enabled: !!storefront?.id && cart.length > 0,
+    queryFn: async () => {
+      const res = await apiRequest('POST', `/api/storefront/${storefront!.id}/checkout/preview`, { listingIds: cart });
+      return res as CheckoutPreview;
+    },
   });
 
   const likeMutation = useMutation({
@@ -688,6 +721,37 @@ export default function Storefront() {
 
           <Separator className="my-12" />
 
+          {bogoPromotions.length > 0 && (
+            <div className="mb-8 space-y-3">
+              {bogoPromotions.map((promo) => (
+                <div
+                  key={promo.id}
+                  className="rounded-xl p-4 border-2 border-purple-300 dark:border-purple-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/50">
+                      <Gift className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                        <Tag className="w-4 h-4" />
+                        {promo.getDiscountPercent === 100
+                          ? `Buy ${promo.buyQuantity}, Get ${promo.getQuantity} FREE!`
+                          : `Buy ${promo.buyQuantity}, Get ${promo.getQuantity} at ${promo.getDiscountPercent}% Off!`}
+                      </p>
+                      {promo.description && (
+                        <p className="text-sm text-muted-foreground mt-0.5">{promo.description}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Add {promo.buyQuantity + promo.getQuantity} or more items to your cart to qualify
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <section>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -811,35 +875,63 @@ export default function Storefront() {
           </section>
 
           {cart.length > 0 && (
-            <div className="fixed bottom-8 right-8 z-50">
-              <div className="bg-background border rounded-xl shadow-2xl p-4 flex items-center gap-4">
-                <div className="text-sm text-muted-foreground">
-                  {cart.length} item{cart.length > 1 ? 's' : ''} &middot; $
-                  {(listings
-                    .filter(l => cart.includes(l.id))
-                    .reduce((sum, l) => {
-                      const price = l.discountPercent && l.discountPriceCents != null &&
-                        (!l.discountExpiresAt || new Date(l.discountExpiresAt) > new Date())
-                        ? l.discountPriceCents : l.priceCents;
-                      return sum + price;
-                    }, 0) / 100
-                  ).toFixed(2)}
+            <div className="fixed bottom-8 right-8 z-50 max-w-md">
+              <div className="bg-background border rounded-xl shadow-2xl p-4 space-y-2">
+                {checkoutPreview?.promotionApplied && (
+                  <div className="flex items-center gap-2 text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 rounded-lg px-3 py-1.5">
+                    <Gift className="w-3.5 h-3.5" />
+                    {checkoutPreview.promotionApplied.summary}
+                    <Badge variant="secondary" className="ml-auto text-[10px] bg-green-100 text-green-700">
+                      Save ${(checkoutPreview.discountCents / 100).toFixed(2)}
+                    </Badge>
+                  </div>
+                )}
+                <div className="flex items-center gap-4">
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">
+                      {cart.length} item{cart.length > 1 ? 's' : ''}
+                    </span>
+                    {checkoutPreview ? (
+                      <span className="ml-2">
+                        {checkoutPreview.discountCents > 0 && (
+                          <span className="line-through text-muted-foreground mr-1">
+                            ${(checkoutPreview.subtotalCents / 100).toFixed(2)}
+                          </span>
+                        )}
+                        <span className="font-bold">
+                          ${(checkoutPreview.totalCents / 100).toFixed(2)}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="ml-2 font-bold">
+                        ${(listings
+                          .filter(l => cart.includes(l.id))
+                          .reduce((sum, l) => {
+                            const price = l.discountPercent && l.discountPriceCents != null &&
+                              (!l.discountExpiresAt || new Date(l.discountExpiresAt) > new Date())
+                              ? l.discountPriceCents : l.priceCents;
+                            return sum + price;
+                          }, 0) / 100
+                        ).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    size="lg"
+                    className="shadow-xl"
+                    onClick={handleCheckout}
+                    disabled={checkoutMutation.isPending}
+                  >
+                    {checkoutMutation.isPending ? (
+                      <>Processing...</>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-5 h-5 mr-2" />
+                        Checkout
+                      </>
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  size="lg"
-                  className="shadow-xl"
-                  onClick={handleCheckout}
-                  disabled={checkoutMutation.isPending}
-                >
-                  {checkoutMutation.isPending ? (
-                    <>Processing...</>
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-5 h-5 mr-2" />
-                      Checkout
-                    </>
-                  )}
-                </Button>
               </div>
             </div>
           )}

@@ -47,6 +47,7 @@ import {
   Twitter,
   Youtube,
 } from 'lucide-react';
+import { BogoPromotionsManager } from './BogoPromotionsManager';
 
 interface StorefrontTemplate {
   id: string;
@@ -581,11 +582,12 @@ export default function StorefrontBuilder() {
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                       <TabsTrigger value="overview">Overview</TabsTrigger>
                       <TabsTrigger value="branding">Branding</TabsTrigger>
                       <TabsTrigger value="colors">Colors & Fonts</TabsTrigger>
-                      <TabsTrigger value="membership">Membership Tiers</TabsTrigger>
+                      <TabsTrigger value="membership">Memberships</TabsTrigger>
+                      <TabsTrigger value="promotions">Promotions</TabsTrigger>
                     </TabsList>
 
                   <TabsContent value="overview" className="space-y-4 mt-4">
@@ -1144,6 +1146,10 @@ export default function StorefrontBuilder() {
                         ))}
                       </div>
                     )}
+                  </TabsContent>
+
+                  <TabsContent value="promotions" className="space-y-4 mt-4">
+                    <BogoPromotionsManager storefrontId={selectedStorefront.id} />
                   </TabsContent>
                 </Tabs>
               </CardContent>

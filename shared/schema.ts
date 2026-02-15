@@ -636,6 +636,9 @@ export const storefrontOrders = pgTable("storefront_orders", {
   status: text("status").default("pending"),
   stripeSessionId: text("stripe_session_id"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
+  appliedPromotionId: varchar("applied_promotion_id"),
+  discountCents: integer("discount_cents").default(0),
+  isFreeItem: boolean("is_free_item").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -3121,6 +3124,38 @@ export const beatPromotions = pgTable("beat_promotions", {
 export type BeatPromotion = typeof beatPromotions.$inferSelect;
 export const insertBeatPromotionSchema = createInsertSchema(beatPromotions).omit({ id: true, createdAt: true });
 export type InsertBeatPromotion = typeof beatPromotions.$inferInsert;
+
+// ============================================================================
+// BOGO PROMOTIONS (Buy X Get Y deals for storefronts)
+// ============================================================================
+export const bogoPromotions = pgTable("bogo_promotions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  storefrontId: varchar("storefront_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  promoType: text("promo_type").notNull().default("buy_x_get_y_free"),
+  buyQuantity: integer("buy_quantity").notNull().default(1),
+  getQuantity: integer("get_quantity").notNull().default(1),
+  getDiscountPercent: integer("get_discount_percent").notNull().default(100),
+  appliesTo: text("applies_to").notNull().default("all"),
+  applicableListingIds: jsonb("applicable_listing_ids").$type<string[]>().default([]),
+  applicableGenres: jsonb("applicable_genres").$type<string[]>().default([]),
+  maxRedemptions: integer("max_redemptions"),
+  redemptionCount: integer("redemption_count").default(0),
+  perCustomerLimit: integer("per_customer_limit"),
+  stackable: boolean("stackable").default(false),
+  priority: integer("priority").default(0),
+  status: text("status").notNull().default("active"),
+  startAt: timestamp("start_at"),
+  endAt: timestamp("end_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type BogoPromotion = typeof bogoPromotions.$inferSelect;
+export const insertBogoPromotionSchema = createInsertSchema(bogoPromotions).omit({ id: true, createdAt: true, updatedAt: true, redemptionCount: true });
+export type InsertBogoPromotion = typeof bogoPromotions.$inferInsert;
 
 // ============================================================================
 // SYSTEM SETTINGS (for platform-wide configurations)

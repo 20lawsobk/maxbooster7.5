@@ -69,6 +69,29 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
       logger.error('[Stripe] Failed to create order record:', orderError);
     }
   }
+
+  const { storefrontId, promotionId } = session.metadata || {};
+  if (storefrontId) {
+    try {
+      const { storefrontOrders, bogoPromotions } = await import('@shared/schema');
+      const { db } = await import('../../db');
+      const { eq, sql } = await import('drizzle-orm');
+
+      await db.update(storefrontOrders)
+        .set({ status: 'completed' })
+        .where(eq(storefrontOrders.stripeSessionId, session.id));
+      logger.info(`[Stripe] Storefront orders marked completed for session ${session.id}`);
+
+      if (promotionId) {
+        await db.update(bogoPromotions)
+          .set({ redemptionCount: sql`${bogoPromotions.redemptionCount} + 1` })
+          .where(eq(bogoPromotions.id, promotionId));
+        logger.info(`[Stripe] BOGO promotion ${promotionId} redemption count incremented`);
+      }
+    } catch (storefrontError) {
+      logger.error('[Stripe] Failed to update storefront orders:', storefrontError);
+    }
+  }
   
   return { success: true, message: 'Checkout session processed' };
 });

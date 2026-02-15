@@ -15,11 +15,12 @@ import {
   listingLicenseTiers,
   storefronts,
   users,
+  bogoPromotions,
 } from '@shared/schema';
 import Stripe from 'stripe';
 import { getBaseUrl } from '../config/defaults';
 import { db } from '../db';
-import { eq, and, count, avg, sql } from 'drizzle-orm';
+import { eq, and, count, avg, sql, lte, gte, or, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 
@@ -885,11 +886,48 @@ router.post('/:id/checkout', async (req, res) => {
       return res.status(400).json({ error: 'No valid listings found' });
     }
 
-    const lineItems = validListings.map(listing => {
+    const cartItems = validListings.map(listing => {
       let priceCents = listing.priceCents;
       if (listing.discountPercent && listing.discountPriceCents != null) {
         if (!listing.discountExpiresAt || new Date(listing.discountExpiresAt) > new Date()) {
           priceCents = listing.discountPriceCents;
+        }
+      }
+      return { id: listing.id, title: listing.title, priceCents, genre: listing.genre };
+    });
+
+    const activePromos = await db.select().from(bogoPromotions)
+      .where(getActivePromotionsFilter(storefrontId));
+
+    const customerRedemptions = new Map<string, number>();
+    if (req.user?.id && activePromos.length > 0) {
+      const pastOrders = await db.select({
+        promoId: storefrontOrders.appliedPromotionId,
+      }).from(storefrontOrders).where(and(
+        eq(storefrontOrders.buyerId, req.user.id),
+        eq(storefrontOrders.storefrontId, storefrontId),
+        eq(storefrontOrders.status, 'completed'),
+      ));
+      for (const order of pastOrders) {
+        if (order.promoId) {
+          customerRedemptions.set(order.promoId, (customerRedemptions.get(order.promoId) || 0) + 1);
+        }
+      }
+    }
+    const bogoResult = applyBogoToCart(cartItems, activePromos, customerRedemptions);
+
+    const lineItems = cartItems.map((item, index) => {
+      let unitAmount = item.priceCents;
+      let desc = `${validListings[index].genre || 'Beat'} - ${licenseType} license`;
+
+      if (bogoResult.freeItemIndices.includes(index)) {
+        unitAmount = 0;
+        desc += ' (FREE - BOGO Deal)';
+      } else {
+        const discountInfo = bogoResult.discountedItems.find(d => d.index === index);
+        if (discountInfo) {
+          unitAmount = Math.round(item.priceCents * (100 - discountInfo.discountPercent) / 100);
+          desc += ` (${discountInfo.discountPercent}% off - BOGO Deal)`;
         }
       }
 
@@ -897,14 +935,14 @@ router.post('/:id/checkout', async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: listing.title,
-            description: `${listing.genre || 'Beat'} - ${licenseType} license`,
+            name: item.title,
+            description: desc,
           },
-          unit_amount: priceCents,
+          unit_amount: Math.max(unitAmount, 0),
         },
         quantity: 1,
       };
-    });
+    }).filter(item => item.price_data.unit_amount > 0);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -919,25 +957,38 @@ router.post('/:id/checkout', async (req, res) => {
         sellerId: storefront.userId,
         listingIds: JSON.stringify(validListings.map(l => l.id)),
         licenseType,
+        promotionId: bogoResult.appliedPromotion?.id || '',
+        promotionSummary: bogoResult.summary || '',
       },
     });
 
-    for (const listing of validListings) {
-      let priceCents = listing.priceCents;
-      if (listing.discountPercent && listing.discountPriceCents != null) {
-        if (!listing.discountExpiresAt || new Date(listing.discountExpiresAt) > new Date()) {
-          priceCents = listing.discountPriceCents;
-        }
+    for (let i = 0; i < validListings.length; i++) {
+      const item = cartItems[i];
+      const isFree = bogoResult.freeItemIndices.includes(i);
+      const discountInfo = bogoResult.discountedItems.find(d => d.index === i);
+      let finalAmount = item.priceCents;
+      let discountCents = 0;
+
+      if (isFree) {
+        discountCents = item.priceCents;
+        finalAmount = 0;
+      } else if (discountInfo) {
+        discountCents = Math.round(item.priceCents * discountInfo.discountPercent / 100);
+        finalAmount = item.priceCents - discountCents;
       }
+
       await db.insert(storefrontOrders).values({
         buyerId: req.user!.id,
         storefrontId,
         sellerId: storefront.userId,
-        listingId: listing.id,
+        listingId: validListings[i].id,
         licenseType,
-        amountCents: priceCents,
+        amountCents: finalAmount,
         status: 'pending',
         stripeSessionId: session.id,
+        appliedPromotionId: bogoResult.appliedPromotion?.id || null,
+        discountCents,
+        isFreeItem: isFree,
       });
     }
 
@@ -1272,6 +1323,321 @@ router.get('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
   } catch (error) {
     logger.error('Error fetching license tiers:', error);
     res.status(500).json({ error: 'Failed to fetch license tiers' });
+  }
+});
+
+// ============================================================================
+// BOGO PROMOTIONS
+// ============================================================================
+
+function getActivePromotionsFilter(storefrontId: string) {
+  const now = new Date();
+  return and(
+    eq(bogoPromotions.storefrontId, storefrontId),
+    eq(bogoPromotions.status, 'active'),
+    or(isNull(bogoPromotions.startAt), lte(bogoPromotions.startAt, now)),
+    or(isNull(bogoPromotions.endAt), gte(bogoPromotions.endAt, now))
+  );
+}
+
+interface BogoResult {
+  appliedPromotion: any | null;
+  freeItemIndices: number[];
+  discountedItems: { index: number; discountPercent: number }[];
+  totalSavingsCents: number;
+  summary: string;
+}
+
+function applyBogoToCart(
+  cartListings: Array<{ id: string; priceCents: number; genre?: string | null }>,
+  promotions: any[],
+  customerRedemptions?: Map<string, number>
+): BogoResult {
+  if (!promotions.length || !cartListings.length) {
+    return { appliedPromotion: null, freeItemIndices: [], discountedItems: [], totalSavingsCents: 0, summary: '' };
+  }
+
+  const sortedPromos = [...promotions].sort((a, b) => (a.priority || 0) - (b.priority || 0));
+
+  let bestResult: BogoResult = { appliedPromotion: null, freeItemIndices: [], discountedItems: [], totalSavingsCents: 0, summary: '' };
+
+  for (const promo of sortedPromos) {
+    if (promo.maxRedemptions && promo.redemptionCount >= promo.maxRedemptions) continue;
+
+    if (promo.perCustomerLimit && customerRedemptions) {
+      const customerUses = customerRedemptions.get(promo.id) || 0;
+      if (customerUses >= promo.perCustomerLimit) continue;
+    }
+
+    const totalNeeded = promo.buyQuantity + promo.getQuantity;
+    
+    let eligibleItems: Array<{ index: number; priceCents: number }>;
+    if (promo.appliesTo === 'specific' && promo.applicableListingIds?.length > 0) {
+      eligibleItems = cartListings
+        .map((l, i) => ({ index: i, priceCents: l.priceCents, id: l.id }))
+        .filter(item => promo.applicableListingIds.includes((item as any).id));
+    } else if (promo.appliesTo === 'genre' && promo.applicableGenres?.length > 0) {
+      eligibleItems = cartListings
+        .map((l, i) => ({ index: i, priceCents: l.priceCents, genre: l.genre }))
+        .filter(item => promo.applicableGenres.includes((item as any).genre));
+    } else {
+      eligibleItems = cartListings.map((l, i) => ({ index: i, priceCents: l.priceCents }));
+    }
+
+    if (eligibleItems.length < totalNeeded) continue;
+
+    const sorted = [...eligibleItems].sort((a, b) => a.priceCents - b.priceCents);
+
+    const setsApplicable = Math.floor(sorted.length / totalNeeded);
+    const freeIndices: number[] = [];
+    const discountedItems: { index: number; discountPercent: number }[] = [];
+    let savings = 0;
+    const discountPercent = promo.getDiscountPercent;
+
+    for (let setIdx = 0; setIdx < setsApplicable; setIdx++) {
+      const setStart = setIdx * totalNeeded;
+      const freeOrDiscounted = sorted.slice(setStart, setStart + promo.getQuantity);
+
+      for (const item of freeOrDiscounted) {
+        if (discountPercent === 100) {
+          freeIndices.push(item.index);
+          savings += item.priceCents;
+        } else {
+          discountedItems.push({ index: item.index, discountPercent });
+          savings += Math.round(item.priceCents * discountPercent / 100);
+        }
+      }
+    }
+
+    if (savings > bestResult.totalSavingsCents) {
+      let summary: string;
+      if (discountPercent === 100) {
+        summary = setsApplicable > 1
+          ? `${promo.name}: Buy ${promo.buyQuantity}, Get ${promo.getQuantity} FREE! (${setsApplicable}x applied)`
+          : `${promo.name}: Buy ${promo.buyQuantity}, Get ${promo.getQuantity} FREE!`;
+      } else {
+        summary = setsApplicable > 1
+          ? `${promo.name}: Buy ${promo.buyQuantity}, Get ${promo.getQuantity} at ${discountPercent}% off! (${setsApplicable}x applied)`
+          : `${promo.name}: Buy ${promo.buyQuantity}, Get ${promo.getQuantity} at ${discountPercent}% off!`;
+      }
+      bestResult = { appliedPromotion: promo, freeItemIndices: freeIndices, discountedItems, totalSavingsCents: savings, summary };
+    }
+  }
+
+  return bestResult;
+}
+
+router.get('/:storefrontId/bogo-promotions', async (req, res) => {
+  try {
+    const { storefrontId } = req.params;
+    const promos = await db.select().from(bogoPromotions)
+      .where(getActivePromotionsFilter(storefrontId))
+      .orderBy(bogoPromotions.priority);
+    res.json(promos);
+  } catch (error) {
+    logger.error('Error fetching BOGO promotions:', error);
+    res.status(500).json({ error: 'Failed to fetch promotions' });
+  }
+});
+
+router.get('/:storefrontId/bogo-promotions/all', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const { storefrontId } = req.params;
+    const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
+    if (!storefront || storefront.userId !== req.user!.id) {
+      return res.status(403).json({ error: 'Not your storefront' });
+    }
+    const promos = await db.select().from(bogoPromotions)
+      .where(eq(bogoPromotions.storefrontId, storefrontId))
+      .orderBy(bogoPromotions.createdAt);
+    res.json(promos);
+  } catch (error) {
+    logger.error('Error fetching all BOGO promotions:', error);
+    res.status(500).json({ error: 'Failed to fetch promotions' });
+  }
+});
+
+router.post('/:storefrontId/bogo-promotions', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const { storefrontId } = req.params;
+    const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
+    if (!storefront || storefront.userId !== req.user!.id) {
+      return res.status(403).json({ error: 'Not your storefront' });
+    }
+
+    const { name, description, promoType, buyQuantity, getQuantity, getDiscountPercent,
+            appliesTo, applicableListingIds, applicableGenres, maxRedemptions,
+            perCustomerLimit, stackable, priority, status, startAt, endAt } = req.body;
+
+    if (!name || !buyQuantity || !getQuantity) {
+      return res.status(400).json({ error: 'Name, buy quantity, and get quantity are required' });
+    }
+    if (buyQuantity < 1 || getQuantity < 1) {
+      return res.status(400).json({ error: 'Quantities must be at least 1' });
+    }
+    if (getDiscountPercent != null && (getDiscountPercent < 1 || getDiscountPercent > 100)) {
+      return res.status(400).json({ error: 'Discount percent must be between 1 and 100' });
+    }
+
+    const [promo] = await db.insert(bogoPromotions).values({
+      storefrontId,
+      userId: req.user!.id,
+      name,
+      description: description || null,
+      promoType: promoType || 'buy_x_get_y_free',
+      buyQuantity,
+      getQuantity,
+      getDiscountPercent: getDiscountPercent ?? 100,
+      appliesTo: appliesTo || 'all',
+      applicableListingIds: applicableListingIds || [],
+      applicableGenres: applicableGenres || [],
+      maxRedemptions: maxRedemptions || null,
+      perCustomerLimit: perCustomerLimit || null,
+      stackable: stackable ?? false,
+      priority: priority ?? 0,
+      status: status || 'active',
+      startAt: startAt ? new Date(startAt) : null,
+      endAt: endAt ? new Date(endAt) : null,
+    }).returning();
+
+    res.json(promo);
+  } catch (error) {
+    logger.error('Error creating BOGO promotion:', error);
+    res.status(500).json({ error: 'Failed to create promotion' });
+  }
+});
+
+router.put('/:storefrontId/bogo-promotions/:promoId', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const { storefrontId, promoId } = req.params;
+    const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
+    if (!storefront || storefront.userId !== req.user!.id) {
+      return res.status(403).json({ error: 'Not your storefront' });
+    }
+
+    const { name, description, promoType, buyQuantity, getQuantity, getDiscountPercent,
+            appliesTo, applicableListingIds, applicableGenres, maxRedemptions,
+            perCustomerLimit, stackable, priority, status, startAt, endAt } = req.body;
+
+    const updateData: any = { updatedAt: new Date() };
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (promoType !== undefined) updateData.promoType = promoType;
+    if (buyQuantity !== undefined) updateData.buyQuantity = buyQuantity;
+    if (getQuantity !== undefined) updateData.getQuantity = getQuantity;
+    if (getDiscountPercent !== undefined) updateData.getDiscountPercent = getDiscountPercent;
+    if (appliesTo !== undefined) updateData.appliesTo = appliesTo;
+    if (applicableListingIds !== undefined) updateData.applicableListingIds = applicableListingIds;
+    if (applicableGenres !== undefined) updateData.applicableGenres = applicableGenres;
+    if (maxRedemptions !== undefined) updateData.maxRedemptions = maxRedemptions;
+    if (perCustomerLimit !== undefined) updateData.perCustomerLimit = perCustomerLimit;
+    if (stackable !== undefined) updateData.stackable = stackable;
+    if (priority !== undefined) updateData.priority = priority;
+    if (status !== undefined) updateData.status = status;
+    if (startAt !== undefined) updateData.startAt = startAt ? new Date(startAt) : null;
+    if (endAt !== undefined) updateData.endAt = endAt ? new Date(endAt) : null;
+
+    const [promo] = await db.update(bogoPromotions)
+      .set(updateData)
+      .where(and(eq(bogoPromotions.id, promoId), eq(bogoPromotions.storefrontId, storefrontId)))
+      .returning();
+
+    if (!promo) return res.status(404).json({ error: 'Promotion not found' });
+    res.json(promo);
+  } catch (error) {
+    logger.error('Error updating BOGO promotion:', error);
+    res.status(500).json({ error: 'Failed to update promotion' });
+  }
+});
+
+router.delete('/:storefrontId/bogo-promotions/:promoId', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const { storefrontId, promoId } = req.params;
+    const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
+    if (!storefront || storefront.userId !== req.user!.id) {
+      return res.status(403).json({ error: 'Not your storefront' });
+    }
+
+    await db.delete(bogoPromotions)
+      .where(and(eq(bogoPromotions.id, promoId), eq(bogoPromotions.storefrontId, storefrontId)));
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting BOGO promotion:', error);
+    res.status(500).json({ error: 'Failed to delete promotion' });
+  }
+});
+
+router.post('/:id/checkout/preview', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Login required' });
+    const storefrontId = req.params.id;
+    const { listingIds } = req.body;
+
+    if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
+      return res.status(400).json({ error: 'At least one listing is required' });
+    }
+
+    const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
+    if (!storefront) return res.status(404).json({ error: 'Storefront not found' });
+
+    const storefrontListings = await db.select().from(listings)
+      .where(and(eq(listings.userId, storefront.userId), eq(listings.status, 'active')));
+    const validListings = storefrontListings.filter(l => listingIds.includes(l.id));
+
+    const cartItems = validListings.map(l => {
+      let priceCents = l.priceCents;
+      if (l.discountPercent && l.discountPriceCents != null) {
+        if (!l.discountExpiresAt || new Date(l.discountExpiresAt) > new Date()) {
+          priceCents = l.discountPriceCents;
+        }
+      }
+      return { id: l.id, title: l.title, priceCents, genre: l.genre };
+    });
+
+    const activePromos = await db.select().from(bogoPromotions)
+      .where(getActivePromotionsFilter(storefrontId));
+
+    const customerRedemptions = new Map<string, number>();
+    if (req.user?.id && activePromos.length > 0) {
+      const pastOrders = await db.select({
+        promoId: storefrontOrders.appliedPromotionId,
+      }).from(storefrontOrders).where(and(
+        eq(storefrontOrders.buyerId, req.user.id),
+        eq(storefrontOrders.storefrontId, storefrontId),
+        eq(storefrontOrders.status, 'completed'),
+      ));
+      for (const order of pastOrders) {
+        if (order.promoId) {
+          customerRedemptions.set(order.promoId, (customerRedemptions.get(order.promoId) || 0) + 1);
+        }
+      }
+    }
+    const bogoResult = applyBogoToCart(cartItems, activePromos, customerRedemptions);
+
+    const subtotalCents = cartItems.reduce((s, item) => s + item.priceCents, 0);
+
+    res.json({
+      items: cartItems.map((item, i) => ({
+        ...item,
+        isFree: bogoResult.freeItemIndices.includes(i),
+        discountPercent: bogoResult.discountedItems.find(d => d.index === i)?.discountPercent || 0,
+      })),
+      subtotalCents,
+      discountCents: bogoResult.totalSavingsCents,
+      totalCents: subtotalCents - bogoResult.totalSavingsCents,
+      promotionApplied: bogoResult.appliedPromotion ? {
+        id: bogoResult.appliedPromotion.id,
+        name: bogoResult.appliedPromotion.name,
+        summary: bogoResult.summary,
+      } : null,
+    });
+  } catch (error) {
+    logger.error('Error previewing checkout:', error);
+    res.status(500).json({ error: 'Failed to preview checkout' });
   }
 });
 
