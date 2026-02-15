@@ -74,8 +74,13 @@ export default defineConfig({
               return 'vendor-state';
             }
 
-            // Utils
-            if (id.includes('date-fns') || id.includes('zod') || id.includes('recharts')) {
+            // Charts (depends on React, must be separate)
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) {
+              return 'vendor-charts';
+            }
+
+            // Utils (no React dependency)
+            if (id.includes('date-fns') || id.includes('zod')) {
               return 'vendor-utils';
             }
           }

@@ -637,7 +637,7 @@ export default function Landing() {
           </div>
           <div className="border-t border-gray-800 pt-8 mt-8 text-center text-gray-400">
             <p>
-              &copy; 2025 Max Booster. All rights reserved. • Solo founded & operated with ❤️ for
+              &copy; {new Date().getFullYear()} Max Booster. All rights reserved. • Solo founded & operated with ❤️ for
               artists
             </p>
           </div>

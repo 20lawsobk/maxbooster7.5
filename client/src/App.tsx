@@ -15,6 +15,7 @@ import { ShortcutProvider } from '@/contexts/ShortcutContext';
 import { CommandPalette } from '@/components/commands/CommandPalette';
 import { ShortcutGuide, QuickActionBar } from '@/components/shortcuts';
 import { useAuth } from '@/hooks/useAuth';
+import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
 import { setupLinkPrefetching, prefetchAdjacentRoutes } from '@/lib/prefetch';
 import Landing from '@/pages/Landing';
@@ -273,6 +274,8 @@ function AIAssistantManager() {
 }
 
 function App() {
+  useAutoUpdate();
+
   return (
     <UndoProvider maxHistorySize={100} persistToStorage={true}>
       <ShortcutProvider persistConfig={true}>

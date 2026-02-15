@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { X, Download, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useAuth } from '@/hooks/useAuth';
 
 const DISMISSAL_KEY = 'pwa-install-dismissed';
 const DISMISSAL_DURATION = 7 * 24 * 60 * 60 * 1000;
 
 export function InstallBanner() {
   const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
+  const { user } = useAuth();
   const [isDismissed, setIsDismissed] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -47,7 +49,7 @@ export function InstallBanner() {
     }
   };
 
-  if (!isInstallable || isInstalled || isDismissed) {
+  if (!isInstallable || isInstalled || isDismissed || !user) {
     return null;
   }
 

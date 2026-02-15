@@ -58,6 +58,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
         req.originalUrl.includes('/@vite') ||
         req.originalUrl.includes('.map') ||
         req.originalUrl.includes('/api/health') ||
+        req.originalUrl.includes('/api/version') ||
         req.originalUrl.includes('/api/ready') ||
         req.originalUrl.includes('/api/live'));
 

@@ -283,7 +283,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
         // Skip rate limiting in development and load test modes
         if (isDev || isLoadTest) return true;
         // Skip rate limiting for health checks
-        return req.path === '/health' || req.path === '/api/health';
+        return req.path === '/health' || req.path === '/api/health' || req.path === '/api/version';
       },
     });
     app.use(limiter);

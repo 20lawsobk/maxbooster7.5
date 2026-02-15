@@ -119,6 +119,7 @@ const skipRateLimiting = (req: Request): boolean => {
   const path = req.path;
   
   if (path.startsWith('/api/health')) return true;
+  if (path === '/api/version') return true;
   if (path.startsWith('/api/monitoring')) return true;
   if (path.startsWith('/api/system')) return true;
   

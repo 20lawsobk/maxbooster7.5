@@ -82,7 +82,7 @@ async function attachUser(req: Request, res: Response, next: NextFunction) {
     } catch (error) {
       console.error("Error fetching user for request:", error);
     }
-  } else if (isProduction && isApiRoute && req.path !== '/api/auth/me' && req.path !== '/api/csrf-token' && req.path !== '/api/health') {
+  } else if (isProduction && isApiRoute && req.path !== '/api/auth/me' && req.path !== '/api/csrf-token' && req.path !== '/api/health' && req.path !== '/api/version') {
     const sessionCookie = req.cookies?.sessionId || req.headers.cookie?.includes('sessionId');
     console.warn(`[Session] No userId in session for ${req.path}, cookie present: ${!!sessionCookie}, session exists: ${!!req.session}`);
   }
@@ -3369,6 +3369,14 @@ export async function registerRoutes(
   app.post("/api/errors", (req: Request, res: Response) => {
     console.error("Client error:", req.body);
     res.json({ received: true });
+  });
+
+  const BUILD_ID = crypto.randomBytes(8).toString('hex');
+  const BUILD_TIMESTAMP = new Date().toISOString();
+
+  app.get("/api/version", (_req: Request, res: Response) => {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.json({ buildId: BUILD_ID, buildTimestamp: BUILD_TIMESTAMP });
   });
 
   // Health check endpoint

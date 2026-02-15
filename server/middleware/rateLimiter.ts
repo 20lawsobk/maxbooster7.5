@@ -129,7 +129,8 @@ function shouldSkipRateLimiting(req: Request): boolean {
   
   const isMonitoring = req.path.startsWith('/api/monitoring/') || 
                        req.path.startsWith('/api/system/') ||
-                       req.path.startsWith('/api/health');
+                       req.path.startsWith('/api/health') ||
+                       req.path === '/api/version';
   
   const isStaticAsset = req.path.startsWith('/@fs/') ||
                         req.path.startsWith('/src/') ||

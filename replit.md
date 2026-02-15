@@ -48,9 +48,11 @@ boosterstate/    - Rust KV store service
 - `allowedHosts: true` configured for Replit proxy compatibility
 
 ## Deployment
-- Build: `cd boosterstate && cargo build --release && cd .. && npm run build`
-- Start: `./boosterstate/target/release/boosterstate & sleep 3 && NODE_ENV=production node dist/index.cjs`
+- Build: `npm run build` (runs esbuild for server + Vite for client)
+- Start: `npm run start` (starts boosterstate + production Node.js server)
+- Workflow: `npm run start` (build first, then start)
 - Deployment target: VM (persistent WebSocket connections and background services)
+- Deploy config: build=`npm run build`, run=`npm run start`
 
 ## Configured Services
 - Stripe (payments, billing, webhooks)
@@ -74,6 +76,7 @@ boosterstate/    - Rust KV store service
 - Replit Object Storage bucket ID
 
 ## Recent Changes
+- 2026-02-15: Configured production build/start scripts - workflow uses `npm run start` (production mode), deployment uses `npm run build` + `npm run start`. Fixed Vite circular chunk dependency by separating recharts into vendor-charts chunk. All secrets configured.
 - 2026-02-13: Analytics auto-refresh system - Created useAnalyticsInvalidation hook with prefix-based predicate matching for all /api/analytics/ and /api/analytics-alerts/ query keys. Wired into all major mutations across Projects, Dashboard, Distribution, SocialMedia, Marketplace, Royalties, and Advertisement pages. Analytics dashboards now refresh automatically when users create/update data anywhere in the platform.
 - 2026-02-13: Fixed storefront memberships bug - rewrote getCustomerMemberships query to use explicit JOINs instead of Drizzle ORM relations (which were undefined for customerMemberships table), fixed column name mismatch (priceCents vs price)
 - 2026-02-13: Comprehensive platform testing - 138+ API endpoint tests passed across auth, payments, studio, marketplace, distribution, social, analytics, admin, security systems. All 14 frontend pages verified. 172 database tables healthy.

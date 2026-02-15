@@ -194,6 +194,7 @@ export const createQueueMiddleware = (queueInstance?: RequestQueue): RequestHand
   return (req: Request, res: Response, next: NextFunction): void => {
     const shouldSkipQueue = 
       req.path.startsWith('/api/health') ||
+      req.path === '/api/version' ||
       req.path.startsWith('/api/monitoring') ||
       req.method === 'OPTIONS';
 
