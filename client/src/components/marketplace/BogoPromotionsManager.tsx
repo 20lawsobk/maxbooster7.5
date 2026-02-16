@@ -609,12 +609,12 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
 
             <div>
               <Label>License Type for BOGO Items</Label>
-              <Select value={form.bogoLicenseType} onValueChange={(v) => setForm({ ...form, bogoLicenseType: v })}>
+              <Select value={form.bogoLicenseType || 'same'} onValueChange={(v) => setForm({ ...form, bogoLicenseType: v === 'same' ? '' : v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Same as purchased license" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Same as purchased license</SelectItem>
+                  <SelectItem value="same">Same as purchased license</SelectItem>
                   <SelectItem value="basic">Basic License</SelectItem>
                   <SelectItem value="premium">Premium License</SelectItem>
                   <SelectItem value="exclusive">Exclusive License</SelectItem>
