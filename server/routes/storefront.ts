@@ -903,7 +903,7 @@ router.post('/:id/checkout', async (req, res) => {
         }
       }
     }
-    const bogoResult = applyBogoToCart(cartItems, activePromos, customerRedemptions);
+    const bogoResult = applyBogoToCart(cartItems, activePromos, customerRedemptions, licenseType);
 
     const bogoLicenseType = bogoResult.appliedPromotion?.bogoLicenseType;
 
@@ -1350,7 +1350,8 @@ interface BogoResult {
 function applyBogoToCart(
   cartListings: Array<{ id: string; priceCents: number; genre?: string | null }>,
   promotions: any[],
-  customerRedemptions?: Map<string, number>
+  customerRedemptions?: Map<string, number>,
+  cartLicenseType?: string
 ): BogoResult {
   if (!promotions.length || !cartListings.length) {
     return { appliedPromotion: null, freeItemIndices: [], discountedItems: [], totalSavingsCents: 0, summary: '' };
@@ -1366,6 +1367,10 @@ function applyBogoToCart(
     if (promo.perCustomerLimit && customerRedemptions) {
       const customerUses = customerRedemptions.get(promo.id) || 0;
       if (customerUses >= promo.perCustomerLimit) continue;
+    }
+
+    if (promo.buyLicenseType && cartLicenseType && promo.buyLicenseType !== cartLicenseType) {
+      continue;
     }
 
     const totalNeeded = promo.buyQuantity + promo.getQuantity;
@@ -1467,7 +1472,7 @@ router.post('/:storefrontId/bogo-promotions', async (req, res) => {
     }
 
     const { name, description, promoType, buyQuantity, getQuantity, getDiscountPercent,
-            appliesTo, applicableListingIds, applicableGenres, bogoLicenseType,
+            appliesTo, applicableListingIds, applicableGenres, buyLicenseType, bogoLicenseType,
             maxRedemptions, perCustomerLimit, stackable, priority, status, startAt, endAt } = req.body;
 
     if (!name || !buyQuantity || !getQuantity) {
@@ -1492,6 +1497,7 @@ router.post('/:storefrontId/bogo-promotions', async (req, res) => {
       appliesTo: appliesTo || 'all',
       applicableListingIds: applicableListingIds || [],
       applicableGenres: applicableGenres || [],
+      buyLicenseType: buyLicenseType || null,
       bogoLicenseType: bogoLicenseType || null,
       maxRedemptions: maxRedemptions || null,
       perCustomerLimit: perCustomerLimit || null,
@@ -1519,7 +1525,7 @@ router.put('/:storefrontId/bogo-promotions/:promoId', async (req, res) => {
     }
 
     const { name, description, promoType, buyQuantity, getQuantity, getDiscountPercent,
-            appliesTo, applicableListingIds, applicableGenres, bogoLicenseType,
+            appliesTo, applicableListingIds, applicableGenres, buyLicenseType, bogoLicenseType,
             maxRedemptions, perCustomerLimit, stackable, priority, status, startAt, endAt } = req.body;
 
     const updateData: any = { updatedAt: new Date() };
@@ -1532,6 +1538,7 @@ router.put('/:storefrontId/bogo-promotions/:promoId', async (req, res) => {
     if (appliesTo !== undefined) updateData.appliesTo = appliesTo;
     if (applicableListingIds !== undefined) updateData.applicableListingIds = applicableListingIds;
     if (applicableGenres !== undefined) updateData.applicableGenres = applicableGenres;
+    if (buyLicenseType !== undefined) updateData.buyLicenseType = buyLicenseType;
     if (bogoLicenseType !== undefined) updateData.bogoLicenseType = bogoLicenseType;
     if (maxRedemptions !== undefined) updateData.maxRedemptions = maxRedemptions;
     if (perCustomerLimit !== undefined) updateData.perCustomerLimit = perCustomerLimit;
@@ -1576,7 +1583,7 @@ router.post('/:id/checkout/preview', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Login required' });
     const storefrontId = req.params.id;
-    const { listingIds } = req.body;
+    const { listingIds, licenseType = 'basic' } = req.body;
 
     if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
       return res.status(400).json({ error: 'At least one listing is required' });
@@ -1617,7 +1624,7 @@ router.post('/:id/checkout/preview', async (req, res) => {
         }
       }
     }
-    const bogoResult = applyBogoToCart(cartItems, activePromos, customerRedemptions);
+    const bogoResult = applyBogoToCart(cartItems, activePromos, customerRedemptions, licenseType);
 
     const subtotalCents = cartItems.reduce((s, item) => s + item.priceCents, 0);
 
