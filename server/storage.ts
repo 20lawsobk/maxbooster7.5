@@ -137,13 +137,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId));
     
     if (!user) return undefined;
-    return (user as any).autopilotConfig || undefined;
+    return ((user as any).preferences as any)?.autopilotConfig || undefined;
   }
 
   async saveAutopilotConfig(userId: string, config: any): Promise<any> {
+    const [user] = await db.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
+    const prefs = (user?.preferences as any) || {};
+    prefs.autopilotConfig = config;
     await db
       .update(users)
-      .set({ autopilotConfig: config } as any)
+      .set({ preferences: prefs })
       .where(eq(users.id, userId));
     return config;
   }
@@ -155,13 +158,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId));
     
     if (!user) return undefined;
-    return (user as any).advertisingAutopilotConfig || undefined;
+    return ((user as any).preferences as any)?.advertisingAutopilotConfig || undefined;
   }
 
   async saveAdvertisingAutopilotConfig(userId: string, config: any): Promise<any> {
+    const [user] = await db.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
+    const prefs = (user?.preferences as any) || {};
+    prefs.advertisingAutopilotConfig = config;
     await db
       .update(users)
-      .set({ advertisingAutopilotConfig: config } as any)
+      .set({ preferences: prefs })
       .where(eq(users.id, userId));
     return config;
   }
@@ -170,12 +176,12 @@ export class DatabaseStorage implements IStorage {
     const allUsers = await db.select().from(users);
     return allUsers
       .filter((user: any) => {
-        const config = user.advertisingAutopilotConfig;
+        const config = (user.preferences as any)?.advertisingAutopilotConfig;
         return config && config.enabled === true;
       })
       .map((user: any) => ({
         userId: user.id,
-        ...user.advertisingAutopilotConfig,
+        ...(user.preferences as any)?.advertisingAutopilotConfig,
       }));
   }
 

@@ -127,8 +127,24 @@ router.post('/ads/optimize', requireAuth, async (req: Request, res: Response) =>
       return res.status(400).json({ error: 'Valid action is required (score, optimize_budget, predict_creative, forecast_roi)' });
     }
 
+    const defaultMetrics = { ctr: 0.02, cvr: 0.05, roas: 1.5, spend: 0, revenue: 0, impressions: 0, clicks: 0, conversions: 0, cpc: 0.5, cpa: 10 };
+    const defaultTargeting = { ageMin: 18, ageMax: 65, interests: [], locations: [], gender: 'all', customAudiences: [], lookalikes: [], excludedAudiences: [] };
+    const enrichedCampaign = {
+      ...campaign,
+      metrics: campaign.metrics || defaultMetrics,
+      targeting: campaign.targeting || defaultTargeting,
+      creatives: campaign.creatives || [],
+      budget: campaign.budget || 100,
+      dailyBudget: campaign.dailyBudget || 10,
+      historicalData: campaign.historicalData || [],
+      platform: campaign.platform || 'instagram',
+      objective: campaign.objective || 'engagement',
+      status: campaign.status || 'active',
+      startDate: campaign.startDate || new Date().toISOString(),
+      endDate: campaign.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    };
     const options: AdOptimizationOptions = {
-      campaign,
+      campaign: enrichedCampaign,
       action,
       campaigns,
       totalBudget,

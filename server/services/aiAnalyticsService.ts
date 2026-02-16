@@ -120,7 +120,7 @@ export async function predictMetric(params: PredictMetricRequest): Promise<Predi
     const results = await db
       .select({
         date: analytics.date,
-        value: sql<number>`CAST(COALESCE(SUM(${analytics.totalStreams}), 0) AS INTEGER)`,
+        value: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
       })
       .from(analytics)
       .where(gte(analytics.date, startDate))
@@ -152,7 +152,7 @@ export async function predictMetric(params: PredictMetricRequest): Promise<Predi
     const analyticsRevenue = await db
       .select({
         date: analytics.date,
-        value: sql<number>`CAST(COALESCE(SUM(${analytics.totalRevenue}), 0) AS NUMERIC)`,
+        value: sql<number>`CAST(COALESCE(SUM(${analytics.revenue}), 0) AS NUMERIC)`,
       })
       .from(analytics)
       .where(gte(analytics.date, startDate))
@@ -336,7 +336,7 @@ export async function forecastRevenue(timeframe: string = '30d'): Promise<Revenu
   const churnedUsers = await db
     .select({ count: count() })
     .from(users)
-    .where(and(eq(users.subscriptionStatus, 'canceled'), gte(users.updatedAt, thirtyDaysAgo)));
+    .where(eq(users.subscriptionStatus, 'canceled'));
 
   const signupCount = Number(newSignups[0]?.count || 0);
   const churnCount = Number(churnedUsers[0]?.count || 0);
@@ -386,8 +386,8 @@ export async function detectAnomalies(): Promise<AnomaliesResponse> {
   const analyticsData = await db
     .select({
       date: analytics.date,
-      streams: sql<number>`CAST(COALESCE(SUM(${analytics.totalStreams}), 0) AS INTEGER)`,
-      revenue: sql<number>`CAST(COALESCE(SUM(${analytics.totalRevenue}), 0) AS NUMERIC)`,
+      streams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
+      revenue: sql<number>`CAST(COALESCE(SUM(${analytics.revenue}), 0) AS NUMERIC)`,
       listeners: sql<number>`CAST(COALESCE(SUM(${analytics.totalListeners}), 0) AS INTEGER)`,
     })
     .from(analytics)
@@ -645,7 +645,7 @@ export async function predictCareerGrowth(
     const results = await db
       .select({
         date: analytics.date,
-        value: sql<number>`CAST(COALESCE(SUM(${analytics.totalStreams}), 0) AS INTEGER)`,
+        value: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
       })
       .from(analytics)
       .where(and(eq(analytics.userId, userId), gte(analytics.date, startDate)))
@@ -748,7 +748,7 @@ export async function getCareerMilestones(userId: string): Promise<CareerMilesto
 
   const analyticsData = await db
     .select({
-      totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics.totalStreams}), 0) AS INTEGER)`,
+      totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
       totalFollowers: sql<number>`CAST(COALESCE(SUM(${analytics.totalFollowers}), 0) AS INTEGER)`,
     })
     .from(analytics)
@@ -818,7 +818,7 @@ export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
   const analyticsData = await db
     .select({
       totalFollowers: sql<number>`CAST(COALESCE(SUM(${analytics.totalFollowers}), 0) AS INTEGER)`,
-      totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics.totalStreams}), 0) AS INTEGER)`,
+      totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
       engagementRate: sql<number>`CAST(COALESCE(AVG(${analytics.engagementRate}), 0) AS NUMERIC)`,
     })
     .from(analytics)

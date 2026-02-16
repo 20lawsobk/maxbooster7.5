@@ -237,13 +237,14 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
     userId,
   };
 
-  const variants = await contentVariantGeneratorService.generateVariants(
+  const variantResult = await contentVariantGeneratorService.generateVariants(
     contentData as any,
     count
   );
+  const variants = Array.isArray(variantResult) ? variantResult : (variantResult.variants || []);
 
   const variantsWithScores = await Promise.all(
-    variants.map(async (variant) => {
+    variants.map(async (variant: any) => {
       const score = await viralScoringService.scoreContent({
         ...contentData,
         caption: variant.caption,

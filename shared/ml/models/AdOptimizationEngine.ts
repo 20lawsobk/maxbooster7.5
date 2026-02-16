@@ -855,9 +855,15 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   public async scoreCampaign(campaign: Campaign): Promise<CampaignScore> {
-    const benchmark = this.platformBenchmarks.get(campaign.platform)!;
+    const benchmark = this.platformBenchmarks.get(campaign.platform) || this.platformBenchmarks.get('instagram')!;
+    const metrics = campaign.metrics || { ctr: 0.02, cvr: 0.05, roas: 1.5, spend: 0, revenue: 0, impressions: 0, clicks: 0, conversions: 0, cpc: 0.5, cpa: 10 };
+    campaign.metrics = metrics;
+    campaign.targeting = campaign.targeting || { ageMin: 18, ageMax: 65, interests: [], locations: [], gender: 'all', customAudiences: [], lookalikes: [], excludedAudiences: [] };
+    campaign.creatives = campaign.creatives || [];
+    campaign.budget = campaign.budget || 100;
+    campaign.historicalData = campaign.historicalData || [];
     
-    const ctrFactor = Math.min(campaign.metrics.ctr / benchmark.ctr, 2);
+    const ctrFactor = Math.min(metrics.ctr / benchmark.ctr, 2);
     const cvrFactor = Math.min(campaign.metrics.cvr / benchmark.cvr, 2);
     const roasFactor = Math.min(campaign.metrics.roas / benchmark.roas, 2);
     const budgetUtilization = Math.min(campaign.metrics.spend / campaign.budget, 1);

@@ -1003,7 +1003,7 @@ class CreativeParameterSynthesizer {
   }
   
   private detectGenre(tokens: string[]): { genre: string; subgenre: string; confidence: number } {
-    let bestGenre = 'electronic';
+    let bestGenre = 'edm';
     let bestSubgenre = '';
     let bestScore = 0;
     
@@ -1146,7 +1146,7 @@ class CreativeParameterSynthesizer {
     mood: MoodVector,
     contextVector: number[]
   ): MusicContext {
-    const genreInfo = GENRE_KNOWLEDGE[genreResult.genre] || GENRE_KNOWLEDGE.electronic;
+    const genreInfo = GENRE_KNOWLEDGE[genreResult.genre] || GENRE_KNOWLEDGE.edm || GENRE_KNOWLEDGE.trap;
     
     return {
       genre: genreResult.genre,

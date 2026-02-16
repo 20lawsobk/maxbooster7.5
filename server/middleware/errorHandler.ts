@@ -54,7 +54,16 @@ export function globalErrorHandler(
   let isOperational = err.isOperational || false;
 
   // Handle specific error types
-  if (err.name === 'ValidationError') {
+  if (err.name === 'ZodError') {
+    statusCode = 400;
+    const issues = Array.isArray(err.issues) ? err.issues : [];
+    const firstIssue = issues[0];
+    message = firstIssue
+      ? `Validation failed: ${firstIssue.path?.length ? firstIssue.path.join('.') + ' - ' : ''}${firstIssue.message}`
+      : 'Validation failed';
+    code = 'VALIDATION_ERROR';
+    isOperational = true;
+  } else if (err.name === 'ValidationError') {
     statusCode = 400;
     message = 'Validation failed';
     code = 'VALIDATION_ERROR';

@@ -87,20 +87,40 @@ export function globalErrorHandler(
 ): void {
   const requestId = (req as any).requestId || 'unknown';
   
-  logger.error(`[${requestId}] Unhandled error:`, {
-    error: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-    userId: (req.user as any)?.id,
-  });
+  let statusCode = 500;
+  let message = err.message || 'Internal server error';
 
-  // Don't leak error details in production
+  if (err.name === 'ZodError') {
+    statusCode = 400;
+    const issues = Array.isArray((err as any).issues) ? (err as any).issues : [];
+    const firstIssue = issues[0];
+    message = firstIssue
+      ? `Validation failed: ${firstIssue.path?.length ? firstIssue.path.join('.') + ' - ' : ''}${firstIssue.message}`
+      : 'Validation failed';
+  } else if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = err.message || 'Validation failed';
+  } else if ((err as any).statusCode) {
+    statusCode = (err as any).statusCode;
+  } else if ((err as any).status) {
+    statusCode = (err as any).status;
+  }
+
+  if (statusCode >= 500) {
+    logger.error(`[${requestId}] Unhandled error:`, {
+      error: err.message,
+      stack: err.stack,
+      path: req.path,
+      method: req.method,
+      userId: (req.user as any)?.id,
+    });
+  }
+
   const isDev = process.env.NODE_ENV !== 'production';
   
-  res.status(500).json({
+  res.status(statusCode).json({
     success: false,
-    error: isDev ? err.message : 'Internal server error',
+    error: isDev ? message : (statusCode >= 500 ? 'Internal server error' : message),
     requestId,
   });
 }
