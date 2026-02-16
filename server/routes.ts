@@ -10,7 +10,15 @@ import { getCsrfToken } from "./middleware/csrf.ts";
 import Stripe from "stripe";
 import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
 import { getBaseUrl } from "./config/defaults.ts";
-import { authenticator } from "otplib";
+import { generateSecret as otpGenerateSecret, verifySync, generateURI } from "otplib";
+
+const authenticator = {
+  generateSecret: () => otpGenerateSecret(),
+  keyuri: (account: string, issuer: string, secret: string) =>
+    generateURI({ label: account, issuer, secret, strategy: 'totp' }),
+  verify: ({ token, secret }: { token: string; secret: string }) =>
+    verifySync({ token, secret, strategy: 'totp', epochTolerance: 1 }),
+};
 import QRCode from "qrcode";
 import { emailService } from "./services/emailService.ts";
 import { upload } from "./middleware/uploadHandler.ts";
@@ -230,10 +238,12 @@ export async function registerRoutes(
           });
         }
 
-        const { authenticator } = await import('otplib');
-        const isCodeValid = authenticator.verify({
+        const { verifySync: otpVerifySync } = await import('otplib');
+        const isCodeValid = otpVerifySync({
           token: twoFactorCode,
-          secret: user.twoFactorSecret
+          secret: user.twoFactorSecret,
+          strategy: 'totp',
+          epochTolerance: 1,
         });
 
         if (!isCodeValid) {
