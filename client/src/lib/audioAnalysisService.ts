@@ -19,6 +19,17 @@ export interface AudioAnalysisResult {
   beatPositions: number[];
 }
 
+export interface BeatMetadataSuggestion {
+  bpm: number;
+  key: string;
+  genre: string;
+  mood: string;
+  tags: string[];
+  energy: number;
+  danceability: number;
+  confidence: number;
+}
+
 class AudioAnalysisService {
   private audioContext: AudioContext | null = null;
 
@@ -330,6 +341,107 @@ class AudioAnalysisService {
     const blob = await response.blob();
     const file = new File([blob], 'audio.wav', { type: blob.type });
     return this.analyzeAudioFile(file);
+  }
+
+  async analyzeAndSuggestMetadata(audioFile: File): Promise<BeatMetadataSuggestion> {
+    const analysis = await this.analyzeAudioFile(audioFile);
+    return this.inferMetadata(analysis);
+  }
+
+  private inferMetadata(a: AudioAnalysisResult): BeatMetadataSuggestion {
+    const genre = this.inferGenre(a);
+    const mood = this.inferMood(a);
+    const tags = this.inferTags(a, genre, mood);
+    const confidence = this.calculateConfidence(a);
+
+    return {
+      bpm: a.bpm,
+      key: a.musicalKey,
+      genre,
+      mood,
+      tags,
+      energy: Math.round(a.energy * 100) / 100,
+      danceability: Math.round(a.danceability * 100) / 100,
+      confidence,
+    };
+  }
+
+  private inferGenre(a: AudioAnalysisResult): string {
+    const { bpm, energy, danceability, spectralCentroid, scale } = a;
+
+    if (bpm >= 130 && bpm <= 150 && energy > 0.5 && spectralCentroid < 2500) return 'Trap';
+    if (bpm >= 140 && energy > 0.6 && spectralCentroid > 3000) return 'Electronic';
+    if (bpm >= 85 && bpm <= 115 && energy < 0.4 && spectralCentroid < 2000) return 'R&B';
+    if (bpm >= 60 && bpm <= 100 && energy < 0.35 && danceability < 0.4) return 'Ambient';
+    if (bpm >= 85 && bpm <= 115 && energy > 0.35 && spectralCentroid < 2500) return 'Hip-Hop';
+    if (bpm >= 100 && bpm <= 130 && danceability > 0.6 && spectralCentroid > 2500) return 'Pop';
+    if (bpm >= 115 && bpm <= 135 && danceability > 0.55 && energy > 0.45) return 'Funk';
+    if (bpm >= 60 && bpm <= 90 && energy < 0.3 && scale === 'minor') return 'Jazz';
+    if (bpm >= 90 && bpm <= 110 && energy > 0.3 && energy < 0.5 && scale === 'minor') return 'Soul';
+    if (bpm >= 130 && energy > 0.7) return 'Electronic';
+    if (bpm >= 60 && bpm <= 80 && danceability > 0.5) return 'Reggae';
+    if (energy > 0.7 && spectralCentroid > 3500) return 'Rock';
+    if (bpm >= 100 && bpm <= 130 && energy > 0.5) return 'Latin';
+    if (energy > 0.4 && danceability > 0.5) return 'Pop';
+
+    return 'Hip-Hop';
+  }
+
+  private inferMood(a: AudioAnalysisResult): string {
+    const { energy, danceability, spectralCentroid, scale, bpm } = a;
+
+    if (energy > 0.7 && danceability > 0.6) return 'Energetic';
+    if (energy > 0.65 && danceability < 0.4) return 'Aggressive';
+    if (energy < 0.25 && danceability < 0.35) return 'Chill';
+    if (energy < 0.3 && scale === 'minor') return 'Melancholic';
+    if (energy > 0.5 && danceability > 0.55 && scale === 'major') return 'Happy';
+    if (energy < 0.35 && spectralCentroid < 1500) return 'Dark';
+    if (energy > 0.4 && energy < 0.6 && spectralCentroid > 2500) return 'Uplifting';
+    if (energy < 0.4 && spectralCentroid > 2000) return 'Romantic';
+    if (energy > 0.5 && bpm > 120) return 'Confident';
+    if (scale === 'minor' && energy > 0.4) return 'Mysterious';
+    if (energy < 0.4 && danceability > 0.4) return 'Relaxed';
+    if (spectralCentroid < 1800 && bpm < 100) return 'Nostalgic';
+
+    return 'Modern';
+  }
+
+  private inferTags(a: AudioAnalysisResult, genre: string, mood: string): string[] {
+    const tags: string[] = [];
+
+    tags.push(genre.toLowerCase());
+    tags.push(mood.toLowerCase());
+
+    if (a.bpm >= 130) tags.push('fast');
+    if (a.bpm <= 85) tags.push('slow');
+    if (a.energy > 0.65) tags.push('hard');
+    if (a.energy < 0.3) tags.push('soft');
+    if (a.danceability > 0.6) tags.push('groovy');
+    if (a.scale === 'minor') tags.push('minor key');
+    if (a.scale === 'major') tags.push('major key');
+    if (a.spectralCentroid > 3000) tags.push('bright');
+    if (a.spectralCentroid < 1500) tags.push('deep');
+    if (a.loudness > 20) tags.push('loud');
+
+    if (genre === 'Trap') tags.push('808', 'hi-hats');
+    if (genre === 'Hip-Hop') tags.push('boom bap', 'rap');
+    if (genre === 'R&B') tags.push('smooth', 'vocals');
+    if (genre === 'Electronic') tags.push('synth', 'bass');
+    if (genre === 'Pop') tags.push('catchy', 'mainstream');
+
+    const bpmRange = a.bpm >= 120 ? 'uptempo' : a.bpm >= 90 ? 'mid-tempo' : 'downtempo';
+    tags.push(bpmRange);
+
+    return [...new Set(tags)].slice(0, 10);
+  }
+
+  private calculateConfidence(a: AudioAnalysisResult): number {
+    let confidence = 0.5;
+    if (a.durationSeconds > 30) confidence += 0.15;
+    if (a.durationSeconds > 60) confidence += 0.1;
+    if (a.beatPositions.length > 10) confidence += 0.15;
+    if (a.energy > 0.1 && a.energy < 0.9) confidence += 0.1;
+    return Math.min(0.95, Math.round(confidence * 100) / 100);
   }
 }
 

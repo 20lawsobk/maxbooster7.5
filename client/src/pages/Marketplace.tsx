@@ -42,6 +42,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { audioAnalysisService, type BeatMetadataSuggestion } from '@/lib/audioAnalysisService';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
@@ -594,6 +595,8 @@ export default function Marketplace() {
   const [fileValidationError, setFileValidationError] = useState<string | null>(null);
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
   const isPickingFileRef = useRef(false);
+  const [isAnalyzingAudio, setIsAnalyzingAudio] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<BeatMetadataSuggestion | null>(null);
 
   const MAX_AUDIO_SIZE_MB = 100;
   const MAX_COVER_SIZE_MB = 10;
@@ -629,12 +632,39 @@ export default function Marketplace() {
     }
     setFileValidationError(null);
     setAudioFile(file);
+    setAiSuggestion(null);
     if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
     setAudioPreviewUrl(URL.createObjectURL(file));
     const filenameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
     if (!uploadForm.title) {
       setUploadForm(prev => ({ ...prev, title: filenameWithoutExt }));
     }
+
+    setIsAnalyzingAudio(true);
+    audioAnalysisService.analyzeAndSuggestMetadata(file).then((suggestion) => {
+      setAiSuggestion(suggestion);
+      setUploadForm(prev => ({
+        ...prev,
+        tempo: suggestion.bpm,
+        key: suggestion.key,
+        genre: prev.genre || suggestion.genre,
+        mood: prev.mood || suggestion.mood,
+        tags: prev.tags || suggestion.tags.join(', '),
+      }));
+      toast({
+        title: 'AI Analysis Complete',
+        description: `Detected ${suggestion.bpm} BPM, Key: ${suggestion.key}, Genre: ${suggestion.genre}`,
+      });
+    }).catch((err) => {
+      console.error('Audio analysis failed:', err);
+      toast({
+        title: 'Audio Analysis',
+        description: 'Could not auto-detect metadata. Please fill in manually.',
+        variant: 'destructive',
+      });
+    }).finally(() => {
+      setIsAnalyzingAudio(false);
+    });
   };
 
   const handleCoverFileSelect = (file: File) => {
@@ -664,6 +694,8 @@ export default function Marketplace() {
   };
 
   const resetUploadForm = () => {
+    setAiSuggestion(null);
+    setIsAnalyzingAudio(false);
     setUploadForm({
       title: '',
       genre: '',
@@ -3711,6 +3743,33 @@ export default function Marketplace() {
                     className="flex-1 h-8"
                     preload="metadata"
                   />
+                </div>
+              )}
+              {isAnalyzingAudio && (
+                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 border border-blue-200 dark:border-blue-800 rounded-lg animate-pulse">
+                  <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">AI is analyzing your beat...</p>
+                    <p className="text-xs text-blue-500 dark:text-blue-400">Detecting BPM, key, genre, mood & tags</p>
+                  </div>
+                </div>
+              )}
+              {aiSuggestion && !isAnalyzingAudio && (
+                <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <span className="text-sm font-medium text-green-700 dark:text-green-300">AI Auto-filled Metadata</span>
+                    <span className="text-xs text-green-500 ml-auto">{Math.round(aiSuggestion.confidence * 100)}% confidence</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900 rounded-full text-green-700 dark:text-green-300">{aiSuggestion.bpm} BPM</span>
+                    <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900 rounded-full text-green-700 dark:text-green-300">Key: {aiSuggestion.key}</span>
+                    <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900 rounded-full text-green-700 dark:text-green-300">{aiSuggestion.genre}</span>
+                    <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900 rounded-full text-green-700 dark:text-green-300">{aiSuggestion.mood}</span>
+                    <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 rounded-full text-blue-700 dark:text-blue-300">Energy: {Math.round(aiSuggestion.energy * 100)}%</span>
+                    <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 rounded-full text-blue-700 dark:text-blue-300">Dance: {Math.round(aiSuggestion.danceability * 100)}%</span>
+                  </div>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1.5">Fields auto-filled below. You can adjust any value.</p>
                 </div>
               )}
             </div>
