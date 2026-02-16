@@ -928,7 +928,7 @@ export async function registerRoutes(
     }
   });
 
-  // Storage: Serve files from storage (proxy for Replit Object Storage)
+  // Storage: Serve files from hybrid storage (Replit hot + Pocket Dimension cold)
   app.get("/api/storage/file/:key(*)", async (req: Request, res: Response) => {
     try {
       const key = decodeURIComponent(req.params.key);
@@ -938,13 +938,29 @@ export async function registerRoutes(
       }
 
       const { storageService } = await import('./services/storageService.js');
+      const { hybridStorageService } = await import('./services/hybridStorageService.js');
       
-      const exists = await storageService.fileExists(key);
-      if (!exists) {
-        return res.status(404).json({ message: "File not found" });
+      let fileBuffer: Buffer | null = null;
+      let storageTier = 'unknown';
+
+      const hybridMeta = hybridStorageService.getMetadata(key);
+      if (hybridMeta) {
+        storageTier = `${hybridMeta.tier}/${hybridMeta.location}`;
+        try {
+          fileBuffer = await hybridStorageService.read(hybridMeta.userId, key);
+        } catch {
+          fileBuffer = null;
+        }
       }
 
-      const fileBuffer = await storageService.downloadFile(key);
+      if (!fileBuffer) {
+        const exists = await storageService.fileExists(key);
+        if (!exists) {
+          return res.status(404).json({ message: "File not found" });
+        }
+        fileBuffer = await storageService.downloadFile(key);
+        storageTier = 'replit-direct';
+      }
       
       const ext = key.split('.').pop()?.toLowerCase() || '';
       const mimeTypes: Record<string, string> = {
@@ -965,6 +981,7 @@ export async function registerRoutes(
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', fileBuffer.length);
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('X-Storage-Tier', storageTier);
       
       return res.send(fileBuffer);
     } catch (error) {

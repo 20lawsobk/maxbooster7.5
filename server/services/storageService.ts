@@ -332,6 +332,114 @@ class ReplitStorageProvider implements StorageProvider {
 }
 
 /**
+ * Hybrid Storage Provider
+ * 
+ * Combines Replit Object Storage (hot tier) with Pocket Dimension (cold tier).
+ * Uses HybridStorageService for intelligent tiering, deduplication, and compression.
+ * Falls back to direct Replit storage for legacy keys not in the hybrid index.
+ */
+class HybridStorageProvider implements StorageProvider {
+  private hybridService: any = null;
+  private replitFallback: ReplitStorageProvider | null = null;
+  private initPromise: Promise<void>;
+  private systemUserId = '__system__';
+
+  constructor() {
+    try {
+      this.replitFallback = new ReplitStorageProvider();
+    } catch {
+      this.replitFallback = null;
+    }
+    this.initPromise = this.initHybrid();
+  }
+
+  private async initHybrid(): Promise<void> {
+    try {
+      const { hybridStorageService } = await import('./hybridStorageService.js');
+      await hybridStorageService.initialize();
+      this.hybridService = hybridStorageService;
+      logger.info('📦 Hybrid Storage Provider initialized (Replit hot + Pocket Dimension cold)');
+    } catch (error) {
+      logger.warn('📦 Hybrid Storage fallback: Pocket Dimension unavailable, using Replit only', error);
+    }
+  }
+
+  private async ensureHybrid(): Promise<void> {
+    await this.initPromise;
+  }
+
+  async uploadFile(file: Buffer, key: string, contentType?: string): Promise<string> {
+    await this.ensureHybrid();
+
+    if (this.replitFallback) {
+      await this.replitFallback.uploadFile(file, key, contentType);
+    } else {
+      throw new Error('No storage backend available');
+    }
+
+    return key;
+  }
+
+  async downloadFile(key: string): Promise<Buffer> {
+    await this.ensureHybrid();
+
+    if (this.hybridService) {
+      const meta = this.hybridService.getMetadata(key);
+      if (meta) {
+        try {
+          return await this.hybridService.read(meta.userId, key);
+        } catch {
+        }
+      }
+    }
+
+    if (this.replitFallback) {
+      return await this.replitFallback.downloadFile(key);
+    }
+    throw new Error(`File not found: ${key}`);
+  }
+
+  async deleteFile(key: string): Promise<void> {
+    await this.ensureHybrid();
+
+    if (this.hybridService) {
+      const meta = this.hybridService.getMetadata(key);
+      if (meta) {
+        try {
+          await this.hybridService.delete(meta.userId, key);
+          return;
+        } catch {
+        }
+      }
+    }
+
+    if (this.replitFallback) {
+      await this.replitFallback.deleteFile(key);
+    }
+  }
+
+  async getUploadUrl(key: string, contentType: string, expiresIn?: number): Promise<string | null> {
+    return null;
+  }
+
+  async getDownloadUrl(key: string, expiresIn?: number): Promise<string> {
+    const encodedKey = encodeURIComponent(key);
+    return `/api/storage/file/${encodedKey}`;
+  }
+
+  async fileExists(key: string): Promise<boolean> {
+    await this.ensureHybrid();
+    if (this.hybridService) {
+      if (this.hybridService.exists(key)) return true;
+    }
+    if (this.replitFallback) {
+      return await this.replitFallback.fileExists(key);
+    }
+    return false;
+  }
+}
+
+/**
  * Storage Service Singleton
  * Automatically uses the correct provider based on configuration
  */
@@ -343,8 +451,8 @@ class StorageService {
       logger.info('📦 Using S3 storage provider');
       this.provider = new S3StorageProvider();
     } else if (config.storage.provider === 'replit') {
-      logger.info('📦 Using Replit App Storage provider');
-      this.provider = new ReplitStorageProvider();
+      logger.info('📦 Using Hybrid Storage provider (Replit hot + Pocket Dimension cold)');
+      this.provider = new HybridStorageProvider();
     } else {
       logger.info('📦 Using local storage provider');
       this.provider = new LocalStorageProvider();

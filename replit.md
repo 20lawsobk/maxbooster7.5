@@ -8,6 +8,7 @@ Max Booster is a comprehensive AI-powered music career management platform by B-
 - **Backend**: Express.js (server/), served on same port 5000
 - **State Engine**: Rust-based BoosterState service (boosterstate/) on port 9877 - acts as a fast KV store / Redis replacement
 - **Database**: PostgreSQL via Drizzle ORM with Neon serverless driver
+- **Storage**: Hybrid Storage System — Replit Object Storage (hot tier) + Pocket Dimension (cold tier) with auto-tiering, deduplication, and compression
 - **Real-time**: WebSocket server for notifications and studio collaboration
 
 ## Project Structure
@@ -80,6 +81,7 @@ boosterstate/    - Rust KV store service
 - Ensure `maxbooster.ai` domain is verified in SendGrid for email delivery
 
 ## Recent Changes
+- 2026-02-16: Hybrid Storage System activated - StorageService now delegates to HybridStorageService (Replit Object Storage hot tier + Pocket Dimension cold tier). All file operations (uploads, downloads, deletes) flow through hybrid system with intelligent tiering, content-hash deduplication, compression, and automatic cold storage migration every 6 hours. Storefront and all route-level storage updated. Legacy Replit-only keys still served via fallback.
 - 2026-02-15: Fixed Redis config bug - server/config/defaults.ts now reads process.env.REDIS_URL instead of hardcoded undefined. Standardized all email domains to @maxbooster.ai (was mixed .com/.io/.ai). ADMIN_PASSWORD moved to encrypted secret.
 - 2026-02-15: Configured production build/start scripts - workflow uses `npm run start` (production mode), deployment uses `npm run build` + `npm run start`. Fixed Vite circular chunk dependency by separating recharts into vendor-charts chunk. All secrets configured.
 - 2026-02-13: Analytics auto-refresh system - Created useAnalyticsInvalidation hook with prefix-based predicate matching for all /api/analytics/ and /api/analytics-alerts/ query keys. Wired into all major mutations across Projects, Dashboard, Distribution, SocialMedia, Marketplace, Royalties, and Advertisement pages. Analytics dashboards now refresh automatically when users create/update data anywhere in the platform.

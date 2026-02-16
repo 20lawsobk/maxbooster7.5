@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { storefrontService } from '../services/storefrontService';
-import { ReplitStorageService } from '../services/replitStorageService';
+import { hybridStorageService } from '../services/hybridStorageService';
 import {
   insertStorefrontSchema,
   updateStorefrontSchema,
@@ -36,15 +36,6 @@ const upload = multer({
     }
   }
 });
-
-let storageService: ReplitStorageService | null = null;
-try {
-  if (process.env.PRIVATE_OBJECT_DIR || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_BUCKET_ID) {
-    storageService = new ReplitStorageService();
-  }
-} catch (e) {
-  logger.warn('ReplitStorageService not available, file uploads will be disabled');
-}
 
 const router = Router();
 
@@ -707,24 +698,21 @@ router.post('/upload-asset', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    if (!storageService) {
-      return res.status(503).json({ error: 'File storage service is not available' });
-    }
-
     const { assetType } = req.body;
     if (!['logo', 'banner', 'avatar'].includes(assetType)) {
       return res.status(400).json({ error: 'Invalid asset type. Must be logo, banner, or avatar' });
     }
 
-    const folder = `storefronts/${req.user!.id}/${assetType}`;
-    const result = await storageService.uploadFile(
-      req.file.buffer,
+    const folder = `storefronts/${assetType}`;
+    const uploadResult = await hybridStorageService.upload(
+      req.user!.id,
       req.file.originalname,
+      req.file.buffer,
       req.file.mimetype,
-      folder
+      { folder, forceLocation: 'replit' as const }
     );
 
-    const fileKey = typeof result === 'string' ? result : result.key;
+    const fileKey = uploadResult.key;
     const url = `/api/storage/file/${fileKey}`;
 
     logger.info(`Uploaded storefront ${assetType} for user ${req.user!.id}: ${fileKey}`);
@@ -1218,9 +1206,14 @@ router.post('/:storefrontId/listings/:listingId/tier-audio', tierAudioUpload.sin
     const ext = path.extname(req.file.originalname) || '.mp3';
     const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
 
-    const storageService = new ReplitStorageService();
-    const key = await storageService.uploadFile(req.file.buffer, 'tier-audio', filename, req.file.mimetype);
-    const audioUrl = `/api/marketplace/audio/${key}`;
+    const audioResult = await hybridStorageService.upload(
+      req.user!.id,
+      filename,
+      req.file.buffer,
+      req.file.mimetype,
+      { folder: 'tier-audio', forceLocation: 'replit' as const }
+    );
+    const audioUrl = `/api/marketplace/audio/${audioResult.key}`;
 
     res.json({ url: audioUrl, format: format || ext.replace('.', ''), filename: req.file.originalname });
   } catch (error) {

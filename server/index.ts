@@ -451,6 +451,28 @@ app.use((req, res, next) => {
         logger.info('🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)');
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
 
+        // 0. Hybrid Storage System (Replit hot + Pocket Dimension cold)
+        try {
+          const { hybridStorageService } = await import('./services/hybridStorageService.js');
+          await hybridStorageService.initialize();
+          logger.info('✅ [Storage] Hybrid Storage initialized (Replit Object Storage + Pocket Dimension)');
+
+          const autoTierInterval = 6 * 60 * 60 * 1000;
+          setInterval(async () => {
+            try {
+              const result = await hybridStorageService.runAutoTiering();
+              if (result.tieredDown > 0 || result.tieredUp > 0) {
+                logger.info(`[Storage] Auto-tiering: ${result.tieredDown} files moved to cold, ${result.tieredUp} promoted to hot`);
+              }
+            } catch (e: any) {
+              logger.warn(`[Storage] Auto-tiering error: ${e.message}`);
+            }
+          }, autoTierInterval);
+          logger.info('✅ [Storage] Auto-tiering scheduler started (every 6 hours)');
+        } catch (e: any) {
+          logger.warn(`⚠️ [Storage] Hybrid Storage init: ${e.message}`);
+        }
+
         // 1. Autonomous Service (Core)
         try {
           const mod = await import('./services/autonomousService.js');
