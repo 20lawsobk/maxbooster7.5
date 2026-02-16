@@ -339,7 +339,7 @@ router.get('/docs', async (req: Request, res: Response) => {
         description: 'List connected platforms',
       },
       {
-        path: '/analytics/streams/:artistId?',
+        path: '/analytics/streams{/:artistId}',
         method: 'GET',
         description: 'Get streaming statistics',
         params: {
@@ -353,22 +353,22 @@ router.get('/docs', async (req: Request, res: Response) => {
         },
       },
       {
-        path: '/analytics/engagement/:artistId?',
+        path: '/analytics/engagement{/:artistId}',
         method: 'GET',
         description: 'Get engagement metrics',
       },
       {
-        path: '/analytics/demographics/:artistId?',
+        path: '/analytics/demographics{/:artistId}',
         method: 'GET',
         description: 'Get audience demographics',
       },
       {
-        path: '/analytics/playlists/:artistId?',
+        path: '/analytics/playlists{/:artistId}',
         method: 'GET',
         description: 'Get playlist placements',
       },
       {
-        path: '/analytics/tracks/:artistId?',
+        path: '/analytics/tracks{/:artistId}',
         method: 'GET',
         description: 'Get track performance data',
         query: {
@@ -377,7 +377,7 @@ router.get('/docs', async (req: Request, res: Response) => {
         },
       },
       {
-        path: '/analytics/summary/:artistId?',
+        path: '/analytics/summary{/:artistId}',
         method: 'GET',
         description: 'Get complete analytics summary',
       },

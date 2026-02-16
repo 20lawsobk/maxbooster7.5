@@ -145,7 +145,7 @@ export function serveStatic(app: Express) {
   const indexPath = path.resolve(distPath, "index.html");
   const baseHtml = fs.readFileSync(indexPath, 'utf-8');
 
-  app.use("*", async (req: Request, res: Response) => {
+  app.use("/{*splat}", async (req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');

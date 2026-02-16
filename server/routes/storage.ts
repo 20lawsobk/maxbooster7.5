@@ -312,7 +312,7 @@ router.delete('/upload/chunk/:fileId', requireAuth, async (req: Request, res: Re
   }
 });
 
-router.get('/file/:key(*)', requireAuth, async (req: Request, res: Response) => {
+router.get('/file/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
     
@@ -371,7 +371,7 @@ router.get('/file/:key(*)', requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-router.get('/public/:key(*)', async (req: Request, res: Response) => {
+router.get('/public/*key', async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
 
@@ -404,7 +404,7 @@ router.get('/public/:key(*)', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/file/:key(*)', requireAuth, async (req: Request, res: Response) => {
+router.delete('/file/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
     const userId = req.session.userId!;
@@ -457,7 +457,7 @@ router.delete('/file/:key(*)', requireAuth, async (req: Request, res: Response) 
 });
 
 // Restore a deleted file (undo delete)
-router.post('/restore/:key(*)', requireAuth, async (req: Request, res: Response) => {
+router.post('/restore/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
     const userId = req.session.userId!;
@@ -765,7 +765,7 @@ router.post('/hybrid/upload', requireAuth, upload.single('file'), async (req: Re
   }
 });
 
-router.get('/hybrid/file/:key(*)', requireAuth, async (req: Request, res: Response) => {
+router.get('/hybrid/file/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
     const userId = req.session.userId!;
@@ -796,7 +796,7 @@ router.get('/hybrid/file/:key(*)', requireAuth, async (req: Request, res: Respon
   }
 });
 
-router.delete('/hybrid/file/:key(*)', requireAuth, async (req: Request, res: Response) => {
+router.delete('/hybrid/file/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
     const userId = req.session.userId!;
@@ -894,7 +894,7 @@ router.get('/hybrid/deduplication', requireAuth, async (req: Request, res: Respo
   }
 });
 
-router.post('/hybrid/tier-down/:key(*)', requireAuth, async (req: Request, res: Response) => {
+router.post('/hybrid/tier-down/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
     const userId = req.session.userId!;
@@ -940,7 +940,7 @@ router.post('/hybrid/auto-tier', requireAuth, async (req: Request, res: Response
   }
 });
 
-router.get('/hybrid/metadata/:key(*)', requireAuth, async (req: Request, res: Response) => {
+router.get('/hybrid/metadata/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
     const userId = req.session.userId!;

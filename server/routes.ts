@@ -929,7 +929,7 @@ export async function registerRoutes(
   });
 
   // Storage: Serve files from hybrid storage (Replit hot + Pocket Dimension cold)
-  app.get("/api/storage/file/:key(*)", async (req: Request, res: Response) => {
+  app.get("/api/storage/file/*key", async (req: Request, res: Response) => {
     try {
       const key = decodeURIComponent(req.params.key);
       
@@ -1956,7 +1956,7 @@ export async function registerRoutes(
   });
 
   // Analytics: Dashboard summary with real data (with optional period path parameter)
-  app.get("/api/analytics/dashboard/:period?", async (req: Request, res: Response) => {
+  app.get("/api/analytics/dashboard{/:period}", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }

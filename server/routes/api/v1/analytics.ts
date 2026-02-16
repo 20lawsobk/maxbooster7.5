@@ -70,11 +70,11 @@ router.get('/platforms', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/streams/:artistId?
+ * GET /api/v1/analytics/streams{/:artistId}
  * Get streaming statistics across all platforms
  * Query params: startDate, endDate, platform, timeRange
  */
-router.get('/streams/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/streams{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -161,10 +161,10 @@ router.get('/streams/:artistId?', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/engagement/:artistId?
+ * GET /api/v1/analytics/engagement{/:artistId}
  * Get engagement metrics (likes, shares, comments, etc.)
  */
-router.get('/engagement/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/engagement{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -240,10 +240,10 @@ router.get('/engagement/:artistId?', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/demographics/:artistId?
+ * GET /api/v1/analytics/demographics{/:artistId}
  * Get audience demographics (age, gender, location)
  */
-router.get('/demographics/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/demographics{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -304,10 +304,10 @@ router.get('/demographics/:artistId?', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/playlists/:artistId?
+ * GET /api/v1/analytics/playlists{/:artistId}
  * Get playlist placement data
  */
-router.get('/playlists/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/playlists{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -380,10 +380,10 @@ router.get('/playlists/:artistId?', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/tracks/:artistId?
+ * GET /api/v1/analytics/tracks{/:artistId}
  * Get track performance data
  */
-router.get('/tracks/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/tracks{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -425,10 +425,10 @@ router.get('/tracks/:artistId?', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/summary/:artistId?
+ * GET /api/v1/analytics/summary{/:artistId}
  * Get complete analytics summary
  */
-router.get('/summary/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/summary{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -547,10 +547,10 @@ router.post('/playlist-journeys', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/global-ranking/:artistId?
+ * GET /api/v1/analytics/global-ranking{/:artistId}
  * Unified ranking with Max Score
  */
-router.get('/global-ranking/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/global-ranking{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -652,10 +652,10 @@ router.post('/nlp-query', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/historical/:artistId?
+ * GET /api/v1/analytics/historical{/:artistId}
  * Historical data with YoY comparisons
  */
-router.get('/historical/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/historical{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -694,10 +694,10 @@ router.get('/historical/:artistId?', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/sync-impact/:artistId?
+ * GET /api/v1/analytics/sync-impact{/:artistId}
  * Sync placement tracking
  */
-router.get('/sync-impact/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/sync-impact{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -731,10 +731,10 @@ router.get('/sync-impact/:artistId?', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/cross-platform/:artistId?
+ * GET /api/v1/analytics/cross-platform{/:artistId}
  * Cross-platform performance
  */
-router.get('/cross-platform/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/cross-platform{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -768,10 +768,10 @@ router.get('/cross-platform/:artistId?', async (req: ApiKeyRequest, res) => {
 });
 
 /**
- * GET /api/v1/analytics/data-sources/shazam/:artistId?
+ * GET /api/v1/analytics/data-sources/shazam{/:artistId}
  * Shazam data
  */
-router.get('/data-sources/shazam/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/data-sources/shazam{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -805,10 +805,10 @@ router.get('/data-sources/shazam/:artistId?', async (req: ApiKeyRequest, res) =>
 });
 
 /**
- * GET /api/v1/analytics/data-sources/radio/:artistId?
+ * GET /api/v1/analytics/data-sources/radio{/:artistId}
  * Radio airplay data
  */
-router.get('/data-sources/radio/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/data-sources/radio{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
@@ -842,10 +842,10 @@ router.get('/data-sources/radio/:artistId?', async (req: ApiKeyRequest, res) => 
 });
 
 /**
- * GET /api/v1/analytics/data-sources/tour/:artistId?
+ * GET /api/v1/analytics/data-sources/tour{/:artistId}
  * Tour/concert data
  */
-router.get('/data-sources/tour/:artistId?', async (req: ApiKeyRequest, res) => {
+router.get('/data-sources/tour{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;

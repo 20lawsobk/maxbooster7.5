@@ -15,7 +15,7 @@ const getUserId = (req: AuthenticatedRequest): string | null => {
   return req.user?.id || (req.query.userId as string) || null;
 };
 
-router.get('/streams/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/streams{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -45,7 +45,7 @@ router.get('/streams/:artistId?', async (req: AuthenticatedRequest, res: Respons
   }
 });
 
-router.get('/playlists/:trackId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/playlists{/:trackId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = getUserId(req);
     if (!userId) {
@@ -77,7 +77,7 @@ router.get('/playlists/:trackId?', async (req: AuthenticatedRequest, res: Respon
   }
 });
 
-router.get('/playlists/revenue/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/playlists/revenue{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -103,7 +103,7 @@ router.get('/playlists/revenue/:artistId?', async (req: AuthenticatedRequest, re
   }
 });
 
-router.get('/playlists/editorial/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/playlists/editorial{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -122,7 +122,7 @@ router.get('/playlists/editorial/:artistId?', async (req: AuthenticatedRequest, 
   }
 });
 
-router.get('/cohorts/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/cohorts{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -160,7 +160,7 @@ router.get('/cohorts/:artistId?', async (req: AuthenticatedRequest, res: Respons
   }
 });
 
-router.get('/cohorts/retention/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/cohorts/retention{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -184,7 +184,7 @@ router.get('/cohorts/retention/:artistId?', async (req: AuthenticatedRequest, re
   }
 });
 
-router.get('/cohorts/churn/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/cohorts/churn{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -203,7 +203,7 @@ router.get('/cohorts/churn/:artistId?', async (req: AuthenticatedRequest, res: R
   }
 });
 
-router.get('/cohorts/loyalty/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/cohorts/loyalty{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -226,7 +226,7 @@ router.get('/cohorts/loyalty/:artistId?', async (req: AuthenticatedRequest, res:
   }
 });
 
-router.get('/forecast/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/forecast{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -258,7 +258,7 @@ router.get('/forecast/:artistId?', async (req: AuthenticatedRequest, res: Respon
   }
 });
 
-router.get('/forecast/breakdown/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/forecast/breakdown{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -284,7 +284,7 @@ router.get('/forecast/breakdown/:artistId?', async (req: AuthenticatedRequest, r
   }
 });
 
-router.get('/forecast/seasonality/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/forecast/seasonality{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -335,7 +335,7 @@ router.post('/forecast/release-impact', async (req: AuthenticatedRequest, res: R
   }
 });
 
-router.get('/demographics/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/demographics{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {
@@ -439,7 +439,7 @@ router.get('/sync-status', async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
-router.get('/overview/:artistId?', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/overview{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const artistId = req.params.artistId || getUserId(req);
     if (!artistId) {

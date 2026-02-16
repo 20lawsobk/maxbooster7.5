@@ -1016,7 +1016,7 @@ router.post('/upload', upload.fields([
   }
 });
 
-router.get('/audio/:path(*)', async (req: Request, res: Response) => {
+router.get('/audio/*path', async (req: Request, res: Response) => {
   try {
     let fileKey = req.params.path;
     
@@ -1083,7 +1083,7 @@ router.get('/audio/:path(*)', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/cover/:path(*)', async (req: Request, res: Response) => {
+router.get('/cover/*path', async (req: Request, res: Response) => {
   try {
     const fileKey = req.params.path;
     
