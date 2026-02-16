@@ -1414,15 +1414,21 @@ function applyBogoToCart(
     }
 
     if (savings > bestResult.totalSavingsCents) {
+      const buyLabel = promo.buyLicenseType
+        ? `${promo.buyQuantity} ${promo.buyLicenseType}`
+        : `${promo.buyQuantity}`;
+      const getLabel = promo.bogoLicenseType
+        ? `${promo.getQuantity} ${promo.bogoLicenseType}`
+        : `${promo.getQuantity}`;
       let summary: string;
       if (discountPercent === 100) {
         summary = setsApplicable > 1
-          ? `${promo.name}: Buy ${promo.buyQuantity}, Get ${promo.getQuantity} FREE! (${setsApplicable}x applied)`
-          : `${promo.name}: Buy ${promo.buyQuantity}, Get ${promo.getQuantity} FREE!`;
+          ? `${promo.name}: Buy ${buyLabel}, Get ${getLabel} FREE! (${setsApplicable}x applied)`
+          : `${promo.name}: Buy ${buyLabel}, Get ${getLabel} FREE!`;
       } else {
         summary = setsApplicable > 1
-          ? `${promo.name}: Buy ${promo.buyQuantity}, Get ${promo.getQuantity} at ${discountPercent}% off! (${setsApplicable}x applied)`
-          : `${promo.name}: Buy ${promo.buyQuantity}, Get ${promo.getQuantity} at ${discountPercent}% off!`;
+          ? `${promo.name}: Buy ${buyLabel}, Get ${getLabel} at ${discountPercent}% off! (${setsApplicable}x applied)`
+          : `${promo.name}: Buy ${buyLabel}, Get ${getLabel} at ${discountPercent}% off!`;
       }
       bestResult = { appliedPromotion: promo, freeItemIndices: freeIndices, discountedItems, totalSavingsCents: savings, summary };
     }

@@ -53,6 +53,7 @@ interface BogoPromotion {
   appliesTo: string;
   applicableListingIds: string[];
   applicableGenres: string[];
+  buyLicenseType: string | null;
   bogoLicenseType: string | null;
   maxRedemptions: number | null;
   redemptionCount: number;
@@ -96,6 +97,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
     appliesTo: 'all',
     applicableListingIds: [] as string[],
     applicableGenres: [] as string[],
+    buyLicenseType: '' as string,
     bogoLicenseType: '' as string,
     maxRedemptions: '',
     perCustomerLimit: '',
@@ -175,6 +177,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       appliesTo: 'all',
       applicableListingIds: [],
       applicableGenres: [],
+      buyLicenseType: '',
       bogoLicenseType: '',
       maxRedemptions: '',
       perCustomerLimit: '',
@@ -208,6 +211,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       appliesTo: promo.appliesTo,
       applicableListingIds: promo.applicableListingIds || [],
       applicableGenres: promo.applicableGenres || [],
+      buyLicenseType: promo.buyLicenseType || '',
       bogoLicenseType: promo.bogoLicenseType || '',
       maxRedemptions: promo.maxRedemptions?.toString() || '',
       perCustomerLimit: promo.perCustomerLimit?.toString() || '',
@@ -238,6 +242,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       appliesTo: form.appliesTo,
       applicableListingIds: form.appliesTo === 'specific' ? form.applicableListingIds : [],
       applicableGenres: form.appliesTo === 'genre' ? form.applicableGenres : [],
+      buyLicenseType: form.buyLicenseType || null,
       bogoLicenseType: form.bogoLicenseType || null,
       maxRedemptions: form.maxRedemptions ? parseInt(form.maxRedemptions) : null,
       perCustomerLimit: form.perCustomerLimit ? parseInt(form.perCustomerLimit) : null,
@@ -254,10 +259,16 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
   };
 
   const getPromoSummary = (promo: BogoPromotion) => {
+    const buyPart = promo.buyLicenseType
+      ? `Buy ${promo.buyQuantity} ${promo.buyLicenseType}`
+      : `Buy ${promo.buyQuantity}`;
+    const getPart = promo.bogoLicenseType
+      ? `${promo.getQuantity} ${promo.bogoLicenseType}`
+      : `${promo.getQuantity}`;
     if (promo.getDiscountPercent === 100) {
-      return `Buy ${promo.buyQuantity}, Get ${promo.getQuantity} FREE`;
+      return `${buyPart}, Get ${getPart} FREE`;
     }
-    return `Buy ${promo.buyQuantity}, Get ${promo.getQuantity} at ${promo.getDiscountPercent}% Off`;
+    return `${buyPart}, Get ${getPart} at ${promo.getDiscountPercent}% Off`;
   };
 
   const isActive = (promo: BogoPromotion) => {
@@ -369,9 +380,14 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
                           promo.appliesTo === 'specific' ? `${promo.applicableListingIds?.length || 0} specific beat${(promo.applicableListingIds?.length || 0) !== 1 ? 's' : ''}` :
                           promo.appliesTo === 'genre' ? (promo.applicableGenres?.join(', ') || 'No genres') : promo.appliesTo}
                       </span>
+                      {promo.buyLicenseType && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/20">
+                          Requires: {promo.buyLicenseType} license
+                        </Badge>
+                      )}
                       {promo.bogoLicenseType && (
-                        <Badge variant="outline" className="text-xs">
-                          {promo.bogoLicenseType} license
+                        <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-900/20">
+                          Free items: {promo.bogoLicenseType} license
                         </Badge>
                       )}
                     </div>
@@ -519,12 +535,16 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
             <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
               <p className="text-sm font-medium text-purple-700 dark:text-purple-300 flex items-center gap-2">
                 <ShoppingCart className="w-4 h-4" />
+                {form.buyLicenseType
+                  ? `Buy ${form.buyQuantity} ${form.buyLicenseType}`
+                  : `Buy ${form.buyQuantity}`}
                 {form.getDiscountPercent === 100
-                  ? `Buy ${form.buyQuantity}, Get ${form.getQuantity} FREE!`
-                  : `Buy ${form.buyQuantity}, Get ${form.getQuantity} at ${form.getDiscountPercent}% off!`}
+                  ? `, Get ${form.getQuantity}${form.bogoLicenseType ? ` ${form.bogoLicenseType}` : ''} FREE!`
+                  : `, Get ${form.getQuantity}${form.bogoLicenseType ? ` ${form.bogoLicenseType}` : ''} at ${form.getDiscountPercent}% off!`}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Customers need {form.buyQuantity + form.getQuantity} items in their cart to qualify
+                Customers need {form.buyQuantity + form.getQuantity} items in their cart
+                {form.buyLicenseType ? ` and must select the "${form.buyLicenseType}" license` : ''} to qualify
               </p>
             </div>
 
@@ -608,7 +628,31 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
             )}
 
             <div>
-              <Label>License Type for BOGO Items</Label>
+              <Label>Required Purchase License</Label>
+              <Select value={form.buyLicenseType || 'any'} onValueChange={(v) => setForm({ ...form, buyLicenseType: v === 'any' ? '' : v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Any license" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any license (no restriction)</SelectItem>
+                  <SelectItem value="basic">Basic License</SelectItem>
+                  <SelectItem value="premium">Premium License</SelectItem>
+                  <SelectItem value="exclusive">Exclusive License</SelectItem>
+                  <SelectItem value="unlimited">Unlimited License</SelectItem>
+                  <SelectItem value="wav">WAV License</SelectItem>
+                  <SelectItem value="stems">Stems License</SelectItem>
+                  <SelectItem value="trackout">Trackout License</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {form.buyLicenseType
+                  ? `Deal only applies when the buyer selects the "${form.buyLicenseType}" license at checkout`
+                  : 'Deal applies regardless of which license the buyer selects'}
+              </p>
+            </div>
+
+            <div>
+              <Label>License Type for Free/Discounted Items</Label>
               <Select value={form.bogoLicenseType || 'same'} onValueChange={(v) => setForm({ ...form, bogoLicenseType: v === 'same' ? '' : v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Same as purchased license" />
