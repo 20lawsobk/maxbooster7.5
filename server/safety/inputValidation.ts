@@ -184,9 +184,13 @@ export function sanitizationMiddleware(
     req.body = sanitizeObject(req.body);
   }
   
-  // Sanitize query params
+  // Sanitize query params (in-place for Express 5 read-only req.query)
   if (req.query && typeof req.query === 'object') {
-    req.query = sanitizeObject(req.query as Record<string, any>);
+    const sanitized = sanitizeObject(req.query as Record<string, any>);
+    for (const key of Object.keys(req.query)) {
+      if (!(key in sanitized)) delete (req.query as any)[key];
+    }
+    Object.assign(req.query, sanitized);
   }
   
   next();

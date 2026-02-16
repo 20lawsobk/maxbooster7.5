@@ -52,10 +52,15 @@ export function prototypePollutionMiddleware(
       req.body = sanitizeObject(req.body);
     }
     if (req.query && typeof req.query === 'object') {
-      req.query = sanitizeObject(req.query);
+      const sanitized = sanitizeObject(req.query);
+      for (const key of Object.keys(req.query)) {
+        if (!(key in sanitized)) delete (req.query as any)[key];
+      }
+      Object.assign(req.query, sanitized);
     }
     if (req.params && typeof req.params === 'object') {
-      req.params = sanitizeObject(req.params);
+      const sanitizedParams = sanitizeObject(req.params);
+      Object.assign(req.params, sanitizedParams);
     }
     next();
   } catch (error) {
