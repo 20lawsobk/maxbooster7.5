@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { storefrontService } from '../services/storefrontService';
 import { hybridStorageService } from '../services/hybridStorageService';
+import { storeUploadedFile } from '../middleware/uploadHandler.js';
 import {
   insertStorefrontSchema,
   updateStorefrontSchema,
@@ -703,23 +704,14 @@ router.post('/upload-asset', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Invalid asset type. Must be logo, banner, or avatar' });
     }
 
-    const folder = `storefronts/${assetType}`;
-    const uploadResult = await hybridStorageService.upload(
-      req.user!.id,
-      req.file.originalname,
-      req.file.buffer,
-      req.file.mimetype,
-      { folder, forceLocation: 'replit' as const }
-    );
+    const category = assetType === 'avatar' ? 'avatar' : 'artwork';
+    const result = await storeUploadedFile(req.file, req.user!.id, category);
 
-    const fileKey = uploadResult.key;
-    const url = `/api/storage/file/${fileKey}`;
-
-    logger.info(`Uploaded storefront ${assetType} for user ${req.user!.id}: ${fileKey}`);
+    logger.info(`Uploaded storefront ${assetType} via storeUploadedFile for user ${req.user!.id}: ${result.key} (processed: ${result.processed})`);
 
     res.json({
-      url,
-      key: fileKey,
+      url: result.url,
+      key: result.key,
       assetType,
     });
   } catch (error: unknown) {

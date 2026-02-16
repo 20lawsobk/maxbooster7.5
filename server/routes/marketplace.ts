@@ -6,6 +6,7 @@ import { discoveryAlgorithmService } from '../services/discoveryAlgorithmService
 import { marketplaceService } from '../services/marketplaceService';
 import { storage } from '../storage';
 import { storageService } from '../services/storageService';
+import { storeUploadedFile } from '../middleware/uploadHandler.js';
 import { notificationService } from '../services/notificationService';
 import { logger } from '../logger.js';
 import { db } from '../db';
@@ -944,11 +945,9 @@ router.post('/upload', upload.fields([
 
     if (files?.coverArt?.[0]) {
       const coverFile = files.coverArt[0];
-      const ext = path.extname(coverFile.originalname) || '.jpg';
-      const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-      const coverKey = await storageService.uploadFile(coverFile.buffer, 'covers', filename, coverFile.mimetype);
-      artworkUrl = `/api/marketplace/cover/${coverKey}`;
-      logger.info(`Cover art saved: ${coverKey}`);
+      const result = await storeUploadedFile(coverFile, req.user!.id, 'artwork');
+      artworkUrl = result.url;
+      logger.info(`Cover art saved via storeUploadedFile: ${result.key} (processed: ${result.processed})`);
     }
 
     const listing = await marketplaceService.createListing({
@@ -1153,10 +1152,9 @@ router.put('/listings/:id', upload.fields([
 
     if (files?.artwork?.[0]) {
       const artworkFile = files.artwork[0];
-      const ext = path.extname(artworkFile.originalname).toLowerCase();
-      const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-      const artworkKey = await storageService.uploadFile(artworkFile.buffer, 'covers', filename, artworkFile.mimetype);
-      updateData.artworkUrl = `/api/marketplace/cover/${artworkKey}`;
+      const result = await storeUploadedFile(artworkFile, req.user!.id, 'artwork');
+      updateData.artworkUrl = result.url;
+      logger.info(`Artwork updated via storeUploadedFile: ${result.key} (processed: ${result.processed})`);
     }
 
     const updatedListing = await marketplaceService.updateListing(id, req.user!.id, updateData);
