@@ -1,0 +1,63 @@
+{
+  "files": {
+    "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/logo/45c103d7-B-Lawz_Music.jpeg": {
+      "key": "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/logo/45c103d7-B-Lawz_Music.jpeg",
+      "originalName": "B-Lawz Music.jpeg",
+      "mimeType": "image/jpeg",
+      "sizeBytes": 116364,
+      "compressedSize": 116364,
+      "tier": "hot",
+      "location": "replit",
+      "contentHash": "f323360f7d886ccd38b52a68e83d7f613d0bad5775b753e62c84eb373259b25d",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-16T00:14:58.894Z",
+      "createdAt": "2026-02-16T00:14:58.783Z",
+      "userId": "388306cc-48c1-48c4-ab96-dd133e41c6b8",
+      "isPublic": false,
+      "isDeduplicated": false
+    },
+    "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/banner/b261eda2-B-Lawz_Music.jpeg": {
+      "key": "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/banner/b261eda2-B-Lawz_Music.jpeg",
+      "originalName": "B-Lawz Music.jpeg",
+      "mimeType": "image/jpeg",
+      "sizeBytes": 116364,
+      "compressedSize": 116364,
+      "tier": "hot",
+      "location": "replit",
+      "contentHash": "f323360f7d886ccd38b52a68e83d7f613d0bad5775b753e62c84eb373259b25d",
+      "accessCount": 1,
+      "lastAccessed": "2026-02-16T00:15:10.786Z",
+      "createdAt": "2026-02-16T00:15:10.687Z",
+      "userId": "388306cc-48c1-48c4-ab96-dd133e41c6b8",
+      "isPublic": false,
+      "isDeduplicated": true,
+      "deduplicationRef": "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/logo/45c103d7-B-Lawz_Music.jpeg"
+    },
+    "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/avatar/dafa6d36-B-Lawz_Music.jpeg": {
+      "key": "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/avatar/dafa6d36-B-Lawz_Music.jpeg",
+      "originalName": "B-Lawz Music.jpeg",
+      "mimeType": "image/jpeg",
+      "sizeBytes": 116364,
+      "compressedSize": 116364,
+      "tier": "hot",
+      "location": "replit",
+      "contentHash": "f323360f7d886ccd38b52a68e83d7f613d0bad5775b753e62c84eb373259b25d",
+      "accessCount": 0,
+      "lastAccessed": "2026-02-16T00:15:17.690Z",
+      "createdAt": "2026-02-16T00:15:17.690Z",
+      "userId": "388306cc-48c1-48c4-ab96-dd133e41c6b8",
+      "isPublic": false,
+      "isDeduplicated": true,
+      "deduplicationRef": "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/logo/45c103d7-B-Lawz_Music.jpeg"
+    }
+  },
+  "contentHashes": {
+    "f323360f7d886ccd38b52a68e83d7f613d0bad5775b753e62c84eb373259b25d": [
+      "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/logo/45c103d7-B-Lawz_Music.jpeg",
+      "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/banner/b261eda2-B-Lawz_Music.jpeg",
+      "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/avatar/dafa6d36-B-Lawz_Music.jpeg"
+    ]
+  },
+  "publicHashes": {},
+  "updatedAt": "2026-02-16T00:15:17.690Z"
+}
