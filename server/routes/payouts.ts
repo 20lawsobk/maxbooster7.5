@@ -689,18 +689,18 @@ router.post('/statements/generate', async (req, res) => {
     }
 
     const { db } = await import('../db');
-    const { royaltyStatements, royalties } = await import('@shared/schema');
+    const { royaltyStatements, royaltyTransactions } = await import('@shared/schema');
     const { eq, and, gte, lte, sum } = await import('drizzle-orm');
     const { v4: uuidv4 } = await import('uuid');
 
     const earningsResult = await db
-      .select({ total: sum(royalties.amount) })
-      .from(royalties)
+      .select({ total: sum(royaltyTransactions.amount) })
+      .from(royaltyTransactions)
       .where(
         and(
-          eq(royalties.userId, req.user.id),
-          gte(royalties.createdAt, start),
-          lte(royalties.createdAt, end)
+          eq(royaltyTransactions.userId, req.user.id),
+          gte(royaltyTransactions.createdAt, start),
+          lte(royaltyTransactions.createdAt, end)
         )
       );
 

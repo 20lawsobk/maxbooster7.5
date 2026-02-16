@@ -598,18 +598,21 @@ export class StorefrontService {
     updates: Partial<CreateMembershipTierInput>
   ) {
     try {
-      const tier = await db.query.membershipTiers.findFirst({
-        where: eq(membershipTiers.id, tierId),
-        with: {
-          storefront: true,
-        },
-      });
+      const tierResults = await db
+        .select({ tier: membershipTiers, storefront: storefronts })
+        .from(membershipTiers)
+        .leftJoin(storefronts, eq(membershipTiers.storefrontId, storefronts.id))
+        .where(eq(membershipTiers.id, tierId))
+        .limit(1);
+
+      const tier = tierResults[0]?.tier;
+      const storefront = tierResults[0]?.storefront;
 
       if (!tier) {
         throw new Error('Membership tier not found');
       }
 
-      if (tier.storefront.userId !== userId) {
+      if (storefront?.userId !== userId) {
         throw new Error('Unauthorized');
       }
 
@@ -634,18 +637,21 @@ export class StorefrontService {
    */
   async deleteMembershipTier(tierId: string, userId: string) {
     try {
-      const tier = await db.query.membershipTiers.findFirst({
-        where: eq(membershipTiers.id, tierId),
-        with: {
-          storefront: true,
-        },
-      });
+      const tierResults = await db
+        .select({ tier: membershipTiers, storefront: storefronts })
+        .from(membershipTiers)
+        .leftJoin(storefronts, eq(membershipTiers.storefrontId, storefronts.id))
+        .where(eq(membershipTiers.id, tierId))
+        .limit(1);
+
+      const tier = tierResults[0]?.tier;
+      const storefront = tierResults[0]?.storefront;
 
       if (!tier) {
         throw new Error('Membership tier not found');
       }
 
-      if (tier.storefront.userId !== userId) {
+      if (storefront?.userId !== userId) {
         throw new Error('Unauthorized');
       }
 
@@ -678,12 +684,18 @@ export class StorefrontService {
         throw new Error('Stripe not configured');
       }
 
-      const tier = await db.query.membershipTiers.findFirst({
-        where: eq(membershipTiers.id, tierId),
-        with: {
-          storefront: true,
-        },
-      });
+      const tierResults = await db
+        .select({
+          tier: membershipTiers,
+          storefront: storefronts,
+        })
+        .from(membershipTiers)
+        .leftJoin(storefronts, eq(membershipTiers.storefrontId, storefronts.id))
+        .where(eq(membershipTiers.id, tierId))
+        .limit(1);
+
+      const tier = tierResults[0]?.tier;
+      const storefront = tierResults[0]?.storefront;
 
       if (!tier) {
         throw new Error('Membership tier not found');
@@ -697,13 +709,18 @@ export class StorefrontService {
         throw new Error('This membership tier is at maximum capacity');
       }
 
-      const existingMembership = await db.query.customerMemberships.findFirst({
-        where: and(
-          eq(customerMemberships.customerId, customerId),
-          eq(customerMemberships.tierId, tierId),
-          eq(customerMemberships.status, 'active')
-        ),
-      });
+      const existingMemberships = await db
+        .select()
+        .from(customerMemberships)
+        .where(
+          and(
+            eq(customerMemberships.customerId, customerId),
+            eq(customerMemberships.tierId, tierId),
+            eq(customerMemberships.status, 'active')
+          )
+        )
+        .limit(1);
+      const existingMembership = existingMemberships[0];
 
       if (existingMembership) {
         throw new Error('You already have an active membership to this tier');
