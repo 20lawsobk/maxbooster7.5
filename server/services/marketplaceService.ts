@@ -1102,6 +1102,10 @@ export class MarketplaceService {
       return { url: session.url };
     } catch (error: unknown) {
       logger.error('Error initiating purchase:', error);
+      const msg = (error as Error).message;
+      if (msg === 'Beat not found' || msg === 'Invalid license type' || msg === 'Invalid or inactive license type' || msg === 'Payment system not configured' || msg === 'Cannot purchase your own beat') {
+        throw error;
+      }
       throw new Error('Failed to initiate purchase');
     }
   }

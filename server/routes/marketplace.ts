@@ -632,7 +632,17 @@ router.post('/purchase', async (req: Request, res: Response) => {
     res.json(result);
   } catch (error: any) {
     logger.error('Error initiating purchase:', error);
-    res.status(500).json({ error: error.message || 'Failed to initiate purchase' });
+    const msg = error.message || 'Failed to initiate purchase';
+    if (msg.includes('not found') || msg.includes('Not found')) {
+      return res.status(404).json({ error: msg });
+    }
+    if (msg.includes('not configured') || msg.includes('Invalid') || msg.includes('inactive')) {
+      return res.status(400).json({ error: msg });
+    }
+    if (msg.includes('Cannot purchase your own')) {
+      return res.status(403).json({ error: msg });
+    }
+    res.status(500).json({ error: 'Failed to initiate purchase' });
   }
 });
 
