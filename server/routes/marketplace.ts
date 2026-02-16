@@ -1017,10 +1017,12 @@ router.post('/upload', upload.fields([
 
 router.get('/audio/*path', async (req: Request, res: Response) => {
   try {
-    let fileKey = req.params.path;
+    let fileKey = Array.isArray(req.params.path) ? req.params.path.join('/') : req.params.path;
     
-    // Strip 'uploads/' prefix if present - the storage key doesn't include this prefix
-    // The 'uploads/' prefix is added by LocalStorageProvider.getDownloadUrl for URLs
+    if (typeof fileKey !== 'string') {
+      return res.status(400).json({ error: 'Invalid audio path' });
+    }
+    
     if (fileKey.startsWith('uploads/')) {
       fileKey = fileKey.substring('uploads/'.length);
     }
@@ -1084,7 +1086,11 @@ router.get('/audio/*path', async (req: Request, res: Response) => {
 
 router.get('/cover/*path', async (req: Request, res: Response) => {
   try {
-    const fileKey = req.params.path;
+    const fileKey = Array.isArray(req.params.path) ? req.params.path.join('/') : req.params.path;
+    
+    if (typeof fileKey !== 'string') {
+      return res.status(400).json({ error: 'Invalid cover path' });
+    }
     
     const exists = await storageService.fileExists(fileKey);
     if (!exists) {
@@ -1379,6 +1385,15 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
         .from(storefrontRatings)
         .where(eq(storefrontRatings.storefrontId, storefrontId));
       avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
+    }
+
+    if (avgRating === 0 && producerBeats.length > 0) {
+      const beatRatings = producerBeats
+        .filter((b: any) => (b.avgRating || 0) > 0)
+        .map((b: any) => b.avgRating);
+      if (beatRatings.length > 0) {
+        avgRating = Math.round((beatRatings.reduce((s: number, r: number) => s + r, 0) / beatRatings.length) * 10) / 10;
+      }
     }
 
     const { and: drizzleAnd } = await import('drizzle-orm');

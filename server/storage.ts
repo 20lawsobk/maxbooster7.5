@@ -586,6 +586,15 @@ export class DatabaseStorage implements IStorage {
           .from(orders)
           .where(and(eq(orders.sellerId, u.id), eq(orders.status, 'completed')));
         salesCount = salesResult?.count || 0;
+
+        if (avgRating === 0 && userBeats.length > 0) {
+          const beatRatings = userBeats
+            .filter(b => ((b.metadata as any)?.avgRating || 0) > 0)
+            .map(b => (b.metadata as any).avgRating);
+          if (beatRatings.length > 0) {
+            avgRating = Math.round((beatRatings.reduce((s: number, r: number) => s + r, 0) / beatRatings.length) * 10) / 10;
+          }
+        }
         
         const displayName = u.username || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Producer';
         return {
@@ -1323,8 +1332,7 @@ export class DatabaseStorage implements IStorage {
           beatArtworkUrl: listings.artworkUrl,
           beatAudioUrl: listings.audioUrl,
           beatMetadata: listings.metadata,
-          sellerName: users.displayName,
-          sellerUsername: users.username,
+          sellerName: users.username,
         })
         .from(orders)
         .leftJoin(listings, eq(orders.listingId, listings.id))

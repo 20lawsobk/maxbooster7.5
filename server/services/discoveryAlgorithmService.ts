@@ -261,6 +261,8 @@ export class DiscoveryAlgorithmService {
           coverArt: beat.artworkUrl,
           plays: metadata.plays || 0,
           likes: metadata.likes || 0,
+          avgRating: metadata.avgRating || 0,
+          ratingCount: metadata.ratingCount || 0,
           isHot: discoveryScore > 0.7,
           isNew: beat.createdAt && beat.createdAt >= oneWeekAgo,
           discoveryScore,
