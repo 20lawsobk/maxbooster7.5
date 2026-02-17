@@ -24,8 +24,8 @@ import {
   Gift,
   Tag,
 } from 'lucide-react';
-import { useState, useCallback, useEffect } from 'react';
-import { Star, UserPlus, UserCheck } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Star, UserPlus, UserCheck, Pause } from 'lucide-react';
 
 interface Storefront {
   id: string;
@@ -136,6 +136,43 @@ export default function Storefront() {
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [userRatingValue, setUserRatingValue] = useState(0);
   const [userReview, setUserReview] = useState('');
+  const [playingListingId, setPlayingListingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handlePlayListing = useCallback((listing: MarketplaceListing) => {
+    if (playingListingId === listing.id) {
+      audioRef.current?.pause();
+      setPlayingListingId(null);
+      return;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    let audioUrl = listing.audioUrl;
+    if (!audioUrl) return;
+    if (!audioUrl.startsWith('http')) {
+      if (!audioUrl.startsWith('/')) {
+        audioUrl = `/api/marketplace/audio/${audioUrl}`;
+      } else if (!audioUrl.startsWith('/api/')) {
+        audioUrl = `/api/marketplace/audio${audioUrl}`;
+      }
+    }
+    const audio = new Audio(audioUrl);
+    audio.play().catch(() => {});
+    audio.onended = () => setPlayingListingId(null);
+    audio.onerror = () => setPlayingListingId(null);
+    audioRef.current = audio;
+    setPlayingListingId(listing.id);
+  }, [playingListingId]);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -841,8 +878,12 @@ export default function Storefront() {
                           )}
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="icon">
-                            <Play className="w-4 h-4" />
+                          <Button variant="outline" size="icon" onClick={() => handlePlayListing(listing)}>
+                            {playingListingId === listing.id ? (
+                              <Pause className="w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
                           </Button>
                           <Button
                             onClick={() => addToCart(listing.id)}

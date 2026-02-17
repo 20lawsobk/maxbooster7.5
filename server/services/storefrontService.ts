@@ -977,7 +977,24 @@ export class StorefrontService {
         limit: 50,
       });
 
-      return storefrontListings;
+      return storefrontListings.map((listing: any) => {
+        const meta = (listing.metadata as any) || {};
+        return {
+          ...listing,
+          coverArtUrl: listing.artworkUrl || '',
+          audioUrl: listing.audioUrl || listing.previewUrl || '',
+          bpm: meta.bpm || null,
+          key: meta.key || null,
+          genre: listing.category || meta.genre || '',
+          mood: meta.mood || null,
+          tags: meta.tags || [],
+          isExclusive: meta.isExclusive || false,
+          priceCents: listing.priceCents || 0,
+          discountPercent: meta.discountPercent || null,
+          discountPriceCents: meta.discountPriceCents || null,
+          discountExpiresAt: meta.discountExpiresAt || null,
+        };
+      });
     } catch (error: unknown) {
       logger.error('Error fetching storefront listings:', error);
       throw error;

@@ -119,11 +119,11 @@ const PLATFORMS = {
     authUrl: 'https://twitter.com/i/oauth2/authorize',
     tokenUrl: 'https://api.twitter.com/2/oauth2/token',
     scope: 'tweet.read tweet.write users.read follows.read follows.write offline.access',
-    clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY,
-    clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET,
+    clientId: process.env.TWITTER_API_KEY,
+    clientSecret: process.env.TWITTER_API_SECRET,
     usePKCE: true,
     responseType: 'code',
-    enabled: true,
+    enabled: !!(process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET),
   },
 };
 
@@ -309,8 +309,6 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     }
 
     if (platform === 'threads') {
-      params.delete('client_id');
-      params.set('app_id', config.clientId!);
       params.set('force_authentication', '1');
     }
     
@@ -401,8 +399,9 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       tokenData = await tokenResponse.json();
       
       if (!tokenResponse.ok || tokenData.error) {
-        logger.error(`Token exchange failed for ${platform}:`, tokenData);
-        return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}`);
+        logger.error(`Token exchange failed for ${platform}:`, { status: tokenResponse.status, data: tokenData });
+        const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
+        return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
       }
     } catch (err) {
       logger.error(`Token exchange error for ${platform}:`, err);
