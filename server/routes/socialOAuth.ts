@@ -285,6 +285,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('scope', config.scope);
       params.set('state', state);
       params.set('response_type', 'code');
+      params.set('force_authentication', '1');
     } else {
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
@@ -352,7 +353,6 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       tokenParams.set('redirect_uri', redirectUri);
       
       if (platform === 'twitter') {
-        tokenParams.set('client_id', config.clientId!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
       } else if (platform === 'tiktok') {
         tokenParams.set('client_key', config.clientId!);
@@ -366,6 +366,11 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       const headers: Record<string, string> = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
+      
+      if (platform === 'twitter') {
+        const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
+        headers['Authorization'] = `Basic ${basicAuth}`;
+      }
 
       logger.info(`[OAuth] Token exchange for ${platform}`, { redirectUri, hasCode: !!authCode, hasVerifier: !!stateData.codeVerifier });
       
