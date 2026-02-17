@@ -231,6 +231,53 @@ router.put('/:id/customize', async (req, res) => {
 });
 
 /**
+ * PATCH /api/storefront/:id/publish
+ * Publish or unpublish a storefront (toggle isPublic)
+ */
+router.patch('/:id/publish', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    const { isPublished } = req.body;
+
+    if (typeof isPublished !== 'boolean') {
+      return res.status(400).json({ error: 'isPublished must be a boolean' });
+    }
+
+    const storefront = await db.query.storefronts.findFirst({
+      where: eq(storefronts.id, id),
+    });
+
+    if (!storefront) {
+      return res.status(404).json({ error: 'Storefront not found' });
+    }
+
+    if (storefront.userId !== req.user!.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const [updated] = await db
+      .update(storefronts)
+      .set({
+        isPublic: isPublished,
+        updatedAt: new Date(),
+      })
+      .where(eq(storefronts.id, id))
+      .returning();
+
+    logger.info(`Storefront ${id} ${isPublished ? 'published' : 'unpublished'} by user ${req.user!.id}`);
+
+    res.json(updated);
+  } catch (error: unknown) {
+    logger.error('Error toggling storefront publish status:', error);
+    res.status(500).json({ error: getErrorMessage(error) || 'Failed to update publish status' });
+  }
+});
+
+/**
  * DELETE /api/storefront/:id
  * Delete a storefront
  */

@@ -46,6 +46,8 @@ import {
   Instagram,
   Twitter,
   Youtube,
+  Globe,
+  EyeOff,
 } from 'lucide-react';
 import { BogoPromotionsManager } from './BogoPromotionsManager';
 
@@ -351,6 +353,29 @@ export default function StorefrontBuilder() {
     },
   });
 
+  const publishStorefrontMutation = useMutation({
+    mutationFn: async ({ storefrontId, isPublished }: { storefrontId: string; isPublished: boolean }) => {
+      const response = await apiRequest('PATCH', `/api/storefront/${storefrontId}/publish`, { isPublished });
+      return response.json();
+    },
+    onSuccess: (data: any, variables) => {
+      toast({
+        title: variables.isPublished ? 'Storefront Published' : 'Storefront Unpublished',
+        description: variables.isPublished
+          ? 'Your storefront is now visible in the marketplace.'
+          : 'Your storefront has been hidden from the marketplace.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Publish Failed',
+        description: error.message || 'Failed to update publish status',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const deleteStorefrontMutation = useMutation({
     mutationFn: async (storefrontId: string) => {
       const response = await apiRequest('DELETE', `/api/storefront/${storefrontId}`);
@@ -488,6 +513,10 @@ export default function StorefrontBuilder() {
                             Active
                           </Badge>
                         )}
+                        <Badge variant={storefront.isPublic ? "default" : "secondary"} className={storefront.isPublic ? "bg-green-600 hover:bg-green-700" : ""}>
+                          {storefront.isPublic ? <Globe className="w-3 h-3 mr-1" /> : <EyeOff className="w-3 h-3 mr-1" />}
+                          {storefront.isPublic ? 'Published' : 'Draft'}
+                        </Badge>
                       </CardTitle>
                       <CardDescription className="mt-1">/{storefront.slug}</CardDescription>
                     </div>
@@ -505,6 +534,22 @@ export default function StorefrontBuilder() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
+                    <Button
+                      variant={storefront.isPublic ? "outline" : "default"}
+                      size="sm"
+                      className="flex-1"
+                      disabled={publishStorefrontMutation.isPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        publishStorefrontMutation.mutate({
+                          storefrontId: storefront.id,
+                          isPublished: !storefront.isPublic,
+                        });
+                      }}
+                    >
+                      {storefront.isPublic ? <EyeOff className="w-4 h-4 mr-1" /> : <Globe className="w-4 h-4 mr-1" />}
+                      {publishStorefrontMutation.isPending ? 'Updating...' : storefront.isPublic ? 'Unpublish' : 'Publish'}
+                    </Button>
                     <Button 
                       variant="outline" 
                       size="sm" 
