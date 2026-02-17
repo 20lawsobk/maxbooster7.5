@@ -53,17 +53,6 @@ const PLATFORMS = {
     responseType: 'code',
     enabled: !!(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET),
   },
-  tiktok2: {
-    name: 'TikTok (App 2)',
-    authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
-    tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-    scope: 'user.info.basic,user.info.profile,user.info.stats,video.list',
-    clientId: process.env.TIKTOK_CLIENT_KEY1,
-    clientSecret: process.env.TIKTOK_CLIENT_SECRET1,
-    usePKCE: true,
-    responseType: 'code',
-    enabled: !!(process.env.TIKTOK_CLIENT_KEY1 && process.env.TIKTOK_CLIENT_SECRET1),
-  },
   google: {
     name: 'Google',
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -162,7 +151,6 @@ const CALLBACK_PATHS: Record<string, string> = {
   instagram: '/auth/instagram/callback',
   threads: '/auth/threads/callback',
   tiktok: '/auth/tiktok/callback',
-  tiktok2: '/auth/tiktok/callback',
   google: '/auth/google/callback',
   youtube: '/auth/youtube/callback',
   googlebusiness: '/auth/google-business/callback',
@@ -221,7 +209,6 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
 
 router.get('/platforms', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const platformList = Object.entries(PLATFORMS)
-    .filter(([key]) => key !== 'tiktok2')
     .map(([key, config]) => ({
       id: key,
       name: config.name,
@@ -235,14 +222,6 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
   try {
     const userId = req.user!.id;
     let platform = req.params.platform.toLowerCase();
-    
-    if (platform === 'tiktok') {
-      const primary = PLATFORMS.tiktok;
-      const secondary = PLATFORMS.tiktok2;
-      if (!primary.enabled && secondary.enabled) {
-        platform = 'tiktok2';
-      }
-    }
     
     const config = PLATFORMS[platform as keyof typeof PLATFORMS];
     if (!config) {
@@ -282,7 +261,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
         params.set('state', state);
         params.set('code_challenge', codeChallenge);
         params.set('code_challenge_method', 'S256');
-      } else if (platform === 'tiktok' || platform === 'tiktok2') {
+      } else if (platform === 'tiktok') {
         const codeChallenge = generateCodeChallenge(codeVerifier, 'hex');
         params.set('client_key', config.clientId);
         params.set('scope', config.scope);
@@ -300,16 +279,19 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('state', state);
       params.set('access_type', 'offline');
       params.set('prompt', 'consent');
+    } else if (platform === 'threads') {
+      params.set('app_id', config.clientId);
+      params.set('redirect_uri', redirectUri);
+      params.set('scope', config.scope);
+      params.set('state', state);
+      params.set('response_type', 'code');
+      params.set('force_authentication', '1');
     } else {
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
       params.set('scope', config.scope);
       params.set('state', state);
       params.set('response_type', 'code');
-    }
-
-    if (platform === 'threads') {
-      params.set('force_authentication', '1');
     }
     
     oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
@@ -346,10 +328,6 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       platform = 'meta';
     }
     
-    if (platform === 'tiktok' && stateData.platform === 'tiktok2') {
-      platform = 'tiktok2';
-    }
-    
     if (stateData.platform !== platform) {
       return res.redirect('/social-media?error=platform_mismatch');
     }
@@ -376,7 +354,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       
       if (platform === 'twitter') {
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
-      } else if (platform === 'tiktok' || platform === 'tiktok2') {
+      } else if (platform === 'tiktok') {
         tokenParams.set('client_key', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
@@ -522,7 +500,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         } catch (ytErr) {
           logger.warn('Failed to fetch YouTube channel info:', ytErr);
         }
-      } else if (platform === 'tiktok' || platform === 'tiktok2') {
+      } else if (platform === 'tiktok') {
         try {
           const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count', {
             headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
@@ -583,7 +561,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       logger.warn(`Failed to fetch user info for ${platform}:`, err);
     }
     
-    const savePlatformName = (platform === 'tiktok2') ? 'tiktok' : platform;
+    const savePlatformName = platform;
     const platformsToSave = platform === 'meta' 
       ? [
           { name: 'facebook', username: facebookUsername, followerCount: facebookFollowers, profileUrl: facebookProfileUrl, platformUserId: facebookPlatformUserId, metadata: facebookMetadata },
