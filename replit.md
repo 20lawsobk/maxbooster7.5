@@ -1,96 +1,51 @@
-# Max Booster - AI-Powered Music Career Management Platform
+# Max Booster
 
 ## Overview
-Max Booster is a comprehensive AI-powered music career management platform by B-Lawz Music. It provides professional tools for music production, social media management, beat marketplace, analytics, distribution, and autonomous marketing systems.
+AI-Powered Music Career Management Platform by B-Lawz Music. Full-stack web application with React frontend, Express backend, PostgreSQL database, and a Rust-based in-memory key-value store (BoosterState).
 
-## Architecture
-- **Frontend**: React + Vite (client/), served on port 5000
-- **Backend**: Express.js (server/), served on same port 5000
-- **State Engine**: Rust-based BoosterState service (boosterstate/) on port 9877 - acts as a fast KV store / Redis replacement
-- **Database**: PostgreSQL via Drizzle ORM (pg + connect-pg-simple for sessions)
-- **Storage**: Hybrid Storage System — Replit Object Storage (hot tier) + Pocket Dimension (cold tier) with auto-tiering, deduplication, and compression
-- **Real-time**: WebSocket server for notifications and studio collaboration
+## Tech Stack
+- **Frontend**: React 19 + Vite 7 + TailwindCSS 4 + Radix UI + Framer Motion
+- **Backend**: Express.js (TypeScript) with session-based auth
+- **Database**: PostgreSQL via Drizzle ORM
+- **State Cache**: Rust BoosterState service (in-memory KV store on port 9877)
+- **Routing**: Wouter (client-side)
+- **State Management**: TanStack React Query + Zustand
+- **Internationalization**: i18next
 
 ## Project Structure
 ```
-client/          - React frontend (Vite)
-  src/
-    components/  - UI components
-    pages/       - Page components
-    stores/      - Zustand state stores
-    hooks/       - Custom React hooks
-    i18n/        - Internationalization
-server/          - Express backend
-  api/           - API route handlers
-  services/      - Business logic services
-  middleware/    - Express middleware
-  safety/        - Security middleware
-  monitoring/    - Metrics and monitoring
-  realtime/      - WebSocket servers
-  config/        - Configuration
-shared/          - Shared types and schema (Drizzle)
-boosterstate/    - Rust KV store service
+client/           - React frontend (Vite dev server)
+  src/            - Source code (components, hooks, pages, contexts)
+server/           - Express backend (API routes, middleware, services)
+shared/           - Shared types and Drizzle schema
+boosterstate/     - Rust KV store microservice (optional, has graceful fallbacks)
+assets/           - Static assets (icons, images)
+migrations/       - Drizzle database migrations
 ```
 
-## Key Technologies
-- React 18 + Wouter (routing) + TanStack Query
-- Tailwind CSS 3 + Radix UI + Framer Motion
-- Zustand (state management)
-- Drizzle ORM + PostgreSQL
-- Stripe (payments)
-- SendGrid (email)
-- TensorFlow.js (content analysis)
-- Sharp (image processing)
+## Key Configuration
+- **Port**: Application serves on port 5000 (both API and frontend)
+- **Vite**: Configured with `allowedHosts: true` and `host: 0.0.0.0` for Replit proxy compatibility
+- **Database**: Uses `DATABASE_URL` environment variable (Replit PostgreSQL)
+- **Schema Push**: `npx drizzle-kit push`
 
-## Development
-- Dev command: `./boosterstate/target/release/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts`
-- Server binds to 0.0.0.0:5000
-- Vite dev server runs in middleware mode through Express
-- `allowedHosts: true` configured for Replit proxy compatibility
+## Scripts
+- `npm run dev` - Development server (BoosterState + Express + Vite HMR)
+- `npm run build` - Production build (Vite frontend + esbuild server)
+- `npm run start` - Production start
+- `npm run db:push` - Push database schema changes
+
+## Workflow
+- **Start application**: Runs debug BoosterState binary + Express dev server with Vite middleware
 
 ## Deployment
-- Build: `npm run build` (runs esbuild for server + Vite for client)
-- Start: `npm run start` (starts boosterstate + production Node.js server)
-- Workflow: `npm run build && npm run start` (build step required before start)
-- Deployment target: VM (persistent WebSocket connections and background services)
-- Deploy config: build=`npm run build`, run=boosterstate + `NODE_ENV=production node dist/index.cjs`
-- IMPORTANT: REDIS_URL and SESSION_SECRET secrets must be set for production session store
-
-## Configured Services
-- Stripe (payments, billing, webhooks)
-- SendGrid (email delivery)
-- Social APIs: Facebook, Instagram, Twitter, TikTok, YouTube, LinkedIn, Threads, Google Business
-- Spotify API (streaming analytics)
-- LabelGrid (music distribution)
-- Sentry (error monitoring)
-- Redis (caching)
+- **Target**: Autoscale
+- **Build**: Cargo release build + npm build
+- **Run**: BoosterState release + Node.js production server
 
 ## Environment Variables
-- `VITE_STRIPE_PUBLIC_KEY` - Stripe publishable key for frontend payment elements
-- `APP_URL` - Production URL (https://maxbooster.replit.app) for OAuth redirects and Stripe callbacks
-- `DOMAIN` - Domain URL for social OAuth redirects
-- All social API credentials configured (Facebook, Instagram, Twitter, TikTok, YouTube, LinkedIn, Threads, Google Business, Spotify)
-- Stripe (publishable key, secret key, webhook secret)
-- SendGrid API key (from addresses default to @maxbooster.ai subdomains)
-- LabelGrid API token for distribution
-- Sentry DSN for error monitoring
-- Redis URL for caching
-- Replit Object Storage bucket ID
-
-## Email Domain
-- All email sender addresses use `@maxbooster.ai` consistently (support, alerts, billing, notifications, etc.)
-- Ensure `maxbooster.ai` domain is verified in SendGrid for email delivery
-
-## Recent Changes
-- 2026-02-16: Fixed payout statements/generate bug - Route was referencing non-existent `royalties` table, changed to `royaltyTransactions`. Fixed storefront membership tier operations (subscribe, update, delete) - replaced broken Drizzle `with: { storefront: true }` relation queries with explicit JOINs since no relations were defined for membershipTiers.
-- 2026-02-16: AI Audio Metadata Auto-fill - Beat upload form now runs client-side audio analysis (Web Audio API) when a file is selected, auto-detecting BPM, musical key, genre, mood, and tags. Uses spectral analysis, autocorrelation BPM detection, and chroma-based key estimation. Genre/mood inferred from audio features (energy, danceability, spectral centroid, scale). Shows analyzing indicator and confidence score. Users can override any auto-filled value. Located in client/src/lib/audioAnalysisService.ts.
-- 2026-02-16: Unified image upload pipeline - Marketplace cover art (upload & edit) and Storefront branding (logo, banner, avatar) now use storeUploadedFile() with full security validation (magic bytes, buffer checks), image processing (Sharp resizing, metadata stripping, format conversion), and standard storage URLs (/api/storage/file/...). Matches avatar upload method. Old /api/marketplace/cover/ proxy still serves legacy records.
-- 2026-02-16: Express 5 compatibility fixes - req.query/req.params read-only (Object.assign in-place), path-to-regexp v8 optional params (:param? → {/:param}), named wildcards (* → /{*splat}). Node.js upgraded to v24, all deps updated (Tailwind v4, React 19, Vite 7).
-- 2026-02-16: Hybrid Storage System activated - StorageService now delegates to HybridStorageService (Replit Object Storage hot tier + Pocket Dimension cold tier). All file operations (uploads, downloads, deletes) flow through hybrid system with intelligent tiering, content-hash deduplication, compression, and automatic cold storage migration every 6 hours. Storefront and all route-level storage updated. Legacy Replit-only keys still served via fallback.
-- 2026-02-15: Fixed Redis config bug - server/config/defaults.ts now reads process.env.REDIS_URL instead of hardcoded undefined. Standardized all email domains to @maxbooster.ai (was mixed .com/.io/.ai). ADMIN_PASSWORD moved to encrypted secret.
-- 2026-02-15: Configured production build/start scripts - workflow uses `npm run start` (production mode), deployment uses `npm run build` + `npm run start`. Fixed Vite circular chunk dependency by separating recharts into vendor-charts chunk. All secrets configured.
-- 2026-02-13: Analytics auto-refresh system - Created useAnalyticsInvalidation hook with prefix-based predicate matching for all /api/analytics/ and /api/analytics-alerts/ query keys. Wired into all major mutations across Projects, Dashboard, Distribution, SocialMedia, Marketplace, Royalties, and Advertisement pages. Analytics dashboards now refresh automatically when users create/update data anywhere in the platform.
-- 2026-02-13: Fixed storefront memberships bug - rewrote getCustomerMemberships query to use explicit JOINs instead of Drizzle ORM relations (which were undefined for customerMemberships table), fixed column name mismatch (priceCents vs price)
-- 2026-02-13: Comprehensive platform testing - 138+ API endpoint tests passed across auth, payments, studio, marketplace, distribution, social, analytics, admin, security systems. All 14 frontend pages verified. 172 database tables healthy.
-- 2026-02-13: Set VITE_STRIPE_PUBLIC_KEY, APP_URL, and DOMAIN environment variables - fixed payment page blocking issue and ensured OAuth redirects use correct production URL
-- 2026-02-12: Initial Replit setup - installed Node.js 20, Rust stable, configured PostgreSQL, pushed DB schema, set all API credentials, fixed storage provider detection for Replit environment
+- `DATABASE_URL` - PostgreSQL connection string (required)
+- `SESSION_SECRET` - Session encryption key (auto-generated)
+- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` - Stripe payment (optional for dev)
+- `SENDGRID_API_KEY` - Email delivery (optional for dev)
+- Various social media API keys (optional)
