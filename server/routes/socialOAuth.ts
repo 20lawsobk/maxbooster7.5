@@ -33,7 +33,7 @@ const PLATFORMS = {
   },
   threads: {
     name: 'Threads',
-    authUrl: 'https://www.threads.net/oauth/authorize',
+    authUrl: 'https://threads.net/oauth/authorize',
     tokenUrl: 'https://graph.threads.net/oauth/access_token',
     scope: 'threads_basic,threads_content_publish,threads_manage_insights,threads_manage_replies,threads_read_replies',
     clientId: process.env.THREADS_APP_ID || process.env.FACEBOOK_APP_ID,
@@ -47,11 +47,11 @@ const PLATFORMS = {
     authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
     tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
     scope: 'user.info.basic,user.info.profile,user.info.stats,video.list',
-    clientId: process.env.TIKTOK_CLIENT_KEY,
-    clientSecret: process.env.TIKTOK_CLIENT_SECRET,
-    usePKCE: true,
+    clientId: process.env.TIKTOK_CLIENT_KEY1 || process.env.TIKTOK_CLIENT_KEY,
+    clientSecret: process.env.TIKTOK_CLIENT_SECRET1 || process.env.TIKTOK_CLIENT_SECRET,
+    usePKCE: false,
     responseType: 'code',
-    enabled: !!(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET),
+    enabled: !!(process.env.TIKTOK_CLIENT_KEY1 || process.env.TIKTOK_CLIENT_KEY),
   },
   google: {
     name: 'Google',
@@ -106,7 +106,7 @@ const PLATFORMS = {
   twitter: {
     name: 'Twitter/X',
     authUrl: 'https://x.com/i/oauth2/authorize',
-    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
+    tokenUrl: 'https://api.x.com/2/oauth2/token',
     scope: 'tweet.read tweet.write users.read follows.read follows.write offline.access',
     clientId: process.env.TWITTER_API_KEY,
     clientSecret: process.env.TWITTER_API_SECRET,
@@ -249,29 +249,22 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     const params = new URLSearchParams();
     let codeVerifier: string | undefined;
     
-    if (config.usePKCE) {
+    if (platform === 'twitter') {
       codeVerifier = generateCodeVerifier();
-      
-      if (platform === 'twitter') {
-        const codeChallenge = generateCodeChallenge(codeVerifier, 'base64url');
-        params.set('response_type', 'code');
-        params.set('client_id', config.clientId);
-        params.set('redirect_uri', redirectUri);
-        params.set('scope', config.scope);
-        params.set('state', state);
-        params.set('code_challenge', codeChallenge);
-        params.set('code_challenge_method', 'S256');
-      } else if (platform === 'tiktok') {
-        const codeChallenge = generateCodeChallenge(codeVerifier, 'hex');
-        params.set('client_key', config.clientId);
-        params.set('scope', config.scope);
-        params.set('response_type', 'code');
-        params.set('redirect_uri', redirectUri);
-        params.set('state', state);
-        params.set('code_challenge', codeChallenge);
-        params.set('code_challenge_method', 'S256');
-        params.set('device_platform', 'web');
-      }
+      const codeChallenge = generateCodeChallenge(codeVerifier, 'base64url');
+      params.set('response_type', 'code');
+      params.set('client_id', config.clientId);
+      params.set('redirect_uri', redirectUri);
+      params.set('scope', config.scope);
+      params.set('state', state);
+      params.set('code_challenge', codeChallenge);
+      params.set('code_challenge_method', 'S256');
+    } else if (platform === 'tiktok') {
+      params.set('client_key', config.clientId);
+      params.set('scope', config.scope);
+      params.set('response_type', 'code');
+      params.set('redirect_uri', redirectUri);
+      params.set('state', state);
     } else if (platform === 'youtube' || platform === 'google' || platform === 'googlebusiness') {
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
@@ -284,9 +277,8 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
       params.set('scope', config.scope);
-      params.set('state', state);
       params.set('response_type', 'code');
-      params.set('force_authentication', '1');
+      params.set('state', state);
     } else {
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
@@ -343,7 +335,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     const redirectUri = getCallbackUrl(platform);
 
     let authCode = code as string;
-    if (platform === 'threads' && authCode) {
+    if (authCode) {
       authCode = authCode.replace(/#_$/, '');
     }
     
@@ -355,24 +347,24 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       tokenParams.set('code', authCode);
       tokenParams.set('redirect_uri', redirectUri);
       
-      if (platform === 'twitter') {
-        tokenParams.set('code_verifier', stateData.codeVerifier || '');
-      } else if (platform === 'tiktok') {
-        tokenParams.set('client_key', config.clientId!);
-        tokenParams.set('client_secret', config.clientSecret!);
-        tokenParams.set('code_verifier', stateData.codeVerifier || '');
-      } else {
-        tokenParams.set('client_id', config.clientId!);
-        tokenParams.set('client_secret', config.clientSecret!);
-      }
-      
       const headers: Record<string, string> = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
-      
+
       if (platform === 'twitter') {
+        tokenParams.set('code_verifier', stateData.codeVerifier || '');
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
         headers['Authorization'] = `Basic ${basicAuth}`;
+      } else if (platform === 'tiktok') {
+        tokenParams.set('client_key', config.clientId!);
+        tokenParams.set('client_secret', config.clientSecret!);
+        headers['Cache-Control'] = 'no-cache';
+      } else if (platform === 'threads') {
+        tokenParams.set('client_id', config.clientId!);
+        tokenParams.set('client_secret', config.clientSecret!);
+      } else {
+        tokenParams.set('client_id', config.clientId!);
+        tokenParams.set('client_secret', config.clientSecret!);
       }
 
       logger.info(`[OAuth] Token exchange for ${platform}`, { redirectUri, hasCode: !!authCode, hasVerifier: !!stateData.codeVerifier });
