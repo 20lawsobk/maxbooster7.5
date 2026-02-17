@@ -158,6 +158,71 @@ router.post('/:accountId/refresh', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/manual-token', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id;
+    const { platform, accessToken, refreshToken, username, platformUserId, expiresIn } = req.body;
+
+    if (!platform || !accessToken) {
+      return res.status(400).json({ error: 'Platform and access token are required' });
+    }
+
+    const validPlatforms = [
+      'instagram', 'facebook', 'tiktok', 'twitter', 'youtube',
+      'spotify', 'threads', 'linkedin', 'soundcloud', 'apple_music',
+    ];
+    if (!validPlatforms.includes(platform)) {
+      return res.status(400).json({ error: `Invalid platform. Must be one of: ${validPlatforms.join(', ')}` });
+    }
+
+    const existing = await db
+      .select()
+      .from(socialAccounts)
+      .where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.platform, platform)));
+
+    const tokenExpiresAt = expiresIn
+      ? new Date(Date.now() + expiresIn * 1000)
+      : null;
+
+    if (existing.length > 0) {
+      await db
+        .update(socialAccounts)
+        .set({
+          accessToken,
+          refreshToken: refreshToken || existing[0].refreshToken,
+          username: username || existing[0].username,
+          platformUserId: platformUserId || existing[0].platformUserId,
+          tokenExpiresAt,
+          isActive: true,
+        })
+        .where(eq(socialAccounts.id, existing[0].id));
+
+      logger.info(`[ManualToken] Updated ${platform} token for user ${userId}`);
+      res.json({ message: `${platform} access token updated successfully`, id: existing[0].id });
+    } else {
+      const [newAccount] = await db
+        .insert(socialAccounts)
+        .values({
+          userId,
+          platform,
+          accessToken,
+          refreshToken: refreshToken || null,
+          username: username || null,
+          platformUserId: platformUserId || null,
+          tokenExpiresAt,
+          isActive: true,
+        })
+        .returning({ id: socialAccounts.id });
+
+      logger.info(`[ManualToken] Created ${platform} token for user ${userId}`);
+      res.json({ message: `${platform} connected successfully`, id: newAccount.id });
+    }
+  } catch (error) {
+    logger.error('Error saving manual token:', error);
+    res.status(500).json({ error: 'Failed to save access token' });
+  }
+});
+
 router.put('/:accountId/permissions', async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
