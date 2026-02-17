@@ -860,7 +860,7 @@ router.post('/:id/checkout', async (req, res) => {
     }
 
     const storefrontListings = await db.select().from(listings)
-      .where(and(eq(listings.userId, storefront.userId), eq(listings.status, 'active')));
+      .where(and(eq(listings.userId, storefront.userId), eq(listings.isPublished, true)));
 
     const validListings = storefrontListings.filter(l => listingIds.includes(l.id));
     if (validListings.length === 0) {
@@ -1591,7 +1591,7 @@ router.post('/:id/checkout/preview', async (req, res) => {
     if (!storefront) return res.status(404).json({ error: 'Storefront not found' });
 
     const storefrontListings = await db.select().from(listings)
-      .where(and(eq(listings.userId, storefront.userId), eq(listings.status, 'active')));
+      .where(and(eq(listings.userId, storefront.userId), eq(listings.isPublished, true)));
     const validListings = storefrontListings.filter(l => listingIds.includes(l.id));
 
     const cartItems = validListings.map(l => {

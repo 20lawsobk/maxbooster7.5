@@ -5176,6 +5176,86 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showCartModal} onOpenChange={setShowCartModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <ShoppingCart className="w-5 h-5 mr-2" />
+              Your Cart ({cart.length})
+            </DialogTitle>
+            <DialogDescription>Review your items before checkout</DialogDescription>
+          </DialogHeader>
+          {cart.length === 0 ? (
+            <EmptyCartState onAction={() => setShowCartModal(false)} />
+          ) : (
+            <div className="space-y-4">
+              <ScrollArea className="max-h-[300px]">
+                <div className="space-y-3 pr-4">
+                  {cart.map((item, index) => {
+                    const beat = beats.find((b: Beat) => b.id === item.beatId);
+                    return (
+                      <div key={`${item.beatId}-${item.licenseType}`} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{beat?.title || 'Beat'}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{item.licenseType} License</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-semibold text-sm">${item.price.toFixed(2)}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setCart(cart.filter((_, i) => i !== index));
+                              toast({ title: 'Removed from Cart' });
+                            }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+              <div className="border-t pt-3 space-y-3">
+                <div className="flex justify-between items-center font-semibold">
+                  <span>Total</span>
+                  <span className="text-lg">${cart.reduce((sum, item) => sum + item.price, 0).toFixed(2)}</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => { setCart([]); toast({ title: 'Cart Cleared' }); }}>
+                    Clear Cart
+                  </Button>
+                  <Button
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    disabled={purchaseBeatMutation.isPending}
+                    onClick={() => {
+                      if (cart.length > 0) {
+                        const item = cart[0];
+                        const beat = beats.find((b: Beat) => b.id === item.beatId);
+                        if (beat) {
+                          handlePurchase(beat, item.licenseType);
+                          setShowCartModal(false);
+                        } else {
+                          toast({ title: 'Error', description: 'Beat no longer available', variant: 'destructive' });
+                        }
+                      }
+                    }}
+                  >
+                    {purchaseBeatMutation.isPending ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checkout</>
+                    ) : (
+                      <><CreditCard className="w-4 h-4 mr-2" /> Checkout ({cart.length} {cart.length === 1 ? 'item' : 'items'})</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
