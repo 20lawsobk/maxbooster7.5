@@ -375,7 +375,6 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       tokenParams.set('redirect_uri', redirectUri);
       
       if (platform === 'twitter') {
-        tokenParams.set('client_id', config.clientId!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
       } else if (platform === 'tiktok' || platform === 'tiktok2') {
         tokenParams.set('client_key', config.clientId!);
