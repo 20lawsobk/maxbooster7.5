@@ -407,7 +407,7 @@ export default function Landing() {
                       </li>
                     ))}
                   </ul>
-                  <Link href={`/subscribe/${plan.name.toLowerCase()}`}>
+                  <Link href={`/register/payment/${plan.name.toLowerCase()}`}>
                     <Button
                       className={`w-full ${plan.popular ? 'gradient-bg' : ''}`}
                       variant={plan.popular ? 'default' : 'outline'}
