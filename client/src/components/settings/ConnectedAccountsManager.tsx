@@ -211,7 +211,8 @@ export function ConnectedAccountsManager() {
       });
       const data = await response.json();
       if (data.authUrl) {
-        window.location.href = data.authUrl;
+        const top = window.top || window;
+        top.location.href = data.authUrl;
       } else if (data.message) {
         toast({
           title: 'Connection Issue',

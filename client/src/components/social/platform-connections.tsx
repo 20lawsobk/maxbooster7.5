@@ -54,7 +54,8 @@ export function PlatformConnections() {
     },
     onSuccess: (data, platform) => {
       if (data.authUrl) {
-        window.location.href = data.authUrl;
+        const top = window.top || window;
+        top.location.href = data.authUrl;
       } else {
         queryClient.invalidateQueries({ queryKey: ['/api/social/connections'] });
         toast({
