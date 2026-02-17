@@ -66,23 +66,6 @@
       "isPublic": false,
       "isDeduplicated": false
     },
-    "0f8182e1-8b2c-4acf-8de4-7733061d51c3/tests/9880ff25-test-file.txt": {
-      "key": "0f8182e1-8b2c-4acf-8de4-7733061d51c3/tests/9880ff25-test-file.txt",
-      "originalName": "test-file.txt",
-      "mimeType": "text/plain",
-      "sizeBytes": 32,
-      "compressedSize": 32,
-      "tier": "hot",
-      "location": "replit",
-      "contentHash": "51c643a3fc0a3e721bb8f8d976bbc56ae83b5c0c3adf05a5d6eb15873eed6bd3",
-      "accessCount": 0,
-      "lastAccessed": "2026-02-17T02:53:47.215Z",
-      "createdAt": "2026-02-17T02:53:47.215Z",
-      "userId": "0f8182e1-8b2c-4acf-8de4-7733061d51c3",
-      "isPublic": false,
-      "isDeduplicated": true,
-      "deduplicationRef": "0f8182e1-8b2c-4acf-8de4-7733061d51c3/tests/73057c38-test-file.txt"
-    },
     "0f8182e1-8b2c-4acf-8de4-7733061d51c3/cold-tests/8b226224-cold-test.txt": {
       "key": "0f8182e1-8b2c-4acf-8de4-7733061d51c3/cold-tests/8b226224-cold-test.txt",
       "originalName": "cold-test.txt",
@@ -107,13 +90,12 @@
       "388306cc-48c1-48c4-ab96-dd133e41c6b8/storefronts/avatar/dafa6d36-B-Lawz_Music.jpeg"
     ],
     "51c643a3fc0a3e721bb8f8d976bbc56ae83b5c0c3adf05a5d6eb15873eed6bd3": [
-      "0f8182e1-8b2c-4acf-8de4-7733061d51c3/tests/73057c38-test-file.txt",
-      "0f8182e1-8b2c-4acf-8de4-7733061d51c3/tests/9880ff25-test-file.txt"
+      "0f8182e1-8b2c-4acf-8de4-7733061d51c3/tests/73057c38-test-file.txt"
     ],
     "a464264ea8f0de46963e97aa6e20566a2407b554296fb3128d8a48d3bfb6d585": [
       "0f8182e1-8b2c-4acf-8de4-7733061d51c3/cold-tests/8b226224-cold-test.txt"
     ]
   },
   "publicHashes": {},
-  "updatedAt": "2026-02-17T02:53:59.168Z"
+  "updatedAt": "2026-02-17T03:00:51.939Z"
 }
