@@ -609,6 +609,40 @@ export async function registerRoutes(
     }
   });
 
+  // Auth: Delete all other sessions (alias for terminate-all)
+  app.delete("/api/auth/sessions/other", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const currentSessionId = req.session.id;
+      const userSessions = await storage.getSessionsByUserId(req.user.id);
+      let terminatedCount = 0;
+
+      for (const session of userSessions) {
+        if (session.id !== currentSessionId) {
+          const deleted = await storage.deleteSession(session.id);
+          if (deleted) {
+            terminatedCount++;
+            try {
+              const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
+              const redisClient = await getRedisClient();
+              if (redisClient) {
+                await redisClient.del(`maxbooster:sess:${session.id}`);
+              }
+            } catch (redisError) {
+            }
+          }
+        }
+      }
+
+      return res.json({ success: true, message: `${terminatedCount} session(s) terminated` });
+    } catch (error) {
+      console.error("Delete other sessions error:", error);
+      return res.status(500).json({ message: "Failed to terminate other sessions" });
+    }
+  });
+
   // Auth: Get login history
   app.get("/api/auth/login-history", async (req: Request, res: Response) => {
     if (!req.user) {
@@ -1594,6 +1628,20 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Mark all read error:", error);
       return res.status(500).json({ message: "Failed to mark all as read" });
+    }
+  });
+
+  // Notifications: Clear all notifications
+  app.delete("/api/notifications/clear-all", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      await storage.deleteAllNotifications(req.user.id);
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Clear all notifications error:", error);
+      return res.status(500).json({ message: "Failed to clear all notifications" });
     }
   });
 

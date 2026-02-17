@@ -482,6 +482,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(notifications.id, id));
   }
 
+  async deleteAllNotifications(userId: string): Promise<void> {
+    await db
+      .delete(notifications)
+      .where(eq(notifications.userId, userId));
+  }
+
   async deleteSession(sessionId: string): Promise<boolean> {
     const result = await db
       .delete(sessions)
