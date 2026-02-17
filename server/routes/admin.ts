@@ -36,7 +36,8 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
 adminRouter.use(requireAdmin);
 
 adminRouter.get("/dashboard", (req, res) => {
-  res.json({ message: "Welcome to the admin dashboard!", user: req.user });
+  const { password, twoFactorSecret, passwordResetToken, ...safeUser } = req.user as any;
+  res.json({ message: "Welcome to the admin dashboard!", user: safeUser });
 });
 
 adminRouter.get("/users", async (req, res) => {

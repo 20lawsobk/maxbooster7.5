@@ -12,7 +12,8 @@ function requirePaid(req: Request, res: Response, next: NextFunction) {
 
 // Example: Paid user dashboard
 paidRouter.get("/dashboard", requirePaid, (req, res) => {
-    res.json({ message: "Welcome to the paid user dashboard!", user: req.user });
+    const { password, twoFactorSecret, passwordResetToken, ...safeUser } = req.user as any;
+    res.json({ message: "Welcome to the paid user dashboard!", user: safeUser });
 });
 
 // Example: Paid-only feature

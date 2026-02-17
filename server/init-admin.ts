@@ -20,9 +20,9 @@ import { DSP_POLICIES } from './services/dspPolicyChecker';
 
 export async function initializeAdmin() {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.Admin_Email;
+    const adminPassword = process.env.ADMIN_PASSWORD || process.env.Admin_Password;
+    const adminUsername = process.env.ADMIN_USERNAME || process.env.Admin_Username;
     
     if (!adminEmail) {
       logger.warn('⚠️ ADMIN_EMAIL not set - skipping admin initialization');
