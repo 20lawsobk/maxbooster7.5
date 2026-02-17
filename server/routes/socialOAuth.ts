@@ -270,6 +270,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
         params.set('state', state);
         params.set('code_challenge', codeChallenge);
         params.set('code_challenge_method', 'S256');
+        params.set('device_platform', 'web');
       }
     } else if (platform === 'youtube' || platform === 'google' || platform === 'googlebusiness') {
       params.set('client_id', config.clientId);
@@ -312,13 +313,15 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     let platform = req.params.platform.toLowerCase();
     const { code, state, error, error_description } = req.query;
     
+    const cbBaseUrl = getBaseUrl();
+    
     if (error) {
       logger.error(`OAuth error for ${platform}:`, { error, error_description });
-      return res.redirect(`/social-media?error=oauth_denied&platform=${platform}`);
+      return res.redirect(`${cbBaseUrl}/social-media?error=oauth_denied&platform=${platform}`);
     }
     
     if (!state || !oauthStates.has(state as string)) {
-      return res.redirect('/social-media?error=invalid_state');
+      return res.redirect(`${cbBaseUrl}/social-media?error=invalid_state`);
     }
     
     const stateData = oauthStates.get(state as string)!;
@@ -329,12 +332,12 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     }
     
     if (stateData.platform !== platform) {
-      return res.redirect('/social-media?error=platform_mismatch');
+      return res.redirect(`${cbBaseUrl}/social-media?error=platform_mismatch`);
     }
     
     const config = PLATFORMS[platform as keyof typeof PLATFORMS];
     if (!config) {
-      return res.redirect(`/social-media?error=unsupported_platform`);
+      return res.redirect(`${cbBaseUrl}/social-media?error=unsupported_platform`);
     }
     
     const redirectUri = getCallbackUrl(platform);
@@ -391,7 +394,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       if (!tokenResponse.ok || tokenData.error) {
         logger.error(`Token exchange failed for ${platform}:`, { status: tokenResponse.status, data: tokenData });
         const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
-        return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
+        return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
       }
 
       if (platform === 'threads' && tokenData.access_token && config.clientSecret) {
@@ -413,7 +416,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       }
     } catch (err) {
       logger.error(`Token exchange error for ${platform}:`, err);
-      return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}`);
+      return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}`);
     }
     
     let facebookUsername = 'Facebook User';
@@ -622,11 +625,13 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     
     const redirectPlatform = platform === 'meta' ? 'facebook,instagram' : savePlatformName;
     const connectedUsername = platformsToSave[0]?.username || '';
-    res.redirect(`/social-media?success=connected&platform=${redirectPlatform}&username=${encodeURIComponent(connectedUsername)}`);
+    const baseUrl = getBaseUrl();
+    res.redirect(`${baseUrl}/social-media?success=connected&platform=${redirectPlatform}&username=${encodeURIComponent(connectedUsername)}`);
   } catch (error) {
     logger.error('OAuth callback error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    res.redirect(`/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`);
+    const baseUrl = getBaseUrl();
+    res.redirect(`${baseUrl}/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`);
   }
 });
 
