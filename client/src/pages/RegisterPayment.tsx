@@ -214,27 +214,27 @@ export default function RegisterPayment() {
                     </span>
                   </div>
                 )}
-                <CardTitle className="text-2xl font-bold text-gray-900">{plan.name}</CardTitle>
+                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</CardTitle>
                 <div className="mt-4">
                   <div className="flex items-baseline justify-center">
                     <span
-                      className="text-4xl font-bold text-gray-900"
+                      className="text-4xl font-bold text-gray-900 dark:text-white"
                       data-testid={`text-price-${plan.id}`}
                     >
                       ${plan.price}
                     </span>
-                    <span className="text-gray-500 ml-2">/{plan.period}</span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-2">/{plan.period}</span>
                   </div>
                   {plan.originalPrice && (
-                    <div className="text-sm text-gray-500 mt-1">
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       <span className="line-through">${plan.originalPrice}/month</span>
-                      <span className="text-green-600 ml-2 font-medium">
+                      <span className="text-green-600 dark:text-green-400 ml-2 font-medium">
                         Save ${(plan.originalPrice - plan.price) * 12}/year
                       </span>
                     </div>
                   )}
                   {plan.billedAnnually && (
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                       Billed annually (${plan.price * 12})
                     </p>
                   )}
@@ -245,20 +245,20 @@ export default function RegisterPayment() {
                 <ul className="space-y-3">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start space-x-3">
-                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center mt-0.5 flex-shrink-0">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       </div>
-                      <span className="text-gray-700 text-sm">{feature}</span>
+                      <span className="text-gray-700 dark:text-gray-200 text-sm">{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center space-x-2 text-blue-800">
+                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center space-x-2 text-blue-800 dark:text-blue-300">
                     <Shield className="h-5 w-5" />
                     <span className="font-medium">90-Day Money-Back Guarantee</span>
                   </div>
-                  <p className="text-blue-700 text-sm mt-1">
+                  <p className="text-blue-700 dark:text-blue-400 text-sm mt-1">
                     If you're not completely satisfied, we'll refund your entire payment, no
                     questions asked.
                   </p>
