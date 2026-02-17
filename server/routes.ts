@@ -141,8 +141,8 @@ export async function registerRoutes(
     }
 
     if (req.user) {
-      const { password, ...userWithoutPassword } = req.user;
-      return res.json(userWithoutPassword);
+      const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...safeUser } = req.user as any;
+      return res.json(safeUser);
     }
     return res.json(null);
   });
@@ -196,8 +196,8 @@ export async function registerRoutes(
       });
 
       req.session.userId = user.id;
-      const { password: _, ...userWithoutPassword } = user;
-      return res.json(userWithoutPassword);
+      const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
+      return res.json(safeUser);
     } catch (error) {
       console.error("Registration error:", error);
       return res.status(500).json({ message: "Registration failed" });
@@ -279,8 +279,8 @@ export async function registerRoutes(
             console.log(`[Login] Response headers:`, JSON.stringify(Object.fromEntries(res.getHeaderNames().map(n => [n, res.getHeader(n)]))));
           }
 
-          const { password: _, ...userWithoutPassword } = user;
-          return res.json(userWithoutPassword);
+          const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
+          return res.json(safeUser);
         });
       });
     } catch (error) {
@@ -349,7 +349,7 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const { password, ...profile } = req.user;
+    const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...profile } = req.user as any;
     return res.json(profile);
   });
 

@@ -265,15 +265,42 @@ adminRouter.get("/system-health", async (req, res) => {
       dbStatus = "disconnected";
     }
 
+    const pingApi = async (url: string, timeoutMs = 5000): Promise<{ status: "connected" | "disconnected" | "unknown"; latency: number | null }> => {
+      try {
+        const start = Date.now();
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        await fetch(url, { method: 'HEAD', signal: controller.signal });
+        clearTimeout(timer);
+        return { status: "connected", latency: Date.now() - start };
+      } catch {
+        return { status: "disconnected", latency: null };
+      }
+    };
+
+    const apiChecks = await Promise.allSettled([
+      process.env.STRIPE_SECRET_KEY ? pingApi('https://api.stripe.com/v1') : Promise.resolve({ status: "unknown" as const, latency: null }),
+      process.env.LABELGRID_API_TOKEN ? pingApi('https://api.labelgrid.com') : Promise.resolve({ status: "unknown" as const, latency: null }),
+      process.env.SPOTIFY_CLIENT_ID ? pingApi('https://api.spotify.com/v1') : Promise.resolve({ status: "unknown" as const, latency: null }),
+      pingApi('https://api.music.apple.com'),
+      process.env.YOUTUBE_CLIENT_ID ? pingApi('https://www.googleapis.com/youtube/v3') : Promise.resolve({ status: "unknown" as const, latency: null }),
+      process.env.TWITTER_API_KEY ? pingApi('https://api.twitter.com/2') : Promise.resolve({ status: "unknown" as const, latency: null }),
+      process.env.INSTAGRAM_APP_ID ? pingApi('https://graph.instagram.com') : Promise.resolve({ status: "unknown" as const, latency: null }),
+      process.env.TIKTOK_CLIENT_KEY ? pingApi('https://open.tiktokapis.com') : Promise.resolve({ status: "unknown" as const, latency: null }),
+    ]);
+
+    const getResult = (r: PromiseSettledResult<{ status: string; latency: number | null }>) =>
+      r.status === 'fulfilled' ? r.value : { status: "disconnected" as const, latency: null };
+
     const externalApis = {
-      stripe: { status: "unknown" as const, latency: null as number | null },
-      labelgrid: { status: "unknown" as const, latency: null as number | null },
-      spotify: { status: "unknown" as const, latency: null as number | null },
-      apple_music: { status: "unknown" as const, latency: null as number | null },
-      youtube: { status: "unknown" as const, latency: null as number | null },
-      twitter: { status: "unknown" as const, latency: null as number | null },
-      instagram: { status: "unknown" as const, latency: null as number | null },
-      tiktok: { status: "unknown" as const, latency: null as number | null },
+      stripe: getResult(apiChecks[0]),
+      labelgrid: getResult(apiChecks[1]),
+      spotify: getResult(apiChecks[2]),
+      apple_music: getResult(apiChecks[3]),
+      youtube: getResult(apiChecks[4]),
+      twitter: getResult(apiChecks[5]),
+      instagram: getResult(apiChecks[6]),
+      tiktok: getResult(apiChecks[7]),
     };
 
     const killSwitchState = killSwitch.getState();

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db.js';
-import { sessions, securityThreats, socialAccounts } from '../../shared/schema.js';
+import { users, sessions, securityThreats, socialAccounts } from '../../shared/schema.js';
 import { eq, and, desc, ne, gte, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
@@ -690,6 +690,89 @@ router.post('/security-alerts/:alertId/dismiss', requireAuth, async (req: Authen
   } catch (error) {
     logger.error('Error dismissing alert:', error);
     res.status(500).json({ error: 'Failed to dismiss alert' });
+  }
+});
+
+router.post('/send-verification-email', requireAuth, async (req: any, res) => {
+  try {
+    const userId = req.user!.id;
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.emailVerified) {
+      return res.json({ success: true, message: 'Email already verified' });
+    }
+
+    const crypto = await import('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await db.update(users).set({
+      emailVerificationToken: token,
+      emailVerificationExpires: expires,
+    }).where(eq(users.id, userId));
+
+    const appUrl = process.env.APP_URL || process.env.DOMAIN || 'https://maxbooster.replit.app';
+    const verificationUrl = `${appUrl}/verify-email?token=${token}`;
+
+    try {
+      const { EmailService } = await import('../services/emailService.js');
+      const emailService = new EmailService();
+      await emailService.sendEmail({
+        to: user.email,
+        subject: 'Verify your Max Booster email',
+        html: `<h2>Email Verification</h2><p>Click the link below to verify your email address:</p><p><a href="${verificationUrl}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
+      });
+    } catch (emailError) {
+      logger.warn('Email service unavailable, verification token generated:', token);
+    }
+
+    res.json({ success: true, message: 'Verification email sent' });
+  } catch (error) {
+    logger.error('Error sending verification email:', error);
+    res.status(500).json({ error: 'Failed to send verification email' });
+  }
+});
+
+router.get('/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: 'Verification token required' });
+    }
+
+    const [user] = await db.select().from(users)
+      .where(eq(users.emailVerificationToken, token));
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired verification token' });
+    }
+
+    if (user.emailVerificationExpires && new Date(user.emailVerificationExpires) < new Date()) {
+      return res.status(400).json({ error: 'Verification token has expired. Please request a new one.' });
+    }
+
+    await db.update(users).set({
+      emailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+    }).where(eq(users.id, user.id));
+
+    res.json({ success: true, message: 'Email verified successfully' });
+  } catch (error) {
+    logger.error('Error verifying email:', error);
+    res.status(500).json({ error: 'Failed to verify email' });
+  }
+});
+
+router.get('/email-verification-status', requireAuth, async (req: any, res) => {
+  try {
+    const userId = req.user!.id;
+    const [user] = await db.select({ emailVerified: users.emailVerified }).from(users).where(eq(users.id, userId));
+    res.json({ emailVerified: user?.emailVerified ?? false });
+  } catch (error) {
+    logger.error('Error checking email verification:', error);
+    res.status(500).json({ error: 'Failed to check verification status' });
   }
 });
 

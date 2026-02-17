@@ -279,6 +279,57 @@ router.get('/plans', async (req: Request, res: Response) => {
   });
 });
 
+router.post('/create-checkout-session', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!stripe) {
+      return res.status(503).json({ error: 'Billing service not configured', message: 'Stripe is not initialized. Please configure STRIPE_SECRET_KEY.' });
+    }
+
+    const { planId } = req.body;
+    if (!planId || !['monthly', 'yearly', 'lifetime'].includes(planId)) {
+      return res.status(400).json({ error: 'Invalid plan', message: 'Please select a valid plan: monthly, yearly, or lifetime' });
+    }
+
+    const userId = req.user!.id;
+    const customerId = await getOrCreateStripeCustomer(req.user);
+    const appUrl = process.env.APP_URL || process.env.DOMAIN || 'https://maxbooster.replit.app';
+
+    const priceMap: Record<string, { amount: number; mode: 'subscription' | 'payment'; interval?: 'month' | 'year' }> = {
+      monthly: { amount: 4900, mode: 'subscription', interval: 'month' },
+      yearly: { amount: 46800, mode: 'subscription', interval: 'year' },
+      lifetime: { amount: 69900, mode: 'payment' },
+    };
+
+    const plan = priceMap[planId];
+
+    const sessionParams: any = {
+      customer: customerId,
+      mode: plan.mode,
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `Max Booster ${planId.charAt(0).toUpperCase() + planId.slice(1)}`,
+            description: planId === 'lifetime' ? 'Lifetime access to all Max Booster features' : `${planId.charAt(0).toUpperCase() + planId.slice(1)} subscription to Max Booster`,
+          },
+          unit_amount: plan.amount,
+          ...(plan.interval ? { recurring: { interval: plan.interval } } : {}),
+        },
+        quantity: 1,
+      }],
+      success_url: `${appUrl}/settings?checkout=success&plan=${planId}`,
+      cancel_url: `${appUrl}/pricing?checkout=canceled`,
+      metadata: { userId, planId },
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    res.json({ url: session.url, sessionId: session.id });
+  } catch (error: any) {
+    logger.error('[Billing] Failed to create checkout session:', error);
+    res.status(500).json({ error: 'Checkout failed', message: error.message || 'Failed to create checkout session' });
+  }
+});
+
 router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
