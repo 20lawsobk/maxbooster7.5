@@ -1,61 +1,54 @@
 # Max Booster
 
 ## Overview
-AI-Powered Music Career Management Platform by B-Lawz Music. Full-stack web application with React frontend, Express backend, PostgreSQL database, and a Rust-based in-memory key-value store (BoosterState).
+AI-Powered Music Career Management Platform by B-Lawz Music. A full-stack application with React frontend, Express backend, Rust state management service (BoosterState), and PostgreSQL database.
 
-## Tech Stack
-- **Frontend**: React 19 + Vite 7 + TailwindCSS 4 + Radix UI + Framer Motion
-- **Backend**: Express.js (TypeScript) with session-based auth
-- **Database**: PostgreSQL via Drizzle ORM
-- **State Cache**: Rust BoosterState service (in-memory KV store on port 9877)
-- **Routing**: Wouter (client-side)
-- **State Management**: TanStack React Query + Zustand
-- **Internationalization**: i18next
+## Project Architecture
 
-## Project Structure
+### Tech Stack
+- **Frontend**: React + TypeScript + Vite + TailwindCSS
+- **Backend**: Express.js (TypeScript) with tsx
+- **State Service**: Rust (BoosterState) - in-memory KV store with WAL on port 9877
+- **Database**: PostgreSQL via Drizzle ORM (Neon serverless driver)
+- **Styling**: TailwindCSS v4
+- **UI Components**: Radix UI, shadcn/ui pattern
+- **Routing**: Wouter
+- **State Management**: Zustand, React Query
+
+### Directory Structure
 ```
-client/           - React frontend (Vite dev server)
-  src/            - Source code (components, hooks, pages, contexts)
-server/           - Express backend (API routes, middleware, services)
-shared/           - Shared types and Drizzle schema
-boosterstate/     - Rust KV store microservice (optional, has graceful fallbacks)
-assets/           - Static assets (icons, images)
-migrations/       - Drizzle database migrations
+├── client/           # React frontend (Vite)
+│   └── src/          # React components, pages, hooks
+├── server/           # Express backend
+│   ├── routes/       # API route handlers
+│   ├── services/     # Business logic services
+│   ├── middleware/    # Express middleware
+│   ├── safety/       # Security middleware
+│   └── realtime/     # WebSocket services
+├── shared/           # Shared types and schema (Drizzle)
+├── boosterstate/     # Rust in-memory state service
+│   └── src/          # Rust source files
+├── assets/           # Static assets
+├── migrations/       # Drizzle database migrations
+└── script/           # Build scripts
 ```
 
-## Key Configuration
-- **Port**: Application serves on port 5000 (both API and frontend)
-- **Vite**: Configured with `allowedHosts: true` and `host: 0.0.0.0` for Replit proxy compatibility
-- **Database**: Uses `DATABASE_URL` environment variable (Replit PostgreSQL)
-- **Schema Push**: `npx drizzle-kit push`
+### Key Configuration
+- **Frontend Dev Server**: Vite on port 5000 (proxied through Express in dev)
+- **Backend**: Express on port 5000
+- **BoosterState**: Rust service on port 9877 (localhost)
+- **Database**: PostgreSQL via DATABASE_URL env var
+- **Build**: `cargo build` for Rust + `tsx script/build.ts` for Node
 
-## Scripts
-- `npm run dev` - Development server (BoosterState + Express + Vite HMR)
-- `npm run build` - Production build (Vite frontend + esbuild server)
-- `npm run start` - Production start
-- `npm run db:push` - Push database schema changes
+### Development Workflow
+- Dev: `./boosterstate/target/debug/boosterstate & sleep 2 && NODE_ENV=development npx tsx server/index.ts`
+- In dev mode, Vite is used as middleware in Express
+- In production, static files are served from `dist/public`
 
-## Workflow
-- **Start application**: Runs debug BoosterState binary + Express dev server with Vite middleware
+### Deployment
+- Build: `cargo build --release` + `npx tsx script/build.ts`
+- Run: `./boosterstate/target/release/boosterstate & sleep 3 && NODE_ENV=production node dist/index.cjs`
+- Target: autoscale
 
-## Deployment
-- **Target**: Reserved VM (8 vCPU / 32 GiB RAM)
-- **Build**: `npm run build` (Cargo release build + Vite frontend + esbuild server bundle)
-- **Run**: `npm run start` (BoosterState release binary + Node.js production server)
-
-## Environment Variables
-- `DATABASE_URL` - PostgreSQL connection string (required)
-- `SESSION_SECRET` - Session encryption key (auto-generated)
-- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` - Stripe payment (optional for dev)
-- `SENDGRID_API_KEY` - Email delivery (optional for dev)
-- Various social media API keys (optional)
-
-## Recent Changes (Feb 2026)
-- **TikTok OAuth**: Uses TIKTOK_CLIENT_KEY1/SECRET1 as primary, removed sandbox entry
-- **Threads OAuth**: Uses `app_id` parameter + `force_authentication=1` for proper auth redirect
-- **ProducerProfile**: Real beat artwork, audio playback, and ratings from API (not mock data)
-- **StorefrontBuilder**: Fixed color branding sync with nested colors/fonts/layout object structure
-- **Database indexes**: Added partial index on user_storage_files.deleted_at and composite index on autopilot_learning_data(created_at, engagement_rate)
-- **Security**: Auth responses redact sensitive tokens (twoFactorSecret, passwordResetToken, emailVerificationToken)
-- **Marketplace**: Cart modal with Stripe checkout; storefront queries use isPublished not status column
-- **Route ordering**: DELETE /api/notifications/clear-all registered before DELETE /api/notifications/:id
+## Recent Changes
+- 2026-02-17: Initial Replit setup - installed Node.js 20, Rust stable, PostgreSQL, npm dependencies. Built Rust service, pushed DB schema, configured workflow and deployment.
