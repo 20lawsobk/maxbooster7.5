@@ -491,7 +491,7 @@ export default function Landing() {
             90-day money-back guarantee!
           </p>
           <div className="flex justify-center">
-            <Link href="/register">
+            <Link href="/pricing">
               <Button size="lg" variant="secondary" className="px-8 py-4 text-lg">
                 Get Started - 90-Day Guarantee
                 <ArrowRight className="ml-2 h-5 w-5" />
