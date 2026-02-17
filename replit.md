@@ -39,9 +39,9 @@ migrations/       - Drizzle database migrations
 - **Start application**: Runs debug BoosterState binary + Express dev server with Vite middleware
 
 ## Deployment
-- **Target**: Autoscale
-- **Build**: Cargo release build + npm build
-- **Run**: BoosterState release + Node.js production server
+- **Target**: Reserved VM (8 vCPU / 32 GiB RAM)
+- **Build**: `npm run build` (Cargo release build + Vite frontend + esbuild server bundle)
+- **Run**: `npm run start` (BoosterState release binary + Node.js production server)
 
 ## Environment Variables
 - `DATABASE_URL` - PostgreSQL connection string (required)
