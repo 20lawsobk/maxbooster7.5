@@ -7,7 +7,7 @@ Max Booster is a comprehensive AI-powered music career management platform by B-
 - **Frontend**: React + Vite (client/), served on port 5000
 - **Backend**: Express.js (server/), served on same port 5000
 - **State Engine**: Rust-based BoosterState service (boosterstate/) on port 9877 - acts as a fast KV store / Redis replacement
-- **Database**: PostgreSQL via Drizzle ORM with Neon serverless driver
+- **Database**: PostgreSQL via Drizzle ORM (pg + connect-pg-simple for sessions)
 - **Storage**: Hybrid Storage System — Replit Object Storage (hot tier) + Pocket Dimension (cold tier) with auto-tiering, deduplication, and compression
 - **Real-time**: WebSocket server for notifications and studio collaboration
 
@@ -51,9 +51,10 @@ boosterstate/    - Rust KV store service
 ## Deployment
 - Build: `npm run build` (runs esbuild for server + Vite for client)
 - Start: `npm run start` (starts boosterstate + production Node.js server)
-- Workflow: `npm run start` (build first, then start)
+- Workflow: `npm run build && npm run start` (build step required before start)
 - Deployment target: VM (persistent WebSocket connections and background services)
-- Deploy config: build=`npm run build`, run=`npm run start`
+- Deploy config: build=`npm run build`, run=boosterstate + `NODE_ENV=production node dist/index.cjs`
+- IMPORTANT: REDIS_URL and SESSION_SECRET secrets must be set for production session store
 
 ## Configured Services
 - Stripe (payments, billing, webhooks)
