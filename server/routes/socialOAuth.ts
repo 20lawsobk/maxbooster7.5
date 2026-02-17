@@ -360,13 +360,18 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     }
     
     const redirectUri = getCallbackUrl(platform);
+
+    let authCode = code as string;
+    if (platform === 'threads' && authCode) {
+      authCode = authCode.replace(/#_$/, '');
+    }
     
     let tokenData: any;
     
     try {
       const tokenParams = new URLSearchParams();
       tokenParams.set('grant_type', 'authorization_code');
-      tokenParams.set('code', code as string);
+      tokenParams.set('code', authCode);
       tokenParams.set('redirect_uri', redirectUri);
       
       if (platform === 'twitter') {
@@ -389,6 +394,8 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
         headers['Authorization'] = `Basic ${credentials}`;
       }
+
+      logger.info(`[OAuth] Token exchange for ${platform}`, { redirectUri, hasCode: !!authCode, hasVerifier: !!stateData.codeVerifier });
       
       const tokenResponse = await fetch(config.tokenUrl, {
         method: 'POST',
@@ -396,12 +403,36 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         body: tokenParams.toString(),
       });
       
-      tokenData = await tokenResponse.json();
+      const responseText = await tokenResponse.text();
+      try {
+        tokenData = JSON.parse(responseText);
+      } catch {
+        const parsed = new URLSearchParams(responseText);
+        tokenData = Object.fromEntries(parsed.entries());
+      }
       
       if (!tokenResponse.ok || tokenData.error) {
         logger.error(`Token exchange failed for ${platform}:`, { status: tokenResponse.status, data: tokenData });
         const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
         return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
+      }
+
+      if (platform === 'threads' && tokenData.access_token && config.clientSecret) {
+        try {
+          const longLivedResponse = await fetch(
+            `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${encodeURIComponent(config.clientSecret)}&access_token=${encodeURIComponent(tokenData.access_token)}`
+          );
+          const longLivedData = await longLivedResponse.json();
+          if (longLivedResponse.ok && longLivedData.access_token) {
+            tokenData.access_token = longLivedData.access_token;
+            tokenData.expires_in = longLivedData.expires_in || 5184000;
+            logger.info(`[OAuth] Threads: exchanged for long-lived token (${tokenData.expires_in}s)`);
+          } else {
+            logger.warn('[OAuth] Threads: long-lived token exchange returned error, using short-lived token', { data: longLivedData });
+          }
+        } catch (llErr) {
+          logger.warn('[OAuth] Threads: failed to get long-lived token, using short-lived:', llErr);
+        }
       }
     } catch (err) {
       logger.error(`Token exchange error for ${platform}:`, err);

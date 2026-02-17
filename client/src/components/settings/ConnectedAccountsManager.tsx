@@ -40,8 +40,9 @@ import {
   Music,
   Share2,
   Headphones,
+  MessageCircle,
 } from 'lucide-react';
-import { SiSpotify, SiApplemusic, SiSoundcloud, SiYoutube, SiInstagram, SiTiktok, SiFacebook, SiX, SiGoogle } from '@icons-pack/react-simple-icons';
+import { SiSpotify, SiApplemusic, SiSoundcloud, SiYoutube, SiInstagram, SiTiktok, SiFacebook, SiX, SiGoogle, SiThreads } from '@icons-pack/react-simple-icons';
 
 interface ConnectedAccount {
   id: string;
@@ -75,6 +76,10 @@ const providerIcons: Record<string, React.ReactNode> = {
   facebook: <SiFacebook className="h-5 w-5" color="#1877F2" />,
   twitter: <SiX className="h-5 w-5" color="#000000" />,
   google: <SiGoogle className="h-5 w-5" color="#4285F4" />,
+  meta: <SiFacebook className="h-5 w-5" color="#0081FB" />,
+  threads: <SiThreads className="h-5 w-5" color="#000000" />,
+  linkedin: <Share2 className="h-5 w-5" color="#0077B5" />,
+  googlebusiness: <SiGoogle className="h-5 w-5" color="#4285F4" />,
 };
 
 const providerNames: Record<string, string> = {
@@ -87,6 +92,10 @@ const providerNames: Record<string, string> = {
   facebook: 'Facebook',
   twitter: 'Twitter/X',
   google: 'Google',
+  meta: 'Meta (Facebook + Instagram)',
+  threads: 'Threads',
+  linkedin: 'LinkedIn',
+  googlebusiness: 'Google Business',
 };
 
 const providerCategories: Record<string, { icon: React.ReactNode; label: string }> = {
@@ -99,6 +108,10 @@ const providerCategories: Record<string, { icon: React.ReactNode; label: string 
   facebook: { icon: <Share2 className="h-4 w-4" />, label: 'Social' },
   twitter: { icon: <Share2 className="h-4 w-4" />, label: 'Social' },
   google: { icon: <Shield className="h-4 w-4" />, label: 'Authentication' },
+  meta: { icon: <Share2 className="h-4 w-4" />, label: 'Social' },
+  threads: { icon: <MessageCircle className="h-4 w-4" />, label: 'Social' },
+  linkedin: { icon: <Share2 className="h-4 w-4" />, label: 'Social' },
+  googlebusiness: { icon: <Shield className="h-4 w-4" />, label: 'Business' },
 };
 
 export function ConnectedAccountsManager() {
@@ -187,8 +200,34 @@ export function ConnectedAccountsManager() {
     setPermissionsDialogOpen(true);
   };
 
-  const connectAccount = (provider: string) => {
-    window.location.href = `/api/auth/connect/${provider}`;
+  const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
+
+  const connectAccount = async (provider: string) => {
+    setConnectingProvider(provider);
+    try {
+      const response = await fetch(`/api/social/connect/${provider}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else if (data.message) {
+        toast({
+          title: 'Connection Issue',
+          description: data.message,
+          variant: 'destructive',
+        });
+        setConnectingProvider(null);
+      }
+    } catch (error) {
+      toast({
+        title: 'Connection Failed',
+        description: 'Failed to connect to platform. Please try again.',
+        variant: 'destructive',
+      });
+      setConnectingProvider(null);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -228,9 +267,13 @@ export function ConnectedAccountsManager() {
     });
   };
 
-  const availableProviders = ['spotify', 'apple_music', 'youtube', 'instagram', 'tiktok', 'soundcloud'];
+  const availableProviders = ['meta', 'twitter', 'youtube', 'tiktok', 'threads', 'linkedin', 'spotify', 'soundcloud', 'googlebusiness'];
   const connectedProviders = new Set(accounts.map(a => a.provider));
-  const unconnectedProviders = availableProviders.filter(p => !connectedProviders.has(p));
+  const metaConnected = connectedProviders.has('facebook') || connectedProviders.has('instagram');
+  const unconnectedProviders = availableProviders.filter(p => {
+    if (p === 'meta') return !metaConnected;
+    return !connectedProviders.has(p);
+  });
 
   if (isLoading) {
     return (
@@ -380,13 +423,18 @@ export function ConnectedAccountsManager() {
                       variant="outline"
                       className="justify-start h-auto py-3"
                       onClick={() => connectAccount(provider)}
+                      disabled={connectingProvider === provider}
                     >
                       <div className="flex items-center gap-3">
-                        {providerIcons[provider] || <LinkIcon className="h-5 w-5" />}
+                        {connectingProvider === provider ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          providerIcons[provider] || <LinkIcon className="h-5 w-5" />
+                        )}
                         <div className="text-left">
                           <p className="font-medium">{providerNames[provider]}</p>
                           <p className="text-xs text-muted-foreground">
-                            {providerCategories[provider]?.label || 'Connect'}
+                            {connectingProvider === provider ? 'Connecting...' : providerCategories[provider]?.label || 'Connect'}
                           </p>
                         </div>
                       </div>
