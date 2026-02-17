@@ -33,7 +33,7 @@ const PLATFORMS = {
   },
   threads: {
     name: 'Threads',
-    authUrl: 'https://threads.net/oauth/authorize',
+    authUrl: 'https://www.threads.net/oauth/authorize',
     tokenUrl: 'https://graph.threads.net/oauth/access_token',
     scope: 'threads_basic,threads_content_publish,threads_manage_insights,threads_manage_replies,threads_read_replies',
     clientId: process.env.THREADS_APP_ID || process.env.FACEBOOK_APP_ID,
@@ -105,7 +105,7 @@ const PLATFORMS = {
   },
   twitter: {
     name: 'Twitter/X',
-    authUrl: 'https://twitter.com/i/oauth2/authorize',
+    authUrl: 'https://x.com/i/oauth2/authorize',
     tokenUrl: 'https://api.twitter.com/2/oauth2/token',
     scope: 'tweet.read tweet.write users.read follows.read follows.write offline.access',
     clientId: process.env.TWITTER_API_KEY,
