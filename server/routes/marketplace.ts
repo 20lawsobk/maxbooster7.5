@@ -1412,6 +1412,18 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       .where(drizzleAnd(eq(orders.sellerId, producerId), eq(orders.status, 'completed')));
     salesCount = salesResult?.count || 0;
     
+    const featuredBeats = producerBeats.slice(0, 8).map((beat: any) => ({
+      id: beat.id,
+      title: beat.title,
+      price: beat.price || (beat.priceCents ? beat.priceCents / 100 : 0),
+      plays: beat.plays || 0,
+      likes: beat.likes || 0,
+      genre: beat.genre || '',
+      tempo: beat.bpm || beat.tempo || 0,
+      coverUrl: beat.artworkUrl || beat.coverUrl || '',
+      audioUrl: beat.previewUrl || beat.audioUrl || '',
+    }));
+
     res.json({
       id: producer.id,
       username: producer.username,
@@ -1425,6 +1437,7 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       sales: salesCount,
       rating: avgRating,
       verified: producer.role === 'admin' || producer.subscriptionTier === 'lifetime',
+      featuredBeats,
     });
   } catch (error: any) {
     logger.error('Error fetching producer:', error);

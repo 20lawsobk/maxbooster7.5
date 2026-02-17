@@ -524,15 +524,48 @@ export default function StorefrontBuilder() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedStorefront(storefront);
-                        setCustomization(storefront.customization || {
-                          bio: '',
-                          socialLinks: {},
-                          theme: 'dark',
-                          accentColor: '#6366f1',
-                          layout: 'grid',
-                          showStats: true,
-                          featuredBeatIds: [],
-                        });
+                        if (storefront.customization) {
+                          setCustomization({
+                            colors: {
+                              primary: storefront.customization.colors?.primary || '#8B5CF6',
+                              secondary: storefront.customization.colors?.secondary || '#EC4899',
+                              background: storefront.customization.colors?.background || '#FFFFFF',
+                              text: storefront.customization.colors?.text || '#000000',
+                            },
+                            fonts: {
+                              heading: storefront.customization.fonts?.heading || 'Inter',
+                              body: storefront.customization.fonts?.body || 'Inter',
+                            },
+                            layout: {
+                              headerStyle: storefront.customization.layout?.headerStyle || 'centered',
+                              gridColumns: storefront.customization.layout?.gridColumns || 3,
+                            },
+                            logo: storefront.customization.logo || undefined,
+                            banner: storefront.customization.banner || undefined,
+                            avatar: storefront.customization.avatar || undefined,
+                            bio: storefront.customization.bio || '',
+                            socialLinks: storefront.customization.socialLinks || {},
+                          });
+                        } else {
+                          setCustomization({
+                            colors: {
+                              primary: '#8B5CF6',
+                              secondary: '#EC4899',
+                              background: '#FFFFFF',
+                              text: '#000000',
+                            },
+                            fonts: {
+                              heading: 'Inter',
+                              body: 'Inter',
+                            },
+                            layout: {
+                              headerStyle: 'centered',
+                              gridColumns: 3,
+                            },
+                            bio: '',
+                            socialLinks: {},
+                          });
+                        }
                         setActiveTab('overview');
                       }}
                     >

@@ -49,3 +49,13 @@ migrations/       - Drizzle database migrations
 - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` - Stripe payment (optional for dev)
 - `SENDGRID_API_KEY` - Email delivery (optional for dev)
 - Various social media API keys (optional)
+
+## Recent Changes (Feb 2026)
+- **TikTok OAuth**: Uses TIKTOK_CLIENT_KEY1/SECRET1 as primary, removed sandbox entry
+- **Threads OAuth**: Uses `app_id` parameter + `force_authentication=1` for proper auth redirect
+- **ProducerProfile**: Real beat artwork, audio playback, and ratings from API (not mock data)
+- **StorefrontBuilder**: Fixed color branding sync with nested colors/fonts/layout object structure
+- **Database indexes**: Added partial index on user_storage_files.deleted_at and composite index on autopilot_learning_data(created_at, engagement_rate)
+- **Security**: Auth responses redact sensitive tokens (twoFactorSecret, passwordResetToken, emailVerificationToken)
+- **Marketplace**: Cart modal with Stripe checkout; storefront queries use isPublished not status column
+- **Route ordering**: DELETE /api/notifications/clear-all registered before DELETE /api/notifications/:id

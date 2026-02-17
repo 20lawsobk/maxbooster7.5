@@ -302,9 +302,17 @@ export function ProducerProfile({ producerId, isOpen, onClose }: ProducerProfile
   };
 
   const displayProducer = producer ? {
+    ...fallbackProducer,
     ...producer,
     name: producer.name || producer.username,
     avatar: producer.avatarUrl || producer.avatar,
+    featuredBeats: producer.featuredBeats || producer.beats || fallbackProducer.featuredBeats,
+    recentReviews: producer.recentReviews || producer.reviews || fallbackProducer.recentReviews,
+    badges: producer.badges || fallbackProducer.badges,
+    socials: producer.socials || producer.socialLinks || fallbackProducer.socials,
+    genres: producer.genres || fallbackProducer.genres,
+    equipment: producer.equipment || fallbackProducer.equipment,
+    achievements: producer.achievements || fallbackProducer.achievements,
     stats: {
       totalBeats: producer.beatCount ?? 0,
       totalSales: producer.sales ?? 0,
@@ -591,12 +599,15 @@ export function ProducerProfile({ producerId, isOpen, onClose }: ProducerProfile
                           <Card className="hover:shadow-md transition-shadow">
                             <CardContent className="p-4">
                               <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
+                                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center relative overflow-hidden">
+                                  {beat.coverUrl ? (
+                                    <img src={beat.coverUrl} alt={beat.title} className="w-full h-full object-cover absolute inset-0" />
+                                  ) : null}
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="w-10 h-10 rounded-full"
-                                    onClick={() => setPlayingBeat(playingBeat === beat.id ? null : beat.id)}
+                                    className="w-10 h-10 rounded-full relative z-10 bg-black/30 hover:bg-black/50 text-white"
+                                    onClick={() => handlePlayBeat(beat.id, beat.audioUrl)}
                                   >
                                     {playingBeat === beat.id ? (
                                       <Pause className="w-5 h-5" />

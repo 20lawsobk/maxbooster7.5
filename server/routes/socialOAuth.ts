@@ -47,22 +47,11 @@ const PLATFORMS = {
     authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
     tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
     scope: 'user.info.basic,user.info.profile,user.info.stats,video.list',
-    clientId: process.env.TIKTOK_CLIENT_KEY,
-    clientSecret: process.env.TIKTOK_CLIENT_SECRET,
+    clientId: process.env.TIKTOK_CLIENT_KEY1 || process.env.TIKTOK_CLIENT_KEY,
+    clientSecret: process.env.TIKTOK_CLIENT_SECRET1 || process.env.TIKTOK_CLIENT_SECRET,
     usePKCE: true,
     responseType: 'code',
     enabled: true,
-  },
-  tiktok_sandbox: {
-    name: 'TikTok (Sandbox)',
-    authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
-    tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-    scope: 'user.info.basic,user.info.profile,user.info.stats,video.list',
-    clientId: process.env.TIKTOK_CLIENT_KEY1,
-    clientSecret: process.env.TIKTOK_CLIENT_SECRET1,
-    usePKCE: true,
-    responseType: 'code',
-    enabled: !!(process.env.TIKTOK_CLIENT_KEY1 && process.env.TIKTOK_CLIENT_SECRET1),
   },
   google: {
     name: 'Google',
@@ -162,7 +151,6 @@ const CALLBACK_PATHS: Record<string, string> = {
   instagram: '/auth/instagram/callback',
   threads: '/auth/threads/callback',
   tiktok: '/auth/tiktok/callback',
-  tiktok_sandbox: '/auth/tiktok/callback',
   google: '/auth/google/callback',
   youtube: '/auth/youtube/callback',
   googlebusiness: '/auth/google-business/callback',
@@ -272,7 +260,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
         params.set('state', state);
         params.set('code_challenge', codeChallenge);
         params.set('code_challenge_method', 'S256');
-      } else if (platform === 'tiktok' || platform === 'tiktok_sandbox') {
+      } else if (platform === 'tiktok') {
         const codeChallenge = generateCodeChallenge(codeVerifier, 'hex');
         params.set('client_key', config.clientId);
         params.set('scope', config.scope);
@@ -296,6 +284,12 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('scope', config.scope);
       params.set('state', state);
       params.set('response_type', 'code');
+    }
+
+    if (platform === 'threads') {
+      params.delete('client_id');
+      params.set('app_id', config.clientId!);
+      params.set('force_authentication', '1');
     }
     
     oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
@@ -355,7 +349,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       if (platform === 'twitter') {
         tokenParams.set('client_id', config.clientId!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
-      } else if (platform === 'tiktok' || platform === 'tiktok_sandbox') {
+      } else if (platform === 'tiktok') {
         tokenParams.set('client_key', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
@@ -474,7 +468,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         } catch (ytErr) {
           logger.warn('Failed to fetch YouTube channel info:', ytErr);
         }
-      } else if (platform === 'tiktok' || platform === 'tiktok_sandbox') {
+      } else if (platform === 'tiktok') {
         try {
           const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count', {
             headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
