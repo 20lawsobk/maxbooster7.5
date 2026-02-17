@@ -47,11 +47,22 @@ const PLATFORMS = {
     authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
     tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
     scope: 'user.info.basic,user.info.profile,user.info.stats,video.list',
-    clientId: process.env.TIKTOK_CLIENT_KEY1 || process.env.TIKTOK_CLIENT_KEY,
-    clientSecret: process.env.TIKTOK_CLIENT_SECRET1 || process.env.TIKTOK_CLIENT_SECRET,
+    clientId: process.env.TIKTOK_CLIENT_KEY,
+    clientSecret: process.env.TIKTOK_CLIENT_SECRET,
     usePKCE: true,
     responseType: 'code',
-    enabled: true,
+    enabled: !!(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET),
+  },
+  tiktok2: {
+    name: 'TikTok (App 2)',
+    authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
+    tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
+    scope: 'user.info.basic,user.info.profile,user.info.stats,video.list',
+    clientId: process.env.TIKTOK_CLIENT_KEY1,
+    clientSecret: process.env.TIKTOK_CLIENT_SECRET1,
+    usePKCE: true,
+    responseType: 'code',
+    enabled: !!(process.env.TIKTOK_CLIENT_KEY1 && process.env.TIKTOK_CLIENT_SECRET1),
   },
   google: {
     name: 'Google',
@@ -151,6 +162,7 @@ const CALLBACK_PATHS: Record<string, string> = {
   instagram: '/auth/instagram/callback',
   threads: '/auth/threads/callback',
   tiktok: '/auth/tiktok/callback',
+  tiktok2: '/auth/tiktok/callback',
   google: '/auth/google/callback',
   youtube: '/auth/youtube/callback',
   googlebusiness: '/auth/google-business/callback',
@@ -208,19 +220,29 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
 });
 
 router.get('/platforms', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const platformList = Object.entries(PLATFORMS).map(([key, config]) => ({
-    id: key,
-    name: config.name,
-    enabled: config.enabled,
-    comingSoon: (config as any).comingSoon || null,
-  }));
+  const platformList = Object.entries(PLATFORMS)
+    .filter(([key]) => key !== 'tiktok2')
+    .map(([key, config]) => ({
+      id: key,
+      name: config.name,
+      enabled: config.enabled,
+      comingSoon: (config as any).comingSoon || null,
+    }));
   res.json(platformList);
 });
 
 router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const platform = req.params.platform.toLowerCase();
+    let platform = req.params.platform.toLowerCase();
+    
+    if (platform === 'tiktok') {
+      const primary = PLATFORMS.tiktok;
+      const secondary = PLATFORMS.tiktok2;
+      if (!primary.enabled && secondary.enabled) {
+        platform = 'tiktok2';
+      }
+    }
     
     const config = PLATFORMS[platform as keyof typeof PLATFORMS];
     if (!config) {
@@ -260,7 +282,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
         params.set('state', state);
         params.set('code_challenge', codeChallenge);
         params.set('code_challenge_method', 'S256');
-      } else if (platform === 'tiktok') {
+      } else if (platform === 'tiktok' || platform === 'tiktok2') {
         const codeChallenge = generateCodeChallenge(codeVerifier, 'hex');
         params.set('client_key', config.clientId);
         params.set('scope', config.scope);
@@ -322,9 +344,12 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     const stateData = oauthStates.get(state as string)!;
     oauthStates.delete(state as string);
     
-    // Handle legacy callback URLs - facebook/instagram callbacks should work for meta platform
     if ((platform === 'facebook' || platform === 'instagram') && stateData.platform === 'meta') {
       platform = 'meta';
+    }
+    
+    if (platform === 'tiktok' && stateData.platform === 'tiktok2') {
+      platform = 'tiktok2';
     }
     
     if (stateData.platform !== platform) {
@@ -349,7 +374,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       if (platform === 'twitter') {
         tokenParams.set('client_id', config.clientId!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
-      } else if (platform === 'tiktok') {
+      } else if (platform === 'tiktok' || platform === 'tiktok2') {
         tokenParams.set('client_key', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
@@ -468,7 +493,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         } catch (ytErr) {
           logger.warn('Failed to fetch YouTube channel info:', ytErr);
         }
-      } else if (platform === 'tiktok') {
+      } else if (platform === 'tiktok' || platform === 'tiktok2') {
         try {
           const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count', {
             headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
@@ -529,12 +554,13 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       logger.warn(`Failed to fetch user info for ${platform}:`, err);
     }
     
+    const savePlatformName = (platform === 'tiktok2') ? 'tiktok' : platform;
     const platformsToSave = platform === 'meta' 
       ? [
           { name: 'facebook', username: facebookUsername, followerCount: facebookFollowers, profileUrl: facebookProfileUrl, platformUserId: facebookPlatformUserId, metadata: facebookMetadata },
           { name: 'instagram', username: instagramUsername, followerCount: instagramFollowers, profileUrl: instagramProfileUrl, platformUserId: instagramPlatformUserId, metadata: instagramMetadata },
         ]
-      : [{ name: platform, username, followerCount, profileUrl, platformUserId, metadata }];
+      : [{ name: savePlatformName, username, followerCount, profileUrl, platformUserId, metadata }];
     
     for (const p of platformsToSave) {
       const existingConnection = await db
@@ -587,7 +613,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       });
     }
     
-    const redirectPlatform = platform === 'meta' ? 'facebook,instagram' : platform;
+    const redirectPlatform = platform === 'meta' ? 'facebook,instagram' : savePlatformName;
     const connectedUsername = platformsToSave[0]?.username || '';
     res.redirect(`/social-media?success=connected&platform=${redirectPlatform}&username=${encodeURIComponent(connectedUsername)}`);
   } catch (error) {
