@@ -758,21 +758,7 @@ router.get('/inbox/team', requireAuth, async (req: AuthenticatedRequest, res: Re
   }
 });
 
-// ===========================
-// ADDITIONAL MISSING ENDPOINTS
-// ===========================
-
-// Activity endpoint
-router.get('/activity', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ activities: [], total: 0 });
-  } catch (error) {
-    logger.error('Failed to get activity:', error);
-    res.json({ activities: [], total: 0 });
-  }
-});
-
-// Connections endpoint - redirect to OAuth connections (actual data is in socialOAuth.ts)
+// Connections endpoint - returns OAuth connections
 router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -794,117 +780,6 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
   } catch (error) {
     logger.error('Failed to get connections:', error);
     res.json([]);
-  }
-});
-
-// Weekly stats endpoint
-router.get('/weekly-stats', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ stats: [], period: 'weekly' });
-  } catch (error) {
-    logger.error('Failed to get weekly stats:', error);
-    res.json({ stats: [], period: 'weekly' });
-  }
-});
-
-// Your stats endpoint
-router.get('/your-stats', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ followers: 0, posts: 0, engagement: 0, reach: 0 });
-  } catch (error) {
-    logger.error('Failed to get your stats:', error);
-    res.json({ followers: 0, posts: 0, engagement: 0, reach: 0 });
-  }
-});
-
-// Competitors endpoint
-router.get('/competitors', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ competitors: [] });
-  } catch (error) {
-    logger.error('Failed to get competitors:', error);
-    res.json({ competitors: [] });
-  }
-});
-
-// AI insights endpoint
-router.get('/ai-insights', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ insights: [], recommendations: [] });
-  } catch (error) {
-    logger.error('Failed to get AI insights:', error);
-    res.json({ insights: [], recommendations: [] });
-  }
-});
-
-// ===========================
-// BENCHMARK ENDPOINTS
-// ===========================
-
-router.get('/benchmark', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ benchmarks: [] });
-  } catch (error) {
-    logger.error('Failed to get benchmarks:', error);
-    res.json({ benchmarks: [] });
-  }
-});
-
-router.get('/benchmark/competitors', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ competitors: [] });
-  } catch (error) {
-    logger.error('Failed to get benchmark competitors:', error);
-    res.json({ competitors: [] });
-  }
-});
-
-router.get('/benchmark/insights', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ insights: [] });
-  } catch (error) {
-    logger.error('Failed to get benchmark insights:', error);
-    res.json({ insights: [] });
-  }
-});
-
-// ===========================
-// LISTENING ENDPOINTS
-// ===========================
-
-router.get('/listening/keywords', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ keywords: [] });
-  } catch (error) {
-    logger.error('Failed to get listening keywords:', error);
-    res.json({ keywords: [] });
-  }
-});
-
-router.get('/listening/trending', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ trending: [] });
-  } catch (error) {
-    logger.error('Failed to get listening trending:', error);
-    res.json({ trending: [] });
-  }
-});
-
-router.get('/listening/alerts', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ alerts: [] });
-  } catch (error) {
-    logger.error('Failed to get listening alerts:', error);
-    res.json({ alerts: [] });
-  }
-});
-
-router.get('/listening/influencers', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    res.json({ influencers: [] });
-  } catch (error) {
-    logger.error('Failed to get listening influencers:', error);
-    res.json({ influencers: [] });
   }
 });
 

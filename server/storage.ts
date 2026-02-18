@@ -26,6 +26,9 @@ import {
   orders,
   autopilotLearningData,
   inferenceRuns,
+  socialKeywords,
+  socialMentions,
+  socialAutopilotContent,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -407,19 +410,94 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialListeningKeywords(userId: string): Promise<any[]> {
-    return [];
+    return await db
+      .select()
+      .from(socialKeywords)
+      .where(eq(socialKeywords.userId, userId))
+      .orderBy(desc(socialKeywords.createdAt));
   }
 
   async getSocialListeningTrending(userId: string): Promise<any[]> {
-    return [];
+    return await db
+      .select()
+      .from(socialMentions)
+      .where(eq(socialMentions.userId, userId))
+      .orderBy(desc(socialMentions.engagement))
+      .limit(20);
   }
 
   async getSocialListeningInfluencers(userId: string): Promise<any[]> {
-    return [];
+    return await db
+      .select()
+      .from(socialMentions)
+      .where(and(
+        eq(socialMentions.userId, userId),
+        eq(socialMentions.isInfluencer, true)
+      ))
+      .orderBy(desc(socialMentions.authorFollowers))
+      .limit(20);
   }
 
   async getSocialListeningAlerts(userId: string): Promise<any[]> {
-    return [];
+    return await db
+      .select()
+      .from(socialMentions)
+      .where(and(
+        eq(socialMentions.userId, userId),
+        eq(socialMentions.sentiment, 'negative')
+      ))
+      .orderBy(desc(socialMentions.createdAt))
+      .limit(20);
+  }
+
+  async getSocialAIInsights(userId: string): Promise<any[]> {
+    const accounts = await this.getSocialAccounts(userId);
+    const recentContent = await db
+      .select()
+      .from(socialAutopilotContent)
+      .where(eq(socialAutopilotContent.userId, userId))
+      .orderBy(desc(socialAutopilotContent.createdAt))
+      .limit(10);
+
+    if (accounts.length === 0 && recentContent.length === 0) return [];
+
+    const insights: any[] = [];
+    if (recentContent.length > 0) {
+      const topPerforming = recentContent.filter(c => {
+        const perf = c.performance as any;
+        return perf && (perf.views > 0 || perf.likes > 0);
+      });
+      if (topPerforming.length > 0) {
+        insights.push({
+          type: 'content_performance',
+          title: 'Top performing content identified',
+          description: `${topPerforming.length} pieces of content showing strong engagement`,
+          priority: 'medium',
+          createdAt: new Date(),
+        });
+      }
+    }
+    return insights;
+  }
+
+  async getUserSocialStats(userId: string): Promise<any | null> {
+    const accounts = await this.getSocialAccounts(userId);
+    if (accounts.length === 0) return null;
+
+    const totalFollowers = accounts.reduce((sum, acc) => sum + (acc.followerCount || 0), 0);
+    const recentPosts = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.userId, userId))
+      .orderBy(desc(posts.createdAt))
+      .limit(50);
+
+    return {
+      followers: totalFollowers,
+      posts: recentPosts.length,
+      engagement: 0,
+      reach: 0,
+    };
   }
 
   async getCompetitors(userId: string): Promise<any[]> {
@@ -1024,9 +1102,11 @@ export class DatabaseStorage implements IStorage {
       const [page] = await db
         .insert(hyperFollowPages)
         .values({
-          ...data,
-          createdAt: data.createdAt || new Date(),
-          updatedAt: data.updatedAt || new Date(),
+          userId: data.userId,
+          title: data.title,
+          slug: data.slug,
+          imageUrl: data.imageUrl || null,
+          links: data.links || {},
         })
         .returning();
       return page;

@@ -2,6 +2,9 @@ import { Router, NextFunction } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
+import { db } from '../db';
+import { eq, and, desc, sql, gte, lte, sum } from 'drizzle-orm';
+import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases } from '@shared/schema';
 import * as codeGenerationService from '../services/distributionCodeGenerationService';
 import { distributionService } from '../services/distributionService';
 import { labelGridService } from '../services/labelgrid-service';
@@ -402,15 +405,28 @@ router.post('/codes/isrc', requireAuth, async (req: Request, res: Response) => {
     const userId = (req.user as AuthenticatedUser).id;
     const { trackId, artist, title } = generateCodeSchema.parse(req.body);
 
-    // Use LabelGrid API to generate ISRC
-    const result = await labelGridService.generateISRC(artist, title);
+    let isrcCode: string;
+    let assignedTo: string = `${artist} - ${title}`;
 
-    // Store in database for tracking
-    if (trackId && trackId !== `temp_${Date.now()}`) {
-      await codeGenerationService.generateISRC(userId, trackId, artist, title);
+    try {
+      const result = await labelGridService.generateISRC(artist, title);
+      isrcCode = result.code;
+      assignedTo = result.assignedTo || assignedTo;
+    } catch (lgError) {
+      logger.warn('LabelGrid ISRC generation failed, falling back to internal generator:', lgError);
+      const fallback = musicCodesService.generateISRC(userId);
+      isrcCode = fallback.code;
     }
 
-    res.json({ isrc: result.code, assignedTo: result.assignedTo });
+    if (trackId && trackId !== `temp_${Date.now()}`) {
+      try {
+        await codeGenerationService.generateISRC(userId, trackId, artist, title);
+      } catch (storeErr) {
+        logger.warn('Failed to store ISRC in database:', storeErr);
+      }
+    }
+
+    res.json({ isrc: isrcCode, assignedTo });
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
@@ -424,17 +440,31 @@ router.post('/codes/isrc', requireAuth, async (req: Request, res: Response) => {
 router.post('/codes/upc', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const { releaseId, title } = generateCodeSchema.parse(req.body);
+    const upcSchema = z.object({ releaseId: z.string().optional(), title: z.string() });
+    const { releaseId, title } = upcSchema.parse(req.body);
 
-    // Use LabelGrid API to generate UPC
-    const result = await labelGridService.generateUPC(title);
+    let upcCode: string;
+    let assignedTo: string = title;
 
-    // Store in database for tracking
-    if (releaseId && releaseId !== `temp_${Date.now()}`) {
-      await codeGenerationService.generateUPC(userId, releaseId, title);
+    try {
+      const result = await labelGridService.generateUPC(title);
+      upcCode = result.code;
+      assignedTo = result.assignedTo || assignedTo;
+    } catch (lgError) {
+      logger.warn('LabelGrid UPC generation failed, falling back to internal generator:', lgError);
+      const fallback = musicCodesService.generateUPC(userId);
+      upcCode = fallback.code;
     }
 
-    res.json({ upc: result.code, assignedTo: result.assignedTo });
+    if (releaseId && releaseId !== `temp_${Date.now()}`) {
+      try {
+        await codeGenerationService.generateUPC(userId, releaseId, title);
+      } catch (storeErr) {
+        logger.warn('Failed to store UPC in database:', storeErr);
+      }
+    }
+
+    res.json({ upc: upcCode, assignedTo });
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
@@ -622,14 +652,58 @@ router.post(
       const userId = (req.user as AuthenticatedUser).id;
       const file = req.file;
 
-      const data = hyperFollowSchema.parse(JSON.parse(req.body.data));
+      let bodyData: any;
+      try {
+        bodyData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : (req.body.data || req.body);
+      } catch (parseErr) {
+        return res.status(400).json({ error: 'Invalid JSON in request body' });
+      }
 
-      const headerImageUrl = file ? `/uploads/distribution/${file.filename}` : data.headerImage;
+      const hyperFollowCreateSchema = z.object({
+        title: z.string().min(1),
+        artistName: z.string().min(1),
+        slug: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/).optional(),
+        description: z.string().optional(),
+        headerImage: z.string().optional(),
+        releaseId: z.string().optional(),
+        collectEmails: z.boolean().default(true),
+        platforms: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            enabled: z.boolean(),
+            url: z.string().optional(),
+          })
+        ).optional().default([]),
+        socialLinks: z.array(
+          z.object({
+            platform: z.string(),
+            url: z.string(),
+          })
+        ).optional(),
+        theme: z.object({
+          primaryColor: z.string(),
+          backgroundColor: z.string(),
+          textColor: z.string(),
+          buttonStyle: z.enum(['rounded', 'square', 'pill']),
+        }).optional(),
+      });
+
+      const data = hyperFollowCreateSchema.parse(bodyData);
+
+      const slug = data.slug || data.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .substring(0, 40) + '-' + Math.random().toString(36).substring(2, 8);
+
+      const headerImageUrl = file ? `/uploads/distribution/${file.filename}` : data.headerImage || null;
 
       const campaign = await storage.createHyperFollowPage({
         userId,
         title: data.title,
-        slug: data.slug,
+        slug,
         imageUrl: headerImageUrl,
         links: {
           platforms: data.platforms,
@@ -638,7 +712,7 @@ router.post(
           description: data.description,
           releaseId: data.releaseId,
           collectEmails: data.collectEmails,
-          theme: data.theme,
+          theme: data.theme || { primaryColor: '#6366f1', backgroundColor: '#1e1b4b', textColor: '#ffffff', buttonStyle: 'rounded' },
           analytics: {
             pageViews: 0,
             preSaves: 0,
@@ -648,6 +722,10 @@ router.post(
           emailList: [],
         },
       });
+
+      if (!campaign) {
+        return res.status(500).json({ error: 'Failed to create campaign - database insert returned null' });
+      }
 
       res.json(campaign);
     } catch (error: unknown) {
@@ -908,10 +986,42 @@ router.post('/releases/:id/check-status', requireAuth, async (req: Request, res:
       return res.status(404).json({ error: 'Release not found' });
     }
 
-    // Trigger status refresh from DSPs
-    await distributionService.refreshReleaseStatus(id);
+    const releaseMetadata = release.metadata as any;
+    const currentStatus = releaseMetadata?.status || release.status || 'draft';
 
-    res.json({ success: true, message: 'Status refresh initiated' });
+    if (currentStatus === 'draft') {
+      return res.json({
+        success: true,
+        status: 'draft',
+        message: 'Release has not been submitted yet. Submit it first before checking status.',
+        platforms: [],
+        lastChecked: new Date(),
+      });
+    }
+
+    try {
+      const statusResult = await distributionService.refreshReleaseStatus(id);
+      res.json({
+        success: true,
+        status: statusResult.status,
+        platforms: statusResult.platforms,
+        lastChecked: statusResult.lastChecked,
+        message: 'Status refreshed successfully',
+      });
+    } catch (refreshError) {
+      logger.warn('Status refresh failed, returning current status:', refreshError);
+      const currentPlatforms = (release.metadata as any)?.platforms || [];
+      res.json({
+        success: true,
+        status: currentStatus,
+        platforms: Array.isArray(currentPlatforms) ? currentPlatforms.map((p: any) => ({
+          platform: typeof p === 'string' ? p : p.platform || p.name,
+          status: p.status || 'unknown',
+        })) : [],
+        lastChecked: new Date(),
+        message: 'Could not reach distribution service. Showing last known status.',
+      });
+    }
   } catch (error: unknown) {
     logger.error('Error refreshing release status:', error);
     res.status(500).json({ error: 'Failed to refresh release status' });
@@ -940,39 +1050,42 @@ router.post('/releases/:id/ddex/preview', requireAuth, async (req: Request, res:
 
     const tracks = await storage.getDistroTracks(id);
 
-    const metadata = release.metadata as any;
+    const metadata = (release.metadata as any) || {};
     const xml = await ddexPackageService.generateDDEXXML(
       {
         id: release.id,
         title: release.title || '',
-        artistName: metadata.artistName,
-        releaseType: metadata.releaseType,
-        upc: release.upc || '',
-        releaseDate: release.releaseDate?.toISOString().split('T')[0] || '',
-        labelName: metadata.labelName,
-        copyrightYear: metadata.copyrightYear,
-        copyrightOwner: metadata.copyrightOwner,
-        publishingRights: metadata.publishingRights,
-        primaryGenre: metadata.primaryGenre,
+        artistName: metadata.artistName || 'Unknown Artist',
+        releaseType: metadata.releaseType || 'Single',
+        upc: metadata.upc || '',
+        releaseDate: release.releaseDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+        labelName: metadata.labelName || '',
+        copyrightYear: metadata.copyrightYear || new Date().getFullYear().toString(),
+        copyrightOwner: metadata.copyrightOwner || metadata.artistName || '',
+        publishingRights: metadata.publishingRights || '',
+        primaryGenre: metadata.primaryGenre || 'Other',
         secondaryGenre: metadata.secondaryGenre,
-        isExplicit: metadata.isExplicit,
-        coverArtPath: release.coverArtUrl,
-        territories: metadata.territories,
+        isExplicit: metadata.isExplicit || false,
+        coverArtPath: release.artworkUrl || metadata.coverArtUrl || null,
+        territories: metadata.territories || ['worldwide'],
       },
-      tracks.map((track: unknown, index: number) => ({
-        id: track.id,
-        title: track.title,
-        isrc: track.isrc || '',
-        trackNumber: index + 1,
-        duration: track.duration || 0,
-        audioFilePath: track.audioUrl,
-        explicit: track.metadata?.explicit || false,
-        lyrics: track.metadata?.lyrics,
-        primaryArtist: metadata.artistName,
-        featuredArtists: track.metadata?.featuredArtists,
-        songwriters: track.metadata?.songwriters,
-        producers: track.metadata?.producers,
-      }))
+      tracks.map((track: any, index: number) => {
+        const trackMeta = (track.metadata as any) || {};
+        return {
+          id: track.id,
+          title: track.title || `Track ${index + 1}`,
+          isrc: track.isrc || trackMeta.isrc || '',
+          trackNumber: index + 1,
+          duration: track.duration || 0,
+          audioFilePath: track.audioUrl || '',
+          explicit: trackMeta.explicit || false,
+          lyrics: trackMeta.lyrics,
+          primaryArtist: metadata.artistName || 'Unknown Artist',
+          featuredArtists: trackMeta.featuredArtists,
+          songwriters: trackMeta.songwriters,
+          producers: trackMeta.producers,
+        };
+      })
     );
 
     // Validate XML
@@ -1000,55 +1113,74 @@ router.get('/releases/:id/ddex/download', requireAuth, async (req: Request, res:
     }
 
     const tracks = await storage.getDistroTracks(id);
-    const metadata = release.metadata as any;
+    if (!tracks || tracks.length === 0) {
+      return res.status(400).json({ error: 'Release has no tracks. Add tracks before downloading a DDEX package.' });
+    }
+
+    const metadata = (release.metadata as any) || {};
+    const upc = metadata.upc || '';
+    const coverArtPath = release.artworkUrl || metadata.coverArtUrl || null;
 
     const outputPath = path.join(uploadDir, `ddex_${id}_${Date.now()}.zip`);
 
-    await ddexPackageService.createDDEXPackage(
-      {
-        id: release.id,
-        title: release.title || '',
-        artistName: metadata.artistName,
-        releaseType: metadata.releaseType,
-        upc: release.upc || '',
-        releaseDate: release.releaseDate?.toISOString().split('T')[0] || '',
-        labelName: metadata.labelName,
-        copyrightYear: metadata.copyrightYear,
-        copyrightOwner: metadata.copyrightOwner,
-        publishingRights: metadata.publishingRights,
-        primaryGenre: metadata.primaryGenre,
-        secondaryGenre: metadata.secondaryGenre,
-        isExplicit: metadata.isExplicit,
-        coverArtPath: release.coverArtUrl,
-        territories: metadata.territories,
-      },
-      tracks.map((track: unknown, index: number) => ({
-        id: track.id,
-        title: track.title,
-        isrc: track.isrc || '',
-        trackNumber: index + 1,
-        duration: track.duration || 0,
-        audioFilePath: path.join(process.cwd(), track.audioUrl),
-        explicit: track.metadata?.explicit || false,
-        lyrics: track.metadata?.lyrics,
-        primaryArtist: metadata.artistName,
-        featuredArtists: track.metadata?.featuredArtists,
-        songwriters: track.metadata?.songwriters,
-        producers: track.metadata?.producers,
-      })),
-      outputPath
-    );
+    try {
+      await ddexPackageService.createDDEXPackage(
+        {
+          id: release.id,
+          title: release.title || '',
+          artistName: metadata.artistName || 'Unknown Artist',
+          releaseType: metadata.releaseType || 'Single',
+          upc: upc,
+          releaseDate: release.releaseDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+          labelName: metadata.labelName || '',
+          copyrightYear: metadata.copyrightYear || new Date().getFullYear().toString(),
+          copyrightOwner: metadata.copyrightOwner || metadata.artistName || '',
+          publishingRights: metadata.publishingRights || '',
+          primaryGenre: metadata.primaryGenre || 'Other',
+          secondaryGenre: metadata.secondaryGenre,
+          isExplicit: metadata.isExplicit || false,
+          coverArtPath: coverArtPath,
+          territories: metadata.territories || ['worldwide'],
+        },
+        tracks.map((track: any, index: number) => {
+          const trackMeta = (track.metadata as any) || {};
+          return {
+            id: track.id,
+            title: track.title || `Track ${index + 1}`,
+            isrc: track.isrc || trackMeta.isrc || '',
+            trackNumber: index + 1,
+            duration: track.duration || 0,
+            audioFilePath: track.audioUrl ? path.join(process.cwd(), track.audioUrl) : '',
+            explicit: trackMeta.explicit || false,
+            lyrics: trackMeta.lyrics,
+            primaryArtist: metadata.artistName || 'Unknown Artist',
+            featuredArtists: trackMeta.featuredArtists,
+            songwriters: trackMeta.songwriters,
+            producers: trackMeta.producers,
+          };
+        }),
+        outputPath
+      );
+    } catch (packageError) {
+      logger.error('Error generating DDEX package content:', packageError);
+      return res.status(500).json({ error: 'Failed to generate DDEX package. Some required track files may be missing.' });
+    }
 
-    res.download(outputPath, `${release.title}_DDEX.zip`, (err) => {
-      if (err) {
+    res.download(outputPath, `${release.title || 'release'}_DDEX.zip`, (err) => {
+      if (err && !res.headersSent) {
         logger.error('Error downloading DDEX package:', err);
       }
-      // Clean up file after download
-      fs.unlinkSync(outputPath);
+      try {
+        fs.unlinkSync(outputPath);
+      } catch (cleanupErr) {
+        logger.warn('Failed to clean up DDEX temp file:', cleanupErr);
+      }
     });
   } catch (error: unknown) {
     logger.error('Error creating DDEX package:', error);
-    res.status(500).json({ error: 'Failed to create DDEX package' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to create DDEX package' });
+    }
   }
 });
 
@@ -2600,7 +2732,7 @@ router.get('/analytics/growth', requireAuth, async (req: Request, res: Response)
     const analyticsData = await storage.getDistroAnalytics(userId);
     
     if (!analyticsData) {
-      return res.json(null);
+      return res.json({ streams: 0, downloads: 0, revenue: 0, growth: 0, platforms: [], trends: [] });
     }
     
     res.json(analyticsData);
@@ -2638,21 +2770,31 @@ router.get('/geographic', requireAuth, async (req: Request, res: Response) => {
 router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const payouts = await storage.getPayoutHistory(userId) as PayoutRecord[];
-    
-    if (payouts.length === 0) {
-      return res.json(null);
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    const allTxns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
+
+    if (allTxns.length === 0) {
+      return res.json({ totalEarnings: 0, pendingEarnings: 0, paidOut: 0, thisMonth: 0, lastMonth: 0, growth: 0 });
     }
-    
-    const totalPaidOut = payouts.reduce((sum: number, p: PayoutRecord) => sum + (p.amount || 0), 0);
-    
+
+    const totalEarnings = allTxns.reduce((s, t) => s + (t.amount || 0), 0);
+    const pendingEarnings = allTxns.filter(t => t.status === 'pending').reduce((s, t) => s + (t.amount || 0), 0);
+    const paidOut = allTxns.filter(t => t.status === 'paid').reduce((s, t) => s + (t.amount || 0), 0);
+    const thisMonth = allTxns.filter(t => t.createdAt && t.createdAt >= thisMonthStart).reduce((s, t) => s + (t.amount || 0), 0);
+    const lastMonth = allTxns.filter(t => t.createdAt && t.createdAt >= lastMonthStart && t.createdAt <= lastMonthEnd).reduce((s, t) => s + (t.amount || 0), 0);
+    const growth = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
+
     res.json({
-      totalEarnings: totalPaidOut,
-      pendingEarnings: 0,
-      paidOut: totalPaidOut,
-      thisMonth: 0,
-      lastMonth: 0,
-      growth: 0,
+      totalEarnings,
+      pendingEarnings,
+      paidOut,
+      thisMonth,
+      lastMonth,
+      growth,
     });
   } catch (error: unknown) {
     logger.error('Error fetching earnings breakdown:', error);
@@ -2664,13 +2806,24 @@ router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Respons
 router.get('/platform-earnings', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const analyticsData = await storage.getDistroAnalytics(userId);
-    
-    if (!analyticsData) {
+    const txns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
+
+    if (txns.length === 0) {
       return res.json([]);
     }
-    
-    res.json([]);
+
+    const platformMap: Record<string, { platform: string; totalEarnings: number; streams: number; transactions: number }> = {};
+    for (const t of txns) {
+      const plat = t.platform || 'unknown';
+      if (!platformMap[plat]) {
+        platformMap[plat] = { platform: plat, totalEarnings: 0, streams: 0, transactions: 0 };
+      }
+      platformMap[plat].totalEarnings += t.amount || 0;
+      platformMap[plat].streams += t.streamCount || 0;
+      platformMap[plat].transactions += 1;
+    }
+
+    res.json(Object.values(platformMap));
   } catch (error: unknown) {
     logger.error('Error fetching platform earnings:', error);
     res.status(500).json({ error: 'Failed to fetch platform earnings' });
@@ -2811,7 +2964,30 @@ router.get('/codes/stats', requireAuth, async (req: Request, res: Response) => {
 // GET /api/distribution/earnings/entries - Get earnings entries
 router.get('/earnings/entries', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ entries: [], total: 0 });
+    const userId = (req.user as AuthenticatedUser).id;
+    const entries = await db
+      .select({
+        id: royaltyTransactions.id,
+        splitId: royaltyTransactions.splitId,
+        releaseId: royaltyTransactions.releaseId,
+        amount: royaltyTransactions.amount,
+        currency: royaltyTransactions.currency,
+        transactionType: royaltyTransactions.transactionType,
+        platform: royaltyTransactions.platform,
+        periodStart: royaltyTransactions.periodStart,
+        periodEnd: royaltyTransactions.periodEnd,
+        streamCount: royaltyTransactions.streamCount,
+        status: royaltyTransactions.status,
+        paidAt: royaltyTransactions.paidAt,
+        metadata: royaltyTransactions.metadata,
+        createdAt: royaltyTransactions.createdAt,
+        releaseTitle: distroReleases.title,
+      })
+      .from(royaltyTransactions)
+      .leftJoin(distroReleases, eq(royaltyTransactions.releaseId, distroReleases.id))
+      .where(eq(royaltyTransactions.userId, userId))
+      .orderBy(desc(royaltyTransactions.createdAt));
+    res.json({ entries, total: entries.length });
   } catch (error: unknown) {
     logger.error('Error fetching earnings entries:', error);
     res.status(500).json({ error: 'Failed to fetch earnings entries' });
@@ -2821,7 +2997,13 @@ router.get('/earnings/entries', requireAuth, async (req: Request, res: Response)
 // GET /api/distribution/earnings/payouts - Get earnings payouts
 router.get('/earnings/payouts', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ payouts: [], total: 0 });
+    const userId = (req.user as AuthenticatedUser).id;
+    const payouts = await db
+      .select()
+      .from(instantPayouts)
+      .where(eq(instantPayouts.userId, userId))
+      .orderBy(desc(instantPayouts.createdAt));
+    res.json({ payouts, total: payouts.length });
   } catch (error: unknown) {
     logger.error('Error fetching earnings payouts:', error);
     res.status(500).json({ error: 'Failed to fetch earnings payouts' });
@@ -2831,7 +3013,13 @@ router.get('/earnings/payouts', requireAuth, async (req: Request, res: Response)
 // GET /api/distribution/earnings/statements - Get earnings statements
 router.get('/earnings/statements', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ statements: [] });
+    const userId = (req.user as AuthenticatedUser).id;
+    const statements = await db
+      .select()
+      .from(royaltyStatements)
+      .where(eq(royaltyStatements.userId, userId))
+      .orderBy(desc(royaltyStatements.createdAt));
+    res.json({ statements });
   } catch (error: unknown) {
     logger.error('Error fetching earnings statements:', error);
     res.status(500).json({ error: 'Failed to fetch earnings statements' });
@@ -2841,7 +3029,21 @@ router.get('/earnings/statements', requireAuth, async (req: Request, res: Respon
 // GET /api/distribution/earnings/summary - Get earnings summary
 router.get('/earnings/summary', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ totalEarnings: 0, pendingEarnings: 0, paidOut: 0, thisMonth: 0, lastMonth: 0 });
+    const userId = (req.user as AuthenticatedUser).id;
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    const allTxns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
+
+    const totalEarnings = allTxns.reduce((s, t) => s + (t.amount || 0), 0);
+    const pendingEarnings = allTxns.filter(t => t.status === 'pending').reduce((s, t) => s + (t.amount || 0), 0);
+    const paidOut = allTxns.filter(t => t.status === 'paid').reduce((s, t) => s + (t.amount || 0), 0);
+    const thisMonth = allTxns.filter(t => t.createdAt && t.createdAt >= thisMonthStart).reduce((s, t) => s + (t.amount || 0), 0);
+    const lastMonth = allTxns.filter(t => t.createdAt && t.createdAt >= lastMonthStart && t.createdAt <= lastMonthEnd).reduce((s, t) => s + (t.amount || 0), 0);
+
+    res.json({ totalEarnings, pendingEarnings, paidOut, thisMonth, lastMonth });
   } catch (error: unknown) {
     logger.error('Error fetching earnings summary:', error);
     res.status(500).json({ error: 'Failed to fetch earnings summary' });
@@ -2851,7 +3053,22 @@ router.get('/earnings/summary', requireAuth, async (req: Request, res: Response)
 // GET /api/distribution/earnings/territories - Get earnings by territory
 router.get('/earnings/territories', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ territories: [] });
+    const userId = (req.user as AuthenticatedUser).id;
+    const txns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
+
+    const territoryMap: Record<string, { territory: string; totalEarnings: number; streams: number; transactions: number }> = {};
+    for (const t of txns) {
+      const meta = t.metadata as any;
+      const territory = meta?.territory || meta?.country || t.platform || 'unknown';
+      if (!territoryMap[territory]) {
+        territoryMap[territory] = { territory, totalEarnings: 0, streams: 0, transactions: 0 };
+      }
+      territoryMap[territory].totalEarnings += t.amount || 0;
+      territoryMap[territory].streams += t.streamCount || 0;
+      territoryMap[territory].transactions += 1;
+    }
+
+    res.json({ territories: Object.values(territoryMap) });
   } catch (error: unknown) {
     logger.error('Error fetching earnings territories:', error);
     res.status(500).json({ error: 'Failed to fetch earnings territories' });
@@ -2865,7 +3082,21 @@ router.get('/earnings/territories', requireAuth, async (req: Request, res: Respo
 // GET /api/distribution/royalties/currency-rates - Get currency rates
 router.get('/royalties/currency-rates', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ rates: { USD: 1, EUR: 0.92, GBP: 0.79 }, baseCurrency: 'USD', lastUpdated: new Date().toISOString() });
+    const [setting] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, 'currency_rates'));
+
+    if (setting && setting.value) {
+      const val = setting.value as any;
+      res.json({
+        rates: val.rates || { USD: 1, EUR: 0.92, GBP: 0.79 },
+        baseCurrency: val.baseCurrency || 'USD',
+        lastUpdated: setting.updatedAt?.toISOString() || new Date().toISOString(),
+      });
+    } else {
+      res.json({ rates: { USD: 1, EUR: 0.92, GBP: 0.79 }, baseCurrency: 'USD', lastUpdated: new Date().toISOString() });
+    }
   } catch (error: unknown) {
     logger.error('Error fetching currency rates:', error);
     res.status(500).json({ error: 'Failed to fetch currency rates' });
@@ -2875,7 +3106,13 @@ router.get('/royalties/currency-rates', requireAuth, async (req: Request, res: R
 // GET /api/distribution/royalties/discrepancies - Get royalty discrepancies
 router.get('/royalties/discrepancies', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ discrepancies: [], total: 0 });
+    const userId = (req.user as AuthenticatedUser).id;
+    const discrepancies = await db
+      .select()
+      .from(royaltyDisputes)
+      .where(eq(royaltyDisputes.userId, userId))
+      .orderBy(desc(royaltyDisputes.createdAt));
+    res.json({ discrepancies, total: discrepancies.length });
   } catch (error: unknown) {
     logger.error('Error fetching royalty discrepancies:', error);
     res.status(500).json({ error: 'Failed to fetch royalty discrepancies' });
@@ -2885,7 +3122,13 @@ router.get('/royalties/discrepancies', requireAuth, async (req: Request, res: Re
 // GET /api/distribution/royalties/payouts - Get royalty payouts
 router.get('/royalties/payouts', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ payouts: [], total: 0 });
+    const userId = (req.user as AuthenticatedUser).id;
+    const payouts = await db
+      .select()
+      .from(royaltyTransactions)
+      .where(and(eq(royaltyTransactions.userId, userId), eq(royaltyTransactions.status, 'paid')))
+      .orderBy(desc(royaltyTransactions.paidAt));
+    res.json({ payouts, total: payouts.length });
   } catch (error: unknown) {
     logger.error('Error fetching royalty payouts:', error);
     res.status(500).json({ error: 'Failed to fetch royalty payouts' });
@@ -2895,7 +3138,21 @@ router.get('/royalties/payouts', requireAuth, async (req: Request, res: Response
 // GET /api/distribution/royalties/platforms - Get royalties by platform
 router.get('/royalties/platforms', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ platforms: [] });
+    const userId = (req.user as AuthenticatedUser).id;
+    const txns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
+
+    const platformMap: Record<string, { platform: string; totalEarnings: number; streams: number; transactions: number }> = {};
+    for (const t of txns) {
+      const plat = t.platform || 'unknown';
+      if (!platformMap[plat]) {
+        platformMap[plat] = { platform: plat, totalEarnings: 0, streams: 0, transactions: 0 };
+      }
+      platformMap[plat].totalEarnings += t.amount || 0;
+      platformMap[plat].streams += t.streamCount || 0;
+      platformMap[plat].transactions += 1;
+    }
+
+    res.json({ platforms: Object.values(platformMap) });
   } catch (error: unknown) {
     logger.error('Error fetching royalties platforms:', error);
     res.status(500).json({ error: 'Failed to fetch royalties platforms' });
@@ -2905,7 +3162,21 @@ router.get('/royalties/platforms', requireAuth, async (req: Request, res: Respon
 // GET /api/distribution/royalties/splits - Get royalty splits
 router.get('/royalties/splits', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ splits: [] });
+    const userId = (req.user as AuthenticatedUser).id;
+    const userReleases = await db
+      .select({ id: distroReleases.id })
+      .from(distroReleases)
+      .where(eq(distroReleases.artistId, userId));
+
+    if (userReleases.length === 0) {
+      return res.json({ splits: [] });
+    }
+
+    const releaseIds = userReleases.map(r => r.id);
+    const allSplits = await db.select().from(royaltySplits);
+    const splits = allSplits.filter(s => releaseIds.includes(s.releaseId));
+
+    res.json({ splits });
   } catch (error: unknown) {
     logger.error('Error fetching royalty splits:', error);
     res.status(500).json({ error: 'Failed to fetch royalty splits' });
@@ -2915,7 +3186,13 @@ router.get('/royalties/splits', requireAuth, async (req: Request, res: Response)
 // GET /api/distribution/royalties/tax-documents - Get tax documents
 router.get('/royalties/tax-documents', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ documents: [] });
+    const userId = (req.user as AuthenticatedUser).id;
+    const documents = await db
+      .select()
+      .from(taxForms)
+      .where(eq(taxForms.userId, userId))
+      .orderBy(desc(taxForms.createdAt));
+    res.json({ documents });
   } catch (error: unknown) {
     logger.error('Error fetching tax documents:', error);
     res.status(500).json({ error: 'Failed to fetch tax documents' });

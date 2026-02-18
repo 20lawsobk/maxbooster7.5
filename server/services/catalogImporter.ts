@@ -129,11 +129,13 @@ class CatalogImporter {
     fileSize: number
   ): Promise<string> {
     const [job] = await db.insert(catalogImportJobs).values({
-      userId,
-      filename,
-      fileType,
-      fileSize,
-      status: 'pending'
+      artistId: userId,
+      sourceType: fileType,
+      sourceUrl: filename,
+      status: 'pending',
+      totalTracks: 0,
+      importedTracks: 0,
+      progress: 0,
     }).returning();
 
     logger.info(`Created import job ${job.id} for user ${userId}`);
@@ -438,7 +440,8 @@ class CatalogImporter {
       .set({
         status: 'processing',
         startedAt: new Date(),
-        totalRows: rows.length
+        totalTracks: rows.length,
+        progress: 0,
       })
       .where(eq(catalogImportJobs.id, jobId));
 
@@ -523,12 +526,9 @@ class CatalogImporter {
       .set({
         status: result.status,
         completedAt: new Date(),
-        processedRows: result.processedRows,
-        successfulRows: result.successfulRows,
-        failedRows: result.failedRows,
-        duplicateRows: result.duplicateRows,
-        errors: result.errors,
-        warnings: result.warnings
+        importedTracks: result.successfulRows,
+        progress: 100,
+        errors: result.errors as any,
       })
       .where(eq(catalogImportJobs.id, jobId));
 
@@ -639,7 +639,7 @@ class CatalogImporter {
   async getImportJobs(userId: string): Promise<any[]> {
     return db.select()
       .from(catalogImportJobs)
-      .where(eq(catalogImportJobs.userId, userId))
+      .where(eq(catalogImportJobs.artistId, userId))
       .orderBy(desc(catalogImportJobs.createdAt));
   }
 

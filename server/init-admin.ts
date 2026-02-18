@@ -30,6 +30,8 @@ export async function initializeAdmin() {
       await seedAchievementsData();
       await seedStatusPageServices();
       await seedAIModels();
+      await seedSystemSettings();
+      await seedAlertRules();
       return null;
     }
     
@@ -39,6 +41,8 @@ export async function initializeAdmin() {
       await seedAchievementsData();
       await seedStatusPageServices();
       await seedAIModels();
+      await seedSystemSettings();
+      await seedAlertRules();
       return null;
     }
     
@@ -118,6 +122,8 @@ export async function initializeAdmin() {
     await seedAchievementsData();
     await seedStatusPageServices();
     await seedAIModels();
+    await seedSystemSettings();
+    await seedAlertRules();
     
     return admin;
   } catch (error: unknown) {
@@ -1506,5 +1512,79 @@ async function seedAIModels() {
     logger.info('   ✓ AI models seeded');
   } catch (error: any) {
     logger.warn('AI models seeding skipped:', error.message);
+  }
+}
+
+async function seedSystemSettings() {
+  try {
+    const { systemSettings } = await import('../shared/schema.js');
+    const existing = await db.select().from(systemSettings);
+    if (existing.length > 0) {
+      logger.info('   ✓ System settings already seeded');
+      return;
+    }
+
+    const defaults = [
+      { key: 'platform_name', value: JSON.stringify('Max Booster'), description: 'Platform display name' },
+      { key: 'maintenance_mode', value: JSON.stringify(false), description: 'Enable/disable maintenance mode' },
+      { key: 'user_registration_enabled', value: JSON.stringify(true), description: 'Allow new user registrations' },
+      { key: 'max_upload_size_mb', value: JSON.stringify(500), description: 'Maximum file upload size in MB' },
+      { key: 'default_currency', value: JSON.stringify('USD'), description: 'Default platform currency' },
+      { key: 'currency_rates', value: JSON.stringify({ USD: 1, EUR: 0.92, GBP: 0.79, CAD: 1.36, AUD: 1.53, JPY: 149.50 }), description: 'Currency exchange rates (updated periodically)' },
+      { key: 'stripe_enabled', value: JSON.stringify(true), description: 'Enable Stripe payment processing' },
+      { key: 'email_notifications_enabled', value: JSON.stringify(true), description: 'Enable email notifications globally' },
+      { key: 'api_rate_limit', value: JSON.stringify(1000), description: 'API rate limit per hour per user' },
+      { key: 'max_social_accounts', value: JSON.stringify(20), description: 'Maximum connected social accounts per user' },
+      { key: 'autopilot_enabled', value: JSON.stringify(true), description: 'Enable autopilot posting system' },
+      { key: 'distribution_auto_submit', value: JSON.stringify(false), description: 'Auto-submit releases after validation' },
+      { key: 'default_royalty_rate', value: JSON.stringify(0.004), description: 'Default per-stream royalty rate in USD' },
+      { key: 'min_payout_threshold', value: JSON.stringify(10), description: 'Minimum balance for payout in USD' },
+      { key: 'payout_schedule', value: JSON.stringify('monthly'), description: 'Default payout schedule (weekly/monthly/quarterly)' },
+      { key: 'max_collaborators_per_release', value: JSON.stringify(20), description: 'Maximum collaborators per release' },
+      { key: 'ai_features_enabled', value: JSON.stringify(true), description: 'Enable AI-powered features' },
+      { key: 'analytics_retention_days', value: JSON.stringify(365), description: 'Days to retain analytics data' },
+      { key: 'session_timeout_hours', value: JSON.stringify(24), description: 'User session timeout in hours' },
+      { key: 'two_factor_required', value: JSON.stringify(false), description: 'Require 2FA for all users' },
+    ];
+
+    for (const setting of defaults) {
+      await db.insert(systemSettings).values(setting).onConflictDoNothing();
+    }
+    logger.info(`   ✓ System settings seeded (${defaults.length} defaults)`);
+  } catch (error: any) {
+    logger.warn('System settings seeding skipped:', error.message);
+  }
+}
+
+async function seedAlertRules() {
+  try {
+    const { alertRules } = await import('../shared/schema.js');
+    const existing = await db.select().from(alertRules);
+    if (existing.length > 0) {
+      logger.info('   ✓ Alert rules already seeded');
+      return;
+    }
+
+    const defaults = [
+      { name: 'High Error Rate', condition: 'error_rate > threshold', threshold: 5, severity: 'critical', channels: ['email', 'push'], isActive: true, metadata: { description: 'Triggers when API error rate exceeds 5% in 5 minutes' } },
+      { name: 'Memory Usage Critical', condition: 'memory_usage > threshold', threshold: 90, severity: 'critical', channels: ['email', 'push'], isActive: true, metadata: { description: 'Triggers when server memory usage exceeds 90%', unit: 'percent' } },
+      { name: 'Database Latency High', condition: 'db_latency > threshold', threshold: 500, severity: 'warning', channels: ['email'], isActive: true, metadata: { description: 'Triggers when database query latency exceeds 500ms', unit: 'ms' } },
+      { name: 'Failed Login Attempts', condition: 'failed_logins > threshold', threshold: 10, severity: 'warning', channels: ['email', 'push'], isActive: true, metadata: { description: 'Triggers when failed login attempts exceed 10 in 15 minutes' } },
+      { name: 'Revenue Drop', condition: 'revenue_change < threshold', threshold: -20, severity: 'warning', channels: ['email'], isActive: true, metadata: { description: 'Triggers when daily revenue drops more than 20% vs prior day', unit: 'percent' } },
+      { name: 'Stream Count Spike', condition: 'stream_count > threshold', threshold: 10000, severity: 'info', channels: ['push'], isActive: true, metadata: { description: 'Notification when daily streams exceed 10,000' } },
+      { name: 'Payout Processing Failed', condition: 'payout_status == failed', threshold: 1, severity: 'critical', channels: ['email', 'push'], isActive: true, metadata: { description: 'Triggers when any payout processing fails' } },
+      { name: 'API Rate Limit Exceeded', condition: 'rate_limit_hits > threshold', threshold: 100, severity: 'warning', channels: ['email'], isActive: true, metadata: { description: 'Triggers when rate limit is hit more than 100 times in an hour' } },
+      { name: 'Disk Usage Warning', condition: 'disk_usage > threshold', threshold: 80, severity: 'warning', channels: ['email'], isActive: true, metadata: { description: 'Triggers when disk usage exceeds 80%', unit: 'percent' } },
+      { name: 'New Release Milestone', condition: 'release_streams > threshold', threshold: 1000, severity: 'info', channels: ['push', 'email'], isActive: true, metadata: { description: 'Notification when a release reaches 1,000 streams' } },
+      { name: 'Social Engagement Spike', condition: 'engagement_rate > threshold', threshold: 10, severity: 'info', channels: ['push'], isActive: true, metadata: { description: 'Notification when social engagement rate exceeds 10%', unit: 'percent' } },
+      { name: 'Distribution Status Change', condition: 'release_status_changed', threshold: 1, severity: 'info', channels: ['push', 'email'], isActive: true, metadata: { description: 'Notification when a release distribution status changes' } },
+    ];
+
+    for (const rule of defaults) {
+      await db.insert(alertRules).values(rule).onConflictDoNothing();
+    }
+    logger.info(`   ✓ Alert rules seeded (${defaults.length} defaults)`);
+  } catch (error: any) {
+    logger.warn('Alert rules seeding skipped:', error.message);
   }
 }
