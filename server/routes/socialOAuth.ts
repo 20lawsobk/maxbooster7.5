@@ -51,7 +51,7 @@ const PLATFORMS = {
     clientSecret: process.env.TIKTOK_CLIENT_SECRET1 || process.env.TIKTOK_CLIENT_SECRET,
     usePKCE: false,
     responseType: 'code',
-    enabled: !!(process.env.TIKTOK_CLIENT_KEY1 || process.env.TIKTOK_CLIENT_KEY),
+    enabled: !!((process.env.TIKTOK_CLIENT_KEY1 || process.env.TIKTOK_CLIENT_KEY) && (process.env.TIKTOK_CLIENT_SECRET1 || process.env.TIKTOK_CLIENT_SECRET)),
   },
   google: {
     name: 'Google',
@@ -544,16 +544,16 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       } else if (platform === 'tiktok') {
         try {
-          const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count', {
+          const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,username,bio_description,profile_deep_link,is_verified', {
             headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
           });
           const userData = await userResponse.json();
           const tiktokData = userData.data?.user;
-          username = tiktokData?.display_name || 'TikTok User';
-          followerCount = tiktokData?.follower_count || 0;
-          profileUrl = tiktokData?.avatar_url || '';
+          username = tiktokData?.display_name || tiktokData?.username || 'TikTok User';
+          followerCount = 0;
           platformUserId = tiktokData?.open_id || tokenData.open_id || '';
-          metadata = { followingCount: tiktokData?.following_count || 0, likesCount: tiktokData?.likes_count || 0, videoCount: tiktokData?.video_count || 0 };
+          profileUrl = tiktokData?.profile_deep_link || (tiktokData?.username ? `https://www.tiktok.com/@${tiktokData.username}` : '');
+          metadata = { avatarUrl: tiktokData?.avatar_url || '', bio: tiktokData?.bio_description || '', isVerified: tiktokData?.is_verified || false, tiktokUsername: tiktokData?.username || '' };
         } catch (tiktokErr) {
           logger.warn('Failed to fetch TikTok user info:', tiktokErr);
           username = 'TikTok User';
