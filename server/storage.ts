@@ -25,6 +25,7 @@ import {
   storefrontRatings,
   orders,
   autopilotLearningData,
+  inferenceRuns,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -216,6 +217,19 @@ export class DatabaseStorage implements IStorage {
         lastTrainedAt: new Date(),
       });
     }
+  }
+
+  async getAIModelByName(modelName: string): Promise<any | undefined> {
+    const [model] = await db
+      .select()
+      .from(aiModels)
+      .where(eq(aiModels.modelName, modelName));
+    return model || undefined;
+  }
+
+  async createInferenceRun(data: any): Promise<any> {
+    const [run] = await db.insert(inferenceRuns).values(data).returning();
+    return run;
   }
 
   async getSocialPosts(userId: string): Promise<Post[]> {
