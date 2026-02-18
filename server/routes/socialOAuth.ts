@@ -42,17 +42,30 @@ const PLATFORMS = {
     responseType: 'code',
     enabled: !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
   },
-  tiktok: {
-    name: 'TikTok',
-    authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
-    tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-    scope: 'user.info.basic',
-    clientId: process.env.TIKTOK_CLIENT_KEY,
-    clientSecret: process.env.TIKTOK_CLIENT_SECRET,
-    usePKCE: false,
-    responseType: 'code',
-    enabled: !!(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET),
-  },
+  tiktok: (() => {
+    const isSandbox = process.env.TIKTOK_ENV === 'sandbox';
+    const clientKey = isSandbox
+      ? (process.env.TIKTOK_SANDBOX_CLIENT_KEY || process.env.TIKTOK_CLIENT_KEY)
+      : (process.env.TIKTOK_PROD_CLIENT_KEY || process.env.TIKTOK_CLIENT_KEY);
+    const clientSecret = isSandbox
+      ? (process.env.TIKTOK_SANDBOX_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET)
+      : (process.env.TIKTOK_PROD_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET);
+    const scopes = isSandbox
+      ? (process.env.TIKTOK_SANDBOX_SCOPES || 'user.info.basic')
+      : (process.env.TIKTOK_PROD_SCOPES || 'user.info.basic');
+    return {
+      name: isSandbox ? 'TikTok (Sandbox)' : 'TikTok',
+      authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
+      tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
+      scope: scopes,
+      clientId: clientKey,
+      clientSecret: clientSecret,
+      usePKCE: false,
+      responseType: 'code',
+      enabled: !!(clientKey && clientSecret),
+      isSandbox,
+    };
+  })(),
   google: {
     name: 'Google',
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -161,7 +174,7 @@ const CALLBACK_PATHS: Record<string, string> = {
   facebook: '/auth/facebook/callback',
   instagram: '/auth/instagram/callback',
   threads: '/auth/threads/callback',
-  tiktok: '/auth/tiktok/callback',
+  tiktok: process.env.TIKTOK_ENV === 'sandbox' ? '/tiktok/sandbox/callback' : '/tiktok/callback',
   google: '/auth/google/callback',
   youtube: '/auth/youtube/callback',
   googlebusiness: '/auth/google-business/callback',

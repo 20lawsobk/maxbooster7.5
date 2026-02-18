@@ -242,7 +242,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
       { id: 'meta', name: 'Meta (Facebook + Instagram)' },
       { id: 'twitter', name: 'Twitter (X)' },
       { id: 'youtube', name: 'YouTube' },
-      { id: 'tiktok', name: 'TikTok' },
+      { id: 'tiktok', name: process.env.TIKTOK_ENV === 'sandbox' ? 'TikTok (Sandbox)' : 'TikTok' },
       { id: 'linkedin', name: 'LinkedIn' },
       { id: 'threads', name: 'Threads' },
       { id: 'googlebusiness', name: 'Google Business' },

@@ -3430,6 +3430,8 @@ export async function registerRoutes(
     { path: '/auth/instagram/callback', platform: 'meta' },
     { path: '/auth/threads/callback', platform: 'threads' },
     { path: '/auth/tiktok/callback', platform: 'tiktok' },
+    { path: '/tiktok/sandbox/callback', platform: 'tiktok' },
+    { path: '/tiktok/callback', platform: 'tiktok' },
     { path: '/auth/google/callback', platform: 'google' },
     { path: '/auth/youtube/callback', platform: 'youtube' },
     { path: '/auth/google-business/callback', platform: 'googlebusiness' },
