@@ -360,12 +360,13 @@ export async function registerRoutes(
     }
     try {
       const { firstName, lastName, bio, website, location, socialLinks } = req.body;
+      const stripHtml = (str: string | undefined) => str ? str.replace(/<[^>]*>/g, '').trim() : str;
       await storage.updateUser(req.user.id, {
-        firstName,
-        lastName,
-        bio,
-        website,
-        location,
+        firstName: stripHtml(firstName),
+        lastName: stripHtml(lastName),
+        bio: stripHtml(bio),
+        website: stripHtml(website),
+        location: stripHtml(location),
         socialLinks,
       });
       return res.json({ success: true });

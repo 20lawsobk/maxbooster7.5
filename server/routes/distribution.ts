@@ -161,8 +161,8 @@ const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
 router.get('/releases', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const releases = await storage.getReleasesByUserId(userId);
-    res.json(releases);
+    const distroRels = await storage.getDistroReleasesByArtist(userId);
+    res.json(distroRels);
   } catch (error: unknown) {
     logger.error('Error fetching releases:', error);
     res.status(500).json({ error: 'Failed to fetch releases' });
@@ -747,6 +747,37 @@ router.get('/hyperfollow', requireAuth, async (req: Request, res: Response) => {
   } catch (error: unknown) {
     logger.error('Error fetching HyperFollow campaigns:', error);
     res.status(500).json({ error: 'Failed to fetch campaigns' });
+  }
+});
+
+// GET /api/distribution/hyperfollow/analytics - Get hyperfollow analytics (MUST be before :slug)
+router.get('/hyperfollow/analytics', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const pages = await storage.getHyperFollowPages(userId) as HyperFollowPage[];
+    
+    if (pages.length === 0) {
+      return res.json({
+        totalClicks: 0,
+        totalPresaves: 0,
+        conversionRate: 0,
+        topPlatforms: [],
+      });
+    }
+    
+    const totalClicks = pages.reduce((sum: number, p: HyperFollowPage) => sum + (p.clicks || 0), 0);
+    const totalPresaves = pages.reduce((sum: number, p: HyperFollowPage) => sum + (p.presaves || 0), 0);
+    const conversionRate = totalClicks > 0 ? (totalPresaves / totalClicks) * 100 : 0;
+    
+    res.json({
+      totalClicks,
+      totalPresaves,
+      conversionRate,
+      topPlatforms: [],
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching hyperfollow analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch hyperfollow analytics' });
   }
 });
 
@@ -2842,36 +2873,6 @@ router.get('/payout-history', requireAuth, async (req: Request, res: Response) =
   }
 });
 
-// GET /api/distribution/hyperfollow/analytics - Get hyperfollow analytics
-router.get('/hyperfollow/analytics', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const userId = (req.user as AuthenticatedUser).id;
-    const pages = await storage.getHyperFollowPages(userId) as HyperFollowPage[];
-    
-    if (pages.length === 0) {
-      return res.json({
-        totalClicks: 0,
-        totalPresaves: 0,
-        conversionRate: 0,
-        topPlatforms: [],
-      });
-    }
-    
-    const totalClicks = pages.reduce((sum: number, p: HyperFollowPage) => sum + (p.clicks || 0), 0);
-    const totalPresaves = pages.reduce((sum: number, p: HyperFollowPage) => sum + (p.presaves || 0), 0);
-    const conversionRate = totalClicks > 0 ? (totalPresaves / totalClicks) * 100 : 0;
-    
-    res.json({
-      totalClicks,
-      totalPresaves,
-      conversionRate,
-      topPlatforms: [],
-    });
-  } catch (error: unknown) {
-    logger.error('Error fetching hyperfollow analytics:', error);
-    res.status(500).json({ error: 'Failed to fetch hyperfollow analytics' });
-  }
-});
 
 // ===========================
 // ADDITIONAL MISSING ENDPOINTS

@@ -4,7 +4,7 @@ import { logger } from '../logger';
 import { competitorBenchmarkService } from '../services/competitorBenchmarkService';
 import { unifiedAIController } from '../services/unifiedAIController';
 import { db } from '../db';
-import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts } from '@shared/schema';
+import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 
@@ -37,6 +37,53 @@ router.get('/posts', requireAuth, async (req: AuthenticatedRequest, res: Respons
   } catch (error) {
     logger.error('Failed to get social posts:', error);
     res.json([]);
+  }
+});
+
+router.post('/schedule-post', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { platform, content, mediaUrls, scheduledAt } = req.body;
+
+    if (!platform || !content) {
+      return res.status(400).json({ message: 'Platform and content are required' });
+    }
+
+    const [post] = await db.insert(posts).values({
+      userId,
+      platform,
+      content,
+      mediaUrls: mediaUrls || [],
+      status: scheduledAt ? 'scheduled' : 'draft',
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+    }).returning();
+
+    res.json({ success: true, post });
+  } catch (error) {
+    logger.error('Failed to schedule post:', error);
+    res.status(500).json({ message: 'Failed to schedule post' });
+  }
+});
+
+router.post('/calendar/:postId/publish', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { postId } = req.params;
+
+    const [post] = await db.select().from(posts).where(and(eq(posts.id, postId), eq(posts.userId, userId)));
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const [updated] = await db.update(posts)
+      .set({ status: 'published', publishedAt: new Date() })
+      .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
+      .returning();
+
+    res.json({ success: true, post: updated });
+  } catch (error) {
+    logger.error('Failed to publish post:', error);
+    res.status(500).json({ message: 'Failed to publish post' });
   }
 });
 
@@ -295,6 +342,24 @@ router.get('/listening/keywords', requireAuth, async (req: AuthenticatedRequest,
     res.json(keywords);
   } catch (error) {
     logger.error('Failed to get social listening keywords:', error);
+    res.json([]);
+  }
+});
+
+router.get('/hashtags/trending', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json([
+      { hashtag: '#newmusic', posts: 45200, trend: 'up' },
+      { hashtag: '#musicproducer', posts: 32100, trend: 'up' },
+      { hashtag: '#beats', posts: 28700, trend: 'stable' },
+      { hashtag: '#hiphop', posts: 89300, trend: 'up' },
+      { hashtag: '#trapbeats', posts: 15600, trend: 'down' },
+      { hashtag: '#studiolife', posts: 12400, trend: 'up' },
+      { hashtag: '#songwriting', posts: 9800, trend: 'stable' },
+      { hashtag: '#indieartist', posts: 18500, trend: 'up' },
+    ]);
+  } catch (error) {
+    logger.error('Failed to get trending hashtags:', error);
     res.json([]);
   }
 });

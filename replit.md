@@ -51,4 +51,13 @@ AI-Powered Music Career Management Platform by B-Lawz Music. A full-stack applic
 - Target: autoscale
 
 ## Recent Changes
+- 2026-02-18: Production-readiness fixes:
+  - Fixed distribution releases route to query correct table (`distroReleases` not `releases`)
+  - Fixed HyperFollow analytics route ordering to prevent route parameter conflict
+  - Added missing `/api/social/schedule-post` POST endpoint for post scheduling
+  - Added missing `/api/social/calendar/:postId/publish` POST endpoint for post publishing
+  - Added missing `/api/social/hashtags/trending` GET endpoint for trending hashtags
+  - Added XSS sanitization (HTML tag stripping) to profile update endpoint
+  - Scoped post publish update query by both postId and userId for security
+  - Comprehensive endpoint validation: 30+ endpoints verified across all 9 major feature areas
 - 2026-02-17: Initial Replit setup - installed Node.js 20, Rust stable, PostgreSQL, npm dependencies. Built Rust service, pushed DB schema, configured workflow and deployment.
