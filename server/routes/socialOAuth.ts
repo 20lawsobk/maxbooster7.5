@@ -52,7 +52,7 @@ const PLATFORMS = {
       : (process.env.TIKTOK_PROD_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET);
     const scopes = isSandbox
       ? (process.env.TIKTOK_SANDBOX_SCOPES || 'user.info.basic,video.list,video.upload,video.publish')
-      : (process.env.TIKTOK_PROD_SCOPES || 'user.info.basic');
+      : (process.env.TIKTOK_PROD_SCOPES || 'user.info.basic,video.list,video.upload,video.publish');
     return {
       name: isSandbox ? 'TikTok (Sandbox)' : 'TikTok',
       authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
