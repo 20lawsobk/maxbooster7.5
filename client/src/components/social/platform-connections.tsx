@@ -54,8 +54,12 @@ export function PlatformConnections() {
     },
     onSuccess: (data, platform) => {
       if (data.authUrl) {
-        const top = window.top || window;
-        top.location.href = data.authUrl;
+        if (platform === 'threads' && /android/i.test(navigator.userAgent)) {
+          window.open(data.authUrl, '_blank', 'noopener,noreferrer');
+        } else {
+          const top = window.top || window;
+          top.location.href = data.authUrl;
+        }
       } else {
         queryClient.invalidateQueries({ queryKey: ['/api/social/connections'] });
         toast({

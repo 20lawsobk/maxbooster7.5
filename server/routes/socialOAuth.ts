@@ -383,11 +383,16 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       };
 
       if (platform === 'twitter') {
-        tokenParams.set('client_id', config.clientId!);
+        const twitterClientId = (config.clientId || '').trim();
+        const twitterClientSecret = (config.clientSecret || '').trim();
+        tokenParams.set('client_id', twitterClientId);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
-        if (config.clientSecret) {
-          const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
+        if (twitterClientSecret) {
+          const encodedId = encodeURIComponent(twitterClientId);
+          const encodedSecret = encodeURIComponent(twitterClientSecret);
+          const basicAuth = Buffer.from(`${encodedId}:${encodedSecret}`).toString('base64');
           headers['Authorization'] = `Basic ${basicAuth}`;
+          logger.info(`[OAuth] Twitter using confidential client Basic auth`, { clientIdLength: twitterClientId.length, secretLength: twitterClientSecret.length });
         }
       } else if (platform === 'spotify') {
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
@@ -440,7 +445,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         retryParams.set('grant_type', 'authorization_code');
         retryParams.set('code', authCode);
         retryParams.set('redirect_uri', redirectUri);
-        retryParams.set('client_id', config.clientId!);
+        retryParams.set('client_id', (config.clientId || '').trim());
         retryParams.set('code_verifier', stateData.codeVerifier || '');
         try {
           tokenResponse = await fetch(config.tokenUrl, {
