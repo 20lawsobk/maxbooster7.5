@@ -893,7 +893,16 @@ export default function SocialMedia() {
       });
       const data = await response.json();
       if (data.authUrl) {
-        window.location.href = data.authUrl;
+        const isInIframe = window !== window.top;
+        if (isInIframe) {
+          try {
+            window.top!.location.href = data.authUrl;
+          } catch {
+            window.location.href = data.authUrl;
+          }
+        } else {
+          window.location.href = data.authUrl;
+        }
       } else if (data.message) {
         toast({
           title: 'Connection Issue',

@@ -54,7 +54,16 @@ export function PlatformConnections() {
     },
     onSuccess: (data, platform) => {
       if (data.authUrl) {
-        window.location.href = data.authUrl;
+        const isInIframe = window !== window.top;
+        if (isInIframe) {
+          try {
+            window.top!.location.href = data.authUrl;
+          } catch {
+            window.location.href = data.authUrl;
+          }
+        } else {
+          window.location.href = data.authUrl;
+        }
       } else {
         queryClient.invalidateQueries({ queryKey: ['/api/social/connections'] });
         toast({

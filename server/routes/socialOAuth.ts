@@ -340,15 +340,13 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     let platform = req.params.platform.toLowerCase();
     const { code, state, error, error_description } = req.query;
     
-    const cbBaseUrl = getBaseUrl();
-    
     if (error) {
       logger.error(`OAuth error for ${platform}:`, { error, error_description });
-      return res.redirect(`${cbBaseUrl}/social-media?error=oauth_denied&platform=${platform}`);
+      return res.redirect(`/social-media?error=oauth_denied&platform=${platform}`);
     }
     
     if (!state || !oauthStates.has(state as string)) {
-      return res.redirect(`${cbBaseUrl}/social-media?error=invalid_state`);
+      return res.redirect(`/social-media?error=invalid_state`);
     }
     
     const stateData = oauthStates.get(state as string)!;
@@ -359,12 +357,12 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     }
     
     if (stateData.platform !== platform) {
-      return res.redirect(`${cbBaseUrl}/social-media?error=platform_mismatch`);
+      return res.redirect(`/social-media?error=platform_mismatch`);
     }
     
     const config = PLATFORMS[platform as keyof typeof PLATFORMS];
     if (!config) {
-      return res.redirect(`${cbBaseUrl}/social-media?error=unsupported_platform`);
+      return res.redirect(`/social-media?error=unsupported_platform`);
     }
     
     const redirectUri = getCallbackUrl(platform);
@@ -411,7 +409,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             data: twitterErr?.data || null,
             code: twitterErr?.code || null,
           });
-          return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(twitterErr?.message || 'Twitter authentication failed')}`);
+          return res.redirect(`/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(twitterErr?.message || 'Twitter authentication failed')}`);
         }
       } else if (platform === 'spotify') {
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
@@ -444,7 +442,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           responseText = await tokenResponse.text();
         } catch (fetchErr: any) {
           logger.error(`[OAuth] Token exchange network error for ${platform}:`, { error: fetchErr?.message || fetchErr, tokenUrl: config.tokenUrl });
-          return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
+          return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
         }
         
         try {
@@ -460,7 +458,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       if (tokenResponse && (!tokenResponse.ok || tokenData?.error)) {
         logger.error(`[OAuth] Token exchange failed for ${platform}:`, { status: tokenResponse!.status, data: tokenData, tokenUrl: config.tokenUrl });
         const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
-        return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
+        return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
       }
 
       if (platform === 'threads' && tokenData.access_token && config.clientSecret) {
@@ -482,7 +480,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       }
     } catch (err) {
       logger.error(`Token exchange error for ${platform}:`, err);
-      return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}`);
+      return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}`);
     }
     
     let facebookUsername = 'Facebook User';
@@ -706,13 +704,15 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     
     const redirectPlatform = platform === 'meta' ? 'facebook,instagram' : savePlatformName;
     const connectedUsername = platformsToSave[0]?.username || '';
-    const baseUrl = getBaseUrl();
-    res.redirect(`${baseUrl}/social-media?success=connected&platform=${redirectPlatform}&username=${encodeURIComponent(connectedUsername)}`);
+    const successUrl = `/social-media?success=connected&platform=${redirectPlatform}&username=${encodeURIComponent(connectedUsername)}`;
+    logger.info(`[OAuth] Redirecting to success URL`, { successUrl, platform: redirectPlatform });
+    res.redirect(successUrl);
   } catch (error) {
     logger.error('OAuth callback error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const baseUrl = getBaseUrl();
-    res.redirect(`${baseUrl}/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`);
+    const errorUrl = `/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`;
+    logger.info(`[OAuth] Redirecting to error URL`, { errorUrl });
+    res.redirect(errorUrl);
   }
 });
 
