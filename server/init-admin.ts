@@ -27,12 +27,16 @@ export async function initializeAdmin() {
     if (!adminEmail) {
       logger.warn('⚠️ ADMIN_EMAIL not set - skipping admin initialization');
       await seedPluginCatalog();
+      await seedAchievementsData();
+      await seedStatusPageServices();
       return null;
     }
     
     if (!adminPassword) {
       logger.warn('⚠️ ADMIN_PASSWORD not set - skipping admin initialization');
       await seedPluginCatalog();
+      await seedAchievementsData();
+      await seedStatusPageServices();
       return null;
     }
     
@@ -66,6 +70,8 @@ export async function initializeAdmin() {
       if (!adminUsername) {
         logger.warn('⚠️ ADMIN_USERNAME not set - cannot create new admin account');
         await seedPluginCatalog();
+        await seedAchievementsData();
+        await seedStatusPageServices();
         return null;
       }
       
@@ -106,6 +112,8 @@ export async function initializeAdmin() {
     await seedPluginCatalog();
     await seedDSPProviders();
     await seedDistributionPlatformsFromFile();
+    await seedAchievementsData();
+    await seedStatusPageServices();
     
     return admin;
   } catch (error: unknown) {
@@ -1460,5 +1468,25 @@ async function seedDistributionPlatformsFromFile() {
     await seedDistributionPlatforms();
   } catch (error: any) {
     logger.warn('Distribution platforms seeding skipped:', error.message);
+  }
+}
+
+async function seedAchievementsData() {
+  try {
+    const { seedAchievements } = await import('./seed/seedAchievements.js');
+    await seedAchievements();
+    logger.info('   ✓ Achievements seeded');
+  } catch (error: any) {
+    logger.warn('Achievements seeding skipped:', error.message);
+  }
+}
+
+async function seedStatusPageServices() {
+  try {
+    const { statusPageService } = await import('./services/statusPageService.js');
+    await statusPageService.initializeDefaultServices();
+    logger.info('   ✓ Status page services initialized');
+  } catch (error: any) {
+    logger.warn('Status page services seeding skipped:', error.message);
   }
 }
