@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle, Clock, Users, RefreshCw } from 'lucide-react';
-import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon } from '@/components/ui/brand-icons';
+import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon, SpotifyIcon } from '@/components/ui/brand-icons';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 interface Platform {
@@ -227,6 +227,18 @@ export function PlatformConnections() {
       followers: connections.find((c: any) => c.platform === 'googlebusiness')?.followers || 0,
       profileUrl: connections.find((c: any) => c.platform === 'googlebusiness')?.profileUrl || '',
       metadata: connections.find((c: any) => c.platform === 'googlebusiness')?.metadata || {},
+    },
+    {
+      id: 'spotify',
+      name: 'Spotify',
+      icon: SpotifyIcon,
+      color: 'text-green-500',
+      connected: connections.some((c: any) => c.platform === 'spotify'),
+      username: connections.find((c: any) => c.platform === 'spotify')?.username,
+      oauth: true,
+      followers: connections.find((c: any) => c.platform === 'spotify')?.followers || 0,
+      profileUrl: connections.find((c: any) => c.platform === 'spotify')?.profileUrl || '',
+      metadata: connections.find((c: any) => c.platform === 'spotify')?.metadata || {},
     },
   ];
 
