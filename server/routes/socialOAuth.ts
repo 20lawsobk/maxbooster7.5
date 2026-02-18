@@ -364,9 +364,12 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       };
 
       if (platform === 'twitter') {
+        tokenParams.set('client_id', config.clientId!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
-        const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
-        headers['Authorization'] = `Basic ${basicAuth}`;
+        if (config.clientSecret) {
+          const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
+          headers['Authorization'] = `Basic ${basicAuth}`;
+        }
       } else if (platform === 'spotify') {
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
         headers['Authorization'] = `Basic ${basicAuth}`;
@@ -384,22 +387,51 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
 
       logger.info(`[OAuth] Token exchange for ${platform}`, { redirectUri, hasCode: !!authCode, hasVerifier: !!stateData.codeVerifier });
       
-      const tokenResponse = await fetch(config.tokenUrl, {
-        method: 'POST',
-        headers,
-        body: tokenParams.toString(),
-      });
+      let tokenResponse: globalThis.Response;
+      let responseText: string;
       
-      const responseText = await tokenResponse.text();
       try {
-        tokenData = JSON.parse(responseText);
+        tokenResponse = await fetch(config.tokenUrl, {
+          method: 'POST',
+          headers,
+          body: tokenParams.toString(),
+          signal: AbortSignal.timeout(15000),
+        });
+        responseText = await tokenResponse.text();
+      } catch (fetchErr: any) {
+        logger.error(`[OAuth] Token exchange network error for ${platform}:`, { error: fetchErr?.message || fetchErr, tokenUrl: config.tokenUrl });
+        if (platform === 'twitter' && fetchErr?.message?.includes('401')) {
+          tokenParams.delete('client_id');
+          tokenParams.set('client_id', config.clientId!);
+          delete headers['Authorization'];
+          try {
+            tokenResponse = await fetch(config.tokenUrl, {
+              method: 'POST',
+              headers,
+              body: tokenParams.toString(),
+              signal: AbortSignal.timeout(15000),
+            });
+            responseText = await tokenResponse.text();
+          } catch (retryErr: any) {
+            logger.error(`[OAuth] Twitter token exchange retry also failed:`, { error: retryErr?.message || retryErr });
+            return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent('Network error connecting to Twitter')}`);
+          }
+        } else {
+          return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
+        }
+      }
+      
+      try {
+        tokenData = JSON.parse(responseText!);
       } catch {
-        const parsed = new URLSearchParams(responseText);
+        const parsed = new URLSearchParams(responseText!);
         tokenData = Object.fromEntries(parsed.entries());
       }
       
-      if (!tokenResponse.ok || tokenData.error) {
-        logger.error(`Token exchange failed for ${platform}:`, { status: tokenResponse.status, data: tokenData });
+      logger.info(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
+      
+      if (!tokenResponse!.ok || tokenData.error) {
+        logger.error(`[OAuth] Token exchange failed for ${platform}:`, { status: tokenResponse!.status, data: tokenData, tokenUrl: config.tokenUrl });
         const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
         return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
       }
