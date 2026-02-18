@@ -1,9 +1,8 @@
-import { storage } from '../storage';
+import { db } from '../db';
+import { aiModels, aiModelVersions } from '../../shared/schema';
+import { eq } from 'drizzle-orm';
 import { logger } from '../logger.js';
 
-/**
- * TODO: Add function documentation
- */
 export async function initializeAIMusicModels() {
   logger.info('🎵 Initializing AI Music Intelligence Models...');
 
@@ -12,153 +11,78 @@ export async function initializeAIMusicModels() {
       {
         modelName: 'stem_separator_v1',
         modelType: 'music_processing',
-        description:
-          'Professional-grade stem separation engine using deterministic frequency-based analysis',
-        category: 'audio',
-        isActive: true,
-        isBeta: false,
+        description: 'Professional-grade stem separation engine using deterministic frequency-based analysis',
+        version: '1.0.0',
+        status: 'active',
+        capabilities: ['stem_separation', 'frequency_analysis', 'vocal_isolation'],
+        parameters: { deterministic: true, performanceTarget: '2000ms' },
+        performance: { accuracy: 0.88, latency: 1800, throughput: 10 },
       },
       {
         modelName: 'genre_preset_engine_v1',
         modelType: 'music_mastering',
         description: 'Genre-specific mixing and mastering presets (20+ professional genres)',
-        category: 'audio',
-        isActive: true,
-        isBeta: false,
+        version: '1.0.0',
+        status: 'active',
+        capabilities: ['genre_detection', 'mastering_presets', 'eq_optimization'],
+        parameters: { deterministic: true, performanceTarget: '500ms' },
+        performance: { accuracy: 0.95, latency: 450, throughput: 10 },
       },
       {
         modelName: 'reference_matcher_v1',
         modelType: 'music_analysis',
         description: 'Reference track matching with spectral analysis and mix recommendations',
-        category: 'audio',
-        isActive: true,
-        isBeta: false,
+        version: '1.0.0',
+        status: 'active',
+        capabilities: ['spectral_analysis', 'reference_matching', 'mix_recommendations'],
+        parameters: { deterministic: true, performanceTarget: '500ms' },
+        performance: { accuracy: 0.95, latency: 450, throughput: 10 },
       },
       {
         modelName: 'lufs_meter_v1',
         modelType: 'music_analysis',
         description: 'ITU-R BS.1770-4 compliant LUFS loudness measurement',
-        category: 'audio',
-        isActive: true,
-        isBeta: false,
+        version: '1.0.0',
+        status: 'active',
+        capabilities: ['lufs_measurement', 'true_peak', 'dynamic_range'],
+        parameters: { deterministic: true, performanceTarget: '200ms' },
+        performance: { accuracy: 0.99, latency: 150, throughput: 50 },
       },
     ];
 
     for (const modelData of models) {
-      const existing = await storage.getAIModelByName(modelData.modelName);
+      const [existing] = await db.select().from(aiModels).where(eq(aiModels.modelName, modelData.modelName)).limit(1);
 
+      let modelId: string;
       if (existing) {
-        logger.info(`✓ AI Model ${modelData.modelName} already exists`);
-        continue;
+        modelId = existing.id;
+        logger.info(`   ✓ AI Model ${modelData.modelName} already exists`);
+      } else {
+        const [model] = await db.insert(aiModels).values(modelData).returning();
+        modelId = model.id;
+        logger.info(`   ✓ Created AI Model: ${model.modelName}`);
       }
 
-      const model = await storage.createAIModel(modelData);
-      logger.info(`✓ Created AI Model: ${model.modelName}`);
-
-      const version = await storage.createAIModelVersion({
-        modelId: model.id,
-        versionNumber: 'v1.0.0',
-        versionHash: `${modelData.modelName}_${Date.now()}`,
-        algorithmChanges: 'Initial release with professional-grade audio processing',
-        parameters: {
-          deterministic: true,
-          performanceTarget: modelData.modelName === 'stem_separator_v1' ? '2000ms' : '500ms',
-          features: getModelFeatures(modelData.modelName),
-        },
-        performanceMetrics: {
-          accuracy: modelData.modelName === 'stem_separator_v1' ? 0.88 : 0.95,
-          latency: modelData.modelName === 'stem_separator_v1' ? 1800 : 450,
-          throughput: 10,
-        },
-        status: 'production',
-        deployedAt: new Date(),
-      });
-
-      await storage.updateAIModel(model.id, {
-        currentVersionId: version.id,
-      });
-
-      logger.info(`  ✓ Created version: ${version.versionNumber}`);
-
-      await storage.createPerformanceMetric({
-        modelId: model.id,
-        versionId: version.id,
-        metricType: 'accuracy',
-        metricValue: modelData.modelName === 'stem_separator_v1' ? 0.88 : 0.95,
-        metricUnit: 'score',
-        aggregationPeriod: 'daily',
-        sampleSize: 1000,
-        metadata: { baseline: true },
-      });
-
-      await storage.createPerformanceMetric({
-        modelId: model.id,
-        versionId: version.id,
-        metricType: 'latency',
-        metricValue: modelData.modelName === 'stem_separator_v1' ? 1800 : 450,
-        metricUnit: 'ms',
-        aggregationPeriod: 'daily',
-        sampleSize: 1000,
-        metadata: { baseline: true },
-      });
-
-      logger.info(`  ✓ Created baseline performance metrics`);
+      const versionHash = `${modelData.modelName}_init`;
+      const [existingVersion] = await db.select().from(aiModelVersions).where(eq(aiModelVersions.versionHash, versionHash)).limit(1);
+      if (!existingVersion) {
+        await db.insert(aiModelVersions).values({
+          modelId,
+          versionNumber: 1,
+          versionHash,
+          status: 'production',
+          accuracy: (modelData.performance as any).accuracy,
+          parameters: modelData.parameters,
+          changelog: 'Initial release with professional-grade audio processing',
+          deployedAt: new Date(),
+        }).returning();
+        logger.info(`   ✓ Created version for ${modelData.modelName}`);
+      }
     }
 
-    logger.info('✅ AI Music Intelligence Models initialized successfully!');
-    return true;
+    logger.info('✅ AI Music Intelligence Models initialized');
   } catch (error: unknown) {
     logger.error('❌ Failed to initialize AI Music Models:', error);
     throw error;
   }
 }
-
-/**
- * TODO: Add function documentation
- */
-function getModelFeatures(modelName: string): string[] {
-  const features: Record<string, string[]> = {
-    stem_separator_v1: [
-      'Frequency-based stem isolation',
-      'Vocals, drums, bass, melody, harmony separation',
-      'Confidence scoring per stem',
-      'Spectral profile analysis',
-      'Sub-2s processing time',
-    ],
-    genre_preset_engine_v1: [
-      '20+ professional genre presets',
-      'Intensity-based blending (0-100%)',
-      'EQ, compression, effects, stereo imaging',
-      'Genre-specific characteristics',
-      'Professional mastering settings',
-    ],
-    reference_matcher_v1: [
-      'Spectral profile extraction',
-      'Loudness analysis (LUFS)',
-      'Frequency balance comparison',
-      'Specific mix adjustment suggestions',
-      'Confidence-scored recommendations',
-    ],
-    lufs_meter_v1: [
-      'ITU-R BS.1770-4 compliance',
-      'Integrated loudness measurement',
-      'Short-term and momentary loudness',
-      'True peak detection',
-      'Dynamic range calculation',
-      'Platform-specific targets (Spotify, YouTube, etc)',
-    ],
-  };
-
-  return features[modelName] || [];
-}
-
-// Auto-run if executed directly
-initializeAIMusicModels()
-  .then(() => {
-    logger.info('Script completed successfully');
-    process.exit(0);
-  })
-  .catch((error) => {
-    logger.error('Script failed:', error);
-    process.exit(1);
-  });

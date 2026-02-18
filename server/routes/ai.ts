@@ -1,6 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
+import { db } from '../db.js';
+import { aiModels, aiModelVersions } from '../../shared/schema.js';
+import { eq, and } from 'drizzle-orm';
 import {
   unifiedAIController,
   type ContentGenerationOptions,
@@ -387,11 +390,22 @@ router.post('/content/adapt', requireAuth, async (req: Request, res: Response) =
 router.get('/models', requireAuth, async (req: Request, res: Response) => {
   try {
     const { status, type } = req.query;
-    
-    const models = await unifiedAIController.getRegisteredModels({
-      status: status as string,
-      type: type as string,
-    });
+
+    let query = db.select().from(aiModels);
+    const conditions: any[] = [];
+    if (status && typeof status === 'string') {
+      conditions.push(eq(aiModels.status, status));
+    }
+    if (type && typeof type === 'string') {
+      conditions.push(eq(aiModels.modelType, type));
+    }
+
+    let models;
+    if (conditions.length > 0) {
+      models = await query.where(and(...conditions));
+    } else {
+      models = await query;
+    }
 
     res.json({
       success: true,
@@ -406,12 +420,17 @@ router.get('/models', requireAuth, async (req: Request, res: Response) => {
 router.get('/models/:modelId/performance', requireAuth, async (req: Request, res: Response) => {
   try {
     const { modelId } = req.params;
-    
-    const performance = await unifiedAIController.getModelPerformance(modelId);
+
+    const versions = await db.select().from(aiModelVersions).where(eq(aiModelVersions.modelId, modelId));
+    const [model] = await db.select().from(aiModels).where(eq(aiModels.id, modelId)).limit(1);
 
     res.json({
       success: true,
-      data: performance,
+      data: {
+        model: model || null,
+        versions,
+        performance: model?.performance || {},
+      },
     });
   } catch (error) {
     logger.error('Get model performance route error:', error);

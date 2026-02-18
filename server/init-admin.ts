@@ -29,6 +29,7 @@ export async function initializeAdmin() {
       await seedPluginCatalog();
       await seedAchievementsData();
       await seedStatusPageServices();
+      await seedAIModels();
       return null;
     }
     
@@ -37,6 +38,7 @@ export async function initializeAdmin() {
       await seedPluginCatalog();
       await seedAchievementsData();
       await seedStatusPageServices();
+      await seedAIModels();
       return null;
     }
     
@@ -72,6 +74,7 @@ export async function initializeAdmin() {
         await seedPluginCatalog();
         await seedAchievementsData();
         await seedStatusPageServices();
+        await seedAIModels();
         return null;
       }
       
@@ -114,6 +117,7 @@ export async function initializeAdmin() {
     await seedDistributionPlatformsFromFile();
     await seedAchievementsData();
     await seedStatusPageServices();
+    await seedAIModels();
     
     return admin;
   } catch (error: unknown) {
@@ -1488,5 +1492,19 @@ async function seedStatusPageServices() {
     logger.info('   ✓ Status page services initialized');
   } catch (error: any) {
     logger.warn('Status page services seeding skipped:', error.message);
+  }
+}
+
+async function seedAIModels() {
+  try {
+    const { initializeAIMusicModels } = await import('./seed/initializeAIMusicModels.js');
+    await initializeAIMusicModels();
+    const { initializeAIInsightsModels } = await import('./seed/initializeAIInsightsModels.js');
+    await initializeAIInsightsModels();
+    const { initializeAIContentModels } = await import('./seed/initializeAIContentModels.js');
+    await initializeAIContentModels();
+    logger.info('   ✓ AI models seeded');
+  } catch (error: any) {
+    logger.warn('AI models seeding skipped:', error.message);
   }
 }
