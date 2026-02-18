@@ -33,9 +33,9 @@ const PLATFORMS = {
   },
   threads: {
     name: 'Threads',
-    authUrl: 'https://www.threads.net/oauth/authorize',
+    authUrl: 'https://threads.net/oauth/authorize',
     tokenUrl: 'https://graph.threads.net/oauth/access_token',
-    scope: 'threads_basic,threads_content_publish,threads_manage_replies,threads_read_replies',
+    scope: 'threads_basic,threads_content_publish',
     clientId: process.env.THREADS_APP_ID,
     clientSecret: process.env.THREADS_APP_SECRET,
     usePKCE: false,
@@ -383,12 +383,11 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       };
 
       if (platform === 'twitter') {
+        tokenParams.set('client_id', config.clientId!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
         if (config.clientSecret) {
           const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
           headers['Authorization'] = `Basic ${basicAuth}`;
-        } else {
-          tokenParams.set('client_id', config.clientId!);
         }
       } else if (platform === 'spotify') {
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
@@ -432,6 +431,37 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       
       logger.info(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
       
+      if (platform === 'twitter' && tokenResponse!.status === 401 && config.clientSecret) {
+        logger.info(`[OAuth] Twitter confidential client auth failed (401), retrying as public client without Basic auth`);
+        const retryHeaders: Record<string, string> = {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        };
+        const retryParams = new URLSearchParams();
+        retryParams.set('grant_type', 'authorization_code');
+        retryParams.set('code', authCode);
+        retryParams.set('redirect_uri', redirectUri);
+        retryParams.set('client_id', config.clientId!);
+        retryParams.set('code_verifier', stateData.codeVerifier || '');
+        try {
+          tokenResponse = await fetch(config.tokenUrl, {
+            method: 'POST',
+            headers: retryHeaders,
+            body: retryParams.toString(),
+            signal: AbortSignal.timeout(15000),
+          });
+          responseText = await tokenResponse.text();
+          try {
+            tokenData = JSON.parse(responseText);
+          } catch {
+            const parsed = new URLSearchParams(responseText);
+            tokenData = Object.fromEntries(parsed.entries());
+          }
+          logger.info(`[OAuth] Twitter public client retry response:`, { status: tokenResponse.status, ok: tokenResponse.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
+        } catch (retryErr: any) {
+          logger.error(`[OAuth] Twitter public client retry failed:`, { error: retryErr?.message });
+        }
+      }
+
       if (!tokenResponse!.ok || tokenData.error) {
         logger.error(`[OAuth] Token exchange failed for ${platform}:`, { status: tokenResponse!.status, data: tokenData, tokenUrl: config.tokenUrl });
         const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
