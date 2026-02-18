@@ -280,6 +280,10 @@ async function searchReleases(query: string, limit: number, offset: number) {
   };
 }
 
+router.get('/', async (req: Request, res: Response) => {
+  return res.redirect(307, `/api/search/unified?${new URLSearchParams(req.query as Record<string, string>).toString()}`);
+});
+
 router.get('/unified', async (req: Request, res: Response) => {
   try {
     const {

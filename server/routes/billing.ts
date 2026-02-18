@@ -282,7 +282,12 @@ router.get('/plans', async (req: Request, res: Response) => {
 router.post('/create-checkout-session', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!stripe) {
-      return res.status(503).json({ error: 'Billing service not configured', message: 'Stripe is not initialized. Please configure STRIPE_SECRET_KEY.' });
+      return res.status(503).json({ 
+        message: 'Billing service not configured',
+        code: 'STRIPE_NOT_CONFIGURED',
+        retryable: false,
+        suggestedAction: 'Please contact support to enable billing features.'
+      });
     }
 
     const { planId } = req.body;

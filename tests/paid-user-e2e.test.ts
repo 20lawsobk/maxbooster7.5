@@ -151,44 +151,63 @@ describe('PAID USER END-TO-END INTEGRATION TESTS', () => {
       expect(Array.isArray(plan.features)).toBe(true);
     });
 
-    it('should show current subscription status', async () => {
+    it('should show current subscription status with full plan details', async () => {
       const res = await api('GET', '/api/billing/subscription');
-      expect([200, 404]).toContain(res.status);
-      if (res.status === 200) {
-        expect(res.json).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      expect(res.json.tier).toBeDefined();
+      expect(res.json.status).toBeDefined();
+      expect(res.json.stripeConfigured).toBe(true);
+      expect(res.json.planBenefits).toBeDefined();
+      expect(res.json.pricing).toBeDefined();
+      expect(res.json.pricing.monthly).toBe(49);
+      expect(res.json.pricing.yearly).toBe(39);
+      expect(res.json.pricing.lifetime).toBe(699);
+      expect(res.json.upgradeOptions).toBeDefined();
+      expect(Array.isArray(res.json.upgradeOptions)).toBe(true);
     });
 
-    it('should create Stripe checkout session or report clear status', async () => {
+    it('should create real Stripe checkout session with checkout URL', async () => {
       const res = await api('POST', '/api/billing/create-checkout-session', {
         planId: 'monthly',
       });
-      expect([200, 503]).toContain(res.status);
-      if (res.status === 503) {
-        expect(res.json.code).toBe('STRIPE_NOT_CONFIGURED');
-        expect(res.json.suggestedAction).toBeDefined();
-        expect(res.json.retryable).toBe(false);
-      }
-      if (res.status === 200) {
-        expect(res.json.url || res.json.sessionId).toBeDefined();
+      expect(res.status).toBe(200);
+      expect(res.json.url).toBeDefined();
+      expect(res.json.url).toContain('checkout.stripe.com');
+      expect(res.json.sessionId).toBeDefined();
+    });
+
+    it('should create checkout sessions for all plan types', async () => {
+      for (const plan of ['monthly', 'yearly', 'lifetime']) {
+        const res = await api('POST', '/api/billing/create-checkout-session', { planId: plan });
+        expect(res.status).toBe(200);
+        expect(res.json.url).toContain('checkout.stripe.com');
       }
     });
 
-    it('should return billing history', async () => {
+    it('should reject invalid plan IDs', async () => {
+      const res = await api('POST', '/api/billing/create-checkout-session', { planId: 'invalid' });
+      expect(res.status).toBe(400);
+    });
+
+    it('should return billing history as array', async () => {
       const res = await api('GET', '/api/billing/history');
-      expect([200, 404]).toContain(res.status);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.json)).toBe(true);
     });
 
-    it('should return invoices', async () => {
-      const res = await api('GET', '/api/billing/invoices');
-      expect([200, 404]).toContain(res.status);
+    it('should return payment method info', async () => {
+      const res = await api('GET', '/api/billing/payment-method');
+      expect(res.status).toBe(200);
+      expect(res.json).toHaveProperty('last4');
+      expect(res.json).toHaveProperty('brand');
     });
 
     it('should handle cancel-subscription gracefully when no subscription', async () => {
       const res = await api('POST', '/api/billing/cancel-subscription', {
         reason: 'testing',
       });
-      expect([400, 404, 503]).toContain(res.status);
+      expect([404]).toContain(res.status);
+      expect(res.json.code).toBe('SUBSCRIPTION_NOT_FOUND');
     });
 
     it('should map Stripe error codes to user-friendly messages', () => {
@@ -295,10 +314,13 @@ describe('PAID USER END-TO-END INTEGRATION TESTS', () => {
         copyrightOwner: 'Test Artist',
         releaseDate: '2026-04-01',
       });
-      expect([200, 201]).toContain(res.status);
-      if (res.status === 200 || res.status === 201) {
-        expect(res.json.id || res.json.release?.id).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      expect(res.json.id).toBeDefined();
+      expect(res.json.title).toBe('E2E Test Track');
+      expect(res.json.status).toBe('draft');
+      expect(res.json.metadata.artistName).toBe('Test Artist');
+      expect(res.json.metadata.releaseType).toBe('single');
+      expect(res.json.metadata.primaryGenre).toBe('Hip Hop');
     });
 
     it('should reject release creation with missing required fields', async () => {
@@ -444,21 +466,34 @@ describe('PAID USER END-TO-END INTEGRATION TESTS', () => {
     });
 
     it('should list collaboration connections', async () => {
-      const res = await api('GET', '/api/collaborations');
-      expect([200, 401, 404]).toContain(res.status);
+      const res = await api('GET', '/api/collaborations/connections');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.json)).toBe(true);
     });
   });
 
   describe('Phase 11: Search Functionality', () => {
 
-    it('should perform unified search', async () => {
-      const res = await api('GET', '/api/search?q=test');
-      expect([200, 401, 404]).toContain(res.status);
+    it('should perform unified search with results', async () => {
+      const res = await api('GET', '/api/search/unified?q=test&type=all');
+      expect(res.status).toBe(200);
+      expect(res.json.totalResults).toBeDefined();
+      expect(res.json.categories).toBeDefined();
     });
 
     it('should handle empty search gracefully', async () => {
-      const res = await api('GET', '/api/search?q=');
-      expect([200, 400, 401, 404]).toContain(res.status);
+      const res = await api('GET', '/api/search/unified?q=');
+      expect(res.status).toBe(200);
+    });
+
+    it('should search with type filter', async () => {
+      const res = await api('GET', '/api/search/unified?q=music&type=beats');
+      expect(res.status).toBe(200);
+    });
+
+    it('should get search suggestions', async () => {
+      const res = await api('GET', '/api/search/suggestions?q=hip');
+      expect(res.status).toBe(200);
     });
   });
 
@@ -476,8 +511,8 @@ describe('PAID USER END-TO-END INTEGRATION TESTS', () => {
     });
 
     it('should reject SQL injection in search', async () => {
-      const res = await api('GET', '/api/search?q=\' OR 1=1; DROP TABLE users; --');
-      expect([200, 400, 401, 404]).toContain(res.status);
+      const res = await api('GET', '/api/search/unified?q=\' OR 1=1; DROP TABLE users; --');
+      expect([200, 400]).toContain(res.status);
     });
 
     it('should reject malformed JSON body', async () => {
