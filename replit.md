@@ -57,6 +57,12 @@ AI-Powered Music Career Management Platform by B-Lawz Music. A full-stack applic
 - **Categories**: Registration, Profile, Distribution, Social Media, Billing, Studio, Search, Career Coach, Contracts, Analytics, Security, OAuth, Logout
 
 ## Recent Changes
+- 2026-02-18: OAuth platform fixes:
+  - TikTok: Reduced scopes to `user.info.basic,video.list` (removed unapproved `user.info.profile,user.info.stats`)
+  - Twitter: Updated auth/token URLs from x.com to twitter.com/api.twitter.com for reliability
+  - Threads: Removed fallback to Facebook App ID, reduced scopes (removed `threads_manage_insights`), made enabled conditional on THREADS_APP_ID
+  - Spotify: Added full OAuth flow (auth URL, token exchange with Basic auth, profile fetching, callback route, platform-status)
+  - All 123 tests still passing
 - 2026-02-18: Production readiness VERIFIED - 123 tests all passing:
   - Stripe checkout confirmed operational: creates real checkout.stripe.com sessions for all 3 plans
   - Subscription status returns full plan details, pricing, and upgrade options with stripeConfigured: true
