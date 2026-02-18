@@ -911,6 +911,36 @@ export default function SocialMedia() {
     }
   };
 
+  const handleDisconnectPlatform = async (platformId: string) => {
+    try {
+      const response = await fetch(`/api/social/disconnect/${platformId}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast({
+          title: 'Platform Disconnected',
+          description: `Successfully disconnected from ${platformId}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/social/platform-status'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/social/connections'] });
+      } else {
+        toast({
+          title: 'Disconnection Failed',
+          description: data.message || 'Failed to disconnect platform',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Disconnection Failed',
+        description: 'Failed to disconnect platform. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleGenerateContent = () => {
     if (selectedPlatforms.length === 0) {
       toast({
@@ -1214,10 +1244,10 @@ export default function SocialMedia() {
                 return (
                   <div
                     key={platform.id}
-                    className={`p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer ${
+                    className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                       platform.isConnected
                         ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-                        : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 hover:border-blue-200 hover:bg-blue-50'
+                        : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 hover:border-blue-200 hover:bg-blue-50 cursor-pointer'
                     }`}
                     onClick={() => !platform.isConnected && handleConnectPlatform(platform.id)}
                     data-testid={
@@ -1238,14 +1268,28 @@ export default function SocialMedia() {
                       </p>
                       <div className="mt-2">
                         {platform.isConnected ? (
-                          <Badge
-                            variant="default"
-                            className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                            data-testid={`badge-status-${platform.id}`}
-                          >
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Connected
-                          </Badge>
+                          <div className="flex flex-col items-center gap-1.5">
+                            <Badge
+                              variant="default"
+                              className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                              data-testid={`badge-status-${platform.id}`}
+                            >
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Connected
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDisconnectPlatform(platform.id);
+                              }}
+                            >
+                              <XCircle className="w-3 h-3 mr-1" />
+                              Disconnect
+                            </Button>
+                          </div>
                         ) : (
                           <Badge variant="outline" data-testid={`badge-status-${platform.id}`}>
                             Connect
