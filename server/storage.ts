@@ -547,15 +547,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async seedPluginCatalog(): Promise<void> {
-    const existingPlugins = await db.select().from(pluginCatalog).limit(1);
-    if (existingPlugins.length > 0) return;
-
     const { ALL_PLUGINS } = await import('./services/plugins/index');
+
+    const existingCount = await db.select({ count: sql<number>`count(*)` }).from(pluginCatalog);
+    const currentCount = Number(existingCount[0]?.count || 0);
+
+    if (currentCount >= ALL_PLUGINS.length) return;
+
+    console.log(`🎹 Seeding plugin catalog (${currentCount} existing, ${ALL_PLUGINS.length} total)...`);
     
-    console.log(`🎹 Seeding ${ALL_PLUGINS.length} studio plugins...`);
-    
+    let inserted = 0;
     for (const plugin of ALL_PLUGINS) {
-      await db.insert(pluginCatalog).values({
+      const result = await db.insert(pluginCatalog).values({
         id: plugin.id,
         name: plugin.name,
         slug: plugin.slug,
@@ -567,9 +570,10 @@ export class DatabaseStorage implements IStorage {
         isBuiltIn: true,
         isActive: true,
       }).onConflictDoNothing();
+      if (result.rowCount && result.rowCount > 0) inserted++;
     }
     
-    console.log(`   ✓ Seeded ${ALL_PLUGINS.length} studio plugins`);
+    console.log(`   ✓ Plugin catalog: ${inserted} new plugins added (${currentCount + inserted} total)`);
   }
 
   async getProducers(): Promise<any[]> {

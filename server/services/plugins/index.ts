@@ -1,6 +1,8 @@
 import { PIANO_PLUGINS, STRINGS_PLUGINS, DRUMS_PLUGINS, BASS_PLUGINS, PAD_PLUGINS, SYNTH_PLUGINS, FM_PLUGINS, WAVETABLE_PLUGINS, SAMPLER_PLUGINS } from './instrumentPlugins';
 import { REVERB_PLUGINS, DELAY_PLUGINS, COMPRESSOR_PLUGINS, EQ_PLUGINS, DISTORTION_PLUGINS, MODULATION_PLUGINS, DYNAMICS_PLUGINS, VOCAL_PLUGINS, MICROPHONE_PLUGINS } from './effectPlugins';
 import { ADDITIONAL_SYNTH_PLUGINS, ADDITIONAL_EFFECT_PLUGINS } from './expandedPlugins';
+import { ALL_ADDITIONAL_INSTRUMENTS } from './additionalInstrumentPlugins';
+import { ALL_ADDITIONAL_EFFECTS } from './additionalEffectPlugins';
 import type { PluginDefinition } from '../pluginHostService';
 
 export const EXPANDED_INSTRUMENTS: PluginDefinition[] = [
@@ -14,6 +16,7 @@ export const EXPANDED_INSTRUMENTS: PluginDefinition[] = [
   ...WAVETABLE_PLUGINS,
   ...SAMPLER_PLUGINS,
   ...ADDITIONAL_SYNTH_PLUGINS,
+  ...ALL_ADDITIONAL_INSTRUMENTS,
 ];
 
 export const EXPANDED_EFFECTS: PluginDefinition[] = [
@@ -27,6 +30,7 @@ export const EXPANDED_EFFECTS: PluginDefinition[] = [
   ...VOCAL_PLUGINS,
   ...MICROPHONE_PLUGINS,
   ...ADDITIONAL_EFFECT_PLUGINS,
+  ...ALL_ADDITIONAL_EFFECTS,
 ];
 
 export const ALL_PLUGINS: PluginDefinition[] = [
