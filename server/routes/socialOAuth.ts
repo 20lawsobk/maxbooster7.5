@@ -388,11 +388,14 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         tokenParams.set('client_id', twitterClientId);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
         if (twitterClientSecret) {
-          const encodedId = encodeURIComponent(twitterClientId);
-          const encodedSecret = encodeURIComponent(twitterClientSecret);
-          const basicAuth = Buffer.from(`${encodedId}:${encodedSecret}`).toString('base64');
+          const basicAuth = Buffer.from(`${twitterClientId}:${twitterClientSecret}`).toString('base64');
           headers['Authorization'] = `Basic ${basicAuth}`;
-          logger.info(`[OAuth] Twitter using confidential client Basic auth`, { clientIdLength: twitterClientId.length, secretLength: twitterClientSecret.length });
+          logger.info(`[OAuth] Twitter using confidential client Basic auth`, { 
+            clientIdLength: twitterClientId.length, 
+            secretLength: twitterClientSecret.length,
+            clientIdPrefix: twitterClientId.substring(0, 6),
+            secretPrefix: twitterClientSecret.substring(0, 3),
+          });
         }
       } else if (platform === 'spotify') {
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
