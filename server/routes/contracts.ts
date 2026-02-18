@@ -6,7 +6,7 @@ import { logger } from '../logger.js';
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
 import { db } from '../db';
-import { marketplaceDisputes, users } from '@shared/schema';
+import { marketplaceDisputes, users, contractTemplates } from '@shared/schema';
 import { eq, and, or, desc, notInArray } from 'drizzle-orm';
 
 const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
@@ -43,16 +43,42 @@ const router = Router();
 
 router.get('/templates', requireAuth, async (req: Request, res: Response) => {
   try {
-    const templates = contractTemplateService.getTemplates();
+    const builtInTemplates = contractTemplateService.getTemplates();
     const { category } = req.query;
+    const userId = (req as any).user?.id;
+
+    let userCustomTemplates: any[] = [];
+    if (userId) {
+      try {
+        const dbTemplates = await db
+          .select()
+          .from(contractTemplates)
+          .where(and(
+            eq(contractTemplates.userId, userId),
+            eq(contractTemplates.isDefault, false)
+          ));
+        userCustomTemplates = dbTemplates.map(t => ({
+          id: t.id,
+          type: t.content as string,
+          name: t.name,
+          description: t.description || '',
+          category: t.category || 'Custom',
+          variables: Array.isArray(t.variables) ? t.variables : [],
+          isPremium: false,
+          isCustom: true,
+        }));
+      } catch (e) {}
+    }
+
+    const allTemplates = [...builtInTemplates, ...userCustomTemplates];
 
     if (category) {
-      const filtered = templates.filter(t => t.category === category);
+      const filtered = allTemplates.filter(t => t.category === category);
       return res.json({ templates: filtered });
     }
 
-    const categories = [...new Set(templates.map(t => t.category))];
-    return res.json({ templates, categories });
+    const categories = [...new Set(allTemplates.map(t => t.category))];
+    return res.json({ templates: allTemplates, categories });
   } catch (error: any) {
     logger.error('Error fetching contract templates:', error);
     res.status(500).json({ error: 'Failed to fetch templates' });
@@ -72,6 +98,83 @@ router.get('/templates/:templateId', requireAuth, async (req: Request, res: Resp
   } catch (error: any) {
     logger.error('Error fetching template:', error);
     res.status(500).json({ error: 'Failed to fetch template' });
+  }
+});
+
+router.post('/templates/custom', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { name, description, content, category, variables } = req.body;
+
+    if (!name || !content) {
+      return res.status(400).json({ error: 'name and content are required' });
+    }
+
+    const [created] = await db.insert(contractTemplates).values({
+      userId,
+      name,
+      description: description || '',
+      content,
+      category: category || 'Custom',
+      variables: variables || [],
+      isDefault: false,
+    }).returning();
+
+    return res.status(201).json(created);
+  } catch (error: any) {
+    logger.error('Error creating custom contract template:', error);
+    res.status(500).json({ error: 'Failed to create template' });
+  }
+});
+
+router.put('/templates/custom/:templateId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { templateId } = req.params;
+    const updates = req.body;
+
+    const [updated] = await db
+      .update(contractTemplates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(
+        eq(contractTemplates.id, templateId),
+        eq(contractTemplates.userId, userId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+
+    return res.json(updated);
+  } catch (error: any) {
+    logger.error('Error updating custom contract template:', error);
+    res.status(500).json({ error: 'Failed to update template' });
+  }
+});
+
+router.delete('/templates/custom/:templateId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { templateId } = req.params;
+
+    const [deleted] = await db
+      .delete(contractTemplates)
+      .where(and(
+        eq(contractTemplates.id, templateId),
+        eq(contractTemplates.userId, userId),
+        eq(contractTemplates.isDefault, false)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Template not found or cannot delete default templates' });
+    }
+
+    return res.json({ success: true });
+  } catch (error: any) {
+    logger.error('Error deleting custom contract template:', error);
+    res.status(500).json({ error: 'Failed to delete template' });
   }
 });
 

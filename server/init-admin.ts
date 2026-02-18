@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import { storage } from './storage';
 import { logger } from './logger.js';
 import { db } from './db';
-import { users, userStorage, userTasteProfiles, dspProviders, licenseTemplates } from '../shared/schema';
+import { users, userStorage, userTasteProfiles, dspProviders, licenseTemplates, contractTemplates, membershipTiers, storefronts } from '../shared/schema';
 import { eq, sql } from 'drizzle-orm';
 import { DSP_POLICIES } from './services/dspPolicyChecker';
 
@@ -283,6 +283,186 @@ async function initializeAdminResources(adminId: string, adminEmail: string, isN
       logger.info('   ✓ Admin license templates seeded (4 templates)');
     } else {
       logger.info(`   ✓ Admin license templates exist (${existingLicenses.length} templates)`);
+    }
+
+    // 5. Check and initialize default contract templates
+    const existingContractTemplates = await db
+      .select()
+      .from(contractTemplates)
+      .where(eq(contractTemplates.userId, adminId));
+
+    if (existingContractTemplates.length === 0) {
+      const defaultContractTemplates = [
+        {
+          userId: adminId,
+          name: 'Non-Exclusive Beat License',
+          description: 'Standard non-exclusive license allowing the artist to use the beat while the producer retains ownership',
+          content: 'non_exclusive_license',
+          category: 'Beat Licenses',
+          variables: ['artistName', 'producerName', 'beatTitle', 'purchasePrice', 'streamLimit', 'salesLimit', 'territory'],
+          isDefault: true,
+        },
+        {
+          userId: adminId,
+          name: 'Exclusive Beat License',
+          description: 'Exclusive rights transfer - beat can no longer be sold to others after purchase',
+          content: 'exclusive_license',
+          category: 'Beat Licenses',
+          variables: ['artistName', 'producerName', 'beatTitle', 'purchasePrice', 'royaltyPercentage', 'territory'],
+          isDefault: true,
+        },
+        {
+          userId: adminId,
+          name: 'Free Download License',
+          description: 'Free promotional use license with attribution requirements',
+          content: 'free_download',
+          category: 'Beat Licenses',
+          variables: ['artistName', 'producerName', 'beatTitle', 'territory'],
+          isDefault: true,
+        },
+        {
+          userId: adminId,
+          name: 'Non-Disclosure Agreement',
+          description: 'Mutual NDA for protecting confidential information during collaborations',
+          content: 'nda',
+          category: 'Legal',
+          variables: ['artistName', 'producerName', 'confidentialPeriodYears', 'effectiveDate'],
+          isDefault: true,
+        },
+        {
+          userId: adminId,
+          name: 'Session Musician Agreement',
+          description: 'Work-for-hire agreement for session musicians including payment terms and rights assignment',
+          content: 'session_musician',
+          category: 'Collaboration',
+          variables: ['artistName', 'producerName', 'projectTitle', 'sessionRate', 'sessionHours', 'royaltyPercentage'],
+          isDefault: true,
+        },
+        {
+          userId: adminId,
+          name: 'Mixing/Mastering Engineer Agreement',
+          description: 'Service agreement for mixing and mastering engineers with deliverables and payment terms',
+          content: 'mixer_engineer',
+          category: 'Collaboration',
+          variables: ['artistName', 'producerName', 'projectTitle', 'mixingFee', 'masteringFee', 'revisions'],
+          isDefault: true,
+        },
+        {
+          userId: adminId,
+          name: 'Royalty Split Sheet',
+          description: 'Official documentation of ownership percentages for publishing and master royalties',
+          content: 'split_sheet',
+          category: 'Royalties',
+          variables: ['beatTitle', 'splits', 'publishingPercentage', 'masterPercentage'],
+          isDefault: true,
+        },
+        {
+          userId: adminId,
+          name: 'Sync Licensing Agreement',
+          description: 'License for use in film, TV, commercials, video games, and other visual media',
+          content: 'sync_license',
+          category: 'Licensing',
+          variables: ['artistName', 'producerName', 'beatTitle', 'syncFee', 'projectTitle', 'projectType', 'territory'],
+          isDefault: true,
+        },
+        {
+          userId: adminId,
+          name: 'Work For Hire Agreement',
+          description: 'Complete rights transfer where the hiring party owns all work product',
+          content: 'work_for_hire',
+          category: 'Legal',
+          variables: ['artistName', 'producerName', 'projectTitle', 'purchasePrice', 'effectiveDate'],
+          isDefault: true,
+        },
+        {
+          userId: adminId,
+          name: 'Producer Agreement',
+          description: 'Comprehensive agreement between artist and producer for album/EP production',
+          content: 'producer_agreement',
+          category: 'Production',
+          variables: ['artistName', 'producerName', 'projectTitle', 'advanceAmount', 'royaltyPercentage', 'publishingPercentage'],
+          isDefault: true,
+        },
+      ];
+      await db.insert(contractTemplates).values(defaultContractTemplates);
+      logger.info(`   ✓ Admin contract templates seeded (${defaultContractTemplates.length} templates)`);
+    } else {
+      logger.info(`   ✓ Admin contract templates exist (${existingContractTemplates.length} templates)`);
+    }
+
+    // 6. Check and initialize default membership tiers for admin storefront
+    const [adminStorefront] = await db
+      .select()
+      .from(storefronts)
+      .where(eq(storefronts.userId, adminId));
+
+    if (adminStorefront) {
+      const existingTiers = await db
+        .select()
+        .from(membershipTiers)
+        .where(eq(membershipTiers.storefrontId, adminStorefront.id));
+
+      if (existingTiers.length === 0) {
+        const defaultTiers = [
+          {
+            storefrontId: adminStorefront.id,
+            name: 'Beat Club',
+            description: 'Access to exclusive beats, 2 free downloads per month, and early access to new releases.',
+            priceCents: 999,
+            currency: 'usd',
+            interval: 'monthly',
+            benefits: [
+              '2 free beat downloads/month',
+              'Early access to new beats',
+              'Exclusive members-only beats',
+              'Priority customer support',
+            ],
+            maxSubscribers: 0,
+            isActive: true,
+          },
+          {
+            storefrontId: adminStorefront.id,
+            name: 'Producer Pro',
+            description: 'Full access to the entire beat catalog with unlimited downloads, stems, and trackouts.',
+            priceCents: 2999,
+            currency: 'usd',
+            interval: 'monthly',
+            benefits: [
+              'Unlimited beat downloads',
+              'WAV + STEMS included',
+              'Custom beat requests (1/month)',
+              'Commercial use license',
+              'Priority mixing feedback',
+              'Exclusive Discord access',
+            ],
+            maxSubscribers: 0,
+            isActive: true,
+          },
+          {
+            storefrontId: adminStorefront.id,
+            name: 'Label Partner',
+            description: 'Enterprise-level access for labels and management companies. Bulk licensing, priority support, and custom terms.',
+            priceCents: 9999,
+            currency: 'usd',
+            interval: 'monthly',
+            benefits: [
+              'Unlimited downloads + trackouts',
+              'Bulk licensing discounts',
+              'Dedicated account manager',
+              'Custom exclusive production',
+              'First right of refusal on new beats',
+              'White-label rights available',
+              'Quarterly sync placement pitches',
+            ],
+            maxSubscribers: 0,
+            isActive: true,
+          },
+        ];
+        await db.insert(membershipTiers).values(defaultTiers);
+        logger.info(`   ✓ Admin membership tiers seeded (${defaultTiers.length} tiers)`);
+      } else {
+        logger.info(`   ✓ Admin membership tiers exist (${existingTiers.length} tiers)`);
+      }
     }
 
     logger.info('✅ Admin resources verified/initialized');
