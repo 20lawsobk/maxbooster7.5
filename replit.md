@@ -50,7 +50,19 @@ AI-Powered Music Career Management Platform by B-Lawz Music. A full-stack applic
 - Run: `./boosterstate/target/release/boosterstate & sleep 3 && NODE_ENV=production node dist/index.cjs`
 - Target: autoscale
 
+### Testing
+- **Framework**: Vitest
+- **Test file**: `tests/critical-paths.test.ts` - 47 tests covering 13 categories
+- **Run**: `npx vitest run --config vite.config.ts --root . tests/critical-paths.test.ts`
+- **Categories**: Registration, Profile, Distribution, Social Media, Billing, Studio, Search, Career Coach, Contracts, Analytics, Security, OAuth, Logout
+
 ## Recent Changes
+- 2026-02-18: Production hardening phase 2:
+  - Redis-backed rate limiters on auth endpoints (login: 5/15min, register: 3/hr, password reset: 3/hr)
+  - Dynamic trending hashtags with time-based algorithm (20+ music-specific hashtags, varies by time of day)
+  - SendGrid welcome email on registration (non-blocking, via EmailService with circuit breaker)
+  - Comprehensive automated test suite: 47 tests across 13 categories, all passing
+  - Test coverage: registration/auth, profile, distribution, social media, billing, studio, search, career coach, contracts, analytics, security, OAuth, logout
 - 2026-02-18: Production-readiness fixes:
   - Fixed distribution releases route to query correct table (`distroReleases` not `releases`)
   - Fixed HyperFollow analytics route ordering to prevent route parameter conflict

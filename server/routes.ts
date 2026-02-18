@@ -11,6 +11,7 @@ import Stripe from "stripe";
 import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
 import { getBaseUrl } from "./config/defaults.ts";
 import { generateSecret as otpGenerateSecret, verifySync, generateURI } from "otplib";
+import { loginRateLimiter, registerRateLimiter, forgotPasswordRateLimiter } from "./middleware/rateLimiter.ts";
 
 const authenticator = {
   generateSecret: () => otpGenerateSecret(),
@@ -148,7 +149,7 @@ export async function registerRoutes(
   });
 
   // Auth: Register
-  app.post("/api/auth/register", async (req: Request, res: Response) => {
+  app.post("/api/auth/register", registerRateLimiter, async (req: Request, res: Response) => {
     try {
       const { email, password, username, firstName, lastName } = req.body;
 
@@ -197,6 +198,12 @@ export async function registerRoutes(
 
       req.session.userId = user.id;
       const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
+
+      emailService.sendWelcomeEmail({
+        firstName: firstName || username || 'there',
+        email,
+      }).catch((err: unknown) => console.error('Welcome email failed (non-blocking):', err));
+
       return res.json(safeUser);
     } catch (error) {
       console.error("Registration error:", error);
@@ -206,7 +213,7 @@ export async function registerRoutes(
 
   // Auth: Login (accepts username or email)
   // SECURITY: Session regeneration implemented to prevent session fixation attacks
-  app.post("/api/auth/login", async (req: Request, res: Response) => {
+  app.post("/api/auth/login", loginRateLimiter, async (req: Request, res: Response) => {
     try {
       const { email, username, password, twoFactorCode } = req.body;
       const identifier = email || username;
@@ -1233,7 +1240,7 @@ export async function registerRoutes(
   });
 
   // Auth: Forgot password
-  app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
+  app.post("/api/auth/forgot-password", forgotPasswordRateLimiter, async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
 
