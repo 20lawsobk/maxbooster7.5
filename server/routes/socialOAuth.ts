@@ -43,16 +43,17 @@ const PLATFORMS = {
     enabled: !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
   },
   tiktok: (() => {
-    const isSandbox = process.env.TIKTOK_ENV === 'sandbox';
+    const env = process.env.TIKTOK_ENV;
+    const isSandbox = env === 'sandbox';
     const clientKey = isSandbox
       ? (process.env.TIKTOK_SANDBOX_CLIENT_KEY || process.env.TIKTOK_CLIENT_KEY)
       : (process.env.TIKTOK_PROD_CLIENT_KEY || process.env.TIKTOK_CLIENT_KEY);
     const clientSecret = isSandbox
       ? (process.env.TIKTOK_SANDBOX_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET)
       : (process.env.TIKTOK_PROD_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET);
-    const scopes = isSandbox
-      ? (process.env.TIKTOK_SANDBOX_SCOPES || 'user.info.basic,video.list,video.upload,video.publish')
-      : (process.env.TIKTOK_PROD_SCOPES || 'user.info.basic,video.list,video.upload,video.publish');
+    const scopes = env === 'sandbox'
+      ? process.env.TIKTOK_SANDBOX_SCOPES
+      : process.env.TIKTOK_PROD_SCOPES;
     return {
       name: isSandbox ? 'TikTok (Sandbox)' : 'TikTok',
       authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
