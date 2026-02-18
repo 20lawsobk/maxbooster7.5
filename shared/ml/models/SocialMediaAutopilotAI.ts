@@ -1186,6 +1186,49 @@ export class SocialMediaAutopilotAI extends BaseModel {
     return platformHashtags[platform] || hashtagPool.music.slice(0, maxHashtags);
   }
 
+  public async predictEngagement(features: {
+    platform: string;
+    contentLength?: number;
+    hasHashtags?: boolean;
+    hasEmojis?: boolean;
+    hasLinks?: boolean;
+    [key: string]: any;
+  }): Promise<{
+    estimatedEngagement: number;
+    estimatedReach: number;
+    confidence: number;
+    breakdown: Record<string, number>;
+  }> {
+    const platform = features.platform || 'instagram';
+    const mediaType = features.mediaType || 'text';
+    const baseEngagement = this.predictContentEngagement(mediaType, platform, features);
+
+    let multiplier = 1.0;
+    if (features.hasHashtags) multiplier *= 1.15;
+    if (features.hasEmojis) multiplier *= 1.1;
+    if (features.hasLinks) multiplier *= 0.95;
+    if (features.contentLength) {
+      if (features.contentLength > 50 && features.contentLength < 280) multiplier *= 1.1;
+      else if (features.contentLength > 500) multiplier *= 0.9;
+    }
+
+    const estimatedEngagement = Math.round(baseEngagement * multiplier);
+    const estimatedReach = Math.round(estimatedEngagement * 12);
+    const confidence = this.isTrained ? 0.85 : 0.6;
+
+    return {
+      estimatedEngagement,
+      estimatedReach,
+      confidence,
+      breakdown: {
+        likes: Math.round(estimatedEngagement * 0.6),
+        comments: Math.round(estimatedEngagement * 0.15),
+        shares: Math.round(estimatedEngagement * 0.1),
+        saves: Math.round(estimatedEngagement * 0.15),
+      },
+    };
+  }
+
   /**
    * Predict engagement for content based on media type and platform
    */

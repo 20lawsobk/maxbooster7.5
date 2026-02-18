@@ -5,6 +5,7 @@ import {
   releases,
   posts,
   socialAccounts,
+  socialCampaigns,
   adCampaigns,
   adCreatives,
   contentCalendar,
@@ -23,6 +24,7 @@ import {
   storefrontFollows,
   storefrontRatings,
   orders,
+  autopilotLearningData,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -420,6 +422,24 @@ export class DatabaseStorage implements IStorage {
 
   async getAllPosts(userId: string): Promise<Post[]> {
     return this.getSocialPosts(userId);
+  }
+
+  async getAllCampaigns(userId: string): Promise<any[]> {
+    const results = await db
+      .select()
+      .from(socialCampaigns)
+      .where(eq(socialCampaigns.userId, userId))
+      .orderBy(desc(socialCampaigns.createdAt));
+    return results;
+  }
+
+  async getAnalyzedContentForTraining(userId: string): Promise<any[]> {
+    const results = await db
+      .select()
+      .from(autopilotLearningData)
+      .where(eq(autopilotLearningData.userId, userId))
+      .orderBy(desc(autopilotLearningData.createdAt));
+    return results;
   }
 
   async getNotifications(userId: string): Promise<Notification[]> {
