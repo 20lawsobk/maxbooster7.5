@@ -120,7 +120,7 @@ const PLATFORMS = {
   twitter: {
     name: 'Twitter/X',
     authUrl: 'https://twitter.com/i/oauth2/authorize',
-    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
+    tokenUrl: 'https://api.x.com/2/oauth2/token',
     scope: 'tweet.read tweet.write users.read follows.read follows.write offline.access',
     clientId: process.env.TWITTER_API_KEY,
     clientSecret: process.env.TWITTER_API_SECRET,
@@ -385,7 +385,6 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       if (platform === 'twitter') {
         const twitterClientId = (config.clientId || '').trim();
         const twitterClientSecret = (config.clientSecret || '').trim();
-        tokenParams.set('client_id', twitterClientId);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
         if (twitterClientSecret) {
           const basicAuth = Buffer.from(`${twitterClientId}:${twitterClientSecret}`).toString('base64');
@@ -393,9 +392,9 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           logger.info(`[OAuth] Twitter using confidential client Basic auth`, { 
             clientIdLength: twitterClientId.length, 
             secretLength: twitterClientSecret.length,
-            clientIdPrefix: twitterClientId.substring(0, 6),
-            secretPrefix: twitterClientSecret.substring(0, 3),
           });
+        } else {
+          tokenParams.set('client_id', twitterClientId);
         }
       } else if (platform === 'spotify') {
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
@@ -555,7 +554,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       } else if (platform === 'twitter') {
         try {
-          const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=public_metrics,profile_image_url,description', {
+          const userResponse = await fetch('https://api.x.com/2/users/me?user.fields=public_metrics,profile_image_url,description', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` },
           });
           const userData = await userResponse.json();
