@@ -286,6 +286,12 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('code_challenge', codeChallenge);
       params.set('code_challenge_method', 'S256');
     } else if (platform === 'tiktok') {
+      if (!config.scope || config.scope.length === 0) {
+        throw new Error("TikTok scopes are not configured.");
+      }
+      if (config.scope.includes(" ")) {
+        throw new Error("TikTok scopes must not contain spaces.");
+      }
       const tiktokAuthUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${config.clientId}&response_type=code&scope=${encodeURIComponent(config.scope)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
       oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
       logger.info(`[OAuth] Generated auth URL for ${platform}`, { userId, platform, redirectUri });
