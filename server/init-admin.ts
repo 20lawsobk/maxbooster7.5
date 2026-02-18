@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import { storage } from './storage';
 import { logger } from './logger.js';
 import { db } from './db';
-import { users, userStorage, userTasteProfiles, dspProviders } from '../shared/schema';
+import { users, userStorage, userTasteProfiles, dspProviders, licenseTemplates } from '../shared/schema';
 import { eq, sql } from 'drizzle-orm';
 import { DSP_POLICIES } from './services/dspPolicyChecker';
 
@@ -206,6 +206,85 @@ async function initializeAdminResources(adminId: string, adminEmail: string, isN
       logger.info('   ✓ Admin producer storefront exists');
     }
     
+    // 4. Check and initialize default license templates
+    const existingLicenses = await db
+      .select()
+      .from(licenseTemplates)
+      .where(eq(licenseTemplates.userId, adminId));
+
+    if (existingLicenses.length === 0) {
+      const defaultLicenses = [
+        {
+          userId: adminId,
+          name: 'Basic Lease',
+          type: 'non-exclusive',
+          priceCents: 2999,
+          streams: '100000',
+          copies: '5000',
+          musicVideos: '1',
+          duration: '1 year',
+          allowsBroadcast: false,
+          allowsProfit: true,
+          allowsSync: false,
+          fileFormats: 'MP3',
+          isActive: true,
+          sortOrder: 0,
+        },
+        {
+          userId: adminId,
+          name: 'Premium Lease',
+          type: 'non-exclusive',
+          priceCents: 9999,
+          streams: '500000',
+          copies: '25000',
+          musicVideos: '3',
+          duration: '2 years',
+          allowsBroadcast: true,
+          allowsProfit: true,
+          allowsSync: true,
+          fileFormats: 'MP3, WAV',
+          isActive: true,
+          sortOrder: 1,
+        },
+        {
+          userId: adminId,
+          name: 'Unlimited Lease',
+          type: 'unlimited',
+          priceCents: 19999,
+          streams: 'unlimited',
+          copies: 'unlimited',
+          musicVideos: 'unlimited',
+          duration: 'Lifetime',
+          allowsBroadcast: true,
+          allowsProfit: true,
+          allowsSync: true,
+          fileFormats: 'MP3, WAV, STEMS',
+          isActive: true,
+          sortOrder: 2,
+        },
+        {
+          userId: adminId,
+          name: 'Exclusive Rights',
+          type: 'exclusive',
+          priceCents: 99999,
+          streams: 'unlimited',
+          copies: 'unlimited',
+          musicVideos: 'unlimited',
+          duration: 'Lifetime (Full Ownership)',
+          allowsBroadcast: true,
+          allowsProfit: true,
+          allowsSync: true,
+          fileFormats: 'MP3, WAV, STEMS, TRACKOUTS',
+          isActive: true,
+          sortOrder: 3,
+        },
+      ];
+      await db.insert(licenseTemplates).values(defaultLicenses);
+      logger.info('   ✓ Admin license templates seeded (4 templates)');
+    } else {
+      logger.info(`   ✓ Admin license templates exist (${existingLicenses.length} templates)`);
+    }
+
     logger.info('✅ Admin resources verified/initialized');
   } catch (error) {
     logger.error('Error initializing admin resources:', error);
