@@ -286,11 +286,10 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('code_challenge', codeChallenge);
       params.set('code_challenge_method', 'S256');
     } else if (platform === 'tiktok') {
-      params.set('client_key', config.clientId);
-      params.set('scope', config.scope);
-      params.set('response_type', 'code');
-      params.set('redirect_uri', redirectUri);
-      params.set('state', state);
+      const tiktokAuthUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${config.clientId}&response_type=code&scope=${encodeURIComponent(config.scope)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+      oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
+      logger.info(`[OAuth] Generated auth URL for ${platform}`, { userId, platform, redirectUri });
+      return res.json({ authUrl: tiktokAuthUrl });
     } else if (platform === 'youtube' || platform === 'google' || platform === 'googlebusiness') {
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
