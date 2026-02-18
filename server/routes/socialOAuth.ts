@@ -314,6 +314,12 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('scope', config.scope);
       params.set('response_type', 'code');
       params.set('state', state);
+      logger.info(`[OAuth] Threads auth params:`, { 
+        clientId: config.clientId, 
+        redirectUri, 
+        scope: config.scope,
+        authUrl: config.authUrl,
+      });
     } else {
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
@@ -386,28 +392,45 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
 
       if (platform === 'twitter') {
         try {
-          const twitterClient = new TwitterApi({
-            clientId: config.clientId!,
-            clientSecret: config.clientSecret!,
+          const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
+          logger.info(`[OAuth] Twitter token exchange via manual Basic Auth`, { 
+            hasCode: !!authCode, 
+            hasVerifier: !!stateData.codeVerifier,
+            redirectUri,
+            clientIdPrefix: config.clientId?.substring(0, 8),
           });
-          logger.info(`[OAuth] Twitter token exchange via twitter-api-v2`, { hasCode: !!authCode, hasVerifier: !!stateData.codeVerifier });
-          const { accessToken, refreshToken, expiresIn, client: loggedClient } = await twitterClient.loginWithOAuth2({
-            code: authCode,
-            codeVerifier: stateData.codeVerifier!,
-            redirectUri: redirectUri,
+          const twitterTokenResponse = await fetch('https://api.x.com/2/oauth2/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Authorization': `Basic ${basicAuth}`,
+            },
+            body: new URLSearchParams({
+              code: authCode,
+              grant_type: 'authorization_code',
+              redirect_uri: redirectUri,
+              code_verifier: stateData.codeVerifier!,
+            }).toString(),
           });
+          const twitterTokenData = await twitterTokenResponse.json() as any;
+          if (!twitterTokenResponse.ok || !twitterTokenData.access_token) {
+            logger.error(`[OAuth] Twitter token exchange FAILED:`, { 
+              status: twitterTokenResponse.status,
+              error: twitterTokenData?.error,
+              description: twitterTokenData?.error_description,
+            });
+            return res.redirect(`/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(twitterTokenData?.error_description || 'Twitter authentication failed')}`);
+          }
           tokenData = {
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            expires_in: expiresIn,
+            access_token: twitterTokenData.access_token,
+            refresh_token: twitterTokenData.refresh_token,
+            expires_in: twitterTokenData.expires_in,
             token_type: 'bearer',
           };
-          logger.info(`[OAuth] Twitter token exchange SUCCESS via twitter-api-v2`, { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken, expiresIn });
+          logger.info(`[OAuth] Twitter token exchange SUCCESS`, { hasAccessToken: !!tokenData.access_token, hasRefreshToken: !!tokenData.refresh_token, expiresIn: tokenData.expires_in });
         } catch (twitterErr: any) {
-          logger.error(`[OAuth] Twitter token exchange FAILED via twitter-api-v2:`, { 
+          logger.error(`[OAuth] Twitter token exchange ERROR:`, { 
             error: twitterErr?.message || twitterErr,
-            data: twitterErr?.data || null,
-            code: twitterErr?.code || null,
           });
           return res.redirect(`/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(twitterErr?.message || 'Twitter authentication failed')}`);
         }

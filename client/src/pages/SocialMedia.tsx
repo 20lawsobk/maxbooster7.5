@@ -449,7 +449,7 @@ export default function SocialMedia() {
     const error = searchParams.get('error');
     const platform = searchParams.get('platform');
     const username = searchParams.get('username');
-    const errorMessage = searchParams.get('message');
+    const errorMessage = searchParams.get('message') || searchParams.get('detail');
 
     if (success === 'connected' && platform) {
       const platformNames = platform.split(',').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' & ');
@@ -468,7 +468,17 @@ export default function SocialMedia() {
           handleOAuthDenied(platformName);
           break;
         case 'token_exchange_failed':
-          handlePlatformUnavailable(platformName);
+          showOutcome({
+            status: 'error',
+            category: 'oauth',
+            title: 'Connection Failed',
+            message: errorMessage 
+              ? `${platformName} connection failed: ${decodeURIComponent(errorMessage)}`
+              : `Failed to connect to ${platformName}. Please try again.`,
+            platformId: platform || undefined,
+            retryable: true,
+            actionLabel: 'Try Again',
+          });
           break;
         case 'callback_failed':
           showOutcome({
