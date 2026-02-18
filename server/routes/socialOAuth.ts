@@ -35,18 +35,18 @@ const PLATFORMS = {
     name: 'Threads',
     authUrl: 'https://threads.net/oauth/authorize',
     tokenUrl: 'https://graph.threads.net/oauth/access_token',
-    scope: 'threads_basic,threads_content_publish,threads_manage_insights,threads_manage_replies,threads_read_replies',
-    clientId: process.env.THREADS_APP_ID || process.env.FACEBOOK_APP_ID,
-    clientSecret: process.env.THREADS_APP_SECRET || process.env.FACEBOOK_APP_SECRET,
+    scope: 'threads_basic,threads_content_publish,threads_manage_replies,threads_read_replies',
+    clientId: process.env.THREADS_APP_ID,
+    clientSecret: process.env.THREADS_APP_SECRET,
     usePKCE: false,
     responseType: 'code',
-    enabled: true,
+    enabled: !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
   },
   tiktok: {
     name: 'TikTok',
     authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
     tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-    scope: 'user.info.basic,user.info.profile,user.info.stats,video.list',
+    scope: 'user.info.basic,video.list',
     clientId: process.env.TIKTOK_CLIENT_KEY1 || process.env.TIKTOK_CLIENT_KEY,
     clientSecret: process.env.TIKTOK_CLIENT_SECRET1 || process.env.TIKTOK_CLIENT_SECRET,
     usePKCE: false,
@@ -105,14 +105,25 @@ const PLATFORMS = {
   },
   twitter: {
     name: 'Twitter/X',
-    authUrl: 'https://x.com/i/oauth2/authorize',
-    tokenUrl: 'https://api.x.com/2/oauth2/token',
+    authUrl: 'https://twitter.com/i/oauth2/authorize',
+    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
     scope: 'tweet.read tweet.write users.read follows.read follows.write offline.access',
     clientId: process.env.TWITTER_API_KEY,
     clientSecret: process.env.TWITTER_API_SECRET,
     usePKCE: true,
     responseType: 'code',
     enabled: !!(process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET),
+  },
+  spotify: {
+    name: 'Spotify',
+    authUrl: 'https://accounts.spotify.com/authorize',
+    tokenUrl: 'https://accounts.spotify.com/api/token',
+    scope: 'user-read-private user-read-email user-top-read user-read-recently-played user-library-read playlist-read-private user-read-playback-state user-read-currently-playing',
+    clientId: process.env.SPOTIFY_CLIENT_ID,
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+    usePKCE: false,
+    responseType: 'code',
+    enabled: !!(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET),
   },
 };
 
@@ -156,6 +167,7 @@ const CALLBACK_PATHS: Record<string, string> = {
   googlebusiness: '/auth/google-business/callback',
   linkedin: '/auth/linkedin/callback',
   twitter: '/auth/twitter/callback',
+  spotify: '/auth/spotify/callback',
 };
 
 function getCallbackUrl(platform: string): string {
@@ -355,6 +367,9 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
         headers['Authorization'] = `Basic ${basicAuth}`;
+      } else if (platform === 'spotify') {
+        const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
+        headers['Authorization'] = `Basic ${basicAuth}`;
       } else if (platform === 'tiktok') {
         tokenParams.set('client_key', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
@@ -536,6 +551,21 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         } catch (threadsErr) {
           logger.warn('Failed to fetch Threads user info:', threadsErr);
           username = 'Threads User';
+        }
+      } else if (platform === 'spotify') {
+        try {
+          const userResponse = await fetch('https://api.spotify.com/v1/me', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+          });
+          const userData = await userResponse.json();
+          username = userData.display_name || 'Spotify User';
+          platformUserId = userData.id || '';
+          profileUrl = userData.external_urls?.spotify || `https://open.spotify.com/user/${userData.id}`;
+          followerCount = userData.followers?.total || 0;
+          metadata = { email: userData.email, product: userData.product, country: userData.country, imageUrl: userData.images?.[0]?.url };
+        } catch (spotifyErr) {
+          logger.warn('Failed to fetch Spotify user info:', spotifyErr);
+          username = 'Spotify User';
         }
       } else if (platform === 'google' || platform === 'googlebusiness') {
         try {

@@ -246,6 +246,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
       { id: 'linkedin', name: 'LinkedIn' },
       { id: 'threads', name: 'Threads' },
       { id: 'googlebusiness', name: 'Google Business' },
+      { id: 'spotify', name: 'Spotify' },
     ];
     
     const platformStatus = supportedPlatforms.map(platform => {

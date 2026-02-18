@@ -3436,6 +3436,7 @@ export async function registerRoutes(
     { path: '/auth/linkedin/callback', platform: 'linkedin' },
     { path: '/auth/twitter/callback', platform: 'twitter' },
     { path: '/auth/twitter/oauth1/callback', platform: 'twitter' },
+    { path: '/auth/spotify/callback', platform: 'spotify' },
   ];
 
   for (const { path, platform } of oauthCallbackPaths) {
