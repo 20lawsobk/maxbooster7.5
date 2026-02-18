@@ -4,6 +4,7 @@ import { socialAccounts } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { logger } from '../logger';
 import crypto from 'crypto';
+import { TwitterApi } from 'twitter-api-v2';
 
 const router = Router();
 
@@ -276,15 +277,18 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     let codeVerifier: string | undefined;
     
     if (platform === 'twitter') {
-      codeVerifier = generateCodeVerifier();
-      const codeChallenge = generateCodeChallenge(codeVerifier, 'base64url');
-      params.set('response_type', 'code');
-      params.set('client_id', config.clientId);
-      params.set('redirect_uri', redirectUri);
-      params.set('scope', config.scope);
-      params.set('state', state);
-      params.set('code_challenge', codeChallenge);
-      params.set('code_challenge_method', 'S256');
+      const twitterClient = new TwitterApi({
+        clientId: config.clientId!,
+        clientSecret: config.clientSecret!,
+      });
+      const { url: twitterAuthUrl, codeVerifier: twCodeVerifier, state: twState } = twitterClient.generateOAuth2AuthLink(
+        redirectUri,
+        { scope: config.scope.split(' '), state }
+      );
+      codeVerifier = twCodeVerifier;
+      oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
+      logger.info(`[OAuth] Generated Twitter auth URL via twitter-api-v2`, { userId, platform, redirectUri });
+      return res.json({ authUrl: twitterAuthUrl });
     } else if (platform === 'tiktok') {
       if (!config.scope || config.scope.length === 0) {
         throw new Error("TikTok scopes are not configured.");
@@ -383,18 +387,31 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       };
 
       if (platform === 'twitter') {
-        const twitterClientId = (config.clientId || '').trim();
-        const twitterClientSecret = (config.clientSecret || '').trim();
-        tokenParams.set('code_verifier', stateData.codeVerifier || '');
-        if (twitterClientSecret) {
-          const basicAuth = Buffer.from(`${twitterClientId}:${twitterClientSecret}`).toString('base64');
-          headers['Authorization'] = `Basic ${basicAuth}`;
-          logger.info(`[OAuth] Twitter using confidential client Basic auth`, { 
-            clientIdLength: twitterClientId.length, 
-            secretLength: twitterClientSecret.length,
+        try {
+          const twitterClient = new TwitterApi({
+            clientId: config.clientId!,
+            clientSecret: config.clientSecret!,
           });
-        } else {
-          tokenParams.set('client_id', twitterClientId);
+          logger.info(`[OAuth] Twitter token exchange via twitter-api-v2`, { hasCode: !!authCode, hasVerifier: !!stateData.codeVerifier });
+          const { accessToken, refreshToken, expiresIn, client: loggedClient } = await twitterClient.loginWithOAuth2({
+            code: authCode,
+            codeVerifier: stateData.codeVerifier!,
+            redirectUri: redirectUri,
+          });
+          tokenData = {
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            expires_in: expiresIn,
+            token_type: 'bearer',
+          };
+          logger.info(`[OAuth] Twitter token exchange SUCCESS via twitter-api-v2`, { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken, expiresIn });
+        } catch (twitterErr: any) {
+          logger.error(`[OAuth] Twitter token exchange FAILED via twitter-api-v2:`, { 
+            error: twitterErr?.message || twitterErr,
+            data: twitterErr?.data || null,
+            code: twitterErr?.code || null,
+          });
+          return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(twitterErr?.message || 'Twitter authentication failed')}`);
         }
       } else if (platform === 'spotify') {
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
@@ -413,63 +430,34 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
 
       logger.info(`[OAuth] Token exchange for ${platform}`, { redirectUri, hasCode: !!authCode, hasVerifier: !!stateData.codeVerifier });
       
-      let tokenResponse: globalThis.Response;
-      let responseText: string;
+      let tokenResponse: globalThis.Response | undefined;
+      let responseText: string | undefined;
       
-      try {
-        tokenResponse = await fetch(config.tokenUrl, {
-          method: 'POST',
-          headers,
-          body: tokenParams.toString(),
-          signal: AbortSignal.timeout(15000),
-        });
-        responseText = await tokenResponse.text();
-      } catch (fetchErr: any) {
-        logger.error(`[OAuth] Token exchange network error for ${platform}:`, { error: fetchErr?.message || fetchErr, tokenUrl: config.tokenUrl });
-        return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
-      }
-      
-      try {
-        tokenData = JSON.parse(responseText!);
-      } catch {
-        const parsed = new URLSearchParams(responseText!);
-        tokenData = Object.fromEntries(parsed.entries());
-      }
-      
-      logger.info(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
-      
-      if (platform === 'twitter' && tokenResponse!.status === 401 && config.clientSecret) {
-        logger.info(`[OAuth] Twitter confidential client auth failed (401), retrying as public client without Basic auth`);
-        const retryHeaders: Record<string, string> = {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        };
-        const retryParams = new URLSearchParams();
-        retryParams.set('grant_type', 'authorization_code');
-        retryParams.set('code', authCode);
-        retryParams.set('redirect_uri', redirectUri);
-        retryParams.set('client_id', (config.clientId || '').trim());
-        retryParams.set('code_verifier', stateData.codeVerifier || '');
+      if (platform !== 'twitter') {
         try {
           tokenResponse = await fetch(config.tokenUrl, {
             method: 'POST',
-            headers: retryHeaders,
-            body: retryParams.toString(),
+            headers,
+            body: tokenParams.toString(),
             signal: AbortSignal.timeout(15000),
           });
           responseText = await tokenResponse.text();
-          try {
-            tokenData = JSON.parse(responseText);
-          } catch {
-            const parsed = new URLSearchParams(responseText);
-            tokenData = Object.fromEntries(parsed.entries());
-          }
-          logger.info(`[OAuth] Twitter public client retry response:`, { status: tokenResponse.status, ok: tokenResponse.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
-        } catch (retryErr: any) {
-          logger.error(`[OAuth] Twitter public client retry failed:`, { error: retryErr?.message });
+        } catch (fetchErr: any) {
+          logger.error(`[OAuth] Token exchange network error for ${platform}:`, { error: fetchErr?.message || fetchErr, tokenUrl: config.tokenUrl });
+          return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
         }
+        
+        try {
+          tokenData = JSON.parse(responseText!);
+        } catch {
+          const parsed = new URLSearchParams(responseText!);
+          tokenData = Object.fromEntries(parsed.entries());
+        }
+        
+        logger.info(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
       }
 
-      if (!tokenResponse!.ok || tokenData.error) {
+      if (tokenResponse && (!tokenResponse.ok || tokenData?.error)) {
         logger.error(`[OAuth] Token exchange failed for ${platform}:`, { status: tokenResponse!.status, data: tokenData, tokenUrl: config.tokenUrl });
         const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
         return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
