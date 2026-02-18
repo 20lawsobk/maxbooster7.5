@@ -33,7 +33,7 @@ const PLATFORMS = {
   },
   threads: {
     name: 'Threads',
-    authUrl: 'https://threads.net/oauth/authorize',
+    authUrl: 'https://www.threads.net/oauth/authorize',
     tokenUrl: 'https://graph.threads.net/oauth/access_token',
     scope: 'threads_basic,threads_content_publish,threads_manage_replies,threads_read_replies',
     clientId: process.env.THREADS_APP_ID,
@@ -383,11 +383,12 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       };
 
       if (platform === 'twitter') {
-        tokenParams.set('client_id', config.clientId!);
         tokenParams.set('code_verifier', stateData.codeVerifier || '');
         if (config.clientSecret) {
           const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
           headers['Authorization'] = `Basic ${basicAuth}`;
+        } else {
+          tokenParams.set('client_id', config.clientId!);
         }
       } else if (platform === 'spotify') {
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
@@ -419,25 +420,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         responseText = await tokenResponse.text();
       } catch (fetchErr: any) {
         logger.error(`[OAuth] Token exchange network error for ${platform}:`, { error: fetchErr?.message || fetchErr, tokenUrl: config.tokenUrl });
-        if (platform === 'twitter' && fetchErr?.message?.includes('401')) {
-          tokenParams.delete('client_id');
-          tokenParams.set('client_id', config.clientId!);
-          delete headers['Authorization'];
-          try {
-            tokenResponse = await fetch(config.tokenUrl, {
-              method: 'POST',
-              headers,
-              body: tokenParams.toString(),
-              signal: AbortSignal.timeout(15000),
-            });
-            responseText = await tokenResponse.text();
-          } catch (retryErr: any) {
-            logger.error(`[OAuth] Twitter token exchange retry also failed:`, { error: retryErr?.message || retryErr });
-            return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent('Network error connecting to Twitter')}`);
-          }
-        } else {
-          return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
-        }
+        return res.redirect(`${cbBaseUrl}/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
       }
       
       try {
