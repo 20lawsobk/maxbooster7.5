@@ -46,7 +46,7 @@ const PLATFORMS = {
     name: 'TikTok',
     authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
     tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-    scope: 'user.info.basic,video.list',
+    scope: 'user.info.basic',
     clientId: process.env.TIKTOK_CLIENT_KEY1 || process.env.TIKTOK_CLIENT_KEY,
     clientSecret: process.env.TIKTOK_CLIENT_SECRET1 || process.env.TIKTOK_CLIENT_SECRET,
     usePKCE: false,
