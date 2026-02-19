@@ -1,93 +1,50 @@
-# Max Booster
+# Max Booster - AI-Powered Music Career Management Platform
 
 ## Overview
-AI-Powered Music Career Management Platform by B-Lawz Music. A full-stack application with React frontend, Express backend, Rust state management service (BoosterState), and PostgreSQL database.
+Max Booster is a full-stack AI-powered music career management platform. It provides artists with professional AI studio tools, social media management, beat marketplace, analytics, music distribution, and more.
 
-## Project Architecture
+## Architecture
+- **Frontend**: React + Vite + TailwindCSS (client directory)
+- **Backend**: Express.js + TypeScript (server directory)
+- **State Service**: Rust-based "BoosterState" microservice (boosterstate directory) running on port 9877
+- **Database**: PostgreSQL via Drizzle ORM (schema in shared/schema.ts)
+- **Desktop/Mobile**: Electron + Capacitor (android directory)
 
-### Tech Stack
-- **Frontend**: React + TypeScript + Vite + TailwindCSS
-- **Backend**: Express.js (TypeScript) with tsx
-- **State Service**: Rust (BoosterState) - in-memory KV store with WAL on port 9877
-- **Database**: PostgreSQL via Drizzle ORM (Neon serverless driver)
-- **Styling**: TailwindCSS v4
-- **UI Components**: Radix UI, shadcn/ui pattern
-- **Routing**: Wouter
-- **State Management**: Zustand, React Query
-
-### Directory Structure
+## Project Structure
 ```
-├── client/           # React frontend (Vite)
-│   └── src/          # React components, pages, hooks
-├── server/           # Express backend
-│   ├── routes/       # API route handlers
-│   ├── services/     # Business logic services
-│   ├── middleware/    # Express middleware
-│   ├── safety/       # Security middleware
-│   └── realtime/     # WebSocket services
-├── shared/           # Shared types and schema (Drizzle)
-├── boosterstate/     # Rust in-memory state service
-│   └── src/          # Rust source files
-├── assets/           # Static assets
-├── migrations/       # Drizzle database migrations
-└── script/           # Build scripts
+client/          - React frontend (Vite)
+server/          - Express backend (TypeScript)
+shared/          - Shared types and schema (Drizzle ORM)
+boosterstate/    - Rust microservice for state management
+migrations/      - Drizzle database migrations
+assets/          - Static assets (images, icons)
+script/          - Build scripts
 ```
 
-### Key Configuration
-- **Frontend Dev Server**: Vite on port 5000 (proxied through Express in dev)
-- **Backend**: Express on port 5000
-- **BoosterState**: Rust service on port 9877 (localhost)
-- **Database**: PostgreSQL via DATABASE_URL env var
-- **Build**: `cargo build` for Rust + `tsx script/build.ts` for Node
+## Key Configuration
+- Server listens on port 5000 (0.0.0.0)
+- BoosterState Rust service on port 9877 (127.0.0.1)
+- Vite dev server configured with allowedHosts: true for Replit proxy
+- Database schema managed by Drizzle Kit (drizzle.config.ts)
+- esbuild pinned to 0.25.12 for drizzle-kit compatibility
 
-### Development Workflow
-- Dev: `./boosterstate/target/debug/boosterstate & sleep 2 && NODE_ENV=development npx tsx server/index.ts`
-- In dev mode, Vite is used as middleware in Express
-- In production, static files are served from `dist/public`
+## Development
+- Dev command: `./boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts`
+- The Express server serves both API routes and the Vite dev frontend on port 5000
+- DB push: `npx drizzle-kit push`
 
-### Deployment
-- Build: `cargo build --release` + `npx tsx script/build.ts`
-- Run: `./boosterstate/target/release/boosterstate & sleep 3 && NODE_ENV=production node dist/index.cjs`
-- Target: autoscale
-
-### Testing
-- **Framework**: Vitest
-- **Test file**: `tests/critical-paths.test.ts` - 47 tests covering 13 categories
-- **Run**: `npx vitest run --config vite.config.ts --root . tests/critical-paths.test.ts`
-- **Categories**: Registration, Profile, Distribution, Social Media, Billing, Studio, Search, Career Coach, Contracts, Analytics, Security, OAuth, Logout
+## External Services (optional, configured via env vars)
+- Stripe (payments)
+- SendGrid (email)
+- Various social media APIs (Twitter, Facebook, Instagram, TikTok, etc.)
+- Sentry (error tracking)
+- LabelGrid (music distribution)
 
 ## Recent Changes
-- 2026-02-18: OAuth platform fixes:
-  - TikTok: Reduced scopes to `user.info.basic,video.list` (removed unapproved `user.info.profile,user.info.stats`)
-  - Twitter: Updated auth/token URLs from x.com to twitter.com/api.twitter.com for reliability
-  - Threads: Removed fallback to Facebook App ID, reduced scopes (removed `threads_manage_insights`), made enabled conditional on THREADS_APP_ID
-  - Spotify: Added full OAuth flow (auth URL, token exchange with Basic auth, profile fetching, callback route, platform-status)
-  - All 123 tests still passing
-- 2026-02-18: Production readiness VERIFIED - 123 tests all passing:
-  - Stripe checkout confirmed operational: creates real checkout.stripe.com sessions for all 3 plans
-  - Subscription status returns full plan details, pricing, and upgrade options with stripeConfigured: true
-  - Distribution release creation returns 200 with full metadata (title, status, artist info)
-  - Search routes fixed: added root redirect to /unified, search/suggestions/autocomplete all functional
-  - Collaboration routes confirmed working at /api/collaborations/connections
-  - Billing checkout error format standardized (code: STRIPE_NOT_CONFIGURED across all paths)
-  - Test suite expanded to 123 tests (47 critical-path + 76 paid-user E2E) with strict success assertions
-  - All Stripe endpoints tested: checkout (all plans), subscription, history, payment method, cancel
-  - All OAuth callbacks verified for: Meta, Twitter, YouTube, TikTok, Spotify, LinkedIn, Threads
-  - Security: SQL injection, XSS, path traversal, malformed JSON all blocked
-  - Email service: SendGrid with circuit breaker pattern for resilience
-- 2026-02-18: Production hardening phase 2:
-  - Redis-backed rate limiters on auth endpoints (login: 5/15min, register: 3/hr, password reset: 3/hr)
-  - Dynamic trending hashtags with time-based algorithm (20+ music-specific hashtags, varies by time of day)
-  - SendGrid welcome email on registration (non-blocking, via EmailService with circuit breaker)
-  - Comprehensive automated test suite: 47 tests across 13 categories, all passing
-  - Test coverage: registration/auth, profile, distribution, social media, billing, studio, search, career coach, contracts, analytics, security, OAuth, logout
-- 2026-02-18: Production-readiness fixes:
-  - Fixed distribution releases route to query correct table (`distroReleases` not `releases`)
-  - Fixed HyperFollow analytics route ordering to prevent route parameter conflict
-  - Added missing `/api/social/schedule-post` POST endpoint for post scheduling
-  - Added missing `/api/social/calendar/:postId/publish` POST endpoint for post publishing
-  - Added missing `/api/social/hashtags/trending` GET endpoint for trending hashtags
-  - Added XSS sanitization (HTML tag stripping) to profile update endpoint
-  - Scoped post publish update query by both postId and userId for security
-  - Comprehensive endpoint validation: 30+ endpoints verified across all 9 major feature areas
-- 2026-02-17: Initial Replit setup - installed Node.js 20, Rust stable, PostgreSQL, npm dependencies. Built Rust service, pushed DB schema, configured workflow and deployment.
+- 2026-02-19: Initial Replit environment setup
+  - Installed Node.js 20 and Rust stable
+  - Created PostgreSQL database
+  - Pushed Drizzle schema
+  - Built Rust boosterstate service
+  - Pinned esbuild to 0.25.12 for drizzle-kit compatibility
+  - Configured workflow and deployment
