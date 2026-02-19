@@ -46,7 +46,9 @@ async function getMetaForPath(reqPath: string): Promise<{ title: string; descrip
         url: `${SITE_URL}/marketplace`,
       };
     }
-  } catch {}
+  } catch (error) {
+    console.error('[Static] Error fetching metadata for path:', reqPath, error instanceof Error ? error.message : String(error));
+  }
   return null;
 }
 

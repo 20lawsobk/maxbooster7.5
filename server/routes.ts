@@ -60,7 +60,13 @@ async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promis
     log(`Warning: ${name} doesn't export a router or setup function`);
     return { type: 'skip', value: null };
   } catch (error: any) {
-    log(`Warning: Could not load ${name} - ${error.message}`);
+    const criticalRoutes = ['auth', 'billing', 'stripeWebhook', 'admin', 'security', 'storage'];
+    if (criticalRoutes.includes(name)) {
+      log(`ERROR: Critical route '${name}' failed to load - ${error.message}`);
+      console.error(`[routes] CRITICAL route loading failure for '${name}':`, error.stack || error.message);
+    } else {
+      log(`Warning: Could not load ${name} - ${error.message}`);
+    }
     return null;
   }
 }

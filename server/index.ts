@@ -159,7 +159,8 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        const responseStr = JSON.stringify(capturedJsonResponse);
+        logLine += ` :: ${responseStr.length > 500 ? responseStr.substring(0, 500) + '...[truncated]' : responseStr}`;
       }
 
       log(logLine);
@@ -416,11 +417,16 @@ app.use((req, res, next) => {
     return next();
   });
 
-  // MANDATORY global error handler (from safety module)
-  app.use(safetyErrorHandler);
+  // SEO routes must be registered before global error handler so their errors are caught
+  try {
+    const seoRoutes = (await import('./routes/seo.js')).default;
+    app.use(seoRoutes);
+  } catch (e: any) {
+    logger.warn(`⚠️ SEO routes not available: ${e.message}`);
+  }
 
-  const seoRoutes = (await import('./routes/seo.js')).default;
-  app.use(seoRoutes);
+  // MANDATORY global error handler (from safety module) - must be LAST middleware
+  app.use(safetyErrorHandler);
 
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
@@ -550,4 +556,7 @@ app.use((req, res, next) => {
       });
     },
   );
-})();
+})().catch((error) => {
+  console.error('❌ FATAL: Server startup failed:', error);
+  process.exit(1);
+});
