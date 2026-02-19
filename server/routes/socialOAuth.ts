@@ -127,11 +127,11 @@ const PLATFORMS = {
     authUrl: 'https://twitter.com/i/oauth2/authorize',
     tokenUrl: 'https://api.x.com/2/oauth2/token',
     scope: 'tweet.read tweet.write users.read follows.read follows.write offline.access',
-    clientId: process.env.TWITTER_API_KEY,
-    clientSecret: process.env.TWITTER_API_SECRET,
+    clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY,
+    clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET,
     usePKCE: true,
     responseType: 'code',
-    enabled: !!(process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET),
+    enabled: !!(process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY),
   },
   spotify: {
     name: 'Spotify',
@@ -396,44 +396,31 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
 
       if (platform === 'twitter') {
         try {
-          logger.info(`[OAuth] Twitter token exchange (public client mode)`, { 
+          logger.info(`[OAuth] Twitter token exchange via twitter-api-v2`, { 
             hasCode: !!authCode, 
             hasVerifier: !!stateData.codeVerifier,
             redirectUri,
           });
-          const tokenBody: Record<string, string> = {
-            client_id: config.clientId!,
-            grant_type: 'authorization_code',
-            code: authCode,
-            redirect_uri: redirectUri,
-            code_verifier: stateData.codeVerifier!,
-          };
-          const twitterTokenResponse = await fetch('https://api.x.com/2/oauth2/token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams(tokenBody).toString(),
+          const twitterClient = new TwitterApi({
+            clientId: config.clientId!,
+            clientSecret: config.clientSecret!,
           });
-          const twitterTokenData = await twitterTokenResponse.json() as any;
-          if (!twitterTokenResponse.ok || !twitterTokenData.access_token) {
-            logger.error(`[OAuth] Twitter token exchange FAILED:`, { 
-              status: twitterTokenResponse.status,
-              error: twitterTokenData?.error,
-              description: twitterTokenData?.error_description,
-            });
-            return res.redirect(`/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(twitterTokenData?.error_description || 'Twitter authentication failed')}`);
-          }
+          const { accessToken, refreshToken, expiresIn } = await twitterClient.loginWithOAuth2({
+            code: authCode,
+            codeVerifier: stateData.codeVerifier!,
+            redirectUri,
+          });
           tokenData = {
-            access_token: twitterTokenData.access_token,
-            refresh_token: twitterTokenData.refresh_token,
-            expires_in: twitterTokenData.expires_in,
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            expires_in: expiresIn,
             token_type: 'bearer',
           };
           logger.info(`[OAuth] Twitter token exchange SUCCESS`, { hasAccessToken: !!tokenData.access_token, hasRefreshToken: !!tokenData.refresh_token, expiresIn: tokenData.expires_in });
         } catch (twitterErr: any) {
           logger.error(`[OAuth] Twitter token exchange ERROR:`, { 
             error: twitterErr?.message || twitterErr,
+            data: twitterErr?.data,
           });
           return res.redirect(`/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(twitterErr?.message || 'Twitter authentication failed')}`);
         }

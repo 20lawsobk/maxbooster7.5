@@ -280,8 +280,8 @@ export class SocialOAuthService {
 
     // Twitter/X OAuth
     this.oauthConfigs.set('twitter', {
-      clientId: process.env.TWITTER_API_KEY || process.env.TWITTER_CLIENT_ID || '',
-      clientSecret: process.env.TWITTER_API_SECRET || process.env.TWITTER_CLIENT_SECRET || '',
+      clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || '',
+      clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET || '',
       authUrl: 'https://twitter.com/i/oauth2/authorize',
       tokenUrl: 'https://api.x.com/2/oauth2/token',
       scopes: ['tweet.read', 'tweet.write', 'users.read', 'follows.read', 'follows.write', 'offline.access'],
@@ -491,7 +491,10 @@ export class SocialOAuthService {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
 
-      if (platform !== 'twitter') {
+      if (platform === 'twitter') {
+        const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
+        headers['Authorization'] = `Basic ${credentials}`;
+      } else {
         refreshParams.client_secret = config.clientSecret;
       }
 
