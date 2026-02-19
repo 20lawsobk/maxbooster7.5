@@ -54,7 +54,12 @@ script/          - Build scripts
 - API response caching (8 routes cached)
 
 ## Recent Changes
-- 2026-02-19: Production hardening pass
+- 2026-02-19: Production hardening pass (phase 2)
+  - Fixed SMS verification code leak (was logging actual codes to console)
+  - Added try/catch to 8 route files (55+ handlers): artistProgress, careerCoach, executiveDashboard, growth, monitoring, organic, releaseCountdown, revenueForecast
+  - Added global MutationCache onError handler - all 390 mutations now show toast errors
+  - Verified promise handling in search.ts (Promise.all covers .then chains)
+- 2026-02-19: Production hardening pass (phase 1)
   - Fixed 7 critical and 13 high-severity security vulnerabilities
   - Added XSS prevention (HTML/regex escaping) to search autocomplete
   - Added IDOR protection to pocket dimension routes
