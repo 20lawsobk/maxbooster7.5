@@ -392,7 +392,7 @@ fetch('https://your-domain.com/api/v1/analytics/streams', {
   }
 })
 .then(response => response.json())
-.then(data => console.log(data));
+.then(data => { /* process data */ });
       `.trim(),
       python: `
 import requests

@@ -5,6 +5,7 @@
 import { Router, Request, Response } from 'express';
 import { aiHelpDeskService } from '../services/aiHelpDeskService';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
+import { logger } from '../logger.js';
 import crypto from 'crypto';
 
 const router = Router();
@@ -53,7 +54,7 @@ router.post('/chat', async (req: Request, res: Response) => {
       ...response
     });
   } catch (error) {
-    console.error('Help desk chat error:', error);
+    logger.error('Help desk chat error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to process message'
@@ -83,7 +84,7 @@ router.post('/escalate', async (req: Request, res: Response) => {
       ...result
     });
   } catch (error) {
-    console.error('Escalation error:', error);
+    logger.error('Escalation error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to escalate'

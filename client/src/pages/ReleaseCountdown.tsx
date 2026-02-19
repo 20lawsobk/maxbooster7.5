@@ -99,7 +99,7 @@ export default function ReleaseCountdown() {
     releaseDate: '',
   });
 
-  const { data: releasesData, isLoading } = useQuery<{ countdowns: Release[] }>({
+  const { data: releasesData, isLoading, isError } = useQuery<{ countdowns: Release[] }>({
     queryKey: ['/api/countdowns'],
     enabled: !!user,
   });
@@ -145,6 +145,14 @@ export default function ReleaseCountdown() {
   if (!user) {
     setLocation('/login');
     return null;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
   }
 
   const releases = releasesData?.countdowns || [];

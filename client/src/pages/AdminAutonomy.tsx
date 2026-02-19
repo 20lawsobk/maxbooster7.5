@@ -23,6 +23,7 @@ export default function AdminAutonomy() {
   const {
     data: autopilotStatus,
     isLoading: autopilotLoading,
+    isError: autopilotIsError,
     error: autopilotError,
   } = useQuery({ queryKey: autopilotKey });
   const {

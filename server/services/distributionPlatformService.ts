@@ -1,4 +1,5 @@
 import { storage } from '../storage';
+import { logger } from '../logger.js';
 
 interface SubmissionResult {
   dispatchId: string;
@@ -64,7 +65,7 @@ export async function submitToProvider(
       status: 'processing',
       logs: `${dispatch.logs}\nProcessing started at ${new Date().toISOString()}`,
     }).catch((err) => {
-      console.error(`Failed to update dispatch ${dispatch.id} status:`, err);
+      logger.error(`Failed to update dispatch ${dispatch.id} status:`, err);
     });
   }, 1000);
 

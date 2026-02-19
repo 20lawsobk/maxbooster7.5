@@ -29,19 +29,24 @@ const requireAdmin = (req: Request, res: Response, next: Function) => {
  * Get current kill switch state
  */
 router.get('/status', requireAdmin, (req: Request, res: Response) => {
-  const state = killSwitch.getState();
-  
-  res.json({
-    success: true,
-    data: {
-      globalKilled: state.globalKilled,
-      systemStates: Object.fromEntries(state.systemStates),
-      lastKillTime: state.lastKillTime,
-      lastResumeTime: state.lastResumeTime,
-      killReason: state.killReason,
-      killedBy: state.killedBy,
-    },
-  });
+  try {
+    const state = killSwitch.getState();
+    
+    res.json({
+      success: true,
+      data: {
+        globalKilled: state.globalKilled,
+        systemStates: Object.fromEntries(state.systemStates),
+        lastKillTime: state.lastKillTime,
+        lastResumeTime: state.lastResumeTime,
+        killReason: state.killReason,
+        killedBy: state.killedBy,
+      },
+    });
+  } catch (error: any) {
+    logger.error('[KillSwitch] Failed to get status:', error);
+    res.status(500).json({ success: false, error: 'Failed to get kill switch status' });
+  }
 });
 
 /**
@@ -49,25 +54,30 @@ router.get('/status', requireAdmin, (req: Request, res: Response) => {
  * Emergency stop all autonomous systems
  */
 router.post('/kill-all', requireAdmin, (req: Request, res: Response) => {
-  const user = req.user as any;
-  const { reason } = req.body;
+  try {
+    const user = req.user as any;
+    const { reason } = req.body;
 
-  if (!reason || typeof reason !== 'string' || reason.length < 5) {
-    return res.status(400).json({
-      success: false,
-      error: 'A reason (min 5 characters) is required for kill switch activation',
+    if (!reason || typeof reason !== 'string' || reason.length < 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'A reason (min 5 characters) is required for kill switch activation',
+      });
+    }
+
+    const success = killSwitch.killAll(reason, user.email || user.id);
+
+    res.json({
+      success,
+      message: success 
+        ? 'All autonomous systems have been stopped' 
+        : 'Some systems failed to stop - check logs',
+      state: killSwitch.getState(),
     });
+  } catch (error: any) {
+    logger.error('[KillSwitch] Failed to kill all:', error);
+    res.status(500).json({ success: false, error: 'Failed to activate kill switch' });
   }
-
-  const success = killSwitch.killAll(reason, user.email || user.id);
-
-  res.json({
-    success,
-    message: success 
-      ? 'All autonomous systems have been stopped' 
-      : 'Some systems failed to stop - check logs',
-    state: killSwitch.getState(),
-  });
 });
 
 /**
@@ -75,25 +85,30 @@ router.post('/kill-all', requireAdmin, (req: Request, res: Response) => {
  * Resume all autonomous systems
  */
 router.post('/resume-all', requireAdmin, (req: Request, res: Response) => {
-  const user = req.user as any;
-  const { reason } = req.body;
+  try {
+    const user = req.user as any;
+    const { reason } = req.body;
 
-  if (!reason || typeof reason !== 'string' || reason.length < 5) {
-    return res.status(400).json({
-      success: false,
-      error: 'A reason (min 5 characters) is required for resuming systems',
+    if (!reason || typeof reason !== 'string' || reason.length < 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'A reason (min 5 characters) is required for resuming systems',
+      });
+    }
+
+    const success = killSwitch.resumeAll(reason, user.email || user.id);
+
+    res.json({
+      success,
+      message: success 
+        ? 'All autonomous systems have been resumed' 
+        : 'Some systems failed to resume - check logs',
+      state: killSwitch.getState(),
     });
+  } catch (error: any) {
+    logger.error('[KillSwitch] Failed to resume all:', error);
+    res.status(500).json({ success: false, error: 'Failed to resume systems' });
   }
-
-  const success = killSwitch.resumeAll(reason, user.email || user.id);
-
-  res.json({
-    success,
-    message: success 
-      ? 'All autonomous systems have been resumed' 
-      : 'Some systems failed to resume - check logs',
-    state: killSwitch.getState(),
-  });
 });
 
 /**
@@ -101,26 +116,31 @@ router.post('/resume-all', requireAdmin, (req: Request, res: Response) => {
  * Kill a specific autonomous system
  */
 router.post('/kill/:system', requireAdmin, (req: Request, res: Response) => {
-  const user = req.user as any;
-  const systemName = req.params.system as AutonomousSystemName;
-  const { reason } = req.body;
+  try {
+    const user = req.user as any;
+    const systemName = req.params.system as AutonomousSystemName;
+    const { reason } = req.body;
 
-  if (!reason || typeof reason !== 'string' || reason.length < 5) {
-    return res.status(400).json({
-      success: false,
-      error: 'A reason (min 5 characters) is required',
+    if (!reason || typeof reason !== 'string' || reason.length < 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'A reason (min 5 characters) is required',
+      });
+    }
+
+    const success = killSwitch.killSystem(systemName, reason, user.email || user.id);
+
+    res.json({
+      success,
+      message: success 
+        ? `System ${systemName} has been stopped` 
+        : `Failed to stop ${systemName}`,
+      state: killSwitch.getState(),
     });
+  } catch (error: any) {
+    logger.error(`[KillSwitch] Failed to kill system ${req.params.system}:`, error);
+    res.status(500).json({ success: false, error: 'Failed to stop system' });
   }
-
-  const success = killSwitch.killSystem(systemName, reason, user.email || user.id);
-
-  res.json({
-    success,
-    message: success 
-      ? `System ${systemName} has been stopped` 
-      : `Failed to stop ${systemName}`,
-    state: killSwitch.getState(),
-  });
 });
 
 /**
@@ -128,26 +148,31 @@ router.post('/kill/:system', requireAdmin, (req: Request, res: Response) => {
  * Resume a specific autonomous system
  */
 router.post('/resume/:system', requireAdmin, (req: Request, res: Response) => {
-  const user = req.user as any;
-  const systemName = req.params.system as AutonomousSystemName;
-  const { reason } = req.body;
+  try {
+    const user = req.user as any;
+    const systemName = req.params.system as AutonomousSystemName;
+    const { reason } = req.body;
 
-  if (!reason || typeof reason !== 'string' || reason.length < 5) {
-    return res.status(400).json({
-      success: false,
-      error: 'A reason (min 5 characters) is required',
+    if (!reason || typeof reason !== 'string' || reason.length < 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'A reason (min 5 characters) is required',
+      });
+    }
+
+    const success = killSwitch.resumeSystem(systemName, reason, user.email || user.id);
+
+    res.json({
+      success,
+      message: success 
+        ? `System ${systemName} has been resumed` 
+        : `Failed to resume ${systemName}`,
+      state: killSwitch.getState(),
     });
+  } catch (error: any) {
+    logger.error(`[KillSwitch] Failed to resume system ${req.params.system}:`, error);
+    res.status(500).json({ success: false, error: 'Failed to resume system' });
   }
-
-  const success = killSwitch.resumeSystem(systemName, reason, user.email || user.id);
-
-  res.json({
-    success,
-    message: success 
-      ? `System ${systemName} has been resumed` 
-      : `Failed to resume ${systemName}`,
-    state: killSwitch.getState(),
-  });
 });
 
 /**
@@ -155,14 +180,19 @@ router.post('/resume/:system', requireAdmin, (req: Request, res: Response) => {
  * Get kill switch audit log
  */
 router.get('/audit-log', requireAdmin, (req: Request, res: Response) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
-  const auditLog = killSwitch.getAuditLog(limit);
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+    const auditLog = killSwitch.getAuditLog(limit);
 
-  res.json({
-    success: true,
-    data: auditLog,
-    total: auditLog.length,
-  });
+    res.json({
+      success: true,
+      data: auditLog,
+      total: auditLog.length,
+    });
+  } catch (error: any) {
+    logger.error('[KillSwitch] Failed to get audit log:', error);
+    res.status(500).json({ success: false, error: 'Failed to get audit log' });
+  }
 });
 
 export default router;

@@ -418,7 +418,7 @@ export default function Advertisement() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery<AdCampaign[]>({
+  const { data: campaigns = [], isLoading: campaignsLoading, isError: advertError } = useQuery<AdCampaign[]>({
     queryKey: ['/api/advertising/campaigns'],
     enabled: !!user,
   });
@@ -504,6 +504,14 @@ export default function Advertisement() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (advertError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
       </div>
     );
   }

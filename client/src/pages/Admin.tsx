@@ -215,7 +215,7 @@ export default function Admin() {
   const [killSwitchReason, setKillSwitchReason] = useState('');
   const [killSwitchTarget, setKillSwitchTarget] = useState<'all' | string>('all');
 
-  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery<UsersResponse>({
+  const { data: usersData, isLoading: usersLoading, isError: usersError, refetch: refetchUsers } = useQuery<UsersResponse>({
     queryKey: ['/api/admin/users', { search: searchTerm, status: statusFilter, plan: planFilter }],
     enabled: !!user,
   });
@@ -359,6 +359,14 @@ export default function Admin() {
   }
 
   if (!user) return null;
+
+  if (usersError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
+  }
 
   const users = usersData?.users || [];
   const reports = moderationReports?.reports || [];

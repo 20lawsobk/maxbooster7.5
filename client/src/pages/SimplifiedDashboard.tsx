@@ -13,7 +13,7 @@ export default function SimplifiedDashboard() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: onboardingStatus } = useQuery({
+  const { data: onboardingStatus, isError } = useQuery({
     queryKey: ['/api/auth/onboarding-status'],
     enabled: !!user,
   });
@@ -63,6 +63,14 @@ export default function SimplifiedDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
       </div>
     );
   }
