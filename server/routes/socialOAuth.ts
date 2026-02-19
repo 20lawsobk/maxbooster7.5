@@ -284,7 +284,6 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     if (platform === 'twitter') {
       const twitterClient = new TwitterApi({
         clientId: config.clientId!,
-        clientSecret: config.clientSecret!,
       });
       const { url: twitterAuthUrl, codeVerifier: twCodeVerifier, state: twState } = twitterClient.generateOAuth2AuthLink(
         redirectUri,
@@ -403,7 +402,6 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           });
           const twitterClient = new TwitterApi({
             clientId: config.clientId!,
-            clientSecret: config.clientSecret!,
           });
           const { accessToken, refreshToken, expiresIn } = await twitterClient.loginWithOAuth2({
             code: authCode,
