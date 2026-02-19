@@ -1991,6 +1991,30 @@ export default function SocialMedia() {
                                     Your browser does not support the video element.
                                   </video>
                                 </div>
+                              ) : item.format === 'video' && !item.mediaUrl ? (
+                                <div className="mb-2">
+                                  <VideoContentGenerator
+                                    platform={(item.platform === 'twitter' ? 'twitter' :
+                                              item.platform === 'instagram' ? 'instagram' :
+                                              item.platform === 'meta' ? 'instagram' :
+                                              item.platform === 'tiktok' ? 'tiktok' :
+                                              item.platform === 'youtube' ? 'youtube' :
+                                              item.platform === 'facebook' ? 'facebook' :
+                                              item.platform === 'linkedin' ? 'linkedin' :
+                                              'instagram') as VideoGeneratorPlatform}
+                                    contentText={item.content || 'Create engaging content'}
+                                    artistName={user?.displayName || user?.username || 'Artist'}
+                                    onVideoGenerated={async (videoUrl: string, blob: Blob) => {
+                                      const updated = [...urlGeneratedContent];
+                                      updated[index] = { ...updated[index], mediaUrl: videoUrl };
+                                      setUrlGeneratedContent(updated);
+                                      toast({
+                                        title: 'Video Ready!',
+                                        description: `Video generated for ${platform?.name || item.platform}.`,
+                                      });
+                                    }}
+                                  />
+                                </div>
                               ) : null}
 
                               <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">

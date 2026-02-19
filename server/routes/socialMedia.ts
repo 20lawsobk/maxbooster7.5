@@ -990,6 +990,7 @@ router.post('/generate-content', requireAuth, async (req: AuthenticatedRequest, 
           generatedContent.push({
             platform,
             caption: result.data.caption,
+            content: result.data.caption,
             hashtags: result.data.hashtags,
             emojis: result.data.emojis,
             characterCount: result.data.characterCount,
@@ -1280,9 +1281,11 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
       });
 
       if (result.success && result.data) {
+        const captionText = result.data.caption + `\n\n🔗 ${url}`;
         generatedContent.push({
           platform,
-          caption: result.data.caption + `\n\n🔗 ${url}`,
+          caption: captionText,
+          content: captionText,
           hashtags: result.data.hashtags,
           emojis: result.data.emojis,
           characterCount: result.data.characterCount,
