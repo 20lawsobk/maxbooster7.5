@@ -53,8 +53,8 @@ const PLATFORMS = {
       ? (process.env.TIKTOK_SANDBOX_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET)
       : (process.env.TIKTOK_PROD_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET);
     const scopes = env === 'sandbox'
-      ? process.env.TIKTOK_SANDBOX_SCOPES
-      : process.env.TIKTOK_PROD_SCOPES;
+      ? (process.env.TIKTOK_SANDBOX_SCOPES || 'user.info.basic,video.publish,video.upload')
+      : (process.env.TIKTOK_PROD_SCOPES || 'user.info.basic,video.publish,video.upload');
     return {
       name: isSandbox ? 'TikTok (Sandbox)' : 'TikTok',
       authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
@@ -390,25 +390,24 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
 
       if (platform === 'twitter') {
         try {
-          const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
-          logger.info(`[OAuth] Twitter token exchange via manual Basic Auth`, { 
+          logger.info(`[OAuth] Twitter token exchange (public client mode)`, { 
             hasCode: !!authCode, 
             hasVerifier: !!stateData.codeVerifier,
             redirectUri,
-            clientIdPrefix: config.clientId?.substring(0, 8),
           });
+          const tokenBody: Record<string, string> = {
+            client_id: config.clientId!,
+            grant_type: 'authorization_code',
+            code: authCode,
+            redirect_uri: redirectUri,
+            code_verifier: stateData.codeVerifier!,
+          };
           const twitterTokenResponse = await fetch('https://api.x.com/2/oauth2/token', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
-              'Authorization': `Basic ${basicAuth}`,
             },
-            body: new URLSearchParams({
-              code: authCode,
-              grant_type: 'authorization_code',
-              redirect_uri: redirectUri,
-              code_verifier: stateData.codeVerifier!,
-            }).toString(),
+            body: new URLSearchParams(tokenBody).toString(),
           });
           const twitterTokenData = await twitterTokenResponse.json() as any;
           if (!twitterTokenResponse.ok || !twitterTokenData.access_token) {

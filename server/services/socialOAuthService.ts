@@ -280,11 +280,11 @@ export class SocialOAuthService {
 
     // Twitter/X OAuth
     this.oauthConfigs.set('twitter', {
-      clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || '',
-      clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET || '',
+      clientId: process.env.TWITTER_API_KEY || process.env.TWITTER_CLIENT_ID || '',
+      clientSecret: process.env.TWITTER_API_SECRET || process.env.TWITTER_CLIENT_SECRET || '',
       authUrl: 'https://twitter.com/i/oauth2/authorize',
-      tokenUrl: 'https://api.twitter.com/2/oauth2/token',
-      scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
+      tokenUrl: 'https://api.x.com/2/oauth2/token',
+      scopes: ['tweet.read', 'tweet.write', 'users.read', 'follows.read', 'follows.write', 'offline.access'],
       redirectUri: `${getOAuthDomain()}/auth/twitter/callback`,
     });
 
@@ -343,7 +343,7 @@ export class SocialOAuthService {
       clientSecret: process.env.TIKTOK_CLIENT_SECRET || '',
       authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
       tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-      scopes: ['user.info.basic', 'video.list', 'video.publish'],
+      scopes: ['user.info.basic', 'video.publish', 'video.upload'],
       redirectUri: `${getOAuthDomain()}/auth/tiktok/callback`,
     });
 
@@ -353,7 +353,7 @@ export class SocialOAuthService {
         clientSecret: process.env.TIKTOK_CLIENT_SECRET1,
         authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
         tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-        scopes: ['user.info.basic', 'video.list', 'video.publish'],
+        scopes: ['user.info.basic', 'video.publish', 'video.upload'],
         redirectUri: `${getOAuthDomain()}/auth/tiktok/callback`,
       });
     }
@@ -487,10 +487,7 @@ export class SocialOAuthService {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
 
-      if (platform === 'twitter') {
-        const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
-        headers['Authorization'] = `Basic ${credentials}`;
-      } else {
+      if (platform !== 'twitter') {
         refreshParams.client_secret = config.clientSecret;
       }
 
