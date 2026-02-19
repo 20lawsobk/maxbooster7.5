@@ -4,7 +4,6 @@ import { socialAccounts } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { logger } from '../logger';
 import crypto from 'crypto';
-import { TwitterApi } from 'twitter-api-v2';
 
 const router = Router();
 
@@ -282,16 +281,21 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     let codeVerifier: string | undefined;
     
     if (platform === 'twitter') {
-      const twitterClient = new TwitterApi({
-        clientId: config.clientId!,
-      });
-      const { url: twitterAuthUrl, codeVerifier: twCodeVerifier, state: twState } = twitterClient.generateOAuth2AuthLink(
-        redirectUri,
-        { scope: config.scope.split(' '), state }
-      );
+      const twCodeVerifier = crypto.randomBytes(32).toString('base64url');
+      const codeChallenge = crypto.createHash('sha256').update(twCodeVerifier).digest('base64url');
       codeVerifier = twCodeVerifier;
+      const twitterAuthParams = new URLSearchParams({
+        response_type: 'code',
+        client_id: config.clientId!,
+        redirect_uri: redirectUri,
+        state,
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+        scope: config.scope,
+      });
+      const twitterAuthUrl = `https://x.com/i/oauth2/authorize?${twitterAuthParams.toString()}`;
       oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
-      logger.info(`[OAuth] Generated Twitter auth URL via twitter-api-v2`, { userId, platform, redirectUri });
+      logger.info(`[OAuth] Generated Twitter auth URL (direct)`, { userId, platform, redirectUri });
       return res.json({ authUrl: twitterAuthUrl });
     } else if (platform === 'tiktok') {
       if (!config.scope || config.scope.length === 0) {
@@ -395,7 +399,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
 
       if (platform === 'twitter') {
         try {
-          logger.info(`[OAuth] Twitter token exchange (public client, direct fetch)`, { 
+          logger.info(`[OAuth] Twitter token exchange (direct fetch)`, { 
             hasCode: !!authCode, 
             hasVerifier: !!stateData.codeVerifier,
             redirectUri,
@@ -404,12 +408,15 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             grant_type: 'authorization_code',
             code: authCode,
             redirect_uri: redirectUri,
-            client_id: config.clientId!,
             code_verifier: stateData.codeVerifier!,
           });
+          const twitterBasicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
           const twitterTokenRes = await fetch('https://api.x.com/2/oauth2/token', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Authorization': `Basic ${twitterBasicAuth}`,
+            },
             body: twitterTokenBody.toString(),
           });
           const twitterTokenJson = await twitterTokenRes.json() as any;
