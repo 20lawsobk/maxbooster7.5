@@ -7,6 +7,20 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlightMatch(text: string, query: string): string {
+  const safeText = escapeHtml(text);
+  const safeQuery = escapeRegex(query);
+  return safeText.replace(new RegExp(`(${safeQuery})`, 'gi'), '<mark>$1</mark>');
+}
+
 interface SearchQuery {
   q: string;
   type?: 'all' | 'tracks' | 'beats' | 'users' | 'projects' | 'releases';
@@ -448,10 +462,7 @@ router.get('/autocomplete', async (req: Request, res: Response) => {
       .map(text => ({
         text,
         type: text.startsWith('@') ? 'user' : 'query',
-        highlighted: text.replace(
-          new RegExp(`(${query})`, 'gi'),
-          '<mark>$1</mark>'
-        ),
+        highlighted: highlightMatch(text, query),
       }))
       .slice(0, Number(limit));
     
@@ -894,7 +905,7 @@ router.get('/suggestions', async (req: Request, res: Response) => {
         suggestions.push({
           text: b.title,
           type: 'beat',
-          highlighted: b.title.replace(new RegExp(`(${query})`, 'gi'), '<mark>$1</mark>'),
+          highlighted: highlightMatch(b.title, query),
         });
       }
     });
@@ -909,7 +920,7 @@ router.get('/suggestions', async (req: Request, res: Response) => {
         suggestions.push({
           text: u.username,
           type: 'user',
-          highlighted: u.username.replace(new RegExp(`(${query})`, 'gi'), '<mark>$1</mark>'),
+          highlighted: highlightMatch(u.username, query),
         });
       }
     });
@@ -924,7 +935,7 @@ router.get('/suggestions', async (req: Request, res: Response) => {
         suggestions.push({
           text: g.genre,
           type: 'genre',
-          highlighted: g.genre.replace(new RegExp(`(${query})`, 'gi'), '<mark>$1</mark>'),
+          highlighted: highlightMatch(g.genre, query),
         });
       }
     });
@@ -933,7 +944,7 @@ router.get('/suggestions', async (req: Request, res: Response) => {
       suggestions.unshift({
         text: query,
         type: 'hashtag',
-        highlighted: query,
+        highlighted: escapeHtml(query),
       });
     }
     
