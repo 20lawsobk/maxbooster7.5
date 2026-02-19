@@ -3,6 +3,7 @@ import { storage } from '../storage';
 import { logger } from '../logger';
 import { competitorBenchmarkService } from '../services/competitorBenchmarkService';
 import { unifiedAIController } from '../services/unifiedAIController';
+import { pythonAIService } from '../services/pythonAIService';
 import { db } from '../db';
 import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
@@ -973,35 +974,65 @@ router.post('/generate-content', requireAuth, async (req: AuthenticatedRequest, 
     const generatedContent = [];
     const failedPlatforms = [];
 
-    for (const platform of platforms) {
-      if (!validPlatforms.includes(platform)) continue;
+    const pyAvailable = await pythonAIService.isAvailable();
 
-      try {
-        const result = await unifiedAIController.generateContent({
-          tone: validTones.includes(tone) ? tone : 'energetic',
-          platform,
-          topic: topic || 'music',
-          contentType: contentTypeMap[contentType] || 'engagement',
-          includeHashtags: true,
-          includeEmojis: true,
-        });
+    if (pyAvailable) {
+      const pyResult = await pythonAIService.generateMultiPlatform({
+        platforms,
+        topic: topic || 'music',
+        tone: validTones.includes(tone) ? tone : 'energetic',
+        goal: 'growth',
+      });
 
-        if (result.success && result.data) {
+      if (pyResult.success && pyResult.data?.generated_content) {
+        for (const item of pyResult.data.generated_content) {
           generatedContent.push({
-            platform,
-            caption: result.data.caption,
-            content: result.data.caption,
-            hashtags: result.data.hashtags,
-            emojis: result.data.emojis,
-            characterCount: result.data.characterCount,
-            estimatedEngagement: result.data.estimatedEngagement,
-            optimalPostTime: getOptimalPostTime(platform),
+            platform: item.platform,
+            caption: item.caption,
+            content: item.content,
+            hashtags: item.hashtags,
+            hook: item.hook,
+            body: item.body,
+            cta: item.cta,
+            optimalPostTime: getOptimalPostTime(item.platform),
+            source: 'python_ai_model',
           });
-        } else {
-          failedPlatforms.push({ platform, error: 'Generation failed' });
         }
-      } catch (err) {
-        failedPlatforms.push({ platform, error: 'Service temporarily unavailable' });
+      }
+    }
+
+    if (generatedContent.length === 0) {
+      for (const platform of platforms) {
+        if (!validPlatforms.includes(platform)) continue;
+
+        try {
+          const result = await unifiedAIController.generateContent({
+            tone: validTones.includes(tone) ? tone : 'energetic',
+            platform,
+            topic: topic || 'music',
+            contentType: contentTypeMap[contentType] || 'engagement',
+            includeHashtags: true,
+            includeEmojis: true,
+          });
+
+          if (result.success && result.data) {
+            generatedContent.push({
+              platform,
+              caption: result.data.caption,
+              content: result.data.caption,
+              hashtags: result.data.hashtags,
+              emojis: result.data.emojis,
+              characterCount: result.data.characterCount,
+              estimatedEngagement: result.data.estimatedEngagement,
+              optimalPostTime: getOptimalPostTime(platform),
+              source: 'unified_ai',
+            });
+          } else {
+            failedPlatforms.push({ platform, error: 'Generation failed' });
+          }
+        } catch (err) {
+          failedPlatforms.push({ platform, error: 'Service temporarily unavailable' });
+        }
       }
     }
 
@@ -1266,36 +1297,74 @@ router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest,
 
     const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'];
     const validTones = ['professional', 'casual', 'energetic', 'promotional'];
-    const generatedContent = [];
+    const generatedContent: any[] = [];
 
-    for (const platform of platforms) {
-      if (!validPlatforms.includes(platform)) continue;
+    const pyAvailable = await pythonAIService.isAvailable();
 
-      const result = await unifiedAIController.generateContent({
+    if (pyAvailable) {
+      const pyResult = await pythonAIService.generateMultiPlatform({
+        platforms,
+        topic: topicWithAudience.substring(0, 150),
         tone: validTones.includes(tone) ? tone : 'energetic',
-        platform,
-        topic: (formatPrefix + topicWithAudience).substring(0, 150),
-        contentType: metadata.contentType,
-        includeHashtags: true,
-        includeEmojis: true,
+        goal: 'growth',
+        format,
+        url,
+        targetAudience: targetAudience || undefined,
       });
 
-      if (result.success && result.data) {
-        const captionText = result.data.caption + `\n\n🔗 ${url}`;
-        generatedContent.push({
+      if (pyResult.success && pyResult.data?.generated_content) {
+        for (const item of pyResult.data.generated_content) {
+          const captionText = item.content.includes(url) ? item.content : item.content + `\n\n🔗 ${url}`;
+          generatedContent.push({
+            platform: item.platform,
+            caption: captionText,
+            content: captionText,
+            hashtags: item.hashtags,
+            hook: item.hook,
+            body: item.body,
+            cta: item.cta,
+            sourceUrl: url,
+            extractedTitle: metadata.title,
+            contentType: metadata.type,
+            format,
+            targetAudience: targetAudience || undefined,
+            source: 'python_ai_model',
+          });
+        }
+      }
+    }
+
+    if (generatedContent.length === 0) {
+      for (const platform of platforms) {
+        if (!validPlatforms.includes(platform)) continue;
+
+        const result = await unifiedAIController.generateContent({
+          tone: validTones.includes(tone) ? tone : 'energetic',
           platform,
-          caption: captionText,
-          content: captionText,
-          hashtags: result.data.hashtags,
-          emojis: result.data.emojis,
-          characterCount: result.data.characterCount,
-          estimatedEngagement: result.data.estimatedEngagement,
-          sourceUrl: url,
-          extractedTitle: metadata.title,
-          contentType: metadata.type,
-          format,
-          targetAudience: targetAudience || undefined,
+          topic: (formatPrefix + topicWithAudience).substring(0, 150),
+          contentType: metadata.contentType,
+          includeHashtags: true,
+          includeEmojis: true,
         });
+
+        if (result.success && result.data) {
+          const captionText = result.data.caption + `\n\n🔗 ${url}`;
+          generatedContent.push({
+            platform,
+            caption: captionText,
+            content: captionText,
+            hashtags: result.data.hashtags,
+            emojis: result.data.emojis,
+            characterCount: result.data.characterCount,
+            estimatedEngagement: result.data.estimatedEngagement,
+            sourceUrl: url,
+            extractedTitle: metadata.title,
+            contentType: metadata.type,
+            format,
+            targetAudience: targetAudience || undefined,
+            source: 'unified_ai',
+          });
+        }
       }
     }
 

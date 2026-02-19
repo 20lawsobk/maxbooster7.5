@@ -6,6 +6,7 @@ Max Booster is a full-stack AI-powered music career management platform. It prov
 ## Architecture
 - **Frontend**: React + Vite + TailwindCSS (client directory)
 - **Backend**: Express.js + TypeScript (server directory)
+- **AI Model**: Custom PyTorch transformer (ai_model directory) running on port 9878
 - **State Service**: Rust-based "BoosterState" microservice (boosterstate directory) running on port 9877
 - **Database**: PostgreSQL via Drizzle ORM (schema in shared/schema.ts)
 - **Desktop/Mobile**: Electron + Capacitor (android directory)
@@ -15,21 +16,41 @@ Max Booster is a full-stack AI-powered music career management platform. It prov
 client/          - React frontend (Vite)
 server/          - Express backend (TypeScript)
 shared/          - Shared types and schema (Drizzle ORM)
+ai_model/        - Custom PyTorch AI content generation model
+  model/         - Transformer LM, tokenizer, creative model wrapper
+  agents/        - Script, visual spec, distribution, optimization agents
+  training/      - Dataset, trainer, config, synthetic data generator, logger
+  boostsheets/   - BoostSheet data model, repository, lifecycle, versioning
+  api/           - FastAPI service (schemas + app)
+  adapters/      - URL-to-BoostSheet adapter
+  weights/       - Saved model checkpoints
 boosterstate/    - Rust microservice for state management
 migrations/      - Drizzle database migrations
 assets/          - Static assets (images, icons)
 script/          - Build scripts
+training/        - Training data (boostsheet_samples.json)
 ```
 
 ## Key Configuration
 - Server listens on port 5000 (0.0.0.0)
+- AI Model FastAPI service on port 9878 (127.0.0.1)
 - BoosterState Rust service on port 9877 (127.0.0.1)
 - Vite dev server configured with allowedHosts: true for Replit proxy
 - Database schema managed by Drizzle Kit (drizzle.config.ts)
 - esbuild pinned to 0.25.12 for drizzle-kit compatibility
 
+## AI Model
+- Custom transformer language model (PyTorch) for social media content generation
+- Supports 8 platforms: TikTok, Instagram, YouTube, Facebook, Twitter/X, LinkedIn, Google Business, Threads
+- Architecture: TransformerLM with configurable dim/layers/heads/max_len (env vars: AI_MODEL_DIM, AI_MODEL_LAYERS, AI_MODEL_HEADS, AI_MODEL_MAX_LEN)
+- Agents: ScriptAgent (hook/body/cta), DistributionAgent (caption/hashtags/timing), VisualSpecAgent (thumbnails), OptimizationAgent
+- Training: Synthetic data generation, BoostSheet-to-training-sample converter, TrainingLogger for continuous learning
+- Fallback: If model output is low-quality (untrained/gibberish), agents produce template-based content
+- Integration: Node.js client (server/services/pythonAIService.ts) calls Python API; social media routes try Python AI first, fall back to unifiedAIController
+- Endpoints: /generate/content, /generate/multi-platform, /generate/script, /generate/visual-spec, /generate/distribution, /train, /train/synthetic, /train/status, /train/log-sheet, /optimize, /boostsheet/create, /health
+
 ## Development
-- Dev command: `./boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts`
+- Dev command: `python3 -m ai_model.serve & ./boosterstate/target/debug/boosterstate & sleep 2 && NODE_ENV=development npx tsx server/index.ts`
 - The Express server serves both API routes and the Vite dev frontend on port 5000
 - DB push: `npx drizzle-kit push`
 
@@ -54,6 +75,17 @@ script/          - Build scripts
 - API response caching (8 routes cached)
 
 ## Recent Changes
+- 2026-02-19: AI Model training pipeline integration
+  - Added DEFAULT_TRAIN_CONFIG (dim=256, layers=4, heads=4, max_len=256, lr=3e-4, batch_size=8, epochs=3)
+  - Added TrainingLogger: appends BoostSheet-to-training-sample conversions to training data
+  - Added synthetic data generator: 50+ diverse samples across 8 platforms, 3 goals, 3 tones
+  - Added train_max_booster() standalone entrypoint (ai_model/training/run.py)
+  - API endpoints: POST /train (with auto-synthetic generation), POST /train/synthetic, GET /train/status, POST /train/log-sheet
+  - Fixed tokenizer freeze/unfreeze for inference vs training (prevents embedding index out of range)
+  - Fixed padding in CreativeDataset for batched training (variable-length sequences)
+  - Model auto-resizes embeddings when vocab grows during training
+  - Agents (Script, Distribution, VisualSpec) now gracefully fall back to templates when model output is gibberish
+  - Trained initial model: 50 samples, 3 epochs, perplexity 369.86, vocab 269, weights saved to ai_model/weights/
 - 2026-02-19: TikTok OAuth sandbox/production split
   - Env-driven config: `TIKTOK_ENV=sandbox` switches between sandbox and production mode
   - Separate env vars: `TIKTOK_SANDBOX_CLIENT_KEY`, `TIKTOK_SANDBOX_CLIENT_SECRET`, `TIKTOK_SANDBOX_SCOPES`, `TIKTOK_SANDBOX_REDIRECT_URI` for sandbox; `TIKTOK_PROD_*` for production

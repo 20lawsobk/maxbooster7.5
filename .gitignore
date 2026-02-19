@@ -34,5 +34,19 @@ dist-installers/
 dist-portable/
 *.keystore
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pythonlibs/
+.venv/
+*.egg-info/
+dist-python/
+ai_model/weights/
+ai_model/data/
+training/
+boostsheets_db/
+
 # Rust
 boosterstate/target/
