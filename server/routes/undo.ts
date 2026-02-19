@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -82,7 +83,7 @@ router.post('/action', async (req: Request, res: Response) => {
       message: 'Action recorded',
     });
   } catch (error) {
-    console.error('Error recording action:', error);
+    logger.error('Error recording action:', error);
     return res.status(500).json({ message: 'Failed to record action' });
   }
 });
@@ -118,7 +119,7 @@ router.post('/undo/:actionId', async (req: Request, res: Response) => {
       restoredState: action.previousState,
     });
   } catch (error) {
-    console.error('Error undoing action:', error);
+    logger.error('Error undoing action:', error);
     return res.status(500).json({ message: 'Failed to undo action' });
   }
 });
@@ -154,7 +155,7 @@ router.post('/redo/:actionId', async (req: Request, res: Response) => {
       restoredState: action.newState,
     });
   } catch (error) {
-    console.error('Error redoing action:', error);
+    logger.error('Error redoing action:', error);
     return res.status(500).json({ message: 'Failed to redo action' });
   }
 });
@@ -203,7 +204,7 @@ router.get('/history', async (req: Request, res: Response) => {
       offset,
     });
   } catch (error) {
-    console.error('Error fetching action history:', error);
+    logger.error('Error fetching action history:', error);
     return res.status(500).json({ message: 'Failed to fetch action history' });
   }
 });
@@ -226,7 +227,7 @@ router.delete('/history', async (req: Request, res: Response) => {
       deletedCount: userActionIds.length,
     });
   } catch (error) {
-    console.error('Error clearing action history:', error);
+    logger.error('Error clearing action history:', error);
     return res.status(500).json({ message: 'Failed to clear action history' });
   }
 });
@@ -264,7 +265,7 @@ router.get('/action/:actionId', async (req: Request, res: Response) => {
       canUndo: !action.isUndone,
     });
   } catch (error) {
-    console.error('Error fetching action:', error);
+    logger.error('Error fetching action:', error);
     return res.status(500).json({ message: 'Failed to fetch action' });
   }
 });
@@ -326,7 +327,7 @@ router.post('/record', async (req: Request, res: Response) => {
       message: 'Action recorded successfully',
     });
   } catch (error) {
-    console.error('Error recording action:', error);
+    logger.error('Error recording action:', error);
     return res.status(500).json({ message: 'Failed to record action' });
   }
 });
@@ -362,7 +363,7 @@ router.post('/revert/:actionId', async (req: Request, res: Response) => {
       restoredState: action.previousState,
     });
   } catch (error) {
-    console.error('Error reverting action:', error);
+    logger.error('Error reverting action:', error);
     return res.status(500).json({ message: 'Failed to revert action' });
   }
 });
@@ -409,7 +410,7 @@ router.post('/batch', async (req: Request, res: Response) => {
       message: `Recorded ${recordedIds.length} actions`,
     });
   } catch (error) {
-    console.error('Error batch recording actions:', error);
+    logger.error('Error batch recording actions:', error);
     return res.status(500).json({ message: 'Failed to batch record actions' });
   }
 });
@@ -516,7 +517,7 @@ router.post('/track-action', async (req: Request, res: Response) => {
       message: 'Action tracked successfully',
     });
   } catch (error) {
-    console.error('Error tracking action:', error);
+    logger.error('Error tracking action:', error);
     return res.status(500).json({ message: 'Failed to track action' });
   }
 });
@@ -566,7 +567,7 @@ router.post('/create-restore-point', async (req: Request, res: Response) => {
       message: 'Restore point created successfully',
     });
   } catch (error) {
-    console.error('Error creating restore point:', error);
+    logger.error('Error creating restore point:', error);
     return res.status(500).json({ message: 'Failed to create restore point' });
   }
 });
@@ -592,7 +593,7 @@ router.get('/restore-points', async (req: Request, res: Response) => {
       })),
     });
   } catch (error) {
-    console.error('Error fetching restore points:', error);
+    logger.error('Error fetching restore points:', error);
     return res.status(500).json({ message: 'Failed to fetch restore points' });
   }
 });
@@ -638,7 +639,7 @@ router.post('/restore/:pointId', async (req: Request, res: Response) => {
       message: `Restored to "${restorePoint.name}" - ${undoneActions.length} actions undone`,
     });
   } catch (error) {
-    console.error('Error restoring to point:', error);
+    logger.error('Error restoring to point:', error);
     return res.status(500).json({ message: 'Failed to restore to point' });
   }
 });
@@ -667,7 +668,7 @@ router.delete('/restore-points/:pointId', async (req: Request, res: Response) =>
       message: 'Restore point deleted successfully',
     });
   } catch (error) {
-    console.error('Error deleting restore point:', error);
+    logger.error('Error deleting restore point:', error);
     return res.status(500).json({ message: 'Failed to delete restore point' });
   }
 });
@@ -705,7 +706,7 @@ router.get('/deleted-items', async (req: Request, res: Response) => {
       total: userDeletedItems.length,
     });
   } catch (error) {
-    console.error('Error fetching deleted items:', error);
+    logger.error('Error fetching deleted items:', error);
     return res.status(500).json({ message: 'Failed to fetch deleted items' });
   }
 });
@@ -746,7 +747,7 @@ router.post('/recover/:itemId', async (req: Request, res: Response) => {
       message: 'Item recovered successfully',
     });
   } catch (error) {
-    console.error('Error recovering item:', error);
+    logger.error('Error recovering item:', error);
     return res.status(500).json({ message: 'Failed to recover item' });
   }
 });

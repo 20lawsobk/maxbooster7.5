@@ -1241,6 +1241,7 @@ export default function Analytics() {
   const {
     data: analyticsData,
     isLoading: analyticsLoading,
+    isError,
     refetch,
   } = useQuery({
     queryKey: ['/api/analytics/dashboard', timeRange],
@@ -1467,6 +1468,14 @@ export default function Analytics() {
           </div>
         </div>
       </AppLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
     );
   }
 

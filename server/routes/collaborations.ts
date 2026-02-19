@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { collaborationService } from "../services/collaborationService";
+import { logger } from "../logger";
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.get("/connections", async (req: Request, res: Response) => {
     const connections = await collaborationService.getConnections(req.user.id);
     return res.json(connections);
   } catch (error) {
-    console.error("Error fetching connections:", error);
+    logger.error("Error fetching connections:", error);
     return res.status(500).json({ message: "Failed to fetch connections" });
   }
 });
@@ -26,7 +27,7 @@ router.get("/connections/pending", async (req: Request, res: Response) => {
     const requests = await collaborationService.getPendingRequests(req.user.id);
     return res.json(requests);
   } catch (error) {
-    console.error("Error fetching pending requests:", error);
+    logger.error("Error fetching pending requests:", error);
     return res.status(500).json({ message: "Failed to fetch pending requests" });
   }
 });
@@ -50,7 +51,7 @@ router.post("/connect", async (req: Request, res: Response) => {
     );
     return res.json(connection);
   } catch (error: any) {
-    console.error("Error sending connection request:", error);
+    logger.error("Error sending connection request:", error);
     return res.status(400).json({ message: error.message || "Failed to send connection request" });
   }
 });
@@ -67,7 +68,7 @@ router.post("/accept/:id", async (req: Request, res: Response) => {
     );
     return res.json(connection);
   } catch (error: any) {
-    console.error("Error accepting connection:", error);
+    logger.error("Error accepting connection:", error);
     return res.status(400).json({ message: error.message || "Failed to accept connection" });
   }
 });
@@ -84,7 +85,7 @@ router.post("/decline/:id", async (req: Request, res: Response) => {
     );
     return res.json(connection);
   } catch (error: any) {
-    console.error("Error declining connection:", error);
+    logger.error("Error declining connection:", error);
     return res.status(400).json({ message: error.message || "Failed to decline connection" });
   }
 });
@@ -98,7 +99,7 @@ router.delete("/connections/:id", async (req: Request, res: Response) => {
     await collaborationService.removeConnection(req.params.id, req.user.id);
     return res.json({ success: true });
   } catch (error: any) {
-    console.error("Error removing connection:", error);
+    logger.error("Error removing connection:", error);
     return res.status(400).json({ message: error.message || "Failed to remove connection" });
   }
 });
@@ -116,7 +117,7 @@ router.get("/suggestions", async (req: Request, res: Response) => {
     );
     return res.json(suggestions);
   } catch (error) {
-    console.error("Error fetching suggestions:", error);
+    logger.error("Error fetching suggestions:", error);
     return res.status(500).json({ message: "Failed to fetch suggestions" });
   }
 });
@@ -135,7 +136,7 @@ router.get("/projects", async (req: Request, res: Response) => {
     });
     return res.json(projects);
   } catch (error) {
-    console.error("Error fetching projects:", error);
+    logger.error("Error fetching projects:", error);
     return res.status(500).json({ message: "Failed to fetch projects" });
   }
 });
@@ -162,7 +163,7 @@ router.post("/projects", async (req: Request, res: Response) => {
     });
     return res.json(project);
   } catch (error: any) {
-    console.error("Error creating project:", error);
+    logger.error("Error creating project:", error);
     return res.status(400).json({ message: error.message || "Failed to create project" });
   }
 });
@@ -181,7 +182,7 @@ router.post("/projects/:id/join", async (req: Request, res: Response) => {
     );
     return res.json(member);
   } catch (error: any) {
-    console.error("Error joining project:", error);
+    logger.error("Error joining project:", error);
     return res.status(400).json({ message: error.message || "Failed to join project" });
   }
 });
@@ -195,7 +196,7 @@ router.post("/projects/:id/leave", async (req: Request, res: Response) => {
     await collaborationService.leaveProject(req.user.id, req.params.id);
     return res.json({ success: true });
   } catch (error: any) {
-    console.error("Error leaving project:", error);
+    logger.error("Error leaving project:", error);
     return res.status(400).json({ message: error.message || "Failed to leave project" });
   }
 });
@@ -217,7 +218,7 @@ router.get("/search", async (req: Request, res: Response) => {
     );
     return res.json(artists);
   } catch (error) {
-    console.error("Error searching artists:", error);
+    logger.error("Error searching artists:", error);
     return res.status(500).json({ message: "Failed to search artists" });
   }
 });
@@ -234,7 +235,7 @@ router.get("/connection-status/:userId", async (req: Request, res: Response) => 
     );
     return res.json(status);
   } catch (error) {
-    console.error("Error getting connection status:", error);
+    logger.error("Error getting connection status:", error);
     return res.status(500).json({ message: "Failed to get connection status" });
   }
 });

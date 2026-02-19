@@ -314,11 +314,9 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('scope', config.scope);
       params.set('response_type', 'code');
       params.set('state', state);
-      logger.info(`[OAuth] Threads auth params:`, { 
-        clientId: config.clientId, 
+      logger.info(`[OAuth] Threads auth initiated`, { 
         redirectUri, 
         scope: config.scope,
-        authUrl: config.authUrl,
       });
     } else {
       params.set('client_id', config.clientId);

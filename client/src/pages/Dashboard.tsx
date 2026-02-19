@@ -224,7 +224,7 @@ function DashboardContent({ user }: { user: any }) {
   }, [onboardingStatus]);
 
   // Fetch comprehensive dashboard data - now only called when user is authenticated
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
+  const { data: dashboardData, isLoading: dashboardLoading, isError } = useQuery({
     queryKey: ['/api/dashboard/comprehensive'],
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
@@ -415,6 +415,14 @@ function DashboardContent({ user }: { user: any }) {
       description: `Navigating to ${featureId} feature...`,
     });
   };
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
+  }
 
   // Show onboarding flow
   if (showOnboarding) {

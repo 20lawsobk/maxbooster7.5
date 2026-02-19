@@ -516,7 +516,7 @@ export default function SocialMedia() {
   }, [location, handleOAuthSuccess, handleOAuthDenied, handlePlatformUnavailable, showOutcome, trackSocialAccountConnected, queryClient]);
 
   // Data Queries
-  const { data: platformsFromApi = [], isLoading: platformsLoading } = useQuery<SocialPlatform[]>({
+  const { data: platformsFromApi = [], isLoading: platformsLoading, isError } = useQuery<SocialPlatform[]>({
     queryKey: ['/api/social/platform-status'],
     enabled: !!user,
   });
@@ -1179,6 +1179,14 @@ export default function SocialMedia() {
   };
 
   if (!user) return null;
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
+  }
 
   return (
     <AppLayout>

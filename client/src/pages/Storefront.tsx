@@ -194,7 +194,7 @@ export default function Storefront() {
     }
   }, [toast]);
 
-  const { data: storefront, isLoading: storefrontLoading } = useQuery<Storefront>({
+  const { data: storefront, isLoading: storefrontLoading, isError } = useQuery<Storefront>({
     queryKey: [`/api/storefront/public/${slug}`],
     enabled: !!slug,
     retry: 1,
@@ -413,6 +413,14 @@ export default function Storefront() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading storefront...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
       </div>
     );
   }

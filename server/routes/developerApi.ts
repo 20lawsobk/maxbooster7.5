@@ -392,11 +392,10 @@ fetch('https://your-domain.com/api/v1/analytics/streams', {
   }
 })
 .then(response => response.json())
-.then(data => logger.info(data));
+.then(data => console.log(data));
       `.trim(),
       python: `
 import requests
-import { logger } from '../logger.js';
 
 headers = {
     'Authorization': 'Bearer mb_live_...'

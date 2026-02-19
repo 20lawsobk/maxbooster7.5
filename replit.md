@@ -54,6 +54,12 @@ script/          - Build scripts
 - API response caching (8 routes cached)
 
 ## Recent Changes
+- 2026-02-19: Production hardening pass (phase 4)
+  - Replaced console.log with logger in 10 more server files: personalization.ts, storage.ts, platform-capsule.ts, ultra-quality-engine.ts, performanceRegression.ts, undo.ts, files.ts, notifications.ts, collaborations.ts, shortcuts.ts
+  - Added isError handling to 15 more frontend pages: Dashboard, Analytics, Distribution, Marketplace, SocialMedia, Settings, Royalties, Storefront, Contracts, Collaborations, Workspaces, Invoices, Projects, CareerCoach, DeveloperApi
+  - Redacted OAuth clientId from Threads auth log (security)
+  - Fixed corrupted developer API doc examples (logger wrongly injected into JS/Python code samples)
+  - Verified all unhandled .then() chains already have .catch() handlers
 - 2026-02-19: Production hardening pass (phase 3)
   - Replaced all console.log/error/warn with structured logger in routes.ts, achievements.ts, batch.ts
   - Removed sensitive auth debug logging (cookie headers, session details, response headers)

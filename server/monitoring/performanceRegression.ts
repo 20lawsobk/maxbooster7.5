@@ -103,35 +103,35 @@ export class PerformanceRegressionDetector {
   }
 
   private printReport(checks: RegressionCheck[], hasRegression: boolean): void {
-    console.log('\n' + '═'.repeat(70));
-    console.log('          PERFORMANCE REGRESSION ANALYSIS');
-    console.log('═'.repeat(70) + '\n');
+    logger.info('\n' + '═'.repeat(70));
+    logger.info('          PERFORMANCE REGRESSION ANALYSIS');
+    logger.info('═'.repeat(70) + '\n');
 
     for (const check of checks) {
       const icon = check.regressed ? '❌' : '✅';
       const arrow = check.percentChange > 0 ? '↑' : '↓';
 
-      console.log(`${icon} ${check.metric}`);
-      console.log(`   Baseline: ${check.baseline.toFixed(2)}`);
-      console.log(`   Current:  ${check.current.toFixed(2)}`);
-      console.log(`   Change:   ${arrow} ${Math.abs(check.percentChange).toFixed(1)}% (threshold: ${check.threshold}%)`);
-      console.log('');
+      logger.info(`${icon} ${check.metric}`);
+      logger.info(`   Baseline: ${check.baseline.toFixed(2)}`);
+      logger.info(`   Current:  ${check.current.toFixed(2)}`);
+      logger.info(`   Change:   ${arrow} ${Math.abs(check.percentChange).toFixed(1)}% (threshold: ${check.threshold}%)`);
+      logger.info('');
     }
 
-    console.log('═'.repeat(70));
+    logger.info('═'.repeat(70));
 
     if (!hasRegression) {
-      console.log('                 ✅ NO REGRESSION DETECTED');
-      console.log('');
-      console.log('  Performance is within acceptable thresholds.');
+      logger.info('                 ✅ NO REGRESSION DETECTED');
+      logger.info('');
+      logger.info('  Performance is within acceptable thresholds.');
     } else {
-      console.log('                 ❌ REGRESSION DETECTED');
-      console.log('');
-      console.log('  Performance has degraded beyond acceptable thresholds.');
-      console.log('  Review and optimize before deploying.');
+      logger.info('                 ❌ REGRESSION DETECTED');
+      logger.info('');
+      logger.info('  Performance has degraded beyond acceptable thresholds.');
+      logger.info('  Review and optimize before deploying.');
     }
 
-    console.log('═'.repeat(70) + '\n');
+    logger.info('═'.repeat(70) + '\n');
   }
 }
 

@@ -61,7 +61,7 @@ export default function CareerCoach() {
     }
   ]);
 
-  const { data: goalsData } = useQuery<{ goals: CareerGoal[] }>({
+  const { data: goalsData, isError } = useQuery<{ goals: CareerGoal[] }>({
     queryKey: ['/api/career-coach/goals'],
     enabled: !!user,
   });
@@ -156,6 +156,14 @@ export default function CareerCoach() {
   if (!user) {
     setLocation('/login');
     return null;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
   }
 
   return (

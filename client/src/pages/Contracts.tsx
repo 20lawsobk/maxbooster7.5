@@ -90,7 +90,7 @@ export default function Contracts() {
   const [currentOutcome, setCurrentOutcome] = useState<ContractOutcome | null>(null);
   const [outcomeDetails, setOutcomeDetails] = useState<any>(null);
 
-  const { data: templatesData } = useQuery<{ templates: ContractTemplate[]; categories: string[] }>({
+  const { data: templatesData, isError } = useQuery<{ templates: ContractTemplate[]; categories: string[] }>({
     queryKey: ['/api/contracts/templates'],
     enabled: !!user,
   });
@@ -294,6 +294,14 @@ export default function Contracts() {
   if (!user) {
     setLocation('/login');
     return null;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
   }
 
   return (

@@ -182,7 +182,7 @@ export default function Royalties() {
   const [newCollaboratorPercentage, setNewCollaboratorPercentage] = useState('');
 
   // Fetch royalties data
-  const { data: royaltiesResponse, isLoading } = useQuery<{ data: Royalty[]; pagination: any }>({
+  const { data: royaltiesResponse, isLoading, isError } = useQuery<{ data: Royalty[]; pagination: any }>({
     queryKey: ['/api/royalties', { period: selectedPeriod, platform: selectedPlatform }],
     enabled: !!user,
     retry: false,
@@ -588,6 +588,14 @@ export default function Royalties() {
 
   if (user.role !== 'admin') {
     return <ComingSoonRoyalties />;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
   }
 
   return (

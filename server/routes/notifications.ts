@@ -130,7 +130,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     return res.json(filtered);
   } catch (error) {
-    console.error('Get notifications error:', error);
+    logger.error('Get notifications error:', error);
     return res.json([]);
   }
 });
@@ -162,7 +162,7 @@ router.put('/:id/read', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Mark notification read error:', error);
+    logger.error('Mark notification read error:', error);
     return res.status(500).json({ message: 'Failed to mark notification as read' });
   }
 });
@@ -184,7 +184,7 @@ router.put('/mark-all-read', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Mark all read error:', error);
+    logger.error('Mark all read error:', error);
     return res.status(500).json({ message: 'Failed to mark all as read' });
   }
 });
@@ -216,7 +216,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Delete notification error:', error);
+    logger.error('Delete notification error:', error);
     return res.status(500).json({ message: 'Failed to delete notification' });
   }
 });
@@ -238,7 +238,7 @@ router.delete('/clear-all', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Clear all notifications error:', error);
+    logger.error('Clear all notifications error:', error);
     return res.status(500).json({ message: 'Failed to clear notifications' });
   }
 });
@@ -276,7 +276,7 @@ router.get('/preferences', async (req: Request, res: Response) => {
 
     return res.json(mergedPrefs);
   } catch (error) {
-    console.error('Get notification preferences error:', error);
+    logger.error('Get notification preferences error:', error);
     return res.json(defaultPreferences);
   }
 });
@@ -320,7 +320,7 @@ router.put('/preferences', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Update notification preferences error:', error);
+    logger.error('Update notification preferences error:', error);
     return res.status(500).json({ message: 'Failed to update preferences' });
   }
 });
@@ -363,7 +363,7 @@ router.post('/push/subscribe', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Push subscribe error:', error);
+    logger.error('Push subscribe error:', error);
     return res.status(500).json({ message: 'Failed to subscribe to push notifications' });
   }
 });
@@ -397,7 +397,7 @@ router.post('/push/unsubscribe', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Push unsubscribe error:', error);
+    logger.error('Push unsubscribe error:', error);
     return res.status(500).json({ message: 'Failed to unsubscribe from push notifications' });
   }
 });
@@ -443,7 +443,7 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
       message: 'Verification code sent',
     });
   } catch (error) {
-    console.error('SMS verify error:', error);
+    logger.error('SMS verify error:', error);
     return res.status(500).json({ message: 'Failed to send verification code' });
   }
 });
@@ -485,7 +485,7 @@ router.post('/sms/confirm', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('SMS confirm error:', error);
+    logger.error('SMS confirm error:', error);
     return res.status(500).json({ message: 'Failed to confirm verification code' });
   }
 });
@@ -527,7 +527,7 @@ router.post('/test', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Test notification error:', error);
+    logger.error('Test notification error:', error);
     return res.status(500).json({ message: 'Failed to send test notification' });
   }
 });
@@ -594,7 +594,7 @@ router.get('/unread-count', requireAuth, async (req: Request, res: Response) => 
 
     return res.json({ count });
   } catch (error) {
-    console.error('Get unread count error:', error);
+    logger.error('Get unread count error:', error);
     return res.json({ count: 0 });
   }
 });

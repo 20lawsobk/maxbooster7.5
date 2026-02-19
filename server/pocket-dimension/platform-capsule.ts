@@ -16,6 +16,7 @@
  * - Optional encryption for secure distribution
  */
 
+import { logger } from '../logger';
 import { pocketManager, PocketDimension } from './index.js';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
@@ -133,10 +134,10 @@ class PlatformCapsuleBuilder {
    */
   async build(options: CapsuleBuildOptions): Promise<CapsuleMetadata> {
     const capsuleId = `capsule-${options.version}-${Date.now()}`;
-    console.log(`\n🧬 PLATFORM CAPSULE BUILDER`);
-    console.log(`   Creating capsule: ${capsuleId}`);
-    console.log(`   Version: ${options.version}`);
-    console.log(`   Source: ${this.projectRoot}\n`);
+    logger.info(`\n🧬 PLATFORM CAPSULE BUILDER`);
+    logger.info(`   Creating capsule: ${capsuleId}`);
+    logger.info(`   Version: ${options.version}`);
+    logger.info(`   Source: ${this.projectRoot}\n`);
 
     // Create the pocket dimension for this capsule
     this.pocket = await pocketManager.openPocket(capsuleId, {
@@ -146,16 +147,16 @@ class PlatformCapsuleBuilder {
     });
 
     // Collect all files
-    console.log('📦 Collecting files...');
+    logger.info('📦 Collecting files...');
     const files = await this.collectFiles(options);
-    console.log(`   Found ${files.length} files to package`);
+    logger.info(`   Found ${files.length} files to package`);
 
     // Create manifest
-    console.log('📋 Building manifest...');
+    logger.info('📋 Building manifest...');
     const manifest = await this.buildManifest(files, options);
 
     // Write files to pocket dimension
-    console.log('💾 Writing to pocket dimension...');
+    logger.info('💾 Writing to pocket dimension...');
     let totalSize = 0;
     let processedFiles = 0;
     
@@ -168,7 +169,7 @@ class PlatformCapsuleBuilder {
       processedFiles++;
       
       if (processedFiles % 50 === 0) {
-        console.log(`   Processed ${processedFiles}/${files.length} files...`);
+        logger.info(`   Processed ${processedFiles}/${files.length} files...`);
       }
     }
 
@@ -213,13 +214,13 @@ class PlatformCapsuleBuilder {
     await this.pocket.write('__capsule__/metadata.json',
       Buffer.from(JSON.stringify(metadata, null, 2)));
 
-    console.log(`\n✅ CAPSULE CREATED SUCCESSFULLY`);
-    console.log(`   ID: ${capsuleId}`);
-    console.log(`   Files: ${files.length}`);
-    console.log(`   Original Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`   Compressed: ${(stats.compressedSize / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`   Compression: ${((1 - compressionRatio) * 100).toFixed(1)}% reduction`);
-    console.log(`   Encrypted: ${options.encrypt ? 'Yes' : 'No'}\n`);
+    logger.info(`\n✅ CAPSULE CREATED SUCCESSFULLY`);
+    logger.info(`   ID: ${capsuleId}`);
+    logger.info(`   Files: ${files.length}`);
+    logger.info(`   Original Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+    logger.info(`   Compressed: ${(stats.compressedSize / 1024 / 1024).toFixed(2)} MB`);
+    logger.info(`   Compression: ${((1 - compressionRatio) * 100).toFixed(1)}% reduction`);
+    logger.info(`   Encrypted: ${options.encrypt ? 'Yes' : 'No'}\n`);
 
     // CRITICAL: Close the pocket to persist all data to disk
     await this.pocket.close();
@@ -312,7 +313,7 @@ class PlatformCapsuleBuilder {
     
     // Include production node_modules tarball if specified (FAST - just 1 file)
     if (options.includeProdTarball) {
-      console.log('   Including production dependencies tarball (optimized)...');
+      logger.info('   Including production dependencies tarball (optimized)...');
       try {
         const tarballPath = options.includeProdTarball;
         const stats = await fs.stat(tarballPath);
@@ -326,24 +327,24 @@ class PlatformCapsuleBuilder {
             hash,
             type: 'binary',
           });
-          console.log(`   Added tarball: ${(stats.size / 1024 / 1024).toFixed(2)} MB (1 file instead of 60k+)`);
+          logger.info(`   Added tarball: ${(stats.size / 1024 / 1024).toFixed(2)} MB (1 file instead of 60k+)`);
         }
       } catch (error) {
-        console.warn('   Warning: Could not include production tarball:', error);
+        logger.warn('   Warning: Could not include production tarball:', error);
       }
     }
     // Legacy: Include production node_modules directory if specified
     else if (options.includeProdModules) {
-      console.log('   Including production node_modules...');
+      logger.info('   Including production node_modules...');
       try {
         const prodModulesDir = options.includeProdModules;
         const stats = await fs.stat(prodModulesDir);
         if (stats.isDirectory()) {
           await collect(prodModulesDir, prodModulesDir, 'node_modules');
-          console.log(`   Added ${files.filter(f => f.relativePath.startsWith('node_modules')).length} files from production modules`);
+          logger.info(`   Added ${files.filter(f => f.relativePath.startsWith('node_modules')).length} files from production modules`);
         }
       } catch (error) {
-        console.warn('   Warning: Could not include production modules:', error);
+        logger.warn('   Warning: Could not include production modules:', error);
       }
     }
     
@@ -431,8 +432,8 @@ class PlatformCapsuleLoader {
    * Extract capsule to filesystem (Extract & Boot mode)
    */
   async extractToPath(capsuleId: string, targetPath: string): Promise<void> {
-    console.log(`\n🚀 EXTRACTING CAPSULE: ${capsuleId}`);
-    console.log(`   Target: ${targetPath}\n`);
+    logger.info(`\n🚀 EXTRACTING CAPSULE: ${capsuleId}`);
+    logger.info(`   Target: ${targetPath}\n`);
 
     const pocket = await pocketManager.openPocket(capsuleId);
     
@@ -475,14 +476,14 @@ class PlatformCapsuleLoader {
       
       extracted++;
       if (extracted % 50 === 0) {
-        console.log(`   Extracted ${extracted}/${manifest.files.length} files...`);
+        logger.info(`   Extracted ${extracted}/${manifest.files.length} files...`);
       }
     }
 
-    console.log(`\n✅ EXTRACTION COMPLETE`);
-    console.log(`   Files: ${extracted}`);
-    console.log(`   Location: ${targetPath}`);
-    console.log(`\n   To run: cd ${targetPath} && npm install && npm start\n`);
+    logger.info(`\n✅ EXTRACTION COMPLETE`);
+    logger.info(`   Files: ${extracted}`);
+    logger.info(`   Location: ${targetPath}`);
+    logger.info(`\n   To run: cd ${targetPath} && npm install && npm start\n`);
   }
 
   /**
@@ -573,9 +574,9 @@ class PlatformCapsuleLoader {
     const capsulePath = path.join(this.storagePath, capsuleId);
     try {
       await fs.rm(capsulePath, { recursive: true, force: true });
-      console.log(`Capsule ${capsuleId} deleted successfully`);
+      logger.info(`Capsule ${capsuleId} deleted successfully`);
     } catch (error) {
-      console.error(`Failed to delete capsule ${capsuleId}:`, error);
+      logger.error(`Failed to delete capsule ${capsuleId}:`, error);
       throw error;
     }
   }

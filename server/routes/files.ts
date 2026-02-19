@@ -6,6 +6,7 @@ import { storageService } from '../services/storageService.js';
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
+import { logger } from '../logger.js';
 
 const PERMANENT_DELETE_DAYS = 30;
 
@@ -210,7 +211,7 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
     });
 
   } catch (error) {
-    console.error('Upload error:', error);
+    logger.error('Upload error:', error);
     return res.status(500).json({
       success: false,
       error: 'Upload failed due to server error',
@@ -250,7 +251,7 @@ router.post('/upload/chunk', upload.single('chunk'), async (req: Request, res: R
     });
 
   } catch (error) {
-    console.error('Chunk upload error:', error);
+    logger.error('Chunk upload error:', error);
     return res.status(500).json({
       success: false,
       error: 'Chunk upload failed',
@@ -298,7 +299,7 @@ router.get('/trash', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Trash list error:', error);
+    logger.error('Trash list error:', error);
     return res.status(500).json({ error: 'Failed to list trash' });
   }
 });
@@ -364,7 +365,7 @@ router.post('/bulk-restore', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Bulk restore error:', error);
+    logger.error('Bulk restore error:', error);
     return res.status(500).json({ error: 'Bulk restore failed' });
   }
 });
@@ -447,7 +448,7 @@ router.get('/storage-usage', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Storage usage error:', error);
+    logger.error('Storage usage error:', error);
     return res.status(500).json({ error: 'Failed to get storage usage' });
   }
 });
@@ -494,7 +495,7 @@ router.get('/list', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('List files error:', error);
+    logger.error('List files error:', error);
     return res.status(500).json({ error: 'Failed to list files' });
   }
 });
@@ -568,7 +569,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
   } catch (error) {
-    console.error('Delete file error:', error);
+    logger.error('Delete file error:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to delete file',
@@ -646,7 +647,7 @@ router.post('/bulk-delete', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Bulk delete error:', error);
+    logger.error('Bulk delete error:', error);
     return res.status(500).json({ error: 'Bulk delete failed' });
   }
 });
@@ -692,7 +693,7 @@ router.get('/:id/download', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Download error:', error);
+    logger.error('Download error:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to generate download link',
@@ -850,7 +851,7 @@ router.post('/validate', upload.single('file'), async (req: Request, res: Respon
     });
 
   } catch (error) {
-    console.error('Validation error:', error);
+    logger.error('Validation error:', error);
     return res.status(500).json({
       success: false,
       error: 'Validation failed',
@@ -914,7 +915,7 @@ router.post('/:id/restore', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Restore error:', error);
+    logger.error('Restore error:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to restore file',
@@ -973,7 +974,7 @@ router.post('/:id/transcode', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Transcode error:', error);
+    logger.error('Transcode error:', error);
     return res.status(500).json({
       success: false,
       error: 'Transcoding failed to start',
@@ -1019,7 +1020,7 @@ router.get('/transcode/:jobId/status', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Transcode status error:', error);
+    logger.error('Transcode status error:', error);
     return res.status(500).json({ error: 'Failed to get transcode status' });
   }
 });
@@ -1063,7 +1064,7 @@ router.post('/:id/preview', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Preview generation error:', error);
+    logger.error('Preview generation error:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to generate preview',

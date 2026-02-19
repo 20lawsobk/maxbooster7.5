@@ -58,7 +58,7 @@ export default function Collaborations() {
   const [selectedUser, setSelectedUser] = useState<Suggestion | null>(null);
   const [connectionMessage, setConnectionMessage] = useState('');
 
-  const { data: connectionsData, isLoading: loadingConnections } = useQuery<Connection[]>({
+  const { data: connectionsData, isLoading: loadingConnections, isError } = useQuery<Connection[]>({
     queryKey: ['/api/collaborations/connections'],
     enabled: !!user,
   });
@@ -135,6 +135,14 @@ export default function Collaborations() {
   if (!user) {
     setLocation('/login');
     return null;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
   }
 
   const connections = connectionsData || [];

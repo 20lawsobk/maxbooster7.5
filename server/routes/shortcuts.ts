@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { eq } from 'drizzle-orm';
@@ -78,7 +79,7 @@ router.get('/user', async (req: Request, res: Response) => {
 
     return res.json(preferences);
   } catch (error) {
-    console.error('Error fetching user shortcuts:', error);
+    logger.error('Error fetching user shortcuts:', error);
     return res.status(500).json({ message: 'Failed to fetch shortcuts' });
   }
 });
@@ -119,7 +120,7 @@ router.put('/user', async (req: Request, res: Response) => {
 
     return res.json(preferences);
   } catch (error) {
-    console.error('Error saving user shortcuts:', error);
+    logger.error('Error saving user shortcuts:', error);
     return res.status(500).json({ message: 'Failed to save shortcuts' });
   }
 });
@@ -145,7 +146,7 @@ router.delete('/user', async (req: Request, res: Response) => {
 
     return res.json({ message: 'Shortcuts reset successfully' });
   } catch (error) {
-    console.error('Error resetting shortcuts:', error);
+    logger.error('Error resetting shortcuts:', error);
     return res.status(500).json({ message: 'Failed to reset shortcuts' });
   }
 });
@@ -157,7 +158,7 @@ router.get('/defaults', async (_req: Request, res: Response) => {
       version: '1.0.0',
     });
   } catch (error) {
-    console.error('Error fetching default shortcuts:', error);
+    logger.error('Error fetching default shortcuts:', error);
     return res.status(500).json({ message: 'Failed to fetch defaults' });
   }
 });
@@ -183,7 +184,7 @@ router.get('/conflicts', async (req: Request, res: Response) => {
 
     return res.json({ conflicts });
   } catch (error) {
-    console.error('Error checking conflicts:', error);
+    logger.error('Error checking conflicts:', error);
     return res.status(500).json({ message: 'Failed to check conflicts' });
   }
 });

@@ -55,7 +55,7 @@ export default function Invoices() {
     notes: '',
   });
 
-  const { data: invoicesData, isLoading } = useQuery<{ invoices: Invoice[] }>({
+  const { data: invoicesData, isLoading, isError } = useQuery<{ invoices: Invoice[] }>({
     queryKey: ['/api/invoices'],
     enabled: !!user,
   });
@@ -109,6 +109,14 @@ export default function Invoices() {
   if (!user) {
     setLocation('/login');
     return null;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
   }
 
   const invoices = invoicesData?.invoices || [];

@@ -1,3 +1,4 @@
+import { logger } from './logger';
 import { 
   users, 
   dspProviders, 
@@ -94,7 +95,7 @@ export class DatabaseStorage implements IStorage {
       const { userPocketService } = await import('./services/userPocketDimensionService.js');
       await userPocketService.initializeUserStorage(user.id, user.email);
     } catch (error) {
-      console.error(`[Storage] Failed to initialize pocket dimension for user ${user.id}:`, error);
+      logger.error(`[Storage] Failed to initialize pocket dimension for user ${user.id}:`, error);
       // Don't fail user creation if storage init fails
     }
     
@@ -646,7 +647,7 @@ export class DatabaseStorage implements IStorage {
 
     if (currentCount >= ALL_PLUGINS.length) return;
 
-    console.log(`🎹 Seeding plugin catalog (${currentCount} existing, ${ALL_PLUGINS.length} total)...`);
+    logger.info(`🎹 Seeding plugin catalog (${currentCount} existing, ${ALL_PLUGINS.length} total)...`);
     
     let inserted = 0;
     for (const plugin of ALL_PLUGINS) {
@@ -665,7 +666,7 @@ export class DatabaseStorage implements IStorage {
       if (result.rowCount && result.rowCount > 0) inserted++;
     }
     
-    console.log(`   ✓ Plugin catalog: ${inserted} new plugins added (${currentCount + inserted} total)`);
+    logger.info(`   ✓ Plugin catalog: ${inserted} new plugins added (${currentCount + inserted} total)`);
   }
 
   async getProducers(): Promise<any[]> {
@@ -747,7 +748,7 @@ export class DatabaseStorage implements IStorage {
       
       return producerData;
     } catch (error) {
-      console.error('Error getting producers:', error);
+      logger.error('Error getting producers:', error);
       return [];
     }
   }
@@ -818,7 +819,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(distroTracks).where(eq(distroTracks.id, trackId));
       return true;
     } catch (error) {
-      console.error('Error deleting distro track:', error);
+      logger.error('Error deleting distro track:', error);
       return false;
     }
   }
@@ -829,7 +830,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(distroReleases).where(eq(distroReleases.id, id));
       return true;
     } catch (error) {
-      console.error('Error deleting distro release:', error);
+      logger.error('Error deleting distro release:', error);
       return false;
     }
   }
@@ -842,7 +843,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(dspProviders.slug, slug));
       return provider || null;
     } catch (error) {
-      console.error('Error fetching DSP provider by slug:', error);
+      logger.error('Error fetching DSP provider by slug:', error);
       return null;
     }
   }
@@ -852,7 +853,7 @@ export class DatabaseStorage implements IStorage {
       const providers = await db.select().from(dspProviders);
       return providers;
     } catch (error) {
-      console.error('Error fetching all DSP providers:', error);
+      logger.error('Error fetching all DSP providers:', error);
       return [];
     }
   }
@@ -880,7 +881,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return provider;
     } catch (error) {
-      console.error('Error creating DSP provider:', error);
+      logger.error('Error creating DSP provider:', error);
       throw error;
     }
   }
@@ -901,7 +902,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return provider || null;
     } catch (error) {
-      console.error('Error updating DSP provider:', error);
+      logger.error('Error updating DSP provider:', error);
       return null;
     }
   }
@@ -911,7 +912,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(hyperFollowPages).where(eq(hyperFollowPages.id, id));
       return true;
     } catch (error) {
-      console.error('Error deleting hyperfollow page:', error);
+      logger.error('Error deleting hyperfollow page:', error);
       return false;
     }
   }
@@ -1037,7 +1038,7 @@ export class DatabaseStorage implements IStorage {
       
       return payouts || [];
     } catch (error) {
-      console.error('Error fetching payout history:', error);
+      logger.error('Error fetching payout history:', error);
       return [];
     }
   }
@@ -1051,7 +1052,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(hyperFollowPages.createdAt));
       return pages || [];
     } catch (error) {
-      console.error('Error fetching hyperfollow pages:', error);
+      logger.error('Error fetching hyperfollow pages:', error);
       return [];
     }
   }
@@ -1065,7 +1066,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return pages[0] || null;
     } catch (error) {
-      console.error('Error fetching hyperfollow page:', error);
+      logger.error('Error fetching hyperfollow page:', error);
       return null;
     }
   }
@@ -1079,7 +1080,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return pages[0] || null;
     } catch (error) {
-      console.error('Error fetching hyperfollow page by slug:', error);
+      logger.error('Error fetching hyperfollow page by slug:', error);
       return null;
     }
   }
@@ -1092,7 +1093,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(dspProviders.name);
       return providers || [];
     } catch (error) {
-      console.error('Error fetching DSP providers:', error);
+      logger.error('Error fetching DSP providers:', error);
       return [];
     }
   }
@@ -1111,7 +1112,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return page;
     } catch (error) {
-      console.error('Error creating hyperfollow page:', error);
+      logger.error('Error creating hyperfollow page:', error);
       return null;
     }
   }
@@ -1125,7 +1126,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return page || null;
     } catch (error) {
-      console.error('Error updating hyperfollow page:', error);
+      logger.error('Error updating hyperfollow page:', error);
       return null;
     }
   }
@@ -1161,7 +1162,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return listing;
     } catch (error) {
-      console.error('Error creating listing:', error);
+      logger.error('Error creating listing:', error);
       throw error;
     }
   }
@@ -1257,7 +1258,7 @@ export class DatabaseStorage implements IStorage {
 
       return mapped;
     } catch (error) {
-      console.error('Error fetching beat listings:', error);
+      logger.error('Error fetching beat listings:', error);
       return [];
     }
   }
@@ -1293,7 +1294,7 @@ export class DatabaseStorage implements IStorage {
         ],
       };
     } catch (error) {
-      console.error('Error fetching beat listing:', error);
+      logger.error('Error fetching beat listing:', error);
       return null;
     }
   }
@@ -1324,7 +1325,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: listing.createdAt,
       };
     } catch (error) {
-      console.error('Error updating listing:', error);
+      logger.error('Error updating listing:', error);
       throw error;
     }
   }
@@ -1334,7 +1335,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(listings).where(eq(listings.id, id));
       return true;
     } catch (error) {
-      console.error('Error deleting listing:', error);
+      logger.error('Error deleting listing:', error);
       throw error;
     }
   }
@@ -1349,7 +1350,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(contractTemplates.createdAt));
       return results;
     } catch (error) {
-      console.error('Error fetching contract templates:', error);
+      logger.error('Error fetching contract templates:', error);
       return [];
     }
   }
@@ -1364,7 +1365,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return template || null;
     } catch (error) {
-      console.error('Error fetching contract template:', error);
+      logger.error('Error fetching contract template:', error);
       return null;
     }
   }
@@ -1380,7 +1381,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return template || null;
     } catch (error) {
-      console.error('Error fetching contract template by user:', error);
+      logger.error('Error fetching contract template by user:', error);
       return null;
     }
   }
@@ -1409,7 +1410,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return template;
     } catch (error) {
-      console.error('Error creating contract template:', error);
+      logger.error('Error creating contract template:', error);
       throw error;
     }
   }
@@ -1424,7 +1425,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return template || null;
     } catch (error) {
-      console.error('Error updating contract template:', error);
+      logger.error('Error updating contract template:', error);
       throw error;
     }
   }
@@ -1435,7 +1436,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(contractTemplates).where(eq(contractTemplates.id, id));
       return true;
     } catch (error) {
-      console.error('Error deleting contract template:', error);
+      logger.error('Error deleting contract template:', error);
       throw error;
     }
   }
@@ -1471,7 +1472,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(orders.createdAt));
       return results;
     } catch (error) {
-      console.error('Error fetching user orders:', error);
+      logger.error('Error fetching user orders:', error);
       return [];
     }
   }
@@ -1486,7 +1487,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(orders.createdAt));
       return results;
     } catch (error) {
-      console.error('Error fetching seller orders:', error);
+      logger.error('Error fetching seller orders:', error);
       return [];
     }
   }

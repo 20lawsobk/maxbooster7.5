@@ -119,7 +119,7 @@ export default function Settings() {
   }, [user?.avatarUrl, user?.profileImageUrl]);
 
   // Query for full profile data
-  const { data: fullProfile } = useQuery({
+  const { data: fullProfile, isError } = useQuery({
     queryKey: ['/api/auth/profile'],
     enabled: !!user,
   });
@@ -624,6 +624,14 @@ export default function Settings() {
   };
 
   if (!user) return null;
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
+  }
 
   return (
     <AppLayout>

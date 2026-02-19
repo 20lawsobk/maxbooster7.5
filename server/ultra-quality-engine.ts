@@ -13,6 +13,7 @@
  * - Quality-maximized defaults
  */
 
+import { logger } from './logger';
 import { PocketDimension, pocketManager, PocketDimensionConfig } from './pocket-dimension/index.js';
 import { EventEmitter } from 'events';
 import crypto from 'crypto';
@@ -121,9 +122,9 @@ class InfiniteCache extends EventEmitter {
       });
       await this.loadTagIndex();
       this.initialized = true;
-      console.log('[CACHE] Infinite Cache System initialized with Pocket Dimension backing');
+      logger.info('[CACHE] Infinite Cache System initialized with Pocket Dimension backing');
     } catch (error) {
-      console.error('[CACHE] Failed to initialize:', error);
+      logger.error('[CACHE] Failed to initialize:', error);
       throw error;
     }
 
@@ -341,7 +342,7 @@ class InfiniteCache extends EventEmitter {
     }
     
     if (cleaned > 0) {
-      console.log(`[CACHE] Cleaned up ${cleaned} expired entries`);
+      logger.info(`[CACHE] Cleaned up ${cleaned} expired entries`);
     }
   }
 
@@ -418,14 +419,14 @@ class VersionInfinity extends EventEmitter {
         const indexBuffer = await this.pocket.read('__index__');
         const index = JSON.parse(indexBuffer.toString());
         this.versionIndex = new Map(Object.entries(index));
-        console.log('[VERSION] Version Infinity System loaded existing data');
+        logger.info('[VERSION] Version Infinity System loaded existing data');
       } catch {
-        console.log('[VERSION] Version Infinity System created new');
+        logger.info('[VERSION] Version Infinity System created new');
       }
       
       this.initialized = true;
     } catch (error) {
-      console.error('[VERSION] Failed to initialize:', error);
+      logger.error('[VERSION] Failed to initialize:', error);
       throw error;
     }
   }
@@ -577,14 +578,14 @@ class AIModelVault extends EventEmitter {
         const index = JSON.parse(indexBuffer.toString());
         this.modelIndex = new Map(Object.entries(index.models || {}));
         this.trainingDataIndex = new Map(Object.entries(index.trainingData || {}));
-        console.log('[AI-VAULT] AI Model Vault loaded existing data');
+        logger.info('[AI-VAULT] AI Model Vault loaded existing data');
       } catch {
-        console.log('[AI-VAULT] AI Model Vault created new');
+        logger.info('[AI-VAULT] AI Model Vault created new');
       }
       
       this.initialized = true;
     } catch (error) {
-      console.error('[AI-VAULT] Failed to initialize:', error);
+      logger.error('[AI-VAULT] Failed to initialize:', error);
       throw error;
     }
   }
@@ -719,9 +720,9 @@ class AudioQualityMaximizer extends EventEmitter {
         enableDeduplication: true,
       });
       this.initialized = true;
-      console.log('[AUDIO] Audio Quality Maximizer initialized');
+      logger.info('[AUDIO] Audio Quality Maximizer initialized');
     } catch (error) {
-      console.error('[AUDIO] Failed to initialize:', error);
+      logger.error('[AUDIO] Failed to initialize:', error);
       throw error;
     }
   }
@@ -958,15 +959,15 @@ export class UltraQualityEngine extends EventEmitter {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    console.log('\n============================================');
-    console.log('   ULTRA-QUALITY ENGINE INITIALIZATION');
-    console.log('============================================');
-    console.log(`   Audio Quality: ${this.config.audioQuality.toUpperCase()}`);
-    console.log(`   Image Quality: ${this.config.imageQuality.toUpperCase()}`);
-    console.log(`   Video Quality: ${this.config.videoQuality.toUpperCase()}`);
-    console.log(`   Version History: ${this.config.versionHistoryDepth}`);
-    console.log(`   Compression Level: ${this.config.compressionLevel}/9`);
-    console.log('============================================\n');
+    logger.info('\n============================================');
+    logger.info('   ULTRA-QUALITY ENGINE INITIALIZATION');
+    logger.info('============================================');
+    logger.info(`   Audio Quality: ${this.config.audioQuality.toUpperCase()}`);
+    logger.info(`   Image Quality: ${this.config.imageQuality.toUpperCase()}`);
+    logger.info(`   Video Quality: ${this.config.videoQuality.toUpperCase()}`);
+    logger.info(`   Version History: ${this.config.versionHistoryDepth}`);
+    logger.info(`   Compression Level: ${this.config.compressionLevel}/9`);
+    logger.info('============================================\n');
 
     await Promise.all([
       this.cache.initialize(),
@@ -976,8 +977,8 @@ export class UltraQualityEngine extends EventEmitter {
     ]);
 
     this.initialized = true;
-    console.log('[QUALITY] Ultra-Quality Engine fully initialized');
-    console.log('[QUALITY] All systems operating at MAXIMUM QUALITY');
+    logger.info('[QUALITY] Ultra-Quality Engine fully initialized');
+    logger.info('[QUALITY] All systems operating at MAXIMUM QUALITY');
     this.emit('initialized');
   }
 
@@ -1045,7 +1046,7 @@ export class UltraQualityEngine extends EventEmitter {
       this.aiVault.close(),
       this.audioMaximizer.close(),
     ]);
-    console.log('[QUALITY] Ultra-Quality Engine shut down gracefully');
+    logger.info('[QUALITY] Ultra-Quality Engine shut down gracefully');
   }
 }
 
