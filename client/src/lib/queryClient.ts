@@ -1,4 +1,5 @@
-import { QueryClient, QueryFunction } from '@tanstack/react-query';
+import { QueryClient, QueryFunction, MutationCache } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
 import { errorService, captureException } from './errorService';
 
 const DEFAULT_TIMEOUT_MS = 30000;
@@ -599,18 +600,29 @@ function shouldRetry(error: unknown): boolean {
 }
 
 export const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onError: (error: Error, _variables, _context, mutation) => {
+      if (mutation.options.onError) return;
+      const message = error.message || 'Something went wrong. Please try again.';
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+    },
+  }),
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: 'throw' }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false, // Disable auto-refetch on reconnect
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime in v4)
-      retry: false, // Disable all automatic retries - let users retry manually
+      refetchOnReconnect: false,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      retry: false,
     },
     mutations: {
-      retry: false, // Disable all automatic retries for mutations
+      retry: false,
     },
   },
 });

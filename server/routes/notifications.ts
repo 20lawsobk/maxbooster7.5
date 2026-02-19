@@ -4,6 +4,7 @@ import { db } from '../db';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { notifications } from '../../shared/schema';
 import { requireAuth } from '../middleware/auth';
+import { logger } from '../logger.js';
 
 const router = Router();
 
@@ -420,7 +421,7 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
 
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    console.log(`[SMS Verification] Code ${verificationCode} sent to ${phoneNumber} for user ${req.user.id}`);
+    logger.info(`[SMS Verification] Code sent to ${phoneNumber.slice(0, 3)}***${phoneNumber.slice(-2)} for user ${req.user.id}`);
 
     const user = await storage.getUser(req.user.id);
     const currentSettings = (user?.notificationSettings as any) || {};

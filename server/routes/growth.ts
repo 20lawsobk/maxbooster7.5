@@ -70,467 +70,582 @@ const shadowbanCheckSchema = z.object({
 });
 
 router.post('/score-viral', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { content } = scoreViralSchema.parse(req.body);
+  try {
+    const userId = req.user!.id;
+    const { content } = scoreViralSchema.parse(req.body);
 
-  const contentData: ContentData = {
-    ...content,
-    id: content.id || nanoid(),
-    userId,
-    scheduledTime: content.scheduledTime ? new Date(content.scheduledTime) : undefined,
-  };
+    const contentData: ContentData = {
+      ...content,
+      id: content.id || nanoid(),
+      userId,
+      scheduledTime: content.scheduledTime ? new Date(content.scheduledTime) : undefined,
+    };
 
-  const score = await viralScoringService.scoreContent(contentData);
+    const score = await viralScoringService.scoreContent(contentData);
 
-  logger.info(`📊 Viral score calculated for user ${userId}: ${score.overall}/100`);
+    logger.info(`📊 Viral score calculated for user ${userId}: ${score.overall}/100`);
 
-  res.json({
-    success: true,
-    score,
-  });
+    res.json({
+      success: true,
+      score,
+    });
+  } catch (error: any) {
+    logger.info('Error in score-viral:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post('/predict-potential', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { content } = scoreViralSchema.parse(req.body);
+  try {
+    const userId = req.user!.id;
+    const { content } = scoreViralSchema.parse(req.body);
 
-  const contentData: ContentData = {
-    ...content,
-    id: content.id || nanoid(),
-    userId,
-  };
+    const contentData: ContentData = {
+      ...content,
+      id: content.id || nanoid(),
+      userId,
+    };
 
-  const potential = await viralScoringService.predictViralPotential(contentData);
+    const potential = await viralScoringService.predictViralPotential(contentData);
 
-  res.json({
-    success: true,
-    potential,
-    category: potential >= 80 ? 'high' : potential >= 50 ? 'medium' : 'low',
-  });
+    res.json({
+      success: true,
+      potential,
+      category: potential >= 80 ? 'high' : potential >= 50 ? 'medium' : 'low',
+    });
+  } catch (error: any) {
+    logger.info('Error in predict-potential:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post('/suggest-improvements', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { content } = scoreViralSchema.parse(req.body);
+  try {
+    const userId = req.user!.id;
+    const { content } = scoreViralSchema.parse(req.body);
 
-  const contentData: ContentData = {
-    ...content,
-    id: content.id || nanoid(),
-    userId,
-  };
+    const contentData: ContentData = {
+      ...content,
+      id: content.id || nanoid(),
+      userId,
+    };
 
-  const improvements = await viralScoringService.suggestImprovements(contentData);
+    const improvements = await viralScoringService.suggestImprovements(contentData);
 
-  res.json({
-    success: true,
-    improvements,
-  });
+    res.json({
+      success: true,
+      improvements,
+    });
+  } catch (error: any) {
+    logger.info('Error in suggest-improvements:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post('/compare-variants', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { variants } = compareVariantsSchema.parse(req.body);
+  try {
+    const userId = req.user!.id;
+    const { variants } = compareVariantsSchema.parse(req.body);
 
-  const contentVariants: ContentData[] = variants.map(v => ({
-    ...v,
-    id: v.id || nanoid(),
-    userId,
-  }));
+    const contentVariants: ContentData[] = variants.map(v => ({
+      ...v,
+      id: v.id || nanoid(),
+      userId,
+    }));
 
-  const comparison = await viralScoringService.compareVariants(contentVariants);
+    const comparison = await viralScoringService.compareVariants(contentVariants);
 
-  res.json({
-    success: true,
-    comparison,
-  });
+    res.json({
+      success: true,
+      comparison,
+    });
+  } catch (error: any) {
+    logger.info('Error in compare-variants:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get('/optimal-timing/:platform', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { platform } = req.params;
-  const { timezone = 'America/New_York' } = req.query;
+  try {
+    const userId = req.user!.id;
+    const { platform } = req.params;
+    const { timezone = 'America/New_York' } = req.query;
 
-  const validPlatforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'spotify', 'apple_music', 'soundcloud', 'threads'];
-  if (!validPlatforms.includes(platform)) {
-    return res.status(400).json({ error: 'Invalid platform' });
+    const validPlatforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'spotify', 'apple_music', 'soundcloud', 'threads'];
+    if (!validPlatforms.includes(platform)) {
+      return res.status(400).json({ error: 'Invalid platform' });
+    }
+
+    const timing = await timingOptimizerService.getOptimalTiming(
+      platform,
+      timezone as string,
+      userId
+    );
+
+    res.json({
+      success: true,
+      timing,
+    });
+  } catch (error: any) {
+    logger.info('Error in optimal-timing:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const timing = await timingOptimizerService.getOptimalTiming(
-    platform,
-    timezone as string,
-    userId
-  );
-
-  res.json({
-    success: true,
-    timing,
-  });
 }));
 
 router.get('/optimal-timing-all', requireAuth, asyncHandler(async (req, res) => {
-  const { timezone = 'America/New_York' } = req.query;
+  try {
+    const { timezone = 'America/New_York' } = req.query;
 
-  const allTimings = await timingOptimizerService.getOptimalTimingForAllPlatforms(
-    timezone as string
-  );
+    const allTimings = await timingOptimizerService.getOptimalTimingForAllPlatforms(
+      timezone as string
+    );
 
-  res.json({
-    success: true,
-    timings: allTimings,
-  });
+    res.json({
+      success: true,
+      timings: allTimings,
+    });
+  } catch (error: any) {
+    logger.info('Error in optimal-timing-all:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post('/timing-recommendation', requireAuth, asyncHandler(async (req, res) => {
-  const { platform, timezone, targetDate } = timingSchema.parse(req.body);
+  try {
+    const { platform, timezone, targetDate } = timingSchema.parse(req.body);
 
-  const date = targetDate ? new Date(targetDate) : new Date();
-  const recommendation = await timingOptimizerService.getTimingRecommendation(
-    platform,
-    date,
-    timezone
-  );
+    const date = targetDate ? new Date(targetDate) : new Date();
+    const recommendation = await timingOptimizerService.getTimingRecommendation(
+      platform,
+      date,
+      timezone
+    );
 
-  res.json({
-    success: true,
-    recommendation,
-  });
+    res.json({
+      success: true,
+      recommendation,
+    });
+  } catch (error: any) {
+    logger.info('Error in timing-recommendation:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post('/audience-patterns', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { platform } = req.body;
+  try {
+    const userId = req.user!.id;
+    const { platform } = req.body;
 
-  const patterns = await timingOptimizerService.analyzeAudiencePatterns(
-    userId,
-    platform
-  );
+    const patterns = await timingOptimizerService.analyzeAudiencePatterns(
+      userId,
+      platform
+    );
 
-  res.json({
-    success: true,
-    patterns,
-  });
+    res.json({
+      success: true,
+      patterns,
+    });
+  } catch (error: any) {
+    logger.info('Error in audience-patterns:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get('/competitor-timing/:platform', requireAuth, asyncHandler(async (req, res) => {
-  const { platform } = req.params;
+  try {
+    const { platform } = req.params;
 
-  const competitorTiming = await timingOptimizerService.getCompetitorTiming(platform);
+    const competitorTiming = await timingOptimizerService.getCompetitorTiming(platform);
 
-  res.json({
-    success: true,
-    competitorTiming,
-  });
+    res.json({
+      success: true,
+      competitorTiming,
+    });
+  } catch (error: any) {
+    logger.info('Error in competitor-timing:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post('/posting-schedule', requireAuth, asyncHandler(async (req, res) => {
-  const { platforms, postsPerWeek = 7, timezone = 'America/New_York' } = req.body;
+  try {
+    const { platforms, postsPerWeek = 7, timezone = 'America/New_York' } = req.body;
 
-  if (!platforms || !Array.isArray(platforms) || platforms.length === 0) {
-    return res.status(400).json({ error: 'Platforms array is required' });
+    if (!platforms || !Array.isArray(platforms) || platforms.length === 0) {
+      return res.status(400).json({ error: 'Platforms array is required' });
+    }
+
+    const schedule = await timingOptimizerService.suggestPostingSchedule(
+      platforms,
+      postsPerWeek,
+      timezone
+    );
+
+    res.json({
+      success: true,
+      schedule,
+    });
+  } catch (error: any) {
+    logger.info('Error in posting-schedule:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const schedule = await timingOptimizerService.suggestPostingSchedule(
-    platforms,
-    postsPerWeek,
-    timezone
-  );
-
-  res.json({
-    success: true,
-    schedule,
-  });
 }));
 
 router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { content, count } = generateVariantsSchema.parse(req.body);
+  try {
+    const userId = req.user!.id;
+    const { content, count } = generateVariantsSchema.parse(req.body);
 
-  const contentData: ContentData = {
-    ...content,
-    id: content.id || nanoid(),
-    userId,
-  };
+    const contentData: ContentData = {
+      ...content,
+      id: content.id || nanoid(),
+      userId,
+    };
 
-  const result = await contentVariantGeneratorService.generateVariants(
-    contentData as any,
-    count
-  );
+    const result = await contentVariantGeneratorService.generateVariants(
+      contentData as any,
+      count
+    );
 
-  logger.info(`🎯 Generated ${result.variants.length} variants for user ${userId}`);
+    logger.info(`🎯 Generated ${result.variants.length} variants for user ${userId}`);
 
-  res.json({
-    success: true,
-    ...result,
-  });
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error: any) {
+    logger.info('Error in generate-variants:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post('/generate-caption-variants', requireAuth, asyncHandler(async (req, res) => {
-  const { caption, count = 5 } = req.body;
+  try {
+    const { caption, count = 5 } = req.body;
 
-  if (!caption) {
-    return res.status(400).json({ error: 'Caption is required' });
+    if (!caption) {
+      return res.status(400).json({ error: 'Caption is required' });
+    }
+
+    const variants = await contentVariantGeneratorService.generateCaptionVariants(
+      caption,
+      count
+    );
+
+    res.json({
+      success: true,
+      variants,
+    });
+  } catch (error: any) {
+    logger.info('Error in generate-caption-variants:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const variants = await contentVariantGeneratorService.generateCaptionVariants(
-    caption,
-    count
-  );
-
-  res.json({
-    success: true,
-    variants,
-  });
 }));
 
 router.post('/generate-hashtag-sets', requireAuth, asyncHandler(async (req, res) => {
-  const { content, count = 5 } = generateVariantsSchema.parse(req.body);
+  try {
+    const { content, count = 5 } = generateVariantsSchema.parse(req.body);
 
-  const hashtagSets = await contentVariantGeneratorService.generateHashtagSets(
-    content as any,
-    count
-  );
+    const hashtagSets = await contentVariantGeneratorService.generateHashtagSets(
+      content as any,
+      count
+    );
 
-  res.json({
-    success: true,
-    hashtagSets,
-  });
+    res.json({
+      success: true,
+      hashtagSets,
+    });
+  } catch (error: any) {
+    logger.info('Error in generate-hashtag-sets:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post('/generate-hooks', requireAuth, asyncHandler(async (req, res) => {
-  const { content } = scoreViralSchema.parse(req.body);
+  try {
+    const { content } = scoreViralSchema.parse(req.body);
 
-  const hooks = await contentVariantGeneratorService.generateHookVariants(content as any);
+    const hooks = await contentVariantGeneratorService.generateHookVariants(content as any);
 
-  res.json({
-    success: true,
-    hooks,
-  });
+    res.json({
+      success: true,
+      hooks,
+    });
+  } catch (error: any) {
+    logger.info('Error in generate-hooks:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post('/create-ab-test', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { content, variantCount = 2 } = req.body;
+  try {
+    const userId = req.user!.id;
+    const { content, variantCount = 2 } = req.body;
 
-  if (!content || typeof content !== 'object') {
-    return res.status(400).json({ error: 'Content object is required with caption, platform, and contentType' });
+    if (!content || typeof content !== 'object') {
+      return res.status(400).json({ error: 'Content object is required with caption, platform, and contentType' });
+    }
+
+    const contentData = {
+      ...content,
+      id: content.id || nanoid(),
+      userId,
+    };
+
+    const abTest = await contentVariantGeneratorService.createABTest(
+      contentData as any,
+      variantCount
+    );
+
+    logger.info(`🧪 A/B test created for user ${userId}: ${abTest.testId}`);
+
+    res.json({
+      success: true,
+      ...abTest,
+    });
+  } catch (error: any) {
+    logger.info('Error in create-ab-test:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const contentData = {
-    ...content,
-    id: content.id || nanoid(),
-    userId,
-  };
-
-  const abTest = await contentVariantGeneratorService.createABTest(
-    contentData as any,
-    variantCount
-  );
-
-  logger.info(`🧪 A/B test created for user ${userId}: ${abTest.testId}`);
-
-  res.json({
-    success: true,
-    ...abTest,
-  });
 }));
 
 router.post('/algorithm-health', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { platform, recentMetrics } = algorithmHealthSchema.parse(req.body);
+  try {
+    const userId = req.user!.id;
+    const { platform, recentMetrics } = algorithmHealthSchema.parse(req.body);
 
-  const health = await algorithmIntelligenceService.checkAlgorithmHealth(
-    platform,
-    userId,
-    recentMetrics
-  );
+    const health = await algorithmIntelligenceService.checkAlgorithmHealth(
+      platform,
+      userId,
+      recentMetrics
+    );
 
-  res.json({
-    success: true,
-    health,
-  });
+    res.json({
+      success: true,
+      health,
+    });
+  } catch (error: any) {
+    logger.info('Error in algorithm-health:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get('/algorithm-health/:platform', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { platform } = req.params;
+  try {
+    const userId = req.user!.id;
+    const { platform } = req.params;
 
-  const validPlatforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'spotify', 'apple_music', 'soundcloud', 'threads'];
-  if (!validPlatforms.includes(platform)) {
-    return res.status(400).json({ error: 'Invalid platform' });
+    const validPlatforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'spotify', 'apple_music', 'soundcloud', 'threads'];
+    if (!validPlatforms.includes(platform)) {
+      return res.status(400).json({ error: 'Invalid platform' });
+    }
+
+    const health = await algorithmIntelligenceService.checkAlgorithmHealth(platform, userId);
+
+    res.json({
+      success: true,
+      health,
+    });
+  } catch (error: any) {
+    logger.info('Error in algorithm-health by platform:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const health = await algorithmIntelligenceService.checkAlgorithmHealth(platform, userId);
-
-  res.json({
-    success: true,
-    health,
-  });
 }));
 
 router.post('/shadowban-check', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { platform, recentMetrics } = shadowbanCheckSchema.parse(req.body);
+  try {
+    const userId = req.user!.id;
+    const { platform, recentMetrics } = shadowbanCheckSchema.parse(req.body);
 
-  const result = await algorithmIntelligenceService.checkShadowBan(
-    platform,
-    userId,
-    recentMetrics
-  );
+    const result = await algorithmIntelligenceService.checkShadowBan(
+      platform,
+      userId,
+      recentMetrics
+    );
 
-  logger.info(`🔍 Shadowban check for ${platform}: ${result.isShadowbanned ? 'DETECTED' : 'Clear'}`);
+    logger.info(`🔍 Shadowban check for ${platform}: ${result.isShadowbanned ? 'DETECTED' : 'Clear'}`);
 
-  res.json({
-    success: true,
-    result,
-  });
+    res.json({
+      success: true,
+      result,
+    });
+  } catch (error: any) {
+    logger.info('Error in shadowban-check:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get('/engagement-patterns/:platform', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { platform } = req.params;
+  try {
+    const userId = req.user!.id;
+    const { platform } = req.params;
 
-  const patterns = await algorithmIntelligenceService.getEngagementPatterns(platform, userId);
+    const patterns = await algorithmIntelligenceService.getEngagementPatterns(platform, userId);
 
-  res.json({
-    success: true,
-    patterns,
-  });
+    res.json({
+      success: true,
+      patterns,
+    });
+  } catch (error: any) {
+    logger.info('Error in engagement-patterns:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get('/platform-profile/:platform', requireAuth, asyncHandler(async (req, res) => {
-  const { platform } = req.params;
+  try {
+    const { platform } = req.params;
 
-  const profile = await algorithmIntelligenceService.getPlatformProfile(platform);
+    const profile = await algorithmIntelligenceService.getPlatformProfile(platform);
 
-  res.json({
-    success: true,
-    profile,
-  });
+    res.json({
+      success: true,
+      profile,
+    });
+  } catch (error: any) {
+    logger.info('Error in platform-profile:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get('/algorithm-insights/:platform', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { platform } = req.params;
+  try {
+    const userId = req.user!.id;
+    const { platform } = req.params;
 
-  const insights = await algorithmIntelligenceService.getAlgorithmInsights(platform, userId);
+    const insights = await algorithmIntelligenceService.getAlgorithmInsights(platform, userId);
 
-  res.json({
-    success: true,
-    insights,
-  });
+    res.json({
+      success: true,
+      insights,
+    });
+  } catch (error: any) {
+    logger.info('Error in algorithm-insights:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { timezone = 'America/New_York' } = req.query;
+  try {
+    const userId = req.user!.id;
+    const { timezone = 'America/New_York' } = req.query;
 
-  const platforms = ['tiktok', 'instagram', 'youtube', 'twitter'];
-  
-  const [healthResults, timingResults] = await Promise.all([
-    Promise.all(
-      platforms.map(platform => 
-        algorithmIntelligenceService.checkAlgorithmHealth(platform, userId)
-      )
-    ),
-    timingOptimizerService.getOptimalTimingForAllPlatforms(timezone as string),
-  ]);
+    const platforms = ['tiktok', 'instagram', 'youtube', 'twitter'];
+    
+    const [healthResults, timingResults] = await Promise.all([
+      Promise.all(
+        platforms.map(platform => 
+          algorithmIntelligenceService.checkAlgorithmHealth(platform, userId)
+        )
+      ),
+      timingOptimizerService.getOptimalTimingForAllPlatforms(timezone as string),
+    ]);
 
-  const platformHealth: Record<string, AlgorithmHealth> = {};
-  platforms.forEach((platform, index) => {
-    platformHealth[platform] = healthResults[index];
-  });
-
-  const overallHealth = Math.round(
-    Object.values(platformHealth).reduce((sum, h) => sum + h.overallScore, 0) / platforms.length
-  );
-
-  const reachMultiplier = 1 + (overallHealth - 50) / 100;
-
-  const allAlerts = Object.values(platformHealth)
-    .flatMap(h => h.alerts)
-    .filter(a => !a.resolved)
-    .sort((a, b) => {
-      const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-      return severityOrder[a.severity] - severityOrder[b.severity];
+    const platformHealth: Record<string, AlgorithmHealth> = {};
+    platforms.forEach((platform, index) => {
+      platformHealth[platform] = healthResults[index];
     });
 
-  const allRecommendations = [...new Set(
-    Object.values(platformHealth)
-      .flatMap(h => h.recommendations)
-  )].slice(0, 10);
+    const overallHealth = Math.round(
+      Object.values(platformHealth).reduce((sum, h) => sum + h.overallScore, 0) / platforms.length
+    );
 
-  const growthProjection = {
-    current: null,
-    projected30Days: null,
-    projected90Days: null,
-  };
+    const reachMultiplier = 1 + (overallHealth - 50) / 100;
 
-  const viralHighlights = platforms.map(platform => ({
-    platform,
-    topScore: null,
-    avgScore: null,
-    viralPotential: null,
-  }));
+    const allAlerts = Object.values(platformHealth)
+      .flatMap(h => h.alerts)
+      .filter(a => !a.resolved)
+      .sort((a, b) => {
+        const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        return severityOrder[a.severity] - severityOrder[b.severity];
+      });
 
-  const heatmapData: Array<{
-    dayOfWeek: number;
-    hour: number;
-    value: number;
-    platform: string;
-  }> = [];
+    const allRecommendations = [...new Set(
+      Object.values(platformHealth)
+        .flatMap(h => h.recommendations)
+    )].slice(0, 10);
 
-  for (const platform of platforms) {
-    const timing = timingResults[platform];
-    if (timing) {
-      for (const slot of timing.bestTimes.slice(0, 5)) {
-        heatmapData.push({
-          dayOfWeek: slot.dayOfWeek,
-          hour: slot.hour,
-          value: slot.score,
-          platform,
-        });
+    const growthProjection = {
+      current: null,
+      projected30Days: null,
+      projected90Days: null,
+    };
+
+    const viralHighlights = platforms.map(platform => ({
+      platform,
+      topScore: null,
+      avgScore: null,
+      viralPotential: null,
+    }));
+
+    const heatmapData: Array<{
+      dayOfWeek: number;
+      hour: number;
+      value: number;
+      platform: string;
+    }> = [];
+
+    for (const platform of platforms) {
+      const timing = timingResults[platform];
+      if (timing) {
+        for (const slot of timing.bestTimes.slice(0, 5)) {
+          heatmapData.push({
+            dayOfWeek: slot.dayOfWeek,
+            hour: slot.hour,
+            value: slot.score,
+            platform,
+          });
+        }
       }
     }
-  }
 
-  res.json({
-    success: true,
-    dashboard: {
-      overallHealth,
-      reachMultiplier: Math.round(reachMultiplier * 100) / 100,
-      platformHealth,
-      optimalTiming: timingResults,
-      alerts: allAlerts,
-      recommendations: allRecommendations,
-      growthProjection,
-      viralHighlights,
-      heatmapData,
-      lastUpdated: new Date().toISOString(),
-    },
-  });
+    res.json({
+      success: true,
+      dashboard: {
+        overallHealth,
+        reachMultiplier: Math.round(reachMultiplier * 100) / 100,
+        platformHealth,
+        optimalTiming: timingResults,
+        alerts: allAlerts,
+        recommendations: allRecommendations,
+        growthProjection,
+        viralHighlights,
+        heatmapData,
+        lastUpdated: new Date().toISOString(),
+      },
+    });
+  } catch (error: any) {
+    logger.info('Error in dashboard:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get('/summary', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
+  try {
+    const userId = req.user!.id;
 
-  const defaultPlatform = 'instagram';
-  const [health, patterns, insights] = await Promise.all([
-    algorithmIntelligenceService.checkAlgorithmHealth(defaultPlatform, userId),
-    algorithmIntelligenceService.getEngagementPatterns(defaultPlatform, userId),
-    algorithmIntelligenceService.getAlgorithmInsights(defaultPlatform, userId),
-  ]);
+    const defaultPlatform = 'instagram';
+    const [health, patterns, insights] = await Promise.all([
+      algorithmIntelligenceService.checkAlgorithmHealth(defaultPlatform, userId),
+      algorithmIntelligenceService.getEngagementPatterns(defaultPlatform, userId),
+      algorithmIntelligenceService.getAlgorithmInsights(defaultPlatform, userId),
+    ]);
 
-  res.json({
-    success: true,
-    summary: {
-      healthScore: health.overallScore,
-      status: health.status,
-      alertCount: health.alerts.filter(a => !a.resolved).length,
-      topRecommendation: health.recommendations[0] || 'Keep up the great work!',
-      optimalPostFrequency: patterns.optimalPostFrequency,
-      benchmarkComparison: insights.benchmarks,
-    },
-  });
+    res.json({
+      success: true,
+      summary: {
+        healthScore: health.overallScore,
+        status: health.status,
+        alertCount: health.alerts.filter(a => !a.resolved).length,
+        topRecommendation: health.recommendations[0] || 'Keep up the great work!',
+        optimalPostFrequency: patterns.optimalPostFrequency,
+        benchmarkComparison: insights.benchmarks,
+      },
+    });
+  } catch (error: any) {
+    logger.info('Error in summary:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 export default router;

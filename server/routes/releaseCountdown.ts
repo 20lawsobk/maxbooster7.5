@@ -28,201 +28,251 @@ const updateTaskSchema = z.object({
 });
 
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const { status } = req.query;
+  try {
+    const userId = req.user!.id;
+    const { status } = req.query;
 
-  logger.info(`Fetching countdowns for user ${userId}`);
+    logger.info(`Fetching countdowns for user ${userId}`);
 
-  let countdowns;
-  if (status === "active") {
-    countdowns = await releaseCountdownService.getActiveCountdowns(userId);
-  } else {
-    countdowns = await releaseCountdownService.getAllCountdowns(userId);
+    let countdowns;
+    if (status === "active") {
+      countdowns = await releaseCountdownService.getActiveCountdowns(userId);
+    } else {
+      countdowns = await releaseCountdownService.getAllCountdowns(userId);
+    }
+
+    const countdownsWithProgress = await Promise.all(
+      countdowns.map(async (countdown) => {
+        const tasks = await releaseCountdownService.getTasks(countdown.id);
+        const progress = releaseCountdownService.calculateProgress(tasks);
+        const timeRemaining = releaseCountdownService.calculateTimeRemaining(new Date(countdown.releaseDate));
+
+        return {
+          ...countdown,
+          progress,
+          timeRemaining,
+          taskCount: tasks.length,
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data: countdownsWithProgress,
+    });
+  } catch (error: any) {
+    logger.info('Error in get countdowns:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const countdownsWithProgress = await Promise.all(
-    countdowns.map(async (countdown) => {
-      const tasks = await releaseCountdownService.getTasks(countdown.id);
-      const progress = releaseCountdownService.calculateProgress(tasks);
-      const timeRemaining = releaseCountdownService.calculateTimeRemaining(new Date(countdown.releaseDate));
-
-      return {
-        ...countdown,
-        progress,
-        timeRemaining,
-        taskCount: tasks.length,
-      };
-    })
-  );
-
-  res.json({
-    success: true,
-    data: countdownsWithProgress,
-  });
 }));
 
 router.post("/", requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const data = createCountdownSchema.parse(req.body);
+  try {
+    const userId = req.user!.id;
+    const data = createCountdownSchema.parse(req.body);
 
-  logger.info(`Creating countdown for user ${userId}: ${data.title}`);
+    logger.info(`Creating countdown for user ${userId}: ${data.title}`);
 
-  const countdown = await releaseCountdownService.createCountdown(userId, data);
-  const tasks = await releaseCountdownService.getTasks(countdown.id);
+    const countdown = await releaseCountdownService.createCountdown(userId, data);
+    const tasks = await releaseCountdownService.getTasks(countdown.id);
 
-  res.status(201).json({
-    success: true,
-    data: {
-      countdown,
-      tasks,
-    },
-  });
+    res.status(201).json({
+      success: true,
+      data: {
+        countdown,
+        tasks,
+      },
+    });
+  } catch (error: any) {
+    logger.info('Error in create countdown:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const countdownId = req.params.id;
+  try {
+    const userId = req.user!.id;
+    const countdownId = req.params.id;
 
-  logger.info(`Fetching countdown ${countdownId} for user ${userId}`);
+    logger.info(`Fetching countdown ${countdownId} for user ${userId}`);
 
-  const result = await releaseCountdownService.getCountdownWithTasks(countdownId, userId);
+    const result = await releaseCountdownService.getCountdownWithTasks(countdownId, userId);
 
-  if (!result) {
-    return res.status(404).json({
-      success: false,
-      message: "Countdown not found",
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "Countdown not found",
+      });
+    }
+
+    const progress = releaseCountdownService.calculateProgress(result.tasks);
+    const timeRemaining = releaseCountdownService.calculateTimeRemaining(new Date(result.countdown.releaseDate));
+    const analytics = await releaseCountdownService.getAnalyticsSummary(countdownId);
+
+    res.json({
+      success: true,
+      data: {
+        ...result.countdown,
+        tasks: result.tasks,
+        progress,
+        timeRemaining,
+        analytics,
+      },
     });
+  } catch (error: any) {
+    logger.info('Error in get countdown by id:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const progress = releaseCountdownService.calculateProgress(result.tasks);
-  const timeRemaining = releaseCountdownService.calculateTimeRemaining(new Date(result.countdown.releaseDate));
-  const analytics = await releaseCountdownService.getAnalyticsSummary(countdownId);
-
-  res.json({
-    success: true,
-    data: {
-      ...result.countdown,
-      tasks: result.tasks,
-      progress,
-      timeRemaining,
-      analytics,
-    },
-  });
 }));
 
 router.patch("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user!.id;
-  const countdownId = req.params.id;
+  try {
+    const userId = req.user!.id;
+    const countdownId = req.params.id;
 
-  logger.info(`Updating countdown ${countdownId} for user ${userId}`);
+    logger.info(`Updating countdown ${countdownId} for user ${userId}`);
 
-  const countdown = await releaseCountdownService.updateCountdown(countdownId, userId, req.body);
+    const countdown = await releaseCountdownService.updateCountdown(countdownId, userId, req.body);
 
-  res.json({
-    success: true,
-    data: countdown,
-  });
+    res.json({
+      success: true,
+      data: countdown,
+    });
+  } catch (error: any) {
+    logger.info('Error in update countdown:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
-  const countdownId = req.params.id;
-  const data = addTaskSchema.parse(req.body);
+  try {
+    const countdownId = req.params.id;
+    const data = addTaskSchema.parse(req.body);
 
-  logger.info(`Adding task to countdown ${countdownId}`);
+    logger.info(`Adding task to countdown ${countdownId}`);
 
-  const task = await releaseCountdownService.addTask(countdownId, data);
+    const task = await releaseCountdownService.addTask(countdownId, data);
 
-  res.status(201).json({
-    success: true,
-    data: task,
-  });
+    res.status(201).json({
+      success: true,
+      data: task,
+    });
+  } catch (error: any) {
+    logger.info('Error in add task:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
-  const countdownId = req.params.id;
+  try {
+    const countdownId = req.params.id;
 
-  logger.info(`Fetching tasks for countdown ${countdownId}`);
+    logger.info(`Fetching tasks for countdown ${countdownId}`);
 
-  const tasks = await releaseCountdownService.getTasks(countdownId);
-  const progress = releaseCountdownService.calculateProgress(tasks);
+    const tasks = await releaseCountdownService.getTasks(countdownId);
+    const progress = releaseCountdownService.calculateProgress(tasks);
 
-  res.json({
-    success: true,
-    data: tasks,
-    meta: {
-      progress,
-    },
-  });
+    res.json({
+      success: true,
+      data: tasks,
+      meta: {
+        progress,
+      },
+    });
+  } catch (error: any) {
+    logger.info('Error in get tasks:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.patch("/:id/tasks/:taskId", requireAuth, asyncHandler(async (req, res) => {
-  const countdownId = req.params.id;
-  const taskId = req.params.taskId;
-  const data = updateTaskSchema.parse(req.body);
+  try {
+    const countdownId = req.params.id;
+    const taskId = req.params.taskId;
+    const data = updateTaskSchema.parse(req.body);
 
-  logger.info(`Updating task ${taskId} for countdown ${countdownId}`);
+    logger.info(`Updating task ${taskId} for countdown ${countdownId}`);
 
-  let task;
-  if (data.completed !== undefined) {
-    if (data.completed) {
-      task = await releaseCountdownService.completeTask(countdownId, taskId);
+    let task;
+    if (data.completed !== undefined) {
+      if (data.completed) {
+        task = await releaseCountdownService.completeTask(countdownId, taskId);
+      } else {
+        task = await releaseCountdownService.uncompleteTask(countdownId, taskId);
+      }
     } else {
-      task = await releaseCountdownService.uncompleteTask(countdownId, taskId);
+      task = await releaseCountdownService.completeTask(countdownId, taskId);
     }
-  } else {
-    task = await releaseCountdownService.completeTask(countdownId, taskId);
-  }
 
-  res.json({
-    success: true,
-    data: task,
-  });
+    res.json({
+      success: true,
+      data: task,
+    });
+  } catch (error: any) {
+    logger.info('Error in update task:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.get("/:id/analytics", requireAuth, asyncHandler(async (req, res) => {
-  const countdownId = req.params.id;
+  try {
+    const countdownId = req.params.id;
 
-  logger.info(`Fetching analytics for countdown ${countdownId}`);
+    logger.info(`Fetching analytics for countdown ${countdownId}`);
 
-  const analytics = await releaseCountdownService.getAnalyticsSummary(countdownId);
+    const analytics = await releaseCountdownService.getAnalyticsSummary(countdownId);
 
-  res.json({
-    success: true,
-    data: analytics,
-  });
+    res.json({
+      success: true,
+      data: analytics,
+    });
+  } catch (error: any) {
+    logger.info('Error in get analytics:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post("/:id/analytics/track", requireAuth, asyncHandler(async (req, res) => {
-  const countdownId = req.params.id;
-  const { presaves, shares, pageViews } = req.body;
+  try {
+    const countdownId = req.params.id;
+    const { presaves, shares, pageViews } = req.body;
 
-  logger.info(`Recording analytics for countdown ${countdownId}`);
+    logger.info(`Recording analytics for countdown ${countdownId}`);
 
-  const analytics = await releaseCountdownService.recordAnalytics(countdownId, {
-    presaves,
-    shares,
-    pageViews,
-  });
+    const analytics = await releaseCountdownService.recordAnalytics(countdownId, {
+      presaves,
+      shares,
+      pageViews,
+    });
 
-  res.json({
-    success: true,
-    data: analytics,
-  });
+    res.json({
+      success: true,
+      data: analytics,
+    });
+  } catch (error: any) {
+    logger.info('Error in track analytics:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 router.post("/:id/generate-checklist", requireAuth, asyncHandler(async (req, res) => {
-  const countdownId = req.params.id;
-  const { genre, targetAudience } = req.body;
+  try {
+    const countdownId = req.params.id;
+    const { genre, targetAudience } = req.body;
 
-  logger.info(`Generating AI checklist for countdown ${countdownId}`);
+    logger.info(`Generating AI checklist for countdown ${countdownId}`);
 
-  const tasks = await releaseCountdownService.generateAISuggestedTasks(countdownId, genre, targetAudience);
-  const addedTasks = await releaseCountdownService.bulkAddTasks(countdownId, tasks);
+    const tasks = await releaseCountdownService.generateAISuggestedTasks(countdownId, genre, targetAudience);
+    const addedTasks = await releaseCountdownService.bulkAddTasks(countdownId, tasks);
 
-  res.json({
-    success: true,
-    data: addedTasks,
-  });
+    res.json({
+      success: true,
+      data: addedTasks,
+    });
+  } catch (error: any) {
+    logger.info('Error in generate checklist:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }));
 
 export default router;
