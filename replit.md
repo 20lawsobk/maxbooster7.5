@@ -40,7 +40,28 @@ script/          - Build scripts
 - Sentry (error tracking)
 - LabelGrid (music distribution)
 
+## Security & Hardening
+- XSS prevention: `escapeHtml()` and `escapeRegex()` helpers in server/routes/search.ts sanitize all search highlighting
+- IDOR protection on pocket dimension routes (stats/list/write) - verify userId matches session
+- Data leak prevention: export-data endpoint strips twoFactorSecret, passwordResetToken, emailVerificationToken
+- Input validation on change-password (min 8 chars) and delete-account (confirmation required)
+- Admin-only auth on infrastructure status endpoint
+- Log injection prevention in error reporting
+- Removed duplicate insecure 2FA disable route
+- Session security: httpOnly, sameSite, secure cookies configured
+- Rate limiting on auth endpoints
+- Circuit breakers for all external streaming services
+- API response caching (8 routes cached)
+
 ## Recent Changes
+- 2026-02-19: Production hardening pass
+  - Fixed 7 critical and 13 high-severity security vulnerabilities
+  - Added XSS prevention (HTML/regex escaping) to search autocomplete
+  - Added IDOR protection to pocket dimension routes
+  - Hardened data export to strip sensitive fields
+  - Added input validation to auth endpoints
+  - Verified error handling coverage across all services
+  - Confirmed performance infrastructure (caching, circuit breakers, rate limiting)
 - 2026-02-19: Initial Replit environment setup
   - Installed Node.js 20 and Rust stable
   - Created PostgreSQL database
