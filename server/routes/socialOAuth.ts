@@ -284,9 +284,10 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       const twCodeVerifier = crypto.randomBytes(32).toString('base64url');
       const codeChallenge = crypto.createHash('sha256').update(twCodeVerifier).digest('base64url');
       codeVerifier = twCodeVerifier;
+      const twitterClientId = process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || config.clientId!;
       const twitterAuthParams = new URLSearchParams({
         response_type: 'code',
-        client_id: config.clientId!,
+        client_id: twitterClientId,
         redirect_uri: redirectUri,
         state,
         code_challenge: codeChallenge,
@@ -399,10 +400,16 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
 
       if (platform === 'twitter') {
         try {
+          const twitterClientId = process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || '';
+          const twitterClientSecret = process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET || '';
           logger.info(`[OAuth] Twitter token exchange (direct fetch)`, { 
             hasCode: !!authCode, 
             hasVerifier: !!stateData.codeVerifier,
             redirectUri,
+            clientIdSource: process.env.TWITTER_CLIENT_ID ? 'TWITTER_CLIENT_ID' : 'TWITTER_API_KEY',
+            clientIdLen: twitterClientId.length,
+            hasClientSecret: twitterClientSecret.length > 0,
+            clientSecretLen: twitterClientSecret.length,
           });
           const twitterTokenBody = new URLSearchParams({
             grant_type: 'authorization_code',
@@ -410,8 +417,8 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             redirect_uri: redirectUri,
             code_verifier: stateData.codeVerifier!,
           });
-          const twitterBasicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
-          const twitterTokenRes = await fetch('https://api.x.com/2/oauth2/token', {
+          const twitterBasicAuth = Buffer.from(`${twitterClientId}:${twitterClientSecret}`).toString('base64');
+          const twitterTokenRes = await fetch('https://api.twitter.com/2/oauth2/token', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
@@ -420,6 +427,10 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             body: twitterTokenBody.toString(),
           });
           const twitterTokenJson = await twitterTokenRes.json() as any;
+          logger.info(`[OAuth] Twitter token response`, { 
+            status: twitterTokenRes.status,
+            responseBody: JSON.stringify(twitterTokenJson),
+          });
           if (!twitterTokenRes.ok || !twitterTokenJson.access_token) {
             throw new Error(twitterTokenJson.error_description || twitterTokenJson.error || `Token request failed with status ${twitterTokenRes.status}`);
           }
