@@ -52,9 +52,12 @@ const PLATFORMS = {
     const clientSecret = isSandbox
       ? (process.env.TIKTOK_SANDBOX_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET)
       : (process.env.TIKTOK_PROD_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET);
-    const scopes = env === 'sandbox'
-      ? (process.env.TIKTOK_SANDBOX_SCOPES || 'user.info.basic,video.publish,video.upload')
-      : (process.env.TIKTOK_PROD_SCOPES || 'user.info.basic,video.publish,video.upload');
+    const scopes = isSandbox
+      ? (process.env.TIKTOK_SANDBOX_SCOPES || 'user.info.basic,video.list,video.upload,video.publish')
+      : (process.env.TIKTOK_PROD_SCOPES || 'user.info.basic');
+    const redirectUri = isSandbox
+      ? process.env.TIKTOK_SANDBOX_REDIRECT_URI
+      : process.env.TIKTOK_PROD_REDIRECT_URI;
     return {
       name: isSandbox ? 'TikTok (Sandbox)' : 'TikTok',
       authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
@@ -66,6 +69,7 @@ const PLATFORMS = {
       responseType: 'code',
       enabled: !!(clientKey && clientSecret),
       isSandbox,
+      redirectUri,
     };
   })(),
   google: {
@@ -176,7 +180,7 @@ const CALLBACK_PATHS: Record<string, string> = {
   facebook: '/auth/facebook/callback',
   instagram: '/auth/instagram/callback',
   threads: '/auth/threads/callback',
-  tiktok: process.env.TIKTOK_ENV === 'sandbox' ? '/tiktok/sandbox/callback' : '/tiktok/callback',
+  tiktok: process.env.TIKTOK_ENV === 'sandbox' ? '/tiktok/sandbox/callback' : '/auth/tiktok/callback',
   google: '/auth/google/callback',
   youtube: '/auth/youtube/callback',
   googlebusiness: '/auth/google-business/callback',
@@ -271,7 +275,8 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     }
     
     const state = crypto.randomBytes(32).toString('hex');
-    const redirectUri = getCallbackUrl(platform);
+    const platformConfig = config as any;
+    const redirectUri = platformConfig.redirectUri || getCallbackUrl(platform);
     
     const params = new URLSearchParams();
     let codeVerifier: string | undefined;
@@ -369,7 +374,8 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       return res.redirect(`/social-media?error=unsupported_platform`);
     }
     
-    const redirectUri = getCallbackUrl(platform);
+    const platformConfig = config as any;
+    const redirectUri = platformConfig.redirectUri || getCallbackUrl(platform);
 
     let authCode = code as string;
     if (authCode) {

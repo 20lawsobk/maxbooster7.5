@@ -338,32 +338,36 @@ export class SocialOAuthService {
       redirectUri: `${getOAuthDomain()}/auth/threads/callback`,
     });
 
+    const tiktokEnv = process.env.TIKTOK_ENV;
+    const isTikTokSandbox = tiktokEnv === 'sandbox';
+    const tiktokClientKey = isTikTokSandbox
+      ? (process.env.TIKTOK_SANDBOX_CLIENT_KEY || process.env.TIKTOK_CLIENT_KEY || '')
+      : (process.env.TIKTOK_PROD_CLIENT_KEY || process.env.TIKTOK_CLIENT_KEY || '');
+    const tiktokClientSecret = isTikTokSandbox
+      ? (process.env.TIKTOK_SANDBOX_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET || '')
+      : (process.env.TIKTOK_PROD_CLIENT_SECRET || process.env.TIKTOK_CLIENT_SECRET || '');
+    const tiktokScopesStr = isTikTokSandbox
+      ? (process.env.TIKTOK_SANDBOX_SCOPES || 'user.info.basic,video.list,video.upload,video.publish')
+      : (process.env.TIKTOK_PROD_SCOPES || 'user.info.basic');
+    const tiktokRedirectUri = isTikTokSandbox
+      ? (process.env.TIKTOK_SANDBOX_REDIRECT_URI || `${getOAuthDomain()}/tiktok/sandbox/callback`)
+      : (process.env.TIKTOK_PROD_REDIRECT_URI || `${getOAuthDomain()}/auth/tiktok/callback`);
+
     this.oauthConfigs.set('tiktok', {
-      clientId: process.env.TIKTOK_CLIENT_KEY || '',
-      clientSecret: process.env.TIKTOK_CLIENT_SECRET || '',
+      clientId: tiktokClientKey,
+      clientSecret: tiktokClientSecret,
       authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
       tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-      scopes: ['user.info.basic', 'video.publish', 'video.upload'],
-      redirectUri: `${getOAuthDomain()}/auth/tiktok/callback`,
+      scopes: tiktokScopesStr.split(','),
+      redirectUri: tiktokRedirectUri,
     });
-
-    if (process.env.TIKTOK_CLIENT_KEY1 && process.env.TIKTOK_CLIENT_SECRET1) {
-      this.oauthConfigs.set('tiktok_sandbox', {
-        clientId: process.env.TIKTOK_CLIENT_KEY1,
-        clientSecret: process.env.TIKTOK_CLIENT_SECRET1,
-        authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
-        tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
-        scopes: ['user.info.basic', 'video.publish', 'video.upload'],
-        redirectUri: `${getOAuthDomain()}/auth/tiktok/callback`,
-      });
-    }
   }
 
   /**
    * Get OAuth authorization URL
    */
   getAuthorizationUrl(platform: string, userId: string): string {
-    const actualPlatform = platform === 'tiktok_sandbox' ? 'tiktok_sandbox' : platform;
+    const actualPlatform = platform === 'tiktok_sandbox' ? 'tiktok' : platform;
     const config = this.oauthConfigs.get(actualPlatform);
     if (!config) {
       throw new Error(`OAuth not configured for platform: ${platform}`);

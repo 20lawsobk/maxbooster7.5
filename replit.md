@@ -54,6 +54,13 @@ script/          - Build scripts
 - API response caching (8 routes cached)
 
 ## Recent Changes
+- 2026-02-19: TikTok OAuth sandbox/production split
+  - Env-driven config: `TIKTOK_ENV=sandbox` switches between sandbox and production mode
+  - Separate env vars: `TIKTOK_SANDBOX_CLIENT_KEY`, `TIKTOK_SANDBOX_CLIENT_SECRET`, `TIKTOK_SANDBOX_SCOPES`, `TIKTOK_SANDBOX_REDIRECT_URI` for sandbox; `TIKTOK_PROD_*` for production
+  - Different default scopes: sandbox=`user.info.basic,video.list,video.upload,video.publish`, production=`user.info.basic`
+  - Consistent redirect URI handling across auth URL generation and token exchange
+  - Both routes and service files aligned on the same env var pattern
+- 2026-02-19: Twitter/X OAuth fix - switched to public client mode (client_id in body, no Basic Auth)
 - 2026-02-19: Production hardening pass (phase 4)
   - Replaced console.log with logger in 10 more server files: personalization.ts, storage.ts, platform-capsule.ts, ultra-quality-engine.ts, performanceRegression.ts, undo.ts, files.ts, notifications.ts, collaborations.ts, shortcuts.ts
   - Added isError handling to 15 more frontend pages: Dashboard, Analytics, Distribution, Marketplace, SocialMedia, Settings, Royalties, Storefront, Contracts, Collaborations, Workspaces, Invoices, Projects, CareerCoach, DeveloperApi
