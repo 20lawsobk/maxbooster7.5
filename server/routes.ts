@@ -842,7 +842,9 @@ export async function registerRoutes(
     try {
       const { currentPassword, newPassword } = req.body;
       
-      // Validate new password
+      if (!currentPassword) {
+        return res.status(400).json({ message: "Current password is required" });
+      }
       if (!newPassword || newPassword.length < 8) {
         return res.status(400).json({ message: "New password must be at least 8 characters" });
       }
@@ -893,6 +895,9 @@ export async function registerRoutes(
     }
     try {
       const { password } = req.body;
+      if (!password) {
+        return res.status(400).json({ message: "Password is required to delete account" });
+      }
       const isValid = await bcrypt.compare(password, req.user.password);
       if (!isValid) {
         return res.status(400).json({ message: "Password is incorrect" });
@@ -1053,11 +1058,16 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const { password, ...userData } = req.user;
-    return res.json({
-      user: userData,
-      exportedAt: new Date().toISOString(),
-    });
+    try {
+      const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...userData } = req.user as any;
+      return res.json({
+        user: userData,
+        exportedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Export data error:", error);
+      return res.status(500).json({ message: "Failed to export data" });
+    }
   });
 
   // Auth: 2FA setup - Generate TOTP secret and QR code
@@ -1193,33 +1203,8 @@ export async function registerRoutes(
     });
   });
 
-  // Auth: 2FA disable - Disable two-factor authentication
-  app.post("/api/auth/2fa/disable", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    try {
-      if (!req.user.twoFactorEnabled) {
-        return res.status(400).json({ message: "Two-factor authentication is not enabled" });
-      }
-
-      await storage.updateUser(req.user.id, { 
-        twoFactorEnabled: false,
-        twoFactorSecret: null
-      });
-
-      console.log(`[2FA] Disabled for user ${req.user.id}`);
-
-      return res.json({ 
-        success: true, 
-        message: "Two-factor authentication has been disabled" 
-      });
-    } catch (error) {
-      console.error("2FA disable error:", error);
-      return res.status(500).json({ message: "Failed to disable 2FA" });
-    }
-  });
+  // REMOVED: Duplicate 2FA disable route without password verification
+  // The secured version with password + 2FA code verification is registered above (line ~1139)
 
   // Auth: Demo login - Read-only showcase of all features
   app.post("/api/auth/demo", async (req: Request, res: Response) => {
@@ -2779,6 +2764,9 @@ export async function registerRoutes(
       const pocket = await db.query.userStorage.findFirst({
         where: eq(userStorage.id, pocketId),
       });
+      if (pocket && pocket.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
       return res.json({
         id: pocketId,
         totalSize: pocket?.totalBytes || 0,
@@ -2797,6 +2785,12 @@ export async function registerRoutes(
     }
     try {
       const { pocketId } = req.params;
+      const pocket = await db.query.userStorage.findFirst({
+        where: eq(userStorage.id, pocketId),
+      });
+      if (pocket && pocket.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
       const files = await db.query.userStorageFiles.findMany({
         where: eq(userStorageFiles.storageId, pocketId),
       });
@@ -2813,6 +2807,12 @@ export async function registerRoutes(
     }
     try {
       const { pocketId } = req.params;
+      const pocket = await db.query.userStorage.findFirst({
+        where: eq(userStorage.id, pocketId),
+      });
+      if (pocket && pocket.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
       const { filename, content } = req.body;
       return res.json({
         success: true,
@@ -3457,9 +3457,19 @@ export async function registerRoutes(
   }
   log('OAuth callback redirect routes registered');
 
-  // Error reporting endpoint
   app.post("/api/errors", (req: Request, res: Response) => {
-    console.error("Client error:", req.body);
+    try {
+      const errorData = req.body;
+      if (typeof errorData === 'object' && errorData !== null) {
+        const safeError = {
+          message: String(errorData.message || '').substring(0, 500),
+          stack: String(errorData.stack || '').substring(0, 1000),
+          url: String(errorData.url || '').substring(0, 200),
+          timestamp: new Date().toISOString(),
+        };
+        console.error("[Client Error]", JSON.stringify(safeError));
+      }
+    } catch {}
     res.json({ received: true });
   });
 
@@ -3716,11 +3726,14 @@ export async function registerRoutes(
     const { scalingMetricsRouter, getInfrastructureStatus } = await import('./infrastructure/index.js');
     app.use('/api/infrastructure', scalingMetricsRouter);
     app.get('/api/infrastructure/status', (req, res) => {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
       try {
         const status = getInfrastructureStatus();
         res.json({ success: true, ...status });
       } catch (error: any) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({ success: false, error: 'Failed to get infrastructure status' });
       }
     });
     log('Infrastructure scaling routes registered');

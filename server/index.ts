@@ -3,6 +3,7 @@ import "./lib/consoleErrorFilter.ts";
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes.ts";
 import { serveStatic } from "./static.ts";
 import { createServer } from "http";
@@ -58,6 +59,7 @@ async function loadOptionalModules() {
 
 const app = express();
 app.use(compression());
+app.use(cookieParser());
 const httpServer = createServer(app);
 
 // Trust proxy - REQUIRED for secure cookies and rate limiting behind Replit's reverse proxy
