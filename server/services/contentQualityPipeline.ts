@@ -4,6 +4,7 @@ import { userBrandVoices, autopilotPreferences } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { aiService } from './aiService';
 import { advancedSocialAIService, type AdvancedContentRequest, type ContentScoring as AdvancedScoring } from './advancedSocialAIService.js';
+import { pythonAIService } from './pythonAIService.js';
 
 export interface ContentVariant {
   id: string;
@@ -195,19 +196,51 @@ class ContentQualityPipeline {
     strategy: string,
     index: number
   ): Promise<ContentVariant> {
-    const { headline, body, cta } = this.generateContentByStrategy(context, strategy);
-    const hashtags = this.generateOptimizedHashtags(context);
-    const fullContent = `${headline}\n\n${body}`;
+    let headline: string;
+    let body: string;
+    let cta: string;
+    let hashtags: string[];
 
-    const platformOpt = this.validatePlatformConstraints(fullContent, hashtags, context.platform);
-    const scores = this.scoreContent(fullContent, headline, cta, context, platformOpt);
+    let usedAI = false;
+    if (await pythonAIService.isAvailable()) {
+      try {
+        const goalMap: Record<string, string> = {
+          awareness: 'growth', engagement: 'engagement', conversions: 'conversion', viral: 'growth',
+        };
+        const aiResult = await pythonAIService.generateContent(
+          context.platform, context.topic, context.tone || 'energetic',
+          goalMap[context.objective] || 'growth', true
+        );
+        if (aiResult.success && aiResult.data && aiResult.data.hook && aiResult.data.body && aiResult.data.cta) {
+          headline = aiResult.data.hook;
+          body = aiResult.data.body;
+          cta = aiResult.data.cta;
+          hashtags = aiResult.data.hashtags || this.generateOptimizedHashtags(context);
+          usedAI = true;
+        }
+      } catch (err) {
+        logger.warn('[ContentQuality] Python AI failed for variant, using templates:', err);
+      }
+    }
+
+    if (!usedAI) {
+      const generated = this.generateContentByStrategy(context, strategy);
+      headline = generated.headline;
+      body = generated.body;
+      cta = generated.cta;
+      hashtags = this.generateOptimizedHashtags(context);
+    }
+
+    const fullContent = `${headline!}\n\n${body!}`;
+    const platformOpt = this.validatePlatformConstraints(fullContent, hashtags!, context.platform);
+    const scores = this.scoreContent(fullContent, headline!, cta!, context, platformOpt);
 
     return {
       id: `variant_${index}_${Date.now()}`,
-      content: body,
-      headline,
-      hashtags,
-      callToAction: cta,
+      content: body!,
+      headline: headline!,
+      hashtags: hashtags!,
+      callToAction: cta!,
       scores,
       platformOptimizations: platformOpt,
     };

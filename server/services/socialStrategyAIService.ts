@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import { logger } from '../logger';
+import { pythonAIService } from './pythonAIService.js';
 
 export interface ContentRecommendation {
   id: string;
@@ -270,13 +271,14 @@ class SocialStrategyAIService {
       const optimalHours = this.platformOptimalTimes[platform]?.[this.getDayName(nextDate)] || [12];
       nextDate.setHours(optimalHours[0] || 12, 0, 0, 0);
 
+      const suggestedContent = await this.generateSuggestedContentAsync(idea.title, platform);
       recommendations.push({
         id: nanoid(),
         type: idea.type as any,
         platform,
         title: idea.title,
         description: `Create a ${idea.type} about ${idea.title.toLowerCase()} to engage your audience.`,
-        suggestedContent: this.generateSuggestedContent(idea.title, platform),
+        suggestedContent,
         hashtags: this.generateHashtags(idea.pillar, platform),
         bestTime: nextDate,
         expectedEngagement: Math.floor(Math.random() * 5000) + 1000,
@@ -292,6 +294,20 @@ class SocialStrategyAIService {
 
   private getDayName(date: Date): string {
     return ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()];
+  }
+
+  private async generateSuggestedContentAsync(title: string, platform: string): Promise<string> {
+    if (await pythonAIService.isAvailable()) {
+      try {
+        const result = await pythonAIService.generateContent(platform, title, 'energetic', 'growth', false);
+        if (result.success && result.data && result.data.hook) {
+          return `${result.data.hook}\n\n${result.data.body}\n\n${result.data.cta}`;
+        }
+      } catch (err) {
+        logger.warn('[SocialStrategy] Python AI failed for suggested content:', err);
+      }
+    }
+    return this.generateSuggestedContent(title, platform);
   }
 
   private generateSuggestedContent(title: string, platform: string): string {

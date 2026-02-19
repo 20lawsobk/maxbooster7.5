@@ -18,6 +18,7 @@ import { MLModelRegistry } from './mlModelRegistry.js';
 import { storage } from '../storage.js';
 import { AIService } from './aiService.js';
 import * as aiAnalyticsService from './aiAnalyticsService.js';
+import { pythonAIService } from './pythonAIService.js';
 import { ContentGenerator, type GenerationOptions, type CaptionResult } from '../../shared/ml/nlp/ContentGenerator.js';
 import { SentimentAnalyzer, type FullAnalysisResult, type SentimentResult } from '../../shared/ml/nlp/SentimentAnalyzer.js';
 import { RecommendationEngine, type RecommendationResult, type SimilarityResult, type TrackData, type ArtistData, type UserInteraction } from '../../shared/ml/models/RecommendationEngine.js';
@@ -228,6 +229,45 @@ export class UnifiedAIController {
         threads: 'instagram',
         googlebusiness: 'facebook',
       };
+      const mappedPlatform = options.platform && platformAliases[options.platform]
+        ? platformAliases[options.platform]
+        : (options.platform || 'instagram');
+
+      if (await pythonAIService.isAvailable()) {
+        try {
+          const aiResult = await pythonAIService.generateContent(
+            mappedPlatform,
+            options.topic || options.genre || 'new music',
+            options.tone || 'energetic',
+            'growth',
+            true
+          );
+          if (aiResult.success && aiResult.data && aiResult.data.hook && aiResult.data.body && aiResult.data.cta) {
+            const d = aiResult.data;
+            const caption = d.caption || `${d.hook}\n\n${d.body}\n\n${d.cta}`;
+            return {
+              success: true,
+              data: {
+                caption,
+                hashtags: d.hashtags || [],
+                tone: options.tone || 'energetic',
+                toneMatch: 0.9,
+                platform: mappedPlatform,
+                charCount: caption.length,
+                hook: d.hook,
+                body: d.body,
+                cta: d.cta,
+              } as CaptionResult,
+              processingTimeMs: Date.now() - startTime,
+              source: 'PythonAIModel',
+              confidence: 0.9,
+            };
+          }
+        } catch (aiErr) {
+          logger.warn('[UnifiedAI] Python AI model failed, falling back to ContentGenerator:', aiErr);
+        }
+      }
+
       const generatorOptions = options.platform && platformAliases[options.platform]
         ? { ...options, platform: platformAliases[options.platform] as any }
         : options;
@@ -268,6 +308,31 @@ export class UnifiedAIController {
     await this.ensureInitialized();
 
     try {
+      if (await pythonAIService.isAvailable()) {
+        try {
+          const platform = options.platform || 'instagram';
+          const topic = options.musicData
+            ? `${options.musicData.title} by ${options.musicData.artist}`
+            : (options.customPrompt || 'new music');
+          const aiResult = await pythonAIService.generateContent(
+            platform, topic, options.tone || 'energetic', 'growth', true
+          );
+          if (aiResult.success && aiResult.data) {
+            const d = aiResult.data;
+            const contentParts = [d.hook, d.body, d.cta].filter(Boolean);
+            return {
+              success: true,
+              data: { content: contentParts },
+              processingTimeMs: Date.now() - startTime,
+              source: 'PythonAIModel',
+              confidence: 0.9,
+            };
+          }
+        } catch (aiErr) {
+          logger.warn('[UnifiedAI] Python AI social content failed, falling back:', aiErr);
+        }
+      }
+
       const result = await this.aiService.generateSocialContent(options);
       
       return {

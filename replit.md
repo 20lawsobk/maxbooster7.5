@@ -75,6 +75,14 @@ training/        - Training data (boostsheet_samples.json)
 - API response caching (8 routes cached)
 
 ## Recent Changes
+- 2026-02-19: AI Model integration across all content generators
+  - unifiedAIController: generateContent() and generateSocialContent() now try Python AI model first
+  - contentQualityPipeline: generateSingleVariant() uses AI for headline/body/cta with template fallback
+  - socialStrategyAIService: getContentRecommendations() generates AI-powered suggested content
+  - contentVariantGenerator: generateCaptionVariants() produces AI-powered variants before templates
+  - autoPostGenerator: generateSocialContent() and generateViralContent() use AI model first
+  - All integrations validate hook/body/cta fields before accepting AI results
+  - Graceful fallback: if Python AI model is unavailable or returns incomplete data, templates are used
 - 2026-02-19: AI Model training pipeline integration
   - Added DEFAULT_TRAIN_CONFIG (dim=256, layers=4, heads=4, max_len=256, lr=3e-4, batch_size=8, epochs=3)
   - Added TrainingLogger: appends BoostSheet-to-training-sample conversions to training data

@@ -5,6 +5,7 @@ import { autoPostingService, type PostContent } from './autoPostingService.js';
 import { contentQualityPipeline, type ContentVariant, type ContentScores } from './contentQualityPipeline';
 import { dynamicTrendsService } from './dynamicTrendsService';
 import { aiTranslationService, type TranslatedContent } from './aiTranslationService';
+import { pythonAIService } from './pythonAIService.js';
 
 /**
  * Auto-Post Generator Service v2.0
@@ -230,57 +231,70 @@ class AutoPostGenerator {
   ): Promise<GeneratedContent> {
     const ai = await this.getSocialAI(userId);
 
-    // Get user's profile for personalization
     const user = await storage.getUserById(userId);
     const artistName = user?.firstName || 'Artist';
 
-    // Generate content based on objective
     const topic = request.topic || 'new music release';
     const tone = request.tone || 'inspirational';
     const platforms = request.platforms || ['instagram', 'facebook', 'twitter'];
 
-    // Content templates based on objective
     let headline = '';
     let body = '';
     let callToAction = '';
+    let aiHashtags: string[] | null = null;
 
-    switch (request.objective) {
-      case 'awareness':
-        headline = this.generateAwarenessHeadline(artistName, topic, tone);
-        body = this.generateAwarenessBody(artistName, topic, tone);
-        callToAction = 'Check it out!';
-        break;
-      
-      case 'engagement':
-        headline = this.generateEngagementHeadline(artistName, topic, tone);
-        body = this.generateEngagementBody(artistName, topic, tone);
-        callToAction = 'Let me know what you think!';
-        break;
-      
-      case 'conversions':
-        headline = this.generateConversionHeadline(artistName, topic, tone);
-        body = this.generateConversionBody(artistName, topic, tone);
-        callToAction = 'Stream now on Spotify!';
-        break;
-      
-      case 'viral':
-        headline = this.generateViralHeadline(artistName, topic, tone);
-        body = this.generateViralBody(artistName, topic, tone);
-        callToAction = 'Share if you love it!';
-        break;
-      
-      default:
-        headline = `${artistName} - ${topic}`;
-        body = `Excited to share this with you all! ${topic}`;
-        callToAction = 'Check it out!';
+    if (await pythonAIService.isAvailable()) {
+      try {
+        const goalMap: Record<string, string> = {
+          awareness: 'growth', engagement: 'engagement', conversions: 'conversion', viral: 'growth',
+        };
+        const aiResult = await pythonAIService.generateContent(
+          platforms[0], topic, tone, goalMap[request.objective || 'engagement'] || 'growth', true
+        );
+        if (aiResult.success && aiResult.data && aiResult.data.hook && aiResult.data.body && aiResult.data.cta) {
+          headline = aiResult.data.hook;
+          body = aiResult.data.body;
+          callToAction = aiResult.data.cta;
+          aiHashtags = aiResult.data.hashtags;
+        }
+      } catch (err) {
+        logger.warn('[AutoPost] Python AI failed, using templates:', err);
+      }
     }
 
-    // Generate hashtags
+    if (!headline) {
+      switch (request.objective) {
+        case 'awareness':
+          headline = this.generateAwarenessHeadline(artistName, topic, tone);
+          body = this.generateAwarenessBody(artistName, topic, tone);
+          callToAction = 'Check it out!';
+          break;
+        case 'engagement':
+          headline = this.generateEngagementHeadline(artistName, topic, tone);
+          body = this.generateEngagementBody(artistName, topic, tone);
+          callToAction = 'Let me know what you think!';
+          break;
+        case 'conversions':
+          headline = this.generateConversionHeadline(artistName, topic, tone);
+          body = this.generateConversionBody(artistName, topic, tone);
+          callToAction = 'Stream now on Spotify!';
+          break;
+        case 'viral':
+          headline = this.generateViralHeadline(artistName, topic, tone);
+          body = this.generateViralBody(artistName, topic, tone);
+          callToAction = 'Share if you love it!';
+          break;
+        default:
+          headline = `${artistName} - ${topic}`;
+          body = `Excited to share this with you all! ${topic}`;
+          callToAction = 'Check it out!';
+      }
+    }
+
     const hashtags = request.includeHashtags !== false
-      ? this.generateHashtags(topic, platforms)
+      ? (aiHashtags || this.generateHashtags(topic, platforms))
       : [];
 
-    // Generate optimal posting time (use AI if available)
     const now = new Date();
     const optimalHour = this.getOptimalPostingHour(platforms);
     const optimalTime = new Date(now);
@@ -289,10 +303,7 @@ class AutoPostGenerator {
       optimalTime.setDate(optimalTime.getDate() + 1);
     }
 
-    // Normalize mediaType (photo -> image)
     const mediaType = this.normalizeMediaType(request.mediaType || 'image');
-    
-    // Generate media guidance
     const mediaGuidance = this.generateMediaGuidance(mediaType, topic, request.objective || 'engagement');
 
     return {
@@ -318,19 +329,38 @@ class AutoPostGenerator {
   ): Promise<GeneratedContent> {
     const ai = await this.getAdvertisingAI(userId);
 
-    // Get user's profile for personalization
     const user = await storage.getUserById(userId);
     const artistName = user?.firstName || 'Artist';
 
-    // Generate viral-optimized content
     const topic = request.topic || 'new music';
     const platforms = request.platforms || ['instagram', 'tiktok', 'youtube', 'facebook'];
 
-    // Viral content templates (designed for maximum sharing)
-    const headline = this.generateViralHeadline(artistName, topic, request.tone || 'inspirational');
-    const body = this.generateViralBody(artistName, topic, request.tone || 'inspirational');
-    const hashtags = this.generateViralHashtags(topic, platforms);
-    const callToAction = 'Share with someone who needs to hear this!';
+    let headline = '';
+    let body = '';
+    let hashtags: string[] = [];
+    let callToAction = 'Share with someone who needs to hear this!';
+
+    if (await pythonAIService.isAvailable()) {
+      try {
+        const aiResult = await pythonAIService.generateContent(
+          platforms[0], topic, request.tone || 'energetic', 'growth', true
+        );
+        if (aiResult.success && aiResult.data && aiResult.data.hook && aiResult.data.body && aiResult.data.cta) {
+          headline = aiResult.data.hook;
+          body = aiResult.data.body;
+          callToAction = aiResult.data.cta;
+          hashtags = aiResult.data.hashtags || [];
+        }
+      } catch (err) {
+        logger.warn('[AutoPost] Python AI failed for viral content:', err);
+      }
+    }
+
+    if (!headline) {
+      headline = this.generateViralHeadline(artistName, topic, request.tone || 'inspirational');
+      body = this.generateViralBody(artistName, topic, request.tone || 'inspirational');
+      hashtags = this.generateViralHashtags(topic, platforms);
+    }
 
     // Get AI prediction for this content
     const prediction = await ai.predictViralContent({

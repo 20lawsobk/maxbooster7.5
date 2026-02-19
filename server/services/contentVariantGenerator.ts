@@ -1,6 +1,7 @@
 import { logger } from '../logger.js';
 import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
 import { nanoid } from 'nanoid';
+import { pythonAIService } from './pythonAIService.js';
 
 export interface ContentData {
   id?: string;
@@ -126,10 +127,29 @@ class ContentVariantGeneratorService {
     const topic = this.extractTopic(original);
     const audience = this.inferAudience(original);
 
+    let aiVariantsGenerated = 0;
+    if (await pythonAIService.isAvailable()) {
+      try {
+        const platforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook'];
+        for (let i = 0; i < Math.min(count, platforms.length); i++) {
+          const result = await pythonAIService.generateContent(
+            platforms[i], topic, 'energetic', 'growth', false
+          );
+          if (result.success && result.data && result.data.hook) {
+            variants.push(`${result.data.hook}\n\n${result.data.body}\n\n${result.data.cta}`);
+            aiVariantsGenerated++;
+          }
+        }
+      } catch (err) {
+        logger.warn('[VariantGen] Python AI failed, using template variants:', err);
+      }
+    }
+
     const hookTypes = Object.keys(this.hookTemplates);
     const usedTypes = new Set<string>();
+    const remaining = count - aiVariantsGenerated;
 
-    for (let i = 0; i < Math.min(count, hookTypes.length); i++) {
+    for (let i = 0; i < Math.min(remaining, hookTypes.length); i++) {
       let hookType = hookTypes[i % hookTypes.length];
       
       while (usedTypes.has(hookType) && usedTypes.size < hookTypes.length) {
@@ -152,7 +172,7 @@ class ContentVariantGeneratorService {
       variants.push(this.enhanceWithEmotions(variant));
     }
 
-    logger.info(`📝 Generated ${variants.length} caption variants`);
+    logger.info(`📝 Generated ${variants.length} caption variants (${aiVariantsGenerated} AI-powered)`);
     return variants;
   }
 
