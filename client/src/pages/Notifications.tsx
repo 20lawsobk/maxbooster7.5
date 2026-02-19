@@ -46,7 +46,7 @@ export default function Notifications() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
 
-  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
+  const { data: notifications = [], isLoading, isError } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
     enabled: !!user,
   });
@@ -138,6 +138,14 @@ export default function Notifications() {
     },
     [navigate]
   );
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

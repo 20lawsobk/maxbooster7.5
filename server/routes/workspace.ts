@@ -23,31 +23,41 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: Function) =
 };
 
 const requireWorkspaceMember = async (req: AuthenticatedRequest, res: Response, next: Function) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-  const workspaceId = req.params.id || req.params.workspaceId;
-  const isMember = await workspaceService.isWorkspaceMember(workspaceId, req.user.id);
-  
-  if (!isMember) {
-    return res.status(403).json({ error: 'Not a member of this workspace' });
+    const workspaceId = req.params.id || req.params.workspaceId;
+    const isMember = await workspaceService.isWorkspaceMember(workspaceId, req.user.id);
+    
+    if (!isMember) {
+      return res.status(403).json({ error: 'Not a member of this workspace' });
+    }
+    next();
+  } catch (error: any) {
+    logger.info('Error in workspace member check:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-  next();
 };
 
 const requireWorkspaceAdmin = async (req: AuthenticatedRequest, res: Response, next: Function) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-  const workspaceId = req.params.id || req.params.workspaceId;
-  const isAdmin = await rbacService.isAdmin(workspaceId, req.user.id);
-  
-  if (!isAdmin) {
-    return res.status(403).json({ error: 'Admin access required' });
+    const workspaceId = req.params.id || req.params.workspaceId;
+    const isAdmin = await rbacService.isAdmin(workspaceId, req.user.id);
+    
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+  } catch (error: any) {
+    logger.info('Error in workspace admin check:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-  next();
 };
 
 const createWorkspaceSchema = z.object({

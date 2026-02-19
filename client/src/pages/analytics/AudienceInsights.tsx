@@ -153,7 +153,7 @@ export function AudienceInsights({
   timeRange = '30d',
   onTimeRangeChange,
 }: AudienceInsightsProps) {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['/api/analytics/audience', timeRange],
     queryFn: async () => {
       const response = await fetch(`/api/analytics/dashboard?range=${timeRange}`, {
@@ -231,6 +231,14 @@ export function AudienceInsights({
           <GeographicSkeleton />
           <DemographicsSkeleton />
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
       </div>
     );
   }

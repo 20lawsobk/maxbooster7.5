@@ -140,42 +140,52 @@ router.get('/status', async (req, res) => {
 });
 
 router.get('/support', async (req, res) => {
-  res.json({
-    supportContact: kycService.getSupportContact(),
-    faq: [
-      {
-        question: 'How long does verification take?',
-        answer: 'Verification typically takes 1-2 business days after all documents are submitted.',
-      },
-      {
-        question: 'What documents are accepted?',
-        answer: 'We accept government-issued IDs (passport, driver\'s license, national ID), proof of address (utility bill, bank statement), and business registration documents.',
-      },
-      {
-        question: 'Why was my document rejected?',
-        answer: 'Documents may be rejected if they are blurry, expired, or do not match the information provided. Check the rejection reason and re-upload a clearer document.',
-      },
-      {
-        question: 'Can I update my information after submission?',
-        answer: 'You can update your information before final submission. Once under review, contact support for any changes.',
-      },
-    ],
-  });
+  try {
+    res.json({
+      supportContact: kycService.getSupportContact(),
+      faq: [
+        {
+          question: 'How long does verification take?',
+          answer: 'Verification typically takes 1-2 business days after all documents are submitted.',
+        },
+        {
+          question: 'What documents are accepted?',
+          answer: 'We accept government-issued IDs (passport, driver\'s license, national ID), proof of address (utility bill, bank statement), and business registration documents.',
+        },
+        {
+          question: 'Why was my document rejected?',
+          answer: 'Documents may be rejected if they are blurry, expired, or do not match the information provided. Check the rejection reason and re-upload a clearer document.',
+        },
+        {
+          question: 'Can I update my information after submission?',
+          answer: 'You can update your information before final submission. Once under review, contact support for any changes.',
+        },
+      ],
+    });
+  } catch (error: any) {
+    logger.info('Error in KYC support info:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 router.get('/document-types', async (req, res) => {
-  const documentTypes = [
-    { type: 'government_id', ...kycService.getDocumentInfo('government_id') },
-    { type: 'passport', ...kycService.getDocumentInfo('passport') },
-    { type: 'drivers_license', ...kycService.getDocumentInfo('drivers_license') },
-    { type: 'proof_of_address', ...kycService.getDocumentInfo('proof_of_address') },
-    { type: 'bank_statement', ...kycService.getDocumentInfo('bank_statement') },
-    { type: 'business_registration', ...kycService.getDocumentInfo('business_registration') },
-    { type: 'articles_of_incorporation', ...kycService.getDocumentInfo('articles_of_incorporation') },
-    { type: 'tax_id_document', ...kycService.getDocumentInfo('tax_id_document') },
-    { type: 'selfie', ...kycService.getDocumentInfo('selfie') },
-  ];
-  res.json({ documentTypes });
+  try {
+    const documentTypes = [
+      { type: 'government_id', ...kycService.getDocumentInfo('government_id') },
+      { type: 'passport', ...kycService.getDocumentInfo('passport') },
+      { type: 'drivers_license', ...kycService.getDocumentInfo('drivers_license') },
+      { type: 'proof_of_address', ...kycService.getDocumentInfo('proof_of_address') },
+      { type: 'bank_statement', ...kycService.getDocumentInfo('bank_statement') },
+      { type: 'business_registration', ...kycService.getDocumentInfo('business_registration') },
+      { type: 'articles_of_incorporation', ...kycService.getDocumentInfo('articles_of_incorporation') },
+      { type: 'tax_id_document', ...kycService.getDocumentInfo('tax_id_document') },
+      { type: 'selfie', ...kycService.getDocumentInfo('selfie') },
+    ];
+    res.json({ documentTypes });
+  } catch (error: any) {
+    logger.info('Error in KYC document types:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 router.put('/individual', async (req, res) => {

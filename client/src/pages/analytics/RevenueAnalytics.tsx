@@ -173,7 +173,7 @@ export function RevenueAnalytics({
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['/api/analytics/revenue', timeRange, selectedPlatforms],
     queryFn: async () => {
       const params = new URLSearchParams({ range: timeRange });
@@ -236,6 +236,14 @@ export function RevenueAnalytics({
       <div className="space-y-6">
         <StatCardRowSkeleton count={4} />
         <RevenueBreakdownSkeleton />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
       </div>
     );
   }

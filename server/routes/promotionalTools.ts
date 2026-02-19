@@ -173,7 +173,12 @@ router.get('/promo-cards', requireAuth, async (req: Request, res: Response) => {
 });
 
 router.get('/promo-cards/templates', async (req: Request, res: Response) => {
-  res.json(promotionalToolsService.getPromoCardTemplates());
+  try {
+    res.json(promotionalToolsService.getPromoCardTemplates());
+  } catch (error: any) {
+    logger.info('Error in promo card templates:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 router.delete('/promo-cards/:id', requireAuth, async (req: Request, res: Response) => {

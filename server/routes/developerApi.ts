@@ -309,7 +309,8 @@ router.get('/usage/:keyId', async (req: Request, res: Response) => {
  * Get API documentation metadata
  */
 router.get('/docs', async (req: Request, res: Response) => {
-  return res.json({
+  try {
+    return res.json({
     success: true,
     version: '1.0.0',
     baseUrl: '/api/v1',
@@ -407,6 +408,10 @@ print(data)
       `.trim(),
     },
   });
+  } catch (error: any) {
+    logger.info('Error in developer docs:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 export default router;

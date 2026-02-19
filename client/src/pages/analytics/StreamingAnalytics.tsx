@@ -171,7 +171,7 @@ export function StreamingAnalytics({
   const [chartView, setChartView] = useState<'area' | 'bar' | 'line'>('area');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['/api/analytics/streaming', timeRange, selectedPlatforms],
     queryFn: async () => {
       const params = new URLSearchParams({ range: timeRange });
@@ -225,6 +225,14 @@ export function StreamingAnalytics({
       <div className="space-y-6">
         <StatCardRowSkeleton count={4} />
         <ChartCardSkeleton height={350} />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
       </div>
     );
   }

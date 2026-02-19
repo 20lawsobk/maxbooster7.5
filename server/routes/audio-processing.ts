@@ -435,32 +435,37 @@ router.get('/presets', requireAuth, async (req: Request, res: Response) => {
 });
 
 router.get('/capabilities', async (req: Request, res: Response) => {
-  res.json({
-    success: true,
-    capabilities: {
-      analysis: {
-        lufs: true,
-        truePeak: true,
-        dynamicRange: true,
-        stereoImage: true,
-        clippingDetection: true,
-        rms: true,
+  try {
+    res.json({
+      success: true,
+      capabilities: {
+        analysis: {
+          lufs: true,
+          truePeak: true,
+          dynamicRange: true,
+          stereoImage: true,
+          clippingDetection: true,
+          rms: true,
+        },
+        processing: {
+          eq: { bands: 8, types: ['highpass', 'lowpass', 'peaking', 'highshelf', 'lowshelf'] },
+          compressor: { threshold: [-100, 0], ratio: [1, 20], attack: [0, 1], release: [0, 1] },
+          limiter: { ceiling: [-20, 0] },
+          reverb: { types: ['plate', 'room', 'hall', 'spring', 'chamber'] },
+          gain: { range: [-60, 24] },
+        },
+        formats: {
+          input: ['wav', 'mp3', 'flac', 'ogg', 'aac'],
+          output: ['wav', 'mp3', 'flac'],
+          sampleRates: [44100, 48000, 88200, 96000],
+          bitDepths: [16, 24, 32],
+        },
       },
-      processing: {
-        eq: { bands: 8, types: ['highpass', 'lowpass', 'peaking', 'highshelf', 'lowshelf'] },
-        compressor: { threshold: [-100, 0], ratio: [1, 20], attack: [0, 1], release: [0, 1] },
-        limiter: { ceiling: [-20, 0] },
-        reverb: { types: ['plate', 'room', 'hall', 'spring', 'chamber'] },
-        gain: { range: [-60, 24] },
-      },
-      formats: {
-        input: ['wav', 'mp3', 'flac', 'ogg', 'aac'],
-        output: ['wav', 'mp3', 'flac'],
-        sampleRates: [44100, 48000, 88200, 96000],
-        bitDepths: [16, 24, 32],
-      },
-    },
-  });
+    });
+  } catch (error: any) {
+    logger.info('Error in audio capabilities:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 export default router;
