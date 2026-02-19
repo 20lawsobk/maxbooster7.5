@@ -395,24 +395,32 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
 
       if (platform === 'twitter') {
         try {
-          logger.info(`[OAuth] Twitter token exchange via twitter-api-v2`, { 
+          logger.info(`[OAuth] Twitter token exchange (public client, direct fetch)`, { 
             hasCode: !!authCode, 
             hasVerifier: !!stateData.codeVerifier,
             redirectUri,
           });
-          const twitterClient = new TwitterApi({
-            clientId: config.clientId!,
-          });
-          const { accessToken, refreshToken, expiresIn } = await twitterClient.loginWithOAuth2({
+          const twitterTokenBody = new URLSearchParams({
+            grant_type: 'authorization_code',
             code: authCode,
-            codeVerifier: stateData.codeVerifier!,
-            redirectUri,
+            redirect_uri: redirectUri,
+            client_id: config.clientId!,
+            code_verifier: stateData.codeVerifier!,
           });
+          const twitterTokenRes = await fetch('https://api.x.com/2/oauth2/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: twitterTokenBody.toString(),
+          });
+          const twitterTokenJson = await twitterTokenRes.json() as any;
+          if (!twitterTokenRes.ok || !twitterTokenJson.access_token) {
+            throw new Error(twitterTokenJson.error_description || twitterTokenJson.error || `Token request failed with status ${twitterTokenRes.status}`);
+          }
           tokenData = {
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            expires_in: expiresIn,
-            token_type: 'bearer',
+            access_token: twitterTokenJson.access_token,
+            refresh_token: twitterTokenJson.refresh_token,
+            expires_in: twitterTokenJson.expires_in,
+            token_type: twitterTokenJson.token_type || 'bearer',
           };
           logger.info(`[OAuth] Twitter token exchange SUCCESS`, { hasAccessToken: !!tokenData.access_token, hasRefreshToken: !!tokenData.refresh_token, expiresIn: tokenData.expires_in });
         } catch (twitterErr: any) {
