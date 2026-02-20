@@ -93,6 +93,7 @@ import { SocialListening } from '@/components/social/SocialListening';
 import { CompetitorBenchmarking } from '@/components/social/CompetitorBenchmarking';
 import { UnifiedCalendar } from '@/components/social/UnifiedCalendar';
 import { VideoContentGenerator, Platform as VideoGeneratorPlatform } from '@/components/content/VideoContentGenerator';
+import { ServerVideoGenerator } from '@/components/content/ServerVideoGenerator';
 import {
   SocialOutcomeHandler,
   useOutcomeHandler,
@@ -1546,54 +1547,28 @@ export default function SocialMedia() {
                         />
                       </div>
 
-                      {selectedPlatforms.length > 0 ? (
-                        <VideoContentGenerator
-                          platform={(selectedPlatforms[0] === 'twitter' ? 'twitter' : 
-                                    selectedPlatforms[0] === 'instagram' ? 'instagram' :
-                                    selectedPlatforms[0] === 'meta' ? 'instagram' :
-                                    selectedPlatforms[0] === 'tiktok' ? 'tiktok' :
-                                    selectedPlatforms[0] === 'youtube' ? 'youtube' :
-                                    selectedPlatforms[0] === 'facebook' ? 'facebook' :
-                                    selectedPlatforms[0] === 'linkedin' ? 'linkedin' :
-                                    'instagram') as VideoGeneratorPlatform}
-                          contentText={postContent || 'Create engaging content'}
-                          artistName={user?.displayName || user?.username || 'Artist'}
-                          onVideoGenerated={async (url: string, blob: Blob) => {
-                            setGeneratedVideoUrl(url);
-                            setMediaPreviewUrl(url);
-                            const file = new File([blob], 'generated-video.webm', { type: 'video/webm' });
-                            setUploadedMedia(file);
-                            uploadMediaMutation.mutate(file);
-                            toast({
-                              title: 'Video Ready!',
-                              description: 'Your video has been generated and is ready to schedule.',
-                            });
-                          }}
-                        />
-                      ) : (
-                        <div className="p-6 border rounded-lg bg-muted/50 text-center">
-                          <Video className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                          <p className="text-muted-foreground mb-2">Select a platform to generate video</p>
-                          <p className="text-sm text-muted-foreground">Choose at least one platform above to start video generation</p>
-                        </div>
-                      )}
+                      <ServerVideoGenerator
+                        platform={selectedPlatforms[0] || 'tiktok'}
+                        topic={postContent || ''}
+                        tone={selectedTone}
+                        goal="growth"
+                        artistName={user?.displayName || user?.username || ''}
+                        onVideoGenerated={(url: string) => {
+                          setGeneratedVideoUrl(url);
+                          setMediaPreviewUrl(url);
+                        }}
+                      />
 
                       {generatedVideoUrl && (
-                        <div className="space-y-3">
-                          <Label>Generated Video Preview</Label>
-                          <div className="rounded-lg overflow-hidden border">
-                            <video src={generatedVideoUrl} className="w-full max-h-64" controls />
-                          </div>
-                          <Button
-                            onClick={handleSchedulePostFromTab}
-                            disabled={selectedPlatforms.length === 0}
-                            className="w-full"
-                            data-testid="button-schedule-video-post"
-                          >
-                            <Calendar className="w-4 h-4 mr-2" />
-                            Schedule Video Post
-                          </Button>
-                        </div>
+                        <Button
+                          onClick={handleSchedulePostFromTab}
+                          disabled={selectedPlatforms.length === 0}
+                          className="w-full"
+                          data-testid="button-schedule-video-post"
+                        >
+                          <Calendar className="w-4 h-4 mr-2" />
+                          Schedule Video Post
+                        </Button>
                       )}
                     </>
                   ) : (

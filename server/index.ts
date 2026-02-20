@@ -134,6 +134,16 @@ app.use('/generated-content', express.static(path.join(process.cwd(), 'public', 
   }
 }));
 
+app.use('/uploads/videos', express.static(path.join(process.cwd(), 'uploads', 'videos'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.mp4')) {
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+  }
+}));
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",

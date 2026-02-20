@@ -47,7 +47,12 @@ training/        - Training data (boostsheet_samples.json)
 - Training: Synthetic data generation, BoostSheet-to-training-sample converter, TrainingLogger for continuous learning
 - Fallback: If model output is low-quality (untrained/gibberish), agents produce template-based content
 - Integration: Node.js client (server/services/pythonAIService.ts) calls Python API; social media routes try Python AI first, fall back to unifiedAIController
-- Endpoints: /generate/content, /generate/multi-platform, /generate/script, /generate/visual-spec, /generate/distribution, /train, /train/synthetic, /train/status, /train/log-sheet, /optimize, /boostsheet/create, /health
+- Video Generation: FFmpeg-based video renderer (ai_model/video/renderer.py) creates MP4 videos with animated text overlays
+  - 5 templates: promo, lyric, announcement, minimal, neon
+  - 4 aspect ratios: 9:16 (TikTok/Reels), 16:9 (YouTube), 1:1 (Instagram), 4:5 (Portrait)
+  - Auto-generates hook/body/CTA from AI model when only topic provided
+  - Videos served from /uploads/videos/ via Express static middleware
+- Endpoints: /generate/content, /generate/multi-platform, /generate/script, /generate/visual-spec, /generate/distribution, /generate/video, /train, /train/synthetic, /train/status, /train/log-sheet, /optimize, /boostsheet/create, /health
 
 ## Development
 - Dev command: `python3 -m ai_model.serve & ./boosterstate/target/debug/boosterstate & sleep 2 && NODE_ENV=development npx tsx server/index.ts`
@@ -75,6 +80,14 @@ training/        - Training data (boostsheet_samples.json)
 - API response caching (8 routes cached)
 
 ## Recent Changes
+- 2026-02-20: Video generation feature
+  - FFmpeg-based video renderer: creates MP4 videos with animated text overlays, fade transitions, and styled backgrounds
+  - 5 templates (promo, lyric, announcement, minimal, neon) with distinct color schemes
+  - 4 aspect ratios (9:16, 16:9, 1:1, 4:5) auto-selected by platform
+  - AI-powered: auto-generates hook/body/CTA from AI model when topic provided
+  - Full-stack: Python FastAPI endpoint → Express proxy route → React UI component (ServerVideoGenerator)
+  - Videos served via Express static middleware from /uploads/videos/
+  - Frontend: ServerVideoGenerator component in Social Media Create tab with template picker, aspect ratio selector, duration control
 - 2026-02-20: Major AI Model quality upgrade (perplexity 370→11.6, 32x improvement)
   - Generation engine: Replaced greedy argmax with nucleus (top-p=0.92) sampling, temperature=0.8, top-k=50, repetition penalty=1.2, min_length=10
   - Model architecture: Added dropout (0.1), embedding dropout, pre-norm TransformerDecoderLayer, proper causal masking

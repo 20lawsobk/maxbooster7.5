@@ -1428,4 +1428,56 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
   }
 });
 
+router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const {
+      hook, body, cta, platform, aspect_ratio, template,
+      duration, bg_color, text_color, accent_color,
+      artist_name, topic, goal, tone,
+    } = req.body;
+
+    const result = await pythonAIService.generateVideo({
+      hook, body, cta,
+      platform: platform || 'tiktok',
+      aspect_ratio,
+      template: template || 'promo',
+      duration: duration || 8,
+      bg_color, text_color, accent_color,
+      artist_name, topic,
+      goal: goal || 'growth',
+      tone: tone || 'energetic',
+    });
+
+    if (!result.success || !result.data?.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.data?.error || result.error || 'Video generation failed',
+      });
+    }
+
+    res.json(result.data);
+  } catch (error) {
+    logger.error('Failed to generate video:', error);
+    res.status(500).json({ success: false, message: 'Video generation failed' });
+  }
+});
+
+router.get('/video-templates', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+  res.json({
+    templates: [
+      { id: 'promo', name: 'Promo', description: 'Bold promotional style with accent colors' },
+      { id: 'lyric', name: 'Lyric', description: 'Elegant lyric video style with gold accents' },
+      { id: 'announcement', name: 'Announcement', description: 'Professional announcement style' },
+      { id: 'minimal', name: 'Minimal', description: 'Clean minimal style with light background' },
+      { id: 'neon', name: 'Neon', description: 'Vibrant neon style with cyan and pink' },
+    ],
+    aspect_ratios: [
+      { id: '9:16', name: 'Vertical (9:16)', platforms: ['TikTok', 'Reels', 'Stories', 'Shorts'] },
+      { id: '16:9', name: 'Landscape (16:9)', platforms: ['YouTube', 'Twitter', 'LinkedIn'] },
+      { id: '1:1', name: 'Square (1:1)', platforms: ['Instagram Feed', 'Facebook', 'Threads'] },
+      { id: '4:5', name: 'Portrait (4:5)', platforms: ['Instagram', 'Facebook'] },
+    ],
+  });
+});
+
 export default router;

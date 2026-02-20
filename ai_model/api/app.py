@@ -16,6 +16,7 @@ from .schemas import (
     TrainRequest, TrainResponse,
     SyntheticDataRequest, SyntheticDataResponse,
     TrainingStatusResponse,
+    VideoGenerateRequest, VideoGenerateResponse,
     HealthResponse,
 )
 from ..model.tokenizer import SimpleTokenizer
@@ -515,6 +516,72 @@ async def log_sheet_for_training(sheet_id: str):
     logger = TrainingLogger()
     logger.log_from_sheet(sheet)
     return {"success": True, "message": f"BoostSheet {sheet_id} logged for training", "total_samples": logger.sample_count()}
+
+
+@app.post("/generate/video", response_model=VideoGenerateResponse)
+async def generate_video(req: VideoGenerateRequest):
+    from ..video.renderer import render_video as do_render, VideoRequest as VReq, PLATFORM_RATIOS
+
+    start = time.time()
+    platform = normalize_platform(req.platform)
+
+    hook = req.hook
+    body = req.body
+    cta = req.cta
+    source = "custom"
+
+    if req.topic and (not hook or not body):
+        script_result = script_agent.run(ScriptRequest(
+            idea=req.topic,
+            platform=platform,
+            goal=req.goal,
+            tone=req.tone,
+        ))
+        hook = hook or script_result.hook
+        body = body or script_result.body
+        cta = cta or script_result.cta
+        source = getattr(script_result, "source", "template")
+
+    ratio = req.aspect_ratio or PLATFORM_RATIOS.get(platform, "9:16")
+
+    result = do_render(VReq(
+        hook=hook,
+        body=body,
+        cta=cta,
+        platform=platform,
+        aspect_ratio=ratio,
+        template=req.template,
+        duration=req.duration,
+        bg_color=req.bg_color,
+        text_color=req.text_color,
+        accent_color=req.accent_color,
+        artist_name=req.artist_name,
+    ))
+
+    if not result.success:
+        return VideoGenerateResponse(
+            success=False,
+            error=result.error,
+            platform=platform,
+            processing_time_ms=(time.time() - start) * 1000,
+        )
+
+    return VideoGenerateResponse(
+        success=True,
+        filename=result.filename,
+        url=f"/uploads/videos/{result.filename}",
+        duration=result.duration,
+        width=result.width,
+        height=result.height,
+        aspect_ratio=ratio,
+        template=req.template,
+        platform=platform,
+        hook=hook,
+        body=body,
+        cta=cta,
+        source=source,
+        processing_time_ms=(time.time() - start) * 1000,
+    )
 
 
 @app.post("/render/thumbnail")

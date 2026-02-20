@@ -105,6 +105,24 @@ export interface BoostSheetResult {
   history: string[];
 }
 
+export interface VideoResult {
+  success: boolean;
+  filename: string;
+  url: string;
+  duration: number;
+  width: number;
+  height: number;
+  aspect_ratio: string;
+  template: string;
+  platform: string;
+  hook: string;
+  body: string;
+  cta: string;
+  source: string;
+  processing_time_ms: number;
+  error?: string;
+}
+
 export interface HealthResult {
   status: string;
   model_loaded: boolean;
@@ -223,6 +241,40 @@ export class PythonAIService {
       performance,
       platform,
       goal,
+    });
+  }
+
+  async generateVideo(options: {
+    hook?: string;
+    body?: string;
+    cta?: string;
+    platform?: string;
+    aspect_ratio?: string;
+    template?: string;
+    duration?: number;
+    bg_color?: string;
+    text_color?: string;
+    accent_color?: string;
+    artist_name?: string;
+    topic?: string;
+    goal?: string;
+    tone?: string;
+  }): Promise<AIModelResponse<VideoResult>> {
+    return callAIModel<VideoResult>('/generate/video', {
+      hook: options.hook || '',
+      body: options.body || '',
+      cta: options.cta || '',
+      platform: options.platform || 'tiktok',
+      aspect_ratio: options.aspect_ratio,
+      template: options.template || 'promo',
+      duration: options.duration || 8.0,
+      bg_color: options.bg_color,
+      text_color: options.text_color,
+      accent_color: options.accent_color,
+      artist_name: options.artist_name,
+      topic: options.topic,
+      goal: options.goal || 'growth',
+      tone: options.tone || 'energetic',
     });
   }
 

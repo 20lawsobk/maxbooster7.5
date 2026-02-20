@@ -188,6 +188,41 @@ class TrainingStatusResponse(BaseModel):
     data_path: str
 
 
+class VideoGenerateRequest(BaseModel):
+    hook: str = ""
+    body: str = ""
+    cta: str = ""
+    platform: str = "tiktok"
+    aspect_ratio: Optional[str] = None
+    template: str = "promo"
+    duration: float = 8.0
+    bg_color: Optional[str] = None
+    text_color: Optional[str] = None
+    accent_color: Optional[str] = None
+    artist_name: Optional[str] = None
+    topic: Optional[str] = None
+    goal: str = "growth"
+    tone: str = "energetic"
+
+
+class VideoGenerateResponse(BaseModel):
+    success: bool
+    filename: str = ""
+    url: str = ""
+    duration: float = 0.0
+    width: int = 0
+    height: int = 0
+    aspect_ratio: str = ""
+    template: str = ""
+    platform: str = ""
+    hook: str = ""
+    body: str = ""
+    cta: str = ""
+    source: str = "template"
+    processing_time_ms: float = 0.0
+    error: Optional[str] = None
+
+
 class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
