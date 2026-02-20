@@ -17,6 +17,7 @@ from .schemas import (
     SyntheticDataRequest, SyntheticDataResponse,
     TrainingStatusResponse,
     VideoGenerateRequest, VideoGenerateResponse,
+    CinematicTemplatesResponse, CinematicTemplateInfo,
     HealthResponse,
 )
 from ..model.tokenizer import SimpleTokenizer
@@ -520,7 +521,8 @@ async def log_sheet_for_training(sheet_id: str):
 
 @app.post("/generate/video", response_model=VideoGenerateResponse)
 async def generate_video(req: VideoGenerateRequest):
-    from ..video.renderer import render_video as do_render, VideoRequest as VReq, PLATFORM_RATIOS
+    from ..video.cinematic_engine import render_video_auto
+    from ..video.renderer import PLATFORM_RATIOS
 
     start = time.time()
     platform = normalize_platform(req.platform)
@@ -543,26 +545,23 @@ async def generate_video(req: VideoGenerateRequest):
         source = getattr(script_result, "source", "template")
 
     ratio = req.aspect_ratio or PLATFORM_RATIOS.get(platform, "9:16")
+    quality = req.quality if req.quality in ["quick", "cinematic"] else "cinematic"
 
-    result = do_render(VReq(
-        hook=hook,
-        body=body,
-        cta=cta,
-        platform=platform,
-        aspect_ratio=ratio,
-        template=req.template,
-        duration=req.duration,
-        bg_color=req.bg_color,
-        text_color=req.text_color,
+    result = render_video_auto(
+        hook=hook, body=body, cta=cta,
+        platform=platform, aspect_ratio=ratio,
+        template=req.template, duration=req.duration,
+        artist_name=req.artist_name or "", quality=quality,
+        bg_color=req.bg_color, text_color=req.text_color,
         accent_color=req.accent_color,
-        artist_name=req.artist_name,
-    ))
+    )
 
     if not result.success:
         return VideoGenerateResponse(
             success=False,
             error=result.error,
             platform=platform,
+            quality=quality,
             processing_time_ms=(time.time() - start) * 1000,
         )
 
@@ -575,12 +574,26 @@ async def generate_video(req: VideoGenerateRequest):
         height=result.height,
         aspect_ratio=ratio,
         template=req.template,
+        template_name=result.template_name,
         platform=platform,
         hook=hook,
         body=body,
         cta=cta,
         source=source,
+        quality=quality,
+        scenes_rendered=result.scenes_rendered,
+        render_time_ms=result.render_time_ms,
         processing_time_ms=(time.time() - start) * 1000,
+    )
+
+
+@app.get("/generate/video/templates", response_model=CinematicTemplatesResponse)
+async def get_cinematic_templates():
+    from ..video.templates_v2 import get_template_list
+    templates = get_template_list()
+    return CinematicTemplatesResponse(
+        success=True,
+        templates=[CinematicTemplateInfo(**t) for t in templates],
     )
 
 

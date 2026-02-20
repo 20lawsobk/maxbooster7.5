@@ -259,6 +259,7 @@ export class PythonAIService {
     topic?: string;
     goal?: string;
     tone?: string;
+    quality?: string;
   }): Promise<AIModelResponse<VideoResult>> {
     return callAIModel<VideoResult>('/generate/video', {
       hook: options.hook || '',
@@ -266,8 +267,8 @@ export class PythonAIService {
       cta: options.cta || '',
       platform: options.platform || 'tiktok',
       aspect_ratio: options.aspect_ratio,
-      template: options.template || 'promo',
-      duration: options.duration || 8.0,
+      template: options.template || 'cinematic_promo',
+      duration: options.duration || 10.0,
       bg_color: options.bg_color,
       text_color: options.text_color,
       accent_color: options.accent_color,
@@ -275,7 +276,23 @@ export class PythonAIService {
       topic: options.topic,
       goal: options.goal || 'growth',
       tone: options.tone || 'energetic',
+      quality: options.quality || 'cinematic',
     });
+  }
+
+  async getCinematicTemplates(): Promise<AIModelResponse<any>> {
+    try {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/generate/video/templates`, {
+        method: 'GET',
+      }, 10000);
+      if (!response.ok) {
+        return { success: false, error: `Failed to fetch templates: ${response.status}` };
+      }
+      const data = await response.json();
+      return { success: true, data };
+    } catch {
+      return { success: false, error: 'AI Model service unavailable' };
+    }
   }
 
   async checkHealth(): Promise<AIModelResponse<HealthResult>> {

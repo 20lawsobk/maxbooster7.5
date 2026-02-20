@@ -194,8 +194,8 @@ class VideoGenerateRequest(BaseModel):
     cta: str = ""
     platform: str = "tiktok"
     aspect_ratio: Optional[str] = None
-    template: str = "promo"
-    duration: float = 8.0
+    template: str = "cinematic_promo"
+    duration: float = 10.0
     bg_color: Optional[str] = None
     text_color: Optional[str] = None
     accent_color: Optional[str] = None
@@ -203,6 +203,7 @@ class VideoGenerateRequest(BaseModel):
     topic: Optional[str] = None
     goal: str = "growth"
     tone: str = "energetic"
+    quality: str = "cinematic"
 
 
 class VideoGenerateResponse(BaseModel):
@@ -214,13 +215,32 @@ class VideoGenerateResponse(BaseModel):
     height: int = 0
     aspect_ratio: str = ""
     template: str = ""
+    template_name: str = ""
     platform: str = ""
     hook: str = ""
     body: str = ""
     cta: str = ""
     source: str = "template"
+    quality: str = "cinematic"
+    scenes_rendered: int = 0
+    render_time_ms: float = 0.0
     processing_time_ms: float = 0.0
     error: Optional[str] = None
+
+
+class CinematicTemplateInfo(BaseModel):
+    id: str
+    name: str
+    description: str
+    category: str
+    transition: str
+    color_grade: str
+
+
+class CinematicTemplatesResponse(BaseModel):
+    success: bool
+    templates: List[CinematicTemplateInfo]
+    quick_templates: List[str] = ["promo", "lyric", "announcement", "minimal", "neon"]
 
 
 class HealthResponse(BaseModel):

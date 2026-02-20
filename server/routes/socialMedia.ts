@@ -1433,19 +1433,20 @@ router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, re
     const {
       hook, body, cta, platform, aspect_ratio, template,
       duration, bg_color, text_color, accent_color,
-      artist_name, topic, goal, tone,
+      artist_name, topic, goal, tone, quality,
     } = req.body;
 
     const result = await pythonAIService.generateVideo({
       hook, body, cta,
       platform: platform || 'tiktok',
       aspect_ratio,
-      template: template || 'promo',
-      duration: duration || 8,
+      template: template || 'cinematic_promo',
+      duration: duration || 10,
       bg_color, text_color, accent_color,
       artist_name, topic,
       goal: goal || 'growth',
       tone: tone || 'energetic',
+      quality: quality || 'cinematic',
     });
 
     if (!result.success || !result.data?.success) {
@@ -1463,21 +1464,46 @@ router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, re
 });
 
 router.get('/video-templates', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
-  res.json({
-    templates: [
-      { id: 'promo', name: 'Promo', description: 'Bold promotional style with accent colors' },
-      { id: 'lyric', name: 'Lyric', description: 'Elegant lyric video style with gold accents' },
-      { id: 'announcement', name: 'Announcement', description: 'Professional announcement style' },
-      { id: 'minimal', name: 'Minimal', description: 'Clean minimal style with light background' },
-      { id: 'neon', name: 'Neon', description: 'Vibrant neon style with cyan and pink' },
-    ],
-    aspect_ratios: [
-      { id: '9:16', name: 'Vertical (9:16)', platforms: ['TikTok', 'Reels', 'Stories', 'Shorts'] },
-      { id: '16:9', name: 'Landscape (16:9)', platforms: ['YouTube', 'Twitter', 'LinkedIn'] },
-      { id: '1:1', name: 'Square (1:1)', platforms: ['Instagram Feed', 'Facebook', 'Threads'] },
-      { id: '4:5', name: 'Portrait (4:5)', platforms: ['Instagram', 'Facebook'] },
-    ],
-  });
+  try {
+    const result = await pythonAIService.getCinematicTemplates();
+    if (result.success && result.data) {
+      res.json({
+        ...result.data,
+        aspect_ratios: [
+          { id: '9:16', name: 'Vertical (9:16)', platforms: ['TikTok', 'Reels', 'Stories', 'Shorts'] },
+          { id: '16:9', name: 'Landscape (16:9)', platforms: ['YouTube', 'Twitter', 'LinkedIn'] },
+          { id: '1:1', name: 'Square (1:1)', platforms: ['Instagram Feed', 'Facebook', 'Threads'] },
+          { id: '4:5', name: 'Portrait (4:5)', platforms: ['Instagram', 'Facebook'] },
+        ],
+      });
+    } else {
+      res.json({
+        templates: [
+          { id: 'cinematic_promo', name: 'Cinematic Promo', description: 'Film-quality promotional video', category: 'promo' },
+          { id: 'neon_pulse', name: 'Neon Pulse', description: 'Vibrant neon with plasma backgrounds', category: 'energetic' },
+          { id: 'dark_cinema', name: 'Dark Cinema', description: 'Moody atmospheric film look', category: 'dramatic' },
+          { id: 'aurora', name: 'Aurora Borealis', description: 'Northern lights color waves', category: 'atmospheric' },
+          { id: 'music_video', name: 'Music Video', description: 'High-energy music video style', category: 'music' },
+          { id: 'gold_luxury', name: 'Gold Luxury', description: 'Premium gold and black aesthetic', category: 'luxury' },
+          { id: 'elegant_minimal', name: 'Elegant Minimal', description: 'Clean sophisticated design', category: 'professional' },
+          { id: 'vintage_film', name: 'Vintage Film', description: 'Retro 8mm film aesthetic', category: 'retro' },
+          { id: 'ocean_wave', name: 'Ocean Wave', description: 'Calming ocean gradients', category: 'calm' },
+          { id: 'fire_ember', name: 'Fire & Ember', description: 'Intense warm fire tones', category: 'intense' },
+          { id: 'storyteller', name: 'Storyteller', description: 'Narrative-driven scene progression', category: 'narrative' },
+        ],
+        quick_templates: ['promo', 'lyric', 'announcement', 'minimal', 'neon'],
+        aspect_ratios: [
+          { id: '9:16', name: 'Vertical (9:16)', platforms: ['TikTok', 'Reels', 'Stories', 'Shorts'] },
+          { id: '16:9', name: 'Landscape (16:9)', platforms: ['YouTube', 'Twitter', 'LinkedIn'] },
+          { id: '1:1', name: 'Square (1:1)', platforms: ['Instagram Feed', 'Facebook', 'Threads'] },
+          { id: '4:5', name: 'Portrait (4:5)', platforms: ['Instagram', 'Facebook'] },
+        ],
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to get video templates:', error);
+    res.status(500).json({ success: false, message: 'Failed to get templates' });
+  }
 });
 
 export default router;

@@ -47,8 +47,12 @@ training/        - Training data (boostsheet_samples.json)
 - Training: Synthetic data generation, BoostSheet-to-training-sample converter, TrainingLogger for continuous learning
 - Fallback: If model output is low-quality (untrained/gibberish), agents produce template-based content
 - Integration: Node.js client (server/services/pythonAIService.ts) calls Python API; social media routes try Python AI first, fall back to unifiedAIController
-- Video Generation: FFmpeg-based video renderer (ai_model/video/renderer.py) creates MP4 videos with animated text overlays
-  - 5 templates: promo, lyric, announcement, minimal, neon
+- Video Generation: Dual-quality video rendering system
+  - Quick mode: Original FFmpeg renderer (ai_model/video/renderer.py), 5 templates, 5-15s
+  - Cinematic mode: Multi-scene composition engine (ai_model/video/cinematic_engine.py), 11 templates, 10-30s
+  - Cinematic templates: cinematic_promo, neon_pulse, dark_cinema, aurora, music_video, gold_luxury, elegant_minimal, vintage_film, ocean_wave, fire_ember, storyteller
+  - Effects system: animated gradients, radial/wave/plasma/aurora backgrounds (rendered at 1/4 resolution then scaled up for performance), vignette, film grain, 5 color grades, letterbox, corner accents, breathing brightness, animated borders, progress bars
+  - Multi-scene pipeline: parallel scene rendering with ThreadPoolExecutor, xfade transitions between scenes
   - 4 aspect ratios: 9:16 (TikTok/Reels), 16:9 (YouTube), 1:1 (Instagram), 4:5 (Portrait)
   - Auto-generates hook/body/CTA from AI model when only topic provided
   - Videos served from /uploads/videos/ via Express static middleware
