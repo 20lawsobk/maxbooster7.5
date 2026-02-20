@@ -529,18 +529,18 @@ router.get('/ai-content/trending-topics', requireAuth, async (req: Authenticated
   }
 });
 
-// AI content generation endpoint
 router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { 
       platform = 'instagram', 
       contentType = 'post',
       topic = 'new music',
-      tone = 'energetic'
+      tone = 'energetic',
+      goal = 'growth',
     } = req.body;
 
     const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'];
-    const validTones = ['professional', 'casual', 'energetic', 'promotional'];
+    const validTones = ['professional', 'casual', 'energetic', 'promotional', 'edgy', 'playful', 'serious'];
     const validContentTypes = ['release', 'behind-the-scenes', 'announcement', 'engagement', 'promotional'];
 
     const mappedContentType = contentType === 'post' ? 'engagement' : 
@@ -560,11 +560,19 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       return res.status(500).json({ message: result.error });
     }
 
+    const data = result.data as any;
     res.json({
       success: true,
       platform,
       contentType,
-      content: result.data,
+      content: data,
+      source: result.source === 'PythonAIModel' ? 'ai' : 'template',
+      processingTimeMs: result.processingTimeMs,
+      hook: data?.hook || '',
+      body: data?.body || '',
+      cta: data?.cta || '',
+      caption: data?.caption || '',
+      hashtags: data?.hashtags || [],
     });
   } catch (error) {
     logger.error('AI content generate error:', error);

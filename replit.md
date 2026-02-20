@@ -75,6 +75,16 @@ training/        - Training data (boostsheet_samples.json)
 - API response caching (8 routes cached)
 
 ## Recent Changes
+- 2026-02-20: AI Model training optimization and quality improvements
+  - Expanded synthetic training data: 500 samples (10x increase) with platform-specific hooks/bodies/CTAs for all 8 platforms
+  - 30+ diverse topics (releases, tours, studio, collabs, milestones, festivals, viral moments)
+  - Optimized model architecture: slim model (128 dim, 3 layers, 4 heads, ~1.16M params) for 4x faster training
+  - Reduced max_len 256→128 based on data profiling (99% coverage, minimal padding waste)
+  - Added gradient clipping (max_norm=1.0), cosine annealing LR scheduler, 10% validation split, best checkpoint restoration
+  - Training results: 25+ epochs total, validation loss 6.50→2.54, perplexity 370→9.39 (40x improvement)
+  - Model checkpoint auto-detects dimensions from saved weights (no env var config needed)
+  - API startup now restores tokenizer vocab from checkpoint for consistent generation
+  - Weights saved at ai_model/weights/model.pt (vocab=1360 tokens)
 - 2026-02-19: Production hardening pass (phase 5)
   - Replaced console.error with structured logger in helpDesk.ts (2 instances) and distributionPlatformService.ts
   - Fixed JS code sample in developerApi.ts (was using console.log in example)

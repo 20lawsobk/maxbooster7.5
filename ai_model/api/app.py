@@ -81,24 +81,59 @@ async def startup():
     tokenizer = SimpleTokenizer()
 
     dim = int(os.environ.get("AI_MODEL_DIM", "128"))
-    n_layers = int(os.environ.get("AI_MODEL_LAYERS", "2"))
-    n_heads = int(os.environ.get("AI_MODEL_HEADS", "2"))
+    n_layers = int(os.environ.get("AI_MODEL_LAYERS", "3"))
+    n_heads = int(os.environ.get("AI_MODEL_HEADS", "4"))
     max_len = int(os.environ.get("AI_MODEL_MAX_LEN", "128"))
-
-    base_model = TransformerLM(
-        vocab_size=max(len(tokenizer.vocab), 1000),
-        dim=dim,
-        n_layers=n_layers,
-        n_heads=n_heads,
-        max_len=max_len,
-    )
 
     if os.path.exists(WEIGHTS_PATH):
         print(f"[AI Model] Loading weights from {WEIGHTS_PATH}")
-        state_dict = torch.load(WEIGHTS_PATH, map_location=DEVICE, weights_only=True)
+        checkpoint = torch.load(WEIGHTS_PATH, map_location=DEVICE)
+        if isinstance(checkpoint, dict) and "vocab" in checkpoint:
+            tokenizer.vocab = checkpoint["vocab"]
+            tokenizer.inv_vocab = checkpoint["inv_vocab"]
+            tokenizer.next_id = checkpoint["next_id"]
+            print(f"[AI Model] Restored vocab ({tokenizer.vocab_size} tokens)")
+            state_dict = checkpoint["model_state_dict"]
+
+            if "config" in checkpoint:
+                cfg = checkpoint["config"]
+                dim = cfg.get("dim", dim)
+                n_layers = cfg.get("layers", n_layers)
+                n_heads = cfg.get("heads", n_heads)
+                max_len = cfg.get("max_len", max_len)
+                print(f"[AI Model] Using checkpoint config: dim={dim}, layers={n_layers}, heads={n_heads}, max_len={max_len}")
+            else:
+                dim = state_dict["token_emb.weight"].shape[1]
+                max_len = state_dict["pos_emb.weight"].shape[0]
+                n_layers = sum(1 for k in state_dict if k.startswith("layers.") and k.endswith(".attn.qkv.weight"))
+                n_heads_inferred = dim // (state_dict["layers.0.attn.qkv.weight"].shape[0] // 3 // (dim // n_heads)) if "layers.0.attn.qkv.weight" in state_dict else n_heads
+                n_heads = n_heads_inferred
+                print(f"[AI Model] Inferred config from weights: dim={dim}, layers={n_layers}, heads={n_heads}, max_len={max_len}")
+
+            saved_vocab = state_dict["token_emb.weight"].shape[0]
+            if saved_vocab != tokenizer.vocab_size:
+                print(f"[AI Model] WARNING: Vocab mismatch (checkpoint={saved_vocab}, tokenizer={tokenizer.vocab_size}). Using checkpoint vocab size.")
+        else:
+            state_dict = checkpoint
+            saved_vocab = max(len(tokenizer.vocab), 1000)
+
+        base_model = TransformerLM(
+            vocab_size=saved_vocab,
+            dim=dim,
+            n_layers=n_layers,
+            n_heads=n_heads,
+            max_len=max_len,
+        )
         base_model.load_state_dict(state_dict)
     else:
         print("[AI Model] No pre-trained weights found, using random initialization")
+        base_model = TransformerLM(
+            vocab_size=max(len(tokenizer.vocab), 1000),
+            dim=dim,
+            n_layers=n_layers,
+            n_heads=n_heads,
+            max_len=max_len,
+        )
 
     creative_model = CreativeModel(base_model, tokenizer, device=DEVICE)
     script_agent = ScriptAgent(creative_model)

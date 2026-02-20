@@ -34,7 +34,30 @@ import {
   Target,
   Users,
   Zap,
+  Bot,
+  FileText,
 } from 'lucide-react';
+
+const PLATFORMS = [
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'twitter', label: 'Twitter/X' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'googlebusiness', label: 'Google Business' },
+  { value: 'threads', label: 'Threads' },
+];
+
+const TONES = [
+  { value: 'energetic', label: 'Energetic' },
+  { value: 'professional', label: 'Professional' },
+  { value: 'casual', label: 'Casual' },
+  { value: 'edgy', label: 'Edgy' },
+  { value: 'playful', label: 'Playful' },
+  { value: 'serious', label: 'Serious' },
+  { value: 'promotional', label: 'Promotional' },
+];
 
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -48,6 +71,19 @@ const LANGUAGES = [
   { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
   { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
 ];
+
+interface AIGenerateResult {
+  success: boolean;
+  platform: string;
+  source: 'ai' | 'template';
+  processingTimeMs: number;
+  hook: string;
+  body: string;
+  cta: string;
+  caption: string;
+  hashtags: string[];
+  content?: any;
+}
 
 interface TrendingTopic {
   id: string;
@@ -85,6 +121,9 @@ export function ContentGenerator() {
   const [culturalAdaptation, setCulturalAdaptation] = useState(true);
   const [contentPrompt, setContentPrompt] = useState('');
   const [generatedContent, setGeneratedContent] = useState('');
+  const [selectedPlatform, setSelectedPlatform] = useState('instagram');
+  const [selectedTone, setSelectedTone] = useState('energetic');
+  const [aiResult, setAiResult] = useState<AIGenerateResult | null>(null);
   const [variantCount, setVariantCount] = useState(3);
 
   const { data: trendingTopics, isLoading: loadingTrends } = useQuery<TrendingTopic[]>({
@@ -155,7 +194,30 @@ export function ContentGenerator() {
     onError: (error: unknown) => {
       toast({
         title: 'Generation Failed',
-        description: error.message || 'Unable to generate content',
+        description: (error as any).message || 'Unable to generate content',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const aiGenerateMutation = useMutation({
+    mutationFn: async (data: { topic: string; platform: string; tone: string }) => {
+      const res = await apiRequest('POST', '/api/social/ai/generate', data);
+      return await res.json() as AIGenerateResult;
+    },
+    onSuccess: (data) => {
+      setAiResult(data);
+      const caption = data.caption || `${data.hook}\n\n${data.body}\n\n${data.cta}`;
+      setGeneratedContent(caption);
+      toast({
+        title: 'Content Generated',
+        description: `Created ${PLATFORMS.find(p => p.value === data.platform)?.label || data.platform} content via ${data.source === 'ai' ? 'AI Model' : 'Smart Templates'} in ${(data.processingTimeMs / 1000).toFixed(1)}s`,
+      });
+    },
+    onError: (error: unknown) => {
+      toast({
+        title: 'Generation Failed',
+        description: (error as any).message || 'Unable to generate content',
         variant: 'destructive',
       });
     },
@@ -205,10 +267,10 @@ export function ContentGenerator() {
       return;
     }
 
-    generateContentMutation.mutate({
-      prompt: contentPrompt,
-      language: selectedLanguage,
-      culturalAdaptation,
+    aiGenerateMutation.mutate({
+      topic: contentPrompt,
+      platform: selectedPlatform,
+      tone: selectedTone,
     });
   };
 
@@ -281,19 +343,16 @@ export function ContentGenerator() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Globe className="w-4 h-4" />
-                  Language
+                  Platform
                 </Label>
-                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {LANGUAGES.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code}>
-                        <span className="flex items-center gap-2">
-                          <span>{lang.flag}</span>
-                          <span>{lang.name}</span>
-                        </span>
+                    {PLATFORMS.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -301,20 +360,29 @@ export function ContentGenerator() {
               </div>
 
               <div className="space-y-2">
-                <Label>Cultural Adaptation</Label>
-                <div className="flex items-center space-x-2 h-10">
-                  <Switch checked={culturalAdaptation} onCheckedChange={setCulturalAdaptation} />
-                  <span className="text-sm text-muted-foreground">
-                    {culturalAdaptation ? 'Enabled' : 'Disabled'}
-                  </span>
-                </div>
+                <Label className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Tone
+                </Label>
+                <Select value={selectedTone} onValueChange={setSelectedTone}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TONES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Content Description</Label>
+              <Label>What's your content about?</Label>
               <Textarea
-                placeholder="Describe the content you want to create..."
+                placeholder="e.g. new single release, behind the scenes studio session, tour announcement..."
                 value={contentPrompt}
                 onChange={(e) => setContentPrompt(e.target.value)}
                 className="min-h-[100px]"
@@ -324,10 +392,10 @@ export function ContentGenerator() {
             <div className="flex gap-2">
               <Button
                 onClick={handleGenerateContent}
-                disabled={generateContentMutation.isPending}
+                disabled={aiGenerateMutation.isPending}
                 className="flex-1"
               >
-                {generateContentMutation.isPending ? (
+                {aiGenerateMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Generating...
@@ -353,22 +421,116 @@ export function ContentGenerator() {
               </Button>
             </div>
 
-            {generatedContent && (
+            {aiResult && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label>Generated Content</Label>
+                  <div className="flex items-center gap-2">
+                    <Label>Generated Content</Label>
+                    <Badge variant={aiResult.source === 'ai' ? 'default' : 'secondary'} className="text-xs">
+                      {aiResult.source === 'ai' ? (
+                        <><Bot className="w-3 h-3 mr-1" /> AI Model</>
+                      ) : (
+                        <><FileText className="w-3 h-3 mr-1" /> Smart Template</>
+                      )}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {(aiResult.processingTimeMs / 1000).toFixed(1)}s
+                    </Badge>
+                  </div>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => copyToClipboard(generatedContent)}
                   >
                     <Copy className="w-4 h-4 mr-1" />
-                    Copy
+                    Copy All
                   </Button>
                 </div>
-                <Card className="bg-muted/50">
-                  <CardContent className="p-4">
-                    <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
+
+                {aiResult.hook && (
+                  <Card className="border-l-4 border-l-primary bg-muted/30">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold uppercase text-primary">Hook</span>
+                        <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copyToClipboard(aiResult.hook)}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      <p className="text-sm">{aiResult.hook}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {aiResult.body && (
+                  <Card className="border-l-4 border-l-blue-500 bg-muted/30">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold uppercase text-blue-500">Body</span>
+                        <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copyToClipboard(aiResult.body)}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      <p className="text-sm">{aiResult.body}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {aiResult.cta && (
+                  <Card className="border-l-4 border-l-green-500 bg-muted/30">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold uppercase text-green-500">Call to Action</span>
+                        <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copyToClipboard(aiResult.cta)}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      <p className="text-sm">{aiResult.cta}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {aiResult.hashtags && aiResult.hashtags.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-1">
+                        <Hash className="w-4 h-4" />
+                        Hashtags
+                      </Label>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2"
+                        onClick={() => copyToClipboard(aiResult.hashtags.join(' '))}
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copy All
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {aiResult.hashtags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="cursor-pointer hover:bg-secondary"
+                          onClick={() => copyToClipboard(tag)}
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Card className="bg-muted/20">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold uppercase text-muted-foreground">Full Caption Preview</span>
+                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copyToClipboard(generatedContent)}>
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">{generatedContent}</p>
                   </CardContent>
                 </Card>
 
