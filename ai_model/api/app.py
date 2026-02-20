@@ -176,6 +176,7 @@ async def generate_script(req: ScriptGenerateRequest):
         body=result.body,
         cta=result.cta,
         platform=platform,
+        source=getattr(result, "source", "template"),
         processing_time_ms=(time.time() - start) * 1000,
     )
 
@@ -261,6 +262,7 @@ async def generate_content(req: ContentGenerateRequest):
         hook=script_result.hook,
         body=script_result.body,
         cta=script_result.cta,
+        source=getattr(script_result, "source", "template"),
         visual_spec=visual_spec,
         posting_time=dist_result.posting_time if dist_result else None,
         processing_time_ms=(time.time() - start) * 1000,
@@ -310,6 +312,7 @@ async def generate_multi_platform(req: MultiPlatformRequest):
             "hook": script_result.hook,
             "body": script_result.body,
             "cta": script_result.cta,
+            "source": getattr(script_result, "source", "template"),
             "format": req.format,
             "target_audience": req.target_audience,
         }
@@ -439,12 +442,28 @@ async def train_model(req: TrainRequest):
     print(f"[AI Model] Training complete. Perplexity: {ppl}")
 
     os.makedirs(WEIGHTS_DIR, exist_ok=True)
-    torch.save(creative_model.model.state_dict(), WEIGHTS_PATH)
+    n_layers = len(creative_model.model.layers)
+    checkpoint = {
+        "model_state_dict": creative_model.model.state_dict(),
+        "vocab": tokenizer.vocab,
+        "inv_vocab": tokenizer.inv_vocab,
+        "next_id": tokenizer.next_id,
+        "config": {
+            "dim": dim,
+            "layers": n_layers,
+            "heads": cfg.heads,
+            "max_len": max_len,
+        },
+    }
+    torch.save(checkpoint, WEIGHTS_PATH)
 
     import json
     meta = {
         "vocab_size": tokenizer.vocab_size,
         "dim": dim,
+        "layers": n_layers,
+        "heads": cfg.heads,
+        "max_len": max_len,
         "perplexity": ppl,
         "samples": len(dataset),
     }

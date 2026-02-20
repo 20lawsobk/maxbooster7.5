@@ -46,6 +46,7 @@ class ScriptGenerateResponse(BaseModel):
     body: str
     cta: str
     platform: str
+    source: str = "template"
     processing_time_ms: float
 
 
@@ -97,6 +98,7 @@ class ContentGenerateResponse(BaseModel):
     hook: str
     body: str
     cta: str
+    source: str = "template"
     visual_spec: Optional[Dict[str, Any]] = None
     posting_time: Optional[str] = None
     processing_time_ms: float
