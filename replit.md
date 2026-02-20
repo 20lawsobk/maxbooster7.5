@@ -92,16 +92,20 @@ training/        - Training data (boostsheet_samples.json)
   - Full-stack: Python FastAPI endpoint → Express proxy route → React UI component (ServerVideoGenerator)
   - Videos served via Express static middleware from /uploads/videos/
   - Frontend: ServerVideoGenerator component in Social Media Create tab with template picker, aspect ratio selector, duration control
+- 2026-02-20: AI Model v3 - Progressive multi-phase training (perplexity 11.6→3.09, 3.75x improvement)
+  - Training data: 2500 diverse samples (up from 500), 35 hooks/bodies/CTAs per platform, 95+ topics
+  - Progressive training: 15-phase schedule with decreasing LR (2e-3→5e-5), checkpoint resume between phases
+  - Gradient accumulation: Effective batch size optimization for CPU-constrained training
+  - Weight initialization: Xavier uniform for transformer layers, proper bias initialization
+  - Results: Perplexity 3.09, validation loss 1.13, vocab=2055 tokens, 15 epochs total
+  - Training pipeline: ai_model/training/progressive_train.py for incremental training within time limits
+  - Large dataset generator: ai_model/training/generate_large_dataset.py (2500 samples across all platform/goal/tone combinations)
+  - Weights saved at ai_model/weights/model.pt (vocab=2055 tokens, dim=128, layers=3, heads=4, max_len=128)
 - 2026-02-20: Major AI Model quality upgrade (perplexity 370→11.6, 32x improvement)
   - Generation engine: Replaced greedy argmax with nucleus (top-p=0.92) sampling, temperature=0.8, top-k=50, repetition penalty=1.2, min_length=10
   - Model architecture: Added dropout (0.1), embedding dropout, pre-norm TransformerDecoderLayer, proper causal masking
   - Training pipeline: Cosine warmup LR scheduler, label smoothing (0.1), early stopping with patience, AdamW with beta2=0.98
-  - Expanded training data: 500 diverse samples with 25 hooks/bodies/CTAs per platform (up from 10-15), 90+ topics
-  - Multi-round training: 60+ total epochs across progressive learning rate schedule (1e-3→1e-4)
-  - Results: Perplexity 370→11.6 (32x improvement), validation loss 2.64, vocab=1856 tokens
   - Script agent: Fixed prompt format to match training data, improved output parsing with _clean_text(), source tracking (ai_model vs template)
-  - API: Source field added to ScriptGenerateResponse and ContentGenerateResponse, full checkpoint saves (vocab+config+weights)
-  - Weights saved at ai_model/weights/model.pt (vocab=1856 tokens, dim=128, layers=3, heads=4, max_len=128)
 - 2026-02-19: Production hardening pass (phase 5)
   - Replaced console.error with structured logger in helpDesk.ts (2 instances) and distributionPlatformService.ts
   - Fixed JS code sample in developerApi.ts (was using console.log in example)

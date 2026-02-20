@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 
@@ -23,6 +24,21 @@ class TransformerLM(nn.Module):
 
         self.ln = nn.LayerNorm(dim)
         self.head = nn.Linear(dim, vocab_size)
+
+        self._init_weights()
+
+    def _init_weights(self):
+        nn.init.normal_(self.token_emb.weight, mean=0.0, std=0.02)
+        nn.init.normal_(self.pos_emb.weight, mean=0.0, std=0.02)
+        nn.init.normal_(self.head.weight, mean=0.0, std=0.02)
+        nn.init.zeros_(self.head.bias)
+
+        for layer in self.layers:
+            for name, param in layer.named_parameters():
+                if 'weight' in name and param.dim() >= 2:
+                    nn.init.xavier_uniform_(param)
+                elif 'bias' in name:
+                    nn.init.zeros_(param)
 
     def forward(self, x):
         B, T = x.shape
