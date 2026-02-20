@@ -70,6 +70,7 @@ import {
   Play,
   Star,
   Activity,
+  ArrowRight,
   X,
 } from 'lucide-react';
 import {
@@ -152,9 +153,15 @@ interface AIContent {
 interface GeneratedContent {
   platform: string;
   content: string;
+  caption?: string;
   hashtags?: string[];
   mediaUrl?: string;
   format?: string;
+  hook?: string;
+  body?: string;
+  cta?: string;
+  source?: string;
+  optimalPostTime?: string;
 }
 
 interface PlatformPerformance {
@@ -584,11 +591,14 @@ export default function SocialMedia() {
       return response.json();
     },
     onSuccess: (data) => {
-      setPostContent(data.content || '');
-      if (data.generatedContent) {
+      if (data.generatedContent && data.generatedContent.length > 0) {
         setUrlGeneratedContent(data.generatedContent);
+        const first = data.generatedContent[0];
+        const fullContent = [first.hook, first.body, first.cta].filter(Boolean).join('\n\n');
+        setPostContent(fullContent || first.content || first.caption || data.content || '');
       } else {
         setUrlGeneratedContent([]);
+        setPostContent(data.content || '');
       }
       
       if (data.outcome) {
@@ -1696,7 +1706,138 @@ export default function SocialMedia() {
                 </CardContent>
               </Card>
 
-              {/* AI Content Suggestions */}
+              {/* AI Generated Results */}
+              {urlGeneratedContent.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Sparkles className="w-5 h-5 mr-2 text-purple-500" />
+                        AI Generated Content
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {urlGeneratedContent[0]?.source && (
+                          <Badge variant={urlGeneratedContent[0].source === 'python_ai_model' ? 'default' : 'secondary'} className="text-xs">
+                            {urlGeneratedContent[0].source === 'python_ai_model' ? 'AI Model' : 'Smart Template'}
+                          </Badge>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleDownloadAllContent}
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Download All
+                        </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                      {urlGeneratedContent.map((item, index) => {
+                        const platform = SOCIAL_PLATFORMS.find((p) => p.id === item.platform);
+                        const IconComponent = platform?.icon;
+                        const hasStructured = item.hook || item.body || item.cta;
+                        return (
+                          <div
+                            key={index}
+                            className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 space-y-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                {IconComponent && (
+                                  <IconComponent
+                                    className="w-4 h-4"
+                                    style={{ color: platform?.color }}
+                                  />
+                                )}
+                                <span className="font-medium">{platform?.name}</span>
+                                {item.optimalPostTime && (
+                                  <span className="text-xs text-muted-foreground">Best time: {item.optimalPostTime}</span>
+                                )}
+                              </div>
+                              <div className="flex space-x-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    const text = hasStructured
+                                      ? [item.hook, item.body, item.cta].filter(Boolean).join('\n\n')
+                                      : item.content;
+                                    navigator.clipboard.writeText(text);
+                                    toast({ title: 'Copied!', description: 'Content copied to clipboard' });
+                                  }}
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setPostContent(
+                                      hasStructured
+                                        ? [item.hook, item.body, item.cta].filter(Boolean).join('\n\n')
+                                        : item.content
+                                    );
+                                    toast({ title: 'Applied!', description: 'Content added to post editor' });
+                                  }}
+                                >
+                                  <ArrowRight className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {hasStructured ? (
+                              <div className="space-y-2">
+                                {item.hook && (
+                                  <div className="p-3 rounded-md bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                                    <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">HOOK</p>
+                                    <p className="text-sm">{item.hook}</p>
+                                  </div>
+                                )}
+                                {item.body && (
+                                  <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                                    <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1">BODY</p>
+                                    <p className="text-sm">{item.body}</p>
+                                  </div>
+                                )}
+                                {item.cta && (
+                                  <div className="p-3 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                                    <p className="text-xs font-semibold text-green-600 dark:text-green-400 mb-1">CALL TO ACTION</p>
+                                    <p className="text-sm">{item.cta}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                                {item.content}
+                              </p>
+                            )}
+
+                            {item.hashtags && item.hashtags.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {item.hashtags.map((tag: string, i: number) => (
+                                  <Badge
+                                    key={i}
+                                    variant="outline"
+                                    className="text-xs cursor-pointer hover:bg-blue-100"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(tag);
+                                      toast({ title: 'Copied!', description: `${tag} copied` });
+                                    }}
+                                  >
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -1767,6 +1908,7 @@ export default function SocialMedia() {
                   </div>
                 </CardContent>
               </Card>
+              )}
             </div>
 
             {/* URL-Based Content Generation */}
