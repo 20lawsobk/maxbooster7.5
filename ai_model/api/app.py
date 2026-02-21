@@ -1011,7 +1011,13 @@ async def generate_veo_campaign(request: dict = {}):
     primary_platforms = request.get("primary_platforms", ["tiktok", "youtube", "instagram"])
     campaign_notes = request.get("campaign_notes", "")
 
-    targets_raw = request.get("targets", [])
+    targets_input = request.get("targets", [])
+    if isinstance(targets_input, dict):
+        targets_raw = [
+            {"platform": p, "goal": g} for p, g in targets_input.items()
+        ]
+    else:
+        targets_raw = targets_input
     if not targets_raw:
         from maxbooster_veo_music.model.platform_heads import PLATFORM_DEFAULTS, PlatformHeads
         default_goals = {
@@ -1286,7 +1292,13 @@ async def veo_url_campaign(request: dict = {}):
     story = campaign_request["story"]
     primary_platforms = campaign_request["primary_platforms"]
 
-    targets_raw = campaign_request.get("targets", [])
+    targets_input_url = campaign_request.get("targets", [])
+    if isinstance(targets_input_url, dict):
+        targets_raw = [
+            {"platform": p, "goal": g} for p, g in targets_input_url.items()
+        ]
+    else:
+        targets_raw = targets_input_url
     if not targets_raw:
         from maxbooster_veo_music.model.platform_heads import PLATFORM_DEFAULTS
         default_goals = {
