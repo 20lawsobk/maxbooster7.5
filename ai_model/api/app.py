@@ -20,6 +20,7 @@ from .schemas import (
     CinematicTemplatesResponse, CinematicTemplateInfo,
     HealthResponse,
     MultiTrainRequest, MultiTrainResponse, MultiGPUStatusResponse,
+    HyperGPUStatusResponse, GPUClusterStatusResponse, ClusterScaleRequest,
 )
 from ..model.tokenizer import SimpleTokenizer
 from ..model.transformer import TransformerLM
@@ -758,3 +759,137 @@ async def multi_gpu_status():
         streams=status["streams"],
         total_vram_mb=status["total_vram_mb"],
     )
+
+
+_hyper_backend = None
+_cluster_backend = None
+
+
+def _get_hyper_backend():
+    global _hyper_backend
+    if _hyper_backend is None:
+        from ..gpu.hyper_backend import HyperGPUBackend
+        from ..gpu.hyper_core import PrecisionMode
+        _hyper_backend = HyperGPUBackend(
+            lanes=512,
+            tensor_cores=8,
+            precision=PrecisionMode.MIXED,
+        )
+    return _hyper_backend
+
+
+def _get_cluster_backend():
+    global _cluster_backend
+    if _cluster_backend is None:
+        from ..gpu.hyper_backend import ClusterBackend
+        from ..gpu.hyper_core import PrecisionMode
+        _cluster_backend = ClusterBackend(
+            num_nodes=4,
+            lanes_per_node=512,
+            tensor_cores_per_node=8,
+            precision=PrecisionMode.MIXED,
+        )
+    return _cluster_backend
+
+
+@app.get("/gpu/hyper/status")
+async def hyper_gpu_status():
+    backend = _get_hyper_backend()
+    s = backend.status()
+    return HyperGPUStatusResponse(
+        success=True,
+        engine=s["engine"],
+        lanes=s["lanes"],
+        tensor_cores=s["tensor_cores"],
+        precision=s["precision"],
+        total_ops=s["total_ops"],
+        total_tensor_core_tflops=s["total_tensor_core_tflops"],
+        total_compute_ms=s["total_compute_ms"],
+        vram=s["vram"],
+        memory_pool=s["memory_pool"],
+        uptime_s=s["uptime_s"],
+    )
+
+
+@app.get("/gpu/cluster/status")
+async def cluster_gpu_status():
+    cluster = _get_cluster_backend()
+    s = cluster.status()
+    return GPUClusterStatusResponse(
+        success=True,
+        engine=s["engine"],
+        num_nodes=s["num_nodes"],
+        total_lanes=s["total_lanes"],
+        total_tensor_cores=s["total_tensor_cores"],
+        nodes_idle=s["nodes_idle"],
+        nodes_busy=s["nodes_busy"],
+        total_ops=s["total_ops"],
+        total_compute_ms=s["total_compute_ms"],
+        total_tensor_core_tflops=s["total_tensor_core_tflops"],
+        nodes=s["nodes"],
+    )
+
+
+@app.post("/gpu/cluster/scale")
+async def cluster_scale(req: ClusterScaleRequest):
+    cluster = _get_cluster_backend()
+    if req.action == "add":
+        nid = cluster.add_node(lanes=req.lanes, tensor_cores=req.tensor_cores)
+        return {"success": True, "action": "added", "node_id": nid, "total_nodes": cluster.cluster.num_nodes}
+    elif req.action == "remove":
+        if req.node_id is None:
+            return {"success": False, "error": "node_id required for remove"}
+        cluster.remove_node(req.node_id)
+        return {"success": True, "action": "removed", "node_id": req.node_id, "total_nodes": cluster.cluster.num_nodes}
+    else:
+        return {"success": False, "error": f"Unknown action: {req.action}"}
+
+
+@app.get("/gpu/capabilities")
+async def gpu_capabilities():
+    backend = _get_hyper_backend()
+    cluster = _get_cluster_backend()
+    hyper_status = backend.status()
+    cluster_status = cluster.status()
+
+    return {
+        "success": True,
+        "hyper_gpu": {
+            "engine": "HyperGPU",
+            "lanes": hyper_status["lanes"],
+            "tensor_cores": hyper_status["tensor_cores"],
+            "precision": hyper_status["precision"],
+            "operations": [
+                "tensor_core_gemm", "mixed_precision_gemm",
+                "flash_attention", "conv2d", "conv3d",
+                "layer_norm", "batch_norm", "gelu", "silu",
+                "grouped_gemm", "fused_attention_norm",
+                "softmax", "add", "gemm_bias_relu",
+            ],
+            "features": [
+                "mixed_precision_training",
+                "flash_attention_memory_efficient",
+                "tensor_core_acceleration",
+                "memory_pooling",
+                "instruction_fusion",
+            ],
+        },
+        "cluster": {
+            "engine": "HyperGPU Cluster",
+            "num_nodes": cluster_status["num_nodes"],
+            "total_lanes": cluster_status["total_lanes"],
+            "total_tensor_cores": cluster_status["total_tensor_cores"],
+            "features": [
+                "distributed_training",
+                "data_parallel",
+                "gradient_all_reduce",
+                "elastic_scaling",
+                "scatter_gather",
+            ],
+        },
+        "supported_model_types": [
+            "transformer", "cnn", "video_generation",
+            "diffusion", "vae", "gan", "unet",
+            "vision_transformer", "multimodal",
+        ],
+    }

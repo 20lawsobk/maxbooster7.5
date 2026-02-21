@@ -277,3 +277,38 @@ class MultiGPUStatusResponse(BaseModel):
     lane_utilization: dict
     streams: dict
     total_vram_mb: float
+
+
+class HyperGPUStatusResponse(BaseModel):
+    success: bool
+    engine: str
+    lanes: int
+    tensor_cores: int
+    precision: str
+    total_ops: int
+    total_tensor_core_tflops: float
+    total_compute_ms: float
+    vram: dict
+    memory_pool: dict
+    uptime_s: float
+
+
+class GPUClusterStatusResponse(BaseModel):
+    success: bool
+    engine: str
+    num_nodes: int
+    total_lanes: int
+    total_tensor_cores: int
+    nodes_idle: int
+    nodes_busy: int
+    total_ops: int
+    total_compute_ms: float
+    total_tensor_core_tflops: float
+    nodes: dict
+
+
+class ClusterScaleRequest(BaseModel):
+    action: str = "add"
+    lanes: int = 512
+    tensor_cores: int = 8
+    node_id: Optional[int] = None
