@@ -167,10 +167,10 @@ const DEFAULT_DISTRIBUTION_FEE_RATE = 0.09;
 
 export const FEE_TIERS: Record<FeeTier, { platformFee: number; distributionFee: number; name: string; description: string }> = {
   free: { platformFee: 0.20, distributionFee: 0.15, name: 'Free', description: 'Basic tier with standard fees' },
-  standard: { platformFee: 0.15, distributionFee: 0.09, name: 'Standard', description: 'Standard subscription tier' },
-  pro: { platformFee: 0.10, distributionFee: 0.05, name: 'Pro', description: 'Professional tier with reduced fees' },
-  label: { platformFee: 0.08, distributionFee: 0.04, name: 'Label', description: 'Label tier with premium rates' },
-  enterprise: { platformFee: 0.05, distributionFee: 0.02, name: 'Enterprise', description: 'Enterprise tier with best rates' },
+  standard: { platformFee: 0, distributionFee: 0, name: 'Standard', description: 'All-inclusive subscription — distribution included' },
+  pro: { platformFee: 0, distributionFee: 0, name: 'Pro', description: 'All-inclusive subscription — distribution included' },
+  label: { platformFee: 0, distributionFee: 0, name: 'Label', description: 'All-inclusive subscription — distribution included' },
+  enterprise: { platformFee: 0, distributionFee: 0, name: 'Enterprise', description: 'All-inclusive subscription — distribution included' },
 };
 
 export const MECHANICAL_RATES: Record<string, { rate: number; type: 'statutory' | 'negotiated' }> = {

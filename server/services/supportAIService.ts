@@ -104,7 +104,7 @@ export class SupportAIService {
       'how to sell beats',
       {
         answer:
-          "Max Booster Marketplace is like BeatStars for selling your music:\n\n**Set Up Your Storefront:**\n1. Go to Marketplace page\n2. Click 'Create Storefront'\n3. Customize branding (logo, colors, banner)\n4. Add your beats/samples/presets\n\n**Upload Products:**\n1. Click 'Add Product'\n2. Upload audio file and preview\n3. Set pricing tiers (Basic, Premium, Exclusive)\n4. Add licensing terms\n5. Publish\n\n**Pricing Options:**\n- Lease licenses ($10-100)\n- Exclusive rights ($100-10,000+)\n- Sample packs\n- Presets and templates\n\n**Payment:**\n- Automatic payment processing via Stripe\n- You receive 95% of sale (5% platform fee)\n- Instant payouts to your bank account",
+          "Max Booster Marketplace is like BeatStars for selling your music:\n\n**Set Up Your Storefront:**\n1. Go to Marketplace page\n2. Click 'Create Storefront'\n3. Customize branding (logo, colors, banner)\n4. Set up your custom URL (yourname.maxbooster.app)\n5. Add your beats/samples/presets\n\n**Upload Products:**\n1. Click 'Add Product'\n2. Upload audio file and preview\n3. Set pricing tiers (Basic, Premium, Exclusive)\n4. Add licensing terms\n5. Publish\n\n**Pricing Options:**\n- Lease licenses ($10-100)\n- Exclusive rights ($100-10,000+)\n- Sample packs\n- Presets and templates\n\n**Payment:**\n- Automatic payment processing via Stripe\n- You keep 100% of your sale revenue (minus standard Stripe processing)\n- No platform fees — everything is included in your subscription\n- Instant payouts to your bank account",
         category: 'marketplace',
       },
     ],
@@ -112,7 +112,7 @@ export class SupportAIService {
       'marketplace fees',
       {
         answer:
-          'Marketplace fees are simple and transparent:\n\n**Seller Fees:**\n- 5% platform fee on all sales\n- You keep 95% of revenue\n- No listing fees\n- No monthly fees\n\n**Payment Processing:**\n- Stripe fees: 2.9% + $0.30 per transaction (standard Stripe rates)\n- Instant payouts available\n\n**Example:** If you sell a beat for $50:\n- Platform fee: $2.50 (5%)\n- Your earnings: $47.50\n- Stripe fee: ~$1.50\n- Net to you: ~$46',
+          'Everything is included in your Max Booster subscription — no hidden fees or top-ups:\n\n**All-Inclusive Subscription:**\n- No platform fees on marketplace sales\n- No distribution fees\n- No feature top-ups\n- You keep 100% of your revenue\n\n**Payment Processing:**\n- Standard Stripe fees: 2.9% + $0.30 per transaction\n- Instant payouts available\n\n**Example:** If you sell a beat for $50:\n- Platform fee: $0 (included in subscription)\n- Stripe processing: ~$1.75\n- Net to you: ~$48.25\n\n**What\'s Included:**\n- Distribution to 150+ platforms\n- Beat marketplace & licensing\n- AI studio, social media autopilot\n- Custom storefront (yourname.maxbooster.app)\n- All current and future features',
         category: 'marketplace',
       },
     ],

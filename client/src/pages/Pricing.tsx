@@ -24,14 +24,15 @@ export default function Pricing() {
         'AI-Enhanced Organic Advertisement Autopilot',
         'Beat Marketplace & Licensing',
         'Professional Analytics Dashboard',
-        'Distribution to 150+ Platforms',
+        'Distribution to 150+ Platforms — Included',
         'AI Mixing & Mastering',
         'Royalty Tracking & Splits',
         'Email Marketing System',
+        'Custom Storefront (yourname.maxbooster.app)',
         'Unlimited Active Projects',
         'Premium Content Library',
         'Cloud Storage',
-        'Comprehensive Help Center',
+        'No Hidden Fees or Feature Top-Ups',
       ],
     },
     {
@@ -49,14 +50,15 @@ export default function Pricing() {
         'AI-Enhanced Organic Advertisement Autopilot',
         'Beat Marketplace & Licensing',
         'Professional Analytics Dashboard',
-        'Distribution to 150+ Platforms',
+        'Distribution to 150+ Platforms — Included',
         'AI Mixing & Mastering',
         'Royalty Tracking & Splits',
         'Email Marketing System',
+        'Custom Storefront (yourname.maxbooster.app)',
         'Unlimited Active Projects',
         'Premium Content Library',
         'Cloud Storage',
-        'Comprehensive Help Center',
+        'No Hidden Fees or Feature Top-Ups',
       ],
     },
     {
@@ -72,14 +74,15 @@ export default function Pricing() {
         'AI-Enhanced Organic Advertisement Autopilot',
         'Beat Marketplace & Licensing',
         'Professional Analytics Dashboard',
-        'Distribution to 150+ Platforms',
+        'Distribution to 150+ Platforms — Included',
         'AI Mixing & Mastering',
         'Royalty Tracking & Splits',
         'Email Marketing System',
+        'Custom Storefront (yourname.maxbooster.app)',
         'Unlimited Active Projects',
         'Premium Content Library',
         'Cloud Storage',
-        'Comprehensive Help Center',
+        'No Hidden Fees or Feature Top-Ups',
       ],
     },
   ];
@@ -109,6 +112,11 @@ export default function Pricing() {
       question: 'Do you offer student discounts?',
       answer:
         'Yes! Students receive 50% off all plans with valid student verification through the partner program.',
+    },
+    {
+      question: 'Are there any hidden fees or feature top-ups?',
+      answer:
+        'No. Your Max Booster subscription includes everything — distribution to 150+ platforms, the AI studio, social media autopilot, beat marketplace, analytics, custom storefront, and all future features. The only additional costs are standard Stripe payment processing fees (2.9% + $0.30) when you sell products through your storefront. You keep 100% of your revenue.',
     },
   ];
 
@@ -378,6 +386,12 @@ export default function Pricing() {
                     },
                     { feature: 'Email Marketing', monthly: true, yearly: true, lifetime: true },
                     {
+                      feature: 'Custom Storefront URL',
+                      monthly: 'yourname.maxbooster.app',
+                      yearly: 'yourname.maxbooster.app',
+                      lifetime: 'yourname.maxbooster.app',
+                    },
+                    {
                       feature: 'Active Projects',
                       monthly: 'Unlimited',
                       yearly: 'Unlimited',
@@ -388,6 +402,18 @@ export default function Pricing() {
                       monthly: 'Included',
                       yearly: 'Included',
                       lifetime: 'Included',
+                    },
+                    {
+                      feature: 'Distribution & Platform Fees',
+                      monthly: '$0 — Included',
+                      yearly: '$0 — Included',
+                      lifetime: '$0 — Included',
+                    },
+                    {
+                      feature: 'Feature Top-Ups Required',
+                      monthly: 'None',
+                      yearly: 'None',
+                      lifetime: 'None',
                     },
                     {
                       feature: 'Support Level',

@@ -298,7 +298,7 @@ export default function StorefrontBuilder() {
     onSuccess: (data) => {
       toast({
         title: 'Storefront Created!',
-        description: `Your storefront "${data.name}" is now live at /${data.slug}`,
+        description: `Your storefront "${data.name}" has been created! Set up a custom URL in the settings to get yourname.maxbooster.app`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
       setShowCreateDialog(false);
@@ -656,7 +656,12 @@ export default function StorefrontBuilder() {
                       className="flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.open(`/store/${storefront.slug}`, '_blank');
+                        const sf = storefront as any;
+                        if (sf.subdomain && sf.isSubdomainActive) {
+                          window.open(`https://${sf.subdomain}.maxbooster.app`, '_blank');
+                        } else {
+                          window.open(`/storefront/${storefront.slug}`, '_blank');
+                        }
                       }}
                     >
                       <Eye className="w-4 h-4 mr-1" />
@@ -770,7 +775,14 @@ export default function StorefrontBuilder() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open(`/store/${selectedStorefront.slug}`, '_blank')}
+                        onClick={() => {
+                          const sf = selectedStorefront as any;
+                          if (sf.subdomain && sf.isSubdomainActive) {
+                            window.open(`https://${sf.subdomain}.maxbooster.app`, '_blank');
+                          } else {
+                            window.open(`/storefront/${selectedStorefront.slug}`, '_blank');
+                          }
+                        }}
                       >
                         <ExternalLink className="w-4 h-4 mr-1" />
                         Open in New Tab
@@ -803,11 +815,17 @@ export default function StorefrontBuilder() {
                         />
                       </div>
                       <div>
-                        <Label>Slug (URL)</Label>
+                        <Label>Storefront ID</Label>
                         <Input value={selectedStorefront.slug} disabled className="bg-muted" />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Your storefront URL: /store/{selectedStorefront.slug}
-                        </p>
+                        {subdomainForm.subdomain && subdomainForm.isSubdomainActive ? (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Your storefront URL: <span className="font-medium text-primary">{subdomainForm.subdomain}.maxbooster.app</span>
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Set up a custom URL below to get <span className="font-medium">yourname.maxbooster.app</span>
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -1540,7 +1558,14 @@ export default function StorefrontBuilder() {
                   <div className="mt-4 flex gap-2">
                     <Button 
                       className="flex-1"
-                      onClick={() => window.open(`/store/${selectedStorefront.slug}`, '_blank')}
+                      onClick={() => {
+                        const sf = selectedStorefront as any;
+                        if (sf.subdomain && sf.isSubdomainActive) {
+                          window.open(`https://${sf.subdomain}.maxbooster.app`, '_blank');
+                        } else {
+                          window.open(`/storefront/${selectedStorefront.slug}`, '_blank');
+                        }
+                      }}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       View Full Storefront
