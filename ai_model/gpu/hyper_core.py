@@ -486,6 +486,15 @@ class HyperGPU:
         self._created_at = time.time()
         self._total_compute_ms = 0.0
         self._lock = threading.Lock()
+        self._training_ops = 0
+
+    def _record_op(self, op_name: str, flops: int, simulated_ms: float):
+        with self._lock:
+            self.core._total_ops += 1
+            self._training_ops += 1
+            if self.core.tensor_core_units:
+                self.core.tensor_core_units[0].total_flops += float(flops)
+            self._total_compute_ms += simulated_ms
 
     def gemm(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
         t0 = time.time()

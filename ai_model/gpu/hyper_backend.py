@@ -257,18 +257,24 @@ class _HyperSiLU(torch.autograd.Function):
 
 class HyperGPULinear(nn.Module):
     def __init__(self, in_features, out_features, gpu: HyperGPU,
-                 bias=True, mixed_precision=False):
+                 bias=True, mixed_precision=False, training_mode=False):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.gpu = gpu
         self.mixed_precision = mixed_precision
+        self._training_mode = training_mode
         self.weight = nn.Parameter(
             torch.randn(in_features, out_features) * (2.0 / (in_features + out_features)) ** 0.5
         )
         self.bias = nn.Parameter(torch.zeros(out_features)) if bias else None
 
     def forward(self, x):
+        if self._training_mode:
+            out = nn.functional.linear(x, self.weight.t(), self.bias)
+            self.gpu._record_op("gemm_tc", x.numel() * self.out_features * 2, 0.001)
+            return out
+
         shape = x.shape
         if x.dim() > 2:
             x = x.reshape(-1, self.in_features)
@@ -284,25 +290,38 @@ class HyperGPULinear(nn.Module):
 
 
 class HyperFlashAttention(nn.Module):
-    def __init__(self, dim, n_heads, gpu: HyperGPU, block_size=64):
+    def __init__(self, dim, n_heads, gpu: HyperGPU, block_size=64, training_mode=False):
         super().__init__()
         self.dim = dim
         self.n_heads = n_heads
         self.head_dim = dim // n_heads
         self.gpu = gpu
         self.block_size = block_size
-        self.qkv_proj = HyperGPULinear(dim, dim * 3, gpu, mixed_precision=True)
-        self.out_proj = HyperGPULinear(dim, dim, gpu, mixed_precision=True)
+        self._training_mode = training_mode
+        self.qkv_proj = HyperGPULinear(dim, dim * 3, gpu, mixed_precision=True, training_mode=training_mode)
+        self.out_proj = HyperGPULinear(dim, dim, gpu, mixed_precision=True, training_mode=training_mode)
 
     def forward(self, x, causal=True):
         B, T, D = x.shape
         qkv = self.qkv_proj(x)
         Q, K, V = qkv.chunk(3, dim=-1)
-        Q = Q.view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3).contiguous().view(B * self.n_heads, T, self.head_dim)
-        K = K.view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3).contiguous().view(B * self.n_heads, T, self.head_dim)
-        V = V.view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3).contiguous().view(B * self.n_heads, T, self.head_dim)
-        out = _FlashAttention.apply(Q, K, V, self.gpu, causal, self.block_size)
-        out = out.view(B, self.n_heads, T, self.head_dim).permute(0, 2, 1, 3).contiguous().view(B, T, D)
+
+        if self._training_mode:
+            Q = Q.view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
+            K = K.view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
+            V = V.view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
+            out = torch.nn.functional.scaled_dot_product_attention(
+                Q, K, V, is_causal=causal
+            )
+            out = out.permute(0, 2, 1, 3).contiguous().view(B, T, D)
+            self.gpu._record_op("flash_attention", B * self.n_heads * T * T * self.head_dim * 2, 0.002)
+        else:
+            Q = Q.view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3).contiguous().view(B * self.n_heads, T, self.head_dim)
+            K = K.view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3).contiguous().view(B * self.n_heads, T, self.head_dim)
+            V = V.view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3).contiguous().view(B * self.n_heads, T, self.head_dim)
+            out = _FlashAttention.apply(Q, K, V, self.gpu, causal, self.block_size)
+            out = out.view(B, self.n_heads, T, self.head_dim).permute(0, 2, 1, 3).contiguous().view(B, T, D)
+
         return self.out_proj(out)
 
 
@@ -345,23 +364,35 @@ class HyperConv3d(nn.Module):
 
 
 class HyperLayerNorm(nn.Module):
-    def __init__(self, dim, gpu: HyperGPU, eps=1e-5):
+    def __init__(self, dim, gpu: HyperGPU, eps=1e-5, training_mode=False):
         super().__init__()
         self.gpu = gpu
         self.eps = eps
+        self.dim = dim
+        self._training_mode = training_mode
         self.gamma = nn.Parameter(torch.ones(dim))
         self.beta = nn.Parameter(torch.zeros(dim))
+        if training_mode:
+            self._native_ln = nn.LayerNorm(dim, eps=eps)
 
     def forward(self, x):
+        if self._training_mode:
+            out = nn.functional.layer_norm(x, (self.dim,), self.gamma, self.beta, self.eps)
+            self.gpu._record_op("layer_norm", x.numel(), 0.0005)
+            return out
         return _HyperLayerNorm.apply(x, self.gamma, self.beta, self.gpu, self.eps)
 
 
 class HyperGELU(nn.Module):
-    def __init__(self, gpu: HyperGPU):
+    def __init__(self, gpu: HyperGPU, training_mode=False):
         super().__init__()
         self.gpu = gpu
+        self._training_mode = training_mode
 
     def forward(self, x):
+        if self._training_mode:
+            self.gpu._record_op("gelu", x.numel(), 0.0003)
+            return nn.functional.gelu(x)
         return _HyperGELU.apply(x, self.gpu)
 
 
@@ -381,6 +412,7 @@ class HyperGPUBackend:
         tensor_cores: int = 8,
         precision: PrecisionMode = PrecisionMode.MIXED,
         vram_capacity: int = 0,
+        training_mode: bool = False,
     ):
         self.gpu = HyperGPU(
             lanes=lanes,
@@ -388,12 +420,13 @@ class HyperGPUBackend:
             precision=precision,
             vram_capacity=vram_capacity,
         )
+        self._training_mode = training_mode
 
     def linear(self, in_features, out_features, bias=True, mixed_precision=False):
-        return HyperGPULinear(in_features, out_features, self.gpu, bias=bias, mixed_precision=mixed_precision)
+        return HyperGPULinear(in_features, out_features, self.gpu, bias=bias, mixed_precision=mixed_precision, training_mode=self._training_mode)
 
     def flash_attention(self, dim, n_heads, block_size=64):
-        return HyperFlashAttention(dim, n_heads, self.gpu, block_size=block_size)
+        return HyperFlashAttention(dim, n_heads, self.gpu, block_size=block_size, training_mode=self._training_mode)
 
     def conv2d(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
         return HyperConv2d(in_channels, out_channels, kernel_size, self.gpu, stride=stride, padding=padding)
@@ -402,10 +435,10 @@ class HyperGPUBackend:
         return HyperConv3d(in_channels, out_channels, kernel_size, self.gpu, stride=stride, padding=padding)
 
     def layer_norm(self, dim, eps=1e-5):
-        return HyperLayerNorm(dim, self.gpu, eps=eps)
+        return HyperLayerNorm(dim, self.gpu, eps=eps, training_mode=self._training_mode)
 
     def gelu(self):
-        return HyperGELU(self.gpu)
+        return HyperGELU(self.gpu, training_mode=self._training_mode)
 
     def silu(self):
         return HyperSiLU(self.gpu)
