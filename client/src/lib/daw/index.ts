@@ -118,3 +118,36 @@ export type {
   MeteringData,
   ScheduledClip
 } from './AudioWorkletEngine';
+
+export { PeakCacheEngine, peakCacheEngine } from './PeakCacheEngine';
+export type { PeakData, PeakCacheLevel, PeakCacheEntry } from './PeakCacheEngine';
+
+export { NonDestructiveRenderer, nonDestructiveRenderer } from './NonDestructiveRenderer';
+export type {
+  DataZoomState,
+  CoordinateMapping,
+  RenderViewport,
+  WaveformRenderResult,
+  FadeOverlay
+} from './NonDestructiveRenderer';
+
+export { TimelineRenderer } from './TimelineRenderer';
+export type {
+  TimelineRenderConfig,
+  ClipRenderData,
+  PlayheadState
+} from './TimelineRenderer';
+
+export { TransformRenderer, transformRenderer } from './TransformRenderer';
+export type {
+  ProcessingChain,
+  ProcessingPlugin,
+  TransformState,
+  TransformEvent
+} from './TransformRenderer';
+
+export {
+  StudioOneWaveformEngine,
+  studioOneWaveformEngine,
+} from './StudioOneWaveformEngine';
+export type { StudioOneEngineConfig, EngineStats } from './StudioOneWaveformEngine';
