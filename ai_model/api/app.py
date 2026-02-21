@@ -1013,24 +1013,32 @@ async def generate_veo_campaign(request: dict = {}):
 
     targets_raw = request.get("targets", [])
     if not targets_raw:
-        platform_defaults = {
-            "tiktok": ("hook_clip", 12.0, "9:16"),
-            "youtube": ("full_video", 180.0, "16:9"),
-            "instagram": ("promo_reel", 30.0, "1:1"),
-            "reels": ("promo_reel", 15.0, "9:16"),
-            "shorts": ("hook_clip", 15.0, "9:16"),
-            "spotify_canvas": ("loop_visualizer", 8.0, "9:16"),
-            "twitter": ("promo_clip", 15.0, "16:9"),
-            "facebook": ("promo_clip", 30.0, "16:9"),
+        from maxbooster_veo_music.model.platform_heads import PLATFORM_DEFAULTS, PlatformHeads
+        default_goals = {
+            "tiktok": "hook_clip", "youtube": "full_video",
+            "instagram": "promo_reel", "reels": "promo_reel",
+            "shorts": "hook_clip", "spotify_canvas": "loop_visualizer",
+            "twitter": "promo_clip", "facebook": "promo_clip",
+            "instagram_stories": "teaser_trailer", "snapchat": "hook_clip",
+            "pinterest": "promo_reel", "linkedin": "behind_the_scenes",
+            "threads": "promo_clip", "twitch": "audio_visualizer",
+            "triller": "hook_clip", "vevo": "full_video",
+            "audiomack": "audio_visualizer", "soundcloud": "audio_visualizer",
+            "apple_music": "loop_visualizer", "amazon_music": "loop_visualizer",
+            "tidal": "loop_visualizer", "deezer": "loop_visualizer",
+            "pandora": "loop_visualizer", "bandcamp": "full_video",
+            "website_embed": "promo_reel", "email_campaign": "email_hero",
+            "billboard_digital": "billboard_ad", "live_backdrop": "live_backdrop",
         }
         for p in primary_platforms:
-            if p in platform_defaults:
-                goal, dur, ar = platform_defaults[p]
+            if p in PLATFORM_DEFAULTS:
+                defaults = PLATFORM_DEFAULTS[p]
+                goal = default_goals.get(p, "promo_clip")
                 targets_raw.append({
                     "platform": p,
                     "goal": goal,
-                    "duration_sec": dur,
-                    "aspect_ratio": ar,
+                    "duration_sec": defaults["duration"],
+                    "aspect_ratio": defaults["aspect"],
                 })
 
     from maxbooster_veo_music.boostsheets.schema import BoostSheet, PlatformTarget
@@ -1075,11 +1083,16 @@ async def generate_veo_campaign(request: dict = {}):
         asset_info = {
             "platform": asset["platform"],
             "goal": asset["goal"],
+            "goal_description": asset.get("goal_description", ""),
+            "style": asset.get("style", ""),
             "duration_sec": asset["duration_sec"],
             "aspect_ratio": asset["aspect_ratio"],
             "fps": asset["fps"],
             "frame_count": asset["frame_count"],
             "resolution": asset["resolution"],
+            "has_text_overlay": asset.get("has_text_overlay", False),
+            "beat_synced": asset.get("beat_synced", False),
+            "fx_intensity": asset.get("fx_intensity", 0.5),
             "status": "generated",
             "video_url": f"/api/social/veo-campaign/asset/{track_id}/{asset['platform']}",
         }
@@ -1091,11 +1104,16 @@ async def generate_veo_campaign(request: dict = {}):
         master_info = {
             "platform": mv["platform"],
             "goal": mv["goal"],
+            "goal_description": mv.get("goal_description", ""),
+            "style": mv.get("style", ""),
             "duration_sec": mv["duration_sec"],
             "aspect_ratio": mv["aspect_ratio"],
             "fps": mv["fps"],
             "frame_count": mv["frame_count"],
             "resolution": mv["resolution"],
+            "has_text_overlay": mv.get("has_text_overlay", False),
+            "beat_synced": mv.get("beat_synced", False),
+            "fx_intensity": mv.get("fx_intensity", 0.5),
             "status": "generated",
             "video_url": f"/api/social/veo-campaign/asset/{track_id}/youtube_master",
         }
@@ -1119,15 +1137,56 @@ async def generate_veo_campaign(request: dict = {}):
 
 @app.get("/veo/platforms")
 async def veo_available_platforms():
-    from maxbooster_veo_music.model.platform_heads import PLATFORM_DEFAULTS
+    from maxbooster_veo_music.model.platform_heads import PLATFORM_DEFAULTS, PlatformHeads
     platforms = {}
     for name, defaults in PLATFORM_DEFAULTS.items():
         platforms[name] = {
             "default_duration_sec": defaults["duration"],
             "default_aspect_ratio": defaults["aspect"],
             "default_fps": defaults["fps"],
+            "recommended_goals": PlatformHeads.get_recommended_goals(name),
         }
-    return {"platforms": platforms}
+    return {
+        "platforms": platforms,
+        "total_platforms": len(platforms),
+    }
+
+
+@app.get("/veo/goals")
+async def veo_available_goals():
+    from maxbooster_veo_music.model.platform_heads import PlatformHeads
+    goals = PlatformHeads.get_available_goals()
+    return {
+        "goals": goals,
+        "total_goals": len(goals),
+    }
+
+
+@app.get("/veo/recommend/{platform}")
+async def veo_recommend_goals(platform: str):
+    from maxbooster_veo_music.model.platform_heads import PLATFORM_DEFAULTS, PlatformHeads, GOAL_SPECS
+    if platform not in PLATFORM_DEFAULTS:
+        raise HTTPException(status_code=404, detail=f"Unknown platform: {platform}")
+    defaults = PLATFORM_DEFAULTS[platform]
+    recommended = PlatformHeads.get_recommended_goals(platform)
+    return {
+        "platform": platform,
+        "defaults": {
+            "duration_sec": defaults["duration"],
+            "aspect_ratio": defaults["aspect"],
+            "fps": defaults["fps"],
+        },
+        "recommended_goals": [
+            {
+                "goal": g,
+                "description": GOAL_SPECS[g]["description"],
+                "style": GOAL_SPECS[g]["style"],
+                "beat_synced": GOAL_SPECS[g]["beat_sync"],
+                "has_text_overlay": GOAL_SPECS[g]["text_overlay"],
+            }
+            for g in recommended if g in GOAL_SPECS
+        ],
+    }
 
 
 @app.get("/veo/status")

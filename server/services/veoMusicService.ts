@@ -116,16 +116,40 @@ class VeoMusicService {
     }
   }
 
-  async getAvailablePlatforms(): Promise<Record<string, VeoPlatformInfo> | null> {
+  async getAvailablePlatforms(): Promise<any> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/platforms`, {
         method: 'GET',
       }, 10000);
 
       if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
 
-      const data = await response.json() as { platforms: Record<string, VeoPlatformInfo> };
-      return data.platforms;
+  async getAvailableGoals(): Promise<any> {
+    try {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/goals`, {
+        method: 'GET',
+      }, 10000);
+
+      if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async getRecommendedGoals(platform: string): Promise<any> {
+    try {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/recommend/${platform}`, {
+        method: 'GET',
+      }, 10000);
+
+      if (!response.ok) return null;
+      return await response.json();
     } catch {
       return null;
     }

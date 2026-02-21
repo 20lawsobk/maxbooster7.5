@@ -1591,17 +1591,50 @@ router.post('/veo-campaign/single', requireAuth, async (req: AuthenticatedReques
 
 router.get('/veo-campaign/platforms', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const platforms = await veoMusicService.getAvailablePlatforms();
-    if (!platforms) {
+    const data = await veoMusicService.getAvailablePlatforms();
+    if (!data) {
       return res.status(503).json({
         success: false,
         message: 'Veo Music pipeline not available',
       });
     }
-    res.json({ success: true, platforms });
+    res.json({ success: true, ...data });
   } catch (error) {
     logger.error('Failed to get Veo platforms:', error);
     res.status(500).json({ success: false, message: 'Failed to get platforms' });
+  }
+});
+
+router.get('/veo-campaign/goals', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = await veoMusicService.getAvailableGoals();
+    if (!data) {
+      return res.status(503).json({
+        success: false,
+        message: 'Veo Music pipeline not available',
+      });
+    }
+    res.json({ success: true, ...data });
+  } catch (error) {
+    logger.error('Failed to get Veo goals:', error);
+    res.status(500).json({ success: false, message: 'Failed to get goals' });
+  }
+});
+
+router.get('/veo-campaign/recommend/:platform', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { platform } = req.params;
+    const data = await veoMusicService.getRecommendedGoals(platform);
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: `No recommendations for platform: ${platform}`,
+      });
+    }
+    res.json({ success: true, ...data });
+  } catch (error) {
+    logger.error('Failed to get Veo recommendations:', error);
+    res.status(500).json({ success: false, message: 'Failed to get recommendations' });
   }
 });
 
