@@ -1654,4 +1654,52 @@ router.get('/veo-campaign/status', requireAuth, async (_req: AuthenticatedReques
   }
 });
 
+router.post('/veo-url/metadata', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { url } = req.body;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing or invalid "url" field',
+      });
+    }
+
+    const data = await veoMusicService.extractUrlMetadata(url);
+    if (!data) {
+      return res.status(503).json({
+        success: false,
+        message: 'Veo Music pipeline not available',
+      });
+    }
+    res.json(data);
+  } catch (error) {
+    logger.error('Failed to extract URL metadata:', error);
+    res.status(500).json({ success: false, message: 'Failed to extract metadata from URL' });
+  }
+});
+
+router.post('/veo-campaign/from-url', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { url, ...overrides } = req.body;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing or invalid "url" field',
+      });
+    }
+
+    const result = await veoMusicService.generateCampaignFromUrl(url, overrides);
+    if (!result || !result.success) {
+      return res.status(result?.error?.includes('unavailable') ? 503 : 500).json({
+        success: false,
+        message: result?.error || 'Campaign generation from URL failed',
+      });
+    }
+    res.json(result);
+  } catch (error) {
+    logger.error('Failed to generate campaign from URL:', error);
+    res.status(500).json({ success: false, message: 'Campaign generation from URL failed' });
+  }
+});
+
 export default router;

@@ -1206,3 +1206,194 @@ async def veo_pipeline_status():
             "total_ops": gpu_status.get("total_ops", 0),
         },
     }
+
+
+_url_extractor = None
+
+def _get_url_extractor():
+    global _url_extractor
+    if _url_extractor is None:
+        from maxbooster_veo_music.url.extractor import UrlMetadataExtractor
+        _url_extractor = UrlMetadataExtractor(timeout=10)
+    return _url_extractor
+
+
+@app.post("/veo/url/metadata")
+async def veo_url_metadata(request: dict = {}):
+    url = request.get("url", "").strip()
+    if not url:
+        return {"success": False, "error": "Missing 'url' field"}
+
+    extractor = _get_url_extractor()
+    metadata = extractor.extract(url)
+
+    suggested_platforms = ["tiktok", "youtube", "instagram"]
+    source = metadata.get("platform", "unknown")
+    from maxbooster_veo_music.model.platform_heads import PLATFORM_DEFAULTS
+    if source in PLATFORM_DEFAULTS and source not in suggested_platforms:
+        suggested_platforms.append(source)
+
+    return {
+        "success": True,
+        "metadata": metadata,
+        "suggested_defaults": {
+            "mood": metadata.get("mood", "energetic"),
+            "era": metadata.get("era", "modern"),
+            "story": metadata.get("story", ""),
+            "primary_platforms": suggested_platforms,
+        },
+        "ready_to_generate": metadata["confidence"] >= 0.5,
+    }
+
+
+@app.post("/veo/url/campaign")
+async def veo_url_campaign(request: dict = {}):
+    import numpy as np
+
+    url = request.get("url", "").strip()
+    if not url:
+        return {"success": False, "error": "Missing 'url' field"}
+
+    extractor = _get_url_extractor()
+    metadata = extractor.extract(url)
+
+    overrides = {}
+    for key in ["title", "artist", "album", "mood", "era", "story",
+                 "primary_platforms", "targets", "lyrics", "brand_notes",
+                 "campaign_notes", "audio_duration_sec"]:
+        if key in request and request[key]:
+            overrides[key] = request[key]
+
+    campaign_request = extractor.metadata_to_campaign_request(metadata, overrides)
+
+    track_id = request.get("track_id", f"url_{int(time.time())}")
+    title = campaign_request["title"]
+    artist = campaign_request["artist"]
+    mood = campaign_request["mood"]
+    era = campaign_request["era"]
+    story = campaign_request["story"]
+    primary_platforms = campaign_request["primary_platforms"]
+
+    targets_raw = campaign_request.get("targets", [])
+    if not targets_raw:
+        from maxbooster_veo_music.model.platform_heads import PLATFORM_DEFAULTS
+        default_goals = {
+            "tiktok": "hook_clip", "youtube": "full_video",
+            "instagram": "promo_reel", "reels": "promo_reel",
+            "shorts": "hook_clip", "spotify_canvas": "loop_visualizer",
+            "twitter": "promo_clip", "facebook": "promo_clip",
+            "soundcloud": "audio_visualizer", "apple_music": "loop_visualizer",
+            "bandcamp": "full_video", "audiomack": "audio_visualizer",
+            "deezer": "loop_visualizer", "tidal": "loop_visualizer",
+            "amazon_music": "loop_visualizer", "pandora": "loop_visualizer",
+            "vevo": "full_video",
+        }
+        for p in primary_platforms:
+            if p in PLATFORM_DEFAULTS:
+                defaults = PLATFORM_DEFAULTS[p]
+                goal = default_goals.get(p, "promo_clip")
+                targets_raw.append({
+                    "platform": p,
+                    "goal": goal,
+                    "duration_sec": defaults["duration"],
+                    "aspect_ratio": defaults["aspect"],
+                })
+
+    from maxbooster_veo_music.boostsheets.schema import BoostSheet, PlatformTarget
+
+    targets = [
+        PlatformTarget(
+            platform=t["platform"],
+            goal=t.get("goal", "promo_clip"),
+            duration_sec=t.get("duration_sec"),
+            aspect_ratio=t.get("aspect_ratio"),
+        )
+        for t in targets_raw
+    ]
+
+    boostsheet = BoostSheet(
+        track_id=track_id,
+        title=title,
+        artist=artist,
+        album=campaign_request.get("album"),
+        story=story,
+        mood=mood,
+        era=era,
+        references=overrides.get("references", []),
+        label=overrides.get("label"),
+        brand_notes=overrides.get("brand_notes", ""),
+        lyrics=campaign_request.get("lyrics"),
+        primary_platforms=primary_platforms,
+        campaign_notes=overrides.get("campaign_notes", ""),
+        targets=targets,
+    )
+
+    duration_sec = campaign_request.get("audio_duration_sec", 180.0)
+    sample_rate = 22050
+    n_samples = int(duration_sec * sample_rate)
+    audio_waveform = np.random.randn(n_samples).astype(np.float32) * 0.1
+
+    generator = _get_campaign_generator()
+    result = generator.generate_campaign(boostsheet, audio_waveform, sample_rate)
+
+    assets_serializable = []
+    for asset in result.get("assets", []):
+        asset_info = {
+            "platform": asset["platform"],
+            "goal": asset["goal"],
+            "goal_description": asset.get("goal_description", ""),
+            "style": asset.get("style", ""),
+            "duration_sec": asset["duration_sec"],
+            "aspect_ratio": asset["aspect_ratio"],
+            "fps": asset["fps"],
+            "frame_count": asset["frame_count"],
+            "resolution": asset["resolution"],
+            "has_text_overlay": asset.get("has_text_overlay", False),
+            "beat_synced": asset.get("beat_synced", False),
+            "fx_intensity": asset.get("fx_intensity", 0.5),
+            "status": "generated",
+            "video_url": f"/api/social/veo-campaign/asset/{track_id}/{asset['platform']}",
+        }
+        assets_serializable.append(asset_info)
+
+    master_info = None
+    if result.get("master_video"):
+        mv = result["master_video"]
+        master_info = {
+            "platform": mv["platform"],
+            "goal": mv["goal"],
+            "goal_description": mv.get("goal_description", ""),
+            "style": mv.get("style", ""),
+            "duration_sec": mv["duration_sec"],
+            "aspect_ratio": mv["aspect_ratio"],
+            "fps": mv["fps"],
+            "frame_count": mv["frame_count"],
+            "resolution": mv["resolution"],
+            "has_text_overlay": mv.get("has_text_overlay", False),
+            "beat_synced": mv.get("beat_synced", False),
+            "fx_intensity": mv.get("fx_intensity", 0.5),
+            "status": "generated",
+            "video_url": f"/api/social/veo-campaign/asset/{track_id}/youtube_master",
+        }
+
+    return {
+        "success": True,
+        "source": {
+            "url": metadata["url"],
+            "platform": metadata["platform"],
+            "extraction_method": metadata["extraction_method"],
+            "confidence": metadata["confidence"],
+        },
+        "campaign": {
+            "track_id": result["track_id"],
+            "artist": result["artist"],
+            "title": result["title"],
+            "master_video": master_info,
+            "assets": assets_serializable,
+            "generation_time_s": result["generation_time_s"],
+            "gpu_ops": result["gpu_ops"],
+            "gpu_compute_ms": result["gpu_compute_ms"],
+            "total_platforms": len(assets_serializable),
+            "total_frames": sum(a["frame_count"] for a in assets_serializable),
+        },
+    }

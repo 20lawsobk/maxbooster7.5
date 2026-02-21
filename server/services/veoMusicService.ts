@@ -168,6 +168,43 @@ class VeoMusicService {
     }
   }
 
+  async extractUrlMetadata(url: string): Promise<any> {
+    try {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/url/metadata`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      }, 15000);
+
+      if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async generateCampaignFromUrl(url: string, overrides?: Record<string, any>): Promise<any> {
+    try {
+      const body: Record<string, any> = { url };
+      if (overrides) {
+        Object.assign(body, overrides);
+      }
+
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/url/campaign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }, 30000);
+
+      if (!response.ok) {
+        return { success: false, error: `Veo URL campaign failed: ${response.status}` };
+      }
+      return await response.json();
+    } catch {
+      return { success: false, error: 'Veo Music service unavailable' };
+    }
+  }
+
   async generateForPost(options: {
     title: string;
     artist: string;
