@@ -155,7 +155,10 @@ export function AutopilotPreferences() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['autopilot-preferences'],
-    queryFn: () => apiRequest('/api/autopilot/preferences'),
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/autopilot/preferences');
+      return res.json();
+    },
   });
 
   useEffect(() => {
@@ -166,10 +169,7 @@ export function AutopilotPreferences() {
 
   const saveMutation = useMutation({
     mutationFn: (data: AutopilotPreferencesData) =>
-      apiRequest('/api/autopilot/preferences', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('POST', '/api/autopilot/preferences', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['autopilot-preferences'] });
       toast({
