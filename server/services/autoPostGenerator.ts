@@ -6,6 +6,7 @@ import { contentQualityPipeline, type ContentVariant, type ContentScores } from 
 import { dynamicTrendsService } from './dynamicTrendsService';
 import { aiTranslationService, type TranslatedContent } from './aiTranslationService';
 import { pythonAIService } from './pythonAIService.js';
+import { veoMusicService } from './veoMusicService.js';
 
 /**
  * Auto-Post Generator Service v2.0
@@ -416,22 +417,55 @@ class AutoPostGenerator {
   /**
    * Generate content AND auto-post using Social Media Autopilot
    */
+  async generateVeoVideoForContent(
+    content: GeneratedContent,
+    trackInfo?: { title: string; artist: string; mood?: string; story?: string; lyrics?: string },
+  ): Promise<string[]> {
+    if (content.mediaType !== 'video' || !trackInfo) return [];
+
+    try {
+      const result = await veoMusicService.generateCampaign({
+        title: trackInfo.title,
+        artist: trackInfo.artist,
+        mood: trackInfo.mood || 'energetic',
+        story: trackInfo.story || content.headline,
+        lyrics: trackInfo.lyrics,
+        primary_platforms: content.platforms,
+      });
+
+      if (result.success && result.campaign) {
+        const mediaUrls = result.campaign.assets.map(a => a.video_url);
+        logger.info(`[VeoMusic] Generated ${mediaUrls.length} video assets for auto-post`);
+        return mediaUrls;
+      }
+    } catch (err) {
+      logger.warn('[VeoMusic] Veo campaign generation failed for auto-post, falling back to standard video guidance');
+    }
+
+    return [];
+  }
+
   async generateAndPostSocial(
     userId: string,
     request: ContentGenerationRequest,
-    scheduleOptimal: boolean = true
+    scheduleOptimal: boolean = true,
+    trackInfo?: { title: string; artist: string; mood?: string; story?: string; lyrics?: string },
   ): Promise<{
     content: GeneratedContent;
     posted?: boolean;
     scheduled?: boolean;
     results?: any;
+    veoAssets?: string[];
   }> {
-    // Generate content
     const content = await this.generateSocialContent(userId, request);
 
     logger.info(`Generated social content for user ${userId}: "${content.headline}"`);
 
-    // Prepare post content
+    let veoAssets: string[] = [];
+    if (content.mediaType === 'video' && trackInfo) {
+      veoAssets = await this.generateVeoVideoForContent(content, trackInfo);
+    }
+
     const postContent: PostContent = {
       text: content.body,
       headline: content.headline,
@@ -454,6 +488,7 @@ class AutoPostGenerator {
         content,
         scheduled: true,
         results: scheduledPost,
+        veoAssets,
       };
     } else {
       const postResults = await autoPostingService.postNow(
@@ -467,6 +502,7 @@ class AutoPostGenerator {
         content,
         posted: true,
         results: postResults,
+        veoAssets,
       };
     }
   }
@@ -668,9 +704,9 @@ class AutoPostGenerator {
       
       case 'video':
         if (objective === 'viral') {
-          return `Create SHORT, attention-grabbing video for ${topic} (15-60 seconds) using Video Studio. Hook viewers in first 3 seconds. Templates: Social Teaser (quick announcement), Quote Card (lyric highlight). Features: Audio visualizers (spectrum/particle), 13 GLSL shaders (bloom, glitch, particles), karaoke-style lyrics. Format: 9:16 vertical for TikTok/Reels/Shorts. Export: 1080p at 30fps.`;
+          return `Create SHORT, attention-grabbing video for ${topic} (15-60 seconds). Two options: (1) Video Studio — templates (Social Teaser, Quote Card), audio visualizers (spectrum/particle), 13 GLSL shaders. (2) Veo Music AI Campaign — auto-generates platform-optimized video from your track + BoostSheet. Use /api/social/veo-campaign for AI-generated multi-platform videos (TikTok hooks, YouTube full videos, Spotify Canvas loops). Format: 9:16 vertical for TikTok/Reels/Shorts. Export: 1080p at 30fps.`;
         }
-        return `Create engaging video for ${topic} (30-90 seconds) using Video Studio. Templates: Release Promo (new music), Lyric Video (animated lyrics), Audio Visualizer (reactive graphics). Features: WebGL2 render engine, 4 visualizer types, text animation with glow/gradient. Format: 9:16 vertical or 16:9 horizontal. Export: 720p/1080p/4K at 24/30/60fps.`;
+        return `Create engaging video for ${topic} (30-90 seconds). Two options: (1) Video Studio — templates (Release Promo, Lyric Video, Audio Visualizer), WebGL2 engine. (2) Veo Music AI Campaign — generates platform-specific videos automatically from your music + mood + story. Use /api/social/veo-campaign for full multi-platform campaigns or /api/social/veo-campaign/single for one platform. Supports: TikTok (12s hooks), YouTube (3min full), Instagram (30s reels), Spotify Canvas (8s loops), Shorts, Twitter, Facebook.`;
       
       case 'carousel':
         return `Create carousel/slideshow (2-10 images/videos) for ${topic}. Examples: step-by-step story, before/after sequence, collection showcase, or multi-angle presentation. Each slide should tell part of the story. Works best on Instagram and Facebook. Include swipeable call-to-action.`;

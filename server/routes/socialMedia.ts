@@ -4,6 +4,7 @@ import { logger } from '../logger';
 import { competitorBenchmarkService } from '../services/competitorBenchmarkService';
 import { unifiedAIController } from '../services/unifiedAIController';
 import { pythonAIService } from '../services/pythonAIService';
+import { veoMusicService } from '../services/veoMusicService';
 import { db } from '../db';
 import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
@@ -1503,6 +1504,120 @@ router.get('/video-templates', requireAuth, async (_req: AuthenticatedRequest, r
   } catch (error) {
     logger.error('Failed to get video templates:', error);
     res.status(500).json({ success: false, message: 'Failed to get templates' });
+  }
+});
+
+router.post('/veo-campaign', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const {
+      title, artist, album, story, mood, era, references,
+      label, brand_notes, lyrics, primary_platforms,
+      campaign_notes, targets, audio_duration_sec, track_id,
+    } = req.body;
+
+    if (!title || !artist) {
+      return res.status(400).json({
+        success: false,
+        message: 'Track title and artist name are required',
+      });
+    }
+
+    const result = await veoMusicService.generateCampaign({
+      track_id,
+      title,
+      artist,
+      album,
+      story,
+      mood: mood || 'energetic',
+      era: era || 'modern',
+      references: references || [],
+      label,
+      brand_notes: brand_notes || '',
+      lyrics,
+      primary_platforms: primary_platforms || ['tiktok', 'youtube', 'instagram'],
+      campaign_notes: campaign_notes || '',
+      targets,
+      audio_duration_sec: audio_duration_sec || 180,
+    });
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.error || 'Video campaign generation failed',
+      });
+    }
+
+    res.json(result);
+  } catch (error) {
+    logger.error('Failed to generate Veo campaign:', error);
+    res.status(500).json({ success: false, message: 'Video campaign generation failed' });
+  }
+});
+
+router.post('/veo-campaign/single', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { title, artist, platform, mood, story, lyrics, tone } = req.body;
+
+    if (!title || !artist || !platform) {
+      return res.status(400).json({
+        success: false,
+        message: 'Track title, artist, and platform are required',
+      });
+    }
+
+    const asset = await veoMusicService.generateForPost({
+      title,
+      artist,
+      platform,
+      mood,
+      story,
+      lyrics,
+      tone,
+    });
+
+    if (!asset) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate video for platform',
+      });
+    }
+
+    res.json({ success: true, asset });
+  } catch (error) {
+    logger.error('Failed to generate single Veo video:', error);
+    res.status(500).json({ success: false, message: 'Video generation failed' });
+  }
+});
+
+router.get('/veo-campaign/platforms', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const platforms = await veoMusicService.getAvailablePlatforms();
+    if (!platforms) {
+      return res.status(503).json({
+        success: false,
+        message: 'Veo Music pipeline not available',
+      });
+    }
+    res.json({ success: true, platforms });
+  } catch (error) {
+    logger.error('Failed to get Veo platforms:', error);
+    res.status(500).json({ success: false, message: 'Failed to get platforms' });
+  }
+});
+
+router.get('/veo-campaign/status', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const status = await veoMusicService.getPipelineStatus();
+    if (!status) {
+      return res.status(503).json({
+        success: false,
+        message: 'Veo Music pipeline not available',
+      });
+    }
+    res.json({ success: true, ...status });
+  } catch (error) {
+    logger.error('Failed to get Veo status:', error);
+    res.status(500).json({ success: false, message: 'Failed to get status' });
   }
 });
 
