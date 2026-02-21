@@ -519,6 +519,46 @@ async def log_sheet_for_training(sheet_id: str):
     return {"success": True, "message": f"BoostSheet {sheet_id} logged for training", "total_samples": logger.sample_count()}
 
 
+@app.post("/train/gpu")
+async def train_on_gpu(epochs: int = 3, lr: float = 5e-4, lanes: int = 32):
+    from ..gpu.gpu_trainer import train_on_digital_gpu
+    from ..training.config import TrainConfig
+    cfg = TrainConfig()
+    cfg.epochs = epochs
+    cfg.lr = lr
+    cfg.batch_size = 4
+    try:
+        model, best_val, profile = train_on_digital_gpu(
+            data_path="training/boostsheet_samples_v2.json",
+            config=cfg,
+            lanes=lanes,
+        )
+        import math
+        return {
+            "success": True,
+            "backend": "digital_gpu",
+            "lanes": lanes,
+            "epochs": epochs,
+            "best_val_loss": round(best_val, 4),
+            "ppl": round(math.exp(min(best_val, 20)), 2),
+            "profile": profile,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/gpu/status")
+async def gpu_status():
+    from ..gpu.torch_backend import DigitalGPUBackend
+    backend = DigitalGPUBackend(lanes=32)
+    status = backend.status()
+    return {
+        "available": True,
+        "backend": "digital_gpu",
+        **status,
+    }
+
+
 @app.post("/generate/video", response_model=VideoGenerateResponse)
 async def generate_video(req: VideoGenerateRequest):
     from ..video.cinematic_engine import render_video_auto
