@@ -1227,13 +1227,20 @@ async def veo_url_metadata(request: dict = {}):
     extractor = _get_url_extractor()
     metadata = extractor.extract(url)
 
-    suggested_platforms = ["tiktok", "youtube", "instagram"]
+    content_type = metadata.get("content_type", "music")
     source = metadata.get("platform", "unknown")
     from maxbooster_veo_music.model.platform_heads import PLATFORM_DEFAULTS
-    if source in PLATFORM_DEFAULTS and source not in suggested_platforms:
-        suggested_platforms.append(source)
 
-    return {
+    if content_type == "website":
+        suggested_platforms = ["tiktok", "youtube", "instagram", "reels", "shorts", "facebook"]
+        suggested_goals = ["ad_creative", "promo_reel", "promo_clip", "teaser_trailer", "hook_clip"]
+    else:
+        suggested_platforms = ["tiktok", "youtube", "instagram"]
+        if source in PLATFORM_DEFAULTS and source not in suggested_platforms:
+            suggested_platforms.append(source)
+        suggested_goals = None
+
+    response = {
         "success": True,
         "metadata": metadata,
         "suggested_defaults": {
@@ -1244,6 +1251,11 @@ async def veo_url_metadata(request: dict = {}):
         },
         "ready_to_generate": metadata["confidence"] >= 0.5,
     }
+
+    if suggested_goals:
+        response["suggested_defaults"]["recommended_goals"] = suggested_goals
+
+    return response
 
 
 @app.post("/veo/url/campaign")

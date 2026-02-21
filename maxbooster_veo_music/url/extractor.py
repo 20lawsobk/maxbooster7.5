@@ -64,6 +64,19 @@ OEMBED_ENDPOINTS = {
     "soundcloud": "https://soundcloud.com/oembed?url={url}&format=json",
 }
 
+WEBSITE_PROMO_GOALS = [
+    "ad_creative", "promo_reel", "promo_clip", "teaser_trailer",
+    "hook_clip", "fan_engagement",
+]
+
+BRAND_MOOD_KEYWORDS = {
+    "energetic": ["launch", "new", "exciting", "powerful", "boost", "fast", "grow", "scale", "ultimate", "supercharge"],
+    "uplifting": ["empower", "success", "achieve", "dream", "inspire", "transform", "create", "build", "future"],
+    "dark": ["disrupt", "revolutionary", "bold", "edge", "cutting-edge", "underground"],
+    "chill": ["simple", "easy", "seamless", "smooth", "intuitive", "minimal", "clean"],
+    "mysterious": ["discover", "explore", "unlock", "secret", "exclusive", "premium", "vip"],
+}
+
 MOOD_KEYWORDS = {
     "energetic": ["hype", "energy", "pump", "fire", "lit", "bass", "trap", "edm", "dance", "party", "club", "bounce"],
     "dark": ["dark", "grim", "sinister", "shadow", "night", "doom", "heavy", "goth", "emo"],
@@ -231,6 +244,124 @@ class UrlMetadataExtractor:
 
         return " ".join(parts) + ". Generate visuals that capture the energy and mood of the track."
 
+    def _extract_website_metadata(self, url: str, existing: Dict[str, Any]) -> Dict[str, Any]:
+        result: Dict[str, Any] = {
+            "description": "",
+            "site_name": "",
+            "page_type": "",
+            "keywords": [],
+        }
+
+        html = self._fetch_url(url)
+        if not html:
+            parsed_url = urlparse(url)
+            host = parsed_url.hostname or ""
+            domain_name = host.replace("www.", "").split(".")[0].title()
+            if not existing.get("title"):
+                result["title"] = domain_name
+            if not existing.get("artist"):
+                result["artist"] = domain_name
+            result["extraction_method"] = "url_parsing"
+            result["platform"] = "website"
+            return result
+
+        og_tags = self._extract_og_tags(html)
+        method = "opengraph" if existing.get("extraction_method") == "none" else existing.get("extraction_method", "") + "+opengraph"
+        result["extraction_method"] = method
+        result["platform"] = "website"
+
+        raw_title = og_tags.get("title", "")
+        if raw_title and not existing.get("title"):
+            result["title"] = raw_title
+
+        site_name = og_tags.get("site_name", "")
+        if site_name:
+            result["site_name"] = site_name
+            if not existing.get("artist"):
+                result["artist"] = site_name
+
+        if not result.get("artist") and not existing.get("artist"):
+            parsed_url = urlparse(url)
+            host = parsed_url.hostname or ""
+            result["artist"] = host.replace("www.", "").split(".")[0].title()
+
+        if og_tags.get("image") and not existing.get("artwork_url"):
+            result["artwork_url"] = og_tags["image"]
+
+        desc = og_tags.get("description", "")
+        if desc:
+            result["description"] = desc
+
+        if not desc:
+            meta_desc = re.search(
+                r'<meta\s+name=["\']description["\']\s+content=["\']([^"\']*)["\']',
+                html, re.IGNORECASE
+            )
+            if meta_desc:
+                result["description"] = meta_desc.group(1)
+
+        kw_match = re.search(
+            r'<meta\s+name=["\']keywords["\']\s+content=["\']([^"\']*)["\']',
+            html, re.IGNORECASE
+        )
+        if kw_match:
+            result["keywords"] = [k.strip() for k in kw_match.group(1).split(",") if k.strip()]
+
+        page_type = og_tags.get("type", "")
+        if page_type:
+            result["page_type"] = page_type
+
+        text_content = f"{result.get('title', '')} {result.get('description', '')} {' '.join(result.get('keywords', []))}"
+        for genre in GENRE_TO_ERA:
+            if genre.lower() in text_content.lower():
+                result["genre"] = genre
+                break
+
+        if not result.get("genre"):
+            result["genre"] = "promotional"
+
+        return result
+
+    def _infer_brand_mood(self, text: str) -> str:
+        text_lower = text.lower()
+        scores = {}
+        for mood, keywords in BRAND_MOOD_KEYWORDS.items():
+            score = sum(1 for kw in keywords if kw in text_lower)
+            if score > 0:
+                scores[mood] = score
+
+        if not scores:
+            for mood, keywords in MOOD_KEYWORDS.items():
+                score = sum(1 for kw in keywords if kw in text_lower)
+                if score > 0:
+                    scores[mood] = score
+
+        if scores:
+            return max(scores, key=scores.get)
+        return "energetic"
+
+    def _build_website_story(self, metadata: Dict[str, Any]) -> str:
+        parts = []
+        title = metadata.get("title", "")
+        artist = metadata.get("artist", metadata.get("site_name", ""))
+        description = metadata.get("description", "")
+
+        if artist and title:
+            if artist.lower() in title.lower():
+                parts.append(f"Promote {title}.")
+            else:
+                parts.append(f"Promote {title} by {artist}.")
+        elif title:
+            parts.append(f"Promote {title}.")
+
+        if description:
+            short_desc = description[:200].rstrip(".")
+            parts.append(f"{short_desc}.")
+
+        parts.append("Create eye-catching promotional video content that drives engagement and conversions.")
+
+        return " ".join(parts) if parts else "Promotional video campaign for brand awareness and engagement."
+
     def extract(self, url: str) -> Dict[str, Any]:
         url = url.strip()
         if not url.startswith(("http://", "https://")):
@@ -345,10 +476,24 @@ class UrlMetadataExtractor:
                 metadata["artist"] = path_parts[0].replace("-", " ").title()
                 metadata["title"] = path_parts[2].replace("-", " ").title()
 
-        all_text = f"{metadata['title']} {metadata['artist']} {metadata['genre']}"
-        metadata["mood"] = self._infer_mood(all_text)
+        if platform == "unknown":
+            metadata["content_type"] = "website"
+            website_data = self._extract_website_metadata(url, metadata)
+            metadata.update(website_data)
+        else:
+            metadata["content_type"] = "music"
+
+        all_text = f"{metadata['title']} {metadata['artist']} {metadata['genre']} {metadata.get('description', '')}"
+        if metadata["content_type"] == "website":
+            metadata["mood"] = self._infer_brand_mood(all_text)
+        else:
+            metadata["mood"] = self._infer_mood(all_text)
         metadata["era"] = self._infer_era(all_text)
-        metadata["story"] = self._build_story(metadata)
+
+        if metadata["content_type"] == "website":
+            metadata["story"] = self._build_website_story(metadata)
+        else:
+            metadata["story"] = self._build_story(metadata)
 
         missing = []
         if not metadata["title"]:
@@ -365,7 +510,7 @@ class UrlMetadataExtractor:
                       if metadata.get(f))
         metadata["confidence"] = round(filled / 4.0, 2)
 
-        if platform == "unknown":
+        if platform == "unknown" and metadata.get("content_type") != "website":
             metadata["errors"].append("Could not identify music platform from URL")
             metadata["confidence"] = max(0.0, metadata["confidence"] - 0.25)
 
@@ -381,14 +526,18 @@ class UrlMetadataExtractor:
         from ..model.platform_heads import PLATFORM_DEFAULTS
 
         source_platform = metadata.get("platform", "unknown")
+        content_type = metadata.get("content_type", "music")
 
         default_platforms = overrides.get("primary_platforms")
         if not default_platforms:
-            always_platforms = ["tiktok", "youtube", "instagram"]
-            if source_platform in PLATFORM_DEFAULTS and source_platform not in always_platforms:
-                default_platforms = always_platforms + [source_platform]
+            if content_type == "website":
+                default_platforms = ["tiktok", "youtube", "instagram", "reels", "shorts", "facebook"]
             else:
-                default_platforms = always_platforms
+                always_platforms = ["tiktok", "youtube", "instagram"]
+                if source_platform in PLATFORM_DEFAULTS and source_platform not in always_platforms:
+                    default_platforms = always_platforms + [source_platform]
+                else:
+                    default_platforms = always_platforms
 
         request = {
             "title": overrides.get("title", metadata.get("title", "Untitled")),
@@ -401,16 +550,44 @@ class UrlMetadataExtractor:
             "audio_duration_sec": overrides.get("audio_duration_sec", metadata.get("duration_sec") or 180.0),
             "source_url": metadata.get("url", ""),
             "source_platform": source_platform,
+            "content_type": content_type,
         }
 
         if overrides.get("targets"):
             request["targets"] = overrides["targets"]
+        elif content_type == "website":
+            targets = []
+            promo_goals = {
+                "tiktok": "ad_creative", "youtube": "promo_reel",
+                "instagram": "promo_clip", "reels": "promo_reel",
+                "shorts": "ad_creative", "facebook": "promo_clip",
+                "twitter": "promo_clip", "linkedin": "promo_clip",
+                "threads": "promo_clip", "snapchat": "ad_creative",
+                "pinterest": "promo_reel", "email_campaign": "email_hero",
+                "billboard_digital": "billboard_ad", "website_embed": "promo_reel",
+            }
+            for p in default_platforms:
+                if p in PLATFORM_DEFAULTS:
+                    defaults = PLATFORM_DEFAULTS[p]
+                    goal = promo_goals.get(p, "ad_creative")
+                    targets.append({
+                        "platform": p,
+                        "goal": goal,
+                        "duration_sec": min(defaults["duration"], 30.0),
+                        "aspect_ratio": defaults["aspect"],
+                    })
+            if targets:
+                request["targets"] = targets
 
         if overrides.get("lyrics"):
             request["lyrics"] = overrides["lyrics"]
 
         if overrides.get("brand_notes"):
             request["brand_notes"] = overrides["brand_notes"]
+        elif content_type == "website":
+            desc = metadata.get("description", "")
+            if desc:
+                request["brand_notes"] = desc[:300]
 
         if overrides.get("campaign_notes"):
             request["campaign_notes"] = overrides["campaign_notes"]
