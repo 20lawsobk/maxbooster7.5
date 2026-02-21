@@ -48,6 +48,8 @@ import {
   Youtube,
   Globe,
   EyeOff,
+  Video,
+  Megaphone,
 } from 'lucide-react';
 import { BogoPromotionsManager } from './BogoPromotionsManager';
 
@@ -144,6 +146,13 @@ export default function StorefrontBuilder() {
     templateId: '',
   });
 
+  const [subdomainForm, setSubdomainForm] = useState({
+    subdomain: '',
+    isSubdomainActive: false,
+  });
+  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
+  const [checkingSubdomain, setCheckingSubdomain] = useState(false);
+
   const [customization, setCustomization] = useState<Storefront['customization']>({
     colors: {
       primary: '#8B5CF6',
@@ -178,6 +187,7 @@ export default function StorefrontBuilder() {
   });
 
   const [uploadingAsset, setUploadingAsset] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -207,13 +217,16 @@ export default function StorefrontBuilder() {
     }
 
     setUploadingAsset(assetType);
+    setUploadProgress(0);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('assetType', assetType);
 
-      const result = await uploadWithProgress('/api/storefront/upload-asset', formData, {}) as any;
+      const result = await uploadWithProgress('/api/storefront/upload-asset', formData, {
+        onProgress: (percent: number) => setUploadProgress(percent),
+      }) as any;
 
       if (result.error) {
         throw new Error(result.error);
@@ -236,8 +249,24 @@ export default function StorefrontBuilder() {
       });
     } finally {
       setUploadingAsset(null);
+      setUploadProgress(0);
     }
   };
+
+  const UploadProgressBar = ({ label }: { label: string }) => (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">Uploading {label}...</span>
+        <span className="font-medium">{Math.round(uploadProgress)}%</span>
+      </div>
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-300"
+          style={{ width: `${uploadProgress}%` }}
+        />
+      </div>
+    </div>
+  );
 
   const { data: storefronts = [], isLoading: storefrontsLoading } = useQuery<Storefront[]>({
     queryKey: ['/api/storefront/my'],
@@ -274,6 +303,8 @@ export default function StorefrontBuilder() {
       queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
       setShowCreateDialog(false);
       setSelectedStorefront(data);
+      setSubdomainForm({ subdomain: '', isSubdomainActive: false });
+      setSubdomainAvailable(null);
       setCreateForm({ name: '', slug: '', templateId: '' });
       trackBeatStoreSetup();
     },
@@ -366,6 +397,9 @@ export default function StorefrontBuilder() {
           : 'Your storefront has been hidden from the marketplace.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+      if (selectedStorefront?.id === variables.storefrontId) {
+        setSelectedStorefront({ ...selectedStorefront, isPublic: variables.isPublished });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -401,6 +435,67 @@ export default function StorefrontBuilder() {
       });
     },
   });
+
+  const [showCampaignResult, setShowCampaignResult] = useState<any>(null);
+
+  const promoteCampaignMutation = useMutation({
+    mutationFn: async (storefrontId: string) => {
+      const response = await apiRequest('POST', '/api/social/veo-campaign/promote-storefront', { storefrontId });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setShowCampaignResult(data);
+      toast({
+        title: 'Campaign Generated!',
+        description: `Video campaign created with ${data.campaign?.videos?.length || 0} platform videos.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Campaign Failed',
+        description: error.message || 'Failed to generate video campaign',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateSubdomainMutation = useMutation({
+    mutationFn: async ({ storefrontId, subdomain, isSubdomainActive }: { storefrontId: string; subdomain: string; isSubdomainActive: boolean }) => {
+      const response = await apiRequest('PUT', `/api/storefront/${storefrontId}/subdomain`, { subdomain, isSubdomainActive });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Custom URL Updated',
+        description: 'Your storefront custom URL has been saved.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Update Failed',
+        description: error.message || 'Failed to update custom URL',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const checkSubdomainAvailability = async (subdomain: string) => {
+    if (!subdomain || subdomain.length < 3) {
+      setSubdomainAvailable(null);
+      return;
+    }
+    setCheckingSubdomain(true);
+    try {
+      const response = await apiRequest('GET', `/api/storefront/check-subdomain/${subdomain}`);
+      const data = await response.json();
+      setSubdomainAvailable(data.available);
+    } catch {
+      setSubdomainAvailable(null);
+    } finally {
+      setCheckingSubdomain(false);
+    }
+  };
 
   const generateSlug = async (name: string) => {
     try {
@@ -477,6 +572,11 @@ export default function StorefrontBuilder() {
                 }`}
                 onClick={() => {
                   setSelectedStorefront(storefront);
+                  setSubdomainForm({
+                    subdomain: (storefront as any).subdomain || '',
+                    isSubdomainActive: (storefront as any).isSubdomainActive || false,
+                  });
+                  setSubdomainAvailable(null);
                   if (storefront.customization) {
                     setCustomization({
                       colors: {
@@ -569,6 +669,11 @@ export default function StorefrontBuilder() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedStorefront(storefront);
+                        setSubdomainForm({
+                          subdomain: (storefront as any).subdomain || '',
+                          isSubdomainActive: (storefront as any).isSubdomainActive || false,
+                        });
+                        setSubdomainAvailable(null);
                         if (storefront.customization) {
                           setCustomization({
                             colors: {
@@ -648,6 +753,21 @@ export default function StorefrontBuilder() {
                     </div>
                     <div className="flex gap-2">
                       <Button
+                        size="sm"
+                        onClick={() => promoteCampaignMutation.mutate(selectedStorefront.id)}
+                        disabled={promoteCampaignMutation.isPending || !selectedStorefront.isPublic}
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                      >
+                        {promoteCampaignMutation.isPending ? (
+                          <>Generating...</>
+                        ) : (
+                          <>
+                            <Megaphone className="w-4 h-4 mr-1" />
+                            Promote with Video
+                          </>
+                        )}
+                      </Button>
+                      <Button
                         variant="outline"
                         size="sm"
                         onClick={() => window.open(`/store/${selectedStorefront.slug}`, '_blank')}
@@ -686,9 +806,78 @@ export default function StorefrontBuilder() {
                         <Label>Slug (URL)</Label>
                         <Input value={selectedStorefront.slug} disabled className="bg-muted" />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Your storefront URL: /{selectedStorefront.slug}
+                          Your storefront URL: /store/{selectedStorefront.slug}
                         </p>
                       </div>
+                    </div>
+
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base font-semibold">Custom URL</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Get a personalized storefront link
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="subdomain-toggle" className="text-sm">Active</Label>
+                          <input
+                            id="subdomain-toggle"
+                            type="checkbox"
+                            checked={subdomainForm.isSubdomainActive}
+                            onChange={(e) => setSubdomainForm({ ...subdomainForm, isSubdomainActive: e.target.checked })}
+                            className="w-4 h-4"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={subdomainForm.subdomain}
+                          onChange={(e) => {
+                            const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                            setSubdomainForm({ ...subdomainForm, subdomain: val });
+                            setSubdomainAvailable(null);
+                          }}
+                          placeholder="my-store"
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">.maxbooster.app</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => checkSubdomainAvailability(subdomainForm.subdomain)}
+                          disabled={!subdomainForm.subdomain || subdomainForm.subdomain.length < 3 || checkingSubdomain}
+                        >
+                          {checkingSubdomain ? 'Checking...' : 'Check Availability'}
+                        </Button>
+                        {subdomainAvailable !== null && (
+                          <span className={`text-sm font-medium ${subdomainAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                            {subdomainAvailable ? (
+                              <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> Available</span>
+                            ) : (
+                              <span className="flex items-center gap-1"><AlertCircle className="w-4 h-4" /> Taken</span>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (selectedStorefront) {
+                            updateSubdomainMutation.mutate({
+                              storefrontId: selectedStorefront.id,
+                              subdomain: subdomainForm.subdomain,
+                              isSubdomainActive: subdomainForm.isSubdomainActive,
+                            });
+                          }
+                        }}
+                        disabled={!subdomainForm.subdomain || subdomainForm.subdomain.length < 3 || updateSubdomainMutation.isPending}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {updateSubdomainMutation.isPending ? 'Saving...' : 'Save Custom URL'}
+                      </Button>
                     </div>
 
                     <div>
@@ -796,23 +985,19 @@ export default function StorefrontBuilder() {
                         className="mt-2 border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer relative overflow-hidden"
                         onClick={() => logoInputRef.current?.click()}
                       >
-                        {customization.logo ? (
+                        {uploadingAsset === 'logo' ? (
+                          <UploadProgressBar label="logo" />
+                        ) : customization.logo ? (
                           <div className="relative">
                             <img src={customization.logo} alt="Logo" className="max-h-20 mx-auto object-contain" />
                             <p className="text-xs text-muted-foreground mt-2">Click to change</p>
                           </div>
                         ) : (
                           <>
-                            {uploadingAsset === 'logo' ? (
-                              <div className="animate-pulse">Uploading...</div>
-                            ) : (
-                              <>
-                                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">
-                                  Click to upload logo (PNG, JPG, max 5MB)
-                                </p>
-                              </>
-                            )}
+                            <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              Click to upload logo (PNG, JPG, max 5MB)
+                            </p>
                           </>
                         )}
                       </div>
@@ -834,23 +1019,21 @@ export default function StorefrontBuilder() {
                         className="mt-2 border-2 border-dashed rounded-lg text-center hover:border-primary transition-colors cursor-pointer relative overflow-hidden"
                         onClick={() => bannerInputRef.current?.click()}
                       >
-                        {customization.banner ? (
+                        {uploadingAsset === 'banner' ? (
+                          <div className="p-6">
+                            <UploadProgressBar label="banner" />
+                          </div>
+                        ) : customization.banner ? (
                           <div className="relative">
                             <img src={customization.banner} alt="Banner" className="w-full h-32 object-cover" />
                             <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white bg-black/50 px-2 py-1 rounded">Click to change</p>
                           </div>
                         ) : (
                           <div className="p-12">
-                            {uploadingAsset === 'banner' ? (
-                              <div className="animate-pulse">Uploading...</div>
-                            ) : (
-                              <>
-                                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">
-                                  Click to upload banner (PNG, JPG, recommended 1920x400px)
-                                </p>
-                              </>
-                            )}
+                            <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              Click to upload banner (PNG, JPG, recommended 1920x400px)
+                            </p>
                           </div>
                         )}
                       </div>
@@ -872,23 +1055,19 @@ export default function StorefrontBuilder() {
                         className="mt-2 border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer relative overflow-hidden"
                         onClick={() => avatarInputRef.current?.click()}
                       >
-                        {customization.avatar ? (
+                        {uploadingAsset === 'avatar' ? (
+                          <UploadProgressBar label="avatar" />
+                        ) : customization.avatar ? (
                           <div className="relative">
                             <img src={customization.avatar} alt="Avatar" className="w-20 h-20 mx-auto rounded-full object-cover" />
                             <p className="text-xs text-muted-foreground mt-2">Click to change</p>
                           </div>
                         ) : (
                           <>
-                            {uploadingAsset === 'avatar' ? (
-                              <div className="animate-pulse">Uploading...</div>
-                            ) : (
-                              <>
-                                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">
-                                  Click to upload avatar (PNG, JPG, square recommended)
-                                </p>
-                              </>
-                            )}
+                            <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              Click to upload avatar (PNG, JPG, square recommended)
+                            </p>
                           </>
                         )}
                       </div>
@@ -1580,6 +1759,49 @@ export default function StorefrontBuilder() {
               disabled={!tierForm.name || tierForm.priceCents < 100}
             >
               {editingTier ? 'Update' : 'Create'} Tier
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!showCampaignResult} onOpenChange={(open) => !open && setShowCampaignResult(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Video className="w-5 h-5 text-purple-600" />
+              Video Campaign Generated
+            </DialogTitle>
+            <DialogDescription>
+              Your promotional video campaign has been created for multiple platforms.
+            </DialogDescription>
+          </DialogHeader>
+          {showCampaignResult?.campaign && (
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-muted rounded-lg p-3">
+                  <span className="text-muted-foreground">Videos</span>
+                  <p className="font-bold text-lg">{showCampaignResult.campaign.videos?.length || 0}</p>
+                </div>
+                <div className="bg-muted rounded-lg p-3">
+                  <span className="text-muted-foreground">Platforms</span>
+                  <p className="font-bold text-lg">{showCampaignResult.campaign.platforms?.length || 0}</p>
+                </div>
+              </div>
+              {showCampaignResult.campaign.platforms && (
+                <div>
+                  <Label className="text-sm mb-2 block">Target Platforms</Label>
+                  <div className="flex flex-wrap gap-1">
+                    {showCampaignResult.campaign.platforms.map((p: string) => (
+                      <Badge key={p} variant="secondary" className="text-xs">{p}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setShowCampaignResult(null)}>
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>

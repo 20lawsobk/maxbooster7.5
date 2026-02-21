@@ -446,13 +446,23 @@ export default function Storefront() {
   const fonts = customization.fonts || {};
   const socialLinks = customization.socialLinks || {};
 
+  const primaryColor = colors.primary || '#8B5CF6';
+  const secondaryColor = colors.secondary || '#EC4899';
+  const bgColor = colors.background || '#FFFFFF';
+  const textColor = colors.text || '#000000';
+  const headingFont = fonts.heading || 'Inter';
+  const bodyFont = fonts.body || 'Inter';
+
   const customStyles = {
-    '--primary-color': colors.primary || '#8B5CF6',
-    '--secondary-color': colors.secondary || '#EC4899',
-    '--background-color': colors.background || '#FFFFFF',
-    '--text-color': colors.text || '#000000',
-    '--heading-font': fonts.heading || 'Inter',
-    '--body-font': fonts.body || 'Inter',
+    '--primary-color': primaryColor,
+    '--secondary-color': secondaryColor,
+    '--background-color': bgColor,
+    '--text-color': textColor,
+    '--heading-font': headingFont,
+    '--body-font': bodyFont,
+    backgroundColor: bgColor,
+    color: textColor,
+    fontFamily: bodyFont,
   } as React.CSSProperties;
 
   return (
@@ -488,14 +498,14 @@ export default function Storefront() {
                 <div>
                   <h1
                     className="text-4xl md:text-5xl font-bold mb-2"
-                    style={{ fontFamily: fonts.heading }}
+                    style={{ fontFamily: headingFont, color: textColor }}
                   >
                     {storefront.name}
                   </h1>
                   {customization.bio && (
                     <p
-                      className="text-lg text-muted-foreground max-w-2xl"
-                      style={{ fontFamily: fonts.body }}
+                      className="text-lg max-w-2xl"
+                      style={{ fontFamily: bodyFont, color: textColor, opacity: 0.7 }}
                     >
                       {customization.bio}
                     </p>
@@ -551,7 +561,8 @@ export default function Storefront() {
                       href={`https://instagram.com/${socialLinks.instagram.replace('@', '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary transition-colors"
+                      style={{ color: textColor, opacity: 0.6 }}
+                      className="hover:opacity-100 transition-opacity"
                     >
                       <Instagram className="w-6 h-6" />
                     </a>
@@ -561,7 +572,8 @@ export default function Storefront() {
                       href={`https://twitter.com/${socialLinks.twitter.replace('@', '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary transition-colors"
+                      style={{ color: textColor, opacity: 0.6 }}
+                      className="hover:opacity-100 transition-opacity"
                     >
                       <Twitter className="w-6 h-6" />
                     </a>
@@ -571,7 +583,8 @@ export default function Storefront() {
                       href={socialLinks.youtube}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary transition-colors"
+                      style={{ color: textColor, opacity: 0.6 }}
+                      className="hover:opacity-100 transition-opacity"
                     >
                       <Youtube className="w-6 h-6" />
                     </a>
@@ -581,7 +594,8 @@ export default function Storefront() {
                       href={socialLinks.soundcloud}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary transition-colors"
+                      style={{ color: textColor, opacity: 0.6 }}
+                      className="hover:opacity-100 transition-opacity"
                     >
                       <ExternalLink className="w-6 h-6" />
                     </a>
@@ -661,8 +675,8 @@ export default function Storefront() {
           {tiers.length > 0 && (
             <section className="mb-12">
               <div className="flex items-center gap-3 mb-6">
-                <Crown className="w-8 h-8" style={{ color: colors.primary }} />
-                <h2 className="text-3xl font-bold" style={{ fontFamily: fonts.heading }}>
+                <Crown className="w-8 h-8" style={{ color: primaryColor }} />
+                <h2 className="text-3xl font-bold" style={{ fontFamily: headingFont, color: textColor }}>
                   Join the Community
                 </h2>
               </div>
@@ -680,12 +694,16 @@ export default function Storefront() {
                       <Card
                         key={tier.id}
                         className={`relative ${isMostPopular ? 'border-2 shadow-lg' : ''}`}
-                        style={isMostPopular ? { borderColor: colors.primary } : undefined}
+                        style={{
+                          backgroundColor: bgColor,
+                          color: textColor,
+                          borderColor: isMostPopular ? primaryColor : undefined,
+                        }}
                       >
                         {isMostPopular && (
                           <div
                             className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-white text-sm font-semibold"
-                            style={{ backgroundColor: colors.primary }}
+                            style={{ backgroundColor: primaryColor }}
                           >
                             <Sparkles className="w-4 h-4 inline mr-1" />
                             Most Popular
@@ -694,12 +712,12 @@ export default function Storefront() {
                         <CardHeader>
                           <CardTitle
                             className="flex items-center gap-2"
-                            style={{ fontFamily: fonts.heading }}
+                            style={{ fontFamily: headingFont, color: textColor }}
                           >
-                            <Crown className="w-5 h-5" />
+                            <Crown className="w-5 h-5" style={{ color: primaryColor }} />
                             {tier.name}
                           </CardTitle>
-                          <CardDescription style={{ fontFamily: fonts.body }}>
+                          <CardDescription style={{ fontFamily: bodyFont, color: textColor, opacity: 0.7 }}>
                             {tier.description}
                           </CardDescription>
                         </CardHeader>
@@ -752,7 +770,7 @@ export default function Storefront() {
                             size="lg"
                             disabled={isLimited}
                             onClick={() => subscribeMutation.mutate(tier.id)}
-                            style={isMostPopular ? { backgroundColor: colors.primary } : undefined}
+                            style={{ backgroundColor: primaryColor, color: '#FFFFFF' }}
                           >
                             {isLimited ? 'Sold Out' : 'Subscribe Now'}
                           </Button>
@@ -800,8 +818,8 @@ export default function Storefront() {
           <section>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <Music className="w-8 h-8" style={{ color: colors.primary }} />
-                <h2 className="text-3xl font-bold" style={{ fontFamily: fonts.heading }}>
+                <Music className="w-8 h-8" style={{ color: primaryColor }} />
+                <h2 className="text-3xl font-bold" style={{ fontFamily: headingFont, color: textColor }}>
                   Products
                 </h2>
               </div>
@@ -831,6 +849,7 @@ export default function Storefront() {
                   <Card
                     key={listing.id}
                     className="overflow-hidden hover:shadow-lg transition-shadow"
+                    style={{ backgroundColor: bgColor, color: textColor }}
                   >
                     <div className="relative">
                       {listing.coverArtUrl ? (
@@ -851,10 +870,10 @@ export default function Storefront() {
                       </div>
                     </div>
                     <CardHeader>
-                      <CardTitle className="text-lg" style={{ fontFamily: fonts.heading }}>
+                      <CardTitle className="text-lg" style={{ fontFamily: headingFont, color: textColor }}>
                         {listing.title}
                       </CardTitle>
-                      <CardDescription style={{ fontFamily: fonts.body }}>
+                      <CardDescription style={{ fontFamily: bodyFont, color: textColor, opacity: 0.7 }}>
                         {listing.description}
                       </CardDescription>
                     </CardHeader>
@@ -898,7 +917,7 @@ export default function Storefront() {
                             variant={cart.includes(listing.id) ? 'secondary' : 'default'}
                             style={
                               !cart.includes(listing.id)
-                                ? { backgroundColor: colors.primary }
+                                ? { backgroundColor: primaryColor, color: '#FFFFFF' }
                                 : undefined
                             }
                           >
