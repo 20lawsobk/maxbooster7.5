@@ -11,6 +11,68 @@ hyperLearningEngine.start().catch(err => {
   logger.warn('HyperLearning Engine failed to auto-start:', err);
 });
 
+router.get('/status', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const hyperStatus = hyperLearningEngine.getStatus();
+    const metrics = hyperLearningEngine.getMetrics();
+
+    const [insights, recommendations, performance, platformStats] = await Promise.all([
+      autopilotLearningService.getLearningInsights(userId),
+      autopilotLearningService.getRecommendations(userId),
+      autopilotLearningService.getPerformanceHistory(userId, { limit: 1 }),
+      autopilotLearningService.getPlatformStatistics(userId),
+    ]);
+
+    res.json({
+      success: true,
+      learning: {
+        isActive: hyperStatus.isRunning,
+        totalDataPoints: metrics.totalDataPointsProcessed,
+        patternsDetected: metrics.patternsDetected,
+        microPatternsFound: metrics.microPatternsFound,
+        learningMultiplier: `${metrics.learningMultiplier.toFixed(1)}x`,
+        lastLearningCycle: hyperStatus.metrics.lastCycleAt || null,
+        processingTimeMs: metrics.actualProcessingTimeMs,
+        humanEquivalentHours: metrics.humanEquivalentHours,
+      },
+      insights: {
+        total: insights.length,
+        types: insights.reduce((acc: Record<string, number>, i) => {
+          acc[i.type] = (acc[i.type] || 0) + 1;
+          return acc;
+        }, {}),
+      },
+      recommendations: {
+        total: recommendations.length,
+        actionable: recommendations.filter(r => r.actionable).length,
+      },
+      performance: {
+        totalRecorded: performance.total,
+        platformsCovered: platformStats.length,
+        platforms: platformStats.map(p => ({
+          platform: p.platform,
+          postCount: p.postCount,
+          avgEngagement: p.avgEngagement,
+        })),
+      },
+      capabilities: [
+        'performance_tracking',
+        'pattern_detection',
+        'optimal_timing',
+        'content_recommendations',
+        'hyper_learning',
+        'micro_pattern_analysis',
+        'cross_platform_synthesis',
+        'predictive_modeling',
+      ],
+    });
+  } catch (error) {
+    logger.error('Failed to get autopilot learning status:', error);
+    res.status(500).json({ error: 'Failed to get autopilot learning status' });
+  }
+});
+
 const recordPerformanceSchema = z.object({
   platform: z.string(),
   contentType: z.string().optional(),
