@@ -47,6 +47,11 @@ ai_model/weights/
 ai_model/data/
 training/
 boostsheets_db/
+boosterstate-data/
+cookies.txt
+.audit-wal/
+.capsule-temp/
+data/
 
 # Rust
 boosterstate/target/
