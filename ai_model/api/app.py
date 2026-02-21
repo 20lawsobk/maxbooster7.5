@@ -893,3 +893,90 @@ async def gpu_capabilities():
             "vision_transformer", "multimodal",
         ],
     }
+
+
+_data_pipeline = None
+
+def _get_data_pipeline():
+    global _data_pipeline
+    if _data_pipeline is None:
+        from maxbooster_veo_music.training.data_pipeline import DataPipeline
+        _data_pipeline = DataPipeline()
+    return _data_pipeline
+
+
+@app.get("/data/pipeline/status")
+async def data_pipeline_status():
+    pipeline = _get_data_pipeline()
+    return pipeline.status()
+
+
+@app.post("/data/pipeline/download")
+async def data_pipeline_download():
+    pipeline = _get_data_pipeline()
+    results = pipeline.download_all()
+    return {"download_results": results}
+
+
+@app.post("/data/pipeline/load")
+async def data_pipeline_load():
+    pipeline = _get_data_pipeline()
+    counts = pipeline.load_all()
+    return {"loaded_counts": counts, "status": pipeline.status()}
+
+
+@app.get("/data/jamendo/status")
+async def jamendo_status():
+    pipeline = _get_data_pipeline()
+    if not pipeline.jamendo._loaded:
+        pipeline.jamendo.load()
+    return pipeline.jamendo.status()
+
+
+@app.get("/data/jamendo/moods")
+async def jamendo_mood_distribution():
+    pipeline = _get_data_pipeline()
+    if not pipeline.jamendo._loaded:
+        pipeline.jamendo.load()
+    return {
+        "mood_distribution": pipeline.jamendo.get_mood_distribution(),
+        "total_tracks": len(pipeline.jamendo.tracks),
+    }
+
+
+@app.get("/data/muvisync/status")
+async def muvisync_status():
+    pipeline = _get_data_pipeline()
+    if not pipeline.muvisync._loaded:
+        pipeline.muvisync.load()
+    return pipeline.muvisync.status()
+
+
+@app.get("/data/social/status")
+async def social_media_status():
+    pipeline = _get_data_pipeline()
+    if not pipeline.social_media._loaded:
+        pipeline.social_media.load()
+    return pipeline.social_media.status()
+
+
+@app.get("/data/social/hashtags")
+async def social_media_hashtag_performance():
+    pipeline = _get_data_pipeline()
+    if not pipeline.social_media._loaded:
+        pipeline.social_media.load()
+    top_hashtags = dict(list(pipeline.social_media.get_hashtag_performance().items())[:20])
+    return {"top_hashtags": top_hashtags}
+
+
+@app.get("/data/social/timing/{platform}")
+async def social_media_optimal_timing(platform: str):
+    pipeline = _get_data_pipeline()
+    if not pipeline.social_media._loaded:
+        pipeline.social_media.load()
+    if platform not in ["tiktok", "youtube", "instagram", "twitter", "facebook", "spotify", "shorts", "reels"]:
+        raise HTTPException(status_code=400, detail=f"Unknown platform: {platform}")
+    return {
+        "platform": platform,
+        "optimal_hours": pipeline.social_media.get_optimal_posting_times(platform),
+    }
