@@ -19,6 +19,7 @@ from .schemas import (
     VideoGenerateRequest, VideoGenerateResponse,
     CinematicTemplatesResponse, CinematicTemplateInfo,
     HealthResponse,
+    MultiTrainRequest, MultiTrainResponse, MultiGPUStatusResponse,
 )
 from ..model.tokenizer import SimpleTokenizer
 from ..model.transformer import TransformerLM
@@ -657,3 +658,103 @@ async def render_video(sheet_id: str):
     result = render_manager.render_video(sheet)
     repo.save(sheet)
     return {"success": True, **result}
+
+
+_multi_orchestrator = None
+_multi_train_thread = None
+
+
+@app.post("/train/multi")
+async def train_multi_agent(req: MultiTrainRequest):
+    global _multi_orchestrator, _multi_train_thread
+    import threading
+
+    if _multi_train_thread and _multi_train_thread.is_alive():
+        return {
+            "success": False,
+            "state": "running",
+            "message": "Multi-agent training is already in progress. Check /train/multi/status for updates.",
+        }
+
+    from ..training.multi_trainer import TrainingOrchestrator
+    from ..training.config import TrainConfig
+
+    cfg = TrainConfig()
+    cfg.epochs = req.epochs
+    cfg.lr = req.learning_rate
+    cfg.batch_size = req.batch_size
+
+    _multi_orchestrator = TrainingOrchestrator(
+        data_path=req.data_path,
+        config=cfg,
+        total_lanes=req.lanes,
+        agent_types=req.agent_types,
+        resume=True,
+    )
+
+    def _run_training():
+        try:
+            _multi_orchestrator.train_all()
+        except Exception as e:
+            _multi_orchestrator._state = f"error: {e}"
+
+    _multi_train_thread = threading.Thread(target=_run_training, daemon=True)
+    _multi_train_thread.start()
+
+    return {
+        "success": True,
+        "state": "started",
+        "message": "Multi-agent training launched. Poll /train/multi/status for progress.",
+        "agents": req.agent_types or ["script", "distribution", "visual_spec", "optimization"],
+        "epochs": req.epochs,
+        "lanes": req.lanes,
+    }
+
+
+@app.get("/train/multi/status")
+async def multi_train_status():
+    global _multi_orchestrator
+    if _multi_orchestrator is None:
+        return {
+            "success": True,
+            "state": "idle",
+            "message": "No multi-agent training has been started",
+        }
+    result = _multi_orchestrator.get_status()
+    return {
+        "success": True,
+        "state": result.state,
+        "total_jobs": result.total_jobs,
+        "completed_jobs": result.completed_jobs,
+        "failed_jobs": result.failed_jobs,
+        "elapsed_s": result.elapsed_s,
+        "best_losses": result.best_losses,
+        "jobs": result.jobs,
+    }
+
+
+@app.get("/gpu/multi/status", response_model=MultiGPUStatusResponse)
+async def multi_gpu_status():
+    global _multi_orchestrator
+    if _multi_orchestrator is None:
+        from ..gpu.multi_backend import MultiStreamBackend
+        backend = MultiStreamBackend(total_lanes=32)
+        status = backend.status()
+        return MultiGPUStatusResponse(
+            success=True,
+            total_lanes=status["total_lanes"],
+            active_streams=status["active_streams"],
+            lane_utilization=status["lane_utilization"],
+            streams=status["streams"],
+            total_vram_mb=status["total_vram_mb"],
+        )
+
+    status = _multi_orchestrator.multi_backend.status()
+    return MultiGPUStatusResponse(
+        success=True,
+        total_lanes=status["total_lanes"],
+        active_streams=status["active_streams"],
+        lane_utilization=status["lane_utilization"],
+        streams=status["streams"],
+        total_vram_mb=status["total_vram_mb"],
+    )

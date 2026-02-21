@@ -249,3 +249,31 @@ class HealthResponse(BaseModel):
     vocab_size: int
     device: str
     version: str = "1.0.0"
+
+
+class MultiTrainRequest(BaseModel):
+    data_path: str = "training/boostsheet_samples_v2.json"
+    epochs: int = 2
+    batch_size: int = 4
+    learning_rate: float = 5e-4
+    lanes: int = 32
+    agent_types: Optional[List[str]] = None
+
+class MultiTrainResponse(BaseModel):
+    success: bool
+    state: str
+    total_jobs: int
+    completed_jobs: int
+    failed_jobs: int
+    elapsed_s: float
+    best_losses: dict
+    jobs: dict
+    gpu_status: dict
+
+class MultiGPUStatusResponse(BaseModel):
+    success: bool
+    total_lanes: int
+    active_streams: int
+    lane_utilization: dict
+    streams: dict
+    total_vram_mb: float
