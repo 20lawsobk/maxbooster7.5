@@ -6,7 +6,7 @@ import { unifiedAIController } from '../services/unifiedAIController';
 import { pythonAIService } from '../services/pythonAIService';
 import { veoMusicService } from '../services/veoMusicService';
 import { db } from '../db';
-import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts } from '@shared/schema';
+import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts, storefronts, listings } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 
@@ -1699,6 +1699,173 @@ router.post('/veo-campaign/from-url', requireAuth, async (req: AuthenticatedRequ
   } catch (error) {
     logger.error('Failed to generate campaign from URL:', error);
     res.status(500).json({ success: false, message: 'Campaign generation from URL failed' });
+  }
+});
+
+router.post('/veo-campaign/promote-storefront', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
+
+    const { slug, platforms, mood, brand_notes, campaign_notes } = req.body;
+
+    let storefront: any;
+    if (slug) {
+      const rows = await db.select().from(storefronts).where(
+        and(eq(storefronts.slug, slug), eq(storefronts.userId, userId))
+      ).limit(1);
+      storefront = rows[0];
+    } else {
+      const rows = await db.select().from(storefronts).where(eq(storefronts.userId, userId)).limit(1);
+      storefront = rows[0];
+    }
+
+    if (!storefront) {
+      return res.status(404).json({ success: false, message: 'Storefront not found or you do not own it' });
+    }
+
+    if (!storefront.isActive) {
+      return res.status(403).json({ success: false, message: 'Storefront is not active' });
+    }
+
+    const customization = (storefront.customization || {}) as Record<string, any>;
+    const seo = (storefront.seo || {}) as Record<string, any>;
+
+    const storeListings = await db.select().from(listings)
+      .where(and(eq(listings.storefrontId, storefront.id), eq(listings.isPublished, true)))
+      .limit(10);
+
+    const listingCount = storeListings.length;
+    const genres = [...new Set(storeListings.map((l: any) => l.category).filter(Boolean))];
+    const topListings = storeListings.slice(0, 3).map((l: any) => l.title).join(', ');
+
+    const description = seo.description || customization.bio || '';
+    const title = seo.title || storefront.name || 'My Storefront';
+    const artworkUrl = seo.ogImage || customization.banner || customization.logo || '';
+    const keywords = seo.keywords || [];
+
+    let story = `Promote ${title}.`;
+    if (description) story += ` ${description.slice(0, 200)}.`;
+    if (listingCount > 0) story += ` Featuring ${listingCount} beats${topListings ? ` including ${topListings}` : ''}.`;
+    if (genres.length > 0) story += ` Genres: ${genres.join(', ')}.`;
+    story += ' Drive traffic and sales to the storefront.';
+
+    const campaignRequest: Record<string, any> = {
+      title,
+      artist: storefront.name,
+      mood: mood || 'energetic',
+      era: 'modern',
+      story,
+      primary_platforms: platforms || ['tiktok', 'youtube', 'instagram', 'reels', 'shorts', 'facebook'],
+      audio_duration_sec: 180,
+      source_url: `/storefront/${storefront.slug}`,
+      source_platform: 'website',
+      content_type: 'website',
+    };
+
+    if (brand_notes) campaignRequest.brand_notes = brand_notes;
+    else if (description) campaignRequest.brand_notes = description.slice(0, 300);
+
+    if (campaign_notes) campaignRequest.campaign_notes = campaign_notes;
+    if (artworkUrl) campaignRequest.artwork_url = artworkUrl;
+    if (keywords.length > 0) campaignRequest.keywords = keywords;
+
+    const result = await veoMusicService.generateCampaign(campaignRequest);
+    if (!result || !result.success) {
+      return res.status(500).json({ success: false, message: result?.error || 'Campaign generation failed' });
+    }
+
+    res.json({
+      ...result,
+      storefront: {
+        id: storefront.id,
+        name: storefront.name,
+        slug: storefront.slug,
+        listingCount,
+        genres,
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to promote storefront:', error);
+    res.status(500).json({ success: false, message: 'Storefront promotion campaign failed' });
+  }
+});
+
+router.post('/veo-campaign/promote-listing', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
+
+    const { listingId, platforms, mood, brand_notes, campaign_notes } = req.body;
+    if (!listingId) return res.status(400).json({ success: false, message: 'Missing listingId' });
+
+    const rows = await db.select().from(listings).where(
+      and(eq(listings.id, listingId), eq(listings.userId, userId))
+    ).limit(1);
+    const listing = rows[0] as any;
+    if (!listing) return res.status(404).json({ success: false, message: 'Listing not found or you do not own it' });
+
+    if (!listing.isPublished) {
+      return res.status(403).json({ success: false, message: 'Listing must be published before promoting' });
+    }
+
+    let storefrontName = 'My Store';
+    if (listing.storefrontId) {
+      const storeRows = await db.select().from(storefronts).where(eq(storefronts.id, listing.storefrontId)).limit(1);
+      if (storeRows[0]) storefrontName = (storeRows[0] as any).name || storefrontName;
+    }
+
+    const metadata = (listing.metadata || {}) as Record<string, any>;
+    const title = listing.title;
+    const description = listing.description || '';
+    const category = listing.category || metadata.genre || '';
+    const artworkUrl = listing.artworkUrl || '';
+    const priceDisplay = listing.priceCents ? `$${(listing.priceCents / 100).toFixed(2)}` : '';
+
+    let story = `Check out "${title}" by ${storefrontName}.`;
+    if (description) story += ` ${description.slice(0, 150)}.`;
+    if (category) story += ` Genre: ${category}.`;
+    if (priceDisplay) story += ` Available now for ${priceDisplay}.`;
+    story += ' Get it before it\'s gone!';
+
+    const isMusic = listing.audioUrl || category;
+
+    const campaignRequest: Record<string, any> = {
+      title,
+      artist: storefrontName,
+      mood: mood || (category ? 'energetic' : 'uplifting'),
+      era: 'modern',
+      story,
+      primary_platforms: platforms || ['tiktok', 'instagram', 'reels', 'shorts'],
+      audio_duration_sec: 180,
+      source_url: `/marketplace/beat/${listing.id}`,
+      source_platform: isMusic ? 'maxbooster' : 'website',
+      content_type: isMusic ? 'music' : 'website',
+    };
+
+    if (brand_notes) campaignRequest.brand_notes = brand_notes;
+    if (campaign_notes) campaignRequest.campaign_notes = campaign_notes;
+    if (artworkUrl) campaignRequest.artwork_url = artworkUrl;
+    if (category) campaignRequest.genre = category;
+
+    const result = await veoMusicService.generateCampaign(campaignRequest);
+    if (!result || !result.success) {
+      return res.status(500).json({ success: false, message: result?.error || 'Campaign generation failed' });
+    }
+
+    res.json({
+      ...result,
+      listing: {
+        id: listing.id,
+        title: listing.title,
+        category: listing.category,
+        price: priceDisplay,
+        storefrontName,
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to promote listing:', error);
+    res.status(500).json({ success: false, message: 'Listing promotion campaign failed' });
   }
 });
 
