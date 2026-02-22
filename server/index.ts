@@ -11,6 +11,8 @@ import compression from "compression";
 import { logger } from "./logger.ts";
 import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
 import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
+import path from "path";
+import crypto from "crypto";
 
 // MANDATORY safety imports - these MUST load successfully
 import {
@@ -124,7 +126,6 @@ app.use(
 app.use(express.urlencoded({ extended: false }));
 
 // Serve generated audio content from root public folder
-import path from "path";
 app.use('/generated-content', express.static(path.join(process.cwd(), 'public', 'generated-content'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.wav') || filePath.endsWith('.mp3')) {
@@ -246,7 +247,7 @@ app.use((req, res, next) => {
     
     const devSessionConfig = {
       store: activeSessionStore,
-      secret: process.env.SESSION_SECRET || require('crypto').randomBytes(32).toString('hex'),
+      secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
       resave: false,
       saveUninitialized: false,
       name: 'sessionId',

@@ -30,6 +30,21 @@ The application employs a microservices architecture. The user interface is buil
 -   **Security**: Comprehensive security measures include XSS prevention, IDOR protection, data leak prevention, input validation, admin-only access for infrastructure, log injection prevention, secure session management (httpOnly, sameSite, secure cookies), rate limiting on authentication endpoints, and circuit breakers for external streaming services.
 -   **Studio One Waveform Engine**: Professional DAW-grade waveform rendering system inspired by PreSonus Studio One, located in `client/src/lib/daw/`. Four interconnected subsystems: (1) **PeakCacheEngine** — hierarchical MinMax peak caching with 7 resolution levels (1 to 65536 samples/peak), RMS computation, transient detection, and LRU cache eviction (256MB default); (2) **NonDestructiveRenderer** — coordinate mapping (sample↔pixel, amplitude↔pixel, time↔pixel), data zoom (vertical scale without gain change), horizontal zoom with viewport calculation, and vector fade curve rendering (linear/exponential/logarithmic/s-curve/equal-power); (3) **TimelineRenderer** — GPU-accelerated double-buffered canvas renderer with frame-rate independent drawing (deltaTime-based), smooth inertial scrolling, beat/bar grid overlay, clip rendering with waveform fill + RMS overlay + transient markers, playhead auto-scroll, and zoom-at-cursor support; (4) **TransformRenderer** — transform-to-rendered-audio pipeline that processes plugin chains (compressor/limiter/EQ/saturation/gate) and regenerates peak caches to reflect processed waveforms in real-time. Unified via `StudioOneWaveformEngine` class and `useStudioOneWaveform` React hook. Component: `StudioOneWaveform.tsx`.
 -   **Development Environment**: The Express server serves both API routes and the Vite development frontend. Database schema is managed via Drizzle Kit. `esbuild` is pinned to version 0.25.12 for Drizzle Kit compatibility.
+-   **Session Store**: BoosterState (Rust microservice, port 6379) serves as the Redis-compatible KV store for sessions and AI caching. Falls back to MemoryStore in dev. Workflow starts BoosterState binary before the Node server.
+-   **Subscription Model**: All features are bundled into every paid plan (monthly $49/mo, yearly $39/mo, lifetime $699 one-time). No feature top-ups or add-ons. Free tier is limited to basic access only to encourage upgrades.
+-   **Storefront URLs**: Storefronts use the `{subdomain}.maxbooster.app` pattern (e.g., `artistname.maxbooster.app`). Subdomain availability check, validation, and generation are all implemented. The StorefrontBuilder UI shows and opens the correct URL format.
+
+## Session History
+### 2026-02-22 — Platform Setup & QA Phase 1
+- Provisioned PostgreSQL database, pushed schema with Drizzle Kit, seeded 97 distribution platforms
+- Installed all npm dependencies (260+ packages)
+- Configured 42 environment variables (24 public config, 18 secrets)
+- Set workflow: BoosterState binary + Node server on port 5000
+- Fixed `require('crypto')` CJS usage → proper ESM `import crypto from "crypto"`
+- Moved mid-file `import path` and `import crypto` to top of `server/index.ts` (ESM compliance)
+- Verified subscription model: no feature top-ups, all features bundled at all paid tiers
+- Verified storefront URL pattern: `{name}.maxbooster.app` already correctly implemented in StorefrontBuilder.tsx
+- Confirmed security posture: bcrypt passwords, Stripe webhook verification, CSRF protection, rate limiting, helmet headers
 
 ## External Dependencies
 -   **Stripe**: For payment processing.
