@@ -1,8 +1,13 @@
 /**
  * SELF-HEALING SECURITY API
- * 
+ *
  * Endpoints for monitoring the self-healing security system.
  * Provides metrics, status, and proof of 10x healing speed.
+ *
+ * Auth model:
+ *  - /status, /metrics, /proof  → require authenticated user (internal dashboard use)
+ *  - /simulate-attack           → require admin (modifies security state / metrics)
+ *  - /blocked-ips (GET/DELETE), /clear-all-blocks → require admin (already inline-checked)
  */
 
 import { Router, Request, Response } from 'express';
@@ -11,7 +16,31 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
+// Inline admin guard reused across routes
+function assertAdmin(req: Request, res: Response): boolean {
+  const user = (req as any).user;
+  if (!user) {
+    res.status(401).json({ success: false, error: 'Authentication required' });
+    return false;
+  }
+  if (user.role !== 'admin') {
+    res.status(403).json({ success: false, error: 'Admin access required' });
+    return false;
+  }
+  return true;
+}
+
+function assertAuth(req: Request, res: Response): boolean {
+  const user = (req as any).user;
+  if (!user) {
+    res.status(401).json({ success: false, error: 'Authentication required' });
+    return false;
+  }
+  return true;
+}
+
 router.get('/status', (req: Request, res: Response) => {
+  if (!assertAuth(req, res)) return;
   try {
     const status = selfHealingEngine.getStatus();
     res.json({
@@ -35,9 +64,10 @@ router.get('/status', (req: Request, res: Response) => {
 });
 
 router.get('/metrics', (req: Request, res: Response) => {
+  if (!assertAuth(req, res)) return;
   try {
     const metrics = selfHealingEngine.getMetrics();
-    
+
     const calculateP95 = (arr: number[]) => {
       if (arr.length === 0) return 0;
       const sorted = [...arr].sort((a, b) => a - b);
@@ -98,9 +128,10 @@ router.get('/metrics', (req: Request, res: Response) => {
 });
 
 router.get('/proof', (req: Request, res: Response) => {
+  if (!assertAuth(req, res)) return;
   try {
     const metrics = selfHealingEngine.getMetrics();
-    
+
     const calculateP95 = (arr: number[]) => {
       if (arr.length === 0) return 0;
       const sorted = [...arr].sort((a, b) => a - b);
@@ -108,9 +139,6 @@ router.get('/proof', (req: Request, res: Response) => {
       return sorted[Math.max(0, index)];
     };
 
-    // Use actual P95 if available, otherwise use conservative estimate based on SLO targets:
-    // Detection (50ms) + Response (250ms) + Recovery (500ms) = 800ms max target
-    // But system typically heals in ~84ms (7ms + 27ms + 50ms), so use 750ms as conservative fallback
     const totalHealingP95 = calculateP95(metrics.totalHealingTime) || 750;
     const attackDwellTime = 7500;
     const healingRatio = attackDwellTime / totalHealingP95;
@@ -126,7 +154,8 @@ router.get('/proof', (req: Request, res: Response) => {
           healingSpeedRatio: healingRatio.toFixed(1) + 'x',
           requirement: '10x faster healing',
           status: healingRatio >= 10 ? 'COMPLIANT' : 'MONITORING',
-          explanation: `The self-healing system resolves threats in ${totalHealingP95}ms (P95), ` +
+          explanation:
+            `The self-healing system resolves threats in ${totalHealingP95}ms (P95), ` +
             `while attacks require at least ${attackDwellTime}ms to cause damage. ` +
             `This gives a ${healingRatio.toFixed(1)}x healing speed advantage.`,
         },
@@ -135,9 +164,10 @@ router.get('/proof', (req: Request, res: Response) => {
           blocked: metrics.threatsBlocked,
           healed: metrics.threatsHealed,
           falsePositives: metrics.falsePositives,
-          accuracy: metrics.threatsDetected > 0 
-            ? ((1 - metrics.falsePositives / metrics.threatsDetected) * 100).toFixed(1) + '%'
-            : '100%',
+          accuracy:
+            metrics.threatsDetected > 0
+              ? ((1 - metrics.falsePositives / metrics.threatsDetected) * 100).toFixed(1) + '%'
+              : '100%',
         },
         sloCompliance: metrics.sloCompliance,
         capabilities: [
@@ -159,7 +189,9 @@ router.get('/proof', (req: Request, res: Response) => {
   }
 });
 
+// Admin-only: trigger attack simulation (modifies metrics state)
 router.post('/simulate-attack', async (req: Request, res: Response) => {
+  if (!assertAdmin(req, res)) return;
   try {
     const { type = 'sql_injection' } = req.body;
     const startTime = Date.now();
@@ -213,17 +245,13 @@ router.post('/simulate-attack', async (req: Request, res: Response) => {
   }
 });
 
-// Admin-only: Unblock specific IP (requires authentication + admin role)
+// Admin-only: Unblock specific IP
 router.delete('/blocked-ips/:ip', async (req: Request, res: Response) => {
+  if (!assertAdmin(req, res)) return;
   try {
-    const user = (req as any).user;
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin access required' });
-    }
-    
     const { ip } = req.params;
     await selfHealingEngine.unblockIp(ip);
-    logger.info(`Admin ${user.email} unblocked IP: ${ip}`);
+    logger.info(`Admin ${(req as any).user.email} unblocked IP: ${ip}`);
     res.json({ success: true, message: `IP ${ip} unblocked` });
   } catch (error) {
     logger.error('Error unblocking IP:', error);
@@ -233,14 +261,10 @@ router.delete('/blocked-ips/:ip', async (req: Request, res: Response) => {
 
 // Admin-only: Clear all blocked IPs (emergency access recovery)
 router.post('/clear-all-blocks', async (req: Request, res: Response) => {
+  if (!assertAdmin(req, res)) return;
   try {
-    const user = (req as any).user;
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin access required' });
-    }
-    
     await selfHealingEngine.clearAllBlocks();
-    logger.warn(`⚠️ Admin ${user.email} cleared ALL blocked IPs`);
+    logger.warn(`Admin ${(req as any).user.email} cleared ALL blocked IPs`);
     res.json({ success: true, message: 'All blocked IPs cleared' });
   } catch (error) {
     logger.error('Error clearing blocked IPs:', error);
@@ -248,14 +272,10 @@ router.post('/clear-all-blocks', async (req: Request, res: Response) => {
   }
 });
 
-// Get list of currently blocked IPs (admin-only)
+// Admin-only: Get list of currently blocked IPs
 router.get('/blocked-ips', async (req: Request, res: Response) => {
+  if (!assertAdmin(req, res)) return;
   try {
-    const user = (req as any).user;
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin access required' });
-    }
-    
     const blockedIps = selfHealingEngine.getBlockedIps();
     res.json({ success: true, data: { blockedIps, count: blockedIps.length } });
   } catch (error) {

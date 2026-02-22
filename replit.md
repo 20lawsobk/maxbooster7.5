@@ -58,6 +58,14 @@ The application employs a microservices architecture. The user interface is buil
 - Built `client/src/components/distribution/ArtistProfileFixer.tsx`: validated Spotify URI input, notes field, orange warning banner about scope of re-mapping
 - Added "Artist Profiles" tab to Distribution page between "My Releases" and "New Release" tabs
 
+### 2026-02-22 — Production Hardening Session 3 (Total Coverage Audit)
+- **Fixed unauthenticated file-upload endpoints** in `server/routes/audioAnalysis.ts`: added `requireAuth` middleware to all 4 CPU-intensive upload routes (`/analyze-metadata`, `/analyze-loudness`, `/generate-waveform`, `/validate-distribution`). Static info routes (`/loudness-targets`, `/supported-formats`) remain intentionally public.
+- **Fixed unauthenticated security telemetry** in `server/routes/selfHealingApi.ts`: `/status`, `/metrics`, `/proof` now require any authenticated user; `/simulate-attack` now requires admin role (prevents metric pollution). Consolidated inline admin checks into a shared `assertAdmin()`/`assertAuth()` pattern.
+- **Fixed storefront checkout N+1 query** in `server/routes/storefront.ts`: replaced full-catalog fetch + in-memory filter (O(seller_listings)) with a targeted `inArray(listings.id, listingIds)` WHERE clause. Applied to both `/checkout` and `/checkout/preview` routes. Added `inArray` to drizzle-orm imports.
+- **Fixed Stripe silent-failure guard** in `server/routes/storefront.ts:checkout`: replaced `process.env.STRIPE_SECRET_KEY || ''` (silent empty-string Stripe client) with an explicit check that returns HTTP 503 with a descriptive message if the key is missing.
+- **Confirmed false positives cleared**: `api/v1/analytics.ts` uses API-key auth (not missing auth); `downloads.ts` and `helpDesk.ts` are intentionally public; search.ts `.then()` chains are inside `Promise.all`; `developerApi.ts` unhandled promise is inside a documentation string literal.
+- Server running clean — zero errors, all routes loaded successfully
+
 ### 2026-02-22 — Production Hardening Session 2
 - Verified all 5 session-plan tasks (T001–T005) were already completed: Stripe webhook DB updates, extendMinutes validation, autopilot composite index, Stripe API version updated, generateUploadUrl functional
 - **Fixed path traversal vulnerability** in `server/routes/storage.ts` chunk upload: `fileId` from request body is now validated against `/^[a-zA-Z0-9_-]+$/` before use in `path.join()` — prevents directory escape attacks

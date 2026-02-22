@@ -5,6 +5,7 @@ import { audioMetadataService } from '../services/audioMetadataService.js';
 import { waveformCacheService } from '../services/waveformCacheService.js';
 import { logger } from '../logger.js';
 import { audioUpload } from '../middleware/uploadHandler.js';
+import { requireAuth } from '../middleware/auth.js';
 
 function generateContentHash(buffer: Buffer): string {
   return crypto.createHash('sha256').update(buffer).digest('hex').substring(0, 16);
@@ -12,7 +13,10 @@ function generateContentHash(buffer: Buffer): string {
 
 const router = Router();
 
-router.post('/analyze-metadata', audioUpload.single('audio'), async (req: Request, res: Response) => {
+// File-upload endpoints require authentication — prevents unauthenticated CPU abuse.
+// Static info routes (loudness-targets, supported-formats) remain public.
+
+router.post('/analyze-metadata', requireAuth, audioUpload.single('audio'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No audio file provided' });
@@ -47,7 +51,7 @@ router.post('/analyze-metadata', audioUpload.single('audio'), async (req: Reques
   }
 });
 
-router.post('/analyze-loudness', audioUpload.single('audio'), async (req: Request, res: Response) => {
+router.post('/analyze-loudness', requireAuth, audioUpload.single('audio'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No audio file provided' });
@@ -111,7 +115,7 @@ router.post('/analyze-loudness', audioUpload.single('audio'), async (req: Reques
   }
 });
 
-router.post('/generate-waveform', audioUpload.single('audio'), async (req: Request, res: Response) => {
+router.post('/generate-waveform', requireAuth, audioUpload.single('audio'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No audio file provided' });
@@ -162,7 +166,7 @@ router.post('/generate-waveform', audioUpload.single('audio'), async (req: Reque
   }
 });
 
-router.post('/validate-distribution', audioUpload.single('audio'), async (req: Request, res: Response) => {
+router.post('/validate-distribution', requireAuth, audioUpload.single('audio'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No audio file provided' });
@@ -213,6 +217,7 @@ router.post('/validate-distribution', audioUpload.single('audio'), async (req: R
   }
 });
 
+// Static info endpoints — intentionally public (no file upload, no user data)
 router.get('/loudness-targets', (_req: Request, res: Response) => {
   res.json({
     success: true,

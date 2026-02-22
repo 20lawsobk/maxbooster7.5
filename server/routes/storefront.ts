@@ -21,7 +21,7 @@ import {
 import Stripe from 'stripe';
 import { getBaseUrl } from '../config/defaults';
 import { db } from '../db';
-import { eq, and, count, avg, sql, lte, gte, or, isNull } from 'drizzle-orm';
+import { eq, and, count, avg, sql, lte, gte, or, isNull, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 
@@ -897,7 +897,12 @@ router.post('/:id/checkout', async (req, res) => {
       return res.status(400).json({ error: 'Maximum 20 items per checkout' });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-06-20' as any });
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      logger.error('Stripe secret key is not configured');
+      return res.status(503).json({ error: 'Payment processing is not available. Please contact support.' });
+    }
+    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as any });
 
     const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
     if (!storefront) return res.status(404).json({ error: 'Storefront not found' });
@@ -906,10 +911,12 @@ router.post('/:id/checkout', async (req, res) => {
       return res.status(400).json({ error: 'Cannot purchase from your own storefront' });
     }
 
-    const storefrontListings = await db.select().from(listings)
-      .where(and(eq(listings.userId, storefront.userId), eq(listings.isPublished, true)));
-
-    const validListings = storefrontListings.filter(l => listingIds.includes(l.id));
+    const validListings = await db.select().from(listings)
+      .where(and(
+        eq(listings.userId, storefront.userId),
+        eq(listings.isPublished, true),
+        inArray(listings.id, listingIds)
+      ));
     if (validListings.length === 0) {
       return res.status(400).json({ error: 'No valid listings found' });
     }
@@ -1637,9 +1644,12 @@ router.post('/:id/checkout/preview', async (req, res) => {
     const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
     if (!storefront) return res.status(404).json({ error: 'Storefront not found' });
 
-    const storefrontListings = await db.select().from(listings)
-      .where(and(eq(listings.userId, storefront.userId), eq(listings.isPublished, true)));
-    const validListings = storefrontListings.filter(l => listingIds.includes(l.id));
+    const validListings = await db.select().from(listings)
+      .where(and(
+        eq(listings.userId, storefront.userId),
+        eq(listings.isPublished, true),
+        inArray(listings.id, listingIds)
+      ));
 
     const cartItems = validListings.map(l => {
       let priceCents = l.priceCents;
