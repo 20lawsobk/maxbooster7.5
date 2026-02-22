@@ -1,13 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { storage } from '../storage';
 import { logger } from '../logger.js';
-
-// AUDIT NOTE: A CircuitBreaker class exists at server/infrastructure/circuitBreaker.ts but is not
-// integrated with LabelGrid API calls. For improved resilience in production, consider:
-// 1. Import and wrap API calls with circuit breaker pattern
-// 2. Configure failure thresholds based on SLA requirements
-// 3. Add metrics collection for circuit breaker state changes
-// TODO: Integrate circuit breaker pattern for LabelGrid API calls to prevent cascade failures
+import { CircuitBreaker } from '../infrastructure/circuitBreaker';
 
 export interface LabelGridRelease {
   title: string;
@@ -215,6 +209,7 @@ class LabelGridService {
   private configLoaded: boolean = false;
   private maxRetries: number = 3;
   private baseDelay: number = 1000;
+  private circuitBreaker: CircuitBreaker;
 
   constructor() {
     this.apiToken = process.env.LABELGRID_API_TOKEN;
@@ -222,6 +217,13 @@ class LabelGridService {
     this.webhookSecret = process.env.LABELGRID_WEBHOOK_SECRET;
     this.endpoints = {};
     this.authHeaderFormat = 'Bearer {token}';
+
+    this.circuitBreaker = new CircuitBreaker('labelgrid-api', {
+      failureThreshold: 5,
+      successThreshold: 2,
+      timeout: 30000,
+      resetTimeout: 60000,
+    });
 
     if (!this.apiToken) {
       logger.warn(
@@ -249,6 +251,19 @@ class LabelGridService {
         return Promise.reject(error);
       }
     );
+
+    // Wrap the axios adapter with circuit breaker so all API calls are
+    // automatically protected — opens after 5 consecutive failures, resets after 60s.
+    const originalAdapter = this.client.defaults.adapter;
+    const cb = this.circuitBreaker;
+    this.client.defaults.adapter = async (config: any) => {
+      return cb.execute(
+        () => (originalAdapter as any)(config),
+        async () => {
+          throw new Error('LabelGrid API circuit breaker is open - service temporarily unavailable');
+        }
+      );
+    };
 
     // Load config from database on initialization
     this.loadConfig();

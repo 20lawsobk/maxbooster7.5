@@ -214,6 +214,52 @@ const REQUIRED_INDEXES: IndexDefinition[] = [
     columns: ['stripe_subscription_id'],
     description: 'Fast subscription lookup by Stripe subscription ID in billing routes',
   },
+
+  // system_logs — write-heavy audit table; indexes support log pruning and dashboard queries
+  {
+    name: 'idx_system_logs_timestamp',
+    table: 'system_logs',
+    columns: ['timestamp'],
+    description: 'Time-range queries and oldest-first pruning on system_logs',
+  },
+  {
+    name: 'idx_system_logs_level',
+    table: 'system_logs',
+    columns: ['level'],
+    description: 'Fast filter by log level (ERROR, WARN, INFO) in monitoring dashboards',
+  },
+  {
+    name: 'idx_system_logs_user_id',
+    table: 'system_logs',
+    columns: ['user_id'],
+    description: 'Per-user audit log queries',
+  },
+
+  // music_workflow_automations
+  {
+    name: 'idx_music_workflow_automations_user_id',
+    table: 'music_workflow_automations',
+    columns: ['user_id'],
+    description: 'Fast lookup of all automations for a given user',
+  },
+  {
+    name: 'idx_music_workflow_execution_logs_template_id',
+    table: 'music_workflow_execution_logs',
+    columns: ['template_id'],
+    description: 'Execution history lookup per workflow template',
+  },
+  {
+    name: 'idx_music_workflow_execution_logs_user_id',
+    table: 'music_workflow_execution_logs',
+    columns: ['user_id'],
+    description: 'Per-user execution history queries',
+  },
+  {
+    name: 'idx_music_workflow_execution_logs_executed_at',
+    table: 'music_workflow_execution_logs',
+    columns: ['executed_at'],
+    description: 'Time-ordered execution log queries',
+  },
 ];
 
 export interface IndexCreationResult {

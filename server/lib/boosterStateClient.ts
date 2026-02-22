@@ -11,10 +11,18 @@ function logWarnOnce(msg: string) {
   }
 }
 
+function authHeaders(): Record<string, string> {
+  const secret = process.env.BOOSTERSTATE_SECRET;
+  if (secret) {
+    return { Authorization: `Bearer ${secret}` };
+  }
+  return {};
+}
+
 async function post(path: string, body: Record<string, any>): Promise<any> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -33,7 +41,7 @@ export class BoosterStateClient {
 
   async connect(): Promise<void> {
     try {
-      const res = await fetch(`${BASE_URL}/ping`);
+      const res = await fetch(`${BASE_URL}/ping`, { headers: authHeaders() });
       if (res.ok) {
         this._isOpen = true;
         logger.info('✅ BoosterState client connected');
@@ -46,7 +54,7 @@ export class BoosterStateClient {
 
   async ping(): Promise<string> {
     try {
-      const res = await fetch(`${BASE_URL}/ping`);
+      const res = await fetch(`${BASE_URL}/ping`, { headers: authHeaders() });
       return await res.text();
     } catch {
       logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
@@ -264,7 +272,7 @@ export async function getBoosterStateClient(): Promise<BoosterStateClient | null
 
 export async function isBoosterStateHealthy(): Promise<boolean> {
   try {
-    const res = await fetch(`${BASE_URL}/health`);
+    const res = await fetch(`${BASE_URL}/health`, { headers: authHeaders() });
     if (!res.ok) return false;
     const data = await res.json();
     return data.status === 'ok';
