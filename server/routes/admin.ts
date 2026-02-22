@@ -104,6 +104,39 @@ adminRouter.get("/users", async (req, res) => {
   }
 });
 
+adminRouter.get("/users/export", async (req, res) => {
+  try {
+    const pageSize = Math.min(parseInt(req.query.limit as string) || 1000, 5000);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+
+    const [exportedUsers, totalResult] = await Promise.all([
+      db.select({
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        subscriptionTier: users.subscriptionTier,
+        subscriptionStatus: users.subscriptionStatus,
+        createdAt: users.createdAt,
+      }).from(users).orderBy(desc(users.createdAt)).limit(pageSize).offset(offset),
+      db.select({ count: count() }).from(users),
+    ]);
+
+    const total = Number(totalResult[0]?.count ?? 0);
+
+    res.json({
+      users: exportedUsers,
+      exportedAt: new Date().toISOString(),
+      pagination: { total, limit: pageSize, offset, hasMore: offset + pageSize < total },
+    });
+  } catch (error) {
+    logger.error("Error exporting users:", error);
+    res.status(500).json({ error: "Failed to export users" });
+  }
+});
+
 adminRouter.get("/users/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -701,30 +734,6 @@ adminRouter.get("/activity", async (req, res) => {
   } catch (error) {
     logger.error("Error fetching activity:", error);
     res.status(500).json({ error: "Failed to fetch activity" });
-  }
-});
-
-adminRouter.get("/users/export", async (req, res) => {
-  try {
-    const allUsers = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        username: users.username,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        subscriptionTier: users.subscriptionTier,
-        subscriptionStatus: users.subscriptionStatus,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .orderBy(desc(users.createdAt));
-
-    res.json({ users: allUsers, exportedAt: new Date().toISOString() });
-  } catch (error) {
-    logger.error("Error exporting users:", error);
-    res.status(500).json({ error: "Failed to export users" });
   }
 });
 

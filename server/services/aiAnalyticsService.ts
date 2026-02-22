@@ -218,67 +218,62 @@ export async function predictMetric(params: PredictMetricRequest): Promise<Predi
   };
 }
 
+// 5-minute in-process cache — prevents repeated full-table scans on every admin request
+const _churnCache: { data: ChurnPredictionResponse | null; expiresAt: number } = {
+  data: null,
+  expiresAt: 0,
+};
+const CHURN_CACHE_TTL_MS = 5 * 60 * 1000;
+
 /**
- * TODO: Add function documentation
+ * Predicts at-risk users using a single aggregated SQL query.
+ * Replaces a prior O(N×5) N+1 pattern (5 sequential DB queries per user, no limit).
+ * Now: 1 query, capped at 1000 users, cached for 5 minutes.
  */
 export async function predictChurn(): Promise<ChurnPredictionResponse> {
+  if (_churnCache.data && Date.now() < _churnCache.expiresAt) {
+    return _churnCache.data;
+  }
+
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const allUsers = await db.select().from(users);
+  // Single aggregated query with LEFT JOINs — replaces the N+1 per-user loop.
+  // Scoped to users inactive for >7 days to focus analysis on truly at-risk accounts.
+  const rows = await db.execute(sql`
+    SELECT
+      u.id,
+      COALESCE(u.username, u.email) AS username,
+      COALESCE(u.updated_at, u.created_at) AS last_active,
+      COALESCE(SUM(CASE WHEN p.created_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_projects,
+      COALESCE(SUM(CASE WHEN p.created_at >= ${thirtyDaysAgo} AND p.created_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_projects,
+      COALESCE(SUM(CASE WHEN po.published_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_posts,
+      COALESCE(SUM(CASE WHEN po.published_at >= ${thirtyDaysAgo} AND po.published_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_posts,
+      COALESCE(SUM(CASE WHEN s.last_activity >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_sessions
+    FROM users u
+    LEFT JOIN projects p ON p.user_id = u.id
+    LEFT JOIN posts po ON po.submitted_by = u.id
+    LEFT JOIN sessions s ON s.user_id = u.id
+    WHERE COALESCE(u.updated_at, u.created_at) < ${sevenDaysAgo}
+    GROUP BY u.id, u.username, u.email, u.updated_at, u.created_at
+    ORDER BY last_active ASC
+    LIMIT 1000
+  `);
 
   const atRiskUsers: ChurnPredictionResponse['atRiskUsers'] = [];
 
-  for (const user of allUsers) {
-    const recentProjects = await db
-      .select({ count: count() })
-      .from(projects)
-      .where(and(eq(projects.userId, user.id), gte(projects.createdAt, sevenDaysAgo)));
-
-    const oldProjects = await db
-      .select({ count: count() })
-      .from(projects)
-      .where(
-        and(
-          eq(projects.userId, user.id),
-          gte(projects.createdAt, thirtyDaysAgo),
-          lte(projects.createdAt, sevenDaysAgo)
-        )
-      );
-
-    const recentPosts = await db
-      .select({ count: count() })
-      .from(posts)
-      .where(and(eq(posts.submittedBy, user.id), gte(posts.publishedAt, sevenDaysAgo)));
-
-    const oldPosts = await db
-      .select({ count: count() })
-      .from(posts)
-      .where(
-        and(
-          eq(posts.submittedBy, user.id),
-          gte(posts.publishedAt, thirtyDaysAgo),
-          lte(posts.publishedAt, sevenDaysAgo)
-        )
-      );
-
-    const recentSessions = await db
-      .select({ count: count() })
-      .from(sessions)
-      .where(and(eq(sessions.userId, user.id), gte(sessions.lastActivity, sevenDaysAgo)));
-
-    const recentProjectCount = Number(recentProjects[0]?.count || 0);
-    const oldProjectCount = Number(oldProjects[0]?.count || 0);
-    const recentPostCount = Number(recentPosts[0]?.count || 0);
-    const oldPostCount = Number(oldPosts[0]?.count || 0);
-    const recentSessionCount = Number(recentSessions[0]?.count || 0);
-
-    const recentActivityScore = recentProjectCount * 3 + recentPostCount * 2 + recentSessionCount;
-    const oldActivityScore = oldProjectCount * 3 + oldPostCount * 2;
-
-    const lastActive = user.updatedAt || user.createdAt;
+  for (const row of (rows as any).rows ?? rows) {
+    const lastActive = new Date(row.last_active as string);
     const daysSinceActive = (now.getTime() - lastActive.getTime()) / (24 * 60 * 60 * 1000);
+    const recentProjects = Number(row.recent_projects ?? 0);
+    const oldProjects = Number(row.old_projects ?? 0);
+    const recentPosts = Number(row.recent_posts ?? 0);
+    const oldPosts = Number(row.old_posts ?? 0);
+    const recentSessions = Number(row.recent_sessions ?? 0);
+
+    const recentActivityScore = recentProjects * 3 + recentPosts * 2 + recentSessions;
+    const oldActivityScore = oldProjects * 3 + oldPosts * 2;
 
     let churnProbability = 0;
     let reason = '';
@@ -286,7 +281,7 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
     if (recentActivityScore === 0 && daysSinceActive > 14) {
       churnProbability = 0.9;
       reason = 'low_activity';
-    } else if (recentProjectCount === 0 && daysSinceActive > 7) {
+    } else if (recentProjects === 0 && daysSinceActive > 7) {
       churnProbability = 0.7;
       reason = 'no_uploads';
     } else if (oldActivityScore > 0 && recentActivityScore < oldActivityScore * 0.5) {
@@ -296,8 +291,8 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
 
     if (churnProbability > 0.5) {
       atRiskUsers.push({
-        userId: user.id,
-        username: user.username || user.email,
+        userId: row.id as string,
+        username: row.username as string,
         churnProbability: Number(churnProbability.toFixed(2)),
         reason,
         lastActiveDate: lastActive.toISOString().split('T')[0],
@@ -305,10 +300,15 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
     }
   }
 
-  return {
+  const result: ChurnPredictionResponse = {
     atRiskUsers: atRiskUsers.sort((a, b) => b.churnProbability - a.churnProbability),
     totalAtRisk: atRiskUsers.length,
   };
+
+  _churnCache.data = result;
+  _churnCache.expiresAt = Date.now() + CHURN_CACHE_TTL_MS;
+
+  return result;
 }
 
 /**

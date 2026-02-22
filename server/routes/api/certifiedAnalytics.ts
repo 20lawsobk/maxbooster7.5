@@ -12,7 +12,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 const getUserId = (req: AuthenticatedRequest): string | null => {
-  return req.user?.id || (req.query.userId as string) || null;
+  return req.user?.id ?? null;
 };
 
 router.get('/streams{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {

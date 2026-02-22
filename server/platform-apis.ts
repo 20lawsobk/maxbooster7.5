@@ -14,6 +14,8 @@ import {
 } from './services/externalServices.js';
 import { CircuitBreakerError, TimeoutError } from './services/circuitBreaker.js';
 
+axios.defaults.timeout = 10000;
+
 type PublishResult = {
   platform: string;
   success: boolean;

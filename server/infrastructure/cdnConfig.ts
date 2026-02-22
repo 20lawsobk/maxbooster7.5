@@ -118,6 +118,7 @@ class CDNManager {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ files: paths }),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (response.ok) {
@@ -147,6 +148,7 @@ class CDNManager {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ purge_everything: true }),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (response.ok) {

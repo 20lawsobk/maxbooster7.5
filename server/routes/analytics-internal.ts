@@ -96,9 +96,14 @@ router.post('/ai/predict-metric', async (req: Request, res: Response) => {
   }
 });
 
+// 5-minute cache for churn predictions — avoids repeated scans on every admin refresh
+const _churnPredictCache: { data: any | null; expiresAt: number } = { data: null, expiresAt: 0 };
+
 /**
  * GET /api/analytics/ai/predict-churn
- * Predict users at risk of churning (admin only)
+ * Predict users at risk of churning (admin only).
+ * Uses a single aggregated LEFT JOIN query — replaces prior O(N) N+1 per-user loop.
+ * Cached for 5 minutes so repeated admin page refreshes don't re-scan the DB.
  */
 router.get('/ai/predict-churn', async (req: Request, res: Response) => {
   try {
@@ -109,86 +114,66 @@ router.get('/ai/predict-churn', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Admin can see all users, regular users see empty (for now)
     if (!isAdmin) {
       return res.json({ atRiskUsers: [] });
     }
 
-    // Get all paid users
-    const paidUsers = await db
-      .select({
-        id: users.id,
-        username: users.username,
-        email: users.email,
-        createdAt: users.createdAt,
-        subscriptionTier: users.subscriptionTier,
-      })
-      .from(users)
-      .where(
-        sql`${users.subscriptionTier} IN ('monthly', 'yearly', 'lifetime')`
-      )
-      .limit(100);
+    if (_churnPredictCache.data && Date.now() < _churnPredictCache.expiresAt) {
+      return res.json(_churnPredictCache.data);
+    }
 
-    // Analyze each user for churn risk
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Single aggregated query replacing O(N) per-user loop
+    const rows = await db.execute(sql`
+      SELECT
+        u.id,
+        COALESCE(u.username, 'Unknown') AS username,
+        u.email,
+        u.created_at,
+        u.subscription_tier,
+        COALESCE(COUNT(sc.id), 0)::int AS activity_score
+      FROM users u
+      LEFT JOIN social_campaigns sc
+        ON sc.user_id = u.id AND sc.created_at >= ${thirtyDaysAgo}
+      WHERE u.subscription_tier IN ('monthly', 'yearly', 'lifetime')
+      GROUP BY u.id, u.username, u.email, u.created_at, u.subscription_tier
+      LIMIT 500
+    `);
+
     const atRiskUsers = [];
-    for (const user of paidUsers) {
-      // Check recent activity (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    for (const row of (rows as any).rows ?? rows) {
+      const activityScore = Number(row.activity_score ?? 0);
 
-      const [recentActivity] = await db
-        .select({
-          postCount: count(socialCampaigns.id),
-        })
-        .from(socialCampaigns)
-        .where(
-          and(
-            eq(socialCampaigns.userId, user.id),
-            gte(socialCampaigns.createdAt, thirtyDaysAgo)
-          )
-        );
-
-      const activityScore = (recentActivity?.postCount || 0) as number;
-      
-      // Simple churn prediction based on activity
       if (activityScore === 0) {
         atRiskUsers.push({
-          userId: user.id,
-          username: user.username || 'Unknown',
-          email: user.email,
+          userId: row.id,
+          username: row.username,
+          email: row.email,
           churnProbability: 85,
           riskLevel: 'high' as const,
-          riskFactors: [
-            'No activity in last 30 days',
-            'No social media posts',
-            'Low engagement'
-          ],
-          recommendedActions: [
-            'Send re-engagement email',
-            'Offer personalized onboarding session',
-            'Highlight new features'
-          ],
+          riskFactors: ['No activity in last 30 days', 'No social media posts', 'Low engagement'],
+          recommendedActions: ['Send re-engagement email', 'Offer personalized onboarding session', 'Highlight new features'],
         });
       } else if (activityScore < 3) {
         atRiskUsers.push({
-          userId: user.id,
-          username: user.username || 'Unknown',
-          email: user.email,
+          userId: row.id,
+          username: row.username,
+          email: row.email,
           churnProbability: 60,
           riskLevel: 'medium' as const,
-          riskFactors: [
-            'Low activity in last 30 days',
-            'Declining engagement'
-          ],
-          recommendedActions: [
-            'Send engagement reminder',
-            'Share success stories'
-          ],
+          riskFactors: ['Low activity in last 30 days', 'Declining engagement'],
+          recommendedActions: ['Send engagement reminder', 'Share success stories'],
         });
       }
     }
 
-    return res.json({ atRiskUsers });
+    const result = { atRiskUsers };
+    _churnPredictCache.data = result;
+    _churnPredictCache.expiresAt = Date.now() + 5 * 60 * 1000;
+
+    return res.json(result);
   } catch (error) {
     logger.error('Error predicting churn:', error);
     return res.status(500).json({ error: 'Failed to predict churn' });

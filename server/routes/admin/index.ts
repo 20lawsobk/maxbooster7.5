@@ -263,19 +263,31 @@ router.get('/users', async (req, res) => {
 
 router.get('/users/export', async (req, res) => {
   try {
-    const allUsers = await db.select({
-      id: users.id,
-      email: users.email,
-      username: users.username,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      role: users.role,
-      subscriptionTier: users.subscriptionTier,
-      subscriptionStatus: users.subscriptionStatus,
-      createdAt: users.createdAt,
-    }).from(users).orderBy(desc(users.createdAt));
+    const pageSize = Math.min(parseInt(req.query.limit as string) || 1000, 5000);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
 
-    res.json({ users: allUsers, exportedAt: new Date().toISOString() });
+    const [exportedUsers, totalResult] = await Promise.all([
+      db.select({
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        subscriptionTier: users.subscriptionTier,
+        subscriptionStatus: users.subscriptionStatus,
+        createdAt: users.createdAt,
+      }).from(users).orderBy(desc(users.createdAt)).limit(pageSize).offset(offset),
+      db.select({ count: count() }).from(users),
+    ]);
+
+    const total = Number(totalResult[0]?.count ?? 0);
+
+    res.json({
+      users: exportedUsers,
+      exportedAt: new Date().toISOString(),
+      pagination: { total, limit: pageSize, offset, hasMore: offset + pageSize < total },
+    });
   } catch (error) {
     logger.error('Error exporting users:', error);
     res.status(500).json({ error: 'Failed to export users' });
