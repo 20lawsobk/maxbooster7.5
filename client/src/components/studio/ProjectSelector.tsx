@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Project {
   id: string;
@@ -31,9 +32,11 @@ interface ProjectSelectorProps {
 
 export function ProjectSelector({ currentProjectId, onProjectChange, className }: ProjectSelectorProps) {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
 
   const { data: projectsData, isLoading } = useQuery<ProjectsApiResponse>({
     queryKey: ['/api/projects'],
+    enabled: !!user,
   });
 
   const projects = projectsData?.data || [];

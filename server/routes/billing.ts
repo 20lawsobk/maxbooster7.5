@@ -43,7 +43,7 @@ if (!stripeSecretKey) {
 }
 
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
-  apiVersion: '2023-10-16' as any,
+  apiVersion: '2026-01-28.clover',
 }) : null;
 
 const requireStripe = (req: Request, res: Response, next: any) => {

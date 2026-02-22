@@ -196,6 +196,24 @@ const REQUIRED_INDEXES: IndexDefinition[] = [
     columns: ['posting_day_of_week', 'posting_hour'],
     description: 'Autopilot learning data posting schedule lookups',
   },
+  {
+    name: 'idx_autopilot_learning_data_user_platform',
+    table: 'autopilot_learning_data',
+    columns: ['user_id', 'platform'],
+    description: 'Composite index for HyperLearning cycle queries filtering by user and platform',
+  },
+  {
+    name: 'idx_users_stripe_customer_id',
+    table: 'users',
+    columns: ['stripe_customer_id'],
+    description: 'Fast user lookup by Stripe customer ID in webhook handlers',
+  },
+  {
+    name: 'idx_users_stripe_subscription_id',
+    table: 'users',
+    columns: ['stripe_subscription_id'],
+    description: 'Fast user lookup by Stripe subscription ID',
+  },
 ];
 
 export interface IndexCreationResult {

@@ -111,8 +111,16 @@ router.post('/extend-session', requireAuth, async (req: AuthenticatedRequest, re
       });
     }
 
+    const parsedMinutes = Number(extendMinutes);
+    if (!Number.isFinite(parsedMinutes) || parsedMinutes <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'invalid_extend_minutes',
+        message: 'extendMinutes must be a positive number'
+      });
+    }
     const maxExtendMinutes = 120;
-    const actualExtend = Math.min(extendMinutes, maxExtendMinutes);
+    const actualExtend = Math.min(parsedMinutes, maxExtendMinutes);
     const newExpiresAt = new Date(Date.now() + actualExtend * 60 * 1000);
 
     await db.update(sessions)

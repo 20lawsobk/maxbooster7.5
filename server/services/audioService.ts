@@ -97,30 +97,39 @@ export class AudioService {
     }
   }
 
-  async generateUploadUrl(userId: string, fileName: string, fileType: string): Promise<any> {
+  async generateUploadUrl(userId: string, fileName: string, fileType: string): Promise<{
+    fileId: string;
+    uploadUrl: string | null;
+    key: string;
+    fileName: string;
+    maxSize: number;
+    allowedTypes: string[];
+    expiresAt: string;
+  }> {
     try {
-      // Generate a unique file ID and upload URL
-      const fileId = randomUUID();
-      const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filePath = `uploads/${userId}/${fileId}_${sanitizedFileName}`;
-      
-      // TODO: In a real implementation, this would generate a signed URL for cloud storage
-      // For now, we'll return a structure that would be used with services like AWS S3, Google Cloud Storage, etc.
-      
-      const uploadData = {
-        fileId,
-        uploadUrl: `${process.env.BASE_URL}/api/upload/${fileId}`,
-        fileName: sanitizedFileName,
-        filePath,
-        maxSize: 100 * 1024 * 1024, // 100MB limit
-        allowedTypes: ['audio/wav', 'audio/mp3', 'audio/flac', 'audio/aac', 'audio/ogg'],
-        expiresAt: new Date(Date.now() + 3600000).toISOString(), // 1 hour
-      };
+      const allowedTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/flac', 'audio/aac', 'audio/ogg'];
+      if (!allowedTypes.includes(fileType)) {
+        throw new Error(`File type ${fileType} is not allowed. Accepted types: ${allowedTypes.join(', ')}`);
+      }
 
-      return uploadData;
+      const fileId = randomUUID();
+      const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+      const storageKey = `audio/${userId}/${fileId}_${sanitizedFileName}`;
+      const uploadUrl = await storageService.getUploadUrl(storageKey, fileType, 3600);
+
+      return {
+        fileId,
+        uploadUrl,
+        key: storageKey,
+        fileName: sanitizedFileName,
+        maxSize: 100 * 1024 * 1024,
+        allowedTypes,
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      };
     } catch (error: unknown) {
       logger.error('Error generating upload URL:', error);
-      throw new Error('Failed to generate upload URL');
+      throw error instanceof Error ? error : new Error('Failed to generate upload URL');
     }
   }
 

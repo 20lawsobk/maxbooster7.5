@@ -98,19 +98,117 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
 
 registerWebhookHandler('customer.subscription.created', async (event) => {
   const subscription = event.data.object as Stripe.Subscription;
-  logger.info(`[Stripe] Subscription created: ${subscription.id}`);
+  logger.info(`[Stripe] Subscription created: ${subscription.id} - Status: ${subscription.status}`);
+
+  try {
+    const { users } = await import('@shared/schema');
+    const { db } = await import('../../db');
+    const { eq } = await import('drizzle-orm');
+
+    const customerId = typeof subscription.customer === 'string'
+      ? subscription.customer
+      : subscription.customer.id;
+
+    const tier = subscription.metadata?.planId || 'monthly';
+    const endsAt = subscription.current_period_end
+      ? new Date(subscription.current_period_end * 1000)
+      : null;
+
+    const updated = await db.update(users)
+      .set({
+        subscriptionTier: tier,
+        subscriptionStatus: subscription.status,
+        subscriptionEndsAt: endsAt,
+        stripeSubscriptionId: subscription.id,
+      })
+      .where(eq(users.stripeCustomerId, customerId))
+      .returning({ id: users.id });
+
+    if (updated.length > 0) {
+      logger.info(`[Stripe] User ${updated[0].id} subscription created: tier=${tier}, status=${subscription.status}`);
+    } else {
+      logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.created`);
+    }
+  } catch (err) {
+    logger.error('[Stripe] Failed to update user on subscription.created:', err);
+  }
+
   return { success: true, message: 'Subscription created' };
 });
 
 registerWebhookHandler('customer.subscription.updated', async (event) => {
   const subscription = event.data.object as Stripe.Subscription;
   logger.info(`[Stripe] Subscription updated: ${subscription.id} - Status: ${subscription.status}`);
+
+  try {
+    const { users } = await import('@shared/schema');
+    const { db } = await import('../../db');
+    const { eq } = await import('drizzle-orm');
+
+    const customerId = typeof subscription.customer === 'string'
+      ? subscription.customer
+      : subscription.customer.id;
+
+    const tier = subscription.metadata?.planId || 'monthly';
+    const endsAt = subscription.current_period_end
+      ? new Date(subscription.current_period_end * 1000)
+      : null;
+
+    const updated = await db.update(users)
+      .set({
+        subscriptionTier: tier,
+        subscriptionStatus: subscription.status,
+        subscriptionEndsAt: endsAt,
+        stripeSubscriptionId: subscription.id,
+      })
+      .where(eq(users.stripeCustomerId, customerId))
+      .returning({ id: users.id });
+
+    if (updated.length > 0) {
+      logger.info(`[Stripe] User ${updated[0].id} subscription updated: tier=${tier}, status=${subscription.status}`);
+    } else {
+      logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.updated`);
+    }
+  } catch (err) {
+    logger.error('[Stripe] Failed to update user on subscription.updated:', err);
+  }
+
   return { success: true, message: 'Subscription updated' };
 });
 
 registerWebhookHandler('customer.subscription.deleted', async (event) => {
   const subscription = event.data.object as Stripe.Subscription;
   logger.info(`[Stripe] Subscription canceled: ${subscription.id}`);
+
+  try {
+    const { users } = await import('@shared/schema');
+    const { db } = await import('../../db');
+    const { eq } = await import('drizzle-orm');
+
+    const customerId = typeof subscription.customer === 'string'
+      ? subscription.customer
+      : subscription.customer.id;
+
+    const updated = await db.update(users)
+      .set({
+        subscriptionTier: 'free',
+        subscriptionStatus: 'canceled',
+        subscriptionEndsAt: subscription.ended_at
+          ? new Date(subscription.ended_at * 1000)
+          : new Date(),
+      })
+      .where(eq(users.stripeCustomerId, customerId))
+      .returning({ id: users.id });
+
+    if (updated.length > 0) {
+      logger.info(`[Stripe] User ${updated[0].id} subscription canceled, downgraded to free`);
+    } else {
+      logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.deleted`);
+    }
+  } catch (err) {
+    logger.error('[Stripe] Failed to update user on subscription.deleted:', err);
+  }
+
   return { success: true, message: 'Subscription canceled' };
 });
 

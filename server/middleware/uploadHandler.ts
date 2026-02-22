@@ -375,14 +375,10 @@ export async function generateUploadUrl(
     const name = path.basename(safeFilename, path.extname(safeFilename));
     const sanitizedFilename = `${timestamp}_${name}${ext}`;
 
-    const { url, key } = await storageService.getUploadUrl(
-      `${category}/${userId}`,
-      sanitizedFilename,
-      contentType,
-      3600
-    );
+    const key = `${category}/${userId}/${sanitizedFilename}`;
+    const uploadUrl = await storageService.getUploadUrl(key, contentType, 3600);
 
-    return { uploadUrl: url, key };
+    return { uploadUrl, key };
   } catch (error: unknown) {
     logger.error('Error generating upload URL:', error);
     throw error instanceof Error ? error : new Error('Failed to generate upload URL');
