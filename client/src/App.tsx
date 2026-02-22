@@ -73,6 +73,7 @@ const ReleaseCountdown = lazy(() => import('@/pages/ReleaseCountdown'));
 const Invoices = lazy(() => import('@/pages/Invoices'));
 const HandleLink = lazy(() => import('@/pages/HandleLink'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
+const MusicWorkflowAutomations = lazy(() => import('@/pages/MusicWorkflowAutomations'));
 
 function Router() {
   return (
@@ -133,6 +134,7 @@ function Router() {
       <Route path="/invoices" component={Invoices} />
       <Route path="/handle-link" component={HandleLink} />
       <Route path="/notifications" component={Notifications} />
+      <Route path="/workflow-automations" component={MusicWorkflowAutomations} />
       <Route component={NotFound} />
     </Switch>
   );

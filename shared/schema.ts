@@ -4114,6 +4114,38 @@ export const filterPresets = pgTable("filter_presets", {
 export type FilterPreset = typeof filterPresets.$inferSelect;
 
 // ============================================================================
+// MUSIC WORKFLOW AUTOMATIONS
+// Per-user optional automation configs covering the full music artist journey
+// ============================================================================
+export const musicWorkflowAutomations = pgTable("music_workflow_automations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  templateId: varchar("template_id").notNull(),
+  enabled: boolean("enabled").notNull().default(false),
+  config: jsonb("config").notNull().default(sql`'{}'::jsonb`),
+  lastTriggeredAt: timestamp("last_triggered_at"),
+  triggerCount: integer("trigger_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type MusicWorkflowAutomation = typeof musicWorkflowAutomations.$inferSelect;
+export type InsertMusicWorkflowAutomation = typeof musicWorkflowAutomations.$inferInsert;
+
+export const musicWorkflowExecutionLogs = pgTable("music_workflow_execution_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  templateId: varchar("template_id").notNull(),
+  eventType: varchar("event_type").notNull(),
+  status: varchar("status").notNull().default("success"),
+  result: jsonb("result"),
+  error: text("error"),
+  executedAt: timestamp("executed_at").defaultNow().notNull(),
+});
+
+export type MusicWorkflowExecutionLog = typeof musicWorkflowExecutionLogs.$inferSelect;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });

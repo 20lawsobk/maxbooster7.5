@@ -3753,5 +3753,14 @@ export async function registerRoutes(
     log(`Warning: Could not load collaboration routes - ${error.message}`);
   }
 
+  // Music Workflow Automations routes
+  try {
+    const musicWorkflowRouter = (await import('./routes/musicWorkflowAutomations.js')).default;
+    app.use('/api/music-workflow-automations', musicWorkflowRouter);
+    log('Loaded route: musicWorkflowAutomations');
+  } catch (error: any) {
+    log(`Warning: Could not load musicWorkflowAutomations routes - ${error.message}`);
+  }
+
   return httpServer;
 }

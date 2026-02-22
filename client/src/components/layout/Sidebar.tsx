@@ -22,6 +22,7 @@ import {
   Timer,
   Receipt,
   ShieldCheck,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ const navItems: NavItem[] = [
   { labelKey: 'navigation.workspaces', path: '/workspaces', icon: Building2 },
   { labelKey: 'navigation.releaseCountdown', path: '/release-countdown', icon: Timer },
   { labelKey: 'navigation.careerCoach', path: '/career-coach', icon: Brain },
+  { labelKey: 'navigation.workflowAutomations', path: '/workflow-automations', icon: Zap },
   { labelKey: 'navigation.invoices', path: '/invoices', icon: Receipt },
   { labelKey: 'navigation.verification', path: '/verification', icon: ShieldCheck },
   { labelKey: 'navigation.adminPanel', path: '/admin', icon: Shield, adminOnly: true },
