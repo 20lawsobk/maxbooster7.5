@@ -3,6 +3,7 @@ import { logger } from '../logger.js';
 import { SocialMediaAutopilotAI } from '../../shared/ml/models/SocialMediaAutopilotAI.js';
 import { AdvertisingAutopilotAI_v3 } from '../../shared/ml/models/AdvertisingAutopilotAI_v3.js';
 import { aiModelTelemetry } from '../monitoring/aiModelTelemetry.js';
+import { loadSocialBaseState, loadAdvertisingBaseState } from './baseModelTrainer.js';
 
 /**
  * AI Model Manager
@@ -87,14 +88,25 @@ class AIModelManager {
       }
     }
 
-    // Try to train on user's data if not yet trained
+    // No persisted model — seed with base training knowledge before user-specific training.
+    // This gives every new user the organic-as-ads intelligence from day one
+    // rather than starting from random weights.
     if (!persistedModel) {
+      try {
+        const baseState = loadSocialBaseState();
+        if (baseState?.state) {
+          model.deserializeMetadata(baseState.state);
+          logger.info(`[AIModelManager] Seeded Social AI for user ${userId} with base training knowledge`);
+        }
+      } catch (err) {
+        logger.warn(`[AIModelManager] Could not apply Social base state for user ${userId}:`, err);
+      }
+
+      // Train on user's own data on top of the base state if enough data exists
       try {
         const posts = await storage.getUserSocialPosts(userId);
         if (posts && posts.length >= 50) {
           await model.trainOnUserEngagementData(posts);
-          
-          // Persist trained model
           await this.persistSocialModel(userId, model);
           logger.info(`✅ Trained and persisted Social AI model for user ${userId} (${posts.length} posts)`);
         }
@@ -164,14 +176,25 @@ class AIModelManager {
       }
     }
 
-    // Try to train on user's data if not yet trained
+    // No persisted model — seed with base training knowledge (organic-as-ads strategy).
+    // Every new user's Advertising AI starts knowing how to replicate paid ad results
+    // using algorithm exploitation, funnel replication, and cross-platform burst coordination.
     if (!persistedModel) {
+      try {
+        const baseState = loadAdvertisingBaseState();
+        if (baseState?.state) {
+          model.deserializeMetadata(baseState.state);
+          logger.info(`[AIModelManager] Seeded Advertising AI for user ${userId} with organic-as-ads base knowledge`);
+        }
+      } catch (err) {
+        logger.warn(`[AIModelManager] Could not apply Advertising base state for user ${userId}:`, err);
+      }
+
+      // Train on user's own campaigns on top of the base state if enough data exists
       try {
         const campaigns = await storage.getOrganicCampaigns(userId);
         if (campaigns && campaigns.length >= 30) {
           await model.trainOnOrganicCampaigns(campaigns);
-          
-          // Persist trained model
           await this.persistAdvertisingModel(userId, model);
           logger.info(`✅ Trained and persisted Advertising AI model for user ${userId} (${campaigns.length} campaigns)`);
         }

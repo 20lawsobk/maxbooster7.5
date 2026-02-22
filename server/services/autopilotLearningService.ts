@@ -526,7 +526,7 @@ class AutopilotLearningService {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const postCount = await db
+      const [postCount] = await db
         .select({ count: count() })
         .from(autopilotLearningData)
         .where(
@@ -536,13 +536,69 @@ class AutopilotLearningService {
           )
         );
 
-      const total = Number(postCount[0]?.count || 0);
+      const total = Number(postCount?.count || 0);
 
+      // Regenerate DB insights every 5 new posts once past 10
       if (total >= 10 && total % 5 === 0) {
         await this.generateInsights(userId);
       }
+
+      // Retrain the Social ML model on real user data every 25 new posts once past 50.
+      // This refines the model beyond the base training to the specific user's audience
+      // and content style — the more they use it, the more personalised it becomes.
+      if (total >= 50 && total % 25 === 0) {
+        this.retrainSocialModelAsync(userId, total).catch(err =>
+          logger.warn(`[AutopilotLearning] Social retrain skipped for ${userId}:`, err)
+        );
+      }
     } catch (error) {
       logger.error('Failed to check insights update:', error);
+    }
+  }
+
+  /**
+   * Retrains the Social Media Autopilot on the user's accumulated performance data.
+   * Runs async (fire-and-forget from the request path) to avoid blocking API responses.
+   * Uses a dynamic import of aiModelManager to prevent circular dependency.
+   */
+  private async retrainSocialModelAsync(userId: string, dataPoints: number): Promise<void> {
+    try {
+      // Fetch all learning records and convert to SocialPost format for the ML model
+      const records = await db
+        .select()
+        .from(autopilotLearningData)
+        .where(eq(autopilotLearningData.userId, userId))
+        .orderBy(desc(autopilotLearningData.createdAt))
+        .limit(500);
+
+      if (records.length < 50) return;
+
+      const posts = records.map((r, i) => ({
+        postId: r.postId || `learning_${r.id}`,
+        platform: r.platform,
+        content: r.contentText || `${r.contentType || 'post'} on ${r.platform}`,
+        mediaType: (r.mediaType as 'text' | 'image' | 'video' | 'carousel') || 'text',
+        postedAt: new Date(r.createdAt || Date.now() - i * 3600000),
+        likes: r.likes || 0,
+        comments: r.comments || 0,
+        shares: r.shares || 0,
+        reach: r.reach || r.impressions || 0,
+        engagement: (r.likes || 0) + (r.comments || 0) + (r.shares || 0) + (r.saves || 0),
+        hashtagCount: Array.isArray(r.hashtags) ? r.hashtags.length : 0,
+        mentionCount: 0,
+        emojiCount: 0,
+        contentLength: (r.contentText || '').length,
+        hasCallToAction: false,
+      }));
+
+      const { aiModelManager } = await import('./aiModelManager.js');
+      const socialModel = await aiModelManager.getSocialAutopilot(userId);
+      await socialModel.trainOnUserEngagementData(posts);
+      await aiModelManager.saveSocialModel(userId);
+
+      logger.info(`[AutopilotLearning] Social AI retrained for user ${userId} — ${posts.length} real data points (total tracked: ${dataPoints})`);
+    } catch (err) {
+      logger.warn(`[AutopilotLearning] Social retraining failed for ${userId}:`, err instanceof Error ? err.message : String(err));
     }
   }
 
