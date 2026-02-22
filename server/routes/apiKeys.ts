@@ -1,6 +1,7 @@
 import { Router, Request, Response, RequestHandler } from 'express';
 import { db } from '../db.js';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { apiKeys } from '@shared/schema';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
 
@@ -15,26 +16,6 @@ const requireAuth: RequestHandler = (req, res, next) => {
 
 router.use(requireAuth);
 
-interface ApiKeyRecord {
-  id: string;
-  userId: string;
-  name: string;
-  keyHash: string;
-  keyPreview: string;
-  scopes: string[];
-  createdAt: Date;
-  lastUsedAt?: Date;
-  expiresAt?: Date;
-  status: 'active' | 'expired' | 'revoked';
-  rateLimit: {
-    requests: number;
-    period: string;
-    used: number;
-  };
-}
-
-const userApiKeys: Map<string, ApiKeyRecord[]> = new Map();
-
 const generateApiKey = (): string => {
   const prefix = 'mb_';
   const key = crypto.randomBytes(32).toString('base64url');
@@ -45,28 +26,35 @@ const hashApiKey = (key: string): string => {
   return crypto.createHash('sha256').update(key).digest('hex');
 };
 
-const getKeyPreview = (key: string): string => {
+const getKeyPrefix = (key: string): string => {
   return `${key.substring(0, 7)}...${key.substring(key.length - 4)}`;
 };
 
 router.get('/', async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
-    const keys = userApiKeys.get(userId) || [];
-    
-    const safeKeys = keys.map(key => ({
-      id: key.id,
-      name: key.name,
-      keyPreview: key.keyPreview,
-      createdAt: key.createdAt.toISOString(),
-      lastUsedAt: key.lastUsedAt?.toISOString(),
-      expiresAt: key.expiresAt?.toISOString(),
-      scopes: key.scopes,
-      status: key.status,
-      rateLimit: key.rateLimit,
+    const rows = await db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.userId, userId));
+
+    const result = rows.map(k => ({
+      id: k.id,
+      name: k.name,
+      keyPreview: k.keyPrefix,
+      createdAt: k.createdAt?.toISOString() ?? null,
+      lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
+      expiresAt: k.expiresAt?.toISOString() ?? null,
+      scopes: k.scopes ?? ['read'],
+      status: k.isActive ? 'active' : 'revoked',
+      rateLimit: {
+        requests: k.rateLimit ?? 1000,
+        period: 'hour',
+        used: 0,
+      },
     }));
-    
-    res.json(safeKeys);
+
+    res.json(result);
   } catch (error) {
     logger.error('Error fetching API keys:', error);
     res.status(500).json({ error: 'Failed to fetch API keys' });
@@ -77,42 +65,40 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     const { name, scopes = ['read'] } = req.body;
-    
+
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return res.status(400).json({ error: 'Key name is required' });
     }
-    
+
+    const trimmedName = name.trim().substring(0, 100);
+    const validScopes = Array.isArray(scopes)
+      ? scopes.filter((s: any) => typeof s === 'string')
+      : ['read'];
+
     const rawKey = generateApiKey();
     const keyHash = hashApiKey(rawKey);
-    const keyPreview = getKeyPreview(rawKey);
-    
-    const newKey: ApiKeyRecord = {
-      id: crypto.randomUUID(),
-      userId,
-      name: name.trim(),
-      keyHash,
-      keyPreview,
-      scopes: Array.isArray(scopes) ? scopes : ['read'],
-      createdAt: new Date(),
-      status: 'active',
-      rateLimit: {
-        requests: 1000,
-        period: 'hour',
-        used: 0,
-      },
-    };
-    
-    const existingKeys = userApiKeys.get(userId) || [];
-    existingKeys.push(newKey);
-    userApiKeys.set(userId, existingKeys);
-    
+    const keyPrefix = getKeyPrefix(rawKey);
+
+    const [inserted] = await db
+      .insert(apiKeys)
+      .values({
+        userId,
+        name: trimmedName,
+        keyHash,
+        keyPrefix,
+        scopes: validScopes,
+        rateLimit: 1000,
+        isActive: true,
+      })
+      .returning();
+
     res.status(201).json({
-      id: newKey.id,
-      name: newKey.name,
+      id: inserted.id,
+      name: inserted.name,
       key: rawKey,
-      keyPreview: newKey.keyPreview,
-      createdAt: newKey.createdAt.toISOString(),
-      scopes: newKey.scopes,
+      keyPreview: inserted.keyPrefix,
+      createdAt: inserted.createdAt?.toISOString(),
+      scopes: inserted.scopes ?? ['read'],
     });
   } catch (error) {
     logger.error('Error creating API key:', error);
@@ -124,17 +110,17 @@ router.delete('/:keyId', async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     const { keyId } = req.params;
-    
-    const keys = userApiKeys.get(userId) || [];
-    const keyIndex = keys.findIndex(k => k.id === keyId);
-    
-    if (keyIndex === -1) {
+
+    const [updated] = await db
+      .update(apiKeys)
+      .set({ isActive: false })
+      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
+      .returning({ id: apiKeys.id });
+
+    if (!updated) {
       return res.status(404).json({ error: 'API key not found' });
     }
-    
-    keys[keyIndex].status = 'revoked';
-    userApiKeys.set(userId, keys);
-    
+
     res.json({ message: 'API key revoked successfully' });
   } catch (error) {
     logger.error('Error revoking API key:', error);
@@ -146,40 +132,39 @@ router.post('/:keyId/regenerate', async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     const { keyId } = req.params;
-    
-    const keys = userApiKeys.get(userId) || [];
-    const keyIndex = keys.findIndex(k => k.id === keyId);
-    
-    if (keyIndex === -1) {
+
+    const [existing] = await db
+      .select({ id: apiKeys.id })
+      .from(apiKeys)
+      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)));
+
+    if (!existing) {
       return res.status(404).json({ error: 'API key not found' });
     }
-    
-    const existingKey = keys[keyIndex];
+
     const rawKey = generateApiKey();
     const keyHash = hashApiKey(rawKey);
-    const keyPreview = getKeyPreview(rawKey);
-    
-    keys[keyIndex] = {
-      ...existingKey,
-      keyHash,
-      keyPreview,
-      createdAt: new Date(),
-      lastUsedAt: undefined,
-      rateLimit: {
-        ...existingKey.rateLimit,
-        used: 0,
-      },
-    };
-    
-    userApiKeys.set(userId, keys);
-    
+    const keyPrefix = getKeyPrefix(rawKey);
+
+    const [updated] = await db
+      .update(apiKeys)
+      .set({
+        keyHash,
+        keyPrefix,
+        lastUsedAt: null,
+        createdAt: new Date(),
+        isActive: true,
+      })
+      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
+      .returning();
+
     res.json({
-      id: keys[keyIndex].id,
-      name: keys[keyIndex].name,
+      id: updated.id,
+      name: updated.name,
       key: rawKey,
-      keyPreview: keys[keyIndex].keyPreview,
-      createdAt: keys[keyIndex].createdAt.toISOString(),
-      scopes: keys[keyIndex].scopes,
+      keyPreview: updated.keyPrefix,
+      createdAt: updated.createdAt?.toISOString(),
+      scopes: updated.scopes ?? ['read'],
     });
   } catch (error) {
     logger.error('Error regenerating API key:', error);
