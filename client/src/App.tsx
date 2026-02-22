@@ -17,7 +17,7 @@ import { ShortcutGuide, QuickActionBar } from '@/components/shortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
-import { setupLinkPrefetching, prefetchAdjacentRoutes } from '@/lib/prefetch';
+import { setupLinkPrefetching, prefetchAdjacentRoutes, setAuthState } from '@/lib/prefetch';
 import Landing from '@/pages/Landing';
 const Login = lazy(() => import('@/pages/Login'));
 const Register = lazy(() => import('@/pages/Register'));
@@ -143,6 +143,11 @@ function Router() {
 function AppWithKeyboardShortcuts() {
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    setAuthState(!!user);
+  }, [user]);
 
   const shortcuts = [
     {

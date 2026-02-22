@@ -1,16 +1,9 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { achievementService } from "../services/achievementService";
 import { logger } from '../logger.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-
-const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-  next();
-};
 
 router.get("/", requireAuth, async (req: Request, res: Response) => {
   try {

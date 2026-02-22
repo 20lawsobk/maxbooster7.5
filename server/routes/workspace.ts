@@ -5,6 +5,7 @@ import { rbacService, type Permission } from '../services/rbacService';
 import { approvalWorkflowService, type WorkflowStep } from '../services/approvalWorkflowService';
 import { ssoService, type SAMLMetadata, type OIDCMetadata } from '../services/ssoService';
 import { logger } from '../logger.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -14,13 +15,6 @@ interface AuthenticatedRequest extends Request {
     email: string;
   };
 }
-
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: Function) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-};
 
 const requireWorkspaceMember = async (req: AuthenticatedRequest, res: Response, next: Function) => {
   try {

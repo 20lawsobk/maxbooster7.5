@@ -2,16 +2,9 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { smartDefaultsService } from '../services/smartDefaultsService';
 import { personalizationService } from '../services/personalizationService';
 import { logger } from '../logger';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-
-const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-  next();
-};
 
 router.get('/defaults', requireAuth, async (req: Request, res: Response) => {
   try {

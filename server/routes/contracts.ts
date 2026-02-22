@@ -8,14 +8,7 @@ import { nanoid } from 'nanoid';
 import { db } from '../db';
 import { marketplaceDisputes, users, contractTemplates, splitSheets } from '@shared/schema';
 import { eq, and, or, desc, notInArray, sql } from 'drizzle-orm';
-
-const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-  next();
-};
+import { requireAuth } from '../middleware/auth.js';
 
 interface SplitParticipant {
   userId: string;

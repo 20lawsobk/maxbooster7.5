@@ -1,4 +1,5 @@
 import { Router, NextFunction } from 'express';
+import { requireAuth } from '../middleware/auth.js';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
@@ -145,14 +146,6 @@ const createRoyaltySplitSchema = z.object({
 });
 
 // Middleware to ensure user is authenticated
-const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-  next();
-};
-
 // ===================
 // RELEASE ENDPOINTS
 // ===================

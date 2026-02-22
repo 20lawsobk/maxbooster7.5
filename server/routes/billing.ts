@@ -31,6 +31,7 @@ import { eq } from 'drizzle-orm';
 import { logger } from '../logger';
 import { executeStripeOperation } from '../services/externalServices';
 import { billingRateLimiter } from '../middleware/rateLimiter';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -135,13 +136,6 @@ interface AuthenticatedRequest extends Request {
     subscriptionEndsAt?: Date | null;
   };
 }
-
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
-  next();
-};
 
 // SECURITY: Customer creation wrapped with circuit breaker and proper error handling
 async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Promise<string> {

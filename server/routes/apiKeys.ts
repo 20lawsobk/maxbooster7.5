@@ -4,15 +4,9 @@ import { eq, and } from 'drizzle-orm';
 import { apiKeys } from '@shared/schema';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-
-const requireAuth: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
 
 router.use(requireAuth);
 

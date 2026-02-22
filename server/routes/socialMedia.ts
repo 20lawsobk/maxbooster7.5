@@ -9,6 +9,7 @@ import { db } from '../db';
 import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts, storefronts, listings } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -18,13 +19,6 @@ interface AuthenticatedRequest extends Request {
 }
 
 // Middleware to require authentication
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
-  next();
-};
-
 // =========================================
 // SOCIAL MEDIA ROUTES - Return empty data until real data exists
 // Frontend expects BARE ARRAYS, not wrapped objects

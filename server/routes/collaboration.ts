@@ -4,6 +4,7 @@ import { logger } from '../logger.js';
 import { db } from '../db';
 import { collaborationComments, collaborationVersions, collaborationAccessRequests } from '@shared/schema';
 import { eq, and, desc, isNull } from 'drizzle-orm';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -13,13 +14,6 @@ interface AuthenticatedRequest extends Request {
     email: string;
   };
 }
-
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: Function) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-};
 
 interface ConflictResolution {
   id: string;

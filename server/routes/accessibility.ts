@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
 import { logger } from '../logger';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -23,13 +24,6 @@ const defaultPreferences: AccessibilityPreferences = {
   screenReaderOptimized: false,
   keyboardNavigationEnabled: true,
 };
-
-function requireAuth(req: Request, res: Response, next: Function) {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  next();
-}
 
 function validatePreferences(preferences: Partial<AccessibilityPreferences>): { 
   valid: boolean; 

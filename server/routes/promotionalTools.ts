@@ -3,15 +3,9 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { promotionalToolsService } from '../services/promotionalToolsService';
 import { logger } from '../logger';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-
-const requireAuth = (req: Request, res: Response, next: Function) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
 
 const preSavePageSchema = z.object({
   releaseId: z.string(),

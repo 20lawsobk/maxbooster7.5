@@ -5,19 +5,13 @@ import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
 import { logger } from '../logger';
 import { invoiceService } from '../services/invoiceService';
 import { nanoid } from 'nanoid';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; email: string };
 }
-
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
-  next();
-};
 
 function generateInvoiceNumber(): string {
   const year = new Date().getFullYear();

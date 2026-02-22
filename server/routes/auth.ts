@@ -4,6 +4,7 @@ import { users, sessions, securityThreats, socialAccounts } from '../../shared/s
 import { eq, and, desc, ne, gte, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -11,13 +12,6 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string; email?: string };
   session: any;
 }
-
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
 
 router.post('/refresh-token', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {

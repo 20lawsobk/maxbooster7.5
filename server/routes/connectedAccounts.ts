@@ -3,15 +3,9 @@ import { logger } from '../logger.js';
 import { db } from '../db';
 import { socialAccounts } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-
-const requireAuth: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
 
 router.use(requireAuth);
 

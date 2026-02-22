@@ -2,15 +2,9 @@ import { Router, Request, Response } from 'express';
 import { userPreferencesService, ArtistType, CareerStage } from '../services/userPreferencesService';
 import { smartDefaultsEngine } from '../services/smartDefaultsEngine';
 import { logger } from '../logger';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-
-function requireAuth(req: Request, res: Response, next: Function) {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  next();
-}
 
 router.get('/user', requireAuth, async (req: Request, res: Response) => {
   try {

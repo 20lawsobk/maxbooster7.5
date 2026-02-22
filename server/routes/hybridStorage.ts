@@ -9,19 +9,13 @@ import { Router, Request, Response } from 'express';
 import { hybridStorageService, StorageTier, StorageLocation } from '../services/hybridStorageService.js';
 import multer from 'multer';
 import { logger } from '../logger.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB max
 });
-
-function requireAuth(req: Request, res: Response, next: Function) {
-  if (!req.isAuthenticated?.() || !req.user?.id) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-}
 
 /**
  * POST /api/hybrid-storage/upload

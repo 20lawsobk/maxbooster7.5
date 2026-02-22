@@ -1,6 +1,12 @@
 const prefetchedRoutes = new Set<string>();
 const prefetchedData = new Set<string>();
 
+let _isAuthenticated = false;
+
+export function setAuthState(isAuthenticated: boolean): void {
+  _isAuthenticated = isAuthenticated;
+}
+
 function shouldPrefetch(): boolean {
   if (typeof navigator === 'undefined') return false;
   const conn = (navigator as any).connection;
@@ -11,7 +17,6 @@ function shouldPrefetch(): boolean {
   return true;
 }
 
-// Route import map for hover-based prefetching
 const routeImportMap: Record<string, () => Promise<any>> = {
   '/dashboard': () => import('@/pages/Dashboard'),
   '/projects': () => import('@/pages/Projects'),
@@ -31,7 +36,8 @@ const routeImportMap: Record<string, () => Promise<any>> = {
   '/invoices': () => import('@/pages/Invoices'),
 };
 
-// API endpoints to prefetch per route
+const publicEndpoints = new Set(['/api/auth/me']);
+
 const routeDataMap: Record<string, string[]> = {
   '/dashboard': ['/api/auth/me', '/api/projects?limit=5'],
   '/projects': ['/api/projects'],
@@ -57,17 +63,17 @@ export function prefetchRoute(importFn: () => Promise<any>) {
 export function prefetchRouteByPath(path: string) {
   if (!shouldPrefetch()) return;
   const normalizedPath = '/' + path.split('/').filter(Boolean)[0];
-  
-  // Prefetch the route code
+
   const importFn = routeImportMap[normalizedPath];
   if (importFn) {
     prefetchRoute(importFn);
   }
 
-  // Prefetch the route data (only for authenticated routes when user has session)
   const endpoints = routeDataMap[normalizedPath];
   if (endpoints) {
     for (const endpoint of endpoints) {
+      const requiresAuth = !publicEndpoints.has(endpoint.split('?')[0]);
+      if (requiresAuth && !_isAuthenticated) continue;
       if (prefetchedData.has(endpoint)) continue;
       prefetchedData.add(endpoint);
       fetch(endpoint, { credentials: 'include' })
@@ -77,41 +83,38 @@ export function prefetchRouteByPath(path: string) {
   }
 }
 
-// Prefetch on link hover - attach to any anchor or navigation element
 export function setupLinkPrefetching() {
   let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
-  
+
   const handlePointerOver = (e: Event) => {
     const target = (e.target as HTMLElement)?.closest('a[href], [data-href]');
     if (!target) return;
-    
+
     const href = target.getAttribute('href') || target.getAttribute('data-href');
     if (!href || href.startsWith('http') || href.startsWith('#')) return;
-    
-    // Small delay to avoid prefetching on quick mouse passes
+
     hoverTimeout = setTimeout(() => {
       if (!shouldPrefetch()) return;
       prefetchRouteByPath(href);
     }, 65);
   };
-  
+
   const handlePointerOut = () => {
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
       hoverTimeout = null;
     }
   };
-  
+
   document.addEventListener('pointerover', handlePointerOver, { passive: true });
   document.addEventListener('pointerout', handlePointerOut, { passive: true });
-  
+
   return () => {
     document.removeEventListener('pointerover', handlePointerOver);
     document.removeEventListener('pointerout', handlePointerOut);
   };
 }
 
-// Prefetch likely next routes based on current location
 export function prefetchAdjacentRoutes(currentPath: string) {
   const adjacencyMap: Record<string, string[]> = {
     '/': ['/dashboard', '/login', '/register', '/pricing'],
@@ -125,11 +128,10 @@ export function prefetchAdjacentRoutes(currentPath: string) {
     '/marketplace': ['/dashboard', '/studio'],
     '/settings': ['/dashboard'],
   };
-  
+
   const normalizedPath = '/' + (currentPath.split('/').filter(Boolean)[0] || '');
   const adjacentRoutes = adjacencyMap[normalizedPath] || [];
-  
-  // Use requestIdleCallback so this never blocks the main thread
+
   if ('requestIdleCallback' in window) {
     (window as any).requestIdleCallback(() => {
       if (!shouldPrefetch()) return;

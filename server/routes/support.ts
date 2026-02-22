@@ -3,15 +3,9 @@ import { db } from '../db.js';
 import { supportTickets, users } from '../../shared/schema.js';
 import { eq, desc, like, or, sql, count, avg, and } from 'drizzle-orm';
 import { logger } from '../logger.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-
-const requireAuth: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
 
 const requireAdmin: RequestHandler = (req, res, next) => {
   if (!req.isAuthenticated()) {
