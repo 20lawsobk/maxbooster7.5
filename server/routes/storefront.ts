@@ -107,6 +107,24 @@ router.get('/public/:slug', async (req, res) => {
 });
 
 /**
+ * GET /api/storefront/suggest-url
+ * Return a fresh Replit-style memorable URL suggestion without saving it.
+ * MUST be registered before /:slug to avoid being swallowed by the wildcard.
+ */
+router.get('/suggest-url', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const slug = await storefrontService.generateRandomSlug();
+    res.json({ slug });
+  } catch (error: unknown) {
+    logger.error('Error suggesting URL:', error);
+    res.status(500).json({ error: 'Failed to suggest URL' });
+  }
+});
+
+/**
  * GET /api/storefront/:slug
  * Get storefront by slug (for authenticated access)
  */

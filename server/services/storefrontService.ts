@@ -906,7 +906,51 @@ export class StorefrontService {
   /**
    * Generate a unique slug from a name
    */
+  // Music-themed word lists for Replit-style memorable URL generation
+  private static readonly SLUG_ADJECTIVES = [
+    'acoustic', 'amber', 'atomic', 'azure', 'blazing', 'bold', 'bright',
+    'chrome', 'cobalt', 'cosmic', 'crisp', 'crystal', 'dark', 'deep',
+    'divine', 'dusk', 'dusty', 'electric', 'emerald', 'epic', 'fluid',
+    'golden', 'grand', 'hollow', 'infinite', 'jade', 'kinetic', 'laser',
+    'live', 'lost', 'loud', 'lunar', 'mellow', 'midnight', 'minor',
+    'mystic', 'neon', 'noble', 'obsidian', 'ocean', 'onyx', 'open',
+    'phantom', 'polar', 'prism', 'pure', 'quiet', 'radiant', 'rapid',
+    'rare', 'raw', 'rebel', 'regal', 'retro', 'rich', 'risen', 'roaming',
+    'rustic', 'sacred', 'savage', 'serene', 'sharp', 'silent', 'silver',
+    'smooth', 'soft', 'solar', 'solo', 'sonic', 'spectral', 'steady',
+    'stellar', 'still', 'stone', 'stormy', 'subtle', 'swift', 'thunder',
+    'twilight', 'ultra', 'urban', 'vast', 'vibrant', 'vivid', 'void',
+    'warm', 'wild', 'wired', 'zenith',
+  ];
+
+  private static readonly SLUG_NOUNS = [
+    'amp', 'anthem', 'arc', 'aria', 'atlas', 'aura', 'bar', 'bass',
+    'beat', 'bloom', 'bridge', 'canon', 'chord', 'clef', 'coda',
+    'current', 'decibel', 'demo', 'drop', 'drum', 'echo', 'fade',
+    'fender', 'flow', 'freq', 'funk', 'gate', 'groove', 'harmony',
+    'hook', 'hum', 'key', 'kick', 'lab', 'layer', 'loop', 'lush',
+    'lyric', 'melody', 'mix', 'mode', 'motion', 'muse', 'note',
+    'octave', 'orbit', 'origin', 'peak', 'pitch', 'pivot', 'prism',
+    'pulse', 'reverb', 'riff', 'rise', 'root', 'sample', 'scale',
+    'signal', 'snare', 'sol', 'sound', 'spark', 'stage', 'stem',
+    'strum', 'studio', 'sub', 'surge', 'synth', 'tempo', 'tone',
+    'track', 'treble', 'tune', 'valve', 'verse', 'vibe', 'vinyl',
+    'voice', 'volt', 'wave', 'wire', 'wub',
+  ];
+
+  /**
+   * Generate a Replit-style memorable random slug (adjective-noun or adjective-noun-number).
+   * Falls back to kebab-casing the provided name when a name is given.
+   */
   async generateSlug(name: string): Promise<string> {
+    // If the user provided a name, base the slug on it (same as before)
+    // but offer a Replit-style word combo as fallback when the name is empty
+    const useWordCombo = !name || name.trim().length === 0;
+
+    if (useWordCombo) {
+      return this.generateRandomSlug();
+    }
+
     const baseSlug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -920,15 +964,38 @@ export class StorefrontService {
         where: eq(storefronts.slug, slug),
       });
 
-      if (!existing) {
-        break;
-      }
+      if (!existing) break;
 
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
 
     return slug;
+  }
+
+  /**
+   * Generate a Replit-style memorable URL slug — adjective-noun, guaranteed unique.
+   * Appends a short number suffix only when needed to resolve collisions.
+   */
+  async generateRandomSlug(): Promise<string> {
+    const adj = StorefrontService.SLUG_ADJECTIVES;
+    const nouns = StorefrontService.SLUG_NOUNS;
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const a = adj[Math.floor(Math.random() * adj.length)];
+      const n = nouns[Math.floor(Math.random() * nouns.length)];
+      const suffix = attempt === 0 ? '' : `-${Math.floor(Math.random() * 90 + 10)}`;
+      const candidate = `${a}-${n}${suffix}`;
+
+      const existing = await db.query.storefronts.findFirst({
+        where: eq(storefronts.slug, candidate),
+      });
+
+      if (!existing) return candidate;
+    }
+
+    // Last-resort: name-based slug with timestamp suffix
+    return `artist-studio-${Date.now().toString(36)}`;
   }
 
   /**

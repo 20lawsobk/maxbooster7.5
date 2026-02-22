@@ -50,6 +50,7 @@ import {
   EyeOff,
   Video,
   Megaphone,
+  Shuffle,
 } from 'lucide-react';
 import { BogoPromotionsManager } from './BogoPromotionsManager';
 
@@ -497,6 +498,8 @@ export default function StorefrontBuilder() {
     }
   };
 
+  const [suggestingUrl, setSuggestingUrl] = useState(false);
+
   const generateSlug = async (name: string) => {
     try {
       const response = await apiRequest('POST', '/api/storefront/generate-slug', { name });
@@ -508,6 +511,26 @@ export default function StorefrontBuilder() {
         description: 'Failed to generate slug',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Fetch a fresh Replit-style random URL suggestion from the server.
+  // Called by shuffle buttons — each call returns a different memorable combo.
+  const suggestRandomUrl = async (target: 'slug' | 'subdomain' = 'slug') => {
+    setSuggestingUrl(true);
+    try {
+      const response = await apiRequest('GET', '/api/storefront/suggest-url');
+      const data = await response.json();
+      if (target === 'slug') {
+        setCreateForm((prev) => ({ ...prev, slug: data.slug }));
+      } else {
+        setSubdomainForm((prev) => ({ ...prev, subdomain: data.slug }));
+        setSubdomainAvailable(null);
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Could not generate a URL suggestion', variant: 'destructive' });
+    } finally {
+      setSuggestingUrl(false);
     }
   };
 
@@ -856,9 +879,18 @@ export default function StorefrontBuilder() {
                             setSubdomainForm({ ...subdomainForm, subdomain: val });
                             setSubdomainAvailable(null);
                           }}
-                          placeholder="my-store"
+                          placeholder="silent-wave"
                           className="flex-1"
                         />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          title="Shuffle — suggest a memorable URL"
+                          onClick={() => suggestRandomUrl('subdomain')}
+                          disabled={suggestingUrl}
+                        >
+                          <Shuffle className="w-4 h-4" />
+                        </Button>
                         <span className="text-sm text-muted-foreground whitespace-nowrap">.maxbooster.app</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1641,18 +1673,31 @@ export default function StorefrontBuilder() {
                 <Input
                   value={createForm.slug}
                   onChange={(e) => setCreateForm({ ...createForm, slug: e.target.value })}
-                  placeholder="my-artist-name"
+                  placeholder="silent-wave"
                 />
                 <Button
                   variant="outline"
+                  size="icon"
+                  title="Generate name-based slug"
                   onClick={() => generateSlug(createForm.name)}
                   disabled={!createForm.name}
                 >
-                  Generate
+                  <Sparkles className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  title="Shuffle — get a random memorable URL"
+                  onClick={() => suggestRandomUrl('slug')}
+                  disabled={suggestingUrl}
+                >
+                  <Shuffle className="w-4 h-4" />
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Your storefront will be at: /{createForm.slug}
+                {createForm.slug
+                  ? <>Your storefront will be at: <span className="font-medium text-primary">/{createForm.slug}</span></>
+                  : 'Type a name above or hit shuffle for a memorable random URL'}
               </p>
             </div>
 
