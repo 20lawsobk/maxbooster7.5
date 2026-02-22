@@ -207,7 +207,7 @@
     "immer": "^11.1.4",
     "input-otp": "^1.4.2",
     "jsonwebtoken": "^9.0.3",
-    "jspdf": "^4.1.0",
+    "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.564.0",
     "memoizee": "^0.4.17",
@@ -292,6 +292,7 @@
     "minimatch": "^10.2.2",
     "bn.js": "^5.2.3",
     "glob": "^11.0.2",
-    "esbuild": "^0.25.12"
+    "esbuild": "^0.25.12",
+    "fast-xml-parser": "^5.3.6"
   }
 }
