@@ -366,6 +366,238 @@ export const TIME_SERIES_PATTERNS = {
   }
 } as const;
 
+/**
+ * Platform algorithm exploitation patterns — how organic content achieves paid-ad-level reach
+ * by engineering content to trigger algorithmic amplification instead of buying placement.
+ */
+export const ORGANIC_AS_ADS_PATTERNS = {
+  algorithmExploitation: {
+    instagram: {
+      reelsBoostedWindow: { hours: 0, to: 48, peakAt: 6 },
+      saveRateThreshold: 0.04,           // saves/impressions ratio that triggers Explore
+      shareRateThreshold: 0.02,
+      commentDepthBonus: true,           // nested replies signal quality to algorithm
+      carouselSwipeMultiplier: 2.1,      // carousels get re-served to non-engagers
+      storiesRetargetingEquivalent: {    // story sequences mimic retargeting funnel
+        touch1: 'awareness_hook',
+        touch2: 'social_proof',
+        touch3: 'call_to_action',
+        conversionWindow: '72hr',
+      },
+      collaboPostReachMultiplier: 3.2,   // collaborative posts hit two audiences simultaneously
+    },
+    tiktok: {
+      fyp_triggerConditions: {
+        completionRateThreshold: 0.80,   // watching full video triggers FYP push
+        replayRateBonus: 0.15,
+        soundAdoption: true,             // using trending audio = algorithm priority
+        stitchDuetMultiplier: 2.8,       // stitches/duets reach the original creator's audience
+      },
+      viralVelocityThreshold: {         // engagement per hour that triggers mass distribution
+        hour1: 100,
+        hour6: 500,
+        hour24: 2000,
+      },
+      hashtagDiscoveryEquivalent: {
+        tier1_hashtags: { reach: 'massive', competition: 'high', targetingPrecision: 'low' },
+        tier2_hashtags: { reach: 'medium', competition: 'medium', targetingPrecision: 'medium' },
+        tier3_hashtags: { reach: 'niche', competition: 'low', targetingPrecision: 'high' },
+        optimalMix: { tier1: 1, tier2: 2, tier3: 4 },  // mirrors paid ad broad + retargeting mix
+      },
+    },
+    youtube: {
+      thumbnailCTRThreshold: 0.07,       // CTR > 7% triggers recommended placement
+      avgViewDurationTarget: 0.55,       // 55% completion = algorithm recommends to similar viewers
+      commentsEngagementSignal: true,
+      premiereAnticipationMultiplier: 1.8,
+      shortsToLongFormFunnelRate: 0.08,  // 8% of Shorts viewers click through to full video
+      playlistRetentionBonus: 2.4,       // playlist watch sessions treated as high-intent
+    },
+    twitter_x: {
+      replyChainAmplification: true,     // reply threads spread to followers of all participants
+      quoteTweetReachMultiplier: 2.2,
+      bookmarkSignal: true,              // bookmarks replace saves as quality signal
+      threadEngagementDecay: {
+        tweet1: 1.0, tweet2: 0.75, tweet3: 0.55, tweet4: 0.40,
+      },
+      timingPrecision: {                 // tweet timing is more impactful than any other platform
+        halfLifeHours: 3,                // tweets lose 50% reach after 3 hours
+        optimalWindowMinutes: 15,        // 15 min after peak hour start is ideal
+      },
+    },
+    facebook: {
+      groupPostReachVsPagePost: 3.5,     // group posts reach 3.5x more people than page posts
+      eventPromotionOrganicReach: 2.8,
+      liveVideoAlgorithmBonus: 4.0,      // live gets pushed to followers in real-time
+      shareChainDecay: { hop1: 1.0, hop2: 0.6, hop3: 0.3 },
+    },
+  },
+
+  funnelReplication: {
+    awareness: {
+      organicTactic: 'broad_hashtag + trending_audio + collab_post',
+      paidEquivalent: 'CPM awareness campaign',
+      organicCostEquivalent: 0,
+      expectedReachMultiple: { low: 0.4, medium: 0.9, high: 2.1 },
+      timeToReach: { days: 1, to: 5 },
+    },
+    consideration: {
+      organicTactic: 'story_sequence + detailed_caption + save_prompt',
+      paidEquivalent: 'retargeting warm audience',
+      organicCostEquivalent: 0,
+      expectedReachMultiple: { low: 0.3, medium: 0.7, high: 1.5 },
+      timeToReach: { days: 2, to: 7 },
+    },
+    conversion: {
+      organicTactic: 'direct_CTA_post + bio_link + DM_automation',
+      paidEquivalent: 'conversion campaign with custom audience',
+      organicCostEquivalent: 0,
+      expectedReachMultiple: { low: 0.2, medium: 0.6, high: 1.2 },
+      timeToReach: { days: 1, to: 3 },
+    },
+    retargetingEquivalent: {
+      organicTactic: 'story_reply + follow_up_reel + mention_engagers',
+      paidEquivalent: 'pixel retargeting',
+      organicCostEquivalent: 0,
+      precision: 'medium',              // slightly less precise but free
+    },
+  },
+
+  crossPlatformBurstStrategy: {
+    description: 'Simultaneous multi-platform push mimics media buy schedule',
+    sequencing: {
+      t0: { platform: 'tiktok', format: 'short_video', purpose: 'viral_seed' },
+      t2h: { platform: 'instagram', format: 'reel', purpose: 'instagram_amplify' },
+      t4h: { platform: 'twitter', format: 'thread', purpose: 'cultural_conversation' },
+      t6h: { platform: 'youtube', format: 'shorts', purpose: 'search_discovery' },
+      t24h: { platform: 'facebook', format: 'share_of_tiktok', purpose: 'older_demo_reach' },
+    },
+    totalOrganicImpressionMultiplier: { low: 2.8, medium: 5.5, high: 12.0 },
+    equivalentPaidBudgetRequired: { low: 200, medium: 800, high: 3500 },
+  },
+
+  audienceSegmentationWithoutAds: {
+    followerInterestClusters: {
+      description: 'Followers naturally cluster by interest — post at each cluster separately',
+      identificationSignals: ['who comments on what types of posts', 'story reply patterns', 'DM topics'],
+      engagementPrecision: 0.72,        // 72% targeting precision vs 85% for paid lookalikes
+    },
+    engagementLadder: {
+      tier1_superfans: { touchFrequency: 'daily', contentType: 'exclusive_bts', conversionRate: 0.35 },
+      tier2_active: { touchFrequency: '3x_week', contentType: 'releases_events', conversionRate: 0.12 },
+      tier3_casual: { touchFrequency: 'weekly', contentType: 'viral_hooks', conversionRate: 0.03 },
+    },
+  },
+} as const;
+
+/**
+ * Paid advertising performance benchmarks — what real paid campaigns achieve
+ * so the model knows what "paid ad performance" means and can target it organically.
+ */
+export const PAID_AD_BENCHMARKS = {
+  platformMetrics: {
+    meta_instagram: {
+      avgCPM: { awareness: 6.50, engagement: 8.20, conversion: 14.30 },
+      avgCPC: { engagement: 0.22, conversion: 1.15, streaming: 0.38 },
+      avgCTR: { image: 0.031, video: 0.048, carousel: 0.041, stories: 0.055 },
+      avgCVR: { coldAudience: 0.021, warmAudience: 0.058, retargeting: 0.12 },
+      avgROAS: { ecommerce: 3.2, streaming: 1.8, eventTickets: 4.5 },
+      frequencyOptimal: { min: 2.5, max: 7.0 },  // impressions per person
+      audienceSaturationPoint: { days: 14, frequencyThreshold: 8.0 },
+    },
+    tiktok_ads: {
+      avgCPM: { awareness: 9.16, engagement: 11.20, conversion: 16.50 },
+      avgCPC: { engagement: 0.19, conversion: 1.02 },
+      avgCTR: { inFeed: 0.053, topView: 0.098, branded: 0.072 },
+      avgCVR: { coldAudience: 0.018, warmAudience: 0.049 },
+      avgROAS: { ecommerce: 2.8, streaming: 1.5 },
+      sparkAdsOrganicBoostMultiplier: 2.4,  // boosting organic posts vs native ads
+    },
+    youtube_ads: {
+      avgCPV: { skippable: 0.026, nonSkippable: 0.12, bumper: 0.08 },
+      avgCPM: { discovery: 5.80, preroll: 12.40 },
+      avgViewRate: { skippable: 0.31, nonSkippable: 1.0 },
+      avgCTR: { overlay: 0.028, endScreen: 0.052 },
+      brandRecallLift: { after3views: 0.18 },
+    },
+    spotify_ads: {
+      avgCPM: { audio: 15.00, video: 22.00, display: 8.50 },
+      avgCTR: { audio: 0.012, podcast: 0.018 },
+      completionRate: { audio30s: 0.88, video: 0.62 },
+      targetingOptions: ['genre', 'playlist', 'activity', 'demographics', 'device'],
+    },
+    google_ads: {
+      avgCPC: { musicKeywords: 0.65, eventKeywords: 2.10, artistName: 0.45 },
+      avgCTR: { search: 0.039, display: 0.0062, shopping: 0.086 },
+      avgCVR: { search: 0.048, display: 0.011 },
+      avgROAS: { eventTickets: 5.8, merch: 3.4 },
+    },
+  },
+
+  campaignTypeOutcomes: {
+    newReleaseBlitz: {
+      description: '7-day paid push around release date',
+      typicalBudget: { indie: 500, mid: 2500, major: 25000 },
+      expectedStreams: { indie: 5000, mid: 35000, major: 500000 },
+      platformMix: { instagram: 0.35, tiktok: 0.30, youtube: 0.20, spotify: 0.15 },
+      organicEquivalentViralCoefficient: 0.025,  // what organic needs to match this
+    },
+    fanbaseGrowth: {
+      description: 'Ongoing follower / subscriber acquisition',
+      avgCostPerFollower: { instagram: 0.85, tiktok: 0.42, youtube: 2.10, twitter: 0.65 },
+      organicEquivalentPostsPerNewFollower: 8,   // posts needed to get same result organically
+      retentionRate: { paid: 0.55, organic: 0.78 },  // organic followers more loyal
+    },
+    playlistPitching: {
+      description: 'Paid playlist placement / Spotify playlist campaigns',
+      avgCostPerStream: { low: 0.008, medium: 0.022, high: 0.055 },
+      saveRateFromPlaylist: 0.04,
+      organicEquivalentSaveRateTarget: 0.05,
+    },
+    eventPromotion: {
+      description: 'Concert / show ticket sales campaign',
+      avgROAS: 4.2,
+      avgCostPerTicket: 3.80,
+      leadTime: { weeks: 6, optimal: 8 },
+      organicEquivalentLocalReachRequired: 0.15,  // 15% of local followers need to see it
+    },
+  },
+
+  performanceVsOrganic: {
+    reachComparison: {
+      paidCPM: 8.50,
+      organicCostEquivalent: 0,
+      organicReachAsPercentOfPaid: {
+        withAlgoExploitation: { low: 0.4, medium: 0.9, high: 2.1 },
+        withoutAlgoExploitation: { low: 0.05, medium: 0.15, high: 0.35 },
+      },
+    },
+    conversionComparison: {
+      paidCVR: 0.038,
+      organicCVR: 0.065,   // organic converts better due to higher trust
+      trustDifferential: 1.71,
+    },
+    retentionComparison: {
+      paidFollowerRetention30d: 0.52,
+      organicFollowerRetention30d: 0.79,
+      lifetimeValueMultiplier: { organic: 2.3, paid: 1.0 },
+    },
+  },
+} as const;
+
+export function getOrganicFunnelStage(stage: 'awareness' | 'consideration' | 'conversion' | 'retargetingEquivalent') {
+  return ORGANIC_AS_ADS_PATTERNS.funnelReplication[stage];
+}
+
+export function getPaidAdBenchmark(platform: keyof typeof PAID_AD_BENCHMARKS.platformMetrics) {
+  return PAID_AD_BENCHMARKS.platformMetrics[platform] ?? null;
+}
+
+export function getOrganicReachMultiple(platform: keyof typeof ORGANIC_AS_ADS_PATTERNS.algorithmExploitation): number {
+  const burst = ORGANIC_AS_ADS_PATTERNS.crossPlatformBurstStrategy.totalOrganicImpressionMultiplier;
+  return burst.medium;
+}
+
 export function getGenreAudioProfile(genre: string): typeof MUSIC_GENRE_TAXONOMY.audioFeatures[keyof typeof MUSIC_GENRE_TAXONOMY.audioFeatures] | null {
   const normalizedGenre = genre.toLowerCase().replace(/[\s-]/g, '-');
   return MUSIC_GENRE_TAXONOMY.audioFeatures[normalizedGenre as keyof typeof MUSIC_GENRE_TAXONOMY.audioFeatures] || null;
