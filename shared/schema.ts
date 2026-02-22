@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, jsonb, real, date, bigint, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, jsonb, real, date, bigint, serial, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -1146,7 +1146,11 @@ export const royaltyTransactions = pgTable("royalty_transactions", {
   errorMessage: text("error_message"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("royalty_transactions_user_id_idx").on(table.userId),
+  createdAtIdx: index("royalty_transactions_created_at_idx").on(table.createdAt),
+  platformIdx: index("royalty_transactions_platform_idx").on(table.platform),
+}));
 
 export const insertRoyaltyTransactionSchema = createInsertSchema(royaltyTransactions).omit({ id: true, createdAt: true });
 export type RoyaltyTransaction = typeof royaltyTransactions.$inferSelect;

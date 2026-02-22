@@ -655,9 +655,11 @@ router.get('/purchases/:orderId/license-agreement', async (req: Request, res: Re
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const [listing] = await db.select().from(listings).where(eq(listings.id, order.listingId));
-    const [buyer] = await db.select().from(users).where(eq(users.id, order.userId));
-    const [seller] = await db.select().from(users).where(eq(users.id, order.sellerId));
+    const [[listing], [buyer], [seller]] = await Promise.all([
+      db.select().from(listings).where(eq(listings.id, order.listingId)).limit(1),
+      db.select().from(users).where(eq(users.id, order.userId)).limit(1),
+      db.select().from(users).where(eq(users.id, order.sellerId)).limit(1),
+    ]);
 
     const licenseType = order.licenseType || 'basic';
     const templateMap: Record<string, any> = {

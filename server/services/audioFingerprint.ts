@@ -143,7 +143,7 @@ export class AudioFingerprintService {
     channels: number;
     metadata?: any;
   }> {
-    const fileBuffer = fs.readFileSync(audioPath);
+    const fileBuffer = await fs.promises.readFile(audioPath);
     const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
     
     const segmentHashes: string[] = [];
@@ -158,7 +158,7 @@ export class AudioFingerprintService {
     const combinedFingerprint = segmentHashes.join('');
     const finalHash = crypto.createHash('sha256').update(combinedFingerprint).digest('hex');
     
-    const stats = fs.statSync(audioPath);
+    const stats = await fs.promises.stat(audioPath);
     const estimatedDuration = Math.round(stats.size / 176400);
     
     return {

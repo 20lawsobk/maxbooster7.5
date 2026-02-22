@@ -573,3 +573,28 @@ app.use((req, res, next) => {
   console.error('❌ FATAL: Server startup failed:', error);
   process.exit(1);
 });
+
+// Graceful shutdown — closes DB pool cleanly so in-flight requests and transactions complete
+async function gracefulShutdown(signal: string): Promise<void> {
+  logger.info(`[Shutdown] Received ${signal}, starting graceful shutdown...`);
+  try {
+    const { pool } = await import('./db.js');
+    await pool.end();
+    logger.info('[Shutdown] Database pool closed');
+  } catch (err) {
+    logger.error('[Shutdown] Error during graceful shutdown:', err);
+  }
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+process.on('uncaughtException', (error: Error) => {
+  logger.error('[Process] Uncaught exception — shutting down:', error);
+  gracefulShutdown('uncaughtException').finally(() => process.exit(1));
+});
+
+process.on('unhandledRejection', (reason: unknown) => {
+  logger.error('[Process] Unhandled promise rejection:', reason);
+});

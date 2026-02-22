@@ -4,7 +4,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
 import { db } from '../db';
-import { eq, and, desc, sql, gte, lte, sum, inArray } from 'drizzle-orm';
+import { eq, and, desc, sql, gte, lte, sum, count, inArray } from 'drizzle-orm';
 import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases } from '@shared/schema';
 import * as codeGenerationService from '../services/distributionCodeGenerationService';
 import { distributionService } from '../services/distributionService';
@@ -2799,25 +2799,26 @@ router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Respons
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-    const allTxns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
+    // Single SQL aggregate query — returns 1 row regardless of transaction count
+    const [agg] = await db.select({
+      totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+      pendingEarnings: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'pending' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+      paidOut: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'paid' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+      thisMonth: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.createdAt} >= ${thisMonthStart} THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+      lastMonth: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.createdAt} >= ${lastMonthStart} AND ${royaltyTransactions.createdAt} <= ${lastMonthEnd} THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+    }).from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
 
-    if (allTxns.length === 0) {
-      return res.json({ totalEarnings: 0, pendingEarnings: 0, paidOut: 0, thisMonth: 0, lastMonth: 0, growth: 0 });
-    }
-
-    const totalEarnings = allTxns.reduce((s, t) => s + (t.amount || 0), 0);
-    const pendingEarnings = allTxns.filter(t => t.status === 'pending').reduce((s, t) => s + (t.amount || 0), 0);
-    const paidOut = allTxns.filter(t => t.status === 'paid').reduce((s, t) => s + (t.amount || 0), 0);
-    const thisMonth = allTxns.filter(t => t.createdAt && t.createdAt >= thisMonthStart).reduce((s, t) => s + (t.amount || 0), 0);
-    const lastMonth = allTxns.filter(t => t.createdAt && t.createdAt >= lastMonthStart && t.createdAt <= lastMonthEnd).reduce((s, t) => s + (t.amount || 0), 0);
-    const growth = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
+    const te = Number(agg.totalEarnings);
+    const lm = Number(agg.lastMonth);
+    const tm = Number(agg.thisMonth);
+    const growth = lm > 0 ? ((tm - lm) / lm) * 100 : 0;
 
     res.json({
-      totalEarnings,
-      pendingEarnings,
-      paidOut,
-      thisMonth,
-      lastMonth,
+      totalEarnings: te,
+      pendingEarnings: Number(agg.pendingEarnings),
+      paidOut: Number(agg.paidOut),
+      thisMonth: tm,
+      lastMonth: lm,
       growth,
     });
   } catch (error: unknown) {
@@ -2830,24 +2831,24 @@ router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Respons
 router.get('/platform-earnings', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const txns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
 
-    if (txns.length === 0) {
-      return res.json([]);
-    }
+    // SQL GROUP BY — O(platforms) rows instead of O(all_transactions)
+    const rows = await db.select({
+      platform: sql<string>`COALESCE(${royaltyTransactions.platform}, 'unknown')`,
+      totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+      streams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+      transactions: sql<number>`COUNT(*)`,
+    }).from(royaltyTransactions)
+      .where(eq(royaltyTransactions.userId, userId))
+      .groupBy(sql`COALESCE(${royaltyTransactions.platform}, 'unknown')`)
+      .orderBy(sql`SUM(${royaltyTransactions.amount}) DESC`);
 
-    const platformMap: Record<string, { platform: string; totalEarnings: number; streams: number; transactions: number }> = {};
-    for (const t of txns) {
-      const plat = t.platform || 'unknown';
-      if (!platformMap[plat]) {
-        platformMap[plat] = { platform: plat, totalEarnings: 0, streams: 0, transactions: 0 };
-      }
-      platformMap[plat].totalEarnings += t.amount || 0;
-      platformMap[plat].streams += t.streamCount || 0;
-      platformMap[plat].transactions += 1;
-    }
-
-    res.json(Object.values(platformMap));
+    res.json(rows.map(r => ({
+      platform: r.platform,
+      totalEarnings: Number(r.totalEarnings),
+      streams: Number(r.streams),
+      transactions: Number(r.transactions),
+    })));
   } catch (error: unknown) {
     logger.error('Error fetching platform earnings:', error);
     res.status(500).json({ error: 'Failed to fetch platform earnings' });
@@ -3029,15 +3030,22 @@ router.get('/earnings/summary', requireAuth, async (req: Request, res: Response)
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-    const allTxns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
+    // Single SQL aggregate query — returns 1 row regardless of transaction count
+    const [agg] = await db.select({
+      totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+      pendingEarnings: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'pending' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+      paidOut: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'paid' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+      thisMonth: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.createdAt} >= ${thisMonthStart} THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+      lastMonth: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.createdAt} >= ${lastMonthStart} AND ${royaltyTransactions.createdAt} <= ${lastMonthEnd} THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+    }).from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
 
-    const totalEarnings = allTxns.reduce((s, t) => s + (t.amount || 0), 0);
-    const pendingEarnings = allTxns.filter(t => t.status === 'pending').reduce((s, t) => s + (t.amount || 0), 0);
-    const paidOut = allTxns.filter(t => t.status === 'paid').reduce((s, t) => s + (t.amount || 0), 0);
-    const thisMonth = allTxns.filter(t => t.createdAt && t.createdAt >= thisMonthStart).reduce((s, t) => s + (t.amount || 0), 0);
-    const lastMonth = allTxns.filter(t => t.createdAt && t.createdAt >= lastMonthStart && t.createdAt <= lastMonthEnd).reduce((s, t) => s + (t.amount || 0), 0);
-
-    res.json({ totalEarnings, pendingEarnings, paidOut, thisMonth, lastMonth });
+    res.json({
+      totalEarnings: Number(agg.totalEarnings),
+      pendingEarnings: Number(agg.pendingEarnings),
+      paidOut: Number(agg.paidOut),
+      thisMonth: Number(agg.thisMonth),
+      lastMonth: Number(agg.lastMonth),
+    });
   } catch (error: unknown) {
     logger.error('Error fetching earnings summary:', error);
     res.status(500).json({ error: 'Failed to fetch earnings summary' });
@@ -3048,21 +3056,24 @@ router.get('/earnings/summary', requireAuth, async (req: Request, res: Response)
 router.get('/earnings/territories', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const txns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
 
-    const territoryMap: Record<string, { territory: string; totalEarnings: number; streams: number; transactions: number }> = {};
-    for (const t of txns) {
-      const meta = t.metadata as any;
-      const territory = meta?.territory || meta?.country || t.platform || 'unknown';
-      if (!territoryMap[territory]) {
-        territoryMap[territory] = { territory, totalEarnings: 0, streams: 0, transactions: 0 };
-      }
-      territoryMap[territory].totalEarnings += t.amount || 0;
-      territoryMap[territory].streams += t.streamCount || 0;
-      territoryMap[territory].transactions += 1;
-    }
+    // SQL GROUP BY on JSONB territory field — O(territories) rows instead of O(all_transactions)
+    const rows = await db.select({
+      territory: sql<string>`COALESCE(${royaltyTransactions.metadata}->>'territory', ${royaltyTransactions.metadata}->>'country', ${royaltyTransactions.platform}, 'unknown')`,
+      totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+      streams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+      transactions: sql<number>`COUNT(*)`,
+    }).from(royaltyTransactions)
+      .where(eq(royaltyTransactions.userId, userId))
+      .groupBy(sql`COALESCE(${royaltyTransactions.metadata}->>'territory', ${royaltyTransactions.metadata}->>'country', ${royaltyTransactions.platform}, 'unknown')`)
+      .orderBy(sql`SUM(${royaltyTransactions.amount}) DESC`);
 
-    res.json({ territories: Object.values(territoryMap) });
+    res.json({ territories: rows.map(r => ({
+      territory: r.territory,
+      totalEarnings: Number(r.totalEarnings),
+      streams: Number(r.streams),
+      transactions: Number(r.transactions),
+    })) });
   } catch (error: unknown) {
     logger.error('Error fetching earnings territories:', error);
     res.status(500).json({ error: 'Failed to fetch earnings territories' });
@@ -3133,20 +3144,24 @@ router.get('/royalties/payouts', requireAuth, async (req: Request, res: Response
 router.get('/royalties/platforms', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const txns = await db.select().from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId));
 
-    const platformMap: Record<string, { platform: string; totalEarnings: number; streams: number; transactions: number }> = {};
-    for (const t of txns) {
-      const plat = t.platform || 'unknown';
-      if (!platformMap[plat]) {
-        platformMap[plat] = { platform: plat, totalEarnings: 0, streams: 0, transactions: 0 };
-      }
-      platformMap[plat].totalEarnings += t.amount || 0;
-      platformMap[plat].streams += t.streamCount || 0;
-      platformMap[plat].transactions += 1;
-    }
+    // SQL GROUP BY — O(platforms) rows instead of O(all_transactions)
+    const rows = await db.select({
+      platform: sql<string>`COALESCE(${royaltyTransactions.platform}, 'unknown')`,
+      totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+      streams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+      transactions: sql<number>`COUNT(*)`,
+    }).from(royaltyTransactions)
+      .where(eq(royaltyTransactions.userId, userId))
+      .groupBy(sql`COALESCE(${royaltyTransactions.platform}, 'unknown')`)
+      .orderBy(sql`SUM(${royaltyTransactions.amount}) DESC`);
 
-    res.json({ platforms: Object.values(platformMap) });
+    res.json({ platforms: rows.map(r => ({
+      platform: r.platform,
+      totalEarnings: Number(r.totalEarnings),
+      streams: Number(r.streams),
+      transactions: Number(r.transactions),
+    })) });
   } catch (error: unknown) {
     logger.error('Error fetching royalties platforms:', error);
     res.status(500).json({ error: 'Failed to fetch royalties platforms' });

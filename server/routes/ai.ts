@@ -402,9 +402,9 @@ router.get('/models', requireAuth, async (req: Request, res: Response) => {
 
     let models;
     if (conditions.length > 0) {
-      models = await query.where(and(...conditions));
+      models = await query.where(and(...conditions)).limit(500);
     } else {
-      models = await query;
+      models = await query.limit(500);
     }
 
     res.json({
