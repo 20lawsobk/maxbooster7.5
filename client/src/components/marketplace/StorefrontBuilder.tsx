@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
@@ -146,6 +146,9 @@ export default function StorefrontBuilder() {
     slug: '',
     templateId: '',
   });
+  // Tracks whether the user has manually typed in the URL field.
+  // While false, the slug stays in sync with the title (Replit behaviour).
+  const [slugUserEdited, setSlugUserEdited] = useState(false);
 
   const [subdomainForm, setSubdomainForm] = useState({
     subdomain: '',
@@ -307,6 +310,7 @@ export default function StorefrontBuilder() {
       setSubdomainForm({ subdomain: '', isSubdomainActive: false });
       setSubdomainAvailable(null);
       setCreateForm({ name: '', slug: '', templateId: '' });
+      setSlugUserEdited(false);
       trackBeatStoreSetup();
     },
     onError: (error: unknown) => {
@@ -516,6 +520,8 @@ export default function StorefrontBuilder() {
 
   // Fetch a fresh Replit-style random URL suggestion from the server.
   // Called by shuffle buttons — each call returns a different memorable combo.
+  // When target is 'slug', also resets the user-edited flag so title typing
+  // resumes syncing (matching Replit's behaviour after a shuffle).
   const suggestRandomUrl = async (target: 'slug' | 'subdomain' = 'slug') => {
     setSuggestingUrl(true);
     try {
@@ -523,6 +529,7 @@ export default function StorefrontBuilder() {
       const data = await response.json();
       if (target === 'slug') {
         setCreateForm((prev) => ({ ...prev, slug: data.slug }));
+        setSlugUserEdited(false); // shuffle clears the manual-edit lock
       } else {
         setSubdomainForm((prev) => ({ ...prev, subdomain: data.slug }));
         setSubdomainAvailable(null);
@@ -533,6 +540,16 @@ export default function StorefrontBuilder() {
       setSuggestingUrl(false);
     }
   };
+
+  // Auto-populate the slug with a memorable random URL whenever the create dialog opens,
+  // exactly as Replit does — the field is never blank when the dialog appears.
+  useEffect(() => {
+    if (showCreateDialog) {
+      setSlugUserEdited(false);
+      suggestRandomUrl('slug');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCreateDialog]);
 
   const handleSaveCustomization = () => {
     if (!selectedStorefront) return;
@@ -1659,7 +1676,9 @@ export default function StorefrontBuilder() {
                 value={createForm.name}
                 onChange={(e) => {
                   setCreateForm({ ...createForm, name: e.target.value });
-                  if (!createForm.slug) {
+                  // Keep the URL in sync with the title unless the user has
+                  // manually edited the URL field (Replit behaviour)
+                  if (!slugUserEdited && e.target.value.trim()) {
                     generateSlug(e.target.value);
                   }
                 }}
@@ -1672,7 +1691,10 @@ export default function StorefrontBuilder() {
               <div className="flex gap-2">
                 <Input
                   value={createForm.slug}
-                  onChange={(e) => setCreateForm({ ...createForm, slug: e.target.value })}
+                  onChange={(e) => {
+                    setCreateForm({ ...createForm, slug: e.target.value });
+                    setSlugUserEdited(true); // stop auto-syncing from title
+                  }}
                   placeholder="silent-wave"
                 />
                 <Button
