@@ -15,15 +15,20 @@ const router = Router();
  * Get welcome message and initial suggestions
  */
 router.get('/welcome', (req: Request, res: Response) => {
-  const response = aiHelpDeskService.getWelcomeMessage();
-  res.json({
-    success: true,
-    assistant: {
-      name: BUSINESS_CONFIG.helpDesk.aiAssistantName,
-      role: BUSINESS_CONFIG.helpDesk.aiAssistantRole,
-    },
-    ...response
-  });
+  try {
+    const response = aiHelpDeskService.getWelcomeMessage();
+    res.json({
+      success: true,
+      assistant: {
+        name: BUSINESS_CONFIG.helpDesk.aiAssistantName,
+        role: BUSINESS_CONFIG.helpDesk.aiAssistantRole,
+      },
+      ...response
+    });
+  } catch (error) {
+    logger.error('Help desk welcome error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load help desk' });
+  }
 });
 
 /**
@@ -42,7 +47,6 @@ router.post('/chat', async (req: Request, res: Response) => {
       });
     }
     
-    // Use provided sessionId or generate new one
     const chatSessionId = sessionId || crypto.randomUUID();
     
     const response = await aiHelpDeskService.processMessage(chatSessionId, message, userId);
@@ -97,16 +101,21 @@ router.post('/escalate', async (req: Request, res: Response) => {
  * End a help desk session
  */
 router.post('/end', (req: Request, res: Response) => {
-  const { sessionId } = req.body;
-  
-  if (sessionId) {
-    aiHelpDeskService.endConversation(sessionId);
+  try {
+    const { sessionId } = req.body;
+    
+    if (sessionId) {
+      aiHelpDeskService.endConversation(sessionId);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Session ended. Thank you for using Max Booster support!'
+    });
+  } catch (error) {
+    logger.error('Help desk end session error:', error);
+    res.status(500).json({ success: false, error: 'Failed to end session' });
   }
-  
-  res.json({
-    success: true,
-    message: 'Session ended. Thank you for using Max Booster support!'
-  });
 });
 
 /**
@@ -114,16 +123,21 @@ router.post('/end', (req: Request, res: Response) => {
  * Get help desk and company information
  */
 router.get('/info', (req: Request, res: Response) => {
-  res.json({
-    success: true,
-    company: BUSINESS_CONFIG.company,
-    helpDesk: {
-      name: BUSINESS_CONFIG.helpDesk.aiAssistantName,
-      role: BUSINESS_CONFIG.helpDesk.aiAssistantRole,
-      capabilities: BUSINESS_CONFIG.helpDesk.capabilities
-    },
-    branding: BUSINESS_CONFIG.branding
-  });
+  try {
+    res.json({
+      success: true,
+      company: BUSINESS_CONFIG.company,
+      helpDesk: {
+        name: BUSINESS_CONFIG.helpDesk.aiAssistantName,
+        role: BUSINESS_CONFIG.helpDesk.aiAssistantRole,
+        capabilities: BUSINESS_CONFIG.helpDesk.capabilities
+      },
+      branding: BUSINESS_CONFIG.branding
+    });
+  } catch (error) {
+    logger.error('Help desk info error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load help desk info' });
+  }
 });
 
 export default router;

@@ -3209,7 +3209,8 @@ router.get('/royalties/splits', requireAuth, async (req: Request, res: Response)
 
     const releaseIds = userReleases.map(r => r.id);
     const splits = await db.select().from(royaltySplits)
-      .where(inArray(royaltySplits.releaseId, releaseIds));
+      .where(inArray(royaltySplits.releaseId, releaseIds))
+      .limit(500);
 
     res.json({ splits });
   } catch (error: unknown) {
