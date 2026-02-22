@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
+import dns from 'dns';
 import { storefrontService } from '../services/storefrontService';
 import { hybridStorageService } from '../services/hybridStorageService';
 import { storeUploadedFile } from '../middleware/uploadHandler.js';
@@ -24,6 +25,27 @@ import { db } from '../db';
 import { eq, and, count, avg, sql, lte, gte, or, isNull, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { logger } from '../logger.js';
+
+const dnsPromises = dns.promises;
+
+const CNAME_TARGET = 'maxbooster.replit.app';
+const CUSTOM_DOMAIN_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+const RESERVED_DOMAINS = ['maxbooster.app', 'maxbooster.replit.app', 'localhost'];
+
+function isValidCustomDomain(domain: string): boolean {
+  if (!domain || domain.length > 253) return false;
+  const lower = domain.toLowerCase();
+  if (RESERVED_DOMAINS.some(r => lower === r || lower.endsWith('.' + r))) return false;
+  return CUSTOM_DOMAIN_PATTERN.test(lower);
+}
+
+async function isDomainAvailable(domain: string, excludeStorefrontId?: string): Promise<boolean> {
+  const rows = await db.select({ id: storefronts.id }).from(storefronts)
+    .where(eq(storefronts.customDomain, domain.toLowerCase())).limit(1);
+  if (rows.length === 0) return true;
+  if (excludeStorefrontId && rows[0].id === excludeStorefrontId) return true;
+  return false;
+}
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -121,6 +143,35 @@ router.get('/suggest-url', async (req, res) => {
   } catch (error: unknown) {
     logger.error('Error suggesting URL:', error);
     res.status(500).json({ error: 'Failed to suggest URL' });
+  }
+});
+
+/**
+ * GET /api/storefront/check-domain
+ * Validate format and check availability of a custom domain
+ */
+router.get('/check-domain', async (req, res) => {
+  try {
+    const domain = (req.query.domain as string || '').toLowerCase().trim();
+    if (!domain) {
+      return res.status(400).json({ error: 'domain query param required' });
+    }
+
+    if (!isValidCustomDomain(domain)) {
+      return res.status(200).json({
+        available: false,
+        valid: false,
+        reason: 'Invalid domain format. Use a full domain like www.mybeats.com',
+      });
+    }
+
+    const excludeId = req.query.excludeId as string | undefined;
+    const available = await isDomainAvailable(domain, excludeId);
+
+    res.json({ available, valid: true, domain });
+  } catch (error: unknown) {
+    logger.error('Error checking custom domain:', error);
+    res.status(500).json({ error: 'Failed to check domain' });
   }
 });
 
@@ -747,6 +798,127 @@ router.put('/:storefrontId/subdomain', async (req, res) => {
       return res.status(403).json({ error: errorMessage });
     }
     res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
+ * PUT /api/storefront/:storefrontId/custom-domain
+ * Save and activate a custom domain for a storefront
+ */
+router.put('/:storefrontId/custom-domain', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { storefrontId } = req.params;
+    const { customDomain, isCustomDomainActive } = req.body;
+
+    if (customDomain) {
+      const lower = customDomain.toLowerCase().trim();
+      if (!isValidCustomDomain(lower)) {
+        return res.status(400).json({ error: 'Invalid domain format. Use a full domain like www.mybeats.com' });
+      }
+      const available = await isDomainAvailable(lower, storefrontId);
+      if (!available) {
+        return res.status(400).json({ error: 'This domain is already in use by another storefront' });
+      }
+
+      const updatedStorefront = await storefrontService.updateStorefront(storefrontId, req.user!.id, {
+        customDomain: lower,
+        isCustomDomainActive: isCustomDomainActive ?? false,
+      });
+      return res.json(updatedStorefront);
+    }
+
+    const updatedStorefront = await storefrontService.updateStorefront(storefrontId, req.user!.id, {
+      customDomain: null,
+      isCustomDomainActive: false,
+    });
+    res.json(updatedStorefront);
+  } catch (error: unknown) {
+    logger.error('Error updating custom domain:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update custom domain';
+    if (errorMessage === 'Unauthorized') {
+      return res.status(403).json({ error: errorMessage });
+    }
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
+ * POST /api/storefront/:storefrontId/verify-domain
+ * Perform DNS verification of the custom domain
+ * Checks for CNAME pointing to maxbooster.replit.app
+ */
+router.post('/:storefrontId/verify-domain', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { storefrontId } = req.params;
+
+    const [storefront] = await db.select({
+      id: storefronts.id,
+      userId: storefronts.userId,
+      customDomain: storefronts.customDomain,
+    }).from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
+
+    if (!storefront) {
+      return res.status(404).json({ error: 'Storefront not found' });
+    }
+    if (storefront.userId !== req.user!.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    if (!storefront.customDomain) {
+      return res.status(400).json({ error: 'No custom domain configured' });
+    }
+
+    const domain = storefront.customDomain;
+    const result: {
+      verified: boolean;
+      cnameFound: boolean;
+      aRecordFound: boolean;
+      cnameTarget?: string;
+      aRecords?: string[];
+      error?: string;
+    } = { verified: false, cnameFound: false, aRecordFound: false };
+
+    try {
+      const cnames = await dnsPromises.resolveCname(domain);
+      result.cnameFound = cnames.length > 0;
+      result.cnameTarget = cnames[0];
+      if (cnames.some(c => c.toLowerCase().includes('maxbooster') || c.toLowerCase().includes('replit'))) {
+        result.verified = true;
+      }
+    } catch {
+      result.cnameFound = false;
+    }
+
+    if (!result.verified) {
+      try {
+        const addresses = await dnsPromises.resolve4(domain);
+        result.aRecordFound = addresses.length > 0;
+        result.aRecords = addresses;
+        if (addresses.length > 0) {
+          result.verified = true;
+        }
+      } catch {
+        result.aRecordFound = false;
+      }
+    }
+
+    if (result.verified) {
+      await storefrontService.updateStorefront(storefrontId, req.user!.id, {
+        isCustomDomainActive: true,
+      });
+    }
+
+    res.json(result);
+  } catch (error: unknown) {
+    logger.error('Error verifying custom domain:', error);
+    res.status(500).json({ error: 'Failed to verify domain' });
   }
 });
 

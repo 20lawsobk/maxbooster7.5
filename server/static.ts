@@ -38,6 +38,25 @@ async function getStorefrontSlugForSubdomain(subdomain: string): Promise<string 
   }
 }
 
+async function getStorefrontSlugForCustomDomain(hostname: string): Promise<string | null> {
+  try {
+    const host = hostname.split(':')[0].toLowerCase();
+    const [store] = await db
+      .select({ slug: storefronts.slug })
+      .from(storefronts)
+      .where(and(eq(storefronts.customDomain, host), eq(storefronts.isCustomDomainActive, true)))
+      .limit(1);
+    return store?.slug ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function isMaxBoosterDomain(hostname: string): boolean {
+  const host = hostname.split(':')[0].toLowerCase();
+  return BASE_DOMAINS.some(base => host === base || host.endsWith('.' + base)) || host === 'localhost';
+}
+
 async function getMetaForPath(reqPath: string): Promise<{ title: string; description: string; image: string; url: string } | null> {
   try {
     const beatMatch = reqPath.match(/^\/marketplace\/beat\/(\d+)/);
@@ -187,6 +206,18 @@ export function serveStatic(app: Express) {
     const subdomain = extractSubdomain(req.hostname);
     if (subdomain) {
       const slug = await getStorefrontSlugForSubdomain(subdomain);
+      if (slug) {
+        const safeSlug = slug.replace(/[^a-z0-9-]/gi, '');
+        const html = baseHtml.replace(
+          '</head>',
+          `<script>window.__MAXBOOSTER_SUBDOMAIN__=${JSON.stringify(safeSlug)}</script></head>`
+        );
+        return res.send(html);
+      }
+    }
+
+    if (!isMaxBoosterDomain(req.hostname)) {
+      const slug = await getStorefrontSlugForCustomDomain(req.hostname);
       if (slug) {
         const safeSlug = slug.replace(/[^a-z0-9-]/gi, '');
         const html = baseHtml.replace(

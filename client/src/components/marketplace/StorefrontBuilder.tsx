@@ -157,6 +157,23 @@ export default function StorefrontBuilder() {
   const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
   const [checkingSubdomain, setCheckingSubdomain] = useState(false);
 
+  const [customDomainForm, setCustomDomainForm] = useState({
+    customDomain: '',
+    isCustomDomainActive: false,
+  });
+  const [customDomainAvailable, setCustomDomainAvailable] = useState<boolean | null>(null);
+  const [customDomainValid, setCustomDomainValid] = useState<boolean | null>(null);
+  const [checkingCustomDomain, setCheckingCustomDomain] = useState(false);
+  const [verifyingDomain, setVerifyingDomain] = useState(false);
+  const [domainVerificationResult, setDomainVerificationResult] = useState<{
+    verified: boolean;
+    cnameFound: boolean;
+    aRecordFound: boolean;
+    cnameTarget?: string;
+    aRecords?: string[];
+    error?: string;
+  } | null>(null);
+
   const [customization, setCustomization] = useState<Storefront['customization']>({
     colors: {
       primary: '#8B5CF6',
@@ -502,6 +519,74 @@ export default function StorefrontBuilder() {
     }
   };
 
+  const updateCustomDomainMutation = useMutation({
+    mutationFn: async ({ storefrontId, customDomain, isCustomDomainActive }: { storefrontId: string; customDomain: string | null; isCustomDomainActive: boolean }) => {
+      const response = await apiRequest('PUT', `/api/storefront/${storefrontId}/custom-domain`, { customDomain, isCustomDomainActive });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Custom Domain Saved',
+        description: 'Your custom domain has been saved. Verify DNS to activate it.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Save Failed',
+        description: error.message || 'Failed to save custom domain',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const checkCustomDomainAvailability = async (domain: string) => {
+    if (!domain || domain.length < 4) {
+      setCustomDomainAvailable(null);
+      setCustomDomainValid(null);
+      return;
+    }
+    setCheckingCustomDomain(true);
+    try {
+      const excludeId = selectedStorefront?.id ?? '';
+      const response = await apiRequest('GET', `/api/storefront/check-domain?domain=${encodeURIComponent(domain)}&excludeId=${excludeId}`);
+      const data = await response.json();
+      setCustomDomainValid(data.valid);
+      setCustomDomainAvailable(data.available);
+    } catch {
+      setCustomDomainAvailable(null);
+      setCustomDomainValid(null);
+    } finally {
+      setCheckingCustomDomain(false);
+    }
+  };
+
+  const verifyCustomDomain = async () => {
+    if (!selectedStorefront) return;
+    setVerifyingDomain(true);
+    setDomainVerificationResult(null);
+    try {
+      const response = await apiRequest('POST', `/api/storefront/${selectedStorefront.id}/verify-domain`, {});
+      const data = await response.json();
+      setDomainVerificationResult(data);
+      if (data.verified) {
+        toast({ title: 'Domain Verified', description: 'DNS is configured correctly. Your custom domain is now active.' });
+        queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+        setCustomDomainForm(prev => ({ ...prev, isCustomDomainActive: true }));
+      } else {
+        toast({
+          title: 'DNS Not Ready',
+          description: 'DNS records not detected yet. Changes can take up to 48 hours to propagate.',
+          variant: 'destructive',
+        });
+      }
+    } catch {
+      toast({ title: 'Verification Failed', description: 'Could not check DNS. Try again shortly.', variant: 'destructive' });
+    } finally {
+      setVerifyingDomain(false);
+    }
+  };
+
   const [suggestingUrl, setSuggestingUrl] = useState(false);
 
   const generateSlug = async (name: string) => {
@@ -617,6 +702,13 @@ export default function StorefrontBuilder() {
                     isSubdomainActive: (storefront as any).isSubdomainActive || false,
                   });
                   setSubdomainAvailable(null);
+                  setCustomDomainForm({
+                    customDomain: (storefront as any).customDomain || '',
+                    isCustomDomainActive: (storefront as any).isCustomDomainActive || false,
+                  });
+                  setCustomDomainAvailable(null);
+                  setCustomDomainValid(null);
+                  setDomainVerificationResult(null);
                   if (storefront.customization) {
                     setCustomization({
                       colors: {
@@ -719,6 +811,13 @@ export default function StorefrontBuilder() {
                           isSubdomainActive: (storefront as any).isSubdomainActive || false,
                         });
                         setSubdomainAvailable(null);
+                        setCustomDomainForm({
+                          customDomain: (storefront as any).customDomain || '',
+                          isCustomDomainActive: (storefront as any).isCustomDomainActive || false,
+                        });
+                        setCustomDomainAvailable(null);
+                        setCustomDomainValid(null);
+                        setDomainVerificationResult(null);
                         if (storefront.customization) {
                           setCustomization({
                             colors: {
@@ -945,6 +1044,144 @@ export default function StorefrontBuilder() {
                         <Save className="w-4 h-4 mr-2" />
                         {updateSubdomainMutation.isPending ? 'Saving...' : 'Save Custom URL'}
                       </Button>
+                    </div>
+
+                    <div className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base font-semibold">Custom Domain</Label>
+                          <p className="text-sm text-muted-foreground">Use your own domain (e.g. www.mybeats.com)</p>
+                        </div>
+                        {customDomainForm.isCustomDomainActive && (
+                          <Badge className="bg-green-600 text-white">Active</Badge>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={customDomainForm.customDomain}
+                          onChange={(e) => {
+                            const val = e.target.value.toLowerCase().trim();
+                            setCustomDomainForm({ ...customDomainForm, customDomain: val });
+                            setCustomDomainAvailable(null);
+                            setCustomDomainValid(null);
+                            setDomainVerificationResult(null);
+                          }}
+                          placeholder="www.mybeats.com"
+                          className="flex-1"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => checkCustomDomainAvailability(customDomainForm.customDomain)}
+                          disabled={!customDomainForm.customDomain || customDomainForm.customDomain.length < 4 || checkingCustomDomain}
+                        >
+                          {checkingCustomDomain ? 'Checking...' : 'Check'}
+                        </Button>
+                      </div>
+
+                      {customDomainAvailable !== null && (
+                        <div className="text-sm font-medium">
+                          {!customDomainValid ? (
+                            <span className="text-red-600 flex items-center gap-1"><AlertCircle className="w-4 h-4" /> Invalid format — use a full domain like www.mybeats.com</span>
+                          ) : customDomainAvailable ? (
+                            <span className="text-green-600 flex items-center gap-1"><CheckCircle className="w-4 h-4" /> Available</span>
+                          ) : (
+                            <span className="text-red-600 flex items-center gap-1"><AlertCircle className="w-4 h-4" /> Already in use by another storefront</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="bg-muted rounded-md p-3 space-y-2 text-sm">
+                        <p className="font-semibold">DNS Configuration</p>
+                        <p className="text-muted-foreground">Add one of these records at your domain registrar:</p>
+                        <div className="space-y-2">
+                          <div className="bg-background rounded p-2 font-mono text-xs space-y-1">
+                            <div className="text-muted-foreground">Option 1 — CNAME (recommended for subdomains like www)</div>
+                            <div><span className="text-blue-600">Type:</span> CNAME</div>
+                            <div><span className="text-blue-600">Name:</span> {customDomainForm.customDomain ? customDomainForm.customDomain.replace(/\.[^.]+\.[^.]+$/, '') || 'www' : 'www'}</div>
+                            <div><span className="text-blue-600">Value:</span> maxbooster.replit.app</div>
+                          </div>
+                          <div className="bg-background rounded p-2 font-mono text-xs space-y-1">
+                            <div className="text-muted-foreground">Option 2 — For apex/root domains (requires Cloudflare or similar)</div>
+                            <div><span className="text-blue-600">Type:</span> CNAME / ALIAS / ANAME</div>
+                            <div><span className="text-blue-600">Name:</span> @</div>
+                            <div><span className="text-blue-600">Value:</span> maxbooster.replit.app</div>
+                          </div>
+                        </div>
+                        <p className="text-muted-foreground text-xs">DNS changes can take up to 48 hours to propagate. Click Verify after adding the record.</p>
+                      </div>
+
+                      {domainVerificationResult && (
+                        <div className={`rounded-md p-3 text-sm space-y-1 ${domainVerificationResult.verified ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                          <p className={`font-semibold ${domainVerificationResult.verified ? 'text-green-700' : 'text-red-700'}`}>
+                            {domainVerificationResult.verified ? 'DNS Verified' : 'DNS Not Ready'}
+                          </p>
+                          {domainVerificationResult.cnameFound && (
+                            <p className="text-muted-foreground">CNAME found: <span className="font-mono">{domainVerificationResult.cnameTarget}</span></p>
+                          )}
+                          {domainVerificationResult.aRecordFound && domainVerificationResult.aRecords && (
+                            <p className="text-muted-foreground">A record found: <span className="font-mono">{domainVerificationResult.aRecords.join(', ')}</span></p>
+                          )}
+                          {!domainVerificationResult.cnameFound && !domainVerificationResult.aRecordFound && (
+                            <p className="text-muted-foreground">No DNS records detected yet. Add the CNAME record above and try again.</p>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={verifyCustomDomain}
+                          disabled={!customDomainForm.customDomain || verifyingDomain || !selectedStorefront}
+                        >
+                          {verifyingDomain ? 'Verifying...' : 'Verify DNS'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (selectedStorefront && customDomainForm.customDomain) {
+                              updateCustomDomainMutation.mutate({
+                                storefrontId: selectedStorefront.id,
+                                customDomain: customDomainForm.customDomain,
+                                isCustomDomainActive: customDomainForm.isCustomDomainActive,
+                              });
+                            }
+                          }}
+                          disabled={!customDomainForm.customDomain || customDomainForm.customDomain.length < 4 || updateCustomDomainMutation.isPending}
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          {updateCustomDomainMutation.isPending ? 'Saving...' : 'Save Domain'}
+                        </Button>
+                        {customDomainForm.customDomain && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => {
+                              if (selectedStorefront) {
+                                updateCustomDomainMutation.mutate({
+                                  storefrontId: selectedStorefront.id,
+                                  customDomain: null,
+                                  isCustomDomainActive: false,
+                                });
+                                setCustomDomainForm({ customDomain: '', isCustomDomainActive: false });
+                                setCustomDomainAvailable(null);
+                                setDomainVerificationResult(null);
+                              }
+                            }}
+                          >
+                            Remove Domain
+                          </Button>
+                        )}
+                      </div>
+
+                      {customDomainForm.isCustomDomainActive && customDomainForm.customDomain && (
+                        <div className="text-sm text-green-700 bg-green-50 rounded p-2">
+                          Your storefront is live at <a href={`https://${customDomainForm.customDomain}`} target="_blank" rel="noopener noreferrer" className="font-medium underline">{customDomainForm.customDomain}</a>
+                        </div>
+                      )}
                     </div>
 
                     <div>
