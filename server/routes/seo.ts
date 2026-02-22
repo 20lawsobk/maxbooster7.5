@@ -3,6 +3,7 @@ import { db } from '../db';
 import { listings, storefronts } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
+import { logger } from '../logger.js';
 
 const router = Router();
 
@@ -39,7 +40,9 @@ router.get('/sitemap.xml', async (_req: Request, res: Response) => {
   </url>`
         )
         .join('\n');
-    } catch {}
+    } catch (err) {
+      logger.warn('Sitemap: failed to fetch beat listings, section will be omitted', err);
+    }
 
     let storefrontUrls = '';
     try {
@@ -59,7 +62,9 @@ router.get('/sitemap.xml', async (_req: Request, res: Response) => {
   </url>`
         )
         .join('\n');
-    } catch {}
+    } catch (err) {
+      logger.warn('Sitemap: failed to fetch storefronts, section will be omitted', err);
+    }
 
     const staticUrls = staticPages
       .map(
@@ -85,6 +90,7 @@ ${storefrontUrls}
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
     res.send(xml);
   } catch (error) {
+    logger.error('Sitemap generation failed entirely:', error);
     res.status(500).send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
 });

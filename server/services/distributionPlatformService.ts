@@ -1,5 +1,6 @@
 import { storage } from '../storage';
 import { logger } from '../logger.js';
+import { createGracefulRedisClient } from '../lib/gracefulRedis.js';
 
 interface SubmissionResult {
   dispatchId: string;
@@ -7,43 +8,38 @@ interface SubmissionResult {
   message: string;
 }
 
-// AUDIT NOTE: In-memory rate limiting only works for single-process deployments.
-// For clustered/multi-instance deployments, this should use Redis or database-backed rate limiting.
-// TODO: Migrate to distributed rate limiting using Redis or database for production scalability.
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 60000;
+const redis = createGracefulRedisClient('distributionPlatformService');
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 const RATE_LIMIT_MAX = 10;
 
 /**
- * Check if user has exceeded rate limit for distribution submissions.
- * LIMITATION: This only works for single-process deployments.
+ * Check if a user has exceeded the distribution submission rate limit.
+ * Uses Redis-backed counting so the limit holds across multiple server instances.
+ * Gracefully allows the request if Redis is unavailable.
  */
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const userLimit = rateLimitMap.get(userId);
-
-  if (!userLimit || now > userLimit.resetTime) {
-    rateLimitMap.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+async function checkRateLimit(userId: string): Promise<boolean> {
+  const key = `rate_limit:distribution:${userId}`;
+  const count = await redis.incr(key);
+  if (count === 0) {
     return true;
   }
-
-  if (userLimit.count >= RATE_LIMIT_MAX) {
-    return false;
+  if (count === 1) {
+    await redis.expire(key, RATE_LIMIT_WINDOW_SECONDS);
   }
-
-  userLimit.count++;
-  return true;
+  return count <= RATE_LIMIT_MAX;
 }
 
 /**
- * TODO: Add function documentation
+ * Queue a release for distribution to a specific provider.
+ * Records a dispatch entry in the database and returns immediately;
+ * actual delivery is handled asynchronously.
  */
 export async function submitToProvider(
   releaseId: string,
   providerSlug: string,
   userId: string
 ): Promise<SubmissionResult> {
-  if (!checkRateLimit(userId)) {
+  if (!await checkRateLimit(userId)) {
     throw new Error('Rate limit exceeded. Please try again later.');
   }
 
@@ -59,7 +55,6 @@ export async function submitToProvider(
     logs: `Queued for ${provider.name} submission at ${new Date().toISOString()}`,
   });
 
-  // HARDENING: Wrap async setTimeout in proper error handling to prevent unhandled promise rejections
   setTimeout(() => {
     storage.updateDistroDispatch(dispatch.id, {
       status: 'processing',
@@ -77,7 +72,8 @@ export async function submitToProvider(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Spotify for Music distribution.
+ * Validates that OAuth client credentials are present before queuing.
  */
 export async function spotifySubmit(
   releaseId: string,
@@ -91,7 +87,8 @@ export async function spotifySubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Apple Music for distribution.
+ * Validates that the MusicKit team ID, key ID, and private key are present.
  */
 export async function appleMusicSubmit(
   releaseId: string,
@@ -105,7 +102,8 @@ export async function appleMusicSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to YouTube Music for distribution.
+ * Validates that the YouTube channel ID and OAuth access token are present.
  */
 export async function youtubeSubmit(
   releaseId: string,
@@ -119,7 +117,8 @@ export async function youtubeSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Amazon Music for distribution.
+ * Validates that the AWS access key and secret key are present.
  */
 export async function amazonMusicSubmit(
   releaseId: string,
@@ -133,7 +132,8 @@ export async function amazonMusicSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Deezer for distribution.
+ * Validates that the Deezer app ID and secret key are present.
  */
 export async function deezerSubmit(
   releaseId: string,
@@ -147,7 +147,8 @@ export async function deezerSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to TIDAL for distribution.
+ * Validates that OAuth client credentials are present before queuing.
  */
 export async function tidalSubmit(
   releaseId: string,
@@ -161,7 +162,8 @@ export async function tidalSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Pandora for distribution.
+ * Validates that the Pandora partner ID and API key are present.
  */
 export async function pandoraSubmit(
   releaseId: string,
@@ -175,7 +177,8 @@ export async function pandoraSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to iHeartRadio for distribution.
+ * Validates that the iHeartRadio API key and partner ID are present.
  */
 export async function iheartradioSubmit(
   releaseId: string,
@@ -189,7 +192,8 @@ export async function iheartradioSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to SoundCloud for distribution.
+ * Validates that OAuth client credentials are present before queuing.
  */
 export async function soundcloudSubmit(
   releaseId: string,
@@ -203,7 +207,8 @@ export async function soundcloudSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to TikTok Music for distribution.
+ * Validates that the TikTok client key and secret are present.
  */
 export async function tiktokSubmit(
   releaseId: string,
@@ -217,7 +222,8 @@ export async function tiktokSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Instagram for distribution.
+ * Validates that the Meta app ID and secret are present.
  */
 export async function instagramSubmit(
   releaseId: string,
@@ -231,7 +237,8 @@ export async function instagramSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Facebook for distribution.
+ * Validates that the Meta app ID and secret are present.
  */
 export async function facebookSubmit(
   releaseId: string,
@@ -245,7 +252,8 @@ export async function facebookSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Tencent Music (QQ Music / Kugou / Kuwo) for distribution.
+ * Validates that the Tencent app ID and key are present.
  */
 export async function tencentMusicSubmit(
   releaseId: string,
@@ -259,7 +267,8 @@ export async function tencentMusicSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to NetEase Cloud Music for distribution.
+ * Validates that the NetEase app ID and secret are present.
  */
 export async function neteaseSubmit(
   releaseId: string,
@@ -273,7 +282,8 @@ export async function neteaseSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to JioSaavn for distribution.
+ * Validates that the JioSaavn API key and partner ID are present.
  */
 export async function jiosaavnSubmit(
   releaseId: string,
@@ -287,7 +297,8 @@ export async function jiosaavnSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Gaana for distribution.
+ * Validates that the Gaana API key is present.
  */
 export async function gaanaSubmit(
   releaseId: string,
@@ -301,7 +312,8 @@ export async function gaanaSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Anghami for distribution.
+ * Validates that OAuth client credentials are present before queuing.
  */
 export async function anghamiSubmit(
   releaseId: string,
@@ -315,7 +327,8 @@ export async function anghamiSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Boomplay for distribution.
+ * Validates that the Boomplay API key and partner ID are present.
  */
 export async function boomplaySubmit(
   releaseId: string,
@@ -329,7 +342,8 @@ export async function boomplaySubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Yandex Music for distribution.
+ * Validates that OAuth client credentials are present before queuing.
  */
 export async function yandexMusicSubmit(
   releaseId: string,
@@ -343,7 +357,8 @@ export async function yandexMusicSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to Melon for distribution.
+ * Validates that the Melon API key and CP code are present.
  */
 export async function melonSubmit(
   releaseId: string,
@@ -357,7 +372,8 @@ export async function melonSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Submit a release to KKBOX for distribution.
+ * Validates that OAuth client credentials are present before queuing.
  */
 export async function kkboxSubmit(
   releaseId: string,
@@ -371,7 +387,8 @@ export async function kkboxSubmit(
 }
 
 /**
- * TODO: Add function documentation
+ * Retrieve the current status and logs for a distribution dispatch record.
+ * Throws if the dispatch ID does not exist.
  */
 export async function getDispatchStatus(dispatchId: string): Promise<any> {
   const dispatch = await storage.getDistroDispatch(dispatchId);

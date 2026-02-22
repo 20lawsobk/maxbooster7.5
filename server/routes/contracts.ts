@@ -67,7 +67,9 @@ router.get('/templates', requireAuth, async (req: Request, res: Response) => {
           isPremium: false,
           isCustom: true,
         }));
-      } catch (e) {}
+      } catch (e) {
+        logger.warn('Failed to fetch user custom contract templates:', e);
+      }
     }
 
     const allTemplates = [...builtInTemplates, ...userCustomTemplates];

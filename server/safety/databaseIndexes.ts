@@ -209,10 +209,10 @@ const REQUIRED_INDEXES: IndexDefinition[] = [
     description: 'Fast user lookup by Stripe customer ID in webhook handlers',
   },
   {
-    name: 'idx_users_stripe_subscription_id',
-    table: 'users',
+    name: 'idx_subscriptions_stripe_subscription_id',
+    table: 'subscriptions',
     columns: ['stripe_subscription_id'],
-    description: 'Fast user lookup by Stripe subscription ID',
+    description: 'Fast subscription lookup by Stripe subscription ID in billing routes',
   },
 ];
 

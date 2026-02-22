@@ -58,7 +58,9 @@ export function createGracefulRedisClient(serviceName: string): RedisClientWrapp
         } else {
           await client.set(key, value);
         }
-      } catch {}
+      } catch (err) {
+        logger.warn(`${serviceName}: Redis set failed for key "${key}"`, err);
+      }
     },
 
     async del(key: string): Promise<void> {
@@ -66,7 +68,9 @@ export function createGracefulRedisClient(serviceName: string): RedisClientWrapp
       if (!client) return;
       try {
         await client.del(key);
-      } catch {}
+      } catch (err) {
+        logger.warn(`${serviceName}: Redis del failed for key "${key}"`, err);
+      }
     },
 
     async exists(key: string): Promise<boolean> {
@@ -95,7 +99,9 @@ export function createGracefulRedisClient(serviceName: string): RedisClientWrapp
       if (!client) return;
       try {
         await client.expire(key, seconds);
-      } catch {}
+      } catch (err) {
+        logger.warn(`${serviceName}: Redis expire failed for key "${key}"`, err);
+      }
     },
   };
 }
