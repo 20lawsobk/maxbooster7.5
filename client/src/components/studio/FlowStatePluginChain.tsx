@@ -15,10 +15,13 @@ import {
   Zap,
   Wind,
   X,
+  Maximize2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { PluginControlDialog, EXTENDED_PARAMETERS } from './PluginControlDialog';
+import type { PluginInstance } from './PluginRack';
 
 export interface PluginNode {
   id: string;
@@ -193,6 +196,50 @@ export function FlowStatePluginChain({
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('Dynamics');
   const [expandedPlugin, setExpandedPlugin] = useState<string | null>(null);
+  const [controlDialogOpen, setControlDialogOpen] = useState(false);
+  const [selectedPluginForDialog, setSelectedPluginForDialog] = useState<PluginInstance | null>(null);
+
+  const openDialog = useCallback((plugin: PluginNode) => {
+    setSelectedPluginForDialog({ ...plugin, expanded: false } as PluginInstance);
+    setControlDialogOpen(true);
+  }, []);
+
+  const handleDialogParameterChange = useCallback((key: string, value: number) => {
+    if (!selectedPluginForDialog) return;
+    const updated = plugins.map((p) =>
+      p.id === selectedPluginForDialog.id
+        ? { ...p, parameters: { ...p.parameters, [key]: value } }
+        : p
+    );
+    onPluginsChange(updated);
+    const fresh = updated.find((p) => p.id === selectedPluginForDialog.id);
+    if (fresh) setSelectedPluginForDialog({ ...fresh, expanded: false } as PluginInstance);
+  }, [selectedPluginForDialog, plugins, onPluginsChange]);
+
+  const handleDialogBypassChange = useCallback((bypass: boolean) => {
+    if (!selectedPluginForDialog) return;
+    const updated = plugins.map((p) =>
+      p.id === selectedPluginForDialog.id ? { ...p, bypass } : p
+    );
+    onPluginsChange(updated);
+    const fresh = updated.find((p) => p.id === selectedPluginForDialog.id);
+    if (fresh) setSelectedPluginForDialog({ ...fresh, expanded: false } as PluginInstance);
+  }, [selectedPluginForDialog, plugins, onPluginsChange]);
+
+  const handleDialogReset = useCallback(() => {
+    if (!selectedPluginForDialog) return;
+    const defaults: Record<string, number> = {};
+    const def = PLUGIN_DEFS.find((d) => d.type === selectedPluginForDialog.type);
+    def?.parameters.forEach((p) => { defaults[p.key] = p.default; });
+    const extended = EXTENDED_PARAMETERS[selectedPluginForDialog.type];
+    extended?.forEach((p) => { defaults[p.key] = p.default; });
+    const updated = plugins.map((p) =>
+      p.id === selectedPluginForDialog.id ? { ...p, parameters: defaults, bypass: false } : p
+    );
+    onPluginsChange(updated);
+    const fresh = updated.find((p) => p.id === selectedPluginForDialog.id);
+    if (fresh) setSelectedPluginForDialog({ ...fresh, expanded: false } as PluginInstance);
+  }, [selectedPluginForDialog, plugins, onPluginsChange]);
 
   const addPlugin = useCallback((type: PluginType) => {
     if (plugins.length >= maxPlugins) return;
@@ -377,6 +424,17 @@ export function FlowStatePluginChain({
                           </div>
 
                           <button
+                            onClick={() => openDialog(plugin)}
+                            title="Open full controls"
+                            className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/10"
+                          >
+                            <Maximize2
+                              className="h-3.5 w-3.5"
+                              style={{ color: def.color }}
+                            />
+                          </button>
+
+                          <button
                             onClick={() => setExpandedPlugin(isExpanded ? null : plugin.id)}
                             className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/10"
                           >
@@ -451,6 +509,15 @@ export function FlowStatePluginChain({
           </div>
         )}
       </div>
+
+      <PluginControlDialog
+        open={controlDialogOpen}
+        onOpenChange={setControlDialogOpen}
+        plugin={selectedPluginForDialog}
+        onParameterChange={handleDialogParameterChange}
+        onBypassChange={handleDialogBypassChange}
+        onReset={handleDialogReset}
+      />
     </div>
   );
 }
