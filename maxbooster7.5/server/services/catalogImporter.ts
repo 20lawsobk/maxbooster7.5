@@ -9,7 +9,7 @@ import { eq, and, sql, desc } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { identifierService } from './identifierService.js';
 import { labelCopyLinter, LabelCopyLinter } from './labelCopyLinter.js';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 export interface ImportRow {
   title: string;
@@ -282,16 +282,33 @@ class CatalogImporter {
   }
 
   async parseXLSX(buffer: Buffer): Promise<ImportRow[]> {
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    
-    if (!sheetName) {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    const sheet = workbook.worksheets[0];
+
+    if (!sheet) {
       throw new Error('XLSX file contains no sheets');
     }
-    
-    const sheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
-    
+
+    const headers: string[] = [];
+    const jsonData: Record<string, any>[] = [];
+
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) {
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const val = cell.value;
+          headers[colNumber - 1] = val !== null && val !== undefined ? String(val) : '';
+        });
+      } else {
+        const obj: Record<string, any> = {};
+        headers.forEach((header, idx) => {
+          const cell = row.getCell(idx + 1);
+          obj[header] = cell.value !== null && cell.value !== undefined ? cell.value : '';
+        });
+        jsonData.push(obj);
+      }
+    });
+
     if (jsonData.length === 0) {
       throw new Error('XLSX file contains no data rows');
     }

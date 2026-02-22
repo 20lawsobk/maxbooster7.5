@@ -37,7 +37,7 @@ The application employs a microservices architecture. The user interface is buil
 ## Session History
 ### 2026-02-22 — Dependency Security Audit & Vulnerability Remediation
 - Started from 36 vulnerabilities (8 moderate, 28 high) — reduced to **0 vulnerabilities**
-- Replaced `xlsx@0.18.5` (no fix available — prototype pollution + ReDoS) with `exceljs@4.4.0` in `server/services/catalogImporter.ts`
+- Replaced `xlsx@0.18.5` (no fix available — prototype pollution + ReDoS) with `exceljs@4.4.0` in `server/services/catalogImporter.ts` and `maxbooster7.5/server/services/catalogImporter.ts`
 - Removed `@tensorflow/tfjs-node@4.22.0` (bundled vulnerable `tar@6.2.1` via `@mapbox/node-pre-gyp@1.0.9`) — pure JS `@tensorflow/tfjs` already used everywhere with proper fallback
 - Applied `npm overrides` in `package.json` for transitive vulnerabilities: `minimatch@^10.2.2`, `bn.js@^5.2.3`, `glob@^11.0.2`, `esbuild@^0.25.12`
 - Updated direct `tar` dependency from `^7.5.8` → `^7.5.9` (patched path traversal CVEs)
