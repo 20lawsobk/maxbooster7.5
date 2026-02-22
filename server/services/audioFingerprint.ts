@@ -100,11 +100,10 @@ export class AudioFingerprintService {
     options: FingerprintOptions = {}
   ): Promise<AudioFingerprint> {
     try {
-      if (!fs.existsSync(audioPath)) {
+      await fs.promises.access(audioPath).catch(() => {
         throw new Error(`Audio file not found: ${audioPath}`);
-      }
+      });
 
-      const stats = fs.statSync(audioPath);
       const algorithm = options.algorithm || 'maxbooster';
       
       const fingerprintData = await this.computeFingerprint(audioPath, options);

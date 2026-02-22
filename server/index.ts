@@ -562,6 +562,9 @@ app.use((req, res, next) => {
 
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
         logger.info('🤖 AUTONOMOUS SYSTEMS READY');
+        import('./services/baseModelTrainer.js').then(({ runBaseModelTraining }) => {
+          runBaseModelTraining().catch((e) => { logger.warn('[BaseTrainer] Background training error:', e instanceof Error ? e.message : String(e)); });
+        }).catch(() => {});
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
       });
     },

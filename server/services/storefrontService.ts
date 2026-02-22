@@ -284,12 +284,16 @@ export class StorefrontService {
       // Sanitize customization data
       const sanitizedCustomization = sanitizeCustomization(input.customization);
 
+      const autoSubdomain = await this.generateSubdomain(input.slug);
+
       const [storefront] = await db
         .insert(storefronts)
         .values({
           userId: input.userId,
           name: sanitizeString(input.name),
           slug: input.slug.toLowerCase(),
+          subdomain: autoSubdomain,
+          isSubdomainActive: true,
           templateId: input.templateId || null,
           customization: sanitizedCustomization,
           isActive: true,
@@ -297,7 +301,7 @@ export class StorefrontService {
         })
         .returning();
 
-      logger.info(`Created storefront ${storefront.id} for user ${input.userId}`);
+      logger.info(`Created storefront ${storefront.id} for user ${input.userId} at ${autoSubdomain}.maxbooster.app`);
       return storefront;
     } catch (error: unknown) {
       logger.error('Error creating storefront:', error);
