@@ -1,7 +1,9 @@
 use axum::{
     extract::State,
     http::StatusCode,
-    response::IntoResponse,
+    middleware::{self, Next},
+    extract::Request,
+    response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
@@ -353,6 +355,31 @@ async fn rate_take_handler(
     }
 }
 
+/// Bearer token auth middleware.
+/// If BOOSTERSTATE_SECRET is set, every request must carry:
+///   Authorization: Bearer <secret>
+/// If the env var is not set the middleware is a no-op (backward compatible).
+async fn auth_middleware(
+    secret: Arc<String>,
+    req: Request,
+    next: Next,
+) -> Response {
+    if secret.is_empty() {
+        return next.run(req).await;
+    }
+    let provided = req
+        .headers()
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    let expected = format!("Bearer {}", secret);
+    if provided == expected {
+        next.run(req).await
+    } else {
+        (StatusCode::UNAUTHORIZED, "Unauthorized").into_response()
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let port: u16 = std::env::var("BOOSTERSTATE_PORT")
@@ -368,8 +395,19 @@ async fn main() -> anyhow::Result<()> {
     let data_dir = std::env::var("BOOSTERSTATE_DATA_DIR")
         .unwrap_or_else(|_| "./boosterstate-data".to_string());
 
+    let secret = Arc::new(
+        std::env::var("BOOSTERSTATE_SECRET").unwrap_or_default()
+    );
+
+    if secret.is_empty() {
+        println!("BoosterState: running without auth (set BOOSTERSTATE_SECRET to enable)");
+    } else {
+        println!("BoosterState: bearer token auth enabled");
+    }
+
     let state = Arc::new(BoosterState::new_with_wal(data_dir.into(), n_shards)?);
 
+    let auth_secret = secret.clone();
     let app = Router::new()
         .route("/health", get(health_handler))
         .route("/ping", get(ping_handler))
@@ -387,6 +425,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/queue/push", post(queue_push_handler))
         .route("/queue/pop", post(queue_pop_handler))
         .route("/rate/take", post(rate_take_handler))
+        .route_layer(middleware::from_fn(move |req: Request, next: Next| {
+            let s = auth_secret.clone();
+            async move { auth_middleware(s, req, next).await }
+        }))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
