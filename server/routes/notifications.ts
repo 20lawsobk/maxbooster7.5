@@ -5,6 +5,7 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 import { notifications } from '../../shared/schema';
 import { requireAuth } from '../middleware/auth';
 import { logger } from '../logger.js';
+import crypto from 'crypto';
 
 const router = Router();
 
@@ -419,7 +420,7 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid phone number format' });
     }
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = crypto.randomInt(100000, 1000000).toString();
 
     logger.info(`[SMS Verification] Code sent to ${phoneNumber.slice(0, 3)}***${phoneNumber.slice(-2)} for user ${req.user.id}`);
 

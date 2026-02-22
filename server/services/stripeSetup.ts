@@ -121,21 +121,15 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
 
     return cachedPriceIds;
   } catch (error: unknown) {
-    logger.error('❌ Error setting up Stripe products/prices:', error.message);
-
-    // Fallback to placeholder IDs
-    cachedPriceIds = {
-      monthly: 'price_monthly_placeholder',
-      yearly: 'price_yearly_placeholder',
-      lifetime: 'price_lifetime_placeholder',
-    };
-    return cachedPriceIds;
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error('❌ Error setting up Stripe products/prices:', message);
+    // Do NOT cache placeholder IDs here — Stripe is configured but had a transient
+    // error. Leaving cachedPriceIds as null forces a retry on the next call and
+    // ensures billing routes surface a clear 500 rather than silently using stale IDs.
+    throw error;
   }
 }
 
-/**
- * TODO: Add function documentation
- */
 export function getStripePriceIds(): StripePriceIds {
   if (!cachedPriceIds) {
     throw new Error(

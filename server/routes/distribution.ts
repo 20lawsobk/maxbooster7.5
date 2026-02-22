@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
 import { db } from '../db';
-import { eq, and, desc, sql, gte, lte, sum } from 'drizzle-orm';
+import { eq, and, desc, sql, gte, lte, sum, inArray } from 'drizzle-orm';
 import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases } from '@shared/schema';
 import * as codeGenerationService from '../services/distributionCodeGenerationService';
 import { distributionService } from '../services/distributionService';
@@ -3174,8 +3174,8 @@ router.get('/royalties/splits', requireAuth, async (req: Request, res: Response)
     }
 
     const releaseIds = userReleases.map(r => r.id);
-    const allSplits = await db.select().from(royaltySplits);
-    const splits = allSplits.filter(s => releaseIds.includes(s.releaseId));
+    const splits = await db.select().from(royaltySplits)
+      .where(inArray(royaltySplits.releaseId, releaseIds));
 
     res.json({ splits });
   } catch (error: unknown) {

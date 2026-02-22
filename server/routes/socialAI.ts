@@ -3,6 +3,7 @@ import { socialChatbotService, ChatbotMessage } from '../services/socialChatbotS
 import { socialListeningService } from '../services/socialListeningService';
 import { socialStrategyAIService } from '../services/socialStrategyAIService';
 import { unifiedAIController } from '../services/unifiedAIController';
+import { aiContentService } from '../services/aiContentService';
 import { logger } from '../logger';
 
 const router = Router();
@@ -477,7 +478,11 @@ router.get('/benchmarks', requireAuth, async (req: AuthenticatedRequest, res: Re
 
 router.get('/ai-content/ab-variants', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ variants: [] });
+    const { content = '', variationType = 'tone' } = req.query as Record<string, string>;
+    const validTypes = ['headline', 'CTA', 'emoji', 'length', 'tone'];
+    const type = validTypes.includes(variationType) ? variationType as any : 'tone';
+    const variants = await aiContentService.generateABVariants(content, type);
+    res.json({ variants });
   } catch (error) {
     logger.error('Get AB variants error:', error);
     res.status(500).json({ message: 'Failed to get AB variants' });
@@ -486,7 +491,13 @@ router.get('/ai-content/ab-variants', requireAuth, async (req: AuthenticatedRequ
 
 router.post('/ai-content/analyze-brand-voice', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ brandVoice: { tone: 'professional', style: 'friendly' }, score: 0.85 });
+    const userId = req.user!.id;
+    const { historicalPosts = [] } = req.body;
+    if (!Array.isArray(historicalPosts)) {
+      return res.status(400).json({ message: 'historicalPosts must be an array of strings' });
+    }
+    const brandVoice = await aiContentService.analyzeBrandVoice(userId, historicalPosts.map(String));
+    res.json({ brandVoice, score: brandVoice.consistency || 0.85 });
   } catch (error) {
     logger.error('Analyze brand voice error:', error);
     res.status(500).json({ message: 'Failed to analyze brand voice' });
@@ -495,7 +506,19 @@ router.post('/ai-content/analyze-brand-voice', requireAuth, async (req: Authenti
 
 router.post('/ai-content/multilingual', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ translations: [] });
+    const { content, targetLanguages, headline, hashtags, platform } = req.body;
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: 'content is required' });
+    }
+    if (!Array.isArray(targetLanguages) || targetLanguages.length === 0) {
+      return res.status(400).json({ message: 'targetLanguages must be a non-empty array' });
+    }
+    const translations = await aiContentService.generateMultilingualContent(
+      content,
+      targetLanguages.map(String),
+      { headline, hashtags, platform }
+    );
+    res.json({ translations });
   } catch (error) {
     logger.error('Multilingual content error:', error);
     res.status(500).json({ message: 'Failed to generate multilingual content' });
@@ -504,7 +527,15 @@ router.post('/ai-content/multilingual', requireAuth, async (req: AuthenticatedRe
 
 router.post('/ai-content/optimize-hashtags', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ hashtags: [], optimized: true });
+    const { content = '', platform = 'instagram', goal = 'engagement' } = req.body;
+    const validGoals = ['reach', 'engagement', 'niche'];
+    const validatedGoal = validGoals.includes(goal) ? goal : 'engagement';
+    const hashtags = await aiContentService.optimizeHashtags(
+      String(content),
+      String(platform).toLowerCase(),
+      validatedGoal as 'reach' | 'engagement' | 'niche'
+    );
+    res.json({ hashtags, optimized: true });
   } catch (error) {
     logger.error('Optimize hashtags error:', error);
     res.status(500).json({ message: 'Failed to optimize hashtags' });
@@ -513,7 +544,9 @@ router.post('/ai-content/optimize-hashtags', requireAuth, async (req: Authentica
 
 router.get('/ai-content/posting-times', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ times: [], timezone: 'UTC' });
+    const userId = req.user!.id;
+    const times = await aiContentService.getOptimalPostingTimes(userId);
+    res.json({ times, timezone: 'UTC' });
   } catch (error) {
     logger.error('Get posting times error:', error);
     res.status(500).json({ message: 'Failed to get posting times' });
@@ -522,7 +555,9 @@ router.get('/ai-content/posting-times', requireAuth, async (req: AuthenticatedRe
 
 router.get('/ai-content/trending-topics', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ topics: [] });
+    const { platform = 'instagram', region, genre } = req.query as Record<string, string>;
+    const topics = await aiContentService.getTrendingTopics(platform, region, genre);
+    res.json({ topics });
   } catch (error) {
     logger.error('Get trending topics error:', error);
     res.status(500).json({ message: 'Failed to get trending topics' });

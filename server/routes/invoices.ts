@@ -21,8 +21,8 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
 
 function generateInvoiceNumber(): string {
   const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 99999).toString().padStart(5, '0');
-  return `INV-${year}-${random}`;
+  const unique = nanoid(8).toUpperCase().replace(/[^A-Z0-9]/g, '0');
+  return `INV-${year}-${unique}`;
 }
 
 router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) => {

@@ -4,6 +4,7 @@ import { users, projects, releases, analytics, posts, orders, systemSettings } f
 import { eq, desc, asc, like, or, sql, count, sum, and, gte, lte } from 'drizzle-orm';
 import { logger } from '../../logger.js';
 import bcrypt from 'bcrypt';
+import os from 'os';
 
 const router = Router();
 
@@ -615,21 +616,29 @@ function formatTimeAgo(date: Date | null): string {
 router.get('/metrics', async (req, res) => {
   try {
     const memUsage = process.memoryUsage();
-    const uptime = process.uptime();
-    
+    const uptimeSeconds = process.uptime();
+
+    const cpus = os.cpus();
+    const loadAvg1m = os.loadavg()[0];
+    const cpuPercent = Math.min(100, Math.round((loadAvg1m / cpus.length) * 100));
+
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const memPercent = Math.round(((totalMem - freeMem) / totalMem) * 100);
+
     const [activeUsersResult] = await Promise.all([
       db.select({ count: count() }).from(users).where(eq(users.subscriptionStatus, 'active'))
     ]);
 
     res.json({
-      cpu: Math.floor(Math.random() * 30 + 10),
-      memory: Math.floor((memUsage.heapUsed / memUsage.heapTotal) * 100),
-      disk: Math.floor(Math.random() * 40 + 20),
-      network: Math.floor(Math.random() * 25 + 5),
-      uptime: 99.9,
+      cpu: cpuPercent,
+      memory: memPercent,
+      heapUsedMb: Math.round(memUsage.heapUsed / 1024 / 1024),
+      heapTotalMb: Math.round(memUsage.heapTotal / 1024 / 1024),
+      uptimeSeconds: Math.round(uptimeSeconds),
+      loadAverage: loadAvg1m.toFixed(2),
+      cpuCount: cpus.length,
       activeUsers: activeUsersResult[0]?.count || 0,
-      requestsPerMinute: Math.floor(Math.random() * 100 + 50),
-      avgResponseTime: Math.floor(Math.random() * 50 + 20)
     });
   } catch (error) {
     logger.error('Error fetching metrics:', error);

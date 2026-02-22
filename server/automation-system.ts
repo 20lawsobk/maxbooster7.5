@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { promisify } from 'util';
 import { exec } from 'child_process';
+import { randomUUID } from 'crypto';
 import cron from 'node-cron';
 import { apiRequest } from '../shared/api-client';
 import { logger } from './logger.js';
@@ -600,7 +601,7 @@ export class AutomationSystem extends EventEmitter {
 
   // Generate unique ID
   private generateId(): string {
-    return Math.random().toString(36).substr(2, 9);
+    return randomUUID();
   }
 
   // Get automation metrics

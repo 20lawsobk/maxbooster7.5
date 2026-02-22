@@ -231,12 +231,21 @@ export async function registerRoutes(
       if (!user) {
         user = await storage.getUserByUsername(identifier);
       }
-      if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" });
+
+      // Always run bcrypt.compare to prevent timing-based user enumeration.
+      // When no user is found we compare against a dummy hash so response time
+      // is indistinguishable from a real password mismatch (prevents user existence
+      // detection via response time differences).
+      const DUMMY_HASH = '$2b$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234';
+      const candidateHash = user?.password ?? DUMMY_HASH;
+      let isValid = false;
+      try {
+        isValid = await bcrypt.compare(password, candidateHash);
+      } catch {
+        isValid = false;
       }
 
-      const isValid = await bcrypt.compare(password, user.password);
-      if (!isValid) {
+      if (!user || !isValid) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
@@ -1310,7 +1319,7 @@ export async function registerRoutes(
       return res.status(403).json({ message: "Admin access required" });
     }
     return res.json({
-      token: `max_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+      token: `max_${crypto.randomBytes(24).toString('hex')}`,
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
   });
