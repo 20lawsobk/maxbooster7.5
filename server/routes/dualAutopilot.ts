@@ -139,7 +139,7 @@ router.post('/fanbase/daily-loop', requireAuth, requirePremium, async (req, res)
 router.get('/fanbase/music-impact', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const limit = parseInt(req.query.limit as string) || 50;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
     
     const metrics = await socialFanbaseService.getMusicImpactMetrics(userId, limit);
     
@@ -307,7 +307,7 @@ router.put('/fanbase/content/:id/performance', requireAuth, async (req, res) => 
 router.get('/fanbase/content/top', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
     
     const content = await socialFanbaseService.getTopPerformingContent(userId, limit);
     
@@ -440,7 +440,7 @@ router.put('/organic/assets/:id/performance', requireAuth, async (req, res) => {
 router.get('/organic/assets/top', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
     
     const assets = await organicCompoundingService.getTopPerformingAssets(userId, limit);
     

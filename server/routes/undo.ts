@@ -167,7 +167,7 @@ router.get('/history', async (req: Request, res: Response) => {
     }
 
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-    const offset = parseInt(req.query.offset as string) || 0;
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
     const category = req.query.category as string | undefined;
     const module = req.query.module as string | undefined;
 

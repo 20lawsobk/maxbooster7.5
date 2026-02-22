@@ -3968,6 +3968,152 @@ export const insertSplitSheetSchema = createInsertSchema(splitSheets).omit({ id:
 export type InsertSplitSheet = z.infer<typeof insertSplitSheetSchema>;
 
 // ============================================================================
+// BATCH TEMPLATES (user-created bulk operation templates)
+// ============================================================================
+export const batchTemplates = pgTable("batch_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  resource: text("resource").notNull(),
+  action: text("action").notNull().default("bulk_operation"),
+  configuration: jsonb("configuration").notNull().default(sql`'{}'::jsonb`),
+  isFavorite: boolean("is_favorite").notNull().default(false),
+  isShared: boolean("is_shared").notNull().default(false),
+  sharedBy: varchar("shared_by"),
+  usageCount: integer("usage_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BatchTemplate = typeof batchTemplates.$inferSelect;
+export const insertBatchTemplateSchema = createInsertSchema(batchTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertBatchTemplate = z.infer<typeof insertBatchTemplateSchema>;
+
+// ============================================================================
+// SHARE LINKS (persistent share links for exports, projects, audio files)
+// ============================================================================
+export const shareLinks = pgTable("share_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shortCode: varchar("short_code").notNull().unique(),
+  url: text("url").notNull(),
+  name: text("name").notNull(),
+  resourceType: text("resource_type").notNull(),
+  resourceId: varchar("resource_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  expiresAt: timestamp("expires_at"),
+  isPasswordProtected: boolean("is_password_protected").notNull().default(false),
+  passwordHash: text("password_hash"),
+  maxDownloads: integer("max_downloads"),
+  downloadCount: integer("download_count").notNull().default(0),
+  viewCount: integer("view_count").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  allowedEmails: jsonb("allowed_emails"),
+  requiresEmail: boolean("requires_email").notNull().default(false),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ShareLink = typeof shareLinks.$inferSelect;
+export const insertShareLinkSchema = createInsertSchema(shareLinks).omit({ id: true, createdAt: true });
+export type InsertShareLink = z.infer<typeof insertShareLinkSchema>;
+
+// ============================================================================
+// COLLABORATION COMMENTS (threaded comments on studio projects)
+// ============================================================================
+export const collaborationComments = pgTable("collaboration_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull(),
+  parentId: varchar("parent_id"),
+  elementId: varchar("element_id"),
+  userId: varchar("user_id").notNull(),
+  userName: text("user_name").notNull(),
+  userAvatar: text("user_avatar"),
+  content: text("content").notNull(),
+  mentions: jsonb("mentions").notNull().default(sql`'[]'::jsonb`),
+  timestamp: integer("timestamp"),
+  resolved: boolean("resolved").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CollaborationComment = typeof collaborationComments.$inferSelect;
+export const insertCollaborationCommentSchema = createInsertSchema(collaborationComments).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCollaborationComment = z.infer<typeof insertCollaborationCommentSchema>;
+
+// ============================================================================
+// COLLABORATION VERSIONS (project version snapshots)
+// ============================================================================
+export const collaborationVersions = pgTable("collaboration_versions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull(),
+  version: integer("version").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdBy: varchar("created_by").notNull(),
+  createdByName: text("created_by_name").notNull(),
+  size: integer("size"),
+  changes: jsonb("changes").default(sql`'[]'::jsonb`),
+  isAutoSave: boolean("is_auto_save").notNull().default(false),
+  isCurrent: boolean("is_current").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type CollaborationVersion = typeof collaborationVersions.$inferSelect;
+export const insertCollaborationVersionSchema = createInsertSchema(collaborationVersions).omit({ id: true, createdAt: true });
+export type InsertCollaborationVersion = z.infer<typeof insertCollaborationVersionSchema>;
+
+// ============================================================================
+// COLLABORATION ACCESS REQUESTS (project access permission requests)
+// ============================================================================
+export const collaborationAccessRequests = pgTable("collaboration_access_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull(),
+  requesterId: varchar("requester_id").notNull(),
+  requesterName: text("requester_name").notNull(),
+  requesterEmail: text("requester_email").notNull(),
+  requestedAccess: text("requested_access").notNull(),
+  message: text("message"),
+  status: text("status").notNull().default("pending"),
+  respondedBy: varchar("responded_by"),
+  respondedAt: timestamp("responded_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type CollaborationAccessRequest = typeof collaborationAccessRequests.$inferSelect;
+export const insertCollaborationAccessRequestSchema = createInsertSchema(collaborationAccessRequests).omit({ id: true, createdAt: true });
+export type InsertCollaborationAccessRequest = z.infer<typeof insertCollaborationAccessRequestSchema>;
+
+// ============================================================================
+// SEARCH HISTORY (per-user search query history, persisted across restarts)
+// ============================================================================
+export const searchHistory = pgTable("search_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  query: text("query").notNull(),
+  resultCount: integer("result_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type SearchHistoryItem = typeof searchHistory.$inferSelect;
+
+// ============================================================================
+// FILTER PRESETS (user-created named filter configurations, persisted)
+// ============================================================================
+export const filterPresets = pgTable("filter_presets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  context: text("context").notNull().default("global"),
+  filters: jsonb("filters").notNull().default(sql`'{}'::jsonb`),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type FilterPreset = typeof filterPresets.$inferSelect;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });

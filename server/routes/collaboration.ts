@@ -1,6 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { logger } from '../logger.js';
+import { db } from '../db';
+import { collaborationComments, collaborationVersions, collaborationAccessRequests } from '@shared/schema';
+import { eq, and, desc, isNull } from 'drizzle-orm';
 
 const router = Router();
 
@@ -72,8 +75,6 @@ interface AccessRequest {
 }
 
 const sessions = new Map<string, Map<string, PresenceInfo>>();
-const versions = new Map<string, Version[]>();
-const accessRequests = new Map<string, AccessRequest[]>();
 const conflicts = new Map<string, ConflictResolution[]>();
 
 const COLORS = [
@@ -344,43 +345,44 @@ const createVersionSchema = z.object({
 router.post('/version', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const validatedData = createVersionSchema.parse(req.body);
-    
-    const projectVersions = versions.get(validatedData.projectId) || [];
-    const nextVersion = projectVersions.length + 1;
-    
-    projectVersions.forEach(v => v.isCurrent = false);
+    const userId = req.user!.id;
 
-    const newVersion: Version = {
-      id: `v-${Date.now()}`,
-      projectId: validatedData.projectId,
-      version: nextVersion,
-      name: validatedData.name || `Version ${nextVersion}`,
-      description: validatedData.description,
-      createdBy: req.user!.id,
-      createdByName: 'You',
-      createdAt: new Date(),
-      isAutoSave: validatedData.isAutoSave || false,
-      isCurrent: true,
-    };
+    const existingVersions = await db
+      .select({ id: collaborationVersions.id })
+      .from(collaborationVersions)
+      .where(eq(collaborationVersions.projectId, validatedData.projectId));
 
-    projectVersions.push(newVersion);
-    versions.set(validatedData.projectId, projectVersions);
+    const nextVersion = existingVersions.length + 1;
+
+    await db
+      .update(collaborationVersions)
+      .set({ isCurrent: false })
+      .where(eq(collaborationVersions.projectId, validatedData.projectId));
+
+    const [newVersion] = await db
+      .insert(collaborationVersions)
+      .values({
+        projectId: validatedData.projectId,
+        version: nextVersion,
+        name: validatedData.name || `Version ${nextVersion}`,
+        description: validatedData.description || null,
+        createdBy: userId,
+        createdByName: 'You',
+        isAutoSave: validatedData.isAutoSave || false,
+        isCurrent: true,
+      })
+      .returning();
 
     const outcomeType = validatedData.isAutoSave ? 'auto_save_completed' : 'new_version_created';
-    const message = validatedData.isAutoSave 
-      ? 'Auto-save completed' 
+    const message = validatedData.isAutoSave
+      ? 'Auto-save completed'
       : `Version ${nextVersion} created`;
 
     logger.info(`Version created: ${newVersion.id} for project ${validatedData.projectId}`);
 
     res.status(201).json({
       version: newVersion,
-      outcome: {
-        type: outcomeType,
-        message,
-        versionId: newVersion.id,
-        version: nextVersion,
-      },
+      outcome: { type: outcomeType, message, versionId: newVersion.id, version: nextVersion },
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -394,14 +396,15 @@ router.post('/version', requireAuth, async (req: AuthenticatedRequest, res: Resp
 router.get('/versions/:projectId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { projectId } = req.params;
-    const projectVersions = versions.get(projectId) || [];
+    const rows = await db
+      .select()
+      .from(collaborationVersions)
+      .where(eq(collaborationVersions.projectId, projectId))
+      .orderBy(desc(collaborationVersions.version));
 
     res.json({
-      versions: projectVersions.sort((a, b) => b.version - a.version),
-      outcome: {
-        type: 'version_history_displayed',
-        message: `${projectVersions.length} versions found`,
-      },
+      versions: rows,
+      outcome: { type: 'version_history_displayed', message: `${rows.length} versions found` },
     });
   } catch (error) {
     logger.error('Get versions error:', error);
@@ -412,28 +415,31 @@ router.get('/versions/:projectId', requireAuth, async (req: AuthenticatedRequest
 router.put('/versions/:projectId/:versionId/restore', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { projectId, versionId } = req.params;
-    const projectVersions = versions.get(projectId);
-    
-    if (!projectVersions) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
 
-    const targetVersion = projectVersions.find(v => v.id === versionId);
-    if (!targetVersion) {
+    const [target] = await db
+      .select()
+      .from(collaborationVersions)
+      .where(and(eq(collaborationVersions.id, versionId), eq(collaborationVersions.projectId, projectId)));
+
+    if (!target) {
       return res.status(404).json({ error: 'Version not found' });
     }
 
-    projectVersions.forEach(v => v.isCurrent = false);
-    targetVersion.isCurrent = true;
+    await db
+      .update(collaborationVersions)
+      .set({ isCurrent: false })
+      .where(eq(collaborationVersions.projectId, projectId));
+
+    const [restored] = await db
+      .update(collaborationVersions)
+      .set({ isCurrent: true })
+      .where(eq(collaborationVersions.id, versionId))
+      .returning();
 
     res.json({
       success: true,
-      version: targetVersion,
-      outcome: {
-        type: 'version_restored',
-        message: `Restored to ${targetVersion.name}`,
-        versionId: targetVersion.id,
-      },
+      version: restored,
+      outcome: { type: 'version_restored', message: `Restored to ${restored.name}`, versionId: restored.id },
     });
   } catch (error) {
     logger.error('Restore version error:', error);
@@ -445,29 +451,22 @@ router.post('/versions/:projectId/compare', requireAuth, async (req: Authenticat
   try {
     const { projectId } = req.params;
     const { versionAId, versionBId } = req.body;
-    
-    const projectVersions = versions.get(projectId);
-    if (!projectVersions) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
 
-    const versionA = projectVersions.find(v => v.id === versionAId);
-    const versionB = projectVersions.find(v => v.id === versionBId);
+    const rows = await db
+      .select()
+      .from(collaborationVersions)
+      .where(and(eq(collaborationVersions.projectId, projectId)));
+
+    const versionA = rows.find(v => v.id === versionAId);
+    const versionB = rows.find(v => v.id === versionBId);
 
     if (!versionA || !versionB) {
       return res.status(404).json({ error: 'One or both versions not found' });
     }
 
     res.json({
-      comparison: {
-        versionA,
-        versionB,
-        changes: ['Sample change 1', 'Sample change 2'],
-      },
-      outcome: {
-        type: 'version_compared',
-        message: `Comparing ${versionA.name} with ${versionB.name}`,
-      },
+      comparison: { versionA, versionB, changes: [] },
+      outcome: { type: 'version_compared', message: `Comparing ${versionA.name} with ${versionB.name}` },
     });
   } catch (error) {
     logger.error('Compare versions error:', error);
@@ -478,31 +477,27 @@ router.post('/versions/:projectId/compare', requireAuth, async (req: Authenticat
 router.delete('/versions/:projectId/:versionId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { projectId, versionId } = req.params;
-    const projectVersions = versions.get(projectId);
-    
-    if (!projectVersions) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
 
-    const versionIndex = projectVersions.findIndex(v => v.id === versionId);
-    if (versionIndex === -1) {
+    const [target] = await db
+      .select()
+      .from(collaborationVersions)
+      .where(and(eq(collaborationVersions.id, versionId), eq(collaborationVersions.projectId, projectId)));
+
+    if (!target) {
       return res.status(404).json({ error: 'Version not found' });
     }
 
-    const deletedVersion = projectVersions[versionIndex];
-    if (deletedVersion.isCurrent) {
+    if (target.isCurrent) {
       return res.status(400).json({ error: 'Cannot delete the current version' });
     }
 
-    projectVersions.splice(versionIndex, 1);
+    await db
+      .delete(collaborationVersions)
+      .where(eq(collaborationVersions.id, versionId));
 
     res.json({
       success: true,
-      outcome: {
-        type: 'version_deleted',
-        message: `${deletedVersion.name} has been deleted`,
-        versionId,
-      },
+      outcome: { type: 'version_deleted', message: `${target.name} has been deleted`, versionId },
     });
   } catch (error) {
     logger.error('Delete version error:', error);
@@ -519,31 +514,29 @@ const accessRequestSchema = z.object({
 router.post('/access/request', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const validatedData = accessRequestSchema.parse(req.body);
-    
-    const request: AccessRequest = {
-      id: `ar-${Date.now()}`,
-      projectId: validatedData.projectId,
-      requesterId: req.user!.id,
-      requesterName: 'User',
-      requesterEmail: req.user!.email,
-      requestedAccess: validatedData.requestedAccess,
-      message: validatedData.message,
-      status: 'pending',
-      createdAt: new Date(),
-    };
+    const userId = req.user!.id;
 
-    const projectRequests = accessRequests.get(validatedData.projectId) || [];
-    projectRequests.push(request);
-    accessRequests.set(validatedData.projectId, projectRequests);
+    const [inserted] = await db
+      .insert(collaborationAccessRequests)
+      .values({
+        projectId: validatedData.projectId,
+        requesterId: userId,
+        requesterName: 'User',
+        requesterEmail: req.user!.email,
+        requestedAccess: validatedData.requestedAccess,
+        message: validatedData.message || null,
+        status: 'pending',
+      })
+      .returning();
 
-    logger.info(`Access request submitted: ${request.id} for project ${validatedData.projectId}`);
+    logger.info(`Access request submitted: ${inserted.id} for project ${validatedData.projectId}`);
 
     res.status(201).json({
-      request,
+      request: inserted,
       outcome: {
         type: 'access_request_submitted',
         message: `Request for ${validatedData.requestedAccess} access has been submitted`,
-        requestId: request.id,
+        requestId: inserted.id,
       },
     });
   } catch (error) {
@@ -558,11 +551,15 @@ router.post('/access/request', requireAuth, async (req: AuthenticatedRequest, re
 router.get('/access/requests/:projectId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { projectId } = req.params;
-    const projectRequests = accessRequests.get(projectId) || [];
+    const rows = await db
+      .select()
+      .from(collaborationAccessRequests)
+      .where(and(
+        eq(collaborationAccessRequests.projectId, projectId),
+        eq(collaborationAccessRequests.status, 'pending'),
+      ));
 
-    res.json({
-      requests: projectRequests.filter(r => r.status === 'pending'),
-    });
+    res.json({ requests: rows });
   } catch (error) {
     logger.error('Get access requests error:', error);
     res.status(500).json({ error: 'Failed to get access requests' });
@@ -608,15 +605,14 @@ router.put('/access/:userId', requireAuth, async (req: AuthenticatedRequest, res
     }
 
     if (projectId) {
-      const projectRequests = accessRequests.get(projectId);
-      if (projectRequests) {
-        const request = projectRequests.find(r => r.requesterId === userId);
-        if (request) {
-          request.status = validatedData.action === 'approve' ? 'approved' : 'denied';
-          request.respondedBy = req.user!.id;
-          request.respondedAt = new Date();
-        }
-      }
+      const newStatus = validatedData.action === 'approve' ? 'approved' : 'denied';
+      await db
+        .update(collaborationAccessRequests)
+        .set({ status: newStatus, respondedBy: req.user!.id, respondedAt: new Date() })
+        .where(and(
+          eq(collaborationAccessRequests.projectId, projectId),
+          eq(collaborationAccessRequests.requesterId, userId),
+        ));
     }
 
     logger.info(`Access updated for user ${userId}: ${validatedData.action}`);
@@ -664,51 +660,30 @@ interface Comment {
   replies: Comment[];
 }
 
-const comments = new Map<string, Comment[]>();
-
 router.post('/comments', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const validatedData = commentSchema.parse(req.body);
-    
-    const comment: Comment = {
-      id: `c-${Date.now()}`,
-      projectId: validatedData.projectId,
-      elementId: validatedData.elementId,
-      userId: req.user!.id,
-      userName: 'You',
-      content: validatedData.content,
-      parentId: validatedData.parentId,
-      mentions: validatedData.mentions || [],
-      timestamp: validatedData.timestamp,
-      resolved: false,
-      createdAt: new Date(),
-      replies: [],
-    };
+    const userId = req.user!.id;
 
-    const projectComments = comments.get(validatedData.projectId) || [];
-    
-    if (validatedData.parentId) {
-      const findAndAddReply = (commentsList: Comment[]): boolean => {
-        for (const c of commentsList) {
-          if (c.id === validatedData.parentId) {
-            c.replies.push(comment);
-            return true;
-          }
-          if (findAndAddReply(c.replies)) return true;
-        }
-        return false;
-      };
-      findAndAddReply(projectComments);
-    } else {
-      projectComments.push(comment);
-    }
-    
-    comments.set(validatedData.projectId, projectComments);
+    const [inserted] = await db
+      .insert(collaborationComments)
+      .values({
+        projectId: validatedData.projectId,
+        elementId: validatedData.elementId || null,
+        userId,
+        userName: 'You',
+        content: validatedData.content,
+        parentId: validatedData.parentId || null,
+        mentions: validatedData.mentions || [],
+        timestamp: validatedData.timestamp ?? null,
+        resolved: false,
+      })
+      .returning();
 
     const outcomes: any[] = [{
       type: validatedData.parentId ? 'comment_replied' : 'comment_added',
       message: validatedData.parentId ? 'Reply added' : 'Comment added',
-      commentId: comment.id,
+      commentId: inserted.id,
     }];
 
     if (validatedData.mentions && validatedData.mentions.length > 0) {
@@ -719,10 +694,7 @@ router.post('/comments', requireAuth, async (req: AuthenticatedRequest, res: Res
       });
     }
 
-    res.status(201).json({
-      comment,
-      outcomes,
-    });
+    res.status(201).json({ comment: inserted, outcomes });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
@@ -735,11 +707,13 @@ router.post('/comments', requireAuth, async (req: AuthenticatedRequest, res: Res
 router.get('/comments/:projectId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { projectId } = req.params;
-    const projectComments = comments.get(projectId) || [];
+    const rows = await db
+      .select()
+      .from(collaborationComments)
+      .where(eq(collaborationComments.projectId, projectId))
+      .orderBy(desc(collaborationComments.createdAt));
 
-    res.json({
-      comments: projectComments,
-    });
+    res.json({ comments: rows });
   } catch (error) {
     logger.error('Get comments error:', error);
     res.status(500).json({ error: 'Failed to get comments' });
@@ -749,26 +723,13 @@ router.get('/comments/:projectId', requireAuth, async (req: AuthenticatedRequest
 router.put('/comments/:commentId/resolve', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { commentId } = req.params;
-    const { projectId } = req.body;
-    
-    const projectComments = comments.get(projectId);
-    if (!projectComments) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
 
-    const findAndResolve = (commentsList: Comment[]): Comment | null => {
-      for (const c of commentsList) {
-        if (c.id === commentId) {
-          c.resolved = true;
-          return c;
-        }
-        const found = findAndResolve(c.replies);
-        if (found) return found;
-      }
-      return null;
-    };
+    const [resolved] = await db
+      .update(collaborationComments)
+      .set({ resolved: true })
+      .where(eq(collaborationComments.id, commentId))
+      .returning();
 
-    const resolved = findAndResolve(projectComments);
     if (!resolved) {
       return res.status(404).json({ error: 'Comment not found' });
     }
@@ -776,11 +737,7 @@ router.put('/comments/:commentId/resolve', requireAuth, async (req: Authenticate
     res.json({
       success: true,
       comment: resolved,
-      outcome: {
-        type: 'comment_resolved',
-        message: 'Comment marked as resolved',
-        commentId,
-      },
+      outcome: { type: 'comment_resolved', message: 'Comment marked as resolved', commentId },
     });
   } catch (error) {
     logger.error('Resolve comment error:', error);

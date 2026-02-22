@@ -95,7 +95,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 
   try {
-    const page = parseInt(req.query.page as string) || 1;
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     const offset = (page - 1) * limit;
     const category = req.query.category as string | undefined;

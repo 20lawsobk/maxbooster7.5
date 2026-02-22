@@ -45,6 +45,15 @@ The application employs a microservices architecture. The user interface is buil
 - Cleaned up `@tensorflow/tfjs-node` import in `contentAnalysisService.ts`, `post-deploy-selftest.ts`, `startup-probes.ts` to use `@tensorflow/tfjs` directly
 - **Side benefit**: Startup time improved significantly (no native TF binary loading overhead)
 
+### 2026-02-22 — Production Hardening Session 2
+- Verified all 5 session-plan tasks (T001–T005) were already completed: Stripe webhook DB updates, extendMinutes validation, autopilot composite index, Stripe API version updated, generateUploadUrl functional
+- **Fixed path traversal vulnerability** in `server/routes/storage.ts` chunk upload: `fileId` from request body is now validated against `/^[a-zA-Z0-9_-]+$/` before use in `path.join()` — prevents directory escape attacks
+- **Fixed unbounded pagination** across 12 route files: added `Math.min(value, max)` caps on all `limit` query params and `Math.max(value, 0)` clamps on all `offset` params to prevent authenticated DoS via oversized page requests
+  - Files: invoices.ts, payouts.ts, dmca.ts, notifications.ts, achievements.ts, collaborations.ts, dualAutopilot.ts, distribution.ts, billing.ts, studio.ts, undo.ts, workspace.ts
+  - Limits capped between 100–500 depending on data type; offsets floored at 0 to prevent negative values
+- Confirmed security routes in `server/routes/security.ts` are correctly protected via `router.use(requireAdmin)` at module level
+- Server running clean — zero errors, all routes loaded successfully
+
 ### 2026-02-22 — Platform Setup & QA Phase 1
 - Provisioned PostgreSQL database, pushed schema with Drizzle Kit, seeded 97 distribution platforms
 - Installed all npm dependencies (260+ packages)

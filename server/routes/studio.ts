@@ -3293,7 +3293,7 @@ router.get('/start-hub/summary', requireAuth, async (req: Request, res: Response
 router.get('/start-hub/recent', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 200);
     
     // Include ALL user projects, not just studio-specific ones
     const recentProjects = await db.query.projects.findMany({

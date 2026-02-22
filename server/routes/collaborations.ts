@@ -110,7 +110,7 @@ router.get("/suggestions", async (req: Request, res: Response) => {
   }
 
   try {
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
     const suggestions = await collaborationService.getSuggestedCollaborators(
       req.user.id,
       limit
@@ -209,7 +209,7 @@ router.get("/search", async (req: Request, res: Response) => {
     const skills = req.query.skills
       ? (req.query.skills as string).split(",")
       : undefined;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 200);
 
     const artists = await collaborationService.searchArtists(
       query,

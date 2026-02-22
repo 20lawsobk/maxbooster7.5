@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db.ts';
 import { storage } from '../storage.ts';
 import { eq, ilike, or, and, desc, sql, count, gte, lte, asc, sum } from 'drizzle-orm';
-import { users, projects, beats, releases, studioProjects, storefronts, analytics, socialCampaigns } from '../../shared/schema.ts';
+import { users, projects, beats, releases, studioProjects, storefronts, analytics, socialCampaigns, searchHistory, filterPresets } from '../../shared/schema.ts';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -48,7 +48,6 @@ interface TrendingSearch {
   trend: 'up' | 'down' | 'stable';
 }
 
-const searchHistoryCache = new Map<string, SearchHistoryItem[]>();
 const trendingSearchesCache: TrendingSearch[] = [];
 const autocompleteCache = new Map<string, string[]>();
 
@@ -390,13 +389,7 @@ router.get('/unified', async (req: Request, res: Response) => {
                        results.projects.total + results.releases.total;
     
     if (userId && q) {
-      const userHistory = searchHistoryCache.get(userId) || [];
-      userHistory.unshift({
-        query: q,
-        timestamp: new Date(),
-        resultCount: totalCount,
-      });
-      searchHistoryCache.set(userId, userHistory.slice(0, 50));
+      await db.insert(searchHistory).values({ userId, query: q, resultCount: totalCount }).catch(() => {});
     }
     
     res.json({
@@ -526,17 +519,16 @@ router.get('/trending', async (req: Request, res: Response) => {
 router.get('/history', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    const history = searchHistoryCache.get(userId) || [];
-    
-    res.json({
-      history: history.slice(0, 20),
-      totalCount: history.length,
-    });
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const rows = await db
+      .select()
+      .from(searchHistory)
+      .where(eq(searchHistory.userId, userId))
+      .orderBy(desc(searchHistory.createdAt))
+      .limit(50);
+
+    res.json({ history: rows.slice(0, 20), totalCount: rows.length });
   } catch (error: any) {
     logger.error('Search history error:', error);
     res.status(500).json({ error: 'Failed to get search history' });
@@ -546,13 +538,10 @@ router.get('/history', async (req: Request, res: Response) => {
 router.delete('/history', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    searchHistoryCache.delete(userId);
-    
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    await db.delete(searchHistory).where(eq(searchHistory.userId, userId));
+
     res.json({ success: true, message: 'Search history cleared' });
   } catch (error: any) {
     logger.error('Clear search history error:', error);
@@ -564,15 +553,12 @@ router.delete('/history/:query', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const { query } = req.params;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    const history = searchHistoryCache.get(userId) || [];
-    const filtered = history.filter(h => h.query !== query);
-    searchHistoryCache.set(userId, filtered);
-    
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    await db
+      .delete(searchHistory)
+      .where(and(eq(searchHistory.userId, userId), eq(searchHistory.query, query)));
+
     res.json({ success: true, message: 'Search item removed' });
   } catch (error: any) {
     logger.error('Remove search history item error:', error);
@@ -619,7 +605,12 @@ router.get('/discover', async (req: Request, res: Response) => {
     let personalized: any[] = [];
     
     if (userId) {
-      const userHistory = searchHistoryCache.get(userId) || [];
+      const userHistory = await db
+        .select()
+        .from(searchHistory)
+        .where(eq(searchHistory.userId, userId))
+        .orderBy(desc(searchHistory.createdAt))
+        .limit(10);
       const recentGenres = new Set<string>();
       
       for (const item of userHistory.slice(0, 10)) {
@@ -723,43 +714,29 @@ router.get('/similar/:beatId', async (req: Request, res: Response) => {
 router.post('/filter-presets', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    const { name, filters } = req.body;
-    
-    if (!name || !filters) {
-      return res.status(400).json({ error: 'Name and filters are required' });
-    }
-    
-    res.json({
-      success: true,
-      preset: {
-        id: `preset_${Date.now()}`,
-        name,
-        filters,
-        createdAt: new Date().toISOString(),
-      },
-    });
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { name, filters, context = 'global' } = req.body;
+    if (!name || !filters) return res.status(400).json({ error: 'Name and filters are required' });
+
+    const [inserted] = await db
+      .insert(filterPresets)
+      .values({ userId, name, filters, context })
+      .returning();
+
+    res.json({ success: true, preset: inserted });
   } catch (error: any) {
     logger.error('Save filter preset error:', error);
     res.status(500).json({ error: 'Failed to save filter preset' });
   }
 });
 
-const filterPresetsCache = new Map<string, any[]>();
-
 router.get('/filter-presets', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const { context = 'global' } = req.query;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
     const builtInPresets: Record<string, any[]> = {
       marketplace: [
         { id: 'preset_trap', name: 'Trap Vibes', filters: { genre: 'Trap', bpm_min: 130, bpm_max: 160 }, isBuiltIn: true },
@@ -791,10 +768,15 @@ router.get('/filter-presets', async (req: Request, res: Response) => {
         { id: 'preset_chill', name: 'Chill Lo-Fi', filters: { genre: 'Lo-Fi', bpm_min: 70, bpm_max: 95 }, isBuiltIn: true },
       ],
     };
-    
-    const contextPresets = builtInPresets[context as string] || builtInPresets.global;
-    const userPresets = filterPresetsCache.get(`${userId}_${context}`) || [];
-    
+
+    const contextKey = String(context);
+    const contextPresets = builtInPresets[contextKey] || builtInPresets.global;
+    const userPresets = await db
+      .select()
+      .from(filterPresets)
+      .where(and(eq(filterPresets.userId, userId), eq(filterPresets.context, contextKey)))
+      .orderBy(desc(filterPresets.createdAt));
+
     res.json({ presets: [...contextPresets, ...userPresets] });
   } catch (error: any) {
     logger.error('Get filter presets error:', error);
@@ -805,35 +787,20 @@ router.get('/filter-presets', async (req: Request, res: Response) => {
 router.put('/filter-presets', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    const { id, name, filters, context = 'global' } = req.body;
-    
-    if (!id || !name) {
-      return res.status(400).json({ error: 'ID and name are required' });
-    }
-    
-    const cacheKey = `${userId}_${context}`;
-    const userPresets = filterPresetsCache.get(cacheKey) || [];
-    const presetIndex = userPresets.findIndex(p => p.id === id);
-    
-    if (presetIndex === -1) {
-      return res.status(404).json({ error: 'Preset not found' });
-    }
-    
-    userPresets[presetIndex] = {
-      ...userPresets[presetIndex],
-      name,
-      filters,
-      updatedAt: new Date().toISOString(),
-    };
-    
-    filterPresetsCache.set(cacheKey, userPresets);
-    
-    res.json({ success: true, preset: userPresets[presetIndex] });
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id, name, filters } = req.body;
+    if (!id || !name) return res.status(400).json({ error: 'ID and name are required' });
+
+    const [updated] = await db
+      .update(filterPresets)
+      .set({ name, ...(filters && { filters }), updatedAt: new Date() })
+      .where(and(eq(filterPresets.id, id), eq(filterPresets.userId, userId)))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: 'Preset not found' });
+
+    res.json({ success: true, preset: updated });
   } catch (error: any) {
     logger.error('Update filter preset error:', error);
     res.status(500).json({ error: 'Failed to update filter preset' });
@@ -844,17 +811,12 @@ router.delete('/filter-presets/:presetId', async (req: Request, res: Response) =
   try {
     const userId = req.user?.id;
     const { presetId } = req.params;
-    const { context = 'global' } = req.query;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    const cacheKey = `${userId}_${context}`;
-    const userPresets = filterPresetsCache.get(cacheKey) || [];
-    const filtered = userPresets.filter(p => p.id !== presetId);
-    filterPresetsCache.set(cacheKey, filtered);
-    
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    await db
+      .delete(filterPresets)
+      .where(and(eq(filterPresets.id, presetId), eq(filterPresets.userId, userId)));
+
     res.json({ success: true });
   } catch (error: any) {
     logger.error('Delete filter preset error:', error);
@@ -866,22 +828,25 @@ router.post('/filter-presets/:presetId/default', async (req: Request, res: Respo
   try {
     const userId = req.user?.id;
     const { presetId } = req.params;
-    const { context = 'global' } = req.query;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    const cacheKey = `${userId}_${context}`;
-    const userPresets = filterPresetsCache.get(cacheKey) || [];
-    
-    const updated = userPresets.map(p => ({
-      ...p,
-      isDefault: p.id === presetId ? !p.isDefault : false,
-    }));
-    
-    filterPresetsCache.set(cacheKey, updated);
-    
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const [target] = await db
+      .select()
+      .from(filterPresets)
+      .where(and(eq(filterPresets.id, presetId), eq(filterPresets.userId, userId)));
+
+    if (!target) return res.status(404).json({ error: 'Preset not found' });
+
+    await db
+      .update(filterPresets)
+      .set({ isDefault: false })
+      .where(and(eq(filterPresets.userId, userId), eq(filterPresets.context, target.context)));
+
+    await db
+      .update(filterPresets)
+      .set({ isDefault: !target.isDefault })
+      .where(eq(filterPresets.id, presetId));
+
     res.json({ success: true });
   } catch (error: any) {
     logger.error('Set default preset error:', error);

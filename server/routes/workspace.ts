@@ -515,7 +515,7 @@ router.get('/:id/approvals/pending', requireAuth, requireWorkspaceMember, async 
 
 router.get('/:id/approvals/history', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
     const history = await approvalWorkflowService.getApprovalHistory(req.params.id, limit);
     res.json({ history });
   } catch (error) {
@@ -573,8 +573,8 @@ router.post('/:id/approvals/:requestId/decide', requireAuth, requireWorkspaceMem
 
 router.get('/:id/activity', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
     const activities = await workspaceService.getAuditLog(req.params.id, limit, offset);
     
     const formattedActivities = activities.map(log => ({
@@ -980,8 +980,8 @@ router.post('/:id/scim/rotate-token', requireAuth, requireWorkspaceAdmin, async 
 
 router.get('/:id/audit-log', requireAuth, requireWorkspaceAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 100;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
     
     const logs = await workspaceService.getAuditLog(req.params.id, limit, offset);
     res.json({ logs });

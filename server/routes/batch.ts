@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { eq, and, inArray, sql } from 'drizzle-orm';
-import { analytics } from '@shared/schema';
+import { eq, and, inArray, sql, desc } from 'drizzle-orm';
+import { analytics, batchTemplates } from '@shared/schema';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -492,7 +492,6 @@ router.post('/analytics/compare', async (req: Request, res: Response) => {
   }
 });
 
-const templates: Map<string, any> = new Map();
 const batchJobs: Map<string, { status: string; processed: number; total: number; success: number; failed: number; failures: Array<{ id: string; error: string }>; currentItem?: string; startTime: number }> = new Map();
 
 router.post('/tracks/move', async (req: Request, res: Response) => {
@@ -760,14 +759,20 @@ router.get('/templates', async (req: Request, res: Response) => {
     const userId = req.user.id;
     const resource = req.query.resource as string | undefined;
 
-    const userTemplates = Array.from(templates.values())
-      .filter((t) => t.userId === userId)
-      .filter((t) => !resource || t.resource === resource)
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    const conditions = [eq(batchTemplates.userId, userId)];
+    if (resource) {
+      conditions.push(eq(batchTemplates.resource, resource));
+    }
 
-    res.json({ templates: userTemplates });
+    const rows = await db
+      .select()
+      .from(batchTemplates)
+      .where(and(...conditions))
+      .orderBy(desc(batchTemplates.updatedAt));
+
+    res.json({ templates: rows });
   } catch (error) {
-    logger.info('Get templates error:', error?.message || error);
+    logger.error('Get templates error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -785,30 +790,21 @@ router.post('/templates', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Name, resource, and configuration are required' });
     }
 
-    const id = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const now = new Date().toISOString();
+    const [inserted] = await db
+      .insert(batchTemplates)
+      .values({
+        userId,
+        name,
+        description: description || null,
+        resource,
+        action: action || 'bulk_operation',
+        configuration,
+      })
+      .returning();
 
-    const template = {
-      id,
-      userId,
-      name,
-      description: description || null,
-      resource,
-      action: action || 'bulk_operation',
-      configuration,
-      isFavorite: false,
-      isShared: false,
-      sharedBy: null,
-      createdAt: now,
-      updatedAt: now,
-      usageCount: 0,
-    };
-
-    templates.set(id, template);
-
-    res.json(template);
+    res.json(inserted);
   } catch (error) {
-    logger.info('Create template error:', error?.message || error);
+    logger.error('Create template error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -820,31 +816,39 @@ router.put('/templates/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const template = templates.get(id);
+    const userId = req.user.id;
 
-    if (!template) {
+    const [existing] = await db
+      .select({ id: batchTemplates.id, userId: batchTemplates.userId })
+      .from(batchTemplates)
+      .where(eq(batchTemplates.id, id));
+
+    if (!existing) {
       return res.status(404).json({ message: 'Template not found' });
     }
-
-    if (template.userId !== req.user.id) {
+    if (existing.userId !== userId) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const updates = req.body;
-    const updatedTemplate = {
-      ...template,
-      ...updates,
-      id: template.id,
-      userId: template.userId,
-      createdAt: template.createdAt,
-      updatedAt: new Date().toISOString(),
-    };
+    const { name, description, resource, action, configuration, isFavorite } = req.body;
 
-    templates.set(id, updatedTemplate);
+    const [updated] = await db
+      .update(batchTemplates)
+      .set({
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(resource !== undefined && { resource }),
+        ...(action !== undefined && { action }),
+        ...(configuration !== undefined && { configuration }),
+        ...(isFavorite !== undefined && { isFavorite }),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(batchTemplates.id, id), eq(batchTemplates.userId, userId)))
+      .returning();
 
-    res.json(updatedTemplate);
+    res.json(updated);
   } catch (error) {
-    logger.info('Update template error:', error?.message || error);
+    logger.error('Update template error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -856,21 +860,20 @@ router.delete('/templates/:id', async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const template = templates.get(id);
+    const userId = req.user.id;
 
-    if (!template) {
+    const [deleted] = await db
+      .delete(batchTemplates)
+      .where(and(eq(batchTemplates.id, id), eq(batchTemplates.userId, userId)))
+      .returning({ id: batchTemplates.id });
+
+    if (!deleted) {
       return res.status(404).json({ message: 'Template not found' });
     }
 
-    if (template.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-
-    templates.delete(id);
-
     res.json({ message: 'Template deleted' });
   } catch (error) {
-    logger.info('Delete template error:', error?.message || error);
+    logger.error('Delete template error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -883,34 +886,39 @@ router.post('/templates/:id/share', async (req: Request, res: Response) => {
 
     const { id } = req.params;
     const { email } = req.body;
+    const userId = req.user.id;
 
     if (!email) {
       return res.status(400).json({ message: 'Email is required' });
     }
 
-    const template = templates.get(id);
+    const [original] = await db
+      .select()
+      .from(batchTemplates)
+      .where(and(eq(batchTemplates.id, id), eq(batchTemplates.userId, userId)));
 
-    if (!template) {
+    if (!original) {
       return res.status(404).json({ message: 'Template not found' });
     }
 
-    if (template.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
+    const [sharedCopy] = await db
+      .insert(batchTemplates)
+      .values({
+        userId,
+        name: original.name,
+        description: original.description,
+        resource: original.resource,
+        action: original.action,
+        configuration: original.configuration as Record<string, unknown>,
+        isShared: true,
+        sharedBy: req.user.email || req.user.username,
+        usageCount: 0,
+      })
+      .returning();
 
-    const sharedTemplate = {
-      ...template,
-      id: `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      isShared: true,
-      sharedBy: req.user.email || req.user.username,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      usageCount: 0,
-    };
-
-    res.json({ message: 'Template shared successfully', sharedTemplate });
+    res.json({ message: 'Template shared successfully', sharedTemplate: sharedCopy });
   } catch (error) {
-    logger.info('Share template error:', error?.message || error);
+    logger.error('Share template error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

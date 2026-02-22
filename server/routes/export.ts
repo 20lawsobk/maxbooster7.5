@@ -5,6 +5,8 @@ import { logger } from '../logger.js';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { getBaseUrl } from '../config/defaults.js';
+import { shareLinks as shareLinksTable } from '@shared/schema';
+import { eq, and, desc } from 'drizzle-orm';
 
 const router = Router();
 
@@ -76,7 +78,6 @@ interface ExportHistoryItem {
 
 // In-memory storage (in production, use database)
 const exportJobs = new Map<string, ExportJob>();
-const shareLinks = new Map<string, ShareLink>();
 const exportHistory: ExportHistoryItem[] = [];
 
 // ============================================================================
@@ -500,44 +501,35 @@ router.post('/share-links', requireAuth, async (req: Request, res: Response) => 
 
     const validation = shareLinkSchema.safeParse(req.body);
     if (!validation.success) {
-      return res.status(400).json({ 
-        success: false, 
-        error: validation.error.message 
-      });
+      return res.status(400).json({ success: false, error: validation.error.message });
     }
 
     const options = validation.data;
-    const linkId = nanoid();
     const shortCode = generateShortCode();
-    
     const baseUrl = getBaseUrl();
     const url = `${baseUrl}/share/${shortCode}`;
 
-    const link: ShareLink = {
-      id: linkId,
-      shortCode,
-      url,
-      name: options.name,
-      resourceType: options.resourceType,
-      resourceId: options.resourceId,
-      userId,
-      createdAt: new Date(),
-      expiresAt: options.expiresAt ? new Date(options.expiresAt) : undefined,
-      isPasswordProtected: !!options.password,
-      maxDownloads: options.maxDownloads || undefined,
-      downloadCount: 0,
-      viewCount: 0,
-      isActive: true,
-      requiresEmail: options.requiresEmail || false,
-      allowedEmails: options.allowedEmails || undefined,
-    };
+    const [inserted] = await db
+      .insert(shareLinksTable)
+      .values({
+        shortCode,
+        url,
+        name: options.name,
+        resourceType: options.resourceType,
+        resourceId: options.resourceId,
+        userId,
+        expiresAt: options.expiresAt ? new Date(options.expiresAt) : null,
+        isPasswordProtected: !!options.password,
+        maxDownloads: options.maxDownloads || null,
+        downloadCount: 0,
+        viewCount: 0,
+        isActive: true,
+        requiresEmail: options.requiresEmail || false,
+        allowedEmails: options.allowedEmails || null,
+      })
+      .returning();
 
-    shareLinks.set(linkId, link);
-
-    res.json({
-      ...link,
-      password: undefined, // Don't return password hash
-    });
+    res.json(inserted);
   } catch (error: unknown) {
     logger.error('Error creating share link:', error);
     res.status(500).json({ error: 'Failed to create share link' });
@@ -548,13 +540,14 @@ router.post('/share-links', requireAuth, async (req: Request, res: Response) => 
 router.get('/share-links', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    
-    const userLinks = Array.from(shareLinks.values())
-      .filter(link => link.userId === userId)
-      .map(link => ({ ...link, passwordHash: undefined }))
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-    res.json(userLinks);
+    const rows = await db
+      .select()
+      .from(shareLinksTable)
+      .where(eq(shareLinksTable.userId, userId))
+      .orderBy(desc(shareLinksTable.createdAt));
+
+    res.json(rows);
   } catch (error: unknown) {
     logger.error('Error fetching share links:', error);
     res.status(500).json({ error: 'Failed to fetch share links' });
@@ -565,28 +558,29 @@ router.get('/share-links', requireAuth, async (req: Request, res: Response) => {
 router.get('/share/:shortCode', async (req: Request, res: Response) => {
   try {
     const { shortCode } = req.params;
-    
-    const link = Array.from(shareLinks.values()).find(l => l.shortCode === shortCode);
-    
+
+    const [link] = await db
+      .select()
+      .from(shareLinksTable)
+      .where(eq(shareLinksTable.shortCode, shortCode));
+
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
     }
-
     if (!link.isActive) {
       return res.status(410).json({ error: 'Link has been revoked' });
     }
-
     if (link.expiresAt && new Date(link.expiresAt) < new Date()) {
       return res.status(410).json({ error: 'Link has expired' });
     }
-
     if (link.maxDownloads && link.downloadCount >= link.maxDownloads) {
       return res.status(410).json({ error: 'Download limit reached' });
     }
 
-    // Increment view count
-    link.viewCount++;
-    link.lastAccessedAt = new Date();
+    await db
+      .update(shareLinksTable)
+      .set({ viewCount: link.viewCount + 1, lastAccessedAt: new Date() })
+      .where(eq(shareLinksTable.id, link.id));
 
     res.json({
       id: link.id,
@@ -594,7 +588,7 @@ router.get('/share/:shortCode', async (req: Request, res: Response) => {
       resourceType: link.resourceType,
       isPasswordProtected: link.isPasswordProtected,
       requiresEmail: link.requiresEmail,
-      allowedEmails: link.allowedEmails ? link.allowedEmails.length : null,
+      allowedEmails: link.allowedEmails ? (link.allowedEmails as string[]).length : null,
     });
   } catch (error: unknown) {
     logger.error('Error fetching share link:', error);
@@ -606,33 +600,28 @@ router.get('/share/:shortCode', async (req: Request, res: Response) => {
 router.post('/share/:shortCode/verify', async (req: Request, res: Response) => {
   try {
     const { shortCode } = req.params;
-    const { password, email } = req.body;
-    
-    const link = Array.from(shareLinks.values()).find(l => l.shortCode === shortCode);
-    
-    if (!link || !link.isActive) {
+    const { email } = req.body;
+
+    const [link] = await db
+      .select()
+      .from(shareLinksTable)
+      .where(and(eq(shareLinksTable.shortCode, shortCode), eq(shareLinksTable.isActive, true)));
+
+    if (!link) {
       return res.status(404).json({ error: 'Link not found' });
     }
 
-    // Check email restriction
     if (link.requiresEmail) {
       if (!email) {
         return res.status(400).json({ error: 'Email required' });
       }
-      if (link.allowedEmails && link.allowedEmails.length > 0) {
-        if (!link.allowedEmails.includes(email.toLowerCase())) {
-          return res.status(403).json({ error: 'Email not authorized' });
-        }
+      const allowed = link.allowedEmails as string[] | null;
+      if (allowed && allowed.length > 0 && !allowed.includes(email.toLowerCase())) {
+        return res.status(403).json({ error: 'Email not authorized' });
       }
     }
 
-    // Password verification would go here
-    // For now, accept any password for demo
-    
-    res.json({ 
-      success: true,
-      downloadUrl: `/api/export/share/${shortCode}/download`,
-    });
+    res.json({ success: true, downloadUrl: `/api/export/share/${shortCode}/download` });
   } catch (error: unknown) {
     logger.error('Error verifying share link:', error);
     res.status(500).json({ error: 'Failed to verify link' });
@@ -643,31 +632,28 @@ router.post('/share/:shortCode/verify', async (req: Request, res: Response) => {
 router.get('/share/:shortCode/download', async (req: Request, res: Response) => {
   try {
     const { shortCode } = req.params;
-    
-    const link = Array.from(shareLinks.values()).find(l => l.shortCode === shortCode);
-    
-    if (!link || !link.isActive) {
+
+    const [link] = await db
+      .select()
+      .from(shareLinksTable)
+      .where(and(eq(shareLinksTable.shortCode, shortCode), eq(shareLinksTable.isActive, true)));
+
+    if (!link) {
       return res.status(404).json({ error: 'Link not found' });
     }
-
     if (link.expiresAt && new Date(link.expiresAt) < new Date()) {
       return res.status(410).json({ error: 'Link has expired' });
     }
-
     if (link.maxDownloads && link.downloadCount >= link.maxDownloads) {
       return res.status(410).json({ error: 'Download limit reached' });
     }
 
-    // Increment download count
-    link.downloadCount++;
-    link.lastAccessedAt = new Date();
+    await db
+      .update(shareLinksTable)
+      .set({ downloadCount: link.downloadCount + 1, lastAccessedAt: new Date() })
+      .where(eq(shareLinksTable.id, link.id));
 
-    // In production, stream actual file
-    res.json({
-      success: true,
-      message: 'Download initiated',
-      fileName: link.name,
-    });
+    res.json({ success: true, message: 'Download initiated', fileName: link.name });
   } catch (error: unknown) {
     logger.error('Error downloading via share link:', error);
     res.status(500).json({ error: 'Failed to download' });
@@ -679,18 +665,24 @@ router.delete('/share-links/:id', requireAuth, async (req: Request, res: Respons
   try {
     const { id } = req.params;
     const userId = (req as any).user.id;
-    
-    const link = shareLinks.get(id);
-    
+
+    const [link] = await db
+      .select({ id: shareLinksTable.id, userId: shareLinksTable.userId })
+      .from(shareLinksTable)
+      .where(eq(shareLinksTable.id, id));
+
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
     }
-
     if (link.userId !== userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    link.isActive = false;
+    await db
+      .update(shareLinksTable)
+      .set({ isActive: false })
+      .where(eq(shareLinksTable.id, id));
+
     res.json({ success: true });
   } catch (error: unknown) {
     logger.error('Error revoking share link:', error);
@@ -704,28 +696,31 @@ router.patch('/share-links/:id', requireAuth, async (req: Request, res: Response
     const { id } = req.params;
     const userId = (req as any).user.id;
     const updates = req.body;
-    
-    const link = shareLinks.get(id);
-    
+
+    const [link] = await db
+      .select({ id: shareLinksTable.id, userId: shareLinksTable.userId })
+      .from(shareLinksTable)
+      .where(eq(shareLinksTable.id, id));
+
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
     }
-
     if (link.userId !== userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    if (updates.expiresAt !== undefined) {
-      link.expiresAt = updates.expiresAt ? new Date(updates.expiresAt) : undefined;
-    }
-    if (updates.maxDownloads !== undefined) {
-      link.maxDownloads = updates.maxDownloads;
-    }
-    if (updates.isActive !== undefined) {
-      link.isActive = updates.isActive;
-    }
+    const patch: Record<string, unknown> = {};
+    if (updates.expiresAt !== undefined) patch.expiresAt = updates.expiresAt ? new Date(updates.expiresAt) : null;
+    if (updates.maxDownloads !== undefined) patch.maxDownloads = updates.maxDownloads;
+    if (updates.isActive !== undefined) patch.isActive = updates.isActive;
 
-    res.json({ ...link, passwordHash: undefined });
+    const [updated] = await db
+      .update(shareLinksTable)
+      .set(patch)
+      .where(and(eq(shareLinksTable.id, id), eq(shareLinksTable.userId, userId)))
+      .returning();
+
+    res.json(updated);
   } catch (error: unknown) {
     logger.error('Error updating share link:', error);
     res.status(500).json({ error: 'Failed to update link' });

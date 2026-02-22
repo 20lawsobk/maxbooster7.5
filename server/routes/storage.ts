@@ -202,6 +202,10 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
     const { chunkIndex, totalChunks, fileId, fileName, fileSize, mimeType, category = 'files' } = req.body;
     const userId = req.session.userId!;
 
+    if (!fileId || !/^[a-zA-Z0-9_-]+$/.test(fileId)) {
+      return res.status(400).json({ error: 'Invalid fileId: must contain only alphanumeric characters, hyphens, and underscores' });
+    }
+
     const chunkIdx = parseInt(chunkIndex, 10);
     const totalChunksNum = parseInt(totalChunks, 10);
     const fileSizeNum = parseInt(fileSize, 10);

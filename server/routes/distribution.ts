@@ -2378,7 +2378,7 @@ router.post('/schedule', requireAuth, async (req: Request, res: Response) => {
 router.get('/schedule/upcoming', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
     const releases = await releaseScheduler.getUpcomingReleases(userId, limit);
     res.json({ releases });
   } catch (error: unknown) {

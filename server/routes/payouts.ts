@@ -90,8 +90,8 @@ router.get('/history', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
 
     const payouts = await instantPayoutService.getPayoutHistory(req.user.id, limit, offset);
 
@@ -502,8 +502,8 @@ router.get('/ledger', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
 
     const entries = await instantPayoutService.getLedgerHistory(req.user.id, limit, offset);
 

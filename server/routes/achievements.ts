@@ -67,7 +67,7 @@ router.post("/mark-notified/:achievementId", async (req: Request, res: Response)
 router.get("/leaderboard", requireAuth, async (req: Request, res: Response) => {
   try {
     const category = req.query.category as string | undefined;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
     
     const leaderboard = await achievementService.getLeaderboard(category, limit);
     return res.json(leaderboard);
