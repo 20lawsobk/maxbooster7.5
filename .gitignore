@@ -54,5 +54,6 @@ cookies.txt
 .capsule-temp/
 data/
 
-# Rust
+# Rust — track the pre-compiled debug binary so deployment skips cargo entirely
 boosterstate/target/
+!boosterstate/target/debug/boosterstate

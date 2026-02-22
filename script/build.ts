@@ -59,9 +59,7 @@ const forceExternal = [
 ];
 
 async function buildAll() {
-  // Check if pre-built frontend assets are already committed to the repo.
-  // If so, skip the expensive Vite build so the deployment VM only has to
-  // compile Rust + the fast esbuild server bundle — no memory competition.
+  // Skip Vite if pre-built frontend assets are already committed to the repo.
   const assetsPrebuilt = await access("dist/public/index.html").then(() => true).catch(() => false);
 
   if (assetsPrebuilt) {
@@ -72,7 +70,21 @@ async function buildAll() {
     await viteBuild();
   }
 
-  // Only remove the server bundle, preserving any committed frontend assets
+  // Skip Rust compilation if the pre-compiled binary is already committed.
+  // The debug binary is tracked in git so deployment never needs to run cargo.
+  // To refresh: run `cargo build --manifest-path boosterstate/Cargo.toml` locally
+  // then commit the updated binary.
+  const binaryExists = await access("boosterstate/target/debug/boosterstate").then(() => true).catch(() => false);
+  if (!binaryExists) {
+    console.log("boosterstate binary not found — building with cargo (debug)...");
+    const { execSync } = await import("child_process");
+    execSync("cargo build --manifest-path boosterstate/Cargo.toml", { stdio: "inherit" });
+    console.log("boosterstate binary built");
+  } else {
+    console.log("pre-built boosterstate binary found — skipping cargo build");
+  }
+
+  // Only remove the server bundle, preserving committed frontend assets
   await rm("dist/index.cjs", { force: true });
 
   console.log("building server...");
