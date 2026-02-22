@@ -7,9 +7,13 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
-hyperLearningEngine.start().catch(err => {
-  logger.warn('HyperLearning Engine failed to auto-start:', err);
-});
+// Delay first learning cycle by 90 seconds so it doesn't compete with
+// cold-start DB connections and slow down the initial page load.
+setTimeout(() => {
+  hyperLearningEngine.start().catch(err => {
+    logger.warn('HyperLearning Engine failed to auto-start:', err);
+  });
+}, 90_000);
 
 router.get('/status', requireAuth, async (req, res) => {
   try {

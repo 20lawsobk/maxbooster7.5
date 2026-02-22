@@ -384,36 +384,6 @@ app.use((req, res, next) => {
     logger.warn(`⚠️ API cache middleware: ${e.message}`);
   }
 
-  // Initialize Stripe products and prices before routes
-  try {
-    const priceIds = await ensureStripeProductsAndPrices();
-    logger.info('✅ Stripe products and prices initialized');
-    logger.info(`   Monthly: ${priceIds.monthly}`);
-    logger.info(`   Yearly: ${priceIds.yearly}`);
-    logger.info(`   Lifetime: ${priceIds.lifetime}`);
-  } catch (e: any) {
-    logger.error(`❌ Failed to initialize Stripe prices: ${e.message}`);
-    logger.warn('⚠️ Payment system may be unavailable');
-  }
-
-  // Initialize admin account (works in both dev and production)
-  try {
-    const { initializeAdmin } = await import('./init-admin.js');
-    await initializeAdmin();
-    logger.info('✅ Admin account initialized');
-  } catch (e: any) {
-    logger.error(`❌ Failed to initialize admin: ${e.message}`);
-  }
-
-  // Seed onboarding tasks and ensure AI tasks exist for existing databases
-  try {
-    const { onboardingService } = await import('./services/onboardingService.js');
-    await onboardingService.seedDefaultTasks();
-    await onboardingService.ensureAITasksExist();
-  } catch (e: any) {
-    logger.warn(`⚠️ Could not seed onboarding tasks: ${e.message}`);
-  }
-
   await registerRoutes(httpServer, app);
 
   // JSON 404 handler for unmatched API routes (must be after all API routes)
@@ -470,7 +440,34 @@ app.use((req, res, next) => {
         logger.info('🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)');
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
 
-        // 0. Hybrid Storage System (Replit hot + Pocket Dimension cold)
+        // 0a. Stripe products — network call, not needed before first payment request
+        try {
+          const priceIds = await ensureStripeProductsAndPrices();
+          logger.info('✅ Stripe products and prices initialized');
+          logger.info(`   Monthly: ${priceIds.monthly} | Yearly: ${priceIds.yearly} | Lifetime: ${priceIds.lifetime}`);
+        } catch (e: any) {
+          logger.error(`❌ Failed to initialize Stripe prices: ${e.message}`);
+        }
+
+        // 0b. Admin account seeding — idempotent, safe to run after listen
+        try {
+          const { initializeAdmin } = await import('./init-admin.js');
+          await initializeAdmin();
+          logger.info('✅ Admin account initialized');
+        } catch (e: any) {
+          logger.error(`❌ Failed to initialize admin: ${e.message}`);
+        }
+
+        // 0c. Onboarding task seeding
+        try {
+          const { onboardingService } = await import('./services/onboardingService.js');
+          await onboardingService.seedDefaultTasks();
+          await onboardingService.ensureAITasksExist();
+        } catch (e: any) {
+          logger.warn(`⚠️ Could not seed onboarding tasks: ${e.message}`);
+        }
+
+        // 0d. Hybrid Storage System (Replit hot + Pocket Dimension cold)
         try {
           const { hybridStorageService } = await import('./services/hybridStorageService.js');
           await hybridStorageService.initialize();

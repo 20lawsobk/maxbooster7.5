@@ -244,11 +244,12 @@ export class ContentAnalysisService {
   private faceDetectionModel: any = null;
   private textDetectionModel: any = null;
   private modelsInitialized = false;
-  private initializationPromise: Promise<void>;
+  private initializationPromise: Promise<void> | null = null;
   private ready = false;
 
   constructor() {
-    this.initializationPromise = this.initializeModels();
+    // Lazy init — TensorFlow is NOT loaded at startup. It initializes on the
+    // first actual analysis request so it doesn't block the cold-start path.
   }
 
   /**
@@ -257,6 +258,9 @@ export class ContentAnalysisService {
    */
   private async ensureInitialized(): Promise<void> {
     if (this.ready) return;
+    if (!this.initializationPromise) {
+      this.initializationPromise = this.initializeModels();
+    }
     await this.initializationPromise;
   }
 
