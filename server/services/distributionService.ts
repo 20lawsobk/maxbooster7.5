@@ -382,7 +382,7 @@ export class DistributionService {
   /**
    * Generate DSP-compliant metadata JSON
    */
-  async generateMetadataJSON(packageId: string): Promise<any> {
+  async generateMetadataJSON(packageId: string, artistProfileData?: Record<string, string | null>): Promise<any> {
     try {
       const pkg = await storage.getDistributionPackageById(packageId);
       if (!pkg) {
@@ -392,7 +392,7 @@ export class DistributionService {
       const tracks = await storage.getPackageTracks(packageId);
 
       // Build DSP-compliant metadata structure
-      const metadata = {
+      const metadata: Record<string, any> = {
         release: {
           upc: pkg.upc,
           title: pkg.albumTitle,
@@ -421,6 +421,23 @@ export class DistributionService {
         metadata_version: "1.0",
         generated_at: new Date().toISOString(),
       };
+
+      // Include artist platform identifiers when available.
+      // These IDs instruct DSPs to map the release to an existing artist page
+      // rather than creating a new one (DistroKid-style identity anchoring).
+      if (artistProfileData) {
+        metadata.artist_identifiers = {
+          is_new_artist: artistProfileData.isNewArtist === 'true',
+          spotify_artist_id: artistProfileData.spotifyArtistId ?? null,
+          spotify_artist_uri: artistProfileData.spotifyArtistUri ?? null,
+          apple_artist_id: artistProfileData.appleArtistId ?? null,
+          youtube_channel_id: artistProfileData.youtubeChannelId ?? null,
+          tidal_artist_id: artistProfileData.tidalArtistId ?? null,
+          deezer_artist_id: artistProfileData.deezerArtistId ?? null,
+          soundcloud_artist_id: artistProfileData.soundcloudArtistId ?? null,
+          amazon_music_artist_id: artistProfileData.amazonMusicArtistId ?? null,
+        };
+      }
 
       return metadata;
     } catch (error: unknown) {

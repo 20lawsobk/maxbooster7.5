@@ -46,6 +46,18 @@ The application employs a microservices architecture. The user interface is buil
 - Cleaned up `@tensorflow/tfjs-node` import in `contentAnalysisService.ts`, `post-deploy-selftest.ts`, `startup-probes.ts` to use `@tensorflow/tfjs` directly
 - **Side benefit**: Startup time improved significantly (no native TF binary loading overhead)
 
+### 2026-02-22 — DistroKid-Style Artist Profile Identity System
+- Added `artist_profiles` table to `shared/schema.ts` with columns: `spotifyArtistId`, `spotifyArtistUri`, `appleArtistId`, `youtubeChannelId`, `tidalArtistId`, `deezerArtistId`, `soundcloudArtistId`, `amazonMusicArtistId`, `isNewArtist`, `isVerified`, `fixerPending`, `fixerStatus`, `fixerTargetSpotifyUri` — pushed to DB via Drizzle
+- Added `artist_profile_releases` junction table linking artist profiles to releases
+- Built `server/services/artistProfileService.ts`: Spotify artist search (client credentials token with caching), Apple Music catalog search (iTunes public API), Deezer artist search, Spotify identity verification, CRUD operations, Fixer request submission/resolution, `buildDistributionMetadata()` helper for injecting platform IDs into DSP metadata feeds
+- Built `server/routes/artistProfiles.ts`: Full REST API at `/api/artist-profiles` — GET/POST/PATCH/DELETE profiles, GET `/search` (multi-platform looker-upper), POST `/:id/fixer`, POST `/:id/verify`, POST `/:id/link-release/:releaseId`, GET `/by-release/:releaseId`
+- Registered route in `server/routes.ts` at `/api/artist-profiles`
+- Updated `distributionService.ts` `generateMetadataJSON()` to accept optional `artistProfileData` and embed `artist_identifiers` block (all 8 platform IDs + `is_new_artist` flag) in the DSP metadata feed — instructs stores to map releases to existing artist pages instead of creating duplicates
+- Built `client/src/components/distribution/ArtistProfileManager.tsx`: profile cards with platform badges, verified checkmarks, fixer pending indicators, create dialog with "New artist?" toggle
+- Built `client/src/components/distribution/ArtistLookerUpper.tsx`: tabbed search across Spotify/Apple Music/Deezer, one-click "Use this" to save IDs to profile, follower/fan counts, external links
+- Built `client/src/components/distribution/ArtistProfileFixer.tsx`: validated Spotify URI input, notes field, orange warning banner about scope of re-mapping
+- Added "Artist Profiles" tab to Distribution page between "My Releases" and "New Release" tabs
+
 ### 2026-02-22 — Production Hardening Session 2
 - Verified all 5 session-plan tasks (T001–T005) were already completed: Stripe webhook DB updates, extendMinutes validation, autopilot composite index, Stripe API version updated, generateUploadUrl functional
 - **Fixed path traversal vulnerability** in `server/routes/storage.ts` chunk upload: `fileId` from request body is now validated against `/^[a-zA-Z0-9_-]+$/` before use in `path.join()` — prevents directory escape attacks

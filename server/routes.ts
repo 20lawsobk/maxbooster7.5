@@ -3193,6 +3193,7 @@ export async function registerRoutes(
   const { default: adminRouter } = await import("./routes/admin.ts");
   const { default: paidRouter } = await import("./routes/paid.ts");
   const { default: artistProgressRouter } = await import("./routes/artistProgress.ts");
+  const { default: artistProfilesRouter } = await import("./routes/artistProfiles.ts");
   const { default: revenueForecastRouter } = await import("./routes/revenueForecast.ts");
   const { default: filesRouter } = await import("./routes/files.ts");
   const { default: preferencesRouter } = await import("./routes/preferences.ts");
@@ -3200,6 +3201,7 @@ export async function registerRoutes(
   app.use("/api/admin", adminRouter);
   app.use("/api/paid", paidRouter);
   app.use("/api/artist-progress", artistProgressRouter);
+  app.use("/api/artist-profiles", artistProfilesRouter);
   app.use("/api/revenue-forecast", revenueForecastRouter);
   app.use("/api/files", filesRouter);
   app.use("/api/preferences", preferencesRouter);

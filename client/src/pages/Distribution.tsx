@@ -111,6 +111,7 @@ import { HyperFollowBuilder } from '@/components/distribution/HyperFollowBuilder
 import { SubmissionStatusTracker } from '@/components/distribution/SubmissionStatusTracker';
 import { ContentIDManager } from '@/components/distribution/ContentIDManager';
 import { DistributionOutcomeHandler } from '@/components/distribution/DistributionOutcomeHandler';
+import ArtistProfileManager from '@/components/distribution/ArtistProfileManager';
 
 // DistroKid Clone Interfaces
 interface Release {
@@ -1254,6 +1255,14 @@ export default function Distribution() {
                 My Releases
               </TabsTrigger>
               <TabsTrigger
+                value="artist-profiles"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-artist-profiles"
+              >
+                <Music2 className="w-4 h-4 mr-1" />
+                Artist Profiles
+              </TabsTrigger>
+              <TabsTrigger
                 value="new-release"
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
                 data-testid="tab-new-release"
@@ -1730,6 +1739,26 @@ export default function Distribution() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Artist Profiles Tab */}
+          <TabsContent value="artist-profiles" className="space-y-6">
+            <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                  <Music2 className="w-5 h-5 mr-2 text-blue-600" />
+                  Artist Identity Management
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Store your Spotify URI, Apple Artist ID, YouTube Channel ID and more so every release
+                  lands on the correct streaming page — not a duplicate. Use the Looker-Upper to find IDs
+                  and the Fixer if a release was misattributed.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ArtistProfileManager />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="new-release" className="space-y-6">

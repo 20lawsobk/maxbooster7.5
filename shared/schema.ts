@@ -4146,6 +4146,61 @@ export const musicWorkflowExecutionLogs = pgTable("music_workflow_execution_logs
 export type MusicWorkflowExecutionLog = typeof musicWorkflowExecutionLogs.$inferSelect;
 
 // ============================================================================
+// ARTIST PROFILES
+// Stores platform-specific artist identifiers for distribution mapping.
+// One user may have multiple artist profiles (e.g. solo + band).
+// ============================================================================
+export const artistProfiles = pgTable("artist_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  artistName: varchar("artist_name", { length: 255 }).notNull(),
+  isNewArtist: boolean("is_new_artist").notNull().default(true),
+
+  // Platform identifiers – stored after lookup or user entry
+  spotifyArtistId: varchar("spotify_artist_id", { length: 255 }),
+  spotifyArtistUri: varchar("spotify_artist_uri", { length: 255 }),
+  appleArtistId: varchar("apple_artist_id", { length: 255 }),
+  youtubeChannelId: varchar("youtube_channel_id", { length: 255 }),
+  tidalArtistId: varchar("tidal_artist_id", { length: 255 }),
+  deezerArtistId: varchar("deezer_artist_id", { length: 255 }),
+  soundcloudArtistId: varchar("soundcloud_artist_id", { length: 255 }),
+  amazonMusicArtistId: varchar("amazon_music_artist_id", { length: 255 }),
+
+  // Verification state
+  isVerified: boolean("is_verified").notNull().default(false),
+  verifiedAt: timestamp("verified_at"),
+  verifiedPlatforms: jsonb("verified_platforms").$type<string[]>().default(sql`'[]'::jsonb`),
+
+  // Fixer mechanism – re-map misattributed releases
+  fixerPending: boolean("fixer_pending").notNull().default(false),
+  fixerTargetSpotifyUri: varchar("fixer_target_spotify_uri", { length: 255 }),
+  fixerNotes: text("fixer_notes"),
+  fixerStatus: varchar("fixer_status", { length: 50 }).default("none"),
+  fixerRequestedAt: timestamp("fixer_requested_at"),
+  fixerResolvedAt: timestamp("fixer_resolved_at"),
+
+  profileImageUrl: varchar("profile_image_url", { length: 500 }),
+  genres: jsonb("genres").$type<string[]>().default(sql`'[]'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ArtistProfile = typeof artistProfiles.$inferSelect;
+export type InsertArtistProfile = typeof artistProfiles.$inferInsert;
+export const insertArtistProfileSchema = createInsertSchema(artistProfiles).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Junction table linking artist profiles to releases
+export const artistProfileReleases = pgTable("artist_profile_releases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistProfileId: varchar("artist_profile_id").notNull(),
+  releaseId: varchar("release_id").notNull(),
+  isPrimary: boolean("is_primary").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ArtistProfileRelease = typeof artistProfileReleases.$inferSelect;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });
