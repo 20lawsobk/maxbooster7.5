@@ -172,7 +172,19 @@
     <link rel="stylesheet" crossorigin href="/assets/index-BsQx7uno.css">
   </head>
   <body class="bg-background text-foreground">
-    <div id="root"></div>
+    <div id="root">
+      <div id="mb-initial-loader" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif;z-index:9999;">
+        <div style="width:56px;height:56px;margin-bottom:24px;">
+          <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+            <circle cx="28" cy="28" r="24" stroke="#1e40af" stroke-width="4"/>
+            <circle cx="28" cy="28" r="24" stroke="#4a9eff" stroke-width="4" stroke-linecap="round" stroke-dasharray="38 113">
+              <animateTransform attributeName="transform" type="rotate" from="0 28 28" to="360 28 28" dur="0.9s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+        </div>
+        <p style="color:#94a3b8;font-size:14px;letter-spacing:0.05em;">Loading Max Booster...</p>
+      </div>
+    </div>
     <noscript>
       <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Inter,sans-serif;padding:20px;text-align:center;">
         <div>
@@ -193,29 +205,14 @@
         }
       });
       setTimeout(function() {
-        var root = document.getElementById('root');
-        if (root && root.children.length === 0 && !document.querySelector('[data-reactroot]')) {
+        if (document.getElementById('mb-initial-loader')) {
           var d = document.createElement('div');
           d.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif;padding:20px;z-index:99999;text-align:center;';
-          d.innerHTML = '<div style="max-width:500px"><h1 style="font-size:20px;color:#f59e0b;margin-bottom:12px">App Initialization Timeout</h1><p style="font-size:14px;line-height:1.5;margin-bottom:16px">The app is taking too long to load. This may be due to a cached version. Clearing site data and reloading...</p><p id="mb-status" style="font-size:12px;color:#94a3b8;margin-bottom:16px">Clearing caches...</p><button onclick="location.reload()" style="background:#3b82f6;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px">Reload Now</button></div>';
-          document.body.appendChild(d);
-          if ('caches' in window) {
-            caches.keys().then(function(names) {
-              return Promise.all(names.map(function(n) { return caches.delete(n); }));
-            }).then(function() {
-              if (navigator.serviceWorker) {
-                return navigator.serviceWorker.getRegistrations().then(function(regs) {
-                  return Promise.all(regs.map(function(r) { return r.unregister(); }));
-                });
-              }
-            }).then(function() {
-              var s = document.getElementById('mb-status');
-              if (s) s.textContent = 'Caches cleared. Reloading in 2 seconds...';
-              setTimeout(function() { location.reload(); }, 2000);
-            });
-          }
+          d.innerHTML = '<div style="max-width:500px"><h1 style="font-size:20px;color:#f59e0b;margin-bottom:12px">Taking longer than expected</h1><p style="font-size:14px;line-height:1.5;margin-bottom:16px">Max Booster is still loading. This can happen on a slow connection. Try reloading, or wait a moment.</p><button onclick="location.reload()" style="background:#3b82f6;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px">Reload</button></div>';
+          var loader = document.getElementById('mb-initial-loader');
+          if (loader) loader.replaceWith(d);
         }
-      }, 10000);
+      }, 30000);
     </script>
     <script>
       if ('serviceWorker' in navigator) {
