@@ -174,6 +174,26 @@ export default function StorefrontBuilder() {
     error?: string;
   } | null>(null);
 
+  const [dnsRegistrar, setDnsRegistrar] = useState<'godaddy' | 'cloudflare' | 'namecheap' | 'other'>('godaddy');
+  const [godaddyApiKey, setGodaddyApiKey] = useState('');
+  const [godaddyApiSecret, setGodaddyApiSecret] = useState('');
+  const [godaddyAutoConfiguring, setGodaddyAutoConfiguring] = useState(false);
+  const [godaddyConfigResult, setGodaddyConfigResult] = useState<{ success: boolean; message: string; record?: any } | null>(null);
+  const [dnsLookupResult, setDnsLookupResult] = useState<{
+    domain: string;
+    records: Array<{ type: string; name: string; value: string; ttl?: number; priority?: number }>;
+    byType: Record<string, any[]>;
+    totalRecords: number;
+    pointsToMaxbooster: boolean;
+  } | null>(null);
+  const [loadingDnsLookup, setLoadingDnsLookup] = useState(false);
+  const [propagationResult, setPropagationResult] = useState<{
+    domain: string;
+    resolvers: Array<{ resolver: string; ip: string; location: string; resolved: boolean; pointsToMaxbooster: boolean; cnames: string[]; aRecords: string[] }>;
+    summary: { total: number; propagated: number; verified: number; propagationPct: number; verifiedPct: number };
+  } | null>(null);
+  const [checkingPropagation, setCheckingPropagation] = useState(false);
+
   const [customization, setCustomization] = useState<Storefront['customization']>({
     colors: {
       primary: '#8B5CF6',
@@ -584,6 +604,63 @@ export default function StorefrontBuilder() {
       toast({ title: 'Verification Failed', description: 'Could not check DNS. Try again shortly.', variant: 'destructive' });
     } finally {
       setVerifyingDomain(false);
+    }
+  };
+
+  const runDnsLookup = async (domain: string) => {
+    if (!domain || domain.length < 4) return;
+    setLoadingDnsLookup(true);
+    setDnsLookupResult(null);
+    try {
+      const response = await apiRequest('GET', `/api/storefront/dns/lookup?domain=${encodeURIComponent(domain)}`);
+      const data = await response.json();
+      setDnsLookupResult(data);
+    } catch {
+      toast({ title: 'DNS Lookup Failed', description: 'Could not query DNS records for this domain.', variant: 'destructive' });
+    } finally {
+      setLoadingDnsLookup(false);
+    }
+  };
+
+  const checkPropagation = async (domain: string) => {
+    if (!domain || domain.length < 4) return;
+    setCheckingPropagation(true);
+    setPropagationResult(null);
+    try {
+      const response = await apiRequest('GET', `/api/storefront/dns/propagation?domain=${encodeURIComponent(domain)}`);
+      const data = await response.json();
+      setPropagationResult(data);
+    } catch {
+      toast({ title: 'Propagation Check Failed', description: 'Could not check DNS propagation.', variant: 'destructive' });
+    } finally {
+      setCheckingPropagation(false);
+    }
+  };
+
+  const godaddyAutoConfigure = async () => {
+    if (!selectedStorefront || !customDomainForm.customDomain || !godaddyApiKey || !godaddyApiSecret) return;
+    setGodaddyAutoConfiguring(true);
+    setGodaddyConfigResult(null);
+    try {
+      const response = await apiRequest('POST', `/api/storefront/${selectedStorefront.id}/godaddy-auto-configure`, {
+        apiKey: godaddyApiKey,
+        apiSecret: godaddyApiSecret,
+        domain: customDomainForm.customDomain,
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGodaddyConfigResult(data);
+        toast({ title: 'CNAME Added via GoDaddy API', description: data.message });
+        setTimeout(() => checkPropagation(customDomainForm.customDomain), 2000);
+      } else {
+        setGodaddyConfigResult({ success: false, message: data.error || 'Auto-configuration failed' });
+        toast({ title: 'GoDaddy API Error', description: data.error, variant: 'destructive' });
+      }
+    } catch (e: any) {
+      setGodaddyConfigResult({ success: false, message: e.message || 'Auto-configuration failed' });
+      toast({ title: 'Auto-configuration Failed', description: 'Please configure DNS manually.', variant: 'destructive' });
+    } finally {
+      setGodaddyAutoConfiguring(false);
     }
   };
 
@@ -1092,42 +1169,220 @@ export default function StorefrontBuilder() {
                         </div>
                       )}
 
-                      <div className="bg-muted rounded-md p-3 space-y-2 text-sm">
-                        <p className="font-semibold">DNS Configuration</p>
-                        <p className="text-muted-foreground">Add one of these records at your domain registrar:</p>
-                        <div className="space-y-2">
-                          <div className="bg-background rounded p-2 font-mono text-xs space-y-1">
-                            <div className="text-muted-foreground">Option 1 — CNAME (recommended for subdomains like www)</div>
-                            <div><span className="text-blue-600">Type:</span> CNAME</div>
-                            <div><span className="text-blue-600">Name:</span> {customDomainForm.customDomain ? customDomainForm.customDomain.replace(/\.[^.]+\.[^.]+$/, '') || 'www' : 'www'}</div>
-                            <div><span className="text-blue-600">Value:</span> maxbooster.replit.app</div>
-                          </div>
-                          <div className="bg-background rounded p-2 font-mono text-xs space-y-1">
-                            <div className="text-muted-foreground">Option 2 — For apex/root domains (requires Cloudflare or similar)</div>
-                            <div><span className="text-blue-600">Type:</span> CNAME / ALIAS / ANAME</div>
-                            <div><span className="text-blue-600">Name:</span> @</div>
-                            <div><span className="text-blue-600">Value:</span> maxbooster.replit.app</div>
-                          </div>
-                        </div>
-                        <p className="text-muted-foreground text-xs">DNS changes can take up to 48 hours to propagate. Click Verify after adding the record.</p>
-                      </div>
-
-                      {domainVerificationResult && (
-                        <div className={`rounded-md p-3 text-sm space-y-1 ${domainVerificationResult.verified ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                          <p className={`font-semibold ${domainVerificationResult.verified ? 'text-green-700' : 'text-red-700'}`}>
-                            {domainVerificationResult.verified ? 'DNS Verified' : 'DNS Not Ready'}
-                          </p>
-                          {domainVerificationResult.cnameFound && (
-                            <p className="text-muted-foreground">CNAME found: <span className="font-mono">{domainVerificationResult.cnameTarget}</span></p>
-                          )}
-                          {domainVerificationResult.aRecordFound && domainVerificationResult.aRecords && (
-                            <p className="text-muted-foreground">A record found: <span className="font-mono">{domainVerificationResult.aRecords.join(', ')}</span></p>
-                          )}
-                          {!domainVerificationResult.cnameFound && !domainVerificationResult.aRecordFound && (
-                            <p className="text-muted-foreground">No DNS records detected yet. Add the CNAME record above and try again.</p>
-                          )}
+                      {customDomainForm.isCustomDomainActive && customDomainForm.customDomain && (
+                        <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                          Live at <a href={`https://${customDomainForm.customDomain}`} target="_blank" rel="noopener noreferrer" className="font-medium underline">{customDomainForm.customDomain}</a>
                         </div>
                       )}
+
+                      <div className="border rounded-lg overflow-hidden">
+                        <div className="bg-muted px-3 py-2 flex gap-1 text-xs font-medium border-b">
+                          {(['godaddy', 'cloudflare', 'namecheap', 'other'] as const).map(r => (
+                            <button
+                              key={r}
+                              onClick={() => setDnsRegistrar(r)}
+                              className={`px-3 py-1 rounded capitalize transition-colors ${dnsRegistrar === r ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                              {r === 'godaddy' ? 'GoDaddy' : r === 'cloudflare' ? 'Cloudflare' : r === 'namecheap' ? 'Namecheap' : 'Other / Manual'}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="p-3 space-y-3 text-sm">
+                          {dnsRegistrar === 'godaddy' && (
+                            <div className="space-y-3">
+                              <div className="bg-amber-50 border border-amber-200 rounded p-3 space-y-2">
+                                <p className="font-semibold text-amber-800">Auto-Configure via GoDaddy API</p>
+                                <p className="text-amber-700 text-xs">Enter your GoDaddy API credentials and we'll add the CNAME record automatically. Get keys at <a href="https://developer.godaddy.com/keys" target="_blank" rel="noopener noreferrer" className="underline">developer.godaddy.com/keys</a></p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="API Key"
+                                    value={godaddyApiKey}
+                                    onChange={e => setGodaddyApiKey(e.target.value)}
+                                    className="border rounded px-2 py-1 text-xs font-mono bg-background"
+                                  />
+                                  <input
+                                    type="password"
+                                    placeholder="API Secret"
+                                    value={godaddyApiSecret}
+                                    onChange={e => setGodaddyApiSecret(e.target.value)}
+                                    className="border rounded px-2 py-1 text-xs font-mono bg-background"
+                                  />
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="bg-amber-600 hover:bg-amber-700 text-white w-full"
+                                  onClick={godaddyAutoConfigure}
+                                  disabled={!godaddyApiKey || !godaddyApiSecret || !customDomainForm.customDomain || godaddyAutoConfiguring}
+                                >
+                                  {godaddyAutoConfiguring ? 'Configuring via GoDaddy API...' : 'Auto-Configure DNS via GoDaddy'}
+                                </Button>
+                                {godaddyConfigResult && (
+                                  <div className={`rounded p-2 text-xs ${godaddyConfigResult.success ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                                    {godaddyConfigResult.message}
+                                    {godaddyConfigResult.record && (
+                                      <div className="font-mono mt-1">CNAME {godaddyConfigResult.record.name} → {godaddyConfigResult.record.value} (TTL {godaddyConfigResult.record.ttl}s)</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-muted-foreground text-xs font-medium">Or configure manually in GoDaddy DNS Manager:</p>
+                              <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                                <li>Log in to <strong>godaddy.com</strong> → My Products → Domains</li>
+                                <li>Click <strong>DNS</strong> next to your domain</li>
+                                <li>Click <strong>Add New Record</strong></li>
+                                <li>Select <strong>CNAME</strong> from the Type dropdown</li>
+                                <li>Fill in the values below and click <strong>Save</strong></li>
+                              </ol>
+                            </div>
+                          )}
+                          {dnsRegistrar === 'cloudflare' && (
+                            <div className="space-y-2">
+                              <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                                <li>Log in to <strong>dash.cloudflare.com</strong> → select your domain</li>
+                                <li>Click <strong>DNS</strong> → <strong>Records</strong> → <strong>Add record</strong></li>
+                                <li>Select <strong>CNAME</strong> from the Type dropdown</li>
+                                <li>Fill in the values below and click <strong>Save</strong></li>
+                                <li>Set <strong>Proxy status</strong> to <strong>DNS only</strong> (grey cloud) — not proxied</li>
+                              </ol>
+                              <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
+                                Cloudflare supports CNAME flattening, so you can use this for apex/root domains too (use <code>@</code> as name).
+                              </div>
+                            </div>
+                          )}
+                          {dnsRegistrar === 'namecheap' && (
+                            <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                              <li>Log in to <strong>namecheap.com</strong> → Domain List → Manage</li>
+                              <li>Click the <strong>Advanced DNS</strong> tab</li>
+                              <li>Click <strong>Add New Record</strong></li>
+                              <li>Select <strong>CNAME Record</strong> from the Type dropdown</li>
+                              <li>Fill in the values below and click <strong>Save All Changes</strong></li>
+                            </ol>
+                          )}
+                          {dnsRegistrar === 'other' && (
+                            <p className="text-xs text-muted-foreground">Log in to your domain registrar's DNS management panel and add a new CNAME record with the values below. If your registrar doesn't support CNAME at the root domain, use Cloudflare as your DNS provider (free) which supports CNAME flattening.</p>
+                          )}
+
+                          <div className="bg-background border rounded overflow-hidden font-mono text-xs">
+                            <div className="grid grid-cols-4 gap-px bg-border">
+                              <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Type</div>
+                              <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Name / Host</div>
+                              <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground col-span-1">Value / Points To</div>
+                              <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">TTL</div>
+                            </div>
+                            <div className="grid grid-cols-4 gap-px bg-border">
+                              <div className="bg-background px-2 py-2 text-blue-600 font-bold">CNAME</div>
+                              <div className="bg-background px-2 py-2 text-green-700">
+                                {customDomainForm.customDomain
+                                  ? (customDomainForm.customDomain.split('.').length > 2
+                                    ? customDomainForm.customDomain.split('.').slice(0, -2).join('.')
+                                    : '@')
+                                  : 'www'}
+                              </div>
+                              <div className="bg-background px-2 py-2 text-purple-700">maxbooster.replit.app</div>
+                              <div className="bg-background px-2 py-2 text-muted-foreground">3600</div>
+                            </div>
+                          </div>
+                          <p className="text-muted-foreground text-xs">TTL 3600 = 1 hour cache. Lower to 300 (5 min) before making changes for faster propagation, then raise back after confirming it works.</p>
+                        </div>
+                      </div>
+
+                      <div className="border rounded-lg overflow-hidden">
+                        <div className="bg-muted px-3 py-2 text-xs font-semibold border-b flex items-center justify-between">
+                          <span>Live DNS Zone Viewer</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-xs px-2"
+                            onClick={() => runDnsLookup(customDomainForm.customDomain)}
+                            disabled={!customDomainForm.customDomain || loadingDnsLookup}
+                          >
+                            {loadingDnsLookup ? 'Looking up...' : 'Look Up Records'}
+                          </Button>
+                        </div>
+                        <div className="p-3">
+                          {!dnsLookupResult && !loadingDnsLookup && (
+                            <p className="text-xs text-muted-foreground">Click "Look Up Records" to query all live DNS records for your domain from Google's public resolver (8.8.8.8).</p>
+                          )}
+                          {loadingDnsLookup && <p className="text-xs text-muted-foreground animate-pulse">Querying DNS records...</p>}
+                          {dnsLookupResult && (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="font-medium">{dnsLookupResult.totalRecords} record{dnsLookupResult.totalRecords !== 1 ? 's' : ''} found</span>
+                                {dnsLookupResult.pointsToMaxbooster ? (
+                                  <span className="text-green-600 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Points to Max Booster</span>
+                                ) : (
+                                  <span className="text-amber-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Not yet pointed to Max Booster</span>
+                                )}
+                              </div>
+                              {dnsLookupResult.records.length > 0 ? (
+                                <div className="font-mono text-xs border rounded overflow-hidden">
+                                  <div className="grid grid-cols-4 gap-px bg-border">
+                                    <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Type</div>
+                                    <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Name</div>
+                                    <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground col-span-2">Value</div>
+                                  </div>
+                                  {dnsLookupResult.records.slice(0, 12).map((r, i) => (
+                                    <div key={i} className="grid grid-cols-4 gap-px bg-border">
+                                      <div className={`bg-background px-2 py-1.5 font-bold ${r.type === 'CNAME' ? 'text-blue-600' : r.type === 'A' ? 'text-green-600' : r.type === 'MX' ? 'text-orange-600' : r.type === 'TXT' ? 'text-purple-600' : 'text-muted-foreground'}`}>{r.type}</div>
+                                      <div className="bg-background px-2 py-1.5 truncate text-muted-foreground">{r.name}</div>
+                                      <div className="bg-background px-2 py-1.5 col-span-2 truncate">{r.priority ? `[${r.priority}] ` : ''}{r.value}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">No records found. DNS may not be configured yet.</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border rounded-lg overflow-hidden">
+                        <div className="bg-muted px-3 py-2 text-xs font-semibold border-b flex items-center justify-between">
+                          <span>Global Propagation Check</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-xs px-2"
+                            onClick={() => checkPropagation(customDomainForm.customDomain)}
+                            disabled={!customDomainForm.customDomain || checkingPropagation}
+                          >
+                            {checkingPropagation ? 'Checking...' : 'Check Propagation'}
+                          </Button>
+                        </div>
+                        <div className="p-3 space-y-2">
+                          {!propagationResult && !checkingPropagation && (
+                            <p className="text-xs text-muted-foreground">Check your domain across {6} global DNS resolvers (Google, Cloudflare, Quad9, OpenDNS, Verisign) simultaneously — like GoDaddy's propagation checker.</p>
+                          )}
+                          {checkingPropagation && <p className="text-xs text-muted-foreground animate-pulse">Querying 6 global resolvers simultaneously...</p>}
+                          {propagationResult && (
+                            <div className="space-y-2">
+                              <div className="flex gap-4 text-xs">
+                                <span>Propagated: <strong className={propagationResult.summary.propagationPct === 100 ? 'text-green-600' : 'text-amber-600'}>{propagationResult.summary.propagationPct}%</strong></span>
+                                <span>Verified correct: <strong className={propagationResult.summary.verifiedPct === 100 ? 'text-green-600' : propagationResult.summary.verifiedPct > 0 ? 'text-amber-600' : 'text-red-600'}>{propagationResult.summary.verifiedPct}%</strong></span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {propagationResult.resolvers.map((r, i) => (
+                                  <div key={i} className={`rounded p-2 text-xs border flex items-start gap-2 ${r.pointsToMaxbooster ? 'bg-green-50 border-green-200' : r.resolved ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
+                                    <div className={`w-2 h-2 rounded-full mt-0.5 flex-shrink-0 ${r.pointsToMaxbooster ? 'bg-green-500' : r.resolved ? 'bg-amber-500' : 'bg-red-400'}`} />
+                                    <div className="min-w-0">
+                                      <div className="font-semibold truncate">{r.resolver} <span className="font-normal text-muted-foreground">({r.ip})</span></div>
+                                      <div className="text-muted-foreground text-[10px]">{r.location}</div>
+                                      <div className={`text-[10px] mt-0.5 ${r.pointsToMaxbooster ? 'text-green-700' : r.resolved ? 'text-amber-700' : 'text-red-600'}`}>
+                                        {r.pointsToMaxbooster ? 'Verified' : r.resolved ? (r.cnames[0] || r.aRecords[0] || 'Resolves (wrong target)') : 'No records yet'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <p className="text-xs text-muted-foreground">Green = points to Max Booster. Yellow = resolves but wrong target. Red = not propagated yet (up to 48h).</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
                       <div className="flex items-center gap-3 flex-wrap">
                         <Button
@@ -1136,7 +1391,7 @@ export default function StorefrontBuilder() {
                           onClick={verifyCustomDomain}
                           disabled={!customDomainForm.customDomain || verifyingDomain || !selectedStorefront}
                         >
-                          {verifyingDomain ? 'Verifying...' : 'Verify DNS'}
+                          {verifyingDomain ? 'Verifying...' : 'Verify & Activate'}
                         </Button>
                         <Button
                           size="sm"
@@ -1161,14 +1416,13 @@ export default function StorefrontBuilder() {
                             className="text-red-600 hover:text-red-700"
                             onClick={() => {
                               if (selectedStorefront) {
-                                updateCustomDomainMutation.mutate({
-                                  storefrontId: selectedStorefront.id,
-                                  customDomain: null,
-                                  isCustomDomainActive: false,
-                                });
+                                updateCustomDomainMutation.mutate({ storefrontId: selectedStorefront.id, customDomain: null, isCustomDomainActive: false });
                                 setCustomDomainForm({ customDomain: '', isCustomDomainActive: false });
                                 setCustomDomainAvailable(null);
                                 setDomainVerificationResult(null);
+                                setDnsLookupResult(null);
+                                setPropagationResult(null);
+                                setGodaddyConfigResult(null);
                               }
                             }}
                           >
@@ -1176,12 +1430,6 @@ export default function StorefrontBuilder() {
                           </Button>
                         )}
                       </div>
-
-                      {customDomainForm.isCustomDomainActive && customDomainForm.customDomain && (
-                        <div className="text-sm text-green-700 bg-green-50 rounded p-2">
-                          Your storefront is live at <a href={`https://${customDomainForm.customDomain}`} target="_blank" rel="noopener noreferrer" className="font-medium underline">{customDomainForm.customDomain}</a>
-                        </div>
-                      )}
                     </div>
 
                     <div>

@@ -29,8 +29,75 @@ import { logger } from '../logger.js';
 const dnsPromises = dns.promises;
 
 const CNAME_TARGET = 'maxbooster.replit.app';
+const GODADDY_API_BASE = 'https://api.godaddy.com';
 const CUSTOM_DOMAIN_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
 const RESERVED_DOMAINS = ['maxbooster.app', 'maxbooster.replit.app', 'localhost'];
+
+const DNS_RESOLVERS = [
+  { name: 'Google', doh: 'https://dns.google/resolve', ip: '8.8.8.8', location: 'US (Global)' },
+  { name: 'Cloudflare', doh: 'https://cloudflare-dns.com/dns-query', ip: '1.1.1.1', location: 'Global' },
+  { name: 'Quad9', doh: 'https://dns.quad9.net:5053/dns-query', ip: '9.9.9.9', location: 'Global' },
+  { name: 'OpenDNS', doh: 'https://doh.opendns.com/dns-query', ip: '208.67.222.222', location: 'US' },
+  { name: 'NextDNS', doh: 'https://dns.nextdns.io/dns-query', ip: '45.90.28.0', location: 'Global' },
+  { name: 'AdGuard', doh: 'https://dns.adguard-dns.com/dns-query', ip: '94.140.14.14', location: 'EU' },
+];
+
+interface DoHAnswer { name: string; type: number; TTL: number; data: string; }
+interface DoHResponse { Status: number; Answer?: DoHAnswer[]; }
+
+async function resolveWithDoH(dohUrl: string, domain: string, type: 'CNAME' | 'A'): Promise<string[]> {
+  try {
+    const typeNum = type === 'A' ? 1 : 5;
+    const url = `${dohUrl}?name=${encodeURIComponent(domain)}&type=${typeNum}`;
+    const resp = await fetch(url, {
+      headers: { Accept: 'application/dns-json' },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!resp.ok) return [];
+    const data: DoHResponse = await resp.json();
+    if (!data.Answer) return [];
+    return data.Answer
+      .filter(a => a.type === typeNum)
+      .map(a => a.data.replace(/\.$/, ''));
+  } catch {
+    return [];
+  }
+}
+
+async function lookupAllRecords(domain: string) {
+  const resolver = new dns.promises.Resolver();
+  resolver.setServers(['8.8.8.8']);
+
+  const [aResult, aaaaResult, cnameResult, mxResult, txtResult, nsResult] = await Promise.allSettled([
+    resolver.resolve4(domain),
+    resolver.resolve6(domain),
+    resolver.resolveCname(domain),
+    resolver.resolveMx(domain),
+    resolver.resolveTxt(domain),
+    resolver.resolveNs(domain),
+  ]);
+
+  return {
+    A: aResult.status === 'fulfilled' ? aResult.value.map(ip => ({ type: 'A', name: domain, value: ip, ttl: 3600 })) : [],
+    AAAA: aaaaResult.status === 'fulfilled' ? aaaaResult.value.map(ip => ({ type: 'AAAA', name: domain, value: ip, ttl: 3600 })) : [],
+    CNAME: cnameResult.status === 'fulfilled' ? cnameResult.value.map(c => ({ type: 'CNAME', name: domain, value: c, ttl: 3600 })) : [],
+    MX: mxResult.status === 'fulfilled' ? mxResult.value.map(mx => ({ type: 'MX', name: domain, value: mx.exchange, priority: mx.priority, ttl: 3600 })) : [],
+    TXT: txtResult.status === 'fulfilled' ? txtResult.value.map(t => ({ type: 'TXT', name: domain, value: t.join(''), ttl: 3600 })) : [],
+    NS: nsResult.status === 'fulfilled' ? nsResult.value.map(ns => ({ type: 'NS', name: domain, value: ns, ttl: 3600 })) : [],
+  };
+}
+
+function extractRootDomain(domain: string): string {
+  const parts = domain.split('.');
+  if (parts.length >= 2) return parts.slice(-2).join('.');
+  return domain;
+}
+
+function extractSubdomainPart(domain: string): string {
+  const parts = domain.split('.');
+  if (parts.length > 2) return parts.slice(0, -2).join('.');
+  return '@';
+}
 
 function isValidCustomDomain(domain: string): boolean {
   if (!domain || domain.length > 253) return false;
@@ -143,6 +210,171 @@ router.get('/suggest-url', async (req, res) => {
   } catch (error: unknown) {
     logger.error('Error suggesting URL:', error);
     res.status(500).json({ error: 'Failed to suggest URL' });
+  }
+});
+
+/**
+ * GET /api/storefront/dns/lookup?domain=
+ * Full DNS zone viewer — returns all live record types for a domain
+ */
+router.get('/dns/lookup', async (req, res) => {
+  try {
+    const domain = (req.query.domain as string || '').toLowerCase().trim();
+    if (!domain || !isValidCustomDomain(domain)) {
+      return res.status(400).json({ error: 'Valid domain required' });
+    }
+    const records = await lookupAllRecords(domain);
+    const allRecords = [
+      ...records.A,
+      ...records.AAAA,
+      ...records.CNAME,
+      ...records.MX,
+      ...records.TXT,
+      ...records.NS,
+    ];
+    res.json({
+      domain,
+      records: allRecords,
+      byType: records,
+      totalRecords: allRecords.length,
+      pointsToMaxbooster: [
+        ...records.CNAME.filter(r => r.value.toLowerCase().includes('maxbooster') || r.value.toLowerCase().includes('replit')),
+        ...records.A,
+      ].length > 0,
+    });
+  } catch (error: unknown) {
+    logger.error('Error doing DNS lookup:', error);
+    res.status(500).json({ error: 'DNS lookup failed' });
+  }
+});
+
+/**
+ * GET /api/storefront/dns/propagation?domain=
+ * Multi-resolver global propagation check (GoDaddy-style)
+ */
+router.get('/dns/propagation', async (req, res) => {
+  try {
+    const domain = (req.query.domain as string || '').toLowerCase().trim();
+    if (!domain || !isValidCustomDomain(domain)) {
+      return res.status(400).json({ error: 'Valid domain required' });
+    }
+
+    const results = await Promise.all(
+      DNS_RESOLVERS.map(async (r) => {
+        const [cnames, aRecords] = await Promise.all([
+          resolveWithServer(r.ip, domain, 'cname'),
+          resolveWithServer(r.ip, domain, 'a'),
+        ]);
+        const resolved = cnames.length > 0 || aRecords.length > 0;
+        const pointsToUs = cnames.some(c =>
+          c.toLowerCase().includes('maxbooster') || c.toLowerCase().includes('replit')
+        );
+        return {
+          resolver: r.name,
+          ip: r.ip,
+          location: r.location,
+          resolved,
+          pointsToMaxbooster: pointsToUs,
+          cnames,
+          aRecords,
+        };
+      })
+    );
+
+    const propagated = results.filter(r => r.resolved).length;
+    const verified = results.filter(r => r.pointsToMaxbooster).length;
+
+    res.json({
+      domain,
+      resolvers: results,
+      summary: {
+        total: results.length,
+        propagated,
+        verified,
+        propagationPct: Math.round((propagated / results.length) * 100),
+        verifiedPct: Math.round((verified / results.length) * 100),
+      },
+    });
+  } catch (error: unknown) {
+    logger.error('Error checking DNS propagation:', error);
+    res.status(500).json({ error: 'Propagation check failed' });
+  }
+});
+
+/**
+ * POST /api/storefront/:storefrontId/godaddy-auto-configure
+ * Use GoDaddy REST API to automatically add the CNAME record for the user
+ */
+router.post('/:storefrontId/godaddy-auto-configure', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { storefrontId } = req.params;
+    const { apiKey, apiSecret, domain } = req.body;
+
+    if (!apiKey || !apiSecret) {
+      return res.status(400).json({ error: 'GoDaddy API key and secret are required' });
+    }
+    if (!domain || !isValidCustomDomain(domain)) {
+      return res.status(400).json({ error: 'Valid domain required' });
+    }
+
+    const [storefront] = await db
+      .select({ id: storefronts.id, userId: storefronts.userId })
+      .from(storefronts)
+      .where(eq(storefronts.id, storefrontId))
+      .limit(1);
+
+    if (!storefront) return res.status(404).json({ error: 'Storefront not found' });
+    if (storefront.userId !== req.user!.id) return res.status(403).json({ error: 'Unauthorized' });
+
+    const rootDomain = extractRootDomain(domain);
+    const subName = extractSubdomainPart(domain);
+    const authHeader = `sso-key ${apiKey}:${apiSecret}`;
+
+    const checkUrl = `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records/CNAME/${subName}`;
+    const putUrl = `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records/CNAME/${subName}`;
+
+    const getResp = await fetch(checkUrl, {
+      headers: { Authorization: authHeader, Accept: 'application/json' },
+    });
+
+    if (getResp.status === 401 || getResp.status === 403) {
+      return res.status(400).json({ error: 'Invalid GoDaddy API credentials. Check your key and secret.' });
+    }
+    if (getResp.status === 404) {
+      return res.status(400).json({ error: `Domain ${rootDomain} not found in your GoDaddy account.` });
+    }
+
+    const putResp = await fetch(putUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: authHeader,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify([{ data: CNAME_TARGET, ttl: 3600 }]),
+    });
+
+    if (putResp.status === 200 || putResp.status === 204) {
+      res.json({
+        success: true,
+        message: `CNAME record added: ${domain} → ${CNAME_TARGET}`,
+        record: { type: 'CNAME', name: subName, value: CNAME_TARGET, ttl: 3600 },
+        rootDomain,
+      });
+    } else {
+      const body = await putResp.text();
+      logger.error('GoDaddy API error:', putResp.status, body);
+      res.status(400).json({
+        error: `GoDaddy API returned ${putResp.status}. ${putResp.status === 422 ? 'Check your domain and API credentials.' : 'Please try manually.'}`,
+      });
+    }
+  } catch (error: unknown) {
+    logger.error('Error in GoDaddy auto-configure:', error);
+    res.status(500).json({ error: 'Auto-configuration failed. Please try manually.' });
   }
 });
 

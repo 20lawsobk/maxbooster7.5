@@ -2956,33 +2956,45 @@ router.get('/codes/stats', requireAuth, async (req: Request, res: Response) => {
 // EARNINGS ENDPOINTS
 // ===========================
 
-// GET /api/distribution/earnings/entries - Get earnings entries
+// GET /api/distribution/earnings/entries - Get earnings entries (paginated)
 router.get('/earnings/entries', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const entries = await db
-      .select({
-        id: royaltyTransactions.id,
-        splitId: royaltyTransactions.splitId,
-        releaseId: royaltyTransactions.releaseId,
-        amount: royaltyTransactions.amount,
-        currency: royaltyTransactions.currency,
-        transactionType: royaltyTransactions.transactionType,
-        platform: royaltyTransactions.platform,
-        periodStart: royaltyTransactions.periodStart,
-        periodEnd: royaltyTransactions.periodEnd,
-        streamCount: royaltyTransactions.streamCount,
-        status: royaltyTransactions.status,
-        paidAt: royaltyTransactions.paidAt,
-        metadata: royaltyTransactions.metadata,
-        createdAt: royaltyTransactions.createdAt,
-        releaseTitle: distroReleases.title,
-      })
-      .from(royaltyTransactions)
-      .leftJoin(distroReleases, eq(royaltyTransactions.releaseId, distroReleases.id))
-      .where(eq(royaltyTransactions.userId, userId))
-      .orderBy(desc(royaltyTransactions.createdAt));
-    res.json({ entries, total: entries.length });
+    const pageLimit = Math.min(Number(req.query.limit) || 100, 500);
+    const pageOffset = Math.max(Number(req.query.offset) || 0, 0);
+
+    const [entries, [{ total }]] = await Promise.all([
+      db
+        .select({
+          id: royaltyTransactions.id,
+          splitId: royaltyTransactions.splitId,
+          releaseId: royaltyTransactions.releaseId,
+          amount: royaltyTransactions.amount,
+          currency: royaltyTransactions.currency,
+          transactionType: royaltyTransactions.transactionType,
+          platform: royaltyTransactions.platform,
+          periodStart: royaltyTransactions.periodStart,
+          periodEnd: royaltyTransactions.periodEnd,
+          streamCount: royaltyTransactions.streamCount,
+          status: royaltyTransactions.status,
+          paidAt: royaltyTransactions.paidAt,
+          metadata: royaltyTransactions.metadata,
+          createdAt: royaltyTransactions.createdAt,
+          releaseTitle: distroReleases.title,
+        })
+        .from(royaltyTransactions)
+        .leftJoin(distroReleases, eq(royaltyTransactions.releaseId, distroReleases.id))
+        .where(eq(royaltyTransactions.userId, userId))
+        .orderBy(desc(royaltyTransactions.createdAt))
+        .limit(pageLimit)
+        .offset(pageOffset),
+      db
+        .select({ total: count() })
+        .from(royaltyTransactions)
+        .where(eq(royaltyTransactions.userId, userId)),
+    ]);
+
+    res.json({ entries, total: Number(total), limit: pageLimit, offset: pageOffset });
   } catch (error: unknown) {
     logger.error('Error fetching earnings entries:', error);
     res.status(500).json({ error: 'Failed to fetch earnings entries' });
@@ -3124,16 +3136,30 @@ router.get('/royalties/discrepancies', requireAuth, async (req: Request, res: Re
   }
 });
 
-// GET /api/distribution/royalties/payouts - Get royalty payouts
+// GET /api/distribution/royalties/payouts - Get royalty payouts (paginated)
 router.get('/royalties/payouts', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const payouts = await db
-      .select()
-      .from(royaltyTransactions)
-      .where(and(eq(royaltyTransactions.userId, userId), eq(royaltyTransactions.status, 'paid')))
-      .orderBy(desc(royaltyTransactions.paidAt));
-    res.json({ payouts, total: payouts.length });
+    const pageLimit = Math.min(Number(req.query.limit) || 100, 500);
+    const pageOffset = Math.max(Number(req.query.offset) || 0, 0);
+
+    const paidFilter = and(eq(royaltyTransactions.userId, userId), eq(royaltyTransactions.status, 'paid'));
+
+    const [payouts, [{ total }]] = await Promise.all([
+      db
+        .select()
+        .from(royaltyTransactions)
+        .where(paidFilter)
+        .orderBy(desc(royaltyTransactions.paidAt))
+        .limit(pageLimit)
+        .offset(pageOffset),
+      db
+        .select({ total: count() })
+        .from(royaltyTransactions)
+        .where(paidFilter),
+    ]);
+
+    res.json({ payouts, total: Number(total), limit: pageLimit, offset: pageOffset });
   } catch (error: unknown) {
     logger.error('Error fetching royalty payouts:', error);
     res.status(500).json({ error: 'Failed to fetch royalty payouts' });
