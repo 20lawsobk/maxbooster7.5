@@ -3948,6 +3948,26 @@ export const insertSystemLogSchema = createInsertSchema(systemLogs).omit({ id: t
 export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
 
 // ============================================================================
+// SPLIT SHEETS (royalty split agreements between collaborators)
+// ============================================================================
+export const splitSheets = pgTable("split_sheets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").notNull(),
+  creatorId: varchar("creator_id").notNull(),
+  contractName: text("contract_name").notNull(),
+  participants: jsonb("participants").notNull().default(sql`'[]'::jsonb`),
+  status: text("status").notNull().default("pending_signature"),
+  effectiveDate: timestamp("effective_date").notNull(),
+  signatures: jsonb("signatures").notNull().default(sql`'[]'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type SplitSheet = typeof splitSheets.$inferSelect;
+export const insertSplitSheetSchema = createInsertSchema(splitSheets).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSplitSheet = z.infer<typeof insertSplitSheetSchema>;
+
+// ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)
 // ============================================================================
 export const insertTakeGroupSchema = createInsertSchema(takeGroups).omit({ id: true, createdAt: true });

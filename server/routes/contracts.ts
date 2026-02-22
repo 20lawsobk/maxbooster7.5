@@ -6,8 +6,8 @@ import { logger } from '../logger.js';
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
 import { db } from '../db';
-import { marketplaceDisputes, users, contractTemplates } from '@shared/schema';
-import { eq, and, or, desc, notInArray } from 'drizzle-orm';
+import { marketplaceDisputes, users, contractTemplates, splitSheets } from '@shared/schema';
+import { eq, and, or, desc, notInArray, sql } from 'drizzle-orm';
 
 const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
@@ -24,20 +24,6 @@ interface SplitParticipant {
   role: string;
   splitPercentage: number;
 }
-
-interface SplitSheet {
-  id: string;
-  releaseId: string;
-  creatorId: string;
-  contractName: string;
-  participants: SplitParticipant[];
-  status: 'draft' | 'pending_signature' | 'active' | 'voided';
-  effectiveDate: Date;
-  createdAt: Date;
-  signatures: Array<{ userId: string; signedAt?: Date; signatureHash?: string }>;
-}
-
-const splitSheets: Map<string, SplitSheet> = new Map();
 
 const router = Router();
 
@@ -883,13 +869,19 @@ router.get('/split-sheets/list', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userSheets: SplitSheet[] = [];
-    splitSheets.forEach((sheet) => {
-      if (sheet.creatorId === req.user!.id || sheet.participants.some(p => p.userId === req.user!.id)) {
-        userSheets.push(sheet);
-      }
-    });
-    return res.json({ splitSheets: userSheets });
+    const userId = req.user!.id;
+    const rows = await db
+      .select()
+      .from(splitSheets)
+      .where(
+        or(
+          eq(splitSheets.creatorId, userId),
+          sql`${splitSheets.participants} @> ${JSON.stringify([{ userId }])}::jsonb`
+        )
+      )
+      .orderBy(desc(splitSheets.createdAt));
+
+    return res.json({ splitSheets: rows });
   } catch (error: any) {
     logger.error('Error fetching split sheets:', error);
     res.status(500).json({ error: 'Failed to fetch split sheets' });
@@ -913,20 +905,22 @@ router.post('/split-sheets/create', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Split percentages must total 100%' });
     }
 
-    const newSheet: SplitSheet = {
-      id: nanoid(),
-      releaseId,
-      creatorId: req.user!.id,
-      contractName,
-      participants,
-      status: 'pending_signature',
-      effectiveDate: effectiveDate ? new Date(effectiveDate) : new Date(),
-      createdAt: new Date(),
-      signatures: participants.map((p: SplitParticipant) => ({ userId: p.userId })),
-    };
+    const signatures = participants.map((p: SplitParticipant) => ({ userId: p.userId }));
 
-    splitSheets.set(newSheet.id, newSheet);
-    return res.status(201).json(newSheet);
+    const [inserted] = await db
+      .insert(splitSheets)
+      .values({
+        releaseId,
+        creatorId: req.user!.id,
+        contractName,
+        participants,
+        status: 'pending_signature',
+        effectiveDate: effectiveDate ? new Date(effectiveDate) : new Date(),
+        signatures,
+      })
+      .returning();
+
+    return res.status(201).json(inserted);
   } catch (error: any) {
     logger.error('Error creating split sheet:', error);
     res.status(500).json({ error: error.message || 'Failed to create split sheet' });
@@ -940,7 +934,10 @@ router.get('/split-sheets/:contractId', async (req: Request, res: Response) => {
     }
 
     const { contractId } = req.params;
-    const contract = splitSheets.get(contractId);
+    const [contract] = await db
+      .select()
+      .from(splitSheets)
+      .where(eq(splitSheets.id, contractId));
 
     if (!contract) {
       return res.status(404).json({ error: 'Split sheet not found' });
@@ -961,35 +958,49 @@ router.post('/split-sheets/:contractId/sign', async (req: Request, res: Response
 
     const { contractId } = req.params;
     const { signature } = req.body;
+    const userId = req.user!.id;
 
-    const contract = splitSheets.get(contractId);
+    const [contract] = await db
+      .select()
+      .from(splitSheets)
+      .where(eq(splitSheets.id, contractId));
+
     if (!contract) {
       return res.status(404).json({ error: 'Split sheet not found' });
     }
 
-    const signatureHash = crypto
-      .createHash('sha256')
-      .update(`${signature || 'electronic-signature'}-${Date.now()}-${req.user!.id}`)
-      .digest('hex');
+    const signatures = contract.signatures as Array<{ userId: string; signedAt?: string; signatureHash?: string }>;
+    const sigIndex = signatures.findIndex(s => s.userId === userId);
 
-    const sigIndex = contract.signatures.findIndex(s => s.userId === req.user!.id);
     if (sigIndex === -1) {
       return res.status(403).json({ error: 'You are not a participant in this split sheet' });
     }
 
-    contract.signatures[sigIndex] = {
-      userId: req.user!.id,
-      signedAt: new Date(),
+    const signatureHash = crypto
+      .createHash('sha256')
+      .update(`${signature || 'electronic-signature'}-${Date.now()}-${userId}`)
+      .digest('hex');
+
+    signatures[sigIndex] = {
+      userId,
+      signedAt: new Date().toISOString(),
       signatureHash,
     };
 
-    const allSigned = contract.signatures.every(s => s.signedAt);
-    if (allSigned) {
-      contract.status = 'active';
-    }
+    const allSigned = signatures.every(s => s.signedAt);
+    const newStatus = allSigned ? 'active' : contract.status;
 
-    splitSheets.set(contractId, contract);
-    return res.json(contract);
+    const [updated] = await db
+      .update(splitSheets)
+      .set({
+        signatures,
+        status: newStatus,
+        updatedAt: new Date(),
+      })
+      .where(eq(splitSheets.id, contractId))
+      .returning();
+
+    return res.json(updated);
   } catch (error: any) {
     logger.error('Error signing split sheet:', error);
     res.status(500).json({ error: error.message || 'Failed to sign split sheet' });
@@ -1009,7 +1020,11 @@ router.post('/split-sheets/:contractId/add-participant', async (req: Request, re
       return res.status(400).json({ error: 'userId, name, email, role, and splitPercentage are required' });
     }
 
-    const contract = splitSheets.get(contractId);
+    const [contract] = await db
+      .select()
+      .from(splitSheets)
+      .where(eq(splitSheets.id, contractId));
+
     if (!contract) {
       return res.status(404).json({ error: 'Split sheet not found' });
     }
@@ -1018,12 +1033,24 @@ router.post('/split-sheets/:contractId/add-participant', async (req: Request, re
       return res.status(403).json({ error: 'Only the creator can add participants' });
     }
 
-    contract.participants.push({ userId, name, email, role, splitPercentage });
-    contract.signatures.push({ userId });
-    contract.status = 'pending_signature';
+    const participants = contract.participants as SplitParticipant[];
+    participants.push({ userId, name, email, role, splitPercentage });
 
-    splitSheets.set(contractId, contract);
-    return res.json(contract);
+    const signatures = contract.signatures as Array<{ userId: string }>;
+    signatures.push({ userId });
+
+    const [updated] = await db
+      .update(splitSheets)
+      .set({
+        participants,
+        signatures,
+        status: 'pending_signature',
+        updatedAt: new Date(),
+      })
+      .where(eq(splitSheets.id, contractId))
+      .returning();
+
+    return res.json(updated);
   } catch (error: any) {
     logger.error('Error adding participant:', error);
     res.status(500).json({ error: error.message || 'Failed to add participant' });
