@@ -1,6 +1,6 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile } from "fs/promises";
+import { rm, readFile, access } from "fs/promises";
 
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times - keep this list small!
@@ -59,10 +59,21 @@ const forceExternal = [
 ];
 
 async function buildAll() {
-  await rm("dist", { recursive: true, force: true });
+  // Check if pre-built frontend assets are already committed to the repo.
+  // If so, skip the expensive Vite build so the deployment VM only has to
+  // compile Rust + the fast esbuild server bundle — no memory competition.
+  const assetsPrebuilt = await access("dist/public/index.html").then(() => true).catch(() => false);
 
-  console.log("building client...");
-  await viteBuild();
+  if (assetsPrebuilt) {
+    console.log("pre-built client assets found — skipping Vite build");
+  } else {
+    await rm("dist", { recursive: true, force: true });
+    console.log("building client...");
+    await viteBuild();
+  }
+
+  // Only remove the server bundle, preserving any committed frontend assets
+  await rm("dist/index.cjs", { force: true });
 
   console.log("building server...");
   const pkg = JSON.parse(await readFile("package.json", "utf-8"));
