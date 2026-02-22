@@ -35,6 +35,16 @@ The application employs a microservices architecture. The user interface is buil
 -   **Storefront URLs**: Storefronts use the `{subdomain}.maxbooster.app` pattern (e.g., `artistname.maxbooster.app`). Subdomain availability check, validation, and generation are all implemented. The StorefrontBuilder UI shows and opens the correct URL format.
 
 ## Session History
+### 2026-02-22 — Dependency Security Audit & Vulnerability Remediation
+- Started from 36 vulnerabilities (8 moderate, 28 high) — reduced to **0 vulnerabilities**
+- Replaced `xlsx@0.18.5` (no fix available — prototype pollution + ReDoS) with `exceljs@4.4.0` in `server/services/catalogImporter.ts`
+- Removed `@tensorflow/tfjs-node@4.22.0` (bundled vulnerable `tar@6.2.1` via `@mapbox/node-pre-gyp@1.0.9`) — pure JS `@tensorflow/tfjs` already used everywhere with proper fallback
+- Applied `npm overrides` in `package.json` for transitive vulnerabilities: `minimatch@^10.2.2`, `bn.js@^5.2.3`, `glob@^11.0.2`, `esbuild@^0.25.12`
+- Updated direct `tar` dependency from `^7.5.8` → `^7.5.9` (patched path traversal CVEs)
+- Ran `npm audit fix` to resolve `ajv` ReDoS vulnerability
+- Cleaned up `@tensorflow/tfjs-node` import in `contentAnalysisService.ts`, `post-deploy-selftest.ts`, `startup-probes.ts` to use `@tensorflow/tfjs` directly
+- **Side benefit**: Startup time improved significantly (no native TF binary loading overhead)
+
 ### 2026-02-22 — Platform Setup & QA Phase 1
 - Provisioned PostgreSQL database, pushed schema with Drizzle Kit, seeded 97 distribution platforms
 - Installed all npm dependencies (260+ packages)

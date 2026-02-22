@@ -43,22 +43,15 @@ async function initTensorFlow(): Promise<boolean> {
   
   tfInitPromise = (async () => {
     try {
-      tf = await import('@tensorflow/tfjs-node');
+      tf = await import('@tensorflow/tfjs');
       tfAvailable = true;
-      logger.info('[ContentAnalysis] TensorFlow.js (native) loaded successfully');
+      logger.info('[ContentAnalysis] TensorFlow.js loaded successfully');
       return true;
-    } catch (nativeError) {
-      try {
-        tf = await import('@tensorflow/tfjs');
-        tfAvailable = true;
-        logger.info('[ContentAnalysis] TensorFlow.js (pure JS) loaded successfully');
-        return true;
-      } catch (error) {
-        logger.warn('[ContentAnalysis] TensorFlow.js not available - using fallback analysis');
-        tf = null;
-        tfAvailable = false;
-        return false;
-      }
+    } catch (error) {
+      logger.warn('[ContentAnalysis] TensorFlow.js not available - using fallback analysis');
+      tf = null;
+      tfAvailable = false;
+      return false;
     }
   })();
   

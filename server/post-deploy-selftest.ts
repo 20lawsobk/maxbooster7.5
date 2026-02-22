@@ -122,7 +122,7 @@ class PostDeploySelfTest {
   async testTensorFlow(): Promise<SelfTestResult> {
     const startTime = Date.now();
     try {
-      const tf = await import('@tensorflow/tfjs-node').catch(() => import('@tensorflow/tfjs')).catch(() => null);
+      const tf = await import('@tensorflow/tfjs').catch(() => null);
       
       if (!tf) {
         return {
