@@ -3189,15 +3189,30 @@ export async function registerRoutes(
     }
   });
 
-  // Mount modular admin and paid routers
-  const { default: adminRouter } = await import("./routes/admin.ts");
-  const { default: paidRouter } = await import("./routes/paid.ts");
-  const { default: artistProgressRouter } = await import("./routes/artistProgress.ts");
-  const { default: artistProfilesRouter } = await import("./routes/artistProfiles.ts");
-  const { default: revenueForecastRouter } = await import("./routes/revenueForecast.ts");
-  const { default: filesRouter } = await import("./routes/files.ts");
-  const { default: preferencesRouter } = await import("./routes/preferences.ts");
-  const { default: shortcutsRouter } = await import("./routes/shortcuts.ts");
+  // Mount modular routers — all loaded in parallel, registered in order
+  const [
+    { default: adminRouter },
+    { default: paidRouter },
+    { default: artistProgressRouter },
+    { default: artistProfilesRouter },
+    { default: revenueForecastRouter },
+    { default: filesRouter },
+    { default: preferencesRouter },
+    { default: shortcutsRouter },
+    { default: undoRouter },
+    { default: batchRouter },
+  ] = await Promise.all([
+    import("./routes/admin.ts"),
+    import("./routes/paid.ts"),
+    import("./routes/artistProgress.ts"),
+    import("./routes/artistProfiles.ts"),
+    import("./routes/revenueForecast.ts"),
+    import("./routes/files.ts"),
+    import("./routes/preferences.ts"),
+    import("./routes/shortcuts.ts"),
+    import("./routes/undo.ts"),
+    import("./routes/batch.ts"),
+  ]);
   app.use("/api/admin", adminRouter);
   app.use("/api/paid", paidRouter);
   app.use("/api/artist-progress", artistProgressRouter);
@@ -3206,13 +3221,7 @@ export async function registerRoutes(
   app.use("/api/files", filesRouter);
   app.use("/api/preferences", preferencesRouter);
   app.use("/api/shortcuts", shortcutsRouter);
-
-  // Undo system routes
-  const { default: undoRouter } = await import("./routes/undo.ts");
   app.use("/api/undo", undoRouter);
-
-  // Batch operations routes
-  const { default: batchRouter } = await import("./routes/batch.ts");
   app.use("/api/batch", batchRouter);
 
   // AI: Optimize content
@@ -3404,8 +3413,13 @@ export async function registerRoutes(
     { path: "/api/export", name: "export", loader: () => import("./routes/export") },
   ];
 
-  for (const { path, name, loader } of routeModules) {
-    const result = await safeLoadRoute(name, loader);
+  // Load all route modules concurrently, then register in order to preserve middleware precedence
+  const loadedModules = await Promise.all(
+    routeModules.map(({ name, loader }) => safeLoadRoute(name, loader))
+  );
+  for (let i = 0; i < routeModules.length; i++) {
+    const { path, name } = routeModules[i];
+    const result = loadedModules[i];
     if (result && result.type !== 'skip') {
       if (result.type === 'router' && result.value) {
         try {
@@ -3414,7 +3428,6 @@ export async function registerRoutes(
           log(`Warning: Failed to mount ${name} - ${e.message}`);
         }
       } else if (result.type === 'function' && result.value) {
-        // Call setup function with the app
         try {
           result.value(app);
         } catch (e: any) {
