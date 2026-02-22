@@ -3,9 +3,40 @@ import fs from "fs";
 import path from "path";
 import { db } from './db';
 import { listings, storefronts, users } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 const SITE_URL = 'https://maxbooster.replit.app';
+
+const BASE_DOMAINS = [
+  'maxbooster.replit.app',
+  'maxbooster.app',
+];
+
+function extractSubdomain(hostname: string): string | null {
+  if (!hostname || hostname === 'localhost') return null;
+  const host = hostname.split(':')[0].toLowerCase();
+  for (const base of BASE_DOMAINS) {
+    if (host === base) return null;
+    if (host.endsWith('.' + base)) {
+      const sub = host.slice(0, -(base.length + 1));
+      if (sub && sub !== 'www' && sub !== 'api') return sub;
+    }
+  }
+  return null;
+}
+
+async function getStorefrontSlugForSubdomain(subdomain: string): Promise<string | null> {
+  try {
+    const [store] = await db
+      .select({ slug: storefronts.slug })
+      .from(storefronts)
+      .where(and(eq(storefronts.subdomain, subdomain), eq(storefronts.isSubdomainActive, true)))
+      .limit(1);
+    return store?.slug ?? null;
+  } catch {
+    return null;
+  }
+}
 
 async function getMetaForPath(reqPath: string): Promise<{ title: string; description: string; image: string; url: string } | null> {
   try {
@@ -152,6 +183,19 @@ export function serveStatic(app: Express) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    const subdomain = extractSubdomain(req.hostname);
+    if (subdomain) {
+      const slug = await getStorefrontSlugForSubdomain(subdomain);
+      if (slug) {
+        const safeSlug = slug.replace(/[^a-z0-9-]/gi, '');
+        const html = baseHtml.replace(
+          '</head>',
+          `<script>window.__MAXBOOSTER_SUBDOMAIN__=${JSON.stringify(safeSlug)}</script></head>`
+        );
+        return res.send(html);
+      }
+    }
 
     const meta = await getMetaForPath(req.originalUrl);
     if (meta) {

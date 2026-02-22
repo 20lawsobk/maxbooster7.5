@@ -149,6 +149,13 @@ function AppWithKeyboardShortcuts() {
     setAuthState(!!user);
   }, [user]);
 
+  useEffect(() => {
+    const storefrontSlug = (window as any).__MAXBOOSTER_SUBDOMAIN__;
+    if (storefrontSlug && typeof storefrontSlug === 'string') {
+      setLocation(`/storefront/${storefrontSlug}`);
+    }
+  }, []);
+
   const shortcuts = [
     {
       key: '?',
