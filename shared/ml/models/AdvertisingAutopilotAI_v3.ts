@@ -413,7 +413,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     model.compile({
       optimizer: tf.train.adam(0.0005), // Lower learning rate for stability
       loss: 'meanSquaredError',
-      metrics: ['mae', 'accuracy'],
+      metrics: ['mae'], // accuracy is meaningless for multi-output regression — removed
     });
 
     return model;
@@ -557,8 +557,8 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'binaryCrossentropy',
-      metrics: ['accuracy'],
+      loss: 'meanSquaredError', // authenticityScore is continuous [0,1], not binary
+      metrics: ['mae'],
     });
 
     return model;
@@ -659,11 +659,13 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     for (const campaign of campaigns) {
       const contentFeatures = this.extractViralContentFeatures(campaign);
       const performanceLabels = [
-        campaign.performance.organicReach / 100000, // Normalized reach
-        campaign.performance.engagementRate,
-        campaign.performance.viralCoefficient,
-        campaign.performance.conversions / 1000, // Normalized conversions
-        campaign.performance.authenticityScore,
+        // All labels clamped to [0,1] — sigmoid output can't exceed 1.0,
+        // so labels > 1 would make the model impossible to train correctly.
+        Math.min(1, campaign.performance.organicReach / 100000),
+        Math.min(1, campaign.performance.engagementRate),
+        Math.min(1, campaign.performance.viralCoefficient),
+        Math.min(1, campaign.performance.conversions / 1000),
+        Math.min(1, campaign.performance.authenticityScore),
       ];
 
       features.push(contentFeatures);
@@ -863,8 +865,10 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
         validationSplit: 0.2,
       });
 
-      if (history.history.val_accuracy && history.history.val_accuracy.length > 0) {
-        accuracy = history.history.val_accuracy[history.history.val_accuracy.length - 1] as number;
+      // val_loss is MSE — convert to a 0-1 score (lower loss = higher score)
+      if (history.history.val_loss && history.history.val_loss.length > 0) {
+        const finalValLoss = history.history.val_loss[history.history.val_loss.length - 1] as number;
+        accuracy = Math.max(0, 1 - finalValLoss * 4); // MSE < 0.25 maps to accuracy > 0
       }
     } catch (error) {
       console.error('Trust scoring model training error:', error);
