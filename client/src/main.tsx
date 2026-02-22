@@ -10,6 +10,12 @@ import App from './App';
 import './index.css';
 import './i18n/config';
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {

@@ -157,9 +157,14 @@ export function NotificationPreferences() {
     },
   });
 
+  const { data: pushKeyData } = useQuery<{ publicKey: string }>({
+    queryKey: ['/api/notifications/push-key'],
+    retry: false,
+  });
+
   const registerPushSubscription = useMutation({
     mutationFn: async (subscription: PushSubscription) => {
-      return apiRequest('POST', '/api/notifications/push/subscribe', {
+      return apiRequest('POST', '/api/notifications/push-subscriptions', {
         endpoint: subscription.endpoint,
         keys: {
           p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!))),
@@ -238,10 +243,20 @@ export function NotificationPreferences() {
     setShowPushPrompt(false);
 
     try {
+      const vapidKey = pushKeyData?.publicKey;
+      if (!vapidKey) {
+        toast({ title: 'Error', description: 'Push notifications are not configured on the server.', variant: 'destructive' });
+        return;
+      }
+
+      const padding = '='.repeat((4 - (vapidKey.length % 4)) % 4);
+      const base64 = (vapidKey + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const applicationServerKey = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.VAPID_PUBLIC_KEY || 'BLBz9zFGGLnhexLDQ5wT9vT5E_J6HZS_tQqz5FcYqw4VH5YyKQVZDKvn5d9OeVnCF7yb_TQJ2FzR4HLmLQsKJiE',
+        applicationServerKey,
       });
 
       await registerPushSubscription.mutateAsync(subscription);
