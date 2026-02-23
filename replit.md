@@ -1,94 +1,39 @@
 # Max Booster - AI-Powered Music Career Management Platform
 
 ## Overview
-Max Booster is a full-stack AI-powered music career management platform designed to empower musical artists. It provides a comprehensive suite of tools including professional AI studio functionalities, social media management, a beat marketplace, advanced analytics, and music distribution services. The platform aims to streamline and enhance various aspects of an artist's career, leveraging AI to offer cutting-edge creative and promotional support.
+Max Booster is a full-stack web application for AI-powered music career management. It includes features for social media management, analytics, beat marketplace, distribution, studio tools, and more.
 
-## User Preferences
-I prefer detailed explanations.
-Do not make changes to the folder `ai_model/gpu`.
-Do not make changes to the file `ai_model/video/cinematic_engine.py`.
-Do not make changes to the file `ai_model/gpu/digital_gpu.py`.
-Do not make changes to the file `ai_model/gpu/torch_backend.py`.
-Do not make changes to the file `ai_model/gpu/accelerated_transformer.py`.
-Do not make changes to the file `ai_model/gpu/gpu_trainer.py`.
+## Architecture
+- **Frontend**: React + Vite + Tailwind CSS (served on port 5000)
+- **Backend**: Express.js (TypeScript), serves API and frontend via Vite middleware mode
+- **Database**: PostgreSQL via Drizzle ORM (Neon serverless driver)
+- **State Service**: Rust-based `boosterstate` (Axum, runs on port 9877) for high-performance state management, session store, and job queues
+- **AI Model**: Python-based AI service (optional)
 
-## System Architecture
-The application employs a microservices architecture. The user interface is built with React, Vite, and TailwindCSS, located in the `client/` directory. The backend is an Express.js application written in TypeScript, residing in the `server/` directory. A dedicated AI Model, implemented in PyTorch, handles content generation and runs as a separate service. State management is offloaded to a Rust-based microservice named "BoosterState". Data persistence is managed using PostgreSQL with Drizzle ORM. The platform also supports desktop and mobile applications via Electron and Capacitor.
+## Project Structure
+- `client/` - React frontend (Vite, Tailwind, Radix UI)
+- `server/` - Express backend (TypeScript)
+- `shared/` - Shared schemas and types (Drizzle schema)
+- `boosterstate/` - Rust state management service (pre-compiled binary)
+- `ai_model/` - Python AI model service (optional)
+- `android/` - Capacitor Android build
+- `electron/` - Electron desktop app wrapper
+- `migrations/` - Drizzle database migrations
 
-**Key Features and Implementations:**
--   **AI Model**: A custom PyTorch transformer model generates social media content for 8 different platforms. It includes agents for script generation (hook, body, CTA), distribution strategies (captions, hashtags, timing), visual specifications (thumbnails), and optimization. The model leverages a custom Digital GPU for accelerated training and inference, featuring a 32-lane SIMD core and PyTorch autograd backend integration.
--   **Multi-Stream Digital GPU**: Upgraded GPU engine supporting simultaneous training of all AI agent models. Features GPU Streams with isolated VRAM partitions per model, a LaneAllocator that dynamically distributes SIMD lanes across concurrent workloads, and a shared-backbone + agent-specific-heads architecture (MultiHeadModel) that reduces memory usage by sharing transformer weights across all 4 agents (script, distribution, visual_spec, optimization). Training is orchestrated via interleaved multi-task learning with per-agent loss tracking and profiling. New files: `ai_model/gpu/multi_stream.py`, `ai_model/gpu/multi_backend.py`, `ai_model/model/multi_head_model.py`, `ai_model/training/multi_trainer.py`. API endpoints: `POST /train/multi`, `GET /train/multi/status`, `GET /gpu/multi/status`.
--   **HyperGPU Engine**: Major GPU upgrade with 512 SIMD lanes (16x from 32), 8 Tensor Core units with mixed-precision (FP16/BF16) acceleration, flash attention for memory-efficient long sequences, Conv2D/Conv3D operations for image and video model training, LayerNorm/BatchNorm/GELU/SiLU activations, grouped GEMM for multi-head processing, fused attention+norm operations, and memory pooling. New files: `ai_model/gpu/hyper_core.py`, `ai_model/gpu/hyper_backend.py`. API endpoints: `GET /gpu/hyper/status`, `GET /gpu/capabilities`.
--   **GPU Cluster**: Distributed training simulation across 4 virtual GPU nodes (2048 total SIMD lanes, 32 tensor cores). Features data-parallel scatter/gather, gradient all-reduce synchronization, elastic scaling (add/remove nodes at runtime), and per-node task assignment. API endpoints: `GET /gpu/cluster/status`, `POST /gpu/cluster/scale`.
--   **MaxBooster Veo Music**: A Veo-style music video campaign generation pipeline in `maxbooster_veo_music/`. Uses HyperGPU (512 lanes, 8 tensor cores) to generate platform-specific video assets from BoostSheets + audio. Architecture: AudioEncoder → TextEncoder → BoostSheetEncoder → VideoLatentVAE → VideoGenerator → PlatformHeads → CampaignGenerator. **28 supported platforms** (TikTok, YouTube, Spotify Canvas, Instagram, Reels, Shorts, Twitter, Facebook, Snapchat, Pinterest, LinkedIn, Threads, Twitch, Triller, Vevo, Audiomack, SoundCloud, Apple Music, Amazon Music, Tidal, Deezer, Pandora, Bandcamp, Instagram Stories, website embeds, email campaigns, digital billboards, live backdrops). **24 video content types** (hook_clip, full_video, promo_reel, promo_clip, loop_visualizer, lyric_video, audio_visualizer, behind_the_scenes, teaser_trailer, countdown, album_unboxing, fan_engagement, concert_promo, merch_showcase, collab_announcement, milestone_celebration, snippet_preview, live_backdrop, vertical_mv, ad_creative, podcast_visual, gif_loop, email_hero, billboard_ad). Each goal has style conditioning, beat-sync control, text overlay, and FX intensity. Per-platform goal recommendations available via API. Generates multi-platform campaigns in ~3.5s with 10K+ GPU ops. **Fully integrated into Social Media Management Suite** via `server/services/veoMusicService.ts` bridge service. Express API endpoints: `POST /api/social/veo-campaign` (full multi-platform campaign), `POST /api/social/veo-campaign/single` (single platform video), `GET /api/social/veo-campaign/platforms` (available platforms with recommended goals), `GET /api/social/veo-campaign/goals` (all 24 video content types), `GET /api/social/veo-campaign/recommend/:platform` (per-platform goal recommendations), `GET /api/social/veo-campaign/status` (pipeline status). Python API endpoints: `POST /veo/campaign`, `GET /veo/platforms`, `GET /veo/goals`, `GET /veo/recommend/{platform}`, `GET /veo/status`. Auto-post generator (`server/services/autoPostGenerator.ts`) can automatically attach Veo video assets when creating video posts via `generateVeoVideoForContent()` method.
--   **Training Data Pipeline**: Unified data pipeline (`maxbooster_veo_music/training/data_pipeline.py`) coordinating three dataset loaders: (1) **MTG-Jamendo** — 18,486 real CC-licensed audio tracks with 56 mood tags + 87 genre tags downloaded from Zenodo/GitHub, used to train AudioEncoder; (2) **MuVi-Sync** — 500 synthetic samples modeled after Video2Music schema (scene offsets, emotion, motion, chords, loudness), for VideoGenerator alignment training; (3) **Social Media Engagement** — 2,000 synthetic posts across 8 platforms with realistic engagement distributions, for content strategy AI. API endpoints: `GET /data/pipeline/status`, `POST /data/pipeline/download`, `POST /data/pipeline/load`, `GET /data/jamendo/status`, `GET /data/jamendo/moods`, `GET /data/muvisync/status`, `GET /data/social/status`, `GET /data/social/hashtags`, `GET /data/social/timing/{platform}`.
--   **URL-to-Video Pipeline**: Accepts music URLs from any major platform (YouTube, Spotify, SoundCloud, Apple Music, Tidal, Deezer, Bandcamp, Audiomack, Amazon Music, Pandora, Vevo) and automatically extracts metadata (title, artist, artwork, duration, mood, genre) using oEmbed + OpenGraph + URL parsing. Generates complete multi-platform video campaigns directly from a URL. Module: `maxbooster_veo_music/url/extractor.py`. Python API: `POST /veo/url/metadata` (extract metadata preview), `POST /veo/url/campaign` (full campaign from URL with optional overrides). Express API: `POST /api/social/veo-url/metadata`, `POST /api/social/veo-campaign/from-url`. Supports user overrides for mood, platforms, targets, lyrics, and brand notes. **Also supports non-music/website URLs** — any website, landing page, or product page can be used to generate promotional video campaigns. The system auto-detects `content_type` (music vs website), scrapes OG tags/meta description/keywords, infers brand mood, builds promotional story, and recommends appropriate goals (ad_creative, promo_reel, promo_clip, teaser_trailer, hook_clip). Website campaigns default to 6 platforms (TikTok, YouTube, Instagram, Reels, Shorts, Facebook) with promotional content types.
--   **Storefront & Listing Promotion**: Direct campaign generation for user storefronts and marketplace listings without URL scraping. `POST /api/social/veo-campaign/promote-storefront` pulls storefront data from DB (name, bio, SEO fields, listings count, genres, top listings) and generates a multi-platform promotional campaign. `POST /api/social/veo-campaign/promote-listing` promotes individual beats/listings with price display, genre, and storefront attribution. Both endpoints enforce ownership (user can only promote their own storefront/listings) and require published/active status. **Storefront Builder UI** includes a "Promote with Video" button (gradient purple/pink) that triggers campaign generation directly from the customization panel, with a results dialog showing generated video count and target platforms.
--   **Storefront Customization**: Full color branding system — user-selected primary, secondary, background, and text colors are applied consistently throughout the public storefront page (Storefront.tsx) via inline styles on the root container, headings, card backgrounds, tier cards, product cards, buttons, and social links. Custom fonts (heading/body) are applied to all text elements. Subdomain-based custom URLs supported via `{name}.maxbooster.app` — StorefrontBuilder includes subdomain configuration UI with availability checking (`GET /api/storefront/check-subdomain/:subdomain`) and save functionality (`PUT /api/storefront/:id/subdomain`). File upload progress bars with percentage indicators shown during logo, banner, and avatar uploads using the `uploadWithProgress` XHR function.
--   **Video Generation**: A dual-quality video rendering system (Quick and Cinematic modes) allows for creating promotional videos. The Cinematic mode offers multi-scene composition, various templates, aspect ratios, and advanced effects (animated gradients, color grades, transitions). The system can auto-generate video content from AI model outputs.
--   **Content Quality Pipeline**: Utilizes the AI model for headline, body, and CTA generation, with graceful fallback to template-based content if AI output is insufficient.
--   **Music Workflow Automations**: A per-user optional automation system covering the complete music artist journey from creation to listener. 15 pre-built workflow templates organized into 5 phases: (1) **Creation** — track upload auto-analysis (BPM/key/ISRC suggestion), collaborator-added notification, mix-complete mastering checklist; (2) **Pre-Release** — release countdown social posts (7-day/3-day/1-day), pre-save campaign launcher, distribution submission notification; (3) **Release Day** — coordinated social media blast, fan newsletter, push notification to followers; (4) **Post-Release** — weekly performance digest (every Monday), streaming milestone celebration posts (1K/10K/100K/1M), playlist placement alert, low-engagement auto-rescue A/B test; (5) **Revenue** — beat sale thank-you to buyer, monthly royalty collection audit. All automations are optional (user toggles), configurable via per-template config schema, and integrated with real push notification, email, and social services. Scheduled automations (weekly digest, monthly royalty check) run on cron. Events are fired by calling `musicWorkflowAutomationService.triggerEvent(event, data)` from any part of the app. DB tables: `music_workflow_automations` (user configs), `music_workflow_execution_logs` (run history). API: `GET/POST /api/music-workflow-automations/`. UI: `/workflow-automations` page with phase-grouped cards, inline config editors, test-run buttons, and execution log history tab. Service: `server/services/musicWorkflowAutomationService.ts`. Routes: `server/routes/musicWorkflowAutomations.ts`.
--   **Security**: Comprehensive security measures include XSS prevention, IDOR protection, data leak prevention, input validation, admin-only access for infrastructure, log injection prevention, secure session management (httpOnly, sameSite, secure cookies), rate limiting on authentication endpoints, circuit breakers for external streaming services, constant-time login comparison (timing attack prevention), and cryptographically secure token generation (crypto.randomBytes).
--   **Studio One Waveform Engine**: Professional DAW-grade waveform rendering system inspired by PreSonus Studio One, located in `client/src/lib/daw/`. Four interconnected subsystems: (1) **PeakCacheEngine** — hierarchical MinMax peak caching with 7 resolution levels (1 to 65536 samples/peak), RMS computation, transient detection, and LRU cache eviction (256MB default); (2) **NonDestructiveRenderer** — coordinate mapping (sample↔pixel, amplitude↔pixel, time↔pixel), data zoom (vertical scale without gain change), horizontal zoom with viewport calculation, and vector fade curve rendering (linear/exponential/logarithmic/s-curve/equal-power); (3) **TimelineRenderer** — GPU-accelerated double-buffered canvas renderer with frame-rate independent drawing (deltaTime-based), smooth inertial scrolling, beat/bar grid overlay, clip rendering with waveform fill + RMS overlay + transient markers, playhead auto-scroll, and zoom-at-cursor support; (4) **TransformRenderer** — transform-to-rendered-audio pipeline that processes plugin chains (compressor/limiter/EQ/saturation/gate) and regenerates peak caches to reflect processed waveforms in real-time. Unified via `StudioOneWaveformEngine` class and `useStudioOneWaveform` React hook. Component: `StudioOneWaveform.tsx`.
--   **Development Environment**: The Express server serves both API routes and the Vite development frontend. Database schema is managed via Drizzle Kit. `esbuild` is pinned to version 0.25.12 for Drizzle Kit compatibility.
--   **Session Store**: BoosterState (Rust microservice, port 6379) serves as the Redis-compatible KV store for sessions and AI caching. Falls back to MemoryStore in dev. Workflow starts BoosterState binary before the Node server.
--   **Subscription Model**: All features are bundled into every paid plan (monthly $49/mo, yearly $39/mo, lifetime $699 one-time). No feature top-ups or add-ons. Free tier is limited to basic access only to encourage upgrades.
--   **Storefront URLs**: Storefronts use the `{subdomain}.maxbooster.app` pattern (e.g., `artistname.maxbooster.app`). Subdomain availability check, validation, and generation are all implemented. The StorefrontBuilder UI shows and opens the correct URL format.
+## Key Commands
+- **Dev**: `./boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts`
+- **Build**: `npx tsx script/build.ts`
+- **Production**: `./boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=production node dist/index.cjs`
+- **DB Push**: `npx drizzle-kit push`
 
-## Session History
-### 2026-02-22 — Dependency Security Audit & Vulnerability Remediation
-- Started from 36 vulnerabilities (8 moderate, 28 high) — reduced to **0 vulnerabilities**
-- Replaced `xlsx@0.18.5` (no fix available — prototype pollution + ReDoS) with `exceljs@4.4.0` in `server/services/catalogImporter.ts` and `maxbooster7.5/server/services/catalogImporter.ts`
-- Removed `@tensorflow/tfjs-node@4.22.0` (bundled vulnerable `tar@6.2.1` via `@mapbox/node-pre-gyp@1.0.9`) — pure JS `@tensorflow/tfjs` already used everywhere with proper fallback
-- Applied `npm overrides` in `package.json` for transitive vulnerabilities: `minimatch@^10.2.2`, `bn.js@^5.2.3`, `glob@^11.0.2`, `esbuild@^0.25.12`
-- Updated direct `tar` dependency from `^7.5.8` → `^7.5.9` (patched path traversal CVEs)
-- Ran `npm audit fix` to resolve `ajv` ReDoS vulnerability
-- Cleaned up `@tensorflow/tfjs-node` import in `contentAnalysisService.ts`, `post-deploy-selftest.ts`, `startup-probes.ts` to use `@tensorflow/tfjs` directly
-- **Side benefit**: Startup time improved significantly (no native TF binary loading overhead)
+## Environment Variables
+- `DATABASE_URL` - PostgreSQL connection string (required)
+- `SESSION_SECRET` - Session encryption key (auto-generated)
+- `STRIPE_SECRET_KEY` - Stripe API key (optional for dev)
+- `STRIPE_PUBLISHABLE_KEY` - Stripe publishable key (optional for dev)
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret (optional for dev)
+- `SENDGRID_API_KEY` - SendGrid email API key (optional for dev)
+- Various social media API keys (optional)
 
-### 2026-02-22 — DistroKid-Style Artist Profile Identity System
-- Added `artist_profiles` table to `shared/schema.ts` with columns: `spotifyArtistId`, `spotifyArtistUri`, `appleArtistId`, `youtubeChannelId`, `tidalArtistId`, `deezerArtistId`, `soundcloudArtistId`, `amazonMusicArtistId`, `isNewArtist`, `isVerified`, `fixerPending`, `fixerStatus`, `fixerTargetSpotifyUri` — pushed to DB via Drizzle
-- Added `artist_profile_releases` junction table linking artist profiles to releases
-- Built `server/services/artistProfileService.ts`: Spotify artist search (client credentials token with caching), Apple Music catalog search (iTunes public API), Deezer artist search, Spotify identity verification, CRUD operations, Fixer request submission/resolution, `buildDistributionMetadata()` helper for injecting platform IDs into DSP metadata feeds
-- Built `server/routes/artistProfiles.ts`: Full REST API at `/api/artist-profiles` — GET/POST/PATCH/DELETE profiles, GET `/search` (multi-platform looker-upper), POST `/:id/fixer`, POST `/:id/verify`, POST `/:id/link-release/:releaseId`, GET `/by-release/:releaseId`
-- Registered route in `server/routes.ts` at `/api/artist-profiles`
-- Updated `distributionService.ts` `generateMetadataJSON()` to accept optional `artistProfileData` and embed `artist_identifiers` block (all 8 platform IDs + `is_new_artist` flag) in the DSP metadata feed — instructs stores to map releases to existing artist pages instead of creating duplicates
-- Built `client/src/components/distribution/ArtistProfileManager.tsx`: profile cards with platform badges, verified checkmarks, fixer pending indicators, create dialog with "New artist?" toggle
-- Built `client/src/components/distribution/ArtistLookerUpper.tsx`: tabbed search across Spotify/Apple Music/Deezer, one-click "Use this" to save IDs to profile, follower/fan counts, external links
-- Built `client/src/components/distribution/ArtistProfileFixer.tsx`: validated Spotify URI input, notes field, orange warning banner about scope of re-mapping
-- Added "Artist Profiles" tab to Distribution page between "My Releases" and "New Release" tabs
-
-### 2026-02-22 — Production Hardening Session 3 (Total Coverage Audit)
-- **Fixed unauthenticated file-upload endpoints** in `server/routes/audioAnalysis.ts`: added `requireAuth` middleware to all 4 CPU-intensive upload routes (`/analyze-metadata`, `/analyze-loudness`, `/generate-waveform`, `/validate-distribution`). Static info routes (`/loudness-targets`, `/supported-formats`) remain intentionally public.
-- **Fixed unauthenticated security telemetry** in `server/routes/selfHealingApi.ts`: `/status`, `/metrics`, `/proof` now require any authenticated user; `/simulate-attack` now requires admin role (prevents metric pollution). Consolidated inline admin checks into a shared `assertAdmin()`/`assertAuth()` pattern.
-- **Fixed storefront checkout N+1 query** in `server/routes/storefront.ts`: replaced full-catalog fetch + in-memory filter (O(seller_listings)) with a targeted `inArray(listings.id, listingIds)` WHERE clause. Applied to both `/checkout` and `/checkout/preview` routes. Added `inArray` to drizzle-orm imports.
-- **Fixed Stripe silent-failure guard** in `server/routes/storefront.ts:checkout`: replaced `process.env.STRIPE_SECRET_KEY || ''` (silent empty-string Stripe client) with an explicit check that returns HTTP 503 with a descriptive message if the key is missing.
-- **Confirmed false positives cleared**: `api/v1/analytics.ts` uses API-key auth (not missing auth); `downloads.ts` and `helpDesk.ts` are intentionally public; search.ts `.then()` chains are inside `Promise.all`; `developerApi.ts` unhandled promise is inside a documentation string literal.
-- Server running clean — zero errors, all routes loaded successfully
-
-### 2026-02-22 — Production Hardening Session 2
-- Verified all 5 session-plan tasks (T001–T005) were already completed: Stripe webhook DB updates, extendMinutes validation, autopilot composite index, Stripe API version updated, generateUploadUrl functional
-- **Fixed path traversal vulnerability** in `server/routes/storage.ts` chunk upload: `fileId` from request body is now validated against `/^[a-zA-Z0-9_-]+$/` before use in `path.join()` — prevents directory escape attacks
-- **Fixed unbounded pagination** across 12 route files: added `Math.min(value, max)` caps on all `limit` query params and `Math.max(value, 0)` clamps on all `offset` params to prevent authenticated DoS via oversized page requests
-  - Files: invoices.ts, payouts.ts, dmca.ts, notifications.ts, achievements.ts, collaborations.ts, dualAutopilot.ts, distribution.ts, billing.ts, studio.ts, undo.ts, workspace.ts
-  - Limits capped between 100–500 depending on data type; offsets floored at 0 to prevent negative values
-- Confirmed security routes in `server/routes/security.ts` are correctly protected via `router.use(requireAdmin)` at module level
-- Server running clean — zero errors, all routes loaded successfully
-
-### 2026-02-22 — Platform Setup & QA Phase 1
-- Provisioned PostgreSQL database, pushed schema with Drizzle Kit, seeded 97 distribution platforms
-- Installed all npm dependencies (260+ packages)
-- Configured 42 environment variables (24 public config, 18 secrets)
-- Set workflow: BoosterState binary + Node server on port 5000
-- Fixed `require('crypto')` CJS usage → proper ESM `import crypto from "crypto"`
-- Moved mid-file `import path` and `import crypto` to top of `server/index.ts` (ESM compliance)
-- Verified subscription model: no feature top-ups, all features bundled at all paid tiers
-- Verified storefront URL pattern: `{name}.maxbooster.app` already correctly implemented in StorefrontBuilder.tsx
-- Confirmed security posture: bcrypt passwords, Stripe webhook verification, CSRF protection, rate limiting, helmet headers
-
-## External Dependencies
--   **Stripe**: For payment processing.
--   **SendGrid**: For email communications.
--   **Social Media APIs**: Integrations with platforms such as Twitter/X, Facebook, Instagram, and TikTok for social media management features.
--   **Sentry**: For error tracking and monitoring.
--   **LabelGrid**: For music distribution services.
+## Recent Changes
+- 2026-02-23: Initial Replit import and setup
