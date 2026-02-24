@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -91,7 +92,7 @@ export function HybridStorageStats() {
         setAnalytics(data);
       }
     } catch (error) {
-      console.error('Failed to fetch storage analytics:', error);
+      logger.error('Failed to fetch storage analytics:', error);
     } finally {
       setLoading(false);
     }
@@ -105,7 +106,7 @@ export function HybridStorageStats() {
         await fetchAnalytics();
       }
     } catch (error) {
-      console.error('Failed to run auto-tiering:', error);
+      logger.error('Failed to run auto-tiering:', error);
     } finally {
       setOptimizing(false);
     }

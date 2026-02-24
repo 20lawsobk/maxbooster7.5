@@ -89,9 +89,9 @@ class SubatomicCore {
       await mkdir(path.join(this.storagePath, 'compressed'), { recursive: true });
       await mkdir(path.join(this.storagePath, 'particles'), { recursive: true });
       this.initialized = true;
-      console.log('[SUBATOMIC] Core initialized - Ready to shrink the universe');
-    } catch (error) {
-      console.error('[SUBATOMIC] Initialization failed:', error);
+      // Subatomic core initialized
+    } catch (_error) {
+      // Subatomic initialization failed - non-critical
     }
   }
 
@@ -156,7 +156,7 @@ class SubatomicCore {
     this.loadedModules.set(id, loaded);
     this.accessLog.push({ module: id, time: new Date(), duration: loadTime });
 
-    console.log(`[SUBATOMIC] Module ${id} collapsed in ${loadTime.toFixed(2)}ms`);
+    // Module collapsed
     
     return loaded as T;
   }
@@ -300,7 +300,7 @@ class SubatomicCore {
       evicted++;
     }
 
-    console.log(`[SUBATOMIC] Evicted ${evicted} cache entries, freed ${(freedSize / 1024).toFixed(2)}KB`);
+    // Cache eviction complete
     return evicted;
   }
 

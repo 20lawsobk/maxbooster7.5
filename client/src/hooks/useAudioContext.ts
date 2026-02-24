@@ -265,9 +265,6 @@ export function generateWaveformPeaks(
   return peaks;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function useAudioContext() {
   const [state, setState] = useState<AudioContextState>({
     context: null,

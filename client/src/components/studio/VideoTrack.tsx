@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import {
   Video,
@@ -217,7 +218,7 @@ export function VideoTrack({
   const handleFileSelect = useCallback(
     async (file: File) => {
       if (!SUPPORTED_FORMATS.some((format) => file.type.includes(format) || file.name.toLowerCase().endsWith(`.${format}`))) {
-        console.error('Unsupported video format');
+        logger.error('Unsupported video format');
         return;
       }
 
@@ -272,7 +273,7 @@ export function VideoTrack({
           setImportProgress(0);
         }, 500);
       } catch (error) {
-        console.error('Failed to import video:', error);
+        logger.error('Failed to import video:', error);
         setIsImporting(false);
         setImportProgress(0);
       }

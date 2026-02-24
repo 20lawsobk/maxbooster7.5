@@ -112,9 +112,6 @@ export interface AppConfig {
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 function parseEnvInt(key: string, defaultValue: number): number {
   const value = process.env[key];
   if (!value) return defaultValue;
@@ -122,18 +119,12 @@ function parseEnvInt(key: string, defaultValue: number): number {
   return isNaN(parsed) ? defaultValue : parsed;
 }
 
-/**
- * TODO: Add function documentation
- */
 function parseEnvBool(key: string, defaultValue: boolean): boolean {
   const value = process.env[key];
   if (!value) return defaultValue;
   return value.toLowerCase() === 'true' || value === '1';
 }
 
-/**
- * TODO: Add function documentation
- */
 function parseEnvArray(key: string, defaultValue: string[]): string[] {
   const value = process.env[key];
   if (!value) return defaultValue;

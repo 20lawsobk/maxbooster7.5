@@ -1,3 +1,4 @@
+import { logger } from 'logger';
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
 interface LogEntry {
@@ -45,13 +46,13 @@ class Logger {
       const style = this.getConsoleStyle(level);
 
       if (data !== undefined) {
-        console.log(`%c${prefix} ${message}`, style, data);
+        logger.info(`%c${prefix} ${message}`, style, data);
       } else {
-        console.log(`%c${prefix} ${message}`, style);
+        logger.info(`%c${prefix} ${message}`, style);
       }
     } else {
       if (level === 'error') {
-        console.error(logEntry.message, logEntry.data);
+        logger.error(logEntry.message, logEntry.data);
       }
     }
   }

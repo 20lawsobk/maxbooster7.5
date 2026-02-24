@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { Pen, Trash2, Circle, Plus, Minus, Loader2, MousePointer2, PenLine, Spline, Edit3, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -99,7 +100,7 @@ export function AutomationLane({
           }
         }
       } catch (error) {
-        console.error('Failed to load automation:', error);
+        logger.error('Failed to load automation:', error);
       } finally {
         if (!cancelled) setIsLoading(false);
       }

@@ -39,9 +39,6 @@ const ROLES = [
   { value: 'manager', label: 'Manager' },
 ];
 
-/**
- * TODO: Add function documentation
- */
 export function RoyaltySplitManager({ splits, onChange, onSendInvites }: RoyaltySplitManagerProps) {
   const [newSplit, setNewSplit] = useState({
     name: '',

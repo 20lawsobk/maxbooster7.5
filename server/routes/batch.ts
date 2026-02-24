@@ -57,7 +57,7 @@ router.post('/releases/submit', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch release submit error:', error?.message || error);
+    logger.error('Batch release submit error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -86,7 +86,7 @@ router.post('/releases/takedown', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch release takedown error:', error?.message || error);
+    logger.error('Batch release takedown error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -115,7 +115,7 @@ router.put('/releases/update', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch release update error:', error?.message || error);
+    logger.error('Batch release update error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -144,7 +144,7 @@ router.post('/releases/delete', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch release delete error:', error?.message || error);
+    logger.error('Batch release delete error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -174,7 +174,7 @@ router.post('/posts/schedule', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch post schedule error:', error?.message || error);
+    logger.error('Batch post schedule error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -203,7 +203,7 @@ router.post('/posts/delete', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch post delete error:', error?.message || error);
+    logger.error('Batch post delete error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -232,7 +232,7 @@ router.put('/posts/update', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch post update error:', error?.message || error);
+    logger.error('Batch post update error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -261,7 +261,7 @@ router.post('/files/delete', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch file delete error:', error?.message || error);
+    logger.error('Batch file delete error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -291,7 +291,7 @@ router.post('/files/move', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch file move error:', error?.message || error);
+    logger.error('Batch file move error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -318,7 +318,7 @@ router.post('/files/download', async (req: Request, res: Response) => {
       downloadUrl,
     });
   } catch (error) {
-    logger.info('Batch file download error:', error?.message || error);
+    logger.error('Batch file download error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -347,7 +347,7 @@ router.put('/files/update', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch file update error:', error?.message || error);
+    logger.error('Batch file update error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -376,7 +376,7 @@ router.put('/marketplace/update', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch marketplace update error:', error?.message || error);
+    logger.error('Batch marketplace update error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -405,7 +405,7 @@ router.post('/marketplace/delete', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch marketplace delete error:', error?.message || error);
+    logger.error('Batch marketplace delete error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -434,7 +434,7 @@ router.post('/analytics/export', async (req: Request, res: Response) => {
       downloadUrl: `/api/analytics/exports/${exportId}`,
     });
   } catch (error) {
-    logger.info('Batch analytics export error:', error?.message || error);
+    logger.error('Batch analytics export error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -487,7 +487,7 @@ router.post('/analytics/compare', async (req: Request, res: Response) => {
       comparisonData,
     });
   } catch (error) {
-    logger.info('Batch analytics compare error:', error?.message || error);
+    logger.error('Batch analytics compare error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -519,7 +519,7 @@ router.post('/tracks/move', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch track move error:', error?.message || error);
+    logger.error('Batch track move error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -549,7 +549,7 @@ router.post('/tracks/tag', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch track tag error:', error?.message || error);
+    logger.error('Batch track tag error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -599,7 +599,7 @@ router.post('/tracks/export', async (req: Request, res: Response) => {
       downloadUrl: `/api/tracks/exports/${exportId}`,
     });
   } catch (error) {
-    logger.info('Batch track export error:', error?.message || error);
+    logger.error('Batch track export error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -628,7 +628,7 @@ router.post('/tracks/delete', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch track delete error:', error?.message || error);
+    logger.error('Batch track delete error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -657,7 +657,7 @@ router.put('/beats/update', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch beat update error:', error?.message || error);
+    logger.error('Batch beat update error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -686,7 +686,7 @@ router.post('/beats/delete', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch beat delete error:', error?.message || error);
+    logger.error('Batch beat delete error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -715,7 +715,7 @@ router.post('/posts/approve', async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
-    logger.info('Batch post approve error:', error?.message || error);
+    logger.error('Batch post approve error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -745,7 +745,7 @@ router.get('/progress/:jobId', async (req: Request, res: Response) => {
       elapsedMs: Date.now() - job.startTime,
     });
   } catch (error) {
-    logger.info('Get batch progress error:', error?.message || error);
+    logger.error('Get batch progress error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

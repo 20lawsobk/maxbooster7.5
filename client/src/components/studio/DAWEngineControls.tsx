@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -440,7 +441,7 @@ export function DAWEngineControls({
                 className="gap-1 text-xs"
                 onClick={() => {
                   const suggestions = daw.analyzeMix();
-                  console.log('Mix Analysis:', suggestions);
+                  logger.info('Mix Analysis:', suggestions);
                 }}
               >
                 <Lightbulb className="w-3 h-3" />
@@ -458,7 +459,7 @@ export function DAWEngineControls({
                 className="gap-1 text-xs"
                 onClick={() => {
                   const chords = daw.suggestChords();
-                  console.log('Chord Suggestions:', chords);
+                  logger.info('Chord Suggestions:', chords);
                 }}
               >
                 <Music className="w-3 h-3" />

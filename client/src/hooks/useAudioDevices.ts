@@ -24,9 +24,6 @@ export interface AudioDeviceState {
  * Hook for enumerating and managing audio I/O devices
  * Implements professional DAW-style device management
  */
-/**
- * TODO: Add function documentation
- */
 export function useAudioDevices() {
   const [state, setState] = useState<AudioDeviceState>({
     inputs: [],

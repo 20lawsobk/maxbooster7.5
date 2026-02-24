@@ -1,9 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Skeleton } from './skeleton';
 
-/**
- * TODO: Add function documentation
- */
 export function SkeletonCard({ className }: { className?: string }) {
   return (
     <div className={cn('rounded-lg border bg-card p-6 space-y-4', className)}>
@@ -23,9 +20,6 @@ export function SkeletonCard({ className }: { className?: string }) {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function SkeletonTable({ rows = 5 }: { rows?: number }) {
   return (
     <div className="rounded-lg border bg-card">
@@ -51,9 +45,6 @@ export function SkeletonTable({ rows = 5 }: { rows?: number }) {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function SkeletonChart({ className }: { className?: string }) {
   return (
     <div className={cn('rounded-lg border bg-card p-6', className)}>
@@ -83,9 +74,6 @@ export function SkeletonChart({ className }: { className?: string }) {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function SkeletonList({ items = 3 }: { items?: number }) {
   return (
     <div className="space-y-3">
@@ -103,9 +91,6 @@ export function SkeletonList({ items = 3 }: { items?: number }) {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function SkeletonDashboardStats() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -123,9 +108,6 @@ export function SkeletonDashboardStats() {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function SkeletonProjectCard() {
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
@@ -143,9 +125,6 @@ export function SkeletonProjectCard() {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function SkeletonStudioTrack() {
   return (
     <div className="flex items-center space-x-3 p-2 border-b">
@@ -169,9 +148,6 @@ interface SkeletonLoaderProps {
   variant?: 'table' | 'card' | 'list' | 'grid';
 }
 
-/**
- * TODO: Add function documentation
- */
 export function SkeletonLoader({
   rows = 3,
   columns = 1,

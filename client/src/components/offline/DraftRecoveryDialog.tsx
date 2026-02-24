@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 import { FileText, Clock, Trash2, RotateCcw } from 'lucide-react';
 import {
   Dialog,
@@ -47,7 +48,7 @@ export function DraftRecoveryDialog({
         : await draftStorage.getAllDrafts();
       setDrafts(allDrafts);
     } catch (error) {
-      console.error('Failed to load drafts:', error);
+      logger.error('Failed to load drafts:', error);
     } finally {
       setLoading(false);
     }

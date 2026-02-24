@@ -102,7 +102,7 @@ router.get(
         dashboard: executiveDashboard,
       });
     } catch (error: any) {
-      logger.info('Error fetching executive dashboard:', error?.message);
+      logger.error('Error fetching executive dashboard:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -128,7 +128,7 @@ router.get(
         timestamp: new Date(),
       });
     } catch (error: any) {
-      logger.info('Error fetching health summary:', error?.message);
+      logger.error('Error fetching health summary:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })

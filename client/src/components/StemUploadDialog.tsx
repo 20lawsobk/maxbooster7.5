@@ -37,9 +37,6 @@ const STEM_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
-/**
- * TODO: Add function documentation
- */
 export function StemUploadDialog({ open, onOpenChange, listingId }: StemUploadDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [stemName, setStemName] = useState('');

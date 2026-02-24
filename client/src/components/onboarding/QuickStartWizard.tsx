@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -97,7 +98,7 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
       await completeOnboardingMutation.mutateAsync();
     } catch (error) {
       // Silently fail - user should still be able to skip
-      console.warn('Failed to mark onboarding complete, but proceeding anyway');
+      logger.warn('Failed to mark onboarding complete, but proceeding anyway');
     }
     onSkip();
   };

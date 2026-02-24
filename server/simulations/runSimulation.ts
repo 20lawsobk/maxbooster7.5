@@ -19,9 +19,6 @@ import fs from 'fs';
 import path from 'path';
 import { logger } from '../logger.js';
 
-/**
- * TODO: Add function documentation
- */
 async function runAdBoosterSimulation() {
   logger.info('🚀 Starting Ad System AI Booster Comprehensive Simulation...\n');
   logger.info('Testing across multiple scenarios:');
@@ -97,9 +94,6 @@ async function runAdBoosterSimulation() {
   }
 }
 
-/**
- * TODO: Add function documentation
- */
 async function runAutonomousUpgradeSimulation() {
   logger.info('🚀 Starting Autonomous Upgrade System Comprehensive Simulation...\n');
   logger.info("Testing Max Booster's ability to auto-detect and self-upgrade:");
@@ -271,9 +265,6 @@ async function runAutonomousUpgradeSimulation() {
   }
 }
 
-/**
- * TODO: Add function documentation
- */
 async function main() {
   const args = process.argv.slice(2);
   const simulationType = args[0] || 'all';

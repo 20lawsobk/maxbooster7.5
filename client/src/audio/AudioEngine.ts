@@ -1,4 +1,5 @@
 import { setInterval, clearInterval } from 'worker-timers';
+import { logger } from '@/lib/logger';
 
 export type AudioEngineType = 'webaudio' | 'elementary' | 'tonejs';
 
@@ -156,7 +157,7 @@ export class WebAudioEngine extends BaseAudioEngine {
   }
   
   createGraph(graph: AudioGraph): void {
-    console.log('[WebAudioEngine] Creating graph with', graph.nodes.length, 'nodes');
+    logger.info('[WebAudioEngine] Creating graph with ' + graph.nodes.length + ' nodes');
   }
   
   processAudio(buffer: Float32Array[]): Float32Array[] {
@@ -253,8 +254,8 @@ export class ElementaryAudioEngine extends BaseAudioEngine {
       latencyHint: 'interactive',
     });
     
-    console.log('[ElementaryAudioEngine] Initializing Elementary Audio...');
-    console.log('[ElementaryAudioEngine] Elementary Audio will run DSP at native C++ speeds');
+    logger.info('[ElementaryAudioEngine] Initializing Elementary Audio...');
+    logger.info('[ElementaryAudioEngine] Elementary Audio will run DSP at native C++ speeds');
     
     this.state.sampleRate = this.context.sampleRate;
     this.state.latency = this.context.baseLatency * 1000;
@@ -270,13 +271,13 @@ export class ElementaryAudioEngine extends BaseAudioEngine {
   
   createGraph(graph: AudioGraph): void {
     if (!this.isInitialized) {
-      console.warn('[ElementaryAudioEngine] Engine not initialized');
+      logger.warn('[ElementaryAudioEngine] Engine not initialized');
       return;
     }
     
-    console.log('[ElementaryAudioEngine] Creating functional audio graph');
-    console.log('[ElementaryAudioEngine] Nodes:', graph.nodes.length);
-    console.log('[ElementaryAudioEngine] Connections:', graph.connections.length);
+    logger.info('[ElementaryAudioEngine] Creating functional audio graph');
+    logger.info('[ElementaryAudioEngine] Nodes: ' + graph.nodes.length);
+    logger.info('[ElementaryAudioEngine] Connections: ' + graph.connections.length);
   }
   
   processAudio(buffer: Float32Array[]): Float32Array[] {
@@ -285,22 +286,22 @@ export class ElementaryAudioEngine extends BaseAudioEngine {
   
   renderDSP(dspFunction: () => any): void {
     if (!this.core) {
-      console.log('[ElementaryAudioEngine] DSP render prepared for Elementary Audio');
+      logger.info('[ElementaryAudioEngine] DSP render prepared for Elementary Audio');
     }
   }
   
   createSynth(type: 'sine' | 'saw' | 'square' | 'triangle', frequency: number): any {
-    console.log(`[ElementaryAudioEngine] Creating ${type} oscillator at ${frequency}Hz`);
+    logger.info(`[ElementaryAudioEngine] Creating ${type} oscillator at ${frequency}Hz`);
     return { type, frequency };
   }
   
   createFilter(type: 'lowpass' | 'highpass' | 'bandpass', cutoff: number, resonance: number): any {
-    console.log(`[ElementaryAudioEngine] Creating ${type} filter: cutoff=${cutoff}Hz, Q=${resonance}`);
+    logger.info(`[ElementaryAudioEngine] Creating ${type} filter: cutoff=${cutoff}Hz, Q=${resonance}`);
     return { type, cutoff, resonance };
   }
   
   createEnvelope(attack: number, decay: number, sustain: number, release: number): any {
-    console.log(`[ElementaryAudioEngine] Creating ADSR envelope: A=${attack}, D=${decay}, S=${sustain}, R=${release}`);
+    logger.info(`[ElementaryAudioEngine] Creating ADSR envelope: A=${attack}, D=${decay}, S=${sustain}, R=${release}`);
     return { attack, decay, sustain, release };
   }
 }
@@ -327,11 +328,11 @@ export class AudioEngineFactory {
   private static createEngine(type: AudioEngineType): BaseAudioEngine {
     switch (type) {
       case 'elementary':
-        console.log('[AudioEngineFactory] Creating Elementary Audio engine (high-performance DSP)');
+        logger.info('[AudioEngineFactory] Creating Elementary Audio engine (high-performance DSP)');
         return new ElementaryAudioEngine();
       case 'webaudio':
       default:
-        console.log('[AudioEngineFactory] Creating WebAudio engine');
+        logger.info('[AudioEngineFactory] Creating WebAudio engine');
         return new WebAudioEngine();
     }
   }

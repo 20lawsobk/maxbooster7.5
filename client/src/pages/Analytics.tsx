@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
@@ -1274,7 +1275,7 @@ export default function Analytics() {
       }
     },
     onError: (error) => {
-      console.error('Analytics WebSocket error:', error);
+      logger.error('Analytics WebSocket error:', error);
     },
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,

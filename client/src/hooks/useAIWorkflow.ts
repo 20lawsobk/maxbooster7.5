@@ -44,9 +44,6 @@ const initialWorkflowData: WorkflowData = {
   isIntegrated: false,
 };
 
-/**
- * TODO: Add function documentation
- */
 export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   const { toast } = useToast();
   const { maxRetries = 3, onStateChange, onProgress, onError, onSuccess } = options;

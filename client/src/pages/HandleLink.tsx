@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 
@@ -32,7 +33,7 @@ export default function HandleLink() {
           return;
         }
       } catch (error) {
-        console.error('[HandleLink] Failed to parse deep link:', error);
+        logger.error('[HandleLink] Failed to parse deep link:', error);
       }
     }
     

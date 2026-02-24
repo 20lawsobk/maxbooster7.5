@@ -245,32 +245,41 @@ const PLAN_BENEFITS = {
 };
 
 router.get('/plans', async (req: Request, res: Response) => {
-  res.json({
-    plans: [
-      {
-        id: 'monthly',
-        name: 'Monthly',
-        price: 49,
-        interval: 'month',
-        features: ['Unlimited distributions', 'AI Studio access', 'Social media tools', 'Analytics dashboard']
-      },
-      {
-        id: 'yearly',
-        name: 'Yearly',
-        price: 468,
-        interval: 'year',
-        savings: '20%',
-        features: ['Everything in Monthly', 'Priority support', 'Advanced analytics', 'Collaboration tools']
-      },
-      {
-        id: 'lifetime',
-        name: 'Lifetime',
-        price: 699,
-        interval: 'lifetime',
-        features: ['Everything in Yearly', 'Forever access', 'All future features', 'VIP support']
-      }
-    ]
-  });
+  try {
+    res.json({
+      plans: [
+        {
+          id: 'monthly',
+          name: 'Monthly',
+          price: 49,
+          interval: 'month',
+          features: ['Unlimited distributions', 'AI Studio access', 'Social media tools', 'Analytics dashboard']
+        },
+        {
+          id: 'yearly',
+          name: 'Yearly',
+          price: 468,
+          interval: 'year',
+          savings: '20%',
+          features: ['Everything in Monthly', 'Priority support', 'Advanced analytics', 'Collaboration tools']
+        },
+        {
+          id: 'lifetime',
+          name: 'Lifetime',
+          price: 699,
+          interval: 'lifetime',
+          features: ['Everything in Yearly', 'Forever access', 'All future features', 'VIP support']
+        }
+      ]
+    });
+  } catch (error: any) {
+    logger.error('[Billing] Failed to fetch plans:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch plans',
+      code: 'PLANS_FETCH_ERROR',
+      retryable: true
+    });
+  }
 });
 
 router.post('/create-checkout-session', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
@@ -1042,7 +1051,9 @@ router.post('/retry-payment', requireAuth, requireStripe, async (req: Authentica
       limit: 1,
     });
     
-    if (subscriptions.data.length === 0) {
+    let subscription = subscriptions.data[0];
+    
+    if (!subscription) {
       const unpaidSubs = await stripe!.subscriptions.list({
         customer: user.stripeCustomerId,
         status: 'unpaid',
@@ -1056,9 +1067,9 @@ router.post('/retry-payment', requireAuth, requireStripe, async (req: Authentica
           retryable: false
         });
       }
+      
+      subscription = unpaidSubs.data[0];
     }
-    
-    const subscription = subscriptions.data[0];
     const latestInvoice = await stripe!.invoices.retrieve(subscription.latest_invoice as string);
     
     if (latestInvoice.status === 'paid') {

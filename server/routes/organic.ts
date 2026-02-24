@@ -41,7 +41,7 @@ router.get('/viral-score/:contentId', requireAuth, asyncHandler(async (req, res)
       contentId,
     });
   } catch (error: any) {
-    logger.info('Error in get viral-score:', error?.message);
+    logger.error('Error in get viral-score:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -84,7 +84,7 @@ router.post('/viral-score', requireAuth, asyncHandler(async (req, res) => {
       score: transformedScore,
     });
   } catch (error: any) {
-    logger.info('Error in post viral-score:', error?.message);
+    logger.error('Error in post viral-score:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -127,7 +127,7 @@ router.get('/optimal-timing/:platform', requireAuth, asyncHandler(async (req, re
       timing: transformedTiming,
     });
   } catch (error: any) {
-    logger.info('Error in optimal-timing:', error?.message);
+    logger.error('Error in optimal-timing:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -240,7 +240,7 @@ router.get('/reach-dashboard', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.info('Error in reach-dashboard:', error?.message);
+    logger.error('Error in reach-dashboard:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -294,7 +294,7 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
       statisticalConfidence: Math.min(95, 60 + variants.length * 7),
     });
   } catch (error: any) {
-    logger.info('Error in generate-variants:', error?.message);
+    logger.error('Error in generate-variants:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -346,7 +346,7 @@ router.get('/algorithm-insights', requireAuth, asyncHandler(async (req, res) => 
       },
     });
   } catch (error: any) {
-    logger.info('Error in algorithm-insights:', error?.message);
+    logger.error('Error in algorithm-insights:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -368,7 +368,7 @@ router.get('/algorithm-insights/:platform', requireAuth, asyncHandler(async (req
       insights,
     });
   } catch (error: any) {
-    logger.info('Error in algorithm-insights by platform:', error?.message);
+    logger.error('Error in algorithm-insights by platform:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -392,7 +392,7 @@ router.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
       alerts: [],
     });
   } catch (error: any) {
-    logger.info('Error in organic dashboard:', error?.message);
+    logger.error('Error in organic dashboard:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -408,7 +408,7 @@ router.get('/stats', requireAuth, asyncHandler(async (req, res) => {
       viralPosts: 0,
     });
   } catch (error: any) {
-    logger.info('Error in organic stats:', error?.message);
+    logger.error('Error in organic stats:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -425,7 +425,7 @@ router.get('/metrics', requireAuth, asyncHandler(async (req, res) => {
       viralScore: null,
     });
   } catch (error: any) {
-    logger.info('Error in organic metrics:', error?.message);
+    logger.error('Error in organic metrics:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -438,7 +438,7 @@ router.get('/recommendations', requireAuth, asyncHandler(async (req, res) => {
       recommendations: [],
     });
   } catch (error: any) {
-    logger.info('Error in organic recommendations:', error?.message);
+    logger.error('Error in organic recommendations:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));

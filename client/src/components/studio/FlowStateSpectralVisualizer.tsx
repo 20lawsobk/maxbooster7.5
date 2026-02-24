@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -162,7 +163,7 @@ interface WebGLResources {
 function compileShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
   const shader = gl.createShader(type);
   if (!shader) {
-    console.error('Failed to create shader');
+    logger.error('Failed to create shader');
     return null;
   }
   
@@ -170,7 +171,7 @@ function compileShader(gl: WebGLRenderingContext, type: number, source: string):
   gl.compileShader(shader);
   
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+    logger.error('Shader compile error:', gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);
     return null;
   }
@@ -185,7 +186,7 @@ function createProgram(
 ): WebGLProgram | null {
   const program = gl.createProgram();
   if (!program) {
-    console.error('Failed to create program');
+    logger.error('Failed to create program');
     return null;
   }
   
@@ -194,7 +195,7 @@ function createProgram(
   gl.linkProgram(program);
   
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.error('Program link error:', gl.getProgramInfoLog(program));
+    logger.error('Program link error:', gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
     return null;
   }
@@ -250,7 +251,7 @@ export function FlowStateSpectralVisualizer({
     });
     
     if (!gl) {
-      console.warn('WebGL not supported');
+      logger.warn('WebGL not supported');
       setHasWebGL(false);
       return false;
     }
@@ -365,7 +366,7 @@ export function FlowStateSpectralVisualizer({
 
     const handleContextLost = (e: Event) => {
       e.preventDefault();
-      console.warn('WebGL context lost');
+      logger.warn('WebGL context lost');
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = undefined;
@@ -374,7 +375,7 @@ export function FlowStateSpectralVisualizer({
     };
 
     const handleContextRestored = () => {
-      console.log('WebGL context restored');
+      logger.info('WebGL context restored');
       if (initGL()) {
         animationRef.current = requestAnimationFrame(render);
       }

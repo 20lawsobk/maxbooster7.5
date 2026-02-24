@@ -29,9 +29,6 @@ interface StudioDockProps {
   memoryUsage?: number;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function StudioDock({
   isPlaying,
   isRecording,

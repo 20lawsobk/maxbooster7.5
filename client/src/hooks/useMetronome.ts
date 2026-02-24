@@ -37,9 +37,6 @@ const DEFAULT_SETTINGS: MetronomeSettings = {
  * Professional metronome with tempo control, subdivisions, and count-in
  * Essential for recording in a DAW
  */
-/**
- * TODO: Add function documentation
- */
 export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   const { context } = useAudioContext();
   const [settings, setSettings] = useState<MetronomeSettings>({

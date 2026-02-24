@@ -68,9 +68,6 @@ const POST_TYPES = [
   { value: 'video', label: 'Video' },
 ];
 
-/**
- * TODO: Add function documentation
- */
 export function SchedulePostDialog({
   open,
   onOpenChange,

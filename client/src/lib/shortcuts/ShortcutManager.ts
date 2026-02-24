@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import {
   ShortcutDefinition,
   ShortcutConfig,
@@ -48,7 +49,7 @@ class ShortcutManagerImpl {
         });
       }
     } catch (e) {
-      console.warn('Failed to load shortcut configs:', e);
+      logger.warn('Failed to load shortcut configs:', e);
     }
   }
 
@@ -59,7 +60,7 @@ class ShortcutManagerImpl {
       const configs = Array.from(this.customConfigs.values());
       localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
     } catch (e) {
-      console.warn('Failed to save shortcut configs:', e);
+      logger.warn('Failed to save shortcut configs:', e);
     }
   }
 

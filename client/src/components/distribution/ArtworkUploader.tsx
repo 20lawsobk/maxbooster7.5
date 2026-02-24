@@ -11,9 +11,6 @@ interface ArtworkUploaderProps {
   onChange: (file: File | null, previewUrl: string | null) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);

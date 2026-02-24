@@ -26,9 +26,6 @@ interface LyricsEditorProps {
   onChange: (lyrics: LyricsData[]) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function LyricsEditor({ tracks, lyricsData, onChange }: LyricsEditorProps) {
   const updateLyrics = (trackNumber: number, updates: Partial<LyricsData>) => {
     const existing = lyricsData.find((l) => l.trackNumber === trackNumber);

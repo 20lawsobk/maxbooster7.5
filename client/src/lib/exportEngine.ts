@@ -63,9 +63,6 @@ export interface ExportProgress {
  * Convert AudioBuffer to WAV Blob
  * Writes proper WAV file header and PCM audio data
  */
-/**
- * TODO: Add function documentation
- */
 function audioBufferToWav(audioBuffer: AudioBuffer, bitDepth: number = 24): Blob {
   const numChannels = audioBuffer.numberOfChannels;
   const sampleRate = audioBuffer.sampleRate;
@@ -136,9 +133,6 @@ function audioBufferToWav(audioBuffer: AudioBuffer, bitDepth: number = 24): Blob
 /**
  * Normalize audio buffer to target peak level
  */
-/**
- * TODO: Add function documentation
- */
 function normalizeAudioBuffer(audioBuffer: AudioBuffer, targetPeak: number = 0.95): AudioBuffer {
   let maxPeak = 0;
 
@@ -167,9 +161,6 @@ function normalizeAudioBuffer(audioBuffer: AudioBuffer, targetPeak: number = 0.9
 /**
  * Create soft clipper curve for limiter
  */
-/**
- * TODO: Add function documentation
- */
 function createSoftClipperCurve(thresholdDb: number = -0.3): Float32Array {
   const samples = 4096;
   const curve = new Float32Array(samples);
@@ -193,9 +184,6 @@ function createSoftClipperCurve(thresholdDb: number = -0.3): Float32Array {
 /**
  * Load audio buffer from URL
  */
-/**
- * TODO: Add function documentation
- */
 async function loadAudioBuffer(url: string, context: OfflineAudioContext): Promise<AudioBuffer> {
   const response = await fetch(url);
   if (!response.ok) {
@@ -208,9 +196,6 @@ async function loadAudioBuffer(url: string, context: OfflineAudioContext): Promi
 
 /**
  * Build complete effects chain for a track in offline context
- */
-/**
- * TODO: Add function documentation
  */
 function buildTrackEffectsChain(
   context: OfflineAudioContext,
@@ -279,9 +264,6 @@ function buildTrackEffectsChain(
 /**
  * Build master chain in offline context
  */
-/**
- * TODO: Add function documentation
- */
 function buildMasterChain(
   context: OfflineAudioContext,
   options: ExportOptions
@@ -319,9 +301,6 @@ function buildMasterChain(
 
 /**
  * Export mixdown - render all tracks together with master chain
- */
-/**
- * TODO: Add function documentation
  */
 async function exportMixdown(
   options: ExportOptions,
@@ -430,9 +409,6 @@ async function exportMixdown(
 /**
  * Export stems - render each track individually
  */
-/**
- * TODO: Add function documentation
- */
 async function exportStems(
   options: ExportOptions,
   onProgress?: (progress: ExportProgress) => void
@@ -515,9 +491,6 @@ async function exportStems(
 
 /**
  * Main export function
- */
-/**
- * TODO: Add function documentation
  */
 export async function exportAudio(
   options: ExportOptions,

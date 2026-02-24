@@ -68,9 +68,6 @@ const MAX_CONCURRENT_CONVERSIONS = 2;
 /**
  * Sanitize file path to prevent directory traversal attacks
  */
-/**
- * TODO: Add function documentation
- */
 function sanitizePath(filePath: string): string {
   const normalized = path.normalize(filePath);
   if (normalized.includes('..') || path.isAbsolute(normalized)) {
@@ -81,9 +78,6 @@ function sanitizePath(filePath: string): string {
 
 /**
  * Get quality settings based on format and preset
- */
-/**
- * TODO: Add function documentation
  */
 function getQualitySettings(
   format: string,
@@ -117,9 +111,6 @@ function getQualitySettings(
 
 /**
  * Convert audio file using FFmpeg
- */
-/**
- * TODO: Add function documentation
  */
 export async function convertAudioFile(
   conversionId: string,
@@ -275,9 +266,6 @@ export async function convertAudioFile(
 /**
  * Process a conversion job
  */
-/**
- * TODO: Add function documentation
- */
 export async function processConversion(conversionId: string, storage: IStorage): Promise<void> {
   try {
     // Get conversion details from database
@@ -318,9 +306,6 @@ export async function processConversion(conversionId: string, storage: IStorage)
 /**
  * Add conversion to queue and start processing if slot available
  */
-/**
- * TODO: Add function documentation
- */
 export async function enqueueConversion(conversionId: string, storage: IStorage): Promise<void> {
   // Check if already in queue
   if (conversionQueue.has(conversionId)) {
@@ -344,9 +329,6 @@ export async function enqueueConversion(conversionId: string, storage: IStorage)
 
 /**
  * Cancel an active conversion
- */
-/**
- * TODO: Add function documentation
  */
 export async function cancelConversion(conversionId: string, storage: IStorage): Promise<void> {
   // Kill FFmpeg process if active
@@ -385,9 +367,6 @@ export async function cancelConversion(conversionId: string, storage: IStorage):
 
 /**
  * Get current queue status
- */
-/**
- * TODO: Add function documentation
  */
 export function getQueueStatus(): { active: number; max: number } {
   return {

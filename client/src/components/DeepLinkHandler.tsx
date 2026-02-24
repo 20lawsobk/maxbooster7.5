@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 
@@ -44,7 +45,7 @@ export function DeepLinkHandler() {
         setLocation(fullPath);
       }
     } catch (error) {
-      console.error('[DeepLink] Failed to parse deep link:', error);
+      logger.error('[DeepLink] Failed to parse deep link:', error);
     }
   };
 

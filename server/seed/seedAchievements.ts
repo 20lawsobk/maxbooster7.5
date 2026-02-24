@@ -1,6 +1,7 @@
 import { db } from "../db";
 import { achievements } from "../../shared/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "../logger.js";
 
 const defaultAchievements = [
   {
@@ -150,7 +151,7 @@ const defaultAchievements = [
 ];
 
 export async function seedAchievements() {
-  console.log("Seeding achievements...");
+  logger.info("Seeding achievements...");
   
   try {
     for (const achievement of defaultAchievements) {
@@ -165,15 +166,15 @@ export async function seedAchievements() {
           ...achievement,
           isActive: true,
         });
-        console.log(`Created achievement: ${achievement.name}`);
+        logger.info(`Created achievement: ${achievement.name}`);
       } else {
-        console.log(`Achievement already exists: ${achievement.name}`);
+        logger.info(`Achievement already exists: ${achievement.name}`);
       }
     }
     
-    console.log("Achievement seeding complete!");
+    logger.info("Achievement seeding complete!");
   } catch (error) {
-    console.error("Error seeding achievements:", error);
+    logger.error("Error seeding achievements:", error);
     throw error;
   }
 }

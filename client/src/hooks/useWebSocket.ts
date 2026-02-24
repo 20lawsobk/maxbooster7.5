@@ -16,9 +16,6 @@ interface UseWebSocketOptions {
   maxReconnectAttempts?: number;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const {
     userId,

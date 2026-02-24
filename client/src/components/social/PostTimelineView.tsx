@@ -93,9 +93,6 @@ const STATUS_CONFIG = {
   },
 };
 
-/**
- * TODO: Add function documentation
- */
 export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTimelineViewProps) {
   const sortedPosts = [...posts].sort(
     (a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()

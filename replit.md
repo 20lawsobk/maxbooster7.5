@@ -45,5 +45,14 @@ Max Booster is a full-stack web application for AI-powered music career manageme
 - Session-based auth with Redis store (production) / MemoryStore (dev fallback)
 
 ## Recent Changes
-- 2026-02-24: Production hardening - wired CSRF middleware, fixed 14 TypeScript errors, verified auth/security/error handling/runtime stability
+- 2026-02-24: Production hardening phase 2:
+  - Fixed error handler type safety: normalizeError() helper for unknown error types, proper Server type in gracefulShutdown
+  - Replaced all console.log/console.warn with structured logger (logger.info/logger.error) across server code
+  - Added production-safe response body redaction in request logging middleware (only logs bodies in development)
+  - Fixed password validation inconsistency: registration now requires 8 chars minimum (matching change-password/reset-password)
+  - Added rate limiter to /api/auth/reset-password endpoint (was missing, allowing brute-force of reset tokens)
+  - Fixed 91+ error logging misuses: catch blocks now use logger.error instead of logger.info for error conditions
+  - Removed 222 auto-generated TODO doc stubs across server/client/shared code
+  - Removed debug console.warn from client queryClient.ts
+- 2026-02-24: Production hardening phase 1 - wired CSRF middleware, fixed 14 TypeScript errors, verified auth/security/error handling/runtime stability
 - 2026-02-23: Initial Replit import and setup

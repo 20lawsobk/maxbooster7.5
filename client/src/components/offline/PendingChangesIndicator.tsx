@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,7 @@ export function PendingChangesIndicator({
         .slice(0, maxPreviewItems);
       setRecentActions(allActions);
     } catch (error) {
-      console.error('Failed to load recent actions:', error);
+      logger.error('Failed to load recent actions:', error);
     }
   };
 

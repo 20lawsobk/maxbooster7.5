@@ -208,9 +208,6 @@ class SeededRandom {
 // TEXT PARSER
 // ============================================================================
 
-/**
- * TODO: Add function documentation
- */
 export function parseTextToParameters(text: string): MusicParameters {
   const lowerText = text.toLowerCase();
 
@@ -270,9 +267,6 @@ export function parseTextToParameters(text: string): MusicParameters {
 // CHORD PROGRESSION GENERATOR
 // ============================================================================
 
-/**
- * TODO: Add function documentation
- */
 export function generateChordProgression(params: MusicParameters): Chord[] {
   const { key, scale, genre, structure = 8 } = params;
   const scaleKey = `${key} ${scale}`;
@@ -321,9 +315,6 @@ export function generateChordProgression(params: MusicParameters): Chord[] {
 // MELODY GENERATOR
 // ============================================================================
 
-/**
- * TODO: Add function documentation
- */
 export function generateMelody(params: MusicParameters, chords: Chord[]): Note[] {
   const { key, scale, tempo, structure = 8 } = params;
   const scaleKey = `${key} ${scale}`;
@@ -383,9 +374,6 @@ export function generateMelody(params: MusicParameters, chords: Chord[]): Note[]
 // AUDIO SYNTHESIS
 // ============================================================================
 
-/**
- * TODO: Add function documentation
- */
 function getNoteFrequency(note: string, octave: number): number {
   const baseFreq = NOTE_FREQUENCIES[note] || 440;
   // Adjust for octave (A4 = 440Hz is our reference)
@@ -393,9 +381,6 @@ function getNoteFrequency(note: string, octave: number): number {
   return baseFreq * Math.pow(2, octaveDiff);
 }
 
-/**
- * TODO: Add function documentation
- */
 function generateADSREnvelope(
   sampleCount: number,
   sampleRate: number,
@@ -435,9 +420,6 @@ function generateADSREnvelope(
   return envelope;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function synthesizeToWAV(
   notes: Note[],
   chords: Chord[],
@@ -580,9 +562,6 @@ export async function analyzeAudioForGeneration(audioPath: string): Promise<Musi
   }
 }
 
-/**
- * TODO: Add function documentation
- */
 export function generateComplementaryMelody(params: MusicParameters): {
   notes: Note[];
   chords: Chord[];

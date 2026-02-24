@@ -112,9 +112,6 @@ interface PostingTime {
   engagement_score: number;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function ContentGenerator() {
   const { toast } = useToast();
   const [selectedLanguage, setSelectedLanguage] = useState('en');

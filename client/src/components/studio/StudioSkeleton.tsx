@@ -1,9 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 
-/**
- * TODO: Add function documentation
- */
 export function StudioSkeleton() {
   return (
     <div className="flex h-screen bg-background">
@@ -82,9 +79,6 @@ export function StudioSkeleton() {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function TrackLoadingSkeleton() {
   return (
     <div className="flex items-center gap-4 p-4 border rounded-lg animate-pulse">
@@ -102,9 +96,6 @@ export function TrackLoadingSkeleton() {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function ProjectListSkeleton() {
   return (
     <div className="space-y-2">
@@ -123,9 +114,6 @@ export function ProjectListSkeleton() {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function FileBrowserSkeleton() {
   return (
     <div className="space-y-2 p-4">
@@ -140,9 +128,6 @@ export function FileBrowserSkeleton() {
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export function MixerPanelSkeleton() {
   return (
     <div className="flex gap-4 p-4">

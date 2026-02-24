@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { AlertTriangle, GitMerge, Download, Upload, Check, X } from 'lucide-react';
 import {
   Dialog,
@@ -52,7 +53,7 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
         setSelectedConflict(rawConflicts[0]);
       }
     } catch (error) {
-      console.error('Failed to load conflicts:', error);
+      logger.error('Failed to load conflicts:', error);
     } finally {
       setLoading(false);
     }
@@ -76,7 +77,7 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
         onOpenChange(false);
       }
     } catch (error) {
-      console.error('Failed to resolve conflict:', error);
+      logger.error('Failed to resolve conflict:', error);
     } finally {
       setResolving(false);
     }
@@ -93,7 +94,7 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
       setSelectedConflict(null);
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to resolve all conflicts:', error);
+      logger.error('Failed to resolve all conflicts:', error);
     } finally {
       setResolving(false);
     }

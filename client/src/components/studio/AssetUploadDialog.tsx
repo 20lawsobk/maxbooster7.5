@@ -21,9 +21,6 @@ interface AssetUploadDialogProps {
   assetType: 'sample' | 'plugin';
 }
 
-/**
- * TODO: Add function documentation
- */
 export function AssetUploadDialog({ open, onOpenChange, assetType }: AssetUploadDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [name, setName] = useState('');

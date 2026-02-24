@@ -36,9 +36,6 @@ interface HealthCheckResult {
 /**
  * Perform comprehensive health check with caching
  */
-/**
- * TODO: Add function documentation
- */
 export async function getCachedHealthCheck(ttlSeconds: number = 30): Promise<HealthCheckResult> {
   const cacheKey = createCacheKey('health', 'system');
 
@@ -64,9 +61,6 @@ export async function getCachedHealthCheck(ttlSeconds: number = 30): Promise<Hea
 
 /**
  * Database health check
- */
-/**
- * TODO: Add function documentation
  */
 async function checkDatabaseHealth() {
   try {
@@ -98,9 +92,6 @@ async function checkDatabaseHealth() {
 /**
  * Process health check
  */
-/**
- * TODO: Add function documentation
- */
 async function checkProcessHealth() {
   const memUsage = process.memoryUsage();
 
@@ -122,9 +113,6 @@ async function checkProcessHealth() {
 /**
  * Lightweight liveness probe (no caching, always fresh)
  */
-/**
- * TODO: Add function documentation
- */
 export function getLivenessProbe() {
   return {
     status: 'alive',
@@ -135,9 +123,6 @@ export function getLivenessProbe() {
 
 /**
  * Readiness probe with minimal caching (10s)
- */
-/**
- * TODO: Add function documentation
  */
 export async function getReadinessProbe(): Promise<{ ready: boolean; checks: any }> {
   const health = await getCachedHealthCheck(10); // 10 second cache

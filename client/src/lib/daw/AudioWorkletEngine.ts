@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 export interface AudioEngineConfig {
   sampleRate: number;
   bufferSize: number;
@@ -151,9 +152,9 @@ export class AudioWorkletEngine {
           }
         };
         
-        console.log('[AudioWorkletEngine] AudioWorklet processor loaded');
+        logger.info('[AudioWorkletEngine] AudioWorklet processor loaded');
       } catch (workletError) {
-        console.warn('[AudioWorkletEngine] AudioWorklet not supported, falling back to analyzer-based metering');
+        logger.warn('[AudioWorkletEngine] AudioWorklet not supported, falling back to analyzer-based metering');
         this.workletReady = false;
       }
       
@@ -175,7 +176,7 @@ export class AudioWorkletEngine {
       this.emit({ type: 'state-change', data: { initialized: true } });
       
     } catch (error) {
-      console.error('[AudioWorkletEngine] Failed to initialize:', error);
+      logger.error('[AudioWorkletEngine] Failed to initialize:', error);
       throw error;
     }
   }
@@ -253,7 +254,7 @@ export class AudioWorkletEngine {
   
   createTrack(trackId: string): void {
     if (!this.audioContext || !this.masterGain) {
-      console.warn('[AudioWorkletEngine] Not initialized');
+      logger.warn('[AudioWorkletEngine] Not initialized');
       return;
     }
     
@@ -459,7 +460,7 @@ export class AudioWorkletEngine {
   
   play(): void {
     if (!this.audioContext) {
-      console.warn('[AudioWorkletEngine] Not initialized');
+      logger.warn('[AudioWorkletEngine] Not initialized');
       return;
     }
     

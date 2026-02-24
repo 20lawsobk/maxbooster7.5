@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -279,23 +280,23 @@ export function FlowStateStudioPro({
   }, [adapter]);
 
   const handleGenerateMelody = useCallback(() => {
-    console.log('[FlowState] Generate Melody pattern');
+    logger.info('[FlowState] Generate Melody pattern');
   }, []);
 
   const handleGenerateBass = useCallback(() => {
-    console.log('[FlowState] Generate Bass pattern');
+    logger.info('[FlowState] Generate Bass pattern');
   }, []);
 
   const handleGenerateDrums = useCallback(() => {
-    console.log('[FlowState] Generate Drums pattern');
+    logger.info('[FlowState] Generate Drums pattern');
   }, []);
 
   const handleGeneratePercussion = useCallback(() => {
-    console.log('[FlowState] Generate Percussion pattern');
+    logger.info('[FlowState] Generate Percussion pattern');
   }, []);
 
   const handleAnalyzeAudio = useCallback(() => {
-    console.log('[FlowState] Analyze Audio');
+    logger.info('[FlowState] Analyze Audio');
   }, []);
 
   const handleAddPlugin = useCallback((pluginId: string, type: 'effect' | 'instrument') => {
@@ -373,30 +374,30 @@ export function FlowStateStudioPro({
         if (selectedTrack) adapter.duplicateTrack(selectedTrack);
         break;
       case 'analyze':
-        console.log('[FlowState] Analyze track:', selectedTrack || 'No track selected');
+        logger.info('[FlowState] Analyze track:', selectedTrack || 'No track selected');
         break;
       case 'stem-separate':
-        console.log('[FlowState] Stem separation:', selectedTrack || 'No track selected');
+        logger.info('[FlowState] Stem separation:', selectedTrack || 'No track selected');
         break;
       case 'ai-process':
-        console.log('[FlowState] AI Process track:', selectedTrack || 'No track selected');
+        logger.info('[FlowState] AI Process track:', selectedTrack || 'No track selected');
         break;
       case 'ai-enhance':
-        console.log('[FlowState] AI Enhance:', context.selectedClipIds[0] || 'No clip selected');
+        logger.info('[FlowState] AI Enhance:', context.selectedClipIds[0] || 'No clip selected');
         break;
       case 'quantize':
-        console.log('[FlowState] Quantize MIDI:', context.selectedClipIds[0] || 'No clip selected');
+        logger.info('[FlowState] Quantize MIDI:', context.selectedClipIds[0] || 'No clip selected');
         break;
       case 'humanize':
-        console.log('[FlowState] Humanize MIDI:', context.selectedClipIds[0] || 'No clip selected');
+        logger.info('[FlowState] Humanize MIDI:', context.selectedClipIds[0] || 'No clip selected');
         break;
       default:
-        console.log('[FlowState] Toolbar action:', actionId);
+        logger.info('[FlowState] Toolbar action:', actionId);
     }
   }, [adapter, context]);
 
   const handleAddTrack = useCallback((type: string, name: string) => {
-    console.log('[FlowState] Add track:', type, name);
+    logger.info('[FlowState] Add track:', type, name);
     adapter.addTrack(type, name);
   }, [adapter]);
 
@@ -418,12 +419,12 @@ export function FlowStateStudioPro({
       onDelete: () => adapter.deleteTrack(track.id),
       onMute: () => adapter.toggleTrackMute(track.id),
       onSolo: () => adapter.toggleTrackSolo(track.id),
-      onRename: () => console.log('[FlowState] Rename track:', track.id),
-      onChangeColor: () => console.log('[FlowState] Change color:', track.id),
-      onMoveUp: () => console.log('[FlowState] Move up:', track.id),
-      onMoveDown: () => console.log('[FlowState] Move down:', track.id),
-      onFreeze: () => console.log('[FlowState] Freeze:', track.id),
-      onAIProcess: () => console.log('[FlowState] AI Process:', track.id),
+      onRename: () => logger.info('[FlowState] Rename track:', track.id),
+      onChangeColor: () => logger.info('[FlowState] Change color:', track.id),
+      onMoveUp: () => logger.info('[FlowState] Move up:', track.id),
+      onMoveDown: () => logger.info('[FlowState] Move down:', track.id),
+      onFreeze: () => logger.info('[FlowState] Freeze:', track.id),
+      onAIProcess: () => logger.info('[FlowState] AI Process:', track.id),
       onAddPlugin: () => handleOpenPluginBrowser(track.id),
       isMuted: track.mute,
       isSolo: track.solo,
@@ -442,7 +443,7 @@ export function FlowStateStudioPro({
         collaborators={collaboration.collaborators}
         currentUserId="current-user"
         isConnected={collaboration.isConnected}
-        onInvite={() => console.log('Invite collaborators')}
+        onInvite={() => logger.info('Invite collaborators')}
         onReconnect={() => collaboration.reconnect()}
       />
 
@@ -1189,7 +1190,7 @@ export function FlowStateStudioPro({
         onOpenChange={setShowImportAudioDialog}
         projectId={projectId || undefined}
         onImportComplete={(files) => {
-          console.log('[FlowState] Audio files imported:', files);
+          logger.info('[FlowState] Audio files imported:', files);
         }}
       />
 
@@ -1197,7 +1198,7 @@ export function FlowStateStudioPro({
         open={showTemplateDialog}
         onOpenChange={setShowTemplateDialog}
         onProjectCreated={(project) => {
-          console.log('[FlowState] Project created from template:', project);
+          logger.info('[FlowState] Project created from template:', project);
         }}
       />
 
@@ -1206,7 +1207,7 @@ export function FlowStateStudioPro({
         onOpenChange={setShowAIGenerateDialog}
         projectId={projectId || undefined}
         onGenerationComplete={(result) => {
-          console.log('[FlowState] AI generation complete:', result);
+          logger.info('[FlowState] AI generation complete:', result);
         }}
       />
     </div>

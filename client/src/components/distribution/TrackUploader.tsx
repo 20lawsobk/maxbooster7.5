@@ -38,9 +38,6 @@ interface TrackUploaderProps {
   maxFiles?: number;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);

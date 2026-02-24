@@ -101,9 +101,6 @@ const STATUS_CONFIG = {
   },
 };
 
-/**
- * TODO: Add function documentation
- */
 export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatusDashboardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();

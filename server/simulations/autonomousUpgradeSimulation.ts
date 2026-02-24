@@ -57,9 +57,6 @@ export interface SimulationResult {
  * Industry change detection simulation
  * Simulates realistic detection times based on severity and monitoring systems
  */
-/**
- * TODO: Add function documentation
- */
 function simulateDetection(severity: 'minor' | 'moderate' | 'critical', rng: SeededRandom): number {
   // Detection times in milliseconds (simulating real-world hours)
   const baseDetectionTimes = {
@@ -79,9 +76,6 @@ function simulateDetection(severity: 'minor' | 'moderate' | 'critical', rng: See
 /**
  * Auto-upgrade execution simulation
  * Simulates realistic upgrade times based on complexity and severity
- */
-/**
- * TODO: Add function documentation
  */
 function simulateUpgrade(
   changeType: 'algorithm' | 'platform' | 'competitor' | 'trend',
@@ -134,9 +128,6 @@ function simulateUpgrade(
 /**
  * Competitive impact assessment
  */
-/**
- * TODO: Add function documentation
- */
 function assessCompetitiveImpact(
   success: boolean,
   algorithmQuality: number,
@@ -164,9 +155,6 @@ function assessCompetitiveImpact(
  * Detect: Spotify prioritizes tracks with >60% completion rate
  * Auto-Upgrade: Update recommendation engine to favor completion metrics
  * Verify: System adjusts algorithms within 24 hours
- */
-/**
- * TODO: Add function documentation
  */
 function simulateScenarioA(rng: SeededRandom): UpgradeScenario {
   const detectionTime = simulateDetection('critical', rng);
@@ -201,9 +189,6 @@ function simulateScenarioA(rng: SeededRandom): UpgradeScenario {
  * Auto-Upgrade: Update content generator to optimize for new duration
  * Verify: Generated content adapts automatically
  */
-/**
- * TODO: Add function documentation
- */
 function simulateScenarioB(rng: SeededRandom): UpgradeScenario {
   const detectionTime = simulateDetection('critical', rng);
   const upgrade = simulateUpgrade('algorithm', 'critical', rng);
@@ -236,9 +221,6 @@ function simulateScenarioB(rng: SeededRandom): UpgradeScenario {
  * Detect: New streaming service gains 10M+ users
  * Auto-Upgrade: Add platform to distribution system
  * Verify: Integration happens automatically
- */
-/**
- * TODO: Add function documentation
  */
 function simulateScenarioC(rng: SeededRandom): UpgradeScenario {
   const detectionTime = simulateDetection('moderate', rng);
@@ -273,9 +255,6 @@ function simulateScenarioC(rng: SeededRandom): UpgradeScenario {
  * Auto-Upgrade: Enhance proprietary AI to maintain advantage
  * Verify: Feature parity achieved within 1 week
  */
-/**
- * TODO: Add function documentation
- */
 function simulateScenarioD(rng: SeededRandom): UpgradeScenario {
   const detectionTime = simulateDetection('critical', rng);
   const upgrade = simulateUpgrade('competitor', 'critical', rng);
@@ -305,9 +284,6 @@ function simulateScenarioD(rng: SeededRandom): UpgradeScenario {
 
 /**
  * Generate realistic industry change scenarios for long-term simulation
- */
-/**
- * TODO: Add function documentation
  */
 function generateIndustryScenarios(count: number, rng: SeededRandom): UpgradeScenario[] {
   const scenarios: UpgradeScenario[] = [];
@@ -415,9 +391,6 @@ function generateIndustryScenarios(count: number, rng: SeededRandom): UpgradeSce
 /**
  * Main simulation function
  */
-/**
- * TODO: Add function documentation
- */
 export async function simulateAutonomousUpgrade(seed = 12345): Promise<SimulationResult> {
   // Create fresh RNG instance for this run to ensure reproducibility
   const rng = new SeededRandom(seed);
@@ -503,9 +476,6 @@ export async function simulateAutonomousUpgrade(seed = 12345): Promise<Simulatio
 /**
  * Long-term simulation (1 year compressed)
  * Simulates 50+ industry changes over a year to verify continuous adaptation
- */
-/**
- * TODO: Add function documentation
  */
 export async function simulateLongTermAdaptation(
   scenarioCount = 52,
@@ -599,9 +569,6 @@ export async function simulateLongTermAdaptation(
 /**
  * Format time in human-readable format
  */
-/**
- * TODO: Add function documentation
- */
 function formatTime(ms: number): string {
   const hours = Math.floor(ms / (60 * 60 * 1000));
   const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
@@ -614,9 +581,6 @@ function formatTime(ms: number): string {
 
 /**
  * Generate comprehensive simulation report
- */
-/**
- * TODO: Add function documentation
  */
 export function generateSimulationReport(
   mainResults: SimulationResult,

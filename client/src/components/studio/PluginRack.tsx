@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
@@ -273,7 +274,7 @@ export function PluginRack({
             bypass: plugin.bypass,
           });
         } else {
-          console.error('[PluginRack] audioEngine.updateTrackDelay is not available');
+          logger.error('[PluginRack] audioEngine.updateTrackDelay is not available');
         }
         break;
       case 'distortion':
@@ -285,7 +286,7 @@ export function PluginRack({
             bypass: plugin.bypass,
           });
         } else {
-          console.error('[PluginRack] audioEngine.updateTrackDistortion is not available');
+          logger.error('[PluginRack] audioEngine.updateTrackDistortion is not available');
         }
         break;
       case 'chorus':
@@ -297,7 +298,7 @@ export function PluginRack({
             bypass: plugin.bypass,
           });
         } else {
-          console.error('[PluginRack] audioEngine.updateTrackChorus is not available');
+          logger.error('[PluginRack] audioEngine.updateTrackChorus is not available');
         }
         break;
       case 'flanger':
@@ -310,7 +311,7 @@ export function PluginRack({
             bypass: plugin.bypass,
           });
         } else {
-          console.error('[PluginRack] audioEngine.updateTrackFlanger is not available');
+          logger.error('[PluginRack] audioEngine.updateTrackFlanger is not available');
         }
         break;
       case 'phaser':
@@ -324,7 +325,7 @@ export function PluginRack({
             bypass: plugin.bypass,
           });
         } else {
-          console.error('[PluginRack] audioEngine.updateTrackPhaser is not available');
+          logger.error('[PluginRack] audioEngine.updateTrackPhaser is not available');
         }
         break;
       case 'gate':
@@ -337,7 +338,7 @@ export function PluginRack({
             bypass: plugin.bypass,
           });
         } else {
-          console.error('[PluginRack] audioEngine.updateTrackGate is not available');
+          logger.error('[PluginRack] audioEngine.updateTrackGate is not available');
         }
         break;
       case 'limiter':
@@ -348,7 +349,7 @@ export function PluginRack({
             bypass: plugin.bypass,
           });
         } else {
-          console.error('[PluginRack] audioEngine.updateTrackLimiter is not available');
+          logger.error('[PluginRack] audioEngine.updateTrackLimiter is not available');
         }
         break;
       default:

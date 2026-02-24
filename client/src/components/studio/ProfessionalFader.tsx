@@ -54,9 +54,6 @@ function dbToValue(db: number): number {
 // Export for use in other components
 export { valueToDb, dbToValue, MAX_DB, MIN_DB, DB_RANGE };
 
-/**
- * TODO: Add function documentation
- */
 export function ProfessionalFader({
   value,
   onChange,

@@ -98,9 +98,6 @@ interface MetadataFormProps {
   errors?: Record<string, string>;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps) {
   const [selectedMoods, setSelectedMoods] = useState<string[]>(data.moodTags || []);
 

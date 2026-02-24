@@ -1,3 +1,4 @@
+import { logger } from 'logger';
 export type SentryLevel = 'fatal' | 'error' | 'warning' | 'info' | 'debug';
 
 export interface SentryBreadcrumb {
@@ -62,9 +63,9 @@ class SentryService {
     if (this.dsn) {
       this.isInitialized = true;
       this.setupGlobalErrorHandlers();
-      console.log('[Sentry] Initialized for environment:', this.environment);
+      logger.info('[Sentry] Initialized for environment:', this.environment);
     } else {
-      console.log('[Sentry] No DSN provided, running in mock mode');
+      logger.info('[Sentry] No DSN provided, running in mock mode');
       this.isInitialized = true;
     }
   }
@@ -143,7 +144,7 @@ class SentryService {
       this.errorQueue.push({ error: sentryError, context: fullContext });
       this.processQueue();
     } else {
-      console.error('[Sentry Mock] Captured exception:', {
+      logger.error('[Sentry Mock] Captured exception:', {
         error: sentryError,
         context: fullContext,
       });
@@ -170,7 +171,7 @@ class SentryService {
         context: fullContext,
       });
     } else {
-      console.log(`[Sentry Mock] Captured message (${level}):`, message, fullContext);
+      logger.info(`[Sentry Mock] Captured message (${level}):`, message, fullContext);
     }
 
     return this.generateEventId();
@@ -229,10 +230,10 @@ class SentryService {
       });
 
       if (!response.ok) {
-        console.warn('[Sentry] Failed to send error:', response.status);
+        logger.warn('[Sentry] Failed to send error:', response.status);
       }
     } catch (err) {
-      console.warn('[Sentry] Error sending to Sentry:', err);
+      logger.warn('[Sentry] Error sending to Sentry:', err);
     }
   }
 

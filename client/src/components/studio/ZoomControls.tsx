@@ -20,9 +20,6 @@ const SNAP_RESOLUTIONS = [
   { value: 4, label: '4 Bars' },
 ];
 
-/**
- * TODO: Add function documentation
- */
 export function ZoomControls() {
   const { zoom, setZoom, snapEnabled, toggleSnap, snapResolution, setSnapResolution } =
     useStudioStore();

@@ -1,9 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from 'lucide-react';
 
-/**
- * TODO: Add function documentation
- */
 export function PostScheduler({ posts }: { posts?: unknown[] }) {
   return (
     <Card>

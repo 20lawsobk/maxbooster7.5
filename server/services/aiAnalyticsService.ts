@@ -57,9 +57,6 @@ interface InsightsResponse {
   insights: Insight[];
 }
 
-/**
- * TODO: Add function documentation
- */
 function linearRegression(dataPoints: { x: number; y: number }[]): {
   slope: number;
   intercept: number;
@@ -80,9 +77,6 @@ function linearRegression(dataPoints: { x: number; y: number }[]): {
   return { slope, intercept };
 }
 
-/**
- * TODO: Add function documentation
- */
 function calculateStandardDeviation(values: number[]): number {
   if (values.length === 0) return 0;
   const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
@@ -90,9 +84,6 @@ function calculateStandardDeviation(values: number[]): number {
   return Math.sqrt(variance);
 }
 
-/**
- * TODO: Add function documentation
- */
 function calculateMovingAverage(values: number[], window: number): number[] {
   const result: number[] = [];
   for (let i = 0; i < values.length; i++) {
@@ -104,9 +95,6 @@ function calculateMovingAverage(values: number[], window: number): number[] {
   return result;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function predictMetric(params: PredictMetricRequest): Promise<PredictMetricResponse> {
   const { metric, timeframe } = params;
 
@@ -311,9 +299,6 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
   return result;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function forecastRevenue(timeframe: string = '30d'): Promise<RevenueForecastResponse> {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -376,9 +361,6 @@ export async function forecastRevenue(timeframe: string = '30d'): Promise<Revenu
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function detectAnomalies(): Promise<AnomaliesResponse> {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -444,9 +426,6 @@ export async function detectAnomalies(): Promise<AnomaliesResponse> {
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function generateInsights(): Promise<InsightsResponse> {
   const insights: Insight[] = [];
   const now = new Date();
@@ -627,9 +606,6 @@ interface CareerGrowthResponse {
   recommendations: string[];
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function predictCareerGrowth(
   params: CareerGrowthRequest
 ): Promise<CareerGrowthResponse> {
@@ -739,9 +715,6 @@ interface CareerMilestone {
   estimatedDate: string;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function getCareerMilestones(userId: string): Promise<CareerMilestone[]> {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -808,9 +781,6 @@ interface FanbaseData {
   growthOpportunities: string[];
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -884,9 +854,6 @@ interface ReleaseStrategy {
   recommendations: string[];
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function getReleaseStrategy(userId: string): Promise<ReleaseStrategy> {
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);

@@ -33,9 +33,6 @@ interface TakeCompingLanesProps {
   compact?: boolean;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function TakeCompingLanes({
   takes,
   selectedTakeId,
@@ -209,9 +206,6 @@ interface TakeLaneItemProps {
   formatDuration: (seconds: number) => string;
 }
 
-/**
- * TODO: Add function documentation
- */
 function TakeLaneItem({
   take,
   isSelected,

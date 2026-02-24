@@ -36,9 +36,6 @@ interface RoyaltySplitManagerProps {
   projectId: string;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);

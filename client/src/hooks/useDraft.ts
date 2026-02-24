@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { draftStorage, Draft, DraftConflict } from '@/lib/offline';
 import { useDebounce } from './useDebounce';
@@ -56,7 +57,7 @@ export function useDraft<T = unknown>(options: UseDraftOptions<T>): UseDraftRetu
         }
         isInitialized.current = true;
       } catch (error) {
-        console.error('[useDraft] Init error:', error);
+        logger.error('[useDraft] Init error:', error);
         onError?.(error as Error);
       }
     };
@@ -82,7 +83,7 @@ export function useDraft<T = unknown>(options: UseDraftOptions<T>): UseDraftRetu
       onSave?.(savedDraft);
       return savedDraft;
     } catch (error) {
-      console.error('[useDraft] Save error:', error);
+      logger.error('[useDraft] Save error:', error);
       onError?.(error as Error);
       throw error;
     } finally {
@@ -99,7 +100,7 @@ export function useDraft<T = unknown>(options: UseDraftOptions<T>): UseDraftRetu
       }
       return null;
     } catch (error) {
-      console.error('[useDraft] Recover error:', error);
+      logger.error('[useDraft] Recover error:', error);
       onError?.(error as Error);
       return null;
     }
@@ -112,7 +113,7 @@ export function useDraft<T = unknown>(options: UseDraftOptions<T>): UseDraftRetu
       setHasDraft(false);
       setLastSaved(null);
     } catch (error) {
-      console.error('[useDraft] Discard error:', error);
+      logger.error('[useDraft] Discard error:', error);
       onError?.(error as Error);
     }
   }, [formId, onError]);
@@ -128,7 +129,7 @@ export function useDraft<T = unknown>(options: UseDraftOptions<T>): UseDraftRetu
       }
       return conflict;
     } catch (error) {
-      console.error('[useDraft] Conflict check error:', error);
+      logger.error('[useDraft] Conflict check error:', error);
       onError?.(error as Error);
       return null;
     }

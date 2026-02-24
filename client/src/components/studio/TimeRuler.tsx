@@ -11,9 +11,6 @@ interface TimeRulerProps {
   onTimelineClick: (time: number) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function TimeRuler({
   duration,
   tempo,

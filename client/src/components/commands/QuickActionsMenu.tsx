@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import { useShortcuts } from '@/contexts/ShortcutContext';
 import { ShortcutHint } from '@/components/shortcuts/ShortcutHint';
 
@@ -178,7 +179,7 @@ export function QuickActionsMenu({
           setFavorites(JSON.parse(stored));
         }
       } catch (e) {
-        console.warn('Failed to load favorites:', e);
+        logger.warn('Failed to load favorites:', e);
       }
     }
   }, [enableFavorites]);

@@ -34,9 +34,6 @@ interface ChannelStripProps {
   onEffectChange?: (effectType: string, params: unknown) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function ChannelStrip({
   id,
   name,

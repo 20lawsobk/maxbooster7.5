@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import React, { createContext, useContext, useCallback, useEffect, useState, useRef } from 'react';
 import { UndoManager, getUndoManager } from '@/lib/undo/UndoManager';
 import { UndoableAction, UndoState, ActionType, ActionCategory, ActionMetadata } from '@/lib/undo/types';
@@ -197,7 +198,7 @@ export function GlobalUndoProvider({
         }));
       }
     } catch (error) {
-      console.warn('Failed to load recovery points:', error);
+      logger.warn('Failed to load recovery points:', error);
     }
   };
 
@@ -295,7 +296,7 @@ export function GlobalUndoProvider({
 
       return newPoint;
     } catch (error) {
-      console.error('Failed to create recovery point:', error);
+      logger.error('Failed to create recovery point:', error);
       throw error;
     }
   }, []);
@@ -316,7 +317,7 @@ export function GlobalUndoProvider({
         }
       }
     } catch (error) {
-      console.error('Failed to restore to point:', error);
+      logger.error('Failed to restore to point:', error);
       throw error;
     }
   }, [state.recoveryPoints]);
@@ -329,7 +330,7 @@ export function GlobalUndoProvider({
         recoveryPoints: prev.recoveryPoints.filter((p) => p.id !== pointId),
       }));
     } catch (error) {
-      console.error('Failed to delete recovery point:', error);
+      logger.error('Failed to delete recovery point:', error);
       throw error;
     }
   }, []);
@@ -357,7 +358,7 @@ export function GlobalUndoProvider({
         isDestructive: action.metadata.isDestructive,
       });
     } catch (error) {
-      console.warn('Failed to sync action to backend:', error);
+      logger.warn('Failed to sync action to backend:', error);
     }
   }, [shouldSyncToBackend]);
 

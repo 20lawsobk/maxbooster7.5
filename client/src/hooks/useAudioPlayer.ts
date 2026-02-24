@@ -51,9 +51,6 @@ export interface AudioPlayerOptions {
   onError?: (error: Error) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function useAudioPlayer(options: AudioPlayerOptions = {}) {
   const engineRef = useRef<AudioEngine>(AudioEngine.getInstance());
   const [state, setState] = useState<PlaybackState>({

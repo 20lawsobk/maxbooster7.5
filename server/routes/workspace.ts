@@ -30,7 +30,7 @@ const requireWorkspaceMember = async (req: AuthenticatedRequest, res: Response, 
     }
     next();
   } catch (error: any) {
-    logger.info('Error in workspace member check:', error?.message);
+    logger.error('Error in workspace member check:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -49,7 +49,7 @@ const requireWorkspaceAdmin = async (req: AuthenticatedRequest, res: Response, n
     }
     next();
   } catch (error: any) {
-    logger.info('Error in workspace admin check:', error?.message);
+    logger.error('Error in workspace admin check:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 };

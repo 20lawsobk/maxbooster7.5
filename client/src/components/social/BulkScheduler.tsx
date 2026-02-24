@@ -55,9 +55,6 @@ interface BatchStatus {
   completedAt?: string;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function BulkScheduler() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedPosts, setParsedPosts] = useState<BulkPost[]>([]);

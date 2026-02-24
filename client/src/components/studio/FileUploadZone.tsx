@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -240,7 +241,7 @@ export function FileUploadZone({
         }
         return;
       } catch (err) {
-        console.warn('File System Access API not available, using fallback');
+        logger.warn('File System Access API not available, using fallback');
       }
     }
     

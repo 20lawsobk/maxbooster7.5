@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -69,7 +70,7 @@ export function useOnboardingProgress() {
       }
     },
     onError: (error) => {
-      console.error('Failed to complete onboarding step:', error);
+      logger.error('Failed to complete onboarding step:', error);
     },
   });
 
@@ -85,7 +86,7 @@ export function useOnboardingProgress() {
   const completeTaskByName = useCallback(async (name: OnboardingTaskName): Promise<boolean> => {
     const task = findTaskByName(name);
     if (!task) {
-      console.warn(`Onboarding task not found: ${name}`);
+      logger.warn(`Onboarding task not found: ${name}`);
       return false;
     }
     
@@ -97,7 +98,7 @@ export function useOnboardingProgress() {
       await completeStepMutation.mutateAsync(task.id);
       return true;
     } catch (error) {
-      console.error(`Failed to complete task: ${name}`, error);
+      logger.error(`Failed to complete task: ${name}`, error);
       return false;
     }
   }, [findTaskByName, completeStepMutation]);
@@ -105,7 +106,7 @@ export function useOnboardingProgress() {
   const completeTaskById = useCallback(async (stepId: string): Promise<boolean> => {
     const task = progress?.tasks.find(t => t.id === stepId);
     if (!task) {
-      console.warn(`Onboarding task not found with id: ${stepId}`);
+      logger.warn(`Onboarding task not found with id: ${stepId}`);
       return false;
     }
 
@@ -117,7 +118,7 @@ export function useOnboardingProgress() {
       await completeStepMutation.mutateAsync(stepId);
       return true;
     } catch (error) {
-      console.error(`Failed to complete task: ${stepId}`, error);
+      logger.error(`Failed to complete task: ${stepId}`, error);
       return false;
     }
   }, [progress?.tasks, completeStepMutation]);

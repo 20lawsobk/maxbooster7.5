@@ -22,9 +22,6 @@ export interface StripePriceIds {
 
 let cachedPriceIds: StripePriceIds | null = null;
 
-/**
- * TODO: Add function documentation
- */
 export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
   // Return cached IDs if already set up
   if (cachedPriceIds) {

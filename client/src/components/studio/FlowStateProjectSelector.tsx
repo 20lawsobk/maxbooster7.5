@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -189,7 +190,7 @@ export function FlowStateProjectSelector({
         setIsOpen(false);
         toast({ title: `Opened "${project.title}"` });
       } else {
-        console.warn('[ProjectSelector] Project loaded with basic metadata only - proceeding');
+        logger.warn('[ProjectSelector] Project loaded with basic metadata only - proceeding');
         onProjectSelect(project.id, project.title);
         setIsOpen(false);
         toast({ 
@@ -198,7 +199,7 @@ export function FlowStateProjectSelector({
         });
       }
     } catch (error) {
-      console.error('[ProjectSelector] Failed to load project:', error);
+      logger.error('[ProjectSelector] Failed to load project:', error);
       toast({ 
         title: 'Failed to load project', 
         description: 'Please try again or create a new project',

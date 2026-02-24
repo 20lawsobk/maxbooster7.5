@@ -71,9 +71,6 @@ router.post('/', raw({ type: 'application/json' }), async (req, res) => {
 /**
  * Map SendGrid event types to our enum
  */
-/**
- * TODO: Add function documentation
- */
 function mapSendGridEventType(
   eventType: string
 ): 'delivered' | 'bounce' | 'spam' | 'unsubscribe' | 'open' | 'click' | 'deferred' | 'dropped' {

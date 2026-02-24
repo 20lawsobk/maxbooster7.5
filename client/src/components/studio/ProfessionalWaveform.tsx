@@ -24,9 +24,6 @@ interface TransientMarker {
   strength: number;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function ProfessionalWaveform({
   audioData,
   width,

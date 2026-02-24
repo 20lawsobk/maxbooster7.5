@@ -49,9 +49,6 @@ interface AccountVerification {
   error?: string;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function PayoutDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();

@@ -11,9 +11,6 @@ interface WaveformVisualizerProps {
   onModeChange?: (mode: 'waveform' | 'spectrum') => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function WaveformVisualizer({
   audioEngine,
   isPlaying,

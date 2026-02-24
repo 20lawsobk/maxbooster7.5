@@ -18,9 +18,6 @@ interface KnobProps {
   disabled?: boolean;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function Knob({
   value,
   onChange,

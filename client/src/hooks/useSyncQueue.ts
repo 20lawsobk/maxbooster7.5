@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { offlineQueue, syncManager, QueuedAction, ActionPriority, ConflictStrategy, ActionStatus } from '@/lib/offline';
 
@@ -61,7 +62,7 @@ export function useSyncQueue(options: UseSyncQueueOptions = {}): UseSyncQueueRet
       const queueStats = await offlineQueue.getStats();
       setStats(queueStats);
     } catch (error) {
-      console.error('[useSyncQueue] Failed to load stats:', error);
+      logger.error('[useSyncQueue] Failed to load stats:', error);
     }
   }, []);
 
@@ -72,7 +73,7 @@ export function useSyncQueue(options: UseSyncQueueOptions = {}): UseSyncQueueRet
       const conflicts = await offlineQueue.getByStatus('conflict');
       setActions([...pending, ...failed, ...conflicts]);
     } catch (error) {
-      console.error('[useSyncQueue] Failed to load actions:', error);
+      logger.error('[useSyncQueue] Failed to load actions:', error);
     }
   }, []);
 

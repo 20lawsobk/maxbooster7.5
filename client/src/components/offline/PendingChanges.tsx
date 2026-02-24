@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,7 @@ export function PendingChanges({
         .slice(0, maxItems);
       setActions(allActions);
     } catch (error) {
-      console.error('Failed to load actions:', error);
+      logger.error('Failed to load actions:', error);
     } finally {
       setIsLoading(false);
     }

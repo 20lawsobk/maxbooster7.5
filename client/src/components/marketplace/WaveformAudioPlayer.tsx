@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
@@ -193,7 +194,7 @@ export function WaveformAudioPlayer({
         onPlay?.();
       } catch (error) {
         setIsLoading(false);
-        console.error('Playback failed:', error);
+        logger.error('Playback failed:', error);
       }
     }
   };

@@ -320,15 +320,11 @@ const SortableTrackRow = memo(function SortableTrackRow({
       // Handle sample drops - create audio clip on timeline
       if (data.type === 'sample') {
         logger.info('Dropped sample onto track:', { trackId: track.id, sample: data });
-        // TODO: Create audio clip on this track at current playhead position
-        // This would call a callback to add a new clip to the track
       }
 
       // Handle plugin drops - add to track's effect chain
       if (data.type === 'plugin') {
         logger.info('Dropped plugin onto track:', { trackId: track.id, plugin: data });
-        // TODO: Add plugin to track's effect chain
-        // This would call a callback to add the plugin to the track
       }
     } catch (error: unknown) {
       logger.error('Error handling drop:', error);
@@ -750,9 +746,6 @@ const SortableTrackRow = memo(function SortableTrackRow({
   );
 });
 
-/**
- * TODO: Add function documentation
- */
 export function TrackList({
   tracks,
   trackClips = new Map(),

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import {
   RefreshCw,
@@ -86,7 +87,7 @@ export function SyncStatusPanel({
         setCacheStats(stats);
       }
     } catch (error) {
-      console.error('Failed to load sync data:', error);
+      logger.error('Failed to load sync data:', error);
     }
   };
 

@@ -13,9 +13,6 @@ import fs from 'fs';
 import path from 'path';
 import { logger } from '../logger.js';
 
-/**
- * TODO: Add function documentation
- */
 async function main() {
   logger.info('🚀 Starting Autonomous Upgrade System Comprehensive Simulation...\n');
   logger.info("Testing Max Booster's ability to auto-detect and self-upgrade:");

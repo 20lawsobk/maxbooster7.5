@@ -24,9 +24,6 @@ interface MetronomeControlProps {
   compact?: boolean;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function MetronomeControl({
   bpm: externalBPM,
   onBPMChange,

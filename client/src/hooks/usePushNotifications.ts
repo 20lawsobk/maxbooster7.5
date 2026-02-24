@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -146,7 +147,7 @@ export function usePushNotifications() {
 
       return true;
     } catch (error: any) {
-      console.error('Push subscription failed:', error);
+      logger.error('Push subscription failed:', error);
       toast({
         title: 'Subscription Failed',
         description: error.message || 'Failed to enable push notifications.',
@@ -184,7 +185,7 @@ export function usePushNotifications() {
 
       return true;
     } catch (error: any) {
-      console.error('Push unsubscribe failed:', error);
+      logger.error('Push unsubscribe failed:', error);
       toast({
         title: 'Unsubscribe Failed',
         description: error.message || 'Failed to disable push notifications.',

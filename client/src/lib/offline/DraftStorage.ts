@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { openDB, IDBPDatabase, DBSchema } from 'idb';
 
 export interface Draft<T = unknown> {
@@ -82,7 +83,7 @@ class DraftStorage {
       this.isInitialized = true;
       this.startCleanupTimer();
     } catch (error) {
-      console.error('[DraftStorage] Failed to initialize IndexedDB:', error);
+      logger.error('[DraftStorage] Failed to initialize IndexedDB:', error);
       throw error;
     }
   }
@@ -101,7 +102,7 @@ class DraftStorage {
         try {
           (listener as DraftEventListener<T>)(event);
         } catch (error) {
-          console.error('[DraftStorage] Event listener error:', error);
+          logger.error('[DraftStorage] Event listener error:', error);
         }
       });
     }
@@ -272,7 +273,7 @@ class DraftStorage {
           onSave?.(draft);
         }
       } catch (error) {
-        console.error('[DraftStorage] Auto-save error:', error);
+        logger.error('[DraftStorage] Auto-save error:', error);
         onError?.(error as Error);
       }
     }, intervalMs);

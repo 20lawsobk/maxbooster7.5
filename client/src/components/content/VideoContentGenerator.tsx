@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -312,7 +313,7 @@ export function VideoContentGenerator({
       setCompilationResult(result);
       return result;
     } catch (error) {
-      console.error('Template compilation failed:', error);
+      logger.error('Template compilation failed:', error);
       setErrorMessage('Failed to compile video template.');
       setPhase('error');
       return null;
@@ -350,7 +351,7 @@ export function VideoContentGenerator({
           else if (state === 'paused' || state === 'ready') setIsPlaying(false);
         },
         onError: (error) => {
-          console.error('Orchestrator error:', error);
+          logger.error('Orchestrator error:', error);
           toast({
             title: 'Preview Error',
             description: error.message,
@@ -376,7 +377,7 @@ export function VideoContentGenerator({
       orchestrator.renderFrame(0);
       setPhase('ready');
     } catch (error) {
-      console.error('Failed to initialize preview:', error);
+      logger.error('Failed to initialize preview:', error);
       setErrorMessage('Failed to initialize video preview.');
       setPhase('error');
     }
@@ -465,7 +466,7 @@ export function VideoContentGenerator({
         return;
       }
       
-      console.error('Export failed:', error);
+      logger.error('Export failed:', error);
       setErrorMessage(error.message || 'Video export failed.');
       setPhase('error');
       

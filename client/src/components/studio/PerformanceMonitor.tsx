@@ -10,9 +10,6 @@ interface PerformanceMonitorProps {
   freezingTrackId: string | null;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function PerformanceMonitor({
   cpuUsage,
   showCPUWarning,

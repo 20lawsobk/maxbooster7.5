@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useCallback, useRef, useEffect } from 'react';
 
 interface FilePickerAcceptType {
@@ -98,7 +99,7 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
           try {
             fullscreenElementRef.current?.requestFullscreen?.();
           } catch (e) {
-            console.warn('Could not re-enter fullscreen:', e);
+            logger.warn('Could not re-enter fullscreen:', e);
           }
           wasFullscreenRef.current = false;
           fullscreenElementRef.current = null;
@@ -141,7 +142,7 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
         if (e.name === 'AbortError') {
           return;
         }
-        console.warn('File System Access API failed, falling back:', e);
+        logger.warn('File System Access API failed, falling back:', e);
       }
     }
 
@@ -162,7 +163,7 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
           await (document as any).msExitFullscreen();
         }
       } catch (e) {
-        console.warn('Could not exit fullscreen:', e);
+        logger.warn('Could not exit fullscreen:', e);
       }
 
       setTimeout(() => {
@@ -219,7 +220,7 @@ export async function exitFullscreenForUpload(): Promise<Element | null> {
       await (document as any).msExitFullscreen();
     }
   } catch (e) {
-    console.warn('Could not exit fullscreen:', e);
+    logger.warn('Could not exit fullscreen:', e);
   }
 
   return fullscreenElement;
@@ -239,7 +240,7 @@ export async function reenterFullscreen(element: Element | null): Promise<void> 
       await (element as any).msRequestFullscreen();
     }
   } catch (e) {
-    console.warn('Could not re-enter fullscreen:', e);
+    logger.warn('Could not re-enter fullscreen:', e);
   }
 }
 

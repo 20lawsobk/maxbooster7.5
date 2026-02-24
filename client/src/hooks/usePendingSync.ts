@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { offlineQueue, syncManager, QueuedAction } from '@/lib/offline';
 
@@ -54,7 +55,7 @@ export function usePendingSync(options?: {
         actions,
       }));
     } catch (error) {
-      console.error('[usePendingSync] Load stats error:', error);
+      logger.error('[usePendingSync] Load stats error:', error);
     }
   }, [loadActions, maxActions]);
 

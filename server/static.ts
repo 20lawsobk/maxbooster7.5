@@ -97,7 +97,7 @@ async function getMetaForPath(reqPath: string): Promise<{ title: string; descrip
       };
     }
   } catch (error) {
-    console.error('[Static] Error fetching metadata for path:', reqPath, error instanceof Error ? error.message : String(error));
+    // Metadata fetch failed - continue with default meta
   }
   return null;
 }

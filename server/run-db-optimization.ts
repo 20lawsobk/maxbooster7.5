@@ -3,9 +3,6 @@
 import DatabaseOptimizer from '../database/optimize-database';
 import { logger } from './logger.js';
 
-/**
- * TODO: Add function documentation
- */
 async function main() {
   logger.info('🎯 Max Booster Database Optimization Script');
   logger.info('==========================================\n');

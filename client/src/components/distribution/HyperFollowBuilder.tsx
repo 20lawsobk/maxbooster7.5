@@ -160,9 +160,6 @@ interface HyperFollowBuilderProps {
   onCancel?: () => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function HyperFollowBuilder({
   releaseId,
   campaignId,

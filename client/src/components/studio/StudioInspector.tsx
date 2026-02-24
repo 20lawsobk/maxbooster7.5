@@ -27,9 +27,6 @@ interface StudioInspectorProps {
   onTrackUpdate: (trackId: string, updates: Partial<StudioTrack>) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function StudioInspector({
   collapsed,
   onToggleCollapse,

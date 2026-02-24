@@ -22,9 +22,6 @@ const getOidcConfig = memoize(
   { maxAge: 3600 * 1000 }
 );
 
-/**
- * TODO: Add function documentation
- */
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
@@ -47,9 +44,6 @@ export function getSession() {
   });
 }
 
-/**
- * TODO: Add function documentation
- */
 function updateUserSession(
   user: unknown,
   tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
@@ -60,9 +54,6 @@ function updateUserSession(
   user.expires_at = user.claims?.exp;
 }
 
-/**
- * TODO: Add function documentation
- */
 async function upsertUser(claims: unknown) {
   await storage.upsertUser({
     id: claims['sub'],
@@ -73,9 +64,6 @@ async function upsertUser(claims: unknown) {
   });
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function setupAuth(app: Express) {
   app.set('trust proxy', 1);
   app.use(getSession());

@@ -25,9 +25,6 @@ interface AudioEngineMonitorProps {
 
 const BUFFER_SIZES = [64, 128, 256, 512, 1024, 2048, 4096];
 
-/**
- * TODO: Add function documentation
- */
 export function AudioEngineMonitor({
   latencyMs = 0,
   cpuUsage = 0,

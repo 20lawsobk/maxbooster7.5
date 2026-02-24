@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import {
   Flag,
@@ -193,7 +194,7 @@ export function RecoveryPointManager({
         );
       }
     } catch (error) {
-      console.error('Failed to load recovery points:', error);
+      logger.error('Failed to load recovery points:', error);
     } finally {
       setIsLoading(false);
     }
@@ -230,7 +231,7 @@ export function RecoveryPointManager({
         setIsCreateOpen(false);
       }
     } catch (error) {
-      console.error('Failed to create recovery point:', error);
+      logger.error('Failed to create recovery point:', error);
     } finally {
       setIsLoading(false);
     }
@@ -249,7 +250,7 @@ export function RecoveryPointManager({
         setSelectedPoint(null);
       }
     } catch (error) {
-      console.error('Failed to restore to point:', error);
+      logger.error('Failed to restore to point:', error);
     } finally {
       setIsRestoring(false);
     }
@@ -265,7 +266,7 @@ export function RecoveryPointManager({
       setConfirmDeleteOpen(false);
       setSelectedPoint(null);
     } catch (error) {
-      console.error('Failed to delete recovery point:', error);
+      logger.error('Failed to delete recovery point:', error);
     } finally {
       setIsLoading(false);
     }

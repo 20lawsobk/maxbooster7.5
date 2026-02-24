@@ -21,9 +21,6 @@ const actionTypes = {
 
 let count = 0;
 
-/**
- * TODO: Add function documentation
- */
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER;
   return count.toString();
@@ -128,9 +125,6 @@ const listeners: Array<(state: State) => void> = [];
 
 let memoryState: State = { toasts: [] };
 
-/**
- * TODO: Add function documentation
- */
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action);
   listeners.forEach((listener) => {
@@ -140,9 +134,6 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, 'id'>;
 
-/**
- * TODO: Add function documentation
- */
 function toast({ ...props }: Toast) {
   const id = genId();
 
@@ -172,9 +163,6 @@ function toast({ ...props }: Toast) {
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);
 

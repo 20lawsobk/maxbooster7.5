@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { transportEngine } from './TransportEngine';
 import { timelineEngine } from './TimelineEngine';
 import { automationEngine } from './AutomationEngine';
@@ -106,7 +107,7 @@ export class ProjectManager {
 
   createNew(name: string = 'Untitled Project'): void {
     if (this.state.isDirty) {
-      console.warn('Unsaved changes will be lost');
+      logger.warn('Unsaved changes will be lost');
     }
 
     const id = `proj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -159,7 +160,7 @@ export class ProjectManager {
 
       return serialized;
     } catch (error) {
-      console.error('Failed to save project:', error);
+      logger.error('Failed to save project:', error);
       throw error;
     }
   }
@@ -193,7 +194,7 @@ export class ProjectManager {
       this.validateMediaPool();
       this.notify();
     } catch (error) {
-      console.error('Failed to load project:', error);
+      logger.error('Failed to load project:', error);
       throw new Error('Invalid project file');
     }
   }
@@ -207,7 +208,7 @@ export class ProjectManager {
       }
       return false;
     } catch (error) {
-      console.error('Failed to load from storage:', error);
+      logger.error('Failed to load from storage:', error);
       return false;
     }
   }
@@ -293,7 +294,7 @@ export class ProjectManager {
   removeFromMediaPool(itemId: string): void {
     const item = this.state.mediaPool.find(i => i.id === itemId);
     if (item && item.usageCount > 0) {
-      console.warn(`Media item ${itemId} is still in use (${item.usageCount} references)`);
+      logger.warn(`Media item ${itemId} is still in use (${item.usageCount} references)`);
       return;
     }
 
@@ -363,7 +364,7 @@ export class ProjectManager {
       
       this.notify();
     } catch (error) {
-      console.error('Autosave failed:', error);
+      logger.error('Autosave failed:', error);
     }
   }
 
@@ -391,7 +392,7 @@ export class ProjectManager {
         this.notify();
       }
     } catch (error) {
-      console.error('Failed to check for recovery data:', error);
+      logger.error('Failed to check for recovery data:', error);
     }
   }
 
@@ -405,7 +406,7 @@ export class ProjectManager {
       localStorage.removeItem(RECOVERY_KEY);
       this.notify();
     } catch (error) {
-      console.error('Failed to recover project:', error);
+      logger.error('Failed to recover project:', error);
       this.discardRecovery();
     }
   }
@@ -526,7 +527,7 @@ export class ProjectManager {
         return { success: true, projectId: newProjectId };
       }
     } catch (error) {
-      console.error('[ProjectManager] Backend save failed:', error);
+      logger.error('[ProjectManager] Backend save failed:', error);
       throw error;
     }
   }
@@ -535,7 +536,7 @@ export class ProjectManager {
     try {
       const response = await fetch(`/api/studio/projects/${projectId}/daw-state`);
       if (!response.ok) {
-        console.warn('[ProjectManager] No DAW state found for project');
+        logger.warn('[ProjectManager] No DAW state found for project');
         return false;
       }
 
@@ -576,7 +577,7 @@ export class ProjectManager {
 
       return true;
     } catch (error) {
-      console.error('[ProjectManager] Backend load failed:', error);
+      logger.error('[ProjectManager] Backend load failed:', error);
       return false;
     }
   }
@@ -592,7 +593,7 @@ export class ProjectManager {
         updatedAt: p.updatedAt || p.createdAt,
       }));
     } catch (error) {
-      console.error('[ProjectManager] Failed to list projects:', error);
+      logger.error('[ProjectManager] Failed to list projects:', error);
       return [];
     }
   }

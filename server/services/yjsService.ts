@@ -13,9 +13,6 @@ import { logger } from '../logger.js';
 //   metadata: Y.Map with project info
 // }
 
-/**
- * TODO: Add function documentation
- */
 function generateHash(data: Uint8Array): string {
   return crypto.createHash('sha256').update(data).digest('hex');
 }

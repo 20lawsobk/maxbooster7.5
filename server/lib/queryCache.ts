@@ -184,9 +184,6 @@ export const queryCache = new QueryCache();
 /**
  * Helper: Create cache key from query components
  */
-/**
- * TODO: Add function documentation
- */
 export function createCacheKey(prefix: string, ...parts: (string | number)[]): string {
   return `${prefix}:${parts.join(':')}`;
 }

@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { offlineQueue, QueuedAction, QueueEvent } from './OfflineQueue';
 import { apiRequest } from '../queryClient';
 
@@ -118,7 +119,7 @@ class SyncManager {
         try {
           listener(event);
         } catch (error) {
-          console.error('[SyncManager] Event listener error:', error);
+          logger.error('[SyncManager] Event listener error:', error);
         }
       });
     }
@@ -223,7 +224,7 @@ class SyncManager {
       await offlineQueue.clearCompleted();
 
     } catch (error) {
-      console.error('[SyncManager] Sync error:', error);
+      logger.error('[SyncManager] Sync error:', error);
       this.setStatus('error');
       this.emit({ type: 'sync-error', error: error as Error });
     }

@@ -43,9 +43,6 @@ const DEFAULT_BUSES: Bus[] = [
   { id: 'master', name: 'Master', color: '#ec4899' },
 ];
 
-/**
- * TODO: Add function documentation
- */
 export function RoutingMatrix({
   tracks = DEFAULT_TRACKS,
   buses = DEFAULT_BUSES,

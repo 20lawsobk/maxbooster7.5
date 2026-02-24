@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { TransportEngine, transportEngine, TransportEvent } from './TransportEngine';
 import { TimelineEngine, timelineEngine, TimelineEvent, EditMode } from './TimelineEngine';
 import { AutomationEngine, automationEngine, AutomationMode, AutomationLane } from './AutomationEngine';
@@ -157,7 +158,7 @@ export class DAWCore {
 
       this.notifyState();
     } catch (error) {
-      console.error('Failed to initialize DAW:', error);
+      logger.error('Failed to initialize DAW:', error);
       this.emit({ type: 'error', data: error });
       throw error;
     }

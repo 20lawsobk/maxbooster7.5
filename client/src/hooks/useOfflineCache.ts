@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { offlineCache, CacheEntry, CacheCategory, CacheOptions } from '@/lib/offline';
 
@@ -55,7 +56,7 @@ export function useOfflineCache<T = unknown>(
       onCacheMiss?.();
       return null;
     } catch (err) {
-      console.error('[useOfflineCache] Failed to load from cache:', err);
+      logger.error('[useOfflineCache] Failed to load from cache:', err);
       return null;
     }
   }, [key, onCacheHit, onCacheMiss]);
@@ -72,7 +73,7 @@ export function useOfflineCache<T = unknown>(
       setError(null);
     } catch (err) {
       setError(err as Error);
-      console.error('[useOfflineCache] Failed to fetch:', err);
+      logger.error('[useOfflineCache] Failed to fetch:', err);
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +96,7 @@ export function useOfflineCache<T = unknown>(
       setIsCached(false);
       setCacheMetadata(null);
     } catch (err) {
-      console.error('[useOfflineCache] Failed to invalidate:', err);
+      logger.error('[useOfflineCache] Failed to invalidate:', err);
     }
   }, [key]);
 
@@ -110,7 +111,7 @@ export function useOfflineCache<T = unknown>(
       setCacheMetadata(entry as CacheEntry<T>);
       setIsCached(true);
     } catch (err) {
-      console.error('[useOfflineCache] Failed to set cache:', err);
+      logger.error('[useOfflineCache] Failed to set cache:', err);
     }
   }, [key, category, ttlMs]);
 
@@ -161,7 +162,7 @@ export function useOfflineCacheCategory(category: CacheCategory) {
       const categoryEntries = await offlineCache.getByCategory(category);
       setEntries(categoryEntries);
     } catch (err) {
-      console.error('[useOfflineCacheCategory] Failed to load:', err);
+      logger.error('[useOfflineCacheCategory] Failed to load:', err);
     } finally {
       setIsLoading(false);
     }

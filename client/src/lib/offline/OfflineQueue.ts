@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { openDB, IDBPDatabase, DBSchema } from 'idb';
 
 export type ActionPriority = 'critical' | 'high' | 'normal' | 'low';
@@ -92,7 +93,7 @@ class OfflineQueue {
       });
       this.isInitialized = true;
     } catch (error) {
-      console.error('[OfflineQueue] Failed to initialize IndexedDB:', error);
+      logger.error('[OfflineQueue] Failed to initialize IndexedDB:', error);
       throw error;
     }
   }
@@ -111,7 +112,7 @@ class OfflineQueue {
         try {
           listener(event);
         } catch (error) {
-          console.error('[OfflineQueue] Event listener error:', error);
+          logger.error('[OfflineQueue] Event listener error:', error);
         }
       });
     }

@@ -148,9 +148,6 @@ const AI_BOOSTER_ORGANIC = {
 /**
  * Calculate audience size multipliers
  */
-/**
- * TODO: Add function documentation
- */
 function getAudienceSizeMultiplier(size: string): { followerCount: number; multiplier: number } {
   switch (size) {
     case 'small':
@@ -167,9 +164,6 @@ function getAudienceSizeMultiplier(size: string): { followerCount: number; multi
 /**
  * Calculate content quality multipliers
  */
-/**
- * TODO: Add function documentation
- */
 function getContentQualityMultiplier(quality: number): number {
   // AI Booster creates 85-100 quality content
   if (quality >= 90) return 1.8; // Exceptional content
@@ -180,9 +174,6 @@ function getContentQualityMultiplier(quality: number): number {
 
 /**
  * Calculate viral coefficient with network effects
- */
-/**
- * TODO: Add function documentation
  */
 function calculateViralCoefficient(
   baseCoefficient: number,
@@ -199,9 +190,6 @@ function calculateViralCoefficient(
 
 /**
  * Simulate paid advertising performance
- */
-/**
- * TODO: Add function documentation
  */
 function simulatePaidAdvertising(campaign: CampaignConfig): SimulationResult['paidAdvertising'] {
   const budgetPerPlatform = campaign.budget / campaign.platforms.length;
@@ -233,9 +221,6 @@ function simulatePaidAdvertising(campaign: CampaignConfig): SimulationResult['pa
 
 /**
  * Simulate AI Booster organic amplification
- */
-/**
- * TODO: Add function documentation
  */
 function simulateAIBoosterOrganic(campaign: CampaignConfig): SimulationResult['aiBoosterOrganic'] {
   const { followerCount, multiplier } = getAudienceSizeMultiplier(campaign.audienceSize);
@@ -315,9 +300,6 @@ function simulateAIBoosterOrganic(campaign: CampaignConfig): SimulationResult['a
 /**
  * Main simulation function
  */
-/**
- * TODO: Add function documentation
- */
 export async function simulateAdBooster(campaign: CampaignConfig): Promise<SimulationResult> {
   // Simulate paid advertising baseline
   const paidAd = simulatePaidAdvertising(campaign);
@@ -361,9 +343,6 @@ export async function simulateAdBooster(campaign: CampaignConfig): Promise<Simul
 
 /**
  * Run comprehensive simulation scenarios
- */
-/**
- * TODO: Add function documentation
  */
 export async function runComprehensiveSimulation(): Promise<{
   scenarios: SimulationResult[];
@@ -507,9 +486,6 @@ export async function runComprehensiveSimulation(): Promise<{
 
 /**
  * Generate detailed simulation report
- */
-/**
- * TODO: Add function documentation
  */
 export function generateSimulationReport(
   results: Awaited<ReturnType<typeof runComprehensiveSimulation>>

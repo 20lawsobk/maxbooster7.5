@@ -193,13 +193,7 @@ export class SocialOAuthService {
       // Clear the stored token
       await this.disconnectPlatform(userId, platform);
 
-      // TODO: Send notification to user about disconnected platform
-      // await notificationService.createNotification({
-      //   userId,
-      //   type: 'social_disconnected',
-      //   title: `${platform} Disconnected`,
-      //   message: `Your ${platform} account was disconnected. Please reconnect to continue posting.`,
-      // });
+      logger.info(`Platform ${platform} disconnected for user ${userId} due to token revocation`);
     } catch (error) {
       logger.error(`Failed to handle revoked token for ${userId}:${platform}:`, error);
     }

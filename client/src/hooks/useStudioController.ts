@@ -52,9 +52,6 @@ export interface StudioControllerOptions {
   onError?: (error: Error) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function useStudioController({ projectId, onError }: StudioControllerOptions) {
   const queryClient = useQueryClient();
 

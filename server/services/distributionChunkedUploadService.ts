@@ -9,18 +9,12 @@ import { logger } from '../logger.js';
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
 const TEMP_DIR = path.join(process.cwd(), 'tmp', 'uploads', 'sessions');
 
-/**
- * TODO: Add function documentation
- */
 async function ensureTempDir(sessionId: string): Promise<string> {
   const sessionDir = path.join(TEMP_DIR, sessionId);
   await fs.mkdir(sessionDir, { recursive: true });
   return sessionDir;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function initializeSession(
   userId: string,
   filename: string,
@@ -48,9 +42,6 @@ export async function initializeSession(
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function uploadChunk(
   sessionId: string,
   chunkIndex: number,
@@ -102,9 +93,6 @@ export async function uploadChunk(
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function getSessionStatus(sessionId: string): Promise<{
   status: string;
   uploadedChunks: number;
@@ -129,9 +117,6 @@ export async function getSessionStatus(sessionId: string): Promise<{
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function finalizeUpload(sessionId: string): Promise<{
   success: boolean;
   filePath: string;
@@ -217,9 +202,6 @@ export async function finalizeUpload(sessionId: string): Promise<{
   }
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function abortUpload(sessionId: string): Promise<void> {
   const session = await storage.getUploadSession(sessionId);
 
@@ -235,9 +217,6 @@ export async function abortUpload(sessionId: string): Promise<void> {
   });
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function resumeUpload(sessionId: string): Promise<{
   missingChunks: number[];
   uploadedChunks: number;

@@ -73,9 +73,6 @@ interface KeyboardShortcutsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function KeyboardShortcutsDialog({ open, onOpenChange }: KeyboardShortcutsDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 

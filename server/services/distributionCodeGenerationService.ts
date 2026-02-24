@@ -1,9 +1,6 @@
 import { storage } from '../storage';
 import * as crypto from 'crypto';
 
-/**
- * TODO: Add function documentation
- */
 export async function generateISRC(
   userId: string,
   trackId: string,
@@ -21,9 +18,6 @@ export async function generateISRC(
   return isrc;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function generateUPC(
   userId: string,
   releaseId: string,
@@ -39,9 +33,6 @@ export async function generateUPC(
   return upc;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function verifyISRC(isrc: string): Promise<{
   valid: boolean;
   exists: boolean;
@@ -80,9 +71,6 @@ export async function verifyISRC(isrc: string): Promise<{
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function verifyUPC(upc: string): Promise<{
   valid: boolean;
   exists: boolean;
@@ -132,9 +120,6 @@ export async function verifyUPC(upc: string): Promise<{
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 function calculateUPCCheckDigit(upc: string): string {
   let sum = 0;
   for (let i = 0; i < upc.length; i++) {

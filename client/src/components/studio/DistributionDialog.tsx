@@ -75,9 +75,6 @@ interface DistributionDialogProps {
   tracks: StudioTrack[];
 }
 
-/**
- * TODO: Add function documentation
- */
 export function DistributionDialog({
   open,
   onOpenChange,

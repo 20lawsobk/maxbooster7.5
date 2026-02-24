@@ -54,9 +54,6 @@ class BoosterStateSessionStore extends session.Store {
   }
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function createSessionStore() {
   try {
     const client = await getBoosterStateClient();
@@ -73,9 +70,6 @@ export async function createSessionStore() {
   return new session.MemoryStore();
 }
 
-/**
- * TODO: Add function documentation
- */
 export function getSessionConfig(store: session.Store | session.MemoryStore) {
   const isProduction = process.env.NODE_ENV === 'production';
 

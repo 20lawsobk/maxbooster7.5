@@ -38,7 +38,7 @@ router.get('/recommendations', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.info('Error fetching career coach recommendations:', error?.message);
+    logger.error('Error fetching career coach recommendations:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -64,7 +64,7 @@ router.post('/dismiss/:id', requireAuth, asyncHandler(async (req, res) => {
       message: 'Recommendation dismissed',
     });
   } catch (error: any) {
-    logger.info('Error dismissing recommendation:', error?.message);
+    logger.error('Error dismissing recommendation:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -90,7 +90,7 @@ router.post('/complete/:id', requireAuth, asyncHandler(async (req, res) => {
       message: 'Recommendation marked as completed',
     });
   } catch (error: any) {
-    logger.info('Error completing recommendation:', error?.message);
+    logger.error('Error completing recommendation:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -118,7 +118,7 @@ router.get('/goals', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.info('Error fetching career goals:', error?.message);
+    logger.error('Error fetching career goals:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -150,7 +150,7 @@ router.post('/goals', requireAuth, asyncHandler(async (req, res) => {
       data: goal,
     });
   } catch (error: any) {
-    logger.info('Error creating career goal:', error?.message);
+    logger.error('Error creating career goal:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -176,7 +176,7 @@ router.post('/goals/smart', requireAuth, asyncHandler(async (req, res) => {
       data: goal,
     });
   } catch (error: any) {
-    logger.info('Error creating SMART goal:', error?.message);
+    logger.error('Error creating SMART goal:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -210,7 +210,7 @@ router.patch('/goals/:id/progress', requireAuth, asyncHandler(async (req, res) =
       data: goal,
     });
   } catch (error: any) {
-    logger.info('Error updating goal progress:', error?.message);
+    logger.error('Error updating goal progress:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -231,7 +231,7 @@ router.get('/analyze', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.info('Error analyzing career gaps:', error?.message);
+    logger.error('Error analyzing career gaps:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));

@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { ShortcutModifier, formatShortcutKeys } from '../shortcuts/types';
 
 export interface Command {
@@ -48,7 +49,7 @@ class CommandRegistryImpl {
         this.history = JSON.parse(stored);
       }
     } catch (e) {
-      console.warn('Failed to load command history:', e);
+      logger.warn('Failed to load command history:', e);
     }
   }
 
@@ -56,7 +57,7 @@ class CommandRegistryImpl {
     try {
       localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(this.history));
     } catch (e) {
-      console.warn('Failed to save command history:', e);
+      logger.warn('Failed to save command history:', e);
     }
   }
 
@@ -114,7 +115,7 @@ class CommandRegistryImpl {
   async execute(commandId: string): Promise<void> {
     const command = this.commands.get(commandId);
     if (!command) {
-      console.warn(`Command not found: ${commandId}`);
+      logger.warn(`Command not found: ${commandId}`);
       return;
     }
 
@@ -125,7 +126,7 @@ class CommandRegistryImpl {
         : command.enabled;
 
     if (!enabled) {
-      console.warn(`Command is disabled: ${commandId}`);
+      logger.warn(`Command is disabled: ${commandId}`);
       return;
     }
 

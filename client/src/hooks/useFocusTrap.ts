@@ -1,9 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { trapFocus } from '@/lib/accessibility';
 
-/**
- * TODO: Add function documentation
- */
 export function useFocusTrap(enabled = true) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cleanupRef = useRef<(() => void) | null>(null);

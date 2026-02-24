@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -294,7 +295,7 @@ export function FlowStateAIPanel({
 
       setGeneratedSuggestions(newSuggestions);
     } catch (error) {
-      console.error('Failed to generate suggestions:', error);
+      logger.error('Failed to generate suggestions:', error);
     } finally {
       setIsGeneratingSuggestions(false);
     }

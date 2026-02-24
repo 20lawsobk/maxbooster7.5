@@ -53,9 +53,6 @@ interface BreadcrumbItem {
   isLast: boolean;
 }
 
-/**
- * TODO: Add function documentation
- */
 function generateBreadcrumbs(pathname: string): BreadcrumbItem[] {
   // Handle root path
   if (pathname === '/') {
@@ -108,9 +105,6 @@ function generateBreadcrumbs(pathname: string): BreadcrumbItem[] {
   return breadcrumbs;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function BreadcrumbTrail() {
   const [location] = useLocation();
   const breadcrumbs = generateBreadcrumbs(location);

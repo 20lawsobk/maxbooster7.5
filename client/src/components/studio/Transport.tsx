@@ -28,9 +28,6 @@ interface TransportProps {
   onTapTempo: () => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function Transport({
   isPlaying,
   isRecording,

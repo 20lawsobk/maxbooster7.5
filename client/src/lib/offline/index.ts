@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 export { offlineQueue, initOfflineQueue } from './OfflineQueue';
 export type {
   QueuedAction,
@@ -32,5 +33,5 @@ export async function initOfflineSystem(): Promise<void> {
 
   await initSyncManager();
 
-  console.log('[Offline] System initialized');
+  logger.info('[Offline] System initialized');
 }

@@ -20,9 +20,6 @@ interface PunchRecordingMarkersProps {
   compact?: boolean;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function PunchRecordingMarkers({
   enabled,
   punchIn,

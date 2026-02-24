@@ -81,9 +81,6 @@ interface ReleaseWizardProps {
   onCancel?: () => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);

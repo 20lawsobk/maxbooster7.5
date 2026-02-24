@@ -30,9 +30,6 @@ interface StudioBrowserProps {
   samples?: unknown[];
 }
 
-/**
- * TODO: Add function documentation
- */
 export function StudioBrowser({
   collapsed,
   onToggleCollapse,

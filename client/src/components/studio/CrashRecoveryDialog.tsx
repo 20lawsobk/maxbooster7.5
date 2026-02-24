@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import {
   AlertDialog,
@@ -60,7 +61,7 @@ export function CrashRecoveryDialog({ onRecover, onDiscard }: CrashRecoveryDialo
         setOpen(true);
       }
     } catch (error) {
-      console.error('[CrashRecovery] Failed to check for recovery data:', error);
+      logger.error('[CrashRecovery] Failed to check for recovery data:', error);
     }
   }, []);
 
@@ -74,7 +75,7 @@ export function CrashRecoveryDialog({ onRecover, onDiscard }: CrashRecoveryDialo
       localStorage.removeItem(RECOVERY_TIMESTAMP_KEY);
       setOpen(false);
     } catch (error) {
-      console.error('[CrashRecovery] Recovery failed:', error);
+      logger.error('[CrashRecovery] Recovery failed:', error);
     } finally {
       setIsRecovering(false);
     }

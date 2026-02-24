@@ -50,9 +50,6 @@ interface NextActionRecommendation {
   priority: 'high' | 'medium' | 'low';
 }
 
-/**
- * TODO: Add function documentation
- */
 export function SmartNextActionWidget() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();

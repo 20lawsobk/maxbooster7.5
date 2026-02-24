@@ -129,9 +129,6 @@ function toServiceOrder(dbOrder: any): Order {
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 function toDBOrder(serviceOrder: Partial<Order>): Partial<DBOrder> {
   const dbOrder: Partial<DBOrder> = {};
 

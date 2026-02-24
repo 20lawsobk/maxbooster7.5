@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -228,7 +229,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         try {
           setProjectVersions(JSON.parse(storedVersions));
         } catch (e) {
-          console.error('Failed to parse stored versions:', e);
+          logger.error('Failed to parse stored versions:', e);
         }
       }
     }
@@ -473,7 +474,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   // Clear audio engine state when project changes
   useEffect(() => {
     if (projectId !== prevProjectIdRef.current && audioInitializedRef.current) {
-      console.log('[DAW] Project changed, clearing audio engine state');
+      logger.info('[DAW] Project changed, clearing audio engine state');
       audioEngine.stop();
       audioEngine.setPositionTime(0);
       
@@ -500,7 +501,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           await audioEngine.initialize();
           audioInitializedRef.current = true;
         } catch (err) {
-          console.error('[DAW] Failed to initialize audio engine:', err);
+          logger.error('[DAW] Failed to initialize audio engine:', err);
           return;
         }
       }
@@ -546,9 +547,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             useStudioStore.getState().updateAudioClip(track.id, clip.id, { waveformData: peakData });
 
             loadedClipsRef.current.add(clip.id);
-            console.log(`[DAW] Loaded clip: ${clip.name} on track ${track.name}`);
+            logger.info(`[DAW] Loaded clip: ${clip.name} on track ${track.name}`);
           } catch (err) {
-            console.error(`[DAW] Failed to load clip ${clip.name}:`, err);
+            logger.error(`[DAW] Failed to load clip ${clip.name}:`, err);
           }
         }
       }
@@ -683,7 +684,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (updates.color !== undefined) patchData.color = updates.color;
       if (Object.keys(patchData).length === 0) return;
       apiRequest('PATCH', `/api/studio/tracks/${trackId}`, patchData).catch((err: any) => {
-        console.error('[DAW] Failed to update track on backend:', err);
+        logger.error('[DAW] Failed to update track on backend:', err);
       });
     }, 500);
   }, [projectId]);
@@ -698,7 +699,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     toast({ title: 'Track Removed', description: 'Track has been deleted.' });
     if (projectId) {
       apiRequest('DELETE', `/api/studio/tracks/${trackId}`).catch((err: any) => {
-        console.error('[DAW] Failed to delete track on backend:', err);
+        logger.error('[DAW] Failed to delete track on backend:', err);
         toast({ title: 'Sync Error', description: 'Failed to delete track on server.', variant: 'destructive' });
       });
     }
@@ -721,7 +722,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         solo: false,
         armed: false,
       }).catch((err: any) => {
-        console.error('[DAW] Failed to sync new track to backend:', err);
+        logger.error('[DAW] Failed to sync new track to backend:', err);
         toast({ title: 'Sync Error', description: 'Track created locally but failed to sync to server.', variant: 'destructive' });
       });
     }
@@ -1316,7 +1317,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
               description: 'Your previous session has been restored.',
             });
           } catch (error) {
-            console.error('[CrashRecovery] Failed to parse recovery data:', error);
+            logger.error('[CrashRecovery] Failed to parse recovery data:', error);
             toast({
               title: 'Recovery Failed',
               description: 'Unable to restore previous session.',
@@ -1467,7 +1468,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                     });
                     audioContext.close();
                   } catch (e) {
-                    console.error('[DAW] Failed to detect audio duration:', e);
+                    logger.error('[DAW] Failed to detect audio duration:', e);
                     if (file.duration && file.duration > 0) {
                       useStudioStore.getState().updateAudioClip(track.id, clip.id, { 
                         duration: file.duration 

@@ -16,9 +16,6 @@ interface UserOverviewPanelProps {
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export function UserOverviewPanel({ user }: UserOverviewPanelProps) {
   const getSubscriptionBadge = (plan?: string | null) => {
     // Handle null, undefined, empty string, or trial as Free tier

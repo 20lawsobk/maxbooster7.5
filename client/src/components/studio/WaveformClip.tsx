@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
@@ -145,7 +146,7 @@ export function WaveformClip({
           }
         } catch (error) {
           if ((error as Error).name === 'AbortError') return;
-          console.warn('Failed to decode audio, using placeholder waveform:', error);
+          logger.warn('Failed to decode audio, using placeholder waveform:', error);
           const renderWidth = Math.max(Math.floor(calculatedWidth), Math.floor(width), 100);
           const peaks: number[] = [];
           for (let i = 0; i < renderWidth; i++) {

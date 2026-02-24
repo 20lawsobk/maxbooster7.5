@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { openDB, IDBPDatabase, DBSchema } from 'idb';
 
 export type CacheCategory = 'analytics' | 'dashboard' | 'ui' | 'user' | 'general';
@@ -84,7 +85,7 @@ class OfflineCache {
       this.isInitialized = true;
       this.startCleanupTimer();
     } catch (error) {
-      console.error('[OfflineCache] Failed to initialize IndexedDB:', error);
+      logger.error('[OfflineCache] Failed to initialize IndexedDB:', error);
       throw error;
     }
   }
@@ -103,7 +104,7 @@ class OfflineCache {
         try {
           (listener as CacheEventListener<T>)(event);
         } catch (error) {
-          console.error('[OfflineCache] Event listener error:', error);
+          logger.error('[OfflineCache] Event listener error:', error);
         }
       });
     }
@@ -393,7 +394,7 @@ class OfflineCache {
           await this.set(url, data, { category });
         }
       } catch (error) {
-        console.warn('[OfflineCache] Prefetch failed for:', url, error);
+        logger.warn('[OfflineCache] Prefetch failed for:', url, error);
       }
     });
 

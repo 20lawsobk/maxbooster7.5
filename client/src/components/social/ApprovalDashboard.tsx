@@ -73,9 +73,6 @@ const statusConfig = {
   published: { color: 'bg-blue-500/20 text-blue-400', icon: Send, label: 'Published' },
 };
 
-/**
- * TODO: Add function documentation
- */
 export function ApprovalDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();

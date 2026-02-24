@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useMemo } from 'react';
 import { X, Search, Grid, List, Music, Sliders, ChevronRight } from 'lucide-react';
 import type { PluginDefinition } from './PluginDialog';
@@ -61,7 +62,7 @@ export function PluginBrowser({ isOpen, onClose, onSelect, filterCategory }: Plu
           setPlugins(data);
         }
       } catch (error) {
-        console.error('Failed to fetch plugins:', error);
+        logger.error('Failed to fetch plugins:', error);
       } finally {
         setLoading(false);
       }

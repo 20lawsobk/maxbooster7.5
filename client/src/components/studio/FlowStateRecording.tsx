@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -126,7 +127,7 @@ export function FlowStateRecording({
       }));
       setAudioDevices(audioDevices);
     } catch (error) {
-      console.error('Failed to enumerate devices:', error);
+      logger.error('Failed to enumerate devices:', error);
     }
   }, []);
 
@@ -137,7 +138,7 @@ export function FlowStateRecording({
       setHasPermission(true);
       await enumerateDevices();
     } catch (error) {
-      console.error('Microphone permission denied:', error);
+      logger.error('Microphone permission denied:', error);
       setHasPermission(false);
       toast({
         title: 'Microphone access denied',
@@ -211,7 +212,7 @@ export function FlowStateRecording({
 
       return stream;
     } catch (error) {
-      console.error('Failed to setup audio pipeline:', error);
+      logger.error('Failed to setup audio pipeline:', error);
       throw error;
     }
   }, [settings]);
@@ -328,7 +329,7 @@ export function FlowStateRecording({
 
       toast({ title: 'Recording started' });
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      logger.error('Failed to start recording:', error);
       toast({
         title: 'Failed to start recording',
         variant: 'destructive',

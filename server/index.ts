@@ -154,7 +154,7 @@ export function log(message: string, source = "express") {
     hour12: true,
   });
 
-  console.log(`${formattedTime} [${source}] ${message}`);
+  logger.info(`${formattedTime} [${source}] ${message}`);
 }
 
 app.use((req, res, next) => {
@@ -172,7 +172,7 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
+      if (capturedJsonResponse && process.env.NODE_ENV !== 'production') {
         const responseStr = JSON.stringify(capturedJsonResponse);
         logLine += ` :: ${responseStr.length > 500 ? responseStr.substring(0, 500) + '...[truncated]' : responseStr}`;
       }
@@ -576,7 +576,7 @@ app.use((req, res, next) => {
     },
   );
 })().catch((error) => {
-  console.error('❌ FATAL: Server startup failed:', error);
+  logger.error('FATAL: Server startup failed:', error);
   process.exit(1);
 });
 

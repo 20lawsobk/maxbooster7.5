@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { FileText, RotateCcw, Trash2, Clock, AlertCircle, ChevronDown, ChevronUp, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,7 +76,7 @@ export function DraftRecovery({
       const draftStats = await draftStorage.getDraftStats();
       setStats(draftStats);
     } catch (error) {
-      console.error('[DraftRecovery] Failed to load drafts:', error);
+      logger.error('[DraftRecovery] Failed to load drafts:', error);
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +109,7 @@ export function DraftRecovery({
       setShowDeleteConfirm(false);
       setSelectedDraft(null);
     } catch (error) {
-      console.error('[DraftRecovery] Failed to discard draft:', error);
+      logger.error('[DraftRecovery] Failed to discard draft:', error);
     }
   };
 
@@ -117,7 +118,7 @@ export function DraftRecovery({
       await draftStorage.clearAll();
       setDrafts([]);
     } catch (error) {
-      console.error('[DraftRecovery] Failed to clear all drafts:', error);
+      logger.error('[DraftRecovery] Failed to clear all drafts:', error);
     }
   };
 

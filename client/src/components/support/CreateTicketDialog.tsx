@@ -26,9 +26,6 @@ interface CreateTicketDialogProps {
   onSuccess?: () => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTicketDialogProps) {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');

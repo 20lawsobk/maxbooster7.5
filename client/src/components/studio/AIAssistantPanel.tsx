@@ -83,9 +83,6 @@ interface AIAssistantPanelProps {
   onApplyChanges?: (changes: unknown) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function AIAssistantPanel({ projectId, onApplyChanges }: AIAssistantPanelProps) {
   const { toast } = useToast();
   const [selectedLUFSTarget, setSelectedLUFSTarget] = useState('-14');

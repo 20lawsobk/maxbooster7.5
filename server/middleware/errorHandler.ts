@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import { type Server } from 'http';
 import { logger } from '../logger.js';
 import { auditLogger } from './auditLogger.js';
 
-// Custom error class for application errors
 export class AppError extends Error {
   public statusCode: number;
   public isOperational: boolean;
@@ -27,7 +27,6 @@ export class AppError extends Error {
   }
 }
 
-// Standardized error response format
 interface ErrorResponse {
   success: false;
   error: {
@@ -40,55 +39,138 @@ interface ErrorResponse {
   };
 }
 
-// Enhanced global error handler
+interface NormalizedError {
+  name: string;
+  message: string;
+  stack?: string;
+  statusCode: number;
+  status?: number;
+  code?: string;
+  isOperational: boolean;
+  issues?: any[];
+  context?: Record<string, any>;
+}
+
+function normalizeError(err: unknown): NormalizedError {
+  if (err instanceof AppError) {
+    return {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      statusCode: err.statusCode,
+      code: err.code,
+      isOperational: err.isOperational,
+      context: err.context,
+    };
+  }
+
+  if (err instanceof Error) {
+    const anyErr = err as any;
+    return {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      statusCode: typeof anyErr.statusCode === 'number' ? anyErr.statusCode : (typeof anyErr.status === 'number' ? anyErr.status : 500),
+      status: typeof anyErr.status === 'number' ? anyErr.status : undefined,
+      code: typeof anyErr.code === 'string' ? anyErr.code : undefined,
+      isOperational: typeof anyErr.isOperational === 'boolean' ? anyErr.isOperational : false,
+      issues: Array.isArray(anyErr.issues) ? anyErr.issues : undefined,
+      context: anyErr.context && typeof anyErr.context === 'object' ? anyErr.context : undefined,
+    };
+  }
+
+  if (err && typeof err === 'object') {
+    const anyErr = err as any;
+    return {
+      name: typeof anyErr.name === 'string' ? anyErr.name : 'UnknownError',
+      message: typeof anyErr.message === 'string' ? anyErr.message : String(err),
+      stack: typeof anyErr.stack === 'string' ? anyErr.stack : undefined,
+      statusCode: typeof anyErr.statusCode === 'number' ? anyErr.statusCode : (typeof anyErr.status === 'number' ? anyErr.status : 500),
+      code: typeof anyErr.code === 'string' ? anyErr.code : undefined,
+      isOperational: typeof anyErr.isOperational === 'boolean' ? anyErr.isOperational : false,
+      issues: Array.isArray(anyErr.issues) ? anyErr.issues : undefined,
+      context: anyErr.context && typeof anyErr.context === 'object' ? anyErr.context : undefined,
+    };
+  }
+
+  return {
+    name: 'UnknownError',
+    message: typeof err === 'string' ? err : 'Internal Server Error',
+    statusCode: 500,
+    isOperational: false,
+  };
+}
+
+function extractReasonInfo(reason: unknown): { message: string; code?: string; stack?: string } {
+  if (reason instanceof Error) {
+    const anyReason = reason as any;
+    return {
+      message: reason.message,
+      code: typeof anyReason.code === 'string' ? anyReason.code : undefined,
+      stack: reason.stack,
+    };
+  }
+  if (reason && typeof reason === 'object') {
+    const anyReason = reason as any;
+    return {
+      message: typeof anyReason.message === 'string' ? anyReason.message : String(reason),
+      code: typeof anyReason.code === 'string' ? anyReason.code : undefined,
+      stack: typeof anyReason.stack === 'string' ? anyReason.stack : undefined,
+    };
+  }
+  return {
+    message: typeof reason === 'string' ? reason : 'Unknown rejection reason',
+  };
+}
+
 export function globalErrorHandler(
   err: unknown,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
-  // Set default error values
-  let statusCode = err.statusCode || err.status || 500;
-  let message = err.message || 'Internal Server Error';
-  let code = err.code;
-  let isOperational = err.isOperational || false;
+  const normalized = normalizeError(err);
 
-  // Handle specific error types
-  if (err.name === 'ZodError') {
+  let statusCode = normalized.statusCode;
+  let message = normalized.message;
+  let code = normalized.code;
+  let isOperational = normalized.isOperational;
+
+  if (normalized.name === 'ZodError') {
     statusCode = 400;
-    const issues = Array.isArray(err.issues) ? err.issues : [];
+    const issues = normalized.issues || [];
     const firstIssue = issues[0];
     message = firstIssue
       ? `Validation failed: ${firstIssue.path?.length ? firstIssue.path.join('.') + ' - ' : ''}${firstIssue.message}`
       : 'Validation failed';
     code = 'VALIDATION_ERROR';
     isOperational = true;
-  } else if (err.name === 'ValidationError') {
+  } else if (normalized.name === 'ValidationError') {
     statusCode = 400;
     message = 'Validation failed';
     code = 'VALIDATION_ERROR';
     isOperational = true;
-  } else if (err.name === 'CastError') {
+  } else if (normalized.name === 'CastError') {
     statusCode = 400;
     message = 'Invalid data format';
     code = 'INVALID_FORMAT';
     isOperational = true;
-  } else if (err.code === '23505') { // PostgreSQL unique violation
+  } else if (normalized.code === '23505') {
     statusCode = 409;
     message = 'Resource already exists';
     code = 'DUPLICATE_RESOURCE';
     isOperational = true;
-  } else if (err.code === '23503') { // PostgreSQL foreign key violation
+  } else if (normalized.code === '23503') {
     statusCode = 400;
     message = 'Referenced resource not found';
     code = 'INVALID_REFERENCE';
     isOperational = true;
-  } else if (err.name === 'MulterError') {
+  } else if (normalized.name === 'MulterError') {
     statusCode = 400;
-    if (err.code === 'LIMIT_FILE_SIZE') {
+    if (normalized.code === 'LIMIT_FILE_SIZE') {
       message = 'File size too large';
       code = 'FILE_TOO_LARGE';
-    } else if (err.code === 'LIMIT_FILE_COUNT') {
+    } else if (normalized.code === 'LIMIT_FILE_COUNT') {
       message = 'Too many files uploaded';
       code = 'TOO_MANY_FILES';
     } else {
@@ -96,13 +178,12 @@ export function globalErrorHandler(
       code = 'UPLOAD_ERROR';
     }
     isOperational = true;
-  } else if (err.name === 'PaymentError') {
+  } else if (normalized.name === 'PaymentError') {
     statusCode = 402;
     code = 'PAYMENT_FAILED';
     isOperational = true;
   }
 
-  // Create standardized error response
   const errorResponse: ErrorResponse = {
     success: false,
     error: {
@@ -114,15 +195,13 @@ export function globalErrorHandler(
     }
   };
 
-  // Add stack trace and context in development
   if (process.env.NODE_ENV === 'development') {
     errorResponse.error.details = {
-      stack: err.stack,
-      context: err.context,
+      stack: normalized.stack,
+      context: normalized.context,
     };
   }
 
-  // Log error to audit system
   auditLogger.log({
     timestamp: new Date().toISOString(),
     userId: (req as any).user?.id,
@@ -133,10 +212,10 @@ export function globalErrorHandler(
     resource: 'system',
     details: {
       error: {
-        name: err.name,
-        message: err.message,
-        code: err.code,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+        name: normalized.name,
+        message: normalized.message,
+        code: normalized.code,
+        stack: process.env.NODE_ENV === 'development' ? normalized.stack : undefined,
         isOperational,
       },
       request: {
@@ -151,52 +230,57 @@ export function globalErrorHandler(
     sessionId: req.sessionID,
   });
 
-  // Log critical errors for immediate attention
   if (statusCode >= 500 && !isOperational) {
-    logger.error('🚨 CRITICAL ERROR:', {
+    logger.error('CRITICAL ERROR:', {
       timestamp: new Date().toISOString(),
       method: req.method,
       url: req.originalUrl,
-      error: err.message,
-      stack: err.stack,
-      context: err.context,
+      error: normalized.message,
+      stack: normalized.stack,
+      context: normalized.context,
       userId: (req as any).user?.id,
       ip: req.ip,
     });
   }
 
-  // Send error response
+  if (res.headersSent) {
+    logger.error('[errorHandler] Headers already sent, cannot send error response', {
+      method: req.method,
+      url: req.originalUrl,
+      statusCode,
+    });
+    return;
+  }
+
   res.status(statusCode).json(errorResponse);
 }
 
-// Async error wrapper
 export function asyncHandler(fn: Function) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 }
 
-// Handle unhandled promise rejections with graceful shutdown
-export function handleUnhandledRejection(server?: unknown) {
-  process.on('unhandledRejection', (reason: unknown, promise: Promise<any>) => {
-    // Suppress Redis connection errors in development (graceful degradation)
-    const isRedisError = reason?.message?.includes('ECONNREFUSED') && 
-                         (reason?.message?.includes('6379') || reason?.code === 'ECONNREFUSED') ||
-                         reason?.message?.includes('Redis') ||
-                         reason?.message?.includes('Connection is closed');
-    
+export function handleUnhandledRejection(server?: Server) {
+  process.on('unhandledRejection', (reason: unknown, _promise: Promise<any>) => {
+    const info = extractReasonInfo(reason);
+
+    const isRedisError = (
+      (info.message.includes('ECONNREFUSED') && (info.message.includes('6379') || info.code === 'ECONNREFUSED')) ||
+      info.message.includes('Redis') ||
+      info.message.includes('Connection is closed')
+    );
+
     if (isRedisError && process.env.NODE_ENV === 'development') {
-      // Silently ignore Redis connection errors in development
       return;
     }
 
-    logger.error('🚨 UNHANDLED PROMISE REJECTION:', {
-      reason,
-      stack: reason?.stack,
+    logger.error('UNHANDLED PROMISE REJECTION:', {
+      reason: info.message,
+      stack: info.stack,
       timestamp: new Date().toISOString(),
     });
 
-    // Log to audit system
     auditLogger.log({
       timestamp: new Date().toISOString(),
       ip: 'system',
@@ -204,31 +288,28 @@ export function handleUnhandledRejection(server?: unknown) {
       action: 'UNHANDLED_REJECTION',
       resource: 'system',
       details: {
-        reason: reason?.message || reason,
-        stack: reason?.stack,
+        reason: info.message,
+        stack: info.stack,
       },
       result: 'error',
       risk: 'critical'
     });
 
-    // Graceful shutdown in production
     if (process.env.NODE_ENV === 'production') {
-      logger.info('💥 Starting graceful shutdown due to unhandled promise rejection...');
+      logger.info('Starting graceful shutdown due to unhandled promise rejection...');
       gracefulShutdown(server, 'UNHANDLED_REJECTION');
     }
   });
 }
 
-// Handle uncaught exceptions with graceful shutdown
-export function handleUncaughtException(server?: unknown) {
+export function handleUncaughtException(server?: Server) {
   process.on('uncaughtException', (error: Error) => {
-    logger.error('🚨 UNCAUGHT EXCEPTION:', {
+    logger.error('UNCAUGHT EXCEPTION:', {
       error: error.message,
       stack: error.stack,
       timestamp: new Date().toISOString(),
     });
 
-    // Log to audit system
     auditLogger.log({
       timestamp: new Date().toISOString(),
       ip: 'system',
@@ -243,48 +324,42 @@ export function handleUncaughtException(server?: unknown) {
       risk: 'critical'
     });
 
-    logger.info('💥 Starting graceful shutdown due to uncaught exception...');
+    logger.info('Starting graceful shutdown due to uncaught exception...');
     gracefulShutdown(server, 'UNCAUGHT_EXCEPTION');
   });
 }
 
-// Graceful shutdown function
-function gracefulShutdown(server: unknown, reason: string) {
-  logger.info(`🛑 Graceful shutdown initiated (${reason})`);
-  
-  if (server) {
-    // Stop accepting new connections
-    server.close((err: unknown) => {
+function gracefulShutdown(server: Server | undefined, reason: string) {
+  logger.info(`Graceful shutdown initiated (${reason})`);
+
+  if (server && typeof server.close === 'function') {
+    server.close((err?: Error) => {
       if (err) {
-        logger.error('❌ Error during server shutdown:', err);
+        logger.error('Error during server shutdown:', { error: err.message });
       } else {
-        logger.info('✅ HTTP server closed');
+        logger.info('HTTP server closed');
       }
-      
-      // Force exit after timeout if graceful shutdown takes too long
+
       setTimeout(() => {
-        logger.info('💥 Force exit after graceful shutdown timeout');
+        logger.info('Force exit after graceful shutdown timeout');
         process.exit(1);
-      }, 10000); // 10 second timeout
-      
-      // Exit process
+      }, 10000);
+
       process.exit(1);
     });
   } else {
-    // No server reference, exit immediately
     process.exit(1);
   }
 }
 
-// Setup graceful shutdown for SIGTERM/SIGINT
-export function setupGracefulShutdown(server: unknown) {
+export function setupGracefulShutdown(server: Server) {
   process.on('SIGTERM', () => {
-    logger.info('📨 SIGTERM received');
+    logger.info('SIGTERM received');
     gracefulShutdown(server, 'SIGTERM');
   });
-  
+
   process.on('SIGINT', () => {
-    logger.info('📨 SIGINT received');
+    logger.info('SIGINT received');
     gracefulShutdown(server, 'SIGINT');
   });
 }

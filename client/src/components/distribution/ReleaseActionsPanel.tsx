@@ -99,9 +99,6 @@ const PLATFORM_NAMES: Record<string, string> = {
   soundcloud: 'SoundCloud',
 };
 
-/**
- * TODO: Add function documentation
- */
 export function ReleaseActionsPanel({
   release,
   onView,

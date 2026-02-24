@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 export interface PluginPreset {
   id: string;
   name: string;
@@ -322,7 +323,7 @@ export class PluginStateManager {
     if (!plugin) return false;
 
     if (state.pluginId && state.pluginId !== plugin.pluginId) {
-      console.warn('Cannot paste state from different plugin type');
+      logger.warn('Cannot paste state from different plugin type');
       return false;
     }
 

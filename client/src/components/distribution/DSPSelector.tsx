@@ -59,9 +59,6 @@ interface DSPSelectorProps {
   onChange: (platforms: string[]) => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function DSPSelector({ selectedPlatforms, onChange }: DSPSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');

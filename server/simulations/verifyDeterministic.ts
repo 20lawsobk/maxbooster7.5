@@ -7,9 +7,6 @@ import { simulateAutonomousUpgrade } from './autonomousUpgradeSimulation';
 import { simulateAdBooster } from './adBoosterSimulation';
 import { logger } from '../logger.js';
 
-/**
- * TODO: Add function documentation
- */
 async function verifyDeterministicBehavior() {
   logger.info('🔍 Verifying Deterministic Behavior\n');
   logger.info('='.repeat(80));

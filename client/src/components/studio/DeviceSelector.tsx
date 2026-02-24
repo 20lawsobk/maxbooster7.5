@@ -22,9 +22,6 @@ interface DeviceSelectorProps {
   compact?: boolean;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function DeviceSelector({
   onAudioInputChange,
   onAudioOutputChange,

@@ -40,9 +40,6 @@ interface StemExport {
   errorMessage?: string;
 }
 
-/**
- * TODO: Add function documentation
- */
 export interface StemExportOptions {
   trackIds: string[];
   format: 'wav' | 'mp3' | 'flac';

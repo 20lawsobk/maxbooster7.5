@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 export type NodeType = 'track' | 'bus' | 'aux' | 'master' | 'send' | 'return' | 'sidechain' | 'plugin';
 
 export interface RoutingNode {
@@ -112,7 +113,7 @@ export class RoutingEngine {
     if (!source || !target) return null;
 
     if (this.wouldCreateCycle(sourceId, targetId)) {
-      console.warn('Cannot create connection: would create a cycle');
+      logger.warn('Cannot create connection: would create a cycle');
       return null;
     }
 

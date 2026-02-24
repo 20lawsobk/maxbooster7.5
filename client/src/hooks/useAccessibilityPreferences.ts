@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import { useAccessibility } from '@/components/a11y/AccessibilityProvider';
@@ -84,7 +85,7 @@ export function useAccessibilityPreferences() {
       await updateMutation.mutateAsync(preferences);
       announce('Accessibility preferences saved to your profile');
     } catch (error) {
-      console.error('Failed to save accessibility preferences:', error);
+      logger.error('Failed to save accessibility preferences:', error);
     }
   }, [reducedMotion, highContrast, fontSize, colorBlindMode, updateMutation, announce]);
 
@@ -111,7 +112,7 @@ export function useAccessibilityPreferences() {
       try {
         await updateMutation.mutateAsync({ [key]: value });
       } catch (error) {
-        console.error(`Failed to update ${key}:`, error);
+        logger.error(`Failed to update ${key}:`, error);
       }
     },
     [reducedMotion, highContrast, setFontSize, setColorBlindMode, updateMutation]
@@ -124,7 +125,7 @@ export function useAccessibilityPreferences() {
       queryClient.invalidateQueries({ queryKey: ['/api/user/accessibility-preferences'] });
       announce('Accessibility preferences reset to defaults');
     } catch (error) {
-      console.error('Failed to reset accessibility preferences:', error);
+      logger.error('Failed to reset accessibility preferences:', error);
     }
   }, [resetAllPreferences, queryClient, announce]);
 

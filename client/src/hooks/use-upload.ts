@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useState, useCallback } from "react";
 import type { UppyFile } from "@uppy/core";
 
@@ -30,7 +31,7 @@ interface UseUploadOptions {
  * function FileUploader() {
  *   const { uploadFile, isUploading, error } = useUpload({
  *     onSuccess: (response) => {
- *       console.log("Uploaded to:", response.objectPath);
+ *       logger.info("Uploaded to:", response.objectPath);
  *     },
  *   });
  *

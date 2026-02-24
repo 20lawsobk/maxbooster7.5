@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -123,7 +124,7 @@ export function RealTimeWaveformDisplay({
       
       setLocalWaveformData(peaks);
     } catch (error) {
-      console.error('Failed to generate waveform:', error);
+      logger.error('Failed to generate waveform:', error);
     }
   };
 

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -84,7 +85,7 @@ export default function FeatureDiscoveryTooltip({
 
     const target = document.querySelector(currentStep.targetSelector);
     if (!target) {
-      console.warn(`Target element not found: ${currentStep.targetSelector}`);
+      logger.warn(`Target element not found: ${currentStep.targetSelector}`);
       return;
     }
 

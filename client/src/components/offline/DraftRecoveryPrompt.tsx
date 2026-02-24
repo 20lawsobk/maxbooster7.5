@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { FileText, X, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -41,7 +42,7 @@ export function DraftRecoveryPrompt({
           }, 500);
         }
       } catch (error) {
-        console.error('[DraftRecoveryPrompt] Failed to check for draft:', error);
+        logger.error('[DraftRecoveryPrompt] Failed to check for draft:', error);
       }
     };
 
@@ -62,7 +63,7 @@ export function DraftRecoveryPrompt({
       await draftStorage.deleteDraft(formId);
       onDiscard?.();
     } catch (error) {
-      console.error('[DraftRecoveryPrompt] Failed to discard draft:', error);
+      logger.error('[DraftRecoveryPrompt] Failed to discard draft:', error);
     }
     await handleDismiss();
   };

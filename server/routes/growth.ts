@@ -90,7 +90,7 @@ router.post('/score-viral', requireAuth, asyncHandler(async (req, res) => {
       score,
     });
   } catch (error: any) {
-    logger.info('Error in score-viral:', error?.message);
+    logger.error('Error in score-viral:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -114,7 +114,7 @@ router.post('/predict-potential', requireAuth, asyncHandler(async (req, res) => 
       category: potential >= 80 ? 'high' : potential >= 50 ? 'medium' : 'low',
     });
   } catch (error: any) {
-    logger.info('Error in predict-potential:', error?.message);
+    logger.error('Error in predict-potential:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -137,7 +137,7 @@ router.post('/suggest-improvements', requireAuth, asyncHandler(async (req, res) 
       improvements,
     });
   } catch (error: any) {
-    logger.info('Error in suggest-improvements:', error?.message);
+    logger.error('Error in suggest-improvements:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -160,7 +160,7 @@ router.post('/compare-variants', requireAuth, asyncHandler(async (req, res) => {
       comparison,
     });
   } catch (error: any) {
-    logger.info('Error in compare-variants:', error?.message);
+    logger.error('Error in compare-variants:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -187,7 +187,7 @@ router.get('/optimal-timing/:platform', requireAuth, asyncHandler(async (req, re
       timing,
     });
   } catch (error: any) {
-    logger.info('Error in optimal-timing:', error?.message);
+    logger.error('Error in optimal-timing:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -205,7 +205,7 @@ router.get('/optimal-timing-all', requireAuth, asyncHandler(async (req, res) => 
       timings: allTimings,
     });
   } catch (error: any) {
-    logger.info('Error in optimal-timing-all:', error?.message);
+    logger.error('Error in optimal-timing-all:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -226,7 +226,7 @@ router.post('/timing-recommendation', requireAuth, asyncHandler(async (req, res)
       recommendation,
     });
   } catch (error: any) {
-    logger.info('Error in timing-recommendation:', error?.message);
+    logger.error('Error in timing-recommendation:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -246,7 +246,7 @@ router.post('/audience-patterns', requireAuth, asyncHandler(async (req, res) => 
       patterns,
     });
   } catch (error: any) {
-    logger.info('Error in audience-patterns:', error?.message);
+    logger.error('Error in audience-patterns:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -262,7 +262,7 @@ router.get('/competitor-timing/:platform', requireAuth, asyncHandler(async (req,
       competitorTiming,
     });
   } catch (error: any) {
-    logger.info('Error in competitor-timing:', error?.message);
+    logger.error('Error in competitor-timing:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -286,7 +286,7 @@ router.post('/posting-schedule', requireAuth, asyncHandler(async (req, res) => {
       schedule,
     });
   } catch (error: any) {
-    logger.info('Error in posting-schedule:', error?.message);
+    logger.error('Error in posting-schedule:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -314,7 +314,7 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
       ...result,
     });
   } catch (error: any) {
-    logger.info('Error in generate-variants:', error?.message);
+    logger.error('Error in generate-variants:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -337,7 +337,7 @@ router.post('/generate-caption-variants', requireAuth, asyncHandler(async (req, 
       variants,
     });
   } catch (error: any) {
-    logger.info('Error in generate-caption-variants:', error?.message);
+    logger.error('Error in generate-caption-variants:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -356,7 +356,7 @@ router.post('/generate-hashtag-sets', requireAuth, asyncHandler(async (req, res)
       hashtagSets,
     });
   } catch (error: any) {
-    logger.info('Error in generate-hashtag-sets:', error?.message);
+    logger.error('Error in generate-hashtag-sets:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -372,7 +372,7 @@ router.post('/generate-hooks', requireAuth, asyncHandler(async (req, res) => {
       hooks,
     });
   } catch (error: any) {
-    logger.info('Error in generate-hooks:', error?.message);
+    logger.error('Error in generate-hooks:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -404,7 +404,7 @@ router.post('/create-ab-test', requireAuth, asyncHandler(async (req, res) => {
       ...abTest,
     });
   } catch (error: any) {
-    logger.info('Error in create-ab-test:', error?.message);
+    logger.error('Error in create-ab-test:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -425,7 +425,7 @@ router.post('/algorithm-health', requireAuth, asyncHandler(async (req, res) => {
       health,
     });
   } catch (error: any) {
-    logger.info('Error in algorithm-health:', error?.message);
+    logger.error('Error in algorithm-health:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -447,7 +447,7 @@ router.get('/algorithm-health/:platform', requireAuth, asyncHandler(async (req, 
       health,
     });
   } catch (error: any) {
-    logger.info('Error in algorithm-health by platform:', error?.message);
+    logger.error('Error in algorithm-health by platform:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -470,7 +470,7 @@ router.post('/shadowban-check', requireAuth, asyncHandler(async (req, res) => {
       result,
     });
   } catch (error: any) {
-    logger.info('Error in shadowban-check:', error?.message);
+    logger.error('Error in shadowban-check:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -487,7 +487,7 @@ router.get('/engagement-patterns/:platform', requireAuth, asyncHandler(async (re
       patterns,
     });
   } catch (error: any) {
-    logger.info('Error in engagement-patterns:', error?.message);
+    logger.error('Error in engagement-patterns:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -503,7 +503,7 @@ router.get('/platform-profile/:platform', requireAuth, asyncHandler(async (req, 
       profile,
     });
   } catch (error: any) {
-    logger.info('Error in platform-profile:', error?.message);
+    logger.error('Error in platform-profile:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -520,7 +520,7 @@ router.get('/algorithm-insights/:platform', requireAuth, asyncHandler(async (req
       insights,
     });
   } catch (error: any) {
-    logger.info('Error in algorithm-insights:', error?.message);
+    logger.error('Error in algorithm-insights:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -615,7 +615,7 @@ router.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.info('Error in dashboard:', error?.message);
+    logger.error('Error in dashboard:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -643,7 +643,7 @@ router.get('/summary', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.info('Error in summary:', error?.message);
+    logger.error('Error in summary:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));

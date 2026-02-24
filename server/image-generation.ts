@@ -1080,9 +1080,6 @@ export async function generateSocialMediaImage(
   return await contentGenerator.generateSocialMediaImage(platform, musicData, targetAudience);
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function generateSocialMediaContent(
   platform: string,
   musicData: unknown,
@@ -1102,9 +1099,6 @@ export async function generateSocialMediaContent(
   );
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function generateContentFromURL(
   url: string,
   platform: string,

@@ -25,9 +25,6 @@ const MARKER_COLORS = [
   '#ec4899', // pink
 ];
 
-/**
- * TODO: Add function documentation
- */
 export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
   const {
     markers,

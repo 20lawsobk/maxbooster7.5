@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useCallback, useMemo } from 'react';
 import { useUndo, useUndoHistory, useUndoActions, useLastAction } from '@/contexts/UndoContext';
 import { useUndoStack } from './useUndoStack';
@@ -117,7 +118,7 @@ export function useGlobalUndo(options: UseGlobalUndoOptions = {}): UseGlobalUndo
         isDestructive: action.metadata.isDestructive,
       });
     } catch (error) {
-      console.warn('Failed to sync action to backend:', error);
+      logger.warn('Failed to sync action to backend:', error);
     }
   }, [syncToBackend]);
 
@@ -172,7 +173,7 @@ export function useGlobalUndo(options: UseGlobalUndoOptions = {}): UseGlobalUndo
       const data = await response.json();
       return data.restorePointId;
     } catch (error) {
-      console.error('Failed to create restore point:', error);
+      logger.error('Failed to create restore point:', error);
       throw error;
     }
   }, []);
@@ -183,7 +184,7 @@ export function useGlobalUndo(options: UseGlobalUndoOptions = {}): UseGlobalUndo
       const data = await response.json();
       return data.restorePoints || [];
     } catch (error) {
-      console.error('Failed to get restore points:', error);
+      logger.error('Failed to get restore points:', error);
       return [];
     }
   }, []);
@@ -192,7 +193,7 @@ export function useGlobalUndo(options: UseGlobalUndoOptions = {}): UseGlobalUndo
     try {
       await apiRequest('POST', `/api/undo/restore/${pointId}`);
     } catch (error) {
-      console.error('Failed to restore to point:', error);
+      logger.error('Failed to restore to point:', error);
       throw error;
     }
   }, []);
@@ -201,7 +202,7 @@ export function useGlobalUndo(options: UseGlobalUndoOptions = {}): UseGlobalUndo
     try {
       await apiRequest('DELETE', `/api/undo/restore-points/${pointId}`);
     } catch (error) {
-      console.error('Failed to delete restore point:', error);
+      logger.error('Failed to delete restore point:', error);
       throw error;
     }
   }, []);

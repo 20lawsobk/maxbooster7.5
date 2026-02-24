@@ -14,9 +14,6 @@ interface ReleaseDateSchedulerProps {
   minWeeksAhead?: number;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function ReleaseDateScheduler({
   selectedDate,
   onChange,

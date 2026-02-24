@@ -51,9 +51,6 @@ const PLATFORM_ICONS: Record<string, any> = {
   googlebusiness: GoogleIcon,
 };
 
-/**
- * TODO: Add function documentation
- */
 export function ContentCalendarView({ posts, onDateClick }: ContentCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 

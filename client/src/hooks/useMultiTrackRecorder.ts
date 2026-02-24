@@ -36,9 +36,6 @@ export interface MultiTrackRecordingState {
   bufferSize: number;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function useMultiTrackRecorder(selectedDeviceId?: string | null, bufferSize?: number) {
   const { context, isSupported } = useAudioContext();
   const audioDevices = useAudioDevices();

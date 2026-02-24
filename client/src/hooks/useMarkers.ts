@@ -3,9 +3,6 @@ import { apiRequest } from '@/lib/queryClient';
 import { useStudioStore, type Marker } from '@/lib/studioStore';
 import { useToast } from '@/hooks/use-toast';
 
-/**
- * TODO: Add function documentation
- */
 export function useMarkers(projectId: string | null) {
   const { markers, addMarker, updateMarker, deleteMarker } = useStudioStore();
   const { toast } = useToast();

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -141,7 +142,7 @@ export default function OnboardingChecklist({
       }
     },
     onError: (error) => {
-      console.error('Failed to complete step:', error);
+      logger.error('Failed to complete step:', error);
     },
   });
 

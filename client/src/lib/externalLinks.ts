@@ -1,3 +1,4 @@
+import { logger } from 'logger';
 /**
  * External Link Utility
  * Provides secure methods to open external URLs in the user's browser
@@ -17,7 +18,7 @@ export function sanitizeUrl(url: string): string | null {
   try {
     const parsed = new URL(url);
     if (!ALLOWED_SCHEMES.includes(parsed.protocol)) {
-      console.warn(`[ExternalLinks] Blocked URL with unsafe protocol: ${parsed.protocol}`);
+      logger.warn(`[ExternalLinks] Blocked URL with unsafe protocol: ${parsed.protocol}`);
       return null;
     }
     return parsed.href;
@@ -27,7 +28,7 @@ export function sanitizeUrl(url: string): string | null {
       const withProtocol = new URL(`https://${url}`);
       return withProtocol.href;
     } catch {
-      console.warn(`[ExternalLinks] Invalid URL: ${url}`);
+      logger.warn(`[ExternalLinks] Invalid URL: ${url}`);
       return null;
     }
   }

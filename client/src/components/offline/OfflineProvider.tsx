@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useEffect, useState, useCallback, ReactNode } from 'react';
 import { initOfflineSystem, syncManager, offlineQueue, offlineCache, SyncStatus, SyncProgress } from '@/lib/offline';
 import { toast } from '@/hooks/use-toast';
@@ -41,7 +42,7 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
         setIsInitialized(true);
         await loadStats();
       } catch (error) {
-        console.error('[OfflineProvider] Failed to initialize:', error);
+        logger.error('[OfflineProvider] Failed to initialize:', error);
       }
     };
     init();
@@ -54,7 +55,7 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
       setFailedActions(stats.failed);
       setConflictCount(stats.conflict);
     } catch (error) {
-      console.error('[OfflineProvider] Failed to load stats:', error);
+      logger.error('[OfflineProvider] Failed to load stats:', error);
     }
   }, []);
 

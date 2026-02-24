@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Crown, Eye, Edit3, Mic, MousePointer2, Wifi, WifiOff, RefreshCw } from 'lucide-react';
@@ -370,7 +371,7 @@ export function useCollaborationPresence(
 
   const reconnect = useCallback(() => {
     if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      console.warn('Max reconnection attempts reached');
+      logger.warn('Max reconnection attempts reached');
       return;
     }
 

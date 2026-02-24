@@ -9,9 +9,6 @@ import {
 } from '@/components/ui/toast';
 import { CheckCircle, XCircle, Info, AlertTriangle, Loader2 } from 'lucide-react';
 
-/**
- * TODO: Add function documentation
- */
 export function Toaster() {
   const { toasts } = useToast();
 

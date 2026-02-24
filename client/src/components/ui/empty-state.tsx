@@ -133,9 +133,6 @@ const sizeClasses = {
   },
 };
 
-/**
- * TODO: Add function documentation
- */
 export function EmptyState({
   title,
   description,

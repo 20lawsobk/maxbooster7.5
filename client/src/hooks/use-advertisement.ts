@@ -55,9 +55,6 @@ interface CreateCampaignData {
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export function useAdvertisement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();

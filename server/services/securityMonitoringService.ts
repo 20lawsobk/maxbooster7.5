@@ -17,9 +17,6 @@ export function trackError() {
   errorCounter++;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function getSecurityMetrics() {
   const uptimeSeconds = Math.floor(process.uptime());
 
@@ -95,9 +92,6 @@ export async function getSecurityMetrics() {
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function getBehavioralAlerts() {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
@@ -169,9 +163,6 @@ export async function getBehavioralAlerts() {
   return { alerts };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function detectSecurityAnomalies() {
   const anomalies = [];
 
@@ -229,9 +220,6 @@ export async function detectSecurityAnomalies() {
   return { anomalies };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function getPentestResults() {
   const hasHttps = process.env.NODE_ENV === 'production';
   const hasSecurityHeaders = true;

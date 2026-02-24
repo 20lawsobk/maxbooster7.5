@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,7 +70,7 @@ export function PocketDimensionDashboard() {
         setGlobalStats(data.stats);
       }
     } catch (error) {
-      console.error('Failed to fetch pockets:', error);
+      logger.error('Failed to fetch pockets:', error);
     }
   };
 
@@ -90,7 +91,7 @@ export function PocketDimensionDashboard() {
         setEntries(entriesData.entries);
       }
     } catch (error) {
-      console.error('Failed to fetch pocket details:', error);
+      logger.error('Failed to fetch pocket details:', error);
     }
   };
 

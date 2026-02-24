@@ -355,9 +355,6 @@ function getStateBadge(state: string) {
   }
 }
 
-/**
- * TODO: Add function documentation
- */
 export function AIGeneratorDialog({
   open,
   onOpenChange,

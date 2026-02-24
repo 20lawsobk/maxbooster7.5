@@ -82,9 +82,6 @@ interface StudioTopBarProps {
   onOpenProjectHub?: () => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function StudioTopBar({
   tempo,
   timeSignature,

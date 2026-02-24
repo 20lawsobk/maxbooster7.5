@@ -47,9 +47,6 @@ interface StudioLoaderProps {
   userId?: string;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function StudioLoader({ children, userId }: StudioLoaderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();

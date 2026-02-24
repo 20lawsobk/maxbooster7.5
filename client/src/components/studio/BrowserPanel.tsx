@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -362,7 +363,7 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
       try {
         setFavorites(new Set(JSON.parse(saved)));
       } catch (e) {
-        console.warn('Failed to load favorites from localStorage');
+        logger.warn('Failed to load favorites from localStorage');
       }
     }
   }, []);
@@ -402,11 +403,11 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
     
     audio.onerror = () => {
       setPreviewingId(null);
-      console.warn('Failed to preview audio file:', fileUrl);
+      logger.warn('Failed to preview audio file:', fileUrl);
     };
     
     audio.play().catch((err) => {
-      console.warn('Audio preview failed:', err);
+      logger.warn('Audio preview failed:', err);
       setPreviewingId(null);
     });
   }, []);

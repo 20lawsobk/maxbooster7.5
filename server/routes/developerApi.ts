@@ -408,7 +408,7 @@ print(data)
     },
   });
   } catch (error: any) {
-    logger.info('Error in developer docs:', error?.message);
+    logger.error('Error in developer docs:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

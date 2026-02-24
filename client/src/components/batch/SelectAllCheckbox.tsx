@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useBatchSelectContext, useOptionalBatchSelectContext } from './BatchSelectProvider';
 
@@ -24,7 +25,7 @@ export function SelectAllCheckbox({
   const checkboxRef = useRef<HTMLButtonElement>(null);
 
   if (!context) {
-    console.warn('SelectAllCheckbox: Must be used within BatchSelectProvider');
+    logger.warn('SelectAllCheckbox: Must be used within BatchSelectProvider');
     return null;
   }
 

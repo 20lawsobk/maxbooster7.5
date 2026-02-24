@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import type {
   VideoProject,
   LayerConfig,
@@ -302,7 +303,7 @@ export class RenderOrchestrator {
     try {
       await this.audioAnalyzer.loadAudio(url);
     } catch (error) {
-      console.warn('Failed to load audio for analysis:', error);
+      logger.warn('Failed to load audio for analysis:', error);
     }
   }
 

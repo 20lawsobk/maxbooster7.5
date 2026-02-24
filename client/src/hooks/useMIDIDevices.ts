@@ -24,9 +24,6 @@ export interface MIDIDeviceState {
  * Hook for enumerating and managing MIDI devices using Web MIDI API
  * Enables professional MIDI controller integration
  */
-/**
- * TODO: Add function documentation
- */
 export function useMIDIDevices() {
   const [state, setState] = useState<MIDIDeviceState>({
     inputs: [],

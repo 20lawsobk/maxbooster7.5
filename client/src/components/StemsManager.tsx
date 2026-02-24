@@ -54,9 +54,6 @@ const STEM_TYPE_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
-/**
- * TODO: Add function documentation
- */
 export function StemsManager({ listingId, isOwner }: StemsManagerProps) {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [playingStem, setPlayingStem] = useState<string | null>(null);

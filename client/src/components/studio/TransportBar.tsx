@@ -79,9 +79,6 @@ interface TransportBarProps {
   onZoomReset?: () => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function TransportBar({
   armedTracksCount = 0,
   onUndo,

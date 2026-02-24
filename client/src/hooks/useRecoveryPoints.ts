@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useState, useCallback, useEffect } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -217,7 +218,7 @@ export function useRecoveryPoints(options: UseRecoveryPointsOptions = {}): UseRe
         name: 'Auto-recovery point',
         description: `Automatically created at ${new Date().toLocaleTimeString()}`,
       }).catch((err) => {
-        console.warn('Auto-recovery failed:', err);
+        logger.warn('Auto-recovery failed:', err);
       });
     }, autoRecoveryInterval);
 

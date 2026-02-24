@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useRef } from 'react';
 import { Howl } from 'howler';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -656,7 +657,7 @@ export default function Marketplace() {
         description: `Detected ${suggestion.bpm} BPM, Key: ${suggestion.key}, Genre: ${suggestion.genre}`,
       });
     }).catch((err) => {
-      console.error('Audio analysis failed:', err);
+      logger.error('Audio analysis failed:', err);
       toast({
         title: 'Audio Analysis',
         description: 'Could not auto-detect metadata. Please fill in manually.',
@@ -856,7 +857,7 @@ export default function Marketplace() {
 
         successCount++;
       } catch (err) {
-        console.error(`Failed to update beat ${beatId}:`, err);
+        logger.error(`Failed to update beat ${beatId}:`, err);
       }
     }
     toast({ title: 'Bulk Edit Complete', description: `Updated ${successCount} of ${selectedIds.length} beats.` });
@@ -1537,7 +1538,7 @@ export default function Marketplace() {
         setCurrentTime(0);
       },
       onloaderror: (_id, error) => {
-        console.error('Howler load error:', error);
+        logger.error('Howler load error:', error);
         toast({
           title: 'Playback Error',
           description: 'Failed to load audio file',
@@ -1548,7 +1549,7 @@ export default function Marketplace() {
         setShowPreviewPlayer(false);
       },
       onplayerror: (_id, error) => {
-        console.error('Howler play error:', error);
+        logger.error('Howler play error:', error);
         // Try to unlock and play again (needed for mobile browsers)
         howl.once('unlock', () => {
           howl.play();

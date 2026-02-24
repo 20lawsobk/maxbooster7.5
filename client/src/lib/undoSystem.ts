@@ -1,3 +1,4 @@
+import { logger } from 'logger';
 export type UndoActionType = 'create' | 'update' | 'delete' | 'move' | 'reorder' | 'batch' | 'custom';
 
 export interface UndoAction<T = unknown> {
@@ -66,7 +67,7 @@ export class UndoStack {
         this.redoStack = parsed.redoStack || [];
       }
     } catch (error) {
-      console.warn('Failed to load undo stack from storage:', error);
+      logger.warn('Failed to load undo stack from storage:', error);
     }
   }
 
@@ -96,7 +97,7 @@ export class UndoStack {
       };
       sessionStorage.setItem(this.config.storageKey, JSON.stringify(serialized));
     } catch (error) {
-      console.warn('Failed to save undo stack to storage:', error);
+      logger.warn('Failed to save undo stack to storage:', error);
     }
   }
 
@@ -139,7 +140,7 @@ export class UndoStack {
 
       return fullAction;
     } catch (error) {
-      console.error('Failed to execute action:', error);
+      logger.error('Failed to execute action:', error);
       throw error;
     }
   }
@@ -162,7 +163,7 @@ export class UndoStack {
       return action;
     } catch (error) {
       this.history.push(action);
-      console.error('Failed to undo action:', error);
+      logger.error('Failed to undo action:', error);
       throw error;
     }
   }
@@ -182,7 +183,7 @@ export class UndoStack {
       return action;
     } catch (error) {
       this.redoStack.push(action);
-      console.error('Failed to redo action:', error);
+      logger.error('Failed to redo action:', error);
       throw error;
     }
   }

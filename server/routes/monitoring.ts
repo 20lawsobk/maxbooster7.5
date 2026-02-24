@@ -24,7 +24,7 @@ router.get(
         metrics: metricsArray,
       });
     } catch (error: any) {
-      logger.info('Error in queue-metrics:', error?.message);
+      logger.error('Error in queue-metrics:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -49,7 +49,7 @@ router.get(
         metrics,
       });
     } catch (error: any) {
-      logger.info('Error in queue-metrics by name:', error?.message);
+      logger.error('Error in queue-metrics by name:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -70,7 +70,7 @@ router.get(
         })),
       });
     } catch (error: any) {
-      logger.info('Error in queue-health:', error?.message);
+      logger.error('Error in queue-health:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -91,7 +91,7 @@ router.get(
         cacheStats,
       });
     } catch (error: any) {
-      logger.info('Error in ai-models:', error?.message);
+      logger.error('Error in ai-models:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -149,7 +149,7 @@ router.get(
         timestamp: new Date(),
       });
     } catch (error: any) {
-      logger.info('Error in system-health:', error?.message);
+      logger.error('Error in system-health:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -185,7 +185,7 @@ router.post(
         message: 'Alert thresholds updated successfully',
       });
     } catch (error: any) {
-      logger.info('Error in set-thresholds:', error?.message);
+      logger.error('Error in set-thresholds:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -209,7 +209,7 @@ router.get(
         timestamp: new Date(),
       });
     } catch (error: any) {
-      logger.info('Error in monitoring dashboard:', error?.message);
+      logger.error('Error in monitoring dashboard:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -242,7 +242,7 @@ router.post(
         filepath,
       });
     } catch (error: any) {
-      logger.info('Error in baseline save:', error?.message);
+      logger.error('Error in baseline save:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -264,7 +264,7 @@ router.get(
         },
       });
     } catch (error: any) {
-      logger.info('Error in alerting config:', error?.message);
+      logger.error('Error in alerting config:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })
@@ -294,7 +294,7 @@ router.post(
         message: 'Test alert sent successfully',
       });
     } catch (error: any) {
-      logger.info('Error in alerting test:', error?.message);
+      logger.error('Error in alerting test:', error?.message);
       res.status(500).json({ message: 'Internal server error' });
     }
   })

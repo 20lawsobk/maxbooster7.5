@@ -463,7 +463,7 @@ router.get('/capabilities', async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    logger.info('Error in audio capabilities:', error?.message);
+    logger.error('Error in audio capabilities:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

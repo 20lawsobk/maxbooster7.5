@@ -16,9 +16,6 @@ interface SpectrumAnalyzerProps {
   className?: string;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function SpectrumAnalyzer({
   analyserNode,
   width = 300,

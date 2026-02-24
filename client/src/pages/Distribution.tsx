@@ -352,9 +352,6 @@ interface UploadSessionStatus {
   status: 'initializing' | 'uploading' | 'processing' | 'complete' | 'failed';
 }
 
-/**
- * TODO: Add function documentation
- */
 function getPlatformIcon(slug: string) {
   const iconMap: Record<string, any> = {
     spotify: SpotifyIcon,
@@ -371,9 +368,6 @@ function getPlatformIcon(slug: string) {
   return iconMap[slug] || Music;
 }
 
-/**
- * TODO: Add function documentation
- */
 function getPlatformColor(slug: string) {
   const colorMap: Record<string, string> = {
     spotify: '#1DB954',

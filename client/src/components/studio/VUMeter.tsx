@@ -11,9 +11,6 @@ interface VUMeterProps {
   className?: string;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function VUMeter({
   level,
   peak = level,

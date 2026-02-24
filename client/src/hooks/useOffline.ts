@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { syncManager, offlineQueue, offlineCache, SyncStatus, SyncProgress, QueuedAction } from '@/lib/offline';
 
@@ -61,7 +62,7 @@ export function useOffline(): UseOfflineReturn {
         conflictCount: stats.conflict,
       }));
     } catch (error) {
-      console.error('[useOffline] Failed to load stats:', error);
+      logger.error('[useOffline] Failed to load stats:', error);
     }
   }, []);
 

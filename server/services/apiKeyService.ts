@@ -22,9 +22,6 @@ export interface ApiKeyRequest extends Request {
  * Format: mb_live_<random64chars>
  * SECURITY: Plaintext key is ONLY returned to user once, never stored in database
  */
-/**
- * TODO: Add function documentation
- */
 export async function generateApiKey(
   userId: string,
   keyName: string,
@@ -77,9 +74,6 @@ export async function generateApiKey(
 /**
  * Validate API key and attach key info to request
  * SECURITY: Validates by comparing hashes, never stores or looks up plaintext keys
- */
-/**
- * TODO: Add function documentation
  */
 export async function validateApiKey(req: ApiKeyRequest, res: Response, next: NextFunction) {
   try {
@@ -155,9 +149,6 @@ export async function validateApiKey(req: ApiKeyRequest, res: Response, next: Ne
 
 /**
  * Rate limiting middleware using Redis sliding window
- */
-/**
- * TODO: Add function documentation
  */
 export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: NextFunction) {
   try {
@@ -242,9 +233,6 @@ export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: N
 /**
  * Track API usage for analytics and billing
  */
-/**
- * TODO: Add function documentation
- */
 export async function trackApiUsage(req: ApiKeyRequest, res: Response, next: NextFunction) {
   const startTime = Date.now();
 
@@ -278,9 +266,6 @@ export async function trackApiUsage(req: ApiKeyRequest, res: Response, next: Nex
 /**
  * Helper function to record API usage in database
  */
-/**
- * TODO: Add function documentation
- */
 async function trackUsageRecord(usage: {
   apiKeyId: string;
   endpoint: string;
@@ -307,9 +292,6 @@ async function trackUsageRecord(usage: {
 /**
  * Get API key by ID
  */
-/**
- * TODO: Add function documentation
- */
 export async function getApiKeyById(keyId: string) {
   try {
     const [key] = await db.select().from(apiKeys).where(eq(apiKeys.id, keyId)).limit(1);
@@ -324,9 +306,6 @@ export async function getApiKeyById(keyId: string) {
 /**
  * List all API keys for a user
  * SECURITY: Does not return any part of the actual key (not even preview)
- */
-/**
- * TODO: Add function documentation
  */
 export async function listApiKeys(userId: string) {
   try {
@@ -356,9 +335,6 @@ export async function listApiKeys(userId: string) {
 /**
  * Revoke (deactivate) an API key
  */
-/**
- * TODO: Add function documentation
- */
 export async function revokeApiKey(keyId: string, userId: string) {
   try {
     const [updated] = await db
@@ -381,9 +357,6 @@ export async function revokeApiKey(keyId: string, userId: string) {
 
 /**
  * Get usage statistics for an API key
- */
-/**
- * TODO: Add function documentation
  */
 export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
   try {
@@ -447,9 +420,6 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
 
 /**
  * Get usage statistics for all user's API keys
- */
-/**
- * TODO: Add function documentation
  */
 export async function getUserApiUsageStats(userId: string, days: number = 30) {
   try {

@@ -126,9 +126,6 @@ const defaultEffects: TrackEffects = {
   },
 };
 
-/**
- * TODO: Add function documentation
- */
 export function MixerPanel({
   tracks,
   projectId,

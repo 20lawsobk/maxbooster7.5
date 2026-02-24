@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useCallback } from 'react';
 import { useUndo } from '@/contexts/UndoContext';
 import {
@@ -73,7 +74,7 @@ export function useUndoableAction<T, Args extends unknown[]>(
             isDestructive: metadata.isDestructive,
           });
         } catch (error) {
-          console.warn('Failed to sync action to backend:', error);
+          logger.warn('Failed to sync action to backend:', error);
         }
       }
 
@@ -162,7 +163,7 @@ export function useUndoableCreate<T extends { id: string }>(
             entityType,
           });
         } catch (error) {
-          console.warn('Failed to sync action to backend:', error);
+          logger.warn('Failed to sync action to backend:', error);
         }
       }
 
@@ -221,7 +222,7 @@ export function useUndoableUpdate<T>(
             newState: newData,
           });
         } catch (error) {
-          console.warn('Failed to sync action to backend:', error);
+          logger.warn('Failed to sync action to backend:', error);
         }
       }
 
@@ -275,7 +276,7 @@ export function useUndoableSettingsChange<T extends Record<string, unknown>>(
             newState: newSettings,
           });
         } catch (error) {
-          console.warn('Failed to sync action to backend:', error);
+          logger.warn('Failed to sync action to backend:', error);
         }
       }
 

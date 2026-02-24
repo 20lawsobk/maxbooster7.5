@@ -53,9 +53,6 @@ interface MusicInsight {
   priority: number;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function predictCareerGrowth(
   userId: string,
   metric: 'streams' | 'followers' | 'engagement',
@@ -148,9 +145,6 @@ export async function predictCareerGrowth(
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function generateReleaseStrategy(userId: string): Promise<ReleaseStrategyInsight> {
   // Analyze past release performance
   const releases = await db
@@ -205,9 +199,6 @@ export async function generateReleaseStrategy(userId: string): Promise<ReleaseSt
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function analyzeFanbase(userId: string): Promise<FanbaseInsight> {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -271,9 +262,6 @@ export async function analyzeFanbase(userId: string): Promise<FanbaseInsight> {
   };
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function getCareerMilestones(userId: string): Promise<CareerMilestone[]> {
   const analyticsData = await db
     .select({
@@ -346,9 +334,6 @@ export async function getCareerMilestones(userId: string): Promise<CareerMilesto
   return milestones;
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function generateMusicInsights(userId: string): Promise<MusicInsight[]> {
   const insights: MusicInsight[] = [];
 

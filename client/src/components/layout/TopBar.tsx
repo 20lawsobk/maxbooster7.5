@@ -11,9 +11,6 @@ interface TopBarProps {
   onMenuClick?: () => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
   const { logout } = useAuth();
   const [, navigate] = useLocation();

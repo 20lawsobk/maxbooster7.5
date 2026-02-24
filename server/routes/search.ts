@@ -297,7 +297,7 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     return res.redirect(307, `/api/search/unified?${new URLSearchParams(req.query as Record<string, string>).toString()}`);
   } catch (error: any) {
-    logger.info('Error in search redirect:', error?.message);
+    logger.error('Error in search redirect:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

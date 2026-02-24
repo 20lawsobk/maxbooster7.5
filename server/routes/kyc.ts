@@ -163,7 +163,7 @@ router.get('/support', async (req, res) => {
       ],
     });
   } catch (error: any) {
-    logger.info('Error in KYC support info:', error?.message);
+    logger.error('Error in KYC support info:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -183,7 +183,7 @@ router.get('/document-types', async (req, res) => {
     ];
     res.json({ documentTypes });
   } catch (error: any) {
-    logger.info('Error in KYC document types:', error?.message);
+    logger.error('Error in KYC document types:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

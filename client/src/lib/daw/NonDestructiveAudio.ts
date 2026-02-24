@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 export interface AudioSource {
   id: string;
   path: string;
@@ -170,7 +171,7 @@ export class NonDestructiveAudioEngine {
   unregisterSource(sourceId: string): void {
     const eventsUsingSource = this.state.events.filter(e => e.sourceId === sourceId);
     if (eventsUsingSource.length > 0) {
-      console.warn(`Cannot unregister source ${sourceId}: ${eventsUsingSource.length} events still using it`);
+      logger.warn(`Cannot unregister source ${sourceId}: ${eventsUsingSource.length} events still using it`);
       return;
     }
 
@@ -379,7 +380,7 @@ export class NonDestructiveAudioEngine {
 
     const trackIds = new Set(events.map(e => e.trackId));
     if (trackIds.size > 1) {
-      console.warn('Cannot consolidate events from different tracks');
+      logger.warn('Cannot consolidate events from different tracks');
       return null;
     }
 
@@ -387,7 +388,7 @@ export class NonDestructiveAudioEngine {
     const endBeat = Math.max(...events.map(e => e.startBeat + e.durationBeats));
     const duration = endBeat - startBeat;
 
-    console.log(`Consolidating ${events.length} events from beat ${startBeat} to ${endBeat}`);
+    logger.info(`Consolidating ${events.length} events from beat ${startBeat} to ${endBeat}`);
 
     return events[0].id;
   }

@@ -99,9 +99,6 @@ interface TerritorySelectorProps {
   onModeChange: (mode: 'worldwide' | 'include' | 'exclude') => void;
 }
 
-/**
- * TODO: Add function documentation
- */
 export function TerritorySelector({
   selectedTerritories,
   onChange,

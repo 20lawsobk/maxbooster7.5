@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { transportEngine, TransportEngine } from './TransportEngine';
 import { timelineEngine, TimelineEngine } from './TimelineEngine';
 
@@ -124,7 +125,7 @@ export class MIDIEngine {
           input.onmidimessage = this.handleMIDIMessage.bind(this);
         });
       } catch (err) {
-        console.log('Web MIDI not available:', err);
+        logger.info('Web MIDI not available:', err);
       }
     }
   }

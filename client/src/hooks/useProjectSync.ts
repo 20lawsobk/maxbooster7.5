@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useStudioStore } from '@/stores/studioStore';
@@ -440,15 +441,15 @@ export function useProjectSync(projectId: string | null) {
 
       if (response.ok) {
         getStoreState().markSaved();
-        console.log(`[ProjectSync] Full DAW state saved for project ${projectId}`);
+        logger.info(`[ProjectSync] Full DAW state saved for project ${projectId}`);
         invalidateProjectQueries();
         return true;
       } else {
-        console.error('[ProjectSync] Failed to save full state:', await response.text());
+        logger.error('[ProjectSync] Failed to save full state:', await response.text());
         return false;
       }
     } catch (error) {
-      console.error('[ProjectSync] Failed to save full state:', error);
+      logger.error('[ProjectSync] Failed to save full state:', error);
       return false;
     }
   }, [projectId, getStoreState, serializeFullState, invalidateProjectQueries]);
@@ -460,7 +461,7 @@ export function useProjectSync(projectId: string | null) {
       const response = await fetch(`/api/studio/projects/${projectId}/daw-state`, { credentials: 'include' });
       
       if (!response.ok) {
-        console.error('[ProjectSync] Failed to load DAW state');
+        logger.error('[ProjectSync] Failed to load DAW state');
         return false;
       }
 
@@ -485,17 +486,17 @@ export function useProjectSync(projectId: string | null) {
             }
             
             store.markSaved();
-            console.log(`[ProjectSync] Full DAW state loaded for project ${projectId}`);
+            logger.info(`[ProjectSync] Full DAW state loaded for project ${projectId}`);
             return true;
           }
         } catch (parseError) {
-          console.error('[ProjectSync] Failed to parse DAW state:', parseError);
+          logger.error('[ProjectSync] Failed to parse DAW state:', parseError);
         }
       }
 
       return false;
     } catch (error) {
-      console.error('[ProjectSync] Failed to load full state:', error);
+      logger.error('[ProjectSync] Failed to load full state:', error);
       return false;
     }
   }, [projectId, store, deserializeAndRestoreState]);
@@ -566,7 +567,7 @@ export function useProjectSync(projectId: string | null) {
         }
       }
     } catch (error) {
-      console.error('[ProjectSync] Failed to refresh:', error);
+      logger.error('[ProjectSync] Failed to refresh:', error);
     }
   }, [projectId, store]);
 
@@ -580,7 +581,7 @@ export function useProjectSync(projectId: string | null) {
       return true;
     }
 
-    console.log('[ProjectSync] No DAW state found, falling back to database tracks');
+    logger.info('[ProjectSync] No DAW state found, falling back to database tracks');
     
     try {
       const [projectRes, tracksRes] = await Promise.all([
@@ -589,7 +590,7 @@ export function useProjectSync(projectId: string | null) {
       ]);
 
       if (!projectRes.ok || !tracksRes.ok) {
-        console.error('[ProjectSync] Failed to load project data');
+        logger.error('[ProjectSync] Failed to load project data');
         return false;
       }
 
@@ -668,7 +669,7 @@ export function useProjectSync(projectId: string | null) {
                 store.updateAudioClip(track.id, clip.id, { duration: audioBuffer.duration });
                 audioContext.close();
               } catch (e) {
-                console.error('[ProjectSync] Failed to detect clip duration:', e);
+                logger.error('[ProjectSync] Failed to detect clip duration:', e);
               }
             }
           }
@@ -676,10 +677,10 @@ export function useProjectSync(projectId: string | null) {
       }, 100);
 
       store.markSaved();
-      console.log(`[ProjectSync] Loaded project ${projectId} with ${backendTracks.length} tracks from database`);
+      logger.info(`[ProjectSync] Loaded project ${projectId} with ${backendTracks.length} tracks from database`);
       return true;
     } catch (error) {
-      console.error('[ProjectSync] Failed to load project data:', error);
+      logger.error('[ProjectSync] Failed to load project data:', error);
       return false;
     }
   }, [projectId, store, loadFullState, getStoreState]);

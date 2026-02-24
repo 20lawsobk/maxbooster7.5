@@ -475,7 +475,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           tokenData = Object.fromEntries(parsed.entries());
         }
         
-        logger.info(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
+        logger.error(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
       }
 
       if (tokenResponse && (!tokenResponse.ok || tokenData?.error)) {

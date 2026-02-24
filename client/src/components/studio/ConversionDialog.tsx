@@ -85,9 +85,6 @@ const QUALITY_OPTIONS = [
   },
 ];
 
-/**
- * TODO: Add function documentation
- */
 export function ConversionDialog({
   open,
   onOpenChange,

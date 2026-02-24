@@ -24,7 +24,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
       data: forecasts,
     });
   } catch (error: any) {
-    logger.info('Error fetching stored forecasts:', error?.message);
+    logger.error('Error fetching stored forecasts:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -42,7 +42,7 @@ router.get('/projections', requireAuth, asyncHandler(async (req, res) => {
       data: projections,
     });
   } catch (error: any) {
-    logger.info('Error getting revenue projections:', error?.message);
+    logger.error('Error getting revenue projections:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -60,7 +60,7 @@ router.get('/accuracy', requireAuth, asyncHandler(async (req, res) => {
       data: accuracy,
     });
   } catch (error: any) {
-    logger.info('Error fetching forecast accuracy:', error?.message);
+    logger.error('Error fetching forecast accuracy:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -81,7 +81,7 @@ router.get('/rate', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.info('Error calculating stream-to-revenue rate:', error?.message);
+    logger.error('Error calculating stream-to-revenue rate:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));
@@ -101,7 +101,7 @@ router.post('/generate', requireAuth, asyncHandler(async (req, res) => {
       message: `Successfully generated ${months}-month revenue forecast`,
     });
   } catch (error: any) {
-    logger.info('Error generating forecast:', error?.message);
+    logger.error('Error generating forecast:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));

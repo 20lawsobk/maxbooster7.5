@@ -245,8 +245,7 @@ async function ensureCsrfToken(): Promise<string | null> {
         const data = await response.json();
         token = data.csrfToken;
       }
-    } catch (error) {
-      console.warn('Failed to fetch CSRF token:', error);
+    } catch (_error) {
     }
   }
   return token;
@@ -298,9 +297,6 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-/**
- * TODO: Add function documentation
- */
 export async function apiRequest(
   method: string,
   url: string,

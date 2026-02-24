@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useMemo } from 'react';
 import {
   Flag,
@@ -200,7 +201,7 @@ export function RestorePointDialog({ className, trigger }: RestorePointDialogPro
   };
 
   const handleDeleteRestorePoint = (pointId: string) => {
-    console.log('Delete restore point:', pointId);
+    logger.info('Delete restore point:', pointId);
   };
 
   return (

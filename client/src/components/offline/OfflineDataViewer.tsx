@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import {
   Database,
   RefreshCw,
@@ -82,7 +83,7 @@ export function OfflineDataViewer({
       const cacheStats = await offlineCache.getStats();
       setStats(cacheStats);
     } catch (error) {
-      console.error('[OfflineDataViewer] Failed to load stats:', error);
+      logger.error('[OfflineDataViewer] Failed to load stats:', error);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +94,7 @@ export function OfflineDataViewer({
       const entries = await offlineCache.getByCategory(category);
       setCategoryEntries(prev => ({ ...prev, [category]: entries }));
     } catch (error) {
-      console.error('[OfflineDataViewer] Failed to load category entries:', error);
+      logger.error('[OfflineDataViewer] Failed to load category entries:', error);
     }
   };
 
