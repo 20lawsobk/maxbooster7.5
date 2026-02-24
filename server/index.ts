@@ -11,6 +11,7 @@ import compression from "compression";
 import { logger } from "./logger.ts";
 import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
 import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
+import { generateCsrfToken, csrfProtectionWithExemptions, getCsrfToken } from "./middleware/csrf.ts";
 import path from "path";
 import crypto from "crypto";
 
@@ -262,6 +263,14 @@ app.use((req, res, next) => {
   
   // Export session store for WebSocket authentication
   (global as any).__activeSessionStore = activeSessionStore;
+
+  // ========================================
+  // CSRF PROTECTION
+  // ========================================
+  app.use(generateCsrfToken);
+  app.get('/api/csrf-token', getCsrfToken);
+  app.use(csrfProtectionWithExemptions);
+  logger.info('✅ CSRF protection enabled');
 
   // ========================================
   // INITIALIZE PRODUCTION SAFETY SYSTEMS
