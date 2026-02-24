@@ -386,13 +386,17 @@ export class FormantShifterProcessor implements DSPProcessor {
 export class VocalCompressorProcessor implements DSPProcessor {
   private envelope: number = 0;
   private saturationState: number = 0;
-  private hpFilter: BiquadFilter;
-  private lpFilter: OnePoleFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private lpFilterL: OnePoleFilter;
+  private lpFilterR: OnePoleFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilter = new BiquadFilter();
-    this.lpFilter = new OnePoleFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
+    this.lpFilterL = new OnePoleFilter();
+    this.lpFilterR = new OnePoleFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -416,12 +420,14 @@ export class VocalCompressorProcessor implements DSPProcessor {
     const kneeWidth = knee / 2;
     const warmthAmount = warmth / 100;
 
-    this.hpFilter.setHighpass(hpFreq, 0.707, this.sampleRate);
-    this.lpFilter.setLowpass(12000, this.sampleRate);
+    this.hpFilterL.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.lpFilterL.setLowpass(12000, this.sampleRate);
+    this.lpFilterR.setLowpass(12000, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
-      let inputL = this.hpFilter.process(input.samples[0][i]);
-      let inputR = this.hpFilter.process(input.samples[1][i]);
+      let inputL = this.hpFilterL.process(input.samples[0][i]);
+      let inputR = this.hpFilterR.process(input.samples[1][i]);
       
       const inputLevel = Math.max(Math.abs(inputL), Math.abs(inputR));
       
@@ -450,8 +456,8 @@ export class VocalCompressorProcessor implements DSPProcessor {
           Math.tanh(processedR * 1.5) * warmthAmount;
       }
       
-      processedL = this.lpFilter.process(processedL);
-      processedR = this.lpFilter.process(processedR);
+      processedL = this.lpFilterL.process(processedL);
+      processedR = this.lpFilterR.process(processedR);
       
       output.samples[0][i] = input.samples[0][i] * (1 - mix) + processedL * mix;
       output.samples[1][i] = input.samples[1][i] * (1 - mix) + processedR * mix;
@@ -463,29 +469,45 @@ export class VocalCompressorProcessor implements DSPProcessor {
   reset(): void {
     this.envelope = 0;
     this.saturationState = 0;
-    this.hpFilter.clear();
-    this.lpFilter.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 
 export class VocalEQProcessor implements DSPProcessor {
-  private hpFilter: BiquadFilter;
-  private lowShelf: BiquadFilter;
-  private lowMid: BiquadFilter;
-  private midPeak: BiquadFilter;
-  private presence: BiquadFilter;
-  private air: BiquadFilter;
-  private deEss: BiquadFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private lowShelfL: BiquadFilter;
+  private lowShelfR: BiquadFilter;
+  private lowMidL: BiquadFilter;
+  private lowMidR: BiquadFilter;
+  private midPeakL: BiquadFilter;
+  private midPeakR: BiquadFilter;
+  private presenceL: BiquadFilter;
+  private presenceR: BiquadFilter;
+  private airL: BiquadFilter;
+  private airR: BiquadFilter;
+  private deEssL: BiquadFilter;
+  private deEssR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilter = new BiquadFilter();
-    this.lowShelf = new BiquadFilter();
-    this.lowMid = new BiquadFilter();
-    this.midPeak = new BiquadFilter();
-    this.presence = new BiquadFilter();
-    this.air = new BiquadFilter();
-    this.deEss = new BiquadFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
+    this.lowShelfL = new BiquadFilter();
+    this.lowShelfR = new BiquadFilter();
+    this.lowMidL = new BiquadFilter();
+    this.lowMidR = new BiquadFilter();
+    this.midPeakL = new BiquadFilter();
+    this.midPeakR = new BiquadFilter();
+    this.presenceL = new BiquadFilter();
+    this.presenceR = new BiquadFilter();
+    this.airL = new BiquadFilter();
+    this.airR = new BiquadFilter();
+    this.deEssL = new BiquadFilter();
+    this.deEssR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -503,13 +525,20 @@ export class VocalEQProcessor implements DSPProcessor {
     const deEssAmount = (params.deEss as number) ?? 0;
     const outputGain = (params.output as number) ?? 0;
 
-    this.hpFilter.setHighpass(hpFreq, 0.707, this.sampleRate);
-    this.lowShelf.setLowShelf(200, lowGain, this.sampleRate);
-    this.lowMid.setPeaking(lowMidFreq, 1.5, lowMidGain, this.sampleRate);
-    this.midPeak.setPeaking(midFreq, 2, midGain, this.sampleRate);
-    this.presence.setPeaking(4000, 1.5, presenceGain, this.sampleRate);
-    this.air.setHighShelf(10000, airGain, this.sampleRate);
-    this.deEss.setPeaking(6500, 3, -deEssAmount, this.sampleRate);
+    this.hpFilterL.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.lowShelfL.setLowShelf(200, lowGain, this.sampleRate);
+    this.lowShelfR.setLowShelf(200, lowGain, this.sampleRate);
+    this.lowMidL.setPeaking(lowMidFreq, 1.5, lowMidGain, this.sampleRate);
+    this.lowMidR.setPeaking(lowMidFreq, 1.5, lowMidGain, this.sampleRate);
+    this.midPeakL.setPeaking(midFreq, 2, midGain, this.sampleRate);
+    this.midPeakR.setPeaking(midFreq, 2, midGain, this.sampleRate);
+    this.presenceL.setPeaking(4000, 1.5, presenceGain, this.sampleRate);
+    this.presenceR.setPeaking(4000, 1.5, presenceGain, this.sampleRate);
+    this.airL.setHighShelf(10000, airGain, this.sampleRate);
+    this.airR.setHighShelf(10000, airGain, this.sampleRate);
+    this.deEssL.setPeaking(6500, 3, -deEssAmount, this.sampleRate);
+    this.deEssR.setPeaking(6500, 3, -deEssAmount, this.sampleRate);
 
     const outGainLin = dbToLinear(outputGain);
 
@@ -517,27 +546,27 @@ export class VocalEQProcessor implements DSPProcessor {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
       
-      sampleL = this.hpFilter.process(sampleL);
-      sampleR = this.hpFilter.process(sampleR);
+      sampleL = this.hpFilterL.process(sampleL);
+      sampleR = this.hpFilterR.process(sampleR);
       
-      sampleL = this.lowShelf.process(sampleL);
-      sampleR = this.lowShelf.process(sampleR);
+      sampleL = this.lowShelfL.process(sampleL);
+      sampleR = this.lowShelfR.process(sampleR);
       
-      sampleL = this.lowMid.process(sampleL);
-      sampleR = this.lowMid.process(sampleR);
+      sampleL = this.lowMidL.process(sampleL);
+      sampleR = this.lowMidR.process(sampleR);
       
-      sampleL = this.midPeak.process(sampleL);
-      sampleR = this.midPeak.process(sampleR);
+      sampleL = this.midPeakL.process(sampleL);
+      sampleR = this.midPeakR.process(sampleR);
       
-      sampleL = this.presence.process(sampleL);
-      sampleR = this.presence.process(sampleR);
+      sampleL = this.presenceL.process(sampleL);
+      sampleR = this.presenceR.process(sampleR);
       
-      sampleL = this.air.process(sampleL);
-      sampleR = this.air.process(sampleR);
+      sampleL = this.airL.process(sampleL);
+      sampleR = this.airR.process(sampleR);
       
       if (deEssAmount > 0) {
-        sampleL = this.deEss.process(sampleL);
-        sampleR = this.deEss.process(sampleR);
+        sampleL = this.deEssL.process(sampleL);
+        sampleR = this.deEssR.process(sampleR);
       }
       
       output.samples[0][i] = sampleL * outGainLin;
@@ -548,13 +577,20 @@ export class VocalEQProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.hpFilter.clear();
-    this.lowShelf.clear();
-    this.lowMid.clear();
-    this.midPeak.clear();
-    this.presence.clear();
-    this.air.clear();
-    this.deEss.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.lowShelfL.clear();
+    this.lowShelfR.clear();
+    this.lowMidL.clear();
+    this.lowMidR.clear();
+    this.midPeakL.clear();
+    this.midPeakR.clear();
+    this.presenceL.clear();
+    this.presenceR.clear();
+    this.airL.clear();
+    this.airR.clear();
+    this.deEssL.clear();
+    this.deEssR.clear();
   }
 }
 
@@ -637,15 +673,19 @@ export class DeBreathProcessor implements DSPProcessor {
 }
 
 export class VocalExciterProcessor implements DSPProcessor {
-  private hpFilter: BiquadFilter;
-  private bandFilters: BiquadFilter[] = [];
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private bandFiltersL: BiquadFilter[] = [];
+  private bandFiltersR: BiquadFilter[] = [];
   private saturationFilters: OnePoleFilter[] = [];
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilter = new BiquadFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
     for (let i = 0; i < 3; i++) {
-      this.bandFilters.push(new BiquadFilter());
+      this.bandFiltersL.push(new BiquadFilter());
+      this.bandFiltersR.push(new BiquadFilter());
       this.saturationFilters.push(new OnePoleFilter());
     }
   }
@@ -661,10 +701,14 @@ export class VocalExciterProcessor implements DSPProcessor {
     const outputGain = (params.output as number) ?? 0;
     const mix = (params.mix as number) ?? 1;
 
-    this.hpFilter.setHighpass(2000, 0.707, this.sampleRate);
-    this.bandFilters[0].setPeaking(3500, 2, presence * 0.12, this.sampleRate);
-    this.bandFilters[1].setPeaking(6000, 2, clarity * 0.1, this.sampleRate);
-    this.bandFilters[2].setHighShelf(10000, air * 0.1, this.sampleRate);
+    this.hpFilterL.setHighpass(2000, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(2000, 0.707, this.sampleRate);
+    this.bandFiltersL[0].setPeaking(3500, 2, presence * 0.12, this.sampleRate);
+    this.bandFiltersR[0].setPeaking(3500, 2, presence * 0.12, this.sampleRate);
+    this.bandFiltersL[1].setPeaking(6000, 2, clarity * 0.1, this.sampleRate);
+    this.bandFiltersR[1].setPeaking(6000, 2, clarity * 0.1, this.sampleRate);
+    this.bandFiltersL[2].setHighShelf(10000, air * 0.1, this.sampleRate);
+    this.bandFiltersR[2].setHighShelf(10000, air * 0.1, this.sampleRate);
 
     const harmonicsAmount = harmonics / 100;
     const outGainLin = dbToLinear(outputGain);
@@ -673,8 +717,8 @@ export class VocalExciterProcessor implements DSPProcessor {
       const inputL = input.samples[0][i];
       const inputR = input.samples[1][i];
       
-      const highL = this.hpFilter.process(inputL);
-      const highR = this.hpFilter.process(inputR);
+      const highL = this.hpFilterL.process(inputL);
+      const highR = this.hpFilterR.process(inputR);
       
       let saturatedL = highL;
       let saturatedR = highR;
@@ -690,9 +734,9 @@ export class VocalExciterProcessor implements DSPProcessor {
       let processedL = inputL + saturatedL * 0.5;
       let processedR = inputR + saturatedR * 0.5;
       
-      for (const filter of this.bandFilters) {
-        processedL = filter.process(processedL);
-        processedR = filter.process(processedR);
+      for (let f = 0; f < this.bandFiltersL.length; f++) {
+        processedL = this.bandFiltersL[f].process(processedL);
+        processedR = this.bandFiltersR[f].process(processedR);
       }
       
       processedL *= outGainLin;
@@ -706,8 +750,10 @@ export class VocalExciterProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.hpFilter.clear();
-    this.bandFilters.forEach(f => f.clear());
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.bandFiltersL.forEach(f => f.clear());
+    this.bandFiltersR.forEach(f => f.clear());
     this.saturationFilters.forEach(f => f.clear());
   }
 }

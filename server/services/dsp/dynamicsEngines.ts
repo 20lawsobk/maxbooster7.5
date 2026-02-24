@@ -154,12 +154,14 @@ export class ExpanderProcessor implements DSPProcessor {
 export class DeEsserProcessor implements DSPProcessor {
   private envelope: number = 0;
   private sibilanceFilter: BiquadFilter;
-  private listenFilter: BiquadFilter;
+  private listenFilterL: BiquadFilter;
+  private listenFilterR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
     this.sibilanceFilter = new BiquadFilter();
-    this.listenFilter = new BiquadFilter();
+    this.listenFilterL = new BiquadFilter();
+    this.listenFilterR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -181,7 +183,8 @@ export class DeEsserProcessor implements DSPProcessor {
     const releaseCoeff = Math.exp(-1 / msToSamples(releaseMs, this.sampleRate));
 
     this.sibilanceFilter.setBandpass(frequency, bandwidth, this.sampleRate);
-    this.listenFilter.setPeaking(frequency, bandwidth, -range, this.sampleRate);
+    this.listenFilterL.setPeaking(frequency, bandwidth, -range, this.sampleRate);
+    this.listenFilterR.setPeaking(frequency, bandwidth, -range, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
       const inputL = input.samples[0][i];
@@ -206,8 +209,8 @@ export class DeEsserProcessor implements DSPProcessor {
       } else {
         const gain = dbToLinear(-gainReduction);
         
-        const processedL = this.listenFilter.process(inputL) * gain + inputL * (1 - gain);
-        const processedR = this.listenFilter.process(inputR) * gain + inputR * (1 - gain);
+        const processedL = this.listenFilterL.process(inputL) * gain + inputL * (1 - gain);
+        const processedR = this.listenFilterR.process(inputR) * gain + inputR * (1 - gain);
         
         output.samples[0][i] = inputL * (1 - mix) + processedL * mix;
         output.samples[1][i] = inputR * (1 - mix) + processedR * mix;
@@ -220,7 +223,8 @@ export class DeEsserProcessor implements DSPProcessor {
   reset(): void {
     this.envelope = 0;
     this.sibilanceFilter.clear();
-    this.listenFilter.clear();
+    this.listenFilterL.clear();
+    this.listenFilterR.clear();
   }
 }
 
@@ -291,11 +295,13 @@ export class TransientShaperProcessor implements DSPProcessor {
 
 export class EnvelopeFollowerProcessor implements DSPProcessor {
   private envelope: number = 0;
-  private lpFilter: OnePoleFilter;
+  private lpFilterL: OnePoleFilter;
+  private lpFilterR: OnePoleFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.lpFilter = new OnePoleFilter();
+    this.lpFilterL = new OnePoleFilter();
+    this.lpFilterR = new OnePoleFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -330,9 +336,10 @@ export class EnvelopeFollowerProcessor implements DSPProcessor {
       switch (mode) {
         case 'filter':
           const modFreq = filterFreq * (1 + envAmount * 4);
-          this.lpFilter.setLowpass(Math.min(modFreq, 20000), this.sampleRate);
-          processedL = this.lpFilter.process(inputL);
-          processedR = this.lpFilter.process(inputR);
+          this.lpFilterL.setLowpass(Math.min(modFreq, 20000), this.sampleRate);
+          this.lpFilterR.setLowpass(Math.min(modFreq, 20000), this.sampleRate);
+          processedL = this.lpFilterL.process(inputL);
+          processedR = this.lpFilterR.process(inputR);
           break;
         case 'amplitude':
         default:
@@ -351,7 +358,8 @@ export class EnvelopeFollowerProcessor implements DSPProcessor {
 
   reset(): void {
     this.envelope = 0;
-    this.lpFilter.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 

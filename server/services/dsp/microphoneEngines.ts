@@ -6,23 +6,35 @@ import {
 } from './core';
 
 export class U87ModelerProcessor implements DSPProcessor {
-  private hpFilter: BiquadFilter;
-  private lowShelf: BiquadFilter;
-  private presencePeak: BiquadFilter;
-  private airBand: BiquadFilter;
-  private proximityFilter: BiquadFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private lowShelfL: BiquadFilter;
+  private lowShelfR: BiquadFilter;
+  private presencePeakL: BiquadFilter;
+  private presencePeakR: BiquadFilter;
+  private airBandL: BiquadFilter;
+  private airBandR: BiquadFilter;
+  private proximityFilterL: BiquadFilter;
+  private proximityFilterR: BiquadFilter;
   private transientEnvelope: EnvelopeFollower;
-  private bodyResonance: BiquadFilter;
+  private bodyResonanceL: BiquadFilter;
+  private bodyResonanceR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilter = new BiquadFilter();
-    this.lowShelf = new BiquadFilter();
-    this.presencePeak = new BiquadFilter();
-    this.airBand = new BiquadFilter();
-    this.proximityFilter = new BiquadFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
+    this.lowShelfL = new BiquadFilter();
+    this.lowShelfR = new BiquadFilter();
+    this.presencePeakL = new BiquadFilter();
+    this.presencePeakR = new BiquadFilter();
+    this.airBandL = new BiquadFilter();
+    this.airBandR = new BiquadFilter();
+    this.proximityFilterL = new BiquadFilter();
+    this.proximityFilterR = new BiquadFilter();
     this.transientEnvelope = new EnvelopeFollower(0.5, 50, 44100);
-    this.bodyResonance = new BiquadFilter();
+    this.bodyResonanceL = new BiquadFilter();
+    this.bodyResonanceR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -38,14 +50,20 @@ export class U87ModelerProcessor implements DSPProcessor {
     const outputGain = (params.output as number) ?? 0;
     const mix = (params.mix as number) ?? 1;
 
-    this.hpFilter.setHighpass(hpFreq, 0.707, this.sampleRate);
-    this.lowShelf.setLowShelf(120, warmth, this.sampleRate);
-    this.presencePeak.setPeaking(4500, 1.2, presence, this.sampleRate);
-    this.airBand.setHighShelf(12000, air, this.sampleRate);
+    this.hpFilterL.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.lowShelfL.setLowShelf(120, warmth, this.sampleRate);
+    this.lowShelfR.setLowShelf(120, warmth, this.sampleRate);
+    this.presencePeakL.setPeaking(4500, 1.2, presence, this.sampleRate);
+    this.presencePeakR.setPeaking(4500, 1.2, presence, this.sampleRate);
+    this.airBandL.setHighShelf(12000, air, this.sampleRate);
+    this.airBandR.setHighShelf(12000, air, this.sampleRate);
     
     const proximityBoost = (proximity / 100) * 6;
-    this.proximityFilter.setLowShelf(200, proximityBoost, this.sampleRate);
-    this.bodyResonance.setPeaking(240, 2.5, warmth * 0.5, this.sampleRate);
+    this.proximityFilterL.setLowShelf(200, proximityBoost, this.sampleRate);
+    this.proximityFilterR.setLowShelf(200, proximityBoost, this.sampleRate);
+    this.bodyResonanceL.setPeaking(240, 2.5, warmth * 0.5, this.sampleRate);
+    this.bodyResonanceR.setPeaking(240, 2.5, warmth * 0.5, this.sampleRate);
     
     const transientFactor = transientResponse / 100;
     const outGainLin = dbToLinear(outputGain);
@@ -54,23 +72,23 @@ export class U87ModelerProcessor implements DSPProcessor {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
       
-      sampleL = this.hpFilter.process(sampleL);
-      sampleR = this.hpFilter.process(sampleR);
+      sampleL = this.hpFilterL.process(sampleL);
+      sampleR = this.hpFilterR.process(sampleR);
       
-      sampleL = this.proximityFilter.process(sampleL);
-      sampleR = this.proximityFilter.process(sampleR);
+      sampleL = this.proximityFilterL.process(sampleL);
+      sampleR = this.proximityFilterR.process(sampleR);
       
-      sampleL = this.bodyResonance.process(sampleL);
-      sampleR = this.bodyResonance.process(sampleR);
+      sampleL = this.bodyResonanceL.process(sampleL);
+      sampleR = this.bodyResonanceR.process(sampleR);
       
-      sampleL = this.lowShelf.process(sampleL);
-      sampleR = this.lowShelf.process(sampleR);
+      sampleL = this.lowShelfL.process(sampleL);
+      sampleR = this.lowShelfR.process(sampleR);
       
-      sampleL = this.presencePeak.process(sampleL);
-      sampleR = this.presencePeak.process(sampleR);
+      sampleL = this.presencePeakL.process(sampleL);
+      sampleR = this.presencePeakR.process(sampleR);
       
-      sampleL = this.airBand.process(sampleL);
-      sampleR = this.airBand.process(sampleR);
+      sampleL = this.airBandL.process(sampleL);
+      sampleR = this.airBandR.process(sampleR);
       
       const envelope = this.transientEnvelope.process((sampleL + sampleR) * 0.5);
       const transientGain = 1 + (envelope * transientFactor * 0.5);
@@ -89,32 +107,50 @@ export class U87ModelerProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.hpFilter.clear();
-    this.lowShelf.clear();
-    this.presencePeak.clear();
-    this.airBand.clear();
-    this.proximityFilter.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.lowShelfL.clear();
+    this.lowShelfR.clear();
+    this.presencePeakL.clear();
+    this.presencePeakR.clear();
+    this.airBandL.clear();
+    this.airBandR.clear();
+    this.proximityFilterL.clear();
+    this.proximityFilterR.clear();
     this.transientEnvelope.clear();
-    this.bodyResonance.clear();
+    this.bodyResonanceL.clear();
+    this.bodyResonanceR.clear();
   }
 }
 
 export class C414ModelerProcessor implements DSPProcessor {
-  private hpFilter: BiquadFilter;
-  private presencePeak: BiquadFilter;
-  private brilliance: BiquadFilter;
-  private lowMidCut: BiquadFilter;
-  private highShelf: BiquadFilter;
-  private patternFilter: BiquadFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private presencePeakL: BiquadFilter;
+  private presencePeakR: BiquadFilter;
+  private brillianceL: BiquadFilter;
+  private brillianceR: BiquadFilter;
+  private lowMidCutL: BiquadFilter;
+  private lowMidCutR: BiquadFilter;
+  private highShelfL: BiquadFilter;
+  private highShelfR: BiquadFilter;
+  private patternFilterL: BiquadFilter;
+  private patternFilterR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilter = new BiquadFilter();
-    this.presencePeak = new BiquadFilter();
-    this.brilliance = new BiquadFilter();
-    this.lowMidCut = new BiquadFilter();
-    this.highShelf = new BiquadFilter();
-    this.patternFilter = new BiquadFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
+    this.presencePeakL = new BiquadFilter();
+    this.presencePeakR = new BiquadFilter();
+    this.brillianceL = new BiquadFilter();
+    this.brillianceR = new BiquadFilter();
+    this.lowMidCutL = new BiquadFilter();
+    this.lowMidCutR = new BiquadFilter();
+    this.highShelfL = new BiquadFilter();
+    this.highShelfR = new BiquadFilter();
+    this.patternFilterL = new BiquadFilter();
+    this.patternFilterR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -131,12 +167,16 @@ export class C414ModelerProcessor implements DSPProcessor {
     const mix = (params.mix as number) ?? 1;
 
     if (hpEnabled) {
-      this.hpFilter.setHighpass(80, 0.707, this.sampleRate);
+      this.hpFilterL.setHighpass(80, 0.707, this.sampleRate);
+      this.hpFilterR.setHighpass(80, 0.707, this.sampleRate);
     }
     
-    this.presencePeak.setPeaking(3500, 1.5, presence, this.sampleRate);
-    this.brilliance.setPeaking(8000, 1.2, brilliance, this.sampleRate);
-    this.highShelf.setHighShelf(10000, brilliance * 0.5, this.sampleRate);
+    this.presencePeakL.setPeaking(3500, 1.5, presence, this.sampleRate);
+    this.presencePeakR.setPeaking(3500, 1.5, presence, this.sampleRate);
+    this.brillianceL.setPeaking(8000, 1.2, brilliance, this.sampleRate);
+    this.brillianceR.setPeaking(8000, 1.2, brilliance, this.sampleRate);
+    this.highShelfL.setHighShelf(10000, brilliance * 0.5, this.sampleRate);
+    this.highShelfR.setHighShelf(10000, brilliance * 0.5, this.sampleRate);
     
     let lowFreqMod = 0;
     let highFreqMod = 0;
@@ -160,8 +200,10 @@ export class C414ModelerProcessor implements DSPProcessor {
         highFreqMod = 0;
     }
     
-    this.patternFilter.setLowShelf(150, bass + lowFreqMod, this.sampleRate);
-    this.lowMidCut.setPeaking(400, 1.5, -2, this.sampleRate);
+    this.patternFilterL.setLowShelf(150, bass + lowFreqMod, this.sampleRate);
+    this.patternFilterR.setLowShelf(150, bass + lowFreqMod, this.sampleRate);
+    this.lowMidCutL.setPeaking(400, 1.5, -2, this.sampleRate);
+    this.lowMidCutR.setPeaking(400, 1.5, -2, this.sampleRate);
     
     const padLin = dbToLinear(-pad);
     const outGainLin = dbToLinear(outputGain);
@@ -171,24 +213,24 @@ export class C414ModelerProcessor implements DSPProcessor {
       let sampleR = input.samples[1][i] * padLin;
       
       if (hpEnabled) {
-        sampleL = this.hpFilter.process(sampleL);
-        sampleR = this.hpFilter.process(sampleR);
+        sampleL = this.hpFilterL.process(sampleL);
+        sampleR = this.hpFilterR.process(sampleR);
       }
       
-      sampleL = this.patternFilter.process(sampleL);
-      sampleR = this.patternFilter.process(sampleR);
+      sampleL = this.patternFilterL.process(sampleL);
+      sampleR = this.patternFilterR.process(sampleR);
       
-      sampleL = this.lowMidCut.process(sampleL);
-      sampleR = this.lowMidCut.process(sampleR);
+      sampleL = this.lowMidCutL.process(sampleL);
+      sampleR = this.lowMidCutR.process(sampleR);
       
-      sampleL = this.presencePeak.process(sampleL);
-      sampleR = this.presencePeak.process(sampleR);
+      sampleL = this.presencePeakL.process(sampleL);
+      sampleR = this.presencePeakR.process(sampleR);
       
-      sampleL = this.brilliance.process(sampleL);
-      sampleR = this.brilliance.process(sampleR);
+      sampleL = this.brillianceL.process(sampleL);
+      sampleR = this.brillianceR.process(sampleR);
       
-      sampleL = this.highShelf.process(sampleL);
-      sampleR = this.highShelf.process(sampleR);
+      sampleL = this.highShelfL.process(sampleL);
+      sampleR = this.highShelfR.process(sampleR);
       
       const processedL = sampleL * outGainLin;
       const processedR = sampleR * outGainLin;
@@ -201,33 +243,53 @@ export class C414ModelerProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.hpFilter.clear();
-    this.presencePeak.clear();
-    this.brilliance.clear();
-    this.lowMidCut.clear();
-    this.highShelf.clear();
-    this.patternFilter.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.presencePeakL.clear();
+    this.presencePeakR.clear();
+    this.brillianceL.clear();
+    this.brillianceR.clear();
+    this.lowMidCutL.clear();
+    this.lowMidCutR.clear();
+    this.highShelfL.clear();
+    this.highShelfR.clear();
+    this.patternFilterL.clear();
+    this.patternFilterR.clear();
   }
 }
 
 export class SM7BModelerProcessor implements DSPProcessor {
-  private hpFilter: BiquadFilter;
-  private bassRolloff: BiquadFilter;
-  private lowMidBody: BiquadFilter;
-  private midPresence: BiquadFilter;
-  private presenceSwitch: BiquadFilter;
-  private bassRolloffSwitch: BiquadFilter;
-  private highRolloff: OnePoleFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private bassRolloffL: BiquadFilter;
+  private bassRolloffR: BiquadFilter;
+  private lowMidBodyL: BiquadFilter;
+  private lowMidBodyR: BiquadFilter;
+  private midPresenceL: BiquadFilter;
+  private midPresenceR: BiquadFilter;
+  private presenceSwitchL: BiquadFilter;
+  private presenceSwitchR: BiquadFilter;
+  private bassRolloffSwitchL: BiquadFilter;
+  private bassRolloffSwitchR: BiquadFilter;
+  private highRolloffL: OnePoleFilter;
+  private highRolloffR: OnePoleFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilter = new BiquadFilter();
-    this.bassRolloff = new BiquadFilter();
-    this.lowMidBody = new BiquadFilter();
-    this.midPresence = new BiquadFilter();
-    this.presenceSwitch = new BiquadFilter();
-    this.bassRolloffSwitch = new BiquadFilter();
-    this.highRolloff = new OnePoleFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
+    this.bassRolloffL = new BiquadFilter();
+    this.bassRolloffR = new BiquadFilter();
+    this.lowMidBodyL = new BiquadFilter();
+    this.lowMidBodyR = new BiquadFilter();
+    this.midPresenceL = new BiquadFilter();
+    this.midPresenceR = new BiquadFilter();
+    this.presenceSwitchL = new BiquadFilter();
+    this.presenceSwitchR = new BiquadFilter();
+    this.bassRolloffSwitchL = new BiquadFilter();
+    this.bassRolloffSwitchR = new BiquadFilter();
+    this.highRolloffL = new OnePoleFilter();
+    this.highRolloffR = new OnePoleFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -242,25 +304,32 @@ export class SM7BModelerProcessor implements DSPProcessor {
     const outputGain = (params.output as number) ?? 0;
     const mix = (params.mix as number) ?? 1;
 
-    this.hpFilter.setHighpass(50, 0.707, this.sampleRate);
+    this.hpFilterL.setHighpass(50, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(50, 0.707, this.sampleRate);
     
     if (bassRolloffEnabled) {
-      this.bassRolloffSwitch.setHighpass(400, 0.5, this.sampleRate);
+      this.bassRolloffSwitchL.setHighpass(400, 0.5, this.sampleRate);
+      this.bassRolloffSwitchR.setHighpass(400, 0.5, this.sampleRate);
     }
     
     const proximityBoost = (proximity / 100) * 4;
-    this.bassRolloff.setLowShelf(150, proximityBoost, this.sampleRate);
+    this.bassRolloffL.setLowShelf(150, proximityBoost, this.sampleRate);
+    this.bassRolloffR.setLowShelf(150, proximityBoost, this.sampleRate);
     
-    this.lowMidBody.setPeaking(350, 1.5, body, this.sampleRate);
+    this.lowMidBodyL.setPeaking(350, 1.5, body, this.sampleRate);
+    this.lowMidBodyR.setPeaking(350, 1.5, body, this.sampleRate);
     
-    this.midPresence.setPeaking(4000, 1.2, 3, this.sampleRate);
+    this.midPresenceL.setPeaking(4000, 1.2, 3, this.sampleRate);
+    this.midPresenceR.setPeaking(4000, 1.2, 3, this.sampleRate);
     
     if (presenceBoostEnabled) {
-      this.presenceSwitch.setPeaking(5500, 2, 5, this.sampleRate);
+      this.presenceSwitchL.setPeaking(5500, 2, 5, this.sampleRate);
+      this.presenceSwitchR.setPeaking(5500, 2, 5, this.sampleRate);
     }
     
     const hfRolloff = 8000 + (smoothness / 100) * 8000;
-    this.highRolloff.setLowpass(hfRolloff, this.sampleRate);
+    this.highRolloffL.setLowpass(hfRolloff, this.sampleRate);
+    this.highRolloffR.setLowpass(hfRolloff, this.sampleRate);
     
     const outGainLin = dbToLinear(outputGain);
 
@@ -268,30 +337,30 @@ export class SM7BModelerProcessor implements DSPProcessor {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
       
-      sampleL = this.hpFilter.process(sampleL);
-      sampleR = this.hpFilter.process(sampleR);
+      sampleL = this.hpFilterL.process(sampleL);
+      sampleR = this.hpFilterR.process(sampleR);
       
       if (bassRolloffEnabled) {
-        sampleL = this.bassRolloffSwitch.process(sampleL);
-        sampleR = this.bassRolloffSwitch.process(sampleR);
+        sampleL = this.bassRolloffSwitchL.process(sampleL);
+        sampleR = this.bassRolloffSwitchR.process(sampleR);
       }
       
-      sampleL = this.bassRolloff.process(sampleL);
-      sampleR = this.bassRolloff.process(sampleR);
+      sampleL = this.bassRolloffL.process(sampleL);
+      sampleR = this.bassRolloffR.process(sampleR);
       
-      sampleL = this.lowMidBody.process(sampleL);
-      sampleR = this.lowMidBody.process(sampleR);
+      sampleL = this.lowMidBodyL.process(sampleL);
+      sampleR = this.lowMidBodyR.process(sampleR);
       
-      sampleL = this.midPresence.process(sampleL);
-      sampleR = this.midPresence.process(sampleR);
+      sampleL = this.midPresenceL.process(sampleL);
+      sampleR = this.midPresenceR.process(sampleR);
       
       if (presenceBoostEnabled) {
-        sampleL = this.presenceSwitch.process(sampleL);
-        sampleR = this.presenceSwitch.process(sampleR);
+        sampleL = this.presenceSwitchL.process(sampleL);
+        sampleR = this.presenceSwitchR.process(sampleR);
       }
       
-      sampleL = this.highRolloff.process(sampleL);
-      sampleR = this.highRolloff.process(sampleR);
+      sampleL = this.highRolloffL.process(sampleL);
+      sampleR = this.highRolloffR.process(sampleR);
       
       const processedL = sampleL * outGainLin;
       const processedR = sampleR * outGainLin;
@@ -304,34 +373,53 @@ export class SM7BModelerProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.hpFilter.clear();
-    this.bassRolloff.clear();
-    this.lowMidBody.clear();
-    this.midPresence.clear();
-    this.presenceSwitch.clear();
-    this.bassRolloffSwitch.clear();
-    this.highRolloff.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.bassRolloffL.clear();
+    this.bassRolloffR.clear();
+    this.lowMidBodyL.clear();
+    this.lowMidBodyR.clear();
+    this.midPresenceL.clear();
+    this.midPresenceR.clear();
+    this.presenceSwitchL.clear();
+    this.presenceSwitchR.clear();
+    this.bassRolloffSwitchL.clear();
+    this.bassRolloffSwitchR.clear();
+    this.highRolloffL.clear();
+    this.highRolloffR.clear();
   }
 }
 
 export class RibbonModelerProcessor implements DSPProcessor {
-  private hpFilter: BiquadFilter;
-  private warmthFilter: BiquadFilter;
-  private midDip: BiquadFilter;
-  private darkening: OnePoleFilter;
-  private smoothing: OnePoleFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private warmthFilterL: BiquadFilter;
+  private warmthFilterR: BiquadFilter;
+  private midDipL: BiquadFilter;
+  private midDipR: BiquadFilter;
+  private darkeningL: OnePoleFilter;
+  private darkeningR: OnePoleFilter;
+  private smoothingL: OnePoleFilter;
+  private smoothingR: OnePoleFilter;
   private transientSoftener: EnvelopeFollower;
-  private bodyResonance: BiquadFilter;
+  private bodyResonanceL: BiquadFilter;
+  private bodyResonanceR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilter = new BiquadFilter();
-    this.warmthFilter = new BiquadFilter();
-    this.midDip = new BiquadFilter();
-    this.darkening = new OnePoleFilter();
-    this.smoothing = new OnePoleFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
+    this.warmthFilterL = new BiquadFilter();
+    this.warmthFilterR = new BiquadFilter();
+    this.midDipL = new BiquadFilter();
+    this.midDipR = new BiquadFilter();
+    this.darkeningL = new OnePoleFilter();
+    this.darkeningR = new OnePoleFilter();
+    this.smoothingL = new OnePoleFilter();
+    this.smoothingR = new OnePoleFilter();
     this.transientSoftener = new EnvelopeFollower(5, 80, 44100);
-    this.bodyResonance = new BiquadFilter();
+    this.bodyResonanceL = new BiquadFilter();
+    this.bodyResonanceR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -347,20 +435,26 @@ export class RibbonModelerProcessor implements DSPProcessor {
     const outputGain = (params.output as number) ?? 0;
     const mix = (params.mix as number) ?? 1;
 
-    this.hpFilter.setHighpass(60, 0.5, this.sampleRate);
+    this.hpFilterL.setHighpass(60, 0.5, this.sampleRate);
+    this.hpFilterR.setHighpass(60, 0.5, this.sampleRate);
     
     const warmthBoost = warmth + (proximity / 100) * 3;
-    this.warmthFilter.setLowShelf(200, warmthBoost, this.sampleRate);
+    this.warmthFilterL.setLowShelf(200, warmthBoost, this.sampleRate);
+    this.warmthFilterR.setLowShelf(200, warmthBoost, this.sampleRate);
     
-    this.bodyResonance.setPeaking(120, 1.5, body, this.sampleRate);
+    this.bodyResonanceL.setPeaking(120, 1.5, body, this.sampleRate);
+    this.bodyResonanceR.setPeaking(120, 1.5, body, this.sampleRate);
     
-    this.midDip.setPeaking(2500, 1.2, -2 - (vintage / 50), this.sampleRate);
+    this.midDipL.setPeaking(2500, 1.2, -2 - (vintage / 50), this.sampleRate);
+    this.midDipR.setPeaking(2500, 1.2, -2 - (vintage / 50), this.sampleRate);
     
     const hfCutoff = 12000 - (darkness / 100) * 8000;
-    this.darkening.setLowpass(hfCutoff, this.sampleRate);
+    this.darkeningL.setLowpass(hfCutoff, this.sampleRate);
+    this.darkeningR.setLowpass(hfCutoff, this.sampleRate);
     
     const smoothCutoff = 15000 - (smoothness / 100) * 7000;
-    this.smoothing.setLowpass(smoothCutoff, this.sampleRate);
+    this.smoothingL.setLowpass(smoothCutoff, this.sampleRate);
+    this.smoothingR.setLowpass(smoothCutoff, this.sampleRate);
     
     const transientAmount = smoothness / 100;
     const outGainLin = dbToLinear(outputGain);
@@ -369,23 +463,23 @@ export class RibbonModelerProcessor implements DSPProcessor {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
       
-      sampleL = this.hpFilter.process(sampleL);
-      sampleR = this.hpFilter.process(sampleR);
+      sampleL = this.hpFilterL.process(sampleL);
+      sampleR = this.hpFilterR.process(sampleR);
       
-      sampleL = this.warmthFilter.process(sampleL);
-      sampleR = this.warmthFilter.process(sampleR);
+      sampleL = this.warmthFilterL.process(sampleL);
+      sampleR = this.warmthFilterR.process(sampleR);
       
-      sampleL = this.bodyResonance.process(sampleL);
-      sampleR = this.bodyResonance.process(sampleR);
+      sampleL = this.bodyResonanceL.process(sampleL);
+      sampleR = this.bodyResonanceR.process(sampleR);
       
-      sampleL = this.midDip.process(sampleL);
-      sampleR = this.midDip.process(sampleR);
+      sampleL = this.midDipL.process(sampleL);
+      sampleR = this.midDipR.process(sampleR);
       
-      sampleL = this.darkening.process(sampleL);
-      sampleR = this.darkening.process(sampleR);
+      sampleL = this.darkeningL.process(sampleL);
+      sampleR = this.darkeningR.process(sampleR);
       
-      sampleL = this.smoothing.process(sampleL);
-      sampleR = this.smoothing.process(sampleR);
+      sampleL = this.smoothingL.process(sampleL);
+      sampleR = this.smoothingR.process(sampleR);
       
       const envelope = this.transientSoftener.process((sampleL + sampleR) * 0.5);
       const transientGain = 1 - (envelope * transientAmount * 0.3);
@@ -410,34 +504,54 @@ export class RibbonModelerProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.hpFilter.clear();
-    this.warmthFilter.clear();
-    this.midDip.clear();
-    this.darkening.clear();
-    this.smoothing.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.warmthFilterL.clear();
+    this.warmthFilterR.clear();
+    this.midDipL.clear();
+    this.midDipR.clear();
+    this.darkeningL.clear();
+    this.darkeningR.clear();
+    this.smoothingL.clear();
+    this.smoothingR.clear();
     this.transientSoftener.clear();
-    this.bodyResonance.clear();
+    this.bodyResonanceL.clear();
+    this.bodyResonanceR.clear();
   }
 }
 
 export class SM58ModelerProcessor implements DSPProcessor {
-  private hpFilter: BiquadFilter;
-  private proximityFilter: BiquadFilter;
-  private midBody: BiquadFilter;
-  private presencePeak: BiquadFilter;
-  private brilliance: BiquadFilter;
-  private popFilter: BiquadFilter;
-  private grillEffect: OnePoleFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private proximityFilterL: BiquadFilter;
+  private proximityFilterR: BiquadFilter;
+  private midBodyL: BiquadFilter;
+  private midBodyR: BiquadFilter;
+  private presencePeakL: BiquadFilter;
+  private presencePeakR: BiquadFilter;
+  private brillianceL: BiquadFilter;
+  private brillianceR: BiquadFilter;
+  private popFilterL: BiquadFilter;
+  private popFilterR: BiquadFilter;
+  private grillEffectL: OnePoleFilter;
+  private grillEffectR: OnePoleFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilter = new BiquadFilter();
-    this.proximityFilter = new BiquadFilter();
-    this.midBody = new BiquadFilter();
-    this.presencePeak = new BiquadFilter();
-    this.brilliance = new BiquadFilter();
-    this.popFilter = new BiquadFilter();
-    this.grillEffect = new OnePoleFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
+    this.proximityFilterL = new BiquadFilter();
+    this.proximityFilterR = new BiquadFilter();
+    this.midBodyL = new BiquadFilter();
+    this.midBodyR = new BiquadFilter();
+    this.presencePeakL = new BiquadFilter();
+    this.presencePeakR = new BiquadFilter();
+    this.brillianceL = new BiquadFilter();
+    this.brillianceR = new BiquadFilter();
+    this.popFilterL = new BiquadFilter();
+    this.popFilterR = new BiquadFilter();
+    this.grillEffectL = new OnePoleFilter();
+    this.grillEffectR = new OnePoleFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -452,21 +566,28 @@ export class SM58ModelerProcessor implements DSPProcessor {
     const outputGain = (params.output as number) ?? 0;
     const mix = (params.mix as number) ?? 1;
 
-    this.hpFilter.setHighpass(50, 0.707, this.sampleRate);
+    this.hpFilterL.setHighpass(50, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(50, 0.707, this.sampleRate);
     
     const proximityBoost = (proximity / 100) * 6;
-    this.proximityFilter.setLowShelf(150, proximityBoost, this.sampleRate);
+    this.proximityFilterL.setLowShelf(150, proximityBoost, this.sampleRate);
+    this.proximityFilterR.setLowShelf(150, proximityBoost, this.sampleRate);
     
-    this.popFilter.setHighpass(100, 0.5, this.sampleRate);
+    this.popFilterL.setHighpass(100, 0.5, this.sampleRate);
+    this.popFilterR.setHighpass(100, 0.5, this.sampleRate);
     
-    this.midBody.setPeaking(250, 1.5, body, this.sampleRate);
+    this.midBodyL.setPeaking(250, 1.5, body, this.sampleRate);
+    this.midBodyR.setPeaking(250, 1.5, body, this.sampleRate);
     
-    this.presencePeak.setPeaking(5000, 1.8, presence, this.sampleRate);
+    this.presencePeakL.setPeaking(5000, 1.8, presence, this.sampleRate);
+    this.presencePeakR.setPeaking(5000, 1.8, presence, this.sampleRate);
     
-    this.brilliance.setPeaking(7500, 1.5, presence * 0.5, this.sampleRate);
+    this.brillianceL.setPeaking(7500, 1.5, presence * 0.5, this.sampleRate);
+    this.brillianceR.setPeaking(7500, 1.5, presence * 0.5, this.sampleRate);
     
     const grillCutoff = 14000 - (grillColor / 100) * 6000;
-    this.grillEffect.setLowpass(grillCutoff, this.sampleRate);
+    this.grillEffectL.setLowpass(grillCutoff, this.sampleRate);
+    this.grillEffectR.setLowpass(grillCutoff, this.sampleRate);
     
     const feedbackNotch = 1000 + feedback * 30;
     const outGainLin = dbToLinear(outputGain);
@@ -475,26 +596,26 @@ export class SM58ModelerProcessor implements DSPProcessor {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
       
-      sampleL = this.hpFilter.process(sampleL);
-      sampleR = this.hpFilter.process(sampleR);
+      sampleL = this.hpFilterL.process(sampleL);
+      sampleR = this.hpFilterR.process(sampleR);
       
-      sampleL = this.popFilter.process(sampleL);
-      sampleR = this.popFilter.process(sampleR);
+      sampleL = this.popFilterL.process(sampleL);
+      sampleR = this.popFilterR.process(sampleR);
       
-      sampleL = this.proximityFilter.process(sampleL);
-      sampleR = this.proximityFilter.process(sampleR);
+      sampleL = this.proximityFilterL.process(sampleL);
+      sampleR = this.proximityFilterR.process(sampleR);
       
-      sampleL = this.midBody.process(sampleL);
-      sampleR = this.midBody.process(sampleR);
+      sampleL = this.midBodyL.process(sampleL);
+      sampleR = this.midBodyR.process(sampleR);
       
-      sampleL = this.presencePeak.process(sampleL);
-      sampleR = this.presencePeak.process(sampleR);
+      sampleL = this.presencePeakL.process(sampleL);
+      sampleR = this.presencePeakR.process(sampleR);
       
-      sampleL = this.brilliance.process(sampleL);
-      sampleR = this.brilliance.process(sampleR);
+      sampleL = this.brillianceL.process(sampleL);
+      sampleR = this.brillianceR.process(sampleR);
       
-      sampleL = this.grillEffect.process(sampleL);
-      sampleR = this.grillEffect.process(sampleR);
+      sampleL = this.grillEffectL.process(sampleL);
+      sampleR = this.grillEffectR.process(sampleR);
       
       sampleL = softClip(sampleL, 0.95);
       sampleR = softClip(sampleR, 0.95);
@@ -510,31 +631,48 @@ export class SM58ModelerProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.hpFilter.clear();
-    this.proximityFilter.clear();
-    this.midBody.clear();
-    this.presencePeak.clear();
-    this.brilliance.clear();
-    this.popFilter.clear();
-    this.grillEffect.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.proximityFilterL.clear();
+    this.proximityFilterR.clear();
+    this.midBodyL.clear();
+    this.midBodyR.clear();
+    this.presencePeakL.clear();
+    this.presencePeakR.clear();
+    this.brillianceL.clear();
+    this.brillianceR.clear();
+    this.popFilterL.clear();
+    this.popFilterR.clear();
+    this.grillEffectL.clear();
+    this.grillEffectR.clear();
   }
 }
 
 export class MicPreampProcessor implements DSPProcessor {
-  private inputHpFilter: BiquadFilter;
-  private transformerLowShelf: BiquadFilter;
-  private transformerHighShelf: BiquadFilter;
+  private inputHpFilterL: BiquadFilter;
+  private inputHpFilterR: BiquadFilter;
+  private transformerLowShelfL: BiquadFilter;
+  private transformerLowShelfR: BiquadFilter;
+  private transformerHighShelfL: BiquadFilter;
+  private transformerHighShelfR: BiquadFilter;
   private tubeStage: number = 0;
-  private ironResonance: BiquadFilter;
-  private outputFilter: OnePoleFilter;
+  private ironResonanceL: BiquadFilter;
+  private ironResonanceR: BiquadFilter;
+  private outputFilterL: OnePoleFilter;
+  private outputFilterR: OnePoleFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.inputHpFilter = new BiquadFilter();
-    this.transformerLowShelf = new BiquadFilter();
-    this.transformerHighShelf = new BiquadFilter();
-    this.ironResonance = new BiquadFilter();
-    this.outputFilter = new OnePoleFilter();
+    this.inputHpFilterL = new BiquadFilter();
+    this.inputHpFilterR = new BiquadFilter();
+    this.transformerLowShelfL = new BiquadFilter();
+    this.transformerLowShelfR = new BiquadFilter();
+    this.transformerHighShelfL = new BiquadFilter();
+    this.transformerHighShelfR = new BiquadFilter();
+    this.ironResonanceL = new BiquadFilter();
+    this.ironResonanceR = new BiquadFilter();
+    this.outputFilterL = new OnePoleFilter();
+    this.outputFilterR = new OnePoleFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -550,7 +688,8 @@ export class MicPreampProcessor implements DSPProcessor {
     const iron = (params.iron as number) ?? 30;
     const mix = (params.mix as number) ?? 1;
 
-    this.inputHpFilter.setHighpass(20, 0.707, this.sampleRate);
+    this.inputHpFilterL.setHighpass(20, 0.707, this.sampleRate);
+    this.inputHpFilterR.setHighpass(20, 0.707, this.sampleRate);
     
     let lowBoost = 0;
     let highRolloff = 20000;
@@ -579,10 +718,14 @@ export class MicPreampProcessor implements DSPProcessor {
         break;
     }
     
-    this.transformerLowShelf.setLowShelf(100, lowBoost, this.sampleRate);
-    this.transformerHighShelf.setHighShelf(8000, -(warmth / 100) * 2, this.sampleRate);
-    this.ironResonance.setPeaking(ironFreq, 2, (iron / 100) * 3, this.sampleRate);
-    this.outputFilter.setLowpass(highRolloff, this.sampleRate);
+    this.transformerLowShelfL.setLowShelf(100, lowBoost, this.sampleRate);
+    this.transformerLowShelfR.setLowShelf(100, lowBoost, this.sampleRate);
+    this.transformerHighShelfL.setHighShelf(8000, -(warmth / 100) * 2, this.sampleRate);
+    this.transformerHighShelfR.setHighShelf(8000, -(warmth / 100) * 2, this.sampleRate);
+    this.ironResonanceL.setPeaking(ironFreq, 2, (iron / 100) * 3, this.sampleRate);
+    this.ironResonanceR.setPeaking(ironFreq, 2, (iron / 100) * 3, this.sampleRate);
+    this.outputFilterL.setLowpass(highRolloff, this.sampleRate);
+    this.outputFilterR.setLowpass(highRolloff, this.sampleRate);
     
     const inputGainLin = dbToLinear(inputGain);
     const driveAmount = drive / 100;
@@ -592,14 +735,14 @@ export class MicPreampProcessor implements DSPProcessor {
       let sampleL = input.samples[0][i] * inputGainLin;
       let sampleR = input.samples[1][i] * inputGainLin;
       
-      sampleL = this.inputHpFilter.process(sampleL);
-      sampleR = this.inputHpFilter.process(sampleR);
+      sampleL = this.inputHpFilterL.process(sampleL);
+      sampleR = this.inputHpFilterR.process(sampleR);
       
-      sampleL = this.ironResonance.process(sampleL);
-      sampleR = this.ironResonance.process(sampleR);
+      sampleL = this.ironResonanceL.process(sampleL);
+      sampleR = this.ironResonanceR.process(sampleR);
       
-      sampleL = this.transformerLowShelf.process(sampleL);
-      sampleR = this.transformerLowShelf.process(sampleR);
+      sampleL = this.transformerLowShelfL.process(sampleL);
+      sampleR = this.transformerLowShelfR.process(sampleR);
       
       if (driveAmount > 0) {
         const driveGain = 1 + driveAmount * 3;
@@ -613,11 +756,11 @@ export class MicPreampProcessor implements DSPProcessor {
         }
       }
       
-      sampleL = this.transformerHighShelf.process(sampleL);
-      sampleR = this.transformerHighShelf.process(sampleR);
+      sampleL = this.transformerHighShelfL.process(sampleL);
+      sampleR = this.transformerHighShelfR.process(sampleR);
       
-      sampleL = this.outputFilter.process(sampleL);
-      sampleR = this.outputFilter.process(sampleR);
+      sampleL = this.outputFilterL.process(sampleL);
+      sampleR = this.outputFilterR.process(sampleR);
       
       const processedL = sampleL * outputGainLin;
       const processedR = sampleR * outputGainLin;
@@ -630,12 +773,17 @@ export class MicPreampProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.inputHpFilter.clear();
-    this.transformerLowShelf.clear();
-    this.transformerHighShelf.clear();
+    this.inputHpFilterL.clear();
+    this.inputHpFilterR.clear();
+    this.transformerLowShelfL.clear();
+    this.transformerLowShelfR.clear();
+    this.transformerHighShelfL.clear();
+    this.transformerHighShelfR.clear();
     this.tubeStage = 0;
-    this.ironResonance.clear();
-    this.outputFilter.clear();
+    this.ironResonanceL.clear();
+    this.ironResonanceR.clear();
+    this.outputFilterL.clear();
+    this.outputFilterR.clear();
   }
 }
 
@@ -768,15 +916,19 @@ export class MicIsolatorProcessor implements DSPProcessor {
   private gateEnvelope: number = 0;
   private noiseBands: BiquadFilter[] = [];
   private bandEnvelopes: EnvelopeFollower[] = [];
-  private hpFilter: BiquadFilter;
-  private lpFilter: BiquadFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private lpFilterL: BiquadFilter;
+  private lpFilterR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
     this.noiseEnvelope = new EnvelopeFollower(50, 200, 44100);
     this.signalEnvelope = new EnvelopeFollower(5, 100, 44100);
-    this.hpFilter = new BiquadFilter();
-    this.lpFilter = new BiquadFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
+    this.lpFilterL = new BiquadFilter();
+    this.lpFilterR = new BiquadFilter();
     
     const bandFreqs = [100, 250, 500, 1000, 2000, 4000, 8000, 12000];
     for (let i = 0; i < 8; i++) {
@@ -804,8 +956,10 @@ export class MicIsolatorProcessor implements DSPProcessor {
     const attackCoeff = Math.exp(-1 / msToSamples(attack, this.sampleRate));
     const releaseCoeff = Math.exp(-1 / msToSamples(release, this.sampleRate));
 
-    this.hpFilter.setHighpass(hpFreq, 0.707, this.sampleRate);
-    this.lpFilter.setLowpass(lpFreq, 0.707, this.sampleRate);
+    this.hpFilterL.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.lpFilterL.setLowpass(lpFreq, 0.707, this.sampleRate);
+    this.lpFilterR.setLowpass(lpFreq, 0.707, this.sampleRate);
     
     const bandFreqs = [100, 250, 500, 1000, 2000, 4000, 8000, 12000];
     for (let b = 0; b < 8; b++) {
@@ -817,11 +971,11 @@ export class MicIsolatorProcessor implements DSPProcessor {
       let sampleR = input.samples[1][i];
       const mono = (sampleL + sampleR) * 0.5;
       
-      sampleL = this.hpFilter.process(sampleL);
-      sampleR = this.hpFilter.process(sampleR);
+      sampleL = this.hpFilterL.process(sampleL);
+      sampleR = this.hpFilterR.process(sampleR);
       
-      sampleL = this.lpFilter.process(sampleL);
-      sampleR = this.lpFilter.process(sampleR);
+      sampleL = this.lpFilterL.process(sampleL);
+      sampleR = this.lpFilterR.process(sampleR);
       
       const signalLevel = this.signalEnvelope.process(mono);
       
@@ -866,8 +1020,10 @@ export class MicIsolatorProcessor implements DSPProcessor {
     this.gateEnvelope = 0;
     this.noiseBands.forEach(f => f.clear());
     this.bandEnvelopes.forEach(e => e.clear());
-    this.hpFilter.clear();
-    this.lpFilter.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 
@@ -876,8 +1032,10 @@ export class PlosiveReducerProcessor implements DSPProcessor {
   private plosiveEnvelope: EnvelopeFollower;
   private bassEnvelope: EnvelopeFollower;
   private reductionEnvelope: number = 0;
-  private hpFilter: BiquadFilter;
-  private dynamicHpFilter: BiquadFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
+  private dynamicHpFilterL: BiquadFilter;
+  private dynamicHpFilterR: BiquadFilter;
   private delayLine: DelayLine;
   private sampleRate: number = 44100;
 
@@ -885,8 +1043,10 @@ export class PlosiveReducerProcessor implements DSPProcessor {
     this.plosiveDetector = new BiquadFilter();
     this.plosiveEnvelope = new EnvelopeFollower(0.5, 30, 44100);
     this.bassEnvelope = new EnvelopeFollower(1, 50, 44100);
-    this.hpFilter = new BiquadFilter();
-    this.dynamicHpFilter = new BiquadFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
+    this.dynamicHpFilterL = new BiquadFilter();
+    this.dynamicHpFilterR = new BiquadFilter();
     this.delayLine = new DelayLine(441);
   }
 
@@ -910,7 +1070,8 @@ export class PlosiveReducerProcessor implements DSPProcessor {
     const lookaheadSamples = lookahead ? msToSamples(2, this.sampleRate) : 0;
 
     this.plosiveDetector.setLowpass(frequency, 2, this.sampleRate);
-    this.hpFilter.setHighpass(40, 0.707, this.sampleRate);
+    this.hpFilterL.setHighpass(40, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(40, 0.707, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
       const inputL = input.samples[0][i];
@@ -949,8 +1110,8 @@ export class PlosiveReducerProcessor implements DSPProcessor {
       
       switch (mode) {
         case 'cut':
-          processedL = this.hpFilter.process(sampleL) * (1 - this.reductionEnvelope) + sampleL * this.reductionEnvelope;
-          processedR = this.hpFilter.process(sampleR) * (1 - this.reductionEnvelope) + sampleR * this.reductionEnvelope;
+          processedL = this.hpFilterL.process(sampleL) * (1 - this.reductionEnvelope) + sampleL * this.reductionEnvelope;
+          processedR = this.hpFilterR.process(sampleR) * (1 - this.reductionEnvelope) + sampleR * this.reductionEnvelope;
           break;
         case 'duck':
           processedL = sampleL * this.reductionEnvelope;
@@ -959,9 +1120,10 @@ export class PlosiveReducerProcessor implements DSPProcessor {
         case 'dynamic':
         default:
           const dynamicFreq = 40 + (1 - this.reductionEnvelope) * frequency;
-          this.dynamicHpFilter.setHighpass(dynamicFreq, 0.5, this.sampleRate);
-          processedL = this.dynamicHpFilter.process(sampleL);
-          processedR = this.dynamicHpFilter.process(sampleR);
+          this.dynamicHpFilterL.setHighpass(dynamicFreq, 0.5, this.sampleRate);
+          this.dynamicHpFilterR.setHighpass(dynamicFreq, 0.5, this.sampleRate);
+          processedL = this.dynamicHpFilterL.process(sampleL);
+          processedR = this.dynamicHpFilterR.process(sampleR);
       }
       
       output.samples[0][i] = inputL * (1 - mix) + processedL * mix;
@@ -976,33 +1138,49 @@ export class PlosiveReducerProcessor implements DSPProcessor {
     this.plosiveEnvelope.clear();
     this.bassEnvelope.clear();
     this.reductionEnvelope = 0;
-    this.hpFilter.clear();
-    this.dynamicHpFilter.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
+    this.dynamicHpFilterL.clear();
+    this.dynamicHpFilterR.clear();
     this.delayLine.clear();
   }
 }
 
 export class ChannelStripProcessor implements DSPProcessor {
-  private inputHpFilter: BiquadFilter;
+  private inputHpFilterL: BiquadFilter;
+  private inputHpFilterR: BiquadFilter;
   private preampSaturation: number = 0;
-  private lowShelf: BiquadFilter;
-  private lowMid: BiquadFilter;
-  private highMid: BiquadFilter;
-  private highShelf: BiquadFilter;
+  private lowShelfL: BiquadFilter;
+  private lowShelfR: BiquadFilter;
+  private lowMidL: BiquadFilter;
+  private lowMidR: BiquadFilter;
+  private highMidL: BiquadFilter;
+  private highMidR: BiquadFilter;
+  private highShelfL: BiquadFilter;
+  private highShelfR: BiquadFilter;
   private compEnvelope: number = 0;
   private gateEnvelope: number = 0;
-  private outputFilter: OnePoleFilter;
-  private transformerFilter: BiquadFilter;
+  private outputFilterL: OnePoleFilter;
+  private outputFilterR: OnePoleFilter;
+  private transformerFilterL: BiquadFilter;
+  private transformerFilterR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.inputHpFilter = new BiquadFilter();
-    this.lowShelf = new BiquadFilter();
-    this.lowMid = new BiquadFilter();
-    this.highMid = new BiquadFilter();
-    this.highShelf = new BiquadFilter();
-    this.outputFilter = new OnePoleFilter();
-    this.transformerFilter = new BiquadFilter();
+    this.inputHpFilterL = new BiquadFilter();
+    this.inputHpFilterR = new BiquadFilter();
+    this.lowShelfL = new BiquadFilter();
+    this.lowShelfR = new BiquadFilter();
+    this.lowMidL = new BiquadFilter();
+    this.lowMidR = new BiquadFilter();
+    this.highMidL = new BiquadFilter();
+    this.highMidR = new BiquadFilter();
+    this.highShelfL = new BiquadFilter();
+    this.highShelfR = new BiquadFilter();
+    this.outputFilterL = new OnePoleFilter();
+    this.outputFilterR = new OnePoleFilter();
+    this.transformerFilterL = new BiquadFilter();
+    this.transformerFilterR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -1035,15 +1213,22 @@ export class ChannelStripProcessor implements DSPProcessor {
     const transformer = (params.transformer as boolean) ?? true;
     const mix = (params.mix as number) ?? 1;
 
-    this.inputHpFilter.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.inputHpFilterL.setHighpass(hpFreq, 0.707, this.sampleRate);
+    this.inputHpFilterR.setHighpass(hpFreq, 0.707, this.sampleRate);
     
-    this.lowShelf.setLowShelf(lowFreq, lowGain, this.sampleRate);
-    this.lowMid.setPeaking(lowMidFreq, 1.5, lowMidGain, this.sampleRate);
-    this.highMid.setPeaking(highMidFreq, 1.5, highMidGain, this.sampleRate);
-    this.highShelf.setHighShelf(highFreq, highGain, this.sampleRate);
+    this.lowShelfL.setLowShelf(lowFreq, lowGain, this.sampleRate);
+    this.lowShelfR.setLowShelf(lowFreq, lowGain, this.sampleRate);
+    this.lowMidL.setPeaking(lowMidFreq, 1.5, lowMidGain, this.sampleRate);
+    this.lowMidR.setPeaking(lowMidFreq, 1.5, lowMidGain, this.sampleRate);
+    this.highMidL.setPeaking(highMidFreq, 1.5, highMidGain, this.sampleRate);
+    this.highMidR.setPeaking(highMidFreq, 1.5, highMidGain, this.sampleRate);
+    this.highShelfL.setHighShelf(highFreq, highGain, this.sampleRate);
+    this.highShelfR.setHighShelf(highFreq, highGain, this.sampleRate);
     
-    this.transformerFilter.setLowShelf(120, transformer ? 1.5 : 0, this.sampleRate);
-    this.outputFilter.setLowpass(18000, this.sampleRate);
+    this.transformerFilterL.setLowShelf(120, transformer ? 1.5 : 0, this.sampleRate);
+    this.transformerFilterR.setLowShelf(120, transformer ? 1.5 : 0, this.sampleRate);
+    this.outputFilterL.setLowpass(18000, this.sampleRate);
+    this.outputFilterR.setLowpass(18000, this.sampleRate);
     
     const inputGainLin = dbToLinear(inputGain);
     const driveAmount = preampDrive / 100;
@@ -1058,8 +1243,8 @@ export class ChannelStripProcessor implements DSPProcessor {
       let sampleL = input.samples[0][i] * inputGainLin;
       let sampleR = input.samples[1][i] * inputGainLin;
       
-      sampleL = this.inputHpFilter.process(sampleL);
-      sampleR = this.inputHpFilter.process(sampleR);
+      sampleL = this.inputHpFilterL.process(sampleL);
+      sampleR = this.inputHpFilterR.process(sampleR);
       
       if (driveAmount > 0) {
         const driveGain = 1 + driveAmount * 2;
@@ -1071,17 +1256,17 @@ export class ChannelStripProcessor implements DSPProcessor {
         sampleR += sampleR * sampleR * evenHarmonic;
       }
       
-      sampleL = this.lowShelf.process(sampleL);
-      sampleR = this.lowShelf.process(sampleR);
+      sampleL = this.lowShelfL.process(sampleL);
+      sampleR = this.lowShelfR.process(sampleR);
       
-      sampleL = this.lowMid.process(sampleL);
-      sampleR = this.lowMid.process(sampleR);
+      sampleL = this.lowMidL.process(sampleL);
+      sampleR = this.lowMidR.process(sampleR);
       
-      sampleL = this.highMid.process(sampleL);
-      sampleR = this.highMid.process(sampleR);
+      sampleL = this.highMidL.process(sampleL);
+      sampleR = this.highMidR.process(sampleR);
       
-      sampleL = this.highShelf.process(sampleL);
-      sampleR = this.highShelf.process(sampleR);
+      sampleL = this.highShelfL.process(sampleL);
+      sampleR = this.highShelfR.process(sampleR);
       
       const inputLevel = Math.max(Math.abs(sampleL), Math.abs(sampleR));
       const compCoeff = inputLevel > this.compEnvelope ? compAttackCoeff : compReleaseCoeff;
@@ -1111,12 +1296,12 @@ export class ChannelStripProcessor implements DSPProcessor {
       }
       
       if (transformer) {
-        sampleL = this.transformerFilter.process(sampleL);
-        sampleR = this.transformerFilter.process(sampleR);
+        sampleL = this.transformerFilterL.process(sampleL);
+        sampleR = this.transformerFilterR.process(sampleR);
       }
       
-      sampleL = this.outputFilter.process(sampleL);
-      sampleR = this.outputFilter.process(sampleR);
+      sampleL = this.outputFilterL.process(sampleL);
+      sampleR = this.outputFilterR.process(sampleR);
       
       const processedL = sampleL * outputGainLin;
       const processedR = sampleR * outputGainLin;
@@ -1129,16 +1314,23 @@ export class ChannelStripProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.inputHpFilter.clear();
+    this.inputHpFilterL.clear();
+    this.inputHpFilterR.clear();
     this.preampSaturation = 0;
-    this.lowShelf.clear();
-    this.lowMid.clear();
-    this.highMid.clear();
-    this.highShelf.clear();
+    this.lowShelfL.clear();
+    this.lowShelfR.clear();
+    this.lowMidL.clear();
+    this.lowMidR.clear();
+    this.highMidL.clear();
+    this.highMidR.clear();
+    this.highShelfL.clear();
+    this.highShelfR.clear();
     this.compEnvelope = 0;
     this.gateEnvelope = 0;
-    this.outputFilter.clear();
-    this.transformerFilter.clear();
+    this.outputFilterL.clear();
+    this.outputFilterR.clear();
+    this.transformerFilterL.clear();
+    this.transformerFilterR.clear();
   }
 }
 

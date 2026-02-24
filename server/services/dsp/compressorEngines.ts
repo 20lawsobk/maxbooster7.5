@@ -258,22 +258,35 @@ export class TubeCompressorProcessor implements DSPProcessor {
 }
 
 export class MultibandCompressorProcessor implements DSPProcessor {
-  private lowEnv: number = 0;
-  private midEnv: number = 0;
-  private highEnv: number = 0;
-  private lowLP: BiquadFilter;
-  private lowHP: BiquadFilter;
-  private midLP: BiquadFilter;
-  private midHP: BiquadFilter;
-  private highHP: BiquadFilter;
+  private lowEnvL: number = 0;
+  private midEnvL: number = 0;
+  private highEnvL: number = 0;
+  private lowEnvR: number = 0;
+  private midEnvR: number = 0;
+  private highEnvR: number = 0;
+  private lowLPL: BiquadFilter;
+  private lowHPL: BiquadFilter;
+  private midLPL: BiquadFilter;
+  private midHPL: BiquadFilter;
+  private highHPL: BiquadFilter;
+  private lowLPR: BiquadFilter;
+  private lowHPR: BiquadFilter;
+  private midLPR: BiquadFilter;
+  private midHPR: BiquadFilter;
+  private highHPR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
-    this.lowLP = new BiquadFilter();
-    this.lowHP = new BiquadFilter();
-    this.midLP = new BiquadFilter();
-    this.midHP = new BiquadFilter();
-    this.highHP = new BiquadFilter();
+    this.lowLPL = new BiquadFilter();
+    this.lowHPL = new BiquadFilter();
+    this.midLPL = new BiquadFilter();
+    this.midHPL = new BiquadFilter();
+    this.highHPL = new BiquadFilter();
+    this.lowLPR = new BiquadFilter();
+    this.lowHPR = new BiquadFilter();
+    this.midLPR = new BiquadFilter();
+    this.midHPR = new BiquadFilter();
+    this.highHPR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -295,18 +308,28 @@ export class MultibandCompressorProcessor implements DSPProcessor {
     const attackCoeff = Math.exp(-1 / msToSamples(attack, this.sampleRate));
     const releaseCoeff = Math.exp(-1 / msToSamples(release, this.sampleRate));
 
-    this.lowLP.setLowpass(lowFreq, 0.707, this.sampleRate);
-    this.lowHP.setHighpass(20, 0.707, this.sampleRate);
-    this.midLP.setLowpass(highFreq, 0.707, this.sampleRate);
-    this.midHP.setHighpass(lowFreq, 0.707, this.sampleRate);
-    this.highHP.setHighpass(highFreq, 0.707, this.sampleRate);
+    this.lowLPL.setLowpass(lowFreq, 0.707, this.sampleRate);
+    this.lowHPL.setHighpass(20, 0.707, this.sampleRate);
+    this.midLPL.setLowpass(highFreq, 0.707, this.sampleRate);
+    this.midHPL.setHighpass(lowFreq, 0.707, this.sampleRate);
+    this.highHPL.setHighpass(highFreq, 0.707, this.sampleRate);
+    this.lowLPR.setLowpass(lowFreq, 0.707, this.sampleRate);
+    this.lowHPR.setHighpass(20, 0.707, this.sampleRate);
+    this.midLPR.setLowpass(highFreq, 0.707, this.sampleRate);
+    this.midHPR.setHighpass(lowFreq, 0.707, this.sampleRate);
+    this.highHPR.setHighpass(highFreq, 0.707, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
-      const mono = (input.samples[0][i] + input.samples[1][i]) * 0.5;
+      const sampleL = input.samples[0][i];
+      const sampleR = input.samples[1][i];
       
-      const lowBand = this.lowLP.process(this.lowHP.process(mono));
-      const midBand = this.midLP.process(this.midHP.process(mono));
-      const highBand = this.highHP.process(mono);
+      const lowBandL = this.lowLPL.process(this.lowHPL.process(sampleL));
+      const midBandL = this.midLPL.process(this.midHPL.process(sampleL));
+      const highBandL = this.highHPL.process(sampleL);
+      
+      const lowBandR = this.lowLPR.process(this.lowHPR.process(sampleR));
+      const midBandR = this.midLPR.process(this.midHPR.process(sampleR));
+      const highBandR = this.highHPR.process(sampleR);
       
       const compressBand = (sample: number, env: number, threshold: number, ratio: number): { sample: number; env: number } => {
         const level = Math.abs(sample);
@@ -323,32 +346,48 @@ export class MultibandCompressorProcessor implements DSPProcessor {
         return { sample: sample * gain, env };
       };
       
-      const lowResult = compressBand(lowBand, this.lowEnv, lowThreshold, lowRatio);
-      const midResult = compressBand(midBand, this.midEnv, midThreshold, midRatio);
-      const highResult = compressBand(highBand, this.highEnv, highThreshold, highRatio);
+      const lowResultL = compressBand(lowBandL, this.lowEnvL, lowThreshold, lowRatio);
+      const midResultL = compressBand(midBandL, this.midEnvL, midThreshold, midRatio);
+      const highResultL = compressBand(highBandL, this.highEnvL, highThreshold, highRatio);
       
-      this.lowEnv = lowResult.env;
-      this.midEnv = midResult.env;
-      this.highEnv = highResult.env;
+      const lowResultR = compressBand(lowBandR, this.lowEnvR, lowThreshold, lowRatio);
+      const midResultR = compressBand(midBandR, this.midEnvR, midThreshold, midRatio);
+      const highResultR = compressBand(highBandR, this.highEnvR, highThreshold, highRatio);
       
-      const processed = lowResult.sample + midResult.sample + highResult.sample;
+      this.lowEnvL = lowResultL.env;
+      this.midEnvL = midResultL.env;
+      this.highEnvL = highResultL.env;
+      this.lowEnvR = lowResultR.env;
+      this.midEnvR = midResultR.env;
+      this.highEnvR = highResultR.env;
       
-      output.samples[0][i] = input.samples[0][i] * (1 - mix) + processed * mix;
-      output.samples[1][i] = input.samples[1][i] * (1 - mix) + processed * mix;
+      const processedL = lowResultL.sample + midResultL.sample + highResultL.sample;
+      const processedR = lowResultR.sample + midResultR.sample + highResultR.sample;
+      
+      output.samples[0][i] = input.samples[0][i] * (1 - mix) + processedL * mix;
+      output.samples[1][i] = input.samples[1][i] * (1 - mix) + processedR * mix;
     }
     
     return output;
   }
 
   reset(): void {
-    this.lowEnv = 0;
-    this.midEnv = 0;
-    this.highEnv = 0;
-    this.lowLP.clear();
-    this.lowHP.clear();
-    this.midLP.clear();
-    this.midHP.clear();
-    this.highHP.clear();
+    this.lowEnvL = 0;
+    this.midEnvL = 0;
+    this.highEnvL = 0;
+    this.lowEnvR = 0;
+    this.midEnvR = 0;
+    this.highEnvR = 0;
+    this.lowLPL.clear();
+    this.lowHPL.clear();
+    this.midLPL.clear();
+    this.midHPL.clear();
+    this.highHPL.clear();
+    this.lowLPR.clear();
+    this.lowHPR.clear();
+    this.midLPR.clear();
+    this.midHPR.clear();
+    this.highHPR.clear();
   }
 }
 

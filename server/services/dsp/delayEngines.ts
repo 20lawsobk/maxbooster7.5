@@ -9,15 +9,19 @@ export class TapeDelayProcessor implements DSPProcessor {
   private delayR: DelayLine;
   private wowFlutter: number = 0;
   private saturation: number = 0;
-  private lpFilter: OnePoleFilter;
-  private hpFilter: BiquadFilter;
+  private lpFilterL: OnePoleFilter;
+  private lpFilterR: OnePoleFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
     this.delayL = new DelayLine(220500);
     this.delayR = new DelayLine(220500);
-    this.lpFilter = new OnePoleFilter();
-    this.hpFilter = new BiquadFilter();
+    this.lpFilterL = new OnePoleFilter();
+    this.lpFilterR = new OnePoleFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -37,8 +41,10 @@ export class TapeDelayProcessor implements DSPProcessor {
     const delaySamples = msToSamples(time, this.sampleRate);
     const delaySpread = msToSamples(time * stereoSpread, this.sampleRate);
     
-    this.lpFilter.setLowpass(highCut, this.sampleRate);
-    this.hpFilter.setHighpass(lowCut, 0.707, this.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
+    this.hpFilterL.setHighpass(lowCut, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(lowCut, 0.707, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
       this.wowFlutter += 0.0001;
@@ -49,10 +55,10 @@ export class TapeDelayProcessor implements DSPProcessor {
       const delayedL = this.delayL.readInterpolated(delaySamples + modulation);
       const delayedR = this.delayR.readInterpolated(delaySamples + delaySpread - modulation);
       
-      let filteredL = this.lpFilter.process(delayedL);
-      let filteredR = this.lpFilter.process(delayedR);
-      filteredL = this.hpFilter.process(filteredL);
-      filteredR = this.hpFilter.process(filteredR);
+      let filteredL = this.lpFilterL.process(delayedL);
+      let filteredR = this.lpFilterR.process(delayedR);
+      filteredL = this.hpFilterL.process(filteredL);
+      filteredR = this.hpFilterR.process(filteredR);
       
       const saturatedL = Math.tanh(filteredL * (1 + saturationAmount * 2)) * (1 / (1 + saturationAmount));
       const saturatedR = Math.tanh(filteredR * (1 + saturationAmount * 2)) * (1 / (1 + saturationAmount));
@@ -70,8 +76,10 @@ export class TapeDelayProcessor implements DSPProcessor {
   reset(): void {
     this.delayL.clear();
     this.delayR.clear();
-    this.lpFilter.clear();
-    this.hpFilter.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
     this.wowFlutter = 0;
   }
 }
@@ -79,13 +87,15 @@ export class TapeDelayProcessor implements DSPProcessor {
 export class DigitalDelayProcessor implements DSPProcessor {
   private delayL: DelayLine;
   private delayR: DelayLine;
-  private lpFilter: BiquadFilter;
+  private lpFilterL: BiquadFilter;
+  private lpFilterR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
     this.delayL = new DelayLine(220500);
     this.delayR = new DelayLine(220500);
-    this.lpFilter = new BiquadFilter();
+    this.lpFilterL = new BiquadFilter();
+    this.lpFilterR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -103,14 +113,15 @@ export class DigitalDelayProcessor implements DSPProcessor {
     const delaySamplesL = msToSamples(timeL, this.sampleRate);
     const delaySamplesR = msToSamples(timeR, this.sampleRate);
     
-    this.lpFilter.setLowpass(highCut, 0.707, this.sampleRate);
+    this.lpFilterL.setLowpass(highCut, 0.707, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, 0.707, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
       const delayedL = this.delayL.read(delaySamplesL);
       const delayedR = this.delayR.read(delaySamplesR);
       
-      const filteredL = this.lpFilter.process(delayedL);
-      const filteredR = this.lpFilter.process(delayedR);
+      const filteredL = this.lpFilterL.process(delayedL);
+      const filteredR = this.lpFilterR.process(delayedR);
       
       if (pingPong) {
         this.delayL.write(input.samples[0][i] + filteredR * feedback);
@@ -130,22 +141,27 @@ export class DigitalDelayProcessor implements DSPProcessor {
   reset(): void {
     this.delayL.clear();
     this.delayR.clear();
-    this.lpFilter.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 
 export class PingPongDelayProcessor implements DSPProcessor {
   private delayL: DelayLine;
   private delayR: DelayLine;
-  private lpFilter: OnePoleFilter;
-  private hpFilter: BiquadFilter;
+  private lpFilterL: OnePoleFilter;
+  private lpFilterR: OnePoleFilter;
+  private hpFilterL: BiquadFilter;
+  private hpFilterR: BiquadFilter;
   private sampleRate: number = 44100;
 
   constructor() {
     this.delayL = new DelayLine(220500);
     this.delayR = new DelayLine(220500);
-    this.lpFilter = new OnePoleFilter();
-    this.hpFilter = new BiquadFilter();
+    this.lpFilterL = new OnePoleFilter();
+    this.lpFilterR = new OnePoleFilter();
+    this.hpFilterL = new BiquadFilter();
+    this.hpFilterR = new BiquadFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -162,8 +178,10 @@ export class PingPongDelayProcessor implements DSPProcessor {
 
     const delaySamples = msToSamples(time, this.sampleRate);
     
-    this.lpFilter.setLowpass(highCut, this.sampleRate);
-    this.hpFilter.setHighpass(lowCut, 0.707, this.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
+    this.hpFilterL.setHighpass(lowCut, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(lowCut, 0.707, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
       const mono = (input.samples[0][i] + input.samples[1][i]) * 0.5;
@@ -171,10 +189,10 @@ export class PingPongDelayProcessor implements DSPProcessor {
       const delayedL = this.delayL.read(delaySamples);
       const delayedR = this.delayR.read(delaySamples);
       
-      let filteredL = this.lpFilter.process(delayedL);
-      let filteredR = this.lpFilter.process(delayedR);
-      filteredL = this.hpFilter.process(filteredL);
-      filteredR = this.hpFilter.process(filteredR);
+      let filteredL = this.lpFilterL.process(delayedL);
+      let filteredR = this.lpFilterR.process(delayedR);
+      filteredL = this.hpFilterL.process(filteredL);
+      filteredR = this.hpFilterR.process(filteredR);
       
       this.delayL.write(mono + filteredR * feedback * spread);
       this.delayR.write(filteredL * feedback);
@@ -192,8 +210,10 @@ export class PingPongDelayProcessor implements DSPProcessor {
   reset(): void {
     this.delayL.clear();
     this.delayR.clear();
-    this.lpFilter.clear();
-    this.hpFilter.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
   }
 }
 
@@ -254,7 +274,8 @@ export class ModDelayProcessor implements DSPProcessor {
   private delayR: DelayLine;
   private lfoL: LFO;
   private lfoR: LFO;
-  private lpFilter: OnePoleFilter;
+  private lpFilterL: OnePoleFilter;
+  private lpFilterR: OnePoleFilter;
   private sampleRate: number = 44100;
 
   constructor() {
@@ -262,7 +283,8 @@ export class ModDelayProcessor implements DSPProcessor {
     this.delayR = new DelayLine(220500);
     this.lfoL = new LFO();
     this.lfoR = new LFO();
-    this.lpFilter = new OnePoleFilter();
+    this.lpFilterL = new OnePoleFilter();
+    this.lpFilterR = new OnePoleFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -282,7 +304,8 @@ export class ModDelayProcessor implements DSPProcessor {
     
     this.lfoL.setFrequency(modRate, this.sampleRate);
     this.lfoR.setFrequency(modRate * (1 + stereoPhase * 0.1), this.sampleRate);
-    this.lpFilter.setLowpass(highCut, this.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
       const modL = this.lfoL.triangle() * modDepth * maxModSamples;
@@ -291,8 +314,8 @@ export class ModDelayProcessor implements DSPProcessor {
       const delayedL = this.delayL.readInterpolated(baseDelaySamples + modL);
       const delayedR = this.delayR.readInterpolated(baseDelaySamples + modR);
       
-      const filteredL = this.lpFilter.process(delayedL);
-      const filteredR = this.lpFilter.process(delayedR);
+      const filteredL = this.lpFilterL.process(delayedL);
+      const filteredR = this.lpFilterR.process(delayedR);
       
       this.delayL.write(input.samples[0][i] + filteredL * feedback);
       this.delayR.write(input.samples[1][i] + filteredR * feedback);
@@ -309,7 +332,8 @@ export class ModDelayProcessor implements DSPProcessor {
     this.delayR.clear();
     this.lfoL.reset();
     this.lfoR.reset();
-    this.lpFilter.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 
@@ -317,7 +341,8 @@ export class DuckingDelayProcessor implements DSPProcessor {
   private delayL: DelayLine;
   private delayR: DelayLine;
   private envelope: EnvelopeFollower;
-  private lpFilter: OnePoleFilter;
+  private lpFilterL: OnePoleFilter;
+  private lpFilterR: OnePoleFilter;
   private duckAmount: number = 0;
   private sampleRate: number = 44100;
 
@@ -325,7 +350,8 @@ export class DuckingDelayProcessor implements DSPProcessor {
     this.delayL = new DelayLine(220500);
     this.delayR = new DelayLine(220500);
     this.envelope = new EnvelopeFollower(5, 200, 44100);
-    this.lpFilter = new OnePoleFilter();
+    this.lpFilterL = new OnePoleFilter();
+    this.lpFilterR = new OnePoleFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -345,7 +371,8 @@ export class DuckingDelayProcessor implements DSPProcessor {
     
     this.envelope.setAttack(attackMs, this.sampleRate);
     this.envelope.setRelease(releaseMs, this.sampleRate);
-    this.lpFilter.setLowpass(highCut, this.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
       const mono = (input.samples[0][i] + input.samples[1][i]) * 0.5;
@@ -358,8 +385,8 @@ export class DuckingDelayProcessor implements DSPProcessor {
       const delayedL = this.delayL.read(delaySamples);
       const delayedR = this.delayR.read(delaySamples);
       
-      const filteredL = this.lpFilter.process(delayedL);
-      const filteredR = this.lpFilter.process(delayedR);
+      const filteredL = this.lpFilterL.process(delayedL);
+      const filteredR = this.lpFilterR.process(delayedR);
       
       this.delayL.write(input.samples[0][i] + filteredL * feedback);
       this.delayR.write(input.samples[1][i] + filteredR * feedback);
@@ -378,7 +405,8 @@ export class DuckingDelayProcessor implements DSPProcessor {
     this.delayL.clear();
     this.delayR.clear();
     this.envelope.clear();
-    this.lpFilter.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
     this.duckAmount = 0;
   }
 }
@@ -562,13 +590,15 @@ export class ReverseDelayProcessor implements DSPProcessor {
   private writeIndex: number = 0;
   private grainSize: number = 0;
   private grainPosition: number = 0;
-  private lpFilter: OnePoleFilter;
+  private lpFilterL: OnePoleFilter;
+  private lpFilterR: OnePoleFilter;
   private sampleRate: number = 44100;
 
   constructor() {
     this.bufferL = new Float32Array(88200);
     this.bufferR = new Float32Array(88200);
-    this.lpFilter = new OnePoleFilter();
+    this.lpFilterL = new OnePoleFilter();
+    this.lpFilterR = new OnePoleFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -582,7 +612,8 @@ export class ReverseDelayProcessor implements DSPProcessor {
     const highCut = (params.highCut as number) ?? 8000;
 
     this.grainSize = msToSamples(time, this.sampleRate);
-    this.lpFilter.setLowpass(highCut, this.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
     
     const fadeLength = Math.floor(this.grainSize * crossfade);
 
@@ -605,8 +636,8 @@ export class ReverseDelayProcessor implements DSPProcessor {
       reversedL *= fadeEnv;
       reversedR *= fadeEnv;
       
-      const filteredL = this.lpFilter.process(reversedL);
-      const filteredR = this.lpFilter.process(reversedR);
+      const filteredL = this.lpFilterL.process(reversedL);
+      const filteredR = this.lpFilterR.process(reversedR);
       
       this.writeIndex = (this.writeIndex + 1) % this.bufferL.length;
       this.grainPosition++;
@@ -627,7 +658,8 @@ export class ReverseDelayProcessor implements DSPProcessor {
     this.bufferR.fill(0);
     this.writeIndex = 0;
     this.grainPosition = 0;
-    this.lpFilter.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 
@@ -635,12 +667,14 @@ export class GranularDelayProcessor implements DSPProcessor {
   private buffer: Float32Array;
   private writeIndex: number = 0;
   private grains: Array<{ position: number; speed: number; pan: number; age: number; maxAge: number }> = [];
-  private lpFilter: OnePoleFilter;
+  private lpFilterL: OnePoleFilter;
+  private lpFilterR: OnePoleFilter;
   private sampleRate: number = 44100;
 
   constructor() {
     this.buffer = new Float32Array(220500);
-    this.lpFilter = new OnePoleFilter();
+    this.lpFilterL = new OnePoleFilter();
+    this.lpFilterR = new OnePoleFilter();
   }
 
   process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
@@ -661,7 +695,8 @@ export class GranularDelayProcessor implements DSPProcessor {
     const spawnRate = Math.floor(this.sampleRate / (grainDensity * 10));
     const basePitch = Math.pow(2, pitch / 12);
     
-    this.lpFilter.setLowpass(8000, this.sampleRate);
+    this.lpFilterL.setLowpass(8000, this.sampleRate);
+    this.lpFilterR.setLowpass(8000, this.sampleRate);
 
     for (let i = 0; i < input.samples[0].length; i++) {
       const mono = (input.samples[0][i] + input.samples[1][i]) * 0.5;
@@ -700,8 +735,8 @@ export class GranularDelayProcessor implements DSPProcessor {
         }
       }
       
-      wetL = this.lpFilter.process(wetL);
-      wetR = this.lpFilter.process(wetR);
+      wetL = this.lpFilterL.process(wetL);
+      wetR = this.lpFilterR.process(wetR);
       
       this.buffer[this.writeIndex] += (wetL + wetR) * 0.5 * feedback;
       this.writeIndex = (this.writeIndex + 1) % this.buffer.length;
@@ -717,7 +752,8 @@ export class GranularDelayProcessor implements DSPProcessor {
     this.buffer.fill(0);
     this.writeIndex = 0;
     this.grains = [];
-    this.lpFilter.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 
