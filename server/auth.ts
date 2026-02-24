@@ -97,9 +97,7 @@ export const requireAuth = requireAuthDual;
 // NOTE: This middleware is mounted at '/api', so req.path strips the '/api' prefix.
 // Use req.originalUrl for full-path matching or paths without the /api prefix.
 export const blockDemoWrite = async (req: Request, res: Response, next: NextFunction) => {
-  const isDemoSession = req.session?.isDemo;
-  const isDemoUser = (req as any).user?.email === 'demo@maxbooster.ai';
-  if (!isDemoSession && !isDemoUser) {
+  if ((req as any).user?.email !== 'demo@maxbooster.ai') {
     return next();
   }
   

@@ -147,7 +147,7 @@ export async function registerRoutes(
 
     if (req.user) {
       const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...safeUser } = req.user as any;
-      if ((req.session as any)?.isDemo) {
+      if (safeUser.email === 'demo@maxbooster.ai') {
         safeUser.isDemo = true;
       }
       return res.json(safeUser);
@@ -207,7 +207,6 @@ export async function registerRoutes(
       });
 
       req.session.userId = user.id;
-      delete (req.session as any).isDemo;
       const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
 
       emailService.sendWelcomeEmail({
@@ -279,7 +278,6 @@ export async function registerRoutes(
       }
 
       req.session.userId = user.id;
-      delete (req.session as any).isDemo;
 
       req.session.save((err) => {
         if (err) {
@@ -1227,7 +1225,6 @@ export async function registerRoutes(
       }
       
       req.session.userId = demoUser.id;
-      (req.session as any).isDemo = true;
 
       req.session.save((saveErr) => {
         if (saveErr) {
@@ -1455,7 +1452,6 @@ export async function registerRoutes(
 
       // Log the user in using session
       req.session.userId = user.id;
-      delete (req.session as any).isDemo;
       req.session.save((err) => {
         if (err) {
           logger.error('[Google OAuth] Session save failed:', err);
@@ -3691,7 +3687,6 @@ export async function registerRoutes(
       if (existingUser) {
         // User already exists - log them in
         req.session.userId = existingUser.id;
-        delete (req.session as any).isDemo;
         const { password: _, ...userWithoutPassword } = existingUser;
         return res.json({ user: userWithoutPassword, message: 'Account already exists. Logged in.' });
       }
@@ -3724,7 +3719,6 @@ export async function registerRoutes(
 
       // Log the user in
       req.session.userId = user.id;
-      delete (req.session as any).isDemo;
 
       const { password: _, ...userWithoutPassword } = user;
       return res.json({ user: userWithoutPassword, message: 'Account created successfully' });
