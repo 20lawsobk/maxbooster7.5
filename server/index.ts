@@ -45,7 +45,7 @@ async function loadOptionalModules() {
 
   try {
     const capacity = await import("./monitoring/capacityMonitor.js");
-    capacityMonitor = capacity.capacityMonitor;
+    capacityMonitor = capacity.CapacityMonitor;
   } catch (e) { /* Optional module */ }
 
   try {
@@ -414,7 +414,7 @@ app.use((req, res, next) => {
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite");
+    const { setupVite } = await import("./vite.js");
     await setupVite(httpServer, app);
   }
 
@@ -492,7 +492,7 @@ app.use((req, res, next) => {
         // 1. Autonomous Service (Core)
         try {
           const mod = await import('./services/autonomousService.js');
-          const svc = mod.autonomousService || mod.default;
+          const svc = mod.autonomousService;
           if (svc && typeof svc.getStatus === 'function') {
             const status = svc.getStatus();
             logger.info(`✅ [Autonomy] Autonomous Service initialized - Running: ${status.isRunning}`);
@@ -504,12 +504,9 @@ app.use((req, res, next) => {
         // 2. Automation System
         try {
           const mod = await import('./automation-system.js');
-          const AutomationSystem = mod.AutomationSystem || mod.default;
-          if (AutomationSystem && typeof AutomationSystem.getInstance === 'function') {
-            const system = AutomationSystem.getInstance();
-            if (typeof system.initialize === 'function') {
-              await system.initialize();
-            }
+          const AutomationSystemClass = mod.AutomationSystem ?? mod.default;
+          if (AutomationSystemClass && typeof AutomationSystemClass.getInstance === 'function') {
+            const system = AutomationSystemClass.getInstance();
             logger.info('✅ [Autonomy] Automation System initialized');
           }
         } catch (e: any) {
@@ -519,7 +516,7 @@ app.use((req, res, next) => {
         // 3. Autonomous Updates Orchestrator
         try {
           const mod = await import('./autonomous-updates.js');
-          const orchestrator = mod.autonomousUpdates || mod.autonomousUpdatesOrchestrator || mod.default;
+          const orchestrator = mod.autonomousUpdates ?? mod.AutonomousUpdatesOrchestrator;
           if (orchestrator) {
             if (typeof orchestrator.configure === 'function') {
               await orchestrator.configure({
@@ -541,22 +538,22 @@ app.use((req, res, next) => {
         // 4-8. Other autonomous modules (load in parallel for speed)
         await Promise.allSettled([
           import('./autonomous-autopilot.js').then(mod => {
-            if (mod.autonomousAutopilot || mod.default) logger.info('✅ [Autonomy] Autonomous Autopilot loaded');
+            if (mod.autonomousAutopilot) logger.info('✅ [Autonomy] Autonomous Autopilot loaded');
           }),
           import('./autopilot-engine.js').then(mod => {
-            if (mod.autopilotEngine || mod.AutopilotEngine || mod.default) logger.info('✅ [Autonomy] Autopilot Engine loaded');
+            if (mod.autopilotEngine || mod.AutopilotEngine) logger.info('✅ [Autonomy] Autopilot Engine loaded');
           }),
           import('./services/autoPostingService.js').then(mod => {
-            if (mod.autoPostingService || mod.default) logger.info('✅ [Autonomy] Auto-Posting Service V1 initialized');
+            if (mod.autoPostingService) logger.info('✅ [Autonomy] Auto-Posting Service V1 initialized');
           }),
           import('./services/autoPostingServiceV2.js').then(mod => {
-            if (mod.autoPostingServiceV2 || mod.default) logger.info('✅ [Autonomy] Auto-Posting Service V2 initialized');
+            if (mod.autoPostingServiceV2) logger.info('✅ [Autonomy] Auto-Posting Service V2 initialized');
           }),
           import('./services/autoPostGenerator.js').then(mod => {
-            if (mod.autoPostGenerator || mod.default) logger.info('✅ [Autonomy] Auto Post Generator initialized');
+            if (mod.autoPostGenerator) logger.info('✅ [Autonomy] Auto Post Generator initialized');
           }),
           import('./services/autopilotPublisher.js').then(mod => {
-            if (mod.autopilotPublisher || mod.default) logger.info('✅ [Autonomy] Autopilot Publisher initialized');
+            if (mod.autopilotPublisher) logger.info('✅ [Autonomy] Autopilot Publisher initialized');
           }),
         ]);
 

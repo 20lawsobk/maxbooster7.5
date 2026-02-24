@@ -76,7 +76,7 @@ export async function createSessionStore() {
 /**
  * TODO: Add function documentation
  */
-export function getSessionConfig(store: unknown) {
+export function getSessionConfig(store: session.Store | session.MemoryStore) {
   const isProduction = process.env.NODE_ENV === 'production';
 
   // CRITICAL: Validate SESSION_SECRET exists in production
