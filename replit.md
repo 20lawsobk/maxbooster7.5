@@ -67,4 +67,12 @@ Max Booster is a full-stack web application for AI-powered music career manageme
   - Removed 222 auto-generated TODO doc stubs across server/client/shared code
   - Removed debug console.warn from client queryClient.ts
 - 2026-02-24: Production hardening phase 1 - wired CSRF middleware, fixed 14 TypeScript errors, verified auth/security/error handling/runtime stability
+- 2026-02-24: Deployment size optimization:
+  - Created .dockerignore to exclude .git, .cache, boosterstate/target, screenshots, videos, source files
+  - Updated .gitignore: fully ignore boosterstate/target/ (removed binary exception), .cache/, screenshots, videos
+  - Moved @tensorflow/tfjs and @tensorflow/tfjs-node to devDependencies (dynamically imported with fallbacks)
+  - Modified build script to skip Rust compilation on Replit deployments (SKIP_BOOSTERSTATE=1 or REPL_SLUG detected)
+  - Updated start script: conditionally launches boosterstate only if binary exists
+  - Deploy config: build prunes devDependencies after compilation, production runs node dist/index.cjs only
+  - Cleaned Playwright cache (622MB), TensorFlow excluded from production install (659MB)
 - 2026-02-23: Initial Replit import and setup

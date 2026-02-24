@@ -1,11 +1,10 @@
-node_modules
 .git
 .cache
 .pythonlibs
 .venv
 __pycache__
 
-# Rust build artifacts (binary is built separately or not needed in deployment)
+# Rust build artifacts
 boosterstate/target
 
 # Development files
@@ -27,10 +26,10 @@ scripts/
 .local/
 attached_assets/
 
-# Build artifacts already in dist/
+# Source files (compiled output lives in dist/)
 client/src
-server/
 shared/
+script/
 
 # Test and development configs
 *.test.*
