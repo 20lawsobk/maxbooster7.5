@@ -1,4 +1,5 @@
 import http from 'http';
+import { logger } from '../../logger.js';
 
 const BASE_URL = 'http://localhost:5000';
 
@@ -228,17 +229,15 @@ function formatNumber(n: number): string {
 }
 
 async function main() {
-  console.log('═'.repeat(70));
-  console.log('🚀 MAX BOOSTER LOAD TESTING - SCALING TO 80 BILLION USERS');
-  console.log('═'.repeat(70));
+  logger.info('MAX BOOSTER LOAD TESTING - SCALING TO 80 BILLION USERS');
   
   let cookie = '';
   try {
-    console.log('\n🔐 Authenticating...');
+    logger.info('Authenticating...');
     cookie = await getAuthCookie();
-    console.log('✅ Authenticated\n');
+    logger.info('Authenticated');
   } catch (e) {
-    console.log('⚠️ Auth failed, proceeding with unauthenticated tests\n');
+    logger.warn('Auth failed, proceeding with unauthenticated tests');
   }
 
   const endpoints = [
@@ -259,9 +258,7 @@ async function main() {
   const allIssues: string[] = [];
 
   for (const ep of endpoints) {
-    console.log(`\n${'─'.repeat(70)}`);
-    console.log(`📊 Testing: ${ep.name} (${ep.path})`);
-    console.log('─'.repeat(70));
+    logger.info(`Testing: ${ep.name}`, { path: ep.path });
     
     const results: LoadTestResult[] = [];
     
@@ -280,14 +277,14 @@ async function main() {
         results.push(result);
         
         const successRate = (result.successfulRequests / result.totalRequests * 100).toFixed(1);
-        console.log(`✅ ${result.requestsPerSecond.toFixed(0)} req/s, ${result.avgResponseMs.toFixed(0)}ms avg, ${successRate}% success`);
+        logger.info(`Load test passed`, { endpoint: ep.path, concurrency, reqPerSec: result.requestsPerSecond.toFixed(0), avgMs: result.avgResponseMs.toFixed(0), successRate: `${successRate}%` });
         
         if (result.failedRequests > 0) {
           allIssues.push(`${ep.name} at ${concurrency} users: ${JSON.stringify(result.errors)}`);
         }
         
       } catch (error: any) {
-        console.log(`❌ Failed: ${error.message}`);
+        logger.error(`Load test failed`, { endpoint: ep.path, concurrency, error: error.message });
         allIssues.push(`${ep.name} at ${concurrency}: ${error.message}`);
       }
     }
@@ -295,9 +292,7 @@ async function main() {
     allResults.set(ep.name, results);
   }
 
-  console.log('\n' + '═'.repeat(70));
-  console.log('📈 SCALE PROJECTIONS UP TO 80 BILLION USERS');
-  console.log('═'.repeat(70));
+  logger.info('SCALE PROJECTIONS UP TO 80 BILLION USERS');
   
   for (const [name, results] of allResults.entries()) {
     if (results.length === 0) continue;
@@ -306,70 +301,63 @@ async function main() {
       a.requestsPerSecond > b.requestsPerSecond ? a : b
     );
     
-    console.log(`\n🎯 ${name}:`);
-    console.log(`   Base Performance: ${bestResult.requestsPerSecond.toFixed(0)} req/s, ${bestResult.avgResponseMs.toFixed(0)}ms latency`);
-    
+    const projections: Record<string, string> = {};
     for (const target of projectionTargets) {
       const projection = projectToScale(bestResult, target);
-      console.log(`   ${projection.scale} users: ~${formatNumber(projection.serversNeeded)} servers, ${projection.projectedLatency.toFixed(0)}ms latency`);
+      projections[`${projection.scale} users`] = `~${formatNumber(projection.serversNeeded)} servers, ${projection.projectedLatency.toFixed(0)}ms latency`;
     }
+    
+    logger.info(`Scale projection: ${name}`, {
+      basePerformance: `${bestResult.requestsPerSecond.toFixed(0)} req/s, ${bestResult.avgResponseMs.toFixed(0)}ms latency`,
+      ...projections,
+    });
   }
 
-  console.log('\n' + '═'.repeat(70));
-  console.log('🛠️ RECOMMENDATIONS FOR 80 BILLION SCALE');
-  console.log('═'.repeat(70));
-  
-  const recommendations = [
-    '1. INFRASTRUCTURE:',
-    '   - Deploy 50,000+ Kubernetes pods across 100 regions',
-    '   - Use multi-cloud (AWS + GCP + Azure) for redundancy',
-    '   - Implement edge computing nodes in 200+ cities',
-    '',
-    '2. DATABASE:',
-    '   - PostgreSQL sharding with 10,000+ shards',
-    '   - Read replicas: 100+ per region',
-    '   - Distributed cache: Redis Cluster with 1000+ nodes',
-    '   - Data partitioning by user region/ID hash',
-    '',
-    '3. APPLICATION:',
-    '   - Connection pooling: 100+ connections per instance',
-    '   - Circuit breakers on all external calls',
-    '   - Rate limiting: 10,000 req/min per user',
-    '   - Request queuing with BullMQ/RabbitMQ',
-    '',
-    '4. CACHING:',
-    '   - Global CDN for static assets',
-    '   - API response caching (1-60 second TTL)',
-    '   - Session storage in Redis Cluster',
-    '   - Database query caching',
-    '',
-    '5. MONITORING:',
-    '   - Distributed tracing (Jaeger/Zipkin)',
-    '   - Real-time metrics (Prometheus/Grafana)',
-    '   - AI-powered anomaly detection',
-    '   - Auto-scaling triggers',
-  ];
-  
-  recommendations.forEach(r => console.log(r));
+  logger.info('Recommendations for 80 billion scale', {
+    infrastructure: [
+      'Deploy 50,000+ Kubernetes pods across 100 regions',
+      'Use multi-cloud (AWS + GCP + Azure) for redundancy',
+      'Implement edge computing nodes in 200+ cities',
+    ],
+    database: [
+      'PostgreSQL sharding with 10,000+ shards',
+      'Read replicas: 100+ per region',
+      'Distributed cache: Redis Cluster with 1000+ nodes',
+      'Data partitioning by user region/ID hash',
+    ],
+    application: [
+      'Connection pooling: 100+ connections per instance',
+      'Circuit breakers on all external calls',
+      'Rate limiting: 10,000 req/min per user',
+      'Request queuing with BullMQ/RabbitMQ',
+    ],
+    caching: [
+      'Global CDN for static assets',
+      'API response caching (1-60 second TTL)',
+      'Session storage in Redis Cluster',
+      'Database query caching',
+    ],
+    monitoring: [
+      'Distributed tracing (Jaeger/Zipkin)',
+      'Real-time metrics (Prometheus/Grafana)',
+      'AI-powered anomaly detection',
+      'Auto-scaling triggers',
+    ],
+  });
 
   if (allIssues.length > 0) {
-    console.log('\n' + '─'.repeat(70));
-    console.log('⚠️ ISSUES DETECTED DURING TESTING:');
-    console.log('─'.repeat(70));
-    [...new Set(allIssues)].forEach((issue, i) => console.log(`  ${i + 1}. ${issue}`));
+    logger.warn('Issues detected during testing', { issues: [...new Set(allIssues)] });
   }
 
-  console.log('\n' + '═'.repeat(70));
-  console.log('✅ LOAD TESTING COMPLETE');
-  console.log('═'.repeat(70));
-  
   const totalEndpoints = allResults.size;
   const successfulEndpoints = Array.from(allResults.values()).filter(r => 
     r.length > 0 && r[r.length - 1].failedRequests / r[r.length - 1].totalRequests < 0.05
   ).length;
   
-  console.log(`\nSummary: ${successfulEndpoints}/${totalEndpoints} endpoints passed stress testing`);
-  console.log(`Platform is architecturally prepared for 80 billion scale with recommended infrastructure.`);
+  logger.info('Load testing complete', {
+    summary: `${successfulEndpoints}/${totalEndpoints} endpoints passed stress testing`,
+    conclusion: 'Platform is architecturally prepared for 80 billion scale with recommended infrastructure.',
+  });
 }
 
-main().catch(console.error);
+main().catch((err) => logger.error('Load test failed', { error: err }));

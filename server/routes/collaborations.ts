@@ -52,7 +52,7 @@ router.post("/connect", async (req: Request, res: Response) => {
     return res.json(connection);
   } catch (error: any) {
     logger.error("Error sending connection request:", error);
-    return res.status(400).json({ message: error.message || "Failed to send connection request" });
+    return res.status(400).json({ message: "Failed to send connection request" });
   }
 });
 
@@ -69,7 +69,7 @@ router.post("/accept/:id", async (req: Request, res: Response) => {
     return res.json(connection);
   } catch (error: any) {
     logger.error("Error accepting connection:", error);
-    return res.status(400).json({ message: error.message || "Failed to accept connection" });
+    return res.status(400).json({ message: "Failed to accept connection" });
   }
 });
 
@@ -86,7 +86,7 @@ router.post("/decline/:id", async (req: Request, res: Response) => {
     return res.json(connection);
   } catch (error: any) {
     logger.error("Error declining connection:", error);
-    return res.status(400).json({ message: error.message || "Failed to decline connection" });
+    return res.status(400).json({ message: "Failed to decline connection" });
   }
 });
 
@@ -100,7 +100,7 @@ router.delete("/connections/:id", async (req: Request, res: Response) => {
     return res.json({ success: true });
   } catch (error: any) {
     logger.error("Error removing connection:", error);
-    return res.status(400).json({ message: error.message || "Failed to remove connection" });
+    return res.status(400).json({ message: "Failed to remove connection" });
   }
 });
 
@@ -164,7 +164,7 @@ router.post("/projects", async (req: Request, res: Response) => {
     return res.json(project);
   } catch (error: any) {
     logger.error("Error creating project:", error);
-    return res.status(400).json({ message: error.message || "Failed to create project" });
+    return res.status(400).json({ message: "Failed to create project" });
   }
 });
 
@@ -183,7 +183,7 @@ router.post("/projects/:id/join", async (req: Request, res: Response) => {
     return res.json(member);
   } catch (error: any) {
     logger.error("Error joining project:", error);
-    return res.status(400).json({ message: error.message || "Failed to join project" });
+    return res.status(400).json({ message: "Failed to join project" });
   }
 });
 
@@ -197,7 +197,7 @@ router.post("/projects/:id/leave", async (req: Request, res: Response) => {
     return res.json({ success: true });
   } catch (error: any) {
     logger.error("Error leaving project:", error);
-    return res.status(400).json({ message: error.message || "Failed to leave project" });
+    return res.status(400).json({ message: "Failed to leave project" });
   }
 });
 

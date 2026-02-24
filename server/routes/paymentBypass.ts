@@ -91,7 +91,7 @@ router.post('/extend', requireAdmin, async (req: AuthenticatedRequest, res: Resp
     });
   } catch (error: any) {
     logger.error('[PaymentBypass] Failed to extend:', error);
-    res.status(400).json({ error: error.message || 'Failed to extend payment bypass' });
+    res.status(400).json({ error: 'Failed to extend payment bypass' });
   }
 });
 

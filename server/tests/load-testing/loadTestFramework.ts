@@ -2,6 +2,7 @@ import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import http from 'http';
 import https from 'https';
 import { EventEmitter } from 'events';
+import { logger } from '../../logger.js';
 
 export interface LoadTestConfig {
   targetUrl: string;
@@ -220,7 +221,7 @@ export class ScalabilityTester {
     const results: ScaleTestResult[] = [];
     
     for (const profile of this.scaleProfiles) {
-      console.log(`\n🔥 Testing at ${profile.name} scale (simulating ${this.formatNumber(profile.multiplier)} users)...`);
+      logger.info(`Testing at ${profile.name} scale`, { simulatedUsers: this.formatNumber(profile.multiplier) });
       
       const actualConcurrentUsers = Math.min(profile.users, 1000);
       
@@ -249,13 +250,13 @@ export class ScalabilityTester {
         this.printResults(results[results.length - 1]);
 
         if (!analysis.passed) {
-          console.log(`⚠️  Performance degradation detected at ${profile.name} scale`);
+          logger.warn(`Performance degradation detected at ${profile.name} scale`);
         }
 
         if (profile.name === maxScale) break;
         
       } catch (error: any) {
-        console.error(`❌ Test failed at ${profile.name} scale:`, error.message);
+        logger.error(`Test failed at ${profile.name} scale`, { error: error.message });
         results.push({
           scale: profile.name,
           simulatedUsers: profile.multiplier,
@@ -345,24 +346,18 @@ export class ScalabilityTester {
   }
 
   private printResults(result: ScaleTestResult): void {
-    console.log(`\n📊 Results for ${result.scale} scale (${this.formatNumber(result.simulatedUsers)} users):`);
-    console.log(`   Total Requests: ${this.formatNumber(result.results.totalRequests)}`);
-    console.log(`   Success Rate: ${((1 - result.results.errorRate) * 100).toFixed(2)}%`);
-    console.log(`   Avg Response: ${result.results.avgResponseTimeMs?.toFixed(2) || 'N/A'}ms`);
-    console.log(`   P95 Response: ${result.results.p95ResponseTimeMs?.toFixed(2) || 'N/A'}ms`);
-    console.log(`   P99 Response: ${result.results.p99ResponseTimeMs?.toFixed(2) || 'N/A'}ms`);
-    console.log(`   Throughput: ${this.formatNumber(Math.round(result.results.requestsPerSecond || 0))} req/s`);
-    console.log(`   Status: ${result.passed ? '✅ PASSED' : '❌ NEEDS OPTIMIZATION'}`);
-    
-    if (result.bottlenecks.length > 0) {
-      console.log(`   Bottlenecks:`);
-      result.bottlenecks.forEach(b => console.log(`     - ${b}`));
-    }
-    
-    if (result.recommendations.length > 0) {
-      console.log(`   Recommendations:`);
-      result.recommendations.forEach(r => console.log(`     - ${r}`));
-    }
+    logger.info(`Results for ${result.scale} scale`, {
+      simulatedUsers: this.formatNumber(result.simulatedUsers),
+      totalRequests: this.formatNumber(result.results.totalRequests),
+      successRate: `${((1 - result.results.errorRate) * 100).toFixed(2)}%`,
+      avgResponse: `${result.results.avgResponseTimeMs?.toFixed(2) || 'N/A'}ms`,
+      p95Response: `${result.results.p95ResponseTimeMs?.toFixed(2) || 'N/A'}ms`,
+      p99Response: `${result.results.p99ResponseTimeMs?.toFixed(2) || 'N/A'}ms`,
+      throughput: `${this.formatNumber(Math.round(result.results.requestsPerSecond || 0))} req/s`,
+      status: result.passed ? 'PASSED' : 'NEEDS OPTIMIZATION',
+      bottlenecks: result.bottlenecks,
+      recommendations: result.recommendations,
+    });
   }
 
   private formatNumber(num: number): string {
@@ -388,9 +383,7 @@ export async function runComprehensiveLoadTest(baseUrl: string, authCookie: stri
   const allResults: Map<string, ScaleTestResult[]> = new Map();
 
   for (const ep of endpoints) {
-    console.log(`\n${'='.repeat(60)}`);
-    console.log(`Testing: ${ep.name}`);
-    console.log('='.repeat(60));
+    logger.info(`Testing endpoint: ${ep.name}`);
 
     const results = await tester.runProgressiveScaleTest({
       targetUrl: baseUrl,
@@ -405,14 +398,14 @@ export async function runComprehensiveLoadTest(baseUrl: string, authCookie: stri
     allResults.set(ep.name, results);
   }
 
-  console.log('\n' + '='.repeat(60));
-  console.log('FINAL SUMMARY');
-  console.log('='.repeat(60));
+  logger.info('FINAL SUMMARY');
   
   for (const [endpoint, results] of allResults.entries()) {
     const lastResult = results[results.length - 1];
-    console.log(`\n${endpoint}:`);
-    console.log(`  Max Scale Tested: ${lastResult.scale} (${tester['formatNumber'](lastResult.simulatedUsers)} users)`);
-    console.log(`  Final Status: ${lastResult.passed ? '✅ PASSED' : '❌ NEEDS WORK'}`);
+    logger.info(`Endpoint summary: ${endpoint}`, {
+      maxScaleTested: lastResult.scale,
+      simulatedUsers: tester['formatNumber'](lastResult.simulatedUsers),
+      status: lastResult.passed ? 'PASSED' : 'NEEDS WORK',
+    });
   }
 }

@@ -1,5 +1,6 @@
 import http from 'http';
 import { LoadTestFramework, ScalabilityTester, ScaleTestResult } from './loadTestFramework';
+import { logger } from '../../logger.js';
 
 const BASE_URL = 'http://localhost:5000';
 
@@ -74,17 +75,15 @@ async function getAuthCookie(): Promise<string> {
 }
 
 async function runAllLoadTests(): Promise<void> {
-  console.log('🚀 Max Booster Load Testing Suite');
-  console.log('=' .repeat(70));
-  console.log('Testing scalability up to 80 BILLION simulated users\n');
+  logger.info('Max Booster Load Testing Suite - Testing scalability up to 80 BILLION simulated users');
   
   let authCookie = '';
   try {
-    console.log('🔐 Authenticating...');
+    logger.info('Authenticating...');
     authCookie = await getAuthCookie();
-    console.log('✅ Authentication successful\n');
+    logger.info('Authentication successful');
   } catch (error) {
-    console.error('❌ Failed to authenticate:', error);
+    logger.error('Failed to authenticate', { error });
     return;
   }
 
@@ -94,10 +93,7 @@ async function runAllLoadTests(): Promise<void> {
   const fixes: string[] = [];
 
   for (const suite of TEST_SUITES) {
-    console.log(`\n${'═'.repeat(70)}`);
-    console.log(`📊 TESTING: ${suite.name.toUpperCase()}`);
-    console.log(`   Endpoint: ${suite.endpoint}`);
-    console.log('═'.repeat(70));
+    logger.info(`Testing: ${suite.name.toUpperCase()}`, { endpoint: suite.endpoint });
 
     try {
       const results = await tester.runProgressiveScaleTest({
@@ -121,36 +117,30 @@ async function runAllLoadTests(): Promise<void> {
       }
 
     } catch (error: any) {
-      console.error(`❌ ${suite.name} test failed:`, error.message);
+      logger.error(`${suite.name} test failed`, { error: error.message });
       issues.push(`${suite.name}: Test execution failed - ${error.message}`);
     }
   }
 
-  console.log('\n' + '═'.repeat(70));
-  console.log('📈 COMPREHENSIVE SCALABILITY REPORT');
-  console.log('═'.repeat(70));
+  logger.info('COMPREHENSIVE SCALABILITY REPORT');
 
-  console.log('\n🎯 ENDPOINT SUMMARY:');
   for (const [name, results] of allResults.entries()) {
     const maxResult = results[results.length - 1];
     const passRate = results.filter(r => r.passed).length / results.length * 100;
-    console.log(`\n  ${name}:`);
-    console.log(`    Max Tested: ${maxResult?.scale || 'N/A'} (${formatNumber(maxResult?.simulatedUsers || 0)} users)`);
-    console.log(`    Pass Rate: ${passRate.toFixed(0)}%`);
-    console.log(`    Final Status: ${maxResult?.passed ? '✅ PASSED' : '⚠️ NEEDS OPTIMIZATION'}`);
+    logger.info(`Endpoint summary: ${name}`, {
+      maxTested: `${maxResult?.scale || 'N/A'} (${formatNumber(maxResult?.simulatedUsers || 0)} users)`,
+      passRate: `${passRate.toFixed(0)}%`,
+      status: maxResult?.passed ? 'PASSED' : 'NEEDS OPTIMIZATION',
+    });
   }
 
-  console.log('\n' + '─'.repeat(70));
-  console.log('🔍 IDENTIFIED ISSUES:');
   if (issues.length === 0) {
-    console.log('  None detected!');
+    logger.info('No issues detected');
   } else {
     const uniqueIssues = [...new Set(issues)];
-    uniqueIssues.forEach((issue, i) => console.log(`  ${i + 1}. ${issue}`));
+    logger.warn('Identified issues', { issues: uniqueIssues });
   }
 
-  console.log('\n' + '─'.repeat(70));
-  console.log('🛠️ RECOMMENDED OPTIMIZATIONS FOR 80B SCALE:');
   const uniqueFixes = [...new Set(fixes)];
   const criticalFixes = [
     'Implement Redis cluster for distributed caching',
@@ -165,29 +155,28 @@ async function runAllLoadTests(): Promise<void> {
     'Implement geo-distributed deployment',
   ];
   
-  [...uniqueFixes, ...criticalFixes].slice(0, 15).forEach((fix, i) => {
-    console.log(`  ${i + 1}. ${fix}`);
+  logger.info('Recommended optimizations for 80B scale', {
+    recommendations: [...uniqueFixes, ...criticalFixes].slice(0, 15),
   });
 
-  console.log('\n' + '═'.repeat(70));
-  console.log('📊 THEORETICAL CAPACITY ANALYSIS FOR 80 BILLION USERS:');
-  console.log('═'.repeat(70));
-  
   const avgThroughput = Array.from(allResults.values())
     .map(r => r[r.length - 1]?.results.requestsPerSecond || 0)
     .reduce((a, b) => a + b, 0) / allResults.size;
 
-  console.log(`\n  Current Throughput: ~${formatNumber(Math.round(avgThroughput))} req/sec per instance`);
-  console.log(`  Required for 80B DAU: ~${formatNumber(80000000000 / 86400)} req/sec`);
-  console.log(`  Instances Needed: ~${formatNumber(Math.ceil((80000000000 / 86400) / avgThroughput))} server instances`);
-  console.log(`  Recommended Architecture:`);
-  console.log(`    - 1000+ Kubernetes pods across 50+ regions`);
-  console.log(`    - 500+ PostgreSQL shards with read replicas`);
-  console.log(`    - Redis cluster with 100+ nodes`);
-  console.log(`    - Global CDN with edge computing`);
-  console.log(`    - Multi-cloud deployment (AWS + GCP + Azure)`);
+  logger.info('Theoretical capacity analysis for 80 billion users', {
+    currentThroughput: `~${formatNumber(Math.round(avgThroughput))} req/sec per instance`,
+    requiredFor80BDAU: `~${formatNumber(80000000000 / 86400)} req/sec`,
+    instancesNeeded: `~${formatNumber(Math.ceil((80000000000 / 86400) / avgThroughput))} server instances`,
+    recommendedArchitecture: [
+      '1000+ Kubernetes pods across 50+ regions',
+      '500+ PostgreSQL shards with read replicas',
+      'Redis cluster with 100+ nodes',
+      'Global CDN with edge computing',
+      'Multi-cloud deployment (AWS + GCP + Azure)',
+    ],
+  });
 
-  console.log('\n✅ Load testing complete!');
+  logger.info('Load testing complete');
 }
 
 function formatNumber(num: number): string {
@@ -198,4 +187,4 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-runAllLoadTests().catch(console.error);
+runAllLoadTests().catch((err) => logger.error('Load test suite failed', { error: err }));

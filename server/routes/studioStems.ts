@@ -238,8 +238,8 @@ router.post('/projects/:projectId/stems/:exportId/cancel', requireAuth, async (r
     if (error.message === 'Export not found') {
       return res.status(404).json({ error: 'Export not found' });
     }
-    if (error.message.includes('Cannot cancel')) {
-      return res.status(400).json({ error: error.message });
+    if (error.message?.includes('Cannot cancel')) {
+      return res.status(400).json({ error: 'Invalid stem export request' });
     }
     res.status(500).json({ error: 'Failed to cancel export' });
   }
