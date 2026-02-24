@@ -306,7 +306,7 @@ function NextStepsFeedback({ feedback, onDismiss }: NextStepsFeedbackProps) {
   const { title, description, type, nextSteps, dismissible = true } = feedback;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[10000] animate-in slide-in-from-bottom-5 duration-300">
+    <div className="fixed bottom-20 lg:bottom-4 right-4 z-[10000] animate-in slide-in-from-bottom-5 duration-300">
       <Card className={cn(
         'w-80 shadow-lg border-l-4',
         type === 'success' && 'border-l-green-500',

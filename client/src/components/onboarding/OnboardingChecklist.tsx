@@ -210,7 +210,7 @@ export default function OnboardingChecklist({
 
   if (isDismissed) {
     return (
-      <div className={cn('fixed bottom-4 right-4 z-50', variant !== 'floating' && 'hidden')}>
+      <div className={cn('fixed bottom-20 lg:bottom-4 right-4 z-[42]', variant !== 'floating' && 'hidden')}>
         <Button
           onClick={handleRestore}
           size="sm"
@@ -230,7 +230,7 @@ export default function OnboardingChecklist({
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="fixed bottom-4 right-4 z-50"
+        className="fixed bottom-20 lg:bottom-4 right-4 z-[42]"
       >
         <Button
           onClick={handleMaximize}
@@ -520,7 +520,7 @@ export default function OnboardingChecklist({
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className={cn('fixed bottom-4 right-4 z-50', className)}
+        className={cn('fixed bottom-20 lg:bottom-4 right-4 z-[42]', className)}
       >
         <Card className="w-full max-w-md shadow-xl border-2 border-primary/20 relative overflow-hidden">
           {cardContent}

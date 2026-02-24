@@ -97,9 +97,9 @@ export function QuickActionBar({
   const visibleActions = isExpanded ? quickActions : quickActions.slice(0, 3);
 
   const positionClasses = {
-    'bottom-right': 'right-4 bottom-4',
-    'bottom-center': 'left-1/2 -translate-x-1/2 bottom-4',
-    'bottom-left': 'left-4 bottom-4',
+    'bottom-right': 'right-4 bottom-20 lg:bottom-4',
+    'bottom-center': 'left-1/2 -translate-x-1/2 bottom-20 lg:bottom-4',
+    'bottom-left': 'left-4 bottom-20 lg:bottom-4',
   };
 
   return (

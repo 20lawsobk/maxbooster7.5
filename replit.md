@@ -63,6 +63,14 @@ Max Booster is a full-stack web application for AI-powered music career manageme
   - StreakCounter.tsx: streak update POST now includes getCsrfHeaders()
   - ConnectedAccountsManager.tsx: social connect POST now includes getCsrfHeaders()
   - Replaced broken base64 audio string in AchievementNotification with Web Audio API oscillator (C-E-G chime)
+- 2026-02-24: Fixed platform-wide component/button spacing and overlap:
+  - Established z-index hierarchy: MobileBottomNav(z-40) < OnboardingChecklist(z-42) < AIAssistant(z-45) < InstallBanner(z-55) < CookieConsent(z-60) < Toast/Feedback(z-10000)
+  - All fixed-bottom elements offset above mobile nav on small screens (bottom-20 lg:bottom-4/6)
+  - Cookie consent banner made compact (reduced padding, shorter text, smaller buttons)
+  - Removed aggressive mobile CSS: min-height 48px no longer applies to ghost/icon buttons or inline links
+  - AI assistant chat panel width responsive (full-width on mobile with margins, 80/96 on desktop)
+  - QuickActionBar, OnboardingChecklist, GlobalFeedback all avoid mobile bottom nav overlap
+  - Toast viewport offset for mobile bottom nav (sm:bottom-20 lg:bottom-0)
 - 2026-02-24: Fixed demo mode — now purely account-based (no session flags):
   - Demo detection is entirely by email (demo@maxbooster.ai), not session state
   - Removed all session-based isDemo flags — no cross-session contamination possible

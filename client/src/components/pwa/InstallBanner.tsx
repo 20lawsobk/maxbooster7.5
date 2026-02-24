@@ -55,9 +55,10 @@ export function InstallBanner() {
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-50 p-4 transition-transform duration-300 ease-out ${
+      className={`fixed bottom-0 left-0 right-0 z-[55] p-3 sm:p-4 transition-transform duration-300 ease-out ${
         isVisible ? 'translate-y-0' : 'translate-y-full'
       }`}
+      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
     >
       <div className="max-w-lg mx-auto">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/70 backdrop-blur-xl shadow-2xl">

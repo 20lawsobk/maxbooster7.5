@@ -803,74 +803,12 @@
 
 /* Global mobile spacing enhancements */
 @media (max-width: 640px) {
-  /* Increase touch targets on mobile */
-  button, [role="button"], a {
-    min-height: 48px;
+  /* Increase touch targets on mobile - only for standalone interactive elements */
+  button:not(.inline-btn):not([class*="ghost"]):not([class*="icon"]),
+  [role="button"]:not(.inline-btn) {
+    min-height: 44px;
   }
-  
-  /* Better card padding on mobile */
-  .card-content, [class*="CardContent"] {
-    padding: 1.25rem !important;
-  }
-  
-  /* More breathing room between sections */
-  .space-y-4 > * + * {
-    margin-top: 1.25rem;
-  }
-  
-  .space-y-6 > * + * {
-    margin-top: 2rem;
-  }
-  
-  .space-y-8 > * + * {
-    margin-top: 2.5rem;
-  }
-  
-  /* Better grid gaps on mobile */
-  .gap-4 {
-    gap: 1.25rem;
-  }
-  
-  .gap-6 {
-    gap: 1.5rem;
-  }
-  
-  .gap-8 {
-    gap: 2rem;
-  }
-  
-  /* Increased container padding on mobile */
-  .px-4 {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
-  }
-  
-  .py-8 {
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
-  }
-  
-  .py-12 {
-    padding-top: 3.5rem;
-    padding-bottom: 3.5rem;
-  }
-  
-  .py-16 {
-    padding-top: 4.5rem;
-    padding-bottom: 4.5rem;
-  }
-  
-  /* Section margin spacing */
-  .my-8 {
-    margin-top: 2.5rem;
-    margin-bottom: 2.5rem;
-  }
-  
-  .my-12 {
-    margin-top: 3.5rem;
-    margin-bottom: 3.5rem;
-  }
-  
+
   /* Form element spacing */
   input, select, textarea {
     padding: 0.875rem 1rem;
@@ -879,13 +817,9 @@
   
   /* Tab triggers more touchable */
   [role="tablist"] button {
-    padding: 0.75rem 1.25rem;
+    padding: 0.75rem 1rem;
     font-size: 0.875rem;
-  }
-  
-  /* Better badge spacing */
-  .badge, [class*="Badge"] {
-    padding: 0.375rem 0.625rem;
+    min-height: 40px;
   }
 }
 

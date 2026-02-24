@@ -143,7 +143,7 @@ export function AIAssistantPersonalized() {
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[45]">
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
@@ -159,8 +159,8 @@ export function AIAssistantPersonalized() {
 
   return (
     <div className={cn(
-      "fixed bottom-6 right-6 z-50 transition-all duration-200",
-      isMinimized ? "w-80" : "w-96"
+      "fixed bottom-20 lg:bottom-6 right-2 sm:right-6 z-[45] transition-all duration-200",
+      isMinimized ? "w-[calc(100vw-1rem)] sm:w-80" : "w-[calc(100vw-1rem)] sm:w-96"
     )}>
       <Card className="shadow-2xl border-2 border-cyan-500/20 bg-[#1a1a1a]">
         <CardHeader className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-b border-cyan-500/20 p-4">
