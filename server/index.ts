@@ -9,6 +9,7 @@ import { serveStatic } from "./static.ts";
 import { createServer } from "http";
 import compression from "compression";
 import { logger } from "./logger.ts";
+import { setupStartupEndpoints } from "./startup-probes.ts";
 import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
 import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
 import { generateCsrfToken, csrfProtectionWithExemptions, getCsrfToken } from "./middleware/csrf.ts";
@@ -61,6 +62,9 @@ async function loadOptionalModules() {
 }
 
 const app = express();
+
+setupStartupEndpoints(app);
+
 app.use(compression());
 app.use(cookieParser());
 const httpServer = createServer(app);

@@ -488,12 +488,14 @@ class ErrorService {
       });
 
       if (!response.ok) {
-        // Re-queue errors if reporting fails
-        this.errorQueue.push(...errors);
+        const retriable = errors.filter(e => (e.retryCount || 0) < 3);
+        retriable.forEach(e => e.retryCount = (e.retryCount || 0) + 1);
+        this.errorQueue.push(...retriable);
       }
     } catch (error: unknown) {
-      // Re-queue errors if reporting fails
-      this.errorQueue.push(...errors);
+      const retriable = errors.filter(e => (e.retryCount || 0) < 3);
+      retriable.forEach(e => e.retryCount = (e.retryCount || 0) + 1);
+      this.errorQueue.push(...retriable);
       logger.error('Failed to report errors to backend:', error);
     } finally {
       this.isReporting = false;

@@ -126,8 +126,11 @@ const CSRF_EXEMPT_PATHS = [
   '/api/auth/token/refresh',
   '/api/auth/google',
   '/api/csrf-token',
+  '/api/errors',
+  '/api/sendgrid/webhook',
   '/health',
   '/ready',
+  '/status',
 ];
 
 export const csrfProtectionWithExemptions: RequestHandler = (req: Request, res: Response, next: NextFunction) => {

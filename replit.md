@@ -51,6 +51,13 @@ Max Booster is a full-stack web application for AI-powered music career manageme
 - 310 useMemo + 1342 useCallback for render optimization
 
 ## Recent Changes
+- 2026-02-24: Fixed production errors (CSRF + health probes):
+  - Added /api/errors, /api/sendgrid/webhook, /status to CSRF exempt paths
+  - POST /api/errors was blocked by CSRF, causing infinite retry loop (403 every 5 seconds in production logs)
+  - Added retry cap (max 3) to client errorService to prevent infinite re-queue loops
+  - Wired up setupStartupEndpoints early in server init (before Vite middleware)
+  - Added /health, /status, /ready, /startup endpoints registered before all middleware
+  - Health check probes (GET /status, GET /health) now return proper JSON instead of 401/HTML
 - 2026-02-24: Fixed demo mode — now purely account-based (no session flags):
   - Demo detection is entirely by email (demo@maxbooster.ai), not session state
   - Removed all session-based isDemo flags — no cross-session contamination possible

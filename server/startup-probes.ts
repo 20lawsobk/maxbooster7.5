@@ -256,9 +256,10 @@ export const startupProbes = new StartupProbeManager();
 
 // Express middleware to add startup endpoints
 export function setupStartupEndpoints(app: import('express').Express): void {
-  // /health - Always responds (liveness probe)
-  // This is already defined in index.ts, but we ensure it exists
-  
+  app.get('/health', (_req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // /startup - Verbose startup status
   app.get('/startup', (_req, res) => {
     const status = startupProbes.getStatus();
@@ -269,6 +270,22 @@ export function setupStartupEndpoints(app: import('express').Express): void {
       uptime: startupProbes.getUptimeSeconds(),
       timestamp: new Date().toISOString(),
     });
+  });
+
+  app.get('/status', (_req, res) => {
+    if (startupProbes.isReady()) {
+      res.status(200).json({
+        status: 'ok',
+        uptime: startupProbes.getUptimeSeconds(),
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      res.status(503).json({
+        status: 'starting',
+        phase: startupProbes.getStatus().phase,
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
 
   // Override /ready to use probe status
