@@ -117,7 +117,14 @@ export const refreshCsrfToken: RequestHandler = (req: Request, res: Response) =>
 const CSRF_EXEMPT_PATHS = [
   '/api/webhooks/',
   '/api/stripe/webhook',
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/auth/verify',
   '/api/auth/token/refresh',
+  '/api/auth/google',
+  '/api/csrf-token',
   '/health',
   '/ready',
 ];

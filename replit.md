@@ -35,5 +35,15 @@ Max Booster is a full-stack web application for AI-powered music career manageme
 - `SENDGRID_API_KEY` - SendGrid email API key (optional for dev)
 - Various social media API keys (optional)
 
+## Security
+- CSRF protection: Cookie-based tokens with `x-csrf-token` header on mutations, exempt paths for webhooks/health
+- Helmet with CSP enabled via mandatory middleware
+- Rate limiting via express-rate-limit
+- Prototype pollution sanitization
+- Zod input validation on all write endpoints (985+ validation instances)
+- Parameterized SQL via Drizzle ORM (no raw queries)
+- Session-based auth with Redis store (production) / MemoryStore (dev fallback)
+
 ## Recent Changes
+- 2026-02-24: Production hardening - wired CSRF middleware, fixed 14 TypeScript errors, verified auth/security/error handling/runtime stability
 - 2026-02-23: Initial Replit import and setup
