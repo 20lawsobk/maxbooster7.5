@@ -47,7 +47,7 @@ export function DAWEngineControls({
 
   useEffect(() => {
     if (!daw.isInitialized) {
-      daw.initialize().catch(console.error);
+      daw.initialize().catch((err: unknown) => logger.error('DAW init failed:', err));
     }
   }, [daw]);
 

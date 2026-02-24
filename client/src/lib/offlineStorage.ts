@@ -240,7 +240,7 @@ export async function fetchWithCache<T = unknown>(
           category: options?.category,
           ttlMs: options?.ttlMs,
         });
-      }).catch(console.error);
+      }).catch((err: unknown) => logger.error('Offline cache fetch failed:', err));
     }
     return cached;
   }
