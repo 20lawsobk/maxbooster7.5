@@ -26,7 +26,7 @@ export function useRequireSubscription() {
       return;
     }
 
-    if ((user as any)?.isDemo) {
+    if ((user as any)?.isDemo || user?.email === 'demo@maxbooster.ai') {
       return;
     }
     

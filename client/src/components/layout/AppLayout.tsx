@@ -57,7 +57,7 @@ export function AppLayout({ title, subtitle, children, noPadding = false }: AppL
   const fluidLayout = useFluidLayout();
   const { containerRef, layoutMode, isMobile, isTablet, isSmallHeight } = fluidLayout;
   const { user } = useAuth();
-  const isDemo = (user as any)?.isDemo === true;
+  const isDemo = (user as any)?.isDemo === true || user?.email === 'demo@maxbooster.ai';
 
   const getPadding = () => {
     if (noPadding) return '';

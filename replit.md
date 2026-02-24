@@ -51,6 +51,11 @@ Max Booster is a full-stack web application for AI-powered music career manageme
 - 310 useMemo + 1342 useCallback for render optimization
 
 ## Recent Changes
+- 2026-02-24: Fixed demo mode redirect-to-pricing bug:
+  - Demo user now gets subscriptionStatus='active' and subscriptionTier='pro' in database on login
+  - Previously demo user had null subscription, relied solely on session isDemo flag which could be lost
+  - Added email-based demo detection fallback (demo@maxbooster.ai) in useRequireSubscription, AppLayout, and blockDemoWrite
+  - Demo users now reliably reach the dashboard and all protected routes even if session is lost
 - 2026-02-24: Fixed hybrid storage provider activation:
   - Storage config now checks REPLIT_BUCKET_ID (not just PRIVATE_OBJECT_DIR) when selecting provider
   - ReplitStorageProvider constructor accepts REPLIT_BUCKET_ID as fallback for bucket name

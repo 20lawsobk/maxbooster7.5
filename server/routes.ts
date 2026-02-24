@@ -1214,6 +1214,15 @@ export async function registerRoutes(
           lastName: "User"
         });
       }
+
+      // Ensure demo user always has active subscription so they can access all protected routes
+      if (demoUser.subscriptionStatus !== 'active' || demoUser.subscriptionTier !== 'pro') {
+        const updated = await storage.updateUser(demoUser.id, {
+          subscriptionStatus: 'active',
+          subscriptionTier: 'pro',
+        });
+        if (updated) demoUser = updated;
+      }
       
       req.session.userId = demoUser.id;
       (req.session as any).isDemo = true;
