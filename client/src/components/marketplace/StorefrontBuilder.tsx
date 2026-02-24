@@ -53,6 +53,7 @@ import {
   Shuffle,
 } from 'lucide-react';
 import { BogoPromotionsManager } from './BogoPromotionsManager';
+import { DNSZoneEditor } from './DNSZoneEditor';
 
 interface StorefrontTemplate {
   id: string;
@@ -1008,12 +1009,13 @@ export default function StorefrontBuilder() {
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-6">
                       <TabsTrigger value="overview">Overview</TabsTrigger>
                       <TabsTrigger value="branding">Branding</TabsTrigger>
                       <TabsTrigger value="colors">Colors & Fonts</TabsTrigger>
                       <TabsTrigger value="membership">Memberships</TabsTrigger>
                       <TabsTrigger value="promotions">Promotions</TabsTrigger>
+                      <TabsTrigger value="dns">DNS</TabsTrigger>
                     </TabsList>
 
                   <TabsContent value="overview" className="space-y-4 mt-4">
@@ -1959,6 +1961,13 @@ export default function StorefrontBuilder() {
 
                   <TabsContent value="promotions" className="space-y-4 mt-4">
                     <BogoPromotionsManager storefrontId={selectedStorefront.id} />
+                  </TabsContent>
+
+                  <TabsContent value="dns" className="space-y-4 mt-4">
+                    <DNSZoneEditor
+                      storefrontId={selectedStorefront.id}
+                      domain={selectedStorefront.customDomain || ''}
+                    />
                   </TabsContent>
                 </Tabs>
               </CardContent>

@@ -3280,6 +3280,7 @@ export async function registerRoutes(
     { path: "/api/distribution", name: "distribution", loader: () => import("./routes/distribution") },
     { path: "/api/countdowns", name: "releaseCountdown", loader: () => import("./routes/releaseCountdown") },
     { path: "/api/storefront", name: "storefront", loader: () => import("./routes/storefront") },
+    { path: "/api/dns", name: "dns", loader: () => import("./routes/dns") },
     { path: "/api/analytics", name: "analytics", loader: () => import("./routes/analytics-internal") },
     { path: "/api/status", name: "status", loader: () => import("./routes/status") },
     { path: "/api/monitoring", name: "monitoring", loader: () => import("./routes/monitoring") },

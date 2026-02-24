@@ -51,6 +51,18 @@ Max Booster is a full-stack web application for AI-powered music career manageme
 - 310 useMemo + 1342 useCallback for render optimization
 
 ## Recent Changes
+- 2026-02-24: Built-in DNS Management System (GoDaddy-style zone editor):
+  - New database tables: dns_record_cache, dns_templates, dns_provider_credentials
+  - DNS provider abstraction layer with GoDaddy and Cloudflare adapters (server/services/dnsProviderService.ts)
+  - Full CRUD API routes for DNS records, templates, and provider credentials (server/routes/dns.ts)
+  - DNSZoneEditor component with record table, add/edit/delete modals, TTL presets, search/filter (client/src/components/marketplace/DNSZoneEditor.tsx)
+  - DNS Templates system: save current zone config as template, apply templates to domains
+  - Integrated as "DNS" tab in StorefrontBuilder alongside existing tabs
+  - Domain ownership validation: DNS operations restricted to storefront's custom domain
+  - GoDaddy update/delete fix: handles name/type changes via delete+re-add pattern
+  - Provider credential storage with verification flow
+  - Batch record operations (up to 50 records per batch)
+  - Record validation per type (A, AAAA, CNAME, MX, TXT, NS, SRV)
 - 2026-02-24: Production hardening phase 4 (final sweep):
   - Fixed 17 remaining error.message leaks in responses (collaborations.ts, paymentBypass.ts, studioStems.ts)
   - Verified all 7 .then() chains have .catch() handlers (simulation.ts, search.ts, developerApi.ts)
