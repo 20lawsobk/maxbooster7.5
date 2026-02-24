@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { getCsrfHeaders } from '@/lib/queryClient';
 import { FileValidator, type ValidationResult } from './FileValidator';
 import {
   Upload,
@@ -170,6 +171,8 @@ export function FileUploader({
 
     const response = await fetch(`${uploadEndpoint}/chunk`, {
       method: 'POST',
+      headers: getCsrfHeaders(),
+      credentials: 'include',
       body: formData,
       signal: abortController.signal,
     });
@@ -220,6 +223,11 @@ export function FileUploader({
       abortController.signal.addEventListener('abort', () => xhr.abort());
 
       xhr.open('POST', uploadEndpoint);
+      xhr.withCredentials = true;
+      const csrfHeaders = getCsrfHeaders();
+      Object.entries(csrfHeaders).forEach(([key, value]) => {
+        xhr.setRequestHeader(key, value);
+      });
       xhr.send(formData);
     });
   };

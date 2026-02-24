@@ -457,7 +457,7 @@ function DashboardContent({ user }: { user: any }) {
             aria-label="Dashboard actions"
           >
             {/* Streak Counter in Header */}
-            <StreakCounter mode="compact" />
+            <StreakCounter compact={true} />
             <Button
               data-testid="button-discover-features"
               variant="outline"
@@ -796,7 +796,7 @@ function DashboardContent({ user }: { user: any }) {
               
               {/* Streak Counter */}
               <div className="space-y-4">
-                <StreakCounter mode="full" />
+                <StreakCounter showAll={true} />
                 <SuggestedCollaborators />
               </div>
             </div>

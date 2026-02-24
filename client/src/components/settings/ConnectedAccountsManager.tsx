@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getCsrfHeaders } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
@@ -207,6 +208,7 @@ export function ConnectedAccountsManager() {
     try {
       const response = await fetch(`/api/social/connect/${provider}`, {
         method: 'POST',
+        headers: getCsrfHeaders(),
         credentials: 'include',
       });
       const data = await response.json();

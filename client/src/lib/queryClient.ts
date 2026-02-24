@@ -230,7 +230,7 @@ function setRateLimited(retryAfter: number) {
   };
 }
 
-function getCsrfToken(): string | null {
+export function getCsrfToken(): string | null {
   const cookies = document.cookie.split(';');
   for (const cookie of cookies) {
     const [name, value] = cookie.trim().split('=');
@@ -239,6 +239,11 @@ function getCsrfToken(): string | null {
     }
   }
   return null;
+}
+
+export function getCsrfHeaders(): Record<string, string> {
+  const token = getCsrfToken();
+  return token ? { [CSRF_HEADER]: token } : {};
 }
 
 async function ensureCsrfToken(): Promise<string | null> {

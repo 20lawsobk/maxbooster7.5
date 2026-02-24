@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle, Clock, Users, RefreshCw } from 'lucide-react';
 import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon, SpotifyIcon } from '@/components/ui/brand-icons';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { getCsrfHeaders } from '@/lib/queryClient';
 
 interface Platform {
   id: string;
@@ -43,6 +44,8 @@ export function PlatformConnections() {
     mutationFn: async (platform: string) => {
       const response = await fetch(`/api/social/connect/${platform}`, {
         method: 'POST',
+        headers: getCsrfHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -86,6 +89,8 @@ export function PlatformConnections() {
     mutationFn: async (platform: string) => {
       const response = await fetch(`/api/social/disconnect/${platform}`, {
         method: 'POST',
+        headers: getCsrfHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -114,6 +119,8 @@ export function PlatformConnections() {
     mutationFn: async (platform: string) => {
       const response = await fetch(`/api/social/sync/${platform}`, {
         method: 'POST',
+        headers: getCsrfHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {

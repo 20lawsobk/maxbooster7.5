@@ -58,6 +58,11 @@ Max Booster is a full-stack web application for AI-powered music career manageme
   - Wired up setupStartupEndpoints early in server init (before Vite middleware)
   - Added /health, /status, /ready, /startup endpoints registered before all middleware
   - Health check probes (GET /status, GET /health) now return proper JSON instead of 401/HTML
+- 2026-02-24: Fixed CSRF headers on raw fetch() calls across frontend:
+  - AchievementNotification.tsx: mark-notified POST now includes getCsrfHeaders()
+  - StreakCounter.tsx: streak update POST now includes getCsrfHeaders()
+  - ConnectedAccountsManager.tsx: social connect POST now includes getCsrfHeaders()
+  - Replaced broken base64 audio string in AchievementNotification with Web Audio API oscillator (C-E-G chime)
 - 2026-02-24: Fixed demo mode — now purely account-based (no session flags):
   - Demo detection is entirely by email (demo@maxbooster.ai), not session state
   - Removed all session-based isDemo flags — no cross-session contamination possible

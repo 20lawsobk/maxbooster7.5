@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { getCsrfHeaders } from "@/lib/queryClient";
 
 interface Streak {
   id: string;
@@ -59,6 +60,7 @@ export function StreakCounter({
     mutationFn: async (type: string) => {
       const res = await fetch(`/api/achievements/streaks/${type}`, {
         method: "POST",
+        headers: getCsrfHeaders(),
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to update streak");

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, X, Star, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getCsrfHeaders } from "@/lib/queryClient";
 
 interface Achievement {
   id: string;
@@ -52,6 +53,7 @@ export function AchievementNotification() {
     mutationFn: async (achievementId: string) => {
       const res = await fetch(`/api/achievements/mark-notified/${achievementId}`, {
         method: "POST",
+        headers: getCsrfHeaders(),
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to mark notified");
@@ -98,9 +100,21 @@ export function AchievementNotification() {
       setCurrentAchievement(next);
       createConfetti();
       
-      const audio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...");
-      audio.volume = 0.3;
-      audio.play().catch(() => {});
+      try {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+        oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.5);
+      } catch {}
     }
   }, [currentAchievement, queue, createConfetti]);
 
