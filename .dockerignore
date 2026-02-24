@@ -1,15 +1,23 @@
+# Version control
 .git
+.github/
+
+# Caches and runtime environments
 .cache
 .pythonlibs
 .venv
 __pycache__
 .local/
 .config/
+.replit
 
-# Rust build artifacts
+# Rust build artifacts (347MB)
 boosterstate/target
+boosterstate/src
+boosterstate/Cargo.lock
+boosterstate/Cargo.toml
 
-# Old/legacy project copies
+# Old/legacy project copies (64MB)
 maxbooster7.5/
 maxbooster_veo_music/
 
@@ -26,27 +34,34 @@ logs/
 client/public/screenshots
 client/public/videos
 
+# Generated content (36MB - regenerated at runtime)
+public/generated-content/
+
 # Development tooling
 scripts/
 .agents/
 attached_assets/
 
-# Source files (compiled output lives in dist/)
+# Source files (compiled into dist/ by Vite and esbuild)
 client/src
 shared/
 script/
+server/
 
-# Test and development configs
+# Config files (only needed at build time)
 *.test.*
 *.spec.*
 tsconfig*.json
+tsconfig.json
 vite.config.ts
 drizzle.config.ts
 tailwind.config.ts
 postcss.config.js
 components.json
+capacitor.config.ts
+capacitor.config.json
 
-# Electron / Desktop / Mobile (not needed for web deployment)
+# Electron / Desktop / Mobile
 electron/
 electron-out/
 out/
@@ -57,22 +72,25 @@ android/
 ios/
 
 # AI model training data
-ai_model/weights/
-ai_model/data/
+ai_model/
 training/
+
+# Data and storage (runtime-created, not deployment artifacts)
 boostsheets_db/
 boosterstate-data/
+pocket-dimensions/
+data/
+uploads/
 
-# Documentation
+# Documentation and tests
 docs/
-
-# Tests
 tests/
+
+# Static assets source (already copied into dist/public by Vite)
+assets/
 
 # Misc
 *.backup
 cookies.txt
 .audit-wal/
 .capsule-temp/
-data/
-pocket-dimensions/
