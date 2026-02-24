@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { requireAuth } from '../auth';
+import { requireAuth } from '../middleware/auth.js';
 import { db } from '../db';
 import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects, studioRecentFiles, studioPinnedFolders } from '@shared/schema';
 import { eq, and, or, desc, isNull, inArray, sql as drizzleSql } from 'drizzle-orm';

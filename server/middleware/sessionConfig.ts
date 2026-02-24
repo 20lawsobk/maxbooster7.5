@@ -6,11 +6,9 @@ import { logger } from '../logger.js';
 class BoosterStateSessionStore extends session.Store {
   get(sid: string, callback: (err?: any, session?: session.SessionData | null) => void): void {
     getBoosterStateClient()
-      .then((client) => {
+      .then(async (client) => {
         if (!client) return callback(null, null);
-        return client.get('sess:' + sid);
-      })
-      .then((data) => {
+        const data = await client.get('sess:' + sid);
         if (!data) return callback(null, null);
         try {
           callback(null, JSON.parse(data));
@@ -23,33 +21,48 @@ class BoosterStateSessionStore extends session.Store {
 
   set(sid: string, sessionData: session.SessionData, callback?: (err?: any) => void): void {
     const ttl = Math.floor((sessionData?.cookie?.maxAge || 86400000) / 1000);
+    logger.info(`[SessionStore] SET sid=${sid.substring(0,8)}... userId=${(sessionData as any)?.userId || 'none'}`);
     getBoosterStateClient()
-      .then((client) => {
-        if (!client) return;
-        return client.setex('sess:' + sid, ttl, JSON.stringify(sessionData));
+      .then(async (client) => {
+        if (!client) {
+          logger.warn('[SessionStore] SET - no client available, using fallback');
+          callback?.();
+          return;
+        }
+        await client.setex('sess:' + sid, ttl, JSON.stringify(sessionData));
+        logger.info(`[SessionStore] SET success for sid=${sid.substring(0,8)}...`);
+        callback?.();
       })
-      .then(() => callback?.())
-      .catch((err) => callback?.(err));
+      .catch((err) => {
+        logger.error(`[SessionStore] SET error:`, err);
+        callback?.(err);
+      });
   }
 
   destroy(sid: string, callback?: (err?: any) => void): void {
     getBoosterStateClient()
-      .then((client) => {
-        if (!client) return;
-        return client.del('sess:' + sid);
+      .then(async (client) => {
+        if (!client) {
+          callback?.();
+          return;
+        }
+        await client.del('sess:' + sid);
+        callback?.();
       })
-      .then(() => callback?.())
       .catch((err) => callback?.(err));
   }
 
   touch(sid: string, sessionData: session.SessionData, callback?: (err?: any) => void): void {
     const ttl = Math.floor((sessionData?.cookie?.maxAge || 86400000) / 1000);
     getBoosterStateClient()
-      .then((client) => {
-        if (!client) return;
-        return client.expire('sess:' + sid, ttl);
+      .then(async (client) => {
+        if (!client) {
+          callback?.();
+          return;
+        }
+        await client.expire('sess:' + sid, ttl);
+        callback?.();
       })
-      .then(() => callback?.())
       .catch((err) => callback?.(err));
   }
 }

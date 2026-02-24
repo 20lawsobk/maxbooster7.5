@@ -94,28 +94,29 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
 export const requireAuth = requireAuthDual;
 
 // Block write operations for demo users (read-only mode)
+// NOTE: This middleware is mounted at '/api', so req.path strips the '/api' prefix.
+// Use req.originalUrl for full-path matching or paths without the /api prefix.
 export const blockDemoWrite = async (req: Request, res: Response, next: NextFunction) => {
-  // Allow if not a demo session
   if (!req.session?.isDemo) {
     return next();
   }
   
-  // Block all write methods for demo users
   const writeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
   if (writeMethods.includes(req.method)) {
-    // Allow certain read-like POST endpoints (analytics, search, etc.)
+    const fullPath = req.originalUrl.split('?')[0];
     const allowedDemoPaths = [
       '/api/auth/logout',
       '/api/auth/demo',
+      '/api/auth/me',
       '/api/search',
       '/api/analytics',
     ];
     
-    if (allowedDemoPaths.some(path => req.path.startsWith(path))) {
+    if (allowedDemoPaths.some(path => fullPath.startsWith(path))) {
       return next();
     }
     
-    logger.info(`Demo user blocked from write operation: ${req.method} ${req.path}`);
+    logger.info(`Demo user blocked from write operation: ${req.method} ${fullPath}`);
     return res.status(403).json({ 
       message: 'Demo mode is read-only. Subscribe to unlock full access.',
       isDemo: true,

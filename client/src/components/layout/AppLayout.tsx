@@ -4,6 +4,7 @@ import { TopBar } from './TopBar';
 import { MobileBottomNav } from './MobileBottomNav';
 import { BreadcrumbTrail } from './Breadcrumb';
 import { useFluidLayout, LayoutMode, getFluidPadding, getFluidGap } from '@/hooks/useFluidLayout';
+import { useAuth } from '@/hooks/useAuth';
 
 interface FluidLayoutContextType {
   layoutMode: LayoutMode;
@@ -42,10 +43,21 @@ interface AppLayoutProps {
   noPadding?: boolean;
 }
 
+function DemoBanner() {
+  return (
+    <div className="bg-amber-500 text-white text-center py-2 px-4 text-sm font-medium flex items-center justify-center gap-2 shrink-0">
+      <span>You're exploring Demo Mode (read-only)</span>
+      <a href="/pricing" className="underline font-semibold hover:text-amber-100">Subscribe to unlock full access</a>
+    </div>
+  );
+}
+
 export function AppLayout({ title, subtitle, children, noPadding = false }: AppLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const fluidLayout = useFluidLayout();
   const { containerRef, layoutMode, isMobile, isTablet, isSmallHeight } = fluidLayout;
+  const { user } = useAuth();
+  const isDemo = (user as any)?.isDemo === true;
 
   const getPadding = () => {
     if (noPadding) return '';
@@ -70,6 +82,7 @@ export function AppLayout({ title, subtitle, children, noPadding = false }: AppL
         <Sidebar isMobileOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
 
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          {isDemo && <DemoBanner />}
           <TopBar title={title} subtitle={subtitle} onMenuClick={() => setIsMobileMenuOpen(true)} />
 
           <main

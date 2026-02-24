@@ -33,6 +33,11 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     return;
   }
 
+  if ((req.session as any)?.isDemo) {
+    next();
+    return;
+  }
+
   const now = new Date();
 
   if (req.user.trialEndsAt) {

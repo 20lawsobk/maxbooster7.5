@@ -74,15 +74,22 @@ export class ApiError extends Error {
           suggestions: ['Log in again', 'Check your credentials'],
         });
         
-      case 403:
+      case 403: {
+        const isDemoBlock = (parsed as any).isDemo === true;
         return new ApiError({
           code: 'FORBIDDEN',
           message: serverMessage,
-          userMessage: "You don't have permission to perform this action.",
+          userMessage: isDemoBlock
+            ? 'This feature is read-only in demo mode. Subscribe to unlock full access.'
+            : "You don't have permission to perform this action.",
           status,
           retryable: false,
-          suggestions: ['Contact your administrator', 'Check your subscription status'],
+          details: isDemoBlock ? { isDemo: true, upgradeUrl: '/pricing' } : undefined,
+          suggestions: isDemoBlock
+            ? ['Subscribe to unlock full access', 'Visit the pricing page']
+            : ['Contact your administrator', 'Check your subscription status'],
         });
+      }
         
       case 404:
         return new ApiError({

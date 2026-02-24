@@ -147,6 +147,9 @@ export async function registerRoutes(
 
     if (req.user) {
       const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...safeUser } = req.user as any;
+      if ((req.session as any)?.isDemo) {
+        safeUser.isDemo = true;
+      }
       return res.json(safeUser);
     }
     return res.json(null);
@@ -161,7 +164,11 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Email and password are required" });
       }
 
-      // Validate email format
+      const { confirmPassword } = req.body;
+      if (confirmPassword !== undefined && confirmPassword !== password) {
+        return res.status(400).json({ message: "Passwords do not match" });
+      }
+
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({ message: "Invalid email format" });
@@ -270,33 +277,18 @@ export async function registerRoutes(
         }
       }
 
-      const isProduction = process.env.NODE_ENV === 'production';
+      req.session.userId = user.id;
 
-      // SECURITY FIX: Regenerate session to prevent session fixation attacks
-      // This creates a new session ID while preserving session data
-      req.session.regenerate((regenerateErr) => {
-        if (regenerateErr) {
-          logger.error('[Login] Session regeneration failed:', regenerateErr);
+      req.session.save((err) => {
+        if (err) {
+          logger.error('[Login] Session save failed:', err);
           return res.status(500).json({ message: "Login failed - session error" });
         }
 
-        req.session.userId = user.id;
+        logger.info('[Login] SUCCESS for userId:', user.id);
 
-        // Explicitly save session for Redis persistence in production
-        req.session.save((err) => {
-          if (err) {
-            logger.error('[Login] Session save failed:', err);
-            return res.status(500).json({ message: "Login failed - session error" });
-          }
-
-          // Production debugging: log session and cookie info
-          if (isProduction) {
-            logger.info('[Login] SUCCESS for userId:', user.id);
-          }
-
-          const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
-          return res.json(safeUser);
-        });
+        const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
+        return res.json(safeUser);
       });
     } catch (error) {
       logger.error("Login error:", error);
@@ -1213,10 +1205,11 @@ export async function registerRoutes(
     try {
       let demoUser = await storage.getUserByEmail("demo@maxbooster.ai");
       if (!demoUser) {
-        const hashedPassword = await bcrypt.hash("demo123", 10);
+        const hashedPassword = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
         demoUser = await storage.createUser({
           email: "demo@maxbooster.ai",
           password: hashedPassword,
+          username: "demo_user",
           firstName: "Demo",
           lastName: "User"
         });
@@ -1224,8 +1217,18 @@ export async function registerRoutes(
       
       req.session.userId = demoUser.id;
       (req.session as any).isDemo = true;
-      const { password, ...userWithoutPassword } = demoUser;
-      return res.json(userWithoutPassword);
+
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          logger.error('[Demo] Session save failed:', saveErr);
+          return res.status(500).json({ message: "Demo login failed - session error" });
+        }
+
+        logger.info('[Demo] SUCCESS for demoUser:', demoUser.id);
+
+        const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = demoUser as any;
+        return res.json({ ...safeUser, isDemo: true });
+      });
     } catch (error) {
       logger.error("Demo login error:", error);
       return res.status(500).json({ message: "Demo login failed" });

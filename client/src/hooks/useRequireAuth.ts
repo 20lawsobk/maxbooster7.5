@@ -25,6 +25,10 @@ export function useRequireSubscription() {
     if (user?.role === 'admin') {
       return;
     }
+
+    if ((user as any)?.isDemo) {
+      return;
+    }
     
     if (!user) {
       navigate('/login');

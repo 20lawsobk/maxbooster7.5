@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { requireAuth } from '../auth';
+import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { z } from 'zod';
 
