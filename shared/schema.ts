@@ -324,6 +324,78 @@ export const updateStorefrontSchema = insertStorefrontSchema.partial();
 export type InsertStorefront = z.infer<typeof insertStorefrontSchema>;
 
 // ============================================================================
+// DNS RECORD CACHE (Built-in GoDaddy-style DNS zone management)
+// ============================================================================
+export const dnsRecordCache = pgTable("dns_record_cache", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  storefrontId: varchar("storefront_id").notNull(),
+  domain: text("domain").notNull(),
+  provider: text("provider").notNull().default('godaddy'),
+  recordType: text("record_type").notNull(),
+  name: text("name").notNull(),
+  value: text("value").notNull(),
+  ttl: integer("ttl").default(3600),
+  priority: integer("priority"),
+  isLocal: boolean("is_local").default(false),
+  lastSyncedAt: timestamp("last_synced_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDnsRecordCacheSchema = createInsertSchema(dnsRecordCache).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDnsRecordCache = z.infer<typeof insertDnsRecordCacheSchema>;
+
+// ============================================================================
+// DNS TEMPLATES (Reusable DNS record configurations)
+// ============================================================================
+export const dnsTemplates = pgTable("dns_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  records: jsonb("records").notNull(),
+  isGlobal: boolean("is_global").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDnsTemplateSchema = createInsertSchema(dnsTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDnsTemplate = z.infer<typeof insertDnsTemplateSchema>;
+
+// ============================================================================
+// DNS PROVIDER CREDENTIALS (per-user registrar API keys)
+// ============================================================================
+export const dnsProviderCredentials = pgTable("dns_provider_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  provider: text("provider").notNull(),
+  domain: text("domain").notNull(),
+  credentials: jsonb("credentials").notNull(),
+  isVerified: boolean("is_verified").default(false),
+  lastUsedAt: timestamp("last_used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDnsProviderCredentialsSchema = createInsertSchema(dnsProviderCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDnsProviderCredentials = z.infer<typeof insertDnsProviderCredentialsSchema>;
+
+// ============================================================================
 // MEMBERSHIP TIERS
 // ============================================================================
 export const membershipTiers = pgTable("membership_tiers", {
