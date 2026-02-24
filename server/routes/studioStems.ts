@@ -98,7 +98,7 @@ router.post('/projects/:projectId/stems/export', requireAuth, async (req, res) =
         details: error.errors 
       });
     }
-    res.status(500).json({ error: error.message || 'Failed to start stem export' });
+    res.status(500).json({ error: 'Failed to start stem export' });
   }
 });
 

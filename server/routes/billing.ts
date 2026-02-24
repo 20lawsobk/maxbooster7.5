@@ -334,7 +334,7 @@ router.post('/create-checkout-session', requireAuth, async (req: AuthenticatedRe
     res.json({ url: session.url, sessionId: session.id });
   } catch (error: any) {
     logger.error('[Billing] Failed to create checkout session:', error);
-    res.status(500).json({ error: 'Checkout failed', message: error.message || 'Failed to create checkout session' });
+    res.status(500).json({ error: 'Checkout failed', message: 'Failed to create checkout session' });
   }
 });
 

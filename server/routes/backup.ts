@@ -12,7 +12,7 @@ router.post('/create', requireAdmin, async (req, res) => {
     const backupFile = await databaseBackupService.createBackup();
     res.json({ success: true, backupFile });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -22,7 +22,7 @@ router.get('/list', requireAdmin, async (req, res) => {
     const backups = await databaseBackupService.listBackups();
     res.json({ backups });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -32,7 +32,7 @@ router.get('/metrics', requireAdmin, async (req, res) => {
     const metrics = databaseBackupService.getBackupMetrics();
     res.json(metrics);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

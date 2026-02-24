@@ -172,7 +172,7 @@ router.post('/start', async (req: Request, res: Response) => {
 
   } catch (error: any) {
     logger.error('Failed to start simulation:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -201,7 +201,7 @@ router.post('/start-full', async (req: Request, res: Response) => {
 
   } catch (error: any) {
     logger.error('Failed to start full simulation:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 

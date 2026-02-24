@@ -250,7 +250,7 @@ router.get('/performance', requireAuth, async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Performance metrics error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

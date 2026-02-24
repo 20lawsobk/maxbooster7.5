@@ -350,25 +350,45 @@ router.get('/unified', async (req: Request, res: Response) => {
     
     if (type === 'all' || type === 'beats') {
       searchPromises.push(
-        searchBeats(q, filters, numLimit, numOffset).then(r => { results.beats = r; })
+        searchBeats(q, filters, numLimit, numOffset)
+          .then(r => { results.beats = r; })
+          .catch(error => {
+            logger.error('Error searching beats:', error);
+            results.beats = { items: [], total: 0 };
+          })
       );
     }
     
     if (type === 'all' || type === 'users') {
       searchPromises.push(
-        searchUsers(q, numLimit, numOffset).then(r => { results.users = r; })
+        searchUsers(q, numLimit, numOffset)
+          .then(r => { results.users = r; })
+          .catch(error => {
+            logger.error('Error searching users:', error);
+            results.users = { items: [], total: 0 };
+          })
       );
     }
     
     if ((type === 'all' || type === 'projects') && userId) {
       searchPromises.push(
-        searchProjects(q, userId, numLimit, numOffset).then(r => { results.projects = r; })
+        searchProjects(q, userId, numLimit, numOffset)
+          .then(r => { results.projects = r; })
+          .catch(error => {
+            logger.error('Error searching projects:', error);
+            results.projects = { items: [], total: 0 };
+          })
       );
     }
     
     if (type === 'all' || type === 'releases') {
       searchPromises.push(
-        searchReleases(q, numLimit, numOffset).then(r => { results.releases = r; })
+        searchReleases(q, numLimit, numOffset)
+          .then(r => { results.releases = r; })
+          .catch(error => {
+            logger.error('Error searching releases:', error);
+            results.releases = { items: [], total: 0 };
+          })
       );
     }
     

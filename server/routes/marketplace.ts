@@ -1179,7 +1179,7 @@ router.put('/listings/:id', upload.fields([
     if (error.message === 'Not authorized to update this listing') {
       return res.status(403).json({ error: error.message });
     }
-    res.status(500).json({ error: error.message || 'Failed to update beat' });
+    res.status(500).json({ error: 'Failed to update beat' });
   }
 });
 
@@ -1200,7 +1200,7 @@ router.delete('/listings/:id', async (req: Request, res: Response) => {
     if (error.message === 'Listing not found') {
       return res.status(404).json({ error: error.message });
     }
-    res.status(500).json({ error: error.message || 'Failed to delete beat' });
+    res.status(500).json({ error: 'Failed to delete beat' });
   }
 });
 
@@ -1224,7 +1224,7 @@ router.post('/connect-stripe', async (req: Request, res: Response) => {
     res.json(result);
   } catch (error: any) {
     logger.error('Error connecting Stripe:', error);
-    res.status(500).json({ error: error.message || 'Failed to connect Stripe account' });
+    res.status(500).json({ error: 'Failed to connect Stripe account' });
   }
 });
 
