@@ -51,6 +51,11 @@ Max Booster is a full-stack web application for AI-powered music career manageme
 - 310 useMemo + 1342 useCallback for render optimization
 
 ## Recent Changes
+- 2026-02-24: Fixed hybrid storage provider activation:
+  - Storage config now checks REPLIT_BUCKET_ID (not just PRIVATE_OBJECT_DIR) when selecting provider
+  - ReplitStorageProvider constructor accepts REPLIT_BUCKET_ID as fallback for bucket name
+  - App now correctly starts with "Hybrid Storage provider (Replit hot + Pocket Dimension cold)" instead of falling back to local filesystem
+  - All 3 storage layers fully active: Replit Object Storage (hot tier), Pocket Dimension (cold tier), and auto-tiering scheduler (every 6 hours)
 - 2026-02-24: Built-in DNS Management System (GoDaddy-style zone editor):
   - New database tables: dns_record_cache, dns_templates, dns_provider_credentials
   - DNS provider abstraction layer with GoDaddy and Cloudflare adapters (server/services/dnsProviderService.ts)

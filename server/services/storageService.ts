@@ -236,12 +236,18 @@ class ReplitStorageProvider implements StorageProvider {
 
   constructor() {
     const privateDir = process.env.PRIVATE_OBJECT_DIR || '';
-    if (!privateDir) {
-      throw new Error('PRIVATE_OBJECT_DIR is required for Replit storage provider');
+    const bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || '';
+
+    if (privateDir) {
+      const parts = privateDir.replace(/^\//, '').split('/');
+      this.bucketName = parts[0];
+      this.objectPrefix = parts.slice(1).join('/');
+    } else if (bucketId) {
+      this.bucketName = bucketId;
+      this.objectPrefix = '';
+    } else {
+      throw new Error('PRIVATE_OBJECT_DIR or REPLIT_BUCKET_ID is required for Replit storage provider');
     }
-    const parts = privateDir.replace(/^\//, '').split('/');
-    this.bucketName = parts[0];
-    this.objectPrefix = parts.slice(1).join('/');
 
     this.initPromise = this.initClient();
   }
