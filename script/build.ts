@@ -70,18 +70,19 @@ async function buildAll() {
     await viteBuild();
   }
 
-  // Skip Rust compilation if the pre-compiled binary is already committed.
-  // The debug binary is tracked in git so deployment never needs to run cargo.
-  // To refresh: run `cargo build --manifest-path boosterstate/Cargo.toml` locally
-  // then commit the updated binary.
-  const binaryExists = await access("boosterstate/target/debug/boosterstate").then(() => true).catch(() => false);
-  if (!binaryExists) {
-    console.log("boosterstate binary not found — building with cargo (debug)...");
-    const { execSync } = await import("child_process");
-    execSync("cargo build --manifest-path boosterstate/Cargo.toml", { stdio: "inherit" });
-    console.log("boosterstate binary built");
+  const skipRust = process.env.SKIP_BOOSTERSTATE === '1' || process.env.REPL_SLUG;
+  if (skipRust) {
+    console.log("skipping boosterstate build (SKIP_BOOSTERSTATE=1 or Replit deployment)");
   } else {
-    console.log("pre-built boosterstate binary found — skipping cargo build");
+    const binaryExists = await access("boosterstate/target/debug/boosterstate").then(() => true).catch(() => false);
+    if (!binaryExists) {
+      console.log("boosterstate binary not found — building with cargo (debug)...");
+      const { execSync } = await import("child_process");
+      execSync("cargo build --manifest-path boosterstate/Cargo.toml", { stdio: "inherit" });
+      console.log("boosterstate binary built");
+    } else {
+      console.log("pre-built boosterstate binary found — skipping cargo build");
+    }
   }
 
   // Only remove the server bundle, preserving committed frontend assets

@@ -1,0 +1,64 @@
+node_modules
+.git
+.cache
+.pythonlibs
+.venv
+__pycache__
+
+# Rust build artifacts (binary is built separately or not needed in deployment)
+boosterstate/target
+
+# Development files
+*.md
+!replit.md
+.env
+.env.*
+*.log
+logs/
+.DS_Store
+
+# Screenshots, videos, and large media assets
+client/public/screenshots
+client/public/videos
+
+# Development tooling
+scripts/
+.agents/
+.local/
+attached_assets/
+
+# Build artifacts already in dist/
+client/src
+server/
+shared/
+
+# Test and development configs
+*.test.*
+*.spec.*
+tsconfig*.json
+vite.config.ts
+drizzle.config.ts
+tailwind.config.ts
+postcss.config.js
+components.json
+
+# Electron / Desktop
+electron/
+electron-out/
+out/
+release/
+dist-installers/
+dist-portable/
+
+# AI model training data
+ai_model/weights/
+ai_model/data/
+training/
+boostsheets_db/
+boosterstate-data/
+
+# Misc
+*.backup
+cookies.txt
+.audit-wal/
+.capsule-temp/

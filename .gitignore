@@ -15,8 +15,8 @@ uploads/
 *.backup
 attached_assets/
 
-# Electron build cache (not source files)
-.cache/electron/
+# All caches
+.cache/
 
 # Desktop installer outputs (built by GitHub Actions)
 *.exe
@@ -54,6 +54,9 @@ cookies.txt
 .capsule-temp/
 data/
 
-# Rust — track the pre-compiled debug binary so deployment skips cargo entirely
+# Rust build artifacts — do NOT track binaries (too large for deployment image)
 boosterstate/target/
-!boosterstate/target/debug/boosterstate
+
+# Screenshots and videos (large media assets)
+client/public/screenshots/
+client/public/videos/
