@@ -1,70 +1,127 @@
 import { BasePlugin } from './BasePlugin';
 
-/**
- * Professional Flanger Plugin
- * Creates a sweeping, jet-like effect through comb filtering
- */
 export class FlangerPlugin extends BasePlugin {
-  private delay: DelayNode;
-  private lfo: OscillatorNode;
-  private lfoGain: GainNode;
-  private feedback: GainNode;
+  private delayL: DelayNode;
+  private delayR: DelayNode;
+  private lfoL: OscillatorNode;
+  private lfoR: OscillatorNode;
+  private lfoGainL: GainNode;
+  private lfoGainR: GainNode;
+  private feedbackL: GainNode;
+  private feedbackR: GainNode;
+  private panL: StereoPannerNode;
+  private panR: StereoPannerNode;
+  private splitter: ChannelSplitterNode;
+  private merger: ChannelMergerNode;
+  private stereoWidth: number = 0;
 
   constructor(context: AudioContext) {
     super(context);
 
-    // Create delay (1-20ms range for flanging)
-    this.delay = context.createDelay(0.02);
-    this.delay.delayTime.value = 0.005; // 5ms center
+    this.delayL = context.createDelay(0.035);
+    this.delayL.delayTime.value = 0.005;
 
-    // Create LFO for modulation
-    this.lfo = context.createOscillator();
-    this.lfoGain = context.createGain();
+    this.delayR = context.createDelay(0.035);
+    this.delayR.delayTime.value = 0.005;
 
-    // Configure LFO
-    this.lfo.type = 'sine';
-    this.lfo.frequency.value = 0.25; // 0.25 Hz default
-    this.lfoGain.gain.value = 0.003; // 3ms modulation depth
+    this.lfoL = context.createOscillator();
+    this.lfoGainL = context.createGain();
+    this.lfoL.type = 'sine';
+    this.lfoL.frequency.value = 0.25;
+    this.lfoGainL.gain.value = 0.003;
 
-    // Create feedback loop
-    this.feedback = context.createGain();
-    this.feedback.gain.value = 0.5; // 50% feedback
+    this.lfoR = context.createOscillator();
+    this.lfoGainR = context.createGain();
+    this.lfoR.type = 'sine';
+    this.lfoR.frequency.value = 0.25;
+    this.lfoGainR.gain.value = 0.003;
 
-    // Connect modulation
-    this.lfo.connect(this.lfoGain);
-    this.lfoGain.connect(this.delay.delayTime);
-    this.lfo.start();
+    this.feedbackL = context.createGain();
+    this.feedbackL.gain.value = 0.5;
 
-    // Connect signal path with feedback
-    this.input.connect(this.delay);
-    this.delay.connect(this.feedback);
-    this.feedback.connect(this.delay); // Feedback loop
-    this.delay.connect(this.wetGain);
+    this.feedbackR = context.createGain();
+    this.feedbackR.gain.value = 0.5;
+
+    this.panL = context.createStereoPanner();
+    this.panR = context.createStereoPanner();
+    this.panL.pan.value = 0;
+    this.panR.pan.value = 0;
+
+    this.splitter = context.createChannelSplitter(2);
+    this.merger = context.createChannelMerger(2);
+
+    this.lfoL.connect(this.lfoGainL);
+    this.lfoGainL.connect(this.delayL.delayTime);
+
+    this.lfoR.connect(this.lfoGainR);
+    this.lfoGainR.connect(this.delayR.delayTime);
+
+    this.lfoL.start();
+    this.lfoR.start();
+
+    this.input.connect(this.delayL);
+    this.delayL.connect(this.feedbackL);
+    this.feedbackL.connect(this.delayL);
+    this.delayL.connect(this.panL);
+    this.panL.connect(this.wetGain);
+
+    this.input.connect(this.delayR);
+    this.delayR.connect(this.feedbackR);
+    this.feedbackR.connect(this.delayR);
+    this.delayR.connect(this.panR);
+    this.panR.connect(this.wetGain);
+
     this.wetGain.connect(this.output);
+
+    this.setStereoWidth(0);
   }
 
   setRate(value: number): void {
-    // 0.1 - 10 Hz range
     const rate = Math.max(0.1, Math.min(10, value));
-    this.lfo.frequency.setValueAtTime(rate, this.context.currentTime);
+    this.lfoL.frequency.setValueAtTime(rate, this.context.currentTime);
+    this.lfoR.frequency.setValueAtTime(rate, this.context.currentTime);
   }
 
   setDepth(value: number): void {
-    // 0 - 10ms modulation depth
-    const depth = Math.max(0, Math.min(0.01, value));
-    this.lfoGain.gain.setValueAtTime(depth, this.context.currentTime);
+    const depth = Math.max(0, Math.min(0.015, value));
+    this.lfoGainL.gain.setValueAtTime(depth, this.context.currentTime);
+    this.lfoGainR.gain.setValueAtTime(depth, this.context.currentTime);
   }
 
   setFeedback(value: number): void {
-    // -0.99 to 0.99 (negative for inverted feedback)
     const feedback = Math.max(-0.99, Math.min(0.99, value));
-    this.feedback.gain.setValueAtTime(feedback, this.context.currentTime);
+    this.feedbackL.gain.setValueAtTime(feedback, this.context.currentTime);
+    this.feedbackR.gain.setValueAtTime(feedback, this.context.currentTime);
   }
 
   setDelayTime(value: number): void {
-    // 1-20ms range
-    const delay = Math.max(0.001, Math.min(0.02, value));
-    this.delay.delayTime.setValueAtTime(delay, this.context.currentTime);
+    const delay = Math.max(0.001, Math.min(0.035, value));
+    this.delayL.delayTime.setValueAtTime(delay, this.context.currentTime);
+    this.delayR.delayTime.setValueAtTime(delay, this.context.currentTime);
+  }
+
+  setStereoWidth(value: number): void {
+    this.stereoWidth = Math.max(0, Math.min(1, value));
+    this.panL.pan.setValueAtTime(-this.stereoWidth, this.context.currentTime);
+    this.panR.pan.setValueAtTime(this.stereoWidth, this.context.currentTime);
+
+    if (this.stereoWidth > 0) {
+      this.lfoR.frequency.setValueAtTime(
+        this.lfoL.frequency.value,
+        this.context.currentTime
+      );
+      const depth = this.lfoGainL.gain.value;
+      this.lfoGainR.gain.setValueAtTime(-depth, this.context.currentTime);
+    } else {
+      this.lfoR.frequency.setValueAtTime(
+        this.lfoL.frequency.value,
+        this.context.currentTime
+      );
+      this.lfoGainR.gain.setValueAtTime(
+        this.lfoGainL.gain.value,
+        this.context.currentTime
+      );
+    }
   }
 
   getName(): string {
@@ -73,10 +130,11 @@ export class FlangerPlugin extends BasePlugin {
 
   getParameters(): Record<string, any> {
     return {
-      rate: this.lfo.frequency.value,
-      depth: this.lfoGain.gain.value,
-      feedback: this.feedback.gain.value,
-      delayTime: this.delay.delayTime.value,
+      rate: this.lfoL.frequency.value,
+      depth: this.lfoGainL.gain.value,
+      feedback: this.feedbackL.gain.value,
+      delayTime: this.delayL.delayTime.value,
+      stereoWidth: this.stereoWidth,
       mix: this.mix,
       bypass: this.bypass,
     };
@@ -87,16 +145,26 @@ export class FlangerPlugin extends BasePlugin {
     if (params.depth !== undefined) this.setDepth(params.depth);
     if (params.feedback !== undefined) this.setFeedback(params.feedback);
     if (params.delayTime !== undefined) this.setDelayTime(params.delayTime);
+    if (params.stereoWidth !== undefined) this.setStereoWidth(params.stereoWidth);
     if (params.mix !== undefined) this.setMix(params.mix);
     if (params.bypass !== undefined) this.setBypass(params.bypass);
   }
 
   destroy(): void {
     super.destroy();
-    this.lfo.stop();
-    this.lfo.disconnect();
-    this.lfoGain.disconnect();
-    this.delay.disconnect();
-    this.feedback.disconnect();
+    this.lfoL.stop();
+    this.lfoR.stop();
+    this.lfoL.disconnect();
+    this.lfoR.disconnect();
+    this.lfoGainL.disconnect();
+    this.lfoGainR.disconnect();
+    this.delayL.disconnect();
+    this.delayR.disconnect();
+    this.feedbackL.disconnect();
+    this.feedbackR.disconnect();
+    this.panL.disconnect();
+    this.panR.disconnect();
+    this.splitter.disconnect();
+    this.merger.disconnect();
   }
 }

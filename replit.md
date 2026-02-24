@@ -51,6 +51,13 @@ Max Booster is a full-stack web application for AI-powered music career manageme
 - 310 useMemo + 1342 useCallback for render optimization
 
 ## Recent Changes
+- 2026-02-24: DAW plugin DSP audit — bridged gaps to match name-brand counterparts:
+  - CompressorPlugin: Removed errant lookahead delay (native node handles it), added auto-makeup gain (threshold/ratio formula), added input HPF (20-500Hz, filters sub-bass before compression)
+  - ReverbPlugin: Fixed setRoomSize/setDecay to regenerate correct IR type (was always 'hall'), seeded PRNG for deterministic impulse responses, added stereo width control (mid/side matrix)
+  - ChorusPlugin: Implemented working setVoices() with per-voice GainNodes (was a no-op), added StereoPannerNode per voice for stereo spread, added feedback path, increased max voices to 8
+  - DelayPlugin: Fixed setCrossFeedback to maintain both self and cross feedback, fixed memory leak (splitter/merger now class properties), added dotted note divisions (3/6/12/24), added HP filter in feedback path
+  - PhaserPlugin: Dynamic 2-12 stage allpass chain (was fixed at 4 with broken bypass), proper stereo mode with dual independent allpass chains and separate LFOs
+  - FlangerPlugin: Added stereo mode with second delay/LFO pair and inverted phase, extended delay range to 35ms
 - 2026-02-24: Fixed production errors (CSRF + health probes):
   - Added /api/errors, /api/sendgrid/webhook, /status to CSRF exempt paths
   - POST /api/errors was blocked by CSRF, causing infinite retry loop (403 every 5 seconds in production logs)

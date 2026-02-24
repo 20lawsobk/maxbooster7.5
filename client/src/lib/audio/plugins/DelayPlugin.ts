@@ -1,27 +1,29 @@
 import { BasePlugin } from './BasePlugin';
 
-/**
- * Professional Delay Plugin
- * Implements stereo delay with ping-pong, feedback, filtering, and modulation
- */
 export class DelayPlugin extends BasePlugin {
   private delayL: DelayNode;
   private delayR: DelayNode;
   private feedbackL: GainNode;
   private feedbackR: GainNode;
+  private crossFeedbackL: GainNode;
+  private crossFeedbackR: GainNode;
   private filterL: BiquadFilterNode;
   private filterR: BiquadFilterNode;
+  private highPassFilterL: BiquadFilterNode;
+  private highPassFilterR: BiquadFilterNode;
   private panL: StereoPannerNode;
   private panR: StereoPannerNode;
   private lfo: OscillatorNode;
   private lfoGain: GainNode;
+  private splitter: ChannelSplitterNode | null = null;
+  private merger: ChannelMergerNode | null = null;
 
-  // Parameters
-  private delayTimeL: number = 0.25; // 250ms
-  private delayTimeR: number = 0.25; // 250ms
+  private delayTimeL: number = 0.25;
+  private delayTimeR: number = 0.25;
   private feedback: number = 0.3;
   private crossFeedback: number = 0;
   private filterFreq: number = 2000;
+  private highPassFreq: number = 20;
   private modDepth: number = 0;
   private syncMode: boolean = false;
   private bpm: number = 120;
@@ -29,15 +31,17 @@ export class DelayPlugin extends BasePlugin {
   constructor(context: AudioContext) {
     super(context);
 
-    // Create delay nodes (max 5 seconds)
     this.delayL = context.createDelay(5);
     this.delayR = context.createDelay(5);
 
-    // Create feedback nodes
     this.feedbackL = context.createGain();
     this.feedbackR = context.createGain();
 
-    // Create filters for feedback path
+    this.crossFeedbackL = context.createGain();
+    this.crossFeedbackR = context.createGain();
+    this.crossFeedbackL.gain.value = 0;
+    this.crossFeedbackR.gain.value = 0;
+
     this.filterL = context.createBiquadFilter();
     this.filterR = context.createBiquadFilter();
     this.filterL.type = 'lowpass';
@@ -45,28 +49,30 @@ export class DelayPlugin extends BasePlugin {
     this.filterL.frequency.value = this.filterFreq;
     this.filterR.frequency.value = this.filterFreq;
 
-    // Create stereo panners
+    this.highPassFilterL = context.createBiquadFilter();
+    this.highPassFilterR = context.createBiquadFilter();
+    this.highPassFilterL.type = 'highpass';
+    this.highPassFilterR.type = 'highpass';
+    this.highPassFilterL.frequency.value = this.highPassFreq;
+    this.highPassFilterR.frequency.value = this.highPassFreq;
+
     this.panL = context.createStereoPanner();
     this.panR = context.createStereoPanner();
     this.panL.pan.value = -0.5;
     this.panR.pan.value = 0.5;
 
-    // Create LFO for modulation
     this.lfo = context.createOscillator();
     this.lfoGain = context.createGain();
-    this.lfo.frequency.value = 0.5; // 0.5 Hz
+    this.lfo.frequency.value = 0.5;
     this.lfoGain.gain.value = 0;
     this.lfo.connect(this.lfoGain);
     this.lfo.start();
 
-    // Connect modulation to delay times
     this.lfoGain.connect(this.delayL.delayTime);
     this.lfoGain.connect(this.delayR.delayTime);
 
-    // Wire up the delay network
     this.setupDelayNetwork();
 
-    // Set initial delay times
     this.delayL.delayTime.value = this.delayTimeL;
     this.delayR.delayTime.value = this.delayTimeR;
     this.feedbackL.gain.value = this.feedback;
@@ -74,39 +80,58 @@ export class DelayPlugin extends BasePlugin {
   }
 
   private setupDelayNetwork(): void {
-    // Split input to both channels
-    const splitter = this.context.createChannelSplitter(2);
-    const merger = this.context.createChannelMerger(2);
+    if (this.splitter) {
+      this.input.disconnect(this.splitter);
+      this.splitter.disconnect();
+    }
+    if (this.merger) {
+      this.merger.disconnect();
+    }
 
-    this.input.connect(splitter);
+    this.delayL.disconnect();
+    this.delayR.disconnect();
+    this.filterL.disconnect();
+    this.filterR.disconnect();
+    this.highPassFilterL.disconnect();
+    this.highPassFilterR.disconnect();
+    this.feedbackL.disconnect();
+    this.feedbackR.disconnect();
+    this.crossFeedbackL.disconnect();
+    this.crossFeedbackR.disconnect();
+    this.panL.disconnect();
+    this.panR.disconnect();
 
-    // Left channel path
-    splitter.connect(this.delayL, 0);
+    this.splitter = this.context.createChannelSplitter(2);
+    this.merger = this.context.createChannelMerger(2);
+
+    this.input.connect(this.splitter);
+
+    this.splitter.connect(this.delayL, 0);
     this.delayL.connect(this.filterL);
-    this.filterL.connect(this.feedbackL);
-    this.feedbackL.connect(this.delayL); // Feedback loop
-    this.filterL.connect(this.panL);
+    this.filterL.connect(this.highPassFilterL);
+    this.highPassFilterL.connect(this.feedbackL);
+    this.feedbackL.connect(this.delayL);
+    this.highPassFilterL.connect(this.crossFeedbackL);
+    this.crossFeedbackL.connect(this.delayR);
+    this.highPassFilterL.connect(this.panL);
 
-    // Right channel path
-    splitter.connect(this.delayR, 1);
+    this.splitter.connect(this.delayR, 1);
     this.delayR.connect(this.filterR);
-    this.filterR.connect(this.feedbackR);
-    this.feedbackR.connect(this.delayR); // Feedback loop
-    this.filterR.connect(this.panR);
+    this.filterR.connect(this.highPassFilterR);
+    this.highPassFilterR.connect(this.feedbackR);
+    this.feedbackR.connect(this.delayR);
+    this.highPassFilterR.connect(this.crossFeedbackR);
+    this.crossFeedbackR.connect(this.delayL);
+    this.highPassFilterR.connect(this.panR);
 
-    // Merge and output
-    this.panL.connect(merger, 0, 0);
-    this.panR.connect(merger, 0, 1);
-    merger.connect(this.wetGain);
+    this.panL.connect(this.merger, 0, 0);
+    this.panR.connect(this.merger, 0, 1);
+    this.merger.connect(this.wetGain);
     this.wetGain.connect(this.output);
   }
 
-  /**
-   * Set delay time in seconds or note division
-   */
   setDelayTime(left: number, right?: number): void {
     if (this.syncMode) {
-      // Convert note division to seconds based on BPM
       const beatLength = 60 / this.bpm;
       this.delayTimeL = this.getNoteTime(left, beatLength);
       this.delayTimeR = this.getNoteTime(right || left, beatLength);
@@ -119,104 +144,85 @@ export class DelayPlugin extends BasePlugin {
     this.delayR.delayTime.setValueAtTime(this.delayTimeR, this.context.currentTime);
   }
 
-  /**
-   * Convert note division to time
-   */
   private getNoteTime(division: number, beatLength: number): number {
     const noteDivisions: Record<number, number> = {
-      1: 4, // Whole note
-      2: 2, // Half note
-      4: 1, // Quarter note
-      8: 0.5, // Eighth note
-      16: 0.25, // Sixteenth note
-      32: 0.125, // Thirty-second note
+      1: 4,
+      2: 2,
+      3: 3,
+      4: 1,
+      6: 1.5,
+      8: 0.5,
+      12: 0.75,
+      16: 0.25,
+      24: 0.375,
+      32: 0.125,
     };
 
     const multiplier = noteDivisions[division] || 1;
     return beatLength * multiplier;
   }
 
-  /**
-   * Set feedback amount (0-0.95)
-   */
   setFeedback(value: number): void {
     this.feedback = Math.max(0, Math.min(0.95, value));
-    this.feedbackL.gain.setValueAtTime(this.feedback, this.context.currentTime);
-    this.feedbackR.gain.setValueAtTime(this.feedback, this.context.currentTime);
+    this.updateFeedbackGains();
   }
 
-  /**
-   * Set cross-feedback for ping-pong effect (0-0.95)
-   */
   setCrossFeedback(value: number): void {
     this.crossFeedback = Math.max(0, Math.min(0.95, value));
+    this.updateFeedbackGains();
+  }
 
-    // Disconnect and reconnect with cross-feedback
+  private updateFeedbackGains(): void {
+    const t = this.context.currentTime;
     if (this.crossFeedback > 0) {
-      this.feedbackL.disconnect();
-      this.feedbackR.disconnect();
-
-      // Create cross connections
-      this.feedbackL.connect(this.delayR);
-      this.feedbackR.connect(this.delayL);
-
-      this.feedbackL.gain.value = this.crossFeedback;
-      this.feedbackR.gain.value = this.crossFeedback;
+      const selfLevel = this.feedback * (1 - this.crossFeedback * 0.5);
+      this.feedbackL.gain.setValueAtTime(selfLevel, t);
+      this.feedbackR.gain.setValueAtTime(selfLevel, t);
+      this.crossFeedbackL.gain.setValueAtTime(this.crossFeedback, t);
+      this.crossFeedbackR.gain.setValueAtTime(this.crossFeedback, t);
     } else {
-      // Restore normal feedback
-      this.setupDelayNetwork();
-      this.setFeedback(this.feedback);
+      this.feedbackL.gain.setValueAtTime(this.feedback, t);
+      this.feedbackR.gain.setValueAtTime(this.feedback, t);
+      this.crossFeedbackL.gain.setValueAtTime(0, t);
+      this.crossFeedbackR.gain.setValueAtTime(0, t);
     }
   }
 
-  /**
-   * Set filter frequency for feedback path (20-20000 Hz)
-   */
   setFilterFrequency(value: number): void {
     this.filterFreq = Math.max(20, Math.min(20000, value));
     this.filterL.frequency.setValueAtTime(this.filterFreq, this.context.currentTime);
     this.filterR.frequency.setValueAtTime(this.filterFreq, this.context.currentTime);
   }
 
-  /**
-   * Set modulation depth (0-0.01)
-   */
+  setHighPassFrequency(value: number): void {
+    this.highPassFreq = Math.max(20, Math.min(2000, value));
+    this.highPassFilterL.frequency.setValueAtTime(this.highPassFreq, this.context.currentTime);
+    this.highPassFilterR.frequency.setValueAtTime(this.highPassFreq, this.context.currentTime);
+  }
+
   setModulationDepth(value: number): void {
     this.modDepth = Math.max(0, Math.min(0.01, value));
     this.lfoGain.gain.setValueAtTime(this.modDepth, this.context.currentTime);
   }
 
-  /**
-   * Set modulation rate in Hz (0.1-10)
-   */
   setModulationRate(value: number): void {
     this.lfo.frequency.setValueAtTime(Math.max(0.1, Math.min(10, value)), this.context.currentTime);
   }
 
-  /**
-   * Enable/disable tempo sync
-   */
   setSync(enabled: boolean, bpm: number = 120): void {
     this.syncMode = enabled;
     this.bpm = bpm;
     if (enabled) {
-      // Re-calculate delay times based on current settings
-      this.setDelayTime(4, 4); // Default to quarter notes
+      this.setDelayTime(4, 4);
     }
   }
 
-  /**
-   * Set stereo spread (-1 to 1)
-   */
   setStereoSpread(value: number): void {
     const spread = Math.max(-1, Math.min(1, value));
     this.panL.pan.setValueAtTime(-spread, this.context.currentTime);
     this.panR.pan.setValueAtTime(spread, this.context.currentTime);
   }
 
-  /**
-   * Apply delay presets
-   */
   applyPreset(preset: 'slapback' | 'echo' | 'ping-pong' | 'dotted' | 'tape' | 'dub'): void {
     switch (preset) {
       case 'slapback':
@@ -239,13 +245,14 @@ export class DelayPlugin extends BasePlugin {
         break;
       case 'dotted':
         this.setSync(true, this.bpm);
-        this.setDelayTime(8, 12); // Dotted eighth
+        this.setDelayTime(8, 12);
         this.setFeedback(0.35);
         break;
       case 'tape':
         this.setDelayTime(0.3, 0.3);
         this.setFeedback(0.5);
         this.setFilterFrequency(2000);
+        this.setHighPassFrequency(100);
         this.setModulationDepth(0.003);
         this.setModulationRate(0.3);
         break;
@@ -253,6 +260,7 @@ export class DelayPlugin extends BasePlugin {
         this.setDelayTime(0.375, 0.375);
         this.setFeedback(0.7);
         this.setFilterFrequency(1000);
+        this.setHighPassFrequency(200);
         this.setCrossFeedback(0.2);
         break;
     }
@@ -269,6 +277,7 @@ export class DelayPlugin extends BasePlugin {
       feedback: this.feedback,
       crossFeedback: this.crossFeedback,
       filterFreq: this.filterFreq,
+      highPassFreq: this.highPassFreq,
       modDepth: this.modDepth,
       modRate: this.lfo.frequency.value,
       syncMode: this.syncMode,
@@ -286,6 +295,7 @@ export class DelayPlugin extends BasePlugin {
     if (params.feedback !== undefined) this.setFeedback(params.feedback);
     if (params.crossFeedback !== undefined) this.setCrossFeedback(params.crossFeedback);
     if (params.filterFreq !== undefined) this.setFilterFrequency(params.filterFreq);
+    if (params.highPassFreq !== undefined) this.setHighPassFrequency(params.highPassFreq);
     if (params.modDepth !== undefined) this.setModulationDepth(params.modDepth);
     if (params.modRate !== undefined) this.setModulationRate(params.modRate);
     if (params.syncMode !== undefined) this.setSync(params.syncMode, params.bpm || this.bpm);
@@ -304,9 +314,15 @@ export class DelayPlugin extends BasePlugin {
     this.delayR.disconnect();
     this.feedbackL.disconnect();
     this.feedbackR.disconnect();
+    this.crossFeedbackL.disconnect();
+    this.crossFeedbackR.disconnect();
     this.filterL.disconnect();
     this.filterR.disconnect();
+    this.highPassFilterL.disconnect();
+    this.highPassFilterR.disconnect();
     this.panL.disconnect();
     this.panR.disconnect();
+    if (this.splitter) this.splitter.disconnect();
+    if (this.merger) this.merger.disconnect();
   }
 }
