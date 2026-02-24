@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, Square, Circle, SkipBack, SkipForward, Repeat,
@@ -12,6 +12,8 @@ import {
   MousePointer2, Pencil, Eraser,
   Film, Radio, Waves, ArrowUpDown, RotateCcw, Activity, Speaker
 } from 'lucide-react';
+import { getShortcutManager } from '@/lib/shortcuts/ShortcutManager';
+import type { ShortcutDefinition } from '@/lib/shortcuts/types';
 import { cn } from '@/lib/utils';
 import { useStudioScale } from '@/hooks/useStudioScale';
 import { Button } from '@/components/ui/button';
@@ -267,39 +269,28 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     };
   }, [transport.isPlaying]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+  const dawActionsRef = useRef<Record<string, () => void>>({});
+  const selectedClipIdRef = useRef(selectedClipId);
+  useEffect(() => { selectedClipIdRef.current = selectedClipId; }, [selectedClipId]);
+  const livePositionRef = useRef(livePosition);
+  useEffect(() => { livePositionRef.current = livePosition; }, [livePosition]);
 
-      if (e.shiftKey && e.key === 'P') {
-        e.preventDefault();
-        setPluginFilter('all');
-        setShowPluginBrowser(true);
-      }
-      if (e.shiftKey && e.key === 'I') {
-        e.preventDefault();
-        setPluginFilter('instruments');
-        setShowPluginBrowser(true);
-      }
-      if (e.shiftKey && e.key === 'E') {
-        e.preventDefault();
-        setPluginFilter('effects');
-        setShowPluginBrowser(true);
-      }
-      if (e.altKey && e.key === 'a') {
-        e.preventDefault();
-        setShowAIPanel(prev => !prev);
-      }
-      if (e.altKey && e.key === 'g') {
-        e.preventDefault();
-        setShowMusicGenerator(true);
-      }
-      if (e.key === '?') {
-        e.preventDefault();
-        setShowKeyboardShortcuts(true);
-      }
-      if (e.key === ' ' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
-        e.preventDefault();
+  const findSelectedClip = useCallback(() => {
+    const currentSelectedClipId = selectedClipIdRef.current;
+    if (!currentSelectedClipId) return null;
+    const s = useStudioStore.getState();
+    for (const t of s.tracks) {
+      const ac = t.audioClips.find((c: any) => c.id === currentSelectedClipId);
+      if (ac) return { track: t, clip: ac, type: 'audio' as const };
+      const mc = t.midiClips.find((c: any) => c.id === currentSelectedClipId);
+      if (mc) return { track: t, clip: mc, type: 'midi' as const };
+    }
+    return null;
+  }, []);
+
+  useEffect(() => {
+    dawActionsRef.current = {
+      'studio.play-pause': () => {
         if (isPlayingRef.current) {
           store.pause();
           if (audioInitializedRef.current) audioEngine.pause();
@@ -307,151 +298,145 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           store.play();
           if (audioInitializedRef.current) audioEngine.play();
         }
-      }
-      if (e.key === 'r' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        e.preventDefault();
-        store.record();
-      }
-      if (e.key === 'l' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        e.preventDefault();
-        store.toggleLoop();
-      }
-      if (e.ctrlKey && e.key === 'n') {
-        e.preventDefault();
-        setShowProjectDialog(true);
-      }
-      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
-        e.preventDefault();
-        setShowSaveAsDialog(true);
-      } else if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-      }
-      if (e.ctrlKey && e.key === 'z') {
-        e.preventDefault();
-        store.undo();
-      }
-      if (e.ctrlKey && e.key === 'y') {
-        e.preventDefault();
-        store.redo();
-      }
-      if (e.key === 'm' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        e.preventDefault();
-        setShowMixer(prev => !prev);
-      }
-      if (e.key === 'i' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        e.preventDefault();
-        setShowInspector(prev => !prev);
-      }
-      if (e.key === 'e' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        e.preventDefault();
-        setShowEditor(prev => !prev);
-      }
-      if (e.ctrlKey && e.key === ',') {
-        e.preventDefault();
-        setShowProjectSettings(true);
-      }
-      if (e.ctrlKey && e.altKey && e.key === 'v') {
-        e.preventDefault();
-        setShowVersionManagement(true);
-      }
-      if (e.ctrlKey && e.shiftKey && e.key === 'E') {
-        e.preventDefault();
-        setShowExportDialog(true);
-      }
-      if (e.ctrlKey && e.key === 'i') {
-        e.preventDefault();
-        setShowImportAudio(true);
-      }
-      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
-        e.preventDefault();
-        setShowStemExport(true);
-      }
-
-      const currentSelectedClipId = selectedClipId;
-      if (currentSelectedClipId) {
+      },
+      'studio.record': () => store.record(),
+      'studio.loop': () => store.toggleLoop(),
+      'studio.save': () => handleSave(),
+      'studio.save-as': () => setShowSaveAsDialog(true),
+      'studio.new-project': () => setShowProjectDialog(true),
+      'studio.undo': () => store.undo(),
+      'studio.redo': () => store.redo(),
+      'studio.toggle-mixer': () => setShowMixer(prev => !prev),
+      'studio.toggle-inspector': () => setShowInspector(prev => !prev),
+      'studio.toggle-editor': () => setShowEditor(prev => !prev),
+      'studio.project-settings': () => setShowProjectSettings(true),
+      'studio.version-management': () => setShowVersionManagement(true),
+      'studio.export': () => setShowExportDialog(true),
+      'studio.import-audio': () => setShowImportAudio(true),
+      'studio.stem-export': () => setShowStemExport(true),
+      'studio.plugin-browser-all': () => { setPluginFilter('all'); setShowPluginBrowser(true); },
+      'studio.plugin-browser-instruments': () => { setPluginFilter('instruments'); setShowPluginBrowser(true); },
+      'studio.plugin-browser-effects': () => { setPluginFilter('effects'); setShowPluginBrowser(true); },
+      'studio.toggle-ai-panel': () => setShowAIPanel(prev => !prev),
+      'studio.music-generator': () => setShowMusicGenerator(true),
+      'studio.show-shortcuts': () => setShowKeyboardShortcuts(true),
+      'studio.delete-clip': () => {
+        const found = findSelectedClip();
+        if (!found) return;
         const s = useStudioStore.getState();
-        let clipTrack: any = null;
-        let clipData: any = null;
-        let clipType: 'audio' | 'midi' = 'audio';
-        for (const t of s.tracks) {
-          const ac = t.audioClips.find((c: any) => c.id === currentSelectedClipId);
-          if (ac) { clipTrack = t; clipData = ac; clipType = 'audio'; break; }
-          const mc = t.midiClips.find((c: any) => c.id === currentSelectedClipId);
-          if (mc) { clipTrack = t; clipData = mc; clipType = 'midi'; break; }
+        if (found.type === 'audio') s.removeAudioClip(found.track.id, found.clip.id);
+        else s.removeMidiClip(found.track.id, found.clip.id);
+        setSelectedClipId(null);
+      },
+      'studio.split-clip': () => {
+        const found = findSelectedClip();
+        if (!found || found.type !== 'audio') return;
+        const s = useStudioStore.getState();
+        const playheadTime = livePositionRef.current;
+        const clipStart = found.clip.startTime || 0;
+        const clipEnd = clipStart + (found.clip.duration || 0);
+        if (playheadTime > clipStart && playheadTime < clipEnd) {
+          const firstDuration = playheadTime - clipStart;
+          const secondDuration = clipEnd - playheadTime;
+          const secondOffset = (found.clip.offset || 0) + firstDuration;
+          s.updateAudioClip(found.track.id, found.clip.id, { duration: firstDuration });
+          const { id: _id, waveformData: _wd, ...clipProps } = found.clip;
+          s.addAudioClip(found.track.id, {
+            ...clipProps,
+            name: `${found.clip.name} (split)`,
+            startTime: playheadTime,
+            duration: secondDuration,
+            offset: secondOffset,
+          });
         }
-
-        if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey) {
-          e.preventDefault();
-          if (clipTrack && clipData) {
-            if (clipType === 'audio') s.removeAudioClip(clipTrack.id, clipData.id);
-            else s.removeMidiClip(clipTrack.id, clipData.id);
-            setSelectedClipId(null);
-          }
+      },
+      'studio.duplicate-clip': () => {
+        const found = findSelectedClip();
+        if (!found) return;
+        const s = useStudioStore.getState();
+        const { id: _id, waveformData: _wd, ...clipProps } = found.clip;
+        const newStart = (found.clip.startTime || 0) + (found.clip.duration || 1);
+        if (found.type === 'audio') {
+          s.addAudioClip(found.track.id, { ...clipProps, name: `${found.clip.name} (copy)`, startTime: newStart });
+        } else {
+          s.addMidiClip(found.track.id, { ...clipProps, name: `${found.clip.name} (copy)`, startTime: newStart });
         }
-
-        if ((e.key === 's' && !e.ctrlKey && !e.altKey && !e.shiftKey) || (e.ctrlKey && e.key === 'b')) {
-          if (clipTrack && clipData && clipType === 'audio') {
-            const playheadTime = livePosition;
-            const clipStart = clipData.startTime || 0;
-            const clipEnd = clipStart + (clipData.duration || 0);
-            if (playheadTime > clipStart && playheadTime < clipEnd) {
-              e.preventDefault();
-              const firstDuration = playheadTime - clipStart;
-              const secondDuration = clipEnd - playheadTime;
-              const secondOffset = (clipData.offset || 0) + firstDuration;
-              s.updateAudioClip(clipTrack.id, clipData.id, { duration: firstDuration });
-              const { id: _id, waveformData: _wd, ...clipProps } = clipData;
-              s.addAudioClip(clipTrack.id, {
-                ...clipProps,
-                name: `${clipData.name} (split)`,
-                startTime: playheadTime,
-                duration: secondDuration,
-                offset: secondOffset,
-              });
-            }
-          }
-        }
-
-        if (e.ctrlKey && e.key === 'd') {
-          e.preventDefault();
-          if (clipTrack && clipData) {
-            const { id: _id, waveformData: _wd, ...clipProps } = clipData;
-            const newStart = (clipData.startTime || 0) + (clipData.duration || 1);
-            if (clipType === 'audio') {
-              s.addAudioClip(clipTrack.id, { ...clipProps, name: `${clipData.name} (copy)`, startTime: newStart });
-            } else {
-              s.addMidiClip(clipTrack.id, { ...clipProps, name: `${clipData.name} (copy)`, startTime: newStart });
-            }
-          }
-        }
-
-        if (e.ctrlKey && e.key === 'c') {
-          e.preventDefault();
-          if (clipTrack && clipData) {
-            copiedClipRef.current = { clip: { ...clipData }, trackId: clipTrack.id, type: clipType };
-          }
-        }
-      }
-
-      if (e.ctrlKey && e.key === 'v') {
-        e.preventDefault();
+      },
+      'studio.copy-clip': () => {
+        const found = findSelectedClip();
+        if (!found) return;
+        copiedClipRef.current = { clip: { ...found.clip }, trackId: found.track.id, type: found.type };
+      },
+      'studio.paste-clip': () => {
         const copied = copiedClipRef.current;
-        if (copied) {
-          const s = useStudioStore.getState();
-          const { id: _id, waveformData: _wd, ...clipProps } = copied.clip;
-          if (copied.type === 'audio') {
-            s.addAudioClip(copied.trackId, { ...clipProps, name: `${copied.clip.name} (paste)`, startTime: livePosition });
-          } else {
-            s.addMidiClip(copied.trackId, { ...clipProps, name: `${copied.clip.name} (paste)`, startTime: livePosition });
-          }
+        if (!copied) return;
+        const s = useStudioStore.getState();
+        const { id: _id, waveformData: _wd, ...clipProps } = copied.clip;
+        if (copied.type === 'audio') {
+          s.addAudioClip(copied.trackId, { ...clipProps, name: `${copied.clip.name} (paste)`, startTime: livePositionRef.current });
+        } else {
+          s.addMidiClip(copied.trackId, { ...clipProps, name: `${copied.clip.name} (paste)`, startTime: livePositionRef.current });
         }
-      }
+      },
+      'studio.toggle-automation': () => setShowAutomation(prev => !prev),
+      'studio.toggle-video-track': () => setShowVideoTrack(prev => !prev),
+      'studio.stop': () => {
+        store.stop();
+        if (audioInitializedRef.current) audioEngine.stop();
+      },
+      'studio.rewind': () => {
+        store.setPosition(0);
+        if (audioInitializedRef.current) audioEngine.setPositionTime(0);
+        setLivePosition(0);
+      },
     };
+  });
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [store, audioEngine, selectedClipId, livePosition]);
+  useEffect(() => {
+    const manager = getShortcutManager();
+    manager.setContext('studio');
+
+    const dawShortcuts: ShortcutDefinition[] = [
+      { id: 'studio.play-pause', key: ' ', description: 'Play / Pause', category: 'transport', context: 'studio', action: () => dawActionsRef.current['studio.play-pause']?.() },
+      { id: 'studio.stop', key: '.', description: 'Stop', category: 'transport', context: 'studio', action: () => dawActionsRef.current['studio.stop']?.() },
+      { id: 'studio.rewind', key: 'Home', description: 'Return to start', category: 'transport', context: 'studio', action: () => dawActionsRef.current['studio.rewind']?.() },
+      { id: 'studio.record', key: 'r', description: 'Toggle recording', category: 'transport', context: 'studio', action: () => dawActionsRef.current['studio.record']?.() },
+      { id: 'studio.loop', key: 'l', description: 'Toggle loop', category: 'transport', context: 'studio', action: () => dawActionsRef.current['studio.loop']?.() },
+      { id: 'studio.save', key: 's', modifiers: ['ctrl'], description: 'Save project', category: 'file', context: 'studio', action: () => dawActionsRef.current['studio.save']?.() },
+      { id: 'studio.save-as', key: 's', modifiers: ['ctrl', 'shift'], description: 'Save project as...', category: 'file', context: 'studio', action: () => dawActionsRef.current['studio.save-as']?.() },
+      { id: 'studio.new-project', key: 'n', modifiers: ['ctrl'], description: 'New project', category: 'file', context: 'studio', action: () => dawActionsRef.current['studio.new-project']?.() },
+      { id: 'studio.undo', key: 'z', modifiers: ['ctrl'], description: 'Undo', category: 'editing', context: 'studio', action: () => dawActionsRef.current['studio.undo']?.() },
+      { id: 'studio.redo', key: 'y', modifiers: ['ctrl'], description: 'Redo', category: 'editing', context: 'studio', action: () => dawActionsRef.current['studio.redo']?.() },
+      { id: 'studio.toggle-mixer', key: 'm', description: 'Toggle mixer', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.toggle-mixer']?.() },
+      { id: 'studio.toggle-inspector', key: 'i', description: 'Toggle inspector', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.toggle-inspector']?.() },
+      { id: 'studio.toggle-editor', key: 'e', description: 'Toggle editor', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.toggle-editor']?.() },
+      { id: 'studio.project-settings', key: ',', modifiers: ['ctrl'], description: 'Project settings', category: 'settings', context: 'studio', action: () => dawActionsRef.current['studio.project-settings']?.() },
+      { id: 'studio.version-management', key: 'v', modifiers: ['ctrl', 'alt'], description: 'Version management', category: 'file', context: 'studio', action: () => dawActionsRef.current['studio.version-management']?.() },
+      { id: 'studio.export', key: 'e', modifiers: ['ctrl', 'shift'], description: 'Export project', category: 'file', context: 'studio', action: () => dawActionsRef.current['studio.export']?.() },
+      { id: 'studio.import-audio', key: 'i', modifiers: ['ctrl'], description: 'Import audio', category: 'file', context: 'studio', action: () => dawActionsRef.current['studio.import-audio']?.() },
+      { id: 'studio.stem-export', key: 'x', modifiers: ['ctrl', 'shift'], description: 'Stem export', category: 'file', context: 'studio', action: () => dawActionsRef.current['studio.stem-export']?.() },
+      { id: 'studio.plugin-browser-all', key: 'p', modifiers: ['shift'], description: 'Browse all plugins', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.plugin-browser-all']?.() },
+      { id: 'studio.plugin-browser-instruments', key: 'i', modifiers: ['shift'], description: 'Browse instruments', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.plugin-browser-instruments']?.() },
+      { id: 'studio.plugin-browser-effects', key: 'f', modifiers: ['shift'], description: 'Browse effects', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.plugin-browser-effects']?.() },
+      { id: 'studio.toggle-ai-panel', key: 'a', modifiers: ['alt'], description: 'Toggle AI panel', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.toggle-ai-panel']?.() },
+      { id: 'studio.music-generator', key: 'g', modifiers: ['alt'], description: 'Open music generator', category: 'actions', context: 'studio', action: () => dawActionsRef.current['studio.music-generator']?.() },
+      { id: 'studio.show-shortcuts', key: '?', description: 'Show keyboard shortcuts', category: 'help', context: 'studio', action: () => dawActionsRef.current['studio.show-shortcuts']?.() },
+      { id: 'studio.delete-clip', key: 'Delete', description: 'Delete selected clip', category: 'editing', context: 'studio', action: () => dawActionsRef.current['studio.delete-clip']?.() },
+      { id: 'studio.split-clip', key: 'b', modifiers: ['ctrl'], description: 'Split clip at playhead', category: 'editing', context: 'studio', action: () => dawActionsRef.current['studio.split-clip']?.() },
+      { id: 'studio.duplicate-clip', key: 'd', modifiers: ['ctrl'], description: 'Duplicate clip', category: 'editing', context: 'studio', action: () => dawActionsRef.current['studio.duplicate-clip']?.() },
+      { id: 'studio.copy-clip', key: 'c', modifiers: ['ctrl'], description: 'Copy clip', category: 'editing', context: 'studio', action: () => dawActionsRef.current['studio.copy-clip']?.() },
+      { id: 'studio.paste-clip', key: 'v', modifiers: ['ctrl'], description: 'Paste clip', category: 'editing', context: 'studio', action: () => dawActionsRef.current['studio.paste-clip']?.() },
+      { id: 'studio.toggle-automation', key: 'a', description: 'Toggle automation', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.toggle-automation']?.() },
+      { id: 'studio.toggle-video-track', key: 'v', modifiers: ['shift'], description: 'Toggle video track', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.toggle-video-track']?.() },
+    ];
+
+    manager.registerMany(dawShortcuts);
+
+    return () => {
+      dawShortcuts.forEach(s => manager.unregister(s.id));
+      manager.setContext('global');
+    };
+  }, []);
 
   const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -2308,8 +2293,41 @@ function ArrangeView({
   const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const playheadX = playheadPosition * pixelsPerSecond;
 
+  const timeSignatureNumerator = useStudioStore((s) => s.transport.timeSignatureNumerator) || 4;
+  const pixelsPerBeat = 40 * zoom;
+  const pixelsPerBar = pixelsPerBeat * timeSignatureNumerator;
+
+  const gridElements = useMemo(() => {
+    const startBar = Math.max(0, Math.floor(scrollX / pixelsPerBar));
+    const visibleBars = Math.ceil(1400 / pixelsPerBar) + 2;
+    const elements: JSX.Element[] = [];
+    for (let i = 0; i < visibleBars; i++) {
+      const bar = startBar + i;
+      const x = bar * pixelsPerBar + trackHeaderWidth;
+      elements.push(
+        <div
+          key={`bar-${bar}`}
+          className="absolute top-0 bottom-0 w-px pointer-events-none"
+          style={{ left: x, backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
+        />
+      );
+      for (let b = 1; b < timeSignatureNumerator; b++) {
+        elements.push(
+          <div
+            key={`beat-${bar}-${b}`}
+            className="absolute top-0 bottom-0 w-px pointer-events-none"
+            style={{ left: x + b * pixelsPerBeat, backgroundColor: 'rgba(255, 255, 255, 0.03)' }}
+          />
+        );
+      }
+    }
+    return elements;
+  }, [scrollX, pixelsPerBar, pixelsPerBeat, timeSignatureNumerator, trackHeaderWidth]);
+
   return (
     <div className="relative min-h-full">
+      {gridElements}
+
       {showVideoTrack && (
         <div className="border-b border-[#444]">
           <VideoTrack
@@ -2647,6 +2665,43 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
     const step = Math.max(1, Math.floor(peakCount / drawW));
     const barsToRender = Math.min(drawW, peakCount);
 
+    const clipStartTime = clip.startTime || 0;
+    const clipDuration = clip.duration || 0;
+    const secondsPerBeat = 60 / tempo;
+    const tsNum = useStudioStore.getState().transport.timeSignatureNumerator || 4;
+    const secondsPerBar = secondsPerBeat * tsNum;
+
+    if (clipDuration > 0 && secondsPerBar > 0) {
+      const firstBar = Math.ceil(clipStartTime / secondsPerBar);
+      const lastBar = Math.floor((clipStartTime + clipDuration) / secondsPerBar);
+      ctx.lineWidth = 1;
+      for (let bar = firstBar; bar <= lastBar; bar++) {
+        const t = bar * secondsPerBar;
+        const x = ((t - clipStartTime) / clipDuration) * drawW;
+        if (x > 0 && x < drawW) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, drawH);
+          ctx.stroke();
+        }
+      }
+      const firstBeat = Math.ceil(clipStartTime / secondsPerBeat);
+      const lastBeat = Math.floor((clipStartTime + clipDuration) / secondsPerBeat);
+      for (let beat = firstBeat; beat <= lastBeat; beat++) {
+        if (beat % tsNum === 0) continue;
+        const t = beat * secondsPerBeat;
+        const x = ((t - clipStartTime) / clipDuration) * drawW;
+        if (x > 0 && x < drawW) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, drawH);
+          ctx.stroke();
+        }
+      }
+    }
+
     ctx.fillStyle = `${trackColor}90`;
     for (let i = 0; i < barsToRender; i++) {
       const peakIdx = Math.floor((i / barsToRender) * peakCount);
@@ -2659,7 +2714,7 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
       const x = (i / barsToRender) * drawW;
       ctx.fillRect(x, (drawH - h) / 2, Math.max(drawW / barsToRender, 1), h);
     }
-  }, [clip.waveformData, displayWidth, trackColor, zoom]);
+  }, [clip.waveformData, clip.startTime, clip.duration, displayWidth, trackColor, zoom, tempo]);
 
   return (
     <ContextMenu>
@@ -2744,6 +2799,33 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
       </ContextMenuContent>
     </ContextMenu>
   );
+}
+
+function MidiClipGrid({ clipStartTime, clipDuration, tempo }: { clipStartTime: number; clipDuration: number; tempo: number }) {
+  const tsNum = useStudioStore((s) => s.transport.timeSignatureNumerator) || 4;
+  const secondsPerBeat = 60 / tempo;
+  const secondsPerBar = secondsPerBeat * tsNum;
+  if (clipDuration <= 0 || secondsPerBar <= 0) return null;
+
+  const lines: JSX.Element[] = [];
+  const firstBar = Math.ceil(clipStartTime / secondsPerBar);
+  const lastBar = Math.floor((clipStartTime + clipDuration) / secondsPerBar);
+  for (let bar = firstBar; bar <= lastBar; bar++) {
+    const pct = ((bar * secondsPerBar - clipStartTime) / clipDuration) * 100;
+    if (pct > 0 && pct < 100) {
+      lines.push(<div key={`b${bar}`} className="absolute top-0 bottom-0 w-px pointer-events-none" style={{ left: `${pct}%`, backgroundColor: 'rgba(255,255,255,0.15)' }} />);
+    }
+  }
+  const firstBeat = Math.ceil(clipStartTime / secondsPerBeat);
+  const lastBeat = Math.floor((clipStartTime + clipDuration) / secondsPerBeat);
+  for (let beat = firstBeat; beat <= lastBeat; beat++) {
+    if (beat % tsNum === 0) continue;
+    const pct = ((beat * secondsPerBeat - clipStartTime) / clipDuration) * 100;
+    if (pct > 0 && pct < 100) {
+      lines.push(<div key={`bt${beat}`} className="absolute top-0 bottom-0 w-px pointer-events-none" style={{ left: `${pct}%`, backgroundColor: 'rgba(255,255,255,0.06)' }} />);
+    }
+  }
+  return <div className="absolute inset-0 pointer-events-none">{lines}</div>;
 }
 
 interface MidiClipViewProps {
@@ -2855,6 +2937,7 @@ function MidiClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onSe
             onMouseDown={(e) => handleMouseDown(e, 'trim-end')}
           />
           <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80 pointer-events-none">{clip.name}</div>
+          <MidiClipGrid clipStartTime={clip.startTime} clipDuration={clip.duration} tempo={tempo} />
           <div className="absolute inset-x-1 bottom-1 top-5 flex flex-col gap-px overflow-hidden pointer-events-none">
             {clip.notes?.slice(0, 8).map((note: any, i: number) => (
               <div
