@@ -3,9 +3,15 @@
 .pythonlibs
 .venv
 __pycache__
+.local/
+.config/
 
 # Rust build artifacts
 boosterstate/target
+
+# Old/legacy project copies
+maxbooster7.5/
+maxbooster_veo_music/
 
 # Development files
 *.md
@@ -23,7 +29,6 @@ client/public/videos
 # Development tooling
 scripts/
 .agents/
-.local/
 attached_assets/
 
 # Source files (compiled output lives in dist/)
@@ -41,13 +46,15 @@ tailwind.config.ts
 postcss.config.js
 components.json
 
-# Electron / Desktop
+# Electron / Desktop / Mobile (not needed for web deployment)
 electron/
 electron-out/
 out/
 release/
 dist-installers/
 dist-portable/
+android/
+ios/
 
 # AI model training data
 ai_model/weights/
@@ -56,8 +63,16 @@ training/
 boostsheets_db/
 boosterstate-data/
 
+# Documentation
+docs/
+
+# Tests
+tests/
+
 # Misc
 *.backup
 cookies.txt
 .audit-wal/
 .capsule-temp/
+data/
+pocket-dimensions/
