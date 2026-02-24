@@ -21,9 +21,9 @@ Max Booster is a full-stack web application for AI-powered music career manageme
 - `migrations/` - Drizzle database migrations
 
 ## Key Commands
-- **Dev**: `./boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts`
-- **Build**: `npx tsx script/build.ts`
-- **Production**: `./boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=production node dist/index.cjs`
+- **Dev**: `npm run dev` (starts boosterstate + Express/Vite dev server)
+- **Build**: `npm run build` (builds client, checks boosterstate binary, bundles server)
+- **Production**: `npm run start` (starts boosterstate + production Node.js server)
 - **DB Push**: `npx drizzle-kit push`
 
 ## Environment Variables

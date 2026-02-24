@@ -85,7 +85,6 @@ async function buildAll() {
     }
   }
 
-  // Only remove the server bundle, preserving committed frontend assets
   await rm("dist/index.cjs", { force: true });
 
   console.log("building server...");
