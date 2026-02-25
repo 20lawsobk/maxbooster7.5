@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { Button } from '@/components/ui/button';
-import { Menu, LogOut, Loader2 } from 'lucide-react';
+import { Menu, LogOut, Loader2, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useLocation } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { logger } from '@/lib/logger';
 
 interface TopBarProps {
@@ -60,6 +60,17 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
         </div>
         <div className="flex items-center space-x-2">
           <NotificationCenter />
+          <Link to="/settings">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              data-testid="settings-button"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="sm"

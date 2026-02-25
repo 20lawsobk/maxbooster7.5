@@ -23,6 +23,7 @@ import {
   Receipt,
   ShieldCheck,
   Zap,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -199,15 +200,21 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
             <LanguageSwitcher />
             <ThemeToggle variant="outline" size="sm" />
           </div>
-          <div className="text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">{user.username}</p>
-            <p className="truncate">{user.email}</p>
-            {isAdmin && (
-              <span className="inline-block mt-2 px-2 py-1 bg-secondary text-secondary-foreground rounded text-xs font-medium">
-                Admin
-              </span>
-            )}
-          </div>
+          <Link
+            to="/settings"
+            className="flex items-center justify-between gap-2 rounded-md p-2 -m-2 hover:bg-accent transition-colors group"
+          >
+            <div className="text-xs text-muted-foreground min-w-0">
+              <p className="font-medium text-foreground">{user.username}</p>
+              <p className="truncate">{user.email}</p>
+              {isAdmin && (
+                <span className="inline-block mt-2 px-2 py-1 bg-secondary text-secondary-foreground rounded text-xs font-medium">
+                  Admin
+                </span>
+              )}
+            </div>
+            <Settings className="w-4 h-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </Link>
         </div>
       </aside>
     </>
