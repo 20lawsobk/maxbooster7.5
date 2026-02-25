@@ -35,6 +35,7 @@ const PLATFORMS = {
     usePKCE: false,
     responseType: 'code',
     enabled: !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
+    redirectUri: process.env.THREADS_REDIRECT_URI,
   },
   tiktok: (() => {
     const env = process.env.TIKTOK_ENV;
