@@ -110,15 +110,14 @@ export default function Settings() {
   const [terminatingSession, setTerminatingSession] = useState(false);
   const [twoFactorDisableOpen, setTwoFactorDisableOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || user?.profileImageUrl || '');
+  const [avatarLoading, setAvatarLoading] = useState(false);
   const [planComparisonOpen, setPlanComparisonOpen] = useState(false);
   const [retryingPayment, setRetryingPayment] = useState(false);
   const [refundsExpanded, setRefundsExpanded] = useState(false);
   const [shortcutCustomizerOpen, setShortcutCustomizerOpen] = useState(false);
 
   useEffect(() => {
-    if (user?.avatarUrl || user?.profileImageUrl) {
-      setAvatarUrl(user.avatarUrl || user.profileImageUrl || '');
-    }
+    setAvatarUrl(user?.avatarUrl || user?.profileImageUrl || '');
   }, [user?.avatarUrl, user?.profileImageUrl]);
 
   // Query for full profile data
@@ -330,6 +329,7 @@ export default function Settings() {
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (avatarLoading) return;
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -346,6 +346,7 @@ export default function Settings() {
     const formData = new FormData();
     formData.append('avatar', file);
 
+    setAvatarLoading(true);
     try {
       const response = await apiRequest('POST', '/api/auth/avatar', formData);
       const data = await response.json() as { avatarUrl?: string; profileImageUrl?: string };
@@ -357,7 +358,7 @@ export default function Settings() {
           queryClient.setQueryData(['/api/auth/me'], { ...cached, avatarUrl: newUrl, profileImageUrl: newUrl });
         }
       }
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
 
       toast({
         title: 'Success',
@@ -369,10 +370,15 @@ export default function Settings() {
         description: 'Failed to upload profile picture',
         variant: 'destructive',
       });
+    } finally {
+      setAvatarLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleAvatarRemove = async () => {
+    if (avatarLoading) return;
+    setAvatarLoading(true);
     try {
       await apiRequest('DELETE', '/api/auth/avatar');
       setAvatarUrl('');
@@ -380,7 +386,7 @@ export default function Settings() {
       if (cached) {
         queryClient.setQueryData(['/api/auth/me'], { ...cached, avatarUrl: null, profileImageUrl: null });
       }
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
 
       toast({
         title: 'Success',
@@ -392,6 +398,8 @@ export default function Settings() {
         description: 'Failed to remove profile picture',
         variant: 'destructive',
       });
+    } finally {
+      setAvatarLoading(false);
     }
   };
 
@@ -735,17 +743,19 @@ export default function Settings() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => !avatarLoading && fileInputRef.current?.click()}
+                        disabled={avatarLoading}
                         data-testid="button-upload-avatar"
                       >
                         <Upload className="w-4 h-4 mr-2" />
-                        Upload Photo
+                        {avatarLoading ? 'Uploading...' : 'Upload Photo'}
                       </Button>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={handleAvatarRemove}
+                        disabled={avatarLoading || !avatarUrl}
                         data-testid="button-remove-avatar"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
