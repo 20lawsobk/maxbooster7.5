@@ -347,16 +347,8 @@ export default function Settings() {
     formData.append('avatar', file);
 
     try {
-      const response = await fetch('/api/auth/avatar', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-
-      if (!response.ok) throw new Error('Upload failed');
-
-      const data = await response.json();
-      setAvatarUrl(data.avatarUrl || data.profileImageUrl);
+      const data = await apiRequest('POST', '/api/auth/avatar', formData) as { avatarUrl?: string; profileImageUrl?: string };
+      setAvatarUrl(data.avatarUrl || data.profileImageUrl || '');
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
 
       toast({
