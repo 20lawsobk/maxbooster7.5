@@ -7,6 +7,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -406,6 +407,8 @@ export default function Advertisement() {
   const [adCreativeTab, setAdCreativeTab] = useState<'video-ai' | 'video-browser' | 'image'>('video-ai');
   const [generatedVideos, setGeneratedVideos] = useState<Array<{ url: string; blob: Blob; createdAt: Date }>>([]);
   const [generatedAdImages, setGeneratedAdImages] = useState<Array<{ url: string; createdAt: Date }>>([]);
+  const [adVideoTopic, setAdVideoTopic] = useState('');
+  const [adImageTopic, setAdImageTopic] = useState('');
   const [campaignForm, setCampaignForm] = useState({
     name: '',
     objective: '',
@@ -957,32 +960,60 @@ export default function Advertisement() {
                 </div>
 
                 {adCreativeTab === 'video-ai' && (
-                  <ServerVideoGenerator
-                    platform={adCreativePlatform}
-                    topic={campaignForm.name || campaignForm.objective || 'New music release'}
-                    tone="energetic"
-                    goal={campaignForm.objective || 'growth'}
-                    artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
-                    onVideoGenerated={(url) => {
-                      setGeneratedVideos((prev) => [...prev, { url, blob: new Blob(), createdAt: new Date() }]);
-                    }}
-                    className="border-0 shadow-none p-0 bg-transparent"
-                  />
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        Video Description
+                      </Label>
+                      <Textarea
+                        value={adVideoTopic}
+                        onChange={(e) => setAdVideoTopic(e.target.value)}
+                        placeholder={campaignForm.name || campaignForm.objective || 'Describe what you want in the video — e.g. "Energetic new single promo with neon visuals and bass drop"'}
+                        rows={2}
+                        className="resize-none text-sm"
+                      />
+                    </div>
+                    <ServerVideoGenerator
+                      platform={adCreativePlatform}
+                      topic={adVideoTopic || campaignForm.name || campaignForm.objective || 'New music release'}
+                      tone="energetic"
+                      goal={campaignForm.objective || 'growth'}
+                      artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
+                      onVideoGenerated={(url) => {
+                        setGeneratedVideos((prev) => [...prev, { url, blob: new Blob(), createdAt: new Date() }]);
+                      }}
+                      className="border-0 shadow-none p-0 bg-transparent"
+                    />
+                  </div>
                 )}
 
                 {adCreativeTab === 'image' && (
-                  <AIImageGenerator
-                    platform={adCreativePlatform}
-                    topic={campaignForm.name || campaignForm.objective || 'New music release'}
-                    tone="energetic"
-                    goal={campaignForm.objective || 'growth'}
-                    artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
-                    endpoint="/api/advertising/generate-image"
-                    onImageGenerated={(url) => {
-                      setGeneratedAdImages((prev) => [...prev, { url, createdAt: new Date() }]);
-                    }}
-                    className="border-0 shadow-none p-0 bg-transparent"
-                  />
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        Image Description
+                      </Label>
+                      <Textarea
+                        value={adImageTopic}
+                        onChange={(e) => setAdImageTopic(e.target.value)}
+                        placeholder={campaignForm.name || campaignForm.objective || 'Describe the image — e.g. "Artist silhouette against city skyline, moody purple tones, album promo"'}
+                        rows={2}
+                        className="resize-none text-sm"
+                      />
+                    </div>
+                    <AIImageGenerator
+                      platform={adCreativePlatform}
+                      topic={adImageTopic || campaignForm.name || campaignForm.objective || 'New music release'}
+                      tone="energetic"
+                      goal={campaignForm.objective || 'growth'}
+                      artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
+                      endpoint="/api/advertising/generate-image"
+                      onImageGenerated={(url) => {
+                        setGeneratedAdImages((prev) => [...prev, { url, createdAt: new Date() }]);
+                      }}
+                      className="border-0 shadow-none p-0 bg-transparent"
+                    />
+                  </div>
                 )}
 
                 {adCreativeTab === 'video-browser' && (
