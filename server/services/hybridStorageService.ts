@@ -118,19 +118,14 @@ export interface TieringDecision {
 export class HybridStorageService {
   private static instance: HybridStorageService;
   private replitClient: any = null;
-  private replitBucketName: string = '';
-  private replitObjectPrefix: string = '';
   private coldPocket: PocketDimension | null = null;
-  private bucketId: string | null = null;
   private initialized: boolean = false;
   
   private fileIndex: Map<string, HybridFileMetadata> = new Map();
   private contentHashIndex: Map<string, string[]> = new Map();
   private publicContentHashes: Map<string, string> = new Map();
 
-  private constructor() {
-    this.bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_OBJSTORE_BUCKET_ID || process.env.REPLIT_BUCKET_ID || null;
-  }
+  private constructor() {}
 
   static getInstance(): HybridStorageService {
     if (!HybridStorageService.instance) {
@@ -143,35 +138,14 @@ export class HybridStorageService {
     if (this.initialized) return;
 
     try {
-      const privateDir = process.env.PRIVATE_OBJECT_DIR || '';
-      if (privateDir || this.bucketId) {
+      const bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_OBJSTORE_BUCKET_ID || '';
+      if (bucketId || process.env.PRIVATE_OBJECT_DIR) {
         try {
-          const { Storage } = await import('@google-cloud/storage');
-          if (privateDir) {
-            const parts = privateDir.replace(/^\//, '').split('/');
-            this.replitBucketName = parts[0];
-            this.replitObjectPrefix = parts.slice(1).join('/');
-          } else {
-            this.replitBucketName = this.bucketId || '';
-            this.replitObjectPrefix = '';
-          }
-          this.replitClient = new Storage({
-            credentials: {
-              audience: "replit",
-              subject_token_type: "access_token",
-              token_url: "http://127.0.0.1:1106/token",
-              type: "external_account",
-              credential_source: {
-                url: "http://127.0.0.1:1106/credential",
-                format: { type: "json", subject_token_field_name: "access_token" },
-              },
-              universe_domain: "googleapis.com",
-            },
-            projectId: "",
-          });
+          const { Client } = await import('@replit/object-storage');
+          this.replitClient = new Client();
           logger.info(`[HybridStorage] Initialized Replit Object Storage (hot tier)`);
         } catch (e) {
-          logger.warn('[HybridStorage] Failed to initialize GCS client, falling back to Pocket Dimension');
+          logger.warn('[HybridStorage] Failed to initialize @replit/object-storage client, falling back to Pocket Dimension only');
           this.replitClient = null;
         }
       } else {
@@ -453,16 +427,13 @@ export class HybridStorageService {
   }
 
   private async writeToReplit(key: string, data: Buffer, contentType?: string): Promise<void> {
-    if (!this.replitClient) throw new Error('Replit client not initialized');
-
-    const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
-    const bucket = this.replitClient.bucket(this.replitBucketName);
-    const file = bucket.file(objectPath);
-
-    await file.save(data, {
+    if (!this.replitClient) throw new Error('Replit Object Storage client not initialized');
+    const result = await this.replitClient.uploadFromBuffer(key, data, {
       contentType: contentType || 'application/octet-stream',
-      resumable: false,
     });
+    if (!result.ok) {
+      throw new Error(`Replit storage write failed for key "${key}": ${result.error}`);
+    }
   }
 
   async read(userId: string, key: string): Promise<Buffer> {
@@ -511,14 +482,12 @@ export class HybridStorageService {
   }
 
   private async readFromReplit(key: string): Promise<Buffer> {
-    if (!this.replitClient) throw new Error('Replit client not initialized');
-
-    const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
-    const bucket = this.replitClient.bucket(this.replitBucketName);
-    const file = bucket.file(objectPath);
-
-    const [contents] = await file.download();
-    return Buffer.from(contents);
+    if (!this.replitClient) throw new Error('Replit Object Storage client not initialized');
+    const result = await this.replitClient.downloadAsBuffer(key);
+    if (!result.ok) {
+      throw new Error(`Replit storage read failed for key "${key}": ${result.error}`);
+    }
+    return result.value as Buffer;
   }
 
   async delete(userId: string, key: string): Promise<boolean> {
@@ -546,9 +515,7 @@ export class HybridStorageService {
       
       if (!otherRefs) {
         if (entry.location === 'replit' && this.replitClient) {
-          const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
-          const bucket = this.replitClient.bucket(this.replitBucketName);
-          await bucket.file(objectPath).delete({ ignoreNotFound: true }).catch(() => {});
+          await this.replitClient.delete(key).catch(() => {});
         } else {
           await this.coldPocket!.delete(`storage/${key}`).catch(() => {});
         }
@@ -584,9 +551,7 @@ export class HybridStorageService {
       const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
 
       if (this.replitClient) {
-        const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
-        const bucket = this.replitClient.bucket(this.replitBucketName);
-        await bucket.file(objectPath).delete({ ignoreNotFound: true }).catch(() => {});
+        await this.replitClient.delete(key).catch(() => {});
       }
 
       entry.tier = 'cold';
@@ -937,9 +902,7 @@ export class HybridStorageService {
       } else {
         const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
         if (entry.location === 'replit' && this.replitClient) {
-          const objectPath = this.replitObjectPrefix ? `${this.replitObjectPrefix}/${key}` : key;
-          const bucket = this.replitClient.bucket(this.replitBucketName);
-          await bucket.file(objectPath).delete({ ignoreNotFound: true }).catch(() => {});
+          await this.replitClient.delete(key).catch(() => {});
         }
         entry.location = 'pocket-dimension';
         entry.tier = targetTier;
