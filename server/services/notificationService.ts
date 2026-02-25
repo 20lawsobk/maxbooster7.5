@@ -569,6 +569,156 @@ Manage your notification preferences: ${link || 'https://maxbooster.ai/settings'
       metadata: { beatName, plays },
     });
   }
+
+  private async getAdminUserId(): Promise<string | null> {
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || 'blawzmusic@gmail.com';
+      const admin = await db.query.users.findFirst({
+        where: eq(users.email, adminEmail),
+        columns: { id: true },
+      });
+      return admin?.id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async sendToAdmin(options: Omit<NotificationOptions, 'userId'>): Promise<void> {
+    const adminId = await this.getAdminUserId();
+    if (!adminId) return;
+    await this.send({ ...options, userId: adminId });
+  }
+
+  async sendAdminNewUserNotification(
+    newUserEmail: string,
+    newUserId: string,
+    plan?: string
+  ): Promise<void> {
+    await this.sendToAdmin({
+      type: 'admin_new_user',
+      title: 'New User Registered',
+      message: `${newUserEmail} just joined Max Booster${plan ? ` on the ${plan} plan` : ''}.`,
+      link: `/admin/users`,
+      metadata: { newUserEmail, newUserId, plan },
+    });
+  }
+
+  async sendAdminPaymentIssueNotification(
+    userEmail: string,
+    userId: string,
+    amount: number,
+    reason?: string
+  ): Promise<void> {
+    await this.sendToAdmin({
+      type: 'admin_payment_issue',
+      title: 'User Payment Failed',
+      message: `Payment of $${amount.toFixed(2)} failed for ${userEmail}${reason ? `: ${reason}` : '.'}`,
+      link: `/admin/users`,
+      metadata: { userEmail, userId, amount, reason },
+    });
+  }
+
+  async sendAdminStorageCriticalNotification(
+    usedPercent: number,
+    usedGB: number,
+    totalGB: number
+  ): Promise<void> {
+    await this.sendToAdmin({
+      type: 'admin_storage_critical',
+      title: 'Platform Storage Critical',
+      message: `Platform storage is at ${usedPercent}% capacity (${usedGB.toFixed(1)} GB / ${totalGB.toFixed(1)} GB). Immediate action may be required.`,
+      link: '/admin',
+      metadata: { usedPercent, usedGB, totalGB },
+    });
+  }
+
+  async sendAdminMarketplaceReviewNotification(
+    itemName: string,
+    itemId: string,
+    sellerEmail: string
+  ): Promise<void> {
+    await this.sendToAdmin({
+      type: 'admin_marketplace_review',
+      title: 'Marketplace Listing Pending Review',
+      message: `"${itemName}" by ${sellerEmail} is awaiting moderation review.`,
+      link: `/admin/marketplace`,
+      metadata: { itemName, itemId, sellerEmail },
+    });
+  }
+
+  async sendAdminUserReportNotification(
+    reporterEmail: string,
+    reportedEmail: string,
+    reason: string
+  ): Promise<void> {
+    await this.sendToAdmin({
+      type: 'admin_user_report',
+      title: 'User Report Filed',
+      message: `${reporterEmail} reported ${reportedEmail}: "${reason}"`,
+      link: `/admin/users`,
+      metadata: { reporterEmail, reportedEmail, reason },
+    });
+  }
+
+  async sendAdminRevenueMilestoneNotification(
+    milestone: number,
+    period: string
+  ): Promise<void> {
+    const formatted = milestone >= 1_000_000
+      ? `$${(milestone / 1_000_000).toFixed(1)}M`
+      : milestone >= 1_000
+        ? `$${(milestone / 1_000).toFixed(0)}K`
+        : `$${milestone}`;
+    await this.sendToAdmin({
+      type: 'admin_revenue_milestone',
+      title: `Platform Revenue Milestone: ${formatted}`,
+      message: `Max Booster has reached ${formatted} in total revenue for ${period}. Congratulations!`,
+      link: '/admin',
+      metadata: { milestone, period },
+    });
+  }
+
+  async sendAdminHealthAlertNotification(
+    service: string,
+    status: string,
+    details?: string
+  ): Promise<void> {
+    await this.sendToAdmin({
+      type: 'admin_health_alert',
+      title: `Platform Health Alert: ${service}`,
+      message: `${service} is reporting ${status}${details ? `: ${details}` : '.'}`,
+      link: '/admin',
+      metadata: { service, status, details },
+    });
+  }
+
+  async sendAdminUserFlaggedNotification(
+    userEmail: string,
+    userId: string,
+    reason: string
+  ): Promise<void> {
+    await this.sendToAdmin({
+      type: 'admin_user_flagged',
+      title: 'Account Flagged for Review',
+      message: `${userEmail} has been automatically flagged: ${reason}`,
+      link: `/admin/users`,
+      metadata: { userEmail, userId, reason },
+    });
+  }
+
+  async sendAdminSupportTicketNotification(
+    userEmail: string,
+    subject: string,
+    ticketId?: string
+  ): Promise<void> {
+    await this.sendToAdmin({
+      type: 'admin_support_ticket',
+      title: 'New Support Ticket',
+      message: `${userEmail} submitted a support request: "${subject}"`,
+      link: `/admin`,
+      metadata: { userEmail, subject, ticketId },
+    });
+  }
 }
 
 export const notificationService = new NotificationService();

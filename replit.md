@@ -119,6 +119,22 @@ Service helpers are in `server/services/notificationService.ts`.
 - `sendSubscriptionExpiringNotification(userId, plan, daysLeft)` — fire 7/3/1 days before expiry
 - `sendBeatPlayMilestoneNotification(userId, beatName, plays)` — fire at beat play milestones
 
+### Admin-Only Category: `platform_admin`
+Only visible when `user.role === 'admin'`. Shows as an orange-highlighted tab/row. The admin notification helpers automatically look up the admin by `ADMIN_EMAIL` env var.
+
+#### Admin notification types (all go to the admin user):
+| Type | Method | Auto-triggered |
+|------|---------|---------------|
+| `admin_new_user` | `sendAdminNewUserNotification(email, userId, plan?)` | ✅ On every registration |
+| `admin_payment_issue` | `sendAdminPaymentIssueNotification(email, userId, amount, reason?)` | ✅ On Stripe `invoice.payment_failed` |
+| `admin_storage_critical` | `sendAdminStorageCriticalNotification(usedPercent, usedGB, totalGB)` | Wire when storage check runs |
+| `admin_marketplace_review` | `sendAdminMarketplaceReviewNotification(itemName, itemId, sellerEmail)` | Wire when listing is submitted |
+| `admin_user_report` | `sendAdminUserReportNotification(reporterEmail, reportedEmail, reason)` | Wire when report is filed |
+| `admin_revenue_milestone` | `sendAdminRevenueMilestoneNotification(milestone, period)` | Wire at milestone thresholds |
+| `admin_health_alert` | `sendAdminHealthAlertNotification(service, status, details?)` | Wire from health checks |
+| `admin_user_flagged` | `sendAdminUserFlaggedNotification(email, userId, reason)` | Wire from fraud/abuse detection |
+| `admin_support_ticket` | `sendAdminSupportTicketNotification(email, subject, ticketId?)` | Wire when ticket submitted |
+
 ## Desktop & Mobile Builds
 
 Building the app requires GitHub Actions (Replit cannot create native installers).

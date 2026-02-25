@@ -22,6 +22,7 @@ import {
   BellOff,
   AlertCircle,
   Trophy,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -40,6 +41,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/useAuth';
 import { PushPermissionPrompt } from './PushPermissionPrompt';
 import type {
   NotificationPreferences as NotificationPreferencesType,
@@ -70,6 +72,7 @@ const defaultPreferences: NotificationPreferencesType = {
       collaboration: true,
       achievements: true,
       system: true,
+      platform_admin: true,
     },
   },
   push: {
@@ -83,6 +86,7 @@ const defaultPreferences: NotificationPreferencesType = {
       collaboration: true,
       achievements: true,
       system: true,
+      platform_admin: true,
     },
   },
   sms: {
@@ -110,6 +114,7 @@ const categoryIcons: Record<NotificationCategory, React.ElementType> = {
   collaboration: Users,
   achievements: Trophy,
   system: Megaphone,
+  platform_admin: LayoutDashboard,
 };
 
 const timezones = [
@@ -126,6 +131,8 @@ const timezones = [
 export function NotificationPreferences() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [phoneInput, setPhoneInput] = useState('');
@@ -546,15 +553,17 @@ export function NotificationPreferences() {
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Push notification categories:</Label>
                 {(Object.keys(categoryConfig) as NotificationCategory[])
-                  .filter((cat) => cat !== 'system')
+                  .filter((cat) => cat !== 'system' && (cat !== 'platform_admin' || isAdmin))
                   .map((key) => {
                     const Icon = categoryIcons[key];
+                    const isAdminCategory = key === 'platform_admin';
                     return (
-                      <div key={key} className="flex items-center justify-between py-1">
+                      <div key={key} className={`flex items-center justify-between py-1 ${isAdminCategory ? 'rounded-lg bg-orange-50 dark:bg-orange-950/20 px-2 border border-orange-200 dark:border-orange-800/40' : ''}`}>
                         <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <Icon className={`h-4 w-4 ${isAdminCategory ? 'text-orange-500' : 'text-muted-foreground'}`} />
                           <div>
-                            <span className="text-sm">{categoryConfig[key].label}</span>
+                            <span className={`text-sm ${isAdminCategory ? 'font-medium text-orange-700 dark:text-orange-300' : ''}`}>{categoryConfig[key].label}</span>
+                            {isAdminCategory && <span className="ml-2 text-[10px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded font-medium">Admin Only</span>}
                             <p className="text-xs text-muted-foreground">{categoryConfig[key].description}</p>
                           </div>
                         </div>
@@ -625,14 +634,18 @@ export function NotificationPreferences() {
               <Separator />
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Email me about:</Label>
-                {(Object.keys(categoryConfig) as NotificationCategory[]).map((key) => {
+                {(Object.keys(categoryConfig) as NotificationCategory[])
+                  .filter((cat) => cat !== 'platform_admin' || isAdmin)
+                  .map((key) => {
                   const Icon = categoryIcons[key];
+                  const isAdminCategory = key === 'platform_admin';
                   return (
-                    <div key={key} className="flex items-center justify-between py-1">
+                    <div key={key} className={`flex items-center justify-between py-1 ${isAdminCategory ? 'rounded-lg bg-orange-50 dark:bg-orange-950/20 px-2 border border-orange-200 dark:border-orange-800/40' : ''}`}>
                       <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-muted-foreground" />
+                        <Icon className={`h-4 w-4 ${isAdminCategory ? 'text-orange-500' : 'text-muted-foreground'}`} />
                         <div>
-                          <span className="text-sm">{categoryConfig[key].label}</span>
+                          <span className={`text-sm ${isAdminCategory ? 'font-medium text-orange-700 dark:text-orange-300' : ''}`}>{categoryConfig[key].label}</span>
+                          {isAdminCategory && <span className="ml-2 text-[10px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded font-medium">Admin Only</span>}
                           <p className="text-xs text-muted-foreground">{categoryConfig[key].description}</p>
                         </div>
                       </div>

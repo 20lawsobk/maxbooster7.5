@@ -216,6 +216,9 @@ export async function registerRoutes(
         email,
       }).catch((err: unknown) => logger.info('Welcome email failed (non-blocking):', err));
 
+      notificationService.sendAdminNewUserNotification(email, user.id)
+        .catch((err: unknown) => logger.info('Admin new-user notification failed (non-blocking):', err));
+
       return res.json(safeUser);
     } catch (error) {
       logger.error("Registration error:", error);

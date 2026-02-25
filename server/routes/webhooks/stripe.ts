@@ -254,13 +254,12 @@ registerWebhookHandler('invoice.payment_failed', async (event) => {
     const { notificationService } = await import('../../services/notificationService.js');
     const customerId = typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer as any)?.id;
     if (customerId) {
-      const found = await db.select({ id: users.id }).from(users).where(eq(users.stripeCustomerId, customerId)).limit(1);
+      const found = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.stripeCustomerId, customerId)).limit(1);
       if (found.length > 0) {
-        await notificationService.sendPaymentFailedNotification(
-          found[0].id,
-          invoice.amount_due / 100,
-          (invoice as any).last_payment_error?.message
-        );
+        const amount = invoice.amount_due / 100;
+        const reason = (invoice as any).last_payment_error?.message;
+        await notificationService.sendPaymentFailedNotification(found[0].id, amount, reason);
+        await notificationService.sendAdminPaymentIssueNotification(found[0].email!, found[0].id, amount, reason);
       }
     }
   } catch (err) {

@@ -49,6 +49,15 @@ export type NotificationType =
   | 'achievement_unlocked'
   | 'streak_milestone'
   | 'promotion'
+  | 'admin_new_user'
+  | 'admin_payment_issue'
+  | 'admin_storage_critical'
+  | 'admin_marketplace_review'
+  | 'admin_user_report'
+  | 'admin_revenue_milestone'
+  | 'admin_health_alert'
+  | 'admin_user_flagged'
+  | 'admin_support_ticket'
   | 'default';
 
 export type NotificationCategory =
@@ -59,7 +68,8 @@ export type NotificationCategory =
   | 'royalties'
   | 'collaboration'
   | 'achievements'
-  | 'system';
+  | 'system'
+  | 'platform_admin';
 
 export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
 
@@ -120,6 +130,7 @@ export interface NotificationPreferences {
       collaboration: boolean;
       achievements: boolean;
       system: boolean;
+      platform_admin: boolean;
     };
   };
   push: {
@@ -133,6 +144,7 @@ export interface NotificationPreferences {
       collaboration: boolean;
       achievements: boolean;
       system: boolean;
+      platform_admin: boolean;
     };
   };
   sms: {
@@ -190,6 +202,7 @@ export const categoryConfig: Record<NotificationCategory, { label: string; descr
   collaboration: { label: 'Collaboration', description: 'Invites, comments, mentions' },
   achievements: { label: 'Achievements', description: 'Badges, streaks, milestones' },
   system: { label: 'System', description: 'Maintenance, updates, storage warnings' },
+  platform_admin: { label: 'Platform Admin', description: 'New users, payment issues, health alerts, reports, flagged accounts' },
 };
 
 export const typeToCategory: Record<NotificationType, NotificationCategory> = {
@@ -243,6 +256,15 @@ export const typeToCategory: Record<NotificationType, NotificationCategory> = {
   achievement_unlocked: 'achievements',
   streak_milestone: 'achievements',
   promotion: 'system',
+  admin_new_user: 'platform_admin',
+  admin_payment_issue: 'platform_admin',
+  admin_storage_critical: 'platform_admin',
+  admin_marketplace_review: 'platform_admin',
+  admin_user_report: 'platform_admin',
+  admin_revenue_milestone: 'platform_admin',
+  admin_health_alert: 'platform_admin',
+  admin_user_flagged: 'platform_admin',
+  admin_support_ticket: 'platform_admin',
   default: 'system',
 };
 

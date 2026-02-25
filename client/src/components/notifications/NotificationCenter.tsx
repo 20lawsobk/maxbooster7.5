@@ -22,6 +22,7 @@ import {
   Volume2,
   VolumeX,
   Trophy,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +61,7 @@ const categoryIcons: Record<NotificationCategory, React.ElementType> = {
   collaboration: Users,
   achievements: Trophy,
   system: Megaphone,
+  platform_admin: LayoutDashboard,
 };
 
 const defaultPreferences: NotificationPreferences = {
@@ -83,6 +85,7 @@ const defaultPreferences: NotificationPreferences = {
       collaboration: true,
       achievements: true,
       system: true,
+      platform_admin: true,
     },
   },
   push: {
@@ -96,6 +99,7 @@ const defaultPreferences: NotificationPreferences = {
       collaboration: true,
       achievements: true,
       system: true,
+      platform_admin: true,
     },
   },
   sms: {
@@ -198,12 +202,18 @@ export function NotificationCenter() {
       marketplace: [],
       royalties: [],
       collaboration: [],
+      achievements: [],
       system: [],
+      platform_admin: [],
     };
 
     notifications.forEach((n) => {
       const category = (n.category || typeToCategory[n.type] || 'system') as NotificationCategory;
-      groups[category].push(n);
+      if (groups[category]) {
+        groups[category].push(n);
+      } else {
+        groups.system.push(n);
+      }
     });
 
     return groups;
@@ -368,18 +378,20 @@ export function NotificationCenter() {
                       </Badge>
                     )}
                   </TabsTrigger>
-                  {(Object.keys(categoryConfig) as NotificationCategory[]).map((cat) => {
-                    const Icon = categoryIcons[cat];
-                    const catCount = groupedByCategory[cat].filter((n) => !n.isRead).length;
-                    return (
-                      <TabsTrigger key={cat} value={cat} className="text-xs px-2">
-                        <Icon className="h-3 w-3 mr-1" />
-                        {catCount > 0 && (
-                          <span className="text-[10px] text-muted-foreground">{catCount}</span>
-                        )}
-                      </TabsTrigger>
-                    );
-                  })}
+                  {(Object.keys(categoryConfig) as NotificationCategory[])
+                    .filter((cat) => cat !== 'platform_admin' || user?.role === 'admin')
+                    .map((cat) => {
+                      const Icon = categoryIcons[cat];
+                      const catCount = groupedByCategory[cat].filter((n) => !n.isRead).length;
+                      return (
+                        <TabsTrigger key={cat} value={cat} className={`text-xs px-2 ${cat === 'platform_admin' ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                          <Icon className="h-3 w-3 mr-1" />
+                          {catCount > 0 && (
+                            <span className="text-[10px] text-muted-foreground">{catCount}</span>
+                          )}
+                        </TabsTrigger>
+                      );
+                    })}
                 </TabsList>
               </div>
 
