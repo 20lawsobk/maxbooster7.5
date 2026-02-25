@@ -196,7 +196,7 @@ const CALLBACK_PATHS: Record<string, string> = {
   meta: '/auth/facebook/callback',
   facebook: '/auth/facebook/callback',
   instagram: '/auth/instagram/callback',
-  threads: '/auth/threads/callback',
+  threads: '/api/social/callback/threads',
   tiktok: process.env.TIKTOK_ENV === 'sandbox' ? '/tiktok/sandbox/callback' : '/auth/tiktok/callback',
   google: '/auth/google/callback',
   youtube: '/auth/youtube/callback',

@@ -329,7 +329,7 @@ export class SocialOAuthService {
       authUrl: 'https://threads.net/oauth/authorize',
       tokenUrl: 'https://graph.threads.net/oauth/access_token',
       scopes: ['threads_basic', 'threads_content_publish', 'threads_manage_insights'],
-      redirectUri: process.env.THREADS_REDIRECT_URI || `${getOAuthDomain()}/auth/threads/callback`,
+      redirectUri: process.env.THREADS_REDIRECT_URI || `${getOAuthDomain()}/api/social/callback/threads`,
     });
 
     const tiktokEnv = process.env.TIKTOK_ENV;
