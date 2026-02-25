@@ -142,8 +142,8 @@ export const config: AppConfig = {
 
   database: {
     url: process.env.DATABASE_URL || '',
-    poolSize: parseEnvInt('DB_POOL_SIZE', 20),
-    maxConnections: parseEnvInt('DB_MAX_CONNECTIONS', 100),
+    poolSize: parseEnvInt('DB_POOL_SIZE', 50),
+    maxConnections: parseEnvInt('DB_MAX_CONNECTIONS', 200),
     idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 30000),
     connectionTimeout: parseEnvInt('DB_CONNECTION_TIMEOUT', 10000),
   },
@@ -156,7 +156,7 @@ export const config: AppConfig = {
 
   boosterState: {
     port: parseEnvInt('BOOSTERSTATE_PORT', 9877),
-    shards: parseEnvInt('BOOSTERSTATE_SHARDS', 4),
+    shards: parseEnvInt('BOOSTERSTATE_SHARDS', 8),
     dataDir: process.env.BOOSTERSTATE_DATA_DIR || './boosterstate-data',
   },
 
@@ -169,8 +169,8 @@ export const config: AppConfig = {
 
   rateLimiting: {
     windowMs: parseEnvInt('RATE_LIMIT_WINDOW_MS', 60000), // 1 minute
-    maxRequests: parseEnvInt('RATE_LIMIT_MAX', 100),
-    criticalMax: parseEnvInt('RATE_LIMIT_CRITICAL_MAX', 20),
+    maxRequests: parseEnvInt('RATE_LIMIT_MAX', 300),
+    criticalMax: parseEnvInt('RATE_LIMIT_CRITICAL_MAX', 60),
   },
 
   upload: {
@@ -193,10 +193,10 @@ export const config: AppConfig = {
 
   queue: {
     concurrency: {
-      audio: parseEnvInt('QUEUE_AUDIO_CONCURRENCY', 2),
-      analytics: parseEnvInt('QUEUE_ANALYTICS_CONCURRENCY', 2),
-      email: parseEnvInt('QUEUE_EMAIL_CONCURRENCY', 5),
-      csv: parseEnvInt('QUEUE_CSV_CONCURRENCY', 1),
+      audio: parseEnvInt('QUEUE_AUDIO_CONCURRENCY', 6),
+      analytics: parseEnvInt('QUEUE_ANALYTICS_CONCURRENCY', 8),
+      email: parseEnvInt('QUEUE_EMAIL_CONCURRENCY', 16),
+      csv: parseEnvInt('QUEUE_CSV_CONCURRENCY', 4),
     },
     timeout: {
       audio: parseEnvInt('QUEUE_AUDIO_TIMEOUT', 120000), // 2 minutes

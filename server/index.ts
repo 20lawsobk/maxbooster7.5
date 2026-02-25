@@ -65,7 +65,7 @@ const app = express();
 
 setupStartupEndpoints(app);
 
-app.use(compression());
+app.use(compression({ level: 4, threshold: 1024 }));
 app.use(cookieParser());
 const httpServer = createServer(app);
 
