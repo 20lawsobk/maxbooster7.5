@@ -280,6 +280,61 @@ export class PythonAIService {
     });
   }
 
+  async generateVisualSpec(options: {
+    topic: string;
+    platform: string;
+    tone?: string;
+    goal?: string;
+    artist_name?: string;
+    style?: string;
+  }): Promise<AIModelResponse<{
+    success: boolean;
+    thumbnail_prompt: string;
+    color_scheme: { primary: string; secondary: string; accent: string; background: string };
+    layout: string;
+    dimensions: { width: number; height: number };
+    format: string;
+    platform: string;
+    processing_time_ms: number;
+  }>> {
+    return callAIModel('/generate/visual-spec', {
+      topic: options.topic,
+      platform: options.platform || 'instagram',
+      tone: options.tone || 'energetic',
+      goal: options.goal || 'growth',
+      artist_name: options.artist_name,
+      style: options.style || 'modern',
+    });
+  }
+
+  async generateImage(options: {
+    topic: string;
+    platform: string;
+    tone?: string;
+    goal?: string;
+    artist_name?: string;
+    style?: string;
+  }): Promise<AIModelResponse<{
+    success: boolean;
+    url: string;
+    width: number;
+    height: number;
+    format: string;
+    platform: string;
+    prompt_used: string;
+    color_scheme: { primary: string; secondary: string; accent: string; background: string };
+    processing_time_ms: number;
+  }>> {
+    return callAIModel('/generate/image', {
+      topic: options.topic,
+      platform: options.platform || 'instagram',
+      tone: options.tone || 'energetic',
+      goal: options.goal || 'growth',
+      artist_name: options.artist_name,
+      style: options.style || 'modern',
+    });
+  }
+
   async getCinematicTemplates(): Promise<AIModelResponse<any>> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/generate/video/templates`, {

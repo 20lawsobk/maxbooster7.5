@@ -94,6 +94,7 @@ import { CompetitorBenchmarking } from '@/components/social/CompetitorBenchmarki
 import { UnifiedCalendar } from '@/components/social/UnifiedCalendar';
 import { VideoContentGenerator, Platform as VideoGeneratorPlatform } from '@/components/content/VideoContentGenerator';
 import { ServerVideoGenerator } from '@/components/content/ServerVideoGenerator';
+import { AIImageGenerator, type ImagePlatform as AIImagePlatform } from '@/components/content/AIImageGenerator';
 import {
   SocialOutcomeHandler,
   useOutcomeHandler,
@@ -435,6 +436,7 @@ export default function SocialMedia() {
   const [uploadedMedia, setUploadedMedia] = useState<File | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Calendar state
@@ -1518,9 +1520,8 @@ export default function SocialMedia() {
                     <Label>Content Format</Label>
                     <Select value={regularContentFormat} onValueChange={(value) => {
                       setRegularContentFormat(value);
-                      if (value !== 'video') {
-                        setGeneratedVideoUrl(null);
-                      }
+                      if (value !== 'video') setGeneratedVideoUrl(null);
+                      if (value !== 'image') setGeneratedImageUrl(null);
                     }}>
                       <SelectTrigger data-testid="select-regular-content-format">
                         <SelectValue />
@@ -1568,6 +1569,44 @@ export default function SocialMedia() {
                         >
                           <Calendar className="w-4 h-4 mr-2" />
                           Schedule Video Post
+                        </Button>
+                      )}
+                    </>
+                  ) : regularContentFormat === 'image' ? (
+                    <>
+                      <div>
+                        <Label>Topic / Image Description</Label>
+                        <Textarea
+                          value={postContent}
+                          onChange={(e) => setPostContent(e.target.value)}
+                          placeholder="Describe the image you want to generate (e.g., 'New single release promo', 'Behind the scenes studio shot')"
+                          rows={3}
+                          data-testid="textarea-image-topic"
+                        />
+                      </div>
+
+                      <AIImageGenerator
+                        platform={(selectedPlatforms[0] || 'instagram') as AIImagePlatform}
+                        topic={postContent || ''}
+                        tone={selectedTone as any}
+                        goal="growth"
+                        artistName={user?.displayName || user?.username || ''}
+                        endpoint="/api/social/generate-image"
+                        onImageGenerated={(url) => {
+                          setGeneratedImageUrl(url);
+                          setMediaPreviewUrl(url);
+                        }}
+                      />
+
+                      {generatedImageUrl && (
+                        <Button
+                          onClick={handleSchedulePostFromTab}
+                          disabled={selectedPlatforms.length === 0}
+                          className="w-full"
+                          data-testid="button-schedule-image-post"
+                        >
+                          <Calendar className="w-4 h-4 mr-2" />
+                          Schedule Image Post
                         </Button>
                       )}
                     </>

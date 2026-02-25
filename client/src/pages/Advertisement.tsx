@@ -34,6 +34,8 @@ import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import { AutonomousDashboard } from '@/components/autonomous/autonomous-dashboard';
 import { ContentAnalyzer } from '@/components/content/ContentAnalyzer';
 import { VideoContentGenerator, type Platform as VideoPlatform } from '@/components/content/VideoContentGenerator';
+import { ServerVideoGenerator } from '@/components/content/ServerVideoGenerator';
+import { AIImageGenerator, type ImagePlatform } from '@/components/content/AIImageGenerator';
 import {
   CreativeVariantGenerator,
   CrossChannelAttribution,
@@ -400,7 +402,10 @@ export default function Advertisement() {
     handleTrackAdvertisingExplored();
   };
   const [videoPlatform, setVideoPlatform] = useState<VideoPlatform>('instagram');
+  const [adCreativePlatform, setAdCreativePlatform] = useState<ImagePlatform>('instagram');
+  const [adCreativeTab, setAdCreativeTab] = useState<'video-ai' | 'video-browser' | 'image'>('video-ai');
   const [generatedVideos, setGeneratedVideos] = useState<Array<{ url: string; blob: Blob; createdAt: Date }>>([]);
+  const [generatedAdImages, setGeneratedAdImages] = useState<Array<{ url: string; createdAt: Date }>>([]);
   const [campaignForm, setCampaignForm] = useState({
     name: '',
     objective: '',
@@ -900,58 +905,128 @@ export default function Advertisement() {
             <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Play className="w-6 h-6 text-purple-500" />
-                  Generate Video Creative
+                  <Sparkles className="w-6 h-6 text-purple-500" />
+                  AI Creative Generator
                 </CardTitle>
                 <CardDescription>
-                  Create AI-powered video content for your ad campaigns. Generate platform-optimized video creatives for social media advertising.
+                  Generate platform-optimized video and image creatives using the Max Booster AI model — cinematic video rendering, AI image generation, and browser-based composition.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <Label className="mb-2 block">Target Platform</Label>
-                  <Select value={videoPlatform} onValueChange={(value) => setVideoPlatform(value as VideoPlatform)}>
-                    <SelectTrigger className="w-full md:w-64">
-                      <SelectValue placeholder="Select platform" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="instagram">Instagram Feed</SelectItem>
-                      <SelectItem value="instagram_reels">Instagram Reels</SelectItem>
-                      <SelectItem value="tiktok">TikTok</SelectItem>
-                      <SelectItem value="youtube">YouTube</SelectItem>
-                      <SelectItem value="youtube_shorts">YouTube Shorts</SelectItem>
-                      <SelectItem value="facebook">Facebook</SelectItem>
-                      <SelectItem value="twitter">Twitter/X</SelectItem>
-                      <SelectItem value="linkedin">LinkedIn</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div>
+                    <Label className="mb-1 block text-xs">Platform</Label>
+                    <Select value={adCreativePlatform} onValueChange={(v) => { setAdCreativePlatform(v as ImagePlatform); setVideoPlatform(v as VideoPlatform); }}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Select platform" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="instagram">Instagram Feed</SelectItem>
+                        <SelectItem value="instagram_reels">Instagram Reels</SelectItem>
+                        <SelectItem value="tiktok">TikTok</SelectItem>
+                        <SelectItem value="youtube">YouTube</SelectItem>
+                        <SelectItem value="youtube_shorts">YouTube Shorts</SelectItem>
+                        <SelectItem value="facebook">Facebook</SelectItem>
+                        <SelectItem value="twitter">Twitter/X</SelectItem>
+                        <SelectItem value="linkedin">LinkedIn</SelectItem>
+                        <SelectItem value="threads">Threads</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1" />
+                  <div className="flex gap-1 bg-muted rounded-lg p-1">
+                    <button
+                      onClick={() => setAdCreativeTab('video-ai')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${adCreativeTab === 'video-ai' ? 'bg-background shadow-sm text-purple-600' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      AI Video
+                    </button>
+                    <button
+                      onClick={() => setAdCreativeTab('image')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${adCreativeTab === 'image' ? 'bg-background shadow-sm text-indigo-600' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      AI Image
+                    </button>
+                    <button
+                      onClick={() => setAdCreativeTab('video-browser')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${adCreativeTab === 'video-browser' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      Browser Video
+                    </button>
+                  </div>
                 </div>
-                
-                <VideoContentGenerator
-                  platform={getSelectedCampaignPlatform()}
-                  contentText={campaignForm.name || campaignForm.objective || 'New music release'}
-                  artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
-                  releaseName={campaignForm.name || 'New Release'}
-                  onVideoGenerated={handleVideoGenerated}
-                  className="border-0 shadow-none p-0"
-                />
-                
+
+                {adCreativeTab === 'video-ai' && (
+                  <ServerVideoGenerator
+                    platform={adCreativePlatform}
+                    topic={campaignForm.name || campaignForm.objective || 'New music release'}
+                    tone="energetic"
+                    goal={campaignForm.objective || 'growth'}
+                    artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
+                    onVideoGenerated={(url) => {
+                      setGeneratedVideos((prev) => [...prev, { url, blob: new Blob(), createdAt: new Date() }]);
+                    }}
+                    className="border-0 shadow-none p-0 bg-transparent"
+                  />
+                )}
+
+                {adCreativeTab === 'image' && (
+                  <AIImageGenerator
+                    platform={adCreativePlatform}
+                    topic={campaignForm.name || campaignForm.objective || 'New music release'}
+                    tone="energetic"
+                    goal={campaignForm.objective || 'growth'}
+                    artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
+                    endpoint="/api/advertising/generate-image"
+                    onImageGenerated={(url) => {
+                      setGeneratedAdImages((prev) => [...prev, { url, createdAt: new Date() }]);
+                    }}
+                    className="border-0 shadow-none p-0 bg-transparent"
+                  />
+                )}
+
+                {adCreativeTab === 'video-browser' && (
+                  <VideoContentGenerator
+                    platform={getSelectedCampaignPlatform()}
+                    contentText={campaignForm.name || campaignForm.objective || 'New music release'}
+                    artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
+                    releaseName={campaignForm.name || 'New Release'}
+                    onVideoGenerated={handleVideoGenerated}
+                    className="border-0 shadow-none p-0"
+                  />
+                )}
+
                 {generatedVideos.length > 0 && (
-                  <div className="mt-6 pt-6 border-t">
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <div className="pt-4 border-t">
+                    <h4 className="font-medium mb-3 flex items-center gap-2 text-sm">
                       <Layers className="w-4 h-4" />
                       Generated Video Creatives ({generatedVideos.length})
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {generatedVideos.slice(-6).map((video, index) => (
-                        <div key={index} className="relative rounded-lg overflow-hidden border bg-card">
-                          <video 
-                            src={video.url} 
-                            className="w-full aspect-video object-cover"
-                            controls
-                          />
+                        <div key={index} className="rounded-lg overflow-hidden border bg-card">
+                          <video src={video.url} className="w-full aspect-video object-cover" controls />
                           <div className="p-2 text-xs text-muted-foreground">
-                            Created: {video.createdAt.toLocaleString()}
+                            {video.createdAt.toLocaleString()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {generatedAdImages.length > 0 && (
+                  <div className="pt-4 border-t">
+                    <h4 className="font-medium mb-3 flex items-center gap-2 text-sm">
+                      <Layers className="w-4 h-4" />
+                      Generated Image Creatives ({generatedAdImages.length})
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {generatedAdImages.slice(-8).map((img, index) => (
+                        <div key={index} className="rounded-lg overflow-hidden border bg-card">
+                          <img src={img.url} alt="Ad creative" className="w-full aspect-square object-cover" />
+                          <div className="p-1.5 text-xs text-muted-foreground">
+                            {img.createdAt.toLocaleString()}
                           </div>
                         </div>
                       ))}

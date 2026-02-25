@@ -1902,4 +1902,48 @@ router.post('/veo-campaign/promote-listing', requireAuth, async (req: Authentica
   }
 });
 
+router.post('/generate-image', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { topic, platform, tone, goal, artist_name, style } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ success: false, message: 'Topic is required' });
+    }
+
+    const result = await pythonAIService.generateImage({
+      topic,
+      platform: platform || 'instagram',
+      tone: tone || 'energetic',
+      goal: goal || 'growth',
+      artist_name,
+      style: style || 'modern',
+    });
+
+    if (!result.success) {
+      const specResult = await pythonAIService.generateVisualSpec({
+        topic,
+        platform: platform || 'instagram',
+        tone: tone || 'energetic',
+        goal: goal || 'growth',
+        artist_name,
+        style: style || 'modern',
+      });
+
+      if (!specResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: specResult.error || 'Image generation failed',
+        });
+      }
+
+      return res.json({ success: true, visual_spec: specResult.data, image_url: null });
+    }
+
+    res.json({ success: true, ...result.data });
+  } catch (error) {
+    logger.error('Failed to generate social image:', error);
+    res.status(500).json({ success: false, message: 'Image generation failed' });
+  }
+});
+
 export default router;

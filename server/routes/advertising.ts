@@ -4,6 +4,7 @@ import { logger } from '../logger.js';
 import { unifiedAIController } from '../services/unifiedAIController.js';
 import { storage } from '../storage.js';
 import { notificationService } from '../services/notificationService.js';
+import { pythonAIService } from '../services/pythonAIService.js';
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
@@ -378,6 +379,106 @@ router.post('/generate-content', requireAuth, async (req, res) => {
   } catch (error) {
     logger.error('Failed to generate ad content:', error);
     res.status(500).json({ error: 'Failed to generate content' });
+  }
+});
+
+router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const {
+      topic, platform, template, aspect_ratio, duration,
+      tone, goal, artist_name, quality,
+    } = req.body;
+
+    const result = await pythonAIService.generateVideo({
+      topic,
+      platform: platform || 'instagram',
+      template: template || 'cinematic_promo',
+      aspect_ratio,
+      duration: duration || 10,
+      tone: tone || 'energetic',
+      goal: goal || 'growth',
+      artist_name,
+      quality: quality || 'cinematic',
+    });
+
+    if (!result.success || !result.data?.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.data?.error || result.error || 'Video generation failed',
+      });
+    }
+
+    res.json(result.data);
+  } catch (error) {
+    logger.error('Failed to generate ad video:', error);
+    res.status(500).json({ success: false, message: 'Video generation failed' });
+  }
+});
+
+router.post('/generate-image', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { topic, platform, tone, goal, artist_name, style } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ success: false, message: 'Topic is required' });
+    }
+
+    const result = await pythonAIService.generateImage({
+      topic,
+      platform: platform || 'instagram',
+      tone: tone || 'energetic',
+      goal: goal || 'growth',
+      artist_name,
+      style: style || 'modern',
+    });
+
+    if (!result.success) {
+      const specResult = await pythonAIService.generateVisualSpec({
+        topic,
+        platform: platform || 'instagram',
+        tone: tone || 'energetic',
+        goal: goal || 'growth',
+        artist_name,
+        style: style || 'modern',
+      });
+
+      if (!specResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: specResult.error || 'Image generation failed',
+        });
+      }
+
+      return res.json({ success: true, visual_spec: specResult.data, image_url: null });
+    }
+
+    res.json({ success: true, ...result.data });
+  } catch (error) {
+    logger.error('Failed to generate ad image:', error);
+    res.status(500).json({ success: false, message: 'Image generation failed' });
+  }
+});
+
+router.get('/video-templates', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await pythonAIService.getCinematicTemplates();
+    if (result.success && result.data) {
+      res.json(result.data);
+    } else {
+      res.json({
+        templates: [
+          { id: 'cinematic_promo', name: 'Cinematic Promo', description: 'Film-quality promotional video', category: 'promo' },
+          { id: 'neon_pulse', name: 'Neon Pulse', description: 'Vibrant neon with plasma backgrounds', category: 'energetic' },
+          { id: 'dark_cinema', name: 'Dark Cinema', description: 'Moody atmospheric film look', category: 'dramatic' },
+          { id: 'music_video', name: 'Music Video', description: 'High-energy music video style', category: 'music' },
+          { id: 'gold_luxury', name: 'Gold Luxury', description: 'Premium gold and black aesthetic', category: 'luxury' },
+          { id: 'elegant_minimal', name: 'Elegant Minimal', description: 'Clean sophisticated design', category: 'professional' },
+        ],
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to get ad video templates:', error);
+    res.status(500).json({ success: false, message: 'Failed to get templates' });
   }
 });
 
