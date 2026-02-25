@@ -423,7 +423,10 @@ router.get('/social-token-status', requireAuth, async (req: AuthenticatedRequest
 
     const accounts = await db.select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId));
+      .where(and(
+        eq(socialAccounts.userId, userId),
+        eq(socialAccounts.isActive, true)
+      ));
 
     const now = new Date();
     const platformStatus = accounts.map(account => {

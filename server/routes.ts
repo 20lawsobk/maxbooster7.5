@@ -24,6 +24,7 @@ import QRCode from "qrcode";
 import { emailService } from "./services/emailService.ts";
 import { upload } from "./middleware/uploadHandler.ts";
 import { logger } from './logger.js';
+import { achievementService } from './services/achievementService.ts';
 
 const log = (msg: string) => logger.info(msg);
 
@@ -286,6 +287,10 @@ export async function registerRoutes(
         }
 
         logger.info('[Login] SUCCESS for userId:', user.id);
+
+        achievementService.updateStreak(user.id, 'login').catch((e: unknown) =>
+          logger.warn('[Login] Failed to update login streak:', e)
+        );
 
         const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
         return res.json(safeUser);
