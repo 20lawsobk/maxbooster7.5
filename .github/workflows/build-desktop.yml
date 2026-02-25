@@ -20,7 +20,7 @@ on:
           - macos
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
   APP_NAME: 'Max Booster'
   APP_ID: 'com.blawzmusic.maxbooster'
 

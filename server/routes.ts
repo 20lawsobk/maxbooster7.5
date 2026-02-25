@@ -25,6 +25,7 @@ import { emailService } from "./services/emailService.ts";
 import { upload } from "./middleware/uploadHandler.ts";
 import { logger } from './logger.js';
 import { achievementService } from './services/achievementService.ts';
+import { notificationService } from './services/notificationService.ts';
 
 const log = (msg: string) => logger.info(msg);
 
@@ -291,6 +292,12 @@ export async function registerRoutes(
         achievementService.updateStreak(user.id, 'login').catch((e: unknown) =>
           logger.warn('[Login] Failed to update login streak:', e)
         );
+
+        notificationService.sendLoginSecurityNotification(
+          user.id,
+          req.ip || undefined,
+          req.headers['user-agent'] || undefined
+        ).catch(() => {});
 
         const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
         return res.json(safeUser);
@@ -880,6 +887,8 @@ export async function registerRoutes(
         // Continue - password was changed successfully
       }
       
+      notificationService.sendPasswordChangedNotification(req.user.id).catch(() => {});
+
       return res.json({ success: true, message: "Password changed. Other sessions have been logged out." });
     } catch (error) {
       logger.error("Change password error:", error);

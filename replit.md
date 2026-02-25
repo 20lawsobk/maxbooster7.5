@@ -90,6 +90,49 @@ All configured via Replit environment secrets. Key ones:
 - Build command: `npm run build`
 - Run command: `npm run start`
 
+## Notification System
+
+All notification types live in `client/src/components/notifications/types.ts`.
+Service helpers are in `server/services/notificationService.ts`.
+
+### Categories
+`account_security`, `distribution`, `social_media`, `marketplace`, `royalties`, `collaboration`, `achievements`, `system`
+
+### Wired Triggers
+- **Achievement unlocked** → `achievementService.checkAndAwardAchievements` fires `sendAchievementNotification`
+- **Streak milestones** (7/14/30/60/100/365 days) → `achievementService.updateStreak` fires `sendStreakMilestoneNotification`
+- **New login** → login handler fires `sendLoginSecurityNotification`
+- **Password changed** → change-password handler fires `sendPasswordChangedNotification`
+- **Payment failed** → Stripe `invoice.payment_failed` webhook fires `sendPaymentFailedNotification`
+- **Subscription updated** → Stripe `customer.subscription.updated` webhook fires `sendSubscriptionChangedNotification` or `sendSubscriptionRenewedNotification`
+- **Analytics anomaly** → `analyticsAnomalyService` fires system notification
+- **Marketplace sale** → `marketplace.ts` fires `sendSaleNotification`
+- **Release status** → `notificationService.sendReleaseNotification`
+
+### Available Helper Methods (not yet wired — call where applicable)
+- `sendStorageQuotaNotification(userId, usedPercent)` — fire when storage hits 75%+
+- `sendUploadCompleteNotification(userId, fileName, fileType)` — fire after file upload
+- `sendAiProcessingCompleteNotification(userId, taskType, trackName)` — fire after AI tasks
+- `sendStreamMilestoneNotification(userId, trackName, streams)` — fire at 1K/10K/100K/1M
+- `sendFollowerMilestoneNotification(userId, platform, followers)` — fire at milestone counts
+- `sendSocialTokenExpiringNotification(userId, platform)` — fire when OAuth token expiring
+- `sendSubscriptionExpiringNotification(userId, plan, daysLeft)` — fire 7/3/1 days before expiry
+- `sendBeatPlayMilestoneNotification(userId, beatName, plays)` — fire at beat play milestones
+
+## Desktop & Mobile Builds
+
+Building the app requires GitHub Actions (Replit cannot create native installers).
+
+- **Desktop (Electron)**: Push a tag `v3.x.x` to trigger `.github/workflows/build-desktop.yml`
+  - Builds: Windows NSIS/Portable, macOS DMG/ZIP, Linux AppImage/DEB
+  - Node 22 required (fixed in workflow)
+  - Electron entry: `electron/main.js` (version 3.0.0)
+- **Mobile (Capacitor)**: Push a tag to trigger `.github/workflows/build-mobile.yml`
+  - Builds: Android APK/AAB, iOS IPA
+  - Node 22, Java 21 required
+  - Config: `capacitor.config.ts`, points to `https://maxbooster.replit.app`
+- **Downloads page** (`/desktop-app`): Fetches release assets from GitHub API (`20lawsobk/maxbooster7.5`)
+
 ## Recent Fixes (Feb 2026)
 
 - **Social OAuth**: Replaced in-memory `oauthStates` Map with HMAC-signed stateless tokens (`SESSION_SECRET`). TikTok state is URL-encoded since it contains `~` and `=`.
@@ -97,3 +140,4 @@ All configured via Replit environment secrets. Key ones:
 - **Settings tabs**: Fixed broken `grid-cols-7` layout for 9+ tabs — switched to `overflow-x-auto` + `inline-flex flex-wrap` scrollable tab list.
 - **Settings keyboard shortcuts tab**: Added `TabsTrigger value="shortcuts"` + `TabsContent` with button that opens `ShortcutCustomizer` dialog.
 - **Distribution upload route**: Was a non-functional stub. Now implemented with `releaseUpload.any()` (memory-storage multer), stores artwork + audio to hybrid storage, creates `distroReleases` and `distroTracks` DB records.
+- **Notifications**: Added 14 new notification types + `achievements` category. Wired achievement, streak, login, password, payment failure, and subscription triggers. Fixed GitHub Actions Node version (20→22). Fixed Electron version mismatch (2.0.0→3.0.0).

@@ -9,6 +9,7 @@ import {
   type UserAchievement,
   type UserStreak 
 } from "../../shared/schema";
+import { notificationService } from "./notificationService.js";
 
 export interface AchievementRequirement {
   type: string;
@@ -89,6 +90,12 @@ class AchievementService {
           });
         }
         newlyUnlocked.push(achievement);
+        notificationService.sendAchievementNotification(
+          userId,
+          achievement.name,
+          achievement.description || `You unlocked the ${achievement.name} achievement.`,
+          achievement.points || 0
+        ).catch(() => {});
       } else if (progress > 0) {
         if (existingProgress) {
           await db
@@ -269,6 +276,15 @@ class AchievementService {
       streakType,
       currentStreak: newCurrentStreak,
     });
+
+    const streakMilestones = [7, 14, 30, 60, 100, 365];
+    if (streakMilestones.includes(newCurrentStreak)) {
+      notificationService.sendStreakMilestoneNotification(
+        userId,
+        streakType,
+        newCurrentStreak
+      ).catch(() => {});
+    }
     
     return updatedStreak;
   }

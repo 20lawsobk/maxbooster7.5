@@ -7,6 +7,7 @@ export type NotificationType =
   | 'payment_received'
   | 'payout_completed'
   | 'payout_failed'
+  | 'payment_failed'
   | 'royalty_statement_ready'
   | 'release_milestone'
   | 'release_live'
@@ -14,6 +15,9 @@ export type NotificationType =
   | 'release_submitted'
   | 'release_processing'
   | 'platform_update'
+  | 'upload_complete'
+  | 'stream_milestone'
+  | 'ai_processing_complete'
   | 'social_like'
   | 'social_comment'
   | 'social_share'
@@ -21,13 +25,17 @@ export type NotificationType =
   | 'social_post_scheduled'
   | 'social_post_published'
   | 'social_engagement_alert'
+  | 'follower_milestone'
+  | 'social_token_expiring'
   | 'marketplace_purchase'
   | 'marketplace_sale'
   | 'marketplace_review'
   | 'marketplace_offer'
+  | 'beat_play_milestone'
   | 'system_announcement'
   | 'system_maintenance'
   | 'system_update'
+  | 'storage_quota_warning'
   | 'security_new_login'
   | 'security_password_changed'
   | 'security_2fa_enabled'
@@ -35,6 +43,11 @@ export type NotificationType =
   | 'security_suspicious_activity'
   | 'account_verified'
   | 'account_warning'
+  | 'subscription_expiring'
+  | 'subscription_renewed'
+  | 'subscription_changed'
+  | 'achievement_unlocked'
+  | 'streak_milestone'
   | 'promotion'
   | 'default';
 
@@ -45,6 +58,7 @@ export type NotificationCategory =
   | 'marketplace'
   | 'royalties'
   | 'collaboration'
+  | 'achievements'
   | 'system';
 
 export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
@@ -104,6 +118,7 @@ export interface NotificationPreferences {
       marketplace: boolean;
       royalties: boolean;
       collaboration: boolean;
+      achievements: boolean;
       system: boolean;
     };
   };
@@ -116,6 +131,7 @@ export interface NotificationPreferences {
       marketplace: boolean;
       royalties: boolean;
       collaboration: boolean;
+      achievements: boolean;
       system: boolean;
     };
   };
@@ -166,13 +182,14 @@ export interface NotificationOutcome {
 }
 
 export const categoryConfig: Record<NotificationCategory, { label: string; description: string }> = {
-  account_security: { label: 'Account & Security', description: 'Login alerts, 2FA, password changes' },
-  distribution: { label: 'Distribution', description: 'Release status, platform updates' },
-  social_media: { label: 'Social Media', description: 'Posts, engagement, scheduling' },
-  marketplace: { label: 'Marketplace', description: 'Purchases, sales, reviews' },
-  royalties: { label: 'Royalties', description: 'Payments, statements' },
+  account_security: { label: 'Account & Security', description: 'Login alerts, 2FA, password changes, subscriptions' },
+  distribution: { label: 'Distribution', description: 'Release status, uploads, streams, AI tasks' },
+  social_media: { label: 'Social Media', description: 'Posts, engagement, followers, scheduling' },
+  marketplace: { label: 'Marketplace', description: 'Purchases, sales, reviews, beat plays' },
+  royalties: { label: 'Royalties', description: 'Payments, statements, payouts' },
   collaboration: { label: 'Collaboration', description: 'Invites, comments, mentions' },
-  system: { label: 'System', description: 'Maintenance, updates' },
+  achievements: { label: 'Achievements', description: 'Badges, streaks, milestones' },
+  system: { label: 'System', description: 'Maintenance, updates, storage warnings' },
 };
 
 export const typeToCategory: Record<NotificationType, NotificationCategory> = {
@@ -184,6 +201,7 @@ export const typeToCategory: Record<NotificationType, NotificationCategory> = {
   payment_received: 'royalties',
   payout_completed: 'royalties',
   payout_failed: 'royalties',
+  payment_failed: 'royalties',
   royalty_statement_ready: 'royalties',
   release_milestone: 'distribution',
   release_live: 'distribution',
@@ -191,6 +209,9 @@ export const typeToCategory: Record<NotificationType, NotificationCategory> = {
   release_submitted: 'distribution',
   release_processing: 'distribution',
   platform_update: 'distribution',
+  upload_complete: 'distribution',
+  stream_milestone: 'distribution',
+  ai_processing_complete: 'distribution',
   social_like: 'social_media',
   social_comment: 'social_media',
   social_share: 'social_media',
@@ -198,13 +219,17 @@ export const typeToCategory: Record<NotificationType, NotificationCategory> = {
   social_post_scheduled: 'social_media',
   social_post_published: 'social_media',
   social_engagement_alert: 'social_media',
+  follower_milestone: 'social_media',
+  social_token_expiring: 'account_security',
   marketplace_purchase: 'marketplace',
   marketplace_sale: 'marketplace',
   marketplace_review: 'marketplace',
   marketplace_offer: 'marketplace',
+  beat_play_milestone: 'marketplace',
   system_announcement: 'system',
   system_maintenance: 'system',
   system_update: 'system',
+  storage_quota_warning: 'system',
   security_new_login: 'account_security',
   security_password_changed: 'account_security',
   security_2fa_enabled: 'account_security',
@@ -212,6 +237,11 @@ export const typeToCategory: Record<NotificationType, NotificationCategory> = {
   security_suspicious_activity: 'account_security',
   account_verified: 'account_security',
   account_warning: 'account_security',
+  subscription_expiring: 'account_security',
+  subscription_renewed: 'account_security',
+  subscription_changed: 'account_security',
+  achievement_unlocked: 'achievements',
+  streak_milestone: 'achievements',
   promotion: 'system',
   default: 'system',
 };

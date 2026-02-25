@@ -21,6 +21,7 @@ import {
   Clock,
   BellOff,
   AlertCircle,
+  Trophy,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -67,6 +68,7 @@ const defaultPreferences: NotificationPreferencesType = {
       marketplace: true,
       royalties: true,
       collaboration: true,
+      achievements: true,
       system: true,
     },
   },
@@ -79,6 +81,7 @@ const defaultPreferences: NotificationPreferencesType = {
       marketplace: true,
       royalties: true,
       collaboration: true,
+      achievements: true,
       system: true,
     },
   },
@@ -105,6 +108,7 @@ const categoryIcons: Record<NotificationCategory, React.ElementType> = {
   marketplace: ShoppingBag,
   royalties: DollarSign,
   collaboration: Users,
+  achievements: Trophy,
   system: Megaphone,
 };
 

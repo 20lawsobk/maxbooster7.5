@@ -166,6 +166,15 @@ registerWebhookHandler('customer.subscription.updated', async (event) => {
 
     if (updated.length > 0) {
       logger.info(`[Stripe] User ${updated[0].id} subscription updated: tier=${tier}, status=${subscription.status}`);
+      const { notificationService } = await import('../../services/notificationService.js');
+      const previousTier = subscription.metadata?.previousPlanId;
+      if (subscription.status === 'active') {
+        if (previousTier && previousTier !== tier) {
+          notificationService.sendSubscriptionChangedNotification(updated[0].id, previousTier, tier).catch(() => {});
+        } else {
+          notificationService.sendSubscriptionRenewedNotification(updated[0].id, tier).catch(() => {});
+        }
+      }
     } else {
       logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.updated`);
     }
@@ -237,6 +246,26 @@ registerWebhookHandler('invoice.payment_failed', async (event) => {
     false,
     'Payment failed'
   );
+
+  try {
+    const { users } = await import('@shared/schema');
+    const { db } = await import('../../db');
+    const { eq } = await import('drizzle-orm');
+    const { notificationService } = await import('../../services/notificationService.js');
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer as any)?.id;
+    if (customerId) {
+      const found = await db.select({ id: users.id }).from(users).where(eq(users.stripeCustomerId, customerId)).limit(1);
+      if (found.length > 0) {
+        await notificationService.sendPaymentFailedNotification(
+          found[0].id,
+          invoice.amount_due / 100,
+          (invoice as any).last_payment_error?.message
+        );
+      }
+    }
+  } catch (err) {
+    logger.error('[Stripe] Failed to send payment failure notification:', err);
+  }
   
   return { success: true, message: 'Payment failure recorded' };
 });

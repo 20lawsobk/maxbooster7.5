@@ -4,7 +4,7 @@ const fs = require('fs');
 
 const PRODUCTION_URL = 'https://maxbooster.replit.app';
 const APP_NAME = 'Max Booster';
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '3.0.0';
 
 let mainWindow;
 let tray = null;

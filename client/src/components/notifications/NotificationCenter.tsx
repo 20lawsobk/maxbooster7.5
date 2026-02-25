@@ -21,6 +21,7 @@ import {
   BellOff,
   Volume2,
   VolumeX,
+  Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +58,7 @@ const categoryIcons: Record<NotificationCategory, React.ElementType> = {
   marketplace: ShoppingBag,
   royalties: DollarSign,
   collaboration: Users,
+  achievements: Trophy,
   system: Megaphone,
 };
 
@@ -79,6 +81,7 @@ const defaultPreferences: NotificationPreferences = {
       marketplace: true,
       royalties: true,
       collaboration: true,
+      achievements: true,
       system: true,
     },
   },
@@ -91,6 +94,7 @@ const defaultPreferences: NotificationPreferences = {
       marketplace: true,
       royalties: true,
       collaboration: true,
+      achievements: true,
       system: true,
     },
   },
@@ -364,7 +368,7 @@ export function NotificationCenter() {
                       </Badge>
                     )}
                   </TabsTrigger>
-                  {(Object.keys(categoryConfig) as NotificationCategory[]).slice(0, 4).map((cat) => {
+                  {(Object.keys(categoryConfig) as NotificationCategory[]).map((cat) => {
                     const Icon = categoryIcons[cat];
                     const catCount = groupedByCategory[cat].filter((n) => !n.isRead).length;
                     return (

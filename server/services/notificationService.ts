@@ -6,7 +6,7 @@ import { logger } from '../logger.js';
 
 interface NotificationOptions {
   userId: string;
-  type: 'release' | 'earning' | 'sale' | 'marketing' | 'system';
+  type: string;
   title: string;
   message: string;
   link?: string;
@@ -322,6 +322,251 @@ Manage your notification preferences: ${link || 'https://maxbooster.ai/settings'
       title,
       message,
       link,
+    });
+  }
+
+  async createNotification(options: NotificationOptions): Promise<void> {
+    return this.send(options);
+  }
+
+  async sendAchievementNotification(
+    userId: string,
+    achievementName: string,
+    description: string,
+    points: number
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'achievement_unlocked',
+      title: `Achievement Unlocked: ${achievementName}`,
+      message: `${description} You earned ${points} points!`,
+      link: '/dashboard',
+      metadata: { points },
+    });
+  }
+
+  async sendStreakMilestoneNotification(
+    userId: string,
+    streakType: string,
+    days: number
+  ): Promise<void> {
+    const typeLabel = streakType === 'login' ? 'login' : streakType;
+    await this.send({
+      userId,
+      type: 'streak_milestone',
+      title: `${days}-Day Streak!`,
+      message: `You've maintained a ${days}-day ${typeLabel} streak. Keep it up!`,
+      link: '/dashboard',
+      metadata: { streakType, days },
+    });
+  }
+
+  async sendLoginSecurityNotification(
+    userId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'security_new_login',
+      title: 'New Login Detected',
+      message: `Your account was accessed from a new session${ipAddress ? ` (IP: ${ipAddress})` : ''}. If this wasn't you, change your password immediately.`,
+      link: '/settings',
+      metadata: { ipAddress, userAgent },
+    });
+  }
+
+  async sendPasswordChangedNotification(userId: string): Promise<void> {
+    await this.send({
+      userId,
+      type: 'security_password_changed',
+      title: 'Password Changed',
+      message: 'Your account password was changed. If you did not do this, contact support immediately.',
+      link: '/settings',
+    });
+  }
+
+  async sendStorageQuotaNotification(
+    userId: string,
+    usedPercent: number
+  ): Promise<void> {
+    const isNearFull = usedPercent >= 90;
+    await this.send({
+      userId,
+      type: 'storage_quota_warning',
+      title: isNearFull ? 'Storage Almost Full' : 'Storage Warning',
+      message: `You've used ${usedPercent}% of your storage. ${isNearFull ? 'Upgrade your plan or delete files to continue uploading.' : 'Consider freeing up space soon.'}`,
+      link: '/settings',
+      metadata: { usedPercent },
+    });
+  }
+
+  async sendUploadCompleteNotification(
+    userId: string,
+    fileName: string,
+    fileType: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'upload_complete',
+      title: 'Upload Complete',
+      message: `"${fileName}" has been uploaded successfully.`,
+      link: fileType === 'track' ? '/projects' : '/studio',
+      metadata: { fileName, fileType },
+    });
+  }
+
+  async sendAiProcessingCompleteNotification(
+    userId: string,
+    taskType: string,
+    trackName: string
+  ): Promise<void> {
+    const labels: Record<string, string> = {
+      mix: 'AI Mix',
+      master: 'AI Master',
+      stem_separation: 'Stem Separation',
+      analysis: 'AI Analysis',
+      vocal_removal: 'Vocal Removal',
+    };
+    const label = labels[taskType] || 'AI Processing';
+    await this.send({
+      userId,
+      type: 'ai_processing_complete',
+      title: `${label} Complete`,
+      message: `${label} for "${trackName}" has finished. Open your Studio to view results.`,
+      link: '/studio',
+      metadata: { taskType, trackName },
+    });
+  }
+
+  async sendStreamMilestoneNotification(
+    userId: string,
+    trackName: string,
+    streams: number
+  ): Promise<void> {
+    const formatted = streams >= 1_000_000
+      ? `${(streams / 1_000_000).toFixed(1)}M`
+      : streams >= 1_000
+        ? `${(streams / 1_000).toFixed(0)}K`
+        : `${streams}`;
+    await this.send({
+      userId,
+      type: 'stream_milestone',
+      title: `${formatted} Streams!`,
+      message: `"${trackName}" just hit ${formatted} streams. Congratulations!`,
+      link: '/analytics',
+      metadata: { trackName, streams },
+    });
+  }
+
+  async sendFollowerMilestoneNotification(
+    userId: string,
+    platform: string,
+    followers: number
+  ): Promise<void> {
+    const formatted = followers >= 1_000_000
+      ? `${(followers / 1_000_000).toFixed(1)}M`
+      : followers >= 1_000
+        ? `${(followers / 1_000).toFixed(0)}K`
+        : `${followers}`;
+    await this.send({
+      userId,
+      type: 'follower_milestone',
+      title: `${formatted} Followers on ${platform}!`,
+      message: `You've reached ${formatted} followers on ${platform}. Keep growing!`,
+      link: '/social-media',
+      metadata: { platform, followers },
+    });
+  }
+
+  async sendSocialTokenExpiringNotification(
+    userId: string,
+    platform: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'social_token_expiring',
+      title: `${platform} Connection Needs Renewal`,
+      message: `Your ${platform} connection is expiring. Reconnect now to keep your social posts and analytics running.`,
+      link: '/social-media',
+      metadata: { platform },
+    });
+  }
+
+  async sendSubscriptionExpiringNotification(
+    userId: string,
+    plan: string,
+    daysLeft: number
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'subscription_expiring',
+      title: 'Subscription Expiring Soon',
+      message: `Your ${plan} plan expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Renew to keep access to all features.`,
+      link: '/settings',
+      metadata: { plan, daysLeft },
+    });
+  }
+
+  async sendSubscriptionRenewedNotification(
+    userId: string,
+    plan: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'subscription_renewed',
+      title: 'Subscription Renewed',
+      message: `Your ${plan} plan has been renewed successfully. Thank you for your continued support!`,
+      link: '/settings',
+      metadata: { plan },
+    });
+  }
+
+  async sendSubscriptionChangedNotification(
+    userId: string,
+    oldPlan: string,
+    newPlan: string
+  ): Promise<void> {
+    const isUpgrade = ['monthly', 'yearly', 'lifetime'].indexOf(newPlan) >
+      ['monthly', 'yearly', 'lifetime'].indexOf(oldPlan);
+    await this.send({
+      userId,
+      type: 'subscription_changed',
+      title: isUpgrade ? 'Plan Upgraded' : 'Plan Changed',
+      message: `Your subscription has been changed from ${oldPlan} to ${newPlan}.`,
+      link: '/settings',
+      metadata: { oldPlan, newPlan },
+    });
+  }
+
+  async sendPaymentFailedNotification(
+    userId: string,
+    amount: number,
+    reason?: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'payment_failed',
+      title: 'Payment Failed',
+      message: `A payment of $${amount.toFixed(2)} failed${reason ? `: ${reason}` : '. Please update your payment method.'}`,
+      link: '/settings',
+      metadata: { amount, reason },
+    });
+  }
+
+  async sendBeatPlayMilestoneNotification(
+    userId: string,
+    beatName: string,
+    plays: number
+  ): Promise<void> {
+    const formatted = plays >= 1_000 ? `${(plays / 1_000).toFixed(0)}K` : `${plays}`;
+    await this.send({
+      userId,
+      type: 'beat_play_milestone',
+      title: `${formatted} Plays on "${beatName}"`,
+      message: `Your beat "${beatName}" just hit ${formatted} plays on the marketplace!`,
+      link: '/marketplace',
+      metadata: { beatName, plays },
     });
   }
 }
