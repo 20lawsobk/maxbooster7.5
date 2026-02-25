@@ -946,7 +946,12 @@ export async function registerRoutes(
         try {
           const result = await storeUploadedFile(req.file, req.user!.id, 'avatar');
 
-          await storage.updateUser(req.user!.id, { avatarUrl: result.url, profileImageUrl: result.url });
+          const updatedUser = await storage.updateUser(req.user!.id, { avatarUrl: result.url, profileImageUrl: result.url });
+          if (!updatedUser) {
+            logger.error(`[Avatar] updateUser returned null for userId=${req.user!.id}. DB update may have failed.`);
+          } else {
+            logger.info(`[Avatar] DB updated for userId=${req.user!.id}, avatarUrl=${updatedUser.avatarUrl}`);
+          }
 
           return res.json({
             success: true,

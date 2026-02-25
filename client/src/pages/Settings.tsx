@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   User,
   Lock,
@@ -725,13 +725,24 @@ export default function Settings() {
                 <form onSubmit={handleProfileSubmit} className="space-y-6">
                   {/* Profile Picture */}
                   <div className="flex items-center space-x-6">
-                    <Avatar className="w-24 h-24">
-                      <AvatarImage src={avatarUrl || user?.avatarUrl || user?.profileImageUrl} />
-                      <AvatarFallback className="text-2xl">
-                        {user?.firstName?.[0]}
-                        {user?.lastName?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
+                    {(avatarUrl || user?.avatarUrl || user?.profileImageUrl) ? (
+                      <img
+                        key={avatarUrl || user?.avatarUrl || user?.profileImageUrl}
+                        src={avatarUrl || user?.avatarUrl || user?.profileImageUrl}
+                        alt="Profile picture"
+                        className="w-24 h-24 rounded-full object-cover shrink-0"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <Avatar className="w-24 h-24">
+                        <AvatarFallback className="text-2xl">
+                          {user?.firstName?.[0]}
+                          {user?.lastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
                     <div className="space-y-2">
                       <input
                         ref={fileInputRef}
