@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "bash -c './boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
     "build": "npx tsx script/build.ts",
+    "deploy": "npx tsx scripts/deploy.ts",
     "start": "bash -c 'if [ -f ./boosterstate/target/debug/boosterstate ]; then ./boosterstate/target/debug/boosterstate & sleep 1; fi && NODE_ENV=production node dist/index.cjs'",
     "check": "tsc",
     "db:push": "drizzle-kit push",

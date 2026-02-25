@@ -121,7 +121,54 @@ async function buildAll() {
   });
 }
 
-buildAll().catch((err) => {
+async function triggerGitHubWorkflows() {
+  const pat = process.env.GITHUB_PAT;
+  const repo = process.env.GITHUB_REPO || '20lawsobk/maxbooster7.5';
+
+  if (!pat) {
+    console.log('GITHUB_PAT not set — skipping desktop/mobile build triggers.');
+    return;
+  }
+
+  const workflows = [
+    { file: 'build-desktop.yml', label: 'Desktop (Windows / macOS / Linux)' },
+    { file: 'build-mobile.yml',  label: 'Mobile (Android / iOS)' },
+  ];
+
+  console.log('Triggering desktop & mobile builds on GitHub Actions...');
+  await Promise.all(
+    workflows.map(async ({ file, label }) => {
+      const res = await fetch(
+        `https://api.github.com/repos/${repo}/actions/workflows/${file}/dispatches`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${pat}`,
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ref: 'main' }),
+        }
+      );
+      if (res.ok || res.status === 204) {
+        console.log(`  ✅ ${label}`);
+      } else {
+        const body = await res.text().catch(() => '');
+        console.error(`  ❌ ${label} — HTTP ${res.status}: ${body}`);
+      }
+    })
+  );
+}
+
+async function main() {
+  await buildAll();
+
+  if (process.env.REPLIT_DEPLOYMENT === '1') {
+    await triggerGitHubWorkflows();
+  }
+}
+
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
