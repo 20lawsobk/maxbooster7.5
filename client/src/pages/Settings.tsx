@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   User,
   Lock,
@@ -111,16 +111,13 @@ export default function Settings() {
   const [twoFactorDisableOpen, setTwoFactorDisableOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || user?.profileImageUrl || '');
   const [avatarLoading, setAvatarLoading] = useState(false);
-  const [avatarError, setAvatarError] = useState(false);
   const [planComparisonOpen, setPlanComparisonOpen] = useState(false);
   const [retryingPayment, setRetryingPayment] = useState(false);
   const [refundsExpanded, setRefundsExpanded] = useState(false);
   const [shortcutCustomizerOpen, setShortcutCustomizerOpen] = useState(false);
 
   useEffect(() => {
-    const url = user?.avatarUrl || user?.profileImageUrl || '';
-    setAvatarUrl(url);
-    setAvatarError(false);
+    setAvatarUrl(user?.avatarUrl || user?.profileImageUrl || '');
   }, [user?.avatarUrl, user?.profileImageUrl]);
 
   // Query for full profile data
@@ -356,7 +353,6 @@ export default function Settings() {
       const newUrl = data.avatarUrl || data.profileImageUrl || '';
       if (newUrl) {
         setAvatarUrl(newUrl);
-        setAvatarError(false);
         const cached = queryClient.getQueryData<any>(['/api/auth/me']);
         if (cached) {
           queryClient.setQueryData(['/api/auth/me'], { ...cached, avatarUrl: newUrl, profileImageUrl: newUrl });
@@ -729,22 +725,17 @@ export default function Settings() {
                 <form onSubmit={handleProfileSubmit} className="space-y-6">
                   {/* Profile Picture */}
                   <div className="flex items-center space-x-6">
-                    {(avatarUrl || user?.avatarUrl || user?.profileImageUrl) && !avatarError ? (
-                      <img
-                        key={avatarUrl || user?.avatarUrl || user?.profileImageUrl}
-                        src={avatarUrl || user?.avatarUrl || user?.profileImageUrl}
+                    <Avatar className="w-24 h-24">
+                      <AvatarImage
+                        src={avatarUrl || user?.avatarUrl || user?.profileImageUrl || undefined}
                         alt="Profile picture"
-                        className="w-24 h-24 rounded-full object-cover shrink-0"
-                        onError={() => setAvatarError(true)}
+                        className="object-cover"
                       />
-                    ) : (
-                      <Avatar className="w-24 h-24">
-                        <AvatarFallback className="text-2xl">
-                          {user?.firstName?.[0] || user?.username?.[0]?.toUpperCase()}
-                          {user?.lastName?.[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
+                      <AvatarFallback className="text-2xl">
+                        {user?.firstName?.[0] || user?.username?.[0]?.toUpperCase()}
+                        {user?.lastName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="space-y-2">
                       <input
                         ref={fileInputRef}
