@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { getCsrfHeaders } from '@/lib/queryClient';
+import { apiRequest, getCsrfToken } from '@/lib/queryClient';
 import { FileValidator, type ValidationResult } from './FileValidator';
 import {
   Upload,
@@ -169,18 +169,9 @@ export function FileUploader({
     formData.append('mimeType', uploadFile.file.type);
     formData.append('category', category);
 
-    const response = await fetch(`${uploadEndpoint}/chunk`, {
-      method: 'POST',
-      headers: getCsrfHeaders(),
-      credentials: 'include',
-      body: formData,
+    const response = await apiRequest('POST', `${uploadEndpoint}/chunk`, formData, {
       signal: abortController.signal,
     });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Upload failed' }));
-      throw new Error(error.error || 'Chunk upload failed');
-    }
 
     return true;
   };
@@ -194,6 +185,17 @@ export function FileUploader({
     formData.append('file', uploadFile.file);
     formData.append('fileId', uploadFile.id);
     formData.append('category', category);
+
+    let csrfToken = getCsrfToken();
+    if (!csrfToken) {
+      try {
+        const csrfRes = await fetch('/api/csrf-token', { credentials: 'include' });
+        if (csrfRes.ok) {
+          const csrfData = await csrfRes.json();
+          csrfToken = csrfData.csrfToken;
+        }
+      } catch { /* proceed without token */ }
+    }
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -224,10 +226,9 @@ export function FileUploader({
 
       xhr.open('POST', uploadEndpoint);
       xhr.withCredentials = true;
-      const csrfHeaders = getCsrfHeaders();
-      Object.entries(csrfHeaders).forEach(([key, value]) => {
-        xhr.setRequestHeader(key, value);
-      });
+      if (csrfToken) {
+        xhr.setRequestHeader('x-csrf-token', csrfToken);
+      }
       xhr.send(formData);
     });
   };

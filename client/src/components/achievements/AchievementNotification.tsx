@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, X, Star, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getCsrfHeaders } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Achievement {
   id: string;
@@ -51,12 +51,7 @@ export function AchievementNotification() {
 
   const markNotifiedMutation = useMutation({
     mutationFn: async (achievementId: string) => {
-      const res = await fetch(`/api/achievements/mark-notified/${achievementId}`, {
-        method: "POST",
-        headers: getCsrfHeaders(),
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to mark notified");
+      const res = await apiRequest("POST", `/api/achievements/mark-notified/${achievementId}`);
       return res.json();
     },
     onSuccess: () => {

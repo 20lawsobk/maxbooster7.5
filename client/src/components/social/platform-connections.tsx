@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle, Clock, Users, RefreshCw } from 'lucide-react';
 import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon, SpotifyIcon } from '@/components/ui/brand-icons';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
-import { getCsrfHeaders } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 
 interface Platform {
   id: string;
@@ -42,17 +42,7 @@ export function PlatformConnections() {
 
   const connectPlatformMutation = useMutation({
     mutationFn: async (platform: string) => {
-      const response = await fetch(`/api/social/connect/${platform}`, {
-        method: 'POST',
-        headers: getCsrfHeaders(),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to connect platform');
-      }
-
+      const response = await apiRequest('POST', `/api/social/connect/${platform}`);
       return response.json();
     },
     onSuccess: (data, platform) => {
@@ -87,16 +77,7 @@ export function PlatformConnections() {
 
   const disconnectPlatformMutation = useMutation({
     mutationFn: async (platform: string) => {
-      const response = await fetch(`/api/social/disconnect/${platform}`, {
-        method: 'POST',
-        headers: getCsrfHeaders(),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to disconnect platform');
-      }
-
+      const response = await apiRequest('POST', `/api/social/disconnect/${platform}`);
       return response.json();
     },
     onSuccess: (_, platform) => {
@@ -117,16 +98,7 @@ export function PlatformConnections() {
 
   const syncPlatformMutation = useMutation({
     mutationFn: async (platform: string) => {
-      const response = await fetch(`/api/social/sync/${platform}`, {
-        method: 'POST',
-        headers: getCsrfHeaders(),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to sync platform stats');
-      }
-
+      const response = await apiRequest('POST', `/api/social/sync/${platform}`);
       return response.json();
     },
     onSuccess: (_, platform) => {

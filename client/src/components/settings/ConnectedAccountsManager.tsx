@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getCsrfHeaders } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
@@ -206,11 +206,7 @@ export function ConnectedAccountsManager() {
   const connectAccount = async (provider: string) => {
     setConnectingProvider(provider);
     try {
-      const response = await fetch(`/api/social/connect/${provider}`, {
-        method: 'POST',
-        headers: getCsrfHeaders(),
-        credentials: 'include',
-      });
+      const response = await apiRequest('POST', `/api/social/connect/${provider}`);
       const data = await response.json();
       if (data.authUrl) {
         const top = window.top || window;
