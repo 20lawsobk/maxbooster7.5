@@ -73,9 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await apiRequest('POST', '/api/auth/logout', {});
-    queryClient.setQueryData(['/api/auth/me'], null);
-    queryClient.clear();
+    try {
+      await apiRequest('POST', '/api/auth/logout', {});
+    } catch {
+      // Server logout failed - still clear local auth state
+    } finally {
+      queryClient.setQueryData(['/api/auth/me'], null);
+      queryClient.clear();
+    }
   };
 
   const value = useMemo(
