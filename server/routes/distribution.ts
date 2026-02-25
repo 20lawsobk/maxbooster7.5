@@ -5,7 +5,8 @@ import { z } from 'zod';
 import { storage } from '../storage';
 import { db } from '../db';
 import { eq, and, desc, sql, gte, lte, sum, count, inArray } from 'drizzle-orm';
-import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases } from '@shared/schema';
+import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases, distroTracks } from '@shared/schema';
+import { storageService } from '../services/storageService';
 import * as codeGenerationService from '../services/distributionCodeGenerationService';
 import { distributionService } from '../services/distributionService';
 import { labelGridService } from '../services/labelgrid-service';
@@ -2201,6 +2202,11 @@ const catalogUpload = multer({
   limits: { fileSize: 50 * 1024 * 1024 },
 });
 
+const releaseUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 500 * 1024 * 1024 },
+});
+
 // POST /api/distribution/catalog/import - Start catalog import from file
 router.post('/catalog/import', requireAuth, catalogUpload.single('file'), async (req: Request, res: Response) => {
   try {
@@ -2922,13 +2928,121 @@ router.get('/reinstatements', requireAuth, async (req: Request, res: Response) =
   }
 });
 
-// POST /api/distribution/upload - Upload distribution file
-router.post('/upload', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+// POST /api/distribution/upload - Upload distribution release with audio files and artwork
+router.post('/upload', requireAuth, releaseUpload.any(), async (req: Request, res: Response) => {
   try {
-    res.json({ success: true, fileId: `file_${Date.now()}`, message: 'File uploaded successfully' });
+    const userId = (req.user as AuthenticatedUser).id;
+    const files = (req.files as Express.Multer.File[]) || [];
+
+    const {
+      title,
+      artistName,
+      releaseType = 'single',
+      primaryGenre,
+      secondaryGenre,
+      language = 'English',
+      releaseDate,
+      labelName,
+      copyrightYear,
+      copyrightOwner,
+      publishingRights,
+      selectedPlatforms,
+      isExplicit,
+      leaveALegacy,
+      legacyPrice,
+      tracks: tracksJson,
+      collaborators: collaboratorsJson,
+    } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: 'Release title is required' });
+    }
+
+    let artworkUrl: string | null = null;
+    const artworkFile = files.find(f => f.fieldname === 'albumArt');
+    if (artworkFile) {
+      const artworkKey = await storageService.uploadFile(
+        artworkFile.buffer,
+        `users/${userId}/artwork`,
+        artworkFile.originalname,
+        artworkFile.mimetype
+      );
+      artworkUrl = await storageService.getDownloadUrl(artworkKey);
+    }
+
+    const parsedTracks = tracksJson ? JSON.parse(tracksJson) : [];
+    const parsedPlatforms = selectedPlatforms ? JSON.parse(selectedPlatforms) : [];
+    const parsedCollaborators = collaboratorsJson ? JSON.parse(collaboratorsJson) : [];
+
+    const [release] = await db.insert(distroReleases).values({
+      artistId: userId,
+      title,
+      releaseDate: releaseDate ? new Date(releaseDate) : null,
+      status: 'processing',
+      artworkUrl,
+      metadata: {
+        artistName,
+        releaseType,
+        primaryGenre,
+        secondaryGenre,
+        language,
+        labelName,
+        copyrightYear: copyrightYear ? parseInt(copyrightYear) : new Date().getFullYear(),
+        copyrightOwner,
+        publishingRights,
+        selectedPlatforms: parsedPlatforms,
+        isExplicit: isExplicit === 'true',
+        leaveALegacy: leaveALegacy === 'true',
+        legacyPrice: legacyPrice ? parseFloat(legacyPrice) : null,
+        collaborators: parsedCollaborators,
+      },
+    }).returning();
+
+    const trackInserts = [];
+    for (let i = 0; i < parsedTracks.length; i++) {
+      const track = parsedTracks[i];
+      const audioFile = files.find(f => f.fieldname === `audioFile_${i}`);
+
+      let audioUrl: string | null = null;
+      if (audioFile) {
+        const audioKey = await storageService.uploadFile(
+          audioFile.buffer,
+          `users/${userId}/audio`,
+          audioFile.originalname,
+          audioFile.mimetype
+        );
+        audioUrl = await storageService.getDownloadUrl(audioKey);
+      }
+
+      trackInserts.push({
+        releaseId: release.id,
+        title: track.title || `Track ${i + 1}`,
+        trackNumber: i + 1,
+        isrc: track.isrc || null,
+        audioUrl,
+        metadata: {
+          explicit: track.explicit || false,
+          writers: track.writers || [],
+          producers: track.producers || [],
+        },
+      });
+    }
+
+    if (trackInserts.length > 0) {
+      await db.insert(distroTracks).values(trackInserts);
+    }
+
+    logger.info(`Distribution release created: ${release.id} by user ${userId}`);
+
+    res.json({
+      success: true,
+      releaseId: release.id,
+      fileId: release.id,
+      message: 'Release uploaded successfully and is being processed for distribution.',
+    });
   } catch (error: unknown) {
-    logger.error('Error uploading file:', error);
-    res.status(500).json({ error: 'Failed to upload file' });
+    logger.error('Error uploading distribution release:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to upload release' });
   }
 });
 

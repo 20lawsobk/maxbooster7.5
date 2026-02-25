@@ -49,7 +49,9 @@ import {
   HardDrive,
   Headphones,
   Check,
+  Keyboard,
 } from 'lucide-react';
+import { ShortcutCustomizer } from '@/components/shortcuts/ShortcutCustomizer';
 import {
   Dialog,
   DialogContent,
@@ -111,6 +113,7 @@ export default function Settings() {
   const [planComparisonOpen, setPlanComparisonOpen] = useState(false);
   const [retryingPayment, setRetryingPayment] = useState(false);
   const [refundsExpanded, setRefundsExpanded] = useState(false);
+  const [shortcutCustomizerOpen, setShortcutCustomizerOpen] = useState(false);
 
   useEffect(() => {
     if (user?.avatarUrl || user?.profileImageUrl) {
@@ -656,44 +659,50 @@ export default function Settings() {
 
         {/* Main Content */}
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="profile" data-testid="tab-profile">
-              <User className="w-4 h-4 mr-2" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="account" data-testid="tab-account">
-              <Lock className="w-4 h-4 mr-2" />
-              Account
-            </TabsTrigger>
-            <TabsTrigger value="notifications" data-testid="tab-notifications">
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
-            </TabsTrigger>
-            <TabsTrigger value="preferences" data-testid="tab-preferences">
-              <Palette className="w-4 h-4 mr-2" />
-              Preferences
-            </TabsTrigger>
-            <TabsTrigger value="billing" data-testid="tab-billing">
-              <CreditCard className="w-4 h-4 mr-2" />
-              Billing
-            </TabsTrigger>
-            <TabsTrigger value="security" data-testid="tab-security">
-              <Shield className="w-4 h-4 mr-2" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="privacy" data-testid="tab-privacy">
-              <Eye className="w-4 h-4 mr-2" />
-              Privacy
-            </TabsTrigger>
-            <TabsTrigger value="platforms" data-testid="tab-platforms">
-              <LinkIcon className="w-4 h-4 mr-2" />
-              Platforms
-            </TabsTrigger>
-            <TabsTrigger value="sync" data-testid="tab-sync">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Sync
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-1">
+            <TabsList className="inline-flex h-auto w-max gap-1 p-1 flex-wrap">
+              <TabsTrigger value="profile" data-testid="tab-profile" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <User className="w-4 h-4" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="account" data-testid="tab-account" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <Lock className="w-4 h-4" />
+                Account
+              </TabsTrigger>
+              <TabsTrigger value="notifications" data-testid="tab-notifications" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <Bell className="w-4 h-4" />
+                Notifications
+              </TabsTrigger>
+              <TabsTrigger value="preferences" data-testid="tab-preferences" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <Palette className="w-4 h-4" />
+                Preferences
+              </TabsTrigger>
+              <TabsTrigger value="billing" data-testid="tab-billing" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <CreditCard className="w-4 h-4" />
+                Billing
+              </TabsTrigger>
+              <TabsTrigger value="security" data-testid="tab-security" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <Shield className="w-4 h-4" />
+                Security
+              </TabsTrigger>
+              <TabsTrigger value="privacy" data-testid="tab-privacy" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <Eye className="w-4 h-4" />
+                Privacy
+              </TabsTrigger>
+              <TabsTrigger value="platforms" data-testid="tab-platforms" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <LinkIcon className="w-4 h-4" />
+                Platforms
+              </TabsTrigger>
+              <TabsTrigger value="sync" data-testid="tab-sync" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <RefreshCw className="w-4 h-4" />
+                Sync
+              </TabsTrigger>
+              <TabsTrigger value="shortcuts" data-testid="tab-shortcuts" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
+                <Keyboard className="w-4 h-4" />
+                Shortcuts
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="profile" className="space-y-6">
             <Card className="glassmorphism">
@@ -1588,9 +1597,36 @@ export default function Settings() {
           <TabsContent value="sync" className="space-y-6">
             <CrossPlatformSync />
           </TabsContent>
+
+          <TabsContent value="shortcuts" className="space-y-6">
+            <Card className="glassmorphism">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Keyboard className="w-5 h-5" />
+                  Keyboard Shortcuts
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Customize keyboard shortcuts to match your workflow. Click any shortcut to rebind it.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={() => setShortcutCustomizerOpen(true)}
+                  className="w-full sm:w-auto"
+                >
+                  <Keyboard className="w-4 h-4 mr-2" />
+                  Open Shortcut Editor
+                </Button>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Shortcuts are saved to your account and synced across devices.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Dialogs */}
+        <ShortcutCustomizer open={shortcutCustomizerOpen} onOpenChange={setShortcutCustomizerOpen} />
         <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
 
         <TwoFactorSetupDialog open={twoFactorOpen} onOpenChange={setTwoFactorOpen} />

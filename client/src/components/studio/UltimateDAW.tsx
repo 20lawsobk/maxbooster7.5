@@ -79,6 +79,9 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
   const [mode, setMode] = useState<FlowStateMode>('create');
   const [isLoadingProject, setIsLoadingProject] = useState(false);
   const projectLoadedRef = useRef<string | null>(null);
+  const playbackRafRef = useRef<number | null>(null);
+  const playbackStartTimeRef = useRef<number>(0);
+  const playbackStartPositionRef = useRef<number>(0);
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('arrange');
   const [activeTool, setActiveTool] = useState('pointer');
   const [showAIPanel, setShowAIPanel] = useState(false);
@@ -109,6 +112,31 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
       });
     }
   }, [projectId, loadProjectData]);
+
+  useEffect(() => {
+    if (transport.isPlaying) {
+      playbackStartTimeRef.current = performance.now();
+      playbackStartPositionRef.current = transport.position;
+
+      const tick = () => {
+        const elapsedSec = (performance.now() - playbackStartTimeRef.current) / 1000;
+        store.setPosition(playbackStartPositionRef.current + elapsedSec);
+        playbackRafRef.current = requestAnimationFrame(tick);
+      };
+      playbackRafRef.current = requestAnimationFrame(tick);
+    } else {
+      if (playbackRafRef.current !== null) {
+        cancelAnimationFrame(playbackRafRef.current);
+        playbackRafRef.current = null;
+      }
+    }
+    return () => {
+      if (playbackRafRef.current !== null) {
+        cancelAnimationFrame(playbackRafRef.current);
+        playbackRafRef.current = null;
+      }
+    };
+  }, [transport.isPlaying]);
 
   const handleAIMix = useCallback(async () => {
     if (!projectId) return;

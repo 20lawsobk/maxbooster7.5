@@ -139,8 +139,6 @@ const PLATFORMS = {
   },
 };
 
-const oauthStates = new Map<string, { userId: string; platform: string; createdAt: Date; codeVerifier?: string }>();
-
 function generateCodeVerifier(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
   let result = '';
@@ -155,14 +153,39 @@ function generateCodeChallenge(verifier: string, encoding: 'hex' | 'base64url' =
   return crypto.createHash('sha256').update(verifier).digest(encoding);
 }
 
-setInterval(() => {
-  const now = Date.now();
-  for (const [state, data] of oauthStates.entries()) {
-    if (now - data.createdAt.getTime() > 10 * 60 * 1000) {
-      oauthStates.delete(state);
-    }
+const OAUTH_STATE_SECRET = process.env.SESSION_SECRET || process.env.SECRET_KEY || 'max-booster-oauth-state-secret';
+const OAUTH_STATE_TTL_MS = 15 * 60 * 1000;
+
+function createOAuthState(userId: string, platform: string, codeVerifier?: string): string {
+  const payload = {
+    u: userId,
+    p: platform,
+    cv: codeVerifier,
+    exp: Date.now() + OAUTH_STATE_TTL_MS,
+    n: crypto.randomBytes(8).toString('hex'),
+  };
+  const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = crypto.createHmac('sha256', OAUTH_STATE_SECRET).update(encoded).digest('base64url');
+  return `${encoded}~${sig}`;
+}
+
+function verifyOAuthState(rawState: string): { userId: string; platform: string; codeVerifier?: string } | null {
+  try {
+    const tilde = rawState.lastIndexOf('~');
+    if (tilde < 0) return null;
+    const encoded = rawState.slice(0, tilde);
+    const sig = rawState.slice(tilde + 1);
+    const expectedSig = crypto.createHmac('sha256', OAUTH_STATE_SECRET).update(encoded).digest('base64url');
+    if (sig.length !== expectedSig.length) return null;
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null;
+    const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf-8'));
+    if (!payload.u || !payload.p || !payload.exp) return null;
+    if (Date.now() > payload.exp) return null;
+    return { userId: payload.u, platform: payload.p, codeVerifier: payload.cv };
+  } catch {
+    return null;
   }
-}, 60000);
+}
 
 function getBaseUrl(): string {
   return process.env.DOMAIN || process.env.APP_URL || 'https://maxbooster.replit.app';
@@ -267,17 +290,18 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       });
     }
     
-    const state = crypto.randomBytes(32).toString('hex');
     const platformConfig = config as any;
     const redirectUri = platformConfig.redirectUri || getCallbackUrl(platform);
     
     const params = new URLSearchParams();
     let codeVerifier: string | undefined;
+    let state: string;
     
     if (platform === 'twitter') {
       const twCodeVerifier = crypto.randomBytes(32).toString('base64url');
       const codeChallenge = crypto.createHash('sha256').update(twCodeVerifier).digest('base64url');
       codeVerifier = twCodeVerifier;
+      state = createOAuthState(userId, platform, codeVerifier);
       const twitterClientId = process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || config.clientId!;
       const twitterAuthParams = new URLSearchParams({
         response_type: 'code',
@@ -289,7 +313,6 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
         scope: config.scope,
       });
       const twitterAuthUrl = `https://x.com/i/oauth2/authorize?${twitterAuthParams.toString()}`;
-      oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
       logger.info(`[OAuth] Generated Twitter auth URL (direct)`, { userId, platform, redirectUri });
       return res.json({ authUrl: twitterAuthUrl });
     } else if (platform === 'tiktok') {
@@ -299,11 +322,12 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       if (config.scope.includes(" ")) {
         throw new Error("TikTok scopes must not contain spaces.");
       }
-      const tiktokAuthUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${config.clientId}&response_type=code&scope=${encodeURIComponent(config.scope)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
-      oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
+      state = createOAuthState(userId, platform);
+      const tiktokAuthUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${config.clientId}&response_type=code&scope=${encodeURIComponent(config.scope)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
       logger.info(`[OAuth] Generated auth URL for ${platform}`, { userId, platform, redirectUri });
       return res.json({ authUrl: tiktokAuthUrl });
     } else if (platform === 'youtube' || platform === 'google' || platform === 'googlebusiness') {
+      state = createOAuthState(userId, platform);
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
       params.set('response_type', 'code');
@@ -312,6 +336,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('access_type', 'offline');
       params.set('prompt', 'consent');
     } else if (platform === 'threads') {
+      state = createOAuthState(userId, platform);
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
       params.set('scope', config.scope);
@@ -322,14 +347,13 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
         scope: config.scope,
       });
     } else {
+      state = createOAuthState(userId, platform);
       params.set('client_id', config.clientId);
       params.set('redirect_uri', redirectUri);
       params.set('scope', config.scope);
       params.set('state', state);
       params.set('response_type', 'code');
     }
-    
-    oauthStates.set(state, { userId, platform, createdAt: new Date(), codeVerifier });
     
     const authUrl = `${config.authUrl}?${params.toString()}`;
     
@@ -352,12 +376,11 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       return res.redirect(`/social-media?error=oauth_denied&platform=${platform}`);
     }
     
-    if (!state || !oauthStates.has(state as string)) {
-      return res.redirect(`/social-media?error=invalid_state`);
+    const stateData = state ? verifyOAuthState(decodeURIComponent(state as string)) : null;
+    if (!stateData) {
+      logger.warn(`[OAuth] Invalid or expired state for ${platform}`, { hasState: !!state });
+      return res.redirect(`/social-media?error=invalid_state&platform=${platform}`);
     }
-    
-    const stateData = oauthStates.get(state as string)!;
-    oauthStates.delete(state as string);
     
     if ((platform === 'facebook' || platform === 'instagram') && stateData.platform === 'meta') {
       platform = 'meta';

@@ -89,3 +89,11 @@ All configured via Replit environment secrets. Key ones:
 - Target: Autoscale
 - Build command: `npm run build`
 - Run command: `npm run start`
+
+## Recent Fixes (Feb 2026)
+
+- **Social OAuth**: Replaced in-memory `oauthStates` Map with HMAC-signed stateless tokens (`SESSION_SECRET`). TikTok state is URL-encoded since it contains `~` and `=`.
+- **Studio DAW audio sync**: Added `requestAnimationFrame` position loop in `UltimateDAW.tsx` so `transport.position` updates at ~60fps during playback.
+- **Settings tabs**: Fixed broken `grid-cols-7` layout for 9+ tabs — switched to `overflow-x-auto` + `inline-flex flex-wrap` scrollable tab list.
+- **Settings keyboard shortcuts tab**: Added `TabsTrigger value="shortcuts"` + `TabsContent` with button that opens `ShortcutCustomizer` dialog.
+- **Distribution upload route**: Was a non-functional stub. Now implemented with `releaseUpload.any()` (memory-storage multer), stores artwork + audio to hybrid storage, creates `distroReleases` and `distroTracks` DB records.
