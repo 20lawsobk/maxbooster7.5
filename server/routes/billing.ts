@@ -32,6 +32,7 @@ import { logger } from '../logger';
 import { executeStripeOperation } from '../services/externalServices';
 import { billingRateLimiter } from '../middleware/rateLimiter';
 import { requireAuth } from '../middleware/auth.js';
+import { notificationService } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -495,6 +496,23 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
         lifetime: 699
       }
     });
+
+    if (
+      daysUntilRenewal !== null &&
+      daysUntilRenewal > 0 &&
+      [1, 3, 7].includes(daysUntilRenewal) &&
+      user.subscriptionTier !== 'lifetime'
+    ) {
+      const plan = user.subscriptionTier || 'free';
+      const days = daysUntilRenewal;
+      setImmediate(async () => {
+        try {
+          await notificationService.sendSubscriptionExpiringNotification(userId, plan, days);
+        } catch (err) {
+          logger.error('Subscription expiring notification error:', err);
+        }
+      });
+    }
   } catch (error) {
     logger.error('[Billing] Failed to get subscription:', error);
     res.status(500).json({ 

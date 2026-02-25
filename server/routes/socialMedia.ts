@@ -10,6 +10,7 @@ import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, po
 import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth } from '../middleware/auth.js';
+import { notificationService } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -45,16 +46,28 @@ router.post('/schedule-post', requireAuth, async (req: AuthenticatedRequest, res
       return res.status(400).json({ message: 'Platform and content are required' });
     }
 
+    const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
+
     const [post] = await db.insert(posts).values({
       userId,
       platform,
       content,
       mediaUrls: mediaUrls || [],
-      status: scheduledAt ? 'scheduled' : 'draft',
-      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      status: scheduledDate ? 'scheduled' : 'draft',
+      scheduledAt: scheduledDate,
     }).returning();
 
     res.json({ success: true, post });
+
+    if (scheduledDate) {
+      setImmediate(async () => {
+        try {
+          await notificationService.sendSocialPostScheduledNotification(userId, platform, content, scheduledDate);
+        } catch (err) {
+          logger.error('Social post scheduled notification error:', err);
+        }
+      });
+    }
   } catch (error) {
     logger.error('Failed to schedule post:', error);
     res.status(500).json({ message: 'Failed to schedule post' });
@@ -77,6 +90,16 @@ router.post('/calendar/:postId/publish', requireAuth, async (req: AuthenticatedR
       .returning();
 
     res.json({ success: true, post: updated });
+
+    setImmediate(async () => {
+      try {
+        const platform = post.platform || 'Social';
+        const content = post.content || '';
+        await notificationService.sendSocialPostPublishedNotification(userId, platform, content);
+      } catch (err) {
+        logger.error('Social post published notification error:', err);
+      }
+    });
   } catch (error) {
     logger.error('Failed to publish post:', error);
     res.status(500).json({ message: 'Failed to publish post' });
@@ -321,6 +344,22 @@ router.post('/sync-all', requireAuth, async (req: AuthenticatedRequest, res: Res
     }
 
     res.json({ success: true, results: allResults });
+
+    setImmediate(async () => {
+      try {
+        const followerMilestones = [1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
+        for (const conn of connections) {
+          if (!conn.isActive || !conn.followerCount) continue;
+          const followers = conn.followerCount as number;
+          if (followerMilestones.includes(followers)) {
+            const platformName = conn.platform.charAt(0).toUpperCase() + conn.platform.slice(1);
+            await notificationService.sendFollowerMilestoneNotification(userId, platformName, followers);
+          }
+        }
+      } catch (err) {
+        logger.error('Follower milestone notification error:', err);
+      }
+    });
   } catch (error) {
     logger.error('Failed to sync all platforms:', error);
     res.status(500).json({ message: 'Failed to sync all platforms' });

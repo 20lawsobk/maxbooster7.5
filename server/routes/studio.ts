@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { db } from '../db';
 import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects, studioRecentFiles, studioPinnedFolders } from '@shared/schema';
+import { notificationService } from '../services/notificationService.js';
 import { eq, and, or, desc, isNull, inArray, sql as drizzleSql } from 'drizzle-orm';
 import { z } from 'zod';
 import { studioService } from '../services/studioService';
@@ -1637,6 +1638,7 @@ router.post('/lyrics', requireAuth, async (req: Request, res: Response) => {
 // AI Master endpoint
 router.post('/ai-master/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
+    const userId = (req as any).user?.id || (req as any).session?.userId;
     const { projectId } = req.params;
     const { targetLoudness, genre, preset } = req.body;
     res.json({
@@ -1647,6 +1649,17 @@ router.post('/ai-master/:projectId', requireAuth, async (req: Request, res: Resp
       message: 'AI mastering started',
       settings: { targetLoudness: targetLoudness || -14, genre, preset },
     });
+    if (userId) {
+      setImmediate(async () => {
+        try {
+          const [proj] = await db.select({ name: projects.name }).from(projects).where(eq(projects.id, projectId)).limit(1);
+          const trackName = proj?.name || projectId;
+          await notificationService.sendAiProcessingCompleteNotification(userId, 'master', trackName);
+        } catch (err) {
+          logger.error('AI master notification error:', err);
+        }
+      });
+    }
   } catch (error: unknown) {
     logger.error('Error starting AI master:', error);
     res.status(500).json({ error: 'Failed to start AI mastering' });
@@ -1656,6 +1669,7 @@ router.post('/ai-master/:projectId', requireAuth, async (req: Request, res: Resp
 // AI Mix endpoint
 router.post('/ai-mix/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
+    const userId = (req as any).user?.id || (req as any).session?.userId;
     const { projectId } = req.params;
     const { targetGenre, referenceTrack, autoEQ, autoCompression } = req.body;
     res.json({
@@ -1666,6 +1680,17 @@ router.post('/ai-mix/:projectId', requireAuth, async (req: Request, res: Respons
       message: 'AI mixing started',
       settings: { targetGenre, autoEQ: autoEQ ?? true, autoCompression: autoCompression ?? true },
     });
+    if (userId) {
+      setImmediate(async () => {
+        try {
+          const [proj] = await db.select({ name: projects.name }).from(projects).where(eq(projects.id, projectId)).limit(1);
+          const trackName = proj?.name || projectId;
+          await notificationService.sendAiProcessingCompleteNotification(userId, 'mix', trackName);
+        } catch (err) {
+          logger.error('AI mix notification error:', err);
+        }
+      });
+    }
   } catch (error: unknown) {
     logger.error('Error starting AI mix:', error);
     res.status(500).json({ error: 'Failed to start AI mixing' });

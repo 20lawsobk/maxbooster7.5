@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { unifiedAIController } from '../services/unifiedAIController.js';
 import { storage } from '../storage.js';
+import { notificationService } from '../services/notificationService.js';
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
@@ -107,9 +108,18 @@ router.get('/ab-tests', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/campaigns', requireAuth, async (req, res) => {
+router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
+    const userId = req.user!.id;
+    const campaignName = req.body?.name || req.body?.campaignName || 'New Campaign';
     res.status(201).json({ success: true, message: 'Campaign created' });
+    setImmediate(async () => {
+      try {
+        await notificationService.sendAdCampaignCreatedNotification(userId, campaignName);
+      } catch (err) {
+        logger.error('Ad campaign created notification error:', err);
+      }
+    });
   } catch (error) {
     logger.error('Failed to create campaign:', error);
     res.status(500).json({ error: 'Failed to create campaign' });
@@ -314,6 +324,19 @@ router.post('/optimize-campaign', requireAuth, async (req, res) => {
       optimization: result.data,
       recommendations: result.data?.recommendations || [],
     });
+
+    const userId = (req as AuthenticatedRequest).user?.id;
+    if (userId) {
+      setImmediate(async () => {
+        try {
+          const campaignName = performance?.name || `Campaign ${campaignId}`;
+          const topRec = (result.data?.recommendations as string[] | undefined)?.[0] || 'Review your targeting and creatives for better performance.';
+          await notificationService.sendAdCampaignOptimizedNotification(userId, campaignName, topRec);
+        } catch (err) {
+          logger.error('Ad campaign optimized notification error:', err);
+        }
+      });
+    }
   } catch (error) {
     logger.error('Failed to optimize campaign:', error);
     res.status(500).json({ error: 'Failed to optimize campaign' });

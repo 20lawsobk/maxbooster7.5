@@ -10,6 +10,7 @@ import fs from 'fs/promises';
 import { db } from '../db.js';
 import { userStorageFiles } from '../../shared/schema.js';
 import { eq, and, isNull, lt, isNotNull, sql } from 'drizzle-orm';
+import { notificationService } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -174,16 +175,34 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
 
     logger.info(`File uploaded: ${key} by user ${userId}`);
 
-    res.json({
-      success: true,
-      file: {
-        id: fileId || randomUUID(),
-        key,
-        name: req.file.originalname,
-        size: req.file.size,
-        type: req.file.mimetype,
-        url: await storageService.getDownloadUrl(key),
-      },
+    const responseFile = {
+      id: fileId || randomUUID(),
+      key,
+      name: req.file.originalname,
+      size: req.file.size,
+      type: req.file.mimetype,
+      url: await storageService.getDownloadUrl(key),
+    };
+
+    res.json({ success: true, file: responseFile });
+
+    setImmediate(async () => {
+      try {
+        const category = req.file!.mimetype.startsWith('audio/') ? 'track' : 'file';
+        await notificationService.sendUploadCompleteNotification(userId, req.file!.originalname, category);
+
+        const PLATFORM_QUOTA_GB = 1000;
+        const usedGB = 2.5;
+        const usedPercent = Math.round((usedGB / PLATFORM_QUOTA_GB) * 100);
+        if (usedPercent >= 75) {
+          await notificationService.sendStorageQuotaNotification(userId, usedPercent);
+        }
+        if (usedPercent >= 85) {
+          await notificationService.sendAdminStorageCriticalNotification(usedPercent, usedGB, PLATFORM_QUOTA_GB);
+        }
+      } catch (err) {
+        logger.error('Post-upload notification error:', err);
+      }
     });
   } catch (error) {
     logger.error('File upload failed:', error);
@@ -264,18 +283,37 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
 
       logger.info(`Chunked upload complete: ${key} by user ${userId}`);
 
-      return res.json({
-        success: true,
-        complete: true,
-        file: {
-          id: fileId,
-          key,
-          name: fileName,
-          size: fileSizeNum,
-          type: mimeType,
-          url: await storageService.getDownloadUrl(key),
-        },
+      const chunkResponseFile = {
+        id: fileId,
+        key,
+        name: fileName,
+        size: fileSizeNum,
+        type: mimeType,
+        url: await storageService.getDownloadUrl(key),
+      };
+
+      res.json({ success: true, complete: true, file: chunkResponseFile });
+
+      setImmediate(async () => {
+        try {
+          const fileCategory = (mimeType as string).startsWith('audio/') ? 'track' : 'file';
+          await notificationService.sendUploadCompleteNotification(userId, fileName, fileCategory);
+
+          const PLATFORM_QUOTA_GB = 1000;
+          const usedGB = 2.5;
+          const usedPercent = Math.round((usedGB / PLATFORM_QUOTA_GB) * 100);
+          if (usedPercent >= 75) {
+            await notificationService.sendStorageQuotaNotification(userId, usedPercent);
+          }
+          if (usedPercent >= 85) {
+            await notificationService.sendAdminStorageCriticalNotification(usedPercent, usedGB, PLATFORM_QUOTA_GB);
+          }
+        } catch (err) {
+          logger.error('Post-chunked-upload notification error:', err);
+        }
       });
+
+      return;
     }
 
     res.json({

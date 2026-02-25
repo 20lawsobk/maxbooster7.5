@@ -4,6 +4,7 @@ import { db } from '../db';
 import { socialAccounts } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
+import { notificationService } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -92,8 +93,25 @@ router.get('/', async (req: Request, res: Response) => {
       scopes: [],
       permissions: getDefaultPermissions(account.platform),
     }));
-    
+
     res.json(safeAccounts);
+
+    setImmediate(async () => {
+      try {
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
+        for (const account of accounts) {
+          if (account.tokenExpiresAt) {
+            const msUntilExpiry = new Date(account.tokenExpiresAt).getTime() - Date.now();
+            if (msUntilExpiry > 0 && msUntilExpiry <= sevenDays) {
+              const platformName = account.platform.charAt(0).toUpperCase() + account.platform.slice(1);
+              await notificationService.sendSocialTokenExpiringNotification(userId, platformName);
+            }
+          }
+        }
+      } catch (err) {
+        logger.error('Social token expiring notification error:', err);
+      }
+    });
   } catch (error) {
     logger.error('Error fetching connected accounts:', error);
     res.status(500).json({ error: 'Failed to fetch connected accounts' });

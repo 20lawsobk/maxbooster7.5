@@ -58,6 +58,9 @@ export type NotificationType =
   | 'admin_health_alert'
   | 'admin_user_flagged'
   | 'admin_support_ticket'
+  | 'ad_campaign_created'
+  | 'ad_campaign_milestone'
+  | 'ad_campaign_optimized'
   | 'default';
 
 export type NotificationCategory =
@@ -201,7 +204,7 @@ export const categoryConfig: Record<NotificationCategory, { label: string; descr
   royalties: { label: 'Royalties', description: 'Payments, statements, payouts' },
   collaboration: { label: 'Collaboration', description: 'Invites, comments, mentions' },
   achievements: { label: 'Achievements', description: 'Badges, streaks, milestones' },
-  system: { label: 'System', description: 'Maintenance, updates, storage warnings' },
+  system: { label: 'System', description: 'Maintenance, updates, storage warnings, advertising campaigns' },
   platform_admin: { label: 'Platform Admin', description: 'New users, payment issues, health alerts, reports, flagged accounts' },
 };
 
@@ -265,6 +268,9 @@ export const typeToCategory: Record<NotificationType, NotificationCategory> = {
   admin_health_alert: 'platform_admin',
   admin_user_flagged: 'platform_admin',
   admin_support_ticket: 'platform_admin',
+  ad_campaign_created: 'system',
+  ad_campaign_milestone: 'system',
+  ad_campaign_optimized: 'system',
   default: 'system',
 };
 

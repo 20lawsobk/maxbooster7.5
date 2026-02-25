@@ -439,6 +439,28 @@ router.post('/interaction', async (req: Request, res: Response) => {
     });
 
     res.json({ success: true });
+
+    if (interactionType === 'play') {
+      setImmediate(async () => {
+        try {
+          const [listing] = await db
+            .select({ id: listings.id, title: listings.title, plays: listings.plays, userId: listings.userId })
+            .from(listings)
+            .where(eq(listings.id, beatId))
+            .limit(1);
+          if (listing) {
+            const plays = (listing.plays || 0) + 1;
+            const milestones = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000, 500000, 1000000];
+            if (milestones.includes(plays)) {
+              await notificationService.sendBeatPlayMilestoneNotification(listing.userId, listing.title || 'Unknown Beat', plays);
+              await notificationService.sendStreamMilestoneNotification(listing.userId, listing.title || 'Unknown Beat', plays);
+            }
+          }
+        } catch (err) {
+          logger.error('Beat play milestone notification error:', err);
+        }
+      });
+    }
   } catch (error: any) {
     logger.error('Error recording interaction:', error);
     res.status(500).json({ error: 'Failed to record interaction' });
@@ -973,6 +995,19 @@ router.post('/upload', upload.fields([
           features: ['MP3 Download', 'Non-exclusive rights'],
         },
       ],
+    });
+
+    // Notify admin about new marketplace listing awaiting review (async, non-blocking)
+    setImmediate(async () => {
+      try {
+        await notificationService.sendAdminMarketplaceReviewNotification(
+          title,
+          listing.id,
+          (req.user as any)?.email || 'unknown'
+        );
+      } catch (err) {
+        logger.error('Marketplace review admin notification error:', err);
+      }
     });
 
     // Notify followers about the new beat upload (async, non-blocking)

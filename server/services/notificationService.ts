@@ -719,6 +719,90 @@ Manage your notification preferences: ${link || 'https://maxbooster.ai/settings'
       metadata: { userEmail, subject, ticketId },
     });
   }
+
+  async sendSocialPostPublishedNotification(
+    userId: string,
+    platform: string,
+    content: string
+  ): Promise<void> {
+    const preview = content.length > 60 ? content.slice(0, 57) + '...' : content;
+    await this.send({
+      userId,
+      type: 'social_post_published',
+      title: `Post Published on ${platform}`,
+      message: `Your post has been published on ${platform}: "${preview}"`,
+      link: '/social-media',
+      metadata: { platform, content },
+    });
+  }
+
+  async sendSocialPostScheduledNotification(
+    userId: string,
+    platform: string,
+    content: string,
+    scheduledAt: Date
+  ): Promise<void> {
+    const preview = content.length > 60 ? content.slice(0, 57) + '...' : content;
+    const timeStr = scheduledAt.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+    await this.send({
+      userId,
+      type: 'social_post_scheduled',
+      title: `Post Scheduled on ${platform}`,
+      message: `Your post has been scheduled for ${timeStr} on ${platform}: "${preview}"`,
+      link: '/social-media',
+      metadata: { platform, content, scheduledAt },
+    });
+  }
+
+  async sendAdCampaignCreatedNotification(
+    userId: string,
+    campaignName: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'ad_campaign_created',
+      title: 'Ad Campaign Created',
+      message: `Your advertising campaign "${campaignName}" has been created and is ready to run.`,
+      link: '/advertising',
+      metadata: { campaignName },
+    });
+  }
+
+  async sendAdCampaignMilestoneNotification(
+    userId: string,
+    campaignName: string,
+    metric: string,
+    value: number
+  ): Promise<void> {
+    const formatted = value >= 1_000_000
+      ? `${(value / 1_000_000).toFixed(1)}M`
+      : value >= 1_000
+        ? `${(value / 1_000).toFixed(0)}K`
+        : `${value}`;
+    await this.send({
+      userId,
+      type: 'ad_campaign_milestone',
+      title: `Campaign Milestone: ${formatted} ${metric}`,
+      message: `Your campaign "${campaignName}" just hit ${formatted} ${metric}. Keep it up!`,
+      link: '/advertising',
+      metadata: { campaignName, metric, value },
+    });
+  }
+
+  async sendAdCampaignOptimizedNotification(
+    userId: string,
+    campaignName: string,
+    suggestion: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'ad_campaign_optimized',
+      title: 'Campaign Optimization Ready',
+      message: `AI has optimized your campaign "${campaignName}": ${suggestion}`,
+      link: '/advertising',
+      metadata: { campaignName, suggestion },
+    });
+  }
 }
 
 export const notificationService = new NotificationService();

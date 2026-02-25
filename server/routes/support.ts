@@ -4,6 +4,7 @@ import { supportTickets, users } from '../../shared/schema.js';
 import { eq, desc, like, or, sql, count, avg, and } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { requireAuth } from '../middleware/auth.js';
+import { notificationService } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -222,6 +223,18 @@ router.post('/tickets', requireAuth, async (req, res) => {
     logger.info(`User ${req.user?.email} created ticket ${newTicket.id}`);
 
     res.status(201).json(newTicket);
+
+    setImmediate(async () => {
+      try {
+        await notificationService.sendAdminSupportTicketNotification(
+          req.user!.email!,
+          subject,
+          newTicket.id
+        );
+      } catch (err) {
+        logger.error('Support ticket admin notification error:', err);
+      }
+    });
   } catch (error) {
     logger.error('Error creating ticket:', error);
     res.status(500).json({ error: 'Failed to create ticket' });

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { statusPageService } from '../services/statusPageService.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
+import { notificationService } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -297,6 +298,20 @@ router.put('/admin/services/:serviceId/status', async (req, res) => {
       service,
       message: 'Service status updated successfully.',
     });
+
+    if (status !== 'operational') {
+      setImmediate(async () => {
+        try {
+          const statusLabel = status.replace(/_/g, ' ');
+          await notificationService.sendAdminHealthAlertNotification(
+            (service as any)?.name || serviceId,
+            statusLabel
+          );
+        } catch (err) {
+          logger.error('Health alert notification error:', err);
+        }
+      });
+    }
   } catch (error: unknown) {
     logger.error('Error updating service status:', error);
     const message = error instanceof Error ? error.message : 'Failed to update service status';

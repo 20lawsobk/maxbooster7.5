@@ -5,6 +5,7 @@ import { eq, desc, asc, like, or, sql, count, sum, and, gte, lte } from 'drizzle
 import { logger } from '../../logger.js';
 import bcrypt from 'bcrypt';
 import os from 'os';
+import { notificationService } from '../../services/notificationService.js';
 
 const router = Router();
 
@@ -353,9 +354,66 @@ router.put('/users/:userId', async (req, res) => {
     logger.info(`Admin ${req.user?.email} updated user ${userId}:`, updateData);
 
     res.json({ success: true, message: 'User updated' });
+
+    if (subscriptionStatus === 'banned') {
+      setImmediate(async () => {
+        try {
+          const [targetUser] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+          if (targetUser?.email) {
+            await notificationService.sendAdminUserFlaggedNotification(
+              targetUser.email,
+              userId,
+              'Account manually banned by admin'
+            );
+          }
+        } catch (err) {
+          logger.error('User flagged notification error:', err);
+        }
+      });
+    }
   } catch (error) {
     logger.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+router.post('/users/:userId/report', requireAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({ error: 'Reason is required' });
+    }
+
+    const [targetUser] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    logger.info(`Admin ${req.user?.email} reported user ${userId}: ${reason}`);
+
+    res.json({ success: true, message: 'User reported' });
+
+    setImmediate(async () => {
+      try {
+        await notificationService.sendAdminUserReportNotification(
+          req.user!.email!,
+          targetUser.email!,
+          reason
+        );
+      } catch (err) {
+        logger.error('User report notification error:', err);
+      }
+    });
+  } catch (error) {
+    logger.error('Error reporting user:', error);
+    res.status(500).json({ error: 'Failed to report user' });
   }
 });
 
