@@ -259,7 +259,7 @@ class ReplitStorageProvider implements StorageProvider {
 
   async uploadFile(file: Buffer, key: string, contentType?: string): Promise<string> {
     await this.ensureClient();
-    const result = await this.client.uploadFromBuffer(key, file, {
+    const result = await this.client.uploadFromBytes(key, file, {
       contentType: contentType || 'application/octet-stream',
     });
     if (!result.ok) {
@@ -270,11 +270,11 @@ class ReplitStorageProvider implements StorageProvider {
 
   async downloadFile(key: string): Promise<Buffer> {
     await this.ensureClient();
-    const result = await this.client.downloadAsBuffer(key);
+    const result = await this.client.downloadAsBytes(key);
     if (!result.ok) {
       throw new Error(`Replit storage download failed for key "${key}": ${result.error}`);
     }
-    return result.value as Buffer;
+    return Buffer.from(result.value);
   }
 
   async deleteFile(key: string): Promise<void> {

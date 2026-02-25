@@ -149,8 +149,18 @@ Building the app requires GitHub Actions (Replit cannot create native installers
   - Config: `capacitor.config.ts`, points to `https://maxbooster.replit.app`
 - **Downloads page** (`/desktop-app`): Fetches release assets from GitHub API (`20lawsobk/maxbooster7.5`)
 
+## Storage SDK — Critical API Notes
+
+The `@replit/object-storage` Client exposes these methods (NOT `uploadFromBuffer` / `downloadAsBuffer`):
+- **Upload**: `client.uploadFromBytes(key, buffer, { contentType })` — returns `{ ok, error }`
+- **Download**: `client.downloadAsBytes(key)` — returns `{ ok, value: Uint8Array, error }`; wrap result with `Buffer.from(result.value)`
+- **Other**: `uploadFromText`, `uploadFromFilename`, `uploadFromStream`, `downloadAsText`, `downloadToFilename`, `downloadAsStream`, `exists`, `list`, `copy`, `delete`
+
+The old `uploadFromBuffer` / `downloadAsBuffer` names do not exist and cause a silent 500 error (image processes fine, storage step fails).
+
 ## Recent Fixes (Feb 2026)
 
+- **File/image uploads platform-wide**: Root cause was `uploadFromBuffer` / `downloadAsBuffer` API calls in both `storageService.ts` and `hybridStorageService.ts`. These methods do not exist on the current `@replit/object-storage` SDK. Fixed to `uploadFromBytes` / `downloadAsBytes` with `Buffer.from(result.value)` wrapping for the download path.
 - **Social OAuth**: Replaced in-memory `oauthStates` Map with HMAC-signed stateless tokens (`SESSION_SECRET`). TikTok state is URL-encoded since it contains `~` and `=`.
 - **Studio DAW audio sync**: Added `requestAnimationFrame` position loop in `UltimateDAW.tsx` so `transport.position` updates at ~60fps during playback.
 - **Settings tabs**: Fixed broken `grid-cols-7` layout for 9+ tabs — switched to `overflow-x-auto` + `inline-flex flex-wrap` scrollable tab list.

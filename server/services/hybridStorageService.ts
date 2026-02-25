@@ -428,7 +428,7 @@ export class HybridStorageService {
 
   private async writeToReplit(key: string, data: Buffer, contentType?: string): Promise<void> {
     if (!this.replitClient) throw new Error('Replit Object Storage client not initialized');
-    const result = await this.replitClient.uploadFromBuffer(key, data, {
+    const result = await this.replitClient.uploadFromBytes(key, data, {
       contentType: contentType || 'application/octet-stream',
     });
     if (!result.ok) {
@@ -483,11 +483,11 @@ export class HybridStorageService {
 
   private async readFromReplit(key: string): Promise<Buffer> {
     if (!this.replitClient) throw new Error('Replit Object Storage client not initialized');
-    const result = await this.replitClient.downloadAsBuffer(key);
+    const result = await this.replitClient.downloadAsBytes(key);
     if (!result.ok) {
       throw new Error(`Replit storage read failed for key "${key}": ${result.error}`);
     }
-    return result.value as Buffer;
+    return Buffer.from(result.value);
   }
 
   async delete(userId: string, key: string): Promise<boolean> {
