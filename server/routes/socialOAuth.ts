@@ -59,6 +59,7 @@ const PLATFORMS = {
       scope: scopes,
       clientId: clientKey,
       clientSecret: clientSecret,
+      clientIdParam: 'client_key',
       usePKCE: false,
       responseType: 'code',
       enabled: !!(clientKey && clientSecret),
@@ -192,6 +193,11 @@ function getBaseUrl(): string {
   return process.env.DOMAIN || process.env.APP_URL || 'https://maxbooster.replit.app';
 }
 
+function buildOAuthUrl(baseUrl: string, params: URLSearchParams, scope: string): string {
+  const encodedScope = encodeURIComponent(scope).replace(/%2C/g, ',');
+  return `${baseUrl}?${params.toString()}&scope=${encodedScope}`;
+}
+
 const CALLBACK_PATHS: Record<string, string> = {
   meta: '/auth/facebook/callback',
   facebook: '/auth/facebook/callback',
@@ -295,79 +301,30 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     const redirectUri = platformConfig.redirectUri || getCallbackUrl(platform);
     
     const params = new URLSearchParams();
-    let codeVerifier: string | undefined;
     let state: string;
-    
-    if (platform === 'twitter') {
-      const twCodeVerifier = crypto.randomBytes(32).toString('base64url');
-      const codeChallenge = crypto.createHash('sha256').update(twCodeVerifier).digest('base64url');
-      codeVerifier = twCodeVerifier;
+
+    if (platformConfig.usePKCE) {
+      const codeVerifier = crypto.randomBytes(32).toString('base64url');
+      const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
       state = createOAuthState(userId, platform, codeVerifier);
-      const twitterClientId = process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || config.clientId!;
-      const twitterAuthParams = new URLSearchParams({
-        response_type: 'code',
-        client_id: twitterClientId,
-        redirect_uri: redirectUri,
-        state,
-        code_challenge: codeChallenge,
-        code_challenge_method: 'S256',
-        scope: config.scope,
-      });
-      const twitterAuthUrl = `https://x.com/i/oauth2/authorize?${twitterAuthParams.toString()}`;
-      logger.info(`[OAuth] Generated Twitter auth URL (direct)`, { userId, platform, redirectUri });
-      return res.json({ authUrl: twitterAuthUrl });
-    } else if (platform === 'tiktok') {
-      if (!config.scope || config.scope.length === 0) {
-        throw new Error("TikTok scopes are not configured.");
-      }
-      if (config.scope.includes(" ")) {
-        throw new Error("TikTok scopes must not contain spaces.");
-      }
-      state = createOAuthState(userId, platform);
-      const tiktokAuthUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${config.clientId}&response_type=code&scope=${encodeURIComponent(config.scope)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
-      logger.info(`[OAuth] Generated auth URL for ${platform}`, { userId, platform, redirectUri });
-      return res.json({ authUrl: tiktokAuthUrl });
-    } else if (platform === 'youtube' || platform === 'google' || platform === 'googlebusiness') {
-      state = createOAuthState(userId, platform);
-      params.set('client_id', config.clientId);
-      params.set('redirect_uri', redirectUri);
       params.set('response_type', 'code');
-      params.set('scope', config.scope);
+      params.set(platformConfig.clientIdParam || 'client_id', config.clientId!);
+      params.set('redirect_uri', redirectUri);
       params.set('state', state);
-      params.set('access_type', 'offline');
-      params.set('prompt', 'consent');
-    } else if (platform === 'threads') {
-      state = createOAuthState(userId, platform);
-      // Build Threads URL manually — URLSearchParams encodes commas as %2C which breaks
-      // Meta's scope parsing. Scopes must remain as comma-separated plain text.
-      const threadsAuthUrl = [
-        `${config.authUrl}`,
-        `?client_id=${encodeURIComponent(config.clientId!)}`,
-        `&redirect_uri=${encodeURIComponent(redirectUri)}`,
-        `&scope=${config.scope}`,
-        `&response_type=code`,
-        `&state=${encodeURIComponent(state)}`,
-      ].join('');
-      logger.info(`[OAuth] Threads auth initiated`, { 
-        redirectUri, 
-        scope: config.scope,
-        authUrl: threadsAuthUrl,
-      });
-      logger.info(`[OAuth] Generated auth URL for threads`, { userId, platform, redirectUri });
-      return res.json({ authUrl: threadsAuthUrl });
+      params.set('code_challenge', codeChallenge);
+      params.set('code_challenge_method', 'S256');
     } else {
       state = createOAuthState(userId, platform);
-      params.set('client_id', config.clientId);
+      params.set(platformConfig.clientIdParam || 'client_id', config.clientId!);
       params.set('redirect_uri', redirectUri);
-      params.set('scope', config.scope);
-      params.set('state', state);
       params.set('response_type', 'code');
+      params.set('state', state);
+      if (platformConfig.accessType) params.set('access_type', platformConfig.accessType);
+      if (platformConfig.prompt) params.set('prompt', platformConfig.prompt);
     }
-    
-    const authUrl = `${config.authUrl}?${params.toString()}`;
-    
+
+    const authUrl = buildOAuthUrl(config.authUrl, params, config.scope);
     logger.info(`[OAuth] Generated auth URL for ${platform}`, { userId, platform, redirectUri });
-    
     res.json({ authUrl });
   } catch (error) {
     logger.error('Failed to initiate OAuth:', error);
