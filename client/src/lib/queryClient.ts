@@ -4,9 +4,6 @@ import { errorService, captureException } from './errorService';
 
 const DEFAULT_TIMEOUT_MS = 30000;
 
-const CSRF_COOKIE = 'csrf-token';
-const CSRF_HEADER = 'x-csrf-token';
-
 export type ApiErrorCode =
   | 'NETWORK_ERROR'
   | 'TIMEOUT'
@@ -230,39 +227,6 @@ function setRateLimited(retryAfter: number) {
   };
 }
 
-export function getCsrfToken(): string | null {
-  const cookies = document.cookie.split(';');
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
-    if (name === CSRF_COOKIE) {
-      return decodeURIComponent(value);
-    }
-  }
-  return null;
-}
-
-export function getCsrfHeaders(): Record<string, string> {
-  const token = getCsrfToken();
-  return token ? { [CSRF_HEADER]: token } : {};
-}
-
-async function ensureCsrfToken(): Promise<string | null> {
-  let token = getCsrfToken();
-  if (!token) {
-    try {
-      const response = await fetch('/api/csrf-token', {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        token = data.csrfToken;
-      }
-    } catch (_error) {
-    }
-  }
-  return token;
-}
-
 // Create an AbortController with timeout - returns controller, cleanup, and timeout flag
 function createAbortControllerWithTimeout(timeoutMs: number = DEFAULT_TIMEOUT_MS): { 
   controller: AbortController; 
@@ -337,14 +301,6 @@ export async function apiRequest(
       headers['Content-Type'] = 'application/json';
     }
 
-    const isMutationMethod = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase());
-    if (isMutationMethod) {
-      const csrfToken = await ensureCsrfToken();
-      if (csrfToken) {
-        headers[CSRF_HEADER] = csrfToken;
-      }
-    }
-
     const res = await fetch(url, {
       method,
       headers,
@@ -398,9 +354,8 @@ export async function uploadWithProgress(
     timeout?: number;
   }
 ): Promise<unknown> {
-  const csrfToken = await ensureCsrfToken();
-  const timeoutMs = options?.timeout || 300000; // 5 minutes default for uploads
-  
+  const timeoutMs = options?.timeout || 300000;
+
   errorService.addBreadcrumb('upload-request', {
     url,
     hasData: true,
@@ -411,10 +366,7 @@ export async function uploadWithProgress(
     xhr.open('POST', url);
     xhr.withCredentials = true;
     xhr.timeout = timeoutMs;
-    
-    if (csrfToken) {
-      xhr.setRequestHeader(CSRF_HEADER, csrfToken);
-    }
+
     
     xhr.upload.addEventListener('progress', (event) => {
       if (event.lengthComputable && options?.onProgress) {

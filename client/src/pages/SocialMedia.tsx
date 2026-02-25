@@ -910,10 +910,7 @@ export default function SocialMedia() {
   // Handler Functions
   const handleConnectPlatform = async (platformId: string) => {
     try {
-      const response = await fetch(`/api/social/connect/${platformId}`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const response = await apiRequest('POST', `/api/social/connect/${platformId}`);
       const data = await response.json();
       if (data.authUrl) {
         const isInIframe = window !== window.top;
@@ -944,10 +941,7 @@ export default function SocialMedia() {
 
   const handleDisconnectPlatform = async (platformId: string) => {
     try {
-      const response = await fetch(`/api/social/disconnect/${platformId}`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const response = await apiRequest('POST', `/api/social/disconnect/${platformId}`);
       const data = await response.json();
       if (data.success) {
         toast({

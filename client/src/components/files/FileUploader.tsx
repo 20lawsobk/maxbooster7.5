@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest, getCsrfToken } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 import { FileValidator, type ValidationResult } from './FileValidator';
 import {
   Upload,
@@ -186,17 +186,6 @@ export function FileUploader({
     formData.append('fileId', uploadFile.id);
     formData.append('category', category);
 
-    let csrfToken = getCsrfToken();
-    if (!csrfToken) {
-      try {
-        const csrfRes = await fetch('/api/csrf-token', { credentials: 'include' });
-        if (csrfRes.ok) {
-          const csrfData = await csrfRes.json();
-          csrfToken = csrfData.csrfToken;
-        }
-      } catch { /* proceed without token */ }
-    }
-
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       
@@ -226,9 +215,6 @@ export function FileUploader({
 
       xhr.open('POST', uploadEndpoint);
       xhr.withCredentials = true;
-      if (csrfToken) {
-        xhr.setRequestHeader('x-csrf-token', csrfToken);
-      }
       xhr.send(formData);
     });
   };

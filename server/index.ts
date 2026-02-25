@@ -12,7 +12,7 @@ import { logger } from "./logger.ts";
 import { setupStartupEndpoints } from "./startup-probes.ts";
 import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
 import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
-import { generateCsrfToken, csrfProtectionWithExemptions, getCsrfToken } from "./middleware/csrf.ts";
+import { originValidation } from "./middleware/requestValidation.ts";
 import path from "path";
 import crypto from "crypto";
 
@@ -268,12 +268,10 @@ app.use((req, res, next) => {
   (global as any).__activeSessionStore = activeSessionStore;
 
   // ========================================
-  // CSRF PROTECTION
+  // REQUEST ORIGIN VALIDATION
   // ========================================
-  app.use(generateCsrfToken);
-  app.get('/api/csrf-token', getCsrfToken);
-  app.use(csrfProtectionWithExemptions);
-  logger.info('✅ CSRF protection enabled');
+  app.use(originValidation);
+  logger.info('✅ Origin validation enabled (SameSite=Lax + Origin header check)');
 
   // ========================================
   // INITIALIZE PRODUCTION SAFETY SYSTEMS
