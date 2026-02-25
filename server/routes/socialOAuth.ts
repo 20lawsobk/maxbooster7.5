@@ -338,15 +338,23 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       params.set('prompt', 'consent');
     } else if (platform === 'threads') {
       state = createOAuthState(userId, platform);
-      params.set('client_id', config.clientId);
-      params.set('redirect_uri', redirectUri);
-      params.set('scope', config.scope);
-      params.set('response_type', 'code');
-      params.set('state', state);
+      // Build Threads URL manually — URLSearchParams encodes commas as %2C which breaks
+      // Meta's scope parsing. Scopes must remain as comma-separated plain text.
+      const threadsAuthUrl = [
+        `${config.authUrl}`,
+        `?client_id=${encodeURIComponent(config.clientId!)}`,
+        `&redirect_uri=${encodeURIComponent(redirectUri)}`,
+        `&scope=${config.scope}`,
+        `&response_type=code`,
+        `&state=${encodeURIComponent(state)}`,
+      ].join('');
       logger.info(`[OAuth] Threads auth initiated`, { 
         redirectUri, 
         scope: config.scope,
+        authUrl: threadsAuthUrl,
       });
+      logger.info(`[OAuth] Generated auth URL for threads`, { userId, platform, redirectUri });
+      return res.json({ authUrl: threadsAuthUrl });
     } else {
       state = createOAuthState(userId, platform);
       params.set('client_id', config.clientId);
