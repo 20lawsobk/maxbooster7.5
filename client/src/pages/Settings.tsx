@@ -350,7 +350,13 @@ export default function Settings() {
       const response = await apiRequest('POST', '/api/auth/avatar', formData);
       const data = await response.json() as { avatarUrl?: string; profileImageUrl?: string };
       const newUrl = data.avatarUrl || data.profileImageUrl || '';
-      if (newUrl) setAvatarUrl(newUrl);
+      if (newUrl) {
+        setAvatarUrl(newUrl);
+        const cached = queryClient.getQueryData<any>(['/api/auth/me']);
+        if (cached) {
+          queryClient.setQueryData(['/api/auth/me'], { ...cached, avatarUrl: newUrl, profileImageUrl: newUrl });
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
 
       toast({
@@ -370,6 +376,10 @@ export default function Settings() {
     try {
       await apiRequest('DELETE', '/api/auth/avatar');
       setAvatarUrl('');
+      const cached = queryClient.getQueryData<any>(['/api/auth/me']);
+      if (cached) {
+        queryClient.setQueryData(['/api/auth/me'], { ...cached, avatarUrl: null, profileImageUrl: null });
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
 
       toast({
@@ -723,6 +733,7 @@ export default function Settings() {
                         onChange={handleAvatarUpload}
                       />
                       <Button
+                        type="button"
                         variant="outline"
                         onClick={() => fileInputRef.current?.click()}
                         data-testid="button-upload-avatar"
@@ -731,6 +742,7 @@ export default function Settings() {
                         Upload Photo
                       </Button>
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={handleAvatarRemove}
