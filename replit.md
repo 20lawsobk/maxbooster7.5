@@ -7,7 +7,7 @@ AI-Powered Music Career Management Platform by B-Lawz Music.
 - **Frontend**: React + TypeScript + Vite (built to `dist/public/`, served by Express in production)
 - **Backend**: Express.js (Node.js/TypeScript), bundled to `dist/index.cjs` via esbuild
 - **Database**: PostgreSQL via Drizzle ORM (Neon serverless driver)
-- **Storage**: Hybrid — Replit Object Storage (hot tier, `@replit/object-storage`) + Pocket Dimension (cold tier, compressed)
+- **Storage**: Three-layer — Replit Object Storage (hot tier) + Pocket Dimension (cold tier, compressed) + Pocket Dimension Fabric (distributed multi-node, DB-backed metadata plane)
 - **State Engine**: BoosterState (Rust-based KV store with WAL, runs on port 9877)
 - **Build System**: Vite (frontend) + esbuild (backend via `script/build.ts`)
 - **State Management**: Zustand
@@ -26,6 +26,8 @@ AI-Powered Music Career Management Platform by B-Lawz Music.
 - `server/services/storageService.ts` — Storage abstraction (Local/S3/Hybrid)
 - `server/services/hybridStorageService.ts` — Hybrid storage (Replit hot + Pocket cold)
 - `server/pocket-dimension/index.ts` — Pocket Dimension compressed storage engine
+- `server/pocket-dimension/fabric/` — Distributed fabric layer: NodeRegistry, VolumeRegistry, PocketRegistry, ObjectIndex, ChunkIndex, PlacementStrategy, Rebalancer, ChunkStore adapters
+- `server/routes/fabric.ts` — REST API for fabric (pockets, volumes, objects, nodes, stats)
 - `server/safety/index.ts` — Mandatory safety middleware (CSRF, rate limiting, helmet)
 - `shared/schema.ts` — Drizzle schema definitions
 - `client/src/App.tsx` — React app root

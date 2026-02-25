@@ -499,6 +499,15 @@ app.use((req, res, next) => {
           logger.warn(`⚠️ [Storage] Hybrid Storage init: ${e.message}`);
         }
 
+        // 0e. Pocket Dimension Fabric (Distributed storage layer)
+        try {
+          const { initializeFabric } = await import('./pocket-dimension/fabric/index.js');
+          await initializeFabric();
+          logger.info('✅ [PocketFabric] Distributed fabric storage initialized');
+        } catch (e: any) {
+          logger.warn(`⚠️ [PocketFabric] Fabric init: ${e.message}`);
+        }
+
         // 1. Autonomous Service (Core)
         try {
           const mod = await import('./services/autonomousService.js');

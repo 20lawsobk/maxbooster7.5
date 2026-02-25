@@ -4295,3 +4295,62 @@ export const insertApprovalRequestSchema = createInsertSchema(approvalRequests).
 export const insertApprovalStepSchema = createInsertSchema(approvalSteps).omit({ id: true, createdAt: true });
 export const insertApprovalWorkflowSchema = createInsertSchema(approvalWorkflows).omit({ id: true, createdAt: true });
 export const insertSsoConfigSchema = createInsertSchema(ssoConfigs).omit({ id: true, createdAt: true });
+
+// ============================================================================
+// POCKET DIMENSION FABRIC
+// ============================================================================
+
+export const fabricPockets = pgTable("fabric_pockets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ownerId: varchar("owner_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  policy: jsonb("policy").notNull().default(sql`'{}'`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const fabricVolumes = pgTable("fabric_volumes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pocketId: varchar("pocket_id").notNull().references(() => fabricPockets.id, { onDelete: 'cascade' }),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: varchar("type", { length: 32 }).notNull().default("objects"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const fabricStorageNodes = pgTable("fabric_storage_nodes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  region: varchar("region", { length: 128 }).notNull(),
+  costTier: varchar("cost_tier", { length: 32 }).notNull().default("standard"),
+  backendType: varchar("backend_type", { length: 64 }).notNull(),
+  backendConfig: jsonb("backend_config").notNull().default(sql`'{}'`),
+  capacityBytes: varchar("capacity_bytes").notNull().default("0"),
+  usedBytes: varchar("used_bytes").notNull().default("0"),
+  healthy: boolean("healthy").notNull().default(true),
+  lastHeartbeat: timestamp("last_heartbeat").notNull().defaultNow(),
+});
+
+export const fabricObjects = pgTable("fabric_objects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  volumeId: varchar("volume_id").notNull().references(() => fabricVolumes.id, { onDelete: 'cascade' }),
+  originalName: varchar("original_name", { length: 512 }).notNull(),
+  contentType: varchar("content_type", { length: 256 }).notNull().default("application/octet-stream"),
+  sizeBytes: varchar("size_bytes").notNull().default("0"),
+  chunkIds: jsonb("chunk_ids").notNull().default(sql`'[]'`),
+  contentHash: varchar("content_hash", { length: 128 }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const fabricChunks = pgTable("fabric_chunks", {
+  id: varchar("id").primaryKey(),
+  objectId: varchar("object_id").notNull(),
+  nodeIds: jsonb("node_ids").notNull().default(sql`'[]'`),
+  sizeBytes: varchar("size_bytes").notNull().default("0"),
+  checksum: varchar("checksum", { length: 128 }).notNull().default(""),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertFabricPocketSchema = createInsertSchema(fabricPockets).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertFabricVolumeSchema = createInsertSchema(fabricVolumes).omit({ id: true, createdAt: true });
+export const insertFabricStorageNodeSchema = createInsertSchema(fabricStorageNodes).omit({ id: true, lastHeartbeat: true });
+export const insertFabricObjectSchema = createInsertSchema(fabricObjects).omit({ id: true, createdAt: true });
+export const insertFabricChunkSchema = createInsertSchema(fabricChunks).omit({ createdAt: true });

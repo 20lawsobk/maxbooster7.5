@@ -3810,5 +3810,13 @@ export async function registerRoutes(
     log(`Warning: Could not load musicWorkflowAutomations routes - ${error.message}`);
   }
 
+  try {
+    const fabricRouter = (await import('./routes/fabric.js')).default;
+    app.use('/api/fabric', fabricRouter);
+    log('Loaded route: fabric');
+  } catch (error: any) {
+    log(`Warning: Could not load fabric routes - ${error.message}`);
+  }
+
   return httpServer;
 }
