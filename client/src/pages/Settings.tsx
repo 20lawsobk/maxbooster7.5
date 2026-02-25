@@ -241,7 +241,7 @@ export default function Settings() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: 'Profile Updated',
         description: 'Your profile has been updated successfully.',
@@ -347,9 +347,11 @@ export default function Settings() {
     formData.append('avatar', file);
 
     try {
-      const data = await apiRequest('POST', '/api/auth/avatar', formData) as { avatarUrl?: string; profileImageUrl?: string };
-      setAvatarUrl(data.avatarUrl || data.profileImageUrl || '');
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      const response = await apiRequest('POST', '/api/auth/avatar', formData);
+      const data = await response.json() as { avatarUrl?: string; profileImageUrl?: string };
+      const newUrl = data.avatarUrl || data.profileImageUrl || '';
+      if (newUrl) setAvatarUrl(newUrl);
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
 
       toast({
         title: 'Success',
@@ -368,7 +370,7 @@ export default function Settings() {
     try {
       await apiRequest('DELETE', '/api/auth/avatar');
       setAvatarUrl('');
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
 
       toast({
         title: 'Success',
@@ -404,7 +406,7 @@ export default function Settings() {
       const response = await apiRequest('POST', '/api/billing/cancel-subscription');
       const data = await response.json();
       
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
       
       toast({
@@ -440,7 +442,7 @@ export default function Settings() {
       const response = await apiRequest('POST', '/api/billing/reactivate-subscription');
       const data = await response.json();
       
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
       
       toast({
@@ -1698,7 +1700,7 @@ export default function Settings() {
                 onClick={async () => {
                   try {
                     await apiRequest('POST', '/api/auth/2fa/disable');
-                    queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
                     toast({
                       title: '2FA Disabled',
                       description: 'Two-factor authentication has been disabled on your account.',
