@@ -296,5 +296,8 @@
     "glob": "^11.0.2",
     "esbuild": ">=0.25.12",
     "fast-xml-parser": "^5.3.6"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
