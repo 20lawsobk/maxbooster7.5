@@ -9,6 +9,7 @@ import { AIAssistantPublic } from '@/components/support/AIAssistantPublic';
 import { AIAssistantPersonalized } from '@/components/support/AIAssistantPersonalized';
 import { InstallBanner } from '@/components/pwa/InstallBanner';
 import { DeepLinkHandler } from '@/components/DeepLinkHandler';
+import { OAuthCallbackHandler } from '@/components/OAuthCallbackHandler';
 import { UndoProvider } from '@/contexts/UndoContext';
 import { UndoToast } from '@/components/undo/UndoToast';
 import { ShortcutProvider } from '@/contexts/ShortcutContext';
@@ -298,6 +299,7 @@ function App() {
         <Toaster />
         <CookieConsentBanner />
         <InstallBanner />
+        <OAuthCallbackHandler />
         <DeepLinkHandler />
         <AIAssistantManager />
         <UndoToast />
