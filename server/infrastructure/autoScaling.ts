@@ -229,6 +229,24 @@ class AutoScalingManager {
     };
   }
 
+  getKubeMetricsHandler(req: Request, res: Response): void {
+    try {
+      const metrics = this.getMetrics();
+      res.json({
+        kind: "ExternalMetricValueList",
+        apiVersion: "external.metrics.k8s.io/v1beta1",
+        items: [
+          { metricName: "http_requests_per_second", value: metrics.requests.requestsPerSecond.toString() },
+          { metricName: "cpu_usage_percent", value: metrics.cpu.usage.toFixed(0) },
+          { metricName: "memory_usage_percent", value: metrics.memory.percentage.toFixed(0) }
+        ]
+      });
+    } catch (error) {
+      logger.error('Error fetching kube metrics:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch kube metrics' });
+    }
+  }
+
   setCurrentReplicas(count: number): void {
     this.currentReplicas = count;
   }
@@ -259,6 +277,10 @@ scalingMetricsRouter.get('/metrics', (req: Request, res: Response) => {
     logger.error('Error fetching scaling metrics:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch metrics' });
   }
+});
+
+scalingMetricsRouter.get('/metrics/kube', (req: Request, res: Response) => {
+  autoScalingManager.getKubeMetricsHandler(req, res);
 });
 
 scalingMetricsRouter.get('/health/detailed', (req: Request, res: Response) => {

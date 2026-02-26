@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 import { storage } from '../storage';
 import crypto from 'crypto';
 import { config } from '../config/defaults.js';
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
+import { getRedisClient, createRedisClient } from '../lib/redisConnectionFactory.js';
 import { logger } from '../logger.js';
 
 // Yjs document structure:
@@ -22,6 +22,54 @@ export class YjsCollaborationService {
   private readonly SAVE_DEBOUNCE_MS = 2000; // Save snapshots every 2 seconds max
   private readonly REDIS_DOC_PREFIX = 'yjs:doc:';
   private readonly REDIS_TTL = 3600; // 1 hour cache TTL
+  
+  private subClient: any = null;
+  private readonly YJS_PUBSUB_ENABLED = !!config.redis.url;
+  private pubSubCallbacks: Map<string, Set<(update: Uint8Array) => void>> = new Map();
+
+  constructor() {
+    if (this.YJS_PUBSUB_ENABLED) {
+      this.initPubSub().catch(err => logger.error('Failed to init YJS PubSub:', err));
+    }
+  }
+
+  private async initPubSub() {
+    try {
+      this.subClient = await createRedisClient();
+      if (this.subClient && typeof this.subClient.on === 'function') {
+        this.subClient.on('message', (channel: string, message: string) => {
+          if (channel.startsWith('yjs:updates:')) {
+            const projectId = channel.split(':').pop();
+            if (projectId) {
+              const callbacks = this.pubSubCallbacks.get(projectId);
+              if (callbacks) {
+                const update = new Uint8Array(Buffer.from(message, 'base64'));
+                callbacks.forEach(cb => cb(update));
+              }
+            }
+          }
+        });
+      }
+    } catch (error) {
+      logger.error('YJS PubSub init error:', error);
+    }
+  }
+
+  async subscribeToProjectUpdates(projectId: string, callback: (update: Uint8Array) => void) {
+    if (!this.YJS_PUBSUB_ENABLED || !this.subClient) return;
+
+    if (!this.pubSubCallbacks.has(projectId)) {
+      this.pubSubCallbacks.set(projectId, new Set());
+      const channel = `yjs:updates:${projectId}`;
+      try {
+        await this.subClient.subscribe(channel);
+        logger.info(`Subscribed to YJS updates for project: ${projectId}`);
+      } catch (error) {
+        logger.error(`Failed to subscribe to ${channel}:`, error);
+      }
+    }
+    this.pubSubCallbacks.get(projectId)?.add(callback);
+  }
 
   // Load Yjs document for project
   async loadDocument(projectId: string): Promise<Y.Doc> {
@@ -84,6 +132,19 @@ export class YjsCollaborationService {
 
     // Auto-save on changes (debounced)
     doc.on('update', async (update: Uint8Array) => {
+      // PUBLISH the update to other nodes
+      if (this.YJS_PUBSUB_ENABLED) {
+        try {
+          const redis = await getRedisClient();
+          if (redis) {
+            const base64Update = Buffer.from(update).toString('base64');
+            await redis.publish(`yjs:updates:${projectId}`, base64Update);
+          }
+        } catch (error) {
+          logger.warn('Failed to publish YJS update:', error);
+        }
+      }
+
       // Clear existing timer
       const existingTimer = this.saveTimers.get(projectId);
       if (existingTimer) {
@@ -171,6 +232,16 @@ export class YjsCollaborationService {
         await this.forceSave(projectId, doc);
       } catch (error: unknown) {
         logger.error('Failed to force save during unload:', projectId, error);
+      }
+    }
+
+    // Unsubscribe from pub/sub
+    if (this.YJS_PUBSUB_ENABLED && this.subClient) {
+      try {
+        await this.subClient.unsubscribe(`yjs:updates:${projectId}`);
+        this.pubSubCallbacks.delete(projectId);
+      } catch (error) {
+        logger.warn(`Failed to unsubscribe from yjs:updates:${projectId}:`, error);
       }
     }
 

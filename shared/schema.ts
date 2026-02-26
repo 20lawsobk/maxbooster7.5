@@ -64,7 +64,9 @@ export const sessions = pgTable("sessions", {
   lastActivity: timestamp("last_activity").defaultNow(),
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  index("sessions_user_id_last_activity_idx").on(t.userId, t.lastActivity),
+]);
 
 export const insertSessionSchema = createInsertSchema(sessions).omit({ id: true, createdAt: true });
 export type InsertSession = z.infer<typeof insertSessionSchema>;
@@ -102,7 +104,9 @@ export const subscriptions = pgTable("subscriptions", {
   currentPeriodEnd: timestamp("current_period_end"),
   canceledAt: timestamp("canceled_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  index("subscriptions_user_id_idx").on(t.userId),
+]);
 
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true });
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
@@ -4374,7 +4378,11 @@ export const customerHealthScores = pgTable("customer_health_scores", {
   reEngagementEmailSentAt: timestamp("re_engagement_email_sent_at"),
   computedAt: timestamp("computed_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  index("customer_health_scores_risk_level_idx").on(t.riskLevel),
+  index("customer_health_scores_days_since_last_login_idx").on(t.daysSinceLastLogin),
+  index("customer_health_scores_re_engagement_sent_idx").on(t.reEngagementEmailSentAt),
+]);
 
 export const insertCustomerHealthScoreSchema = createInsertSchema(customerHealthScores).omit({ id: true, createdAt: true });
 export type CustomerHealthScore = typeof customerHealthScores.$inferSelect;
@@ -4386,7 +4394,10 @@ export const npsResponses = pgTable("nps_responses", {
   comment: text("comment"),
   triggerContext: text("trigger_context").default("30_day"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  index("nps_responses_user_id_idx").on(t.userId),
+  index("nps_responses_score_idx").on(t.score),
+]);
 
 export const insertNpsResponseSchema = createInsertSchema(npsResponses).omit({ id: true, createdAt: true });
 export type NpsResponse = typeof npsResponses.$inferSelect;
@@ -4400,7 +4411,10 @@ export const cancellationFeedback = pgTable("cancellation_feedback", {
   wouldReturn: boolean("would_return"),
   planAtCancellation: text("plan_at_cancellation"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  index("cancellation_feedback_user_id_idx").on(t.userId),
+  index("cancellation_feedback_created_at_idx").on(t.createdAt),
+]);
 
 export const insertCancellationFeedbackSchema = createInsertSchema(cancellationFeedback).omit({ id: true, createdAt: true });
 export type CancellationFeedback = typeof cancellationFeedback.$inferSelect;
@@ -4430,7 +4444,11 @@ export const dunningState = pgTable("dunning_state", {
   resolvedReason: text("resolved_reason"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => [
+  index("dunning_state_stripe_invoice_id_idx").on(t.stripeInvoiceId),
+  index("dunning_state_resolved_at_partial_idx").on(t.resolvedAt).where(sql`resolved_at IS NULL`),
+  index("dunning_state_next_email_at_idx").on(t.nextEmailAt),
+]);
 
 export const insertDunningStateSchema = createInsertSchema(dunningState).omit({ id: true, createdAt: true });
 export type DunningState = typeof dunningState.$inferSelect;

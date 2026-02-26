@@ -199,3 +199,19 @@ export const pool = new InstrumentedPool({
 });
 
 export const db = drizzle(pool, { schema });
+
+// Read replica routing: if DATABASE_REPLICA_URLS is set, route SELECT queries to replica.
+// Falls back to the primary pool when no replica URL is configured.
+const replicaUrl = (process.env.DATABASE_REPLICA_URLS || '').split(',').filter(Boolean)[0];
+const replicaPool = replicaUrl
+  ? new InstrumentedPool({
+      connectionString: replicaUrl,
+      max: config.database.poolSize,
+      idleTimeoutMillis: config.database.idleTimeout,
+      connectionTimeoutMillis: config.database.connectionTimeout,
+    })
+  : null;
+
+export const dbRead = replicaPool
+  ? drizzle(replicaPool, { schema })
+  : db;

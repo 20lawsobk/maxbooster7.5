@@ -3,7 +3,9 @@ import axios from 'axios';
 import { storage } from '../storage';
 import type { InsertWebhookAttempt, InsertWebhookDeadLetterQueue } from '@shared/schema';
 
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || crypto.randomBytes(32).toString('hex');
+const WEBHOOK_SECRET = process.env.NODE_ENV === 'production' 
+  ? (process.env.WEBHOOK_SECRET || (() => { throw new Error('WEBHOOK_SECRET is required in production'); })())
+  : (process.env.WEBHOOK_SECRET || 'dev_webhook_secret_fallback_32_chars');
 const MAX_RETRIES = 5;
 const RETRY_DELAYS = [1000, 5000, 25000, 125000, 625000]; // Exponential backoff with jitter
 

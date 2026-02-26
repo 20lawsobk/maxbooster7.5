@@ -133,6 +133,15 @@ class DunningService {
 
   async processPendingSteps(): Promise<void> {
     try {
+      // Keep existing entry point, call paged version
+      await this.processPendingStepsPaged(50);
+    } catch (err) {
+      logger.error('[Dunning] Failed to process pending steps:', err);
+    }
+  }
+
+  async processPendingStepsPaged(limit: number): Promise<number> {
+    try {
       const now = new Date();
 
       const pending = await db
@@ -143,8 +152,10 @@ class DunningService {
             isNull(dunningState.resolvedAt),
             lte(dunningState.nextEmailAt, now)
           )
-        );
+        )
+        .limit(limit);
 
+      let processed = 0;
       for (const record of pending) {
         const nextStep = record.currentStep + 1;
         if (nextStep >= DUNNING_STEPS.length) {
@@ -152,6 +163,7 @@ class DunningService {
             .update(dunningState)
             .set({ resolvedAt: new Date(), resolvedReason: 'sequence_complete' })
             .where(eq(dunningState.id, record.id));
+          processed++;
           continue;
         }
 
@@ -165,9 +177,12 @@ class DunningService {
           .update(dunningState)
           .set({ currentStep: nextStep, nextEmailAt, updatedAt: new Date() })
           .where(eq(dunningState.id, record.id));
+        processed++;
       }
+      return processed;
     } catch (err) {
-      logger.error('[Dunning] Failed to process pending steps:', err);
+      logger.error('[Dunning] Failed to process pending steps paged:', err);
+      return 0;
     }
   }
 

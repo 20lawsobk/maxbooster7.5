@@ -18,8 +18,10 @@
 
 import { db } from '../db.js';
 import { customerHealthScores, sessions, featureEvents, users, subscriptions } from '@shared/schema';
-import { eq, and, gte, count, countDistinct, desc } from 'drizzle-orm';
+import { eq, and, gte, count, countDistinct, desc, gt, asc } from 'drizzle-orm';
 import { logger } from '../logger.js';
+import { getRedisClient } from '../lib/redisClient.js';
+import { Queue } from 'bullmq';
 
 export type RiskLevel = 'healthy' | 'at_risk' | 'churning';
 
@@ -197,6 +199,14 @@ class CustomerHealthScoreService {
 
   async batchCompute(limit = 500): Promise<void> {
     try {
+      const redis = getRedisClient();
+      if (redis) {
+        const queue = new Queue('retention-jobs', { connection: redis });
+        await queue.add('health-score-batch', { cursor: 0, batchSize: 100 });
+        logger.info('[HealthScore] Enqueued batch compute job via BullMQ');
+        return;
+      }
+
       const allUsers = await db.select({ id: users.id }).from(users).limit(limit);
       const results = await Promise.allSettled(
         allUsers.map((u) => this.computeAndStore(u.id))
@@ -205,6 +215,30 @@ class CustomerHealthScoreService {
       logger.info(`[HealthScore] Batch complete: ${allUsers.length - failed} updated, ${failed} failed`);
     } catch (err) {
       logger.error('[HealthScore] Batch compute failed:', err);
+    }
+  }
+
+  async batchComputePaged(cursor: number | string, batchSize: number): Promise<string | null> {
+    try {
+      // Drizzle handles string vs number ID mapping, but let's assume it's string based on schema varchar(id)
+      const batch = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(gt(users.id, String(cursor)))
+        .orderBy(asc(users.id))
+        .limit(batchSize);
+
+      if (batch.length === 0) return null;
+
+      for (const u of batch) {
+        await this.computeAndStore(u.id);
+      }
+
+      const lastId = batch[batch.length - 1].id;
+      return lastId;
+    } catch (err) {
+      logger.error('[HealthScore] Batch compute paged failed:', err);
+      throw err;
     }
   }
 }

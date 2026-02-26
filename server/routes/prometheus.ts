@@ -8,6 +8,8 @@ import {
   type RegistryContentType,
 } from 'prom-client';
 
+import { tfWorkerPool } from '../lib/tensorflowWorkerPool';
+
 const registry = new Registry();
 
 collectDefaultMetrics({ register: registry, prefix: 'maxbooster_' });
@@ -81,6 +83,15 @@ export const stripePaymentTotal = new Counter({
   help: 'Total Stripe payment events',
   labelNames: ['status'],
   registers: [registry],
+});
+
+export const tfWorkerQueueDepth = new Gauge({
+  name: 'maxbooster_tf_worker_queue_depth',
+  help: 'Current depth of the TensorFlow worker inference queue',
+  registers: [registry],
+  collect() {
+    this.set(tfWorkerPool.getQueueDepth());
+  }
 });
 
 const router = Router();

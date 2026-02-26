@@ -442,21 +442,23 @@ app.use((req, res, next) => {
     reEngagementService.startDailyCron();
     logger.info('[Retention] Re-engagement cron started');
 
-    setInterval(async () => {
-      try {
-        const { dunningService } = await import('./services/dunningService.js');
-        await dunningService.processPendingSteps();
-      } catch (e) { /* non-critical */ }
-    }, 6 * 60 * 60 * 1000);
-    logger.info('[Retention] Dunning processor started (6h interval)');
+    const { getRetentionQueue, startRetentionWorker } = await import('./lib/scaleJobQueue.js');
+    const retentionQueue = getRetentionQueue();
+    startRetentionWorker();
 
     setInterval(async () => {
       try {
-        const { customerHealthScoreService } = await import('./services/customerHealthScoreService.js');
-        await customerHealthScoreService.batchCompute();
+        await retentionQueue.add('dunning-process', { limit: 50 });
+      } catch (e) { /* non-critical */ }
+    }, 6 * 60 * 60 * 1000);
+    logger.info('[Retention] Dunning processor enqueued (6h interval)');
+
+    setInterval(async () => {
+      try {
+        await retentionQueue.add('health-score-batch', { cursor: 0, batchSize: 100 });
       } catch (e) { /* non-critical */ }
     }, 24 * 60 * 60 * 1000);
-    logger.info('[Retention] Health score batch processor started (24h interval)');
+    logger.info('[Retention] Health score batch processor enqueued (24h interval)');
   } catch (retentionErr) {
     logger.warn('[Retention] Background services failed to start:', retentionErr);
   }

@@ -14,9 +14,10 @@
 
 import { db } from '../db.js';
 import { customerHealthScores, users } from '@shared/schema';
-import { and, lte, gte, isNull, or, sql } from 'drizzle-orm';
+import { and, lte, gte, isNull, or, sql, eq } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { emailService } from './emailService.js';
+import { withLock } from '../lib/distributedLock.js';
 
 function buildReEngagementHtml(firstName: string, daysSinceLogin: number, appUrl: string): string {
   const urgencyMessage = daysSinceLogin >= 20
@@ -66,78 +67,77 @@ class ReEngagementService {
   private isRunning = false;
 
   async runDailyCheck(): Promise<void> {
-    if (this.isRunning) {
-      logger.warn('[ReEngagement] Daily check already running, skipping');
-      return;
-    }
-
-    this.isRunning = true;
-    try {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-      const eligibleUsers = await db
-        .select({
-          userId: customerHealthScores.userId,
-          daysSinceLastLogin: customerHealthScores.daysSinceLastLogin,
-          riskLevel: customerHealthScores.riskLevel,
-        })
-        .from(customerHealthScores)
-        .where(
-          and(
-            gte(customerHealthScores.daysSinceLastLogin!, 10),
-            lte(customerHealthScores.daysSinceLastLogin!, 30),
-            or(
-              isNull(customerHealthScores.reEngagementEmailSentAt),
-              lte(customerHealthScores.reEngagementEmailSentAt!, sevenDaysAgo)
-            )
-          )
-        )
-        .limit(200);
-
-      logger.info(`[ReEngagement] Found ${eligibleUsers.length} eligible users for re-engagement`);
-
-      let sent = 0;
-      for (const { userId, daysSinceLastLogin } of eligibleUsers) {
-        try {
-          const userRows = await db
-            .select({ email: users.email, firstName: users.firstName, notificationSettings: users.notificationSettings })
-            .from(users)
-            .where(sql`${users.id} = ${userId}`)
-            .limit(1);
-
-          if (!userRows.length || !userRows[0].email) continue;
-
-          const { email, firstName, notificationSettings } = userRows[0];
-
-          const settings = notificationSettings as Record<string, boolean> | null;
-          if (settings?.emailMarketing === false) continue;
-
-          const displayName = firstName ?? email.split('@')[0];
-          const appUrl = process.env.APP_URL ?? 'https://maxbooster.app';
-          const html = buildReEngagementHtml(displayName, daysSinceLastLogin ?? 10, appUrl);
-
-          await emailService.sendTransactional(
-            email,
-            `${displayName}, your music career tools are waiting`,
-            html
-          );
-
-          await db
-            .update(customerHealthScores)
-            .set({ reEngagementEmailSentAt: new Date() })
-            .where(sql`${customerHealthScores.userId} = ${userId}`);
-
-          sent++;
-        } catch (err) {
-          logger.error(`[ReEngagement] Failed to send to user ${userId}:`, err);
-        }
+    await withLock('reengagement-daily', 23 * 60 * 60, async () => {
+      if (this.isRunning) {
+        logger.warn('[ReEngagement] Daily check already running, skipping');
+        return;
       }
 
-      logger.info(`[ReEngagement] Daily check complete: ${sent} emails sent`);
-    } finally {
-      this.isRunning = false;
-    }
+      this.isRunning = true;
+      try {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const eligibleUsers = await db
+          .select({
+            userId: customerHealthScores.userId,
+            daysSinceLastLogin: customerHealthScores.daysSinceLastLogin,
+            riskLevel: customerHealthScores.riskLevel,
+            email: users.email,
+            firstName: users.firstName,
+            notificationSettings: users.notificationSettings,
+          })
+          .from(customerHealthScores)
+          .innerJoin(users, eq(users.id, customerHealthScores.userId))
+          .where(
+            and(
+              gte(customerHealthScores.daysSinceLastLogin!, 10),
+              lte(customerHealthScores.daysSinceLastLogin!, 30),
+              or(
+                isNull(customerHealthScores.reEngagementEmailSentAt),
+                lte(customerHealthScores.reEngagementEmailSentAt!, sevenDaysAgo)
+              )
+            )
+          )
+          .limit(200);
+
+        logger.info(`[ReEngagement] Found ${eligibleUsers.length} eligible users for re-engagement`);
+
+        let sent = 0;
+        for (const user of eligibleUsers) {
+          try {
+            const { userId, daysSinceLastLogin, email, firstName, notificationSettings } = user;
+            if (!email) continue;
+
+            const settings = notificationSettings as Record<string, boolean> | null;
+            if (settings?.emailMarketing === false) continue;
+
+            const displayName = firstName ?? email.split('@')[0];
+            const appUrl = process.env.APP_URL ?? 'https://maxbooster.app';
+            const html = buildReEngagementHtml(displayName, daysSinceLastLogin ?? 10, appUrl);
+
+            await emailService.sendTransactional(
+              email,
+              `${displayName}, your music career tools are waiting`,
+              html
+            );
+
+            await db
+              .update(customerHealthScores)
+              .set({ reEngagementEmailSentAt: new Date() })
+              .where(eq(customerHealthScores.userId, userId));
+
+            sent++;
+          } catch (err) {
+            logger.error(`[ReEngagement] Failed to send to user ${user.userId}:`, err);
+          }
+        }
+
+        logger.info(`[ReEngagement] Daily check complete: ${sent} emails sent`);
+      } finally {
+        this.isRunning = false;
+      }
+    });
   }
 
   startDailyCron(): void {

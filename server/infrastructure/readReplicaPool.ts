@@ -187,6 +187,10 @@ class ReadReplicaPool {
            normalized.startsWith('EXPLAIN');
   }
 
+  async queryRead(text: string, params?: any[]): Promise<any> {
+    return this.query(text, params, true);
+  }
+
   async getPrimaryClient(): Promise<PoolClient> {
     return await this.primaryPool.connect();
   }
@@ -235,6 +239,7 @@ class ReadReplicaPool {
 export const readReplicaPool = {
   getInstance: () => ReadReplicaPool.getInstance(),
   initialize: (config: ReadReplicaPoolConfig) => ReadReplicaPool.initializeWithConfig(config),
+  queryRead: (text: string, params?: any[]) => ReadReplicaPool.getInstance().queryRead(text, params),
 };
 
 export { ReadReplicaPool, ReadReplicaPoolConfig, ReplicaConfig };
