@@ -19,7 +19,12 @@ export function getRedisClient(): Redis {
     },
   });
 
-  _redis.on('connect', () => logger.info('✅ [Redis] Connected'));
+  _redis.on('connect', () => {
+    logger.info('✅ [Redis] Connected');
+    _redis!.config('SET', 'maxmemory-policy', 'allkeys-lru').catch(() => {
+      logger.warn('[Redis] Could not set maxmemory-policy (managed Redis may restrict CONFIG SET — set it via provider dashboard)');
+    });
+  });
   _redis.on('error', (err) => logger.error('[Redis] Connection error:', err.message));
   _redis.on('reconnecting', () => logger.warn('[Redis] Reconnecting...'));
 

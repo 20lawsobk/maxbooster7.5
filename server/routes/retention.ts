@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { customerHealthScoreService } from '../services/customerHealthScoreService.js';
+import { pushFeatureEvent } from '../services/featureEventBuffer.js';
 
 const router = Router();
 
@@ -113,7 +114,7 @@ router.post('/feature-event', requireAuth, async (req: any, res) => {
     const userId = req.user?.id ?? req.session?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    await db.insert(featureEvents).values({
+    await pushFeatureEvent({
       userId,
       featureName: parsed.data.featureName,
       action: parsed.data.action,

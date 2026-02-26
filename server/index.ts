@@ -383,6 +383,15 @@ app.use((req, res, next) => {
     logger.warn(`⚠️ Rate limiter not available: ${e.message}`);
   }
 
+  // Admission control — shed excess concurrent requests to protect the DB under spike load
+  try {
+    const { admissionControl } = await import('./middleware/admissionControl.js');
+    app.use('/api', admissionControl);
+    logger.info('✅ Admission control applied (max concurrent: ' + (process.env.MAX_CONCURRENT_REQUESTS ?? '5000') + ')');
+  } catch (e: any) {
+    logger.warn(`⚠️ Admission control not available: ${e.message}`);
+  }
+
   // API response cache - invalidate on mutations, cache on reads
   try {
     const { invalidateCacheOnMutation, cacheMiddleware } = await import('./middleware/apiCache.js');
@@ -459,6 +468,13 @@ app.use((req, res, next) => {
       } catch (e) { /* non-critical */ }
     }, 24 * 60 * 60 * 1000);
     logger.info('[Retention] Health score batch processor enqueued (24h interval)');
+
+    setInterval(async () => {
+      try {
+        await retentionQueue.add('feature-event-flush', {});
+      } catch (e) { /* non-critical */ }
+    }, 60 * 1000);
+    logger.info('[Retention] Feature event buffer flush enqueued (60s interval)');
   } catch (retentionErr) {
     logger.warn('[Retention] Background services failed to start:', retentionErr);
   }
