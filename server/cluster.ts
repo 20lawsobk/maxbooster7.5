@@ -14,12 +14,14 @@ if (DISABLE_CLUSTER || !isProduction) {
   require(appEntry);
 } else {
   const numCPUs = os.cpus().length;
-  const totalMemGB = os.totalmem() / (1024 ** 3);
 
-  // Each worker running TF models + Express needs roughly 4 GB.
-  // Cap workers by both CPU count and available RAM so we never OOM.
-  const cpuLimit  = Math.max(1, numCPUs - 1);          // leave 1 CPU for the primary
-  const memLimit  = Math.max(1, Math.floor(totalMemGB / 4)); // 4 GB per worker minimum
+  // Use FREE memory (not total) — on a busy machine total can be 64 GB while only
+  // 16 GB is actually available.  Each TF-loaded Express worker needs ~6 GB headroom.
+  const freeMemGB = os.freemem() / (1024 ** 3);
+
+  // Cap workers by both CPU count and AVAILABLE RAM so we never OOM.
+  const cpuLimit = Math.max(1, numCPUs - 1);            // leave 1 CPU for the primary
+  const memLimit = Math.max(1, Math.floor(freeMemGB / 6)); // 6 GB per worker (conservative)
 
   // CLUSTER_WORKERS env var gives the operator an explicit override.
   const envOverride = process.env.CLUSTER_WORKERS ? parseInt(process.env.CLUSTER_WORKERS, 10) : null;
@@ -33,7 +35,7 @@ if (DISABLE_CLUSTER || !isProduction) {
 
   console.log(
     `[Cluster] Primary ${process.pid} — forking ${workerCount} workers ` +
-    `(CPUs: ${numCPUs}, RAM: ${totalMemGB.toFixed(1)} GB, limit: cpu=${cpuLimit} mem=${memLimit})`
+    `(CPUs: ${numCPUs}, free RAM: ${freeMemGB.toFixed(1)} GB, limit: cpu=${cpuLimit} mem=${memLimit})`
   );
 
   for (let i = 0; i < workerCount; i++) {
