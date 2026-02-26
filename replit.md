@@ -168,6 +168,27 @@ The `@replit/object-storage` Client exposes these methods (NOT `uploadFromBuffer
 
 The old `uploadFromBuffer` / `downloadAsBuffer` names do not exist and cause a silent 500 error (image processes fine, storage step fails).
 
+## Environment Variables (Feb 2026 — Fully Configured)
+
+All API keys and secrets are now set in shared environment:
+- Stripe live keys (STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET)
+- Redis session/cache/pub-sub (REDIS_URL — mandatory in production)
+- SendGrid email (SENDGRID_API_KEY)
+- Sentry error monitoring (SENTRY_DSN)
+- Replit Object Storage (REPLIT_BUCKET_ID, STORAGE_PROVIDER=replit)
+- Social OAuth: Facebook, Google, Instagram, LinkedIn, TikTok, Twitter, YouTube, Threads, Spotify
+- BoosterState (BOOSTERSTATE_PORT=9877, BOOSTERSTATE_SECRET)
+- Admin credentials (ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_USERNAME)
+- VAPID push keys, LabelGrid distribution token, GitHub PAT
+
+## Storage System (Hybrid — Active)
+
+STORAGE_PROVIDER=replit activates the full three-layer hybrid system:
+- **Hot tier**: Replit Object Storage (`@replit/object-storage`, bucket: `REPLIT_BUCKET_ID`)
+- **Cold tier**: Pocket Dimension compressed local storage
+- **Metadata plane**: Pocket Dimension Fabric (DB-backed, distributed)
+- **State KV**: BoosterState Rust binary (port 9877, WAL + CRC32)
+
 ## Recent Fixes (Feb 2026)
 
 - **File/image uploads platform-wide**: Root cause was `uploadFromBuffer` / `downloadAsBuffer` API calls in both `storageService.ts` and `hybridStorageService.ts`. These methods do not exist on the current `@replit/object-storage` SDK. Fixed to `uploadFromBytes` / `downloadAsBytes` with `Buffer.from(result.value)` wrapping for the download path.
