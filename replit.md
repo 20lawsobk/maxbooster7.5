@@ -6,20 +6,23 @@ AI-Powered Music Career Management Platform by B-Lawz Music.
 
 - **Frontend**: React + TypeScript + Vite (built to `dist/public/`, served by Express in production)
 - **Backend**: Express.js (Node.js/TypeScript), bundled to `dist/index.cjs` via esbuild
+- **Clustering**: `server/cluster.ts` → `dist/cluster.cjs` is the production entry point; forks `numCPUs - 1` workers, auto-restarts dead workers. Disable with `DISABLE_CLUSTER=true`.
 - **Database**: PostgreSQL via Drizzle ORM (Neon serverless driver)
 - **Storage**: Three-layer — Replit Object Storage (hot tier) + Pocket Dimension (cold tier, compressed) + Pocket Dimension Fabric (distributed multi-node, DB-backed metadata plane)
-- **State Engine**: BoosterState (Rust-based KV store with WAL, runs on port 9877)
-- **Build System**: Vite (frontend) + esbuild (backend via `script/build.ts`)
+- **State Engine**: BoosterState (Rust-based KV store with WAL + CRC32 checksums + fsync, runs on port 9877, 32 shards on 16-vCPU)
+- **Build System**: Vite (frontend) + esbuild (backend via `script/build.ts`, builds both `dist/index.cjs` and `dist/cluster.cjs`)
 - **State Management**: Zustand
 - **Styling**: Tailwind CSS v4
 - **Email**: SendGrid
 - **Payments**: Stripe (live keys configured)
 - **Monitoring**: Sentry (errors + distributed tracing) + Prometheus `/metrics` endpoint (Grafana-compatible)
-- **Cache**: `DistributedCache` backed by Redis (shared cross-instance, TTL, pattern invalidation; in-memory fallback)
+- **Cache**: `DistributedCache` backed by Redis (mandatory in production — throws at startup if REDIS_URL missing; fails to cache-miss on Redis error rather than using per-instance fallback)
+- **Rate Limiting**: `DistributedRateLimiter` — atomic Redis Lua sliding window; mandatory Redis in production; fails-open on Redis error rather than using per-instance in-memory tracking
 - **WebSocket Broadcasting**: Redis Pub/Sub (`ws:user:notify`, `ws:broadcast` channels) for cross-instance delivery
-- **TF Inference**: 4-worker `TensorFlowWorkerPool` (`.cjs` workers, event loop isolated)
-- **Sessions**: `connect-redis` (Redis-backed, survives restarts)
+- **TF Inference**: `os.cpus()-2` worker `TensorFlowWorkerPool` (`.cjs` workers, event loop isolated, max queue depth 500)
+- **Sessions**: `connect-redis` (Redis-backed, mandatory in production — process.exit(1) if Redis unavailable)
 - **Job Queues**: BullMQ (Redis-backed, 3 retries, exponential backoff, DLQ)
+- **Autonomous Service**: In-memory Maps bounded (processingQueue ≤ 1000, learningData ≤ 500 via FIFO eviction); metrics persisted to Redis every 60s and restored on startup
 
 ## Key Files
 

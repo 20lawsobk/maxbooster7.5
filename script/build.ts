@@ -92,6 +92,7 @@ async function buildAll() {
   }
 
   await rm("dist/index.cjs", { force: true });
+  await rm("dist/cluster.cjs", { force: true });
 
   console.log("building server...");
   const pkg = JSON.parse(await readFile("package.json", "utf-8"));
@@ -111,20 +112,31 @@ async function buildAll() {
 
   console.log(`Externalizing ${uniqueExternals.length} packages to reduce bundle size`);
 
-  await esbuild({
-    entryPoints: ["server/index.ts"],
-    platform: "node",
+  const sharedBuildConfig = {
+    platform: "node" as const,
     bundle: true,
-    format: "cjs",
-    outfile: "dist/index.cjs",
+    format: "cjs" as const,
     define: {
       "process.env.NODE_ENV": '"production"',
     },
     minify: true,
     external: uniqueExternals,
-    logLevel: "info",
+    logLevel: "info" as const,
     treeShaking: true,
-  });
+  };
+
+  await Promise.all([
+    esbuild({
+      ...sharedBuildConfig,
+      entryPoints: ["server/index.ts"],
+      outfile: "dist/index.cjs",
+    }),
+    esbuild({
+      ...sharedBuildConfig,
+      entryPoints: ["server/cluster.ts"],
+      outfile: "dist/cluster.cjs",
+    }),
+  ]);
 }
 
 async function triggerGitHubWorkflows() {

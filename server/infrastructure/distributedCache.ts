@@ -14,6 +14,9 @@ interface CacheStats {
   memoryUsage: number;
 }
 
+const isProductionEnv = (): boolean =>
+  process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+
 class InMemoryCache {
   private cache: Map<string, { value: string; expires: number }> = new Map();
 
@@ -75,8 +78,15 @@ export class DistributedCache {
 
   async connect(): Promise<void> {
     const url = process.env.REDIS_URL;
+
     if (!url) {
-      logger.warn('[DistributedCache] REDIS_URL not set — using in-memory cache');
+      if (isProductionEnv()) {
+        throw new Error(
+          '[DistributedCache] REDIS_URL is required in production. ' +
+          'Shared cache cannot function without Redis — per-instance in-memory caches diverge across cluster workers.'
+        );
+      }
+      logger.warn('[DistributedCache] REDIS_URL not set — using in-memory cache (development only)');
       return;
     }
 
@@ -100,7 +110,14 @@ export class DistributedCache {
 
       this.redis.on('error', (err) => {
         this._redisReady = false;
-        logger.warn(`[DistributedCache] Redis error — falling back to in-memory: ${err.message}`);
+        if (isProductionEnv()) {
+          logger.error(
+            `[DistributedCache] Redis error in production — cache misses will be returned until Redis recovers. ` +
+            `In-memory fallback is DISABLED in production to prevent cross-worker cache divergence. Error: ${err.message}`
+          );
+        } else {
+          logger.warn(`[DistributedCache] Redis error (dev) — falling back to in-memory: ${err.message}`);
+        }
       });
 
       this.redis.on('close', () => {
@@ -111,7 +128,13 @@ export class DistributedCache {
       this._redisReady = true;
       logger.info('✅ [DistributedCache] Redis backend ready');
     } catch (err: any) {
-      logger.warn(`[DistributedCache] Could not connect to Redis (${err.message}) — using in-memory cache`);
+      if (isProductionEnv()) {
+        throw new Error(
+          `[DistributedCache] Could not connect to Redis in production (${err.message}). ` +
+          `Redis is required — cannot start without a shared cache layer.`
+        );
+      }
+      logger.warn(`[DistributedCache] Could not connect to Redis (${err.message}) — using in-memory cache (dev only)`);
       this.redis = null;
       this._redisReady = false;
     }
@@ -123,14 +146,24 @@ export class DistributedCache {
 
   async get<T>(key: string): Promise<T | null> {
     try {
-      let value: string | null = null;
-
       if (this.redis && this._redisReady) {
-        value = await this.redis.get(key);
-      } else {
-        value = await this.fallbackCache.get(key);
+        const value = await this.redis.get(key);
+        if (value) {
+          this.stats.hits++;
+          return JSON.parse(value) as T;
+        }
+        this.stats.misses++;
+        return null;
       }
 
+      if (isProductionEnv()) {
+        // Redis is down in production — return a cache miss rather than reading from
+        // a per-instance in-memory store that diverges across cluster workers.
+        this.stats.misses++;
+        return null;
+      }
+
+      const value = await this.fallbackCache.get(key);
       if (value) {
         this.stats.hits++;
         return JSON.parse(value) as T;
@@ -150,11 +183,24 @@ export class DistributedCache {
     try {
       if (this.redis && this._redisReady) {
         await this.redis.setex(key, ttl, serialized);
-      } else {
-        await this.fallbackCache.set(key, serialized, ttl);
+        this.stats.size++;
+        return;
       }
+
+      if (isProductionEnv()) {
+        // Redis is down — skip the write entirely rather than populating a per-instance cache
+        // that would diverge from other cluster workers.
+        logger.warn(`[DistributedCache] Skipping cache set for key "${key}" — Redis unavailable in production`);
+        return;
+      }
+
+      await this.fallbackCache.set(key, serialized, ttl);
       this.stats.size++;
     } catch {
+      if (isProductionEnv()) {
+        // On Redis write error in production: skip, don't fall back.
+        return;
+      }
       await this.fallbackCache.set(key, serialized, ttl);
     }
   }
@@ -163,11 +209,15 @@ export class DistributedCache {
     try {
       if (this.redis && this._redisReady) {
         await this.redis.del(key);
-      } else {
+        return;
+      }
+      if (!isProductionEnv()) {
         await this.fallbackCache.del(key);
       }
     } catch {
-      await this.fallbackCache.del(key);
+      if (!isProductionEnv()) {
+        await this.fallbackCache.del(key);
+      }
     }
   }
 
@@ -182,9 +232,12 @@ export class DistributedCache {
         }
         return 0;
       }
-      const keys = await this.fallbackCache.keys(pattern);
-      for (const key of keys) await this.fallbackCache.del(key);
-      return keys.length;
+      if (!isProductionEnv()) {
+        const keys = await this.fallbackCache.keys(pattern);
+        for (const key of keys) await this.fallbackCache.del(key);
+        return keys.length;
+      }
+      return 0;
     } catch {
       return 0;
     }
@@ -206,12 +259,14 @@ export class DistributedCache {
     try {
       if (this.redis && this._redisReady) {
         await this.redis.flushdb();
-      } else {
+      } else if (!isProductionEnv()) {
         await this.fallbackCache.flushAll();
       }
       this.stats.size = 0;
     } catch {
-      await this.fallbackCache.flushAll();
+      if (!isProductionEnv()) {
+        await this.fallbackCache.flushAll();
+      }
     }
   }
 
@@ -220,7 +275,7 @@ export class DistributedCache {
     const hitRate = total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) : '0.00';
     return {
       ...this.stats,
-      mode: this._redisReady ? 'redis' : 'in-memory',
+      mode: this._redisReady ? 'redis' : (isProductionEnv() ? 'cache-miss-only' : 'in-memory'),
       hitRate: `${hitRate}%`,
     };
   }

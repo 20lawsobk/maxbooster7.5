@@ -13,6 +13,12 @@ import type { SocialPost, AdCampaign, Release } from '@shared/schema';
 import { logger } from '../logger.js';
 import { EventEmitter } from 'events';
 import sharp from 'sharp';
+import { distributedCache } from '../infrastructure/distributedCache.js';
+
+const MAX_PROCESSING_QUEUE = 1000;
+const MAX_LEARNING_DATA = 500;
+const METRICS_CACHE_KEY = 'autonomous:metrics';
+const METRICS_PERSIST_INTERVAL_MS = 60_000;
 
 interface AutonomousConfig {
   socialPosting: boolean;
@@ -87,6 +93,43 @@ export class AutonomousService extends EventEmitter {
     this.config = this.getDefaultConfig();
     this.metrics = this.initializeMetrics();
     this.loadAutonomousWhitelist();
+    this.loadMetricsFromCache();
+  }
+
+  private boundedMapSet(map: Map<string, any>, key: string, value: any, maxSize: number): void {
+    if (map.size >= maxSize && !map.has(key)) {
+      const firstKey = map.keys().next().value;
+      if (firstKey !== undefined) map.delete(firstKey);
+    }
+    map.set(key, value);
+  }
+
+  private addToProcessingQueue(key: string, value: any): void {
+    this.boundedMapSet(this.processingQueue, key, value, MAX_PROCESSING_QUEUE);
+  }
+
+  private addToLearningData(key: string, value: any): void {
+    this.boundedMapSet(this.learningData, key, value, MAX_LEARNING_DATA);
+  }
+
+  private async loadMetricsFromCache(): Promise<void> {
+    try {
+      const cached = await distributedCache.get<AutonomousMetrics>(METRICS_CACHE_KEY);
+      if (cached) {
+        this.metrics = { ...cached, lastUpdated: new Date(cached.lastUpdated) };
+        logger.info('[AUTONOMOUS] Metrics restored from shared cache');
+      }
+    } catch (err) {
+      logger.warn('[AUTONOMOUS] Could not load metrics from cache:', err);
+    }
+  }
+
+  private async persistMetricsToCache(): Promise<void> {
+    try {
+      await distributedCache.set(METRICS_CACHE_KEY, this.metrics, 3600);
+    } catch (err) {
+      logger.warn('[AUTONOMOUS] Could not persist metrics to cache:', err);
+    }
   }
 
   private getDefaultConfig(): AutonomousConfig {
@@ -806,6 +849,12 @@ export class AutonomousService extends EventEmitter {
     }, 3600000);
 
     this.operationIntervals.set('analytics', analyticsInterval);
+
+    const metricsInterval = setInterval(async () => {
+      await this.persistMetricsToCache();
+    }, METRICS_PERSIST_INTERVAL_MS);
+
+    this.operationIntervals.set('metrics_persist', metricsInterval);
 
     logger.info('[AUTONOMOUS] 24/7 operations started successfully');
     this.emit('operationsStarted');
