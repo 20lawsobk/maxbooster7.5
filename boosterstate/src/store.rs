@@ -258,6 +258,25 @@ impl<W: Wal> WalStore<W> {
             wal,
         }
     }
+
+    /// Replay a sequence of WAL records recovered from disk into the in-memory
+    /// store without writing them back to the WAL (they are already on disk).
+    pub fn replay(&mut self, records: Vec<crate::wal::WalRecord>) {
+        use crate::wal::WalRecord;
+        use std::time::SystemTime;
+        let now = SystemTime::now();
+        for record in records {
+            match record {
+                WalRecord::KvSet { key, entry } => {
+                    self.inner.kv_set(key, entry);
+                }
+                WalRecord::QueuePush { ns, ws, queue, item } => {
+                    self.inner.queue_push(ns, ws, queue, item);
+                }
+            }
+        }
+        let _ = now; // suppress unused warning
+    }
 }
 
 impl<W: Wal> BoosterStore for WalStore<W> {

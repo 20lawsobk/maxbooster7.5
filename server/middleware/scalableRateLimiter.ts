@@ -198,27 +198,51 @@ export class DistributedRateLimiter {
     this.redisClient = redisClient;
   }
 
+  // Single atomic Lua script — replaces the previous 4-round-trip approach
+  // (ZREMRANGEBYSCORE → ZCARD → ZADD → PEXPIRE).  Executing all four
+  // operations in one EVAL call eliminates the race condition where two
+  // concurrent requests both pass the ZCARD check before either ZADD lands.
+  private static readonly SLIDING_WINDOW_LUA = `
+    local key        = KEYS[1]
+    local now        = tonumber(ARGV[1])
+    local window_ms  = tonumber(ARGV[2])
+    local max_req    = tonumber(ARGV[3])
+    local window_start = now - window_ms
+
+    redis.call('ZREMRANGEBYSCORE', key, 0, window_start)
+    local count = tonumber(redis.call('ZCARD', key))
+
+    if count >= max_req then
+      return {1, 0}
+    end
+
+    redis.call('ZADD', key, now, now .. ':' .. math.random())
+    redis.call('PEXPIRE', key, window_ms)
+
+    return {0, max_req - count - 1}
+  `;
+
   async isRateLimited(key: string): Promise<{ limited: boolean; remaining: number }> {
     if (this.redisClient) {
       try {
         const redisKey = `ratelimit:${key}`;
         const now = Date.now();
-        const windowStart = now - this.config.windowMs;
 
-        await this.redisClient.zremrangebyscore(redisKey, 0, windowStart);
-        
-        const count = await this.redisClient.zcard(redisKey);
-        
-        if (count >= this.config.maxRequests) {
-          return { limited: true, remaining: 0 };
-        }
+        const result = await this.redisClient.eval(
+          DistributedRateLimiter.SLIDING_WINDOW_LUA,
+          1,
+          redisKey,
+          String(now),
+          String(this.config.windowMs),
+          String(this.config.maxRequests)
+        ) as [number, number];
 
-        await this.redisClient.zadd(redisKey, now, `${now}:${Math.random()}`);
-        await this.redisClient.pexpire(redisKey, this.config.windowMs);
-
-        return { limited: false, remaining: this.config.maxRequests - count - 1 };
+        return {
+          limited: result[0] === 1,
+          remaining: Math.max(0, result[1] ?? 0),
+        };
       } catch (error) {
-        logger.warn('Redis rate limit failed, falling back to local');
+        logger.warn('Redis rate limit Lua eval failed, falling back to local');
       }
     }
 

@@ -100,8 +100,11 @@ impl ShardHandle {
     pub fn spawn<C: Clock>(shard_id: usize, data_dir: PathBuf, clock: C) -> anyhow::Result<Self> {
         std::fs::create_dir_all(&data_dir)?;
         let wal_path = data_dir.join(format!("shard-{}.wal", shard_id));
-        let wal = FileWal::open(wal_path)?;
+        let (wal, replay_records) = FileWal::open(wal_path)?;
         let mut store = WalStore::new(wal);
+        if !replay_records.is_empty() {
+            store.replay(replay_records);
+        }
 
         let (tx, mut rx) = mpsc::channel::<ShardCommand>(4096);
 

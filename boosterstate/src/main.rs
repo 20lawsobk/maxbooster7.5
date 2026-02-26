@@ -390,7 +390,7 @@ async fn main() -> anyhow::Result<()> {
     let n_shards: usize = std::env::var("BOOSTERSTATE_SHARDS")
         .ok()
         .and_then(|v| v.parse().ok())
-        .unwrap_or(4);
+        .unwrap_or_else(|| num_cpus::get() * 2);
 
     let data_dir = std::env::var("BOOSTERSTATE_DATA_DIR")
         .unwrap_or_else(|_| "./boosterstate-data".to_string());

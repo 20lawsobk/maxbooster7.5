@@ -422,6 +422,8 @@ class StorageService {
   private provider: StorageProvider;
 
   constructor() {
+    const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+
     if (config.storage.provider === 's3') {
       logger.info('📦 Using S3 storage provider');
       this.provider = new S3StorageProvider();
@@ -429,7 +431,18 @@ class StorageService {
       logger.info('📦 Using Hybrid Storage provider (Replit hot + Pocket Dimension cold)');
       this.provider = new HybridStorageProvider();
     } else {
-      logger.info('📦 Using local storage provider');
+      if (isProduction) {
+        // Local filesystem storage loses ALL data when the container restarts.
+        // In production you must configure STORAGE_PROVIDER=replit or =s3 with
+        // the appropriate credentials.  Failing loudly here prevents silent
+        // data loss that would otherwise go unnoticed until a restart.
+        throw new Error(
+          '[StorageService] FATAL: Local filesystem storage is not allowed in production. ' +
+          'Set STORAGE_PROVIDER=replit (with REPLIT_BUCKET_ID) or STORAGE_PROVIDER=s3 ' +
+          '(with S3_BUCKET + credentials) before starting the server.'
+        );
+      }
+      logger.info('📦 Using local storage provider (development only)');
       this.provider = new LocalStorageProvider();
     }
   }

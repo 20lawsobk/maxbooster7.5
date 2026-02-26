@@ -40,6 +40,14 @@ interface WorkerState {
   busy: boolean;
 }
 
+// Leave 2 vCPUs for Express + DB threads; use all remaining for TF inference.
+// On the 16-vCPU reserved VM this yields 14 isolated TF workers.
+const DEFAULT_POOL_SIZE = Math.max(1, os.cpus().length - 2);
+
+// Reject inference requests when the pending queue exceeds this depth.
+// Prevents unbounded memory growth under sustained AI load.
+const MAX_QUEUE_DEPTH = 500;
+
 class TensorFlowWorkerPool {
   private workers: WorkerState[] = [];
   private queue: InferenceRequest[] = [];
@@ -48,7 +56,11 @@ class TensorFlowWorkerPool {
   private readonly poolSize: number;
 
   constructor(poolSize?: number) {
-    this.poolSize = poolSize ?? Math.max(1, Math.min(os.cpus().length - 1, 4));
+    this.poolSize = poolSize ?? DEFAULT_POOL_SIZE;
+  }
+
+  getQueueDepth(): number {
+    return this.queue.length;
   }
 
   async initialize(): Promise<void> {
@@ -188,6 +200,14 @@ class TensorFlowWorkerPool {
   }
 
   infer(modelId: string, inputData: number[], inputShape: number[]): Promise<number[]> {
+    if (this.queue.length >= MAX_QUEUE_DEPTH) {
+      return Promise.reject(
+        new Error(
+          `TF inference queue full (depth=${this.queue.length}/${MAX_QUEUE_DEPTH}). ` +
+          `Server is under heavy AI load — retry after a brief pause.`
+        )
+      );
+    }
     return new Promise((resolve, reject) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const req: InferenceRequest = { id, modelId, inputData, inputShape, resolve, reject };
