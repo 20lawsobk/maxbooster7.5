@@ -14,7 +14,12 @@ AI-Powered Music Career Management Platform by B-Lawz Music.
 - **Styling**: Tailwind CSS v4
 - **Email**: SendGrid
 - **Payments**: Stripe (live keys configured)
-- **Monitoring**: Sentry
+- **Monitoring**: Sentry (errors + distributed tracing) + Prometheus `/metrics` endpoint (Grafana-compatible)
+- **Cache**: `DistributedCache` backed by Redis (shared cross-instance, TTL, pattern invalidation; in-memory fallback)
+- **WebSocket Broadcasting**: Redis Pub/Sub (`ws:user:notify`, `ws:broadcast` channels) for cross-instance delivery
+- **TF Inference**: 4-worker `TensorFlowWorkerPool` (`.cjs` workers, event loop isolated)
+- **Sessions**: `connect-redis` (Redis-backed, survives restarts)
+- **Job Queues**: BullMQ (Redis-backed, 3 retries, exponential backoff, DLQ)
 
 ## Key Files
 

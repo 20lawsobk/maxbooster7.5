@@ -3,6 +3,12 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { parse as parseUrl } from 'url';
 import { parse as parseCookie } from 'cookie';
 import { logger } from '../logger.js';
+import {
+  initRedisPubSub,
+  registerHandlers,
+  publishUserNotification,
+  publishBroadcast,
+} from './redisPubSub.js';
 
 export { studioCollabServer, StudioCollabServer } from './studioCollabServer.js';
 export {
@@ -157,8 +163,8 @@ function initializeNotificationServer(httpServer: HttpServer): void {
   logger.info('General notification WebSocket server initialized at /ws');
 }
 
-// Send notification to a specific user
-export function sendNotificationToUser(userId: string, notification: object): void {
+// Deliver a notification to connections on THIS instance only
+function deliverLocalUserNotification(userId: string, notification: object): void {
   const connections = userConnections.get(userId);
   if (connections && connections.size > 0) {
     const message = JSON.stringify({ type: 'notification', data: notification });
@@ -167,12 +173,10 @@ export function sendNotificationToUser(userId: string, notification: object): vo
         client.send(message);
       }
     });
-    logger.info(`Sent notification to user ${userId} (${connections.size} connections)`);
   }
 }
 
-// Broadcast to all notification clients
-export function broadcastNotification(notification: object): void {
+function deliverLocalBroadcast(notification: object): void {
   const message = JSON.stringify({ type: 'notification', data: notification });
   notificationClients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
@@ -181,11 +185,35 @@ export function broadcastNotification(notification: object): void {
   });
 }
 
+// Send notification to a specific user — publishes to Redis so ALL instances deliver it
+export function sendNotificationToUser(userId: string, notification: object): void {
+  // Publish cross-instance (Redis subscriber on every instance calls deliverLocalUserNotification)
+  publishUserNotification(userId, notification).catch(() => {
+    // Redis unavailable — fall back to local delivery only
+    deliverLocalUserNotification(userId, notification);
+  });
+  // Also deliver locally without waiting for the Redis round-trip
+  deliverLocalUserNotification(userId, notification);
+  logger.info(`Sent notification to user ${userId}`);
+}
+
+// Broadcast to all notification clients on all instances
+export function broadcastNotification(notification: object): void {
+  publishBroadcast(notification).catch(() => {
+    deliverLocalBroadcast(notification);
+  });
+  deliverLocalBroadcast(notification);
+}
+
 // Initialize the realtime collaboration server
 export async function initializeRealtimeServer(httpServer: HttpServer): Promise<void> {
   try {
     // Initialize general notification WebSocket first
     initializeNotificationServer(httpServer);
+
+    // Wire Redis Pub/Sub for cross-instance WebSocket broadcasting
+    registerHandlers(deliverLocalUserNotification, deliverLocalBroadcast);
+    await initRedisPubSub();
 
     const { studioCollabServer } = await import('./studioCollabServer.js');
     

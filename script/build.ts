@@ -61,6 +61,7 @@ const forceExternal = [
   "connect-redis",
   "ioredis",
   "bullmq",
+  "prom-client",
 ];
 
 async function buildAll() {

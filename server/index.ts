@@ -28,6 +28,10 @@ import {
   stripeRawBodyParser,
 } from "./safety/index.ts";
 
+// Scale infrastructure
+import { distributedCache } from "./infrastructure/distributedCache.ts";
+import prometheusRouter, { httpRequestDuration, httpRequestTotal } from "./routes/prometheus.ts";
+
 // Dynamic imports for monitoring services (optional)
 let metricsCollector: any = null;
 let alertingService: any = null;
@@ -235,6 +239,9 @@ app.use((req, res, next) => {
     const sessionConfig = getSessionConfig(activeSessionStore);
     app.use(session(sessionConfig));
     logger.info('✅ Production session store initialized (Redis)');
+
+    // Connect distributed cache to Redis now that Redis is confirmed available
+    await distributedCache.connect();
   } catch (error: any) {
     if (isProduction) {
       // In production, Redis is required - abort if unavailable
@@ -340,6 +347,14 @@ app.use((req, res, next) => {
     logger.warn('Workers not available');
   }
 
+  // Initialize TensorFlow worker pool — keeps inference off the HTTP event loop
+  try {
+    const { tfWorkerPool } = await import('./lib/tensorflowWorkerPool.js');
+    await tfWorkerPool.initialize();
+  } catch (e: any) {
+    logger.warn(`[TFWorkerPool] Initialization skipped: ${e.message}`);
+  }
+
   // Autonomous systems initialization is deferred to after server starts
   // to ensure fast cold start times for landing page loading
 
@@ -395,6 +410,22 @@ app.use((req, res, next) => {
   } catch (e: any) {
     logger.warn(`⚠️ API cache middleware: ${e.message}`);
   }
+
+  // Prometheus metrics endpoint (before routes so it's always reachable)
+  app.use(prometheusRouter);
+
+  // HTTP request duration instrumentation for Prometheus
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const route = req.route?.path || req.path.replace(/\/[0-9a-f-]{36}/gi, '/:id') || 'unknown';
+      const durationSecs = (Date.now() - start) / 1000;
+      const labels = { method: req.method, route, status_code: String(res.statusCode) };
+      httpRequestDuration.observe(labels, durationSecs);
+      httpRequestTotal.inc(labels);
+    });
+    next();
+  });
 
   await registerRoutes(httpServer, app);
 
