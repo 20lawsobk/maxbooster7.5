@@ -41,8 +41,13 @@ interface WorkerState {
 }
 
 // Leave 2 vCPUs for Express + DB threads; use all remaining for TF inference.
-// On the 16-vCPU reserved VM this yields 14 isolated TF workers.
-const DEFAULT_POOL_SIZE = Math.max(1, os.cpus().length - 2);
+// Also cap by available RAM — each TF worker needs ~2.5 GB, keep a 2 GB system buffer.
+// On the 16-vCPU reserved VM with 64 GB free this yields 14 isolated TF workers.
+// On a constrained dev machine with 6-8 GB free this safely yields 1-2 workers.
+const _freeMemGB = os.freemem() / (1024 ** 3);
+const _cpuLimit = Math.max(1, os.cpus().length - 2);
+const _memLimit = Math.max(1, Math.floor((_freeMemGB - 2) / 2.5));
+const DEFAULT_POOL_SIZE = Math.min(_cpuLimit, _memLimit);
 
 // Reject inference requests when the pending queue exceeds this depth.
 // Prevents unbounded memory growth under sustained AI load.
