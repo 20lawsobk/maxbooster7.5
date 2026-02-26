@@ -1,26 +1,36 @@
 /**
- * Feature Event Write Buffer
+ * Feature Event Write Buffer — At-Least-Once Delivery
  *
  * Buffers high-frequency feature tracking events in Redis and flushes them to
- * PostgreSQL in batches via the BullMQ retention queue. This cuts write load
- * by ~10x compared to a direct INSERT on every event.
+ * PostgreSQL in bulk batches via BullMQ. Upgraded from at-most-once (LRANGE+LTRIM)
+ * to at-least-once using a per-batch processing key with TTL crash recovery.
  *
  * Write path:  POST /api/retention/feature-event
- *              → featureEventBuffer.push()
- *              → RPUSH feat:buf (Redis list)
+ *              → pushFeatureEvent()
+ *              → RPUSH feat:buf
  *
- * Flush path:  BullMQ worker job 'feature-event-flush'
- *              → featureEventBuffer.flush()
- *              → LRANGE + LTRIM + bulk INSERT
+ * Flush path:  BullMQ 'feature-event-flush' job
+ *              → flushFeatureEvents()
+ *              → Lua: copy batch to feat:processing:{id} + LTRIM feat:buf (atomic)
+ *              → bulk INSERT to PostgreSQL
+ *              → DEL feat:processing:{id} on success
+ *              → LPUSH items back to feat:buf on failure + DEL feat:processing:{id}
+ *
+ * Crash recovery:
+ *              → recoverStaleProcessingBatches() on server startup
+ *              → Scans feat:processing:* keys, re-queues items to feat:buf, deletes stale keys
  */
 
 import { logger } from '../logger.js';
 import { getRedisClient } from '../lib/redisClient.js';
 import { db } from '../db.js';
 import { featureEvents } from '@shared/schema';
+import crypto from 'crypto';
 
 const BUFFER_KEY = 'feat:buf';
+const PROCESSING_PREFIX = 'feat:processing:';
 const FLUSH_BATCH_SIZE = 500;
+const PROCESSING_TTL_SECONDS = 300;
 
 export interface FeatureEventPayload {
   userId: number;
@@ -38,7 +48,7 @@ export async function pushFeatureEvent(payload: FeatureEventPayload): Promise<vo
   try {
     redis = getRedisClient();
   } catch {
-    // Redis not available — write directly
+    // Redis not available
   }
 
   if (!redis) {
@@ -56,8 +66,10 @@ export async function pushFeatureEvent(payload: FeatureEventPayload): Promise<vo
 
 /**
  * Flush up to FLUSH_BATCH_SIZE events from the Redis buffer into PostgreSQL.
- * Returns the number of events inserted.
- * Safe to call concurrently — uses LRANGE + LTRIM atomically via Lua.
+ * Uses at-least-once delivery: items are moved to a processing key before being
+ * removed from the buffer. On failure, items are restored to the buffer.
+ *
+ * Returns number of events successfully inserted.
  */
 export async function flushFeatureEvents(): Promise<number> {
   let redis: ReturnType<typeof getRedisClient> | null = null;
@@ -68,19 +80,33 @@ export async function flushFeatureEvents(): Promise<number> {
   }
   if (!redis) return 0;
 
-  const lua = `
-    local items = redis.call('LRANGE', KEYS[1], 0, ARGV[1] - 1)
+  const batchId = crypto.randomBytes(6).toString('hex');
+  const processingKey = `${PROCESSING_PREFIX}${batchId}`;
+
+  // Atomic Lua: copy batch to processing key (with TTL), trim buffer
+  const fetchLua = `
+    local n = tonumber(ARGV[1])
+    local ttl = tonumber(ARGV[2])
+    local items = redis.call('LRANGE', KEYS[1], 0, n - 1)
     if #items > 0 then
-      redis.call('LTRIM', KEYS[1], ARGV[1], -1)
+      for i, v in ipairs(items) do
+        redis.call('RPUSH', KEYS[2], v)
+      end
+      redis.call('EXPIRE', KEYS[2], ttl)
+      redis.call('LTRIM', KEYS[1], n, -1)
     end
     return items
   `;
 
   let raw: string[];
   try {
-    raw = (await redis.eval(lua, 1, BUFFER_KEY, String(FLUSH_BATCH_SIZE))) as string[];
+    raw = (await redis.eval(
+      fetchLua, 2,
+      BUFFER_KEY, processingKey,
+      String(FLUSH_BATCH_SIZE), String(PROCESSING_TTL_SECONDS)
+    )) as string[];
   } catch (err) {
-    logger.error('[FeatureEventBuffer] Flush Lua script failed:', err);
+    logger.error('[FeatureEventBuffer] Fetch Lua script failed:', err);
     return 0;
   }
 
@@ -95,32 +121,95 @@ export async function flushFeatureEvents(): Promise<number> {
     }
   }
 
-  if (payloads.length === 0) return 0;
+  if (payloads.length === 0) {
+    await redis.del(processingKey).catch(() => {});
+    return 0;
+  }
 
   try {
     await insertDirect(payloads);
-    logger.info(`[FeatureEventBuffer] Flushed ${payloads.length} events to DB`);
+    // Confirm delivery: remove the processing key
+    await redis.del(processingKey).catch((err) => {
+      logger.warn('[FeatureEventBuffer] Failed to delete processing key (harmless — TTL will clean up):', err);
+    });
+    logger.info(`[FeatureEventBuffer] Flushed ${payloads.length} events (batch ${batchId})`);
     return payloads.length;
+
   } catch (insertErr) {
-    logger.error('[FeatureEventBuffer] Bulk insert failed, re-queuing events:', insertErr);
-    // Re-push back to the front of the list so they are not lost.
-    // Use individual LPUSH calls (not pipeline) so a partial Redis failure still saves some events.
-    let requeued = 0;
+    logger.error(`[FeatureEventBuffer] Insert failed for batch ${batchId}, restoring to buffer:`, insertErr);
+    // Restore items to the front of the buffer (reverse order to preserve sequence)
+    let restored = 0;
     for (let i = payloads.length - 1; i >= 0; i--) {
       try {
         await redis.lpush(BUFFER_KEY, JSON.stringify(payloads[i]));
-        requeued++;
-      } catch (requeueErr) {
-        logger.error(`[FeatureEventBuffer] Failed to re-queue event ${i} — event may be lost:`, requeueErr);
+        restored++;
+      } catch (restoreErr) {
+        logger.error(`[FeatureEventBuffer] Lost event during restore (index ${i}):`, restoreErr);
       }
     }
-    logger.info(`[FeatureEventBuffer] Re-queued ${requeued}/${payloads.length} events after insert failure`);
+    await redis.del(processingKey).catch(() => {});
+    logger.info(`[FeatureEventBuffer] Restored ${restored}/${payloads.length} events after insert failure`);
     throw insertErr;
   }
 }
 
 /**
- * Returns how many events are currently buffered.
+ * Crash recovery: scan for stale feat:processing:* keys and move their items
+ * back to feat:buf. Call once at server startup.
+ *
+ * A processing key is "stale" if it exists but still has a TTL (meaning the
+ * process that created it crashed before finishing). We recover all of them.
+ */
+export async function recoverStaleProcessingBatches(): Promise<void> {
+  let redis: ReturnType<typeof getRedisClient> | null = null;
+  try {
+    redis = getRedisClient();
+  } catch {
+    return;
+  }
+  if (!redis) return;
+
+  try {
+    let cursor = '0';
+    let recovered = 0;
+
+    do {
+      const [nextCursor, keys] = await redis.scan(
+        cursor, 'MATCH', `${PROCESSING_PREFIX}*`, 'COUNT', '100'
+      );
+      cursor = nextCursor;
+
+      for (const key of keys) {
+        try {
+          const items = await redis.lrange(key, 0, -1);
+          if (items.length > 0) {
+            const pipeline = redis.pipeline();
+            for (let i = items.length - 1; i >= 0; i--) {
+              pipeline.lpush(BUFFER_KEY, items[i]);
+            }
+            pipeline.del(key);
+            await pipeline.exec();
+            recovered += items.length;
+            logger.info(`[FeatureEventBuffer] Recovered ${items.length} events from stale batch ${key}`);
+          } else {
+            await redis.del(key);
+          }
+        } catch (err) {
+          logger.error(`[FeatureEventBuffer] Failed to recover stale batch ${key}:`, err);
+        }
+      }
+    } while (cursor !== '0');
+
+    if (recovered > 0) {
+      logger.warn(`[FeatureEventBuffer] Crash recovery: restored ${recovered} events to buffer`);
+    }
+  } catch (err) {
+    logger.error('[FeatureEventBuffer] Crash recovery scan failed:', err);
+  }
+}
+
+/**
+ * Returns how many events are currently buffered (excludes in-flight processing batches).
  */
 export async function bufferDepth(): Promise<number> {
   let redis: ReturnType<typeof getRedisClient> | null = null;

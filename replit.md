@@ -1,234 +1,72 @@
 # Max Booster
 
-AI-Powered Music Career Management Platform by B-Lawz Music.
+AI-Powered Music Career Management Platform by B-Lawz Music. This platform aims to empower musicians and artists by providing tools for career management, distribution, promotion, and analytics, leveraging AI for creative generation and insights. The project envisions becoming a leading platform in the music industry, offering comprehensive support for artists at various stages of their careers.
 
-## Architecture
+## User Preferences
 
-- **Frontend**: React + TypeScript + Vite (built to `dist/public/`, served by Express in production)
-- **Backend**: Express.js (Node.js/TypeScript), bundled to `dist/index.cjs` via esbuild
-- **Clustering**: `server/cluster.ts` → `dist/cluster.cjs` is the production entry point; forks `numCPUs - 1` workers, auto-restarts dead workers. Disable with `DISABLE_CLUSTER=true`.
-- **Database**: PostgreSQL via Drizzle ORM (Neon serverless driver)
-- **Storage**: Three-layer — Replit Object Storage (hot tier) + Pocket Dimension (cold tier, compressed) + Pocket Dimension Fabric (distributed multi-node, DB-backed metadata plane)
-- **State Engine**: BoosterState (Rust-based KV store with WAL + CRC32 checksums + fsync, runs on port 9877, 32 shards on 16-vCPU)
-- **Build System**: Vite (frontend) + esbuild (backend via `script/build.ts`, builds both `dist/index.cjs` and `dist/cluster.cjs`)
-- **State Management**: Zustand
-- **Styling**: Tailwind CSS v4
-- **Email**: SendGrid
-- **Payments**: Stripe (live keys configured)
-- **Monitoring**: Sentry (errors + distributed tracing) + Prometheus `/metrics` endpoint (Grafana-compatible)
-- **Cache**: `DistributedCache` backed by Redis (mandatory in production — throws at startup if REDIS_URL missing; fails to cache-miss on Redis error rather than using per-instance fallback)
-- **Rate Limiting**: `DistributedRateLimiter` — atomic Redis Lua sliding window; mandatory Redis in production; fails-open on Redis error rather than using per-instance in-memory tracking
-- **WebSocket Broadcasting**: Redis Pub/Sub (`ws:user:notify`, `ws:broadcast` channels) for cross-instance delivery
-- **TF Inference**: `os.cpus()-2` worker `TensorFlowWorkerPool` (`.cjs` workers, event loop isolated, max queue depth 500)
-- **Sessions**: `connect-redis` (Redis-backed, mandatory in production — process.exit(1) if Redis unavailable)
-- **Job Queues**: BullMQ (Redis-backed, 3 retries, exponential backoff, DLQ)
-- **Autonomous Service**: In-memory Maps bounded (processingQueue ≤ 1000, learningData ≤ 500 via FIFO eviction); metrics persisted to Redis every 60s and restored on startup; background loops (content-dispatch 60s, analytics 1h, metrics-persist 60s, per-campaign optimization 5min) migrated from `setInterval` to BullMQ repeatable jobs — deduped in Redis across all instances; new files: `server/services/autonomousJobScheduler.ts` (queue + job registration), `server/workers/autonomousWorker.ts` (job processor)
+I prefer iterative development with clear communication at each stage. Please ask before making any major architectural changes or introducing new external dependencies. I also prefer detailed explanations for complex technical decisions. Do not make changes to files in the `electron/` directory, `capacitor/` directory, or any files related to the desktop or mobile build processes. I prefer a coding style that prioritizes readability and maintainability, using TypeScript consistently.
 
-## Key Files
+## System Architecture
 
-- `server/index.ts` — Express server entry point, serves on port 5000
-- `server/vite.ts` — Vite dev middleware (dev mode only)
-- `server/db.ts` — Drizzle ORM + Neon/WebSocket pool
-- `server/routes.ts` — Route loader (dynamic import of all routes)
-- `server/config/defaults.ts` — Centralized config from environment variables
-- `server/services/storageService.ts` — Storage abstraction (Local/S3/Hybrid)
-- `server/services/hybridStorageService.ts` — Hybrid storage (Replit hot + Pocket cold)
-- `server/pocket-dimension/index.ts` — Pocket Dimension compressed storage engine
-- `server/pocket-dimension/fabric/` — Distributed fabric layer: NodeRegistry, VolumeRegistry, PocketRegistry, ObjectIndex, ChunkIndex, PlacementStrategy, Rebalancer, ChunkStore adapters
-- `server/routes/fabric.ts` — REST API for fabric (pockets, volumes, objects, nodes, stats)
-- `server/safety/index.ts` — Mandatory safety middleware (CSRF, rate limiting, helmet)
-- `shared/schema.ts` — Drizzle schema definitions
-- `client/src/App.tsx` — React app root
-- `vite.config.ts` — Vite configuration (host: 0.0.0.0, port: 5000, allowedHosts: true)
-- `script/build.ts` — Production build script (Vite frontend + esbuild backend)
-- `drizzle.config.ts` — Drizzle Kit config
+The Max Booster platform is built with a decoupled frontend and backend.
 
-## Development
+**Frontend:**
+-   Developed using React, TypeScript, and Vite.
+-   Utilizes Zustand for state management and Tailwind CSS v4 for styling.
+-   The client application (`client/src/App.tsx`) is bundled into `dist/public/` for production.
+-   UI/UX decisions focus on a clean, modern interface with a consistent color scheme.
+-   Features include:
+    -   Comprehensive notification system with various categories (e.g., account security, distribution, social media, royalties, achievements) and wired triggers for events like achievement unlocks, streak milestones, new logins, password changes, and payment failures.
+    -   Admin-only notification category (`platform_admin`) for critical system alerts.
+    -   In-app NPS survey and a cancellation exit survey to improve user retention.
+    -   AI Creative Generators (`AIImageGenerator`) for image generation, integrated into advertising and social media tools.
+    -   Audio sync using `requestAnimationFrame` for digital audio workstation (DAW) features.
+    -   Robust settings with keyboard shortcut customization.
 
-```bash
-NODE_ENV=development npx tsx server/index.ts
-```
+**Backend:**
+-   Implemented with Express.js (Node.js/TypeScript), bundled to `dist/index.cjs` using esbuild.
+-   A clustering mechanism (`server/cluster.ts`) is used in production for high availability and performance, forking workers and auto-restarting dead ones.
+-   **Database:** PostgreSQL, accessed via Drizzle ORM and a Neon serverless driver. Schema definitions are in `shared/schema.ts`. Critical database indexes are implemented on new retention tables and hot query columns to optimize performance. Read replica routing is supported for SELECT queries when `DATABASE_REPLICA_URLS` is configured.
+-   **Storage:** A three-layer hybrid storage system is employed:
+    -   **Hot Tier:** Replit Object Storage (`@replit/object-storage`).
+    -   **Cold Tier:** Pocket Dimension (custom compressed, chunked, content-addressed local storage).
+    -   **Metadata Plane:** Pocket Dimension Fabric (distributed, DB-backed metadata plane with node/volume/pocket/object/chunk registries, placement strategy, and rebalancer).
+    -   Files inactive for 30+ days are automatically tiered to cold storage.
+    -   The `@replit/object-storage` Client uses `uploadFromBytes` and `downloadAsBytes` for all operations.
+-   **State Engine:** BoosterState, a custom Rust-based KV store with Write-Ahead Log (WAL), CRC32 checksums, and fsync, running on port 9877. It is used for job queues and session backing.
+-   **Caching:** `DistributedCache` backed by Redis, essential for production. Includes cache stampede protection using distributed locks.
+-   **Rate Limiting:** `DistributedRateLimiter` using atomic Redis Lua sliding window.
+-   **WebSocket Broadcasting:** Utilizes Redis Pub/Sub for cross-instance message delivery.
+-   **TF Inference:** `TensorFlowWorkerPool` uses isolated `.cjs` workers for TensorFlow inference.
+-   **Sessions:** `connect-redis` for Redis-backed session management.
+-   **Job Queues:** BullMQ, a Redis-backed job queue with retries, exponential backoff, and a Dead Letter Queue (DLQ). Used for various background tasks and retention services. Concurrency is capped, and job persistence is configured. Distributed cron locks prevent multiple instances from running the same job.
+-   **Autonomous Service:** In-memory maps for processing and learning data, with metrics persisted to Redis. Background loops are managed by BullMQ repeatable jobs.
+-   **Security:** Mandatory safety middleware includes origin validation (replacing CSRF tokens), rate limiting, and Helmet. Webhook secrets require `WEBHOOK_SECRET` in production for signature verification.
+-   **Retention & Long-term SaaS Success Systems:**
+    -   Multi-step dunning for payment recovery.
+    -   Customer health score computation.
+    -   Re-engagement cron jobs for inactive users.
+    -   Retention API for NPS, cancellation feedback, and feature events.
+    -   Feature event write buffer that pushes to Redis lists and bulk-inserts to the DB.
+-   **Scalability Hardening:**
+    -   Admission control middleware to manage concurrent requests using Redis.
+    -   Redis eviction policy set to `allkeys-lru`.
+    -   DB table partitioning script for large tables.
+    -   Kubernetes HPA metrics exposed for autoscaling.
+    -   Prometheus metrics for TensorFlow worker queue depth.
+    -   YJS cross-node pub/sub for collaborative editing.
 
-## Production Build + Start
+## External Dependencies
 
-```bash
-npm run build   # Builds frontend (Vite) + backend (esbuild) to dist/
-npm run start   # Starts boosterstate + NODE_ENV=production node dist/index.cjs
-```
-
-The workflow uses: `npm run build && npm run start`
-
-## Storage Configuration
-
-The hybrid storage system is activated when `STORAGE_PROVIDER=replit`. It uses:
-- **Hot tier**: `@replit/object-storage` with `REPLIT_BUCKET_ID`
-- **Cold tier**: Pocket Dimension (compressed, chunked, content-addressed local storage)
-- **Auto-tiering**: Files inactive for 30+ days are moved to cold tier every 6 hours
-
-## Database
-
-- Schema push: `npm run db:push`
-- Uses `DATABASE_URL` environment variable (PostgreSQL / Neon)
-
-## BoosterState
-
-Custom Rust KV store with WAL (Write-Ahead Log) for job queues and session backing.
-- Binary: `boosterstate/target/debug/boosterstate`
-- Port: 9877 (set via `BOOSTERSTATE_PORT`)
-- Secret: Set via `BOOSTERSTATE_SECRET`
-
-## Environment Variables
-
-All configured via Replit environment secrets. Key ones:
-- `DATABASE_URL` — PostgreSQL connection (auto-provisioned)
-- `STORAGE_PROVIDER=replit` — Activates hybrid storage
-- `REPLIT_BUCKET_ID` — Replit Object Storage bucket ID
-- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` — Stripe live keys
-- `SENDGRID_API_KEY` — Email delivery
-- `REDIS_URL` — Production session store
-- `SESSION_SECRET` — Session signing
-- `SENTRY_DSN` — Error monitoring
-- Social OAuth keys: Facebook, Google, Instagram, LinkedIn, TikTok, Twitter, YouTube, Threads, Spotify
-- `BOOSTERSTATE_PORT=9877`, `BOOSTERSTATE_SECRET`
-- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_USERNAME`
-- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — Web push notifications
-- `APP_URL=https://maxbooster.replit.app`
-
-## Deployment
-
-- Target: Autoscale
-- Build command: `npm run build`
-- Run command: `npm run start`
-
-## Notification System
-
-All notification types live in `client/src/components/notifications/types.ts`.
-Service helpers are in `server/services/notificationService.ts`.
-
-### Categories
-`account_security`, `distribution`, `social_media`, `marketplace`, `royalties`, `collaboration`, `achievements`, `system`
-
-### Wired Triggers
-- **Achievement unlocked** → `achievementService.checkAndAwardAchievements` fires `sendAchievementNotification`
-- **Streak milestones** (7/14/30/60/100/365 days) → `achievementService.updateStreak` fires `sendStreakMilestoneNotification`
-- **New login** → login handler fires `sendLoginSecurityNotification`
-- **Password changed** → change-password handler fires `sendPasswordChangedNotification`
-- **Payment failed** → Stripe `invoice.payment_failed` webhook fires `sendPaymentFailedNotification`
-- **Subscription updated** → Stripe `customer.subscription.updated` webhook fires `sendSubscriptionChangedNotification` or `sendSubscriptionRenewedNotification`
-- **Analytics anomaly** → `analyticsAnomalyService` fires system notification
-- **Marketplace sale** → `marketplace.ts` fires `sendSaleNotification`
-- **Release status** → `notificationService.sendReleaseNotification`
-
-### Available Helper Methods (not yet wired — call where applicable)
-- `sendStorageQuotaNotification(userId, usedPercent)` — fire when storage hits 75%+
-- `sendUploadCompleteNotification(userId, fileName, fileType)` — fire after file upload
-- `sendAiProcessingCompleteNotification(userId, taskType, trackName)` — fire after AI tasks
-- `sendStreamMilestoneNotification(userId, trackName, streams)` — fire at 1K/10K/100K/1M
-- `sendFollowerMilestoneNotification(userId, platform, followers)` — fire at milestone counts
-- `sendSocialTokenExpiringNotification(userId, platform)` — fire when OAuth token expiring
-- `sendSubscriptionExpiringNotification(userId, plan, daysLeft)` — fire 7/3/1 days before expiry
-- `sendBeatPlayMilestoneNotification(userId, beatName, plays)` — fire at beat play milestones
-
-### Admin-Only Category: `platform_admin`
-Only visible when `user.role === 'admin'`. Shows as an orange-highlighted tab/row. The admin notification helpers automatically look up the admin by `ADMIN_EMAIL` env var.
-
-#### Admin notification types (all go to the admin user):
-| Type | Method | Auto-triggered |
-|------|---------|---------------|
-| `admin_new_user` | `sendAdminNewUserNotification(email, userId, plan?)` | ✅ On every registration |
-| `admin_payment_issue` | `sendAdminPaymentIssueNotification(email, userId, amount, reason?)` | ✅ On Stripe `invoice.payment_failed` |
-| `admin_storage_critical` | `sendAdminStorageCriticalNotification(usedPercent, usedGB, totalGB)` | Wire when storage check runs |
-| `admin_marketplace_review` | `sendAdminMarketplaceReviewNotification(itemName, itemId, sellerEmail)` | Wire when listing is submitted |
-| `admin_user_report` | `sendAdminUserReportNotification(reporterEmail, reportedEmail, reason)` | Wire when report is filed |
-| `admin_revenue_milestone` | `sendAdminRevenueMilestoneNotification(milestone, period)` | Wire at milestone thresholds |
-| `admin_health_alert` | `sendAdminHealthAlertNotification(service, status, details?)` | Wire from health checks |
-| `admin_user_flagged` | `sendAdminUserFlaggedNotification(email, userId, reason)` | Wire from fraud/abuse detection |
-| `admin_support_ticket` | `sendAdminSupportTicketNotification(email, subject, ticketId?)` | Wire when ticket submitted |
-
-## Desktop & Mobile Builds
-
-Building the app requires GitHub Actions (Replit cannot create native installers).
-
-- **Desktop (Electron)**: Push a tag `v3.x.x` to trigger `.github/workflows/build-desktop.yml`
-  - Builds: Windows NSIS/Portable, macOS DMG/ZIP, Linux AppImage/DEB
-  - Node 22 required (fixed in workflow)
-  - Electron entry: `electron/main.js` (version 3.0.0)
-- **Mobile (Capacitor)**: Push a tag to trigger `.github/workflows/build-mobile.yml`
-  - Builds: Android APK/AAB, iOS IPA
-  - Node 22, Java 21 required
-  - Config: `capacitor.config.ts`, points to `https://maxbooster.replit.app`
-- **Downloads page** (`/desktop-app`): Fetches release assets from GitHub API (`20lawsobk/maxbooster7.5`)
-
-## Storage SDK — Critical API Notes
-
-The `@replit/object-storage` Client exposes these methods (NOT `uploadFromBuffer` / `downloadAsBuffer`):
-- **Upload**: `client.uploadFromBytes(key, buffer, { contentType })` — returns `{ ok, error }`
-- **Download**: `client.downloadAsBytes(key)` — returns `{ ok, value: Uint8Array, error }`; wrap result with `Buffer.from(result.value)`
-- **Other**: `uploadFromText`, `uploadFromFilename`, `uploadFromStream`, `downloadAsText`, `downloadToFilename`, `downloadAsStream`, `exists`, `list`, `copy`, `delete`
-
-The old `uploadFromBuffer` / `downloadAsBuffer` names do not exist and cause a silent 500 error (image processes fine, storage step fails).
-
-## Environment Variables (Feb 2026 — Fully Configured)
-
-All API keys and secrets are now set in shared environment:
-- Stripe live keys (STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET)
-- Redis session/cache/pub-sub (REDIS_URL — mandatory in production)
-- SendGrid email (SENDGRID_API_KEY)
-- Sentry error monitoring (SENTRY_DSN)
-- Replit Object Storage (REPLIT_BUCKET_ID, STORAGE_PROVIDER=replit)
-- Social OAuth: Facebook, Google, Instagram, LinkedIn, TikTok, Twitter, YouTube, Threads, Spotify
-- BoosterState (BOOSTERSTATE_PORT=9877, BOOSTERSTATE_SECRET)
-- Admin credentials (ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_USERNAME)
-- VAPID push keys, LabelGrid distribution token, GitHub PAT
-
-## Storage System (Hybrid — Active)
-
-STORAGE_PROVIDER=replit activates the full three-layer hybrid system:
-- **Hot tier**: Replit Object Storage (`@replit/object-storage`, bucket: `REPLIT_BUCKET_ID`)
-- **Cold tier**: Pocket Dimension compressed local storage
-- **Metadata plane**: Pocket Dimension Fabric (DB-backed, distributed)
-- **State KV**: BoosterState Rust binary (port 9877, WAL + CRC32)
-
-## Recent Fixes (Feb 2026)
-
-- **File/image uploads platform-wide**: Root cause was `uploadFromBuffer` / `downloadAsBuffer` API calls in both `storageService.ts` and `hybridStorageService.ts`. These methods do not exist on the current `@replit/object-storage` SDK. Fixed to `uploadFromBytes` / `downloadAsBytes` with `Buffer.from(result.value)` wrapping for the download path.
-- **Social OAuth**: Replaced in-memory `oauthStates` Map with HMAC-signed stateless tokens (`SESSION_SECRET`). TikTok state is URL-encoded since it contains `~` and `=`.
-- **Studio DAW audio sync**: Added `requestAnimationFrame` position loop in `UltimateDAW.tsx` so `transport.position` updates at ~60fps during playback.
-- **Settings tabs**: Fixed broken `grid-cols-7` layout for 9+ tabs — switched to `overflow-x-auto` + `inline-flex flex-wrap` scrollable tab list.
-- **Settings keyboard shortcuts tab**: Added `TabsTrigger value="shortcuts"` + `TabsContent` with button that opens `ShortcutCustomizer` dialog.
-- **Distribution upload route**: Was a non-functional stub. Now implemented with `releaseUpload.any()` (memory-storage multer), stores artwork + audio to hybrid storage, creates `distroReleases` and `distroTracks` DB records.
-- **Notifications**: Added 14 new notification types + `achievements` category. Wired achievement, streak, login, password, payment failure, and subscription triggers. Fixed GitHub Actions Node version (20→22). Fixed Electron version mismatch (2.0.0→3.0.0).
-- **AI Creative Generators**: Added `AIImageGenerator` component (`client/src/components/content/AIImageGenerator.tsx`) with style selector, tone picker, color-scheme display, and copy-prompt fallback. Wired into `Advertisement.tsx` Creative tab (AI Video / AI Image / Browser Video sub-tabs with shared platform selector) and into `SocialMedia.tsx` Content Creator image format. Server endpoints: `POST /api/advertising/generate-image`, `POST /api/social/generate-image` (via `pythonAIService.generateImage` → Python AI model).
-- **Security: CSRF → Origin Validation**: Replaced CSRF double-submit cookie pattern with `SameSite=Lax + Origin header check`. New middleware at `server/middleware/requestValidation.ts` (`originValidation`). Removed CSRF token logic from `client/src/lib/queryClient.ts` (no more `getCsrfToken`/`getCsrfHeaders`/`ensureCsrfToken` exports, no more `/api/csrf-token` prefetch). Also cleaned CSRF token from `FileUploader.tsx`. All raw `fetch()` POST calls now work without a special wrapper.
-- **Avatar fix**: `requireAuthDual` in `server/auth.ts` was only mapping 8 fields to `req.user`, dropping `avatarUrl`, `profileImageUrl`, `displayName`, `username`, `firstName`, `lastName`, `bio`, and `role`. Added those fields so `/api/auth/me` returns them and profile pictures render.
-- **Social media connect fix**: `handleConnectPlatform` and `handleDisconnectPlatform` in `SocialMedia.tsx` were using raw `fetch()` — updated to `apiRequest()` for consistent error handling and timeout support.
-- **Retention & Long-term SaaS Success Systems**: Added 6 interconnected retention features based on industry research:
-  - **Multi-step dunning** (`server/services/dunningService.ts`): 4-step email sequence (Day 0/3/7/14) triggered on Stripe `invoice.payment_failed`, automatically resolved on `invoice.paid`. Recovers ~40% of involuntary churn.
-  - **Customer health score** (`server/services/customerHealthScoreService.ts`): 0–100 score per user computed from login frequency (30%), feature adoption (25%), engagement depth (25%), payment health (20%). Stored in `customer_health_scores` table. Batch-computed daily, on-demand per user.
-  - **Re-engagement cron** (`server/services/reEngagementService.ts`): Daily job emails users inactive 10–30 days. Respects notification preferences, minimum 7-day gap between emails. Runs at noon server time.
-  - **Retention API** (`server/routes/retention.ts`): `POST /api/retention/nps`, `POST /api/retention/cancellation-feedback`, `POST /api/retention/feature-event`, `GET /api/retention/health-score`, `GET /api/retention/admin/at-risk`.
-  - **In-app NPS survey** (`client/src/components/retention/NPSSurvey.tsx`, `client/src/hooks/useNPSSurvey.ts`): Shows after 30 days of account age, at most every 90 days. State stored in localStorage. Wired into `App.tsx` as `NPSSurveyManager`.
-  - **Cancellation exit survey** (`client/src/components/retention/CancellationModal.tsx`): Multi-step modal with retention offers (price discount, pause option) before confirming cancellation. Wired into `Settings.tsx` — "Cancel Subscription" button now opens this before the final AlertDialog.
-  - **Feature tracking hook** (`client/src/hooks/useFeatureTracking.ts`): Batched async event tracking for feature adoption, feeds health score computation.
-  - **Schema additions** (`shared/schema.ts`): `customer_health_scores`, `nps_responses`, `cancellation_feedback`, `feature_events`, `dunning_state` tables.
-  - **Background services startup** (`server/index.ts`): Re-engagement cron starts at server boot; dunning processor runs every 6h; health score batch processor runs every 24h.
-- **90M-User Scale Hardening** (10 architect-recommended fixes):
-  - **Read replica routing** (`server/db.ts`): Added `dbRead` export — when `DATABASE_REPLICA_URLS` is set, creates a second connection pool pointing to replica; all SELECT queries route there automatically. Falls back to primary when no replica is configured.
-  - **Cache stampede protection** (`server/infrastructure/distributedCache.ts`): Added `getOrSetWithLock<T>()` method. Uses Redis `SET NX EX` to acquire a distributed lock before rehydrating cache, so concurrent cache misses serialize rather than all hammering the DB simultaneously.
-  - **Read replica helper** (`server/infrastructure/readReplicaPool.ts`): Added `queryRead()` export that always passes `preferReplica=true`, giving callers a clean API for replica-routed queries.
-  - **Distributed cron lock** (`server/lib/distributedLock.ts`): New file. `acquireLock()` / `releaseLock()` (Lua-script safe release) / `withLock()` wrapper. Ensures only one cluster node runs each cron job at a time. Re-engagement daily check wraps with `withLock('reengagement-daily', 23*3600)`.
-  - **BullMQ job queue** (`server/lib/scaleJobQueue.ts`): New file. `getRetentionQueue()` and `startRetentionWorker()` using BullMQ with ioredis. Worker handles `health-score-batch` (cursor-based pagination, 100 users per page), `dunning-process` (batched 50), `re-engagement-batch`. Server startup now enqueues to queue instead of running direct intervals.
-  - **Paginated batch compute** (`server/services/customerHealthScoreService.ts`): Added `batchComputePaged(cursor, batchSize)` for cursor-based traversal of users table; BullMQ worker enqueues next page after each page completes.
-  - **N+1 fix** (`server/services/reEngagementService.ts`): Replaced per-user `SELECT` inside the email loop with a single `innerJoin` of `customerHealthScores` + `users` tables.
-  - **YJS cross-node pub/sub** (`server/services/yjsService.ts`, `server/lib/redisConnectionFactory.ts`): Doc updates now PUBLISH delta to `yjs:updates:{projectId}` channel; `subscribeToProjectUpdates()` allows other nodes to SUBSCRIBE and apply deltas. Uses a dedicated ioredis connection for sub mode. Gracefully degrades when Redis unavailable.
-  - **Kubernetes HPA metrics** (`server/infrastructure/autoScaling.ts`): `getKubeMetricsHandler()` returns `ExternalMetricValueList`-format JSON (RPS, CPU %, memory %) on `GET /metrics/kube` for Kubernetes Horizontal Pod Autoscaler integration.
-  - **TF queue depth metric** (`server/routes/prometheus.ts`): Added `maxbooster_tf_worker_queue_depth` Prometheus gauge reading from `tfWorkerPool.getQueueDepth()`.
-  - **Webhook secret hardening** (`server/services/webhookReliabilityService.ts`): Removed `crypto.randomBytes(32)` random fallback (different per restart). Now requires `WEBHOOK_SECRET` in production; uses a stable static dev-only fallback so signature verification remains consistent.
-  - **Database indexes** (`shared/schema.ts`): Added indexes on all new retention tables and hot query columns — `customer_health_scores(risk_level, days_since_last_login, re_engagement_email_sent_at)`, `dunning_state(stripe_invoice_id, next_email_at)`, `feature_events(user_id+feature_name, created_at)`, `nps_responses(user_id, score)`, `cancellation_feedback(user_id, created_at)`, `sessions(user_id+last_activity)`, `subscriptions(user_id)`.
-- **Additional 90M Scale Hardening — Round 2** (architect-verified):
-  - **Feature event write buffer** (`server/services/featureEventBuffer.ts`): `pushFeatureEvent()` writes to Redis list `feat:buf` via RPUSH, falling back to direct DB insert when Redis unavailable. `flushFeatureEvents()` uses a Lua LRANGE+LTRIM (atomic) to drain up to 500 events per call and bulk-inserts to DB. On insert failure, re-queues events to front of list via pipeline LPUSH. Flush job (`feature-event-flush`) added to BullMQ worker — runs every 60s, max 20 iterations per job run (10,000 events), re-queues itself if buffer still has items to prevent worker starvation.
-  - **Admission control / backpressure** (`server/middleware/admissionControl.ts`): Tracks in-flight API requests via Redis INCR/DECR on `api:inflight` (TTL 60s). When concurrent requests exceed `MAX_CONCURRENT_REQUESTS` (default 5000), returns 503 + Retry-After header. Uses once-flag pattern (`safeDecrement`) to prevent double-decrement on res.finish+close. Falls back to in-process counter when Redis unavailable. Production-only (dev skips).
-  - **BullMQ concurrency cap** (`server/lib/scaleJobQueue.ts`): Increased from `concurrency: 1` to `concurrency: 5` with a rate limiter (`max: 5, duration: 1000`). Added job persistence config: `removeOnComplete: { age: 86400 }` (24h), `removeOnFail: { count: 100 }` (7 days), `attempts: 3`, `backoff: exponential 5s`.
-  - **Redis eviction policy** (`server/lib/redisClient.ts`): `CONFIG SET maxmemory-policy allkeys-lru` sent on every Redis connect event. Gracefully warns if managed Redis provider restricts CONFIG SET (set via provider dashboard instead).
-  - **DB table partitioning script** (`scripts/partition-feature-events.sql`): Manual DBA migration script ready for execution when `feature_events` hits 50M+ rows. Converts to `PARTITION BY RANGE (created_at)`, pre-seeds 24 monthly partitions, re-creates indexes on partitioned parent. Includes data migration from old table and verification step before drop.
-  - **Env vars to activate in production**: `DATABASE_REPLICA_URLS` (Neon read replica → activates `dbRead`), `REDIS_URL` (already set), `WEBHOOK_SECRET` (required), `BULLMQ_CONCURRENCY` (optional, default 5), `MAX_CONCURRENT_REQUESTS` (optional, default 5000).
+-   **Database:** PostgreSQL (via Neon serverless driver)
+-   **ORM:** Drizzle ORM
+-   **Object Storage:** Replit Object Storage (`@replit/object-storage`)
+-   **Email:** SendGrid
+-   **Payments:** Stripe
+-   **Monitoring:** Sentry (errors + distributed tracing), Prometheus (Grafana-compatible metrics)
+-   **Caching/Messaging/Sessions/Job Queues:** Redis (via `connect-redis`, `ioredis`, BullMQ)
+-   **AI/ML:** TensorFlow
+-   **OAuth Providers:** Facebook, Google, Instagram, LinkedIn, TikTok, Twitter, YouTube, Threads, Spotify
+-   **Push Notifications:** VAPID (for Web Push)
+-   **Build Tools:** Vite, esbuild
+-   **Deployment:** GitHub Actions (for Desktop and Mobile builds - Electron, Capacitor)

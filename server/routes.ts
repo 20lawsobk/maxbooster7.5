@@ -12,6 +12,7 @@ import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/str
 import { getBaseUrl } from "./config/defaults.ts";
 import { generateSecret as otpGenerateSecret, verifySync, generateURI } from "otplib";
 import { loginRateLimiter, registerRateLimiter, forgotPasswordRateLimiter } from "./middleware/rateLimiter.ts";
+import { criticalEndpointLimiter } from "./middleware/globalRateLimiter.ts";
 
 const authenticator = {
   generateSecret: () => otpGenerateSecret(),
@@ -119,6 +120,14 @@ export async function registerRoutes(
 
   // Apply user attachment middleware to all routes
   app.use(attachUser);
+
+  // Critical endpoint rate limiting — tighter per-IP limits for AI, billing, and admin routes
+  // which are the most expensive per-request and most attractive DDoS/abuse targets
+  app.use('/api/ai', criticalEndpointLimiter);
+  app.use('/api/career-coach', criticalEndpointLimiter);
+  app.use('/api/billing', criticalEndpointLimiter);
+  app.use('/api/admin', criticalEndpointLimiter);
+  app.use('/api/studio/generation', criticalEndpointLimiter);
 
   // CSRF Token endpoint
   app.get("/api/csrf-token", getCsrfToken);

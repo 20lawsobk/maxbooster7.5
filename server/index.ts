@@ -71,6 +71,10 @@ const app = express();
 
 setupStartupEndpoints(app);
 
+import('./lib/configValidator.js').then(({ validateScaleConfig }) => {
+  validateScaleConfig();
+}).catch(() => {});
+
 app.use(compression({ level: 4, threshold: 1024 }));
 app.use(cookieParser());
 const httpServer = createServer(app);
@@ -450,6 +454,9 @@ app.use((req, res, next) => {
     const { reEngagementService } = await import('./services/reEngagementService.js');
     reEngagementService.startDailyCron();
     logger.info('[Retention] Re-engagement cron started');
+
+    const { recoverStaleProcessingBatches } = await import('./services/featureEventBuffer.js');
+    await recoverStaleProcessingBatches();
 
     const { getRetentionQueue, startRetentionWorker } = await import('./lib/scaleJobQueue.js');
     const retentionQueue = getRetentionQueue();
