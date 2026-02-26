@@ -1,47 +1,67 @@
 import { getRedisClient } from './redisClient.js';
 import { logger } from '../logger.js';
 
+const isProduction = () =>
+  process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+
 /**
  * Distributed Lock Service using Redis
- * 
- * Provides atomic locks across cluster nodes to ensure only one node 
+ *
+ * Provides atomic locks across cluster nodes to ensure only one node
  * executes a specific task at a time.
+ *
+ * Failure policy:
+ *   Production: fail-closed — Redis unavailable → return null → job is skipped.
+ *   Development: fail-open  — Redis unavailable → proceed without lock (safe on single node).
  */
 
 /**
- * Acquire a lock
- * @param lockName Name of the lock
- * @param ttlSeconds Time-to-live in seconds
- * @returns Lock token (string) if acquired, null otherwise
+ * Acquire a lock.
+ * @returns Lock token if acquired, null otherwise (including when lock is held by another node).
  */
 export async function acquireLock(lockName: string, ttlSeconds: number): Promise<string | null> {
-  const redis = getRedisClient();
+  let redis: ReturnType<typeof getRedisClient> | null = null;
+  try {
+    redis = getRedisClient();
+  } catch {
+    // Redis not configured
+  }
+
   if (!redis) {
-    logger.warn(`[Lock] Redis unavailable, skipping lock: ${lockName}`);
-    return 'fallback-token';
+    if (isProduction()) {
+      logger.error(`[Lock] Redis unavailable in production — skipping lock-protected job: ${lockName}. Configure REDIS_URL to enable distributed coordination.`);
+      return null;
+    }
+    logger.warn(`[Lock] Redis unavailable (dev) — proceeding without lock: ${lockName}`);
+    return 'dev-no-redis';
   }
 
   const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
   const key = `lock:${lockName}`;
 
   try {
-    // SET key value EX ttl NX
     const result = await redis.set(key, token, 'EX', ttlSeconds, 'NX');
     return result === 'OK' ? token : null;
   } catch (err) {
     logger.error(`[Lock] Failed to acquire lock ${lockName}:`, err);
-    return null;
+    if (isProduction()) return null;
+    return 'dev-error-fallback';
   }
 }
 
 /**
- * Release a lock only if the token matches
- * @param lockName Name of the lock
- * @param token The token received when acquiring the lock
+ * Release a lock only if the token matches (Lua-script atomic release).
  */
 export async function releaseLock(lockName: string, token: string): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis || token === 'fallback-token') return;
+  if (token === 'dev-no-redis' || token === 'dev-error-fallback') return;
+
+  let redis: ReturnType<typeof getRedisClient> | null = null;
+  try {
+    redis = getRedisClient();
+  } catch {
+    return;
+  }
+  if (!redis) return;
 
   const key = `lock:${lockName}`;
   const lua = `

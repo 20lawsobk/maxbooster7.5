@@ -259,30 +259,38 @@ export class DistributedCache {
     key: string,
     fetcher: () => Promise<T>,
     ttlSeconds?: number,
-    lockTtlSeconds: number = 10
+    lockTtlSeconds: number = 10,
+    _attempt: number = 0
   ): Promise<T> {
+    const MAX_WAIT_ATTEMPTS = 50;
+
     // 1. Check cache — return hit
     const cached = await this.get<T>(key);
     if (cached !== null) return cached;
 
-    // 5. In dev/no-Redis mode: falls back to regular getOrSet behavior
+    // Fallback: no Redis — use plain getOrSet
     if (!this.redis || !this._redisReady) {
       return this.getOrSet(key, fetcher, ttlSeconds);
     }
 
     const lockKey = `lock:${key}`;
-    
+
     try {
-      // 2. Tries to acquire Redis SETNX lock lock:{key} with TTL lockTtlSeconds
+      // 2. Try to acquire SETNX lock
       const acquired = await this.redis.set(lockKey, 'locked', 'EX', lockTtlSeconds, 'NX');
 
       if (!acquired) {
-        // 3. If lock not acquired — wait 100ms and retry the cache check (stampede protection)
+        // 3. Lock is held by another request — wait and retry cache check
+        if (_attempt >= MAX_WAIT_ATTEMPTS) {
+          // Waited 5s (50 × 100ms) — lock holder is stuck or dead; fetch directly
+          logger.warn(`[DistributedCache] Lock wait exceeded for key ${key}, fetching directly`);
+          return this.getOrSet(key, fetcher, ttlSeconds);
+        }
         await new Promise(resolve => setTimeout(resolve, 100));
-        return this.getOrSetWithLock(key, fetcher, ttlSeconds, lockTtlSeconds);
+        return this.getOrSetWithLock(key, fetcher, ttlSeconds, lockTtlSeconds, _attempt + 1);
       }
 
-      // 4. If lock acquired — run fetcher(), set cache, release lock, return value
+      // 4. Lock acquired — run fetcher, cache result, release
       try {
         const value = await fetcher();
         await this.set(key, value, ttlSeconds);
