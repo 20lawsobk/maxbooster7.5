@@ -1,4 +1,5 @@
-import { getBoosterStateClient } from '../lib/boosterStateClient.js';
+import { Worker, type Job } from 'bullmq';
+import { getRedisClient } from '../lib/redisClient.js';
 import { config } from '../config/defaults.js';
 import { AudioService } from '../services/audioService.js';
 import { RoyaltiesCSVImportService } from '../services/royaltiesCSVImportService.js';
@@ -34,183 +35,124 @@ function checkMemoryUsage(workerName: string): void {
   const now = Date.now();
   if (now - lastMemoryLog < 30000) return;
   lastMemoryLog = now;
-
-  const memUsage = process.memoryUsage();
-  const heapUsed = memUsage.heapUsed;
+  const { heapUsed } = process.memoryUsage();
   const heapUsedMB = Math.round(heapUsed / 1024 / 1024);
-
   if (heapUsed > MEMORY_CRITICAL_THRESHOLD) {
-    logger.error(`🚨 ${workerName}: CRITICAL memory usage ${heapUsedMB}MB - approaching limit`);
-    if (global.gc) {
-      logger.info(`🧹 ${workerName}: Forcing garbage collection...`);
-      global.gc();
-    }
+    logger.error(`🚨 ${workerName}: CRITICAL memory usage ${heapUsedMB}MB`);
+    if (global.gc) { logger.info(`🧹 Forcing GC...`); global.gc(); }
   } else if (heapUsed > MEMORY_WARNING_THRESHOLD) {
-    logger.warn(`⚠️  ${workerName}: High memory usage ${heapUsedMB}MB`);
+    logger.warn(`⚠️  ${workerName}: High memory ${heapUsedMB}MB`);
   }
 }
 
-const memoryMonitorInterval = setInterval(() => {
-  checkMemoryUsage('Workers');
-}, 60000);
+function workerOpts(concurrency: number) {
+  return {
+    connection: getRedisClient(),
+    concurrency,
+    limiter: { max: concurrency, duration: 1000 },
+  };
+}
 
-class BoosterWorker {
-  private queueName: string;
-  private processor: (job: { id: string; name: string; data: any }) => Promise<any>;
-  private concurrency: number;
-  private pollInterval: number;
-  private activeJobs: number = 0;
-  private intervalId: NodeJS.Timeout | null = null;
-  private running: boolean = false;
+let audioWorker: Worker | null = null;
+let csvWorker: Worker | null = null;
+let analyticsWorker: Worker | null = null;
+let emailWorker: Worker | null = null;
 
-  constructor(
-    queueName: string,
-    processor: (job: { id: string; name: string; data: any }) => Promise<any>,
-    options?: { concurrency?: number; pollInterval?: number }
-  ) {
-    this.queueName = queueName;
-    this.processor = processor;
-    this.concurrency = options?.concurrency || 1;
-    this.pollInterval = options?.pollInterval || 2000;
-  }
-
-  start(): void {
-    if (this.running) return;
-    this.running = true;
-
-    this.intervalId = setInterval(async () => {
-      if (this.activeJobs >= this.concurrency) return;
-
-      try {
-        const client = await getBoosterStateClient();
-        if (!client) return;
-
-        const item = await client.queuePop(this.queueName);
-        if (!item) return;
-
-        this.activeJobs++;
-
-        try {
-          const parsed = JSON.parse(item.data);
-          const job = {
-            id: item.id,
-            name: parsed.name || 'unknown',
-            data: parsed.data || parsed,
-          };
-
-          logger.info(`▶️  ${this.queueName} job ${job.id} (${job.name}) is now active`);
-          const result = await this.processor(job);
-          logger.info(`✅ ${this.queueName} job ${job.id} completed`);
-        } catch (error: any) {
-          logger.error(`❌ ${this.queueName} job ${item.id} failed:`, error?.message || error);
-        } finally {
-          this.activeJobs--;
-        }
-      } catch (error: any) {
-        logger.warn(`⚠️  ${this.queueName} worker poll error:`, error?.message || error);
+function createAudioWorker(): Worker {
+  const w = new Worker(
+    'audio',
+    async (job: Job) => {
+      logger.info(`🎵 Audio job ${job.id} (${job.name}) starting...`);
+      checkMemoryUsage('AudioWorker');
+      switch (job.name) {
+        case 'convert':
+          return audioService.processAudioConversion(job.data as AudioConvertJobData);
+        case 'mix':
+          return audioService.processAudioMix(job.data as AudioMixJobData);
+        case 'waveform':
+          return audioService.processWaveformGeneration(job.data as AudioConvertJobData);
+        default:
+          throw new Error(`Unknown audio job type: ${job.name}`);
       }
-    }, this.pollInterval);
-  }
-
-  async close(): Promise<void> {
-    this.running = false;
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
-  }
+    },
+    workerOpts(config.queue.concurrency.audio),
+  );
+  w.on('completed', (job) => logger.info(`✅ Audio job ${job.id} completed`));
+  w.on('failed', (job, err) => logger.error(`❌ Audio job ${job?.id} failed: ${err.message}`));
+  return w;
 }
 
-const audioWorker = new BoosterWorker(
-  'audio',
-  async (job) => {
-    logger.info(`🎵 Processing ${job.name} job ${job.id}...`);
-    checkMemoryUsage('AudioWorker');
+function createCsvWorker(): Worker {
+  const w = new Worker(
+    'csv',
+    async (job: Job) => {
+      logger.info(`📊 CSV import job ${job.id} starting...`);
+      checkMemoryUsage('CSVWorker');
+      return csvImportService.processCSVImport(job.data as CSVImportJobData);
+    },
+    workerOpts(config.queue.concurrency.csv),
+  );
+  w.on('completed', (job) => logger.info(`✅ CSV job ${job.id} completed`));
+  w.on('failed', (job, err) => logger.error(`❌ CSV job ${job?.id} failed: ${err.message}`));
+  return w;
+}
 
-    switch (job.name) {
-      case 'convert':
-        return await audioService.processAudioConversion(job.data as AudioConvertJobData);
-      case 'mix':
-        return await audioService.processAudioMix(job.data as AudioMixJobData);
-      case 'waveform':
-        return await audioService.processWaveformGeneration(job.data as AudioConvertJobData);
-      default:
-        throw new Error(`Unknown audio job type: ${job.name}`);
-    }
-  },
-  { concurrency: config.queue.concurrency.audio, pollInterval: 2000 }
-);
+function createAnalyticsWorker(): Worker {
+  const w = new Worker(
+    'analytics',
+    async (job: Job) => {
+      logger.info(`📈 Analytics job ${job.id} (${job.data.type}) starting...`);
+      checkMemoryUsage('AnalyticsWorker');
+      switch (job.data.type) {
+        case 'anomaly-detection':
+          return anomalyService.processAnomalyDetection(job.data as AnalyticsJobData);
+        default:
+          throw new Error(`Unknown analytics job type: ${job.data.type}`);
+      }
+    },
+    workerOpts(config.queue.concurrency.analytics),
+  );
+  w.on('completed', (job) => logger.info(`✅ Analytics job ${job.id} completed`));
+  w.on('failed', (job, err) => logger.error(`❌ Analytics job ${job?.id} failed: ${err.message}`));
+  return w;
+}
 
-const csvWorker = new BoosterWorker(
-  'csv',
-  async (job) => {
-    logger.info(`📊 Processing CSV import job ${job.id}...`);
-    checkMemoryUsage('CSVWorker');
-    return await csvImportService.processCSVImport(job.data as CSVImportJobData);
-  },
-  { concurrency: config.queue.concurrency.csv, pollInterval: 2000 }
-);
+function createEmailWorker(): Worker {
+  const w = new Worker(
+    'email',
+    async (job: Job) => {
+      const { to, subject, html, from } = job.data as EmailJobData;
+      logger.info(`📧 Email job ${job.id} → ${to}`);
+      checkMemoryUsage('EmailWorker');
 
-const analyticsWorker = new BoosterWorker(
-  'analytics',
-  async (job) => {
-    logger.info(`📈 Processing analytics job ${job.id} (${job.data.type})...`);
-    checkMemoryUsage('AnalyticsWorker');
+      if (!process.env.SENDGRID_API_KEY) {
+        logger.warn('⚠️  SendGrid not configured, skipping email send');
+        return;
+      }
 
-    switch (job.data.type) {
-      case 'anomaly-detection':
-        return await anomalyService.processAnomalyDetection(job.data as AnalyticsJobData);
-      default:
-        throw new Error(`Unknown analytics job type: ${job.data.type}`);
-    }
-  },
-  { concurrency: config.queue.concurrency.analytics, pollInterval: 2000 }
-);
-
-const emailWorker = new BoosterWorker(
-  'email',
-  async (job) => {
-    logger.info(`📧 Processing email job ${job.id} - To: ${job.data.to}...`);
-    checkMemoryUsage('EmailWorker');
-
-    const { to, subject, html, from } = job.data as EmailJobData;
-
-    if (!process.env.SENDGRID_API_KEY) {
-      logger.warn('⚠️  SendGrid not configured, skipping email send');
-      return;
-    }
-
-    const fromEmail = from || process.env.SENDGRID_FROM_EMAIL || 'noreply@maxbooster.ai';
-
-    await sgMail.send({
-      to,
-      from: fromEmail,
-      subject,
-      html,
-    });
-
-    logger.info(`✅ Email sent to ${to}`);
-  },
-  { concurrency: config.queue.concurrency.email, pollInterval: 2000 }
-);
+      const fromEmail = from || process.env.SENDGRID_FROM_EMAIL || 'noreply@maxbooster.ai';
+      await sgMail.send({ to, from: fromEmail, subject, html });
+      logger.info(`✅ Email sent to ${to}`);
+    },
+    workerOpts(config.queue.concurrency.email),
+  );
+  w.on('completed', (job) => logger.info(`✅ Email job ${job.id} completed`));
+  w.on('failed', (job, err) => logger.error(`❌ Email job ${job?.id} failed: ${err.message}`));
+  return w;
+}
 
 async function gracefulShutdown(signal: string): Promise<void> {
-  logger.info(`\n🛑 Received ${signal}, shutting down workers gracefully...`);
-
+  logger.info(`\n🛑 Received ${signal}, shutting down workers...`);
   try {
-    clearInterval(memoryMonitorInterval);
-    logger.info('✅ Memory monitor stopped');
-
     await Promise.all([
-      audioWorker.close(),
-      csvWorker.close(),
-      analyticsWorker.close(),
-      emailWorker.close(),
+      audioWorker?.close(),
+      csvWorker?.close(),
+      analyticsWorker?.close(),
+      emailWorker?.close(),
     ]);
-
-    logger.info('✅ All workers closed successfully');
+    logger.info('✅ All BullMQ workers closed');
     process.exit(0);
-  } catch (error: unknown) {
+  } catch (error) {
     logger.error('❌ Error during shutdown:', error);
     process.exit(1);
   }
@@ -224,39 +166,30 @@ process.on('uncaughtException', (error) => {
   gracefulShutdown('uncaughtException');
 });
 
-process.on('unhandledRejection', (reason: any, promise) => {
-  const reasonStr = String(reason);
-  const errorMessage = reason?.message || reason?.toString?.() || reasonStr;
-
-  const isConnectionError = errorMessage?.includes('ECONNREFUSED') ||
-                            errorMessage?.includes('ECONNRESET') ||
-                            errorMessage?.includes('Connection') ||
-                            errorMessage?.includes('socket') ||
-                            reason?.code === 'ECONNREFUSED' ||
-                            reason?.code === 'ECONNRESET';
-
-  if (isConnectionError) {
-    logger.warn('⚠️ Connection error (will retry):', errorMessage);
+process.on('unhandledRejection', (reason: any) => {
+  const msg = reason?.message || String(reason);
+  const isConnErr = /ECONNREFUSED|ECONNRESET|socket/i.test(msg);
+  if (isConnErr) {
+    logger.warn('⚠️ Connection error (will retry):', msg);
     return;
   }
-
-  logger.error('❌ Unhandled rejection:', errorMessage);
+  logger.error('❌ Unhandled rejection:', msg);
   gracefulShutdown('unhandledRejection');
 });
 
 export async function initializeWorkers(): Promise<void> {
-  logger.info('🚀 Background workers initializing (boosterstate-backed)...');
+  logger.info('🚀 BullMQ workers initializing (Redis-backed, ack + DLQ + retry)...');
 
-  audioWorker.start();
-  csvWorker.start();
-  analyticsWorker.start();
-  emailWorker.start();
+  audioWorker = createAudioWorker();
+  csvWorker = createCsvWorker();
+  analyticsWorker = createAnalyticsWorker();
+  emailWorker = createEmailWorker();
 
-  logger.info('📋 Active workers:');
-  logger.info(`   - Audio (concurrency: ${config.queue.concurrency.audio})`);
-  logger.info(`   - CSV Import (concurrency: ${config.queue.concurrency.csv})`);
+  logger.info('📋 Active BullMQ workers:');
+  logger.info(`   - Audio     (concurrency: ${config.queue.concurrency.audio})`);
+  logger.info(`   - CSV       (concurrency: ${config.queue.concurrency.csv})`);
   logger.info(`   - Analytics (concurrency: ${config.queue.concurrency.analytics})`);
-  logger.info(`   - Email (concurrency: ${config.queue.concurrency.email})`);
+  logger.info(`   - Email     (concurrency: ${config.queue.concurrency.email})`);
 
   try {
     const { initializeWeeklyInsightsCron } = await import('./weeklyInsightsCron.js');
@@ -265,7 +198,7 @@ export async function initializeWorkers(): Promise<void> {
     logger.warn('⚠️  Could not initialize weekly insights cron:', error);
   }
 
-  logger.info('⏳ Waiting for jobs...');
+  logger.info('⏳ BullMQ workers listening for jobs...');
 }
 
 export async function shutdownWorkers(): Promise<void> {

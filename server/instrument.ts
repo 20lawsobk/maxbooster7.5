@@ -1,34 +1,44 @@
 /**
- * Sentry Instrumentation
+ * Mandatory Observability
  *
- * This file MUST be imported FIRST before any other imports in server/index.ts
- * Sentry v8 uses OpenTelemetry auto-instrumentation for request tracing
+ * This file MUST be imported FIRST in server/index.ts.
+ * In production, unhandled errors are always captured — to Sentry when configured,
+ * and always to structured JSON logs. Observability cannot fail open.
  */
 
 import * as Sentry from '@sentry/node';
 import { logger } from './logger.js';
 
-// Initialize Sentry for error tracking (enabled in all environments, but only reports in production)
+const isProduction = process.env.NODE_ENV === 'production';
+const dsn = process.env.SENTRY_DSN;
+
 Sentry.init({
-  dsn:
-    process.env.NODE_ENV === 'production'
-      ? process.env.SENTRY_DSN ||
-        'https://160f9a7fe10a384154f5087b2139b2ee@o4510378512613376.ingest.us.sentry.io/4510378520936448'
-      : undefined, // Don't send data in non-production
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 1.0 : 0,
-  profilesSampleRate: process.env.NODE_ENV === 'production' ? 1.0 : 0,
+  dsn: isProduction ? dsn : undefined,
+  tracesSampleRate: isProduction ? 1.0 : 0,
+  profilesSampleRate: isProduction ? 1.0 : 0,
   environment: process.env.NODE_ENV || 'development',
   beforeSend(event) {
-    // Never send events in non-production environments
-    if (process.env.NODE_ENV !== 'production') {
-      return null;
-    }
+    if (!isProduction) return null;
     return event;
   },
 });
 
-if (process.env.NODE_ENV === 'production') {
-  logger.info('✅ Sentry error tracking initialized (production mode)');
+process.on('uncaughtException', (err) => {
+  logger.error({ err, type: 'uncaughtException' }, `FATAL uncaughtException: ${err.message}`);
+  if (isProduction) Sentry.captureException(err);
+  Sentry.close(2000).finally(() => process.exit(1));
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  logger.error({ err, type: 'unhandledRejection' }, `unhandledRejection: ${err.message}`);
+  if (isProduction) Sentry.captureException(err);
+});
+
+if (isProduction) {
+  logger.info('✅ [Observability] Sentry active — errors will be captured and reported');
 } else {
-  logger.info('✅ Sentry instrumentation loaded (development mode - no data sent)');
+  logger.info('✅ [Observability] Structured error logging active (Sentry disabled in dev)');
 }
+
+export { Sentry };

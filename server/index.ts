@@ -1,5 +1,7 @@
 // Import console error filter FIRST to suppress non-critical localhost Redis errors
 import "./lib/consoleErrorFilter.ts";
+// Mandatory observability — must load before anything else can throw
+import "./instrument.ts";
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";

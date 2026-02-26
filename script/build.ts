@@ -56,6 +56,11 @@ const forceExternal = [
   "twitter-api-v2",
   "openid-client",
   "helmet",
+  "@sentry/node",
+  "@sentry/profiling-node",
+  "connect-redis",
+  "ioredis",
+  "bullmq",
 ];
 
 async function buildAll() {

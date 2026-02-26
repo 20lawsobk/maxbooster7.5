@@ -12,6 +12,7 @@ import cors from 'cors';
 import { logger } from '../logger.js';
 import { randomUUID } from 'crypto';
 import { selfHealingSecurityMiddleware } from '../middleware/selfHealingMiddleware.js';
+import * as Sentry from '@sentry/node';
 
 /**
  * Prototype pollution protection
@@ -114,6 +115,15 @@ export function globalErrorHandler(
       method: req.method,
       userId: (req.user as any)?.id,
     });
+    try {
+      Sentry.withScope((scope) => {
+        scope.setTag('requestId', requestId);
+        scope.setTag('path', req.path);
+        scope.setTag('method', req.method);
+        scope.setUser({ id: (req.user as any)?.id });
+        Sentry.captureException(err);
+      });
+    } catch {}
   }
 
   const isDev = process.env.NODE_ENV !== 'production';
