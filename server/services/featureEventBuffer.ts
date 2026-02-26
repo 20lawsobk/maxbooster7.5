@@ -101,15 +101,21 @@ export async function flushFeatureEvents(): Promise<number> {
     await insertDirect(payloads);
     logger.info(`[FeatureEventBuffer] Flushed ${payloads.length} events to DB`);
     return payloads.length;
-  } catch (err) {
-    logger.error('[FeatureEventBuffer] Bulk insert failed, re-queuing events:', err);
-    // Re-push back to the front of the list so they are not lost
-    const pipeline = redis.pipeline();
+  } catch (insertErr) {
+    logger.error('[FeatureEventBuffer] Bulk insert failed, re-queuing events:', insertErr);
+    // Re-push back to the front of the list so they are not lost.
+    // Use individual LPUSH calls (not pipeline) so a partial Redis failure still saves some events.
+    let requeued = 0;
     for (let i = payloads.length - 1; i >= 0; i--) {
-      pipeline.lpush(BUFFER_KEY, JSON.stringify(payloads[i]));
+      try {
+        await redis.lpush(BUFFER_KEY, JSON.stringify(payloads[i]));
+        requeued++;
+      } catch (requeueErr) {
+        logger.error(`[FeatureEventBuffer] Failed to re-queue event ${i} — event may be lost:`, requeueErr);
+      }
     }
-    await pipeline.exec();
-    throw err;
+    logger.info(`[FeatureEventBuffer] Re-queued ${requeued}/${payloads.length} events after insert failure`);
+    throw insertErr;
   }
 }
 
