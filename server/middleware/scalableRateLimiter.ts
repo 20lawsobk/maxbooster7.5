@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { logger } from '../logger.js';
+import { getRedisClient } from '../lib/redisClient.js';
 
 interface RateLimiterConfig {
   windowMs: number;
@@ -157,25 +158,35 @@ export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>
   return limiter.middleware();
 };
 
-export const globalScalableRateLimiter = createScalableRateLimiter({
-  windowMs: 60000,
-  maxRequests: 10000,
-});
+// Build a Redis-backed distributed global limiter; fall back to in-memory if Redis unavailable
+function buildDistributedGlobal(
+  windowMs: number,
+  maxRequests: number,
+  keyPrefix = 'global'
+): RequestHandler {
+  let redisClient: any = null;
+  try {
+    redisClient = getRedisClient();
+  } catch {
+    logger.warn('[RateLimit] Redis unavailable — global rate limiter using in-memory fallback');
+  }
 
-export const apiRateLimiter = createScalableRateLimiter({
-  windowMs: 60000,
-  maxRequests: 5000,
-});
+  const limiter = new DistributedRateLimiter(
+    {
+      windowMs,
+      maxRequests,
+      skip: skipRateLimiting,
+      keyGenerator: (req) => {
+        const userId = (req as any).user?.id;
+        const ip = req.ip || req.socket.remoteAddress || 'unknown';
+        return `${keyPrefix}:${userId ?? ip}`;
+      },
+    },
+    redisClient
+  );
 
-export const aiRateLimiter = createScalableRateLimiter({
-  windowMs: 60000,
-  maxRequests: 2000,
-});
-
-export const authRateLimiter = createScalableRateLimiter({
-  windowMs: 900000,
-  maxRequests: 100,
-});
+  return limiter.middleware();
+}
 
 export class DistributedRateLimiter {
   private localStore: Map<string, SlidingWindowEntry> = new Map();
@@ -260,6 +271,14 @@ export class DistributedRateLimiter {
     };
   }
 }
+
+export const globalScalableRateLimiter = buildDistributedGlobal(60000, 10000, 'global');
+
+export const apiRateLimiter = buildDistributedGlobal(60000, 5000, 'api');
+
+export const aiRateLimiter = buildDistributedGlobal(60000, 2000, 'ai');
+
+export const authRateLimiter = buildDistributedGlobal(900000, 100, 'auth');
 
 export const createHighScaleRateLimiter = (
   tier: 'monthly' | 'yearly' | 'lifetime' | 'unlimited'

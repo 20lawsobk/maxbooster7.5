@@ -9,6 +9,7 @@ import { studioService } from '../services/studioService';
 import { logger } from '../logger.js';
 import { nanoid } from 'nanoid';
 import { audioUpload, storeUploadedFile, handleUploadError } from '../middleware/uploadHandler.js';
+import { requirePresignedForLargeUploads } from '../middleware/uploadSizeGuard.js';
 
 const router = Router();
 
@@ -1780,7 +1781,7 @@ router.post('/ai-music/match-reference', requireAuth, async (req: Request, res: 
 });
 
 // Studio upload endpoint with proper file handling
-router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploadError, async (req: Request, res: Response) => {
+router.post('/upload', requireAuth, requirePresignedForLargeUploads, audioUpload.single('audioFile'), handleUploadError, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
     const file = req.file;

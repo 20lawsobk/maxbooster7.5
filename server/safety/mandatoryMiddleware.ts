@@ -13,6 +13,8 @@ import { logger } from '../logger.js';
 import { randomUUID } from 'crypto';
 import { selfHealingSecurityMiddleware } from '../middleware/selfHealingMiddleware.js';
 import * as Sentry from '@sentry/node';
+import { DistributedRateLimiter } from '../middleware/scalableRateLimiter.js';
+import { getRedisClient } from '../lib/redisClient.js';
 
 /**
  * Prototype pollution protection
@@ -296,57 +298,66 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     throw new Error('Failed to load mandatory prototype pollution middleware');
   }
 
-  // 6. Rate limiting (required - but configurable for scale)
+  // 6. Rate limiting — Redis-backed distributed sliding window; in-memory fallback
   try {
     const isDev = process.env.NODE_ENV !== 'production';
     const isLoadTest = process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
-    
-    // In development or load test mode, use very high limits
-    const maxRequests = isLoadTest ? 1000000 : (isDev ? 100000 : 1000);
-    
-    const limiter = rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: maxRequests,
-      message: {
-        success: false,
-        error: 'Too many requests, please try again later',
+    const maxRequests = isLoadTest ? 1_000_000 : isDev ? 100_000 : 1_000;
+    const windowMs = 15 * 60 * 1000;
+
+    let redisClient: any = null;
+    try { redisClient = getRedisClient(); } catch { /* fall through to in-memory */ }
+
+    const limiter = new DistributedRateLimiter(
+      {
+        windowMs,
+        maxRequests,
+        skip: (req) => {
+          if (isDev || isLoadTest) return true;
+          return req.path === '/health' || req.path === '/api/health' || req.path === '/api/version';
+        },
+        keyGenerator: (req) => {
+          const userId = (req as any).user?.id;
+          const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+          return `mandatory:${userId ?? ip}`;
+        },
       },
-      standardHeaders: true,
-      legacyHeaders: false,
-      validate: { trustProxy: false },
-      skip: (req) => {
-        // Skip rate limiting in development and load test modes
-        if (isDev || isLoadTest) return true;
-        // Skip rate limiting for health checks
-        return req.path === '/health' || req.path === '/api/health' || req.path === '/api/version';
-      },
-    });
-    app.use(limiter);
+      redisClient
+    );
+    app.use(limiter.middleware());
     loadedMiddleware.push('rateLimit');
-    logger.info(`   ✓ Rate limiting middleware (max: ${maxRequests}/15min, skip: ${isDev || isLoadTest ? 'dev/test mode' : 'disabled'})`);
+    const backend = redisClient ? 'Redis' : 'in-memory';
+    logger.info(`   ✓ Rate limiting middleware (max: ${maxRequests}/15min, backend: ${backend}, skip: ${isDev || isLoadTest ? 'dev/test mode' : 'disabled'})`);
   } catch (error) {
     failedMiddleware.push('rateLimit');
     logger.error('   ✗ Rate limiting middleware FAILED', error);
     throw new Error('Failed to load mandatory rate limiting middleware');
   }
 
-  // 7. Strict API rate limiting (for sensitive endpoints)
+  // 7. Strict API rate limiting (for sensitive endpoints) — Redis-backed
   try {
     const isDev = process.env.NODE_ENV !== 'production';
     const isLoadTest = process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
-    
-    const strictLimiter = rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: isDev || isLoadTest ? 100000 : 50,
-      message: {
-        success: false,
-        error: 'Too many authentication attempts, please try again later',
+    const maxRequests = isDev || isLoadTest ? 100_000 : 50;
+    const windowMs = 15 * 60 * 1000;
+
+    let redisClient: any = null;
+    try { redisClient = getRedisClient(); } catch { /* fall through to in-memory */ }
+
+    const strictLimiter = new DistributedRateLimiter(
+      {
+        windowMs,
+        maxRequests,
+        skip: () => isDev || isLoadTest,
+        keyGenerator: (req) => {
+          const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+          return `strict:${ip}`;
+        },
       },
-      validate: { trustProxy: false },
-      skip: () => isDev || isLoadTest,
-    });
-    app.use('/api/auth', strictLimiter);
-    app.use('/api/kill-switch', strictLimiter);
+      redisClient
+    );
+    app.use('/api/auth', strictLimiter.middleware());
+    app.use('/api/kill-switch', strictLimiter.middleware());
     loadedMiddleware.push('strictRateLimit');
     logger.info(`   ✓ Strict rate limiting for auth endpoints (skip: ${isDev || isLoadTest ? 'dev/test mode' : 'disabled'})`);
   } catch (error) {

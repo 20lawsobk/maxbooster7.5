@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { distributedCache } from '../infrastructure/distributedCache.js';
 import { db } from '../db';
 import { 
   analytics, 
@@ -31,65 +32,68 @@ router.post('/ai/predict-metric', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Calculate timeframe
-    const days = parseInt(timeframe.replace('d', '')) || 30;
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const cacheKey = `analytics:predict:${userId}:${metric}:${timeframe}`;
+    const result = await distributedCache.getOrSet(
+      cacheKey,
+      async () => {
+        const days = parseInt(timeframe.replace('d', '')) || 30;
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
 
-    // Get historical data for the metric - use SUM to aggregate values by date
-    const historicalData = await db
-      .select({
-        date: sql<string>`DATE(${analytics.date})`,
-        value: metric === 'streams' ? sql<number>`SUM(${analytics.streams})` :
-               metric === 'revenue' ? sql<number>`SUM(${analytics.revenue})` :
-               sql<number>`SUM(${analytics.totalListeners})`,
-      })
-      .from(analytics)
-      .where(
-        and(
-          eq(analytics.userId, userId),
-          gte(analytics.date, startDate),
-          lte(analytics.date, endDate)
-        )
-      )
-      .groupBy(sql`DATE(${analytics.date})`)
-      .orderBy(sql`DATE(${analytics.date})`);
+        const historicalData = await db
+          .select({
+            date: sql<string>`DATE(${analytics.date})`,
+            value: metric === 'streams' ? sql<number>`SUM(${analytics.streams})` :
+                   metric === 'revenue' ? sql<number>`SUM(${analytics.revenue})` :
+                   sql<number>`SUM(${analytics.totalListeners})`,
+          })
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              gte(analytics.date, startDate),
+              lte(analytics.date, endDate)
+            )
+          )
+          .groupBy(sql`DATE(${analytics.date})`)
+          .orderBy(sql`DATE(${analytics.date})`);
 
-    // Simple linear regression for prediction
-    const values = historicalData.map(d => Number(d.value) || 0);
-    const current = values.length > 0 ? values[values.length - 1] : 0;
-    const avg_value = values.reduce((a, b) => a + b, 0) / (values.length || 1);
-    const trend = values.length > 1 ? 
-      (values[values.length - 1] - values[0]) / values.length : 0;
+        const values = historicalData.map(d => Number(d.value) || 0);
+        const current = values.length > 0 ? values[values.length - 1] : 0;
+        const avg_value = values.reduce((a, b) => a + b, 0) / (values.length || 1);
+        const trend = values.length > 1 ?
+          (values[values.length - 1] - values[0]) / values.length : 0;
 
-    // Predict next 7 days
-    const predicted = Math.max(0, current + (trend * 7));
-    const confidence = Math.min(95, Math.max(50, 75 - (Math.abs(trend) / avg_value) * 100));
+        const predicted = Math.max(0, current + (trend * 7));
+        const confidence = Math.min(95, Math.max(50, 75 - (Math.abs(trend) / (avg_value || 1)) * 100));
 
-    // Generate forecast
-    const forecast = [];
-    for (let i = 1; i <= 7; i++) {
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + i);
-      const predictedValue = Math.max(0, current + (trend * i));
-      
-      forecast.push({
-        date: futureDate.toISOString().split('T')[0],
-        value: Math.round(predictedValue),
-        confidence_low: Math.round(predictedValue * 0.8),
-        confidence_high: Math.round(predictedValue * 1.2),
-      });
-    }
+        const forecast = [];
+        for (let i = 1; i <= 7; i++) {
+          const futureDate = new Date();
+          futureDate.setDate(futureDate.getDate() + i);
+          const predictedValue = Math.max(0, current + (trend * i));
+          forecast.push({
+            date: futureDate.toISOString().split('T')[0],
+            value: Math.round(predictedValue),
+            confidence_low: Math.round(predictedValue * 0.8),
+            confidence_high: Math.round(predictedValue * 1.2),
+          });
+        }
 
-    return res.json({
-      metric,
-      current: Math.round(current),
-      predicted: Math.round(predicted),
-      confidence: Math.round(confidence),
-      trend: trend > 0 ? 'up' : trend < 0 ? 'down' : 'stable',
-      forecast,
-    });
+        return {
+          metric,
+          current: Math.round(current),
+          predicted: Math.round(predicted),
+          confidence: Math.round(confidence),
+          trend: trend > 0 ? 'up' : trend < 0 ? 'down' : 'stable',
+          forecast,
+        };
+      },
+      60
+    );
+
+    return res.json(result);
   } catch (error) {
     logger.error('Error predicting metric:', error);
     return res.status(500).json({ error: 'Failed to predict metric' });
@@ -650,49 +654,60 @@ router.get('/historical/yearly', async (req: Request, res: Response) => {
     }
 
     const currentYear = new Date().getFullYear();
-    const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
-    
-    const yearlyData = await Promise.all(years.map(async (year) => {
-      const startDate = new Date(year, 0, 1);
-      const endDate = new Date(year, 11, 31);
-      
-      const yearStats = await db
-        .select({
-          streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-          revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
-          listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-        })
-        .from(analytics)
-        .where(
-          and(
-            eq(analytics.userId, userId),
-            gte(analytics.date, startDate),
-            lte(analytics.date, endDate)
-          )
-        );
+    const cacheKey = `analytics:historical:yearly:${userId}:${currentYear}`;
 
-      const releaseCount = await db
-        .select({ count: count() })
-        .from(releases)
-        .where(
-          and(
-            eq(releases.userId, userId),
-            gte(releases.releaseDate, startDate),
-            lte(releases.releaseDate, endDate)
-          )
-        );
+    const data = await distributedCache.getOrSet(
+      cacheKey,
+      async () => {
+        const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
 
-      return {
-        year,
-        streams: Number(yearStats[0]?.streams) || 0,
-        revenue: Number(yearStats[0]?.revenue) || 0,
-        listeners: Number(yearStats[0]?.listeners) || 0,
-        releases: releaseCount[0]?.count || 0,
-        playlistAdds: Math.max(0, Math.floor(Number(yearStats[0]?.streams || 0) * 0.002)),
-      };
-    }));
+        const yearlyData = await Promise.all(years.map(async (year) => {
+          const startDate = new Date(year, 0, 1);
+          const endDate = new Date(year, 11, 31);
 
-    return res.json({ success: true, data: yearlyData });
+          const [yearStats, releaseCount] = await Promise.all([
+            db
+              .select({
+                streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+                revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+                listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+              })
+              .from(analytics)
+              .where(
+                and(
+                  eq(analytics.userId, userId),
+                  gte(analytics.date, startDate),
+                  lte(analytics.date, endDate)
+                )
+              ),
+            db
+              .select({ count: count() })
+              .from(releases)
+              .where(
+                and(
+                  eq(releases.userId, userId),
+                  gte(releases.releaseDate, startDate),
+                  lte(releases.releaseDate, endDate)
+                )
+              ),
+          ]);
+
+          return {
+            year,
+            streams: Number(yearStats[0]?.streams) || 0,
+            revenue: Number(yearStats[0]?.revenue) || 0,
+            listeners: Number(yearStats[0]?.listeners) || 0,
+            releases: releaseCount[0]?.count || 0,
+            playlistAdds: Math.max(0, Math.floor(Number(yearStats[0]?.streams || 0) * 0.002)),
+          };
+        }));
+
+        return yearlyData;
+      },
+      300
+    );
+
+    return res.json({ success: true, data });
   } catch (error) {
     logger.error('Error fetching yearly historical data:', error);
     return res.status(500).json({ error: 'Failed to fetch historical data' });

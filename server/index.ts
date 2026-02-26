@@ -351,6 +351,13 @@ app.use((req, res, next) => {
   try {
     const { tfWorkerPool } = await import('./lib/tensorflowWorkerPool.js');
     await tfWorkerPool.initialize();
+    // Load all persisted models into worker threads so inference is immediately available
+    try {
+      const { mlModelRegistry } = await import('./services/mlModelRegistry.js');
+      await tfWorkerPool.loadAllModels(mlModelRegistry);
+    } catch (modelErr: any) {
+      logger.warn(`[TFWorkerPool] Model preload skipped: ${modelErr.message}`);
+    }
   } catch (e: any) {
     logger.warn(`[TFWorkerPool] Initialization skipped: ${e.message}`);
   }

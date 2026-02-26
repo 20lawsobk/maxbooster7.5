@@ -5,6 +5,7 @@ import { eq, and, desc, sql, gte, lte, between } from 'drizzle-orm';
 import { apiKeyService, ApiKeyRequest } from '../../../services/apiKeyService';
 import { logger } from '../../../logger.js';
 import { advancedAnalyticsService } from '../../../services/advancedAnalyticsService';
+import { distributedCache } from '../../../infrastructure/distributedCache.js';
 
 const router = Router();
 
@@ -84,74 +85,80 @@ router.get('/streams{/:artistId}', async (req: ApiKeyRequest, res) => {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
     }
 
-    // Calculate date range
-    const end = endDate ? new Date(endDate as string) : new Date();
-    const start = startDate
-      ? new Date(startDate as string)
-      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
+    const cacheKey = `v1:analytics:streams:${artistId}:${timeRange}:${startDate ?? ''}:${endDate ?? ''}:${platform ?? ''}`;
+    const payload = await distributedCache.getOrSet(
+      cacheKey,
+      async () => {
+        // Calculate date range
+        const end = endDate ? new Date(endDate as string) : new Date();
+        const start = startDate
+          ? new Date(startDate as string)
+          : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
 
-    // Build query conditions
-    const conditions = [
-      eq(analytics.userId, artistId as string),
-      gte(analytics.date, start),
-      lte(analytics.date, end),
-    ];
+        // Build query conditions
+        const conditions = [
+          eq(analytics.userId, artistId as string),
+          gte(analytics.date, start),
+          lte(analytics.date, end),
+        ];
 
-    if (platform) {
-      conditions.push(eq(analytics.platform, platform as string));
-    }
+        if (platform) {
+          conditions.push(eq(analytics.platform, platform as string));
+        }
 
-    // Get streaming data
-    const streamData = await db
-      .select({
-        date: sql<string>`DATE(${analytics.date})`,
-        platform: analytics.platform,
-        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-        revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
-        listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-      })
-      .from(analytics)
-      .where(and(...conditions))
-      .groupBy(sql`DATE(${analytics.date})`, analytics.platform)
-      .orderBy(sql`DATE(${analytics.date})`);
+        const [streamData, [totals], byPlatform] = await Promise.all([
+          db
+            .select({
+              date: sql<string>`DATE(${analytics.date})`,
+              platform: analytics.platform,
+              streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+              revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+              listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+            })
+            .from(analytics)
+            .where(and(...conditions))
+            .groupBy(sql`DATE(${analytics.date})`, analytics.platform)
+            .orderBy(sql`DATE(${analytics.date})`),
+          db
+            .select({
+              totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+              totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+              totalListeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+            })
+            .from(analytics)
+            .where(and(...conditions)),
+          db
+            .select({
+              platform: analytics.platform,
+              streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+              revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+              listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+            })
+            .from(analytics)
+            .where(and(...conditions))
+            .groupBy(analytics.platform)
+            .orderBy(desc(sql`COALESCE(SUM(${analytics.streams}), 0)`)),
+        ]);
 
-    // Calculate totals
-    const [totals] = await db
-      .select({
-        totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-        totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
-        totalListeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-      })
-      .from(analytics)
-      .where(and(...conditions));
-
-    // Group by platform
-    const byPlatform = await db
-      .select({
-        platform: analytics.platform,
-        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-        revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
-        listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-      })
-      .from(analytics)
-      .where(and(...conditions))
-      .groupBy(analytics.platform)
-      .orderBy(desc(sql`COALESCE(SUM(${analytics.streams}), 0)`));
-
-    return res.json({
-      success: true,
-      timeRange: {
-        start: start.toISOString(),
-        end: end.toISOString(),
+        return {
+          success: true,
+          timeRange: {
+            start: start.toISOString(),
+            end: end.toISOString(),
+          },
+          totals: {
+            streams: totals?.totalStreams || 0,
+            revenue: parseFloat(totals?.totalRevenue?.toString() || '0'),
+            listeners: totals?.totalListeners || 0,
+          },
+          byPlatform,
+          timeline: streamData,
+        };
       },
-      totals: {
-        streams: totals?.totalStreams || 0,
-        revenue: parseFloat(totals?.totalRevenue?.toString() || '0'),
-        listeners: totals?.totalListeners || 0,
-      },
-      byPlatform,
-      timeline: streamData,
-    });
+      60
+    );
+
+    return res.json(payload);
   } catch (error: unknown) {
     logger.error('Error fetching stream data:', error);
     return res

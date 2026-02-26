@@ -27,6 +27,14 @@ interface InferenceRequest {
   reject: (err: Error) => void;
 }
 
+interface LoadRequest {
+  id: string;
+  modelId: string;
+  modelPath: string;
+  resolve: () => void;
+  reject: (err: Error) => void;
+}
+
 interface WorkerState {
   worker: Worker;
   busy: boolean;
@@ -105,6 +113,78 @@ class TensorFlowWorkerPool {
     } catch (err: any) {
       logger.warn(`[TFWorkerPool] Could not initialize worker pool: ${err.message} — falling back to in-process inference`);
     }
+  }
+
+  /**
+   * Load a model into every worker in the pool. Each worker independently
+   * deserializes the weights from disk so inference runs fully in-thread.
+   */
+  loadModel(modelId: string, modelPath: string): Promise<void> {
+    if (!this.initialized || this.workers.length === 0) {
+      return Promise.reject(new Error('[TFWorkerPool] Pool not initialized — cannot load model'));
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const id = `load-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      let settled = 0;
+      let failed = 0;
+      const total = this.workers.length;
+
+      const onResponse = (msg: any) => {
+        if (msg.type !== 'load' || msg.modelId !== modelId || msg.id !== id) return;
+
+        if (msg.error) {
+          failed++;
+          logger.warn(`[TFWorkerPool] Worker failed to load model ${modelId}: ${msg.error}`);
+        } else {
+          logger.info(`[TFWorkerPool] Worker loaded model ${modelId}`);
+        }
+
+        settled++;
+        if (settled === total) {
+          this.workers.forEach(ws => ws.worker.off('message', onResponse));
+          if (failed === total) {
+            reject(new Error(`All workers failed to load model ${modelId}`));
+          } else {
+            resolve();
+          }
+        }
+      };
+
+      this.workers.forEach(ws => {
+        ws.worker.on('message', onResponse);
+        ws.worker.postMessage({ id, type: 'load', modelId, modelPath });
+      });
+    });
+  }
+
+  /**
+   * Load all models that have a filePath persisted in the MLModelRegistry.
+   * Called once after pool initialization so workers can serve real inference.
+   */
+  async loadAllModels(registry: { listModels: (f?: any) => Promise<Array<{ id: string; filePath?: string }>> }): Promise<void> {
+    let models: Array<{ id: string; filePath?: string }> = [];
+    try {
+      models = await registry.listModels();
+    } catch (err: any) {
+      logger.warn(`[TFWorkerPool] Could not list models from registry: ${err.message}`);
+      return;
+    }
+
+    const withPath = models.filter(m => m.filePath);
+    if (withPath.length === 0) {
+      logger.info('[TFWorkerPool] No persisted models found in registry — workers idle until models are trained');
+      return;
+    }
+
+    logger.info(`[TFWorkerPool] Loading ${withPath.length} model(s) into worker pool…`);
+    const results = await Promise.allSettled(
+      withPath.map(m => this.loadModel(m.id, `${m.filePath}/model.json`))
+    );
+
+    const loaded = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    logger.info(`✅ [TFWorkerPool] Models loaded into workers — success: ${loaded}, failed: ${failed}`);
   }
 
   infer(modelId: string, inputData: number[], inputShape: number[]): Promise<number[]> {

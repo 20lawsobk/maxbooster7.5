@@ -6,6 +6,7 @@ import { logger } from '../../logger.js';
 import bcrypt from 'bcrypt';
 import os from 'os';
 import { notificationService } from '../../services/notificationService.js';
+import { distributedCache } from '../../infrastructure/distributedCache.js';
 
 const router = Router();
 
@@ -82,78 +83,56 @@ router.get('/activity', async (req, res) => {
 
 router.get('/analytics', async (req, res) => {
   try {
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-    
-    const [totalUsersResult] = await db.select({ count: count() }).from(users);
-    const totalUsers = totalUsersResult?.count || 0;
-    
-    const [activeUsersResult] = await db.select({ count: count() })
-      .from(users)
-      .where(gte(users.createdAt, thirtyDaysAgo));
-    const activeUsers = activeUsersResult?.count || 0;
-    
-    const [previousActiveResult] = await db.select({ count: count() })
-      .from(users)
-      .where(and(gte(users.createdAt, sixtyDaysAgo), lte(users.createdAt, thirtyDaysAgo)));
-    const previousActiveUsers = previousActiveResult?.count || 0;
-    
-    const [revenueResult] = await db.select({ 
-      total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` 
-    }).from(analytics).where(gte(analytics.date, thirtyDaysAgo));
-    const revenue = revenueResult?.total || 0;
-    
-    const [previousRevenueResult] = await db.select({ 
-      total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` 
-    }).from(analytics).where(and(gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo)));
-    const previousRevenue = previousRevenueResult?.total || 0;
-    
-    const subscriptionCounts = await db.select({
-      tier: users.subscriptionTier,
-      count: count(),
-    })
-    .from(users)
-    .groupBy(users.subscriptionTier);
-    
-    const subscriptions = {
-      free: 0,
-      pro: 0,
-      enterprise: 0,
-    };
-    
-    subscriptionCounts.forEach(row => {
-      const tier = row.tier?.toLowerCase() || '';
-      const paidTiers = ['pro', 'premium', 'monthly', 'yearly', 'annual'];
-      const enterpriseTiers = ['enterprise', 'lifetime', 'unlimited'];
-      
-      if (enterpriseTiers.includes(tier)) {
-        subscriptions.enterprise += row.count;
-      } else if (paidTiers.includes(tier)) {
-        subscriptions.pro += row.count;
-      } else {
-        subscriptions.free += row.count;
-      }
-    });
-    
-    const userGrowth = previousActiveUsers > 0 
-      ? Math.round(((activeUsers - previousActiveUsers) / previousActiveUsers) * 100)
-      : activeUsers > 0 ? 100 : 0;
-    
-    const revenueGrowth = previousRevenue > 0 
-      ? Math.round(((revenue - previousRevenue) / previousRevenue) * 100)
-      : revenue > 0 ? 100 : 0;
-    
-    res.json({
-      totalUsers,
-      activeUsers,
-      revenue,
-      subscriptions,
-      growth: { 
-        users: userGrowth, 
-        revenue: revenueGrowth 
+    const cacheKey = `admin:analytics:${Math.floor(Date.now() / 60000)}`;
+    const payload = await distributedCache.getOrSet(
+      cacheKey,
+      async () => {
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+        const [
+          [totalUsersResult],
+          [activeUsersResult],
+          [previousActiveResult],
+          [revenueResult],
+          [previousRevenueResult],
+          subscriptionCounts,
+        ] = await Promise.all([
+          db.select({ count: count() }).from(users),
+          db.select({ count: count() }).from(users).where(gte(users.createdAt, thirtyDaysAgo)),
+          db.select({ count: count() }).from(users).where(and(gte(users.createdAt, sixtyDaysAgo), lte(users.createdAt, thirtyDaysAgo))),
+          db.select({ total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(gte(analytics.date, thirtyDaysAgo)),
+          db.select({ total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(and(gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo))),
+          db.select({ tier: users.subscriptionTier, count: count() }).from(users).groupBy(users.subscriptionTier),
+        ]);
+
+        const totalUsers = totalUsersResult?.count || 0;
+        const activeUsers = activeUsersResult?.count || 0;
+        const previousActiveUsers = previousActiveResult?.count || 0;
+        const revenue = revenueResult?.total || 0;
+        const previousRevenue = previousRevenueResult?.total || 0;
+
+        const subscriptions = { free: 0, pro: 0, enterprise: 0 };
+        subscriptionCounts.forEach(row => {
+          const tier = row.tier?.toLowerCase() || '';
+          if (['enterprise', 'lifetime', 'unlimited'].includes(tier)) subscriptions.enterprise += row.count;
+          else if (['pro', 'premium', 'monthly', 'yearly', 'annual'].includes(tier)) subscriptions.pro += row.count;
+          else subscriptions.free += row.count;
+        });
+
+        const userGrowth = previousActiveUsers > 0
+          ? Math.round(((activeUsers - previousActiveUsers) / previousActiveUsers) * 100)
+          : activeUsers > 0 ? 100 : 0;
+        const revenueGrowth = previousRevenue > 0
+          ? Math.round(((Number(revenue) - Number(previousRevenue)) / Number(previousRevenue)) * 100)
+          : Number(revenue) > 0 ? 100 : 0;
+
+        return { totalUsers, activeUsers, revenue, subscriptions, growth: { users: userGrowth, revenue: revenueGrowth } };
       },
-    });
+      60
+    );
+    res.json(payload);
   } catch (error) {
     logger.error('Error fetching admin analytics:', error);
     res.status(500).json({ error: 'Failed to fetch analytics' });
@@ -470,65 +449,64 @@ router.post('/users/:userId/email', async (req, res) => {
 
 router.get('/analytics', async (req, res) => {
   try {
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const cacheKey = `admin:stats:${Math.floor(Date.now() / 60000)}`;
+    const payload = await distributedCache.getOrSet(
+      cacheKey,
+      async () => {
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const [
-      totalUsersResult,
-      newUsersResult,
-      totalProjectsResult,
-      totalReleasesResult,
-      subscriptionStatsResult,
-      revenueResult
-    ] = await Promise.all([
-      db.select({ count: count() }).from(users),
-      db.select({ count: count() }).from(users).where(gte(users.createdAt, thirtyDaysAgo)),
-      db.select({ count: count() }).from(projects),
-      db.select({ count: count() }).from(releases),
-      db.select({
-        plan: users.subscriptionTier,
-        count: count()
-      }).from(users).groupBy(users.subscriptionTier),
-      db.select({ total: sum(analytics.revenue) }).from(analytics)
-    ]);
+        const [
+          totalUsersResult,
+          newUsersResult,
+          totalProjectsResult,
+          totalReleasesResult,
+          subscriptionStatsResult,
+          revenueResult
+        ] = await Promise.all([
+          db.select({ count: count() }).from(users),
+          db.select({ count: count() }).from(users).where(gte(users.createdAt, thirtyDaysAgo)),
+          db.select({ count: count() }).from(projects),
+          db.select({ count: count() }).from(releases),
+          db.select({ plan: users.subscriptionTier, count: count() }).from(users).groupBy(users.subscriptionTier),
+          db.select({ total: sum(analytics.revenue) }).from(analytics)
+        ]);
 
-    const totalUsers = totalUsersResult[0]?.count || 0;
-    const newUsers = newUsersResult[0]?.count || 0;
-    const totalProjects = totalProjectsResult[0]?.count || 0;
-    const totalReleases = totalReleasesResult[0]?.count || 0;
-    const totalRevenue = parseFloat(revenueResult[0]?.total || '0');
+        const totalUsers = totalUsersResult[0]?.count || 0;
+        const newUsers = newUsersResult[0]?.count || 0;
+        const totalProjects = totalProjectsResult[0]?.count || 0;
+        const totalReleases = totalReleasesResult[0]?.count || 0;
+        const totalRevenue = parseFloat(revenueResult[0]?.total || '0');
+        const userGrowthRate = totalUsers > 0 ? ((newUsers / totalUsers) * 100) : 0;
+        const subscriptionStats = subscriptionStatsResult.map(s => ({ plan: s.plan || 'free', count: s.count }));
 
-    const userGrowthRate = totalUsers > 0 ? ((newUsers / totalUsers) * 100) : 0;
-
-    const subscriptionStats = subscriptionStatsResult.map(s => ({
-      plan: s.plan || 'free',
-      count: s.count
-    }));
-
-    res.json({
-      totalUsers,
-      newUsers,
-      recentSignups: newUsers,
-      totalProjects,
-      totalReleases,
-      totalRevenue,
-      totalStreams: 0,
-      revenueGrowth: 12.5,
-      projectsGrowth: 8.3,
-      userGrowthRate,
-      monthlyGrowth: userGrowthRate,
-      subscriptionStats,
-      userGrowth: [],
-      streamGrowth: [],
-      topArtists: [],
-      platformStats: [],
-      topCountries: [
-        { country: 'United States', users: Math.floor(totalUsers * 0.4) },
-        { country: 'United Kingdom', users: Math.floor(totalUsers * 0.15) },
-        { country: 'Germany', users: Math.floor(totalUsers * 0.1) }
-      ]
-    });
+        return {
+          totalUsers,
+          newUsers,
+          recentSignups: newUsers,
+          totalProjects,
+          totalReleases,
+          totalRevenue,
+          totalStreams: 0,
+          revenueGrowth: 12.5,
+          projectsGrowth: 8.3,
+          userGrowthRate,
+          monthlyGrowth: userGrowthRate,
+          subscriptionStats,
+          userGrowth: [],
+          streamGrowth: [],
+          topArtists: [],
+          platformStats: [],
+          topCountries: [
+            { country: 'United States', users: Math.floor(totalUsers * 0.4) },
+            { country: 'United Kingdom', users: Math.floor(totalUsers * 0.15) },
+            { country: 'Germany', users: Math.floor(totalUsers * 0.1) }
+          ]
+        };
+      },
+      60
+    );
+    res.json(payload);
   } catch (error) {
     logger.error('Error fetching analytics:', error);
     res.status(500).json({ error: 'Failed to fetch analytics' });

@@ -14,6 +14,7 @@ import { orders, listings, users, licenseTemplates } from '@shared/schema';
 import { eq, and, gte, sql, desc, asc } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
+import { distributedCache } from '../infrastructure/distributedCache.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -26,9 +27,14 @@ router.get('/beats', async (req: Request, res: Response) => {
       key, bpmMin, bpmMax, priceMin, priceMax, tags 
     } = req.query;
 
-    // If filtering by producer, get their beats directly
+    // If filtering by producer, get their beats directly (short TTL since producer pages update often)
     if (producerId) {
-      const producerBeats = await marketplaceService.getListingsByProducer(producerId as string);
+      const cacheKey = `marketplace:producer-beats:${producerId}`;
+      const producerBeats = await distributedCache.getOrSet(
+        cacheKey,
+        () => marketplaceService.getListingsByProducer(producerId as string),
+        30
+      );
       return res.json(producerBeats);
     }
 
@@ -46,15 +52,26 @@ router.get('/beats', async (req: Request, res: Response) => {
       offset: parseInt(offset as string) || 0,
     };
 
+    // Personalized feeds are cached per-user (30s) to still feel fresh
     if (userId) {
-      const personalizedBeats = await discoveryAlgorithmService.getPersonalizedFeed(userId, filters);
+      const filterSig = `${genre ?? ''}:${mood ?? ''}:${search ?? ''}:${sortBy ?? ''}:${limit ?? 20}:${offset ?? 0}`;
+      const cacheKey = `marketplace:beats:user:${userId}:${filterSig}`;
+      const personalizedBeats = await distributedCache.getOrSet(
+        cacheKey,
+        () => discoveryAlgorithmService.getPersonalizedFeed(userId, filters),
+        30
+      );
       return res.json(personalizedBeats);
     }
 
-    const beats = await marketplaceService.browseListings({
-      ...filters,
-      sortBy: (sortBy as any) || 'recent',
-    });
+    // Anonymous browse — longer TTL since it's not personalized
+    const filterSig = `${genre ?? ''}:${mood ?? ''}:${search ?? ''}:${sortBy ?? ''}:${limit ?? 20}:${offset ?? 0}`;
+    const cacheKey = `marketplace:beats:anon:${filterSig}`;
+    const beats = await distributedCache.getOrSet(
+      cacheKey,
+      () => marketplaceService.browseListings({ ...filters, sortBy: (sortBy as any) || 'recent' }),
+      60
+    );
 
     res.json(beats);
   } catch (error: any) {
@@ -71,111 +88,100 @@ router.get('/producer-analytics', async (req: Request, res: Response) => {
 
     const { timeRange = '30d' } = req.query;
     const userId = req.user!.id;
+    const cacheKey = `marketplace:producer-analytics:${userId}:${timeRange}`;
 
-    const userListings = await marketplaceService.getUserListings(userId);
-    const userPurchases = await marketplaceService.getUserSales(userId);
+    const result = await distributedCache.getOrSet(
+      cacheKey,
+      async () => {
+        const userListings = await marketplaceService.getUserListings(userId);
+        const userPurchases = await marketplaceService.getUserSales(userId);
 
-    const totalViews = userListings.reduce((sum, l) => sum + (l.views || 0), 0);
-    const totalPlays = userListings.reduce((sum, l) => sum + (l.plays || 0), 0);
-    const totalSales = userPurchases.length;
-    const totalRevenue = userPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const totalViews = userListings.reduce((sum, l) => sum + (l.views || 0), 0);
+        const totalPlays = userListings.reduce((sum, l) => sum + (l.plays || 0), 0);
+        const totalSales = userPurchases.length;
+        const totalRevenue = userPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
 
-    const conversionRate = totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
-    const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+        const conversionRate = totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
+        const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
-    const days = timeRange === '7d' ? 7 : timeRange === '90d' ? 90 : timeRange === '1y' ? 365 : 30;
-    const currentPeriodStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    const previousPeriodStart = new Date(Date.now() - days * 2 * 24 * 60 * 60 * 1000);
+        const days = timeRange === '7d' ? 7 : timeRange === '90d' ? 90 : timeRange === '1y' ? 365 : 30;
+        const currentPeriodStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+        const previousPeriodStart = new Date(Date.now() - days * 2 * 24 * 60 * 60 * 1000);
+        const now = new Date();
 
-    const now = new Date();
-    const [currentPeriodOrders] = await db
-      .select({
-        count: sql<number>`COUNT(*)`,
-        revenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)`,
-      })
-      .from(orders)
-      .where(and(
-        eq(orders.sellerId, userId),
-        eq(orders.status, 'completed'),
-        gte(orders.createdAt, currentPeriodStart),
-        sql`${orders.createdAt} < ${now}`,
-      ));
+        const [[currentPeriodOrders], [previousPeriodOrders]] = await Promise.all([
+          db
+            .select({ count: sql<number>`COUNT(*)`, revenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)` })
+            .from(orders)
+            .where(and(eq(orders.sellerId, userId), eq(orders.status, 'completed'), gte(orders.createdAt, currentPeriodStart), sql`${orders.createdAt} < ${now}`)),
+          db
+            .select({ count: sql<number>`COUNT(*)`, revenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)` })
+            .from(orders)
+            .where(and(eq(orders.sellerId, userId), eq(orders.status, 'completed'), gte(orders.createdAt, previousPeriodStart), sql`${orders.createdAt} < ${currentPeriodStart}`)),
+        ]);
 
-    const [previousPeriodOrders] = await db
-      .select({
-        count: sql<number>`COUNT(*)`,
-        revenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)`,
-      })
-      .from(orders)
-      .where(and(
-        eq(orders.sellerId, userId),
-        eq(orders.status, 'completed'),
-        gte(orders.createdAt, previousPeriodStart),
-        sql`${orders.createdAt} < ${currentPeriodStart}`,
-      ));
+        const curSales = Number(currentPeriodOrders?.count || 0);
+        const prevSales = Number(previousPeriodOrders?.count || 0);
+        const curRevenue = Number(currentPeriodOrders?.revenue || 0);
+        const prevRevenue = Number(previousPeriodOrders?.revenue || 0);
 
-    const curSales = Number(currentPeriodOrders?.count || 0);
-    const prevSales = Number(previousPeriodOrders?.count || 0);
-    const curRevenue = Number(currentPeriodOrders?.revenue || 0);
-    const prevRevenue = Number(previousPeriodOrders?.revenue || 0);
+        const calcChange = (cur: number, prev: number) => prev > 0 ? parseFloat(((cur - prev) / prev * 100).toFixed(1)) : cur > 0 ? 100 : 0;
+        const salesChange = calcChange(curSales, prevSales);
+        const revenueChange = calcChange(curRevenue, prevRevenue);
 
-    const calcChange = (cur: number, prev: number) => prev > 0 ? parseFloat(((cur - prev) / prev * 100).toFixed(1)) : cur > 0 ? 100 : 0;
+        const licenseBreakdown = userPurchases.reduce((acc, p) => {
+          const type = p.licenseType || 'basic';
+          if (!acc[type]) acc[type] = { count: 0, revenue: 0 };
+          acc[type].count++;
+          acc[type].revenue += p.amount || 0;
+          return acc;
+        }, {} as Record<string, { count: number; revenue: number }>);
 
-    const salesChange = calcChange(curSales, prevSales);
-    const revenueChange = calcChange(curRevenue, prevRevenue);
-    const viewsChange = 0;
-    const playsChange = 0;
-
-    const licenseBreakdown = userPurchases.reduce((acc, p) => {
-      const type = p.licenseType || 'basic';
-      if (!acc[type]) acc[type] = { count: 0, revenue: 0 };
-      acc[type].count++;
-      acc[type].revenue += p.amount || 0;
-      return acc;
-    }, {} as Record<string, { count: number; revenue: number }>);
-
-    const analytics = {
-      overview: {
-        totalViews,
-        totalPlays,
-        totalSales,
-        totalRevenue,
-        conversionRate: parseFloat(conversionRate.toFixed(2)),
-        avgOrderValue: parseFloat(avgOrderValue.toFixed(2)),
-        viewsChange,
-        playsChange,
-        salesChange,
-        revenueChange,
+        return {
+          overview: {
+            totalViews,
+            totalPlays,
+            totalSales,
+            totalRevenue,
+            conversionRate: parseFloat(conversionRate.toFixed(2)),
+            avgOrderValue: parseFloat(avgOrderValue.toFixed(2)),
+            viewsChange: 0,
+            playsChange: 0,
+            salesChange,
+            revenueChange,
+          },
+          timeline: await generateTimelineData(timeRange as string, userId),
+          topBeats: userListings
+            .sort((a, b) => (b.plays || 0) - (a.plays || 0))
+            .slice(0, 5)
+            .map((beat) => ({
+              id: beat.id,
+              title: beat.title,
+              views: beat.views || 0,
+              plays: beat.plays || 0,
+              sales: userPurchases.filter(p => p.beatId === beat.id).length,
+              revenue: userPurchases.filter(p => p.beatId === beat.id).reduce((s, p) => s + (p.amount || 0), 0),
+              conversionRate: beat.views > 0 ? parseFloat(((userPurchases.filter(p => p.beatId === beat.id).length / beat.views) * 100).toFixed(2)) : 0,
+            })),
+          licenseBreakdown: Object.entries(licenseBreakdown).map(([type, data]) => ({
+            type: type.charAt(0).toUpperCase() + type.slice(1),
+            count: data.count,
+            revenue: data.revenue,
+            percentage: totalSales > 0 ? parseFloat(((data.count / totalSales) * 100).toFixed(1)) : 0,
+          })),
+          trafficSources: [
+            { source: 'Direct', visits: Math.floor(totalViews * 0.33), conversions: Math.floor(totalSales * 0.35), percentage: 33.3 },
+            { source: 'Social Media', visits: Math.floor(totalViews * 0.28), conversions: Math.floor(totalSales * 0.25), percentage: 28.1 },
+            { source: 'Search', visits: Math.floor(totalViews * 0.21), conversions: Math.floor(totalSales * 0.22), percentage: 20.8 },
+            { source: 'Referral', visits: Math.floor(totalViews * 0.11), conversions: Math.floor(totalSales * 0.12), percentage: 11.2 },
+            { source: 'Email', visits: Math.floor(totalViews * 0.07), conversions: Math.floor(totalSales * 0.06), percentage: 6.6 },
+          ],
+        };
       },
-      timeline: await generateTimelineData(timeRange as string, userId),
-      topBeats: userListings
-        .sort((a, b) => (b.plays || 0) - (a.plays || 0))
-        .slice(0, 5)
-        .map((beat, i) => ({
-          id: beat.id,
-          title: beat.title,
-          views: beat.views || 0,
-          plays: beat.plays || 0,
-          sales: userPurchases.filter(p => p.beatId === beat.id).length,
-          revenue: userPurchases.filter(p => p.beatId === beat.id).reduce((s, p) => s + (p.amount || 0), 0),
-          conversionRate: beat.views > 0 ? parseFloat(((userPurchases.filter(p => p.beatId === beat.id).length / beat.views) * 100).toFixed(2)) : 0,
-        })),
-      licenseBreakdown: Object.entries(licenseBreakdown).map(([type, data]) => ({
-        type: type.charAt(0).toUpperCase() + type.slice(1),
-        count: data.count,
-        revenue: data.revenue,
-        percentage: totalSales > 0 ? parseFloat(((data.count / totalSales) * 100).toFixed(1)) : 0,
-      })),
-      trafficSources: [
-        { source: 'Direct', visits: Math.floor(totalViews * 0.33), conversions: Math.floor(totalSales * 0.35), percentage: 33.3 },
-        { source: 'Social Media', visits: Math.floor(totalViews * 0.28), conversions: Math.floor(totalSales * 0.25), percentage: 28.1 },
-        { source: 'Search', visits: Math.floor(totalViews * 0.21), conversions: Math.floor(totalSales * 0.22), percentage: 20.8 },
-        { source: 'Referral', visits: Math.floor(totalViews * 0.11), conversions: Math.floor(totalSales * 0.12), percentage: 11.2 },
-        { source: 'Email', visits: Math.floor(totalViews * 0.07), conversions: Math.floor(totalSales * 0.06), percentage: 6.6 },
-      ],
-    };
+      60
+    );
 
-    res.json(analytics);
+    res.json(result);
   } catch (error: any) {
     logger.error('Error fetching producer analytics:', error);
     res.status(500).json({ error: 'Failed to fetch analytics' });
@@ -183,6 +189,15 @@ router.get('/producer-analytics', async (req: Request, res: Response) => {
 });
 
 async function generateTimelineData(timeRange: string, userId: string) {
+  const cacheKey = `marketplace:timeline:${userId}:${timeRange}:${Math.floor(Date.now() / 60000)}`;
+  return distributedCache.getOrSet(
+    cacheKey,
+    () => _computeTimelineData(timeRange, userId),
+    60
+  );
+}
+
+async function _computeTimelineData(timeRange: string, userId: string) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const now = new Date();
   const periodCount = timeRange === '7d' ? 7 : timeRange === '90d' ? 12 : timeRange === '1y' ? 12 : 10;
@@ -942,7 +957,7 @@ router.get('/collaborations', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/upload', upload.fields([
+router.post('/upload', requirePresignedForLargeUploads, upload.fields([
   { name: 'audioFile', maxCount: 1 },
   { name: 'coverArt', maxCount: 1 }
 ]), async (req: Request, res: Response) => {
