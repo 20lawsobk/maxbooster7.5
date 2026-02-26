@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { CancellationModal } from '@/components/retention/CancellationModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -105,6 +106,7 @@ export default function Settings() {
   const [paymentUpdateOpen, setPaymentUpdateOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [cancelSubscriptionOpen, setCancelSubscriptionOpen] = useState(false);
+  const [cancellationFeedbackOpen, setCancellationFeedbackOpen] = useState(false);
   const [terminateSessionOpen, setTerminateSessionOpen] = useState(false);
   const [sessionToTerminate, setSessionToTerminate] = useState<string | null>(null);
   const [terminatingSession, setTerminatingSession] = useState(false);
@@ -1355,7 +1357,7 @@ export default function Settings() {
                           {subscriptionData?.tier !== 'free' && (
                             <Button
                               variant="ghost"
-                              onClick={() => setCancelSubscriptionOpen(true)}
+                              onClick={() => setCancellationFeedbackOpen(true)}
                               data-testid="button-cancel-subscription"
                             >
                               Cancel Subscription
@@ -1654,6 +1656,13 @@ export default function Settings() {
         <PaymentUpdateDialog open={paymentUpdateOpen} onOpenChange={setPaymentUpdateOpen} />
 
         <DeleteAccountDialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen} />
+
+        <CancellationModal
+          open={cancellationFeedbackOpen}
+          onOpenChange={setCancellationFeedbackOpen}
+          currentPlan={subscriptionData?.tier ?? 'Pro'}
+          onConfirmCancellation={handleCancelSubscription}
+        />
 
         <AlertDialog open={cancelSubscriptionOpen} onOpenChange={setCancelSubscriptionOpen}>
           <AlertDialogContent>

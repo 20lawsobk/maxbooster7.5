@@ -5,6 +5,8 @@ import { InstantSkeleton } from '@/components/ui/instant-skeleton';
 import { KeyboardShortcutsDialog } from '@/components/dialogs/KeyboardShortcutsDialog';
 import { SkipLinks } from '@/components/SkipLinks';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
+import { NPSSurvey } from '@/components/retention/NPSSurvey';
+import { useNPSSurvey } from '@/hooks/useNPSSurvey';
 import { AIAssistantPublic } from '@/components/support/AIAssistantPublic';
 import { AIAssistantPersonalized } from '@/components/support/AIAssistantPersonalized';
 import { InstallBanner } from '@/components/pwa/InstallBanner';
@@ -290,6 +292,12 @@ function AIAssistantManager() {
   return user ? <AIAssistantPersonalized /> : <AIAssistantPublic />;
 }
 
+function NPSSurveyManager() {
+  const { visible, dismiss, complete } = useNPSSurvey();
+  if (!visible) return null;
+  return <NPSSurvey onDismiss={dismiss} onSubmit={complete} />;
+}
+
 function App() {
   useAutoUpdate();
 
@@ -302,6 +310,7 @@ function App() {
         <OAuthCallbackHandler />
         <DeepLinkHandler />
         <AIAssistantManager />
+        <NPSSurveyManager />
         <UndoToast />
         <CommandPalette />
         <ShortcutGuide />

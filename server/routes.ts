@@ -3317,6 +3317,7 @@ export async function registerRoutes(
     { path: "/api/dmca", name: "dmca", loader: () => import("./routes/dmca") },
     { path: "/api/growth", name: "growth", loader: () => import("./routes/growth") },
     { path: "/api/backup", name: "backup", loader: () => import("./routes/backup") },
+    { path: "/api/retention", name: "retention", loader: () => import("./routes/retention") },
 
     // Payments & Payouts
     { path: "/api/billing", name: "billing", loader: () => import("./routes/billing") },

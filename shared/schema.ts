@@ -4354,3 +4354,83 @@ export const insertFabricVolumeSchema = createInsertSchema(fabricVolumes).omit({
 export const insertFabricStorageNodeSchema = createInsertSchema(fabricStorageNodes).omit({ id: true, lastHeartbeat: true });
 export const insertFabricObjectSchema = createInsertSchema(fabricObjects).omit({ id: true, createdAt: true });
 export const insertFabricChunkSchema = createInsertSchema(fabricChunks).omit({ createdAt: true });
+
+// ============================================================================
+// RETENTION & LONG-TERM SUCCESS TABLES
+// ============================================================================
+
+export const customerHealthScores = pgTable("customer_health_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  score: integer("score").notNull().default(50),
+  riskLevel: text("risk_level").notNull().default("healthy"),
+  loginFrequencyScore: integer("login_frequency_score").default(0),
+  featureAdoptionScore: integer("feature_adoption_score").default(0),
+  engagementScore: integer("engagement_score").default(0),
+  paymentHealthScore: integer("payment_health_score").default(0),
+  daysSinceLastLogin: integer("days_since_last_login"),
+  featuresUsed: integer("features_used").default(0),
+  totalSessions: integer("total_sessions").default(0),
+  reEngagementEmailSentAt: timestamp("re_engagement_email_sent_at"),
+  computedAt: timestamp("computed_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCustomerHealthScoreSchema = createInsertSchema(customerHealthScores).omit({ id: true, createdAt: true });
+export type CustomerHealthScore = typeof customerHealthScores.$inferSelect;
+
+export const npsResponses = pgTable("nps_responses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  score: integer("score").notNull(),
+  comment: text("comment"),
+  triggerContext: text("trigger_context").default("30_day"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertNpsResponseSchema = createInsertSchema(npsResponses).omit({ id: true, createdAt: true });
+export type NpsResponse = typeof npsResponses.$inferSelect;
+
+export const cancellationFeedback = pgTable("cancellation_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  reason: text("reason").notNull(),
+  elaboration: text("elaboration"),
+  competitorMentioned: text("competitor_mentioned"),
+  wouldReturn: boolean("would_return"),
+  planAtCancellation: text("plan_at_cancellation"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCancellationFeedbackSchema = createInsertSchema(cancellationFeedback).omit({ id: true, createdAt: true });
+export type CancellationFeedback = typeof cancellationFeedback.$inferSelect;
+
+export const featureEvents = pgTable("feature_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  featureName: text("feature_name").notNull(),
+  action: text("action").notNull().default("used"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => [
+  index("feature_events_user_feature_idx").on(t.userId, t.featureName),
+  index("feature_events_created_idx").on(t.createdAt),
+]);
+
+export const insertFeatureEventSchema = createInsertSchema(featureEvents).omit({ id: true, createdAt: true });
+export type FeatureEvent = typeof featureEvents.$inferSelect;
+
+export const dunningState = pgTable("dunning_state", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  stripeInvoiceId: text("stripe_invoice_id").notNull().unique(),
+  currentStep: integer("current_step").notNull().default(0),
+  nextEmailAt: timestamp("next_email_at"),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedReason: text("resolved_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDunningStateSchema = createInsertSchema(dunningState).omit({ id: true, createdAt: true });
+export type DunningState = typeof dunningState.$inferSelect;

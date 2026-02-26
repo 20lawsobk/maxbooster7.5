@@ -721,6 +721,20 @@ If you did not expect this invitation, you can safely ignore this email.
       text,
     };
   }
+
+  /**
+   * Generic transactional email — used by dunning and re-engagement services.
+   * Bypasses template-specific methods for operational emails.
+   */
+  async sendTransactional(to: string, subject: string, html: string): Promise<boolean> {
+    const emailData: sgMail.MailDataRequired = {
+      to,
+      from: process.env.SENDGRID_FROM_EMAIL ?? 'noreply@maxbooster.app',
+      subject,
+      html,
+    };
+    return this.sendWithCircuitBreaker(emailData, true);
+  }
 }
 
 export const emailService = new EmailService();

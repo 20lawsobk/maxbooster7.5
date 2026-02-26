@@ -436,6 +436,31 @@ app.use((req, res, next) => {
 
   await registerRoutes(httpServer, app);
 
+  // Start retention background services
+  try {
+    const { reEngagementService } = await import('./services/reEngagementService.js');
+    reEngagementService.startDailyCron();
+    logger.info('[Retention] Re-engagement cron started');
+
+    setInterval(async () => {
+      try {
+        const { dunningService } = await import('./services/dunningService.js');
+        await dunningService.processPendingSteps();
+      } catch (e) { /* non-critical */ }
+    }, 6 * 60 * 60 * 1000);
+    logger.info('[Retention] Dunning processor started (6h interval)');
+
+    setInterval(async () => {
+      try {
+        const { customerHealthScoreService } = await import('./services/customerHealthScoreService.js');
+        await customerHealthScoreService.batchCompute();
+      } catch (e) { /* non-critical */ }
+    }, 24 * 60 * 60 * 1000);
+    logger.info('[Retention] Health score batch processor started (24h interval)');
+  } catch (retentionErr) {
+    logger.warn('[Retention] Background services failed to start:', retentionErr);
+  }
+
   // JSON 404 handler for unmatched API routes (must be after all API routes)
   // This prevents the SPA fallback from returning HTML for missing API endpoints
   // Uses path-agnostic approach to respect multi-handler pipelines

@@ -231,6 +231,13 @@ registerWebhookHandler('invoice.paid', async (event) => {
     invoice.payment_intent as string || invoice.id,
     true
   );
+
+  try {
+    const { dunningService } = await import('../../services/dunningService.js');
+    await dunningService.resolveSequence(invoice.id, 'paid');
+  } catch (err) {
+    logger.error('[Stripe] Failed to resolve dunning sequence:', err);
+  }
   
   return { success: true, message: 'Invoice paid' };
 });
@@ -260,6 +267,13 @@ registerWebhookHandler('invoice.payment_failed', async (event) => {
         const reason = (invoice as any).last_payment_error?.message;
         await notificationService.sendPaymentFailedNotification(found[0].id, amount, reason);
         await notificationService.sendAdminPaymentIssueNotification(found[0].email!, found[0].id, amount, reason);
+
+        try {
+          const { dunningService } = await import('../../services/dunningService.js');
+          await dunningService.startSequence(found[0].id, invoice.id);
+        } catch (dunningErr) {
+          logger.error('[Stripe] Failed to start dunning sequence:', dunningErr);
+        }
       }
     }
   } catch (err) {
