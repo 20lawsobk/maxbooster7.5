@@ -2,13 +2,19 @@ import cluster from 'cluster';
 import os from 'os';
 import path from 'path';
 
-const DISABLE_CLUSTER = process.env.DISABLE_CLUSTER === 'true';
-const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+// Clustering requires either:
+//   1. REPLIT_DEPLOYMENT is set (actual Reserved VM deployment), OR
+//   2. ENABLE_CLUSTER=true explicitly set by the operator
+// NODE_ENV=production alone does NOT trigger clustering — in the Replit IDE the build
+// runs with NODE_ENV=production but there is only one process and no health-check grace period.
+const ENABLE_CLUSTER =
+  !!process.env.REPLIT_DEPLOYMENT ||
+  process.env.ENABLE_CLUSTER === 'true';
 
-if (DISABLE_CLUSTER || !isProduction) {
-  // Not in production or clustering explicitly disabled — run the app in this process directly.
-  // Workers spawned via setupPrimary always execute index.cjs and never run this file,
-  // so cluster.isWorker is never true here.
+const DISABLE_CLUSTER = process.env.DISABLE_CLUSTER === 'true';
+
+if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
+  // Single-process mode: IDE dev environment, DISABLE_CLUSTER=true, or non-deployment run.
   const appEntry = path.join(__dirname, 'index.cjs');
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require(appEntry);
@@ -20,7 +26,7 @@ if (DISABLE_CLUSTER || !isProduction) {
   const freeMemGB = os.freemem() / (1024 ** 3);
 
   // Cap workers by both CPU count and AVAILABLE RAM so we never OOM.
-  const cpuLimit = Math.max(1, numCPUs - 1);            // leave 1 CPU for the primary
+  const cpuLimit = Math.max(1, numCPUs - 1);             // leave 1 CPU for the primary
   const memLimit = Math.max(1, Math.floor(freeMemGB / 6)); // 6 GB per worker (conservative)
 
   // CLUSTER_WORKERS env var gives the operator an explicit override.
