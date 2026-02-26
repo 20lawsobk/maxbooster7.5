@@ -15,6 +15,7 @@
 
 import Redis from 'ioredis';
 import { logger } from '../logger.js';
+import { applyIoredisCompatShim } from './redisCompat.js';
 
 type RedisClient = Redis | InstanceType<typeof Redis.Cluster>;
 
@@ -50,6 +51,7 @@ function buildStandaloneClient(): Redis {
   client.on('error', (err) => logger.error('[Redis] Connection error:', err.message));
   client.on('reconnecting', () => logger.warn('[Redis] Reconnecting...'));
 
+  applyIoredisCompatShim(client);
   return client;
 }
 
@@ -78,12 +80,12 @@ function buildClusterClient(): InstanceType<typeof Redis.Cluster> {
   client.on('connect', () => logger.info('✅ [Redis] Connected (cluster mode)'));
   client.on('ready', () => {
     logger.info('✅ [Redis] Cluster ready');
-    // eviction policy must be set per-node; log a reminder
     logger.info('[Redis] Reminder: set maxmemory-policy=allkeys-lru on all cluster nodes via your provider dashboard');
   });
   client.on('error', (err) => logger.error('[Redis] Cluster error:', err.message));
   client.on('reconnecting', () => logger.warn('[Redis] Cluster reconnecting...'));
 
+  applyIoredisCompatShim(client);
   return client;
 }
 

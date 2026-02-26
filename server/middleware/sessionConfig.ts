@@ -4,13 +4,78 @@ import crypto from 'crypto';
 import { getRedisClient } from '../lib/redisClient.js';
 import { logger } from '../logger.js';
 
+/**
+ * Adapter that wraps an ioredis client to satisfy the connect-redis v9 interface,
+ * which expects node-redis v5 API calls:
+ *   set(key, val, { expiration: { type: "EX", value: ttl } })
+ *   del([key1, key2])
+ *   scanIterator({ MATCH: pattern, COUNT: count })
+ *
+ * ioredis uses:
+ *   set(key, val, 'EX', ttl)
+ *   del(key1, key2)   ← spread, not array
+ *   scan / no scanIterator
+ */
+function createIoredisAdapter(ioredisClient: any) {
+  return {
+    get(key: string): Promise<string | null> {
+      return ioredisClient.get(key);
+    },
+
+    set(
+      key: string,
+      val: string,
+      opts?: { expiration?: { type?: string; value?: number } }
+    ): Promise<any> {
+      const ttl = opts?.expiration?.value;
+      if (ttl && ttl > 0) {
+        return ioredisClient.set(key, val, 'EX', ttl);
+      }
+      return ioredisClient.set(key, val);
+    },
+
+    expire(key: string, ttl: number): Promise<any> {
+      return ioredisClient.expire(key, ttl);
+    },
+
+    del(keys: string | string[]): Promise<any> {
+      if (Array.isArray(keys)) {
+        if (keys.length === 0) return Promise.resolve(0);
+        return ioredisClient.del(...keys);
+      }
+      return ioredisClient.del(keys);
+    },
+
+    async *scanIterator(
+      opts: { MATCH?: string; COUNT?: number } = {}
+    ): AsyncGenerator<string[]> {
+      const pattern = opts.MATCH || '*';
+      const count = opts.COUNT || 100;
+      let cursor = '0';
+      do {
+        const [nextCursor, keys] = await ioredisClient.scan(
+          cursor,
+          'MATCH',
+          pattern,
+          'COUNT',
+          count
+        );
+        cursor = nextCursor;
+        if (keys.length > 0) {
+          yield keys;
+        }
+      } while (cursor !== '0');
+    },
+  };
+}
+
 export async function createSessionStore(): Promise<session.Store> {
   try {
-    const client = getRedisClient();
-    await client.ping();
+    const ioredisClient = getRedisClient();
+    await ioredisClient.ping();
 
     const store = new RedisStore({
-      client,
+      client: createIoredisAdapter(ioredisClient) as any,
       prefix: 'sess:',
       ttl: 24 * 60 * 60,
     });

@@ -1,5 +1,6 @@
 import { logger } from '../logger.js';
 import type { Redis } from 'ioredis';
+import { applyIoredisCompatShim } from '../lib/redisCompat.js';
 
 interface CacheConfig {
   defaultTTL: number;
@@ -102,6 +103,7 @@ export class DistributedCache {
           return Math.min(times * 300, 3000);
         },
       });
+      applyIoredisCompatShim(this.redis);
 
       this.redis.on('ready', () => {
         this._redisReady = true;

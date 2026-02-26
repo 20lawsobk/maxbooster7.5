@@ -2,6 +2,7 @@ import { getBoosterStateClient, isBoosterStateHealthy, shutdownBoosterState } fr
 import { logger } from '../logger.js';
 import Redis from 'ioredis';
 import { config } from '../config/defaults.js';
+import { applyIoredisCompatShim } from './redisCompat.js';
 
 export type RedisClientType = any;
 
@@ -16,6 +17,7 @@ export async function getRedisClient(): Promise<any> {
         retryStrategy: (times) => Math.min(times * config.redis.retryDelay, 2000),
       });
       redisClient.on('error', (err) => logger.error('Redis error:', err));
+      applyIoredisCompatShim(redisClient);
     }
     return redisClient;
   }
@@ -36,6 +38,7 @@ export async function createRedisClient(): Promise<any> {
       retryStrategy: (times) => Math.min(times * config.redis.retryDelay, 2000),
     });
     client.on('error', (err) => logger.error('Redis error (new client):', err));
+    applyIoredisCompatShim(client);
     return client;
   }
   return getRedisClient();

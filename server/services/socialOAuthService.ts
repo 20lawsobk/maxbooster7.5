@@ -2,7 +2,7 @@ import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 import { db } from '../db.js';
 import { socialAccounts } from '@shared/schema';
-import { gte, and, eq, isNotNull } from 'drizzle-orm';
+import { gte, lte, and, eq, isNotNull } from 'drizzle-orm';
 import axios from 'axios';
 import crypto from 'crypto';
 
@@ -107,10 +107,13 @@ export class SocialOAuthService {
             isNotNull(socialAccounts.tokenExpiresAt),
             isNotNull(socialAccounts.refreshToken),
             eq(socialAccounts.isActive, true),
-            // Token expires within the buffer period but hasn't expired yet
-            gte(socialAccounts.tokenExpiresAt, now)
+            // Token has not yet expired (now <= tokenExpiresAt)
+            gte(socialAccounts.tokenExpiresAt, now),
+            // Token expires within the buffer window (tokenExpiresAt <= now + buffer)
+            lte(socialAccounts.tokenExpiresAt, expiryThreshold)
           )
-        );
+        )
+        .limit(100);
       
       for (const account of expiringAccounts) {
         try {

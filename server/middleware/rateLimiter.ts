@@ -11,13 +11,11 @@ export const RATE_LIMITS = {
     login: { windowMs: 900000, max: 5 },
     register: { windowMs: 3600000, max: 3 },
     forgotPassword: { windowMs: 3600000, max: 3 },
-    // SECURITY: 2FA verification has strict limits to prevent brute-force attacks
-    twoFactor: { windowMs: 300000, max: 5 }, // 5 attempts per 5 minutes
+    twoFactor: { windowMs: 300000, max: 5 },
     captchaThreshold: 3
   },
   billing: {
-    // SECURITY: Rate limits for billing endpoints
-    perUser: { windowMs: 60000, max: 10 } // 10 requests per minute
+    perUser: { windowMs: 60000, max: 10 }
   },
   uploads: {
     perUser: { windowMs: 3600000, max: 50 }
@@ -62,16 +60,17 @@ async function slidingWindowCheck(
   const redisKey = `${REDIS_KEY_PREFIX}${key}`;
 
   try {
-    await redis.zRemRangeByScore(redisKey, '-inf', windowStart.toString());
+    // ioredis API: all commands are lowercase
+    await redis.zremrangebyscore(redisKey, '-inf', windowStart);
 
-    const requestCount = await redis.zCard(redisKey);
+    const requestCount: number = await redis.zcard(redisKey);
 
     if (requestCount >= maxRequests) {
-      const oldestRequest = await redis.zRange(redisKey, 0, 0, { REV: false });
+      const oldest: string[] = await redis.zrange(redisKey, 0, 0);
       let resetAt = now + windowMs;
-      
-      if (oldestRequest.length > 0) {
-        const oldestTimestamp = parseInt(oldestRequest[0], 10);
+
+      if (oldest.length > 0) {
+        const oldestTimestamp = parseInt(oldest[0], 10);
         resetAt = oldestTimestamp + windowMs;
       }
 
@@ -84,7 +83,8 @@ async function slidingWindowCheck(
     }
 
     const requestId = `${now}:${Math.random().toString(36).substring(7)}`;
-    await redis.zAdd(redisKey, { score: now, value: requestId });
+    // ioredis zadd: zadd(key, score, member)
+    await redis.zadd(redisKey, now, requestId);
 
     await redis.expire(redisKey, Math.ceil(windowMs / 1000) + 60);
 
@@ -122,20 +122,19 @@ function sendRateLimitExceeded(res: Response, resetAt: number): void {
 }
 
 function shouldSkipRateLimiting(req: Request): boolean {
-  // Skip ALL rate limiting in development mode - Replit proxy causes IP issues
   if (process.env.NODE_ENV !== 'production') {
     return true;
   }
-  
-  const isMonitoring = req.path.startsWith('/api/monitoring/') || 
+
+  const isMonitoring = req.path.startsWith('/api/monitoring/') ||
                        req.path.startsWith('/api/system/') ||
                        req.path.startsWith('/api/health') ||
                        req.path === '/api/version';
-  
+
   const isStaticAsset = req.path.startsWith('/@fs/') ||
                         req.path.startsWith('/src/') ||
                         req.path.startsWith('/node_modules/');
-  
+
   return isMonitoring || isStaticAsset;
 }
 
@@ -201,12 +200,11 @@ export const loginRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // Skip in development mode
   if (process.env.NODE_ENV !== 'production') {
     next();
     return;
   }
-  
+
   const ip = getClientIP(req);
   const key = `auth:login:${ip}`;
   const { login } = RATE_LIMITS.auth;
@@ -228,12 +226,11 @@ export const registerRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // Skip in development mode
   if (process.env.NODE_ENV !== 'production') {
     next();
     return;
   }
-  
+
   const ip = getClientIP(req);
   const key = `auth:register:${ip}`;
   const { register } = RATE_LIMITS.auth;
@@ -255,12 +252,11 @@ export const forgotPasswordRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // Skip in development mode
   if (process.env.NODE_ENV !== 'production') {
     next();
     return;
   }
-  
+
   const ip = getClientIP(req);
   const key = `auth:forgot-password:${ip}`;
   const { forgotPassword } = RATE_LIMITS.auth;
@@ -277,21 +273,18 @@ export const forgotPasswordRateLimiter: RequestHandler = async (
   next();
 };
 
-// SECURITY: 2FA verification rate limiter to prevent brute-force attacks
 export const twoFactorRateLimiter: RequestHandler = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // Skip in development mode
   if (process.env.NODE_ENV !== 'production') {
     next();
     return;
   }
-  
+
   const ip = getClientIP(req);
   const userId = getUserId(req);
-  // Use both IP and userId for stricter limiting
   const key = userId ? `auth:2fa:${userId}:${ip}` : `auth:2fa:${ip}`;
   const { twoFactor } = RATE_LIMITS.auth;
 
@@ -307,18 +300,16 @@ export const twoFactorRateLimiter: RequestHandler = async (
   next();
 };
 
-// SECURITY: Billing endpoints rate limiter
 export const billingRateLimiter: RequestHandler = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // Skip in development mode
   if (process.env.NODE_ENV !== 'production') {
     next();
     return;
   }
-  
+
   const userId = getUserId(req);
   if (!userId) {
     next();
@@ -345,12 +336,11 @@ export const uploadRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // Skip in development mode
   if (process.env.NODE_ENV !== 'production') {
     next();
     return;
   }
-  
+
   const userId = getUserId(req);
   if (!userId) {
     next();
@@ -416,8 +406,8 @@ export async function getRateLimitStatus(
     const windowStart = now - config.windowMs;
     const redisKey = `${REDIS_KEY_PREFIX}${key}`;
 
-    await redis.zRemRangeByScore(redisKey, '-inf', windowStart.toString());
-    const count = await redis.zCard(redisKey);
+    await redis.zremrangebyscore(redisKey, '-inf', windowStart);
+    const count: number = await redis.zcard(redisKey);
 
     return {
       remaining: Math.max(0, config.max - count),
