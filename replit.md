@@ -22,7 +22,7 @@ AI-Powered Music Career Management Platform by B-Lawz Music.
 - **TF Inference**: `os.cpus()-2` worker `TensorFlowWorkerPool` (`.cjs` workers, event loop isolated, max queue depth 500)
 - **Sessions**: `connect-redis` (Redis-backed, mandatory in production — process.exit(1) if Redis unavailable)
 - **Job Queues**: BullMQ (Redis-backed, 3 retries, exponential backoff, DLQ)
-- **Autonomous Service**: In-memory Maps bounded (processingQueue ≤ 1000, learningData ≤ 500 via FIFO eviction); metrics persisted to Redis every 60s and restored on startup
+- **Autonomous Service**: In-memory Maps bounded (processingQueue ≤ 1000, learningData ≤ 500 via FIFO eviction); metrics persisted to Redis every 60s and restored on startup; background loops (content-dispatch 60s, analytics 1h, metrics-persist 60s, per-campaign optimization 5min) migrated from `setInterval` to BullMQ repeatable jobs — deduped in Redis across all instances; new files: `server/services/autonomousJobScheduler.ts` (queue + job registration), `server/workers/autonomousWorker.ts` (job processor)
 
 ## Key Files
 

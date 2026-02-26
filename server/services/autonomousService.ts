@@ -14,11 +14,17 @@ import { logger } from '../logger.js';
 import { EventEmitter } from 'events';
 import sharp from 'sharp';
 import { distributedCache } from '../infrastructure/distributedCache.js';
+import {
+  setupRepeatableJobs,
+  scheduleCampaignOptimization,
+  removeCampaignOptimization,
+  teardownRepeatableJobs,
+} from './autonomousJobScheduler.js';
 
 const MAX_PROCESSING_QUEUE = 1000;
 const MAX_LEARNING_DATA = 500;
 const METRICS_CACHE_KEY = 'autonomous:metrics';
-const METRICS_PERSIST_INTERVAL_MS = 60_000;
+
 
 interface AutonomousConfig {
   socialPosting: boolean;
@@ -84,7 +90,6 @@ export class AutonomousService extends EventEmitter {
   private metrics: AutonomousMetrics;
   private processingQueue: Map<string, any> = new Map();
   private learningData: Map<string, any> = new Map();
-  private operationIntervals: Map<string, NodeJS.Timeout> = new Map();
   private isRunning: boolean = false;
 
   constructor() {
@@ -124,7 +129,7 @@ export class AutonomousService extends EventEmitter {
     }
   }
 
-  private async persistMetricsToCache(): Promise<void> {
+  async persistMetricsToCache(): Promise<void> {
     try {
       await distributedCache.set(METRICS_CACHE_KEY, this.metrics, 3600);
     } catch (err) {
@@ -294,7 +299,9 @@ export class AutonomousService extends EventEmitter {
         } as any);
 
         await advertisingDispatchService.startCampaign(newCampaign.id);
-        this.startCampaignOptimization(newCampaign.id);
+        scheduleCampaignOptimization(newCampaign.id).catch((err) =>
+          logger.error('[AUTONOMOUS] Failed to schedule campaign optimization:', err)
+        );
 
         this.metrics.campaignsLaunched++;
         this.metrics.lastUpdated = new Date();
@@ -764,42 +771,75 @@ export class AutonomousService extends EventEmitter {
     }
   }
 
-  private startCampaignOptimization(campaignId: string): void {
-    const interval = setInterval(async () => {
-      try {
-        const campaign = await storage.getAdCampaign(campaignId);
-        if (!campaign || campaign.status !== 'active') {
-          clearInterval(interval);
-          this.operationIntervals.delete(`campaign_${campaignId}`);
-          return;
-        }
-
-        const metrics = await advertisingDispatchService.getCampaignMetrics(campaignId);
-
-        if (metrics.ctr < 0.01) {
-          await advertisingDispatchService.optimizeTargeting(campaignId);
-        }
-
-        if (metrics.conversionRate < 0.02) {
-          await advertisingDispatchService.optimizeCreative(campaignId);
-        }
-
-        if (metrics.roas < 2) {
-          await advertisingDispatchService.optimizeBidding(campaignId);
-        }
-
-        this.metrics.campaignsOptimized++;
-        this.metrics.lastUpdated = new Date();
-
-        logger.info(
-          `[AUTONOMOUS] Campaign ${campaignId} optimized - CTR: ${metrics.ctr}, ROAS: ${metrics.roas}`
-        );
-      } catch (error: unknown) {
-        logger.error(`[AUTONOMOUS] Error optimizing campaign ${campaignId}:`, error);
+  async runCampaignOptimization(campaignId: string): Promise<void> {
+    try {
+      const campaign = await storage.getAdCampaign(campaignId);
+      if (!campaign || campaign.status !== 'active') {
+        await removeCampaignOptimization(campaignId);
+        return;
       }
-    }, 300000);
 
-    this.operationIntervals.set(`campaign_${campaignId}`, interval);
+      const metrics = await advertisingDispatchService.getCampaignMetrics(campaignId);
+
+      if (metrics.ctr < 0.01) {
+        await advertisingDispatchService.optimizeTargeting(campaignId);
+      }
+
+      if (metrics.conversionRate < 0.02) {
+        await advertisingDispatchService.optimizeCreative(campaignId);
+      }
+
+      if (metrics.roas < 2) {
+        await advertisingDispatchService.optimizeBidding(campaignId);
+      }
+
+      this.metrics.campaignsOptimized++;
+      this.metrics.lastUpdated = new Date();
+
+      logger.info(
+        `[AUTONOMOUS] Campaign ${campaignId} optimized - CTR: ${metrics.ctr}, ROAS: ${metrics.roas}`
+      );
+    } catch (error: unknown) {
+      logger.error(`[AUTONOMOUS] Error optimizing campaign ${campaignId}:`, error);
+    }
+  }
+
+  async runContentDispatch(): Promise<void> {
+    try {
+      const autonomousUsers = Array.from(this.autonomousWhitelist);
+
+      for (const userId of autonomousUsers) {
+        const pendingPosts = await storage.getPendingSocialPosts(userId);
+
+        for (const post of pendingPosts) {
+          if (post.scheduledAt && new Date(post.scheduledAt) <= new Date()) {
+            await this.dispatchAutonomousContent(post.id);
+          }
+        }
+
+        const activeCampaigns = await storage.getActiveAdCampaigns(userId);
+        for (const campaign of activeCampaigns) {
+          if (campaign.approvalStatus === 'auto-approved') {
+            await advertisingDispatchService.optimizeCampaign(campaign.id);
+          }
+        }
+      }
+    } catch (error: unknown) {
+      logger.error('[AUTONOMOUS] Error in content dispatch job:', error);
+    }
+  }
+
+  async runPeriodicAnalytics(): Promise<void> {
+    try {
+      const autonomousUsers = Array.from(this.autonomousWhitelist);
+
+      for (const userId of autonomousUsers) {
+        await this.autoAnalyzePerformance(userId);
+        await this.autoOptimizeGrowth(userId);
+      }
+    } catch (error: unknown) {
+      logger.error('[AUTONOMOUS] Error in analytics job:', error);
+    }
   }
 
   startAutonomousOperations(): void {
@@ -808,53 +848,9 @@ export class AutonomousService extends EventEmitter {
 
     logger.info('[AUTONOMOUS] Starting 24/7 autonomous operations...');
 
-    const contentInterval = setInterval(async () => {
-      try {
-        const autonomousUsers = Array.from(this.autonomousWhitelist);
-
-        for (const userId of autonomousUsers) {
-          const pendingPosts = await storage.getPendingSocialPosts(userId);
-
-          for (const post of pendingPosts) {
-            if (post.scheduledAt && new Date(post.scheduledAt) <= new Date()) {
-              await this.dispatchAutonomousContent(post.id);
-            }
-          }
-
-          const activeCampaigns = await storage.getActiveAdCampaigns(userId);
-          for (const campaign of activeCampaigns) {
-            if (campaign.approvalStatus === 'auto-approved') {
-              await advertisingDispatchService.optimizeCampaign(campaign.id);
-            }
-          }
-        }
-      } catch (error: unknown) {
-        logger.error('[AUTONOMOUS] Error in 24/7 operations:', error);
-      }
-    }, 60000);
-
-    this.operationIntervals.set('content_dispatch', contentInterval);
-
-    const analyticsInterval = setInterval(async () => {
-      try {
-        const autonomousUsers = Array.from(this.autonomousWhitelist);
-
-        for (const userId of autonomousUsers) {
-          await this.autoAnalyzePerformance(userId);
-          await this.autoOptimizeGrowth(userId);
-        }
-      } catch (error: unknown) {
-        logger.error('[AUTONOMOUS] Error in analytics operations:', error);
-      }
-    }, 3600000);
-
-    this.operationIntervals.set('analytics', analyticsInterval);
-
-    const metricsInterval = setInterval(async () => {
-      await this.persistMetricsToCache();
-    }, METRICS_PERSIST_INTERVAL_MS);
-
-    this.operationIntervals.set('metrics_persist', metricsInterval);
+    setupRepeatableJobs().catch((err) =>
+      logger.error('[AUTONOMOUS] Failed to register repeatable jobs:', err)
+    );
 
     logger.info('[AUTONOMOUS] 24/7 operations started successfully');
     this.emit('operationsStarted');
@@ -863,10 +859,9 @@ export class AutonomousService extends EventEmitter {
   stopAutonomousOperations(): void {
     this.isRunning = false;
 
-    for (const [key, interval] of this.operationIntervals) {
-      clearInterval(interval);
-      this.operationIntervals.delete(key);
-    }
+    teardownRepeatableJobs().catch((err) =>
+      logger.error('[AUTONOMOUS] Failed to remove repeatable jobs:', err)
+    );
 
     logger.info('[AUTONOMOUS] 24/7 operations stopped');
     this.emit('operationsStopped');
@@ -884,7 +879,7 @@ export class AutonomousService extends EventEmitter {
       config: this.config,
       metrics: this.metrics,
       activeUsers: this.autonomousWhitelist.size,
-      activeOperations: this.operationIntervals.size,
+      activeOperations: this.isRunning ? 3 : 0,
     };
   }
 }
