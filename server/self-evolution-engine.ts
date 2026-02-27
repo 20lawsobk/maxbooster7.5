@@ -81,12 +81,17 @@ export class SelfEvolutionEngine extends EventEmitter {
   private upgradeQueue: CodeUpgrade[] = [];
   private industryChanges: IndustryChange[] = [];
   private seenChangeIds: Set<string> = new Set();
+  private lastCycleAt: Date | null = null;
+  private lastCycleError: string | null = null;
+  private totalCyclesRun: number = 0;
   private competitorFeatures: CompetitorFeature[] = [];
   private platformStandards: PlatformStandard[] = [];
 
   private readonly MONITORING_INTERVAL_MS = 60 * 60 * 1000;
   private readonly MAX_CHANGES_IN_MEMORY = 500;
   private readonly MAX_UPGRADES_IN_MEMORY = 200;
+  private readonly MAX_SEEN_IDS = 2000;
+  private readonly STATE_FILE = path.join(process.cwd(), '.evolution-state.json');
   private readonly MAX_BOOSTER_MODULES = [
     'studio', 'distribution', 'social', 'advertising', 
     'marketplace', 'analytics', 'security', 'monetization'
@@ -101,19 +106,35 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private async seedSeenIdsFromDisk(): Promise<void> {
     try {
-      const enhancementsDir = path.join(process.cwd(), 'server', 'enhancements');
-      const files = await fs.readdir(enhancementsDir).catch(() => [] as string[]);
-      for (const file of files) {
-        if (file.endsWith('.ts') || file.endsWith('.js')) {
-          const content = await fs.readFile(path.join(enhancementsDir, file), 'utf-8').catch(() => '');
-          const match = content.match(/upgrade_(\w+)/);
-          if (match) this.seenChangeIds.add(match[1]);
-        }
-      }
-      if (files.length > 0) {
-        logger.info(`🧬 Seeded ${this.seenChangeIds.size} known change IDs from ${files.length} existing enhancement files`);
+      const raw = await fs.readFile(this.STATE_FILE, 'utf-8');
+      const state = JSON.parse(raw) as { seenChangeIds?: string[] };
+      if (Array.isArray(state.seenChangeIds)) {
+        for (const id of state.seenChangeIds) this.seenChangeIds.add(id);
+        logger.info(`🧬 Restored ${this.seenChangeIds.size} seen change IDs from state file`);
       }
     } catch {
+      logger.info('🧬 No prior evolution state found — starting fresh');
+    }
+  }
+
+  private async saveStateToDisk(): Promise<void> {
+    try {
+      const ids = Array.from(this.seenChangeIds);
+      const state = { seenChangeIds: ids, savedAt: new Date().toISOString() };
+      const tmp = this.STATE_FILE + '.tmp';
+      await fs.writeFile(tmp, JSON.stringify(state, null, 2), 'utf-8');
+      await fs.rename(tmp, this.STATE_FILE);
+    } catch (e) {
+      logger.warn('Failed to persist evolution state:', e);
+    }
+  }
+
+  private pruneSeenIds(): void {
+    if (this.seenChangeIds.size > this.MAX_SEEN_IDS) {
+      const arr = Array.from(this.seenChangeIds);
+      const keep = arr.slice(arr.length - (this.MAX_SEEN_IDS - 500));
+      this.seenChangeIds = new Set(keep);
+      logger.info(`🧬 Pruned seenChangeIds to ${this.seenChangeIds.size} entries`);
     }
   }
 
@@ -296,10 +317,16 @@ export class SelfEvolutionEngine extends EventEmitter {
       // Phase 7: Learn from results and improve
       await this.learnFromCycle(cycleId);
 
-      logger.info(`✅ Evolution cycle ${cycleId} completed successfully`);
+      this.lastCycleAt = new Date();
+      this.lastCycleError = null;
+      this.totalCyclesRun++;
+      logger.info(`✅ Evolution cycle ${cycleId} completed successfully (total: ${this.totalCyclesRun})`);
       this.emit('cycleCompleted', { cycleId, changes: changes.length, upgrades: deployedCount });
 
     } catch (error) {
+      this.lastCycleAt = new Date();
+      this.lastCycleError = (error as Error).message || String(error);
+      this.totalCyclesRun++;
       logger.error(`❌ Evolution cycle ${cycleId} failed:`, error);
       this.emit('cycleFailed', { cycleId, error });
     } finally {
@@ -873,12 +900,37 @@ export const ${this.camelCase(techName)}Adoption = {
   }
 
   private async runUpgradeTests(upgrade: CodeUpgrade): Promise<{ passed: boolean; reason?: string }> {
-    // Simulate test execution with high success rate (95%)
-    const seed = this.hashString(upgrade.id);
-    const passed = (seed % 100) < 95;
+    for (const [filePath, code] of upgrade.generatedCode) {
+      if (!code || code.trim().length === 0) {
+        return { passed: false, reason: `Empty generated code for ${filePath}` };
+      }
 
-    if (!passed) {
-      return { passed: false, reason: 'Integration test failure detected' };
+      if (code.length > 500_000) {
+        return { passed: false, reason: `Generated code exceeds 500KB safety limit for ${filePath}` };
+      }
+
+      const openBraces = (code.match(/\{/g) || []).length;
+      const closeBraces = (code.match(/\}/g) || []).length;
+      if (Math.abs(openBraces - closeBraces) > 5) {
+        return { passed: false, reason: `Unbalanced braces in generated code for ${filePath} ({:${openBraces} }:${closeBraces})` };
+      }
+
+      if (!code.includes('export')) {
+        return { passed: false, reason: `Generated code has no exports in ${filePath}` };
+      }
+
+      const dangerPatterns = ['process.exit(', 'require("child_process")', "require('child_process')", 'eval(', '__proto__'];
+      for (const pattern of dangerPatterns) {
+        if (code.includes(pattern)) {
+          return { passed: false, reason: `Dangerous pattern "${pattern}" detected in generated code for ${filePath}` };
+        }
+      }
+
+      const allowedDirs = ['server/enhancements/', 'server/compliance/', 'server/technology/'];
+      const isInAllowedDir = allowedDirs.some(dir => filePath.startsWith(dir));
+      if (!isInAllowedDir) {
+        return { passed: false, reason: `File path "${filePath}" is outside allowed deployment directories` };
+      }
     }
 
     return { passed: true };
@@ -979,16 +1031,31 @@ describe('${upgrade.id}', () => {
   // ============================================
 
   private async monitorDeploymentHealth(): Promise<void> {
-    // Monitor key metrics after deployment
-    const metrics = {
-      errorRate: Math.random() * 0.01, // Should be < 1%
-      responseTime: 50 + Math.random() * 50, // Should be < 200ms
-      userSatisfaction: 0.95 + Math.random() * 0.05, // Should be > 90%
-    };
+    try {
+      const port = process.env.PORT || '5000';
+      const start = Date.now();
 
-    if (metrics.errorRate > 0.01 || metrics.responseTime > 200) {
-      logger.warn('⚠️ Post-deployment metrics degraded - initiating rollback analysis');
-      await this.analyzeRollbackNeed(metrics);
+      const { default: http } = await import('http');
+      const responseTime = await new Promise<number>((resolve, reject) => {
+        const req = http.get(`http://127.0.0.1:${port}/api/health`, (res) => {
+          res.resume();
+          res.on('end', () => resolve(Date.now() - start));
+        });
+        req.setTimeout(5000, () => { req.destroy(); reject(new Error('Health check timeout')); });
+        req.on('error', reject);
+      });
+
+      const metrics = { errorRate: 0, responseTime };
+
+      if (responseTime > 3000) {
+        logger.warn(`⚠️ Post-deployment health check slow: ${responseTime}ms — analyzing rollback need`);
+        await this.analyzeRollbackNeed({ ...metrics, errorRate: 0.02 });
+      } else {
+        logger.info(`   💚 Health check passed: ${responseTime}ms`);
+      }
+    } catch (e) {
+      logger.warn(`⚠️ Health check failed (${(e as Error).message}) — analyzing rollback need`);
+      await this.analyzeRollbackNeed({ errorRate: 0.1, responseTime: 9999 });
     }
   }
 
@@ -1003,9 +1070,37 @@ describe('${upgrade.id}', () => {
   }
 
   private async performRollback(): Promise<void> {
-    // Rollback to previous stable state
-    logger.info('🔙 Performing automatic rollback...');
-    // Implementation would restore previous file versions
+    logger.info('🔙 Performing automatic rollback — restoring .bak files...');
+    const rollbackDirs = [
+      path.join(process.cwd(), 'server', 'enhancements'),
+      path.join(process.cwd(), 'server', 'compliance'),
+      path.join(process.cwd(), 'server', 'technology'),
+    ];
+
+    let restoredCount = 0;
+    for (const dir of rollbackDirs) {
+      const files = await fs.readdir(dir).catch(() => [] as string[]);
+      for (const file of files) {
+        if (!file.endsWith('.bak')) continue;
+        const bakPath = path.join(dir, file);
+        const originalPath = bakPath.slice(0, -4);
+        try {
+          await fs.copyFile(bakPath, originalPath);
+          await fs.unlink(bakPath);
+          restoredCount++;
+          logger.info(`   ↩️ Restored: ${originalPath}`);
+        } catch (e) {
+          logger.error(`   ❌ Failed to restore ${originalPath}:`, e);
+        }
+      }
+    }
+
+    if (restoredCount > 0) {
+      logger.info(`🔙 Rollback complete — restored ${restoredCount} files`);
+      this.emit('rollbackCompleted', { restoredCount });
+    } else {
+      logger.info('🔙 Rollback: no .bak files found — nothing to restore');
+    }
   }
 
   // ============================================
@@ -1013,22 +1108,25 @@ describe('${upgrade.id}', () => {
   // ============================================
 
   private async learnFromCycle(cycleId: string): Promise<void> {
-    // Record what worked and what didn't
-    // Adjust future code generation strategies
-    // Update competitive intelligence
-    
     logger.info(`   🧠 Learning from cycle ${cycleId}...`);
-    
-    // Update AI model parameters based on deployment success
-    const successRate = 0.95; // Would be calculated from actual results
-    
+
+    const deployedCount = this.upgradeQueue.filter(u => u.status === 'deployed').length;
+    const failedCount = this.upgradeQueue.filter(u => u.status === 'failed').length;
+    const total = deployedCount + failedCount;
+    const successRate = total > 0 ? deployedCount / total : 1.0;
+
     if (successRate > 0.9) {
       customAI.recordPerformance('self_evolution', {
         cycleId,
         successRate,
+        deployedCount,
+        failedCount,
         timestamp: new Date().toISOString(),
       });
     }
+
+    this.pruneSeenIds();
+    await this.saveStateToDisk();
   }
 
   // ============================================
@@ -1179,8 +1277,18 @@ describe('${upgrade.id}', () => {
     changesDetected: number;
     upgradesDeployed: number;
     lastCycle: Date | null;
+    lastCycleAt: Date | null;
+    lastCycleError: string | null;
+    totalCyclesRun: number;
+    intervalHealthy: boolean;
     memoryUsage: { changes: number; upgrades: number; seenIds: number };
   } {
+    const now = Date.now();
+    const expectedIntervalMs = this.MONITORING_INTERVAL_MS * 1.5;
+    const intervalHealthy = !this.isRunning || !this.lastCycleAt
+      ? true
+      : (now - this.lastCycleAt.getTime()) < expectedIntervalMs;
+
     return {
       isRunning: this.isRunning,
       isCycleRunning: this.isCycleRunning,
@@ -1189,6 +1297,10 @@ describe('${upgrade.id}', () => {
       lastCycle: this.industryChanges.length > 0
         ? this.industryChanges[this.industryChanges.length - 1].detectedAt
         : null,
+      lastCycleAt: this.lastCycleAt,
+      lastCycleError: this.lastCycleError,
+      totalCyclesRun: this.totalCyclesRun,
+      intervalHealthy,
       memoryUsage: {
         changes: this.industryChanges.length,
         upgrades: this.upgradeQueue.length,
