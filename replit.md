@@ -112,3 +112,38 @@ All production credentials are configured. Key variables:
 
 Uses Drizzle ORM with PostgreSQL. Schema in `shared/schema.ts`.  
 To push schema changes: `npm run db:push`
+
+## Feature Map (All Integrated Tabs)
+
+### Distribution Page
+- Overview, Releases, Artist Profiles, New Release, Quality Check, Codes, Scheduling, Splits, Earnings, Takedowns, Rights, HyperFollow, Analytics, Platforms, Transfer, Submission Status, Content ID, Outcomes
+- **Playlist Pitching** tab (pitch campaigns to curators)
+- **Shows / Booking** tab (live show management + venue CRM via `/api/venues`)
+- **Sync Licensing** tab (pitch music to film/TV/ads)
+- **A&R Submissions** tab (label/publisher/management submissions via `/api/label-submissions`)
+- **Sample Clearance** tab (track sample usage, clearance status via `/api/sample-clearances`)
+- **Music Videos** tab (video production tracker via `/api/music-videos`)
+
+### Social Media Page
+- Overview, Connect, Content Queue, Schedule, AI Generator, Autopilot, Analytics, Content Calendar, Bulk Tools, Approvals, Unified Inbox, Social Listening, Press Kit
+- **Radio & Press** tab (radio/DJ/blog/podcast outreach tracker via `/api/radio-pitches`)
+- **Fan Campaigns** tab (fan email campaigns with templates via `/api/fan-campaigns`)
+
+### Royalties Page
+- Overview, Statements, Splits, Publishing, Forecast, Payouts
+- **Tax & Revenue Intelligence** tab (IRS quarterly schedule, deductions checklist, revenue stream classification)
+
+### Projects Page
+- Overview, Beats, Samples, Studio Sessions, Collaboration
+- **Songwriting** tab (sessions, lyrics, built-in AI rhyme finder + chord progressions via `/api/songwriting`)
+- **Budget Planner** tab (project budgets, line items, expense tracking via `/api/project-budgets`)
+
+### Advertisement Page
+- Overview, Campaigns, Autopilot, Analytics, Audiences, Creatives, Automation
+- **Press Kit / EPK** tab (professional bio, links, assets for media/booking)
+
+### New DB Tables Added
+`labelSubmissions`, `radioPitches`, `venueContacts`, `projectBudgets`, `budgetLineItems`, `sampleClearances`, `musicVideoProductions`, `songwritingSessions`, `fanCampaigns`
+
+### Design Constraint
+The Advertisement and Autopilot systems use **custom in-house AI models + connected social profiles** to negate ad spend entirely. Do NOT add ad budgets, ad spend tracking, or native ad platform integrations to those sections.

@@ -4720,3 +4720,275 @@ export const publishingRights = pgTable("publishing_rights", {
 
 export const insertPublishingRightSchema = createInsertSchema(publishingRights).omit({ id: true, createdAt: true, updatedAt: true });
 export type PublishingRight = typeof publishingRights.$inferSelect;
+
+// ============================================================================
+// LABEL / A&R SUBMISSION TRACKER
+// ============================================================================
+
+export const labelSubmissions = pgTable("label_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackTitle: text("track_title").notNull(),
+  artistName: text("artist_name"),
+  labelName: text("label_name").notNull(),
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  contactRole: text("contact_role"),
+  submissionMethod: text("submission_method").default("email"),
+  demoUrl: text("demo_url"),
+  submittedAt: timestamp("submitted_at"),
+  followUpAt: timestamp("follow_up_at"),
+  responseAt: timestamp("response_at"),
+  status: text("status").default("draft"),
+  responseNote: text("response_note"),
+  notes: text("notes"),
+  priority: text("priority").default("medium"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("label_submissions_user_id_idx").on(t.userId),
+  index("label_submissions_status_idx").on(t.status),
+]);
+
+export const insertLabelSubmissionSchema = createInsertSchema(labelSubmissions).omit({ id: true, createdAt: true, updatedAt: true });
+export type LabelSubmission = typeof labelSubmissions.$inferSelect;
+export type InsertLabelSubmission = typeof labelSubmissions.$inferInsert;
+
+// ============================================================================
+// RADIO / DJ / BLOG OUTREACH TRACKER
+// ============================================================================
+
+export const radioPitches = pgTable("radio_pitches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackTitle: text("track_title").notNull(),
+  targetName: text("target_name").notNull(),
+  targetType: text("target_type").default("radio"),
+  contactEmail: text("contact_email"),
+  contactUrl: text("contact_url"),
+  genre: text("genre"),
+  pitchNote: text("pitch_note"),
+  demoUrl: text("demo_url"),
+  submittedAt: timestamp("submitted_at"),
+  followUpAt: timestamp("follow_up_at"),
+  responseAt: timestamp("response_at"),
+  status: text("status").default("draft"),
+  responseNote: text("response_note"),
+  featureUrl: text("feature_url"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("radio_pitches_user_id_idx").on(t.userId),
+  index("radio_pitches_status_idx").on(t.status),
+]);
+
+export const insertRadioPitchSchema = createInsertSchema(radioPitches).omit({ id: true, createdAt: true, updatedAt: true });
+export type RadioPitch = typeof radioPitches.$inferSelect;
+export type InsertRadioPitch = typeof radioPitches.$inferInsert;
+
+// ============================================================================
+// VENUE / BOOKING CONTACTS CRM
+// ============================================================================
+
+export const venueContacts = pgTable("venue_contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  venueName: text("venue_name").notNull(),
+  city: text("city"),
+  state: text("state"),
+  country: text("country"),
+  capacity: integer("capacity"),
+  venueType: text("venue_type").default("club"),
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  contactRole: text("contact_role"),
+  bookingEmail: text("booking_email"),
+  website: text("website"),
+  guaranteeMin: integer("guarantee_min"),
+  guaranteeMax: integer("guarantee_max"),
+  deal: text("deal"),
+  status: text("status").default("prospect"),
+  lastContactedAt: timestamp("last_contacted_at"),
+  notes: text("notes"),
+  rating: integer("rating").default(0),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("venue_contacts_user_id_idx").on(t.userId),
+]);
+
+export const insertVenueContactSchema = createInsertSchema(venueContacts).omit({ id: true, createdAt: true, updatedAt: true });
+export type VenueContact = typeof venueContacts.$inferSelect;
+export type InsertVenueContact = typeof venueContacts.$inferInsert;
+
+// ============================================================================
+// PROJECT BUDGET PLANNER
+// ============================================================================
+
+export const projectBudgets = pgTable("project_budgets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  projectId: varchar("project_id"),
+  projectName: text("project_name").notNull(),
+  budgetType: text("budget_type").default("album"),
+  totalBudget: real("total_budget").default(0),
+  currency: text("currency").default("USD"),
+  status: text("status").default("planning"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("project_budgets_user_id_idx").on(t.userId),
+]);
+
+export const insertProjectBudgetSchema = createInsertSchema(projectBudgets).omit({ id: true, createdAt: true, updatedAt: true });
+export type ProjectBudget = typeof projectBudgets.$inferSelect;
+
+export const budgetLineItems = pgTable("budget_line_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  budgetId: varchar("budget_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  estimated: real("estimated").default(0),
+  actual: real("actual"),
+  vendor: text("vendor"),
+  status: text("status").default("planned"),
+  paidAt: timestamp("paid_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => [
+  index("budget_line_items_budget_id_idx").on(t.budgetId),
+]);
+
+export const insertBudgetLineItemSchema = createInsertSchema(budgetLineItems).omit({ id: true, createdAt: true });
+export type BudgetLineItem = typeof budgetLineItems.$inferSelect;
+
+// ============================================================================
+// SAMPLE CLEARANCE TRACKER
+// ============================================================================
+
+export const sampleClearances = pgTable("sample_clearances", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackTitle: text("track_title").notNull(),
+  sampleSource: text("sample_source").notNull(),
+  sampleArtist: text("sample_artist"),
+  sampleLabel: text("sample_label"),
+  samplePublisher: text("sample_publisher"),
+  sampleStartTime: text("sample_start_time"),
+  sampleDuration: integer("sample_duration"),
+  contactEmail: text("contact_email"),
+  contactName: text("contact_name"),
+  clearanceType: text("clearance_type").default("master_and_sync"),
+  status: text("status").default("needed"),
+  fee: real("fee"),
+  royaltyRate: real("royalty_rate"),
+  clearedAt: timestamp("cleared_at"),
+  expiresAt: timestamp("expires_at"),
+  notes: text("notes"),
+  documentUrl: text("document_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("sample_clearances_user_id_idx").on(t.userId),
+  index("sample_clearances_status_idx").on(t.status),
+]);
+
+export const insertSampleClearanceSchema = createInsertSchema(sampleClearances).omit({ id: true, createdAt: true, updatedAt: true });
+export type SampleClearance = typeof sampleClearances.$inferSelect;
+
+// ============================================================================
+// MUSIC VIDEO PRODUCTION TRACKER
+// ============================================================================
+
+export const musicVideoProductions = pgTable("music_video_productions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackTitle: text("track_title").notNull(),
+  director: text("director"),
+  productionCompany: text("production_company"),
+  budget: real("budget"),
+  shootDate: timestamp("shoot_date"),
+  editDeadline: timestamp("edit_deadline"),
+  releaseDate: timestamp("release_date"),
+  platform: text("platform").default("youtube"),
+  videoUrl: text("video_url"),
+  thumbnailUrl: text("thumbnail_url"),
+  stage: text("stage").default("concept"),
+  views: integer("views").default(0),
+  notes: text("notes"),
+  locations: text("locations").array(),
+  crew: jsonb("crew").default([]),
+  callSheets: jsonb("call_sheets").default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("music_video_productions_user_id_idx").on(t.userId),
+]);
+
+export const insertMusicVideoProductionSchema = createInsertSchema(musicVideoProductions).omit({ id: true, createdAt: true, updatedAt: true });
+export type MusicVideoProduction = typeof musicVideoProductions.$inferSelect;
+
+// ============================================================================
+// SONGWRITING / LYRICS SESSIONS
+// ============================================================================
+
+export const songwritingSessions = pgTable("songwriting_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  title: text("title").notNull(),
+  status: text("status").default("in_progress"),
+  genre: text("genre"),
+  mood: text("mood"),
+  bpm: integer("bpm"),
+  key: text("key"),
+  timeSignature: text("time_signature").default("4/4"),
+  lyrics: text("lyrics"),
+  structure: jsonb("structure").default([]),
+  coWriters: text("co_writers").array(),
+  aiAssisted: boolean("ai_assisted").default(false),
+  tags: text("tags").array(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("songwriting_sessions_user_id_idx").on(t.userId),
+]);
+
+export const insertSongwritingSessionSchema = createInsertSchema(songwritingSessions).omit({ id: true, createdAt: true, updatedAt: true });
+export type SongwritingSession = typeof songwritingSessions.$inferSelect;
+
+// ============================================================================
+// FAN EMAIL CAMPAIGNS
+// ============================================================================
+
+export const fanCampaigns = pgTable("fan_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  campaignType: text("campaign_type").default("newsletter"),
+  status: text("status").default("draft"),
+  segmentFilter: jsonb("segment_filter").default({}),
+  scheduledAt: timestamp("scheduled_at"),
+  sentAt: timestamp("sent_at"),
+  recipientCount: integer("recipient_count").default(0),
+  openCount: integer("open_count").default(0),
+  clickCount: integer("click_count").default(0),
+  unsubscribeCount: integer("unsubscribe_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("fan_campaigns_user_id_idx").on(t.userId),
+  index("fan_campaigns_status_idx").on(t.status),
+]);
+
+export const insertFanCampaignSchema = createInsertSchema(fanCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
+export type FanCampaign = typeof fanCampaigns.$inferSelect;

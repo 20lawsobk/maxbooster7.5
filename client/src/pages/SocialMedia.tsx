@@ -23,6 +23,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
 import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
@@ -73,6 +81,12 @@ import {
   ArrowRight,
   X,
   FileImage,
+  Radio,
+  Mail,
+  Newspaper,
+  Mic2,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   FacebookIcon,
@@ -1412,6 +1426,20 @@ export default function SocialMedia() {
             >
               <FileImage className="w-3 h-3 mr-1 inline" />
               Press Kit
+            </TabsTrigger>
+            <TabsTrigger
+              value="radio-pitching"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs px-2 py-1.5"
+            >
+              <Radio className="w-3 h-3 mr-1 inline" />
+              Radio & Press
+            </TabsTrigger>
+            <TabsTrigger
+              value="fan-campaigns"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs px-2 py-1.5"
+            >
+              <Mail className="w-3 h-3 mr-1 inline" />
+              Fan Campaigns
             </TabsTrigger>
           </TabsList>
 
@@ -3193,6 +3221,14 @@ export default function SocialMedia() {
           <TabsContent value="press-kit" className="space-y-6">
             <PressKitTabContent />
           </TabsContent>
+
+          <TabsContent value="radio-pitching" className="space-y-6">
+            <RadioPitchingContent />
+          </TabsContent>
+
+          <TabsContent value="fan-campaigns" className="space-y-6">
+            <FanCampaignsContent />
+          </TabsContent>
         </Tabs>
       </div>
       )}
@@ -3440,6 +3476,334 @@ function PressKitTabContent() {
           </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+// ============================================================================
+// RADIO / DJ / BLOG PITCHING CONTENT
+// ============================================================================
+
+function RadioPitchingContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isNewOpen, setIsNewOpen] = useState(false);
+  const [filterType, setFilterType] = useState('all');
+  const [newPitch, setNewPitch] = useState({
+    trackTitle: '', targetName: '', targetType: 'radio', contactEmail: '',
+    contactUrl: '', genre: '', pitchNote: '', demoUrl: '',
+  });
+
+  const { data: pitches = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/radio-pitches'] });
+  const { data: stats } = useQuery<any>({ queryKey: ['/api/radio-pitches/stats'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/radio-pitches', data); return res.json(); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/radio-pitches'] });
+      setIsNewOpen(false);
+      setNewPitch({ trackTitle: '', targetName: '', targetType: 'radio', contactEmail: '', contactUrl: '', genre: '', pitchNote: '', demoUrl: '' });
+      toast({ title: 'Pitch Tracked', description: 'Your outreach has been logged.' });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: any) => { const res = await apiRequest('PUT', `/api/radio-pitches/${id}`, { status }); return res.json(); },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/radio-pitches'] }),
+  });
+
+  const filteredPitches = filterType === 'all' ? pitches : pitches.filter((p: any) => p.targetType === filterType);
+
+  const typeColors: Record<string, string> = {
+    radio: 'bg-blue-100 text-blue-700',
+    dj: 'bg-purple-100 text-purple-700',
+    blog: 'bg-green-100 text-green-700',
+    podcast: 'bg-orange-100 text-orange-700',
+    magazine: 'bg-pink-100 text-pink-700',
+  };
+
+  const statusColors: Record<string, string> = {
+    draft: 'bg-gray-100 text-gray-600',
+    submitted: 'bg-blue-100 text-blue-700',
+    under_review: 'bg-yellow-100 text-yellow-700',
+    featured: 'bg-green-100 text-green-700',
+    declined: 'bg-red-100 text-red-700',
+    following_up: 'bg-orange-100 text-orange-700',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {[
+          { label: 'Total Pitches', value: stats?.total || 0 },
+          { label: 'Radio', value: stats?.radio || 0, color: 'text-blue-600' },
+          { label: 'Blogs', value: stats?.blog || 0, color: 'text-green-600' },
+          { label: 'DJs', value: stats?.dj || 0, color: 'text-purple-600' },
+          { label: 'Featured', value: stats?.features || 0, color: 'text-yellow-600' },
+        ].map((s, i) => (
+          <Card key={i}><CardContent className="p-3 text-center">
+            <p className={`text-xl font-bold ${s.color || ''}`}>{s.value}</p>
+            <p className="text-xs text-gray-500">{s.label}</p>
+          </CardContent></Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <CardTitle className="text-base flex items-center gap-2"><Radio className="w-5 h-5 text-blue-600" />Radio, Blog & Press Outreach</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1 flex-wrap">
+                {['all','radio','dj','blog','podcast','magazine'].map(t => (
+                  <button key={t} onClick={() => setFilterType(t)} className={`px-2 py-1 rounded text-xs font-medium transition-colors ${filterType === t ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t}</button>
+                ))}
+              </div>
+              <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
+                <DialogTrigger asChild><Button size="sm" className="gradient-bg"><Plus className="w-4 h-4 mr-1" />Track Pitch</Button></DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader><DialogTitle>Track Outreach</DialogTitle><DialogDescription>Log a radio, DJ, blog, or press pitch</DialogDescription></DialogHeader>
+                  <div className="space-y-3">
+                    <div><Label>Track / Release</Label><Input placeholder="What you're pitching" value={newPitch.trackTitle} onChange={(e) => setNewPitch({...newPitch, trackTitle: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Target Name</Label><Input placeholder="Station, blog, DJ name..." value={newPitch.targetName} onChange={(e) => setNewPitch({...newPitch, targetName: e.target.value})} /></div>
+                      <div><Label>Type</Label>
+                        <Select value={newPitch.targetType} onValueChange={(v) => setNewPitch({...newPitch, targetType: v})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {['radio','dj','blog','podcast','magazine','influencer','other'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Contact Email</Label><Input type="email" value={newPitch.contactEmail} onChange={(e) => setNewPitch({...newPitch, contactEmail: e.target.value})} /></div>
+                      <div><Label>Website / Submit Link</Label><Input placeholder="https://..." value={newPitch.contactUrl} onChange={(e) => setNewPitch({...newPitch, contactUrl: e.target.value})} /></div>
+                    </div>
+                    <div><Label>Genre</Label><Input placeholder="Hip-Hop, R&B, Pop..." value={newPitch.genre} onChange={(e) => setNewPitch({...newPitch, genre: e.target.value})} /></div>
+                    <div><Label>Demo / Stream Link</Label><Input placeholder="SoundCloud, Spotify, Drive..." value={newPitch.demoUrl} onChange={(e) => setNewPitch({...newPitch, demoUrl: e.target.value})} /></div>
+                    <div><Label>Pitch Note</Label><Textarea placeholder="Brief pitch message..." value={newPitch.pitchNote} onChange={(e) => setNewPitch({...newPitch, pitchNote: e.target.value})} className="h-20" /></div>
+                    <Button className="w-full gradient-bg" onClick={() => createMutation.mutate(newPitch)} disabled={!newPitch.trackTitle || !newPitch.targetName || createMutation.isPending}>
+                      {createMutation.isPending ? 'Saving...' : 'Track Pitch'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : filteredPitches.length === 0 ? (
+            <div className="text-center py-12">
+              <Newspaper className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-gray-500">No outreach tracked yet.</p>
+              <p className="text-sm text-gray-400 mt-1">Track every radio, blog, DJ, and press pitch in one place.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredPitches.map((p: any) => (
+                <div key={p.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{p.trackTitle}</span>
+                      <span className="text-gray-400 text-sm">→</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{p.targetName}</span>
+                      <Badge className={`text-xs ${typeColors[p.targetType] || 'bg-gray-100'}`}>{p.targetType}</Badge>
+                    </div>
+                    {p.pitchNote && <p className="text-xs text-gray-400 mt-1 line-clamp-1">{p.pitchNote}</p>}
+                    {p.featureUrl && <a href={p.featureUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-green-500 hover:underline mt-1 inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Featured</a>}
+                  </div>
+                  <div className="flex items-center gap-2 ml-3">
+                    <Select value={p.status} onValueChange={(v) => updateStatusMutation.mutate({ id: p.id, status: v })}>
+                      <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {['draft','submitted','under_review','following_up','featured','declined'].map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================================
+// FAN EMAIL CAMPAIGNS CONTENT
+// ============================================================================
+
+function FanCampaignsContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isNewOpen, setIsNewOpen] = useState(false);
+  const [newCampaign, setNewCampaign] = useState({ name: '', subject: '', body: '', campaignType: 'newsletter' });
+
+  const { data: campaigns = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/fan-campaigns'] });
+  const { data: stats } = useQuery<any>({ queryKey: ['/api/fan-campaigns/stats'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/fan-campaigns', data); return res.json(); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/fan-campaigns'] });
+      setIsNewOpen(false);
+      setNewCampaign({ name: '', subject: '', body: '', campaignType: 'newsletter' });
+      toast({ title: 'Campaign Created', description: 'Draft saved. Ready to send.' });
+    },
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: async (id: string) => { const res = await apiRequest('POST', `/api/fan-campaigns/${id}/send`); return res.json(); },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/fan-campaigns'] });
+      toast({ title: 'Campaign Sent!', description: `Delivered to ${data.recipientCount} fans.` });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { await apiRequest('DELETE', `/api/fan-campaigns/${id}`); },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/fan-campaigns'] }),
+  });
+
+  const TEMPLATES = [
+    { name: 'New Release', subject: '🎵 New Music Out Now!', body: 'Hey [Fan Name],\n\nI just dropped something new and I couldn\'t wait to share it with you...\n\n[Your message here]\n\nStream it now: [Link]\n\nAlways grateful,\n[Artist Name]' },
+    { name: 'Show Announcement', subject: '🎤 I\'m coming to [City]!', body: 'What\'s good [Fan Name],\n\nI\'m hitting the road and [City] is on the list!\n\nDate: [Date]\nVenue: [Venue]\n\nGet your tickets before they sell out: [Link]\n\nSee you there,\n[Artist Name]' },
+    { name: 'Exclusive Update', subject: '🔒 For My Day Ones Only', body: 'Hey [Fan Name],\n\nI wanted to share something exclusive with my inner circle before anyone else hears it...\n\n[Your update]\n\nAppreciate you riding with me.\n\n— [Artist Name]' },
+  ];
+
+  const statusColors: Record<string, string> = {
+    draft: 'bg-gray-100 text-gray-600',
+    scheduled: 'bg-blue-100 text-blue-700',
+    sent: 'bg-green-100 text-green-700',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Campaigns', value: stats?.totalCampaigns || 0 },
+          { label: 'Sent', value: stats?.sent || 0, color: 'text-green-600' },
+          { label: 'Total Subscribers', value: stats?.totalSubscribers || 0, color: 'text-blue-600' },
+          { label: 'Avg Open Rate', value: `${stats?.avgOpenRate || 0}%`, color: 'text-purple-600' },
+        ].map((s, i) => (
+          <Card key={i}><CardContent className="p-4 text-center">
+            <p className={`text-2xl font-bold mt-1 ${s.color || ''}`}>{s.value}</p>
+            <p className="text-xs text-gray-500">{s.label}</p>
+          </CardContent></Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2"><Mail className="w-5 h-5 text-blue-600" />Fan Email Campaigns</CardTitle>
+                <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
+                  <DialogTrigger asChild><Button size="sm" className="gradient-bg"><Plus className="w-4 h-4 mr-1" />New Campaign</Button></DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader><DialogTitle>Create Fan Campaign</DialogTitle><DialogDescription>Write an email campaign to send to your fans</DialogDescription></DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><Label>Campaign Name</Label><Input placeholder="e.g. April Newsletter" value={newCampaign.name} onChange={(e) => setNewCampaign({...newCampaign, name: e.target.value})} /></div>
+                        <div><Label>Type</Label>
+                          <Select value={newCampaign.campaignType} onValueChange={(v) => setNewCampaign({...newCampaign, campaignType: v})}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {['newsletter','release_announcement','show_announcement','exclusive','merchandise','other'].map(t => <SelectItem key={t} value={t}>{t.replace('_', ' ')}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div><Label>Subject Line</Label><Input placeholder="Something that makes fans want to open it..." value={newCampaign.subject} onChange={(e) => setNewCampaign({...newCampaign, subject: e.target.value})} /></div>
+                      <div>
+                        <Label>Message</Label>
+                        <Textarea className="min-h-[200px] font-mono text-sm mt-1" placeholder="Write your message here. Use [Fan Name] and [Artist Name] as placeholders..." value={newCampaign.body} onChange={(e) => setNewCampaign({...newCampaign, body: e.target.value})} />
+                      </div>
+                      <Button className="w-full gradient-bg" onClick={() => createMutation.mutate(newCampaign)} disabled={!newCampaign.name || !newCampaign.subject || !newCampaign.body || createMutation.isPending}>
+                        {createMutation.isPending ? 'Saving...' : 'Save as Draft'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : campaigns.length === 0 ? (
+                <div className="text-center py-12">
+                  <Mail className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-gray-500">No campaigns yet.</p>
+                  <p className="text-sm text-gray-400 mt-1">Create your first fan email campaign and build your direct connection with fans.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {campaigns.map((c: any) => (
+                    <div key={c.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-sm">{c.name}</p>
+                            <Badge className={`text-xs ${statusColors[c.status] || 'bg-gray-100'}`}>{c.status}</Badge>
+                            <Badge variant="outline" className="text-xs">{c.campaignType?.replace('_', ' ')}</Badge>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Subject: {c.subject}</p>
+                          {c.status === 'sent' && (
+                            <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                              <span>📬 {c.recipientCount} sent</span>
+                              <span>👁 {c.openCount} opens</span>
+                              <span>📈 {c.recipientCount > 0 ? Math.round((c.openCount / c.recipientCount) * 100) : 0}% open rate</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          {c.status === 'draft' && (
+                            <Button size="sm" onClick={() => sendMutation.mutate(c.id)} disabled={sendMutation.isPending}>
+                              <Send className="w-3 h-3 mr-1" />Send
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" className="text-red-400" onClick={() => deleteMutation.mutate(c.id)}>×</Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <Card>
+            <CardHeader><CardTitle className="text-sm">✉️ Email Templates</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {TEMPLATES.map((t, i) => (
+                  <div key={i} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                    onClick={() => { setNewCampaign({...newCampaign, name: t.name, subject: t.subject, body: t.body}); setIsNewOpen(true); }}>
+                    <p className="text-sm font-medium">{t.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{t.subject}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader><CardTitle className="text-sm">📊 Tips for High Open Rates</CardTitle></CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                <li>✅ Use your artist name in the sender field</li>
+                <li>✅ Keep subject lines under 50 characters</li>
+                <li>✅ Send on Tuesday or Thursday mornings</li>
+                <li>✅ Personalize with fan name placeholders</li>
+                <li>✅ Include one clear call-to-action link</li>
+                <li>✅ Make them feel like inner circle access</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -3849,5 +3849,69 @@ export async function registerRoutes(
     log(`Warning: Could not load fabric routes - ${error.message}`);
   }
 
+  try {
+    const labelSubmissionsRouter = (await import('./routes/labelSubmissions.js')).default;
+    app.use('/api/label-submissions', labelSubmissionsRouter);
+    log('Loaded route: labelSubmissions');
+  } catch (error: any) {
+    log(`Warning: Could not load labelSubmissions routes - ${error.message}`);
+  }
+
+  try {
+    const radioPitchesRouter = (await import('./routes/radioPitches.js')).default;
+    app.use('/api/radio-pitches', radioPitchesRouter);
+    log('Loaded route: radioPitches');
+  } catch (error: any) {
+    log(`Warning: Could not load radioPitches routes - ${error.message}`);
+  }
+
+  try {
+    const venuesRouter = (await import('./routes/venues.js')).default;
+    app.use('/api/venues', venuesRouter);
+    log('Loaded route: venues');
+  } catch (error: any) {
+    log(`Warning: Could not load venues routes - ${error.message}`);
+  }
+
+  try {
+    const projectBudgetsRouter = (await import('./routes/projectBudgets.js')).default;
+    app.use('/api/project-budgets', projectBudgetsRouter);
+    log('Loaded route: projectBudgets');
+  } catch (error: any) {
+    log(`Warning: Could not load projectBudgets routes - ${error.message}`);
+  }
+
+  try {
+    const sampleClearancesRouter = (await import('./routes/sampleClearances.js')).default;
+    app.use('/api/sample-clearances', sampleClearancesRouter);
+    log('Loaded route: sampleClearances');
+  } catch (error: any) {
+    log(`Warning: Could not load sampleClearances routes - ${error.message}`);
+  }
+
+  try {
+    const musicVideosRouter = (await import('./routes/musicVideos.js')).default;
+    app.use('/api/music-videos', musicVideosRouter);
+    log('Loaded route: musicVideos');
+  } catch (error: any) {
+    log(`Warning: Could not load musicVideos routes - ${error.message}`);
+  }
+
+  try {
+    const songwritingRouter = (await import('./routes/songwriting.js')).default;
+    app.use('/api/songwriting', songwritingRouter);
+    log('Loaded route: songwriting');
+  } catch (error: any) {
+    log(`Warning: Could not load songwriting routes - ${error.message}`);
+  }
+
+  try {
+    const fanCampaignsRouter = (await import('./routes/fanCampaigns.js')).default;
+    app.use('/api/fan-campaigns', fanCampaignsRouter);
+    log('Loaded route: fanCampaigns');
+  } catch (error: any) {
+    log(`Warning: Could not load fanCampaigns routes - ${error.message}`);
+  }
+
   return httpServer;
 }

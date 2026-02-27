@@ -90,6 +90,9 @@ import {
   ListMusic,
   Ticket,
   Film,
+  Briefcase,
+  Video,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   SpotifyIcon,
@@ -1814,6 +1817,30 @@ export default function Distribution() {
               >
                 <Film className="w-4 h-4 mr-1" />
                 Sync Licensing
+              </TabsTrigger>
+              <TabsTrigger
+                value="a-and-r"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-a-and-r"
+              >
+                <Briefcase className="w-4 h-4 mr-1" />
+                A&R Submissions
+              </TabsTrigger>
+              <TabsTrigger
+                value="sample-clearance"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-sample-clearance"
+              >
+                <ShieldCheck className="w-4 h-4 mr-1" />
+                Sample Clearance
+              </TabsTrigger>
+              <TabsTrigger
+                value="music-videos"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-music-videos"
+              >
+                <Video className="w-4 h-4 mr-1" />
+                Music Videos
               </TabsTrigger>
             </TabsList>
           </div>
@@ -3639,6 +3666,18 @@ export default function Distribution() {
           <TabsContent value="sync-licensing" className="space-y-6">
             <SyncLicensingContent />
           </TabsContent>
+
+          <TabsContent value="a-and-r" className="space-y-6">
+            <ARSubmissionsContent />
+          </TabsContent>
+
+          <TabsContent value="sample-clearance" className="space-y-6">
+            <SampleClearanceContent />
+          </TabsContent>
+
+          <TabsContent value="music-videos" className="space-y-6">
+            <MusicVideosContent />
+          </TabsContent>
         </Tabs>
 
         {/* Upload Dialog */}
@@ -4468,5 +4507,431 @@ export default function Distribution() {
       </div>
       )}
     </AppLayout>
+  );
+}
+
+// ============================================================================
+// A&R SUBMISSIONS CONTENT
+// ============================================================================
+
+function ARSubmissionsContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isNewOpen, setIsNewOpen] = useState(false);
+  const [newSubmission, setNewSubmission] = useState({
+    trackTitle: '', labelName: '', contactName: '', contactEmail: '', contactRole: '',
+    submissionMethod: 'email', demoUrl: '', notes: '', priority: 'medium',
+  });
+
+  const { data: submissions = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/label-submissions'] });
+  const { data: stats } = useQuery<any>({ queryKey: ['/api/label-submissions/stats'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/label-submissions', data); return res.json(); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/label-submissions'] });
+      setIsNewOpen(false);
+      setNewSubmission({ trackTitle: '', labelName: '', contactName: '', contactEmail: '', contactRole: '', submissionMethod: 'email', demoUrl: '', notes: '', priority: 'medium' });
+      toast({ title: 'Submission Added', description: 'Label submission tracked successfully.' });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: any) => { const res = await apiRequest('PUT', `/api/label-submissions/${id}`, { status }); return res.json(); },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/label-submissions'] }),
+  });
+
+  const statusColors: Record<string, string> = {
+    draft: 'bg-gray-100 text-gray-700',
+    submitted: 'bg-blue-100 text-blue-700',
+    under_review: 'bg-yellow-100 text-yellow-700',
+    following_up: 'bg-orange-100 text-orange-700',
+    accepted: 'bg-green-100 text-green-700',
+    rejected: 'bg-red-100 text-red-700',
+    declined: 'bg-red-100 text-red-700',
+  };
+
+  const priorityColors: Record<string, string> = {
+    low: 'bg-gray-100 text-gray-600',
+    medium: 'bg-yellow-100 text-yellow-700',
+    high: 'bg-red-100 text-red-700',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Submitted', value: stats?.total || 0, icon: <Briefcase className="w-5 h-5" /> },
+          { label: 'Pending Response', value: stats?.pending || 0, icon: <AlertCircle className="w-5 h-5 text-yellow-500" /> },
+          { label: 'Accepted', value: stats?.accepted || 0, icon: <CheckCircle className="w-5 h-5 text-green-500" /> },
+          { label: 'Conversion Rate', value: `${stats?.conversionRate || 0}%`, icon: <TrendingUp className="w-5 h-5 text-blue-500" /> },
+        ].map((stat, i) => (
+          <Card key={i}><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">{stat.icon}</div>
+            <div><p className="text-xs text-gray-500">{stat.label}</p><p className="text-xl font-bold">{stat.value}</p></div>
+          </CardContent></Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2"><Briefcase className="w-5 h-5 text-blue-600" />A&R & Label Submissions</CardTitle>
+            <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
+              <DialogTrigger asChild><Button size="sm" className="gradient-bg"><Plus className="w-4 h-4 mr-1" />Track Submission</Button></DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Track Label Submission</DialogTitle><DialogDescription>Log a music submission to a label or A&R contact</DialogDescription></DialogHeader>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Track Title</Label><Input placeholder="Song name" value={newSubmission.trackTitle} onChange={(e) => setNewSubmission({...newSubmission, trackTitle: e.target.value})} /></div>
+                    <div><Label>Label / Company</Label><Input placeholder="Label name" value={newSubmission.labelName} onChange={(e) => setNewSubmission({...newSubmission, labelName: e.target.value})} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Contact Name</Label><Input placeholder="A&R rep name" value={newSubmission.contactName} onChange={(e) => setNewSubmission({...newSubmission, contactName: e.target.value})} /></div>
+                    <div><Label>Contact Email</Label><Input type="email" placeholder="email@label.com" value={newSubmission.contactEmail} onChange={(e) => setNewSubmission({...newSubmission, contactEmail: e.target.value})} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Role</Label><Input placeholder="A&R Director, Manager..." value={newSubmission.contactRole} onChange={(e) => setNewSubmission({...newSubmission, contactRole: e.target.value})} /></div>
+                    <div><Label>Priority</Label>
+                      <Select value={newSubmission.priority} onValueChange={(v) => setNewSubmission({...newSubmission, priority: v})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="low">Low</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="high">High</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div><Label>Demo / Stream Link</Label><Input placeholder="SoundCloud, Drive, etc." value={newSubmission.demoUrl} onChange={(e) => setNewSubmission({...newSubmission, demoUrl: e.target.value})} /></div>
+                  <div><Label>Notes</Label><Textarea placeholder="Any additional context..." value={newSubmission.notes} onChange={(e) => setNewSubmission({...newSubmission, notes: e.target.value})} className="h-20" /></div>
+                  <Button className="w-full gradient-bg" onClick={() => createMutation.mutate(newSubmission)} disabled={!newSubmission.trackTitle || !newSubmission.labelName || createMutation.isPending}>
+                    {createMutation.isPending ? 'Saving...' : 'Track Submission'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : submissions.length === 0 ? (
+            <div className="text-center py-12">
+              <Briefcase className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-gray-500">No submissions tracked yet.</p>
+              <p className="text-sm text-gray-400 mt-1">Start tracking your label submissions and A&R outreach.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {submissions.map((sub: any) => (
+                <div key={sub.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{sub.trackTitle}</span>
+                      <Badge className={`text-xs ${priorityColors[sub.priority || 'medium']}`}>{sub.priority}</Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{sub.labelName}{sub.contactName ? ` — ${sub.contactName}` : ''}{sub.contactRole ? `, ${sub.contactRole}` : ''}</p>
+                    {sub.notes && <p className="text-xs text-gray-400 mt-1">{sub.notes}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <Select value={sub.status} onValueChange={(v) => updateStatusMutation.mutate({ id: sub.id, status: v })}>
+                      <SelectTrigger className="w-36 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['draft','submitted','under_review','following_up','accepted','rejected'].map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Badge className={`text-xs whitespace-nowrap ${statusColors[sub.status] || 'bg-gray-100 text-gray-600'}`}>{sub.status?.replace('_', ' ')}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================================
+// SAMPLE CLEARANCE CONTENT
+// ============================================================================
+
+function SampleClearanceContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isNewOpen, setIsNewOpen] = useState(false);
+  const [newClearance, setNewClearance] = useState({
+    trackTitle: '', sampleSource: '', sampleArtist: '', sampleLabel: '', samplePublisher: '',
+    clearanceType: 'master_and_sync', contactEmail: '', fee: '', notes: '',
+  });
+
+  const { data: clearances = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/sample-clearances'] });
+  const { data: stats } = useQuery<any>({ queryKey: ['/api/sample-clearances/stats'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/sample-clearances', data); return res.json(); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sample-clearances'] });
+      setIsNewOpen(false);
+      toast({ title: 'Sample Added', description: 'Sample clearance tracking started.' });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: any) => { const res = await apiRequest('PUT', `/api/sample-clearances/${id}`, { status }); return res.json(); },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/sample-clearances'] }),
+  });
+
+  const statusColors: Record<string, string> = {
+    needed: 'bg-red-100 text-red-700',
+    contacting: 'bg-blue-100 text-blue-700',
+    negotiating: 'bg-yellow-100 text-yellow-700',
+    in_review: 'bg-orange-100 text-orange-700',
+    cleared: 'bg-green-100 text-green-700',
+    denied: 'bg-red-100 text-red-700',
+    no_sample: 'bg-gray-100 text-gray-600',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Samples', value: stats?.total || 0 },
+          { label: 'Cleared', value: stats?.cleared || 0, color: 'text-green-600' },
+          { label: 'Pending', value: stats?.pending || 0, color: 'text-yellow-600' },
+          { label: 'Fees Paid', value: `$${(stats?.totalFees || 0).toLocaleString()}`, color: 'text-blue-600' },
+        ].map((s, i) => (
+          <Card key={i}><CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold mt-1 {s.color || ''}">{s.value}</p>
+            <p className="text-xs text-gray-500">{s.label}</p>
+          </CardContent></Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2"><Shield className="w-5 h-5 text-blue-600" />Sample Clearance Tracker</CardTitle>
+            <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
+              <DialogTrigger asChild><Button size="sm" className="gradient-bg"><Plus className="w-4 h-4 mr-1" />Add Sample</Button></DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Track Sample Clearance</DialogTitle><DialogDescription>Track a sample used in your music that needs clearance</DialogDescription></DialogHeader>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Your Track</Label><Input placeholder="Track using the sample" value={newClearance.trackTitle} onChange={(e) => setNewClearance({...newClearance, trackTitle: e.target.value})} /></div>
+                    <div><Label>Sample Source</Label><Input placeholder="Original song title" value={newClearance.sampleSource} onChange={(e) => setNewClearance({...newClearance, sampleSource: e.target.value})} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Original Artist</Label><Input value={newClearance.sampleArtist} onChange={(e) => setNewClearance({...newClearance, sampleArtist: e.target.value})} /></div>
+                    <div><Label>Original Label</Label><Input value={newClearance.sampleLabel} onChange={(e) => setNewClearance({...newClearance, sampleLabel: e.target.value})} /></div>
+                  </div>
+                  <div><Label>Publisher</Label><Input placeholder="Music publisher" value={newClearance.samplePublisher} onChange={(e) => setNewClearance({...newClearance, samplePublisher: e.target.value})} /></div>
+                  <div><Label>Clearance Type</Label>
+                    <Select value={newClearance.clearanceType} onValueChange={(v) => setNewClearance({...newClearance, clearanceType: v})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="master_and_sync">Master & Sync (both)</SelectItem>
+                        <SelectItem value="master_only">Master Only</SelectItem>
+                        <SelectItem value="sync_only">Sync Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Contact Email</Label><Input type="email" value={newClearance.contactEmail} onChange={(e) => setNewClearance({...newClearance, contactEmail: e.target.value})} /></div>
+                    <div><Label>Clearance Fee ($)</Label><Input type="number" placeholder="0" value={newClearance.fee} onChange={(e) => setNewClearance({...newClearance, fee: e.target.value})} /></div>
+                  </div>
+                  <div><Label>Notes</Label><Textarea className="h-16" value={newClearance.notes} onChange={(e) => setNewClearance({...newClearance, notes: e.target.value})} /></div>
+                  <Button className="w-full gradient-bg" onClick={() => createMutation.mutate({...newClearance, fee: newClearance.fee ? parseFloat(newClearance.fee) : undefined})} disabled={!newClearance.trackTitle || !newClearance.sampleSource || createMutation.isPending}>
+                    {createMutation.isPending ? 'Adding...' : 'Track Sample'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : clearances.length === 0 ? (
+            <div className="text-center py-12">
+              <Shield className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-gray-500">No samples tracked.</p>
+              <p className="text-sm text-gray-400 mt-1">Track samples in your music and manage clearance status.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {clearances.map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{c.trackTitle} <span className="text-gray-400">uses</span> "{c.sampleSource}"</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{c.sampleArtist && `by ${c.sampleArtist}`}{c.sampleLabel && ` on ${c.sampleLabel}`}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{c.clearanceType?.replace('_', ' & ')} clearance{c.fee ? ` — $${c.fee}` : ''}</p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <Select value={c.status} onValueChange={(v) => updateStatusMutation.mutate({ id: c.id, status: v })}>
+                      <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {['needed','contacting','negotiating','in_review','cleared','denied','no_sample'].map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Badge className={`text-xs whitespace-nowrap ${statusColors[c.status] || 'bg-gray-100'}`}>{c.status?.replace('_', ' ')}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-l-4 border-l-yellow-500">
+        <CardContent className="p-4">
+          <h3 className="font-semibold flex items-center gap-2 mb-2"><AlertCircle className="w-4 h-4 text-yellow-500" />Sample Clearance Guide</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
+            <div><p className="font-medium text-gray-800 mb-1">1. Identify Rights Holders</p><p>Find both the master rights holder (label/artist) and publishing rights holder (publisher/songwriter).</p></div>
+            <div><p className="font-medium text-gray-800 mb-1">2. Request Clearance</p><p>Contact both parties and negotiate a license fee or royalty arrangement.</p></div>
+            <div><p className="font-medium text-gray-800 mb-1">3. Get It In Writing</p><p>Always get a written license agreement before releasing music with a sample.</p></div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================================
+// MUSIC VIDEOS CONTENT
+// ============================================================================
+
+function MusicVideosContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isNewOpen, setIsNewOpen] = useState(false);
+  const [newVideo, setNewVideo] = useState({
+    trackTitle: '', director: '', productionCompany: '', budget: '', stage: 'concept', platform: 'youtube', notes: '',
+  });
+
+  const { data: videos = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/music-videos'] });
+  const { data: stats } = useQuery<any>({ queryKey: ['/api/music-videos/stats'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/music-videos', data); return res.json(); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/music-videos'] });
+      setIsNewOpen(false);
+      setNewVideo({ trackTitle: '', director: '', productionCompany: '', budget: '', stage: 'concept', platform: 'youtube', notes: '' });
+      toast({ title: 'Music Video Added', description: 'Video project tracked successfully.' });
+    },
+  });
+
+  const updateStageMutation = useMutation({
+    mutationFn: async ({ id, stage }: any) => { const res = await apiRequest('PUT', `/api/music-videos/${id}`, { stage }); return res.json(); },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/music-videos'] }),
+  });
+
+  const STAGES = ['concept', 'pre_production', 'casting', 'filming', 'editing', 'color_grade', 'mastering', 'released'];
+  const stageColors: Record<string, string> = {
+    concept: 'bg-gray-100 text-gray-600',
+    pre_production: 'bg-blue-100 text-blue-600',
+    casting: 'bg-purple-100 text-purple-600',
+    filming: 'bg-orange-100 text-orange-600',
+    editing: 'bg-yellow-100 text-yellow-600',
+    color_grade: 'bg-pink-100 text-pink-600',
+    mastering: 'bg-indigo-100 text-indigo-600',
+    released: 'bg-green-100 text-green-600',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Projects', value: stats?.total || 0 },
+          { label: 'In Production', value: stats?.inProduction || 0, color: 'text-orange-500' },
+          { label: 'Released', value: stats?.released || 0, color: 'text-green-600' },
+          { label: 'Total Views', value: (stats?.totalViews || 0).toLocaleString(), color: 'text-blue-600' },
+        ].map((s, i) => (
+          <Card key={i}><CardContent className="p-4 text-center">
+            <p className={`text-2xl font-bold mt-1 ${s.color || ''}`}>{s.value}</p>
+            <p className="text-xs text-gray-500">{s.label}</p>
+          </CardContent></Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2"><Video className="w-5 h-5 text-blue-600" />Music Video Production Tracker</CardTitle>
+            <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
+              <DialogTrigger asChild><Button size="sm" className="gradient-bg"><Plus className="w-4 h-4 mr-1" />Add Video</Button></DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Track Music Video</DialogTitle><DialogDescription>Track a music video production from concept to release</DialogDescription></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>Track Title</Label><Input placeholder="Song this video is for" value={newVideo.trackTitle} onChange={(e) => setNewVideo({...newVideo, trackTitle: e.target.value})} /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Director</Label><Input placeholder="Director name" value={newVideo.director} onChange={(e) => setNewVideo({...newVideo, director: e.target.value})} /></div>
+                    <div><Label>Production Company</Label><Input value={newVideo.productionCompany} onChange={(e) => setNewVideo({...newVideo, productionCompany: e.target.value})} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Budget ($)</Label><Input type="number" value={newVideo.budget} onChange={(e) => setNewVideo({...newVideo, budget: e.target.value})} /></div>
+                    <div><Label>Release Platform</Label>
+                      <Select value={newVideo.platform} onValueChange={(v) => setNewVideo({...newVideo, platform: v})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {['youtube','instagram','tiktok','vevo','all_platforms'].map(p => <SelectItem key={p} value={p}>{p.replace('_', ' ')}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div><Label>Production Stage</Label>
+                    <Select value={newVideo.stage} onValueChange={(v) => setNewVideo({...newVideo, stage: v})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {STAGES.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>Notes</Label><Textarea className="h-16" value={newVideo.notes} onChange={(e) => setNewVideo({...newVideo, notes: e.target.value})} /></div>
+                  <Button className="w-full gradient-bg" onClick={() => createMutation.mutate({...newVideo, budget: newVideo.budget ? parseFloat(newVideo.budget) : undefined})} disabled={!newVideo.trackTitle || createMutation.isPending}>
+                    {createMutation.isPending ? 'Adding...' : 'Track Video'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : videos.length === 0 ? (
+            <div className="text-center py-12">
+              <Video className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-gray-500">No music videos tracked yet.</p>
+              <p className="text-sm text-gray-400 mt-1">Track your music video productions from concept to release.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {videos.map((v: any) => (
+                <div key={v.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="font-semibold">{v.trackTitle}</p>
+                      <p className="text-sm text-gray-500">{v.director && `Dir: ${v.director}`}{v.productionCompany && ` • ${v.productionCompany}`}{v.budget && ` • $${parseFloat(v.budget).toLocaleString()}`}</p>
+                    </div>
+                    <Select value={v.stage} onValueChange={(stage) => updateStageMutation.mutate({ id: v.id, stage })}>
+                      <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {STAGES.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {STAGES.map((stage, i) => (
+                      <div key={stage} className="flex items-center">
+                        <div className={`px-2 py-0.5 rounded text-xs font-medium ${STAGES.indexOf(v.stage) >= i ? stageColors[v.stage] || 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                          {stage.replace('_', ' ')}
+                        </div>
+                        {i < STAGES.length - 1 && <div className={`w-3 h-0.5 ${STAGES.indexOf(v.stage) > i ? 'bg-blue-400' : 'bg-gray-200'}`} />}
+                      </div>
+                    ))}
+                  </div>
+                  {v.videoUrl && <a href={v.videoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline mt-2 inline-flex items-center gap-1"><ExternalLink className="w-3 h-3" />Watch Video</a>}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

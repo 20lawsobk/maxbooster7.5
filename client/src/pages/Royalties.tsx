@@ -43,6 +43,11 @@ import {
   FileText,
   Zap,
   Copyright,
+  Calculator,
+  Receipt,
+  BarChart3,
+  Plus,
+  Wallet,
 } from 'lucide-react';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -856,6 +861,14 @@ export default function Royalties() {
             >
               Settings
             </TabsTrigger>
+            <TabsTrigger 
+              value="tax-intelligence" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              data-testid="tab-tax-intelligence"
+            >
+              <Calculator className="w-3 h-3 mr-1" />
+              Tax & Revenue
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -1547,6 +1560,10 @@ export default function Royalties() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="tax-intelligence" className="space-y-6">
+            <TaxIntelligenceContent />
+          </TabsContent>
         </Tabs>
 
         {/* Tax Information Dialog */}
@@ -1962,5 +1979,153 @@ export default function Royalties() {
       </div>
       )}
     </AppLayout>
+  );
+}
+
+// ============================================================================
+// TAX & REVENUE INTELLIGENCE CONTENT
+// ============================================================================
+
+function TaxIntelligenceContent() {
+  const { data: royaltyData } = useQuery<any>({ queryKey: ['/api/royalties/statements'] });
+  const { data: payoutsData } = useQuery<any>({ queryKey: ['/api/payouts'] });
+  const { data: publishingData } = useQuery<any[]>({ queryKey: ['/api/publishing'] });
+  const { data: forecastData } = useQuery<any>({ queryKey: ['/api/royalties/forecast'] });
+
+  const currentYear = new Date().getFullYear();
+  const quarters = ['Q1 (Jan–Mar)', 'Q2 (Apr–Jun)', 'Q3 (Jul–Sep)', 'Q4 (Oct–Dec)'];
+
+  const revenueStreams = [
+    { source: 'Streaming Royalties', description: 'Spotify, Apple Music, YouTube, Tidal, etc.', taxType: '1099-MISC / Self-Employment', deductible: false },
+    { source: 'Publishing Royalties', description: 'PRO income, sync fees, mechanical royalties', taxType: '1099-MISC', deductible: false },
+    { source: 'Live Performance', description: 'Show guarantees, door deals, tickets', taxType: 'Business Income', deductible: false },
+    { source: 'Merchandise Sales', description: 'Clothing, accessories, digital goods', taxType: 'Business Income', deductible: false },
+    { source: 'Sync Licensing', description: 'TV, film, ad placements', taxType: '1099-MISC', deductible: false },
+    { source: 'Beat Sales', description: 'Exclusive and non-exclusive beat licenses', taxType: 'Business Income', deductible: false },
+  ];
+
+  const deductions = [
+    { item: 'Recording Studio Costs', description: 'Studio time, session musicians, engineer fees' },
+    { item: 'Music Production Equipment', description: 'DAWs, plugins, hardware, microphones, cables' },
+    { item: 'Distribution & Platform Fees', description: 'DistroKid, TuneCore, publishing admin fees' },
+    { item: 'Marketing & Promotion', description: 'Content creation, photography, graphic design' },
+    { item: 'Travel & Transportation', description: 'Tour travel, show mileage (IRS rate × miles)' },
+    { item: 'Professional Services', description: 'Manager commissions, attorney fees, accountant' },
+    { item: 'Home Studio Deduction', description: 'Portion of rent/mortgage if studio is primary workspace' },
+    { item: 'Instrument Repairs & Maintenance', description: 'Repair costs, string replacements, etc.' },
+    { item: 'Wardrobe & Styling', description: 'Stage outfits and performance-specific clothing' },
+    { item: 'Software Subscriptions', description: 'DAW subscriptions, plugins, cloud storage' },
+  ];
+
+  const quarterlyEstimate = [15, 15, 15, 15]; // estimated % by quarter
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Revenue Streams', value: revenueStreams.length, icon: <DollarSign className="w-5 h-5 text-green-500" />, color: 'text-green-600' },
+          { label: 'Tax Deductions', value: deductions.length, icon: <Receipt className="w-5 h-5 text-blue-500" />, color: 'text-blue-600' },
+          { label: 'Tax Year', value: currentYear, icon: <Calculator className="w-5 h-5 text-purple-500" />, color: 'text-purple-600' },
+          { label: 'Self-Employment Rate', value: '15.3%', icon: <BarChart3 className="w-5 h-5 text-orange-500" />, color: 'text-orange-600' },
+        ].map((s, i) => (
+          <Card key={i}><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">{s.icon}</div>
+            <div><p className="text-xs text-gray-500">{s.label}</p><p className={`text-xl font-bold ${s.color}`}>{s.value}</p></div>
+          </CardContent></Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Wallet className="w-5 h-5 text-green-600" />Music Revenue Streams ({currentYear})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {revenueStreams.map((stream, i) => (
+                <div key={i} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-sm">{stream.source}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{stream.description}</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs whitespace-nowrap">{stream.taxType}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+              <p className="text-xs text-yellow-800 dark:text-yellow-200 font-medium">⚠️ Important: As an independent artist, you likely file as self-employed. All music income is subject to both income tax AND self-employment tax (15.3%).</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Receipt className="w-5 h-5 text-blue-600" />Tax Deductions Checklist</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {deductions.map((d, i) => (
+                <div key={i} className="flex items-start gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">{d.item}</p>
+                    <p className="text-xs text-gray-500">{d.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><Calculator className="w-5 h-5 text-purple-600" />Quarterly Tax Estimated Payment Schedule ({currentYear})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">If you expect to owe $1,000+ in taxes, the IRS requires quarterly estimated payments. Missing them results in penalties.</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {quarters.map((q, i) => {
+              const deadlines = ['April 15', 'June 15', 'September 15', 'January 15'];
+              return (
+                <div key={i} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
+                  <p className="text-xs text-gray-500 mb-1">{q}</p>
+                  <p className="font-semibold text-sm">Due {deadlines[i]}</p>
+                  <Badge variant="outline" className="text-xs mt-2">{quarterlyEstimate[i]}% of annual</Badge>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-200"><span className="font-semibold">Pro tip:</span> Set aside 25–30% of every royalty payment and gig fee into a separate savings account earmarked for taxes. This covers self-employment tax + federal income tax for most artists.</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">📋 End-of-Year Tax Preparation Checklist</CardTitle></CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              '✅ Collect all 1099 forms from streaming platforms and labels',
+              '✅ Export payout history from DistroKid / TuneCore / CDBaby',
+              '✅ Download PRO earnings statements (ASCAP/BMI/SESAC)',
+              '✅ Gather all receipts for deductible expenses',
+              '✅ Calculate total business mileage for shows and sessions',
+              '✅ Document home studio square footage for home office deduction',
+              '✅ List all equipment purchases (potential Section 179 deduction)',
+              '✅ Confirm any international income for foreign tax forms',
+              '✅ Review split sheet agreements for co-writer deductions',
+              '✅ Calculate net profit / loss for Schedule C filing',
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">{item}</div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-4 text-center">This is educational information. Always consult a licensed CPA or tax professional for personalized tax advice.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
