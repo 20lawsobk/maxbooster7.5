@@ -24,12 +24,6 @@ import {
   ShieldCheck,
   Zap,
   Settings,
-  Film,
-  Copyright,
-  FileImage,
-  ListMusic,
-  Ticket,
-  ShoppingCart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -62,12 +56,6 @@ const navItems: NavItem[] = [
   { labelKey: 'navigation.careerCoach', path: '/career-coach', icon: Brain },
   { labelKey: 'navigation.workflowAutomations', path: '/workflow-automations', icon: Zap },
   { labelKey: 'navigation.invoices', path: '/invoices', icon: Receipt },
-  { labelKey: 'navigation.pressKit', path: '/press-kit', icon: FileImage },
-  { labelKey: 'navigation.playlistPitching', path: '/playlist-pitching', icon: ListMusic },
-  { labelKey: 'navigation.shows', path: '/shows', icon: Ticket },
-  { labelKey: 'navigation.merch', path: '/merch', icon: ShoppingCart },
-  { labelKey: 'navigation.syncLicensing', path: '/sync-licensing', icon: Film },
-  { labelKey: 'navigation.publishing', path: '/publishing', icon: Copyright },
   { labelKey: 'navigation.verification', path: '/verification', icon: ShieldCheck },
   { labelKey: 'navigation.adminPanel', path: '/admin', icon: Shield, adminOnly: true },
   { labelKey: 'navigation.adminSecurity', path: '/admin/security', icon: Shield, adminOnly: true },
