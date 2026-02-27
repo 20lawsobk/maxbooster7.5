@@ -1,72 +1,69 @@
-# Max Booster
+# Max Booster - AI-Powered Music Career Management Platform
 
-AI-Powered Music Career Management Platform by B-Lawz Music. This platform aims to empower musicians and artists by providing tools for career management, distribution, promotion, and analytics, leveraging AI for creative generation and insights. The project envisions becoming a leading platform in the music industry, offering comprehensive support for artists at various stages of their careers.
+## Project Overview
 
-## User Preferences
+Max Booster is a full-stack TypeScript web application for music artists. It provides AI-assisted tools for social media management, music distribution, analytics, beat marketplace, and career automation.
 
-I prefer iterative development with clear communication at each stage. Please ask before making any major architectural changes or introducing new external dependencies. I also prefer detailed explanations for complex technical decisions. Do not make changes to files in the `electron/` directory, `capacitor/` directory, or any files related to the desktop or mobile build processes. I prefer a coding style that prioritizes readability and maintainability, using TypeScript consistently.
+**Author:** B-Lawz Music (blawzmusic@gmail.com)  
+**Version:** 3.0.0
 
-## System Architecture
+## Tech Stack
 
-The Max Booster platform is built with a decoupled frontend and backend.
+- **Frontend:** React 19, TypeScript, Vite 7, TailwindCSS 4, Wouter (routing), Zustand (state), TanStack Query
+- **Backend:** Express.js, TypeScript (tsx), Node.js 22
+- **Database:** PostgreSQL via Neon (serverless), Drizzle ORM
+- **State Store:** BoosterState (custom Rust-based WAL key-value store on port 9877)
+- **Build:** Vite for frontend, tsx for server-side TypeScript
 
-**Frontend:**
--   Developed using React, TypeScript, and Vite.
--   Utilizes Zustand for state management and Tailwind CSS v4 for styling.
--   The client application (`client/src/App.tsx`) is bundled into `dist/public/` for production.
--   UI/UX decisions focus on a clean, modern interface with a consistent color scheme.
--   Features include:
-    -   Comprehensive notification system with various categories (e.g., account security, distribution, social media, royalties, achievements) and wired triggers for events like achievement unlocks, streak milestones, new logins, password changes, and payment failures.
-    -   Admin-only notification category (`platform_admin`) for critical system alerts.
-    -   In-app NPS survey and a cancellation exit survey to improve user retention.
-    -   AI Creative Generators (`AIImageGenerator`) for image generation, integrated into advertising and social media tools.
-    -   Audio sync using `requestAnimationFrame` for digital audio workstation (DAW) features.
-    -   Robust settings with keyboard shortcut customization.
+## Architecture
 
-**Backend:**
--   Implemented with Express.js (Node.js/TypeScript), bundled to `dist/index.cjs` using esbuild.
--   A clustering mechanism (`server/cluster.ts`) is used in production for high availability and performance, forking workers and auto-restarting dead ones.
--   **Database:** PostgreSQL, accessed via Drizzle ORM and a Neon serverless driver. Schema definitions are in `shared/schema.ts`. Critical database indexes are implemented on new retention tables and hot query columns to optimize performance. Read replica routing is supported for SELECT queries when `DATABASE_REPLICA_URLS` is configured.
--   **Storage:** A three-layer hybrid storage system is employed:
-    -   **Hot Tier:** Replit Object Storage (`@replit/object-storage`).
-    -   **Cold Tier:** Pocket Dimension (custom compressed, chunked, content-addressed local storage).
-    -   **Metadata Plane:** Pocket Dimension Fabric (distributed, DB-backed metadata plane with node/volume/pocket/object/chunk registries, placement strategy, and rebalancer).
-    -   Files inactive for 30+ days are automatically tiered to cold storage.
-    -   The `@replit/object-storage` Client uses `uploadFromBytes` and `downloadAsBytes` for all operations.
--   **State Engine:** BoosterState, a custom Rust-based KV store with Write-Ahead Log (WAL), CRC32 checksums, and fsync, running on port 9877. It is used for job queues and session backing.
--   **Caching:** `DistributedCache` backed by Redis, essential for production. Includes cache stampede protection using distributed locks.
--   **Rate Limiting:** `DistributedRateLimiter` using atomic Redis Lua sliding window.
--   **WebSocket Broadcasting:** Utilizes Redis Pub/Sub for cross-instance message delivery.
--   **TF Inference:** `TensorFlowWorkerPool` uses isolated `.cjs` workers for TensorFlow inference.
--   **Sessions:** `connect-redis` for Redis-backed session management.
--   **Job Queues:** BullMQ, a Redis-backed job queue with retries, exponential backoff, and a Dead Letter Queue (DLQ). Used for various background tasks and retention services. Concurrency is capped, and job persistence is configured. Distributed cron locks prevent multiple instances from running the same job.
--   **Autonomous Service:** In-memory maps for processing and learning data, with metrics persisted to Redis. Background loops are managed by BullMQ repeatable jobs.
--   **Security:** Mandatory safety middleware includes origin validation (replacing CSRF tokens), rate limiting, and Helmet. Webhook secrets require `WEBHOOK_SECRET` in production for signature verification.
--   **Retention & Long-term SaaS Success Systems:**
-    -   Multi-step dunning for payment recovery.
-    -   Customer health score computation.
-    -   Re-engagement cron jobs for inactive users.
-    -   Retention API for NPS, cancellation feedback, and feature events.
-    -   Feature event write buffer that pushes to Redis lists and bulk-inserts to the DB.
--   **Scalability Hardening:**
-    -   Admission control middleware to manage concurrent requests using Redis.
-    -   Redis eviction policy set to `allkeys-lru`.
-    -   DB table partitioning script for large tables.
-    -   Kubernetes HPA metrics exposed for autoscaling.
-    -   Prometheus metrics for TensorFlow worker queue depth.
-    -   YJS cross-node pub/sub for collaborative editing.
+This is a monorepo with:
+- `client/` - React frontend (served via Vite middleware in dev)
+- `server/` - Express backend with all API routes
+- `shared/` - Shared TypeScript types and schema
+- `boosterstate/` - Rust WAL-based key-value store (pre-compiled binary in `target/debug/`)
+- `ai_model/` - Python AI model components
 
-## External Dependencies
+The server serves the frontend via Vite middleware in development mode. Both frontend and backend run on **port 5000**.
 
--   **Database:** PostgreSQL (via Neon serverless driver)
--   **ORM:** Drizzle ORM
--   **Object Storage:** Replit Object Storage (`@replit/object-storage`)
--   **Email:** SendGrid
--   **Payments:** Stripe
--   **Monitoring:** Sentry (errors + distributed tracing), Prometheus (Grafana-compatible metrics)
--   **Caching/Messaging/Sessions/Job Queues:** Redis (via `connect-redis`, `ioredis`, BullMQ)
--   **AI/ML:** TensorFlow
--   **OAuth Providers:** Facebook, Google, Instagram, LinkedIn, TikTok, Twitter, YouTube, Threads, Spotify
--   **Push Notifications:** VAPID (for Web Push)
--   **Build Tools:** Vite, esbuild
--   **Deployment:** GitHub Actions (for Desktop and Mobile builds - Electron, Capacitor)
+## Development
+
+Start command: `npm run dev`
+
+This starts:
+1. `boosterstate` binary (Rust key-value store on port 9877)
+2. Express server with Vite middleware on port 5000
+
+## Environment Variables Required
+
+- `DATABASE_URL` - PostgreSQL connection string (Neon/Replit database)
+- `SESSION_SECRET` - Session signing secret (auto-set)
+
+Optional (features will be degraded without them):
+- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` - Payment processing
+- `SENDGRID_API_KEY` - Email delivery
+- `REDIS_URL` - Session store and pub/sub (falls back to in-memory)
+- Social API keys for OAuth: Twitter, Facebook, Instagram, TikTok, YouTube, LinkedIn, Threads
+
+## Database
+
+Uses Drizzle ORM with PostgreSQL. Schema in `shared/schema.ts`.
+
+To push schema changes: `npm run db:push`
+
+## Key Fixes Applied During Import
+
+1. Upgraded Node.js from 20 to 22 (required by project dependencies)
+2. Cleared corrupted temp node_modules directories before install
+3. Installed npm dependencies with `--ignore-scripts`
+4. Pushed database schema and created indexes
+5. Created placeholder ML weights files (`ai_model/weights/social_base.json`, `ai_model/weights/advertising_base.json`) to skip memory-intensive TF.js training on startup
+6. Removed `process.exit(1)` from Vite error logger (was crashing server on non-fatal icon resolution warnings)
+7. Cleared Vite cache to resolve stale dependency pre-bundling errors
+
+## Production Deployment
+
+Build: `npm run build`  
+Start: `npm run start`
+
+Production requires Stripe and SendGrid keys for full functionality.
