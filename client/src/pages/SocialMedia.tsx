@@ -72,6 +72,7 @@ import {
   Activity,
   ArrowRight,
   X,
+  FileImage,
 } from 'lucide-react';
 import {
   FacebookIcon,
@@ -1404,6 +1405,13 @@ export default function SocialMedia() {
             >
               <Bot className="w-3 h-3 mr-1 inline" />
               Autopilot
+            </TabsTrigger>
+            <TabsTrigger
+              value="press-kit"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs px-2 py-1.5"
+            >
+              <FileImage className="w-3 h-3 mr-1 inline" />
+              Press Kit
             </TabsTrigger>
           </TabsList>
 
@@ -3181,9 +3189,257 @@ export default function SocialMedia() {
             {/* Multimodal Content Analysis for Autopilot */}
             <ContentAnalyzer />
           </TabsContent>
+
+          <TabsContent value="press-kit" className="space-y-6">
+            <PressKitTabContent />
+          </TabsContent>
         </Tabs>
       </div>
       )}
     </AppLayout>
+  );
+}
+
+function PressKitTabContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [uploading, setUploading] = useState(false);
+
+  const { data: pressKit, isLoading } = useQuery({
+    queryKey: ['/api/press-kit'],
+  });
+
+  const updatePressKitMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('PUT', '/api/press-kit', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/press-kit'] });
+      toast({ title: 'Success', description: 'Press kit updated successfully' });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: 'Update Failed', 
+        description: error.message || 'Could not update press kit', 
+        variant: 'destructive' 
+      });
+    }
+  });
+
+  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    
+    const genres = (data.genres as string).split(',').map(g => g.trim()).filter(Boolean);
+    const socialLinks = {
+      instagram: data.instagram,
+      twitter: data.twitter,
+      youtube: data.youtube,
+      facebook: data.facebook,
+      spotify: data.spotify,
+    };
+
+    updatePressKitMutation.mutate({
+      ...data,
+      genres,
+      socialLinks,
+      isPublic: pressKit?.isPublic ?? false,
+    });
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'press-kit');
+
+      const res = await uploadWithProgress('/api/storage/upload', formData) as any;
+      const photoUrl = res.file.url;
+
+      const currentPhotos = (pressKit?.photos as any[]) || [];
+      updatePressKitMutation.mutate({
+        ...pressKit,
+        photos: [...currentPhotos, { url: photoUrl, caption: '' }],
+      });
+    } catch (error) {
+      toast({ title: 'Upload Failed', description: 'Could not upload photo', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    const currentPhotos = [...(pressKit?.photos as any[])];
+    currentPhotos.splice(index, 1);
+    updatePressKitMutation.mutate({ ...pressKit, photos: currentPhotos });
+  };
+
+  const copyPublicLink = () => {
+    if (pressKit?.slug) {
+      const url = `${window.location.origin}/epk/${pressKit.slug}`;
+      navigator.clipboard.writeText(url);
+      toast({ title: 'Link Copied', description: 'Public EPK link copied to clipboard' });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Electronic Press Kit (EPK)</h2>
+          <p className="text-muted-foreground">Build your professional artist profile for promoters and press.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {pressKit?.isPublic && (
+            <Button variant="outline" size="sm" onClick={copyPublicLink}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy Public Link
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <form onSubmit={handleSave} className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Artist Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="artistName">Artist Name</Label>
+                    <Input id="artistName" name="artistName" defaultValue={pressKit?.artistName} placeholder="Stage Name" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="genres">Genres</Label>
+                    <Input id="genres" name="genres" defaultValue={pressKit?.genres?.join(', ')} placeholder="Indie, Rock, Pop" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="shortBio">Short Bio (One Liner)</Label>
+                  <Input id="shortBio" name="shortBio" defaultValue={pressKit?.shortBio} placeholder="A brief catchy description" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Full Biography</Label>
+                  <Textarea id="bio" name="bio" defaultValue={pressKit?.bio} placeholder="Your full story..." className="min-h-[150px]" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Photo Gallery</CardTitle>
+                <div className="relative">
+                  <Input type="file" id="photo-upload" className="hidden" accept="image/*" onChange={handlePhotoUpload} disabled={uploading} />
+                  <Label htmlFor="photo-upload" className={`cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3 ${uploading ? 'opacity-50' : ''}`}>
+                    {uploading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                    Add Photo
+                  </Label>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {pressKit?.photos?.map((photo: any, index: number) => (
+                    <div key={index} className="group relative aspect-square rounded-md overflow-hidden border">
+                      <img src={photo.url} alt="Press" className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {(!pressKit?.photos || pressKit.photos.length === 0) && (
+                    <div className="col-span-full py-8 text-center border-2 border-dashed rounded-lg text-muted-foreground">
+                      No photos added yet.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact & Booking</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Contact Email</Label>
+                  <Input id="contactEmail" name="contactEmail" type="email" defaultValue={pressKit?.contactEmail} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bookingEmail">Booking Email</Label>
+                  <Input id="bookingEmail" name="bookingEmail" type="email" defaultValue={pressKit?.bookingEmail} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="technicalRider">Technical Rider (Link or Text)</Label>
+                  <Textarea id="technicalRider" name="technicalRider" defaultValue={pressKit?.technicalRider} placeholder="Technical requirements..." />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Social Links</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Instagram</Label>
+                  <Input name="instagram" defaultValue={pressKit?.socialLinks?.instagram} placeholder="URL" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Twitter/X</Label>
+                  <Input name="twitter" defaultValue={pressKit?.socialLinks?.twitter} placeholder="URL" />
+                </div>
+                <div className="space-y-2">
+                  <Label>YouTube</Label>
+                  <Input name="youtube" defaultValue={pressKit?.socialLinks?.youtube} placeholder="URL" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Spotify</Label>
+                  <Input name="spotify" defaultValue={pressKit?.socialLinks?.spotify} placeholder="URL" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-dashed">
+              <div className="flex flex-col">
+                <span className="font-medium">Public Visibility</span>
+                <span className="text-xs text-muted-foreground">Make your EPK public</span>
+              </div>
+              <Switch 
+                checked={pressKit?.isPublic} 
+                onCheckedChange={(checked) => updatePressKitMutation.mutate({ ...pressKit, isPublic: checked })}
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={updatePressKitMutation.isPending}>
+              {updatePressKitMutation.isPending && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+              Save Press Kit
+            </Button>
+          </div>
+        </div>
+      </form>
+    </div>
   );
 }

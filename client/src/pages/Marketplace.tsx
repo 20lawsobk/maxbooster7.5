@@ -773,6 +773,44 @@ export default function Marketplace() {
     message: '',
   });
 
+  // Merch Store queries and mutations
+  const { data: merchItems, isLoading: merchLoading } = useQuery({
+    queryKey: ['/api/merch'],
+    enabled: activeTab === 'merch',
+  });
+
+  const { data: merchOrders, isLoading: ordersLoading } = useQuery({
+    queryKey: ['/api/merch/orders'],
+    enabled: activeTab === 'merch',
+  });
+
+  const { data: merchStats } = useQuery({
+    queryKey: ['/api/merch/stats'],
+    enabled: activeTab === 'merch',
+  });
+
+  const addItemMutation = useMutation({
+    mutationFn: async (newItem: any) => {
+      const res = await apiRequest('POST', '/api/merch', newItem);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/merch'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/merch/stats'] });
+      toast({ title: 'Success', description: 'Item added successfully' });
+    },
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest('DELETE', `/api/merch/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/merch'] });
+      toast({ title: 'Success', description: 'Item deleted' });
+    },
+  });
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingBeat, setEditingBeat] = useState<Beat | null>(null);
@@ -2107,6 +2145,10 @@ export default function Marketplace() {
                 </TabsTrigger>
                 <TabsTrigger value="my-store" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
                   My Store
+                </TabsTrigger>
+                <TabsTrigger value="merch" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                  <ShoppingCart className="w-3 h-3 mr-1 inline" />
+                  Merch
                 </TabsTrigger>
                 <TabsTrigger value="purchases" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
                   Purchases
@@ -3492,6 +3534,265 @@ export default function Marketplace() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="merch" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">Merch Store</h2>
+                <p className="text-muted-foreground text-sm">Manage your physical and digital merchandise.</p>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Product
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Product</DialogTitle>
+                    <DialogDescription>
+                      Enter the details for your new merchandise item.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const data = Object.fromEntries(formData.entries());
+                    addItemMutation.mutate({
+                      ...data,
+                      price: parseFloat(data.price as string),
+                      inventory: parseInt(data.inventory as string) || 0,
+                      isActive: true,
+                    });
+                  }} className="space-y-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Product Name</Label>
+                        <Input id="name" name="name" required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="category">Category</Label>
+                        <Select name="category" defaultValue="clothing">
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="clothing">Clothing</SelectItem>
+                            <SelectItem value="accessories">Accessories</SelectItem>
+                            <SelectItem value="music">Music (Physical)</SelectItem>
+                            <SelectItem value="digital">Digital Download</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea id="description" name="description" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="price">Price ($)</Label>
+                        <Input id="price" name="price" type="number" step="0.01" required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="inventory">Inventory</Label>
+                        <Input id="inventory" name="inventory" type="number" defaultValue="0" />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit" disabled={addItemMutation.isPending}>
+                        {addItemMutation.isPending ? 'Adding...' : 'Add Product'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">${merchStats?.totalRevenue?.toFixed(2) || '0.00'}</div>
+                  <p className="text-xs text-muted-foreground">Lifetime earnings</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Orders (Month)</CardTitle>
+                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{merchStats?.ordersThisMonth || 0}</div>
+                  <p className="text-xs text-muted-foreground">Orders this month</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{merchStats?.totalOrders || 0}</div>
+                  <p className="text-xs text-muted-foreground">All time orders</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{merchStats?.inventoryAlerts || 0}</div>
+                  <p className="text-xs text-muted-foreground">Items needing restock</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Tabs defaultValue="products" className="w-full">
+              <TabsList className="bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="orders">Orders</TabsTrigger>
+              </TabsList>
+              <TabsContent value="products" className="pt-4">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {merchLoading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <Card key={i} className="animate-pulse bg-white dark:bg-gray-800">
+                        <CardContent className="h-48" />
+                      </Card>
+                    ))
+                  ) : merchItems?.length === 0 ? (
+                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg bg-muted/10">
+                      <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold">No products found</h3>
+                      <p className="text-muted-foreground text-sm">Add your first product to get started.</p>
+                    </div>
+                  ) : (
+                    merchItems?.map((item: any) => (
+                      <Card key={item.id} className="overflow-hidden bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
+                        <div className="aspect-square bg-muted relative">
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.name} className="object-cover w-full h-full" />
+                          ) : (
+                            <div className="flex items-center justify-center h-full">
+                              <Package className="h-12 w-12 text-muted-foreground/20" />
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2">
+                            <Badge variant={item.isActive ? "default" : "secondary"}>
+                              {item.isActive ? "Active" : "Draft"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <CardHeader className="p-4 pb-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-base truncate max-w-[150px]">{item.name}</CardTitle>
+                              <p className="text-xs text-muted-foreground capitalize">{item.category}</p>
+                            </div>
+                            <div className="font-bold text-blue-600">${parseFloat(item.price).toFixed(2)}</div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0 space-y-3">
+                          <div className="flex justify-between items-center text-xs">
+                            <span>Stock: {item.isDigital ? '∞ (Digital)' : item.inventory}</span>
+                            <span>Sold: {item.soldCount || 0}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" className="flex-1 text-xs">
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-destructive hover:text-destructive text-xs"
+                              onClick={() => {
+                                if (confirm('Are you sure you want to delete this product?')) {
+                                  deleteItemMutation.mutate(item.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="orders" className="pt-4">
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Recent Orders</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order ID</TableHead>
+                          <TableHead>Buyer</TableHead>
+                          <TableHead>Total</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ordersLoading ? (
+                          Array.from({ length: 3 }).map((_, i) => (
+                            <TableRow key={i} className="animate-pulse">
+                              <TableCell colSpan={5} className="h-12" />
+                            </TableRow>
+                          ))
+                        ) : merchOrders?.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-12 text-muted-foreground text-sm">
+                              No orders yet.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          merchOrders?.map((order: any) => (
+                            <TableRow key={order.id}>
+                              <TableCell className="font-mono text-xs">
+                                {order.id.split('-')[0]}
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm font-medium">{order.buyerName}</div>
+                                <div className="text-[10px] text-muted-foreground">{order.buyerEmail}</div>
+                              </TableCell>
+                              <TableCell className="text-sm font-medium">
+                                ${parseFloat(order.total).toFixed(2)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  order.status === 'delivered' ? 'default' :
+                                  order.status === 'shipped' ? 'secondary' :
+                                  'outline'
+                                } className="text-[10px] capitalize">
+                                  {order.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="sm" className="text-xs">
+                                  Details
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </div>

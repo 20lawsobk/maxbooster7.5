@@ -87,6 +87,9 @@ import {
   Crown,
   Sparkles,
   MapPin,
+  ListMusic,
+  Ticket,
+  Film,
 } from 'lucide-react';
 import {
   SpotifyIcon,
@@ -366,6 +369,424 @@ function getPlatformIcon(slug: string) {
     soundcloud: SoundCloudIcon,
   };
   return iconMap[slug] || Music;
+}
+
+function getPlatformColor(slug: string) {
+  const colorMap: Record<string, string> = {
+    spotify: '#1DB954',
+    'apple-music': '#FA243C',
+    'youtube-music': '#FF0000',
+    'amazon-music': '#FF9900',
+    'amazon-mp3': '#FF9900',
+    tidal: '#000000',
+    deezer: '#FEAA2D',
+    tiktok: '#000000',
+    instagram: '#E4405F',
+    facebook: '#1877F2',
+    pandora: '#005483',
+    iheartradio: '#C6002B',
+    soundcloud: '#FF3300',
+    napster: '#000000',
+    qobuz: '#000000',
+    audiomack: '#FFA500',
+    jiosaavn: '#FF6B35',
+    gaana: '#FF6B35',
+    melon: '#00C73C',
+    anghami: '#A74CD5',
+    boomplay: '#FF6B35',
+    'yandex-music': '#FFCC00',
+    'netease-cloud-music': '#FF6B35',
+  };
+  return colorMap[slug] || '#666666';
+}
+
+function PlaylistPitchingContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isNewPitchOpen, setIsNewPitchOpen] = useState(false);
+  
+  const { data: pitches = [], isLoading: pitchesLoading } = useQuery<any[]>({
+    queryKey: ['/api/playlist-pitching'],
+  });
+
+  const { data: stats } = useQuery<any>({
+    queryKey: ['/api/playlist-pitching/stats'],
+  });
+
+  const [newPitchForm, setNewPitchForm] = useState({
+    trackTitle: '',
+    artistName: '',
+    genre: '',
+    curatorName: '',
+    playlistUrl: '',
+    description: '',
+    status: 'submitted',
+  });
+
+  const createPitchMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/playlist-pitching', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Pitch created!' });
+      setIsNewPitchOpen(false);
+      setNewPitchForm({
+        trackTitle: '',
+        artistName: '',
+        genre: '',
+        curatorName: '',
+        playlistUrl: '',
+        description: '',
+        status: 'submitted',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/playlist-pitching'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/playlist-pitching/stats'] });
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Playlist Pitching</h2>
+          <p className="text-gray-500">Track your submissions to curators</p>
+        </div>
+        <Button onClick={() => setIsNewPitchOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Track New Pitch
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard title="Total Pitches" value={stats?.total || 0} icon={<ListMusic className="w-4 h-4" />} />
+        <StatCard title="Accepted" value={stats?.accepted || 0} icon={<CheckCircle className="w-4 h-4 text-green-500" />} />
+        <StatCard title="Pending" value={stats?.pending || 0} icon={<Clock className="w-4 h-4 text-yellow-500" />} />
+        <StatCard title="Conversion" value={`${(stats?.conversionRate || 0).toFixed(1)}%`} icon={<TrendingUp className="w-4 h-4 text-purple-500" />} />
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b bg-gray-50/50 dark:bg-gray-800/50">
+                <tr>
+                  <th className="p-4 font-medium">Track</th>
+                  <th className="p-4 font-medium">Curator</th>
+                  <th className="p-4 font-medium">Status</th>
+                  <th className="p-4 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {pitchesLoading ? (
+                  <tr><td colSpan={4} className="p-8 text-center text-gray-500">Loading...</td></tr>
+                ) : pitches.length === 0 ? (
+                  <tr><td colSpan={4} className="p-8 text-center text-gray-500">No pitches tracked yet.</td></tr>
+                ) : pitches.map((pitch) => (
+                  <tr key={pitch.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                    <td className="p-4">
+                      <div className="font-medium">{pitch.trackTitle}</div>
+                      <div className="text-xs text-gray-500">{pitch.artistName}</div>
+                    </td>
+                    <td className="p-4">{pitch.curatorName}</td>
+                    <td className="p-4">
+                      <Badge variant="outline">{pitch.status}</Badge>
+                    </td>
+                    <td className="p-4 text-xs text-gray-500">
+                      {new Date(pitch.submittedAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isNewPitchOpen} onOpenChange={setIsNewPitchOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Track New Pitch</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Track Title</Label>
+              <Input 
+                value={newPitchForm.trackTitle}
+                onChange={(e) => setNewPitchForm({ ...newPitchForm, trackTitle: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Curator Name</Label>
+              <Input 
+                value={newPitchForm.curatorName}
+                onChange={(e) => setNewPitchForm({ ...newPitchForm, curatorName: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Playlist URL</Label>
+              <Input 
+                value={newPitchForm.playlistUrl}
+                onChange={(e) => setNewPitchForm({ ...newPitchForm, playlistUrl: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewPitchOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={() => createPitchMutation.mutate({ ...newPitchForm, submittedAt: new Date().toISOString() })}
+              disabled={createPitchMutation.isPending}
+            >
+              Save Pitch
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function ShowsContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newShow, setNewShow] = useState({
+    name: "",
+    venue: "",
+    city: "",
+    country: "US",
+    date: "",
+    capacity: 0,
+    ticketUrl: "",
+  });
+
+  const { data: shows = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/shows"],
+  });
+
+  const { data: stats } = useQuery<any>({
+    queryKey: ["/api/shows/stats"],
+  });
+
+  const createShowMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/shows", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shows"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/shows/stats"] });
+      setShowCreateDialog(false);
+      setNewShow({ name: "", venue: "", city: "", country: "US", date: "", capacity: 0, ticketUrl: "" });
+      toast({ title: "Show created" });
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Shows & Tours</h2>
+          <p className="text-gray-500">Manage your live performances</p>
+        </div>
+        <Button onClick={() => setShowCreateDialog(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Show
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard title="Total Shows" value={stats?.totalShows || 0} icon={<Ticket className="w-4 h-4" />} />
+        <StatCard title="Revenue" value={`$${(stats?.totalRevenue || 0).toLocaleString()}`} icon={<DollarSign className="w-4 h-4 text-green-500" />} />
+        <StatCard title="Avg. Attendance" value={Math.round(stats?.avgTicketsSold || 0)} icon={<Users className="w-4 h-4 text-blue-500" />} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {isLoading ? (
+          <p>Loading shows...</p>
+        ) : shows.length === 0 ? (
+          <Card className="col-span-full p-12 text-center text-gray-500">
+            No shows scheduled yet.
+          </Card>
+        ) : shows.map((show) => (
+          <Card key={show.id}>
+            <CardHeader>
+              <CardTitle className="text-lg">{show.name}</CardTitle>
+              <p className="text-sm text-gray-500">{show.venue}, {show.city}</p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                <CalendarIcon className="w-4 h-4" />
+                {new Date(show.date).toLocaleDateString()}
+              </div>
+              <Button variant="outline" className="w-full" asChild>
+                <a href={show.ticketUrl || "#"} target="_blank" rel="noopener noreferrer">View Tickets</a>
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Show</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Show Name</Label>
+              <Input value={newShow.name} onChange={(e) => setNewShow({...newShow, name: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Venue</Label>
+                <Input value={newShow.venue} onChange={(e) => setNewShow({...newShow, venue: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input type="datetime-local" value={newShow.date} onChange={(e) => setNewShow({...newShow, date: e.target.value})} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
+            <Button 
+              onClick={() => createShowMutation.mutate(newShow)}
+              disabled={createShowMutation.isPending}
+            >
+              Add Show
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function SyncLicensingContent() {
+  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const { data: catalog = [], isLoading } = useQuery<any[]>({
+    queryKey: ['/api/sync-licensing'],
+  });
+
+  const { data: stats } = useQuery<any>({
+    queryKey: ['/api/sync-licensing/stats'],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/sync-licensing', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sync-licensing'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/sync-licensing/stats'] });
+      setIsDialogOpen(false);
+      toast({ title: 'Success', description: 'Track added to sync catalog' });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    createMutation.mutate({
+      ...data,
+      bpm: data.bpm ? parseInt(data.bpm as string) : undefined,
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Sync Licensing</h2>
+          <p className="text-gray-500">Put Your Music in TV, Film & Ads</p>
+        </div>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add to Catalog
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard title="Catalog Size" value={stats?.totalTracks || 0} icon={<Music className="w-4 h-4" />} />
+        <StatCard title="Licensed" value={stats?.licensedCount || 0} icon={<CheckCircle className="w-4 h-4 text-green-500" />} />
+        <StatCard title="Revenue" value={`$${stats?.revenue || 0}`} icon={<DollarSign className="w-4 h-4 text-purple-500" />} />
+        <StatCard title="Pending" value={stats?.pendingCount || 0} icon={<Clock className="w-4 h-4 text-yellow-500" />} />
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b bg-gray-50/50 dark:bg-gray-800/50">
+                <tr>
+                  <th className="p-4 font-medium">Track</th>
+                  <th className="p-4 font-medium">Genre/Mood</th>
+                  <th className="p-4 font-medium">Usage Type</th>
+                  <th className="p-4 font-medium">Status</th>
+                  <th className="p-4 font-medium">Price</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {isLoading ? (
+                  <tr><td colSpan={5} className="p-8 text-center text-gray-500">Loading...</td></tr>
+                ) : catalog.length === 0 ? (
+                  <tr><td colSpan={5} className="p-8 text-center text-gray-500">No tracks in catalog.</td></tr>
+                ) : catalog.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                    <td className="p-4">
+                      <div className="font-medium">{item.trackTitle}</div>
+                      <div className="text-xs text-gray-500">{item.artistName}</div>
+                    </td>
+                    <td className="p-4">
+                      <div>{item.genre}</div>
+                      <div className="text-xs text-gray-500">{item.mood}</div>
+                    </td>
+                    <td className="p-4">{item.usageType}</td>
+                    <td className="p-4">
+                      <Badge variant="outline">{item.status}</Badge>
+                    </td>
+                    <td className="p-4">${item.price}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Track to Sync Catalog</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="trackTitle">Track Title</Label>
+              <Input id="trackTitle" name="trackTitle" required />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="genre">Genre</Label>
+                <Input id="genre" name="genre" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="price">Price ($)</Label>
+                <Input id="price" name="price" type="number" step="0.01" />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+              Add Track
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
 function getPlatformColor(slug: string) {
@@ -1369,6 +1790,30 @@ export default function Distribution() {
               >
                 <TrendingUp className="w-4 h-4 mr-1" />
                 Outcomes
+              </TabsTrigger>
+              <TabsTrigger
+                value="playlist-pitching"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-playlist-pitching"
+              >
+                <ListMusic className="w-4 h-4 mr-1" />
+                Playlist Pitching
+              </TabsTrigger>
+              <TabsTrigger
+                value="shows"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-shows"
+              >
+                <Ticket className="w-4 h-4 mr-1" />
+                Shows & Tours
+              </TabsTrigger>
+              <TabsTrigger
+                value="sync-licensing"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-sync-licensing"
+              >
+                <Film className="w-4 h-4 mr-1" />
+                Sync Licensing
               </TabsTrigger>
             </TabsList>
           </div>
@@ -3178,6 +3623,21 @@ export default function Distribution() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* Playlist Pitching Tab */}
+          <TabsContent value="playlist-pitching" className="space-y-6">
+            <PlaylistPitchingContent />
+          </TabsContent>
+
+          {/* Shows & Tours Tab */}
+          <TabsContent value="shows" className="space-y-6">
+            <ShowsContent />
+          </TabsContent>
+
+          {/* Sync Licensing Tab */}
+          <TabsContent value="sync-licensing" className="space-y-6">
+            <SyncLicensingContent />
           </TabsContent>
         </Tabs>
 

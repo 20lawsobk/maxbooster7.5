@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Max Booster is a full-stack TypeScript web application for music artists. It provides AI-assisted tools for social media management, music distribution, analytics, beat marketplace, and career automation.
+Max Booster is a full-stack TypeScript web application for music artists. It provides AI-assisted tools for social media management, music distribution, analytics, beat marketplace, career automation, press kit builder, playlist pitching, shows/tour management, merch store, sync licensing, and publishing rights management.
 
 **Author:** B-Lawz Music (blawzmusic@gmail.com)  
 **Version:** 3.0.0  

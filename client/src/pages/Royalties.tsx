@@ -42,6 +42,7 @@ import {
   Scale,
   FileText,
   Zap,
+  Copyright,
 } from 'lucide-react';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -113,6 +114,29 @@ interface PayoutSettings {
   taxFormCompleted: boolean;
   taxCountry: string | null;
   taxId: string | null;
+}
+
+interface PublishingWork {
+  id: string;
+  trackTitle: string;
+  iswc?: string;
+  isrc?: string;
+  upc?: string;
+  proName: string;
+  proRegistrationId?: string;
+  publisherName?: string;
+  writerSplit: number;
+  publishingSplit: number;
+  copyrightYear: number;
+  coWriters?: string;
+  status: 'pending' | 'registered' | 'rejected';
+}
+
+interface PublishingStats {
+  totalWorks: number;
+  pendingCount: number;
+  proIncome: number;
+  avgPublishingSplit: number;
 }
 
 function ComingSoonRoyalties() {
@@ -253,6 +277,38 @@ export default function Royalties() {
 
   const [selectedStatement, setSelectedStatement] = useState<StatementPeriod | null>(null);
   const { showOutcome } = useRoyaltyOutcome();
+  const [isRegisterWorkDialogOpen, setIsRegisterWorkDialogOpen] = useState(false);
+
+  // Publishing Queries
+  const { data: publishingWorks = [], isLoading: publishingLoading } = useQuery<PublishingWork[]>({
+    queryKey: ['/api/publishing'],
+    enabled: !!user,
+  });
+
+  const { data: publishingStats } = useQuery<PublishingStats>({
+    queryKey: ['/api/publishing/stats'],
+    enabled: !!user,
+  });
+
+  const registerWorkMutation = useMutation({
+    mutationFn: async (data: Partial<PublishingWork>) => {
+      const response = await apiRequest('POST', '/api/publishing', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Work Registered', description: 'Your work has been submitted for registration' });
+      setIsRegisterWorkDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/publishing'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/publishing/stats'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Registration Failed',
+        description: error.message || 'Failed to register work',
+        variant: 'destructive',
+      });
+    },
+  });
 
   // Mutations
   const exportRoyaltiesMutation = useMutation({
@@ -747,25 +803,57 @@ export default function Royalties() {
 
         {/* Main Content */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview" data-testid="tab-overview">
+          <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0">
+            <TabsTrigger 
+              value="overview" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              data-testid="tab-overview"
+            >
               Overview
             </TabsTrigger>
-            <TabsTrigger value="payouts" data-testid="tab-payouts">
+            <TabsTrigger 
+              value="payouts" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              data-testid="tab-payouts"
+            >
               <Zap className="w-4 h-4 mr-1" />
               Payouts
             </TabsTrigger>
-            <TabsTrigger value="statements" data-testid="tab-statements">
+            <TabsTrigger 
+              value="statements" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              data-testid="tab-statements"
+            >
               Statements
             </TabsTrigger>
-            <TabsTrigger value="splits" data-testid="tab-splits">
+            <TabsTrigger 
+              value="splits" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              data-testid="tab-splits"
+            >
               Collaborators
             </TabsTrigger>
-            <TabsTrigger value="disputes" data-testid="tab-disputes">
+            <TabsTrigger 
+              value="publishing" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              data-testid="tab-publishing"
+            >
+              <Copyright className="w-4 h-4 mr-1" />
+              Publishing
+            </TabsTrigger>
+            <TabsTrigger 
+              value="disputes" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              data-testid="tab-disputes"
+            >
               <Scale className="w-4 h-4 mr-1" />
               Disputes
             </TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">
+            <TabsTrigger 
+              value="settings" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              data-testid="tab-settings"
+            >
               Settings
             </TabsTrigger>
           </TabsList>
@@ -1148,6 +1236,109 @@ export default function Royalties() {
               </CardContent>
             </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="publishing" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="glassmorphism">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Total Works Registered</CardTitle>
+                  <Music className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{publishingStats?.totalWorks || 0}</div>
+                </CardContent>
+              </Card>
+              <Card className="glassmorphism">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Pending Registration</CardTitle>
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{publishingStats?.pendingCount || 0}</div>
+                </CardContent>
+              </Card>
+              <Card className="glassmorphism">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">PRO Income</CardTitle>
+                  <DollarSign className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">${(publishingStats?.proIncome || 0).toLocaleString()}</div>
+                </CardContent>
+              </Card>
+              <Card className="glassmorphism">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Publishing Split</CardTitle>
+                  <PieChart className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{publishingStats?.avgPublishingSplit || 0}%</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="glassmorphism">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Registered Works</CardTitle>
+                <Button onClick={() => setIsRegisterWorkDialogOpen(true)} data-testid="button-register-work">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Register New Work
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {publishingLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-8 h-8 animate-spin" />
+                  </div>
+                ) : publishingWorks.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left border-b border-border/50">
+                          <th className="p-3 font-medium">Title</th>
+                          <th className="p-3 font-medium">ISWC</th>
+                          <th className="p-3 font-medium">ISRC</th>
+                          <th className="p-3 font-medium">PRO</th>
+                          <th className="p-3 font-medium">Writer Split</th>
+                          <th className="p-3 font-medium">Publisher</th>
+                          <th className="p-3 font-medium text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {publishingWorks.map((work) => (
+                          <tr key={work.id} className="border-b border-border/50">
+                            <td className="p-3 font-medium">{work.trackTitle}</td>
+                            <td className="p-3">{work.iswc || '—'}</td>
+                            <td className="p-3">{work.isrc || '—'}</td>
+                            <td className="p-3">{work.proName}</td>
+                            <td className="p-3">{work.writerSplit}%</td>
+                            <td className="p-3">{work.publisherName || '—'}</td>
+                            <td className="p-3 text-right">
+                              <Badge 
+                                className={
+                                  work.status === 'registered' ? 'bg-green-500/20 text-green-500' :
+                                  work.status === 'rejected' ? 'bg-red-500/20 text-red-500' :
+                                  'bg-yellow-500/20 text-yellow-500'
+                                }
+                              >
+                                {work.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <EmptyState
+                    title="No works registered"
+                    description="Register your musical works to start tracking publishing royalties."
+                    icon={<Copyright className="w-12 h-12" />}
+                  />
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="disputes" className="space-y-6">
@@ -1660,6 +1851,112 @@ export default function Royalties() {
                 {updateSplitMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Register New Work Dialog */}
+        <Dialog open={isRegisterWorkDialogOpen} onOpenChange={setIsRegisterWorkDialogOpen}>
+          <DialogContent className="max-w-2xl bg-gray-900 border-gray-800 text-white" data-testid="dialog-register-work">
+            <DialogHeader>
+              <DialogTitle>Register New Work</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Register your musical work for publishing rights and royalty tracking.
+              </DialogDescription>
+            </DialogHeader>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const data = Object.fromEntries(formData.entries());
+                registerWorkMutation.mutate({
+                  trackTitle: data.trackTitle as string,
+                  iswc: data.iswc as string,
+                  isrc: data.isrc as string,
+                  upc: data.upc as string,
+                  proName: data.proName as string,
+                  proRegistrationId: data.proRegistrationId as string,
+                  publisherName: data.publisherName as string,
+                  writerSplit: parseFloat(data.writerSplit as string),
+                  publishingSplit: 100 - parseFloat(data.writerSplit as string),
+                  copyrightYear: parseInt(data.copyrightYear as string),
+                  coWriters: data.coWriters as string,
+                  status: 'pending'
+                });
+              }}
+              className="space-y-4 py-4"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="trackTitle">Track Title (Required)</Label>
+                  <Input id="trackTitle" name="trackTitle" required className="bg-gray-800 border-gray-700" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="copyrightYear">Copyright Year</Label>
+                  <Input id="copyrightYear" name="copyrightYear" type="number" defaultValue={new Date().getFullYear()} className="bg-gray-800 border-gray-700" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="iswc">ISWC (Optional)</Label>
+                  <Input id="iswc" name="iswc" placeholder="T-123.456.789-C" className="bg-gray-800 border-gray-700" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="isrc">ISRC (Optional)</Label>
+                  <Input id="isrc" name="isrc" placeholder="US-ABC-12-34567" className="bg-gray-800 border-gray-700" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="upc">UPC (Optional)</Label>
+                  <Input id="upc" name="upc" className="bg-gray-800 border-gray-700" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proName">PRO Name</Label>
+                  <Select name="proName" defaultValue="ASCAP">
+                    <SelectTrigger className="bg-gray-800 border-gray-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-gray-800 text-white">
+                      <SelectItem value="ASCAP">ASCAP</SelectItem>
+                      <SelectItem value="BMI">BMI</SelectItem>
+                      <SelectItem value="SESAC">SESAC</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proRegistrationId">PRO Registration ID</Label>
+                  <Input id="proRegistrationId" name="proRegistrationId" className="bg-gray-800 border-gray-700" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="publisherName">Publisher Name</Label>
+                  <Input id="publisherName" name="publisherName" className="bg-gray-800 border-gray-700" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="writerSplit">Writer Split % (0-100)</Label>
+                  <Input id="writerSplit" name="writerSplit" type="number" min="0" max="100" defaultValue="100" className="bg-gray-800 border-gray-700" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Publishing Split % (Auto)</Label>
+                  <div className="p-2 bg-gray-800 border border-gray-700 rounded text-sm text-gray-400 italic">
+                    Calculated as 100 - Writer Split
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="coWriters">Co-Writers (Names and Splits)</Label>
+                <textarea 
+                  id="coWriters" 
+                  name="coWriters" 
+                  className="w-full h-24 p-2 bg-gray-800 border border-gray-700 rounded text-sm text-white"
+                  placeholder="e.g. John Doe (25%), Jane Smith (25%)"
+                />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsRegisterWorkDialogOpen(false)} className="border-gray-700 text-gray-400">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={registerWorkMutation.isPending}>
+                  {registerWorkMutation.isPending ? 'Registering...' : 'Register Work'}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
