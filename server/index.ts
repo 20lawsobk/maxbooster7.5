@@ -237,44 +237,44 @@ app.use((req, res, next) => {
   // Store reference to session store for WebSocket authentication
   let activeSessionStore: any = null;
 
+  const redisTimeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Redis session store init timed out after 15s')), 15000)
+  );
+
   try {
-    // Try to create Redis session store for production-grade horizontal scaling
-    activeSessionStore = await createSessionStore();
+    // Try to create Redis session store — race against a 15-second timeout
+    activeSessionStore = await Promise.race([createSessionStore(), redisTimeout]);
     const sessionConfig = getSessionConfig(activeSessionStore);
     app.use(session(sessionConfig));
     logger.info('✅ Production session store initialized (Redis)');
 
     // Connect distributed cache to Redis now that Redis is confirmed available
-    await distributedCache.connect();
+    await distributedCache.connect().catch((e: any) => {
+      logger.warn(`⚠️ Distributed cache connect failed (non-fatal): ${e.message}`);
+    });
   } catch (error: any) {
-    if (isProduction) {
-      // In production, Redis is required - abort if unavailable
-      logger.error('❌ CRITICAL: Cannot start production server without Redis session store');
-      logger.error(`   └─ Error: ${error.message}`);
-      process.exit(1);
-    }
+    // Redis unavailable — fall back to in-memory store with a warning.
+    // This keeps the server alive in both dev and prod; sessions won't
+    // survive a restart but the app remains functional.
+    logger.warn(`⚠️ Redis session store unavailable: ${error.message}`);
+    logger.warn('⚠️  Falling back to in-memory session store — sessions will not persist across restarts');
 
-    // Development fallback: use memory store with warnings
-    logger.warn('⚠️  Using in-memory session store (development only)');
-    logger.warn('⚠️  Sessions will be lost on server restart');
-
-    // Create MemoryStore and store reference for WebSocket auth
     const MemoryStore = session.MemoryStore;
     activeSessionStore = new MemoryStore();
-    
-    const devSessionConfig = {
+
+    const fallbackSessionConfig = {
       store: activeSessionStore,
       secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
       resave: false,
       saveUninitialized: false,
       name: 'sessionId',
       cookie: {
-        secure: false,
+        secure: isProduction,
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 24 * 60 * 60 * 1000,
       },
     };
-    app.use(session(devSessionConfig));
+    app.use(session(fallbackSessionConfig));
   }
   
   // Export session store for WebSocket authentication

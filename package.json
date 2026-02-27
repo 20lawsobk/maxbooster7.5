@@ -14,7 +14,7 @@
     "dev": "bash -c './boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
     "build": "npx tsx script/build.ts",
     "deploy": "npx tsx scripts/deploy.ts",
-    "start": "bash -c 'if [ -f ./boosterstate/target/debug/boosterstate ]; then ./boosterstate/target/debug/boosterstate & sleep 1; fi && UV_THREADPOOL_SIZE=32 TF_NUM_INTEROP_THREADS=4 TF_NUM_INTRAOP_THREADS=4 NODE_ENV=production node --max-old-space-size=24576 dist/cluster.cjs'",
+    "start": "bash -c 'if [ -f ./boosterstate/target/debug/boosterstate ]; then ./boosterstate/target/debug/boosterstate & sleep 1; fi && UV_THREADPOOL_SIZE=8 TF_NUM_INTEROP_THREADS=2 TF_NUM_INTRAOP_THREADS=2 NODE_ENV=production node --max-old-space-size=4096 dist/cluster.cjs'",
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "electron:dev": "electron .",
