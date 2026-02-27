@@ -274,7 +274,8 @@ class ReplitStorageProvider implements StorageProvider {
     if (!result.ok) {
       throw new Error(`Replit storage download failed for key "${key}": ${result.error}`);
     }
-    return Buffer.from(result.value);
+    const raw = Array.isArray(result.value) ? result.value[0] : result.value;
+    return Buffer.isBuffer(raw) ? raw : Buffer.from(raw);
   }
 
   async deleteFile(key: string): Promise<void> {

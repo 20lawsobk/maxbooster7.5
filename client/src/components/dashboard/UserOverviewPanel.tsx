@@ -92,8 +92,8 @@ export function UserOverviewPanel({ user }: UserOverviewPanelProps) {
       <CardContent className="p-6">
         <div className="flex items-center space-x-4">
           {/* Avatar */}
-          <Avatar className="w-16 h-16 border-2 border-blue-600" data-testid="user-avatar">
-            <AvatarImage src={user.avatarUrl} alt={user.username} />
+          <Avatar key={user.avatarUrl || 'no-avatar'} className="w-16 h-16 border-2 border-blue-600" data-testid="user-avatar">
+            <AvatarImage src={user.avatarUrl || undefined} alt={user.username} />
             <AvatarFallback className="bg-blue-600 text-white text-lg font-bold">
               {getInitials(user.username)}
             </AvatarFallback>

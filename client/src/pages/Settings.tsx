@@ -727,7 +727,7 @@ export default function Settings() {
                 <form onSubmit={handleProfileSubmit} className="space-y-6">
                   {/* Profile Picture */}
                   <div className="flex items-center space-x-6">
-                    <Avatar className="w-24 h-24">
+                    <Avatar key={avatarUrl || 'no-avatar'} className="w-24 h-24">
                       <AvatarImage
                         src={avatarUrl || user?.avatarUrl || user?.profileImageUrl || undefined}
                         alt="Profile picture"
