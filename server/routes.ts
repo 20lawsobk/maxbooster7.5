@@ -1,6 +1,8 @@
 import type { Express, Request, Response, NextFunction, Router } from "express";
 import { type Server } from "http";
 import crypto from "crypto";
+import { execSync } from "child_process";
+import fs from "fs";
 import { storage } from "./storage.ts";
 import { db } from "./db.ts";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
@@ -3630,7 +3632,19 @@ export async function registerRoutes(
     res.json({ received: true });
   });
 
-  const BUILD_ID = crypto.randomBytes(8).toString('hex');
+  function getStableBuildId(): string {
+    try {
+      return execSync('git rev-parse --short HEAD', { timeout: 3000 }).toString().trim();
+    } catch {
+      try {
+        const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+        return crypto.createHash('sha1').update(pkg.version || '1.0.0').digest('hex').slice(0, 8);
+      } catch {
+        return 'dev-build';
+      }
+    }
+  }
+  const BUILD_ID = process.env.BUILD_ID || getStableBuildId();
   const BUILD_TIMESTAMP = new Date().toISOString();
 
   app.get("/api/version", (_req: Request, res: Response) => {

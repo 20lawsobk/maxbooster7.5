@@ -1,11 +1,15 @@
 import { useEffect, useRef } from 'react';
 
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 5 * 60 * 1000;
 
 export function useAutoUpdate() {
   const knownBuildId = useRef<string | null>(null);
 
   useEffect(() => {
+    if (import.meta.env.DEV) {
+      return;
+    }
+
     let timer: ReturnType<typeof setInterval>;
 
     async function checkVersion() {
