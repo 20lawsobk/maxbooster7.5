@@ -630,6 +630,8 @@ function ShowsContent() {
         ))}
       </div>
 
+      <VenueBookingCRM />
+
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader>
@@ -663,6 +665,102 @@ function ShowsContent() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function VenueBookingCRM() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isOpen, setIsOpen] = useState(false);
+  const [newVenue, setNewVenue] = useState({ venueName: '', city: '', state: '', capacity: '', contactName: '', contactEmail: '', status: 'prospect', notes: '' });
+
+  const { data: venues = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/venues'] });
+  const { data: stats } = useQuery<any>({ queryKey: ['/api/venues/stats'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/venues', { ...data, capacity: data.capacity ? parseInt(data.capacity) : undefined });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/venues'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/venues/stats'] });
+      setIsOpen(false);
+      setNewVenue({ venueName: '', city: '', state: '', capacity: '', contactName: '', contactEmail: '', status: 'prospect', notes: '' });
+      toast({ title: 'Venue Added', description: 'Venue contact saved to your booking CRM' });
+    },
+  });
+
+  const statusColor: Record<string, string> = {
+    prospect: 'bg-gray-100 text-gray-700',
+    contacted: 'bg-blue-100 text-blue-700',
+    negotiating: 'bg-yellow-100 text-yellow-700',
+    booked: 'bg-green-100 text-green-700',
+    completed: 'bg-purple-100 text-purple-700',
+    declined: 'bg-red-100 text-red-700',
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <MapPin className="w-5 h-5 text-purple-600" />
+          Venue & Booking CRM
+        </CardTitle>
+        <div className="flex items-center gap-3">
+          <div className="flex gap-4 text-sm text-gray-500">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />{stats?.contacted || 0} Contacted</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{stats?.booked || 0} Booked</span>
+          </div>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="w-4 h-4 mr-1" />Add Venue</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Add Venue Contact</DialogTitle><DialogDescription>Track a venue for booking outreach</DialogDescription></DialogHeader>
+              <div className="space-y-3 py-2">
+                <div><Label>Venue Name *</Label><Input placeholder="Madison Square Garden" value={newVenue.venueName} onChange={(e) => setNewVenue({...newVenue, venueName: e.target.value})} /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>City</Label><Input placeholder="New York" value={newVenue.city} onChange={(e) => setNewVenue({...newVenue, city: e.target.value})} /></div>
+                  <div><Label>State</Label><Input placeholder="NY" value={newVenue.state} onChange={(e) => setNewVenue({...newVenue, state: e.target.value})} /></div>
+                </div>
+                <div><Label>Capacity</Label><Input type="number" placeholder="5000" value={newVenue.capacity} onChange={(e) => setNewVenue({...newVenue, capacity: e.target.value})} /></div>
+                <div><Label>Booking Contact</Label><Input placeholder="Jane Smith" value={newVenue.contactName} onChange={(e) => setNewVenue({...newVenue, contactName: e.target.value})} /></div>
+                <div><Label>Contact Email</Label><Input type="email" placeholder="booking@venue.com" value={newVenue.contactEmail} onChange={(e) => setNewVenue({...newVenue, contactEmail: e.target.value})} /></div>
+                <div><Label>Notes</Label><Input placeholder="Best venue for hip-hop shows..." value={newVenue.notes} onChange={(e) => setNewVenue({...newVenue, notes: e.target.value})} /></div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                <Button onClick={() => createMutation.mutate(newVenue)} disabled={!newVenue.venueName || createMutation.isPending}>Save Venue</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-gray-400 py-4">Loading venues...</p>
+        ) : venues.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            <MapPin className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No venues tracked yet. Add venue contacts to manage your booking pipeline.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {venues.map((v: any) => (
+              <div key={v.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                <div>
+                  <p className="font-medium text-sm">{v.venueName}</p>
+                  <p className="text-xs text-gray-500">{[v.city, v.state].filter(Boolean).join(', ')}{v.capacity ? ` · Cap: ${v.capacity.toLocaleString()}` : ''}</p>
+                  {v.contactName && <p className="text-xs text-gray-400 mt-0.5">Contact: {v.contactName}{v.contactEmail ? ` · ${v.contactEmail}` : ''}</p>}
+                </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${statusColor[v.status] || statusColor.prospect}`}>{v.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

@@ -76,13 +76,17 @@ interface PlatformStandard {
 
 export class SelfEvolutionEngine extends EventEmitter {
   private isRunning: boolean = false;
+  private isCycleRunning: boolean = false;
   private monitoringInterval: NodeJS.Timeout | null = null;
   private upgradeQueue: CodeUpgrade[] = [];
   private industryChanges: IndustryChange[] = [];
+  private seenChangeIds: Set<string> = new Set();
   private competitorFeatures: CompetitorFeature[] = [];
   private platformStandards: PlatformStandard[] = [];
-  
-  private readonly MONITORING_INTERVAL_MS = 60 * 60 * 1000; // Check every hour
+
+  private readonly MONITORING_INTERVAL_MS = 60 * 60 * 1000;
+  private readonly MAX_CHANGES_IN_MEMORY = 500;
+  private readonly MAX_UPGRADES_IN_MEMORY = 200;
   private readonly MAX_BOOSTER_MODULES = [
     'studio', 'distribution', 'social', 'advertising', 
     'marketplace', 'analytics', 'security', 'monetization'
@@ -91,7 +95,26 @@ export class SelfEvolutionEngine extends EventEmitter {
   constructor() {
     super();
     this.initializeIndustryKnowledge();
+    this.seedSeenIdsFromDisk().catch(() => {});
     logger.info('🧬 Self-Evolution Engine initialized');
+  }
+
+  private async seedSeenIdsFromDisk(): Promise<void> {
+    try {
+      const enhancementsDir = path.join(process.cwd(), 'server', 'enhancements');
+      const files = await fs.readdir(enhancementsDir).catch(() => [] as string[]);
+      for (const file of files) {
+        if (file.endsWith('.ts') || file.endsWith('.js')) {
+          const content = await fs.readFile(path.join(enhancementsDir, file), 'utf-8').catch(() => '');
+          const match = content.match(/upgrade_(\w+)/);
+          if (match) this.seenChangeIds.add(match[1]);
+        }
+      }
+      if (files.length > 0) {
+        logger.info(`🧬 Seeded ${this.seenChangeIds.size} known change IDs from ${files.length} existing enhancement files`);
+      }
+    } catch {
+    }
   }
 
   /**
@@ -199,15 +222,21 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   async start(): Promise<void> {
     if (this.isRunning) return;
+
+    if (!this.isProductionSafetyEnabled()) {
+      logger.warn('🛡️ Self-Evolution Engine: auto-start blocked by production safety gate. Set ENABLE_SELF_EVOLUTION=true to allow.');
+      return;
+    }
+
     this.isRunning = true;
 
     logger.info('🚀 Self-Evolution Engine ACTIVATED');
     logger.info('   Max Booster will now autonomously upgrade itself to stay ahead of competition');
 
-    await this.runEvolutionCycle();
+    this.runEvolutionCycle().catch((e) => logger.error('Initial evolution cycle error:', e));
 
-    this.monitoringInterval = setInterval(async () => {
-      await this.runEvolutionCycle();
+    this.monitoringInterval = setInterval(() => {
+      this.runEvolutionCycle().catch((e) => logger.error('Scheduled evolution cycle error:', e));
     }, this.MONITORING_INTERVAL_MS);
 
     this.emit('started');
@@ -227,6 +256,12 @@ export class SelfEvolutionEngine extends EventEmitter {
   }
 
   private async runEvolutionCycle(): Promise<void> {
+    if (this.isCycleRunning) {
+      logger.info('🔒 Evolution cycle already in progress — skipping overlap');
+      return;
+    }
+
+    this.isCycleRunning = true;
     const cycleId = `evolution_${Date.now()}`;
     logger.info(`🧬 Starting evolution cycle: ${cycleId}`);
 
@@ -243,6 +278,9 @@ export class SelfEvolutionEngine extends EventEmitter {
       const upgrades = await this.generateCodeUpgrades(competitiveGaps);
       logger.info(`   💻 Generated ${upgrades.length} code upgrades`);
       this.upgradeQueue.push(...upgrades);
+      if (this.upgradeQueue.length > this.MAX_UPGRADES_IN_MEMORY) {
+        this.upgradeQueue = this.upgradeQueue.slice(-this.MAX_UPGRADES_IN_MEMORY);
+      }
 
       // Phase 4: Test and validate generated code
       const validatedUpgrades = await this.testUpgrades(upgrades);
@@ -264,6 +302,8 @@ export class SelfEvolutionEngine extends EventEmitter {
     } catch (error) {
       logger.error(`❌ Evolution cycle ${cycleId} failed:`, error);
       this.emit('cycleFailed', { cycleId, error });
+    } finally {
+      this.isCycleRunning = false;
     }
   }
 
@@ -292,9 +332,12 @@ export class SelfEvolutionEngine extends EventEmitter {
     // Monitor technology trends
     changes.push(...await this.monitorTechnologyTrends());
 
-    const existingIds = new Set(this.industryChanges.map(c => c.id));
-    const newChanges = changes.filter(c => !existingIds.has(c.id));
+    const newChanges = changes.filter(c => !this.seenChangeIds.has(c.id));
+    for (const c of newChanges) this.seenChangeIds.add(c.id);
     this.industryChanges.push(...newChanges);
+    if (this.industryChanges.length > this.MAX_CHANGES_IN_MEMORY) {
+      this.industryChanges = this.industryChanges.slice(-this.MAX_CHANGES_IN_MEMORY);
+    }
     return newChanges;
   }
 
@@ -872,18 +915,28 @@ describe('${upgrade.id}', () => {
     for (const upgrade of upgrades) {
       try {
         upgrade.status = 'deploying';
-        
-        // Write generated code to filesystem
+
         for (const [filePath, code] of upgrade.generatedCode) {
           const fullPath = path.join(process.cwd(), filePath);
           const dir = path.dirname(fullPath);
-          
-          // Ensure directory exists
+
           await fs.mkdir(dir, { recursive: true });
-          
-          // Write the generated code
-          await fs.writeFile(fullPath, code, 'utf-8');
-          
+
+          const existsAlready = await fs.access(fullPath).then(() => true).catch(() => false);
+          if (existsAlready) {
+            const existingContent = await fs.readFile(fullPath, 'utf-8').catch(() => '');
+            if (existingContent === code) {
+              logger.info(`   ⏭️ Skipped (unchanged): ${filePath}`);
+              continue;
+            }
+            const backupPath = `${fullPath}.bak`;
+            await fs.copyFile(fullPath, backupPath).catch(() => {});
+          }
+
+          const tempPath = `${fullPath}.tmp`;
+          await fs.writeFile(tempPath, code, 'utf-8');
+          await fs.rename(tempPath, fullPath);
+
           logger.info(`   📝 Wrote: ${filePath}`);
         }
 
@@ -891,7 +944,6 @@ describe('${upgrade.id}', () => {
         upgrade.deployedAt = new Date();
         deployedCount++;
 
-        // Record deployment for tracking
         await this.recordDeployment(upgrade);
 
       } catch (error) {
@@ -1123,17 +1175,25 @@ describe('${upgrade.id}', () => {
 
   getStatus(): {
     isRunning: boolean;
+    isCycleRunning: boolean;
     changesDetected: number;
     upgradesDeployed: number;
     lastCycle: Date | null;
+    memoryUsage: { changes: number; upgrades: number; seenIds: number };
   } {
     return {
       isRunning: this.isRunning,
+      isCycleRunning: this.isCycleRunning,
       changesDetected: this.industryChanges.length,
       upgradesDeployed: this.upgradeQueue.filter(u => u.status === 'deployed').length,
-      lastCycle: this.industryChanges.length > 0 
-        ? this.industryChanges[this.industryChanges.length - 1].detectedAt 
+      lastCycle: this.industryChanges.length > 0
+        ? this.industryChanges[this.industryChanges.length - 1].detectedAt
         : null,
+      memoryUsage: {
+        changes: this.industryChanges.length,
+        upgrades: this.upgradeQueue.length,
+        seenIds: this.seenChangeIds.size,
+      },
     };
   }
 

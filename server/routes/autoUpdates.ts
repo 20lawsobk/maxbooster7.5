@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { selfEvolution } from '../self-evolution-engine.js';
@@ -10,6 +10,35 @@ import {
 
 const router = Router();
 
+const runOnceCalls = new Map<string, number[]>();
+function runOnceRateLimit(req: Request, res: Response, next: NextFunction) {
+  const userId = (req as any).user?.id || (req as any).session?.userId || 'anon';
+  const now = Date.now();
+  const window = 60 * 1000;
+  const maxPerMinute = 3;
+  const calls = (runOnceCalls.get(userId) || []).filter((t) => now - t < window);
+  if (calls.length >= maxPerMinute) {
+    return res.status(429).json({ error: `Rate limit: max ${maxPerMinute} evolution cycles per minute` });
+  }
+  calls.push(now);
+  runOnceCalls.set(userId, calls);
+  return next();
+}
+
+const simulationCalls = new Map<string, number>();
+function simulationRateLimit(req: Request, res: Response, next: NextFunction) {
+  const userId = (req as any).user?.id || (req as any).session?.userId || 'anon';
+  const now = Date.now();
+  const cooldownMs = 30 * 1000;
+  const last = simulationCalls.get(userId) || 0;
+  if (now - last < cooldownMs) {
+    const remainingSec = Math.ceil((cooldownMs - (now - last)) / 1000);
+    return res.status(429).json({ error: `Simulation cooldown: wait ${remainingSec}s before running again` });
+  }
+  simulationCalls.set(userId, now);
+  return next();
+}
+
 router.get('/status', requireAuth, async (_req, res) => {
   try {
     const engineStatus = selfEvolution.getStatus();
@@ -19,9 +48,11 @@ router.get('/status', requireAuth, async (_req, res) => {
 
     res.json({
       isRunning: engineStatus.isRunning,
+      isCycleRunning: engineStatus.isCycleRunning,
       changesDetected: engineStatus.changesDetected,
       upgradesDeployed: engineStatus.upgradesDeployed,
       lastCycle: engineStatus.lastCycle,
+      memoryUsage: engineStatus.memoryUsage,
       safety: safetyStatus,
       recentChanges,
       recentUpgrades,
@@ -79,7 +110,7 @@ router.post('/stop', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/run-once', requireAuth, async (req, res) => {
+router.post('/run-once', requireAuth, runOnceRateLimit, async (req, res) => {
   try {
     logger.info(`[SelfEvolution] Manual evolution cycle triggered by user ${req.user!.id}`);
     const result = await selfEvolution.triggerManualUpgrade();
@@ -119,7 +150,7 @@ router.get('/upgrades', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/simulation', requireAuth, async (req, res) => {
+router.post('/simulation', requireAuth, simulationRateLimit, async (req, res) => {
   try {
     logger.info(`[SelfEvolution] Simulation triggered by user ${req.user!.id}`);
     const scenarios = Math.min(parseInt(req.query.scenarios as string) || 52, 200);
