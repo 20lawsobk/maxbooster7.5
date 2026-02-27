@@ -4452,3 +4452,271 @@ export const dunningState = pgTable("dunning_state", {
 
 export const insertDunningStateSchema = createInsertSchema(dunningState).omit({ id: true, createdAt: true });
 export type DunningState = typeof dunningState.$inferSelect;
+
+// ============================================================================
+// FAN HUB / FAN CRM TABLES
+// ============================================================================
+
+export const fanSubscribers = pgTable("fan_subscribers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  email: text("email").notNull(),
+  name: text("name"),
+  phone: text("phone"),
+  source: text("source").default("manual"),
+  tags: jsonb("tags").default([]),
+  totalSpent: real("total_spent").default(0),
+  location: text("location"),
+  isVip: boolean("is_vip").default(false),
+  notes: text("notes"),
+  lastActive: timestamp("last_active"),
+  joinedAt: timestamp("joined_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => [
+  index("fan_subscribers_user_id_idx").on(t.userId),
+  index("fan_subscribers_email_idx").on(t.userId, t.email),
+]);
+
+export const fanMessages = pgTable("fan_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  segmentFilter: jsonb("segment_filter").default({}),
+  recipientCount: integer("recipient_count").default(0),
+  openCount: integer("open_count").default(0),
+  clickCount: integer("click_count").default(0),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => [
+  index("fan_messages_user_id_idx").on(t.userId),
+]);
+
+export const insertFanSubscriberSchema = createInsertSchema(fanSubscribers).omit({ id: true, createdAt: true, joinedAt: true });
+export const insertFanMessageSchema = createInsertSchema(fanMessages).omit({ id: true, createdAt: true });
+export type FanSubscriber = typeof fanSubscribers.$inferSelect;
+export type FanMessage = typeof fanMessages.$inferSelect;
+
+// ============================================================================
+// PRESS KIT (EPK) TABLE
+// ============================================================================
+
+export const pressKits = pgTable("press_kits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  artistName: text("artist_name"),
+  bio: text("bio"),
+  shortBio: text("short_bio"),
+  genres: jsonb("genres").default([]),
+  contactEmail: text("contact_email"),
+  bookingEmail: text("booking_email"),
+  website: text("website"),
+  socialLinks: jsonb("social_links").default({}),
+  photos: jsonb("photos").default([]),
+  pressQuotes: jsonb("press_quotes").default([]),
+  achievements: jsonb("achievements").default([]),
+  technicalRider: text("technical_rider"),
+  hospitalityRider: text("hospitality_rider"),
+  isPublic: boolean("is_public").default(false),
+  slug: text("slug").unique(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => [
+  index("press_kits_user_id_idx").on(t.userId),
+  index("press_kits_slug_idx").on(t.slug),
+]);
+
+export const insertPressKitSchema = createInsertSchema(pressKits).omit({ id: true, createdAt: true });
+export type PressKit = typeof pressKits.$inferSelect;
+
+// ============================================================================
+// PLAYLIST PITCHING TABLE
+// ============================================================================
+
+export const playlistPitches = pgTable("playlist_pitches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackTitle: text("track_title").notNull(),
+  artistName: text("artist_name").notNull(),
+  genre: text("genre"),
+  mood: text("mood"),
+  bpm: integer("bpm"),
+  description: text("description"),
+  targetPlaylistUrl: text("target_playlist_url"),
+  curatorName: text("curator_name"),
+  curatorEmail: text("curator_email"),
+  status: text("status").default("draft"),
+  submittedAt: timestamp("submitted_at"),
+  responseAt: timestamp("response_at"),
+  responseNote: text("response_note"),
+  followUpAt: timestamp("follow_up_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("playlist_pitches_user_id_idx").on(t.userId),
+  index("playlist_pitches_status_idx").on(t.status),
+]);
+
+export const insertPlaylistPitchSchema = createInsertSchema(playlistPitches).omit({ id: true, createdAt: true, updatedAt: true });
+export type PlaylistPitch = typeof playlistPitches.$inferSelect;
+
+// ============================================================================
+// SHOWS / TOUR MANAGEMENT TABLES
+// ============================================================================
+
+export const shows = pgTable("shows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  venue: text("venue"),
+  city: text("city"),
+  state: text("state"),
+  country: text("country").default("US"),
+  date: timestamp("date").notNull(),
+  endTime: timestamp("end_time"),
+  ticketUrl: text("ticket_url"),
+  capacity: integer("capacity"),
+  ticketsSold: integer("tickets_sold").default(0),
+  revenue: real("revenue").default(0),
+  status: text("status").default("upcoming"),
+  notes: text("notes"),
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("shows_user_id_idx").on(t.userId),
+  index("shows_date_idx").on(t.date),
+  index("shows_status_idx").on(t.status),
+]);
+
+export const setlists = pgTable("setlists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  showId: varchar("show_id").references(() => shows.id),
+  name: text("name").notNull(),
+  tracks: jsonb("tracks").default([]),
+  totalDuration: integer("total_duration").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("setlists_user_id_idx").on(t.userId),
+  index("setlists_show_id_idx").on(t.showId),
+]);
+
+export const insertShowSchema = createInsertSchema(shows).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSetlistSchema = createInsertSchema(setlists).omit({ id: true, createdAt: true, updatedAt: true });
+export type Show = typeof shows.$inferSelect;
+export type Setlist = typeof setlists.$inferSelect;
+
+// ============================================================================
+// MERCH STORE TABLES
+// ============================================================================
+
+export const merchItems = pgTable("merch_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: real("price").notNull(),
+  salePrice: real("sale_price"),
+  imageUrl: text("image_url"),
+  category: text("category").default("clothing"),
+  variants: jsonb("variants").default([]),
+  inventory: integer("inventory").default(0),
+  sku: text("sku"),
+  isActive: boolean("is_active").default(true),
+  isDigital: boolean("is_digital").default(false),
+  downloadUrl: text("download_url"),
+  soldCount: integer("sold_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("merch_items_user_id_idx").on(t.userId),
+  index("merch_items_category_idx").on(t.category),
+]);
+
+export const merchOrders = pgTable("merch_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  buyerEmail: text("buyer_email"),
+  buyerName: text("buyer_name"),
+  items: jsonb("items").default([]),
+  total: real("total").default(0),
+  status: text("status").default("pending"),
+  trackingNumber: text("tracking_number"),
+  shippingAddress: jsonb("shipping_address").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("merch_orders_user_id_idx").on(t.userId),
+  index("merch_orders_status_idx").on(t.status),
+]);
+
+export const insertMerchItemSchema = createInsertSchema(merchItems).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMerchOrderSchema = createInsertSchema(merchOrders).omit({ id: true, createdAt: true, updatedAt: true });
+export type MerchItem = typeof merchItems.$inferSelect;
+export type MerchOrder = typeof merchOrders.$inferSelect;
+
+// ============================================================================
+// SYNC LICENSING TABLE
+// ============================================================================
+
+export const syncSubmissions = pgTable("sync_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackTitle: text("track_title").notNull(),
+  artistName: text("artist_name").notNull(),
+  genre: text("genre"),
+  mood: text("mood"),
+  bpm: integer("bpm"),
+  duration: integer("duration"),
+  description: text("description"),
+  usageTypes: jsonb("usage_types").default([]),
+  isExclusive: boolean("is_exclusive").default(false),
+  price: real("price"),
+  previewUrl: text("preview_url"),
+  submissionTarget: text("submission_target"),
+  status: text("status").default("available"),
+  licensedTo: text("licensed_to"),
+  licensedAt: timestamp("licensed_at"),
+  licenseFee: real("license_fee"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("sync_submissions_user_id_idx").on(t.userId),
+  index("sync_submissions_status_idx").on(t.status),
+]);
+
+export const insertSyncSubmissionSchema = createInsertSchema(syncSubmissions).omit({ id: true, createdAt: true, updatedAt: true });
+export type SyncSubmission = typeof syncSubmissions.$inferSelect;
+
+// ============================================================================
+// PUBLISHING RIGHTS TABLE
+// ============================================================================
+
+export const publishingRights = pgTable("publishing_rights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  trackTitle: text("track_title").notNull(),
+  iswc: text("iswc"),
+  isrc: text("isrc"),
+  upc: text("upc"),
+  coWriters: jsonb("co_writers").default([]),
+  publisherName: text("publisher_name"),
+  proName: text("pro_name"),
+  proRegistrationId: text("pro_registration_id"),
+  publishingSplit: real("publishing_split").default(50),
+  writerSplit: real("writer_split").default(50),
+  copyrightYear: integer("copyright_year"),
+  status: text("status").default("pending"),
+  notes: text("notes"),
+  registeredAt: timestamp("registered_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("publishing_rights_user_id_idx").on(t.userId),
+  index("publishing_rights_status_idx").on(t.status),
+]);
+
+export const insertPublishingRightSchema = createInsertSchema(publishingRights).omit({ id: true, createdAt: true, updatedAt: true });
+export type PublishingRight = typeof publishingRights.$inferSelect;

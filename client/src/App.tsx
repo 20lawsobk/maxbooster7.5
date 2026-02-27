@@ -77,6 +77,12 @@ const Invoices = lazy(() => import('@/pages/Invoices'));
 const HandleLink = lazy(() => import('@/pages/HandleLink'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
 const MusicWorkflowAutomations = lazy(() => import('@/pages/MusicWorkflowAutomations'));
+const PressKit = lazy(() => import('@/pages/PressKit'));
+const PlaylistPitching = lazy(() => import('@/pages/PlaylistPitching'));
+const Shows = lazy(() => import('@/pages/Shows'));
+const MerchStore = lazy(() => import('@/pages/MerchStore'));
+const SyncLicensing = lazy(() => import('@/pages/SyncLicensing'));
+const Publishing = lazy(() => import('@/pages/Publishing'));
 
 function Router() {
   return (
@@ -138,6 +144,12 @@ function Router() {
       <Route path="/handle-link" component={HandleLink} />
       <Route path="/notifications" component={Notifications} />
       <Route path="/workflow-automations" component={MusicWorkflowAutomations} />
+      <Route path="/press-kit" component={PressKit} />
+      <Route path="/playlist-pitching" component={PlaylistPitching} />
+      <Route path="/shows" component={Shows} />
+      <Route path="/merch" component={MerchStore} />
+      <Route path="/sync-licensing" component={SyncLicensing} />
+      <Route path="/publishing" component={Publishing} />
       <Route component={NotFound} />
     </Switch>
   );

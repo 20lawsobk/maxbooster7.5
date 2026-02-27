@@ -3446,6 +3446,27 @@ export async function registerRoutes(
     // Session & Token Management
     { path: "/api/auth", name: "auth", loader: () => import("./routes/auth") },
 
+    // Fan Hub / Fan CRM
+    { path: "/api/fan-hub", name: "fanHub", loader: () => import("./routes/fanHub") },
+
+    // Press Kit (EPK Builder)
+    { path: "/api/press-kit", name: "pressKit", loader: () => import("./routes/pressKit") },
+
+    // Playlist Pitching
+    { path: "/api/playlist-pitching", name: "playlistPitching", loader: () => import("./routes/playlistPitching") },
+
+    // Shows / Tour Management
+    { path: "/api/shows", name: "shows", loader: () => import("./routes/shows") },
+
+    // Merch Store
+    { path: "/api/merch", name: "merch", loader: () => import("./routes/merch") },
+
+    // Sync Licensing Catalog
+    { path: "/api/sync-licensing", name: "syncLicensing", loader: () => import("./routes/syncLicensing") },
+
+    // Publishing Rights Management
+    { path: "/api/publishing", name: "publishing", loader: () => import("./routes/publishing") },
+
     // File Storage Management
     { path: "/api/storage", name: "storage", loader: () => import("./routes/storage") },
 

@@ -1,0 +1,387 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Calendar as CalendarIcon, 
+  Plus, 
+  Ticket, 
+  MapPin, 
+  Clock, 
+  DollarSign, 
+  Users, 
+  MoreVertical,
+  Edit,
+  Trash2,
+  CalendarDays,
+  List as ListIcon,
+  Music
+} from "lucide-react";
+import { format, isPast, isFuture } from "date-fns";
+import { apiRequest } from "@/lib/queryClient";
+import type { Show, Setlist } from "@shared/schema";
+import { useRequireSubscription } from "@/hooks/useRequireSubscription";
+
+export default function Shows() {
+  useRequireSubscription();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  
+  const [newShow, setNewShow] = useState({
+    name: "",
+    venue: "",
+    city: "",
+    country: "US",
+    date: "",
+    capacity: 0,
+    ticketUrl: "",
+    notes: ""
+  });
+
+  const { data: showsData, isLoading } = useQuery<Show[]>({
+    queryKey: ["/api/shows"],
+  });
+
+  const { data: statsData } = useQuery<{
+    totalShows: number;
+    totalRevenue: number;
+    avgTicketsSold: number;
+  }>({
+    queryKey: ["/api/shows/stats"],
+  });
+
+  const createShowMutation = useMutation({
+    mutationFn: async (data: typeof newShow) => {
+      const res = await apiRequest("POST", "/api/shows", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shows"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/shows/stats"] });
+      setShowCreateDialog(false);
+      setNewShow({
+        name: "",
+        venue: "",
+        city: "",
+        country: "US",
+        date: "",
+        capacity: 0,
+        ticketUrl: "",
+        notes: ""
+      });
+      toast({ title: "Show created", description: "Your performance has been scheduled." });
+    },
+  });
+
+  const deleteShowMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/shows/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shows"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/shows/stats"] });
+      toast({ title: "Show deleted", description: "The show has been removed from your calendar." });
+    },
+  });
+
+  const upcomingShows = showsData?.filter(s => isFuture(new Date(s.date))) || [];
+  const pastShows = showsData?.filter(s => isPast(new Date(s.date))) || [];
+
+  return (
+    <AppLayout title="Shows & Tour Management">
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Ticket className="h-8 w-8 text-primary" />
+              Shows & Tour
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your live performances, ticket sales, and setlists.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex bg-muted p-1 rounded-lg">
+              <Button 
+                variant={viewMode === 'list' ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={() => setViewMode('list')}
+              >
+                <ListIcon className="h-4 w-4 mr-2" />
+                List
+              </Button>
+              <Button 
+                variant={viewMode === 'calendar' ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={() => setViewMode('calendar')}
+              >
+                <CalendarDays className="h-4 w-4 mr-2" />
+                Calendar
+              </Button>
+            </div>
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Show
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add New Show</DialogTitle>
+                  <DialogDescription>Enter the details for your upcoming performance.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Show Name / Tour Stop</Label>
+                    <Input 
+                      id="name" 
+                      placeholder="e.g. Summer Festival 2024" 
+                      value={newShow.name}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewShow({...newShow, name: e.target.value})}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="venue">Venue</Label>
+                      <Input 
+                        id="venue" 
+                        placeholder="Club Name" 
+                        value={newShow.venue}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewShow({...newShow, venue: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input 
+                        id="city" 
+                        placeholder="City" 
+                        value={newShow.city}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewShow({...newShow, city: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date">Date & Time</Label>
+                      <Input 
+                        id="date" 
+                        type="datetime-local" 
+                        value={newShow.date}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewShow({...newShow, date: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="capacity">Capacity</Label>
+                      <Input 
+                        id="capacity" 
+                        type="number" 
+                        value={newShow.capacity}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewShow({...newShow, capacity: parseInt(e.target.value) || 0})}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ticketUrl">Ticket URL</Label>
+                    <Input 
+                      id="ticketUrl" 
+                      placeholder="https://..." 
+                      value={newShow.ticketUrl}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewShow({...newShow, ticketUrl: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
+                  <Button 
+                    onClick={() => createShowMutation.mutate(newShow)}
+                    disabled={!newShow.name || !newShow.date || createShowMutation.isPending}
+                  >
+                    {createShowMutation.isPending ? "Adding..." : "Add Show"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming Shows</CardTitle>
+              <CalendarIcon className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{upcomingShows.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${statsData?.totalRevenue?.toLocaleString() || '0'}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Attendance</CardTitle>
+              <Users className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{Math.round(statsData?.avgTicketsSold || 0)}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="upcoming" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+            <TabsTrigger value="past">Past Shows</TabsTrigger>
+            <TabsTrigger value="setlists">Setlists</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="upcoming">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            ) : upcomingShows.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Ticket className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <h3 className="text-xl font-medium">No upcoming shows</h3>
+                <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+                  You haven't scheduled any upcoming shows yet. Time to hit the stage!
+                </p>
+                <Button className="mt-6" onClick={() => setShowCreateDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Schedule First Show
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {upcomingShows.map((show) => (
+                  <Card key={show.id} className="overflow-hidden border-l-4 border-l-primary">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-xl">{show.name}</CardTitle>
+                          <CardDescription className="flex items-center gap-1 mt-1">
+                            <MapPin className="h-3 w-3" />
+                            {show.venue}, {show.city}
+                          </CardDescription>
+                        </div>
+                        <Badge variant="outline" className="bg-primary/5">Upcoming</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <CalendarIcon className="h-4 w-4" />
+                          {format(new Date(show.date), 'MMM d, yyyy')}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          {format(new Date(show.date), 'h:mm a')}
+                        </div>
+                      </div>
+                      
+                      {show.capacity && (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">Tickets Sold</span>
+                            <span>{show.ticketsSold} / {show.capacity}</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                            <div 
+                              className="bg-primary h-full transition-all" 
+                              style={{ width: `${Math.min(100, (show.ticketsSold || 0) / show.capacity * 100)}%` }} 
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                    <CardFooter className="bg-muted/30 flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <a href={show.ticketUrl || "#"} target="_blank" rel="noopener noreferrer">
+                          Tickets
+                        </a>
+                      </Button>
+                      <Button variant="outline" size="icon" className="h-9 w-9">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="past">
+            <div className="space-y-4">
+              {pastShows.map((show) => (
+                <Card key={show.id} className="flex flex-col md:flex-row items-center p-4 gap-4 opacity-70 hover:opacity-100 transition-opacity">
+                  <div className="bg-muted h-12 w-12 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CalendarIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 text-center md:text-left">
+                    <h4 className="font-bold">{show.name}</h4>
+                    <p className="text-sm text-muted-foreground">{show.venue} • {show.city} • {format(new Date(show.date), 'MMM d, yyyy')}</p>
+                  </div>
+                  <div className="flex gap-4 text-center">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase">Revenue</p>
+                      <p className="font-bold text-green-600">${show.revenue?.toLocaleString() || '0'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase">Attendance</p>
+                      <p className="font-bold">{show.ticketsSold}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => deleteShowMutation.mutate(show.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </Card>
+              ))}
+              {pastShows.length === 0 && (
+                <p className="text-center py-12 text-muted-foreground">No past shows found.</p>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="setlists">
+             <Card className="p-12 text-center">
+                <Music className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <h3 className="text-xl font-medium">Setlist Management</h3>
+                <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+                  Build and manage setlists for your performances.
+                </p>
+                <Button className="mt-6" variant="outline" disabled>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Setlist Template
+                </Button>
+              </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </AppLayout>
+  );
+}
