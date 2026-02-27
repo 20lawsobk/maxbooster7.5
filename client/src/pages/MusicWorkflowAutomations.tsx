@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { CustomWorkflowTab } from '@/components/automations/CustomWorkflowBuilder';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -699,6 +700,7 @@ export default function MusicWorkflowAutomations() {
               <TabsTrigger value="automations">Automations</TabsTrigger>
               <TabsTrigger value="history">Run History</TabsTrigger>
               <TabsTrigger value="schedule">Schedule</TabsTrigger>
+              <TabsTrigger value="custom">Custom</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -735,6 +737,10 @@ export default function MusicWorkflowAutomations() {
 
             <TabsContent value="schedule">
               <ScheduleTab automations={automations} stats={stats} />
+            </TabsContent>
+
+            <TabsContent value="custom">
+              <CustomWorkflowTab />
             </TabsContent>
           </Tabs>
         )}

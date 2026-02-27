@@ -4992,3 +4992,29 @@ export const fanCampaigns = pgTable("fan_campaigns", {
 
 export const insertFanCampaignSchema = createInsertSchema(fanCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
 export type FanCampaign = typeof fanCampaigns.$inferSelect;
+
+// ============================================================================
+// CUSTOM WORKFLOW AUTOMATIONS
+// ============================================================================
+
+export const customWorkflows = pgTable("custom_workflows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description").default(""),
+  triggerEvent: text("trigger_event").notNull(),
+  triggerConditions: jsonb("trigger_conditions").default({}),
+  actions: jsonb("actions").notNull().default([]),
+  enabled: boolean("enabled").default(false),
+  runCount: integer("run_count").default(0),
+  lastRunAt: timestamp("last_run_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("custom_workflows_user_id_idx").on(t.userId),
+  index("custom_workflows_enabled_idx").on(t.enabled),
+]);
+
+export const insertCustomWorkflowSchema = createInsertSchema(customWorkflows).omit({ id: true, createdAt: true, updatedAt: true });
+export type CustomWorkflow = typeof customWorkflows.$inferSelect;
+export type InsertCustomWorkflow = typeof customWorkflows.$inferInsert;

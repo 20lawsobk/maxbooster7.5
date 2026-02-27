@@ -3913,5 +3913,13 @@ export async function registerRoutes(
     log(`Warning: Could not load fanCampaigns routes - ${error.message}`);
   }
 
+  try {
+    const customWorkflowsRouter = (await import('./routes/customWorkflows.js')).default;
+    app.use('/api/custom-workflows', customWorkflowsRouter);
+    log('Loaded route: customWorkflows');
+  } catch (error: any) {
+    log(`Warning: Could not load customWorkflows routes - ${error.message}`);
+  }
+
   return httpServer;
 }
