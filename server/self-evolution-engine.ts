@@ -242,6 +242,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       // Phase 3: Generate code upgrades for high-priority changes
       const upgrades = await this.generateCodeUpgrades(competitiveGaps);
       logger.info(`   💻 Generated ${upgrades.length} code upgrades`);
+      this.upgradeQueue.push(...upgrades);
 
       // Phase 4: Test and validate generated code
       const validatedUpgrades = await this.testUpgrades(upgrades);
@@ -291,8 +292,10 @@ export class SelfEvolutionEngine extends EventEmitter {
     // Monitor technology trends
     changes.push(...await this.monitorTechnologyTrends());
 
-    this.industryChanges.push(...changes);
-    return changes;
+    const existingIds = new Set(this.industryChanges.map(c => c.id));
+    const newChanges = changes.filter(c => !existingIds.has(c.id));
+    this.industryChanges.push(...newChanges);
+    return newChanges;
   }
 
   private async monitorCompetitorDAWs(): Promise<IndustryChange[]> {
