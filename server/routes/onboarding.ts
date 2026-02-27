@@ -483,6 +483,7 @@ const DEFAULT_ACHIEVEMENTS = [
     rarity: 'rare',
     icon: 'Flame',
     points: 150,
+    threshold: 7,
   },
   {
     id: 'month_streak',
@@ -492,6 +493,7 @@ const DEFAULT_ACHIEVEMENTS = [
     rarity: 'epic',
     icon: 'Crown',
     points: 500,
+    threshold: 30,
   },
   {
     id: 'ten_releases',
@@ -501,6 +503,7 @@ const DEFAULT_ACHIEVEMENTS = [
     rarity: 'epic',
     icon: 'Trophy',
     points: 400,
+    threshold: 10,
   },
   {
     id: 'verified_artist',
@@ -510,6 +513,7 @@ const DEFAULT_ACHIEVEMENTS = [
     rarity: 'legendary',
     icon: 'Award',
     points: 1000,
+    threshold: 1,
   },
   {
     id: 'first_payout',
@@ -519,6 +523,7 @@ const DEFAULT_ACHIEVEMENTS = [
     rarity: 'rare',
     icon: 'DollarSign',
     points: 300,
+    threshold: 1,
   },
   {
     id: 'studio_master',
@@ -528,6 +533,7 @@ const DEFAULT_ACHIEVEMENTS = [
     rarity: 'epic',
     icon: 'Headphones',
     points: 450,
+    threshold: 50,
   },
 ];
 
@@ -553,9 +559,7 @@ router.get('/achievements', requireAuth, async (req, res) => {
         ...achievement,
         unlockedAt: unlocked?.unlockedAt || unlocked?.celebratedAt || null,
         progress: unlocked?.progress || 0,
-        maxProgress: achievement.id.includes('streak') ? (achievement.id === 'week_streak' ? 7 : 30) : 
-                     achievement.id === 'ten_releases' ? 10 :
-                     achievement.id === 'studio_master' ? 50 : 1,
+        maxProgress: (achievement as any).threshold ?? 1,
       };
     });
 

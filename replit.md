@@ -123,6 +123,14 @@ Artist-side tier creation:
 6. Removed `process.exit(1)` from Vite error logger
 7. Cleared Vite cache
 
+## Bug Fixes (Post-Launch)
+
+- **Streak hardcoding**: Added `threshold` field to `week_streak` (7) and `month_streak` (30) — and all other non-binary achievements — in `DEFAULT_ACHIEVEMENTS` (`server/routes/onboarding.ts`). The `maxProgress` field now uses `achievement.threshold ?? 1` instead of a per-ID ternary.
+- **Build script**: Rewrote `scripts/build-apps.ts` — eliminated double `buildWebAssets()` calls in `buildDesktopAndMobile()`, replaced `setupCapacitor()` overwrite with `validateCapacitorConfig()` (never touches existing `capacitor.config.ts`), made `ensureCapacitorInstalled()` actually install packages, added platform fallback error in `buildDesktop()`, consolidated aliases (`all`, `both`, `desktop-mobile` → `buildAll()`).
+- **Electron version**: `electron/main.js` now reads `APP_VERSION` from `package.json` via `fs.readFileSync` instead of the hardcoded string `'3.0.0'`.
+- **Stripe auto-price**: Subscribe route auto-creates a Stripe price if `stripePriceId` is missing, then persists it.
+- **Redis session fallback**: Production no longer exits on Redis failure — falls back to memory store with a warning.
+
 ## Database
 
 Uses Drizzle ORM with PostgreSQL. Schema in `shared/schema.ts`.  

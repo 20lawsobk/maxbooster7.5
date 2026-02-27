@@ -1,25 +1,26 @@
 #!/usr/bin/env tsx
 /**
  * Max Booster - Desktop & Mobile App Build Script
- * 
+ *
  * RECOMMENDED: Use GitHub Actions for production builds
  * - Push a tag (v3.0.0) to trigger automated builds on all platforms
  * - See .github/workflows/build-desktop.yml and build-mobile.yml
  * - See .github/SECRETS_SETUP.md for required secrets
- * 
+ *
  * Local builds (development/testing):
  * - Desktop: Windows (NSIS, Portable), macOS (DMG, ZIP), Linux (AppImage, DEB)
  * - Mobile: iOS (Capacitor), Android (Capacitor)
- * 
+ *
  * Usage:
- *   npx tsx scripts/build-apps.ts desktop    # Build desktop apps only (current platform)
- *   npx tsx scripts/build-apps.ts mobile     # Setup mobile apps (requires native IDEs)
- *   npx tsx scripts/build-apps.ts all        # Build all platforms
- *   npx tsx scripts/build-apps.ts version    # Bump version only
- *   npx tsx scripts/build-apps.ts github     # Show GitHub Actions instructions
+ *   npx tsx scripts/build-apps.ts desktop        # Build desktop app (current platform)
+ *   npx tsx scripts/build-apps.ts mobile         # Setup mobile apps (requires native IDEs)
+ *   npx tsx scripts/build-apps.ts desktop+mobile # Build desktop AND mobile in one pass
+ *   npx tsx scripts/build-apps.ts all            # Alias for desktop+mobile
+ *   npx tsx scripts/build-apps.ts version        # Bump patch version
+ *   npx tsx scripts/build-apps.ts github         # Show GitHub Actions instructions
  */
 
-import { execSync, spawn } from 'child_process';
+import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -27,19 +28,8 @@ const APP_NAME = 'Max Booster';
 const APP_ID = 'com.blawzmusic.maxbooster';
 const PRODUCTION_URL = 'https://maxbooster.replit.app';
 
-interface BuildConfig {
-  desktop: boolean;
-  mobile: boolean;
-  version?: string;
-}
-
 function log(message: string, type: 'info' | 'success' | 'error' | 'warn' = 'info') {
-  const icons = {
-    info: '\u2139\ufe0f',
-    success: '\u2705',
-    error: '\u274c',
-    warn: '\u26a0\ufe0f'
-  };
+  const icons = { info: 'ℹ️', success: '✅', error: '❌', warn: '⚠️' };
   console.log(`${icons[type]} ${message}`);
 }
 
@@ -49,7 +39,7 @@ function runCommand(command: string, options: { cwd?: string; stdio?: 'inherit' 
     const result = execSync(command, {
       cwd: options.cwd || process.cwd(),
       stdio: options.stdio || 'inherit',
-      encoding: 'utf-8'
+      encoding: 'utf-8',
     });
     return typeof result === 'string' ? result : '';
   } catch (error) {
@@ -72,7 +62,7 @@ function updatePackageJson(updates: Partial<any>): void {
 function bumpVersion(type: 'major' | 'minor' | 'patch' = 'patch'): string {
   const pkg = getPackageJson();
   const [major, minor, patch] = pkg.version.split('.').map(Number);
-  
+
   let newVersion: string;
   switch (type) {
     case 'major':
@@ -85,7 +75,7 @@ function bumpVersion(type: 'major' | 'minor' | 'patch' = 'patch'): string {
     default:
       newVersion = `${major}.${minor}.${patch + 1}`;
   }
-  
+
   updatePackageJson({ version: newVersion });
   log(`Version bumped: ${pkg.version} -> ${newVersion}`, 'success');
   return newVersion;
@@ -97,176 +87,160 @@ function ensureDirectory(dir: string): void {
   }
 }
 
+/** Build the web/Vite bundle that both Electron and Capacitor serve. */
 function buildWebAssets(): void {
   log('Building web assets...', 'info');
   runCommand('npm run build');
   log('Web assets built successfully', 'success');
 }
 
-function buildDesktop(includeMobile: boolean = false): void {
+/**
+ * Build the Electron desktop app for the current platform.
+ * In the Replit environment this validates config only; full builds
+ * require GitHub Actions or a local desktop machine.
+ */
+function buildDesktop(): void {
   log('='.repeat(60), 'info');
-  log('BUILDING DESKTOP APPLICATIONS', 'info');
+  log('BUILDING DESKTOP APPLICATION', 'info');
   log('='.repeat(60), 'info');
-  
+
   const pkg = getPackageJson();
-  
+
   ensureDirectory('electron/assets');
-  
   if (!fs.existsSync('electron/assets/icon.png')) {
     log('Warning: Missing icon at electron/assets/icon.png', 'warn');
   }
-  
+
+  if (!pkg.build) {
+    throw new Error('No electron-builder config found in package.json. Add a "build" key.');
+  }
+
+  if (!fs.existsSync('electron/main.js') && !fs.existsSync('electron/main.ts')) {
+    throw new Error('Electron main process file not found (electron/main.js or electron/main.ts).');
+  }
+
   log(`Building ${APP_NAME} v${pkg.version} for desktop...`, 'info');
-  
+
   const isReplit = process.env.REPLIT || process.env.REPLIT_DEV_DOMAIN;
   const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
   const forceFullBuild = process.env.FORCE_FULL_BUILD === 'true';
-  
+
   if (isReplit && !isCI && !forceFullBuild) {
-    log('Detected Replit environment - running validation only', 'info');
-    log('Full desktop packaging should be done via GitHub Actions', 'info');
-    log('See: .github/workflows/build-desktop.yml', 'info');
-    
-    log('Validating Electron configuration...', 'info');
-    if (pkg.build) {
-      log('Electron-builder config found in package.json', 'success');
-    }
-    if (fs.existsSync('electron/main.js') || fs.existsSync('electron/main.ts')) {
-      log('Electron main process file exists', 'success');
-    }
-    
-    log('Verifying native module compilation (Python check)...', 'info');
+    log('Detected Replit environment — validating config only', 'info');
+    log('Full installers must be built via GitHub Actions (or a local desktop machine).', 'info');
+    log('Run: npx tsx scripts/build-apps.ts github   for instructions', 'info');
+
     try {
       runCommand('python3 --version', { stdio: 'pipe' });
       log('Python available for native modules', 'success');
     } catch {
-      log('Python not found - native modules may fail', 'warn');
+      log('Python not found — native modules may fail during packaging', 'warn');
     }
-    
-    log('Desktop build validation completed!', 'success');
-    log('To build full installers, use GitHub Actions or run locally on desktop', 'info');
-    
-    if (includeMobile) {
-      log('', 'info');
-      log('Also building mobile apps...', 'info');
-      buildMobile();
-    }
+
+    log('electron-builder config ✓', 'success');
+    log('Electron main process   ✓', 'success');
+    log('Desktop config validation complete', 'success');
     return;
   }
-  
-  log('Building for all desktop platforms...', 'info');
-  
-  try {
-    if (process.platform === 'linux') {
-      log('Building Linux packages...', 'info');
-      runCommand('npx electron-builder --linux');
-    } else if (process.platform === 'darwin') {
-      log('Building macOS packages...', 'info');
-      runCommand('npx electron-builder --mac');
-    } else if (process.platform === 'win32') {
-      log('Building Windows packages...', 'info');
-      runCommand('npx electron-builder --win');
-    }
-    
-    log('Desktop build completed!', 'success');
-    log(`Output: dist-installers/`, 'info');
-    
-    if (fs.existsSync('dist-installers')) {
-      const files = fs.readdirSync('dist-installers');
+
+  const platform = process.platform;
+  let buildCmd: string;
+  if (platform === 'linux') {
+    log('Building Linux packages (AppImage, DEB)...', 'info');
+    buildCmd = 'npx electron-builder --linux';
+  } else if (platform === 'darwin') {
+    log('Building macOS packages (DMG, ZIP)...', 'info');
+    buildCmd = 'npx electron-builder --mac';
+  } else if (platform === 'win32') {
+    log('Building Windows packages (NSIS, Portable)...', 'info');
+    buildCmd = 'npx electron-builder --win';
+  } else {
+    throw new Error(`Unsupported build platform: ${platform}. Use GitHub Actions for cross-platform builds.`);
+  }
+
+  runCommand(buildCmd);
+
+  log('Desktop build completed!', 'success');
+  log('Output directory: dist-installers/', 'info');
+
+  if (fs.existsSync('dist-installers')) {
+    const files = fs.readdirSync('dist-installers').filter(f => !f.endsWith('.yml'));
+    if (files.length > 0) {
       log('Generated installers:', 'info');
       files.forEach(file => console.log(`  - ${file}`));
     }
-    
-    if (includeMobile) {
-      log('', 'info');
-      log('Also building mobile apps...', 'info');
-      buildMobile();
-    }
-  } catch (error) {
-    log('Desktop build failed', 'error');
-    throw error;
   }
 }
 
-function buildDesktopAndMobile(): void {
-  log('='.repeat(60), 'info');
-  log('BUILDING DESKTOP + MOBILE APPLICATIONS', 'info');
-  log('='.repeat(60), 'info');
-  
-  const pkg = getPackageJson();
-  log(`Building ${APP_NAME} v${pkg.version} for all platforms...`, 'info');
-  
-  buildWebAssets();
-  
-  buildDesktop(false);
-  
-  buildMobile();
-  
-  log('', 'info');
-  log('='.repeat(60), 'info');
-  log('BUILD SUMMARY', 'success');
-  log('='.repeat(60), 'info');
-  log('Desktop: dist-installers/', 'success');
-  log('Mobile:  android/ and ios/ (requires native IDEs to compile)', 'success');
-  log('', 'info');
-  log('Next steps for mobile:', 'info');
-  log('  iOS:     npx cap open ios      (requires macOS + Xcode)', 'info');
-  log('  Android: npx cap open android  (requires Android Studio)', 'info');
-}
+/**
+ * Validate that capacitor.config.ts exists and is correct.
+ * The authoritative config lives in capacitor.config.ts — this script
+ * never overwrites it. If it is missing we print the required content.
+ */
+function validateCapacitorConfig(): void {
+  if (fs.existsSync('capacitor.config.ts')) {
+    log('capacitor.config.ts exists ✓', 'success');
+    return;
+  }
+  if (fs.existsSync('capacitor.config.json')) {
+    log('capacitor.config.json exists ✓', 'success');
+    return;
+  }
 
-function setupCapacitor(): void {
-  log('Setting up Capacitor for mobile builds...', 'info');
-  
-  const capacitorConfig = {
-    appId: APP_ID,
-    appName: APP_NAME,
-    webDir: 'dist/public',
-    server: {
-      url: PRODUCTION_URL,
-      cleartext: true
-    },
-    plugins: {
-      SplashScreen: {
-        launchShowDuration: 2000,
-        launchAutoHide: true,
-        backgroundColor: '#1a1a2e',
-        androidSplashResourceName: 'splash',
-        androidScaleType: 'CENTER_CROP',
-        showSpinner: true,
-        spinnerColor: '#9333ea'
-      },
-      StatusBar: {
-        style: 'Dark',
-        backgroundColor: '#1a1a2e'
-      },
-      Keyboard: {
-        resize: 'body',
-        resizeOnFullScreen: true
-      },
-      PushNotifications: {
-        presentationOptions: ['badge', 'sound', 'alert']
-      }
-    },
-    ios: {
-      contentInset: 'automatic',
-      preferredContentMode: 'mobile',
-      scheme: 'maxbooster'
-    },
-    android: {
+  log('No Capacitor config found — creating capacitor.config.ts', 'warn');
+
+  const configContent = `import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: '${APP_ID}',
+  appName: '${APP_NAME}',
+  webDir: 'dist/public',
+  server: {
+    url: '${PRODUCTION_URL}',
+    cleartext: false,
+    androidScheme: 'https',
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      launchAutoHide: true,
       backgroundColor: '#1a1a2e',
-      allowMixedContent: false,
-      captureInput: true,
-      webContentsDebuggingEnabled: false
-    }
-  };
-  
-  fs.writeFileSync('capacitor.config.json', JSON.stringify(capacitorConfig, null, 2) + '\n');
-  log('Capacitor config created', 'success');
+      showSpinner: true,
+      spinnerColor: '#9333ea',
+    },
+    StatusBar: { style: 'Dark', backgroundColor: '#1a1a2e' },
+    Keyboard: { resize: 'body', resizeOnFullScreen: true },
+    PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] },
+  },
+  ios: {
+    contentInset: 'automatic',
+    preferredContentMode: 'mobile',
+    scheme: 'maxbooster',
+  },
+  android: {
+    backgroundColor: '#1a1a2e',
+    allowMixedContent: false,
+    captureInput: true,
+    webContentsDebuggingEnabled: false,
+  },
+};
+
+export default config;
+`;
+
+  fs.writeFileSync('capacitor.config.ts', configContent);
+  log('capacitor.config.ts created', 'success');
 }
 
-function installCapacitorDeps(): void {
-  log('Installing Capacitor dependencies...', 'info');
-  
+/** Actually install Capacitor packages if they are missing. */
+function ensureCapacitorInstalled(): boolean {
+  if (fs.existsSync('node_modules/@capacitor/core')) {
+    log('@capacitor/core is installed ✓', 'success');
+    return true;
+  }
+
+  log('@capacitor/core not found — installing Capacitor packages...', 'warn');
+
   const deps = [
     '@capacitor/core',
     '@capacitor/cli',
@@ -276,7 +250,6 @@ function installCapacitorDeps(): void {
     '@capacitor/browser',
     '@capacitor/camera',
     '@capacitor/filesystem',
-    '@capacitor/geolocation',
     '@capacitor/haptics',
     '@capacitor/keyboard',
     '@capacitor/local-notifications',
@@ -285,55 +258,81 @@ function installCapacitorDeps(): void {
     '@capacitor/push-notifications',
     '@capacitor/share',
     '@capacitor/splash-screen',
-    '@capacitor/status-bar'
-  ];
-  
-  log('Note: Capacitor packages need to be installed via npm separately', 'warn');
-  log('Run: npm install ' + deps.join(' '), 'info');
+    '@capacitor/status-bar',
+  ].join(' ');
+
+  try {
+    runCommand(`npm install ${deps}`);
+    log('Capacitor packages installed', 'success');
+    return true;
+  } catch (err) {
+    log(`Failed to install Capacitor packages: ${err}`, 'error');
+    log('Run manually: npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios', 'info');
+    return false;
+  }
 }
 
-function buildMobile(): void {
+/**
+ * Set up Capacitor and sync web assets to native projects.
+ * Pass webAssetsAlreadyBuilt=true to skip rebuilding the Vite bundle.
+ */
+function buildMobile(webAssetsAlreadyBuilt = false): void {
   log('='.repeat(60), 'info');
   log('BUILDING MOBILE APPLICATIONS', 'info');
   log('='.repeat(60), 'info');
-  
-  setupCapacitor();
-  
-  buildWebAssets();
-  
-  log('Syncing Capacitor projects...', 'info');
-  
-  try {
-    if (!fs.existsSync('node_modules/@capacitor/core')) {
-      log('Capacitor not installed. Installing dependencies...', 'warn');
-      installCapacitorDeps();
-      log('Please install Capacitor dependencies and re-run the mobile build', 'warn');
-      return;
-    }
-    
-    if (!fs.existsSync('android')) {
-      log('Adding Android platform...', 'info');
-      runCommand('npx cap add android');
-    }
-    
-    if (!fs.existsSync('ios')) {
-      log('Adding iOS platform...', 'info');
-      runCommand('npx cap add ios');
-    }
-    
-    log('Syncing web assets to native projects...', 'info');
-    runCommand('npx cap sync');
-    
-    log('Mobile build setup completed!', 'success');
-    log('', 'info');
-    log('Next steps:', 'info');
-    log('  iOS:     npx cap open ios      (requires macOS + Xcode)', 'info');
-    log('  Android: npx cap open android  (requires Android Studio)', 'info');
-    
-  } catch (error) {
-    log('Mobile build setup failed', 'error');
-    throw error;
+
+  validateCapacitorConfig();
+
+  if (!webAssetsAlreadyBuilt) {
+    buildWebAssets();
   }
+
+  const installed = ensureCapacitorInstalled();
+  if (!installed) {
+    log('Cannot proceed with mobile build — Capacitor packages missing', 'error');
+    process.exit(1);
+  }
+
+  log('Syncing Capacitor projects...', 'info');
+
+  if (!fs.existsSync('android')) {
+    log('Adding Android platform...', 'info');
+    runCommand('npx cap add android');
+  }
+
+  if (!fs.existsSync('ios')) {
+    log('Adding iOS platform...', 'info');
+    runCommand('npx cap add ios');
+  }
+
+  runCommand('npx cap sync');
+
+  log('Mobile build setup completed!', 'success');
+  console.log('');
+  log('Next steps:', 'info');
+  log('  Android: npx cap open android   (requires Android Studio)', 'info');
+  log('  iOS:     npx cap open ios        (requires macOS + Xcode)', 'info');
+}
+
+/** Build web assets once, then desktop and mobile. */
+function buildAll(): void {
+  log('='.repeat(60), 'info');
+  log('BUILDING DESKTOP + MOBILE APPLICATIONS', 'info');
+  log('='.repeat(60), 'info');
+
+  const pkg = getPackageJson();
+  log(`Building ${APP_NAME} v${pkg.version} for all platforms...`, 'info');
+
+  buildWebAssets();
+  buildDesktop();
+  buildMobile(true);
+
+  console.log('');
+  log('='.repeat(60), 'info');
+  log('BUILD SUMMARY', 'success');
+  log('='.repeat(60), 'info');
+  log('Desktop: dist-installers/', 'success');
+  log('Mobile:  android/ and ios/ (open in native IDEs to compile)', 'success');
 }
 
 function generateBuildInfo(): void {
@@ -345,29 +344,21 @@ function generateBuildInfo(): void {
     buildDate: new Date().toISOString(),
     platforms: {
       desktop: {
-        electron: pkg.devDependencies?.electron || 'not installed',
+        electron: pkg.devDependencies?.electron || pkg.dependencies?.electron || 'not installed',
         windows: ['NSIS Installer', 'Portable'],
         macos: ['DMG', 'ZIP'],
-        linux: ['AppImage', 'DEB', 'tar.gz']
+        linux: ['AppImage', 'DEB'],
       },
       mobile: {
-        ios: {
-          minVersion: '15.0',
-          scheme: 'maxbooster'
-        },
-        android: {
-          minSdk: 22,
-          targetSdk: 34
-        }
+        ios: { minVersion: '15.0', scheme: 'maxbooster' },
+        android: { minSdk: 22, targetSdk: 34 },
       },
-      web: {
-        url: PRODUCTION_URL
-      }
-    }
+      web: { url: PRODUCTION_URL },
+    },
   };
-  
+
   fs.writeFileSync('build-info.json', JSON.stringify(buildInfo, null, 2) + '\n');
-  log('Build info generated: build-info.json', 'success');
+  log('Build info written to build-info.json', 'success');
 }
 
 function showGitHubInstructions(): void {
@@ -375,34 +366,30 @@ function showGitHubInstructions(): void {
 ${APP_NAME} - GitHub Actions Build Instructions
 ================================================
 
-RECOMMENDED: Use GitHub Actions for production builds across all platforms.
+RECOMMENDED: Use GitHub Actions for production builds on all platforms.
 
 1. SETUP SECRETS
-   Go to GitHub > Settings > Secrets and variables > Actions
-   See .github/SECRETS_SETUP.md for required secrets
+   GitHub → Settings → Secrets and variables → Actions
+   See .github/SECRETS_SETUP.md for the full list of required secrets.
 
-2. TRIGGER BUILDS
+2. TRIGGER A BUILD
 
    Automatic (push a version tag):
-   $ git tag v3.0.0
-   $ git push origin v3.0.0
+     git tag v3.1.0
+     git push origin v3.1.0
 
    Manual:
-   - Go to Actions tab in GitHub
-   - Select "Build Desktop Apps" or "Build Mobile Apps"
-   - Click "Run workflow"
+     GitHub → Actions → "Build Desktop Apps" or "Build Mobile Apps" → Run workflow
 
 3. DOWNLOAD ARTIFACTS
-   - Go to Actions > Select workflow run
-   - Download artifacts from the bottom of the page
+   GitHub → Actions → select the run → download from the Artifacts section.
 
 4. RELEASES
-   Tagged builds automatically create GitHub Releases with all installers attached.
+   Tagged builds automatically create GitHub Releases with installers attached.
 
-WORKFLOWS:
-  .github/workflows/build-desktop.yml  - Windows, macOS, Linux builds
-  .github/workflows/build-mobile.yml   - iOS, Android builds
-
+WORKFLOW FILES:
+  .github/workflows/build-desktop.yml  — Windows, macOS, Linux
+  .github/workflows/build-mobile.yml   — iOS, Android
 `);
 }
 
@@ -415,88 +402,82 @@ Usage:
   npx tsx scripts/build-apps.ts <command>
 
 Commands:
-  desktop        Build desktop apps for current platform (Electron)
-  desktop+mobile Build desktop AND mobile apps in one command
-  mobile         Setup mobile apps locally (Capacitor)
-  all            Build all platforms locally (same as desktop+mobile)
-  version        Bump patch version
+  desktop        Build desktop app for the current OS (Electron)
+  mobile         Setup mobile apps locally (Capacitor + Android/iOS)
+  desktop+mobile Build desktop AND mobile (web assets built only once)
+  all            Alias for desktop+mobile
+  version        Bump patch version in package.json
   version:minor  Bump minor version
   version:major  Bump major version
-  info           Generate build info
-  github         Show GitHub Actions build instructions (RECOMMENDED)
+  info           Write build-info.json
+  github         Show GitHub Actions instructions (RECOMMENDED for production)
   help           Show this help message
 
-RECOMMENDED FOR PRODUCTION:
-  Use GitHub Actions to build for all platforms automatically.
-  Run: npx tsx scripts/build-apps.ts github
+Environment variables:
+  FORCE_FULL_BUILD=true   Run a full Electron build even inside Replit
 
 Examples:
-  npx tsx scripts/build-apps.ts github         # See GitHub Actions instructions
+  npx tsx scripts/build-apps.ts github         # Preferred for production
   npx tsx scripts/build-apps.ts desktop        # Local build for current OS
-  npx tsx scripts/build-apps.ts desktop+mobile # Build desktop AND mobile together
-  npx tsx scripts/build-apps.ts mobile         # Setup Capacitor locally
+  npx tsx scripts/build-apps.ts desktop+mobile # Build both in one pass
+  npx tsx scripts/build-apps.ts mobile         # Capacitor setup only
 `);
 }
 
 async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  const command = args[0] || 'help';
-  
+  const command = process.argv[2] || 'help';
+
   console.log('');
   log(`${APP_NAME} Build System`, 'info');
   log('='.repeat(40), 'info');
   console.log('');
-  
+
   try {
     switch (command) {
       case 'desktop':
         buildWebAssets();
-        buildDesktop(false);
+        buildDesktop();
         break;
-      
-      case 'desktop+mobile':
-      case 'desktop-mobile':
-      case 'both':
-        buildDesktopAndMobile();
-        break;
-        
+
       case 'mobile':
         buildMobile();
         break;
-        
+
+      case 'desktop+mobile':
+      case 'desktop-mobile':
+      case 'both':
       case 'all':
-        buildDesktopAndMobile();
+        buildAll();
         break;
-        
+
       case 'version':
         bumpVersion('patch');
         break;
-        
+
       case 'version:minor':
         bumpVersion('minor');
         break;
-        
+
       case 'version:major':
         bumpVersion('major');
         break;
-        
+
       case 'info':
         generateBuildInfo();
         break;
-        
+
       case 'github':
         showGitHubInstructions();
         break;
-        
+
       case 'help':
       default:
         showHelp();
         break;
     }
-    
+
     console.log('');
     log('Build process completed!', 'success');
-    
   } catch (error) {
     log(`Build failed: ${error}`, 'error');
     process.exit(1);

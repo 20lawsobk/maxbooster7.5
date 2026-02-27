@@ -4,7 +4,14 @@ const fs = require('fs');
 
 const PRODUCTION_URL = 'https://maxbooster.replit.app';
 const APP_NAME = 'Max Booster';
-const APP_VERSION = '3.0.0';
+const APP_VERSION = (() => {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
+    return pkg.version || '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+})();
 
 let mainWindow;
 let tray = null;
