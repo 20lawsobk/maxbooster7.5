@@ -1,5 +1,5 @@
 import { db } from '../db.js';
-import { userOnboarding, onboardingTasks, users } from '../../shared/schema.js';
+import { userOnboarding, onboardingTasks, users, userStreaks } from '../../shared/schema.js';
 import { eq, asc, and, sql, desc } from 'drizzle-orm';
 import { logger } from '../logger.js';
 
@@ -80,6 +80,13 @@ class OnboardingService {
 
       const recommendedNextStep = await this.getRecommendedNextStep(userId, tasksWithStatus);
 
+      const loginStreakRow = await db
+        .select()
+        .from(userStreaks)
+        .where(and(eq(userStreaks.userId, userId), eq(userStreaks.streakType, 'login')))
+        .limit(1);
+      const loginStreak = loginStreakRow[0]?.currentStreak || 0;
+
       return {
         userId,
         currentStep: progress.currentStep || 0,
@@ -87,7 +94,7 @@ class OnboardingService {
         completionPercentage,
         completedSteps,
         totalPoints: progress.totalPoints || 0,
-        dayStreak: progress.dayStreak || 0,
+        dayStreak: loginStreak,
         startedAt: progress.startedAt,
         completedAt: progress.completedAt,
         skippedAt: progress.skippedAt,
