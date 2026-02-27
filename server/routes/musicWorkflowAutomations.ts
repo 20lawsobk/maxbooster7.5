@@ -129,6 +129,18 @@ router.post('/trigger', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/music-workflow-automations/stats
+router.get('/stats', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const stats = await musicWorkflowAutomationService.getStats(userId);
+    res.json(stats);
+  } catch (err: any) {
+    logger.error('[MusicWorkflow] Error fetching stats:', err);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
 // GET /api/music-workflow-automations/logs
 router.get('/logs', requireAuth, async (req: Request, res: Response) => {
   try {

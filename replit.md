@@ -142,6 +142,18 @@ To push schema changes: `npm run db:push`
 - Overview, Campaigns, Autopilot, Analytics, Audiences, Creatives, Automation
 - **Press Kit / EPK** tab (professional bio, links, assets for media/booking)
 
+### Workflow Automations Page (`/workflow-automations`)
+- Full `AppLayout` with sidebar navigation
+- **Stats dashboard**: Active count, Total Runs, Success Rate, Last Run — powered by `GET /api/music-workflow-automations/stats`
+- **4 Tabs**: Overview (phase summary cards + progress bars + how-it-works guide), Automations (all 21 templates by phase), Run History (execution logs with template names), Schedule (upcoming scheduled runs + event-triggered list)
+- **21 automation templates** across 5 career phases:
+  - Creation: Track Upload Analysis, Auto-Prompt PRO Track Registration, Collaboration Alert
+  - Pre-Release: Release Countdown Posts, Pre-Save Campaign, Distribution Submitted Notify, Press Release Generator, Mix Ready Checklist
+  - Release Day: Release Day Social Blast, Release Day Newsletter, Release Day Push Notify, Auto-Update Social Bios
+  - Post-Release: Weekly Performance Digest, Streaming Milestone Celebrate, Playlist Placement Alert, Low Engagement Rescue, Multi-Platform Caption Repurposer
+  - Revenue: Beat Sale Thank You, Royalty Collection Reminder, Venue Booking Follow-Up, Auto-Pitch New Tracks for Sync
+- **Service**: `server/services/musicWorkflowAutomationService.ts` — full CRUD, event dispatcher, cron scheduler (weekly digest + monthly royalty check)
+
 ### New DB Tables Added
 `labelSubmissions`, `radioPitches`, `venueContacts`, `projectBudgets`, `budgetLineItems`, `sampleClearances`, `musicVideoProductions`, `songwritingSessions`, `fanCampaigns`
 

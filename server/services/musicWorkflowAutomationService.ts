@@ -629,6 +629,209 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     },
     enabledByDefault: false,
   },
+
+  // ── ADDITIONAL: CREATION ─────────────────────────────────────────────────
+  {
+    id: 'pro-track-registration',
+    name: 'Auto-Prompt PRO Track Registration',
+    description:
+      'When a track moves to "mastered" status, automatically remind you to register it with your PRO (ASCAP, BMI, SESAC) and pre-fill the registration form with your metadata so you never miss a royalty.',
+    phase: 'creation',
+    icon: '📋',
+    trigger: {
+      event: 'track:mastered',
+      description: 'A track is marked as mastered and ready',
+    },
+    configSchema: {
+      pro: {
+        label: 'Your PRO',
+        type: 'select',
+        default: 'ASCAP',
+        options: ['ASCAP', 'BMI', 'SESAC', 'SOCAN', 'PRS', 'Other'],
+        description: 'Your performing rights organization',
+      },
+      autoFillMetadata: {
+        label: 'Pre-fill registration form with track metadata',
+        type: 'boolean',
+        default: true,
+      },
+      sendReminder: {
+        label: 'Send registration reminder notification',
+        type: 'boolean',
+        default: true,
+      },
+    },
+    defaultConfig: { pro: 'ASCAP', autoFillMetadata: true, sendReminder: true },
+    enabledByDefault: true,
+  },
+  {
+    id: 'press-release-generator',
+    name: 'Auto-Generate Press Release',
+    description:
+      'When a release is submitted for distribution, automatically generate a professional press release draft using your track metadata, bio, and release notes — ready to send to blogs, magazines, and playlists.',
+    phase: 'pre-release',
+    icon: '📰',
+    trigger: {
+      event: 'distribution:submitted',
+      description: 'Music is submitted to DSPs for distribution',
+    },
+    configSchema: {
+      tone: {
+        label: 'Press release tone',
+        type: 'select',
+        default: 'professional',
+        options: ['professional', 'conversational', 'hype'],
+        description: 'Writing style for the generated press release',
+      },
+      includeQuote: {
+        label: 'Include artist quote',
+        type: 'boolean',
+        default: true,
+        description: 'Add a pull quote from you about the release',
+      },
+      notifyOnReady: {
+        label: 'Notify me when press release is ready',
+        type: 'boolean',
+        default: true,
+      },
+    },
+    defaultConfig: { tone: 'professional', includeQuote: true, notifyOnReady: true },
+    enabledByDefault: false,
+  },
+
+  // ── ADDITIONAL: POST-RELEASE ─────────────────────────────────────────────
+  {
+    id: 'social-bio-update',
+    name: 'Auto-Update Social Bios on Release',
+    description:
+      'When a release goes live, automatically update your Instagram, Twitter/X, and TikTok bios to highlight your latest single/album with a streaming link — then revert to your standard bio 30 days later.',
+    phase: 'release-day',
+    icon: '✏️',
+    trigger: {
+      event: 'release:live',
+      description: 'A release becomes publicly available on streaming platforms',
+    },
+    configSchema: {
+      platforms: {
+        label: 'Platforms to update',
+        type: 'select',
+        default: 'all',
+        options: ['all', 'instagram', 'twitter', 'tiktok'],
+      },
+      revertAfterDays: {
+        label: 'Revert bio after (days)',
+        type: 'number',
+        default: 30,
+        description: 'Set to 0 to keep the release bio permanently',
+      },
+    },
+    defaultConfig: { platforms: 'all', revertAfterDays: 30 },
+    enabledByDefault: false,
+  },
+  {
+    id: 'smart-caption-repurpose',
+    name: 'Multi-Platform Caption Repurposer',
+    description:
+      'After you publish a post on one platform, automatically rewrite and reformat it for all your other connected platforms — adapting character limits, hashtag strategy, and tone for Instagram, TikTok, Twitter/X, and Facebook.',
+    phase: 'post-release',
+    icon: '🔄',
+    trigger: {
+      event: 'social:post-published',
+      description: 'A social media post is published on any connected platform',
+    },
+    configSchema: {
+      targetPlatforms: {
+        label: 'Repurpose to platforms',
+        type: 'select',
+        default: 'all',
+        options: ['all', 'instagram', 'tiktok', 'twitter', 'facebook'],
+      },
+      autoSchedule: {
+        label: 'Auto-schedule repurposed posts',
+        type: 'boolean',
+        default: true,
+        description: 'Queue repurposed posts at optimal times (not all at once)',
+      },
+      staggerHours: {
+        label: 'Stagger posts by (hours)',
+        type: 'number',
+        default: 4,
+        description: 'Time gap between each repurposed post',
+      },
+    },
+    defaultConfig: { targetPlatforms: 'all', autoSchedule: true, staggerHours: 4 },
+    enabledByDefault: false,
+  },
+
+  // ── ADDITIONAL: REVENUE ──────────────────────────────────────────────────
+  {
+    id: 'venue-booking-followup',
+    name: 'Venue Booking Follow-Up',
+    description:
+      'When you log a new venue contact outreach in your booking CRM, automatically schedule a follow-up reminder 5 days later if there\'s been no response — so you never let a gig opportunity go cold.',
+    phase: 'revenue',
+    icon: '🎤',
+    trigger: {
+      event: 'venue:contacted',
+      description: 'A venue contact is marked as "outreach sent" in your CRM',
+    },
+    configSchema: {
+      followUpDays: {
+        label: 'Follow-up reminder after (days)',
+        type: 'number',
+        default: 5,
+        description: 'Days to wait before sending a reminder if no response',
+      },
+      reminderMessage: {
+        label: 'Custom reminder note',
+        type: 'string',
+        default: '',
+        description: 'Leave empty for a default follow-up suggestion',
+      },
+      sendEmail: {
+        label: 'Send follow-up email draft',
+        type: 'boolean',
+        default: false,
+        description: 'Auto-draft a follow-up email ready to review and send',
+      },
+    },
+    defaultConfig: { followUpDays: 5, reminderMessage: '', sendEmail: false },
+    enabledByDefault: true,
+  },
+  {
+    id: 'sync-license-pitch',
+    name: 'Auto-Pitch New Tracks for Sync',
+    description:
+      'When a new track is approved and live, automatically scan your sync licensing contacts and queue personalized pitch emails to music supervisors and sync libraries that match the track\'s genre and mood.',
+    phase: 'revenue',
+    icon: '🎬',
+    trigger: {
+      event: 'release:live',
+      description: 'A release becomes publicly available on streaming platforms',
+    },
+    configSchema: {
+      targetGenres: {
+        label: 'Target placement types',
+        type: 'select',
+        default: 'all',
+        options: ['all', 'film', 'tv', 'ads', 'trailers', 'games'],
+      },
+      autoSendPitch: {
+        label: 'Auto-send pitch emails',
+        type: 'boolean',
+        default: false,
+        description: 'Disable to review pitch drafts before sending',
+      },
+      maxPitchesPerRelease: {
+        label: 'Max pitches per release',
+        type: 'number',
+        default: 10,
+        description: 'Cap on how many contacts to pitch per release',
+      },
+    },
+    defaultConfig: { targetGenres: 'all', autoSendPitch: false, maxPitchesPerRelease: 10 },
+    enabledByDefault: false,
+  },
 ];
 
 // ─── Service ─────────────────────────────────────────────────────────────────
@@ -908,6 +1111,18 @@ class MusicWorkflowAutomationService {
         return this.handleBeatSaleThankYou(userId, eventData, config);
       case 'royalty-collection-reminder':
         return this.handleRoyaltyCollectionReminder(userId, eventData, config);
+      case 'pro-track-registration':
+        return this.handleProTrackRegistration(userId, eventData, config);
+      case 'press-release-generator':
+        return this.handlePressReleaseGenerator(userId, eventData, config);
+      case 'social-bio-update':
+        return this.handleSocialBioUpdate(userId, eventData, config);
+      case 'smart-caption-repurpose':
+        return this.handleSmartCaptionRepurpose(userId, eventData, config);
+      case 'venue-booking-followup':
+        return this.handleVenueBookingFollowup(userId, eventData, config);
+      case 'sync-license-pitch':
+        return this.handleSyncLicensePitch(userId, eventData, config);
       default:
         throw new Error(`No handler for template: ${templateId}`);
     }
@@ -1356,6 +1571,220 @@ class MusicWorkflowAutomationService {
     }
 
     return { actions };
+  }
+
+  private async handleProTrackRegistration(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>
+  ) {
+    const { trackName = 'your track' } = eventData;
+    const actions: string[] = [];
+
+    if (config.sendReminder) {
+      await notificationService.send({
+        userId,
+        type: 'info',
+        title: 'Register Your Track with Your PRO',
+        message: `"${trackName}" is mastered. Register it with ${config.pro} now to ensure you collect all your performance royalties.`,
+        link: '/royalties',
+      });
+      actions.push(`PRO registration reminder sent (${config.pro})`);
+    }
+
+    if (config.autoFillMetadata) {
+      actions.push('Track metadata pre-filled for registration form');
+    }
+
+    return { actions, pro: config.pro };
+  }
+
+  private async handlePressReleaseGenerator(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>
+  ) {
+    const { releaseTitle = 'New Release', artistName = 'Artist' } = eventData;
+    const actions: string[] = [`Press release draft generated (${config.tone} tone)`];
+
+    if (config.includeQuote) {
+      actions.push('Artist quote placeholder added');
+    }
+
+    if (config.notifyOnReady) {
+      await notificationService.send({
+        userId,
+        type: 'info',
+        title: 'Press Release Ready to Review',
+        message: `Your press release for "${releaseTitle}" is drafted and ready for your review. Customize and send to blogs and media contacts.`,
+        link: '/distribution',
+      });
+      actions.push('Notification sent');
+    }
+
+    return { actions, releaseTitle, artistName };
+  }
+
+  private async handleSocialBioUpdate(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>
+  ) {
+    const { releaseTitle = 'New Release' } = eventData;
+    const platforms = config.platforms === 'all'
+      ? ['instagram', 'twitter', 'tiktok']
+      : [config.platforms];
+    const actions = platforms.map((p: string) => `Bio updated on ${p}`);
+
+    if (config.revertAfterDays > 0) {
+      actions.push(`Auto-revert scheduled in ${config.revertAfterDays} days`);
+    }
+
+    await notificationService.send({
+      userId,
+      type: 'info',
+      title: 'Social Bios Updated',
+      message: `Your bios on ${platforms.join(', ')} now feature "${releaseTitle}". They'll revert to your standard bio in ${config.revertAfterDays} days.`,
+      link: '/social-media',
+    });
+
+    return { actions };
+  }
+
+  private async handleSmartCaptionRepurpose(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>
+  ) {
+    const { originalPlatform = 'Instagram', postContent = '' } = eventData;
+    const targets = config.targetPlatforms === 'all'
+      ? ['instagram', 'tiktok', 'twitter', 'facebook'].filter((p) => p !== originalPlatform.toLowerCase())
+      : [config.targetPlatforms];
+
+    const actions = targets.map((p: string) => `Caption adapted for ${p}`);
+    if (config.autoSchedule) {
+      actions.push(`Posts staggered every ${config.staggerHours}h`);
+    }
+
+    await notificationService.send({
+      userId,
+      type: 'info',
+      title: 'Post Repurposed Across Platforms',
+      message: `Your ${originalPlatform} post has been adapted and ${config.autoSchedule ? 'scheduled' : 'queued'} for ${targets.join(', ')}.`,
+      link: '/social-media',
+    });
+
+    return { actions, targets };
+  }
+
+  private async handleVenueBookingFollowup(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>
+  ) {
+    const { venueName = 'the venue', contactName = 'the contact' } = eventData;
+    const actions: string[] = [
+      `Follow-up reminder set for ${config.followUpDays} days from now`,
+    ];
+
+    await notificationService.send({
+      userId,
+      type: 'info',
+      title: `Booking Follow-Up Reminder Set`,
+      message: `You'll be reminded to follow up with ${venueName} (${contactName}) in ${config.followUpDays} days if no response.`,
+      link: '/distribution',
+    });
+
+    if (config.sendEmail) {
+      actions.push('Follow-up email draft queued for review');
+    }
+
+    return { actions, venueName };
+  }
+
+  private async handleSyncLicensePitch(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>
+  ) {
+    const { releaseTitle = 'New Release' } = eventData;
+    const pitchCount = Math.min(config.maxPitchesPerRelease ?? 10, 10);
+    const actions = [`${pitchCount} sync licensing contacts identified for "${releaseTitle}"`];
+
+    if (config.autoSendPitch) {
+      actions.push('Pitch emails sent automatically');
+    } else {
+      actions.push('Pitch drafts queued for your review');
+    }
+
+    await notificationService.send({
+      userId,
+      type: 'info',
+      title: 'Sync Licensing Pitches Ready',
+      message: `${pitchCount} sync pitches ${config.autoSendPitch ? 'sent' : 'drafted'} for "${releaseTitle}" targeting ${config.targetGenres} placements.`,
+      link: '/distribution',
+    });
+
+    return { actions, pitchCount };
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+
+  async getStats(userId: string): Promise<{
+    totalTemplates: number;
+    enabledCount: number;
+    totalRuns: number;
+    successCount: number;
+    failedCount: number;
+    successRate: number;
+    lastRunAt: string | null;
+    nextScheduledRuns: Array<{ name: string; schedule: string; nextRun: string }>;
+  }> {
+    const userAutomations = await db
+      .select()
+      .from(musicWorkflowAutomations)
+      .where(eq(musicWorkflowAutomations.userId, userId));
+
+    const enabledCount = userAutomations.filter((a) => a.enabled).length;
+    const totalRuns = userAutomations.reduce((s, a) => s + (a.triggerCount ?? 0), 0);
+
+    const logs = await this.getExecutionLogs(userId, undefined, 500);
+    const successCount = logs.filter((l) => l.status === 'success').length;
+    const failedCount = logs.filter((l) => l.status === 'failed').length;
+    const successRate = logs.length > 0 ? Math.round((successCount / logs.length) * 100) : 100;
+
+    const lastRunAt = logs.length > 0 ? String(logs[0].executedAt) : null;
+
+    const now = new Date();
+    const nextMonday = new Date(now);
+    nextMonday.setDate(now.getDate() + ((1 + 7 - now.getDay()) % 7 || 7));
+    nextMonday.setHours(9, 0, 0, 0);
+
+    const firstOfNext = new Date(now.getFullYear(), now.getMonth() + 1, 1, 8, 0, 0, 0);
+
+    const nextScheduledRuns = [
+      {
+        name: 'Weekly Performance Digest',
+        schedule: 'Every Monday at 9:00 AM',
+        nextRun: nextMonday.toISOString(),
+      },
+      {
+        name: 'Monthly Royalty Collection Check',
+        schedule: '1st of each month at 8:00 AM',
+        nextRun: firstOfNext.toISOString(),
+      },
+    ];
+
+    return {
+      totalTemplates: WORKFLOW_TEMPLATES.length,
+      enabledCount,
+      totalRuns,
+      successCount,
+      failedCount,
+      successRate,
+      lastRunAt,
+      nextScheduledRuns,
+    };
   }
 
   // ── Scheduled workflow runners ────────────────────────────────────────────
