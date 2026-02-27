@@ -811,8 +811,23 @@ router.post('/subscribe/:tierId', async (req, res) => {
       await db.update(users).set({ stripeCustomerId }).where(eq(users.id, user.id));
     }
 
-    if (!(tier as any).stripePriceId) {
-      return res.status(400).json({ error: 'Payment not configured for this membership tier. The artist has not set up billing for this tier yet.' });
+    let stripePriceId = (tier as any).stripePriceId as string | null | undefined;
+    if (!stripePriceId) {
+      const price = await stripe.prices.create({
+        unit_amount: tier.priceCents,
+        currency: tier.currency || 'usd',
+        recurring: { interval: tier.interval as 'month' | 'year' },
+        product_data: {
+          name: `${storefront?.name || 'Artist'} - ${tier.name}`,
+          description: tier.description || undefined,
+        },
+        metadata: {
+          storefrontId: tier.storefrontId,
+          tierName: tier.name,
+        },
+      });
+      stripePriceId = price.id;
+      await db.update(membershipTiers).set({ stripePriceId }).where(eq(membershipTiers.id, tierId));
     }
 
     const appUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
@@ -822,7 +837,7 @@ router.post('/subscribe/:tierId', async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       mode: 'subscription',
-      line_items: [{ price: (tier as any).stripePriceId, quantity: 1 }],
+      line_items: [{ price: stripePriceId, quantity: 1 }],
       success_url: `${returnBase}?membership=success`,
       cancel_url: `${returnBase}?membership=canceled`,
       metadata: {
