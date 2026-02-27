@@ -92,7 +92,46 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
       logger.error('[Stripe] Failed to update storefront orders:', storefrontError);
     }
   }
-  
+
+  const { type: sessionType, customerId: memberCustomerId, tierId: memberTierId, storefrontId: memberStorefrontId } = session.metadata || {};
+  if (sessionType === 'storefront_membership' && memberCustomerId && memberTierId) {
+    try {
+      const { customerMemberships } = await import('@shared/schema');
+      const { db } = await import('../../db');
+      const { eq, and } = await import('drizzle-orm');
+
+      const subscriptionId = session.subscription as string | undefined;
+
+      const existing = await db
+        .select({ id: customerMemberships.id })
+        .from(customerMemberships)
+        .where(
+          and(
+            eq(customerMemberships.customerId, memberCustomerId),
+            eq(customerMemberships.tierId, memberTierId),
+            eq(customerMemberships.status, 'active')
+          )
+        )
+        .limit(1);
+
+      if (!existing[0]) {
+        await db.insert(customerMemberships).values({
+          customerId: memberCustomerId,
+          tierId: memberTierId,
+          storefrontId: memberStorefrontId || '',
+          stripeSubscriptionId: subscriptionId || null,
+          status: 'active',
+        });
+
+        logger.info(`[Stripe] Storefront membership created: tier=${memberTierId}, customer=${memberCustomerId}`);
+      } else {
+        logger.info(`[Stripe] Storefront membership already active for tier=${memberTierId}, customer=${memberCustomerId}, skipping`);
+      }
+    } catch (membershipError) {
+      logger.error('[Stripe] Failed to activate storefront membership:', membershipError);
+    }
+  }
+
   return { success: true, message: 'Checkout session processed' };
 });
 

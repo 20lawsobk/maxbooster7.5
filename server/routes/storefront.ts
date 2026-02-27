@@ -18,6 +18,8 @@ import {
   storefronts,
   users,
   bogoPromotions,
+  membershipTiers,
+  customerMemberships,
 } from '@shared/schema';
 import Stripe from 'stripe';
 import { getBaseUrl } from '../config/defaults';
@@ -756,33 +758,86 @@ router.post('/subscribe/:tierId', async (req, res) => {
     }
 
     const { tierId } = req.params;
+    const user = req.user!;
 
-    const result = await storefrontService.subscribeMembershipTier(req.user!.id, tierId);
+    const tierResults = await db
+      .select({ tier: membershipTiers, storefront: storefronts })
+      .from(membershipTiers)
+      .leftJoin(storefronts, eq(membershipTiers.storefrontId, storefronts.id))
+      .where(eq(membershipTiers.id, tierId))
+      .limit(1);
 
-    res.status(201).json(result);
+    const tier = tierResults[0]?.tier;
+    const storefront = tierResults[0]?.storefront;
+
+    if (!tier) {
+      return res.status(404).json({ error: 'Membership tier not found' });
+    }
+
+    if (!tier.isActive) {
+      return res.status(400).json({ error: 'This membership tier is not currently available' });
+    }
+
+    const existingMemberships = await db
+      .select()
+      .from(customerMemberships)
+      .where(
+        and(
+          eq(customerMemberships.customerId, user.id),
+          eq(customerMemberships.tierId, tierId),
+          eq(customerMemberships.status, 'active')
+        )
+      )
+      .limit(1);
+
+    if (existingMemberships[0]) {
+      return res.status(400).json({ error: 'You already have an active membership to this tier' });
+    }
+
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey?.startsWith('sk_')) {
+      return res.status(503).json({ error: 'Payment service unavailable. Please try again later.' });
+    }
+
+    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as any });
+
+    let stripeCustomerId = (user as any).stripeCustomerId as string | undefined;
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { userId: user.id },
+      });
+      stripeCustomerId = customer.id;
+      await db.update(users).set({ stripeCustomerId }).where(eq(users.id, user.id));
+    }
+
+    if (!(tier as any).stripePriceId) {
+      return res.status(400).json({ error: 'Payment not configured for this membership tier. The artist has not set up billing for this tier yet.' });
+    }
+
+    const appUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
+    const storefrontSlug = storefront?.slug || '';
+    const returnBase = `${appUrl}/storefront/${storefrontSlug}`;
+
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      mode: 'subscription',
+      line_items: [{ price: (tier as any).stripePriceId, quantity: 1 }],
+      success_url: `${returnBase}?membership=success`,
+      cancel_url: `${returnBase}?membership=canceled`,
+      metadata: {
+        type: 'storefront_membership',
+        customerId: user.id,
+        tierId,
+        storefrontId: tier.storefrontId,
+      },
+    });
+
+    res.json({ checkoutUrl: session.url });
   } catch (error: unknown) {
-    logger.error('Error subscribing to membership tier:', error);
+    logger.error('Error creating membership checkout session:', error);
     const errMsg = getErrorMessage(error);
-
-    if (errMsg === 'Membership tier not found') {
-      return res.status(404).json({ error: errMsg });
-    }
-
-    if (
-      errMsg.includes('not currently available') ||
-      errMsg.includes('at maximum capacity') ||
-      errMsg.includes('already have an active membership')
-    ) {
-      return res.status(400).json({ error: errMsg });
-    }
-
-    if (errMsg.includes('Stripe')) {
-      return res
-        .status(503)
-        .json({ error: 'Payment service unavailable. Please try again later.' });
-    }
-
-    res.status(500).json({ error: errMsg || 'Failed to subscribe to membership tier' });
+    res.status(500).json({ error: errMsg || 'Failed to initiate subscription' });
   }
 });
 

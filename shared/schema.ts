@@ -412,7 +412,10 @@ export const membershipTiers = pgTable("membership_tiers", {
   interval: text("interval").notNull(),
   benefits: jsonb("benefits"),
   maxSubscribers: integer("max_subscribers"),
+  currentSubscribers: integer("current_subscribers").default(0),
   isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  stripePriceId: text("stripe_price_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

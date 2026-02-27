@@ -94,6 +94,21 @@ All production credentials are configured. Key variables:
 - Yearly: `price_1SEWW5GIdnrORdO6N8PyilTm` ($468/yr)
 - Lifetime: `price_1SEWW5GIdnrORdO6CL86RYTb` ($699)
 
+## Storefront Membership Subscription Flow
+
+Fan-facing subscription via Stripe Checkout:
+1. Fan clicks "Subscribe Now" on a storefront membership tier
+2. `POST /api/storefront/subscribe/:tierId` creates a Stripe Checkout Session (mode: subscription)
+3. Fan is redirected to Stripe-hosted payment page
+4. On success, Stripe fires `checkout.session.completed` webhook
+5. Webhook (`server/routes/webhooks/stripe.ts`) detects `metadata.type === 'storefront_membership'` and creates the `customer_memberships` record
+6. Fan is redirected back to the storefront with `?membership=success`
+
+Artist-side tier creation:
+- Creating a membership tier in StorefrontBuilder automatically creates a Stripe Price via `storefrontService.createMembershipTier`
+- The `stripe_price_id` is stored on `membership_tiers` table (added in schema alongside `current_subscribers`, `sort_order`)
+- Cancel flow: `storefrontService.cancelMembership` sets `cancel_at_period_end: true` on the Stripe subscription
+
 ## Distribution Platforms
 
 97 platforms seeded including Spotify, Apple Music, TikTok, Instagram, YouTube, Amazon Music, Deezer, Tidal, Pandora, SoundCloud, and 87 more global platforms.

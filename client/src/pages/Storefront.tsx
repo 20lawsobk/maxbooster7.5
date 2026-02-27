@@ -177,6 +177,7 @@ export default function Storefront() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const checkoutStatus = params.get('checkout');
+    const membershipStatus = params.get('membership');
     if (checkoutStatus === 'success') {
       toast({
         title: 'Purchase Complete!',
@@ -188,6 +189,19 @@ export default function Storefront() {
       toast({
         title: 'Checkout Canceled',
         description: 'Your checkout was canceled. Your cart items are still available.',
+        variant: 'destructive',
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (membershipStatus === 'success') {
+      toast({
+        title: 'Membership Activated!',
+        description: 'Welcome! Your membership subscription is now active.',
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (membershipStatus === 'canceled') {
+      toast({
+        title: 'Subscription Canceled',
+        description: 'You did not complete the membership subscription.',
         variant: 'destructive',
       });
       window.history.replaceState({}, '', window.location.pathname);
