@@ -131,6 +131,21 @@ Artist-side tier creation:
 - **Stripe auto-price**: Subscribe route auto-creates a Stripe price if `stripePriceId` is missing, then persists it.
 - **Redis session fallback**: Production no longer exits on Redis failure — falls back to memory store with a warning.
 
+## Auth System Fixes
+
+### Session Security
+- **Session fixation prevention**: All 6 login handlers (register, login, demo login, Google OAuth, post-payment existing user, post-payment new user) now call `req.session.regenerate()` before setting `req.session.userId`. This creates a new session ID on every login, preventing session fixation attacks.
+
+### JWT Bearer Token System (for mobile API clients)
+- **Added `jwt_tokens` DB table**: Stores issued access tokens with `userId`, `accessToken`, `expiresAt`, `revoked`, `revokedAt`, `revokedReason`
+- **Added `refresh_tokens` DB table**: Stores refresh tokens with `userId`, `token` (unique), `expiresAt`, `revoked`, `revokedAt`, `revokedReason`
+- **Implemented 8 missing storage methods** in `DatabaseStorage`: `createJWTToken`, `verifyJWTToken`, `revokeJWTToken`, `revokeAllJWTTokensForUser`, `createRefreshToken`, `getRefreshToken`, `revokeRefreshToken`, `revokeAllRefreshTokensForUser` — these were called by `jwtAuthService.ts` but didn't exist, causing runtime crashes on any Bearer token request
+- **JWT token revocation on logout**: `POST /api/auth/logout` now revokes all JWT tokens for the user and clears the session cookie
+
+### Session Heartbeat
+- **Added `POST /api/auth/refresh-token` endpoint**: Validates the session and returns `{ success: true, expiresAt }`. Used by the frontend to keep sessions alive.
+- **Mounted `TokenRefreshHandler` in App.tsx**: Pings `/api/auth/refresh-token` every 5 minutes while a user is logged in, and on tab focus changes. Sessions no longer silently expire while the app is open.
+
 ## Database
 
 Uses Drizzle ORM with PostgreSQL. Schema in `shared/schema.ts`.  

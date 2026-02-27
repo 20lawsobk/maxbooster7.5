@@ -5021,3 +5021,43 @@ export const customWorkflows = pgTable("custom_workflows", {
 export const insertCustomWorkflowSchema = createInsertSchema(customWorkflows).omit({ id: true, createdAt: true, updatedAt: true });
 export type CustomWorkflow = typeof customWorkflows.$inferSelect;
 export type InsertCustomWorkflow = typeof customWorkflows.$inferInsert;
+
+// ============================================================================
+// JWT & REFRESH TOKENS (for Bearer-token / mobile API auth)
+// ============================================================================
+
+export const jwtTokens = pgTable("jwt_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  accessToken: text("access_token").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  revoked: boolean("revoked").default(false),
+  revokedAt: timestamp("revoked_at"),
+  revokedReason: text("revoked_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => [
+  index("jwt_tokens_user_id_idx").on(t.userId),
+  index("jwt_tokens_revoked_idx").on(t.revoked),
+]);
+
+export const insertJwtTokenSchema = createInsertSchema(jwtTokens).omit({ id: true, createdAt: true });
+export type JwtToken = typeof jwtTokens.$inferSelect;
+export type InsertJWTToken = typeof jwtTokens.$inferInsert;
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  revoked: boolean("revoked").default(false),
+  revokedAt: timestamp("revoked_at"),
+  revokedReason: text("revoked_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => [
+  index("refresh_tokens_user_id_idx").on(t.userId),
+  index("refresh_tokens_token_idx").on(t.token),
+]);
+
+export const insertRefreshTokenSchema = createInsertSchema(refreshTokens).omit({ id: true, createdAt: true });
+export type RefreshToken = typeof refreshTokens.$inferSelect;
+export type InsertRefreshToken = typeof refreshTokens.$inferInsert;

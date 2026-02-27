@@ -12,6 +12,7 @@ import { AIAssistantPersonalized } from '@/components/support/AIAssistantPersona
 import { InstallBanner } from '@/components/pwa/InstallBanner';
 import { DeepLinkHandler } from '@/components/DeepLinkHandler';
 import { OAuthCallbackHandler } from '@/components/OAuthCallbackHandler';
+import TokenRefreshHandler from '@/components/auth/TokenRefreshHandler';
 import { UndoProvider } from '@/contexts/UndoContext';
 import { UndoToast } from '@/components/undo/UndoToast';
 import { ShortcutProvider } from '@/contexts/ShortcutContext';
@@ -309,6 +310,7 @@ function App() {
         <InstallBanner />
         <OAuthCallbackHandler />
         <DeepLinkHandler />
+        <TokenRefreshHandler refreshInterval={5 * 60 * 1000} silentRefresh={true} />
         <AIAssistantManager />
         <NPSSurveyManager />
         <UndoToast />

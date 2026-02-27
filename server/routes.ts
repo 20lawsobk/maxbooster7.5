@@ -27,6 +27,7 @@ import { upload } from "./middleware/uploadHandler.ts";
 import { logger } from './logger.js';
 import { achievementService } from './services/achievementService.ts';
 import { notificationService } from './services/notificationService.ts';
+import { jwtAuthService } from './services/jwtAuthService.ts';
 
 const log = (msg: string) => logger.info(msg);
 
@@ -217,18 +218,30 @@ export async function registerRoutes(
         lastName: lastName || ""
       });
 
-      req.session.userId = user.id;
       const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
 
-      emailService.sendWelcomeEmail({
-        firstName: firstName || username || 'there',
-        email,
-      }).catch((err: unknown) => logger.info('Welcome email failed (non-blocking):', err));
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          logger.error('[Register] Session regeneration failed:', regenerateErr);
+          return res.status(500).json({ message: 'Registration failed - session error' });
+        }
+        req.session.userId = user.id;
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            logger.error('[Register] Session save failed:', saveErr);
+          }
 
-      notificationService.sendAdminNewUserNotification(email, user.id)
-        .catch((err: unknown) => logger.info('Admin new-user notification failed (non-blocking):', err));
+          emailService.sendWelcomeEmail({
+            firstName: firstName || username || 'there',
+            email,
+          }).catch((err: unknown) => logger.info('Welcome email failed (non-blocking):', err));
 
-      return res.json(safeUser);
+          notificationService.sendAdminNewUserNotification(email, user.id)
+            .catch((err: unknown) => logger.info('Admin new-user notification failed (non-blocking):', err));
+
+          return res.json(safeUser);
+        });
+      });
     } catch (error) {
       logger.error("Registration error:", error);
       return res.status(500).json({ message: "Registration failed" });
@@ -291,28 +304,35 @@ export async function registerRoutes(
         }
       }
 
-      req.session.userId = user.id;
-
-      req.session.save((err) => {
-        if (err) {
-          logger.error('[Login] Session save failed:', err);
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          logger.error('[Login] Session regeneration failed:', regenerateErr);
           return res.status(500).json({ message: "Login failed - session error" });
         }
 
-        logger.info('[Login] SUCCESS for userId:', user.id);
+        req.session.userId = user.id;
 
-        achievementService.updateStreak(user.id, 'login').catch((e: unknown) =>
-          logger.warn('[Login] Failed to update login streak:', e)
-        );
+        req.session.save((err) => {
+          if (err) {
+            logger.error('[Login] Session save failed:', err);
+            return res.status(500).json({ message: "Login failed - session error" });
+          }
 
-        notificationService.sendLoginSecurityNotification(
-          user.id,
-          req.ip || undefined,
-          req.headers['user-agent'] || undefined
-        ).catch(() => {});
+          logger.info('[Login] SUCCESS for userId:', user.id);
 
-        const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
-        return res.json(safeUser);
+          achievementService.updateStreak(user.id, 'login').catch((e: unknown) =>
+            logger.warn('[Login] Failed to update login streak:', e)
+          );
+
+          notificationService.sendLoginSecurityNotification(
+            user.id,
+            req.ip || undefined,
+            req.headers['user-agent'] || undefined
+          ).catch(() => {});
+
+          const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
+          return res.json(safeUser);
+        });
       });
     } catch (error) {
       logger.error("Login error:", error);
@@ -322,12 +342,53 @@ export async function registerRoutes(
 
   // Auth: Logout
   app.post("/api/auth/logout", (req: Request, res: Response) => {
+    const userId = req.session?.userId;
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ message: "Logout failed" });
       }
+      if (userId) {
+        jwtAuthService.revokeAllUserTokens(userId, 'User logout').catch(() => {});
+      }
+      res.clearCookie('connect.sid');
       res.json({ message: "Logged out successfully" });
     });
+  });
+
+  // Auth: Session refresh heartbeat (keeps session alive, renews CSRF)
+  app.post("/api/auth/refresh-token", async (req: Request, res: Response) => {
+    const userId = req.session?.userId || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        action: 'reauth_required',
+        error: 'session_expired',
+        message: 'Session expired. Please sign in again.',
+      });
+    }
+
+    try {
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          action: 'reauth_required',
+          error: 'user_not_found',
+          message: 'User account not found.',
+        });
+      }
+
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      return res.json({
+        success: true,
+        expiresAt,
+        message: 'Session refreshed',
+      });
+    } catch (error) {
+      logger.error('[Auth] refresh-token error:', error);
+      return res.status(500).json({ success: false, message: 'Refresh failed' });
+    }
   });
 
   // Auth: Onboarding status
@@ -1255,18 +1316,25 @@ export async function registerRoutes(
         if (updated) demoUser = updated;
       }
       
-      req.session.userId = demoUser.id;
-
-      req.session.save((saveErr) => {
-        if (saveErr) {
-          logger.error('[Demo] Session save failed:', saveErr);
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          logger.error('[Demo] Session regeneration failed:', regenerateErr);
           return res.status(500).json({ message: "Demo login failed - session error" });
         }
 
-        logger.info('[Demo] SUCCESS for demoUser:', demoUser.id);
+        req.session.userId = demoUser.id;
 
-        const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = demoUser as any;
-        return res.json({ ...safeUser, isDemo: true });
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            logger.error('[Demo] Session save failed:', saveErr);
+            return res.status(500).json({ message: "Demo login failed - session error" });
+          }
+
+          logger.info('[Demo] SUCCESS for demoUser:', demoUser.id);
+
+          const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = demoUser as any;
+          return res.json({ ...safeUser, isDemo: true });
+        });
       });
     } catch (error) {
       logger.error("Demo login error:", error);
@@ -1481,15 +1549,21 @@ export async function registerRoutes(
         logger.info(`[Google OAuth] Created new user: ${user.email}`);
       }
 
-      // Log the user in using session
-      req.session.userId = user.id;
-      req.session.save((err) => {
-        if (err) {
-          logger.error('[Google OAuth] Session save failed:', err);
+      // Log the user in using session (regenerate prevents session fixation)
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          logger.error('[Google OAuth] Session regeneration failed:', regenerateErr);
           return res.redirect('/login?error=login_failed');
         }
-        logger.info(`[Google OAuth] User logged in: ${user.email}`);
-        return res.redirect('/dashboard');
+        req.session.userId = user.id;
+        req.session.save((err) => {
+          if (err) {
+            logger.error('[Google OAuth] Session save failed:', err);
+            return res.redirect('/login?error=login_failed');
+          }
+          logger.info(`[Google OAuth] User logged in: ${user.email}`);
+          return res.redirect('/dashboard');
+        });
       });
     } catch (err) {
       logger.error('[Google OAuth] Error:', err);
@@ -3739,10 +3813,23 @@ export async function registerRoutes(
       // Check if user already exists (prevent duplicate registration)
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
-        // User already exists - log them in
-        req.session.userId = existingUser.id;
-        const { password: _, ...userWithoutPassword } = existingUser;
-        return res.json({ user: userWithoutPassword, message: 'Account already exists. Logged in.' });
+        // User already exists - log them in (regenerate prevents session fixation)
+        return new Promise<void>((resolve) => {
+          req.session.regenerate((regenerateErr) => {
+            if (regenerateErr) {
+              logger.error('[PostPayment] Session regeneration failed:', regenerateErr);
+              res.status(500).json({ error: 'Login failed - session error' });
+              return resolve();
+            }
+            req.session.userId = existingUser.id;
+            req.session.save(() => {
+              const { password: _, ...userWithoutPassword } = existingUser;
+              res.json({ user: userWithoutPassword, message: 'Account already exists. Logged in.' });
+              resolve();
+            });
+          });
+        });
+        return;
       }
 
       const existingUsername = await storage.getUserByUsername(username);
@@ -3771,11 +3858,19 @@ export async function registerRoutes(
         lastName: session.metadata?.lastName || ""
       });
 
-      // Log the user in
-      req.session.userId = user.id;
-
+      // Log the user in (regenerate prevents session fixation)
       const { password: _, ...userWithoutPassword } = user;
-      return res.json({ user: userWithoutPassword, message: 'Account created successfully' });
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          logger.error('[PostPayment] Session regeneration failed:', regenerateErr);
+          return res.status(500).json({ error: 'Account created but login failed - please sign in.' });
+        }
+        req.session.userId = user.id;
+        req.session.save(() => {
+          return res.json({ user: userWithoutPassword, message: 'Account created successfully' });
+        });
+      });
+      return;
     } catch (error: any) {
       logger.info('Error completing registration after payment:', error);
 

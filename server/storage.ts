@@ -18,6 +18,8 @@ import {
   distroTracks,
   instantPayouts,
   hyperFollowPages,
+  jwtTokens,
+  refreshTokens,
   listings,
   sessions,
   collabSnapshots,
@@ -61,6 +63,14 @@ export interface IStorage {
   getProjectsByUserId(userId: string): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
   getReleasesByUserId(userId: string): Promise<Release[]>;
+  createJWTToken(data: any): Promise<any>;
+  verifyJWTToken(jti: string): Promise<boolean>;
+  revokeJWTToken(id: string, reason: string): Promise<void>;
+  revokeAllJWTTokensForUser(userId: string, reason: string): Promise<void>;
+  createRefreshToken(data: any): Promise<any>;
+  getRefreshToken(token: string): Promise<any>;
+  revokeRefreshToken(id: string, reason: string): Promise<void>;
+  revokeAllRefreshTokensForUser(userId: string, reason: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1536,6 +1546,65 @@ export class DatabaseStorage implements IStorage {
         await db.delete(collabSnapshots).where(eq(collabSnapshots.id, id));
       }
     }
+  }
+
+  async createJWTToken(data: any): Promise<any> {
+    const [token] = await db.insert(jwtTokens).values(data).returning();
+    return token;
+  }
+
+  async verifyJWTToken(jti: string): Promise<boolean> {
+    const [token] = await db
+      .select({ id: jwtTokens.id, revoked: jwtTokens.revoked, expiresAt: jwtTokens.expiresAt })
+      .from(jwtTokens)
+      .where(eq(jwtTokens.id, jti))
+      .limit(1);
+    if (!token) return false;
+    if (token.revoked) return false;
+    if (token.expiresAt < new Date()) return false;
+    return true;
+  }
+
+  async revokeJWTToken(id: string, reason: string): Promise<void> {
+    await db
+      .update(jwtTokens)
+      .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
+      .where(eq(jwtTokens.id, id));
+  }
+
+  async revokeAllJWTTokensForUser(userId: string, reason: string): Promise<void> {
+    await db
+      .update(jwtTokens)
+      .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
+      .where(and(eq(jwtTokens.userId, userId), eq(jwtTokens.revoked, false)));
+  }
+
+  async createRefreshToken(data: any): Promise<any> {
+    const [token] = await db.insert(refreshTokens).values(data).returning();
+    return token;
+  }
+
+  async getRefreshToken(token: string): Promise<any> {
+    const [rt] = await db
+      .select()
+      .from(refreshTokens)
+      .where(eq(refreshTokens.token, token))
+      .limit(1);
+    return rt || null;
+  }
+
+  async revokeRefreshToken(id: string, reason: string): Promise<void> {
+    await db
+      .update(refreshTokens)
+      .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
+      .where(eq(refreshTokens.id, id));
+  }
+
+  async revokeAllRefreshTokensForUser(userId: string, reason: string): Promise<void> {
+    await db
+      .update(refreshTokens)
+      .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
+      .where(and(eq(refreshTokens.userId, userId), eq(refreshTokens.revoked, false)));
   }
 }
 
