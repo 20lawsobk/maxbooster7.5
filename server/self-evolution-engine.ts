@@ -317,19 +317,19 @@ export class SelfEvolutionEngine extends EventEmitter {
       // Phase 7: Learn from results and improve
       await this.learnFromCycle(cycleId);
 
-      this.lastCycleAt = new Date();
       this.lastCycleError = null;
-      this.totalCyclesRun++;
-      logger.info(`✅ Evolution cycle ${cycleId} completed successfully (total: ${this.totalCyclesRun})`);
+      logger.info(`✅ Evolution cycle ${cycleId} completed successfully (total: ${this.totalCyclesRun + 1})`);
       this.emit('cycleCompleted', { cycleId, changes: changes.length, upgrades: deployedCount });
 
     } catch (error) {
-      this.lastCycleAt = new Date();
       this.lastCycleError = (error as Error).message || String(error);
-      this.totalCyclesRun++;
       logger.error(`❌ Evolution cycle ${cycleId} failed:`, error);
       this.emit('cycleFailed', { cycleId, error });
     } finally {
+      this.lastCycleAt = new Date();
+      this.totalCyclesRun++;
+      this.pruneSeenIds();
+      this.saveStateToDisk().catch(e => logger.warn('Could not save state:', e));
       this.isCycleRunning = false;
     }
   }
@@ -926,10 +926,18 @@ export const ${this.camelCase(techName)}Adoption = {
         }
       }
 
-      const allowedDirs = ['server/enhancements/', 'server/compliance/', 'server/technology/'];
-      const isInAllowedDir = allowedDirs.some(dir => filePath.startsWith(dir));
+      if (filePath.includes('..') || path.isAbsolute(filePath)) {
+        return { passed: false, reason: `File path "${filePath}" contains traversal sequences or is absolute` };
+      }
+      const allowedRoots = [
+        path.resolve(process.cwd(), 'server', 'enhancements'),
+        path.resolve(process.cwd(), 'server', 'compliance'),
+        path.resolve(process.cwd(), 'server', 'technology'),
+      ];
+      const resolvedPath = path.resolve(process.cwd(), filePath);
+      const isInAllowedDir = allowedRoots.some(root => resolvedPath.startsWith(root + path.sep) || resolvedPath === root);
       if (!isInAllowedDir) {
-        return { passed: false, reason: `File path "${filePath}" is outside allowed deployment directories` };
+        return { passed: false, reason: `Resolved path "${resolvedPath}" is outside allowed deployment directories` };
       }
     }
 
