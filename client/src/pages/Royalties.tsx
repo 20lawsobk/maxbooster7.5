@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -195,6 +195,26 @@ export default function Royalties() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
   const { invalidateOnRevenueChange } = useAnalyticsInvalidation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const setupStatus = params.get('setup');
+    if (setupStatus === 'complete') {
+      toast({
+        title: 'Bank Account Connected!',
+        description: 'Your bank account has been successfully connected for payouts.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (setupStatus === 'refresh') {
+      toast({
+        title: 'Connection Incomplete',
+        description: 'Your bank account setup was not completed. Please try again.',
+        variant: 'destructive',
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [toast]);
 
   const [selectedPeriod, setSelectedPeriod] = useState('current');
   const [selectedPlatform, setSelectedPlatform] = useState('all');

@@ -3170,14 +3170,15 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
-        success: true,
-        url: '/settings?tab=payments',
-        message: 'Please complete Stripe connection in settings',
-      });
+      const { instantPayoutService } = await import("./services/instantPayoutService");
+      const baseUrl = getBaseUrl();
+      const refreshUrl = `${baseUrl}/royalties?setup=refresh`;
+      const returnUrl = `${baseUrl}/royalties?setup=complete`;
+      const url = await instantPayoutService.createAccountLink(req.user.id, refreshUrl, returnUrl);
+      return res.json({ success: true, url });
     } catch (error) {
       logger.info("Connect Stripe error:", error);
-      return res.status(500).json({ message: "Failed to connect Stripe" });
+      return res.status(500).json({ message: "Failed to connect bank account. Please try again." });
     }
   });
 
