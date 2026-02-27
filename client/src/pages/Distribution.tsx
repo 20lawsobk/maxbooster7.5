@@ -792,35 +792,6 @@ function SyncLicensingContent() {
   );
 }
 
-function getPlatformColor(slug: string) {
-  const colorMap: Record<string, string> = {
-    spotify: '#1DB954',
-    'apple-music': '#FA243C',
-    'youtube-music': '#FF0000',
-    'amazon-music': '#FF9900',
-    'amazon-mp3': '#FF9900',
-    tidal: '#000000',
-    deezer: '#FEAA2D',
-    tiktok: '#000000',
-    instagram: '#E4405F',
-    facebook: '#1877F2',
-    pandora: '#005483',
-    iheartradio: '#C6002B',
-    soundcloud: '#FF3300',
-    napster: '#000000',
-    qobuz: '#000000',
-    audiomack: '#FFA500',
-    jiosaavn: '#FF6B35',
-    gaana: '#FF6B35',
-    melon: '#00C73C',
-    anghami: '#A74CD5',
-    boomplay: '#FF6B35',
-    'yandex-music': '#FFCC00',
-    'netease-cloud-music': '#FF6B35',
-  };
-  return colorMap[slug] || '#666666';
-}
-
 const GENRES = [
   'Pop',
   'Rock',
