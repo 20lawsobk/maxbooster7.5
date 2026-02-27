@@ -174,8 +174,8 @@ export class SelfEvolutionEngine extends EventEmitter {
       return {
         success: true,
         cycleId,
-        changesDetected: status.totalChangesDetected,
-        upgradesDeployed: status.totalUpgradesDeployed,
+        changesDetected: status.changesDetected,
+        upgradesDeployed: status.upgradesDeployed,
       };
     } catch (error) {
       logger.error(`❌ Manual evolution cycle ${cycleId} failed:`, error);
