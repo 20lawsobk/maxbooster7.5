@@ -332,3 +332,12 @@ The Advertisement and Autopilot systems use **custom in-house AI models + connec
 - Bug 2 (MEDIUM): Moved compileGate call into runUpgradeTests so TypeScript compile errors are caught during the test phase before backup files are created.
 - Bug 3 (MEDIUM): Fixed rollback threshold from responseTime > 500ms to responseTime > 3000ms. The 500ms threshold matched the warning-level threshold and would trigger unnecessary rollbacks under any momentary load.
 - Bug 4 (LOW): Fixed getUpgradeHistory() to convert Map<string,string> to a plain object with Object.fromEntries(). The API previously returned {} for all generatedCode fields.
+
+### Autonomous Mode Audit — 4 Root Issues Fixed (Complete)
+- Bug 1 (CRITICAL): Kill switch registerSystem() was never called by any of the 9 autonomous systems — killAll() fired but had nothing to stop. Fixed by wiring all 9 systems in server/index.ts startup block after each module loads, using their actual stop/start methods.
+- Bug 2 (MEDIUM): .ts import extensions in server/autonomous-autopilot.ts (platform-apis.ts, custom-ai-engine.ts) — invalid in ESM. Fixed to .js extensions.
+- Bug 3 (MEDIUM): autoPostingService V1 used a bare setInterval with no stored reference — impossible to stop. Added paused flag + pause()/resume() methods that the interval checks. autoPostingServiceV2 already had workerInterval — added public pause()/resume() methods wrapping clearInterval/startWorker.
+- Bug 4 (LOW): AdminAutonomy.tsx had no kill switch UI at all. Added Emergency Kill Switch panel as the first card on the page: shows global killed state, Kill All (red) / Resume All (green) buttons, per-system status grid with individual Stop/Start buttons, and a recent audit log from /api/kill-switch/status.
+
+**9 Kill Switch Registrations (all active on server start):**
+autonomous-service, automation-system, autonomous-updates, autonomous-autopilot, autopilot-engine, auto-posting-v1, auto-posting-v2, auto-post-generator, autopilot-publisher

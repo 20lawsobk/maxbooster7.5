@@ -41,6 +41,7 @@ router.get('/status', requireAdmin, (req: Request, res: Response) => {
         lastResumeTime: state.lastResumeTime,
         killReason: state.killReason,
         killedBy: state.killedBy,
+        auditLog: state.auditLog.slice(-20),
       },
     });
   } catch (error: any) {

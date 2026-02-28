@@ -48,10 +48,20 @@ export interface PostResult {
 class AutoPostingService {
   private postQueue: Map<string, ScheduledPost> = new Map();
   private isProcessing: boolean = false;
+  private paused: boolean = false;
 
   constructor() {
-    // Start queue processor
     this.startQueueProcessor();
+  }
+
+  pause(): void {
+    this.paused = true;
+    logger.info('[AutoPostingService V1] Paused by kill switch');
+  }
+
+  resume(): void {
+    this.paused = false;
+    logger.info('[AutoPostingService V1] Resumed');
   }
 
   /**
@@ -630,7 +640,7 @@ class AutoPostingService {
    */
   private startQueueProcessor() {
     setInterval(async () => {
-      if (this.isProcessing) return;
+      if (this.paused || this.isProcessing) return;
 
       this.isProcessing = true;
 

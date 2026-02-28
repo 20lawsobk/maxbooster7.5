@@ -605,6 +605,10 @@ app.use((req, res, next) => {
           if (svc && typeof svc.getStatus === 'function') {
             const status = svc.getStatus();
             logger.info(`✅ [Autonomy] Autonomous Service initialized - Running: ${status.isRunning}`);
+            killSwitch.registerSystem('autonomous-service', {
+              kill: () => { if (typeof svc.stopAutonomousOperations === 'function') svc.stopAutonomousOperations(); },
+              resume: () => { if (typeof svc.startAutonomousOperations === 'function') svc.startAutonomousOperations(); },
+            });
           }
         } catch (e: any) {
           logger.warn(`⚠️ [Autonomy] Autonomous Service: ${e.message}`);
@@ -617,6 +621,10 @@ app.use((req, res, next) => {
           if (AutomationSystemClass && typeof AutomationSystemClass.getInstance === 'function') {
             const system = AutomationSystemClass.getInstance();
             logger.info('✅ [Autonomy] Automation System initialized');
+            killSwitch.registerSystem('automation-system', {
+              kill: () => { (system as any)._killSwitchPaused = true; logger.warn('[AutomationSystem] Paused by kill switch'); },
+              resume: () => { (system as any)._killSwitchPaused = false; logger.info('[AutomationSystem] Resumed'); },
+            });
           }
         } catch (e: any) {
           logger.warn(`⚠️ [Autonomy] Automation System: ${e.message}`);
@@ -639,32 +647,97 @@ app.use((req, res, next) => {
               await orchestrator.start();
             }
             logger.info('✅ [Autonomy] Auto-Upgrade System ENABLED');
+            killSwitch.registerSystem('autonomous-updates', {
+              kill: () => { if (typeof orchestrator.stop === 'function') orchestrator.stop(); },
+              resume: () => { if (typeof orchestrator.start === 'function') orchestrator.start(); },
+            });
           }
         } catch (e: any) {
           logger.warn(`⚠️ [Autonomy] Autonomous Updates: ${e.message}`);
         }
 
-        // 4-8. Other autonomous modules (load in parallel for speed)
-        await Promise.allSettled([
-          import('./autonomous-autopilot.js').then(mod => {
-            if (mod.autonomousAutopilot) logger.info('✅ [Autonomy] Autonomous Autopilot loaded');
-          }),
-          import('./autopilot-engine.js').then(mod => {
-            if (mod.autopilotEngine || mod.AutopilotEngine) logger.info('✅ [Autonomy] Autopilot Engine loaded');
-          }),
-          import('./services/autoPostingService.js').then(mod => {
-            if (mod.autoPostingService) logger.info('✅ [Autonomy] Auto-Posting Service V1 initialized');
-          }),
-          import('./services/autoPostingServiceV2.js').then(mod => {
-            if (mod.autoPostingServiceV2) logger.info('✅ [Autonomy] Auto-Posting Service V2 initialized');
-          }),
-          import('./services/autoPostGenerator.js').then(mod => {
-            if (mod.autoPostGenerator) logger.info('✅ [Autonomy] Auto Post Generator initialized');
-          }),
-          import('./services/autopilotPublisher.js').then(mod => {
-            if (mod.autopilotPublisher) logger.info('✅ [Autonomy] Autopilot Publisher initialized');
-          }),
+        // 4-9. Other autonomous modules — load in parallel then register with kill switch
+        const parallelMods = await Promise.allSettled([
+          import('./autonomous-autopilot.js'),
+          import('./autopilot-engine.js'),
+          import('./services/autoPostingService.js'),
+          import('./services/autoPostingServiceV2.js'),
+          import('./services/autoPostGenerator.js'),
+          import('./services/autopilotPublisher.js'),
         ]);
+
+        // 4. Autonomous Autopilot
+        if (parallelMods[0].status === 'fulfilled') {
+          const mod = parallelMods[0].value as any;
+          if (mod.autonomousAutopilot) {
+            logger.info('✅ [Autonomy] Autonomous Autopilot loaded');
+            killSwitch.registerSystem('autonomous-autopilot', {
+              kill: () => { if (typeof mod.autonomousAutopilot.stopAutonomousMode === 'function') mod.autonomousAutopilot.stopAutonomousMode(); },
+              resume: () => { logger.info('[AutonomousAutopilot] Kill switch released — restart per-user as needed'); },
+            });
+          }
+        } else logger.warn(`⚠️ [Autonomy] Autonomous Autopilot: ${(parallelMods[0] as any).reason?.message}`);
+
+        // 5. Autopilot Engine
+        if (parallelMods[1].status === 'fulfilled') {
+          const mod = parallelMods[1].value as any;
+          const engine = mod.autopilotEngine ?? (mod.AutopilotEngine ? new mod.AutopilotEngine() : null);
+          if (engine) {
+            logger.info('✅ [Autonomy] Autopilot Engine loaded');
+            killSwitch.registerSystem('autopilot-engine', {
+              kill: () => { if (typeof engine.stop === 'function') engine.stop(); },
+              resume: () => { if (typeof engine.start === 'function') engine.start(); },
+            });
+          }
+        } else logger.warn(`⚠️ [Autonomy] Autopilot Engine: ${(parallelMods[1] as any).reason?.message}`);
+
+        // 6. Auto-Posting Service V1
+        if (parallelMods[2].status === 'fulfilled') {
+          const mod = parallelMods[2].value as any;
+          if (mod.autoPostingService) {
+            logger.info('✅ [Autonomy] Auto-Posting Service V1 initialized');
+            killSwitch.registerSystem('auto-posting-v1', {
+              kill: () => { if (typeof mod.autoPostingService.pause === 'function') mod.autoPostingService.pause(); },
+              resume: () => { if (typeof mod.autoPostingService.resume === 'function') mod.autoPostingService.resume(); },
+            });
+          }
+        } else logger.warn(`⚠️ [Autonomy] Auto-Posting V1: ${(parallelMods[2] as any).reason?.message}`);
+
+        // 7. Auto-Posting Service V2
+        if (parallelMods[3].status === 'fulfilled') {
+          const mod = parallelMods[3].value as any;
+          if (mod.autoPostingServiceV2) {
+            logger.info('✅ [Autonomy] Auto-Posting Service V2 initialized');
+            killSwitch.registerSystem('auto-posting-v2', {
+              kill: () => { if (typeof mod.autoPostingServiceV2.pause === 'function') mod.autoPostingServiceV2.pause(); },
+              resume: () => { if (typeof mod.autoPostingServiceV2.resume === 'function') mod.autoPostingServiceV2.resume(); },
+            });
+          }
+        } else logger.warn(`⚠️ [Autonomy] Auto-Posting V2: ${(parallelMods[3] as any).reason?.message}`);
+
+        // 8. Auto Post Generator (stateless — no running loop; kill switch flag surfaced via log)
+        if (parallelMods[4].status === 'fulfilled') {
+          const mod = parallelMods[4].value as any;
+          if (mod.autoPostGenerator) {
+            logger.info('✅ [Autonomy] Auto Post Generator initialized');
+            killSwitch.registerSystem('auto-post-generator', {
+              kill: () => { (mod.autoPostGenerator as any)._killed = true; logger.warn('[AutoPostGenerator] Paused by kill switch'); },
+              resume: () => { (mod.autoPostGenerator as any)._killed = false; logger.info('[AutoPostGenerator] Resumed'); },
+            });
+          }
+        } else logger.warn(`⚠️ [Autonomy] Auto Post Generator: ${(parallelMods[4] as any).reason?.message}`);
+
+        // 9. Autopilot Publisher
+        if (parallelMods[5].status === 'fulfilled') {
+          const mod = parallelMods[5].value as any;
+          if (mod.autopilotPublisher) {
+            logger.info('✅ [Autonomy] Autopilot Publisher initialized');
+            killSwitch.registerSystem('autopilot-publisher', {
+              kill: () => { if (typeof mod.autopilotPublisher.stopScheduler === 'function') mod.autopilotPublisher.stopScheduler(); },
+              resume: () => { if (typeof mod.autopilotPublisher.startScheduler === 'function') mod.autopilotPublisher.startScheduler(); },
+            });
+          }
+        } else logger.warn(`⚠️ [Autonomy] Autopilot Publisher: ${(parallelMods[5] as any).reason?.message}`);
 
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
         logger.info('🤖 AUTONOMOUS SYSTEMS READY');

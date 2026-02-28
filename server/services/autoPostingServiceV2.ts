@@ -765,6 +765,21 @@ class AutoPostingServiceV2 {
     logger.info(`❌ Cancelled scheduled post ${postId}`);
   }
 
+  pause(): void {
+    if (this.workerInterval) {
+      clearInterval(this.workerInterval);
+      this.workerInterval = null;
+    }
+    logger.info('[AutoPostingService V2] Paused by kill switch');
+  }
+
+  resume(): void {
+    if (!this.workerInterval) {
+      this.startWorker();
+    }
+    logger.info('[AutoPostingService V2] Resumed');
+  }
+
   async shutdown() {
     logger.info('Shutting down auto-posting service...');
 

@@ -12,7 +12,7 @@ import { apiRequest } from '@/lib/queryClient';
 import {
   Play, Square, Shield, Cpu, Activity, Zap, TrendingUp,
   AlertTriangle, CheckCircle, Clock, RefreshCw, FlaskConical,
-  Radio, Globe, Music, BarChart3,
+  Radio, Globe, Music, BarChart3, PowerOff, Power,
 } from 'lucide-react';
 
 const URGENCY_COLORS: Record<string, string> = {
@@ -121,6 +121,34 @@ export default function AdminAutonomy() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: autonomousKey }),
   });
 
+  const killSwitchKey = ['/api/kill-switch/status'];
+  const { data: killSwitchData, refetch: refetchKillSwitch } = useQuery<any>({
+    queryKey: killSwitchKey,
+    refetchInterval: 5000,
+  });
+
+  const killAll = useMutation({
+    mutationFn: async () => (await apiRequest('POST', '/api/kill-switch/kill-all', { reason: 'Admin emergency stop' })).json(),
+    onSuccess: () => { toast({ title: 'All autonomous systems halted', variant: 'destructive' }); refetchKillSwitch(); },
+    onError: () => toast({ title: 'Kill switch failed', variant: 'destructive' }),
+  });
+
+  const resumeAll = useMutation({
+    mutationFn: async () => (await apiRequest('POST', '/api/kill-switch/resume-all', { reason: 'Admin resume' })).json(),
+    onSuccess: () => { toast({ title: 'All autonomous systems resumed' }); refetchKillSwitch(); },
+    onError: () => toast({ title: 'Resume failed', variant: 'destructive' }),
+  });
+
+  const killSystem = useMutation({
+    mutationFn: async (system: string) => (await apiRequest('POST', `/api/kill-switch/kill/${system}`, { reason: 'Admin individual stop' })).json(),
+    onSuccess: (_, system) => { toast({ title: `${system} halted` }); refetchKillSwitch(); },
+  });
+
+  const resumeSystem = useMutation({
+    mutationFn: async (system: string) => (await apiRequest('POST', `/api/kill-switch/resume/${system}`, { reason: 'Admin individual resume' })).json(),
+    onSuccess: (_, system) => { toast({ title: `${system} resumed` }); refetchKillSwitch(); },
+  });
+
   const runSimulation = async () => {
     setSimRunning(true);
     setSimReport(null);
@@ -163,6 +191,112 @@ export default function AdminAutonomy() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar title="Admin Autonomy" />
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
+
+          {/* Emergency Kill Switch */}
+          {(() => {
+            const ksData = killSwitchData?.data ?? killSwitchData ?? {};
+            const globalKilled: boolean = ksData.globalKilled ?? false;
+            const systemStates: Record<string, boolean> = ksData.systemStates ?? {};
+            const auditLog: any[] = ksData.auditLog ?? [];
+            const registeredSystems = Object.keys(systemStates);
+            return (
+              <Card className={`border-2 ${globalKilled ? 'border-red-500 bg-red-50 dark:bg-red-950' : 'border-green-200 dark:border-green-900'}`}>
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${globalKilled ? 'bg-red-100' : 'bg-green-100'}`}>
+                        {globalKilled
+                          ? <PowerOff className="w-6 h-6 text-red-600 animate-pulse" />
+                          : <Power className="w-6 h-6 text-green-600" />}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">Emergency Kill Switch</CardTitle>
+                        <CardDescription>Instantly halt or resume all 9 autonomous systems</CardDescription>
+                      </div>
+                    </div>
+                    <Badge className={globalKilled ? 'bg-red-600 text-white text-sm px-3 py-1' : 'bg-green-600 text-white text-sm px-3 py-1'}>
+                      {globalKilled ? 'ALL SYSTEMS HALTED' : 'ALL SYSTEMS ACTIVE'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-3 flex-wrap">
+                    <Button
+                      variant="destructive"
+                      onClick={() => killAll.mutate()}
+                      disabled={globalKilled || killAll.isPending}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      <PowerOff className="w-4 h-4 mr-2" />
+                      {killAll.isPending ? 'Halting…' : 'Kill All Systems'}
+                    </Button>
+                    <Button
+                      onClick={() => resumeAll.mutate()}
+                      disabled={!globalKilled || resumeAll.isPending}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Power className="w-4 h-4 mr-2" />
+                      {resumeAll.isPending ? 'Resuming…' : 'Resume All Systems'}
+                    </Button>
+                  </div>
+
+                  {registeredSystems.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No systems registered yet — server will populate on restart.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {registeredSystems.map((sys) => {
+                        const killed: boolean = systemStates[sys];
+                        return (
+                          <div key={sys} className={`flex items-center justify-between p-2 rounded-lg border text-xs ${killed ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <div className={`w-2 h-2 rounded-full shrink-0 ${killed ? 'bg-red-500' : 'bg-green-500'}`} />
+                              <span className="truncate font-medium capitalize">{sys.replace(/-/g, ' ')}</span>
+                            </div>
+                            <div className="flex gap-1 ml-1 shrink-0">
+                              {!killed ? (
+                                <button
+                                  onClick={() => killSystem.mutate(sys)}
+                                  className="text-red-600 hover:text-red-800 text-xs px-1.5 py-0.5 border border-red-200 rounded hover:bg-red-50"
+                                >
+                                  Stop
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => resumeSystem.mutate(sys)}
+                                  className="text-green-700 hover:text-green-900 text-xs px-1.5 py-0.5 border border-green-200 rounded hover:bg-green-50"
+                                >
+                                  Start
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {auditLog.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1.5">Recent Audit Log</p>
+                      <ScrollArea className="h-24">
+                        <div className="space-y-1 pr-1">
+                          {[...auditLog].reverse().slice(0, 10).map((entry: any, i: number) => (
+                            <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className={`font-medium shrink-0 ${entry.action.includes('KILL') ? 'text-red-600' : 'text-green-700'}`}>
+                                {entry.action}
+                              </span>
+                              <span className="truncate">{entry.system ?? 'all'} — {entry.triggeredBy}</span>
+                              <span className="shrink-0">{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : ''}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Self-Evolution Engine */}
           <Card className="border-2 border-blue-200 dark:border-blue-800">
