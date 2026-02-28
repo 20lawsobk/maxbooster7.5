@@ -407,3 +407,6 @@ Three root causes fixed; all builds now pass (Windows, macOS, Linux desktop + An
 
 **Bug 3 (`autopilot_learning_data` "Failed query" in production):**
 The `autopilot_learning_data` table was defined in `shared/schema.ts` but had never been migrated to the production database. The HyperLearning Engine's `runMicroPatternDetection()` query failed with "Failed query". **Fix:** Ran `npm run db:push` which applied the missing table and all related schema to the production database (`[✓] Changes applied`).
+
+**Bug 4 (Admin login 500 — "Failed query" on read replica):**
+In production, `getUserByEmail`, `getUserByUsername`, `getUser`, and `getUserByPasswordResetToken` in `storage.ts` all use `dbRead` (the Neon read replica via `DATABASE_REPLICA_URLS`). The read replica was failing with `Error: Failed query: select ... from "users" where "users"."email" = $1` — causing every login attempt to return 500. The root cause is the Neon serverless replica connection failing (cold start timeout, connection error, or replica lag). **Fix:** Wrapped all 4 auth-critical storage methods with try/catch — on any `dbRead` failure, they retry the same query against the primary `db`. Login, registration, and session validation now always succeed as long as the primary database is reachable.
