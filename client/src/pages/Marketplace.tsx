@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger';
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'wouter';
 import { Howl } from 'howler';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -558,6 +559,7 @@ export default function Marketplace() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const { invalidateOnMarketplaceChange } = useAnalyticsInvalidation();
   const [activeTab, setActiveTab] = useState('browse');
   const [searchQuery, setSearchQuery] = useState('');
@@ -2018,7 +2020,7 @@ export default function Marketplace() {
                                 className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-left"
                                 onClick={() => {
                                   setShowSuggestions(false);
-                                  window.location.href = `/marketplace/producer/${p.id}`;
+                                  navigate(`/marketplace/producer/${p.id}`);
                                 }}
                               >
                                 {p.avatar ? (
@@ -2217,7 +2219,7 @@ export default function Marketplace() {
                       <Card
                         key={producer.id}
                         className="hover:shadow-xl transition group cursor-pointer border-2 hover:border-blue-500"
-                        onClick={() => (window.location.href = `/marketplace/producer/${producer.id}`)}
+                        onClick={() => navigate(`/marketplace/producer/${producer.id}`)}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-center gap-4">
@@ -2505,7 +2507,7 @@ export default function Marketplace() {
                         <div className="flex space-x-2 w-full">
                           <Button
                             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                            onClick={() => (window.location.href = `/marketplace/producer/${producer.id}`)}
+                            onClick={() => navigate(`/marketplace/producer/${producer.id}`)}
                           >
                             View Profile
                           </Button>

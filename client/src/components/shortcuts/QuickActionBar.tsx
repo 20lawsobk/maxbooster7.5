@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Command,
@@ -41,6 +42,7 @@ export function QuickActionBar({
 }: QuickActionBarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { openCommandPalette, openShortcutGuide } = useShortcuts();
+  const [, navigate] = useLocation();
 
   const quickActions: QuickAction[] = useMemo(() => [
     {
@@ -55,7 +57,7 @@ export function QuickActionBar({
       id: 'new-project',
       label: 'New Project',
       icon: Plus,
-      action: () => window.location.href = '/studio',
+      action: () => navigate('/studio'),
       color: 'text-green-400',
     },
     {
@@ -71,19 +73,19 @@ export function QuickActionBar({
       id: 'dashboard',
       label: 'Dashboard',
       icon: Home,
-      action: () => window.location.href = '/dashboard',
+      action: () => navigate('/dashboard'),
     },
     {
       id: 'studio',
       label: 'Studio',
       icon: Music,
-      action: () => window.location.href = '/studio',
+      action: () => navigate('/studio'),
     },
     {
       id: 'analytics',
       label: 'Analytics',
       icon: BarChart3,
-      action: () => window.location.href = '/analytics',
+      action: () => navigate('/analytics'),
     },
     {
       id: 'help',
@@ -92,7 +94,7 @@ export function QuickActionBar({
       shortcut: 'cmd+/',
       action: openShortcutGuide,
     },
-  ], [openCommandPalette, openShortcutGuide]);
+  ], [openCommandPalette, openShortcutGuide, navigate]);
 
   const visibleActions = isExpanded ? quickActions : quickActions.slice(0, 3);
 

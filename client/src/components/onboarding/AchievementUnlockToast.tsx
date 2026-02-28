@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react';
+import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -330,6 +331,7 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
   const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null);
   const [queue, setQueue] = useState<Achievement[]>([]);
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   const { data: achievements = [], isLoading } = useQuery<Achievement[]>({
     queryKey: ['/api/onboarding/achievements'],
@@ -355,8 +357,8 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
 
   const handleViewAll = useCallback(() => {
     handleClose();
-    window.location.href = '/achievements';
-  }, [handleClose]);
+    navigate('/achievements');
+  }, [handleClose, navigate]);
 
   return (
     <AchievementContext.Provider value={{ showAchievement, achievements, isLoading }}>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -148,6 +149,7 @@ export default function FirstActionCelebration({
   const [confetti, setConfetti] = useState<Confetti[]>([]);
   const [showContent, setShowContent] = useState(false);
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   const config = ACTION_CONFIGS[actionType];
 
@@ -203,7 +205,7 @@ export default function FirstActionCelebration({
   const handleNextAction = () => {
     markCelebratedMutation.mutate();
     if (config.nextAction) {
-      window.location.href = config.nextAction.href;
+      navigate(config.nextAction.href);
     }
     onClose();
   };

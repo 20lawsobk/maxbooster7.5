@@ -134,60 +134,6 @@ const BADGE_ICONS: Record<string, { icon: React.ReactNode; color: string }> = {
   prolific: { icon: <Music2 className="w-4 h-4" />, color: 'bg-cyan-500' },
 };
 
-const mockProducerData = {
-  id: '1',
-  name: 'B-Lawz Beats',
-  username: 'blawzbeats',
-  avatar: '/images/producers/blawz.jpg',
-  coverImage: '/images/covers/producer-cover.jpg',
-  bio: 'Grammy-nominated producer specializing in Hip-Hop, R&B, and Pop. Over 500+ placements with major artists. All beats are 100% original and exclusive.',
-  verified: true,
-  stats: {
-    totalBeats: 342,
-    totalSales: 1247,
-    totalPlays: 892000,
-    totalDownloads: 45600,
-    followers: 12400,
-    rating: 4.9,
-    reviewCount: 456,
-    responseRate: 98,
-    responseTime: '< 2 hours',
-    memberSince: '2019-03-15',
-    location: 'Los Angeles, CA',
-  },
-  badges: [
-    { id: '1', name: 'Verified', type: 'verified', earnedAt: '2019-03-15' },
-    { id: '2', name: 'Top Seller', type: 'top_seller', earnedAt: '2021-06-01' },
-    { id: '3', name: 'Trending', type: 'trending', earnedAt: '2024-01-15' },
-    { id: '4', name: 'Platinum Producer', type: 'platinum', earnedAt: '2023-09-01' },
-    { id: '5', name: 'Quick Responder', type: 'quick_responder', earnedAt: '2020-01-01' },
-  ],
-  socials: [
-    { platform: 'instagram', url: 'https://instagram.com/blawzbeats', followers: 45000 },
-    { platform: 'youtube', url: 'https://youtube.com/blawzbeats', followers: 128000 },
-    { platform: 'twitter', url: 'https://twitter.com/blawzbeats', followers: 23000 },
-    { platform: 'tiktok', url: 'https://tiktok.com/@blawzbeats', followers: 89000 },
-  ],
-  featuredBeats: [
-    { id: '1', title: 'Midnight Dreams', price: 49.99, plays: 12400, likes: 890, genre: 'Hip-Hop', tempo: 140 },
-    { id: '2', title: 'Summer Vibes', price: 79.99, plays: 8900, likes: 650, genre: 'R&B', tempo: 95 },
-    { id: '3', title: 'Dark Energy', price: 59.99, plays: 15200, likes: 1100, genre: 'Trap', tempo: 150 },
-    { id: '4', title: 'Smooth Operator', price: 99.99, plays: 6700, likes: 520, genre: 'Neo-Soul', tempo: 85 },
-  ],
-  recentReviews: [
-    { id: '1', reviewer: { name: 'Mike A.', avatar: '' }, rating: 5, comment: 'Amazing quality beats! Super responsive too.', createdAt: '2024-01-10', beatTitle: 'Midnight Dreams' },
-    { id: '2', reviewer: { name: 'Sarah M.', avatar: '' }, rating: 5, comment: 'Best producer on the platform. Period.', createdAt: '2024-01-08', beatTitle: 'Summer Vibes' },
-    { id: '3', reviewer: { name: 'Jay K.', avatar: '' }, rating: 4, comment: 'Great beats, quick delivery. Will buy again!', createdAt: '2024-01-05', beatTitle: 'Dark Energy' },
-  ],
-  genres: ['Hip-Hop', 'Trap', 'R&B', 'Pop', 'Neo-Soul', 'Drill'],
-  equipment: ['FL Studio', 'Waves Plugins', 'Kontakt', 'Serum', 'Omnisphere'],
-  achievements: [
-    { label: 'Total Earnings', value: '$125,000+' },
-    { label: 'Major Placements', value: '15+' },
-    { label: 'Return Customers', value: '78%' },
-    { label: 'Avg. Rating', value: '4.9/5' },
-  ],
-};
 
 export function ProducerProfile({ producerId, isOpen, onClose }: ProducerProfileProps) {
   const [activeTab, setActiveTab] = useState('beats');
@@ -275,7 +221,13 @@ export function ProducerProfile({ producerId, isOpen, onClose }: ProducerProfile
   };
 
   const fallbackProducer = {
-    ...mockProducerData,
+    id: producerId || '',
+    name: '',
+    username: '',
+    avatar: '',
+    coverImage: '',
+    bio: '',
+    verified: false,
     stats: { totalBeats: 0, totalSales: 0, totalPlays: 0, totalDownloads: 0, followers: 0, rating: 0, reviewCount: 0, responseRate: 0, responseTime: '', memberSince: '', location: '' },
     featuredBeats: [],
     recentReviews: [],

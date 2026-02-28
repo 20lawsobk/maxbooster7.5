@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, Square, Circle, SkipBack, SkipForward, Repeat,
@@ -66,6 +67,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const { tracks, masterTrack, transport, view, project, canUndo, canRedo } = store;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const { forceSave, loadProjectData } = useProjectSync(projectId);
   const audioEngine = useAudioEngine();
   const audioInitializedRef = useRef(false);
@@ -906,7 +908,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       <div className="h-full w-full bg-[#1a1a1e] text-white">
         <StudioStartHub
           onProjectSelect={(id) => {
-            window.location.href = `/studio/${id}`;
+            navigate(`/studio/${id}`);
           }}
           onCreateProject={(title, templateId) => {
             setPendingProjectTitle(title || '');
@@ -1209,7 +1211,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             await forceSave();
             store.markSaved();
             if (pendingNavigation) {
-              window.location.href = pendingNavigation;
+              navigate(pendingNavigation);
             }
           } finally {
             setIsSaving(false);
@@ -1219,7 +1221,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         onDiscard={() => {
           store.markSaved();
           if (pendingNavigation) {
-            window.location.href = pendingNavigation;
+            navigate(pendingNavigation);
           }
           setPendingNavigation(null);
         }}

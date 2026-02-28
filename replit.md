@@ -279,9 +279,15 @@ The Advertisement and Autopilot systems use **custom in-house AI models + connec
 - **`RevenueAnalytics.tsx`** — 4 issues: fake platform breakdown (Spotify $1250.50, Apple Music $890.25 etc.), fake `earningsStatus` ($450 pending/$2850 paid), fake `taxInfo` ($3500 gross), hardcoded `royaltyBreakdown` (4 fake categories), fake tax documents (3 hardcoded PDFs) — all cleared
 - **`PlaylistJourneysVisualization.tsx`** — `defaultEvents` (6 fake playlist events with 35M/12.5M follower playlists), `defaultPositionHistory` (6 fake "Today's Top Hits" entries), `defaultTypeBreakdown` (52M/8.5M fake reach) removed; `Math.max`/`Math.min` empty crash fixed in `PositionChart`
 - **`ARDiscoveryPanel.tsx`** — `defaultArtists` (6 fake artists: Luna Waves 285K listeners, Neon Pulse 420K, Velvet Echo 175K, Arctic Bloom 98K, Solar Drift 156K, Coral Reef 42K) removed; empty state added to `GrowthTrajectoryChart`
+- **`ProducerProfile.tsx`** — `mockProducerData` constant (52 lines of fake data: B-Lawz Beats 342 beats/1247 sales, 4 fake featured beats, 3 fake reviews, fake social links, $125k achievements) fully removed; `fallbackProducer` rewritten with empty/zero values derived from `producerId` prop only
 
 ### Navigation
 - **`QuickActionButton.tsx` and `QuickActionsMenu.tsx`** replaced all `window.location.href = '/...'` with wouter `navigate()` to prevent full-page SPA reloads
+- **`QuickActionBar.tsx`** — 4 SPA routes (/studio x2, /dashboard, /analytics) converted from `window.location.href` to `navigate()` from wouter; `navigate` added to useMemo deps
+- **`AchievementUnlockToast.tsx` / `AchievementProvider`** — `handleViewAll` `/achievements` route converted to `navigate()` from wouter
+- **`FirstActionCelebration.tsx`** — `handleNextAction` `config.nextAction.href` converted to `navigate()` from wouter
+- **`Marketplace.tsx`** — 3x `/marketplace/producer/:id` routes converted from `window.location.href` to `navigate()` from wouter
+- **`StudioOneDAW.tsx`** — `/studio/:id` project select + 2x `pendingNavigation` (save/discard dialog) converted to `navigate()` from wouter
 
 ### Validation
 - **Marketplace Zod validation** added — 6 schemas (`purchaseSchema`, `licenseTemplateSchema`, `interactionSchema`, `contractSchema`, `affiliateSchema`, `collaborationSchema`) applied to all key POST endpoints; removed duplicate stub `/interaction` endpoint
