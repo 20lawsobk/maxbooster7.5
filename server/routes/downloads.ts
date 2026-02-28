@@ -58,7 +58,7 @@ async function fetchLatestRelease(): Promise<ReleaseInfo | null> {
       'Accept': 'application/vnd.github+json',
       'User-Agent': 'MaxBooster-App',
     };
-    const token = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+    const token = process.env.GITHUB_PAT || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }

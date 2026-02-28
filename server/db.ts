@@ -7,6 +7,8 @@ import { createHash } from 'crypto';
 import { logger } from './logger.js';
 
 neonConfig.webSocketConstructor = ws;
+// Cache fetch connections across requests for better pooling efficiency in production
+neonConfig.fetchConnectionCache = true;
 
 if (!config.database.url) {
   throw new Error('DATABASE_URL must be set. Did you forget to provision a database?');
