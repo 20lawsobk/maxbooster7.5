@@ -274,14 +274,14 @@ export function SearchFilters({
                 Genre
               </Label>
               <Select
-                value={filters.genre || ''}
-                onValueChange={(v) => updateFilter('genre', v || undefined)}
+                value={filters.genre || '_all'}
+                onValueChange={(v) => updateFilter('genre', v === '_all' ? undefined : v)}
               >
                 <SelectTrigger className="bg-slate-700/50 border-slate-600">
                   <SelectValue placeholder="All Genres" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Genres</SelectItem>
+                  <SelectItem value="_all">All Genres</SelectItem>
                   {GENRES.map((genre) => (
                     <SelectItem key={genre} value={genre}>{genre}</SelectItem>
                   ))}
@@ -295,14 +295,14 @@ export function SearchFilters({
                 Mood
               </Label>
               <Select
-                value={filters.mood || ''}
-                onValueChange={(v) => updateFilter('mood', v || undefined)}
+                value={filters.mood || '_all'}
+                onValueChange={(v) => updateFilter('mood', v === '_all' ? undefined : v)}
               >
                 <SelectTrigger className="bg-slate-700/50 border-slate-600">
                   <SelectValue placeholder="All Moods" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Moods</SelectItem>
+                  <SelectItem value="_all">All Moods</SelectItem>
                   {MOODS.map((mood) => (
                     <SelectItem key={mood} value={mood}>{mood}</SelectItem>
                   ))}
@@ -316,14 +316,14 @@ export function SearchFilters({
                 Key
               </Label>
               <Select
-                value={filters.key || ''}
-                onValueChange={(v) => updateFilter('key', v || undefined)}
+                value={filters.key || '_all'}
+                onValueChange={(v) => updateFilter('key', v === '_all' ? undefined : v)}
               >
                 <SelectTrigger className="bg-slate-700/50 border-slate-600">
                   <SelectValue placeholder="All Keys" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Keys</SelectItem>
+                  <SelectItem value="_all">All Keys</SelectItem>
                   {MUSICAL_KEYS.map((key) => (
                     <SelectItem key={key} value={key}>{key}</SelectItem>
                   ))}

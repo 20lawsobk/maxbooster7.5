@@ -179,39 +179,39 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Select value={filters.genre} onValueChange={(v) => setFilters(prev => ({ ...prev, genre: v }))}>
+          <Select value={filters.genre || '_all'} onValueChange={(v) => setFilters(prev => ({ ...prev, genre: v === '_all' ? '' : v }))}>
             <SelectTrigger className="w-[130px] bg-slate-700/50 border-slate-600">
               <Music className="h-4 w-4 mr-2 text-slate-400" />
               <SelectValue placeholder="Genre" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Genres</SelectItem>
+              <SelectItem value="_all">All Genres</SelectItem>
               {GENRES.map(genre => (
                 <SelectItem key={genre} value={genre}>{genre}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={filters.mood} onValueChange={(v) => setFilters(prev => ({ ...prev, mood: v }))}>
+          <Select value={filters.mood || '_all'} onValueChange={(v) => setFilters(prev => ({ ...prev, mood: v === '_all' ? '' : v }))}>
             <SelectTrigger className="w-[130px] bg-slate-700/50 border-slate-600">
               <Sparkles className="h-4 w-4 mr-2 text-slate-400" />
               <SelectValue placeholder="Mood" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Moods</SelectItem>
+              <SelectItem value="_all">All Moods</SelectItem>
               {MOODS.map(mood => (
                 <SelectItem key={mood} value={mood}>{mood}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={filters.key} onValueChange={(v) => setFilters(prev => ({ ...prev, key: v }))}>
+          <Select value={filters.key || '_all'} onValueChange={(v) => setFilters(prev => ({ ...prev, key: v === '_all' ? '' : v }))}>
             <SelectTrigger className="w-[110px] bg-slate-700/50 border-slate-600">
               <Hash className="h-4 w-4 mr-2 text-slate-400" />
               <SelectValue placeholder="Key" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Keys</SelectItem>
+              <SelectItem value="_all">All Keys</SelectItem>
               {MUSICAL_KEYS.map(key => (
                 <SelectItem key={key} value={key}>{key}</SelectItem>
               ))}

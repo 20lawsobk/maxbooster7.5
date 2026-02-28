@@ -920,7 +920,7 @@ export function RoyaltyReconciliation() {
                     <SelectValue placeholder="Full Year" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Full Year</SelectItem>
+                    <SelectItem value="full">Full Year</SelectItem>
                     <SelectItem value="Q1">Q1 (Jan-Mar)</SelectItem>
                     <SelectItem value="Q2">Q2 (Apr-Jun)</SelectItem>
                     <SelectItem value="Q3">Q3 (Jul-Sep)</SelectItem>

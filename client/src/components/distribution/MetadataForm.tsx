@@ -203,14 +203,14 @@ export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps)
           <div className="space-y-2">
             <Label htmlFor="secondaryGenre">Secondary Genre (Optional)</Label>
             <Select
-              value={data.secondaryGenre}
-              onValueChange={(value) => onChange({ secondaryGenre: value })}
+              value={data.secondaryGenre || '__none__'}
+              onValueChange={(value) => onChange({ secondaryGenre: value === '__none__' ? '' : value })}
             >
               <SelectTrigger id="secondaryGenre">
                 <SelectValue placeholder="Select secondary genre" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="__none__">None</SelectItem>
                 {GENRES.map((genre) => (
                   <SelectItem key={genre} value={genre}>
                     {genre}

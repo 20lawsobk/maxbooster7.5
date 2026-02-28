@@ -655,12 +655,12 @@ export function ChordTrack({
 
                 <div className="space-y-2">
                   <Label className="text-[10px]">Bass Note (optional)</Label>
-                  <Select value={newChordBass} onValueChange={setNewChordBass}>
+                  <Select value={newChordBass || '__none__'} onValueChange={(v) => setNewChordBass(v === '__none__' ? '' : v)}>
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="" className="text-xs">None</SelectItem>
+                      <SelectItem value="__none__" className="text-xs">None</SelectItem>
                       {CHORD_ROOTS.map(root => (
                         <SelectItem key={root} value={root} className="text-xs">{root}</SelectItem>
                       ))}
@@ -855,17 +855,17 @@ export function ChordTrack({
                 <div className="space-y-2">
                   <Label>Bass Note</Label>
                   <Select 
-                    value={editingChord.bass || ''} 
+                    value={editingChord.bass || '__none__'} 
                     onValueChange={(value) => updateChord(editingChordId, { 
-                      bass: value || undefined, 
-                      name: `${editingChord.root}${editingChord.quality}${value ? `/${value}` : ''}` 
+                      bass: value === '__none__' ? undefined : value, 
+                      name: `${editingChord.root}${editingChord.quality}${value && value !== '__none__' ? `/${value}` : ''}` 
                     })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {CHORD_ROOTS.map(root => (
                         <SelectItem key={root} value={root}>{root}</SelectItem>
                       ))}

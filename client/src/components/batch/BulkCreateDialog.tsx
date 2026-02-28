@@ -596,12 +596,12 @@ export function BulkCreateDialog({
                 </div>
                 <div className="space-y-2">
                   <Label>Variation Field (optional)</Label>
-                  <Select value={variationField} onValueChange={setVariationField}>
+                  <Select value={variationField || '__none__'} onValueChange={(v) => setVariationField(v === '__none__' ? '' : v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Add number suffix to..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {fields.filter(f => f.type === 'text').map(field => (
                         <SelectItem key={field.key} value={field.key}>
                           {field.label}
