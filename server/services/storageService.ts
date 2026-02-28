@@ -241,12 +241,24 @@ class ReplitStorageProvider implements StorageProvider {
   }
 
   private async initClient(): Promise<void> {
+    let sidecarAvailable = false;
+    try {
+      const probe = await fetch('http://127.0.0.1:1106/object-storage/default-bucket', {
+        signal: AbortSignal.timeout(600),
+      });
+      sidecarAvailable = probe.ok || probe.status < 500;
+    } catch {
+      sidecarAvailable = false;
+    }
+    if (!sidecarAvailable) {
+      logger.warn('[ReplitStorage] Object Storage sidecar not reachable (Cloud Run / Autoscale), provider disabled');
+      return;
+    }
     try {
       const { Client } = await import('@replit/object-storage');
       this.client = new Client();
     } catch (err) {
       logger.error('[ReplitStorage] Failed to initialize @replit/object-storage client:', err);
-      throw err;
     }
   }
 

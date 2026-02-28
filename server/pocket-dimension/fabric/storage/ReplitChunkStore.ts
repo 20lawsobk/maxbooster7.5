@@ -9,6 +9,18 @@ export class ReplitChunkStore implements ChunkStore {
 
   private async getClient(): Promise<any> {
     if (this.client) return this.client;
+    let sidecarAvailable = false;
+    try {
+      const probe = await fetch('http://127.0.0.1:1106/object-storage/default-bucket', {
+        signal: AbortSignal.timeout(600),
+      });
+      sidecarAvailable = probe.ok || probe.status < 500;
+    } catch {
+      sidecarAvailable = false;
+    }
+    if (!sidecarAvailable) {
+      throw new Error('Replit Object Storage sidecar not reachable (Cloud Run / Autoscale)');
+    }
     try {
       const { Client } = await import('@replit/object-storage');
       this.client = new Client();

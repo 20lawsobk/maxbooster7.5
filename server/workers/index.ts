@@ -168,9 +168,9 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason: any) => {
   const msg = reason?.message || String(reason);
-  const isConnErr = /ECONNREFUSED|ECONNRESET|socket/i.test(msg);
-  if (isConnErr) {
-    logger.warn('⚠️ Connection error (will retry):', msg);
+  const isNonFatal = /ECONNREFUSED|ECONNRESET|socket|fetch failed|Failed to fetch/i.test(msg);
+  if (isNonFatal) {
+    logger.warn('⚠️ Non-fatal network error (ignoring):', msg);
     return;
   }
   logger.error('❌ Unhandled rejection:', msg);
