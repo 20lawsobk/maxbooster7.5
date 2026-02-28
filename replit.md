@@ -396,3 +396,14 @@ Three root causes fixed; all builds now pass (Windows, macOS, Linux desktop + An
 **Bug 3 (Windows same EBADPLATFORM):** Same lockfile mismatch issue on `windows-latest` runner (win32/x64 vs linux/x64). Fixed with the same `rm -f package-lock.json && npm install --no-audit` approach, adding `shell: bash` to the Windows step so `rm -f` works via Git Bash.
 
 **Net result:** Linux (ubuntu-latest) continues using `npm ci` unchanged. macOS 14 (arm64) and Windows runners now use lockfile-free install. Android build unchanged (already passing).
+
+### Production Bug Fixes — February 28, 2026
+
+**Bug 1 (CRITICAL — Root `/` served health JSON instead of React app):**
+`setupStartupEndpoints()` in `startup-probes.ts` was called at line 72 of `server/index.ts` (before all other middleware), which registered `app.get('/', ...)` returning `{"status":"ok","timestamp":"..."}`. This handler permanently hijacked the root URL, preventing `serveStatic`'s `app.use("/{*splat}", ...)` catch-all (registered at line 515) from ever matching. **Fix:** Removed the `app.get('/', ...)` handler. The deployment health check now uses `/health` (which remains registered). The React app's catch-all in `static.ts` now correctly handles all non-API routes including `/`.
+
+**Bug 2 (Redis `Command timed out` causing 9–34 second slow queries):**
+`redisClient.ts` had `commandTimeout: 10000` (10 seconds) and `distributedCache.ts` had no `commandTimeout` at all (defaulting to ioredis default of 20s). When Redis was unreachable/slow in production, every cache operation blocked for up to 10–20 seconds before failing, cascading into slow query warnings. **Fix:** Reduced `commandTimeout` to **2000ms** and `connectTimeout` to **5000ms** on both standalone and cluster clients in `redisClient.ts` and `distributedCache.ts`. Also reduced `maxRetriesPerRequest` from `null` (infinite) to `1`, and retry cap from 5/10 attempts to 3 attempts — so Redis failures now fail fast (within ~2s) instead of waiting 10–34s.
+
+**Bug 3 (`autopilot_learning_data` "Failed query" in production):**
+The `autopilot_learning_data` table was defined in `shared/schema.ts` but had never been migrated to the production database. The HyperLearning Engine's `runMicroPatternDetection()` query failed with "Failed query". **Fix:** Ran `npm run db:push` which applied the missing table and all related schema to the production database (`[✓] Changes applied`).

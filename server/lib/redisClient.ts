@@ -29,14 +29,14 @@ function buildStandaloneClient(urlOverride?: string): Redis {
   if (!url) throw new Error('REDIS_URL environment variable is not set');
 
   const client = new Redis(url, {
-    maxRetriesPerRequest: null,
+    maxRetriesPerRequest: 1,
     enableReadyCheck: false,
     lazyConnect: false,
-    connectTimeout: 10000,
-    commandTimeout: 10000,
+    connectTimeout: 5000,
+    commandTimeout: 2000,
     retryStrategy(times) {
-      if (times > 5) return null;
-      return Math.min(times * 500, 3000);
+      if (times > 3) return null;
+      return Math.min(times * 300, 2000);
     },
   });
 
@@ -59,14 +59,16 @@ function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> 
 
   const client = new Redis.Cluster(nodes, {
     redisOptions: {
-      maxRetriesPerRequest: null,
+      maxRetriesPerRequest: 1,
       enableReadyCheck: false,
+      commandTimeout: 2000,
+      connectTimeout: 5000,
       password: new URL(urls[0]).password || undefined,
       tls: urls[0].startsWith('rediss://') ? {} : undefined,
     },
     clusterRetryStrategy(times) {
-      if (times > 10) return null;
-      return Math.min(times * 200, 3000);
+      if (times > 3) return null;
+      return Math.min(times * 200, 2000);
     },
   });
 
