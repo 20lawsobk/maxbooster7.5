@@ -1659,7 +1659,7 @@ export async function registerRoutes(
     }
     try {
       const userId = (req.user as any).id;
-      const { studioTracks, releases, socialAccounts, analytics } = await import('@shared/schema');
+      const { studioProjects, releases, socialAccounts, analytics } = await import('@shared/schema');
       const { count, sum, gte, eq, and } = await import('drizzle-orm');
 
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -1676,8 +1676,8 @@ export async function registerRoutes(
         recentNotifications,
         upcomingReleasesResult,
       ] = await Promise.all([
-        db.select({ count: count() }).from(studioTracks).where(eq(studioTracks.userId, userId)),
-        db.select({ count: count() }).from(studioTracks).where(and(eq(studioTracks.userId, userId), sql`${studioTracks.createdAt} < ${thirtyDaysAgo}`)),
+        db.select({ count: count() }).from(studioProjects).where(eq(studioProjects.userId, userId)),
+        db.select({ count: count() }).from(studioProjects).where(and(eq(studioProjects.userId, userId), sql`${studioProjects.createdAt} < ${thirtyDaysAgo}`)),
         db.select({ count: count() }).from(releases).where(and(eq(releases.userId, userId), eq(releases.status, 'distributed'))),
         db.select({ count: count() }).from(releases).where(and(eq(releases.userId, userId), eq(releases.status, 'distributed'), sql`${releases.createdAt} < ${thirtyDaysAgo}`)),
         db.select({ total: sum(socialAccounts.followerCount) }).from(socialAccounts).where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.isActive, true))),
@@ -1726,11 +1726,11 @@ export async function registerRoutes(
     }
     try {
       const userId = (req.user as any).id;
-      const { studioTracks, releases, socialAccounts, subscriptions: subscriptionsTable } = await import('@shared/schema');
+      const { studioProjects, releases, socialAccounts, subscriptions: subscriptionsTable } = await import('@shared/schema');
       const { count, eq, and } = await import('drizzle-orm');
 
       const [trackCount, releaseCount, socialCount, subResult] = await Promise.all([
-        db.select({ count: count() }).from(studioTracks).where(eq(studioTracks.userId, userId)),
+        db.select({ count: count() }).from(studioProjects).where(eq(studioProjects.userId, userId)),
         db.select({ count: count() }).from(releases).where(eq(releases.userId, userId)),
         db.select({ count: count() }).from(socialAccounts).where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.isActive, true))),
         db.select().from(subscriptionsTable).where(and(eq(subscriptionsTable.userId, userId), eq(subscriptionsTable.status, 'active'))).limit(1),

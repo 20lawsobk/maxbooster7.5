@@ -3,7 +3,7 @@ import { db } from '../db';
 import {
   analytics,
   users,
-  projects,
+  studioProjects,
   aiMetricPredictions,
   aiCohortAnalysis,
   aiChurnPredictions,
@@ -956,7 +956,7 @@ export class CustomAIEngine {
 
   private async extractChurnFeatures(userId: string): Promise<any> {
     const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    const userProjects = await db.select().from(projects).where(eq(projects.userId, userId));
+    const userProjects = await db.select().from(studioProjects).where(eq(studioProjects.userId, userId));
 
     return {
       engagementScore: userProjects.length > 0 ? 0.7 : 0.3,
@@ -966,8 +966,7 @@ export class CustomAIEngine {
       lastActivityDays: 3,
       featureUsageScore: 0.6,
       totalProjects: userProjects.length,
-      avgStreams:
-        userProjects.reduce((acc, p) => acc + (p.streams || 0), 0) / (userProjects.length || 1),
+      avgStreams: 0,
     };
   }
 
