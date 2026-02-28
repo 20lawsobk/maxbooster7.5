@@ -144,6 +144,13 @@ function Router() {
   );
 }
 
+function isNativeApp(): boolean {
+  return !!(window as any).electronAPI?.isElectron ||
+    !!(window as any).Capacitor?.isNativePlatform?.();
+}
+
+const PUBLIC_ONLY_ROUTES = ['/', '/about', '/blog', '/features', '/solo-founder-story'];
+
 function AppWithKeyboardShortcuts() {
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
   const [location, setLocation] = useLocation();
@@ -152,6 +159,12 @@ function AppWithKeyboardShortcuts() {
   useEffect(() => {
     setAuthState(!!user);
   }, [user]);
+
+  useEffect(() => {
+    if (isNativeApp() && PUBLIC_ONLY_ROUTES.includes(location)) {
+      setLocation('/dashboard');
+    }
+  }, [location]);
 
   useEffect(() => {
     const storefrontSlug = (window as any).__MAXBOOSTER_SUBDOMAIN__;

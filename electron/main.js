@@ -42,10 +42,10 @@ function createWindow() {
   });
 
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:5000');
+    mainWindow.loadURL('http://localhost:5000/dashboard');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadURL(PRODUCTION_URL);
+    mainWindow.loadURL(PRODUCTION_URL + '/dashboard');
   }
 
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
