@@ -140,22 +140,33 @@ export class HybridStorageService {
     try {
       const bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_OBJSTORE_BUCKET_ID || '';
       if (bucketId || process.env.PRIVATE_OBJECT_DIR) {
+        // The @replit/object-storage Client internally fetches http://127.0.0.1:1106
+        // (the Replit object-storage sidecar). This sidecar is ONLY available in the
+        // Replit IDE / Reserved VM — it does NOT exist in Cloud Run / Autoscale.
+        // Probe the sidecar first with a short timeout so we never create a Client
+        // that fires an unhandled rejection in production.
+        let sidecarAvailable = false;
         try {
-          const { Client } = await import('@replit/object-storage');
-          const client = new Client();
-          // The constructor fires an async init() internally. Catch its promise to
-          // prevent an unhandled rejection when the sidecar/bucket isn't available.
-          const internalState = (client as any).state;
-          if (internalState?.promise && typeof internalState.promise.catch === 'function') {
-            internalState.promise.catch((e: Error) => {
-              logger.warn('[HybridStorage] Object Storage bucket unavailable, falling back to Pocket Dimension only:', e.message);
-              this.replitClient = null;
-            });
+          const probe = await fetch('http://127.0.0.1:1106/object-storage/default-bucket', {
+            signal: AbortSignal.timeout(600),
+          });
+          sidecarAvailable = probe.ok || probe.status < 500;
+        } catch {
+          sidecarAvailable = false;
+        }
+
+        if (sidecarAvailable) {
+          try {
+            const { Client } = await import('@replit/object-storage');
+            const client = new Client();
+            this.replitClient = client;
+            logger.info(`[HybridStorage] Initialized Replit Object Storage (hot tier)`);
+          } catch (e) {
+            logger.warn('[HybridStorage] Failed to initialize @replit/object-storage client, falling back to Pocket Dimension only');
+            this.replitClient = null;
           }
-          this.replitClient = client;
-          logger.info(`[HybridStorage] Initialized Replit Object Storage (hot tier)`);
-        } catch (e) {
-          logger.warn('[HybridStorage] Failed to initialize @replit/object-storage client, falling back to Pocket Dimension only');
+        } else {
+          logger.warn('[HybridStorage] Object Storage sidecar not reachable (Cloud Run / Autoscale), using Pocket Dimension only');
           this.replitClient = null;
         }
       } else {
