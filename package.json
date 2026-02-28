@@ -98,7 +98,15 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "blawzmusic",
+        "repo": "max-booster",
+        "releaseType": "release"
+      }
+    ]
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.990.0",
@@ -121,6 +129,7 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.8.3",
+    "electron-updater": "^6.8.3",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
     "express-session": "^1.19.0",

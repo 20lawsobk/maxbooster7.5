@@ -934,11 +934,18 @@ export const ${this.camelCase(techName)}Adoption = {
         path.resolve(process.cwd(), 'server', 'enhancements'),
         path.resolve(process.cwd(), 'server', 'compliance'),
         path.resolve(process.cwd(), 'server', 'technology'),
+        path.resolve(process.cwd(), 'server', 'adaptations'),
+        path.resolve(process.cwd(), 'server', 'security', 'patches'),
       ];
       const resolvedPath = path.resolve(process.cwd(), filePath);
       const isInAllowedDir = allowedRoots.some(root => resolvedPath.startsWith(root + path.sep) || resolvedPath === root);
       if (!isInAllowedDir) {
         return { passed: false, reason: `Resolved path "${resolvedPath}" is outside allowed deployment directories` };
+      }
+
+      const compileResult = await this.compileGate(code, filePath);
+      if (!compileResult.ok) {
+        return { passed: false, reason: `TypeScript compile error in ${filePath}: ${compileResult.error}` };
       }
     }
 
@@ -1093,11 +1100,10 @@ describe('${upgrade.id}', () => {
   }
 
   private async analyzeRollbackNeed(metrics: Record<string, number>): Promise<void> {
-    // Determine if rollback is needed based on metrics
-    const needsRollback = metrics.errorRate > 0.05 || metrics.responseTime > 500;
-    
+    const needsRollback = metrics.errorRate > 0.05 || metrics.responseTime > 3000;
+
     if (needsRollback) {
-      logger.error('🔙 CRITICAL: Initiating automatic rollback');
+      logger.error(`🔙 CRITICAL: Initiating automatic rollback (errorRate=${metrics.errorRate.toFixed(3)}, responseTime=${metrics.responseTime}ms)`);
       await this.performRollback();
     }
   }
@@ -1346,8 +1352,11 @@ describe('${upgrade.id}', () => {
     return this.industryChanges.slice(-limit);
   }
 
-  getUpgradeHistory(limit: number = 50): CodeUpgrade[] {
-    return this.upgradeQueue.slice(-limit);
+  getUpgradeHistory(limit: number = 50): Array<Omit<CodeUpgrade, 'generatedCode'> & { generatedCode: Record<string, string> }> {
+    return this.upgradeQueue.slice(-limit).map(upgrade => ({
+      ...upgrade,
+      generatedCode: Object.fromEntries(upgrade.generatedCode),
+    }));
   }
 
   async forceEvolutionCycle(): Promise<void> {

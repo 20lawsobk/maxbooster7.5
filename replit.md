@@ -318,3 +318,17 @@ The Advertisement and Autopilot systems use **custom in-house AI models + connec
 - All phase docs updated and marked complete
 - JSDoc added to all server/lib and client/src/lib utility files
 - API hardening: Marketplace Zod validation added to 6 key POST endpoints
+
+### Desktop App - Electron Auto-Updater (Complete)
+- Installed electron-updater v6.8.3
+- electron/main.js: Added setupAutoUpdater() - silent background downloads, system tray notifications on update available and downloaded, auto-install on quit, suppressed noisy network-offline errors
+- electron/main.js: Added IPC handlers: check-for-updates, quit-and-install, get-update-status
+- electron/main.js: Update check fires 10 seconds after app ready in production
+- electron/preload.js: Exposed checkForUpdates(), quitAndInstall(), getUpdateStatus(), onUpdateStatus(callback) on window.electronAPI
+- package.json: Added GitHub publish target (blawzmusic/max-booster) to electron-builder config
+
+### Self-Evolution Engine - 4 Bug Fixes (Complete)
+- Bug 1 (CRITICAL): Added server/adaptations and server/security/patches to allowedRoots in runUpgradeTests. Social media adaptation code and security patches were previously always rejected by the path-check, silently failing every cycle.
+- Bug 2 (MEDIUM): Moved compileGate call into runUpgradeTests so TypeScript compile errors are caught during the test phase before backup files are created.
+- Bug 3 (MEDIUM): Fixed rollback threshold from responseTime > 500ms to responseTime > 3000ms. The 500ms threshold matched the warning-level threshold and would trigger unnecessary rollbacks under any momentary load.
+- Bug 4 (LOW): Fixed getUpgradeHistory() to convert Map<string,string> to a plain object with Object.fromEntries(). The API previously returned {} for all generatedCode fields.

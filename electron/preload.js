@@ -41,11 +41,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   
   isOnline: () => navigator.onLine,
-  
+
   onOnlineStatusChange: (callback) => {
     window.addEventListener('online', () => callback(true));
     window.addEventListener('offline', () => callback(false));
-  }
+  },
+
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+
+  quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
+
+  getUpdateStatus: () => ipcRenderer.invoke('get-update-status'),
+
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on('update-status', (_event, data) => callback(data));
+    return () => ipcRenderer.removeAllListeners('update-status');
+  },
 });
 
 window.addEventListener('DOMContentLoaded', () => {

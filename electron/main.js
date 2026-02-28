@@ -1,4 +1,5 @@
 const { app, BrowserWindow, shell, Menu, Tray, nativeImage, Notification, ipcMain, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
@@ -170,6 +171,82 @@ function showOfflineNotification() {
   }
 }
 
+function setupAutoUpdater() {
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = false;
+
+  autoUpdater.on('checking-for-update', () => {
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'checking' });
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    if (Notification.isSupported()) {
+      new Notification({
+        title: 'Max Booster Update Available',
+        body: `Version ${info.version} is downloading in the background.`,
+        icon: path.join(__dirname, 'assets', 'icon.png'),
+      }).show();
+    }
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'available', version: info.version });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'up-to-date' });
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('update-status', {
+        status: 'downloading',
+        percent: Math.round(progress.percent),
+        transferred: progress.transferred,
+        total: progress.total,
+      });
+    }
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    if (Notification.isSupported()) {
+      new Notification({
+        title: 'Max Booster Ready to Update',
+        body: `Version ${info.version} downloaded. It will install when you quit the app.`,
+        icon: path.join(__dirname, 'assets', 'icon.png'),
+      }).show();
+    }
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'downloaded', version: info.version });
+  });
+
+  autoUpdater.on('error', (err) => {
+    const msg = err?.message || String(err);
+    if (!msg.includes('net::ERR') && !msg.includes('ENOTFOUND')) {
+      console.error('Auto-updater error:', msg);
+    }
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'error', message: msg });
+  });
+}
+
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    return await autoUpdater.checkForUpdates();
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle('quit-and-install', () => {
+  isQuitting = true;
+  autoUpdater.quitAndInstall(false, true);
+});
+
+ipcMain.handle('get-update-status', () => {
+  return {
+    currentVersion: APP_VERSION,
+    autoDownload: autoUpdater.autoDownload,
+    autoInstallOnAppQuit: autoUpdater.autoInstallOnAppQuit,
+  };
+});
+
 ipcMain.handle('show-notification', (event, { title, body }) => {
   if (Notification.isSupported()) {
     new Notification({ title, body, icon: path.join(__dirname, 'assets', 'icon.png') }).show();
@@ -217,8 +294,15 @@ ipcMain.handle('get-file-info', async (event, filePath) => {
 });
 
 app.whenReady().then(() => {
+  setupAutoUpdater();
   createWindow();
   createTray();
+
+  if (process.env.NODE_ENV !== 'development') {
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch(() => {});
+    }, 10000);
+  }
 });
 
 app.on('before-quit', () => {
