@@ -12,6 +12,7 @@ import { createServer } from "http";
 import compression from "compression";
 import { logger } from "./logger.ts";
 import { setupStartupEndpoints } from "./startup-probes.ts";
+import { verifyReadReplica } from "./db.ts";
 import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
 import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
 import { originValidation } from "./middleware/requestValidation.ts";
@@ -289,7 +290,6 @@ app.use((req, res, next) => {
   // Verify read replica once at startup. On failure dbRead is permanently
   // re-pointed to the primary with a loud error — no per-query try/catch needed.
   try {
-    const { verifyReadReplica } = await import('./db.js');
     await verifyReadReplica();
   } catch (e: any) {
     logger.error(`[db] Failed to run replica verification: ${e.message}`);

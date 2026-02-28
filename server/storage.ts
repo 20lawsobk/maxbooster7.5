@@ -74,23 +74,25 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Auth queries always use the primary db — replicas are for analytics/dashboard reads.
+  // Authentication requires the latest committed data; replica lag cannot be tolerated here.
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await dbRead.select().from(users).where(eq(users.id, id));
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await dbRead.select().from(users).where(eq(users.email, email));
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await dbRead.select().from(users).where(eq(users.username, username));
+    const [user] = await db.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
 
   async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
-    const [user] = await dbRead.select().from(users).where(eq(users.passwordResetToken, token));
+    const [user] = await db.select().from(users).where(eq(users.passwordResetToken, token));
     return user || undefined;
   }
 

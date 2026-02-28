@@ -1,5 +1,6 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
+import { sql } from 'drizzle-orm';
 import ws from 'ws';
 import * as schema from '@shared/schema';
 import { config } from './config/defaults.js';
@@ -236,7 +237,6 @@ export let dbRead = replicaPool
 export async function verifyReadReplica(): Promise<void> {
   if (!replicaPool) return;
   try {
-    const { sql } = await import('drizzle-orm');
     await dbRead.execute(sql`SELECT 1`);
     logger.info('[db] ✅ Read replica verified — SELECTs route to Neon replica');
   } catch (err: any) {
