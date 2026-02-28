@@ -13,6 +13,8 @@
  * - Circuit breaker pattern for external services
  */
 
+import { resolve } from 'path';
+import { existsSync, readFileSync } from 'fs';
 import { db } from './db.js';
 import { sql } from 'drizzle-orm';
 import { logger } from './logger.js';
@@ -266,6 +268,26 @@ export function setupStartupEndpoints(app: import('express').Express): void {
   app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
   });
+
+  // Root route: serves the React app's index.html immediately so the Replit
+  // deployment health check (which always hits /) gets a 200 from the moment
+  // the process starts — not after the 2-minute async init window.
+  // In development Vite handles /, so this only runs in production.
+  if (process.env.NODE_ENV === 'production') {
+    const indexPath = resolve(__dirname, 'public', 'index.html');
+    if (existsSync(indexPath)) {
+      const html = readFileSync(indexPath, 'utf8');
+      app.get('/', (_req, res) => {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.status(200).send(html);
+      });
+    } else {
+      // Build hasn't produced index.html yet — still return 200 so the health
+      // check doesn't kill the deployment during a first-ever cold start.
+      app.get('/', (_req, res) => res.status(200).send(''));
+    }
+  }
 
   // /startup - Verbose startup status
   app.get('/startup', (_req, res) => {

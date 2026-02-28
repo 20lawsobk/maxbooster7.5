@@ -75,43 +75,23 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    try {
-      const [user] = await dbRead.select().from(users).where(eq(users.id, id));
-      return user || undefined;
-    } catch {
-      const [user] = await db.select().from(users).where(eq(users.id, id));
-      return user || undefined;
-    }
+    const [user] = await dbRead.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    try {
-      const [user] = await dbRead.select().from(users).where(eq(users.email, email));
-      return user || undefined;
-    } catch {
-      const [user] = await db.select().from(users).where(eq(users.email, email));
-      return user || undefined;
-    }
+    const [user] = await dbRead.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    try {
-      const [user] = await dbRead.select().from(users).where(eq(users.username, username));
-      return user || undefined;
-    } catch {
-      const [user] = await db.select().from(users).where(eq(users.username, username));
-      return user || undefined;
-    }
+    const [user] = await dbRead.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
-    try {
-      const [user] = await dbRead.select().from(users).where(eq(users.passwordResetToken, token));
-      return user || undefined;
-    } catch {
-      const [user] = await db.select().from(users).where(eq(users.passwordResetToken, token));
-      return user || undefined;
-    }
+    const [user] = await dbRead.select().from(users).where(eq(users.passwordResetToken, token));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {

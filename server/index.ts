@@ -286,6 +286,15 @@ app.use((req, res, next) => {
   app.use(originValidation);
   logger.info('✅ Origin validation enabled (SameSite=Lax + Origin header check)');
 
+  // Verify read replica once at startup. On failure dbRead is permanently
+  // re-pointed to the primary with a loud error — no per-query try/catch needed.
+  try {
+    const { verifyReadReplica } = await import('./db.js');
+    await verifyReadReplica();
+  } catch (e: any) {
+    logger.error(`[db] Failed to run replica verification: ${e.message}`);
+  }
+
   // ========================================
   // INITIALIZE PRODUCTION SAFETY SYSTEMS
   // ========================================

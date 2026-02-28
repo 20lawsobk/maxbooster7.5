@@ -7,8 +7,6 @@ import { createHash } from 'crypto';
 import { logger } from './logger.js';
 
 neonConfig.webSocketConstructor = ws;
-// Cache fetch connections across requests for better pooling efficiency in production
-neonConfig.fetchConnectionCache = true;
 
 if (!config.database.url) {
   throw new Error('DATABASE_URL must be set. Did you forget to provision a database?');
@@ -220,11 +218,31 @@ const replicaPool = replicaUrl
   : null;
 
 if (isProduction && replicaPool) {
-  logger.info('[db] Read replica active — SELECTs route to Neon replica');
+  logger.info('[db] Read replica pool created — will verify connectivity at startup');
 } else if (isProduction && !replicaPool) {
   logger.warn('[db] DATABASE_REPLICA_URLS not set — all queries routed to primary in production');
 }
 
-export const dbRead = replicaPool
+export let dbRead = replicaPool
   ? drizzle(replicaPool, { schema })
   : db;
+
+/**
+ * verifyReadReplica — called once at startup.
+ * Runs a live SELECT 1 against the replica. If it fails for any reason
+ * (bad URL, cold-start timeout, Neon proxy rejection), dbRead is permanently
+ * re-pointed to the primary and a loud error is logged. No per-query try/catch needed.
+ */
+export async function verifyReadReplica(): Promise<void> {
+  if (!replicaPool) return;
+  try {
+    const { sql } = await import('drizzle-orm');
+    await dbRead.execute(sql`SELECT 1`);
+    logger.info('[db] ✅ Read replica verified — SELECTs route to Neon replica');
+  } catch (err: any) {
+    logger.error('[db] ❌ Read replica health check FAILED — routing ALL queries to primary');
+    logger.error(`[db]    Replica error: ${err.message}`);
+    logger.error('[db]    Check DATABASE_REPLICA_URLS — the replica URL may be invalid or the Neon replica may be down');
+    dbRead = db;
+  }
+}
