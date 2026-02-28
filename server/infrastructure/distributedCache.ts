@@ -61,6 +61,35 @@ export class DistributedCache {
   private stats: CacheStats = { hits: 0, misses: 0, size: 0, memoryUsage: 0 };
   private _redisReady = false;
 
+  // L1 in-process cache — eliminates Redis round-trips for hot keys.
+  // TTL is capped at 2 seconds so stale data propagates across workers quickly.
+  private l1 = new Map<string, { raw: string; expiresAt: number }>();
+  private readonly L1_MAX     = 2_000;
+  private readonly L1_TTL_MS  = 2_000;
+  private l1PrunedAt = Date.now();
+
+  private l1Get(key: string): string | null {
+    const entry = this.l1.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) { this.l1.delete(key); return null; }
+    return entry.raw;
+  }
+
+  private l1Set(key: string, raw: string): void {
+    const now = Date.now();
+    if (now - this.l1PrunedAt > 10_000) {
+      for (const [k, v] of this.l1) { if (now > v.expiresAt) this.l1.delete(k); }
+      this.l1PrunedAt = now;
+    }
+    if (this.l1.size >= this.L1_MAX) {
+      const oldest = this.l1.keys().next().value;
+      if (oldest) this.l1.delete(oldest);
+    }
+    this.l1.set(key, { raw, expiresAt: now + this.L1_TTL_MS });
+  }
+
+  private l1Del(key: string): void { this.l1.delete(key); }
+
   private constructor(config: Partial<CacheConfig> = {}) {
     this.config = {
       defaultTTL: config.defaultTTL || 300,
@@ -148,9 +177,17 @@ export class DistributedCache {
 
   async get<T>(key: string): Promise<T | null> {
     try {
+      // L1 — nanosecond in-process lookup (no network)
+      const l1raw = this.l1Get(key);
+      if (l1raw !== null) {
+        this.stats.hits++;
+        return JSON.parse(l1raw) as T;
+      }
+
       if (this.redis && this._redisReady) {
         const value = await this.redis.get(key);
         if (value) {
+          this.l1Set(key, value);   // populate L1 for subsequent requests
           this.stats.hits++;
           return JSON.parse(value) as T;
         }
@@ -182,6 +219,9 @@ export class DistributedCache {
     const ttl = ttlSeconds || this.config.defaultTTL;
     const serialized = JSON.stringify(value);
 
+    // Always populate L1 on write regardless of Redis state
+    this.l1Set(key, serialized);
+
     try {
       if (this.redis && this._redisReady) {
         await this.redis.setex(key, ttl, serialized);
@@ -208,6 +248,7 @@ export class DistributedCache {
   }
 
   async delete(key: string): Promise<void> {
+    this.l1Del(key);  // always evict from L1
     try {
       if (this.redis && this._redisReady) {
         await this.redis.del(key);
@@ -224,6 +265,10 @@ export class DistributedCache {
   }
 
   async invalidatePattern(pattern: string): Promise<number> {
+    // Evict matching L1 entries synchronously
+    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+    for (const key of this.l1.keys()) { if (regex.test(key)) this.l1.delete(key); }
+
     try {
       if (this.redis && this._redisReady) {
         const keys = await this.redis.keys(`cache:${pattern}`);
