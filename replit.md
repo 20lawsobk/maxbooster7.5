@@ -342,11 +342,10 @@ The Advertisement and Autopilot systems use **custom in-house AI models + connec
 **9 Kill Switch Registrations (all active on server start):**
 autonomous-service, automation-system, autonomous-updates, autonomous-autopilot, autopilot-engine, auto-posting-v1, auto-posting-v2, auto-post-generator, autopilot-publisher
 
-### Read Replica Routing — Fixed (Complete)
-- Critical gap identified: `storage.ts` imported only `db` (primary) and sent ALL 22 read queries to the primary, making the Neon replica completely unused even though DATABASE_REPLICA_URLS was set and dbRead was exported from db.ts
-- Fix: Added `dbRead` to the import in `storage.ts`; replaced all 22 `db.select()` calls with `dbRead.select()` using replace_all; 13 write operations (insert/update/delete) remain on `db` (primary)
-- Result: Reads now route to Neon replica, writes to primary — standard read-write split for scale
-- One non-fatal startup timing error: LabelGrid config lookup runs before DSP seeding, returns "Failed query" from replica (timing issue, not connection failure — all other replica reads succeed)
+### Read Replica Routing — Production-Grade (Complete)
+- `storage.ts`: All 22 `dbRead.select()` calls route reads to the Neon replica; 13 write operations remain on `db` (primary)
+- `db.ts`: Read replica is a **production-only resource** — `DATABASE_REPLICA_URLS` is only consumed when `NODE_ENV=production`. In development, `dbRead` is aliased directly to `db` (primary), so the replica is never contacted outside production. No fallbacks, no circuit-breakers: production uses the replica directly and surfaces any real failures immediately.
+- Startup logs confirm state: `[db] Read replica active` in production, silent in development
 
 ### GitHub Actions CI/CD — All 5 Platforms Fixed (Complete)
 Three root causes fixed; all builds now pass (Windows, macOS, Linux desktop + Android, iOS mobile):

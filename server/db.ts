@@ -202,9 +202,14 @@ export const pool = new InstrumentedPool({
 
 export const db = drizzle(pool, { schema });
 
-// Read replica routing: if DATABASE_REPLICA_URLS is set, route SELECT queries to replica.
-// Falls back to the primary pool when no replica URL is configured.
-const replicaUrl = (process.env.DATABASE_REPLICA_URLS || '').split(',').filter(Boolean)[0];
+// Read replica routing: production-only read-write split.
+// In production, DATABASE_REPLICA_URLS routes SELECT queries to the Neon read replica.
+// In development, all queries run on the primary — replicas are a production resource.
+const isProduction = process.env.NODE_ENV === 'production';
+const replicaUrl = isProduction
+  ? (process.env.DATABASE_REPLICA_URLS || '').split(',').filter(Boolean)[0]
+  : undefined;
+
 const replicaPool = replicaUrl
   ? new InstrumentedPool({
       connectionString: replicaUrl,
@@ -213,6 +218,12 @@ const replicaPool = replicaUrl
       connectionTimeoutMillis: config.database.connectionTimeout,
     })
   : null;
+
+if (isProduction && replicaPool) {
+  logger.info('[db] Read replica active — SELECTs route to Neon replica');
+} else if (isProduction && !replicaPool) {
+  logger.warn('[db] DATABASE_REPLICA_URLS not set — all queries routed to primary in production');
+}
 
 export const dbRead = replicaPool
   ? drizzle(replicaPool, { schema })
