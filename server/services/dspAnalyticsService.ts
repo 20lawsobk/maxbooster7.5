@@ -428,29 +428,40 @@ class DSPAnalyticsService {
   }
 
   normalizeTikTokData(data: TikTokAnalytics, startDate: Date, endDate: Date): NormalizedDSPAnalytics {
+    const avgVideoLength = 30;
+    const completionRate = data.views > 0 && data.avgWatchTime > 0
+      ? Math.max(0, Math.min(1, data.avgWatchTime / avgVideoLength))
+      : 0;
+    const skips = data.views > 0
+      ? Math.floor(data.views * (1 - completionRate))
+      : 0;
+    const engagementRate = data.views > 0
+      ? ((data.likes + data.comments + data.shares) / data.views) * 100
+      : 0;
+    const virality = data.views > 0 ? Math.min(1, (data.shares / Math.max(data.views, 1)) * 50) : 0;
     return {
       platform: 'tiktok',
       period: { start: startDate, end: endDate },
       streams: data.views,
-      listeners: Math.floor(data.views * 0.4),
+      listeners: Math.floor(data.views * 0.35),
       saves: data.likes,
       playlistAdds: data.soundUsages,
       shares: data.shares,
-      skips: data.views > 0 ? Math.floor(data.views * (1 - (data.avgWatchTime / Math.max(data.avgWatchTime + 10, 30)))) : 0,
-      completionRate: data.views > 0 ? Math.max(0, Math.min(1, data.avgWatchTime / Math.max(data.avgWatchTime + 10, 30))) : 0,
+      skips,
+      completionRate,
       avgListenDuration: data.avgWatchTime,
-      revenue: data.views * 0.00015,
+      revenue: data.views * 0.00003,
       sourceBreakdown: {
-        playlist: 10,
-        search: 15,
-        library: 5,
+        playlist: 8,
+        search: 12,
+        library: 3,
         radio: 0,
-        artist: 25,
-        other: 45,
+        artist: 22,
+        other: 55,
       },
       deviceBreakdown: {
-        mobile: 92,
-        desktop: 5,
+        mobile: 94,
+        desktop: 3,
         tablet: 2,
         smartSpeaker: 0,
         tv: 1,
@@ -460,29 +471,34 @@ class DSPAnalyticsService {
   }
 
   normalizeInstagramData(data: InstagramAnalytics, startDate: Date, endDate: Date): NormalizedDSPAnalytics {
+    const totalViews = data.reelsViews + data.storiesViews;
+    const totalEngagements = data.likes + data.comments + data.shares + data.saves;
+    const engagementRate = data.reach > 0 ? (totalEngagements / data.reach) * 100 : 0;
+    const skipRate = 0.35;
+    const completionRate = Math.max(0, Math.min(1, 1 - skipRate));
     return {
       platform: 'instagram',
       period: { start: startDate, end: endDate },
-      streams: data.reelsViews + data.storiesViews,
-      listeners: Math.floor(data.reach * 0.5),
+      streams: totalViews,
+      listeners: Math.floor(data.reach * 0.45),
       saves: data.saves,
-      playlistAdds: Math.floor(data.saves * 0.3),
+      playlistAdds: Math.floor(data.saves * 0.25),
       shares: data.shares,
-      skips: Math.floor(data.impressions * 0.2),
-      completionRate: data.impressions > 0 ? Math.max(0, Math.min(1, 1 - (Math.floor(data.impressions * 0.2) / data.impressions))) : 0,
-      avgListenDuration: 25,
-      revenue: data.impressions * 0.00008,
+      skips: Math.floor(data.impressions * skipRate),
+      completionRate,
+      avgListenDuration: 18,
+      revenue: data.impressions * 0.00005,
       sourceBreakdown: {
         playlist: 5,
-        search: 20,
-        library: 10,
+        search: 22,
+        library: 8,
         radio: 0,
-        artist: 35,
-        other: 30,
+        artist: 38,
+        other: 27,
       },
       deviceBreakdown: {
-        mobile: 88,
-        desktop: 8,
+        mobile: 90,
+        desktop: 6,
         tablet: 3,
         smartSpeaker: 0,
         tv: 1,
@@ -521,32 +537,33 @@ class DSPAnalyticsService {
       })),
     };
 
+    const spotifySkipRate = 0.22;
     return {
       platform: 'spotify',
       period: { start: startDate, end: endDate },
       streams: data.streams,
       listeners: data.listeners,
       saves: data.saves,
-      playlistAdds: Math.floor(data.saves * 0.3),
-      shares: Math.floor(data.saves * 0.1),
-      skips: Math.floor(data.streams * 0.15),
-      completionRate: data.streams > 0 ? Math.max(0, Math.min(1, 1 - (Math.floor(data.streams * 0.15) / data.streams))) : 0,
-      avgListenDuration: 180,
+      playlistAdds: Math.floor(data.saves * 0.28),
+      shares: Math.floor(data.saves * 0.08),
+      skips: Math.floor(data.streams * spotifySkipRate),
+      completionRate: Math.max(0, Math.min(1, 1 - spotifySkipRate)),
+      avgListenDuration: 162,
       revenue: data.streams * 0.004,
       demographics,
       geography,
       sourceBreakdown: {
-        playlist: 40,
-        search: 20,
-        library: 15,
+        playlist: 38,
+        search: 22,
+        library: 17,
         radio: 10,
-        artist: 10,
-        other: 5,
+        artist: 9,
+        other: 4,
       },
       deviceBreakdown: {
-        mobile: 55,
-        desktop: 25,
-        tablet: 8,
+        mobile: 57,
+        desktop: 24,
+        tablet: 7,
         smartSpeaker: 7,
         tv: 3,
         other: 2,
@@ -555,6 +572,7 @@ class DSPAnalyticsService {
   }
 
   normalizeAppleMusicData(data: AppleMusicAnalytics, startDate: Date, endDate: Date): NormalizedDSPAnalytics {
+    const appleSkipRate = 0.12;
     return {
       platform: 'apple',
       period: { start: startDate, end: endDate },
@@ -563,21 +581,21 @@ class DSPAnalyticsService {
       saves: data.downloads,
       playlistAdds: data.playlistAdds,
       shares: data.shares,
-      skips: Math.floor(data.plays * 0.12),
-      completionRate: data.plays > 0 ? Math.max(0, Math.min(1, 1 - (Math.floor(data.plays * 0.12) / data.plays))) : 0,
-      avgListenDuration: 195,
-      revenue: data.plays * 0.01,
+      skips: Math.floor(data.plays * appleSkipRate),
+      completionRate: Math.max(0, Math.min(1, 1 - appleSkipRate)),
+      avgListenDuration: 188,
+      revenue: data.plays * 0.008,
       sourceBreakdown: {
-        playlist: 35,
-        search: 25,
-        library: 20,
-        radio: 8,
-        artist: 8,
+        playlist: 33,
+        search: 27,
+        library: 22,
+        radio: 7,
+        artist: 7,
         other: 4,
       },
       deviceBreakdown: {
-        mobile: 60,
-        desktop: 20,
+        mobile: 62,
+        desktop: 18,
         tablet: 12,
         smartSpeaker: 5,
         tv: 2,
@@ -587,32 +605,36 @@ class DSPAnalyticsService {
   }
 
   normalizeYouTubeData(data: YouTubeAnalytics, startDate: Date, endDate: Date): NormalizedDSPAnalytics {
+    const assumedAvgVideoLength = 210;
+    const completionRate = data.averageViewDuration > 0 && assumedAvgVideoLength > 0
+      ? Math.max(0, Math.min(1, data.averageViewDuration / assumedAvgVideoLength))
+      : 0;
     return {
       platform: 'youtube',
       period: { start: startDate, end: endDate },
       streams: data.views,
-      listeners: Math.floor(data.views * 0.6),
+      listeners: Math.floor(data.views * 0.55),
       saves: data.likes,
-      playlistAdds: Math.floor(data.likes * 0.2),
-      shares: Math.floor(data.comments * 0.5),
-      skips: 0,
-      completionRate: data.averageViewDuration / 240,
+      playlistAdds: Math.floor(data.likes * 0.18),
+      shares: data.comments > 0 ? Math.floor(data.comments * 0.4) : 0,
+      skips: data.views > 0 ? Math.floor(data.views * (1 - completionRate)) : 0,
+      completionRate,
       avgListenDuration: data.averageViewDuration,
-      revenue: (data.watchTimeMinutes / 1000) * 2,
+      revenue: data.views * 0.00069,
       sourceBreakdown: {
-        playlist: 25,
-        search: 40,
+        playlist: 23,
+        search: 42,
         library: 5,
         radio: 5,
-        artist: 15,
-        other: 10,
+        artist: 18,
+        other: 7,
       },
       deviceBreakdown: {
-        mobile: 65,
-        desktop: 20,
-        tablet: 8,
+        mobile: 67,
+        desktop: 18,
+        tablet: 7,
         smartSpeaker: 2,
-        tv: 4,
+        tv: 5,
         other: 1,
       },
     };
@@ -635,26 +657,27 @@ class DSPAnalyticsService {
       else deviceBreakdown.other = d.percentage;
     });
 
+    const amazonSkipRate = 0.15;
     return {
       platform: 'amazon',
       period: { start: startDate, end: endDate },
       streams: data.streams,
       listeners: data.listeners,
-      saves: Math.floor(data.streams * 0.02),
-      playlistAdds: Math.floor(data.streams * 0.01),
-      shares: Math.floor(data.streams * 0.005),
-      skips: Math.floor(data.streams * 0.1),
-      completionRate: data.streams > 0 ? Math.max(0, Math.min(1, 1 - (Math.floor(data.streams * 0.1) / data.streams))) : 0,
-      avgListenDuration: 200,
-      revenue: data.streams * 0.004,
+      saves: Math.floor(data.streams * 0.018),
+      playlistAdds: Math.floor(data.streams * 0.009),
+      shares: Math.floor(data.streams * 0.004),
+      skips: Math.floor(data.streams * amazonSkipRate),
+      completionRate: Math.max(0, Math.min(1, 1 - amazonSkipRate)),
+      avgListenDuration: 195,
+      revenue: data.streams * 0.00402,
       deviceBreakdown,
       sourceBreakdown: {
-        playlist: 30,
-        search: 15,
-        library: 25,
-        radio: 15,
-        artist: 10,
-        other: 5,
+        playlist: 28,
+        search: 16,
+        library: 27,
+        radio: 17,
+        artist: 9,
+        other: 3,
       },
     };
   }
@@ -914,8 +937,8 @@ class DSPAnalyticsService {
         totalStreams: sql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
         totalListeners: sql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
         totalSaves: sql<number>`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
-        totalRevenue: sql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
-        avgCompletionRate: sql<number>`0`,
+        totalRevenue: sql<number>`COALESCE(SUM(CAST(${dspAnalytics.revenue} AS NUMERIC)), 0)`,
+        avgCompletionRate: sql<number>`COALESCE(AVG(${dspAnalytics.completionRate}), 0)`,
       })
       .from(dspAnalytics)
       .where(and(...conditions));
