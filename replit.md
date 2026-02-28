@@ -17,6 +17,22 @@ Max Booster is a full-stack TypeScript web application for music artists. It pro
 - **Storage:** Hybrid — Replit Object Storage (hot tier) + Pocket Dimension (cold tier) + BoosterState
 - **Build:** Vite for frontend, tsx/esbuild for server bundle
 
+## Deployment
+
+**Target:** Replit Autoscale  
+**Per-replica:** 8 vCPU / 32 GiB RAM  
+**Max replicas:** 10  
+**Workers per replica:** 6 (auto-calculated from CPU/RAM; override with `CLUSTER_WORKERS=6`)  
+**Total capacity at full scale:** 60 Express workers across 10 replicas  
+**Run command:** `bash -c 'if [ -f ./boosterstate/target/debug/boosterstate ]; then ./boosterstate/target/debug/boosterstate & sleep 1; fi && UV_THREADPOOL_SIZE=8 TF_NUM_INTEROP_THREADS=2 TF_NUM_INTRAOP_THREADS=2 NODE_ENV=production node --max-old-space-size=4096 dist/cluster.cjs'`
+
+With Autoscale, each replica is stateless at the app level — shared state lives in:
+- Redis (sessions, rate limits, BullMQ queues, pub/sub)
+- PostgreSQL/Neon (all persistent data)
+- Replit Object Storage (hot-tier files)
+
+BoosterState (port 9877) is **per-replica** — do not use it for cross-replica shared state; use Redis instead.
+
 ## Architecture
 
 This is a monorepo with:

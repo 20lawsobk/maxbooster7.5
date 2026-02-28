@@ -31,6 +31,51 @@ interface SlidingWindowResult {
   total: number;
 }
 
+const DEGRADED_RATE_FRACTION = 0.25;
+const DEGRADED_MAX_KEYS = 10_000;
+
+class InMemoryDegradedRateLimiter {
+  private store = new Map<string, number[]>();
+  private lastPrune = Date.now();
+
+  check(key: string, windowMs: number, maxRequests: number): SlidingWindowResult {
+    const now = Date.now();
+    const degradedMax = Math.max(1, Math.floor(maxRequests * DEGRADED_RATE_FRACTION));
+
+    if (now - this.lastPrune > 60_000) {
+      this.prune(now);
+    }
+
+    if (!this.store.has(key) && this.store.size >= DEGRADED_MAX_KEYS) {
+      return { allowed: false, remaining: 0, resetAt: now + windowMs, total: degradedMax };
+    }
+
+    const windowStart = now - windowMs;
+    const timestamps = (this.store.get(key) || []).filter(t => t > windowStart);
+
+    if (timestamps.length >= degradedMax) {
+      this.store.set(key, timestamps);
+      return { allowed: false, remaining: 0, resetAt: timestamps[0] + windowMs, total: timestamps.length };
+    }
+
+    timestamps.push(now);
+    this.store.set(key, timestamps);
+    return { allowed: true, remaining: degradedMax - timestamps.length, resetAt: now + windowMs, total: timestamps.length };
+  }
+
+  private prune(now: number): void {
+    const cutoff = now - 3_600_000;
+    for (const [key, timestamps] of this.store) {
+      const fresh = timestamps.filter(t => t > cutoff);
+      if (fresh.length === 0) this.store.delete(key);
+      else this.store.set(key, fresh);
+    }
+    this.lastPrune = now;
+  }
+}
+
+const degradedLimiter = new InMemoryDegradedRateLimiter();
+
 function getClientIP(req: Request): string {
   const forwarded = req.headers['x-forwarded-for'];
   if (typeof forwarded === 'string') {
@@ -54,7 +99,8 @@ async function slidingWindowCheck(
   const redis = await getRedisClient();
 
   if (!redis) {
-    return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs, total: 1 };
+    logger.warn('[RateLimit] Redis unavailable — degraded mode (25% limits)');
+    return degradedLimiter.check(key, windowMs, maxRequests);
   }
 
   const redisKey = `${REDIS_KEY_PREFIX}${key}`;
@@ -95,8 +141,8 @@ async function slidingWindowCheck(
       total: requestCount + 1
     };
   } catch (error) {
-    logger.error('Rate limiter Redis error:', error);
-    return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs, total: 1 };
+    logger.error('[RateLimit] Redis error — degraded mode (25% limits):', error);
+    return degradedLimiter.check(key, windowMs, maxRequests);
   }
 }
 
