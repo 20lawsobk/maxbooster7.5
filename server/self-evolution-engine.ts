@@ -23,6 +23,7 @@ import * as path from 'path';
 import { logger } from './logger.js';
 import { storage } from './storage.js';
 import { customAI } from './custom-ai-engine.js';
+import * as esbuild from 'esbuild';
 
 interface IndustryChange {
   id: string;
@@ -944,6 +945,23 @@ export const ${this.camelCase(techName)}Adoption = {
     return { passed: true };
   }
 
+  private async compileGate(code: string, filePath: string): Promise<{ ok: boolean; error?: string }> {
+    if (!filePath.endsWith('.ts')) return { ok: true };
+    try {
+      await esbuild.transform(code, {
+        loader: 'ts',
+        target: 'node18',
+        format: 'cjs',
+        logLevel: 'silent',
+      });
+      return { ok: true };
+    } catch (err: any) {
+      const msg = err?.message ?? String(err);
+      logger.error(`[SelfEvolution] Compile gate FAILED for ${filePath}: ${msg}`);
+      return { ok: false, error: msg };
+    }
+  }
+
   private async generateTestsForUpgrade(upgrade: CodeUpgrade): Promise<string> {
     return `
 // Auto-generated tests for upgrade: ${upgrade.id}
@@ -991,6 +1009,13 @@ describe('${upgrade.id}', () => {
             }
             const backupPath = `${fullPath}.bak`;
             await fs.copyFile(fullPath, backupPath).catch(() => {});
+          }
+
+          const compileResult = await this.compileGate(code, filePath);
+          if (!compileResult.ok) {
+            upgrade.status = 'failed';
+            logger.error(`   ❌ Compile gate blocked deployment of ${filePath}: ${compileResult.error}`);
+            break;
           }
 
           const tempPath = `${fullPath}.tmp`;

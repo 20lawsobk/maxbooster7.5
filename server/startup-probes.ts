@@ -256,6 +256,13 @@ export const startupProbes = new StartupProbeManager();
 
 // Express middleware to add startup endpoints
 export function setupStartupEndpoints(app: import('express').Express): void {
+  // Registered before ALL middleware — designed for external uptime monitors.
+  // No session, no auth, no rate-limiting, no DB. Just confirms the process is alive.
+  app.get('/api/ping', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.json({ ok: true, pid: process.pid, uptime: Math.floor(process.uptime()) });
+  });
+
   app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
   });
