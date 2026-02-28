@@ -1,12 +1,99 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { type Store, type Options, type IncrementResponse } from 'express-rate-limit';
 import type { Request, Response } from 'express';
 import { config } from '../config/defaults.js';
 import { logger } from '../logger.js';
+import { getRedisClient } from '../lib/redisClient.js';
 
-// Aggressive rate limiting for extreme load protection
+const RL_PREFIX = 'glrl:';
+
+interface MemEntry { hits: number; resetAt: number; }
+
+class RedisRateLimitStore implements Store {
+  private windowMs: number;
+  private maxRequests: number;
+  private fallbackStore = new Map<string, MemEntry>();
+  private fallbackPrunedAt = Date.now();
+
+  constructor(windowMs: number, maxRequests: number) {
+    this.windowMs = windowMs;
+    this.maxRequests = maxRequests;
+  }
+
+  init(options: Options): void {
+    this.windowMs = options.windowMs;
+    this.maxRequests = typeof options.max === 'number' ? options.max : this.maxRequests;
+  }
+
+  private fallbackIncrement(key: string): IncrementResponse {
+    const now = Date.now();
+    if (now - this.fallbackPrunedAt > 60_000) {
+      for (const [k, v] of this.fallbackStore) {
+        if (now > v.resetAt) this.fallbackStore.delete(k);
+      }
+      this.fallbackPrunedAt = now;
+    }
+    const entry = this.fallbackStore.get(key);
+    if (!entry || now > entry.resetAt) {
+      const resetAt = now + this.windowMs;
+      this.fallbackStore.set(key, { hits: 1, resetAt });
+      return { totalHits: 1, resetTime: new Date(resetAt) };
+    }
+    entry.hits += 1;
+    return { totalHits: entry.hits, resetTime: new Date(entry.resetAt) };
+  }
+
+  async increment(key: string): Promise<IncrementResponse> {
+    const rKey = `${RL_PREFIX}${key}`;
+    const windowSec = Math.ceil(this.windowMs / 1000);
+
+    try {
+      const redis = getRedisClient();
+      const pipeline = redis.pipeline();
+      pipeline.incr(rKey);
+      pipeline.expire(rKey, windowSec);
+      const results = await pipeline.exec();
+      const totalHits = (results?.[0]?.[1] as number) ?? 1;
+      const resetTime = new Date(Date.now() + this.windowMs);
+      return { totalHits, resetTime };
+    } catch {
+      logger.warn('[GlobalRateLimit] Redis unavailable — using in-memory fallback');
+      return this.fallbackIncrement(key);
+    }
+  }
+
+  async decrement(key: string): Promise<void> {
+    try {
+      const redis = getRedisClient();
+      const v = await redis.decr(`${RL_PREFIX}${key}`);
+      if (v < 0) await redis.set(`${RL_PREFIX}${key}`, '0');
+    } catch {
+      const entry = this.fallbackStore.get(key);
+      if (entry && entry.hits > 0) entry.hits--;
+    }
+  }
+
+  async resetKey(key: string): Promise<void> {
+    this.fallbackStore.delete(key);
+    try {
+      const redis = getRedisClient();
+      await redis.del(`${RL_PREFIX}${key}`);
+    } catch {}
+  }
+}
+
+const globalStore = new RedisRateLimitStore(
+  config.rateLimiting.windowMs,
+  config.rateLimiting.maxRequests
+);
+const criticalStore = new RedisRateLimitStore(
+  config.rateLimiting.windowMs,
+  config.rateLimiting.criticalMax
+);
+
 export const globalRateLimiter = rateLimit({
   windowMs: config.rateLimiting.windowMs,
   max: config.rateLimiting.maxRequests,
+  store: globalStore,
   message: {
     error: 'Too many requests',
     message: 'You have exceeded the request limit. Please slow down and try again later.',
@@ -17,7 +104,8 @@ export const globalRateLimiter = rateLimit({
   validate: { trustProxy: false },
   skip: (req: Request) => {
     const isDevelopment = process.env.NODE_ENV === 'development';
-    const isMonitoringEndpoint = req.path.startsWith('/api/monitoring/') || req.path.startsWith('/api/system/');
+    const isMonitoringEndpoint =
+      req.path.startsWith('/api/monitoring/') || req.path.startsWith('/api/system/');
     const isStaticAsset =
       req.path.startsWith('/@fs/') ||
       req.path.startsWith('/src/') ||
@@ -25,23 +113,13 @@ export const globalRateLimiter = rateLimit({
       req.path.startsWith('/@vite/') ||
       req.path.startsWith('/@react-refresh') ||
       req.path.startsWith('/@replit/');
-    
-    // Always skip monitoring/system endpoints (needed for health checks and burn-in tests)
-    if (isMonitoringEndpoint) {
-      return true;
-    }
-    
-    // Skip ALL requests in development mode (rate limiting is for production only)
-    // In development, traffic comes through Replit's proxy with varying IPs
-    if (isDevelopment) {
-      return true;
-    }
-    
-    // Skip static assets in all environments
+
+    if (isMonitoringEndpoint) return true;
+    if (isDevelopment) return true;
     return isStaticAsset;
   },
   handler: (req: Request, res: Response) => {
-    logger.warn(`⚠️ Rate limit exceeded for IP: ${req.ip}`);
+    logger.warn(`⚠️ Global rate limit exceeded for IP: ${req.ip}`);
     res.status(429).json({
       error: 'Too many requests',
       message: 'You have exceeded the request limit. Please slow down and try again later.',
@@ -50,10 +128,10 @@ export const globalRateLimiter = rateLimit({
   },
 });
 
-// Critical endpoints get stricter limits
 export const criticalEndpointLimiter = rateLimit({
   windowMs: config.rateLimiting.windowMs,
   max: config.rateLimiting.criticalMax,
+  store: criticalStore,
   message: {
     error: 'Too many requests to critical endpoint',
     message: 'This endpoint is rate-limited. Please try again later.',

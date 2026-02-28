@@ -13,8 +13,17 @@ class ClusterSessionManager {
   private isDistributedMode: boolean = true;
 
   private constructor() {
+    const isProductionEnv =
+      process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+    const rawSecret = process.env.SESSION_SECRET;
+    if (isProductionEnv && (!rawSecret || rawSecret.length < 32)) {
+      logger.error(
+        '❌ CRITICAL: SESSION_SECRET missing or too short (<32 chars) — refusing to start in production'
+      );
+      process.exit(1);
+    }
     this.config = {
-      sessionSecret: process.env.SESSION_SECRET || 'max-booster-session-secret-change-in-production',
+      sessionSecret: rawSecret || 'dev-only-insecure-fallback-not-for-production',
       sessionName: 'maxbooster.sid',
       maxAge: parseInt(process.env.SESSION_MAX_AGE || '86400000'),
       secure: process.env.NODE_ENV === 'production',

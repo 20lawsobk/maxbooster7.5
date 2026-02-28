@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { selfEvolution } from '../self-evolution-engine.js';
 import {
@@ -67,7 +67,7 @@ router.get('/status', requireAuth, async (_req, res) => {
   }
 });
 
-router.post('/start', requireAuth, async (req, res) => {
+router.post('/start', requireAdmin, async (req, res) => {
   try {
     if (!selfEvolution.canAutoStart()) {
       const safetyStatus = selfEvolution.getProductionSafetyStatus();
@@ -95,7 +95,7 @@ router.post('/start', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/stop', requireAuth, async (req, res) => {
+router.post('/stop', requireAdmin, async (req, res) => {
   try {
     await selfEvolution.stop();
     const status = selfEvolution.getStatus();
@@ -114,7 +114,7 @@ router.post('/stop', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/run-once', requireAuth, runOnceRateLimit, async (req, res) => {
+router.post('/run-once', requireAdmin, runOnceRateLimit, async (req, res) => {
   try {
     logger.info(`[SelfEvolution] Manual evolution cycle triggered by user ${req.user!.id}`);
     const result = await selfEvolution.triggerManualUpgrade();
@@ -154,7 +154,7 @@ router.get('/upgrades', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/simulation', requireAuth, simulationRateLimit, async (req, res) => {
+router.post('/simulation', requireAdmin, simulationRateLimit, async (req, res) => {
   try {
     logger.info(`[SelfEvolution] Simulation triggered by user ${req.user!.id}`);
     const scenarios = Math.min(parseInt(req.query.scenarios as string) || 52, 200);
