@@ -3,14 +3,17 @@
  *
  * Supports two modes:
  *   Standalone: REDIS_URL is set → single ioredis instance (default)
- *   Cluster:    REDIS_CLUSTER_URLS is set (comma-separated) → ioredis.Cluster
+ *   Cluster:    REDIS_CLUSTER_URLS is set with 2+ comma-separated URLs → ioredis.Cluster
  *
- * All application code imports getRedisClient() and receives a unified client
- * whether it's standalone or cluster — ioredis Cluster is API-compatible.
+ * IMPORTANT: If REDIS_CLUSTER_URLS contains only a single URL (same as REDIS_URL),
+ * we fall back to standalone mode automatically. ioredis.Cluster requires a true
+ * Redis Cluster (6+ nodes). Connecting a Cluster client to a single-node Redis
+ * causes endless reconnects and session store timeouts.
+ *
+ * All application code imports getRedisClient() and receives a unified client.
  *
  * NOTE: allkeys-lru eviction policy must be set manually via your Redis
- * provider dashboard. Replit's managed Redis does not permit CONFIG SET,
- * so attempting it programmatically would generate spurious timeout errors.
+ * provider dashboard. Replit's managed Redis does not permit CONFIG SET.
  */
 
 import Redis from 'ioredis';
@@ -21,8 +24,8 @@ type RedisClient = Redis | InstanceType<typeof Redis.Cluster>;
 
 let _redis: RedisClient | null = null;
 
-function buildStandaloneClient(): Redis {
-  const url = process.env.REDIS_URL;
+function buildStandaloneClient(urlOverride?: string): Redis {
+  const url = urlOverride || process.env.REDIS_URL;
   if (!url) throw new Error('REDIS_URL environment variable is not set');
 
   const client = new Redis(url, {
@@ -48,10 +51,7 @@ function buildStandaloneClient(): Redis {
   return client;
 }
 
-function buildClusterClient(): InstanceType<typeof Redis.Cluster> {
-  const urls = (process.env.REDIS_CLUSTER_URLS || '').split(',').map(u => u.trim()).filter(Boolean);
-  if (urls.length === 0) throw new Error('REDIS_CLUSTER_URLS is set but empty');
-
+function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> {
   const nodes = urls.map(url => {
     const parsed = new URL(url);
     return { host: parsed.hostname, port: parseInt(parsed.port || '6379', 10) };
@@ -85,11 +85,19 @@ function buildClusterClient(): InstanceType<typeof Redis.Cluster> {
 export function getRedisClient(): RedisClient {
   if (_redis) return _redis;
 
-  const clusterUrls = process.env.REDIS_CLUSTER_URLS;
-  if (clusterUrls) {
-    logger.info('[Redis] Initialising in CLUSTER mode');
-    _redis = buildClusterClient();
+  const clusterUrls = (process.env.REDIS_CLUSTER_URLS || '')
+    .split(',')
+    .map(u => u.trim())
+    .filter(Boolean);
+
+  if (clusterUrls.length > 1) {
+    logger.info(`[Redis] Initialising in CLUSTER mode (${clusterUrls.length} nodes)`);
+    _redis = buildClusterClient(clusterUrls);
+  } else if (clusterUrls.length === 1) {
+    logger.info('[Redis] REDIS_CLUSTER_URLS has a single URL — using standalone mode (single node cannot form a cluster)');
+    _redis = buildStandaloneClient(clusterUrls[0]);
   } else {
+    logger.info('[Redis] Initialising in STANDALONE mode');
     _redis = buildStandaloneClient();
   }
 

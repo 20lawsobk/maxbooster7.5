@@ -142,7 +142,17 @@ export class HybridStorageService {
       if (bucketId || process.env.PRIVATE_OBJECT_DIR) {
         try {
           const { Client } = await import('@replit/object-storage');
-          this.replitClient = new Client();
+          const client = new Client();
+          // The constructor fires an async init() internally. Catch its promise to
+          // prevent an unhandled rejection when the sidecar/bucket isn't available.
+          const internalState = (client as any).state;
+          if (internalState?.promise && typeof internalState.promise.catch === 'function') {
+            internalState.promise.catch((e: Error) => {
+              logger.warn('[HybridStorage] Object Storage bucket unavailable, falling back to Pocket Dimension only:', e.message);
+              this.replitClient = null;
+            });
+          }
+          this.replitClient = client;
           logger.info(`[HybridStorage] Initialized Replit Object Storage (hot tier)`);
         } catch (e) {
           logger.warn('[HybridStorage] Failed to initialize @replit/object-storage client, falling back to Pocket Dimension only');
