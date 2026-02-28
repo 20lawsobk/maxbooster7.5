@@ -352,7 +352,7 @@ export async function registerRoutes(
       if (userId) {
         jwtAuthService.revokeAllUserTokens(userId, 'User logout').catch(() => {});
       }
-      res.clearCookie('connect.sid');
+      res.clearCookie('sessionId', { path: '/' });
       res.json({ message: "Logged out successfully" });
     });
   });
