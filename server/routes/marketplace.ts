@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
+import { z } from 'zod';
 import { discoveryAlgorithmService } from '../services/discoveryAlgorithmService';
 import { marketplaceService } from '../services/marketplaceService';
 import { storage } from '../storage';
@@ -19,6 +20,62 @@ import { requirePresignedForLargeUploads } from '../middleware/uploadSizeGuard.j
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+const purchaseSchema = z.object({
+  beatId: z.string().min(1, 'beatId is required'),
+  licenseType: z.enum(['basic', 'premium', 'unlimited', 'exclusive'], { required_error: 'licenseType is required' }),
+  useEscrow: z.boolean().optional(),
+});
+
+const licenseTemplateSchema = z.object({
+  name: z.string().min(1).max(100),
+  type: z.enum(['basic', 'premium', 'unlimited', 'exclusive']).optional(),
+  priceCents: z.number().int().min(0).optional(),
+  streams: z.union([z.string(), z.number()]).optional(),
+  copies: z.union([z.string(), z.number()]).optional(),
+  musicVideos: z.union([z.string(), z.number()]).optional(),
+  duration: z.string().max(50).optional(),
+  allowsBroadcast: z.boolean().optional(),
+  allowsProfit: z.boolean().optional(),
+  allowsSync: z.boolean().optional(),
+  fileFormats: z.string().max(100).optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+const interactionSchema = z.object({
+  beatId: z.string().min(1, 'beatId is required'),
+  interactionType: z.enum(['play', 'like', 'share', 'purchase', 'preview', 'skip', 'repeat', 'add_to_cart'], {
+    required_error: 'interactionType is required',
+  }),
+  playDurationSeconds: z.number().min(0).optional(),
+  completionRate: z.number().min(0).max(1).optional(),
+  source: z.string().max(50).optional(),
+  sessionId: z.string().max(100).optional(),
+});
+
+const contractSchema = z.object({
+  name: z.string().min(1).max(200),
+  content: z.string().min(1),
+  description: z.string().max(500).optional(),
+  category: z.string().max(50).optional(),
+  variables: z.array(z.string()).optional(),
+});
+
+const affiliateSchema = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+  commissionRate: z.number().min(0).max(100).optional(),
+});
+
+const collaborationSchema = z.object({
+  toUserId: z.string().min(1, 'toUserId is required'),
+  type: z.string().min(1, 'type is required'),
+  beatId: z.string().optional(),
+  terms: z.string().max(2000).optional(),
+  splitPercentage: z.number().min(0).max(100).optional(),
+  budget: z.number().min(0).optional(),
+  message: z.string().max(1000).optional(),
+});
 
 router.get('/beats', async (req: Request, res: Response) => {
   try {
@@ -295,10 +352,11 @@ router.get('/license-templates', async (req: Request, res: Response) => {
 
 router.post('/license-templates', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { name, type, priceCents, streams, copies, musicVideos, duration, allowsBroadcast, allowsProfit, allowsSync, fileFormats, sortOrder } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: 'License name is required' });
+    const parsed = licenseTemplateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
+    const { name, type, priceCents, streams, copies, musicVideos, duration, allowsBroadcast, allowsProfit, allowsSync, fileFormats, sortOrder } = parsed.data;
     const [template] = await db.insert(licenseTemplates).values({
       userId: req.user!.id,
       name,
@@ -433,16 +491,11 @@ router.post('/interaction', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { beatId, interactionType, playDurationSeconds, completionRate, source, sessionId } = req.body;
-
-    if (!beatId || !interactionType) {
-      return res.status(400).json({ error: 'beatId and interactionType are required' });
+    const parsed = interactionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
-
-    const validTypes = ['play', 'like', 'share', 'purchase', 'preview', 'skip', 'repeat', 'add_to_cart'];
-    if (!validTypes.includes(interactionType)) {
-      return res.status(400).json({ error: 'Invalid interaction type' });
-    }
+    const { beatId, interactionType, playDurationSeconds, completionRate, source, sessionId } = parsed.data;
 
     await discoveryAlgorithmService.recordInteraction({
       userId: req.user!.id,
@@ -646,10 +699,11 @@ router.post('/purchase', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { beatId, licenseType, useEscrow } = req.body;
-    if (!beatId || !licenseType) {
-      return res.status(400).json({ error: 'beatId and licenseType are required' });
+    const parsed = purchaseSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
+    const { beatId, licenseType } = parsed.data;
 
     const result = await marketplaceService.initiatePurchase(req.user!.id, beatId, licenseType);
 
@@ -1318,10 +1372,11 @@ router.post('/affiliates', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { name, email, commissionRate } = req.body;
-    if (!name || !email) {
-      return res.status(400).json({ error: 'Name and email are required' });
+    const parsed = affiliateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
+    const { name, email, commissionRate } = parsed.data;
 
     const affiliate = {
       id: `aff-${Date.now()}`,
@@ -1351,10 +1406,11 @@ router.post('/contracts', async (req: Request, res: Response) => {
     }
 
     const userId = (req.user as any).id;
-    const { name, description, content, category, variables } = req.body;
-    if (!name || !content) {
-      return res.status(400).json({ error: 'Name and content are required' });
+    const parsed = contractSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
+    const { name, description, content, category, variables } = parsed.data;
 
     const contract = await storage.createContractTemplate({
       userId,
@@ -1378,10 +1434,11 @@ router.post('/collaborations', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { toUserId, beatId, type, terms, splitPercentage, budget, message } = req.body;
-    if (!toUserId || !type) {
-      return res.status(400).json({ error: 'toUserId and type are required' });
+    const parsed = collaborationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
+    const { toUserId, beatId, type, terms, splitPercentage, budget, message } = parsed.data;
 
     const collaboration = {
       id: `collab-${Date.now()}`,
@@ -1791,72 +1848,6 @@ router.get('/listings/:listingId/stems', async (req: Request, res: Response) => 
   } catch (error: any) {
     logger.error('Error fetching listing stems:', error);
     res.status(500).json({ error: 'Failed to fetch listing stems' });
-  }
-});
-
-// ===========================
-// ADDITIONAL MISSING ENDPOINTS
-// ===========================
-
-// Affiliates endpoint
-router.get('/affiliates', async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    res.json({ affiliates: [], total: 0 });
-  } catch (error: any) {
-    logger.error('Error fetching affiliates:', error);
-    res.status(500).json({ error: 'Failed to fetch affiliates' });
-  }
-});
-
-// AI Recommendations endpoint
-router.get('/ai-recommendations', async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    res.json({ recommendations: [] });
-  } catch (error: any) {
-    logger.error('Error fetching AI recommendations:', error);
-    res.status(500).json({ error: 'Failed to fetch AI recommendations' });
-  }
-});
-
-// Collaborations endpoint
-router.get('/collaborations', async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    res.json({ collaborations: [], total: 0 });
-  } catch (error: any) {
-    logger.error('Error fetching collaborations:', error);
-    res.status(500).json({ error: 'Failed to fetch collaborations' });
-  }
-});
-
-// Escrow endpoint
-router.get('/escrow', async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    res.json({ escrows: [], total: 0 });
-  } catch (error: any) {
-    logger.error('Error fetching escrows:', error);
-    res.status(500).json({ error: 'Failed to fetch escrows' });
-  }
-});
-
-// Interaction endpoint
-router.post('/interaction', async (req: Request, res: Response) => {
-  try {
-    res.json({ success: true });
-  } catch (error: any) {
-    logger.error('Error recording interaction:', error);
-    res.status(500).json({ error: 'Failed to record interaction' });
   }
 });
 

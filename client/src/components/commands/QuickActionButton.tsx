@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap,
@@ -51,6 +52,7 @@ export function QuickActionButton({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPowerMode, setIsPowerMode] = useState(powerUserMode);
   const { openCommandPalette, openShortcutGuide } = useShortcuts();
+  const [, navigate] = useLocation();
 
   const defaultActions: QuickActionItem[] = useMemo(() => [
     {
@@ -66,35 +68,35 @@ export function QuickActionButton({
       label: 'New Project',
       icon: Plus,
       shortcut: 'N',
-      action: () => window.location.href = '/studio',
+      action: () => navigate('/studio'),
       color: 'text-green-400',
     },
     {
       id: 'studio',
       label: 'Open Studio',
       icon: Music,
-      action: () => window.location.href = '/studio',
+      action: () => navigate('/studio'),
       color: 'text-purple-400',
     },
     {
       id: 'social',
       label: 'Social Media',
       icon: Share2,
-      action: () => window.location.href = '/social-media',
+      action: () => navigate('/social-media'),
       color: 'text-blue-400',
     },
     {
       id: 'analytics',
       label: 'Analytics',
       icon: BarChart3,
-      action: () => window.location.href = '/analytics',
+      action: () => navigate('/analytics'),
       color: 'text-cyan-400',
     },
     {
       id: 'dashboard',
       label: 'Dashboard',
       icon: Home,
-      action: () => window.location.href = '/dashboard',
+      action: () => navigate('/dashboard'),
     },
     {
       id: 'shortcuts',
@@ -103,7 +105,7 @@ export function QuickActionButton({
       shortcut: 'cmd+/',
       action: openShortcutGuide,
     },
-  ], [openCommandPalette, openShortcutGuide]);
+  ], [openCommandPalette, openShortcutGuide, navigate]);
 
   const displayActions = actions || defaultActions;
   const visibleActions = isExpanded 

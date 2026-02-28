@@ -482,8 +482,3 @@ export default function PlaylistPitching() {
     </AppLayout>
   );
 }
-
-      </div>
-    </AppLayout>
-  );
-}

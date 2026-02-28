@@ -537,13 +537,7 @@ const FanJourneyFunnel = memo(({ data }: { data: AnalyticsData['fanJourney'] | u
 FanJourneyFunnel.displayName = 'FanJourneyFunnel';
 
 const CohortAnalysisChart = memo(({ cohorts }: { cohorts: CohortData[] | undefined }) => {
-  const defaultCohorts: CohortData[] = [
-    { cohortMonth: 'Jan 2025', initialUsers: 1000, retention: { week1: 85, week2: 70, week3: 60, week4: 55, month2: 45, month3: 38, month6: 25 } },
-    { cohortMonth: 'Dec 2024', initialUsers: 850, retention: { week1: 82, week2: 68, week3: 58, week4: 52, month2: 42, month3: 35, month6: 22 } },
-    { cohortMonth: 'Nov 2024', initialUsers: 920, retention: { week1: 80, week2: 65, week3: 55, week4: 50, month2: 40, month3: 32, month6: 20 } },
-  ];
-
-  const data = cohorts && cohorts.length > 0 ? cohorts : defaultCohorts;
+  const data = cohorts && cohorts.length > 0 ? cohorts : [];
   const retentionPeriods = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Month 2', 'Month 3', 'Month 6'];
 
   const getRetentionColor = (value: number) => {
@@ -553,6 +547,14 @@ const CohortAnalysisChart = memo(({ cohorts }: { cohorts: CohortData[] | undefin
     if (value >= 15) return 'bg-orange-400';
     return 'bg-red-400';
   };
+
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <p className="text-muted-foreground text-sm">No cohort data available yet. Data will appear as your audience grows.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-x-auto">
@@ -594,18 +596,8 @@ const ChurnAnalytics = memo(({ churnData }: { churnData: ChurnData[] | undefined
     period: 'Last 30 days',
     churnedUsers: 0,
     churnRate: 0,
-    reasons: [
-      { reason: 'No new content', percentage: 35 },
-      { reason: 'Found alternatives', percentage: 25 },
-      { reason: 'Price sensitivity', percentage: 20 },
-      { reason: 'Lost interest', percentage: 15 },
-      { reason: 'Other', percentage: 5 },
-    ],
-    riskSegments: [
-      { segment: 'Casual listeners', riskLevel: 'high', count: 1200 },
-      { segment: 'Inactive 30+ days', riskLevel: 'critical', count: 450 },
-      { segment: 'Low engagement', riskLevel: 'medium', count: 800 },
-    ],
+    reasons: [],
+    riskSegments: [],
   };
 
   const data = churnData && churnData.length > 0 ? churnData[0] : defaultChurn;
@@ -708,16 +700,20 @@ const ChurnAnalytics = memo(({ churnData }: { churnData: ChurnData[] | undefined
 ChurnAnalytics.displayName = 'ChurnAnalytics';
 
 const GeographicHeatMap = memo(({ geoData }: { geoData: GeoData[] | undefined }) => {
-  const defaultGeo: GeoData[] = [
-    { country: 'United States', countryCode: 'US', streams: 45000, revenue: 180, listeners: 12000, growth: 12.5, topCities: [{ city: 'Los Angeles', streams: 15000 }, { city: 'New York', streams: 12000 }] },
-    { country: 'United Kingdom', countryCode: 'GB', streams: 28000, revenue: 112, listeners: 7500, growth: 8.3, topCities: [{ city: 'London', streams: 18000 }, { city: 'Manchester', streams: 5000 }] },
-    { country: 'Germany', countryCode: 'DE', streams: 22000, revenue: 88, listeners: 6000, growth: 15.2, topCities: [{ city: 'Berlin', streams: 10000 }, { city: 'Munich', streams: 6000 }] },
-    { country: 'Brazil', countryCode: 'BR', streams: 18000, revenue: 36, listeners: 8000, growth: 25.8, topCities: [{ city: 'São Paulo', streams: 9000 }, { city: 'Rio de Janeiro', streams: 5000 }] },
-    { country: 'Japan', countryCode: 'JP', streams: 15000, revenue: 75, listeners: 4000, growth: 5.2, topCities: [{ city: 'Tokyo', streams: 10000 }, { city: 'Osaka', streams: 3000 }] },
-  ];
+  const defaultGeo: GeoData[] = [];
 
   const data = geoData && geoData.length > 0 ? geoData : defaultGeo;
   const totalStreams = data.reduce((sum, g) => sum + g.streams, 0);
+
+  if (data.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+        <Globe className="h-12 w-12 mb-3 opacity-30" />
+        <p className="text-sm">No geographic data available yet</p>
+        <p className="text-xs mt-1">Stream data will appear here as listeners are tracked</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -790,19 +786,19 @@ const DemographicsBreakdown = memo(({ demographics }: { demographics: Demographi
     {
       category: 'Age',
       segments: [
-        { name: '18-24', count: 8500, percentage: 28, avgEngagement: 4.2 },
-        { name: '25-34', count: 12000, percentage: 40, avgEngagement: 3.8 },
-        { name: '35-44', count: 5500, percentage: 18, avgEngagement: 3.5 },
-        { name: '45-54', count: 2800, percentage: 9, avgEngagement: 3.2 },
-        { name: '55+', count: 1500, percentage: 5, avgEngagement: 2.9 },
+        { name: '18-24', count: 0, percentage: 0, avgEngagement: 0 },
+        { name: '25-34', count: 0, percentage: 0, avgEngagement: 0 },
+        { name: '35-44', count: 0, percentage: 0, avgEngagement: 0 },
+        { name: '45-54', count: 0, percentage: 0, avgEngagement: 0 },
+        { name: '55+', count: 0, percentage: 0, avgEngagement: 0 },
       ],
     },
     {
       category: 'Gender',
       segments: [
-        { name: 'Male', count: 16000, percentage: 53, avgEngagement: 3.6 },
-        { name: 'Female', count: 12500, percentage: 42, avgEngagement: 4.1 },
-        { name: 'Other', count: 1500, percentage: 5, avgEngagement: 3.8 },
+        { name: 'Male', count: 0, percentage: 0, avgEngagement: 0 },
+        { name: 'Female', count: 0, percentage: 0, avgEngagement: 0 },
+        { name: 'Other', count: 0, percentage: 0, avgEngagement: 0 },
       ],
     },
   ];
@@ -859,21 +855,14 @@ const DemographicsBreakdown = memo(({ demographics }: { demographics: Demographi
 DemographicsBreakdown.displayName = 'DemographicsBreakdown';
 
 const PlaylistTracker = memo(({ playlists }: { playlists: AnalyticsData['playlists'] | undefined }) => {
-  const defaultPlaylists: PlaylistData[] = [
-    { id: '1', name: 'Chill Vibes', platform: 'Spotify', followers: 250000, trackCount: 85, addedDate: '2025-01-05', status: 'active', estimatedStreams: 15000, position: 23 },
-    { id: '2', name: 'New Music Friday', platform: 'Spotify', followers: 8500000, trackCount: 50, addedDate: '2025-01-03', status: 'active', estimatedStreams: 85000, position: 42 },
-    { id: '3', name: 'Indie Essentials', platform: 'Apple Music', followers: 180000, trackCount: 100, addedDate: '2024-12-20', status: 'active', estimatedStreams: 8500 },
-    { id: '4', name: 'Today\'s Hits', platform: 'Spotify', followers: 12000000, trackCount: 50, addedDate: '2024-12-01', removedDate: '2024-12-15', status: 'removed', estimatedStreams: 0 },
-  ];
-
-  const data = playlists?.current && playlists.current.length > 0 ? playlists.current : defaultPlaylists;
+  const data = playlists?.current && playlists.current.length > 0 ? playlists.current : [];
   const metrics = playlists?.metrics || {
-    totalPlaylists: 12,
-    totalReach: 21430000,
-    estimatedMonthlyStreams: 108500,
-    avgPlaylistPosition: 35,
-    additionsThisMonth: 3,
-    removalsThisMonth: 1,
+    totalPlaylists: 0,
+    totalReach: 0,
+    estimatedMonthlyStreams: 0,
+    avgPlaylistPosition: 0,
+    additionsThisMonth: 0,
+    removalsThisMonth: 0,
   };
 
   const getPlatformColor = (platform: string) => {
@@ -941,6 +930,11 @@ const PlaylistTracker = memo(({ playlists }: { playlists: AnalyticsData['playlis
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {data.length === 0 ? (
+            <div className="flex items-center justify-center h-24">
+              <p className="text-muted-foreground text-sm">No playlist placements found. Submit tracks for playlist consideration to see data here.</p>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -984,6 +978,7 @@ const PlaylistTracker = memo(({ playlists }: { playlists: AnalyticsData['playlis
               </tbody>
             </table>
           </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -992,14 +987,7 @@ const PlaylistTracker = memo(({ playlists }: { playlists: AnalyticsData['playlis
 PlaylistTracker.displayName = 'PlaylistTracker';
 
 const RevenueAttributionChart = memo(({ attribution }: { attribution: RevenueAttribution[] | undefined }) => {
-  const defaultAttribution: RevenueAttribution[] = [
-    { source: 'Streaming', revenue: 2450, percentage: 45, streams: 612500, growth: 12.3, avgPerStream: 0.004 },
-    { source: 'Playlist Placements', revenue: 1200, percentage: 22, streams: 300000, growth: 28.5, avgPerStream: 0.004 },
-    { source: 'Algorithmic Discovery', revenue: 850, percentage: 16, streams: 212500, growth: 35.2, avgPerStream: 0.004 },
-    { source: 'Social Media', revenue: 450, percentage: 8, streams: 112500, growth: 45.8, avgPerStream: 0.004 },
-    { source: 'Direct Links', revenue: 280, percentage: 5, streams: 70000, growth: 8.2, avgPerStream: 0.004 },
-    { source: 'Search', revenue: 220, percentage: 4, streams: 55000, growth: 5.5, avgPerStream: 0.004 },
-  ];
+  const defaultAttribution: RevenueAttribution[] = [];
 
   const data = attribution && attribution.length > 0 ? attribution : defaultAttribution;
   const totalRevenue = data.reduce((sum, a) => sum + a.revenue, 0);
@@ -1065,7 +1053,7 @@ const RevenueAttributionChart = memo(({ attribution }: { attribution: RevenueAtt
                   <p className="text-xs text-slate-500">Revenue Sources</p>
                 </div>
                 <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg text-center">
-                  <p className="text-xl font-bold">${(totalRevenue / data.length).toFixed(0)}</p>
+                  <p className="text-xl font-bold">${data.length > 0 ? (totalRevenue / data.length).toFixed(0) : '0'}</p>
                   <p className="text-xs text-slate-500">Avg per Source</p>
                 </div>
               </div>
@@ -1095,41 +1083,7 @@ const RevenueAttributionChart = memo(({ attribution }: { attribution: RevenueAtt
 RevenueAttributionChart.displayName = 'RevenueAttributionChart';
 
 const PredictiveForecasting = memo(({ forecasts }: { forecasts: ForecastData[] | undefined }) => {
-  const defaultForecasts: ForecastData[] = [
-    {
-      metric: 'Streams',
-      currentValue: 125000,
-      trend: 'up',
-      growthRate: 15.2,
-      predictions: [
-        { period: 'Next Week', predicted: 32500, lowerBound: 28000, upperBound: 37000, confidence: 92 },
-        { period: 'Next Month', predicted: 145000, lowerBound: 130000, upperBound: 165000, confidence: 85 },
-        { period: 'Next Quarter', predicted: 480000, lowerBound: 420000, upperBound: 550000, confidence: 75 },
-      ],
-    },
-    {
-      metric: 'Followers',
-      currentValue: 28500,
-      trend: 'up',
-      growthRate: 8.5,
-      predictions: [
-        { period: 'Next Week', predicted: 29200, lowerBound: 28800, upperBound: 29600, confidence: 90 },
-        { period: 'Next Month', predicted: 31000, lowerBound: 29500, upperBound: 32500, confidence: 82 },
-        { period: 'Next Quarter', predicted: 38000, lowerBound: 35000, upperBound: 42000, confidence: 72 },
-      ],
-    },
-    {
-      metric: 'Revenue',
-      currentValue: 2850,
-      trend: 'up',
-      growthRate: 12.8,
-      predictions: [
-        { period: 'Next Week', predicted: 750, lowerBound: 680, upperBound: 820, confidence: 88 },
-        { period: 'Next Month', predicted: 3200, lowerBound: 2900, upperBound: 3600, confidence: 80 },
-        { period: 'Next Quarter', predicted: 11500, lowerBound: 10000, upperBound: 13500, confidence: 70 },
-      ],
-    },
-  ];
+  const defaultForecasts: ForecastData[] = [];
 
   const data = forecasts && forecasts.length > 0 ? forecasts : defaultForecasts;
 
@@ -1146,6 +1100,16 @@ const PredictiveForecasting = memo(({ forecasts }: { forecasts: ForecastData[] |
     if (confidence >= 70) return 'text-yellow-600 bg-yellow-100';
     return 'text-orange-600 bg-orange-100';
   };
+
+  if (data.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+        <TrendingUp className="h-12 w-12 mb-3 opacity-30" />
+        <p className="text-sm">No forecast data available yet</p>
+        <p className="text-xs mt-1">Predictions will appear here as streaming history accumulates</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

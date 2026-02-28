@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useLocation } from 'wouter';
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import {
   Command,
@@ -68,6 +69,7 @@ export function QuickActionsMenu({
   const [favorites, setFavorites] = useState<string[]>([]);
   const { openCommandPalette, openShortcutGuide } = useShortcuts();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [, navigate] = useLocation();
 
   const defaultActions: QuickAction[] = useMemo(() => [
     {
@@ -83,7 +85,7 @@ export function QuickActionsMenu({
       id: 'new-project',
       label: 'New Project',
       icon: Plus,
-      action: () => window.location.href = '/studio',
+      action: () => navigate('/studio'),
       color: 'text-green-400',
       category: 'action',
     },
@@ -91,7 +93,7 @@ export function QuickActionsMenu({
       id: 'studio',
       label: 'Open Studio',
       icon: Music,
-      action: () => window.location.href = '/studio',
+      action: () => navigate('/studio'),
       color: 'text-purple-400',
       category: 'navigation',
     },
@@ -109,21 +111,21 @@ export function QuickActionsMenu({
       id: 'dashboard',
       label: 'Dashboard',
       icon: Home,
-      action: () => window.location.href = '/dashboard',
+      action: () => navigate('/dashboard'),
       category: 'navigation',
     },
     {
       id: 'projects',
       label: 'My Projects',
       icon: Folder,
-      action: () => window.location.href = '/projects',
+      action: () => navigate('/projects'),
       category: 'navigation',
     },
     {
       id: 'social',
       label: 'Social Media',
       icon: Share2,
-      action: () => window.location.href = '/social-media',
+      action: () => navigate('/social-media'),
       color: 'text-blue-400',
       category: 'navigation',
     },
@@ -131,7 +133,7 @@ export function QuickActionsMenu({
       id: 'analytics',
       label: 'Analytics',
       icon: BarChart3,
-      action: () => window.location.href = '/analytics',
+      action: () => navigate('/analytics'),
       color: 'text-cyan-400',
       category: 'navigation',
     },
@@ -139,7 +141,7 @@ export function QuickActionsMenu({
       id: 'marketplace',
       label: 'Marketplace',
       icon: ShoppingBag,
-      action: () => window.location.href = '/marketplace',
+      action: () => navigate('/marketplace'),
       color: 'text-pink-400',
       category: 'navigation',
     },
@@ -147,7 +149,7 @@ export function QuickActionsMenu({
       id: 'royalties',
       label: 'Royalties',
       icon: DollarSign,
-      action: () => window.location.href = '/royalties',
+      action: () => navigate('/royalties'),
       color: 'text-emerald-400',
       category: 'navigation',
     },
@@ -164,10 +166,10 @@ export function QuickActionsMenu({
       label: 'Settings',
       icon: Settings,
       shortcut: 'cmd+,',
-      action: () => window.location.href = '/settings',
+      action: () => navigate('/settings'),
       category: 'navigation',
     },
-  ], [openCommandPalette, openShortcutGuide]);
+  ], [openCommandPalette, openShortcutGuide, navigate]);
 
   const actions = customActions || defaultActions;
 

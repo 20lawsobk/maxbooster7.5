@@ -180,7 +180,51 @@ export function DataDenseAnalytics() {
       if (!response.ok) {
         throw new Error('Failed to load analytics');
       }
-      return response.json();
+      const raw = await response.json();
+      if (!raw || typeof raw !== 'object') return null;
+      const overview = raw.overview || raw;
+      const streams = raw.streams || {};
+      const audience = raw.audience || {};
+      return {
+        totalStreams: overview.totalStreams || 0,
+        totalRevenue: overview.totalRevenue || 0,
+        totalFollowers: audience.totalListeners || overview.totalFollowers || 0,
+        totalPlays: overview.totalPlays || overview.totalStreams || 0,
+        monthlyListeners: audience.totalListeners || 0,
+        artistScore: raw.aiInsights?.performanceScore || 0,
+        careerStage: raw.aiInsights?.careerStage || 'Unknown',
+        streamChange: overview.growthRate || 0,
+        revenueChange: 0,
+        followerChange: 0,
+        playChange: 0,
+        platforms: (streams.byPlatform || []).map((p: any) => ({
+          platform: p.platform || 'Unknown',
+          streams: p.streams || 0,
+          followers: 0,
+          change: p.growth || 0,
+          color: '#6b7280',
+        })),
+        geoData: (streams.byCountry || []).map((c: any) => ({
+          country: c.country || 'Unknown',
+          code: c.code || '',
+          streams: c.streams || 0,
+          percentage: c.percentage || 0,
+          growth: c.growth || 0,
+        })),
+        timeline: raw.timeline || [],
+        triggerCities: (streams.byCity || []).map((c: any) => ({
+          city: c.city || 'Unknown',
+          listeners: c.listeners || 0,
+          growth: c.growth || 0,
+        })),
+        demographics: raw.demographics || { age: [], gender: [] },
+        revenueBySource: (raw.revenue?.revenueBySource || raw.revenueBySource || []),
+        streamHistory: (streams.daily || []).map((d: any) => ({
+          date: d.date,
+          streams: d.streams || 0,
+          revenue: d.revenue || 0,
+        })),
+      };
     },
     refetchInterval: 60000,
   });
@@ -195,72 +239,27 @@ export function DataDenseAnalytics() {
   });
 
   const fallbackData = {
-    totalStreams: 1847293,
-    totalRevenue: 4829.47,
-    totalFollowers: 45892,
-    totalPlays: 892341,
-    monthlyListeners: 128934,
-    artistScore: 78,
-    careerStage: 'Emerging',
-    streamChange: 12.4,
-    revenueChange: 8.2,
-    followerChange: 5.7,
-    playChange: -2.1,
-    platforms: [
-      { platform: 'Spotify', streams: 892341, followers: 23400, change: 15.2, color: '#1DB954' },
-      { platform: 'Apple Music', streams: 456782, followers: 12300, change: 8.7, color: '#FC3C44' },
-      { platform: 'YouTube Music', streams: 234567, followers: 5600, change: 22.1, color: '#FF0000' },
-      { platform: 'Amazon Music', streams: 123456, followers: 2100, change: -3.4, color: '#FF9900' },
-      { platform: 'Deezer', streams: 89234, followers: 1800, change: 6.2, color: '#00C7F2' },
-      { platform: 'TikTok', streams: 50913, followers: 680, change: 45.8, color: '#000000' },
-    ],
-    geoData: [
-      { country: 'United States', code: 'US', streams: 456782, percentage: 24.7, growth: 12.3 },
-      { country: 'United Kingdom', code: 'GB', streams: 234567, percentage: 12.7, growth: 8.9 },
-      { country: 'Germany', code: 'DE', streams: 178234, percentage: 9.6, growth: 15.2 },
-      { country: 'Brazil', code: 'BR', streams: 156789, percentage: 8.5, growth: 28.4 },
-      { country: 'Mexico', code: 'MX', streams: 134567, percentage: 7.3, growth: 21.7 },
-      { country: 'Canada', code: 'CA', streams: 98765, percentage: 5.3, growth: 6.1 },
-      { country: 'France', code: 'FR', streams: 87654, percentage: 4.7, growth: 9.8 },
-      { country: 'Australia', code: 'AU', streams: 76543, percentage: 4.1, growth: 11.2 },
-    ],
-    timeline: [
-      { date: '2024-01-15', type: 'release', title: 'New Single "Midnight Dreams"', impact: '+45K streams' },
-      { date: '2024-01-10', type: 'playlist', title: 'Added to "Today\'s Top Hits"', impact: '+120K streams' },
-      { date: '2024-01-05', type: 'viral', title: 'TikTok trend #MidnightChallenge', impact: '+85K followers' },
-      { date: '2023-12-20', type: 'milestone', title: '1M Total Streams', impact: '' },
-    ],
-    triggerCities: [
-      { city: 'Los Angeles, CA', listeners: 12400, growth: 18.5 },
-      { city: 'New York, NY', listeners: 10800, growth: 14.2 },
-      { city: 'London, UK', listeners: 8900, growth: 22.1 },
-      { city: 'Toronto, CA', listeners: 6700, growth: 11.8 },
-      { city: 'Sao Paulo, BR', listeners: 5600, growth: 35.2 },
-    ],
+    totalStreams: 0,
+    totalRevenue: 0,
+    totalFollowers: 0,
+    totalPlays: 0,
+    monthlyListeners: 0,
+    artistScore: 0,
+    careerStage: 'Unknown',
+    streamChange: 0,
+    revenueChange: 0,
+    followerChange: 0,
+    playChange: 0,
+    platforms: [],
+    geoData: [],
+    timeline: [],
+    triggerCities: [],
     demographics: {
-      age: [
-        { range: '18-24', percentage: 35 },
-        { range: '25-34', percentage: 42 },
-        { range: '35-44', percentage: 15 },
-        { range: '45+', percentage: 8 },
-      ],
-      gender: [
-        { type: 'Female', percentage: 48 },
-        { type: 'Male', percentage: 49 },
-        { type: 'Other', percentage: 3 },
-      ],
+      age: [],
+      gender: [],
     },
-    revenueBySource: [
-      { source: 'Streaming', amount: 3240.50, percentage: 67 },
-      { source: 'Merchandise', amount: 890.20, percentage: 18 },
-      { source: 'Beat Sales', amount: 456.77, percentage: 10 },
-      { source: 'Sync Licensing', amount: 242.00, percentage: 5 },
-    ],
-    streamHistory: Array.from({ length: 30 }, (_, i) => ({
-      date: `Day ${i + 1}`,
-      streams: Math.floor(Math.random() * 50000) + 30000,
-      revenue: Math.floor(Math.random() * 200) + 100,
-    })),
+    revenueBySource: [],
+    streamHistory: [],
   };
 
   const data = analyticsData || fallbackData;

@@ -274,7 +274,17 @@ export function ProducerProfile({ producerId, isOpen, onClose }: ProducerProfile
     }
   };
 
-  const fallbackProducer = mockProducerData;
+  const fallbackProducer = {
+    ...mockProducerData,
+    stats: { totalBeats: 0, totalSales: 0, totalPlays: 0, totalDownloads: 0, followers: 0, rating: 0, reviewCount: 0, responseRate: 0, responseTime: '', memberSince: '', location: '' },
+    featuredBeats: [],
+    recentReviews: [],
+    badges: [],
+    socials: [],
+    genres: [],
+    equipment: [],
+    achievements: [],
+  };
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;

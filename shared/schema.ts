@@ -1902,6 +1902,31 @@ export const alertIncidents = pgTable("alert_incidents", {
 });
 
 // ============================================================================
+// DSP USER PLATFORM SYNC STATUS (per-user, per-platform OAuth tracking)
+// ============================================================================
+export const dspUserPlatformStatus = pgTable("dsp_user_platform_status", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  platform: text("platform").notNull(),
+  syncStatus: text("sync_status").default("pending"),
+  lastSyncAt: timestamp("last_sync_at"),
+  lastSuccessAt: timestamp("last_success_at"),
+  credentials: jsonb("credentials"),
+  errorMessage: text("error_message"),
+  errorCount: integer("error_count").default(0),
+  dataRangeStart: timestamp("data_range_start"),
+  dataRangeEnd: timestamp("data_range_end"),
+  recordsProcessed: integer("records_processed").default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => ({
+  userPlatformIdx: index("dsp_user_platform_status_user_platform_idx").on(t.userId, t.platform),
+}));
+
+export type DspUserPlatformStatus = typeof dspUserPlatformStatus.$inferSelect;
+export type InsertDspUserPlatformStatus = typeof dspUserPlatformStatus.$inferInsert;
+
+// ============================================================================
 // DSP SYNC STATUS
 // ============================================================================
 export const dspSyncStatus = pgTable("dsp_sync_status", {

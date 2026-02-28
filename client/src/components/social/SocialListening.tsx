@@ -444,15 +444,23 @@ export function SocialListening() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-48 flex items-end justify-between gap-1">
+                  <div className="h-48 flex items-end justify-between gap-1 relative">
+                    {alerts.length === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground">Add keywords to start tracking mentions</p>
+                      </div>
+                    )}
                     {Array.from({ length: 24 }).map((_, i) => {
-                      const height = Math.random() * 100;
+                      const mentionCount = alerts.filter(a =>
+                        a.timestamp && new Date(a.timestamp).getHours() === i
+                      ).length;
+                      const height = alerts.length > 0 ? Math.min(100, mentionCount * 10) : 0;
                       return (
                         <div
                           key={i}
                           className="flex-1 bg-primary/60 rounded-t transition-all hover:bg-primary"
-                          style={{ height: `${height}%` }}
-                          title={`${i}:00 - ${Math.round(height * 10)} mentions`}
+                          style={{ height: `${height}%`, minHeight: height > 0 ? '2px' : '0' }}
+                          title={`${i}:00 - ${mentionCount} mentions`}
                         />
                       );
                     })}

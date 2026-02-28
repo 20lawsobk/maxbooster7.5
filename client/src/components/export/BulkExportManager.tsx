@@ -470,7 +470,7 @@ export function BulkExportManager({
           description: `Exporting ${selectedItems.length} files...`,
         });
 
-        setTimeout(() => simulateProgress(data.jobId), 1000);
+        setTimeout(() => pollJobProgress(data.jobId), 1000);
       }
     },
     onError: (error: Error) => {
@@ -483,82 +483,89 @@ export function BulkExportManager({
     },
   });
 
-  const simulateProgress = (jobId: string) => {
-    let progress = 0;
-    let completedItems = 0;
+  const pollJobProgress = (jobId: string) => {
     const totalItems = selectedItems.length;
-    const failedIndexes = new Set<number>();
+    let pollCount = 0;
+    const MAX_POLLS = 120;
 
-    if (Math.random() < 0.2) {
-      failedIndexes.add(Math.floor(Math.random() * totalItems));
-    }
-
-    const interval = setInterval(() => {
-      progress += Math.random() * 15;
-      if (progress > 100) progress = 100;
-
-      const newCompletedItems = Math.floor((progress / 100) * totalItems);
-      if (newCompletedItems > completedItems) {
-        completedItems = newCompletedItems;
+    const interval = setInterval(async () => {
+      pollCount++;
+      if (pollCount > MAX_POLLS) {
+        clearInterval(interval);
+        setCurrentJob(prev => prev ? { ...prev, status: 'failed' } : null);
+        toast({ variant: 'destructive', title: 'Export Timeout', description: 'Export job timed out. Please try again.' });
+        return;
       }
 
-      setCurrentJob(prev => {
-        if (!prev) return null;
-        
-        const updatedItems = prev.items.map((item, idx) => {
-          if (idx < completedItems) {
-            if (failedIndexes.has(idx)) {
-              return { ...item, status: 'failed' as const, progress: 100, error: 'Network timeout' };
-            }
-            return { 
-              ...item, 
-              status: 'complete' as const, 
-              progress: 100,
-              fileSize: Math.floor(Math.random() * 20000000) + 1000000,
-              downloadUrl: `/api/export/download/${item.id}`,
-            };
+      try {
+        const response = await fetch(`/api/export/jobs/${jobId}`, { credentials: 'include' });
+        if (!response.ok) {
+          if (response.status === 404) {
+            clearInterval(interval);
+            return;
           }
-          if (idx === completedItems) {
-            return { ...item, status: 'processing' as const, progress: (progress % (100 / totalItems)) * totalItems };
-          }
-          return item;
-        });
+          return;
+        }
 
-        const failedItems = updatedItems.filter(i => i.status === 'failed').length;
-        const successItems = updatedItems.filter(i => i.status === 'complete').length;
+        const serverJob = await response.json();
+        const progress: number = serverJob.progress || 0;
+        const serverStatus: string = serverJob.status || 'processing';
+        const completedItems = Math.floor((progress / 100) * totalItems);
 
-        if (progress >= 100) {
+        const isDone = ['complete', 'failed', 'cancelled', 'partial'].includes(serverStatus);
+
+        if (isDone) {
           clearInterval(interval);
-          const finalStatus = failedItems > 0 
-            ? (failedItems === totalItems ? 'failed' : 'partial')
-            : 'complete';
-          
+        }
+
+        setCurrentJob(prev => {
+          if (!prev) return null;
+
+          const updatedItems = prev.items.map((item, idx) => {
+            if (idx < completedItems) {
+              return {
+                ...item,
+                status: 'complete' as const,
+                progress: 100,
+                downloadUrl: `/api/export/download/${item.id}`,
+              };
+            }
+            if (idx === completedItems && !isDone) {
+              return { ...item, status: 'processing' as const, progress: progress % (100 / Math.max(totalItems, 1)) * totalItems };
+            }
+            return item;
+          });
+
+          const failedItems = serverJob.failedItems || 0;
+          const successItems = updatedItems.filter(i => i.status === 'complete').length;
+
+          const finalStatus: BulkExportJob['status'] = isDone
+            ? (serverStatus === 'complete' ? 'complete' : serverStatus === 'cancelled' ? 'cancelled' : failedItems > 0 && failedItems < totalItems ? 'partial' : 'failed')
+            : (serverStatus as BulkExportJob['status']);
+
           const job: BulkExportJob = {
             ...prev,
             items: updatedItems,
             status: finalStatus,
-            progress: 100,
+            progress,
             completedItems: successItems,
             failedItems,
-            completedTime: new Date(),
-            zipUrl: failedItems < totalItems ? `/api/export/download/zip/${jobId}` : undefined,
-            totalSize: updatedItems
-              .filter(i => i.status === 'complete' && i.fileSize)
-              .reduce((sum, i) => sum + (i.fileSize || 0), 0),
+            ...(isDone ? {
+              completedTime: new Date(),
+              zipUrl: serverJob.downloadUrl || `/api/export/download/zip/${jobId}`,
+              totalSize: serverJob.fileSize || 0,
+            } : {}),
           };
-          onExportComplete?.(job);
-          return job;
-        }
 
-        return {
-          ...prev,
-          items: updatedItems,
-          progress,
-          completedItems: successItems,
-          failedItems,
-        };
-      });
-    }, 500);
+          if (isDone) {
+            onExportComplete?.(job);
+          }
+
+          return job;
+        });
+      } catch {
+      }
+    }, 2000);
   };
 
   const handleExport = useCallback(() => {

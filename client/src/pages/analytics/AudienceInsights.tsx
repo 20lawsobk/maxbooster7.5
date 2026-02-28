@@ -166,30 +166,13 @@ export function AudienceInsights({
   });
 
   const demographics = useMemo<DemographicData>(() => ({
-    age: data?.audience?.demographics?.age || [
-      { range: '18-24', percentage: 35, count: 12500 },
-      { range: '25-34', percentage: 42, count: 15000 },
-      { range: '35-44', percentage: 15, count: 5400 },
-      { range: '45+', percentage: 8, count: 2900 },
-    ],
-    gender: data?.audience?.demographics?.gender || [
-      { type: 'Female', percentage: 48, color: '#ec4899' },
-      { type: 'Male', percentage: 49, color: '#3b82f6' },
-      { type: 'Other', percentage: 3, color: '#8b5cf6' },
-    ],
+    age: data?.audience?.demographics?.age || [],
+    gender: data?.audience?.demographics?.gender || [],
   }), [data]);
 
   const geoData = useMemo<GeoData[]>(() => {
     if (!data?.audience?.geographic) {
-      return [
-        { country: 'United States', code: 'US', flag: '🇺🇸', listeners: 45000, percentage: 35, growth: 12 },
-        { country: 'United Kingdom', code: 'GB', flag: '🇬🇧', listeners: 25000, percentage: 19, growth: 8 },
-        { country: 'Germany', code: 'DE', flag: '🇩🇪', listeners: 18000, percentage: 14, growth: 15 },
-        { country: 'Brazil', code: 'BR', flag: '🇧🇷', listeners: 15000, percentage: 12, growth: 25 },
-        { country: 'Canada', code: 'CA', flag: '🇨🇦', listeners: 12000, percentage: 9, growth: 6 },
-        { country: 'France', code: 'FR', flag: '🇫🇷', listeners: 8000, percentage: 6, growth: 10 },
-        { country: 'Australia', code: 'AU', flag: '🇦🇺', listeners: 6000, percentage: 5, growth: 18 },
-      ];
+      return [];
     }
     return data.audience.geographic.map((g: any) => ({
       ...g,
@@ -199,29 +182,20 @@ export function AudienceInsights({
 
   const listenerTrends = useMemo<ListenerTrend[]>(() => {
     if (!data?.audience?.trends) {
-      return Array.from({ length: 30 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
-        return {
-          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          newListeners: Math.floor(Math.random() * 500) + 200,
-          returningListeners: Math.floor(Math.random() * 1500) + 800,
-          totalListeners: 0,
-        };
-      }).map(d => ({ ...d, totalListeners: d.newListeners + d.returningListeners }));
+      return [];
     }
     return data.audience.trends;
   }, [data]);
 
   const fanGrowthMetrics = useMemo<FanGrowthMetric[]>(() => [
-    { label: 'Total Followers', current: 45892, previous: 42150, change: 8.9, target: 50000 },
-    { label: 'Monthly Listeners', current: 128934, previous: 115200, change: 11.9, target: 150000 },
-    { label: 'Super Fans', current: 2450, previous: 2100, change: 16.7, target: 3000 },
-    { label: 'Engagement Rate', current: 4.8, previous: 4.2, change: 14.3, target: 6 },
+    { label: 'Total Followers', current: data?.overview?.totalFollowers || 0, previous: 0, change: data?.overview?.growthRate || 0, target: 0 },
+    { label: 'Monthly Listeners', current: data?.audience?.totalListeners || 0, previous: 0, change: 0, target: 0 },
+    { label: 'Super Fans', current: 0, previous: 0, change: 0, target: 0 },
+    { label: 'Engagement Rate', current: 0, previous: 0, change: 0, target: 0 },
   ], [data]);
 
-  const totalListeners = geoData.reduce((sum, g) => sum + g.listeners, 0);
-  const hasData = totalListeners > 0;
+  const totalListeners = data?.audience?.totalListeners || geoData.reduce((sum, g) => sum + g.listeners, 0);
+  const hasData = totalListeners > 0 || (data?.overview?.totalStreams || 0) > 0;
 
   if (isLoading) {
     return (

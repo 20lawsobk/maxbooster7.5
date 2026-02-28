@@ -68,66 +68,11 @@ interface HistoricalAnalyticsProps {
   trends?: TrendData[];
 }
 
-const defaultYearlyData: YearData[] = [
-  { year: 2025, streams: 2850000, revenue: 8550, listeners: 285000, releases: 4, playlistAdds: 45 },
-  { year: 2024, streams: 1920000, revenue: 5760, listeners: 195000, releases: 6, playlistAdds: 38 },
-  { year: 2023, streams: 1150000, revenue: 3450, listeners: 120000, releases: 5, playlistAdds: 22 },
-  { year: 2022, streams: 680000, revenue: 2040, listeners: 75000, releases: 4, playlistAdds: 15 },
-  { year: 2021, streams: 320000, revenue: 960, listeners: 42000, releases: 3, playlistAdds: 8 },
-];
+const defaultYearlyData: YearData[] = [];
 
-const defaultMilestones: Milestone[] = [
-  { id: '1', type: 'streams', title: '2M Streams', description: 'Reached 2 million total streams', date: '2025-10-15', value: 2000000, icon: '🎵' },
-  { id: '2', type: 'playlist', title: 'Featured on Today\'s Top Hits', description: 'Track added to Spotify\'s flagship playlist', date: '2025-08-22', icon: '🎧' },
-  { id: '3', type: 'followers', title: '100K Followers', description: 'Reached 100,000 followers across platforms', date: '2025-06-10', value: 100000, icon: '👥' },
-  { id: '4', type: 'release', title: 'Debut Album Release', description: 'Released first full-length album', date: '2025-03-15', icon: '💿' },
-  { id: '5', type: 'revenue', title: '$5,000 Monthly Revenue', description: 'First month exceeding $5K in royalties', date: '2024-11-30', value: 5000, icon: '💰' },
-  { id: '6', type: 'streams', title: '1M Streams', description: 'Reached 1 million total streams', date: '2024-06-20', value: 1000000, icon: '🎵' },
-  { id: '7', type: 'award', title: 'Emerging Artist Award', description: 'Recognition from industry publication', date: '2024-03-08', icon: '🏆' },
-  { id: '8', type: 'playlist', title: 'First Editorial Playlist', description: 'Added to first major editorial playlist', date: '2023-09-12', icon: '📋' },
-];
+const defaultMilestones: Milestone[] = [];
 
-const defaultTrends: TrendData[] = [
-  {
-    metric: 'Streams',
-    data: [
-      { year: 2021, value: 320000 },
-      { year: 2022, value: 680000 },
-      { year: 2023, value: 1150000 },
-      { year: 2024, value: 1920000 },
-      { year: 2025, value: 2850000 },
-    ],
-    currentValue: 2850000,
-    totalGrowth: 790,
-    avgYearlyGrowth: 73,
-  },
-  {
-    metric: 'Revenue',
-    data: [
-      { year: 2021, value: 960 },
-      { year: 2022, value: 2040 },
-      { year: 2023, value: 3450 },
-      { year: 2024, value: 5760 },
-      { year: 2025, value: 8550 },
-    ],
-    currentValue: 8550,
-    totalGrowth: 790,
-    avgYearlyGrowth: 73,
-  },
-  {
-    metric: 'Listeners',
-    data: [
-      { year: 2021, value: 42000 },
-      { year: 2022, value: 75000 },
-      { year: 2023, value: 120000 },
-      { year: 2024, value: 195000 },
-      { year: 2025, value: 285000 },
-    ],
-    currentValue: 285000,
-    totalGrowth: 579,
-    avgYearlyGrowth: 62,
-  },
-];
+const defaultTrends: TrendData[] = [];
 
 const YearOverYearComparison = memo(({ data }: { data: YearData[] }) => {
   const [metric, setMetric] = useState<keyof YearData>('streams');
@@ -147,7 +92,17 @@ const YearOverYearComparison = memo(({ data }: { data: YearData[] }) => {
     return value.toLocaleString();
   };
 
-  const maxValue = Math.max(...sortedData.map(d => d[metric] as number));
+  const maxValue = sortedData.length > 0 ? Math.max(...sortedData.map(d => d[metric] as number)) : 1;
+
+  if (sortedData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+        <BarChart3 className="h-12 w-12 mb-3 opacity-30" />
+        <p className="text-sm">No historical data available yet</p>
+        <p className="text-xs mt-1">Year-over-year comparisons will appear after your first full year</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -217,11 +217,7 @@ export function PlaylistTracking({
     avgPosition: Math.round(placements.filter(p => p.status === 'active').reduce((sum, p) => sum + p.position, 0) / placements.filter(p => p.status === 'active').length) || 0,
   }), [placements]);
 
-  const curatorInsights = useMemo<CuratorInsight[]>(() => [
-    { curatorName: 'Spotify Editorial', playlistCount: 3, totalFollowers: 55000000, responseRate: 85, avgTimeToAdd: '5-7 days' },
-    { curatorName: 'Apple Music', playlistCount: 2, totalFollowers: 4500000, responseRate: 72, avgTimeToAdd: '7-14 days' },
-    { curatorName: 'Indie Curator', playlistCount: 5, totalFollowers: 250000, responseRate: 45, avgTimeToAdd: '2-3 days' },
-  ], []);
+  const curatorInsights = useMemo<CuratorInsight[]>(() => [], []);
 
   const filteredPlacements = useMemo(() => {
     let filtered = placements;
@@ -234,12 +230,13 @@ export function PlaylistTracking({
     return filtered;
   }, [placements, filterStatus, activeTab]);
 
-  const performanceData = useMemo(() => [
-    { week: 'Week 1', streams: 45000, additions: 2 },
-    { week: 'Week 2', streams: 78000, additions: 3 },
-    { week: 'Week 3', streams: 125000, additions: 1 },
-    { week: 'Week 4', streams: 280000, additions: 4 },
-  ], []);
+  const performanceData = useMemo(() => placements.length > 0
+    ? placements.map((p, i) => ({
+        week: `Week ${i + 1}`,
+        streams: p.estimatedStreams || 0,
+        additions: p.status === 'active' ? 1 : 0,
+      }))
+    : [], [placements]);
 
   const hasData = placements.length > 0;
 
@@ -406,7 +403,9 @@ export function PlaylistTracking({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {curatorInsights.map((curator, index) => (
+                {curatorInsights.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No curator data available yet.</p>
+                ) : curatorInsights.map((curator, index) => (
                   <motion.div
                     key={curator.curatorName}
                     initial={{ opacity: 0, x: 10 }}

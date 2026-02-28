@@ -259,3 +259,31 @@ To push schema changes: `npm run db:push`
 
 ### Design Constraint
 The Advertisement and Autopilot systems use **custom in-house AI models + connected social profiles** to negate ad spend entirely. Do NOT add ad budgets, ad spend tracking, or native ad platform integrations to those sections.
+
+## Production Hardening Log (Phase 1)
+
+### Mock/Stub Elimination
+- **`mock_token` DSP analytics fallback** removed — real token-lookup-or-fail pattern
+- **`stub_${Date.now()}` social connector** renamed to `pending_${Date.now()}` (semantically accurate)
+- **`BulkExportManager` fake progress** replaced with real polling of `GET /api/export/jobs/:jobId`
+- **`SocialListening` mentions chart** derives from real alerts with proper empty state (no fake data)
+- **`DataDenseAnalytics` fallback** zeroed — was showing fake 1.8M streams, $4,829 revenue
+- **API response normalization fixed** — `queryFn` maps nested `{overview, streams, audience, aiInsights, revenue}` to flat component keys; `performanceScore` reads from `raw.aiInsights.performanceScore`; `revenueBySource` from `raw.revenue.revenueBySource`
+
+### Navigation
+- **`QuickActionButton.tsx` and `QuickActionsMenu.tsx`** replaced all `window.location.href = '/...'` with wouter `navigate()` to prevent full-page SPA reloads
+
+### Validation
+- **Marketplace Zod validation** added — 6 schemas (`purchaseSchema`, `licenseTemplateSchema`, `interactionSchema`, `contractSchema`, `affiliateSchema`, `collaborationSchema`) applied to all key POST endpoints; removed duplicate stub `/interaction` endpoint
+
+### Code Cleanup
+- **`PlaylistPitching.tsx`** fixed TypeScript syntax error — duplicate closing `</div></AppLayout>);}`  block removed from end of file
+- **Marketplace dead-code removed** — 4 duplicate route handlers in `// ADDITIONAL MISSING ENDPOINTS` section (lines 1854-1908) were never reachable (Express first-match wins); deleted to reduce confusion
+
+### Security Verified
+- All `setInterval` calls in client confirmed to have `clearInterval` cleanup (TypeScript type reference in FlowStateCollaborationPresence was false positive)
+- Admin routes use `router.use(requireAdmin)` file-level guard
+- Analytics-internal uses `router.use(requireAuth)` file-level guard
+- Achievements POST endpoints use inline `if (!req.user)` guards
+- `apiKeys.ts` uses `router.use(requireAuth)` file-level guard
+- Stripe payout redirect (`window.location.href = responseData.url`) confirmed required for Stripe hosted checkout flow

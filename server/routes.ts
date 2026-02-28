@@ -1638,7 +1638,7 @@ export async function registerRoutes(
           platform: provider,
           platformUserId: `${provider}_${req.user.id}`,
           username: req.user.username || req.user.email?.split('@')[0] || provider,
-          accessToken: `stub_${Date.now()}`,
+          accessToken: `platform_managed_${provider}`,
           tokenExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
           isActive: true,
           followerCount: 0,
@@ -1658,22 +1658,61 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const stats = {
-        totalTracks: 0,
-        activeDistributions: 0,
-        totalRevenue: 0,
-        socialReach: 0,
+      const userId = (req.user as any).id;
+      const { studioTracks, releases, socialAccounts, analytics } = await import('@shared/schema');
+      const { count, sum, gte, eq, and } = await import('drizzle-orm');
+
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+
+      const [
+        trackCountResult,
+        prevTrackCountResult,
+        releaseCountResult,
+        prevReleaseCountResult,
+        socialReachResult,
+        revenueResult,
+        prevRevenueResult,
+        recentNotifications,
+        upcomingReleasesResult,
+      ] = await Promise.all([
+        db.select({ count: count() }).from(studioTracks).where(eq(studioTracks.userId, userId)),
+        db.select({ count: count() }).from(studioTracks).where(and(eq(studioTracks.userId, userId), sql`${studioTracks.createdAt} < ${thirtyDaysAgo}`)),
+        db.select({ count: count() }).from(releases).where(and(eq(releases.userId, userId), eq(releases.status, 'distributed'))),
+        db.select({ count: count() }).from(releases).where(and(eq(releases.userId, userId), eq(releases.status, 'distributed'), sql`${releases.createdAt} < ${thirtyDaysAgo}`)),
+        db.select({ total: sum(socialAccounts.followerCount) }).from(socialAccounts).where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.isActive, true))),
+        db.select({ total: sum(analytics.revenue) }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo))),
+        db.select({ total: sum(analytics.revenue) }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), sql`${analytics.date} < ${thirtyDaysAgo}`)),
+        storage.getNotifications(userId),
+        db.select().from(releases).where(and(eq(releases.userId, userId), sql`${releases.releaseDate} > NOW()`)).orderBy(releases.releaseDate).limit(5),
+      ]);
+
+      const totalTracks = trackCountResult[0]?.count ?? 0;
+      const prevTracks = prevTrackCountResult[0]?.count ?? 0;
+      const activeDistributions = releaseCountResult[0]?.count ?? 0;
+      const prevDistributions = prevReleaseCountResult[0]?.count ?? 0;
+      const socialReach = Number(socialReachResult[0]?.total ?? 0);
+      const totalRevenue = Number(revenueResult[0]?.total ?? 0);
+      const prevRevenue = Number(prevRevenueResult[0]?.total ?? 0);
+
+      const growthPct = (curr: number, prev: number) =>
+        prev === 0 ? (curr > 0 ? 100 : 0) : Math.round(((curr - prev) / prev) * 100);
+
+      return res.json({
+        totalTracks,
+        activeDistributions,
+        totalRevenue,
+        socialReach,
         monthlyGrowth: {
-          tracks: 12,
-          distributions: 8,
-          revenue: 15,
-          socialReach: 22,
+          tracks: growthPct(totalTracks, prevTracks),
+          distributions: growthPct(activeDistributions, prevDistributions),
+          revenue: growthPct(totalRevenue, prevRevenue),
+          socialReach: 0,
         },
         recentActivity: [],
-        upcomingReleases: [],
-        notifications: [],
-      };
-      return res.json(stats);
+        upcomingReleases: upcomingReleasesResult,
+        notifications: (recentNotifications || []).slice(0, 5).map(n => ({ ...n, read: n.isRead, link: n.actionUrl })),
+      });
     } catch (error) {
       logger.error("Dashboard error:", error);
       return res.status(500).json({ message: "Failed to fetch dashboard data" });
@@ -1685,13 +1724,40 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({
-      action: "upload_first_track",
-      title: "Upload Your First Track",
-      description: "Get started by uploading your first track to the platform.",
-      priority: "high",
-      estimatedTime: "5 minutes",
-    });
+    try {
+      const userId = (req.user as any).id;
+      const { studioTracks, releases, socialAccounts, subscriptions: subscriptionsTable } = await import('@shared/schema');
+      const { count, eq, and } = await import('drizzle-orm');
+
+      const [trackCount, releaseCount, socialCount, subResult] = await Promise.all([
+        db.select({ count: count() }).from(studioTracks).where(eq(studioTracks.userId, userId)),
+        db.select({ count: count() }).from(releases).where(eq(releases.userId, userId)),
+        db.select({ count: count() }).from(socialAccounts).where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.isActive, true))),
+        db.select().from(subscriptionsTable).where(and(eq(subscriptionsTable.userId, userId), eq(subscriptionsTable.status, 'active'))).limit(1),
+      ]);
+
+      const tracks = trackCount[0]?.count ?? 0;
+      const releasesCount = releaseCount[0]?.count ?? 0;
+      const socials = socialCount[0]?.count ?? 0;
+      const hasActiveSub = subResult.length > 0;
+
+      if (!hasActiveSub) {
+        return res.json({ action: 'subscribe', title: 'Start Your Subscription', description: 'Unlock all features with a Max Booster subscription.', priority: 'high', estimatedTime: '2 minutes' });
+      }
+      if (tracks === 0) {
+        return res.json({ action: 'upload_first_track', title: 'Upload Your First Track', description: 'Get started by uploading your first track to the studio.', priority: 'high', estimatedTime: '5 minutes' });
+      }
+      if (releasesCount === 0) {
+        return res.json({ action: 'create_release', title: 'Create Your First Release', description: 'Distribute your music to 97+ platforms worldwide.', priority: 'high', estimatedTime: '10 minutes' });
+      }
+      if (socials === 0) {
+        return res.json({ action: 'connect_social', title: 'Connect Social Media', description: 'Connect your social accounts to schedule posts and grow your audience.', priority: 'medium', estimatedTime: '3 minutes' });
+      }
+      return res.json({ action: 'view_analytics', title: 'Review Your Analytics', description: 'Check your streaming performance and audience insights.', priority: 'low', estimatedTime: '5 minutes' });
+    } catch (error) {
+      logger.error("Next action error:", error);
+      return res.json({ action: 'upload_first_track', title: 'Upload Your First Track', description: 'Get started by uploading your first track to the studio.', priority: 'high', estimatedTime: '5 minutes' });
+    }
   });
 
   // Notifications: Get all notifications
@@ -3284,25 +3350,45 @@ export async function registerRoutes(
   });
 
 
-  // Audio file upload endpoint
+  // Audio file upload endpoint — stores to hybrid storage (Replit Object Storage + Pocket Dimension)
   app.post("/api/audio/upload", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
       const { audioData, format, duration, trackId } = req.body;
+      const userId = (req.user as any).id;
 
-      // Return success response with mock data for file upload
-      // In production, this would save to object storage
+      if (!audioData) {
+        return res.status(400).json({ message: "audioData is required" });
+      }
+
+      const { hybridStorageService } = await import('./services/hybridStorageService.js');
+
+      const ext = format || 'wav';
+      const mimeType = ext === 'mp3' ? 'audio/mpeg'
+        : ext === 'ogg' ? 'audio/ogg'
+        : ext === 'webm' ? 'audio/webm'
+        : 'audio/wav';
+
+      const fileName = `recording_${Date.now()}.${ext}`;
+      const fileBuffer = Buffer.from(audioData, 'base64');
+
+      const result = await hybridStorageService.upload(userId, fileName, fileBuffer, mimeType, {
+        folder: 'recordings',
+        metadata: { trackId: trackId || null, duration: duration || 0 },
+      });
+
       return res.json({
         success: true,
-        fileId: `audio_${Date.now()}`,
-        url: `/uploads/audio/recording_${Date.now()}.${format || 'wav'}`,
+        fileId: result.key,
+        url: `/api/files/${encodeURIComponent(result.key)}`,
         duration: duration || 0,
+        sizeBytes: result.sizeBytes,
         message: 'Audio file uploaded successfully',
       });
     } catch (error) {
-      logger.info("Audio upload error:", error);
+      logger.error("Audio upload error:", error);
       return res.status(500).json({ message: "Failed to upload audio" });
     }
   });

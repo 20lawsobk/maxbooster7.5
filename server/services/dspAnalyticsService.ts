@@ -1,10 +1,10 @@
 import { db } from '../db';
 import {
   dspAnalytics,
-  dspSyncStatus,
+  dspUserPlatformStatus,
   InsertDspAnalytics,
   DspAnalytics,
-  DspSyncStatus,
+  DspUserPlatformStatus,
 } from '@shared/schema';
 import { eq, and, gte, lte, desc, sql, asc } from 'drizzle-orm';
 import { logger } from '../logger.js';
@@ -691,12 +691,12 @@ class DSPAnalyticsService {
     try {
       const [syncStatus] = await db
         .select()
-        .from(dspSyncStatus)
-        .where(and(eq(dspSyncStatus.userId, userId), eq(dspSyncStatus.platform, platform)))
+        .from(dspUserPlatformStatus)
+        .where(and(eq(dspUserPlatformStatus.userId, userId), eq(dspUserPlatformStatus.platform, platform)))
         .limit(1);
 
       await db
-        .insert(dspSyncStatus)
+        .insert(dspUserPlatformStatus)
         .values({
           userId,
           platform,
@@ -704,16 +704,26 @@ class DSPAnalyticsService {
           lastSyncAt: new Date(),
         })
         .onConflictDoUpdate({
-          target: [dspSyncStatus.userId, dspSyncStatus.platform],
+          target: [dspUserPlatformStatus.userId, dspUserPlatformStatus.platform],
           set: {
             syncStatus: 'syncing',
             lastSyncAt: new Date(),
           },
         });
 
-      const credentials: PlatformCredentials = syncStatus?.credentials as PlatformCredentials || {
-        accessToken: 'mock_token',
-      };
+      if (!syncStatus?.credentials) {
+        logger.info(`No OAuth credentials stored for ${platform} for user ${userId} — platform not connected, skipping sync`);
+        await db
+          .update(dspUserPlatformStatus)
+          .set({
+            syncStatus: 'disconnected',
+            errorMessage: 'Platform not connected — please connect your account in Settings',
+            updatedAt: new Date(),
+          })
+          .where(and(eq(dspUserPlatformStatus.userId, userId), eq(dspUserPlatformStatus.platform, platform)));
+        return null;
+      }
+      const credentials = syncStatus.credentials as PlatformCredentials;
 
       let normalizedData: NormalizedDSPAnalytics | null = null;
 
@@ -757,7 +767,7 @@ class DSPAnalyticsService {
         await this.storeDSPAnalytics(userId, normalizedData);
         
         await db
-          .update(dspSyncStatus)
+          .update(dspUserPlatformStatus)
           .set({
             syncStatus: 'success',
             lastSuccessAt: new Date(),
@@ -768,7 +778,7 @@ class DSPAnalyticsService {
             errorCount: 0,
             updatedAt: new Date(),
           })
-          .where(and(eq(dspSyncStatus.userId, userId), eq(dspSyncStatus.platform, platform)));
+          .where(and(eq(dspUserPlatformStatus.userId, userId), eq(dspUserPlatformStatus.platform, platform)));
       }
 
       return normalizedData;
@@ -776,14 +786,14 @@ class DSPAnalyticsService {
       logger.error(`Error syncing ${platform} data for user ${userId}:`, error);
       
       await db
-        .update(dspSyncStatus)
+        .update(dspUserPlatformStatus)
         .set({
           syncStatus: 'error',
           errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          errorCount: sql`${dspSyncStatus.errorCount} + 1`,
+          errorCount: sql`${dspUserPlatformStatus.errorCount} + 1`,
           updatedAt: new Date(),
         })
-        .where(and(eq(dspSyncStatus.userId, userId), eq(dspSyncStatus.platform, platform)));
+        .where(and(eq(dspUserPlatformStatus.userId, userId), eq(dspUserPlatformStatus.platform, platform)));
       
       return null;
     }
@@ -1055,15 +1065,15 @@ class DSPAnalyticsService {
     };
   }
 
-  async getSyncStatus(userId: string, platform?: DSPPlatform): Promise<DspSyncStatus[]> {
-    const conditions = [eq(dspSyncStatus.userId, userId)];
+  async getSyncStatus(userId: string, platform?: DSPPlatform): Promise<DspUserPlatformStatus[]> {
+    const conditions = [eq(dspUserPlatformStatus.userId, userId)];
     if (platform) {
-      conditions.push(eq(dspSyncStatus.platform, platform));
+      conditions.push(eq(dspUserPlatformStatus.platform, platform));
     }
 
     return db
       .select()
-      .from(dspSyncStatus)
+      .from(dspUserPlatformStatus)
       .where(and(...conditions));
   }
 

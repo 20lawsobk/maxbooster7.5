@@ -215,48 +215,53 @@ export function CrossPlatformComparison({
   });
 
   const platformData = useMemo<PlatformData[]>(() => {
-    const defaultData: PlatformData[] = [
-      { platform: 'Spotify', color: '#1DB954', icon: '🎵', streams: 892341, streamChange: 15.2, followers: 23400, followerChange: 8.5, engagement: 4.8, engagementChange: 12, revenue: 1250.50, revenueChange: 10, saves: 15600, shares: 4200 },
-      { platform: 'Apple Music', color: '#FA2D48', icon: '🍎', streams: 456782, streamChange: 8.7, followers: 12300, followerChange: 5.2, engagement: 5.2, engagementChange: 8, revenue: 890.25, revenueChange: 6, saves: 8900, shares: 2100 },
-      { platform: 'YouTube Music', color: '#FF0000', icon: '📺', streams: 234567, streamChange: 22.1, followers: 5600, followerChange: 18.3, engagement: 3.5, engagementChange: 15, revenue: 420.80, revenueChange: 25, saves: 3400, shares: 5600 },
-      { platform: 'Amazon Music', color: '#FF9900', icon: '📦', streams: 123456, streamChange: -3.4, followers: 2100, followerChange: 2.1, engagement: 2.8, engagementChange: -5, revenue: 280.45, revenueChange: -2, saves: 1800, shares: 900 },
-    ];
-
-    if (!data?.platforms) return defaultData;
-    
-    return data.platforms.map((p: any) => ({
-      platform: p.name || p.platform,
-      color: PLATFORM_INFO[p.name?.toLowerCase()]?.color || '#6B7280',
-      icon: PLATFORM_INFO[p.name?.toLowerCase()]?.icon || '🎵',
-      ...p,
+    const metrics: any[] = data?.data?.metrics ?? data?.metrics ?? [];
+    if (!metrics.length) return [];
+    return metrics.map((p: any) => ({
+      platform: p.platform || p.name || '',
+      color: PLATFORM_INFO[p.platform?.toLowerCase() ?? p.name?.toLowerCase()]?.color || '#6B7280',
+      icon: PLATFORM_INFO[p.platform?.toLowerCase() ?? p.name?.toLowerCase()]?.icon || '🎵',
+      streams: p.streams || 0,
+      streamChange: p.growthRate || 0,
+      followers: p.listeners || 0,
+      followerChange: 0,
+      engagement: p.engagement || 0,
+      engagementChange: 0,
+      revenue: p.revenue || 0,
+      revenueChange: 0,
+      saves: 0,
+      shares: 0,
     }));
   }, [data]);
 
-  const maxStreams = Math.max(...platformData.map(p => p.streams));
+  const maxStreams = platformData.length > 0 ? Math.max(...platformData.map(p => p.streams)) : 1;
 
-  const growthData = useMemo<GrowthData[]>(() => [
-    { month: 'Sep', spotify: 650000, apple: 320000, youtube: 150000, amazon: 95000 },
-    { month: 'Oct', spotify: 720000, apple: 380000, youtube: 180000, amazon: 110000 },
-    { month: 'Nov', spotify: 780000, apple: 400000, youtube: 200000, amazon: 105000 },
-    { month: 'Dec', spotify: 850000, apple: 430000, youtube: 220000, amazon: 118000 },
-    { month: 'Jan', spotify: 892341, apple: 456782, youtube: 234567, amazon: 123456 },
-  ], []);
+  const growthData = useMemo<GrowthData[]>(() => {
+    const timeline: any[] = data?.data?.timeline ?? data?.timeline ?? [];
+    return timeline;
+  }, [data]);
 
-  const engagementData = useMemo<EngagementMetric[]>(() => [
-    { metric: 'Save Rate', spotify: 4.2, apple: 5.1, youtube: 3.8, amazon: 2.9 },
-    { metric: 'Share Rate', spotify: 1.8, apple: 1.5, youtube: 3.2, amazon: 0.9 },
-    { metric: 'Completion', spotify: 78, apple: 82, youtube: 65, amazon: 75 },
-    { metric: 'Skip Rate', spotify: 22, apple: 18, youtube: 35, amazon: 25 },
-    { metric: 'Replay Rate', spotify: 15, apple: 18, youtube: 12, amazon: 10 },
-  ], []);
+  const engagementData = useMemo<EngagementMetric[]>(() => {
+    const engagement: any[] = data?.data?.engagementBreakdown ?? data?.engagementBreakdown ?? [];
+    return engagement;
+  }, [data]);
 
-  const radarData = useMemo(() => [
-    { metric: 'Streams', spotify: 100, apple: 51, youtube: 26, amazon: 14 },
-    { metric: 'Followers', spotify: 100, apple: 53, youtube: 24, amazon: 9 },
-    { metric: 'Engagement', spotify: 92, apple: 100, youtube: 67, amazon: 54 },
-    { metric: 'Revenue', spotify: 100, apple: 71, youtube: 34, amazon: 22 },
-    { metric: 'Growth', spotify: 69, apple: 39, youtube: 100, amazon: -15 },
-  ], []);
+  const radarData = useMemo(() => {
+    if (!platformData.length) return [];
+    const maxStreams_ = Math.max(...platformData.map(p => p.streams), 1);
+    const maxRevenue = Math.max(...platformData.map(p => p.revenue), 1);
+    const metrics = ['Streams', 'Revenue', 'Engagement'];
+    return metrics.map(metric => {
+      const row: Record<string, any> = { metric };
+      platformData.forEach(p => {
+        const key = p.platform.toLowerCase();
+        if (metric === 'Streams') row[key] = Math.round((p.streams / maxStreams_) * 100);
+        else if (metric === 'Revenue') row[key] = Math.round((p.revenue / maxRevenue) * 100);
+        else if (metric === 'Engagement') row[key] = p.engagement;
+      });
+      return row;
+    });
+  }, [platformData]);
 
   const filteredPlatforms = useMemo(() => {
     if (selectedPlatforms.length === 0) return platformData;
@@ -325,21 +330,27 @@ export function CrossPlatformComparison({
               <CardDescription>Monthly stream comparison across platforms</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={growthData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-                    <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(v) => `${(v / 1000)}K`} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Bar dataKey="spotify" name="Spotify" fill="#1DB954" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="apple" name="Apple Music" fill="#FA2D48" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="youtube" name="YouTube Music" fill="#FF0000" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="amazon" name="Amazon Music" fill="#FF9900" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {growthData.length === 0 ? (
+                <div className="h-[400px] flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm">No historical trend data available yet. Connect your DSP platforms to see growth over time.</p>
+                </div>
+              ) : (
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={growthData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
+                      <XAxis dataKey="month" className="text-xs" />
+                      <YAxis className="text-xs" tickFormatter={(v) => `${(v / 1000)}K`} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Bar dataKey="spotify" name="Spotify" fill="#1DB954" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="apple" name="Apple Music" fill="#FA2D48" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="youtube" name="YouTube Music" fill="#FF0000" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="amazon" name="Amazon Music" fill="#FF9900" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -351,21 +362,27 @@ export function CrossPlatformComparison({
               <CardDescription>Key engagement metrics by platform</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={engagementData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-                    <XAxis type="number" className="text-xs" />
-                    <YAxis type="category" dataKey="metric" width={100} className="text-xs" />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Bar dataKey="spotify" name="Spotify" fill="#1DB954" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="apple" name="Apple Music" fill="#FA2D48" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="youtube" name="YouTube Music" fill="#FF0000" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="amazon" name="Amazon Music" fill="#FF9900" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {engagementData.length === 0 ? (
+                <div className="h-[400px] flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm">No engagement breakdown data available. Connect your DSP platforms to compare engagement rates.</p>
+                </div>
+              ) : (
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={engagementData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
+                      <XAxis type="number" className="text-xs" />
+                      <YAxis type="category" dataKey="metric" width={100} className="text-xs" />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Bar dataKey="spotify" name="Spotify" fill="#1DB954" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="apple" name="Apple Music" fill="#FA2D48" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="youtube" name="YouTube Music" fill="#FF0000" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="amazon" name="Amazon Music" fill="#FF9900" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -377,6 +394,11 @@ export function CrossPlatformComparison({
               <CardDescription>Relative performance across key metrics (normalized to 100)</CardDescription>
             </CardHeader>
             <CardContent>
+              {radarData.length === 0 ? (
+                <div className="h-[450px] flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm">No platform data available yet. Connect your streaming platforms to see a performance radar.</p>
+                </div>
+              ) : (
               <div className="h-[450px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
@@ -408,6 +430,7 @@ export function CrossPlatformComparison({
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

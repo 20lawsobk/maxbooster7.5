@@ -79,58 +79,24 @@ interface AnalyticsData {
 
 const COLORS = ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#3B82F6', '#6366F1'];
 
-const mockAnalytics: AnalyticsData = {
+const emptyAnalytics: AnalyticsData = {
   overview: {
-    totalViews: 45620,
-    totalPlays: 28340,
-    totalSales: 847,
-    totalRevenue: 34580.50,
-    conversionRate: 2.98,
-    avgOrderValue: 40.83,
-    viewsChange: 12.5,
-    playsChange: 8.3,
-    salesChange: 15.2,
-    revenueChange: 22.8,
+    totalViews: 0,
+    totalPlays: 0,
+    totalSales: 0,
+    totalRevenue: 0,
+    conversionRate: 0,
+    avgOrderValue: 0,
+    viewsChange: 0,
+    playsChange: 0,
+    salesChange: 0,
+    revenueChange: 0,
   },
-  timeline: [
-    { date: 'Jan', views: 3200, plays: 1800, sales: 52, revenue: 2100 },
-    { date: 'Feb', views: 3800, plays: 2200, sales: 68, revenue: 2750 },
-    { date: 'Mar', views: 4100, plays: 2500, sales: 75, revenue: 3050 },
-    { date: 'Apr', views: 3600, plays: 2100, sales: 61, revenue: 2480 },
-    { date: 'May', views: 4500, plays: 2800, sales: 89, revenue: 3620 },
-    { date: 'Jun', views: 5200, plays: 3200, sales: 102, revenue: 4150 },
-    { date: 'Jul', views: 4800, plays: 2900, sales: 94, revenue: 3820 },
-    { date: 'Aug', views: 5500, plays: 3400, sales: 112, revenue: 4560 },
-    { date: 'Sep', views: 4900, plays: 3000, sales: 98, revenue: 3990 },
-    { date: 'Oct', views: 5100, plays: 3150, sales: 96, revenue: 4060 },
-  ],
-  topBeats: [
-    { id: '1', title: 'Midnight Dreams', views: 8540, plays: 5200, sales: 156, revenue: 6250, conversionRate: 3.0 },
-    { id: '2', title: 'Dark Energy', views: 6820, plays: 4100, sales: 128, revenue: 5120, conversionRate: 3.12 },
-    { id: '3', title: 'Summer Vibes', views: 5430, plays: 3200, sales: 98, revenue: 3920, conversionRate: 3.06 },
-    { id: '4', title: 'Trap Soul', views: 4890, plays: 2800, sales: 87, revenue: 3480, conversionRate: 3.11 },
-    { id: '5', title: 'Wavy Days', views: 4210, plays: 2500, sales: 76, revenue: 3040, conversionRate: 3.04 },
-  ],
-  licenseBreakdown: [
-    { type: 'Basic', count: 420, revenue: 12600, percentage: 49.6 },
-    { type: 'Premium', count: 280, revenue: 13960, percentage: 33.1 },
-    { type: 'Unlimited', count: 95, revenue: 7600, percentage: 11.2 },
-    { type: 'Exclusive', count: 52, revenue: 10400, percentage: 6.1 },
-  ],
-  trafficSources: [
-    { source: 'Direct', visits: 15200, conversions: 450, percentage: 33.3 },
-    { source: 'Social Media', visits: 12800, conversions: 320, percentage: 28.1 },
-    { source: 'Search', visits: 9500, conversions: 280, percentage: 20.8 },
-    { source: 'Referral', visits: 5100, conversions: 140, percentage: 11.2 },
-    { source: 'Email', visits: 3020, conversions: 95, percentage: 6.6 },
-  ],
-  geographicData: [
-    { country: 'United States', plays: 12500, sales: 380 },
-    { country: 'United Kingdom', plays: 4200, sales: 125 },
-    { country: 'Germany', plays: 3100, sales: 92 },
-    { country: 'Canada', plays: 2800, sales: 85 },
-    { country: 'France', plays: 2200, sales: 65 },
-  ],
+  timeline: [],
+  topBeats: [],
+  licenseBreakdown: [],
+  trafficSources: [],
+  geographicData: [],
 };
 
 function StatCard({ 
@@ -177,7 +143,7 @@ export function ProducerAnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState('30d');
   const [activeTab, setActiveTab] = useState('overview');
 
-  const { data: analytics = mockAnalytics, isLoading } = useQuery<AnalyticsData>({
+  const { data: analytics = emptyAnalytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['/api/marketplace/producer-analytics', timeRange],
     queryFn: async () => {
       const res = await fetch(`/api/marketplace/producer-analytics?timeRange=${timeRange}`, {
