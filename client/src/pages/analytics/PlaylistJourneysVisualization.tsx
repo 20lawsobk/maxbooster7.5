@@ -66,31 +66,16 @@ interface PlaylistJourneysProps {
   onRefresh?: () => void;
 }
 
-const defaultEvents: PlaylistEvent[] = [
-  { id: '1', playlistName: 'Today\'s Top Hits', platform: 'Spotify', type: 'editorial', action: 'added', date: '2025-12-15', position: 45, followers: 35000000, estimatedStreams: 125000, trackName: 'Your Hit Song' },
-  { id: '2', playlistName: 'New Music Friday', platform: 'Spotify', type: 'editorial', action: 'added', date: '2025-12-10', position: 12, followers: 12500000, estimatedStreams: 85000, trackName: 'Latest Release' },
-  { id: '3', playlistName: 'Discover Weekly', platform: 'Spotify', type: 'algorithmic', action: 'added', date: '2025-12-08', followers: 0, estimatedStreams: 15000, trackName: 'Your Hit Song' },
-  { id: '4', playlistName: 'Release Radar', platform: 'Spotify', type: 'algorithmic', action: 'added', date: '2025-12-05', followers: 0, estimatedStreams: 12000, trackName: 'Latest Release' },
-  { id: '5', playlistName: 'Indie Vibes', platform: 'Apple Music', type: 'editorial', action: 'removed', date: '2025-12-01', position: 8, followers: 2500000, estimatedStreams: 0, trackName: 'Old Track' },
-  { id: '6', playlistName: 'Chill Hits', platform: 'Spotify', type: 'user', action: 'added', date: '2025-11-28', followers: 850000, estimatedStreams: 8500, trackName: 'Chill Song' },
-];
-
-const defaultPositionHistory: PositionHistory[] = [
-  { date: '2025-12-15', position: 45, playlistName: 'Today\'s Top Hits' },
-  { date: '2025-12-14', position: 42, playlistName: 'Today\'s Top Hits' },
-  { date: '2025-12-13', position: 38, playlistName: 'Today\'s Top Hits' },
-  { date: '2025-12-12', position: 35, playlistName: 'Today\'s Top Hits' },
-  { date: '2025-12-11', position: 28, playlistName: 'Today\'s Top Hits' },
-  { date: '2025-12-10', position: 22, playlistName: 'Today\'s Top Hits' },
-];
-
-const defaultTypeBreakdown: PlaylistTypeBreakdown[] = [
-  { type: 'editorial', count: 12, percentage: 35, totalReach: 52000000, avgStreamsPerDay: 45000 },
-  { type: 'algorithmic', count: 45, percentage: 45, totalReach: 0, avgStreamsPerDay: 28000 },
-  { type: 'user', count: 128, percentage: 20, totalReach: 8500000, avgStreamsPerDay: 12000 },
-];
 
 const PlaylistTimeline = memo(({ events }: { events: PlaylistEvent[] }) => {
+  if (events.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+        <p>No playlist events recorded yet</p>
+      </div>
+    );
+  }
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'editorial': return 'bg-purple-100 text-purple-800 border-purple-200';
@@ -210,6 +195,15 @@ PlaylistTimeline.displayName = 'PlaylistTimeline';
 
 const PositionChart = memo(({ history }: { history: PositionHistory[] }) => {
   const reversedHistory = [...history].reverse();
+
+  if (reversedHistory.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+        <p>No position history available yet</p>
+      </div>
+    );
+  }
+
   const maxPosition = Math.max(...reversedHistory.map(h => h.position));
   const minPosition = Math.min(...reversedHistory.map(h => h.position));
   
@@ -250,6 +244,14 @@ const PositionChart = memo(({ history }: { history: PositionHistory[] }) => {
 PositionChart.displayName = 'PositionChart';
 
 const TypeBreakdownChart = memo(({ breakdown }: { breakdown: PlaylistTypeBreakdown[] }) => {
+  if (breakdown.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+        <p>No playlist type data available yet</p>
+      </div>
+    );
+  }
+
   const typeColors = {
     editorial: { bg: 'bg-purple-500', light: 'bg-purple-100', text: 'text-purple-700' },
     algorithmic: { bg: 'bg-blue-500', light: 'bg-blue-100', text: 'text-blue-700' },
@@ -331,9 +333,9 @@ export default function PlaylistJourneysVisualization({
   });
 
   const journeysData = journeysResponse?.data ?? journeysResponse;
-  const events = propEvents || (isError ? defaultEvents : journeysData?.events) || defaultEvents;
-  const positionHistory = propPositionHistory || (isError ? defaultPositionHistory : journeysData?.positionHistory) || defaultPositionHistory;
-  const typeBreakdown = propTypeBreakdown || (isError ? defaultTypeBreakdown : journeysData?.typeBreakdown) || defaultTypeBreakdown;
+  const events: PlaylistEvent[] = propEvents || journeysData?.events || [];
+  const positionHistory: PositionHistory[] = propPositionHistory || journeysData?.positionHistory || [];
+  const typeBreakdown: PlaylistTypeBreakdown[] = propTypeBreakdown || journeysData?.typeBreakdown || [];
 
   const handleRefresh = () => {
     refetch();

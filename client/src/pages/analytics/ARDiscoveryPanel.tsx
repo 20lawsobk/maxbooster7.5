@@ -61,110 +61,6 @@ interface ARDiscoveryProps {
   onArtistSelect?: (artist: EmergingArtist) => void;
 }
 
-const defaultArtists: EmergingArtist[] = [
-  {
-    id: '1',
-    name: 'Luna Waves',
-    genre: 'Indie Pop',
-    country: 'Sweden',
-    countryCode: 'SE',
-    growthScore: 94,
-    signingPotential: 'high',
-    monthlyListeners: 285000,
-    monthlyGrowth: 156,
-    socialFollowing: 125000,
-    recentReleases: 3,
-    playlistReach: 4500000,
-    engagementRate: 8.5,
-    topTrack: 'Midnight Dreams',
-    trajectory: [45, 58, 72, 85, 94],
-  },
-  {
-    id: '2',
-    name: 'Neon Pulse',
-    genre: 'Electronic',
-    country: 'Germany',
-    countryCode: 'DE',
-    growthScore: 89,
-    signingPotential: 'high',
-    monthlyListeners: 420000,
-    monthlyGrowth: 89,
-    socialFollowing: 95000,
-    recentReleases: 5,
-    playlistReach: 6200000,
-    engagementRate: 7.2,
-    topTrack: 'Circuit Break',
-    trajectory: [52, 61, 73, 82, 89],
-  },
-  {
-    id: '3',
-    name: 'Velvet Echo',
-    genre: 'R&B',
-    country: 'United States',
-    countryCode: 'US',
-    growthScore: 85,
-    signingPotential: 'high',
-    monthlyListeners: 175000,
-    monthlyGrowth: 234,
-    socialFollowing: 280000,
-    recentReleases: 2,
-    playlistReach: 3100000,
-    engagementRate: 12.3,
-    topTrack: 'Silk & Shadows',
-    trajectory: [28, 45, 62, 78, 85],
-  },
-  {
-    id: '4',
-    name: 'Arctic Bloom',
-    genre: 'Alternative',
-    country: 'Norway',
-    countryCode: 'NO',
-    growthScore: 78,
-    signingPotential: 'medium',
-    monthlyListeners: 98000,
-    monthlyGrowth: 67,
-    socialFollowing: 45000,
-    recentReleases: 4,
-    playlistReach: 1800000,
-    engagementRate: 9.1,
-    topTrack: 'Northern Lights',
-    trajectory: [35, 48, 58, 68, 78],
-  },
-  {
-    id: '5',
-    name: 'Solar Drift',
-    genre: 'Synth Pop',
-    country: 'Japan',
-    countryCode: 'JP',
-    growthScore: 72,
-    signingPotential: 'medium',
-    monthlyListeners: 156000,
-    monthlyGrowth: 45,
-    socialFollowing: 82000,
-    recentReleases: 6,
-    playlistReach: 2400000,
-    engagementRate: 6.8,
-    topTrack: 'Cosmic Rider',
-    trajectory: [40, 52, 60, 66, 72],
-  },
-  {
-    id: '6',
-    name: 'Coral Reef',
-    genre: 'Indie Folk',
-    country: 'Australia',
-    countryCode: 'AU',
-    growthScore: 65,
-    signingPotential: 'low',
-    monthlyListeners: 42000,
-    monthlyGrowth: 32,
-    socialFollowing: 28000,
-    recentReleases: 2,
-    playlistReach: 890000,
-    engagementRate: 5.4,
-    topTrack: 'Ocean Breeze',
-    trajectory: [38, 45, 52, 58, 65],
-  },
-];
 
 const getCountryFlag = (countryCode: string) => {
   const codePoints = countryCode
@@ -306,6 +202,14 @@ const GrowthTrajectoryChart = memo(({ artists }: { artists: EmergingArtist[] }) 
   const topArtists = artists.slice(0, 5);
   const colors = ['#6366f1', '#ec4899', '#22c55e', '#f59e0b', '#06b6d4'];
 
+  if (topArtists.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+        <p>No trajectory data available yet</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="relative h-64 bg-slate-50 dark:bg-slate-900 rounded-lg p-4">
@@ -368,9 +272,9 @@ export default function ARDiscoveryPanel({ artists: propArtists, onArtistSelect 
   });
 
   const discoveryData = discoveryResponse?.data ?? discoveryResponse;
-  const artists = propArtists || (isError ? defaultArtists : (Array.isArray(discoveryData) ? discoveryData : discoveryData?.data)) || defaultArtists;
-  const availableGenres = (isError ? [] : discoveryResponse?.filters?.genres) || [...new Set(artists.map((a: EmergingArtist) => a.genre))];
-  const availableCountries = (isError ? [] : discoveryResponse?.filters?.countries) || [...new Set(artists.map((a: EmergingArtist) => a.country))];
+  const artists: EmergingArtist[] = propArtists || (Array.isArray(discoveryData) ? discoveryData : discoveryData?.data) || [];
+  const availableGenres: string[] = discoveryResponse?.filters?.genres || [...new Set(artists.map((a: EmergingArtist) => a.genre))];
+  const availableCountries: string[] = discoveryResponse?.filters?.countries || [...new Set(artists.map((a: EmergingArtist) => a.country))];
 
   const genres = availableGenres;
   const countries = availableCountries;

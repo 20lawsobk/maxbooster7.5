@@ -909,12 +909,7 @@ router.get('/global-ranking', async (req: Request, res: Response) => {
       });
     }
 
-    const similarArtists = [
-      { name: 'Rising Star', score: baseScore + 8, rank: globalRank - 4000, genre: 'Indie Pop', monthlyListeners: 2500000, comparison: 'ahead' },
-      { name: 'Groove Master', score: baseScore + 2, rank: globalRank - 1000, genre: 'Electronic', monthlyListeners: 1800000, comparison: 'ahead' },
-      { name: 'Sunset Vibes', score: baseScore - 1, rank: globalRank + 500, genre: 'Indie Pop', monthlyListeners: 1200000, comparison: 'similar' },
-      { name: 'Echo Chamber', score: baseScore - 6, rank: globalRank + 4000, genre: 'Alternative', monthlyListeners: 950000, comparison: 'behind' },
-    ];
+    const similarArtists: { name: string; score: number; rank: number; genre: string; monthlyListeners: number; comparison: string }[] = [];
 
     return res.json({
       success: true,

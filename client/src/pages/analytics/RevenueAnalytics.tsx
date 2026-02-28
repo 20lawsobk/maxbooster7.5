@@ -1,6 +1,6 @@
 import { useState, useMemo, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   PieChart,
   Pie,
@@ -16,31 +16,17 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Tooltip as UITooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
   DollarSign,
-  TrendingUp,
-  TrendingDown,
   CreditCard,
-  Wallet,
   Clock,
-  FileText,
   AlertCircle,
   CheckCircle,
-  Info,
-  ChevronRight,
   Receipt,
 } from 'lucide-react';
 import { DateRangePicker } from '@/components/analytics/DateRangePicker';
-import { PlatformFilterChips } from '@/components/analytics/PlatformFilterChips';
 import { RevenueEmptyState } from '@/components/analytics/AnalyticsEmptyStates';
 import { RevenueBreakdownSkeleton, StatCardRowSkeleton } from '@/components/analytics/AnalyticsLoadingSkeletons';
 import { cn } from '@/lib/utils';
@@ -187,15 +173,7 @@ export function RevenueAnalytics({
   });
 
   const revenueBreakdown = useMemo<RevenueBreakdown[]>(() => {
-    if (!data?.revenue?.revenueByPlatform) {
-      return [
-        { platform: 'Spotify', earnings: 1250.50, streams: 125050, ratePerStream: 0.01, change: 12.5, color: PLATFORM_COLORS.spotify },
-        { platform: 'Apple Music', earnings: 890.25, streams: 62118, ratePerStream: 0.0143, change: 8.2, color: PLATFORM_COLORS.apple_music },
-        { platform: 'YouTube Music', earnings: 420.80, streams: 105200, ratePerStream: 0.004, change: 15.8, color: PLATFORM_COLORS.youtube_music },
-        { platform: 'Amazon Music', earnings: 280.45, streams: 35056, ratePerStream: 0.008, change: -2.3, color: PLATFORM_COLORS.amazon_music },
-        { platform: 'Other', earnings: 158.00, streams: 19750, ratePerStream: 0.008, change: 5.0, color: PLATFORM_COLORS.other },
-      ];
-    }
+    if (!data?.revenue?.revenueByPlatform) return [];
     return data.revenue.revenueByPlatform.map((p: any) => ({
       platform: p.platform,
       earnings: p.revenue || 0,
@@ -207,26 +185,24 @@ export function RevenueAnalytics({
   }, [data]);
 
   const earningsStatus = useMemo<EarningsStatus>(() => ({
-    pending: data?.revenue?.pendingEarnings || 450.25,
-    paid: data?.revenue?.paidEarnings || 2850.00,
-    processing: data?.revenue?.processingEarnings || 125.50,
-    nextPayoutDate: data?.revenue?.nextPayoutDate || 'Mar 15, 2025',
-    nextPayoutAmount: data?.revenue?.nextPayoutAmount || 575.75,
+    pending: data?.revenue?.pendingEarnings ?? 0,
+    paid: data?.revenue?.paidEarnings ?? 0,
+    processing: data?.revenue?.processingEarnings ?? 0,
+    nextPayoutDate: data?.revenue?.nextPayoutDate ?? '—',
+    nextPayoutAmount: data?.revenue?.nextPayoutAmount ?? 0,
   }), [data]);
 
   const taxInfo = useMemo<TaxInfo>(() => ({
-    grossEarnings: data?.revenue?.grossEarnings || 3500.00,
-    taxWithheld: data?.revenue?.taxWithheld || 350.00,
-    netEarnings: data?.revenue?.netEarnings || 3150.00,
-    taxRate: data?.revenue?.taxRate || 10,
+    grossEarnings: data?.revenue?.grossEarnings ?? 0,
+    taxWithheld: data?.revenue?.taxWithheld ?? 0,
+    netEarnings: data?.revenue?.netEarnings ?? 0,
+    taxRate: data?.revenue?.taxRate ?? 0,
   }), [data]);
 
-  const royaltyBreakdown = useMemo<RoyaltyBreakdown[]>(() => [
-    { type: 'Streaming Royalties', amount: 2450.50, percentage: 70, description: 'Revenue from streaming platforms' },
-    { type: 'Mechanical Royalties', amount: 525.25, percentage: 15, description: 'Publishing rights from streams' },
-    { type: 'Sync Licensing', amount: 350.00, percentage: 10, description: 'Music used in videos/ads' },
-    { type: 'Performance Royalties', amount: 175.25, percentage: 5, description: 'Radio & public performance' },
-  ], []);
+  const royaltyBreakdown = useMemo<RoyaltyBreakdown[]>(() => {
+    if (!data?.revenue?.royaltyBreakdown) return [];
+    return data.revenue.royaltyBreakdown;
+  }, [data]);
 
   const totalEarnings = revenueBreakdown.reduce((sum, p) => sum + p.earnings, 0);
   const hasData = totalEarnings > 0;
@@ -391,38 +367,44 @@ export function RevenueAnalytics({
               <CardDescription>Understanding your different revenue streams</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  {royaltyBreakdown.map((royalty, index) => (
-                    <motion.div
-                      key={royalty.type}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="p-4 rounded-lg border bg-slate-50 dark:bg-slate-800/50"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">{royalty.type}</span>
-                        <span className="font-bold">${royalty.amount.toLocaleString()}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">{royalty.description}</p>
-                      <Progress value={royalty.percentage} className="h-2" />
-                      <span className="text-xs text-muted-foreground mt-1">{royalty.percentage}% of total</span>
-                    </motion.div>
-                  ))}
+              {royaltyBreakdown.length === 0 ? (
+                <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
+                  <p>No royalty breakdown data available yet</p>
                 </div>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={royaltyBreakdown} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" tickFormatter={(v) => `$${v}`} />
-                      <YAxis type="category" dataKey="type" width={120} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Bar dataKey="amount" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    {royaltyBreakdown.map((royalty, index) => (
+                      <motion.div
+                        key={royalty.type}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="p-4 rounded-lg border bg-slate-50 dark:bg-slate-800/50"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">{royalty.type}</span>
+                          <span className="font-bold">${royalty.amount.toLocaleString()}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">{royalty.description}</p>
+                        <Progress value={royalty.percentage} className="h-2" />
+                        <span className="text-xs text-muted-foreground mt-1">{royalty.percentage}% of total</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={royaltyBreakdown} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" tickFormatter={(v) => `$${v}`} />
+                        <YAxis type="category" dataKey="type" width={120} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="amount" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -466,27 +448,8 @@ export function RevenueAnalytics({
                 <CardDescription>Download your tax forms and reports</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { name: 'Annual Tax Summary 2024', type: 'PDF', date: 'Jan 15, 2025' },
-                    { name: 'W-9 Form', type: 'PDF', date: 'Oct 1, 2024' },
-                    { name: 'Royalty Statement Q4 2024', type: 'PDF', date: 'Jan 5, 2025' },
-                  ].map((doc) => (
-                    <Button
-                      key={doc.name}
-                      variant="outline"
-                      className="w-full justify-between h-auto py-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-muted-foreground" />
-                        <div className="text-left">
-                          <p className="font-medium">{doc.name}</p>
-                          <p className="text-xs text-muted-foreground">{doc.type} • {doc.date}</p>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  ))}
+                <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                  <p>No tax documents available yet</p>
                 </div>
               </CardContent>
             </Card>

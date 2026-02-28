@@ -63,31 +63,6 @@ interface GlobalRankingProps {
   similarArtists?: SimilarArtist[];
 }
 
-const defaultPlatformScores: PlatformScore[] = [
-  { platform: 'Spotify', score: 78, rank: 12453, trend: 'up', change: 5, color: '#1DB954' },
-  { platform: 'Apple Music', score: 72, rank: 18234, trend: 'up', change: 3, color: '#FA2D48' },
-  { platform: 'YouTube Music', score: 65, rank: 24567, trend: 'stable', change: 0, color: '#FF0000' },
-  { platform: 'Amazon Music', score: 58, rank: 32145, trend: 'down', change: -2, color: '#00A8E1' },
-  { platform: 'Deezer', score: 52, rank: 41234, trend: 'up', change: 8, color: '#FEAA2D' },
-  { platform: 'Tidal', score: 45, rank: 52341, trend: 'stable', change: 0, color: '#000000' },
-];
-
-const defaultRankingHistory: RankingHistory[] = [
-  { date: '2025-12-15', score: 74, rank: 12453 },
-  { date: '2025-12-08', score: 71, rank: 13245 },
-  { date: '2025-12-01', score: 68, rank: 14567 },
-  { date: '2025-11-24', score: 65, rank: 16234 },
-  { date: '2025-11-17', score: 62, rank: 18456 },
-  { date: '2025-11-10', score: 58, rank: 21234 },
-];
-
-const defaultSimilarArtists: SimilarArtist[] = [
-  { name: 'Rising Star', score: 82, rank: 8234, genre: 'Indie Pop', monthlyListeners: 2500000, comparison: 'ahead' },
-  { name: 'Groove Master', score: 76, rank: 11234, genre: 'Electronic', monthlyListeners: 1800000, comparison: 'ahead' },
-  { name: 'Sunset Vibes', score: 73, rank: 13456, genre: 'Indie Pop', monthlyListeners: 1200000, comparison: 'similar' },
-  { name: 'Echo Chamber', score: 68, rank: 16789, genre: 'Alternative', monthlyListeners: 950000, comparison: 'behind' },
-  { name: 'Neon Dreams', score: 64, rank: 19234, genre: 'Synth Pop', monthlyListeners: 780000, comparison: 'behind' },
-];
 
 const ScoreGauge = memo(({ score, size = 200 }: { score: number; size?: number }) => {
   const radius = (size - 20) / 2;
@@ -196,6 +171,15 @@ PlatformScoreCard.displayName = 'PlatformScoreCard';
 
 const RankingHistoryChart = memo(({ history }: { history: RankingHistory[] }) => {
   const reversedHistory = [...history].reverse();
+
+  if (reversedHistory.length < 2) {
+    return (
+      <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+        <p>No ranking history available yet</p>
+      </div>
+    );
+  }
+
   const maxScore = Math.max(...reversedHistory.map(h => h.score));
   const minScore = Math.min(...reversedHistory.map(h => h.score));
   const range = maxScore - minScore || 1;
@@ -208,7 +192,8 @@ const RankingHistoryChart = memo(({ history }: { history: RankingHistory[] }) =>
     })
     .join(' ');
 
-  const areaPath = `M0,100 L0,${100 - ((reversedHistory[0].score - minScore) / range) * 80 - 10} ${reversedHistory
+  const firstY = 100 - ((reversedHistory[0].score - minScore) / range) * 80 - 10;
+  const areaPath = `M0,100 L0,${firstY} ${reversedHistory
     .map((h, i) => {
       const x = (i / (reversedHistory.length - 1)) * 100;
       const y = 100 - ((h.score - minScore) / range) * 80 - 10;
@@ -261,6 +246,13 @@ const RankingHistoryChart = memo(({ history }: { history: RankingHistory[] }) =>
 RankingHistoryChart.displayName = 'RankingHistoryChart';
 
 const SimilarArtistsComparison = memo(({ artists, currentScore }: { artists: SimilarArtist[]; currentScore: number }) => {
+  if (artists.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+        <p>No similar artist data available yet</p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-3">
       {artists.map((artist, idx) => {
@@ -337,15 +329,15 @@ export default function GlobalRankingDashboard({
   });
 
   const rankingData = rankingResponse?.data ?? rankingResponse;
-  const maxScore = propMaxScore ?? (isError ? 74 : rankingData?.currentScore) ?? 74;
-  const globalRank = propGlobalRank ?? (isError ? 12453 : rankingData?.globalRank) ?? 12453;
-  const platformScores = propPlatformScores || (isError ? defaultPlatformScores : rankingData?.platformScores) || defaultPlatformScores;
-  const rankingHistory = propRankingHistory || (isError ? defaultRankingHistory : rankingData?.rankingHistory) || defaultRankingHistory;
-  const similarArtists = propSimilarArtists || (isError ? defaultSimilarArtists : rankingData?.similarArtists) || defaultSimilarArtists;
+  const maxScore = propMaxScore ?? rankingData?.currentScore ?? null;
+  const globalRank = propGlobalRank ?? rankingData?.globalRank ?? null;
+  const platformScores: PlatformScore[] = propPlatformScores || rankingData?.platformScores || [];
+  const rankingHistory: RankingHistory[] = propRankingHistory || rankingData?.rankingHistory || [];
+  const similarArtists: SimilarArtist[] = propSimilarArtists || rankingData?.similarArtists || [];
 
-  const avgPlatformScore = Math.round(
-    platformScores.reduce((sum: number, p: PlatformScore) => sum + p.score, 0) / platformScores.length
-  );
+  const avgPlatformScore = platformScores.length > 0
+    ? Math.round(platformScores.reduce((sum: number, p: PlatformScore) => sum + p.score, 0) / platformScores.length)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -383,10 +375,18 @@ export default function GlobalRankingDashboard({
             <CardDescription>Your overall performance rating (0-100)</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center pt-4">
-            <ScoreGauge score={maxScore} />
+            {maxScore !== null ? (
+              <ScoreGauge score={maxScore} />
+            ) : (
+              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                <p>No score data yet</p>
+              </div>
+            )}
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">Global Rank</p>
-              <p className="text-3xl font-bold">#{globalRank.toLocaleString()}</p>
+              <p className="text-3xl font-bold">
+                {globalRank !== null ? `#${globalRank.toLocaleString()}` : '—'}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -400,9 +400,13 @@ export default function GlobalRankingDashboard({
             <CardDescription>Performance breakdown by streaming platform</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {platformScores.map((platform, idx) => (
+            {platformScores.length > 0 ? platformScores.map((platform) => (
               <PlatformScoreCard key={platform.platform} platform={platform} />
-            ))}
+            )) : (
+              <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
+                <p>No platform data available yet</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -430,7 +434,7 @@ export default function GlobalRankingDashboard({
             <CardDescription>How you compare to artists in your genre</CardDescription>
           </CardHeader>
           <CardContent>
-            <SimilarArtistsComparison artists={similarArtists} currentScore={maxScore} />
+            <SimilarArtistsComparison artists={similarArtists} currentScore={maxScore ?? 0} />
           </CardContent>
         </Card>
       </div>

@@ -269,6 +269,16 @@ The Advertisement and Autopilot systems use **custom in-house AI models + connec
 - **`SocialListening` mentions chart** derives from real alerts with proper empty state (no fake data)
 - **`DataDenseAnalytics` fallback** zeroed — was showing fake 1.8M streams, $4,829 revenue
 - **API response normalization fixed** — `queryFn` maps nested `{overview, streams, audience, aiInsights, revenue}` to flat component keys; `performanceScore` reads from `raw.aiInsights.performanceScore`; `revenueBySource` from `raw.revenue.revenueBySource`
+- **`Analytics.tsx` fake cohorts + playlists** removed — `defaultCohorts` (3 cohorts, 1000/850/920 users), `defaultPlaylists` (21.4M reach) cleared with empty states
+- **`CrossPlatformComparison.tsx`** — fake `growthData`/`engagementData`/`radarData` cleared; API unwrap fixed (`data?.data?.metrics`); `Math.max` empty array crash fixed
+- **`PlaylistTracking.tsx`** — fake `curatorInsights` (Spotify Editorial 55M followers) and `performanceData` cleared
+- **`ProducerAnalyticsDashboard.tsx`** — `mockAnalytics` ($34,580 revenue) replaced with `emptyAnalytics` (all zeros)
+- **`ProducerProfile.tsx`** — `fallbackProducer` (fake reviews, social links, $125k+ achievements) replaced with empty arrays/zeros
+- **`GlobalRankingDashboard.tsx`** — `defaultPlatformScores` (6 fake ranks), `defaultRankingHistory` (6 fake weekly scores), `defaultSimilarArtists` (5 fake artists) removed; null-safe score/rank display; `Math.max` crash-on-empty fixed
+- **`analytics-internal.ts` global-ranking** — fake `similarArtists` (Rising Star, Groove Master, etc.) replaced with empty array
+- **`RevenueAnalytics.tsx`** — 4 issues: fake platform breakdown (Spotify $1250.50, Apple Music $890.25 etc.), fake `earningsStatus` ($450 pending/$2850 paid), fake `taxInfo` ($3500 gross), hardcoded `royaltyBreakdown` (4 fake categories), fake tax documents (3 hardcoded PDFs) — all cleared
+- **`PlaylistJourneysVisualization.tsx`** — `defaultEvents` (6 fake playlist events with 35M/12.5M follower playlists), `defaultPositionHistory` (6 fake "Today's Top Hits" entries), `defaultTypeBreakdown` (52M/8.5M fake reach) removed; `Math.max`/`Math.min` empty crash fixed in `PositionChart`
+- **`ARDiscoveryPanel.tsx`** — `defaultArtists` (6 fake artists: Luna Waves 285K listeners, Neon Pulse 420K, Velvet Echo 175K, Arctic Bloom 98K, Solar Drift 156K, Coral Reef 42K) removed; empty state added to `GrowthTrajectoryChart`
 
 ### Navigation
 - **`QuickActionButton.tsx` and `QuickActionsMenu.tsx`** replaced all `window.location.href = '/...'` with wouter `navigate()` to prevent full-page SPA reloads
