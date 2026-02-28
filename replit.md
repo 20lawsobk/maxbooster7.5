@@ -341,3 +341,9 @@ The Advertisement and Autopilot systems use **custom in-house AI models + connec
 
 **9 Kill Switch Registrations (all active on server start):**
 autonomous-service, automation-system, autonomous-updates, autonomous-autopilot, autopilot-engine, auto-posting-v1, auto-posting-v2, auto-post-generator, autopilot-publisher
+
+### Read Replica Routing — Fixed (Complete)
+- Critical gap identified: `storage.ts` imported only `db` (primary) and sent ALL 22 read queries to the primary, making the Neon replica completely unused even though DATABASE_REPLICA_URLS was set and dbRead was exported from db.ts
+- Fix: Added `dbRead` to the import in `storage.ts`; replaced all 22 `db.select()` calls with `dbRead.select()` using replace_all; 13 write operations (insert/update/delete) remain on `db` (primary)
+- Result: Reads now route to Neon replica, writes to primary — standard read-write split for scale
+- One non-fatal startup timing error: LabelGrid config lookup runs before DSP seeding, returns "Failed query" from replica (timing issue, not connection failure — all other replica reads succeed)

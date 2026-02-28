@@ -39,7 +39,7 @@ import {
   type CollabSnapshot,
   type InsertCollabSnapshot
 } from "@shared/schema";
-import { db } from "./db";
+import { db, dbRead } from "./db";
 import { eq, and, desc, gte, lte, sql, inArray } from "drizzle-orm";
 
 type Project = typeof projects.$inferSelect;
@@ -75,22 +75,22 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await dbRead.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const [user] = await dbRead.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await dbRead.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
 
   async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.passwordResetToken, token));
+    const [user] = await dbRead.select().from(users).where(eq(users.passwordResetToken, token));
     return user || undefined;
   }
 
@@ -127,12 +127,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDistributionProvider(slug: string): Promise<DSPProvider | undefined> {
-    const [provider] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug));
+    const [provider] = await dbRead.select().from(dspProviders).where(eq(dspProviders.slug, slug));
     return provider || undefined;
   }
 
   async getProjectsByUserId(userId: string): Promise<Project[]> {
-    return await db.select().from(projects).where(eq(projects.userId, userId));
+    return await dbRead.select().from(projects).where(eq(projects.userId, userId));
   }
 
   async createProject(insertProject: InsertProject): Promise<Project> {
@@ -144,7 +144,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReleasesByUserId(userId: string): Promise<Release[]> {
-    return await db.select().from(releases).where(eq(releases.userId, userId));
+    return await dbRead.select().from(releases).where(eq(releases.userId, userId));
   }
 
   async getAutopilotConfig(userId: string): Promise<any | undefined> {
@@ -158,7 +158,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveAutopilotConfig(userId: string, config: any): Promise<any> {
-    const [user] = await db.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
+    const [user] = await dbRead.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
     const prefs = (user?.preferences as any) || {};
     prefs.autopilotConfig = config;
     await db
@@ -179,7 +179,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveAdvertisingAutopilotConfig(userId: string, config: any): Promise<any> {
-    const [user] = await db.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
+    const [user] = await dbRead.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
     const prefs = (user?.preferences as any) || {};
     prefs.advertisingAutopilotConfig = config;
     await db
@@ -190,7 +190,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllEnabledAutopilotConfigs(): Promise<any[]> {
-    const allUsers = await db.select().from(users);
+    const allUsers = await dbRead.select().from(users);
     return allUsers
       .filter((user: any) => {
         const config = (user.preferences as any)?.advertisingAutopilotConfig;
@@ -645,14 +645,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAnalytics(userId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
-    let query = db.select().from(analytics).where(eq(analytics.userId, userId));
+    let query = dbRead.select().from(analytics).where(eq(analytics.userId, userId));
     return await query.orderBy(desc(analytics.date)).limit(100);
   }
 
   async seedPluginCatalog(): Promise<void> {
     const { ALL_PLUGINS } = await import('./services/plugins/index');
 
-    const existingCount = await db.select({ count: sql<number>`count(*)` }).from(pluginCatalog);
+    const existingCount = await dbRead.select({ count: sql<number>`count(*)` }).from(pluginCatalog);
     const currentCount = Number(existingCount[0]?.count || 0);
 
     if (currentCount >= ALL_PLUGINS.length) return;
@@ -681,7 +681,7 @@ export class DatabaseStorage implements IStorage {
 
   async getProducers(): Promise<any[]> {
     try {
-      const allUsers = await db.select({
+      const allUsers = await dbRead.select({
         id: users.id,
         firstName: users.firstName,
         lastName: users.lastName,
@@ -696,10 +696,10 @@ export class DatabaseStorage implements IStorage {
       }).from(users).limit(50);
       
       const producerData = await Promise.all(allUsers.map(async (u) => {
-        const userBeats = await db.select().from(listings).where(eq(listings.userId, u.id));
+        const userBeats = await dbRead.select().from(listings).where(eq(listings.userId, u.id));
         const beatsCount = userBeats.length;
 
-        const userStorefront = await db.select({ id: storefronts.id })
+        const userStorefront = await dbRead.select({ id: storefronts.id })
           .from(storefronts)
           .where(eq(storefronts.userId, u.id))
           .limit(1);
@@ -710,18 +710,18 @@ export class DatabaseStorage implements IStorage {
         let salesCount = 0;
 
         if (storefrontId) {
-          const [followResult] = await db.select({ count: sql<number>`count(*)::int` })
+          const [followResult] = await dbRead.select({ count: sql<number>`count(*)::int` })
             .from(storefrontFollows)
             .where(eq(storefrontFollows.storefrontId, storefrontId));
           followersCount = followResult?.count || 0;
 
-          const [ratingResult] = await db.select({ avg: sql<number>`coalesce(avg(${storefrontRatings.rating}), 0)` })
+          const [ratingResult] = await dbRead.select({ avg: sql<number>`coalesce(avg(${storefrontRatings.rating}), 0)` })
             .from(storefrontRatings)
             .where(eq(storefrontRatings.storefrontId, storefrontId));
           avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
         }
 
-        const [salesResult] = await db.select({ count: sql<number>`count(*)::int` })
+        const [salesResult] = await dbRead.select({ count: sql<number>`count(*)::int` })
           .from(orders)
           .where(and(eq(orders.sellerId, u.id), eq(orders.status, 'completed')));
         salesCount = salesResult?.count || 0;
@@ -860,7 +860,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAllDSPProviders(): Promise<any[]> {
     try {
-      const providers = await db.select().from(dspProviders);
+      const providers = await dbRead.select().from(dspProviders);
       return providers;
     } catch (error) {
       logger.error('Error fetching all DSP providers:', error);
@@ -1191,17 +1191,17 @@ export class DatabaseStorage implements IStorage {
     userId?: string;
   }): Promise<any[]> {
     try {
-      let query = db.select().from(listings).where(eq(listings.isPublished, true));
+      let query = dbRead.select().from(listings).where(eq(listings.isPublished, true));
       
       if (filters?.userId) {
-        query = db.select().from(listings).where(eq(listings.userId, filters.userId));
+        query = dbRead.select().from(listings).where(eq(listings.userId, filters.userId));
       }
       
       let results = await query.orderBy(desc(listings.createdAt)).limit(filters?.limit || 50);
       
       const userIds = [...new Set(results.map(l => l.userId))];
       const userRows = userIds.length > 0
-        ? await db.select({ id: users.id, username: users.username, firstName: users.firstName, lastName: users.lastName })
+        ? await dbRead.select({ id: users.id, username: users.username, firstName: users.firstName, lastName: users.lastName })
             .from(users)
             .where(inArray(users.id, userIds))
         : [];
