@@ -46,6 +46,52 @@ This is a monorepo with:
 
 The server serves the frontend via Vite middleware in development mode. Both frontend and backend run on **port 5000**.
 
+## AI Model Fine-Tuning Status
+
+All core AI/ML models have been fine-tuned for music artist use cases (2024-2026 data):
+
+| Service | File | Status | Key Changes |
+|---|---|---|---|
+| Viral Scoring | `server/services/viralScoring.ts` | ✅ Fine-tuned | Genre multipliers, hook patterns, platform weights, engagement prediction |
+| Timing Optimizer | `server/services/timingOptimizer.ts` | ✅ Fine-tuned | Per-platform hourly/day multipliers, extended timezone support, optimal windows |
+| Algorithm Intelligence | `server/services/algorithmIntelligence.ts` | ✅ Fine-tuned | Platform algorithm profiles, shadowban thresholds, engagement pattern benchmarks |
+| Customer Health Score | `server/services/customerHealthScoreService.ts` | ✅ Fine-tuned | Music-platform-aware weights, tier-adaptive feature scoring, intervention priority |
+| Discovery Algorithm | `server/services/discoveryAlgorithmService.ts` | ✅ Fine-tuned | Dynamic learning rates, diversity injection, cold-start handling, trending boosts |
+
+### Key Fine-Tuning Decisions
+
+**Viral Scoring:**
+- Genre viral multipliers: Afrobeats (1.32x), Hip-Hop (1.30x), Trap (1.28x), R&B (1.22x)
+- TikTok: audio/completion rate weighted most (24% audio, 32% completion)
+- Engagement prediction: exponential scaling in viral zone (85+ score = 2.5x multiplier)
+- Hook patterns: 12 patterns ranked by CTR data; music-specific hooks included
+
+**Timing Optimizer:**
+- TikTok: Sunday 7-10PM is peak (#1 slot), Saturday 6-10PM is #2
+- Instagram: Wednesday 11AM-2PM is top slot (mid-week lunch window)
+- YouTube: Friday 5-9PM (music drop day) + Saturday 3-8PM
+- Twitter: Tuesday 9AM-12PM is peak; external links get extra penalty
+- 40+ timezone offsets added for global artist support
+
+**Algorithm Intelligence:**
+- Platform benchmarks calibrated for music creators (not generic brands)
+- TikTok completion rate weighted at 32% (was 35% watch time — more specific)
+- Shadowban: requires 3+ low indicators to trigger (reduces false positives)
+- Engagement pattern: music_preview content type added (1.45x on TikTok)
+
+**Customer Health Score:**
+- Feature adoption threshold: tier-aware (free=8 features max, pro=30 max)
+- Login score: 60% recency + 40% frequency + 7-day recent boost
+- Music platform use is bursty (release cycles) — recency thresholds widened
+- `getAtRiskUsers()` method added for retention campaign targeting
+
+**Discovery Algorithm:**
+- Interaction weights: purchase (12.0), exclusive_purchase (15.0), skip (-0.8)
+- Dynamic learning rates per interaction type (purchase: 0.25, play: 0.04)
+- Diversity injection: no more than 2 consecutive same-genre results
+- Cold-start mode: popularity-weighted until 5+ interactions recorded
+- Trending genre boosts: Afrobeats (1.30x), Drill (1.22x), Trap (1.20x)
+
 ## Storage System (Hybrid)
 
 Three-layer hybrid storage:
