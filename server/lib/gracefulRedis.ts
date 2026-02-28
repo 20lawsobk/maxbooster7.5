@@ -1,3 +1,18 @@
+/**
+ * Graceful Redis Client Wrapper
+ *
+ * Wraps BoosterState (the recommended KV backend) with a standardised
+ * interface that matches the surface area used across service files.
+ * Every method silently returns a safe default if the backend is
+ * unavailable — the caller never needs to handle Redis outages.
+ *
+ * createGracefulRedisClient(serviceName) — returns a wrapper whose
+ *   `isConnected` getter reports live connectivity.
+ *
+ * createLegacyGracefulRedisClient() — deprecated shim kept for
+ *   compile-compatibility with old service code; always returns stubs.
+ */
+
 import { getBoosterStateClient } from './boosterStateClient.js';
 import { logger } from '../logger.js';
 

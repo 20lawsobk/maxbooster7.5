@@ -1,3 +1,20 @@
+/**
+ * Redis Connection Factory (async / BoosterState-aware)
+ *
+ * Alternative entry-point for code that wants Redis lazily and is happy to
+ * receive null when no broker is configured.  Prefers a real ioredis
+ * connection (REDIS_URL) and falls back to BoosterState (the KV sidecar).
+ *
+ * Distinct from redisClient.ts which is synchronous and used by BullMQ.
+ * Used by: queryCache, services that need optional Redis
+ *
+ * Exports:
+ *   getRedisClient()    — async, returns ioredis|BoosterState|null
+ *   createRedisClient() — always creates a fresh ioredis instance (for BullMQ)
+ *   isRedisHealthy()    — boolean liveness check
+ *   shutdownRedis()     — graceful shutdown for both backends
+ */
+
 import { getBoosterStateClient, isBoosterStateHealthy, shutdownBoosterState } from './boosterStateClient.js';
 import { logger } from '../logger.js';
 import Redis from 'ioredis';

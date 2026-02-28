@@ -303,3 +303,18 @@ The Advertisement and Autopilot systems use **custom in-house AI models + connec
 - Achievements POST endpoints use inline `if (!req.user)` guards
 - `apiKeys.ts` uses `router.use(requireAuth)` file-level guard
 - Stripe payout redirect (`window.location.href = responseData.url`) confirmed required for Stripe hosted checkout flow
+
+### Runtime Bug Fix (Phase 10 Hardening)
+- **`server/lib/redisClient.ts`** — Removed `setEvictionPolicy()` function and its `client.config('SET', 'maxmemory-policy', 'allkeys-lru')` call from the `'connect'` event handler. Replit's managed Redis does not support `CONFIG SET` and ioredis was printing `Error: Command timed out` to stdout on every call, flooding the log with 100+ errors per session. Replaced with a one-time `logger.info` reminder to set allkeys-lru via the provider dashboard. Confirmed clean startup (0 timeout errors in post-fix logs).
+
+### Phase 6 — JSDoc Documentation (Complete ✅)
+- **server/lib** files documented: `redisClient`, `redisConnectionFactory`, `redisCompat`, `redisCache`, `distributedLock`, `gracefulRedis`, `boosterStateClient`, `connectionPool`, `scaleJobQueue`, `queryCache`, `configValidator`, `cachedHealthCheck`
+- **client/src/lib** files documented: `auth`, `authUtils`, `environment`, `errorService`, `logger`, `prefetch`, `queryClient`, `responsive`
+
+### Phase 11 — UX Polish (Complete ✅)
+- SPA navigation fully hardened — 14 internal `window.location.href` calls replaced with wouter `navigate()` across 5 files (see Navigation section above)
+
+### Phase 12 — Documentation (Complete ✅)
+- All phase docs updated and marked complete
+- JSDoc added to all server/lib and client/src/lib utility files
+- API hardening: Marketplace Zod validation added to 6 key POST endpoints

@@ -1,3 +1,21 @@
+/**
+ * Optimized PostgreSQL Connection Pool
+ *
+ * Wraps the `pg` Pool with auto-tuned settings based on environment:
+ *   Development: max 20 connections, allows idle exit
+ *   Production:  max 100 connections (50 for Neon/pooler), no idle exit
+ *   Neon/pooler: SSL enabled, reduced pool size to stay within PgBouncer limits
+ *
+ * Key features:
+ *   - Per-query timing with slow-query logging (>1s threshold)
+ *   - Rolling average query time (EMA, α=0.1) for trend detection
+ *   - Pool utilization monitoring every 30s — warns above 80%
+ *   - `withConnection(fn)` — borrow a client and auto-release
+ *   - `withTransaction(fn)` — BEGIN/COMMIT/ROLLBACK wrapper
+ *   - `getPoolHealth()` — snapshot for health endpoints
+ *   - Graceful shutdown on SIGTERM / SIGINT
+ */
+
 import { Pool, PoolConfig } from 'pg';
 import { logger } from '../logger.js';
 

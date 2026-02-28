@@ -1,3 +1,24 @@
+/**
+ * Responsive Layout Utilities
+ *
+ * Pure functions and constants for building fluid, viewport-adaptive layouts.
+ * All values scale linearly between a defined min/max viewport width range.
+ *
+ * Key exports:
+ *   fluidClamp(min, max)       — CSS clamp() string that scales from min→max px
+ *                                across minVw→maxVw viewport width
+ *   fluidValue(min, max, w)    — JS numeric equivalent (for canvas/chart sizing)
+ *   fluidSpacing               — Pre-computed spacing tokens (xs→2xl)
+ *   fluidFontSize              — Pre-computed font-size tokens (xs→4xl)
+ *   fluidRadius                — Pre-computed border-radius tokens
+ *   responsiveValue(w, map)    — Pick the right value from a breakpoint map
+ *   currentBreakpoint(w)       — Return the active breakpoint label
+ *   containerColumns(w, min)   — Auto-calculate column count from width
+ *   aspectRatioHeight(w, '16/9') — Height for a given width + aspect ratio
+ *   getAutoFitGrid / getAutoFillGrid — CSS grid-template-columns strings
+ *   breakpointWidths           — Canonical breakpoint px values (xs→2xl)
+ */
+
 export function fluidClamp(minPx: number, maxPx: number, minVw: number = 320, maxVw: number = 1920): string {
   const slope = (maxPx - minPx) / (maxVw - minVw);
   const yAxisIntersection = minPx - slope * minVw;

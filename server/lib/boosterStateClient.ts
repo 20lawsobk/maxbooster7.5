@@ -1,3 +1,19 @@
+/**
+ * BoosterState Client
+ *
+ * HTTP client for the BoosterState sidecar service — a lightweight KV, queue,
+ * sorted-set, and token-bucket rate-limiter that runs alongside the main server.
+ *
+ * All methods fail-open with graceful fallbacks: if BoosterState is unavailable
+ * (e.g. during development or before the sidecar starts) every operation returns
+ * a safe zero/null/empty value instead of throwing.  A single warning is emitted
+ * the first time an unavailability is detected to avoid log spam.
+ *
+ * Usage: import { getBoosterStateClient } from './boosterStateClient.js'
+ *        const client = await getBoosterStateClient();
+ *        if (client) await client.set('key', 'value');
+ */
+
 import { logger } from '../logger.js';
 
 const BASE_URL = `http://127.0.0.1:${process.env.BOOSTERSTATE_PORT || 9877}`;

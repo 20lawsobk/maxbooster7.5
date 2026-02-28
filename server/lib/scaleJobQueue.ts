@@ -1,3 +1,21 @@
+/**
+ * Scale Job Queue — BullMQ-backed retention and maintenance worker
+ *
+ * Manages background jobs that run on a schedule across all server replicas.
+ * Uses Redis (via ioredis) as the BullMQ broker so jobs are distributed
+ * evenly and not duplicated when multiple nodes are running.
+ *
+ * Supported job types:
+ *   health-score-batch   — Paginated computation of customer health scores
+ *   dunning-process      — Process pending dunning/payment-retry steps
+ *   re-engagement-batch  — Daily re-engagement email sweep
+ *   feature-event-flush  — Drain the in-memory feature-event buffer to the DB
+ *
+ * Concurrency is capped via BULLMQ_CONCURRENCY (default 5) to prevent DB
+ * connection pool exhaustion.  Failed jobs are retained for 7 days (up to
+ * 100 entries) so they can be inspected and re-queued.
+ */
+
 import { Queue, Worker, Job } from 'bullmq';
 import { getRedisClient } from './redisClient.js';
 import { logger } from '../logger.js';

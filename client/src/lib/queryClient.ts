@@ -1,3 +1,26 @@
+/**
+ * React Query Client & API Fetch Utilities
+ *
+ * Central module for all HTTP communication between the React app and the
+ * Express backend.  Exports a pre-configured QueryClient used by the
+ * QueryClientProvider in App.tsx, plus helper functions.
+ *
+ * Key exports:
+ *   queryClient       — Singleton QueryClient (staleTime 5min, no window-focus refetch)
+ *   apiRequest()      — Typed fetch wrapper with timeout, structured error classes,
+ *                       and automatic Sentry breadcrumbs
+ *   getQueryFn()      — React Query queryFn factory used as the global default;
+ *                       supports 'returnNull' on 401 for optional-auth queries
+ *   uploadWithProgress() — XHR wrapper for file uploads with progress callbacks
+ *   ApiError          — Structured error class with code, userMessage, retryable flag
+ *   getRateLimitState / clearRateLimitState — Client-side 429 throttle tracking
+ *
+ * Error handling:
+ *   All 4xx/5xx responses are mapped to ApiError instances with a `userMessage`
+ *   field safe to display to users.  The MutationCache shows a toast for any
+ *   mutation that doesn't provide its own onError handler.
+ */
+
 import { QueryClient, QueryFunction, MutationCache } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { errorService, captureException } from './errorService';

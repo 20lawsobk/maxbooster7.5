@@ -1,3 +1,24 @@
+/**
+ * Client-side Route & Data Prefetcher
+ *
+ * Proactively loads JS chunks and API data for routes the user is likely to
+ * navigate to next, improving perceived navigation speed.
+ *
+ * Strategies:
+ *   prefetchRoute(importFn)      — Lazy-load a page JS chunk on idle
+ *   prefetchRouteByPath(path)    — Load chunk + key API data for a path
+ *   setupLinkPrefetching()       — Register pointer-over listener on links;
+ *                                  prefetches after 65ms hover (cancels on out)
+ *   prefetchAdjacentRoutes(path) — Background-prefetch likely next routes
+ *                                  (called on route change, idle-queued)
+ *
+ * All prefetching is suppressed on 2G/slow-2g connections and when
+ * navigator.connection.saveData is true.
+ *
+ * Authentication-gated API endpoints are skipped when the user is logged out
+ * (call setAuthState(true) after successful login to enable them).
+ */
+
 const prefetchedRoutes = new Set<string>();
 const prefetchedData = new Set<string>();
 

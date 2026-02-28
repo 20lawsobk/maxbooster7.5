@@ -1,3 +1,23 @@
+/**
+ * Client-side Error Service
+ *
+ * Centralised singleton for capturing, categorising, and reporting
+ * runtime errors from within the React application.
+ *
+ * Features:
+ *   - Automatic error categorisation (network, auth, validation, timeout, etc.)
+ *   - Severity classification (critical → info)
+ *   - User-facing toast notifications with actionable recovery suggestions
+ *   - Breadcrumb trail (last 50 actions) for debugging
+ *   - Batch error reporting to /api/errors every 5 s with retry on failure
+ *   - Rate-limiting: max 10 errors/minute to prevent report flooding
+ *   - Global window.error and unhandledrejection handlers wired up automatically
+ *
+ * Usage:
+ *   import { captureException, captureMessage, addBreadcrumb } from '@/lib/errorService';
+ *   captureException(err, { component: 'MyComponent', action: 'submit' });
+ */
+
 import { toast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 

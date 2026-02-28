@@ -1,3 +1,20 @@
+/**
+ * Client-side Logger
+ *
+ * Thin structured-logging wrapper for use in React components and client lib.
+ * Behaviour differs by environment:
+ *   Development — all levels logged to console with colour-coded prefixes
+ *   Production  — only 'error' and 'warn' are emitted (reduces console noise)
+ *
+ * Delegates to the browser's native `logger` (or console) so log output can be
+ * captured by dev tools and Sentry breadcrumbs.
+ *
+ * Usage:
+ *   import { logger } from '@/lib/logger';
+ *   logger.info('User authenticated', { userId });
+ *   logger.error('Payment failed', error, 'BillingPage');
+ */
+
 import { logger } from 'logger';
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 

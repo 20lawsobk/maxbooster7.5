@@ -8,9 +8,9 @@
  * All application code imports getRedisClient() and receives a unified client
  * whether it's standalone or cluster — ioredis Cluster is API-compatible.
  *
- * Set allkeys-lru eviction policy automatically on connect to prevent OOM
- * under cache pressure (managed Redis providers may restrict CONFIG SET —
- * set it via your provider dashboard as a fallback).
+ * NOTE: allkeys-lru eviction policy must be set manually via your Redis
+ * provider dashboard. Replit's managed Redis does not permit CONFIG SET,
+ * so attempting it programmatically would generate spurious timeout errors.
  */
 
 import Redis from 'ioredis';
@@ -20,15 +20,6 @@ import { applyIoredisCompatShim } from './redisCompat.js';
 type RedisClient = Redis | InstanceType<typeof Redis.Cluster>;
 
 let _redis: RedisClient | null = null;
-
-const isProduction = () =>
-  process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
-
-function setEvictionPolicy(client: Redis): void {
-  client.config('SET', 'maxmemory-policy', 'allkeys-lru').catch(() => {
-    logger.warn('[Redis] Could not set maxmemory-policy — set allkeys-lru via your provider dashboard');
-  });
-}
 
 function buildStandaloneClient(): Redis {
   const url = process.env.REDIS_URL;
@@ -48,7 +39,7 @@ function buildStandaloneClient(): Redis {
 
   client.on('connect', () => {
     logger.info('✅ [Redis] Connected (standalone)');
-    setEvictionPolicy(client);
+    logger.info('[Redis] Reminder: ensure allkeys-lru eviction policy is set via your Redis provider dashboard');
   });
   client.on('error', (err) => logger.error('[Redis] Connection error:', err.message));
   client.on('reconnecting', () => logger.warn('[Redis] Reconnecting...'));
