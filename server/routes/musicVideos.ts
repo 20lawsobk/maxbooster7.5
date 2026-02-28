@@ -29,7 +29,11 @@ router.get('/stats', async (req, res) => {
 router.post('/', async (req, res) => {
   if (!req.session.userId) return res.status(401).send('Unauthorized');
   try {
-    const data = insertMusicVideoProductionSchema.parse({ ...req.body, userId: req.session.userId });
+    const data = insertMusicVideoProductionSchema.parse({
+      ...req.body,
+      userId: req.session.userId,
+      budget: req.body.budget !== '' && req.body.budget != null ? parseFloat(req.body.budget) : undefined,
+    });
     const [item] = await db.insert(musicVideoProductions).values(data).returning();
     res.json(item);
   } catch (e: any) {

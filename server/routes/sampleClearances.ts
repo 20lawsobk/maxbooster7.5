@@ -29,7 +29,12 @@ router.get('/stats', async (req, res) => {
 router.post('/', async (req, res) => {
   if (!req.session.userId) return res.status(401).send('Unauthorized');
   try {
-    const data = insertSampleClearanceSchema.parse({ ...req.body, userId: req.session.userId });
+    const data = insertSampleClearanceSchema.parse({
+      ...req.body,
+      userId: req.session.userId,
+      fee: req.body.fee !== '' && req.body.fee != null ? parseFloat(req.body.fee) : undefined,
+      royaltyRate: req.body.royaltyRate !== '' && req.body.royaltyRate != null ? parseFloat(req.body.royaltyRate) : undefined,
+    });
     const [item] = await db.insert(sampleClearances).values(data).returning();
     res.json(item);
   } catch (e: any) {
