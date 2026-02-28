@@ -347,3 +347,16 @@ autonomous-service, automation-system, autonomous-updates, autonomous-autopilot,
 - Fix: Added `dbRead` to the import in `storage.ts`; replaced all 22 `db.select()` calls with `dbRead.select()` using replace_all; 13 write operations (insert/update/delete) remain on `db` (primary)
 - Result: Reads now route to Neon replica, writes to primary — standard read-write split for scale
 - One non-fatal startup timing error: LabelGrid config lookup runs before DSP seeding, returns "Failed query" from replica (timing issue, not connection failure — all other replica reads succeed)
+
+### GitHub Actions CI/CD — All 5 Platforms Fixed (Complete)
+Three root causes fixed; all builds now pass (Windows, macOS, Linux desktop + Android, iOS mobile):
+
+**Bug 1 (CRITICAL — desktop workflow never started):** `build-desktop.yml` used `secrets.MAC_CERTIFICATE_BASE64` inside an `if:` condition. GitHub Actions does not allow the `secrets` context in `if:` expressions. The workflow failed to parse, producing 0 jobs across every run. Fixed by removing the `if:` and putting the check inside the `run:` script with a bash `if [ -z "$MAC_CERTIFICATE_BASE64" ]` guard.
+
+**Bug 2 (CRITICAL — macOS arm64 EBADPLATFORM):** The `package-lock.json` was generated on Linux x64, pinning `@esbuild/linux-x64@0.27.3`. When `npm ci` (or `npm install --prefer-offline`) ran on macOS arm64, npm found this package in the lockfile/cache and failed with `EBADPLATFORM`. Fixed by:
+  - Moving `@esbuild/linux-x64` from `devDependencies` to `optionalDependencies` in `package.json` — npm skips optional packages that fail platform checks
+  - Using `rm -f package-lock.json && npm install --no-audit` on macOS and Windows runners so npm resolves the correct platform binaries fresh rather than reading the Linux-generated lockfile
+
+**Bug 3 (Windows same EBADPLATFORM):** Same lockfile mismatch issue on `windows-latest` runner (win32/x64 vs linux/x64). Fixed with the same `rm -f package-lock.json && npm install --no-audit` approach, adding `shell: bash` to the Windows step so `rm -f` works via Git Bash.
+
+**Net result:** Linux (ubuntu-latest) continues using `npm ci` unchanged. macOS 14 (arm64) and Windows runners now use lockfile-free install. Android build unchanged (already passing).

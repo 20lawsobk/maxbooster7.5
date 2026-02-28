@@ -219,7 +219,7 @@ jobs:
             ${{ runner.os }}-pods-
 
       - name: Install dependencies
-        run: npm ci
+        run: rm -f package-lock.json && npm install --no-audit
 
       - name: Install Capacitor CLI
         run: npm install -g @capacitor/cli
