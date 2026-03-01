@@ -58,6 +58,66 @@ const ACCEPTED_AUDIO_TYPES = [
 const ACCEPTED_EXTENSIONS = ['.wav', '.mp3', '.flac', '.aiff', '.aif', '.ogg'];
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
 
+const CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB — safely under Replit's proxy limit
+
+function generateUploadId(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function uploadInChunks(
+  file: File,
+  onProgress: (percent: number) => void
+): Promise<{ audioUrl: string; fileSize: number }> {
+  const uploadId = generateUploadId();
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
+
+    const formData = new FormData();
+    formData.append('uploadId', uploadId);
+    formData.append('chunkIndex', String(i));
+    formData.append('totalChunks', String(totalChunks));
+    formData.append('chunk', chunk, file.name);
+
+    const res = await fetch('/api/uploads/chunk', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Chunk upload failed' }));
+      throw new Error(err.message || `Chunk ${i} upload failed`);
+    }
+
+    onProgress(Math.round(((i + 1) / totalChunks) * 90));
+  }
+
+  const assembleRes = await fetch('/api/uploads/assemble', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      uploadId,
+      totalChunks,
+      filename: file.name,
+      category: 'audio',
+    }),
+  });
+  if (!assembleRes.ok) {
+    const err = await assembleRes.json().catch(() => ({ message: 'Assembly failed' }));
+    throw new Error(err.message || 'File assembly failed');
+  }
+
+  const { url, size } = await assembleRes.json();
+  onProgress(100);
+  return { audioUrl: url, fileSize: size };
+}
+
 export function StudioProjectDialog({
   open,
   onOpenChange,
@@ -144,30 +204,50 @@ export function StudioProjectDialog({
 
   const createProjectMutation = useMutation({
     mutationFn: async () => {
-      const formData = new FormData();
-      formData.append('title', form.title || 'Untitled Project');
-      formData.append('description', form.description);
-      formData.append('genre', form.genre);
-      formData.append('bpm', form.bpm.toString());
-      formData.append('key', `${form.key} ${form.scale}`);
-      formData.append('isStudioProject', 'true');
-
       if (selectedFile) {
+        const projectMeta = {
+          title: form.title || 'Untitled Project',
+          description: form.description,
+          genre: form.genre,
+          bpm: form.bpm.toString(),
+          key: `${form.key} ${form.scale}`,
+          isStudioProject: 'true',
+        };
+
+        if (selectedFile.size > CHUNK_SIZE) {
+          // Large file — upload in chunks to bypass Replit's proxy body-size limit
+          setUploadProgress(1);
+          const { audioUrl, fileSize } = await uploadInChunks(
+            selectedFile,
+            (pct) => setUploadProgress(pct)
+          );
+          const response = await apiRequest('POST', '/api/projects', {
+            ...projectMeta,
+            audioUrl,
+            fileSize,
+          });
+          return response.json();
+        }
+
+        // Small file — upload in a single multipart request
+        const formData = new FormData();
+        Object.entries(projectMeta).forEach(([k, v]) => formData.append(k, v));
         formData.append('audio', selectedFile, selectedFile.name);
         return uploadWithProgress('/api/projects', formData, {
           onProgress: (percent) => setUploadProgress(percent),
           timeout: 300000,
         });
-      } else {
-        const response = await apiRequest('POST', '/api/studio/projects', {
-          title: form.title || 'Untitled Project',
-          description: form.description,
-          genre: form.genre,
-          tempo: form.bpm,
-          key: `${form.key} ${form.scale}`,
-        });
-        return response.json();
       }
+
+      // No audio file — create a blank studio project
+      const response = await apiRequest('POST', '/api/studio/projects', {
+        title: form.title || 'Untitled Project',
+        description: form.description,
+        genre: form.genre,
+        tempo: form.bpm,
+        key: `${form.key} ${form.scale}`,
+      });
+      return response.json();
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });

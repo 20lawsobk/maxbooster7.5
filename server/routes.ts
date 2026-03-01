@@ -26,6 +26,7 @@ const authenticator = {
 import QRCode from "qrcode";
 import { emailService } from "./services/emailService.ts";
 import { upload } from "./middleware/uploadHandler.ts";
+import multer from "multer";
 import { logger } from './logger.js';
 import { achievementService } from './services/achievementService.ts';
 import { notificationService } from './services/notificationService.ts';
@@ -2184,12 +2185,16 @@ export async function registerRoutes(
       let audioUrl: string | null = null;
       let fileSize: number | null = null;
       
-      // Store uploaded audio file if present
       if (req.file) {
+        // Direct file upload (≤ proxy limit)
         const { storeUploadedFile } = await import('./middleware/uploadHandler.js');
         const storedFile = await storeUploadedFile(req.file, 'audio', req.user.id);
         audioUrl = storedFile.url;
         fileSize = req.file.size;
+      } else if (req.body.audioUrl) {
+        // Pre-assembled chunked upload — audioUrl already in Object Storage
+        audioUrl = req.body.audioUrl;
+        fileSize = req.body.fileSize ? Number(req.body.fileSize) : null;
       }
       
       const project = await storage.createProject({
@@ -3363,6 +3368,104 @@ export async function registerRoutes(
     }
   });
 
+
+  // ── Chunked upload endpoints ──────────────────────────────────────────────
+  // Replit's reverse proxy enforces a request-body size limit (≈ 32 MB).
+  // For audio files that exceed this we split the file client-side into 4 MB
+  // chunks and upload each one independently, then reassemble here.
+  // Chunks are stored in /tmp during assembly then moved to Object Storage.
+
+  const chunkUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 6 * 1024 * 1024 }, // 6 MB safety ceiling per chunk
+  });
+
+  // POST /api/uploads/chunk
+  // Accepts one chunk.  All chunks for a given upload share the same uploadId.
+  app.post(
+    "/api/uploads/chunk",
+    chunkUpload.single("chunk"),
+    async (req: Request, res: Response) => {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      if (!req.file) return res.status(400).json({ message: "No chunk received" });
+
+      const { uploadId, chunkIndex, totalChunks } = req.body;
+      if (!uploadId || chunkIndex === undefined || !totalChunks) {
+        return res.status(400).json({ message: "uploadId, chunkIndex and totalChunks are required" });
+      }
+
+      // Sanitise uploadId — only allow alphanumeric + hyphens
+      if (!/^[a-zA-Z0-9-]{8,64}$/.test(uploadId)) {
+        return res.status(400).json({ message: "Invalid uploadId" });
+      }
+
+      try {
+        const fsPromises = await import('fs/promises');
+        const pathMod = await import('path');
+        const osMod = await import('os');
+        const dir = pathMod.join(osMod.tmpdir(), 'uploads', uploadId);
+        await fsPromises.mkdir(dir, { recursive: true });
+        const chunkPath = pathMod.join(dir, String(chunkIndex).padStart(6, '0') + '.bin');
+        await fsPromises.writeFile(chunkPath, req.file.buffer);
+        return res.json({ received: Number(chunkIndex), uploadId });
+      } catch (err: any) {
+        logger.error("[ChunkUpload] Failed to store chunk:", err);
+        return res.status(500).json({ message: "Failed to store chunk" });
+      }
+    }
+  );
+
+  // POST /api/uploads/assemble
+  // Concatenates all stored chunks, uploads final file to Object Storage.
+  app.post("/api/uploads/assemble", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+
+    const { uploadId, totalChunks, filename, category } = req.body;
+    if (!uploadId || !totalChunks || !filename) {
+      return res.status(400).json({ message: "uploadId, totalChunks and filename are required" });
+    }
+    if (!/^[a-zA-Z0-9-]{8,64}$/.test(uploadId)) {
+      return res.status(400).json({ message: "Invalid uploadId" });
+    }
+
+    try {
+      const fsPromises = await import('fs/promises');
+      const pathMod = await import('path');
+      const osMod = await import('os');
+      const dir = pathMod.join(osMod.tmpdir(), 'uploads', uploadId);
+      const count = Number(totalChunks);
+
+      const chunkBuffers: Buffer[] = [];
+      for (let i = 0; i < count; i++) {
+        const chunkPath = pathMod.join(dir, String(i).padStart(6, '0') + '.bin');
+        const buf = await fsPromises.readFile(chunkPath);
+        chunkBuffers.push(buf);
+      }
+
+      const assembled = Buffer.concat(chunkBuffers);
+      const ext = filename.split('.').pop()?.toLowerCase() || 'bin';
+      const mimeMap: Record<string, string> = {
+        wav: 'audio/wav', mp3: 'audio/mpeg', flac: 'audio/flac',
+        aiff: 'audio/aiff', aif: 'audio/aiff', ogg: 'audio/ogg',
+      };
+      const contentType = mimeMap[ext] || 'audio/octet-stream';
+      const destCategory = category || 'audio';
+      const userId = (req.user as any).id;
+
+      const { storageService } = await import('./services/storageService.js');
+      const finalKey = await storageService.uploadFile(assembled, `${destCategory}/${userId}`, filename, contentType);
+      const url = await storageService.getDownloadUrl(finalKey);
+
+      // Clean up temp chunks (best-effort, non-blocking)
+      fsPromises.rm(dir, { recursive: true, force: true }).catch(() => {});
+
+      return res.json({ url, key: finalKey, size: assembled.length });
+    } catch (err: any) {
+      logger.error("[ChunkUpload] Assembly failed:", err);
+      return res.status(500).json({ message: "Failed to assemble upload" });
+    }
+  });
+  // ── End chunked upload ─────────────────────────────────────────────────────
 
   // Audio file upload endpoint — stores to hybrid storage (Replit Object Storage + Pocket Dimension)
   app.post("/api/audio/upload", async (req: Request, res: Response) => {
