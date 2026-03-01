@@ -24,7 +24,7 @@ I prefer iterative development, with clear communication before significant chan
 Every unbounded list query now uses `parsePaginationParams` middleware (MAX_PAGE_SIZE=500) or inline limits:
 - `server/routes/merch.ts` — GET / (items) + GET /orders now paginated
 - `server/routes/projectBudgets.ts` — GET / paginated; GET /:id/items paginated; PUT /:id uses `.omit({ userId: true })` to prevent ownership mutation; PUT /items/:id uses `.omit({ userId: true, budgetId: true })` to prevent both ownership and re-parenting attacks
-- `server/routes/playlistPitching.ts` — GET / paginated; stats endpoint cached with 300s TTL + cache invalidation on POST
+- `server/routes/playlistPitching.ts` — GET / paginated; stats endpoint cached with 300s TTL + cache invalidation on POST, PUT, and DELETE (all mutations)
 - `server/routes/customWorkflows.ts` — GET / paginated
 - `server/routes/fanHub.ts` — GET /messages paginated; POST /message now uses COUNT aggregate (no full subscriber load)
 - `server/routes/storefront.ts` — GET /:id/orders paginated; bogoPromotions queries limited to 100; license tiers limited to 20; cart checkout promos limited to 50
@@ -38,7 +38,10 @@ Stats endpoints cached with `queryCache.getOrCompute` (300s TTL) + `queryCache.i
 - `fanCampaigns`, `venues`, `radioPitches`, `labelSubmissions`, `sampleClearances`, `musicVideos`, `songwriting`, `merch`, `projectBudgets`, `playlistPitching`
 
 ### Composite DB Indexes (50 indexes)
-Migration script at `server/scripts/addCompositeIndexes.ts` created (userId, createdAt DESC) and (userId, status) composite indexes on all major user-owned tables. Column name corrections applied (storefront_orders→buyer_id/seller_id, notifications→is_read, distro_releases→artist_id).
+Migration script at `server/scripts/addCompositeIndexes.ts` created (userId, createdAt DESC) and (userId, status) composite indexes on all major user-owned tables. Column name corrections applied (storefront_orders→buyer_id/seller_id, notifications→is_read, distro_releases→artist_id). All indexes confirmed present in production DB via pg_indexes verification.
+
+### Request Correlation IDs (End-to-End Tracing)
+`requestIdMiddleware` (server/middleware/requestId.ts) registered as the first middleware in `registerRoutes`. Every request receives a UUID-based `X-Request-ID` / `X-Correlation-ID` header. Honors upstream IDs from load balancers. Propagates via AsyncLocalStorage so every `logger.*` call in any route handler automatically includes requestId and duration without manual threading. Infrastructure was already built (requestContext.ts + structuredLogger.ts) — this commit wires it live for all traffic.
 
 ## Security Hardening (Completed)
 

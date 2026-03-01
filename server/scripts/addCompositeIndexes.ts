@@ -43,9 +43,9 @@ const COMPOSITE_INDEXES: Array<{ name: string; table: string; columns: string; w
   { name: 'listings_user_id_created_at_idx', table: 'listings', columns: 'user_id, created_at DESC' },
   { name: 'listings_user_id_status_idx', table: 'listings', columns: 'user_id, status' },
 
-  // Storefront orders
-  { name: 'storefront_orders_user_id_created_at_idx', table: 'storefront_orders', columns: 'user_id, created_at DESC' },
-  { name: 'storefront_orders_user_id_status_idx', table: 'storefront_orders', columns: 'user_id, status' },
+  // Storefront orders — uses buyer_id/seller_id, not user_id
+  { name: 'storefront_orders_buyer_id_created_at_idx', table: 'storefront_orders', columns: 'buyer_id, created_at DESC' },
+  { name: 'storefront_orders_buyer_id_status_idx', table: 'storefront_orders', columns: 'buyer_id, status' },
 
   // Royalty transactions
   { name: 'royalty_transactions_user_id_created_at_idx', table: 'royalty_transactions', columns: 'user_id, created_at DESC' },

@@ -79,6 +79,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       .returning();
 
     if (!updatedPitch) return res.status(404).json({ error: 'Pitch not found' });
+    await queryCache.invalidate(createCacheKey('stats:playlistPitches', req.user!.id));
     res.json(updatedPitch);
   } catch (error) {
     logger.error('[PlaylistPitching] Failed to update pitch:', error);
@@ -96,6 +97,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
       .returning();
 
     if (!deletedPitch) return res.status(404).json({ error: 'Pitch not found' });
+    await queryCache.invalidate(createCacheKey('stats:playlistPitches', req.user!.id));
     res.json({ success: true });
   } catch (error) {
     logger.error('[PlaylistPitching] Failed to delete pitch:', error);

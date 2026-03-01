@@ -15,6 +15,7 @@ import { getBaseUrl } from "./config/defaults.ts";
 import { generateSecret as otpGenerateSecret, verifySync, generateURI } from "otplib";
 import { loginRateLimiter, registerRateLimiter, forgotPasswordRateLimiter } from "./middleware/rateLimiter.ts";
 import { criticalEndpointLimiter } from "./middleware/globalRateLimiter.ts";
+import { requestIdMiddleware } from "./middleware/requestId.js";
 
 const authenticator = {
   generateSecret: () => otpGenerateSecret(),
@@ -121,6 +122,11 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // Assign a unique request ID to every request for end-to-end tracing.
+  // This populates AsyncLocalStorage so every logger.* call automatically
+  // includes requestId and duration without any manual threading.
+  app.use(requestIdMiddleware);
 
   // Apply user attachment middleware to all routes
   app.use(attachUser);
