@@ -3,6 +3,7 @@ import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { selfEvolution } from '../self-evolution-engine.js';
 import { silentDeployment } from '../services/silentDeploymentService.js';
+import { industryMonitor } from '../services/industryMonitorService.js';
 import {
   simulateAutonomousUpgrade,
   simulateLongTermAdaptation,
@@ -212,6 +213,27 @@ router.post('/silent-deployment/disable', requireAdmin, (req, res) => {
   } catch (error) {
     logger.error('Failed to disable silent deployment:', error);
     res.status(500).json({ error: 'Failed to disable silent deployment' });
+  }
+});
+
+router.get('/industry-monitor/status', requireAdmin, (_req, res) => {
+  try {
+    res.json(industryMonitor.getStatus());
+  } catch (error) {
+    logger.error('Failed to get industry monitor status:', error);
+    res.status(500).json({ error: 'Failed to get industry monitor status' });
+  }
+});
+
+router.post('/industry-monitor/refresh', requireAdmin, async (req, res) => {
+  try {
+    logger.info(`[IndustryMonitor] Cache cleared and refresh triggered by admin ${req.user!.id}`);
+    industryMonitor.clearCache();
+    const changes = await industryMonitor.fetchLiveChanges();
+    res.json({ success: true, newChanges: changes.length, changes });
+  } catch (error) {
+    logger.error('Failed to refresh industry monitor:', error);
+    res.status(500).json({ error: 'Failed to refresh industry monitor' });
   }
 });
 

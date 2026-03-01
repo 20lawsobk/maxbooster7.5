@@ -24,6 +24,7 @@ import { logger } from './logger.js';
 import { storage } from './storage.js';
 import { customAI } from './custom-ai-engine.js';
 import * as esbuild from 'esbuild';
+import { industryMonitor } from './services/industryMonitorService.js';
 
 interface IndustryChange {
   id: string;
@@ -340,267 +341,36 @@ export class SelfEvolutionEngine extends EventEmitter {
   // ============================================
 
   private async monitorIndustryLandscape(): Promise<IndustryChange[]> {
-    const changes: IndustryChange[] = [];
+    let liveChanges: IndustryChange[] = [];
 
-    // Monitor competitor DAW platforms
-    changes.push(...await this.monitorCompetitorDAWs());
+    // Primary: real RSS feeds + optional Tavily/Exa search intelligence
+    try {
+      const raw = await industryMonitor.fetchLiveChanges();
+      liveChanges = raw.map(c => ({
+        id: c.id,
+        source: c.source,
+        category: c.category,
+        title: c.title,
+        description: c.description,
+        detectedAt: c.detectedAt,
+        urgency: c.urgency,
+        affectedModules: c.affectedModules,
+        competitiveImpact: c.competitiveImpact,
+        implementationComplexity: c.implementationComplexity,
+        estimatedImplementationHours: c.estimatedImplementationHours,
+      }));
+      logger.info(`[SelfEvolution] Live industry monitor: ${liveChanges.length} real changes fetched`);
+    } catch (error) {
+      logger.error('[SelfEvolution] Live industry monitor failed — no simulated fallback, skipping cycle phase 1:', (error as Error).message);
+    }
 
-    // Monitor streaming platform requirements
-    changes.push(...await this.monitorStreamingPlatforms());
-
-    // Monitor social media API changes
-    changes.push(...await this.monitorSocialMediaAPIs());
-
-    // Monitor security advisories
-    changes.push(...await this.monitorSecurityAdvisories());
-
-    // Monitor regulatory changes (GDPR, COPPA, copyright)
-    changes.push(...await this.monitorRegulatoryChanges());
-
-    // Monitor technology trends
-    changes.push(...await this.monitorTechnologyTrends());
-
-    const newChanges = changes.filter(c => !this.seenChangeIds.has(c.id));
+    const newChanges = liveChanges.filter(c => !this.seenChangeIds.has(c.id));
     for (const c of newChanges) this.seenChangeIds.add(c.id);
     this.industryChanges.push(...newChanges);
     if (this.industryChanges.length > this.MAX_CHANGES_IN_MEMORY) {
       this.industryChanges = this.industryChanges.slice(-this.MAX_CHANGES_IN_MEMORY);
     }
     return newChanges;
-  }
-
-  private async monitorCompetitorDAWs(): Promise<IndustryChange[]> {
-    const competitors = ['FL Studio', 'Ableton Live', 'Logic Pro', 'Pro Tools', 'Studio One', 'Cubase', 'BandLab', 'Soundtrap'];
-    const changes: IndustryChange[] = [];
-    const timestamp = Date.now();
-
-    const potentialFeatures = [
-      { name: 'AI Stem Separation v2', category: 'feature', complexity: 'moderate', hours: 40 },
-      { name: 'Real-time Collaboration', category: 'feature', complexity: 'complex', hours: 80 },
-      { name: 'Cloud Project Sync', category: 'feature', complexity: 'moderate', hours: 30 },
-      { name: 'AI Vocal Tuning', category: 'feature', complexity: 'complex', hours: 60 },
-      { name: 'Smart EQ Matching', category: 'optimization', complexity: 'moderate', hours: 25 },
-      { name: 'AI Drum Pattern Generation', category: 'feature', complexity: 'moderate', hours: 35 },
-      { name: 'Spatial Audio Support', category: 'standard', complexity: 'complex', hours: 50 },
-      { name: 'MIDI 2.0 Support', category: 'standard', complexity: 'moderate', hours: 20 },
-      { name: 'ARA 2 Plugin Integration', category: 'feature', complexity: 'complex', hours: 70 },
-      { name: 'AI Chord Detection', category: 'feature', complexity: 'simple', hours: 15 },
-    ];
-
-    // Deterministically select which "new features" competitors have added
-    const seed = Math.floor(timestamp / (24 * 60 * 60 * 1000)); // Changes daily
-    const featuresDetected = potentialFeatures.filter((_, i) => (seed + i) % 7 === 0);
-
-    for (const feature of featuresDetected) {
-      const competitorIndex = (seed + this.hashString(feature.name)) % competitors.length;
-      const competitor = competitors[competitorIndex];
-
-      // Check if Max Booster already has this feature
-      const hasFeature = await this.checkIfMaxBoosterHasFeature(feature.name);
-      
-      if (!hasFeature) {
-        changes.push({
-          id: `comp_${this.hashString(feature.name + competitor)}`,
-          source: 'competitor',
-          category: feature.category as any,
-          title: `${competitor} added: ${feature.name}`,
-          description: `Competitor ${competitor} has released ${feature.name}. Max Booster should implement an equivalent or superior version.`,
-          detectedAt: new Date(),
-          urgency: feature.complexity === 'complex' ? 'high' : 'medium',
-          affectedModules: ['studio'],
-          competitiveImpact: 60 + (seed % 30),
-          implementationComplexity: feature.complexity as any,
-          estimatedImplementationHours: feature.hours,
-        });
-      }
-    }
-
-    return changes;
-  }
-
-  private async monitorStreamingPlatforms(): Promise<IndustryChange[]> {
-    const changes: IndustryChange[] = [];
-    const platforms = ['Spotify', 'Apple Music', 'YouTube Music', 'Amazon Music', 'Tidal', 'Deezer', 'SoundCloud'];
-    const timestamp = Date.now();
-    const seed = Math.floor(timestamp / (7 * 24 * 60 * 60 * 1000)); // Changes weekly
-
-    const potentialChanges = [
-      { type: 'loudness', desc: 'Updated loudness normalization algorithm', urgency: 'high' },
-      { type: 'metadata', desc: 'New metadata fields required for releases', urgency: 'medium' },
-      { type: 'api_version', desc: 'API version deprecation announced', urgency: 'critical' },
-      { type: 'artwork', desc: 'New artwork resolution requirements', urgency: 'low' },
-      { type: 'audio_format', desc: 'Added support for new audio codec', urgency: 'medium' },
-      { type: 'content_policy', desc: 'Updated content guidelines', urgency: 'high' },
-    ];
-
-    // Simulate detecting platform changes
-    if (seed % 3 === 0) {
-      const platformIndex = seed % platforms.length;
-      const changeIndex = seed % potentialChanges.length;
-      const platform = platforms[platformIndex];
-      const change = potentialChanges[changeIndex];
-
-      changes.push({
-        id: `streaming_${platform}_${change.type}_${seed}`,
-        source: 'streaming_platform',
-        category: change.type === 'api_version' ? 'api_change' : 'standard',
-        title: `${platform}: ${change.desc}`,
-        description: `${platform} has announced: ${change.desc}. Max Booster distribution module needs to adapt.`,
-        detectedAt: new Date(),
-        urgency: change.urgency as any,
-        affectedModules: ['distribution', 'studio'],
-        competitiveImpact: change.urgency === 'critical' ? 90 : 50,
-        implementationComplexity: change.urgency === 'critical' ? 'moderate' : 'simple',
-        estimatedImplementationHours: change.urgency === 'critical' ? 20 : 8,
-      });
-    }
-
-    return changes;
-  }
-
-  private async monitorSocialMediaAPIs(): Promise<IndustryChange[]> {
-    const changes: IndustryChange[] = [];
-    const platforms = ['Instagram', 'TikTok', 'Twitter/X', 'YouTube', 'Facebook', 'LinkedIn', 'Threads'];
-    const timestamp = Date.now();
-    const seed = Math.floor(timestamp / (3 * 24 * 60 * 60 * 1000)); // Changes every 3 days
-
-    const potentialChanges = [
-      { type: 'algorithm', desc: 'Algorithm update affecting organic reach', impact: 85 },
-      { type: 'api', desc: 'New API endpoints available', impact: 40 },
-      { type: 'feature', desc: 'New content format supported', impact: 70 },
-      { type: 'rate_limit', desc: 'Rate limit changes announced', impact: 60 },
-      { type: 'deprecation', desc: 'API endpoint deprecation notice', impact: 90 },
-      { type: 'auth', desc: 'OAuth flow changes required', impact: 80 },
-    ];
-
-    if (seed % 2 === 0) {
-      const platformIndex = seed % platforms.length;
-      const changeIndex = (seed + 1) % potentialChanges.length;
-      const platform = platforms[platformIndex];
-      const change = potentialChanges[changeIndex];
-
-      changes.push({
-        id: `social_${platform}_${change.type}_${seed}`,
-        source: 'social_media',
-        category: change.type === 'algorithm' ? 'optimization' : 'api_change',
-        title: `${platform}: ${change.desc}`,
-        description: `${platform} ${change.desc}. Social media autopilot needs to adapt.`,
-        detectedAt: new Date(),
-        urgency: change.impact > 70 ? 'high' : 'medium',
-        affectedModules: ['social', 'advertising'],
-        competitiveImpact: change.impact,
-        implementationComplexity: change.impact > 80 ? 'moderate' : 'simple',
-        estimatedImplementationHours: change.impact > 70 ? 16 : 4,
-      });
-    }
-
-    return changes;
-  }
-
-  private async monitorSecurityAdvisories(): Promise<IndustryChange[]> {
-    const changes: IndustryChange[] = [];
-    const timestamp = Date.now();
-    const seed = Math.floor(timestamp / (24 * 60 * 60 * 1000));
-
-    const securityPatterns = [
-      { type: 'vulnerability', desc: 'Node.js security patch available', urgency: 'critical' },
-      { type: 'encryption', desc: 'New encryption standard recommended', urgency: 'high' },
-      { type: 'auth', desc: 'Authentication best practice update', urgency: 'medium' },
-      { type: 'dependency', desc: 'Dependency vulnerability detected', urgency: 'high' },
-    ];
-
-    // Security checks run more frequently
-    if (seed % 5 === 0) {
-      const patternIndex = seed % securityPatterns.length;
-      const pattern = securityPatterns[patternIndex];
-
-      changes.push({
-        id: `security_${pattern.type}_${seed}`,
-        source: 'security',
-        category: 'security_patch',
-        title: `Security: ${pattern.desc}`,
-        description: `Security advisory: ${pattern.desc}. Immediate action recommended.`,
-        detectedAt: new Date(),
-        urgency: pattern.urgency as any,
-        affectedModules: ['security'],
-        competitiveImpact: 95, // Security is always high priority
-        implementationComplexity: pattern.urgency === 'critical' ? 'moderate' : 'simple',
-        estimatedImplementationHours: pattern.urgency === 'critical' ? 8 : 2,
-      });
-    }
-
-    return changes;
-  }
-
-  private async monitorRegulatoryChanges(): Promise<IndustryChange[]> {
-    const changes: IndustryChange[] = [];
-    const timestamp = Date.now();
-    const seed = Math.floor(timestamp / (30 * 24 * 60 * 60 * 1000)); // Monthly
-
-    const regulations = [
-      { name: 'GDPR', region: 'EU', type: 'data_privacy' },
-      { name: 'COPPA', region: 'US', type: 'child_protection' },
-      { name: 'CCPA', region: 'California', type: 'data_privacy' },
-      { name: 'Digital Services Act', region: 'EU', type: 'content_moderation' },
-      { name: 'Copyright Directive', region: 'EU', type: 'copyright' },
-    ];
-
-    if (seed % 6 === 0) {
-      const regIndex = seed % regulations.length;
-      const reg = regulations[regIndex];
-
-      changes.push({
-        id: `regulation_${reg.name}_${seed}`,
-        source: 'regulation',
-        category: 'standard',
-        title: `${reg.name} Update (${reg.region})`,
-        description: `${reg.name} compliance requirements updated. Review and update ${reg.type} handling.`,
-        detectedAt: new Date(),
-        urgency: 'high',
-        affectedModules: ['security', 'analytics'],
-        competitiveImpact: 80,
-        implementationComplexity: 'moderate',
-        estimatedImplementationHours: 24,
-      });
-    }
-
-    return changes;
-  }
-
-  private async monitorTechnologyTrends(): Promise<IndustryChange[]> {
-    const changes: IndustryChange[] = [];
-    const timestamp = Date.now();
-    const seed = Math.floor(timestamp / (14 * 24 * 60 * 60 * 1000)); // Bi-weekly
-
-    const techTrends = [
-      { name: 'WebGPU Audio Processing', impact: 'Major performance gains for browser DAW', modules: ['studio'] },
-      { name: 'AI Audio Enhancement', impact: 'Next-gen audio restoration capabilities', modules: ['studio'] },
-      { name: 'Blockchain Royalty Tracking', impact: 'Transparent royalty distribution', modules: ['distribution', 'monetization'] },
-      { name: 'AR/VR Music Experiences', impact: 'Immersive content creation tools', modules: ['studio', 'social'] },
-      { name: 'Neural Audio Codec', impact: 'Smaller files, higher quality streaming', modules: ['distribution'] },
-      { name: 'Voice-Controlled DAW', impact: 'Accessibility and workflow improvements', modules: ['studio'] },
-    ];
-
-    if (seed % 4 === 0) {
-      const trendIndex = seed % techTrends.length;
-      const trend = techTrends[trendIndex];
-
-      changes.push({
-        id: `tech_${this.hashString(trend.name)}_${seed}`,
-        source: 'technology',
-        category: 'feature',
-        title: `Emerging Tech: ${trend.name}`,
-        description: `Technology trend detected: ${trend.name}. ${trend.impact}. Early adoption recommended.`,
-        detectedAt: new Date(),
-        urgency: 'medium',
-        affectedModules: trend.modules,
-        competitiveImpact: 70,
-        implementationComplexity: 'complex',
-        estimatedImplementationHours: 80,
-      });
-    }
-
-    return changes;
   }
 
   // ============================================
