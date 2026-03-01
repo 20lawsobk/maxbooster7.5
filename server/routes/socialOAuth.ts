@@ -32,7 +32,7 @@ const PLATFORMS = {
     scope: 'threads_basic,threads_content_publish',
     clientId: process.env.THREADS_APP_ID,
     clientSecret: process.env.THREADS_APP_SECRET,
-    usePKCE: true,
+    usePKCE: false,
     responseType: 'code',
     enabled: !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
   },
