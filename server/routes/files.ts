@@ -7,7 +7,6 @@ import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
 import { logger } from '../logger.js';
-import { requirePresignedForLargeUploads } from '../middleware/uploadSizeGuard.js';
 
 const PERMANENT_DELETE_DAYS = 30;
 
@@ -63,7 +62,7 @@ async function getOrCreateUserStorage(userId: string) {
   return newStorage;
 }
 
-router.post('/upload', requirePresignedForLargeUploads, upload.single('file'), async (req: Request, res: Response) => {
+router.post('/upload', upload.single('file'), async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ 

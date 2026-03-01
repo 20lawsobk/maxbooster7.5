@@ -16,7 +16,6 @@ import { eq, and, gte, sql, desc, asc } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
 import { distributedCache } from '../infrastructure/distributedCache.js';
-import { requirePresignedForLargeUploads } from '../middleware/uploadSizeGuard.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -1012,7 +1011,7 @@ router.get('/collaborations', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/upload', requirePresignedForLargeUploads, upload.fields([
+router.post('/upload', upload.fields([
   { name: 'audioFile', maxCount: 1 },
   { name: 'coverArt', maxCount: 1 }
 ]), async (req: Request, res: Response) => {
