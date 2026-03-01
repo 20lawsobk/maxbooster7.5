@@ -5,6 +5,7 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { requireAuth } from '../middleware/auth.js';
 import { z } from 'zod';
+import { parsePaginationParams } from '../middleware/pagination.js';
 
 const router = Router();
 
@@ -36,10 +37,13 @@ const updateOrderSchema = z.object({
 // GET /api/merch - list user's merch items
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
+    const { limit, offset } = parsePaginationParams(req);
     const items = await db.select()
       .from(merchItems)
       .where(eq(merchItems.userId, req.user!.id))
-      .orderBy(desc(merchItems.createdAt));
+      .orderBy(desc(merchItems.createdAt))
+      .limit(limit)
+      .offset(offset);
 
     res.json(items);
   } catch (error) {
@@ -155,10 +159,13 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 // GET /api/merch/orders - list orders
 router.get('/orders', requireAuth, async (req: Request, res: Response) => {
   try {
+    const { limit, offset } = parsePaginationParams(req);
     const orders = await db.select()
       .from(merchOrders)
       .where(eq(merchOrders.userId, req.user!.id))
-      .orderBy(desc(merchOrders.createdAt));
+      .orderBy(desc(merchOrders.createdAt))
+      .limit(limit)
+      .offset(offset);
 
     res.json(orders);
   } catch (error) {

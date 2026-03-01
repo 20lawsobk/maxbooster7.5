@@ -320,7 +320,8 @@ router.get('/license-templates', async (req: Request, res: Response) => {
     const userTemplates = await db.select()
       .from(licenseTemplates)
       .where(eq(licenseTemplates.userId, req.user!.id))
-      .orderBy(asc(licenseTemplates.sortOrder));
+      .orderBy(asc(licenseTemplates.sortOrder))
+      .limit(50);
 
     const mapped = userTemplates.map(t => ({
       id: t.id,

@@ -5,6 +5,8 @@ import { and, eq, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
+import { queryCache, createCacheKey } from '../lib/queryCache.js';
+import { parsePaginationParams } from '../middleware/pagination.js';
 
 const router = Router();
 
@@ -37,10 +39,13 @@ router.get('/curators', (_req, res) => {
 
 router.get('/', requireAuth, async (req, res) => {
   try {
+    const { limit, offset } = parsePaginationParams(req);
     const pitches = await db.select()
       .from(playlistPitches)
       .where(eq(playlistPitches.userId, req.user!.id))
-      .orderBy(desc(playlistPitches.createdAt));
+      .orderBy(desc(playlistPitches.createdAt))
+      .limit(limit)
+      .offset(offset);
     res.json(pitches);
   } catch (error) {
     logger.error('[PlaylistPitching] Failed to list pitches:', error);
@@ -50,10 +55,11 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const validatedData = insertPlaylistPitchSchema.parse(req.body);
+    const validatedData = insertPlaylistPitchSchema.parse({ ...req.body, userId: req.user!.id });
     const [newPitch] = await db.insert(playlistPitches)
-      .values({ ...validatedData, userId: req.user!.id })
+      .values(validatedData)
       .returning();
+    await queryCache.invalidate(createCacheKey('stats:playlistPitches', req.user!.id));
     res.status(201).json(newPitch);
   } catch (error) {
     logger.error('[PlaylistPitching] Failed to create pitch:', error);
@@ -66,7 +72,7 @@ router.post('/', requireAuth, async (req, res) => {
 
 router.put('/:id', requireAuth, async (req, res) => {
   try {
-    const validatedData = insertPlaylistPitchSchema.partial().parse(req.body);
+    const validatedData = insertPlaylistPitchSchema.partial().omit({ userId: true }).parse(req.body);
     const [updatedPitch] = await db.update(playlistPitches)
       .set({ ...validatedData, updatedAt: new Date() })
       .where(and(eq(playlistPitches.id, req.params.id), eq(playlistPitches.userId, req.user!.id)))
@@ -99,26 +105,28 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
 router.get('/stats', requireAuth, async (req, res) => {
   try {
-    const stats = await db.select({
-      status: playlistPitches.status,
-      count: sql<number>`count(*)`,
-    })
-      .from(playlistPitches)
-      .where(eq(playlistPitches.userId, req.user!.id))
-      .groupBy(playlistPitches.status);
+    const userId = req.user!.id;
+    const cacheKey = createCacheKey('stats:playlistPitches', userId);
 
-    const result = { total: 0, accepted: 0, pending: 0, rejected: 0, conversionRate: 0 };
+    const result = await queryCache.getOrCompute(cacheKey, async () => {
+      const stats = await db.select({
+        status: playlistPitches.status,
+        count: sql<number>`count(*)`,
+      })
+        .from(playlistPitches)
+        .where(eq(playlistPitches.userId, userId))
+        .groupBy(playlistPitches.status);
 
-    stats.forEach(s => {
-      result.total += Number(s.count);
-      if (s.status === 'accepted') result.accepted = Number(s.count);
-      if (s.status === 'submitted' || s.status === 'under_review') result.pending += Number(s.count);
-      if (s.status === 'rejected') result.rejected = Number(s.count);
-    });
-
-    if (result.total > 0) {
-      result.conversionRate = (result.accepted / result.total) * 100;
-    }
+      const r = { total: 0, accepted: 0, pending: 0, rejected: 0, conversionRate: 0 };
+      stats.forEach(s => {
+        r.total += Number(s.count);
+        if (s.status === 'accepted') r.accepted = Number(s.count);
+        if (s.status === 'submitted' || s.status === 'under_review') r.pending += Number(s.count);
+        if (s.status === 'rejected') r.rejected = Number(s.count);
+      });
+      if (r.total > 0) r.conversionRate = (r.accepted / r.total) * 100;
+      return r;
+    }, 300);
 
     res.json(result);
   } catch (error) {

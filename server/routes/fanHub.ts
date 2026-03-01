@@ -225,14 +225,15 @@ router.post("/message", async (req: Request, res: Response) => {
 
     const { subject, body, segmentFilter } = parsed.data;
 
-    const subscribers = await db.select().from(fanSubscribers).where(eq(fanSubscribers.userId, userId));
-    const recipientCount = subscribers.length;
+    const [{ recipientCount }] = await db.select({
+      recipientCount: sql<number>`count(*)`,
+    }).from(fanSubscribers).where(eq(fanSubscribers.userId, userId));
 
     const [message] = await db.insert(fanMessages).values({
       userId,
       subject,
       body,
-      recipientCount,
+      recipientCount: Number(recipientCount),
       sentAt: new Date(),
       segmentFilter: segmentFilter || "all",
     }).returning();
@@ -246,10 +247,15 @@ router.post("/message", async (req: Request, res: Response) => {
 
 router.get("/messages", async (req: Request, res: Response) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = (page - 1) * limit;
     const messages = await db.select()
       .from(fanMessages)
       .where(eq(fanMessages.userId, req.user!.id))
-      .orderBy(desc(fanMessages.sentAt));
+      .orderBy(desc(fanMessages.sentAt))
+      .limit(limit)
+      .offset(offset);
 
     return res.json(messages);
   } catch (error) {

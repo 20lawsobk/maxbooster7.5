@@ -4,14 +4,18 @@ import { projectBudgets, budgetLineItems, insertProjectBudgetSchema, insertBudge
 import { and, eq, desc } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
+import { parsePaginationParams } from '../middleware/pagination.js';
 
 const router = Router();
 
 router.get('/', requireAuth, async (req, res) => {
   try {
+    const { limit, offset } = parsePaginationParams(req);
     const budgets = await db.select().from(projectBudgets)
       .where(eq(projectBudgets.userId, req.user!.id))
-      .orderBy(desc(projectBudgets.createdAt));
+      .orderBy(desc(projectBudgets.createdAt))
+      .limit(limit)
+      .offset(offset);
     res.json(budgets);
   } catch (error) {
     logger.error('[ProjectBudgets] Failed to list:', error);

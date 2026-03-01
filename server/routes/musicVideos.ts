@@ -1,17 +1,23 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { musicVideoProductions, insertMusicVideoProductionSchema } from '@shared/schema';
-import { and, eq, desc } from 'drizzle-orm';
+import { and, eq, desc, count, sql } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
+import { queryCache, createCacheKey } from '../lib/queryCache.js';
+import { parsePaginationParams } from '../middleware/pagination.js';
 
 const router = Router();
+const CACHE_TTL = 300;
 
 router.get('/', requireAuth, async (req, res) => {
   try {
+    const { limit, offset } = parsePaginationParams(req);
     const items = await db.select().from(musicVideoProductions)
       .where(eq(musicVideoProductions.userId, req.user!.id))
-      .orderBy(desc(musicVideoProductions.createdAt));
+      .orderBy(desc(musicVideoProductions.createdAt))
+      .limit(limit)
+      .offset(offset);
     res.json(items);
   } catch (error) {
     logger.error('[MusicVideos] Failed to list:', error);
@@ -21,15 +27,30 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.get('/stats', requireAuth, async (req, res) => {
   try {
-    const items = await db.select().from(musicVideoProductions)
-      .where(eq(musicVideoProductions.userId, req.user!.id));
-    const total = items.length;
-    const released = items.filter(i => i.stage === 'released').length;
-    const inProduction = items.filter(i => ['filming', 'editing', 'color_grade', 'mastering'].includes(i.stage || '')).length;
-    const planned = items.filter(i => ['concept', 'pre_production', 'casting'].includes(i.stage || '')).length;
-    const totalViews = items.reduce((s, i) => s + (i.views || 0), 0);
-    const totalBudget = items.filter(i => i.budget).reduce((s, i) => s + (i.budget || 0), 0);
-    res.json({ total, released, inProduction, planned, totalViews, totalBudget });
+    const userId = req.user!.id;
+    const cacheKey = createCacheKey('stats:musicVideos', userId);
+
+    const stats = await queryCache.getOrCompute(cacheKey, async () => {
+      const [totals] = await db.select({
+        total: count(),
+        released: sql<number>`count(*) filter (where stage = 'released')`,
+        inProduction: sql<number>`count(*) filter (where stage in ('filming','editing','color_grade','mastering'))`,
+        planned: sql<number>`count(*) filter (where stage in ('concept','pre_production','casting'))`,
+        totalViews: sql<number>`coalesce(sum(views), 0)`,
+        totalBudget: sql<number>`coalesce(sum(budget), 0)`,
+      }).from(musicVideoProductions).where(eq(musicVideoProductions.userId, userId));
+
+      return {
+        total: Number(totals.total),
+        released: Number(totals.released),
+        inProduction: Number(totals.inProduction),
+        planned: Number(totals.planned),
+        totalViews: Number(totals.totalViews),
+        totalBudget: Number(totals.totalBudget),
+      };
+    }, CACHE_TTL);
+
+    res.json(stats);
   } catch (error) {
     logger.error('[MusicVideos] Failed to fetch stats:', error);
     res.status(500).json({ error: 'Failed to fetch stats' });
@@ -44,11 +65,12 @@ router.post('/', requireAuth, async (req, res) => {
       budget: req.body.budget !== '' && req.body.budget != null ? parseFloat(req.body.budget) : undefined,
     });
     const [item] = await db.insert(musicVideoProductions).values(data).returning();
+    await queryCache.invalidate(createCacheKey('stats:musicVideos', req.user!.id));
     res.status(201).json(item);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[MusicVideos] Failed to create:', error);
-    if (error?.name === 'ZodError') {
-      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    if (error instanceof Error && error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
     res.status(500).json({ error: 'Failed to create music video production' });
   }
@@ -75,11 +97,12 @@ router.put('/:id', requireAuth, async (req, res) => {
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(musicVideoProductions.id, id), eq(musicVideoProductions.userId, userId)))
       .returning();
+    await queryCache.invalidate(createCacheKey('stats:musicVideos', userId));
     res.json(item);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[MusicVideos] Failed to update:', error);
-    if (error?.name === 'ZodError') {
-      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    if (error instanceof Error && error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
     res.status(500).json({ error: 'Failed to update music video production' });
   }
@@ -100,6 +123,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
     await db.delete(musicVideoProductions)
       .where(and(eq(musicVideoProductions.id, id), eq(musicVideoProductions.userId, userId)));
+    await queryCache.invalidate(createCacheKey('stats:musicVideos', userId));
     res.json({ success: true });
   } catch (error) {
     logger.error('[MusicVideos] Failed to delete:', error);

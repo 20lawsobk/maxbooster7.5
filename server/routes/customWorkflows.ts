@@ -6,6 +6,7 @@ import { notificationService } from '../services/notificationService.js';
 import { logger } from '../logger.js';
 import { requireAuth } from '../middleware/auth.js';
 import { z } from 'zod';
+import { parsePaginationParams } from '../middleware/pagination.js';
 
 const router = Router();
 
@@ -99,11 +100,14 @@ router.get('/catalog', (_req, res) => {
 
 router.get('/', requireAuth, async (req, res) => {
   try {
+    const { limit, offset } = parsePaginationParams(req);
     const rows = await db
       .select()
       .from(customWorkflows)
       .where(eq(customWorkflows.userId, req.user!.id))
-      .orderBy(desc(customWorkflows.createdAt));
+      .orderBy(desc(customWorkflows.createdAt))
+      .limit(limit)
+      .offset(offset);
     res.json(rows);
   } catch (error) {
     logger.error('[CustomWorkflow] Error fetching:', error);

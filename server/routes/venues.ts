@@ -1,17 +1,23 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { venueContacts, insertVenueContactSchema } from '@shared/schema';
-import { and, eq, desc } from 'drizzle-orm';
+import { and, eq, desc, count, sql } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
+import { queryCache, createCacheKey } from '../lib/queryCache.js';
+import { parsePaginationParams } from '../middleware/pagination.js';
 
 const router = Router();
+const CACHE_TTL = 300;
 
 router.get('/', requireAuth, async (req, res) => {
   try {
+    const { limit, offset } = parsePaginationParams(req);
     const items = await db.select().from(venueContacts)
       .where(eq(venueContacts.userId, req.user!.id))
-      .orderBy(desc(venueContacts.createdAt));
+      .orderBy(desc(venueContacts.createdAt))
+      .limit(limit)
+      .offset(offset);
     res.json(items);
   } catch (error) {
     logger.error('[Venues] Failed to list:', error);
@@ -21,14 +27,31 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.get('/stats', requireAuth, async (req, res) => {
   try {
-    const items = await db.select().from(venueContacts)
-      .where(eq(venueContacts.userId, req.user!.id));
-    const total = items.length;
-    const prospects = items.filter(i => i.status === 'prospect').length;
-    const contacted = items.filter(i => i.status === 'contacted').length;
-    const booked = items.filter(i => i.status === 'booked').length;
-    const avgCapacity = total > 0 ? Math.round(items.reduce((s, i) => s + (i.capacity || 0), 0) / total) : 0;
-    res.json({ total, prospects, contacted, booked, avgCapacity });
+    const userId = req.user!.id;
+    const cacheKey = createCacheKey('stats:venues', userId);
+
+    const stats = await queryCache.getOrCompute(cacheKey, async () => {
+      const [totals] = await db.select({
+        total: count(),
+        prospects: sql<number>`count(*) filter (where status = 'prospect')`,
+        contacted: sql<number>`count(*) filter (where status = 'contacted')`,
+        booked: sql<number>`count(*) filter (where status = 'booked')`,
+        totalCapacity: sql<number>`coalesce(sum(capacity), 0)`,
+        venueCount: count(),
+      }).from(venueContacts).where(eq(venueContacts.userId, userId));
+
+      const total = Number(totals.total);
+      const totalCapacity = Number(totals.totalCapacity);
+      return {
+        total,
+        prospects: Number(totals.prospects),
+        contacted: Number(totals.contacted),
+        booked: Number(totals.booked),
+        avgCapacity: total > 0 ? Math.round(totalCapacity / total) : 0,
+      };
+    }, CACHE_TTL);
+
+    res.json(stats);
   } catch (error) {
     logger.error('[Venues] Failed to fetch stats:', error);
     res.status(500).json({ error: 'Failed to fetch stats' });
@@ -39,11 +62,12 @@ router.post('/', requireAuth, async (req, res) => {
   try {
     const data = insertVenueContactSchema.parse({ ...req.body, userId: req.user!.id });
     const [item] = await db.insert(venueContacts).values(data).returning();
+    await queryCache.invalidate(createCacheKey('stats:venues', req.user!.id));
     res.status(201).json(item);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Venues] Failed to create:', error);
-    if (error?.name === 'ZodError') {
-      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    if (error instanceof Error && error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
     res.status(500).json({ error: 'Failed to create venue contact' });
   }
@@ -67,11 +91,12 @@ router.put('/:id', requireAuth, async (req, res) => {
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(venueContacts.id, id), eq(venueContacts.userId, userId)))
       .returning();
+    await queryCache.invalidate(createCacheKey('stats:venues', userId));
     res.json(item);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Venues] Failed to update:', error);
-    if (error?.name === 'ZodError') {
-      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    if (error instanceof Error && error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
     res.status(500).json({ error: 'Failed to update venue contact' });
   }
@@ -92,6 +117,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
     await db.delete(venueContacts)
       .where(and(eq(venueContacts.id, id), eq(venueContacts.userId, userId)));
+    await queryCache.invalidate(createCacheKey('stats:venues', userId));
     res.json({ success: true });
   } catch (error) {
     logger.error('[Venues] Failed to delete:', error);

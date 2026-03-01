@@ -1424,7 +1424,8 @@ router.post('/:id/checkout', async (req, res) => {
     });
 
     const activePromos = await db.select().from(bogoPromotions)
-      .where(getActivePromotionsFilter(storefrontId));
+      .where(getActivePromotionsFilter(storefrontId))
+      .limit(50);
 
     const customerRedemptions = new Map<string, number>();
     if (req.user?.id && activePromos.length > 0) {
@@ -1434,7 +1435,7 @@ router.post('/:id/checkout', async (req, res) => {
         eq(storefrontOrders.buyerId, req.user.id),
         eq(storefrontOrders.storefrontId, storefrontId),
         eq(storefrontOrders.status, 'completed'),
-      ));
+      )).limit(1000);
       for (const order of pastOrders) {
         if (order.promoId) {
           customerRedemptions.set(order.promoId, (customerRedemptions.get(order.promoId) || 0) + 1);
@@ -1536,11 +1537,16 @@ router.get('/:id/orders', async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
     const storefrontId = req.params.id;
 
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = (page - 1) * limit;
     const orders = await db.select().from(storefrontOrders)
       .where(and(
         eq(storefrontOrders.storefrontId, storefrontId),
         eq(storefrontOrders.buyerId, req.user!.id)
-      ));
+      ))
+      .limit(limit)
+      .offset(offset);
 
     res.json(orders);
   } catch (error) {
@@ -1614,7 +1620,8 @@ router.get('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
     const { listingId } = req.params;
     const tiers = await db.select().from(listingLicenseTiers)
       .where(eq(listingLicenseTiers.listingId, listingId))
-      .orderBy(listingLicenseTiers.sortOrder);
+      .orderBy(listingLicenseTiers.sortOrder)
+      .limit(20);
     res.json(tiers);
   } catch (error) {
     logger.error('Error fetching license tiers:', error);
@@ -1855,7 +1862,8 @@ router.get('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
     const { listingId } = req.params;
     const tiers = await db.select().from(listingLicenseTiers)
       .where(eq(listingLicenseTiers.listingId, listingId))
-      .orderBy(listingLicenseTiers.sortOrder);
+      .orderBy(listingLicenseTiers.sortOrder)
+      .limit(20);
     res.json(tiers);
   } catch (error) {
     logger.error('Error fetching license tiers:', error);
@@ -1980,7 +1988,8 @@ router.get('/:storefrontId/bogo-promotions', async (req, res) => {
     const { storefrontId } = req.params;
     const promos = await db.select().from(bogoPromotions)
       .where(getActivePromotionsFilter(storefrontId))
-      .orderBy(bogoPromotions.priority);
+      .orderBy(bogoPromotions.priority)
+      .limit(100);
     res.json(promos);
   } catch (error) {
     logger.error('Error fetching BOGO promotions:', error);
@@ -1998,7 +2007,8 @@ router.get('/:storefrontId/bogo-promotions/all', async (req, res) => {
     }
     const promos = await db.select().from(bogoPromotions)
       .where(eq(bogoPromotions.storefrontId, storefrontId))
-      .orderBy(bogoPromotions.createdAt);
+      .orderBy(bogoPromotions.createdAt)
+      .limit(100);
     res.json(promos);
   } catch (error) {
     logger.error('Error fetching all BOGO promotions:', error);
@@ -2154,7 +2164,8 @@ router.post('/:id/checkout/preview', async (req, res) => {
     });
 
     const activePromos = await db.select().from(bogoPromotions)
-      .where(getActivePromotionsFilter(storefrontId));
+      .where(getActivePromotionsFilter(storefrontId))
+      .limit(50);
 
     const customerRedemptions = new Map<string, number>();
     if (req.user?.id && activePromos.length > 0) {
@@ -2164,7 +2175,7 @@ router.post('/:id/checkout/preview', async (req, res) => {
         eq(storefrontOrders.buyerId, req.user.id),
         eq(storefrontOrders.storefrontId, storefrontId),
         eq(storefrontOrders.status, 'completed'),
-      ));
+      )).limit(1000);
       for (const order of pastOrders) {
         if (order.promoId) {
           customerRedemptions.set(order.promoId, (customerRedemptions.get(order.promoId) || 0) + 1);

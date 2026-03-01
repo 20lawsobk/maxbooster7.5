@@ -5,6 +5,7 @@ import { and, eq, desc } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { z } from 'zod';
+import { parsePaginationParams } from '../middleware/pagination.js';
 
 const router = Router();
 
@@ -17,9 +18,12 @@ const aiAssistSchema = z.object({
 
 router.get('/', requireAuth, async (req, res) => {
   try {
+    const { limit, offset } = parsePaginationParams(req);
     const sessions = await db.select().from(songwritingSessions)
       .where(eq(songwritingSessions.userId, req.user!.id))
-      .orderBy(desc(songwritingSessions.updatedAt));
+      .orderBy(desc(songwritingSessions.updatedAt))
+      .limit(limit)
+      .offset(offset);
     res.json(sessions);
   } catch (error) {
     logger.error('[Songwriting] Failed to list sessions:', error);
@@ -32,10 +36,10 @@ router.post('/', requireAuth, async (req, res) => {
     const data = insertSongwritingSessionSchema.parse({ ...req.body, userId: req.user!.id });
     const [session] = await db.insert(songwritingSessions).values(data).returning();
     res.status(201).json(session);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Songwriting] Failed to create session:', error);
-    if (error?.name === 'ZodError') {
-      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    if (error instanceof Error && error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
     res.status(500).json({ error: 'Failed to create songwriting session' });
   }
@@ -60,10 +64,10 @@ router.put('/:id', requireAuth, async (req, res) => {
       .where(and(eq(songwritingSessions.id, id), eq(songwritingSessions.userId, userId)))
       .returning();
     res.json(session);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Songwriting] Failed to update session:', error);
-    if (error?.name === 'ZodError') {
-      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    if (error instanceof Error && error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
     res.status(500).json({ error: 'Failed to update songwriting session' });
   }

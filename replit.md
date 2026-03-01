@@ -18,6 +18,28 @@ Max Booster is an AI-powered, full-stack TypeScript web application designed to 
 
 I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
 
+## Performance Hardening (Current Session - March 2026)
+
+### Pagination Applied to All List Endpoints
+Every unbounded list query now uses `parsePaginationParams` middleware (MAX_PAGE_SIZE=500) or inline limits:
+- `server/routes/merch.ts` — GET / (items) + GET /orders now paginated
+- `server/routes/projectBudgets.ts` — GET / paginated
+- `server/routes/playlistPitching.ts` — GET / paginated; stats endpoint cached with 300s TTL + cache invalidation on POST
+- `server/routes/customWorkflows.ts` — GET / paginated
+- `server/routes/fanHub.ts` — GET /messages paginated; POST /message now uses COUNT aggregate (no full subscriber load)
+- `server/routes/storefront.ts` — GET /:id/orders paginated; bogoPromotions queries limited to 100; license tiers limited to 20; cart checkout promos limited to 50
+- `server/routes/marketplace.ts` — license templates query limited to 50
+
+### Bug Fix: Playlist Pitching Create
+Pre-existing bug fixed: `insertPlaylistPitchSchema.parse(req.body)` failed because `userId` was required in schema but not injected before parse. Fixed by injecting `userId: req.user!.id` before parsing. PUT route also now uses `.omit({ userId: true })` on partial schema.
+
+### Redis Query Cache Added
+Stats endpoints cached with `queryCache.getOrCompute` (300s TTL) + `queryCache.invalidate` on mutations:
+- `fanCampaigns`, `venues`, `radioPitches`, `labelSubmissions`, `sampleClearances`, `musicVideos`, `songwriting`, `merch`, `projectBudgets`, `playlistPitching`
+
+### Composite DB Indexes (50 indexes)
+Migration script at `server/scripts/addCompositeIndexes.ts` created (userId, createdAt DESC) and (userId, status) composite indexes on all major user-owned tables. Column name corrections applied (storefront_orders→buyer_id/seller_id, notifications→is_read, distro_releases→artist_id).
+
 ## Security Hardening (Completed)
 
 All route files migrated from broken `req.session.userId` pattern to Passport `req.user!.id` (requireAuth from `server/middleware/auth.ts`). Files fixed:
