@@ -1038,6 +1038,12 @@ describe('${upgrade.id}', () => {
 
         await this.recordDeployment(upgrade);
 
+        this.emit('filesDeployed', {
+          upgradeId: upgrade.id,
+          upgradeType: upgrade.type,
+          filesModified: upgrade.targetFiles.length,
+        });
+
       } catch (error) {
         upgrade.status = 'failed';
         logger.error(`   ❌ Failed to deploy ${upgrade.id}:`, error);
@@ -1045,6 +1051,10 @@ describe('${upgrade.id}', () => {
     }
 
     return deployedCount;
+  }
+
+  async triggerRollback(): Promise<void> {
+    await this.performRollback();
   }
 
   private async recordDeployment(upgrade: CodeUpgrade): Promise<void> {

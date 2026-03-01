@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { selfEvolution } from '../self-evolution-engine.js';
+import { silentDeployment } from '../services/silentDeploymentService.js';
 import {
   simulateAutonomousUpgrade,
   simulateLongTermAdaptation,
@@ -170,6 +171,47 @@ router.post('/simulation', requireAdmin, simulationRateLimit, async (req, res) =
   } catch (error) {
     logger.error('Failed to run simulation:', error);
     res.status(500).json({ error: 'Simulation failed' });
+  }
+});
+
+router.get('/silent-deployment/status', requireAdmin, (_req, res) => {
+  try {
+    res.json(silentDeployment.getStatus());
+  } catch (error) {
+    logger.error('Failed to get silent deployment status:', error);
+    res.status(500).json({ error: 'Failed to get silent deployment status' });
+  }
+});
+
+router.get('/silent-deployment/history', requireAdmin, (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+    res.json({ history: silentDeployment.getHistory(limit) });
+  } catch (error) {
+    logger.error('Failed to get silent deployment history:', error);
+    res.status(500).json({ error: 'Failed to get silent deployment history' });
+  }
+});
+
+router.post('/silent-deployment/enable', requireAdmin, (req, res) => {
+  try {
+    silentDeployment.enable();
+    logger.info(`[SilentDeploy] Enabled by admin ${req.user!.id}`);
+    res.json({ success: true, message: 'Silent deployment system enabled', status: silentDeployment.getStatus() });
+  } catch (error) {
+    logger.error('Failed to enable silent deployment:', error);
+    res.status(500).json({ error: 'Failed to enable silent deployment' });
+  }
+});
+
+router.post('/silent-deployment/disable', requireAdmin, (req, res) => {
+  try {
+    silentDeployment.disable();
+    logger.info(`[SilentDeploy] Disabled by admin ${req.user!.id}`);
+    res.json({ success: true, message: 'Silent deployment system disabled', status: silentDeployment.getStatus() });
+  } catch (error) {
+    logger.error('Failed to disable silent deployment:', error);
+    res.status(500).json({ error: 'Failed to disable silent deployment' });
   }
 });
 

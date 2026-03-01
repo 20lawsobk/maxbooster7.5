@@ -121,3 +121,13 @@ The server serves the frontend using Vite middleware in development and as stati
     - Google (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
     - Threads (`THREADS_APP_ID`, `THREADS_APP_SECRET`)
 - **Version Control**: GitHub (`GITHUB_PAT`) for CI/CD.
+### Silent Deployment System
+- **Service**: `server/services/silentDeploymentService.ts` — singleton `silentDeployment`
+- **Trigger**: `selfEvolution` engine emits `filesDeployed` after each atomic file write; service listens and queues a deployment window
+- **Flow**: Pre-health snapshot → 30s grace period (in-flight requests drain) → rolling cluster restart via IPC → 60s health watch → auto-rollback if degraded
+- **Rolling restart**: Worker sends `{ type: 'SILENT_RELOAD' }` to cluster primary → primary forks replacement first, waits for it to listen, then gracefully disconnects old worker (10s force-kill timeout) — one worker at a time, zero downtime
+- **Single-process fallback**: Schedules `process.exit(0)` after 2s (process manager restarts with new code)
+- **Rollback**: If post-restart health check fails within 60s, calls `selfEvolution.triggerRollback()` which restores all `.bak` files
+- **Audit**: Every deployment (success or failure) written to `optimization_tasks` table — no end-user notifications
+- **Activation**: Set `ENABLE_SELF_EVOLUTION=true` env var (auto-enables on boot) or call `POST /api/auto-updates/silent-deployment/enable` as admin
+- **Admin endpoints**: `GET /api/auto-updates/silent-deployment/status`, `GET /api/auto-updates/silent-deployment/history`, `POST /api/auto-updates/silent-deployment/enable`, `POST /api/auto-updates/silent-deployment/disable`

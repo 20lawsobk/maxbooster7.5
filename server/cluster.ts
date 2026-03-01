@@ -79,4 +79,55 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   cluster.on('online', (worker) => {
     console.log(`[Cluster] Worker ${worker.process.pid} online`);
   });
+
+  // Rolling restart triggered by SilentDeploymentService after self-evolution files land.
+  // Cycles workers one at a time: old exits → new forks and comes online → repeat.
+  // Zero downtime: at least one worker is always serving traffic.
+  let rollingRestartInProgress = false;
+
+  cluster.on('message', (_worker, message: unknown) => {
+    if (!message || typeof message !== 'object') return;
+    const msg = message as Record<string, unknown>;
+    if (msg.type !== 'SILENT_RELOAD') return;
+    if (rollingRestartInProgress) {
+      console.log('[Cluster] Rolling restart already in progress — ignoring duplicate SILENT_RELOAD');
+      return;
+    }
+
+    const reason = msg.reason ?? 'unknown';
+    console.log(`[Cluster] SILENT_RELOAD received (reason=${reason}) — beginning rolling restart`);
+    rollingRestartInProgress = true;
+
+    const workerList = Object.values(cluster.workers ?? {}).filter(Boolean) as import('cluster').Worker[];
+    let index = 0;
+
+    const restartNext = () => {
+      if (index >= workerList.length) {
+        console.log('[Cluster] Rolling restart complete — all workers running new code');
+        rollingRestartInProgress = false;
+        return;
+      }
+
+      const target = workerList[index++];
+      if (!target || target.isDead()) {
+        restartNext();
+        return;
+      }
+
+      // Fork the replacement first so traffic is never fully dropped
+      const replacement = cluster.fork();
+      replacement.once('listening', () => {
+        console.log(`[Cluster] Replacement worker ${replacement.process.pid} ready — retiring old worker ${target.process.pid}`);
+        target.disconnect();
+        // Give old worker 10s to finish in-flight requests then force-kill
+        const forceKill = setTimeout(() => target.kill(), 10_000);
+        target.once('exit', () => {
+          clearTimeout(forceKill);
+          restartNext();
+        });
+      });
+    };
+
+    restartNext();
+  });
 }

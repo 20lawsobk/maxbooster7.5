@@ -4240,5 +4240,17 @@ export async function registerRoutes(
     log(`Warning: Could not load customWorkflows routes - ${error.message}`);
   }
 
+  try {
+    const { silentDeployment } = await import('./services/silentDeploymentService.js');
+    if (process.env.ENABLE_SELF_EVOLUTION === 'true') {
+      silentDeployment.enable();
+      log('Silent deployment system ENABLED (ENABLE_SELF_EVOLUTION=true)');
+    } else {
+      log('Silent deployment system on standby (set ENABLE_SELF_EVOLUTION=true to activate)');
+    }
+  } catch (error: any) {
+    log(`Warning: Could not initialize silent deployment service - ${error.message}`);
+  }
+
   return httpServer;
 }
