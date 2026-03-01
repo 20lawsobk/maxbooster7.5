@@ -195,18 +195,23 @@ class IndustryMonitorService {
 
     const changes: LiveIndustryChange[] = [];
 
-    if (tavilyKey) {
-      const results = await Promise.allSettled(
-        MUSIC_INDUSTRY_QUERIES.map(q => this.tavilySearch(q, tavilyKey))
-      );
-      for (const r of results) {
+    const [tavilyResults, exaResults] = await Promise.allSettled([
+      tavilyKey
+        ? Promise.allSettled(MUSIC_INDUSTRY_QUERIES.map(q => this.tavilySearch(q, tavilyKey)))
+        : Promise.resolve([]),
+      exaKey
+        ? Promise.allSettled(MUSIC_INDUSTRY_QUERIES.map(q => this.exaSearch(q, exaKey)))
+        : Promise.resolve([]),
+    ]);
+
+    if (tavilyResults.status === 'fulfilled') {
+      for (const r of tavilyResults.value) {
         if (r.status === 'fulfilled') changes.push(...r.value);
       }
-    } else if (exaKey) {
-      const results = await Promise.allSettled(
-        MUSIC_INDUSTRY_QUERIES.map(q => this.exaSearch(q, exaKey))
-      );
-      for (const r of results) {
+    }
+
+    if (exaResults.status === 'fulfilled') {
+      for (const r of exaResults.value) {
         if (r.status === 'fulfilled') changes.push(...r.value);
       }
     }
