@@ -18,6 +18,28 @@ Max Booster is an AI-powered, full-stack TypeScript web application designed to 
 
 I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
 
+## Security Hardening (Completed)
+
+All route files migrated from broken `req.session.userId` pattern to Passport `req.user!.id` (requireAuth from `server/middleware/auth.ts`). Files fixed:
+
+- `server/routes/labelSubmissions.ts` - ownership check on PUT/DELETE, Zod validation, try/catch
+- `server/routes/musicVideos.ts` - same
+- `server/routes/projectBudgets.ts` - same + budget line items ownership checks  
+- `server/routes/radioPitches.ts` - same
+- `server/routes/sampleClearances.ts` - same
+- `server/routes/songwriting.ts` - same + ai-assist Zod validation
+- `server/routes/venues.ts` - same
+- `server/routes/fanHub.ts` - replaced local requireAuth with shared, Zod validation on all write routes, import size limit (1000/req)
+- `server/routes/customWorkflows.ts` - Zod validation on create/update, trigger event allowlist
+- `server/routes/helpDesk.ts` - ownership/validation fixes
+- `server/routes/fanCampaigns.ts` - ownership/validation fixes
+- `server/routes/merch.ts` - explicit field allowlist replacing body spread
+- `server/routes/playlistPitching.ts` - session auth → passport auth, ownership enforced
+- `server/routes/pressKit.ts` - session auth → passport auth, slug validation
+- `server/routes/storage.ts` - all session.userId references replaced with req.user!.id
+
+**Pattern used in all fixed routes**: `requireAuth` middleware + `req.user!.id` + Zod schema validation on input + ownership `AND userId` in all WHERE clauses for mutations + full try/catch with logger.error in catch + 201 status on creates + 404 when resource not found (not leaking existence).
+
 ## System Architecture
 
 The Max Booster application is structured as a monorepo, separating concerns into distinct directories:

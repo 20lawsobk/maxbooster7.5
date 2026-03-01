@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { databaseBackupService } from '../services/backup/databaseBackupService.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { logger } from '../logger.js';
 
 const router = Router();
 
@@ -11,8 +12,9 @@ router.post('/create', requireAdmin, async (req, res) => {
   try {
     const backupFile = await databaseBackupService.createBackup();
     res.json({ success: true, backupFile });
-  } catch (error: any) {
-    res.status(500).json({ error: 'Internal server error' });
+  } catch (error) {
+    logger.error('[Backup] Failed to create backup:', error);
+    res.status(500).json({ error: 'Failed to create backup' });
   }
 });
 
@@ -21,8 +23,9 @@ router.get('/list', requireAdmin, async (req, res) => {
   try {
     const backups = await databaseBackupService.listBackups();
     res.json({ backups });
-  } catch (error: any) {
-    res.status(500).json({ error: 'Internal server error' });
+  } catch (error) {
+    logger.error('[Backup] Failed to list backups:', error);
+    res.status(500).json({ error: 'Failed to list backups' });
   }
 });
 
@@ -31,8 +34,9 @@ router.get('/metrics', requireAdmin, async (req, res) => {
   try {
     const metrics = databaseBackupService.getBackupMetrics();
     res.json(metrics);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Internal server error' });
+  } catch (error) {
+    logger.error('[Backup] Failed to get backup metrics:', error);
+    res.status(500).json({ error: 'Failed to get backup metrics' });
   }
 });
 

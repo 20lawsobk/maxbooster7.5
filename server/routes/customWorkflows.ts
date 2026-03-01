@@ -4,10 +4,10 @@ import { customWorkflows } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { notificationService } from '../services/notificationService.js';
 import { logger } from '../logger.js';
+import { requireAuth } from '../middleware/auth.js';
+import { z } from 'zod';
 
 const router = Router();
-
-// ─── Catalog of available triggers ──────────────────────────────────────────
 
 export const CUSTOM_TRIGGERS = [
   { id: 'track:uploaded', label: 'Track uploaded', category: 'Music', description: 'A new audio file is uploaded to your library' },
@@ -28,8 +28,6 @@ export const CUSTOM_TRIGGERS = [
   { id: 'schedule:weekly', label: 'Every Monday at 9 AM', category: 'Schedule', description: 'Runs every Monday at 9:00 AM' },
   { id: 'schedule:monthly', label: '1st of each month at 8 AM', category: 'Schedule', description: 'Runs on the 1st of each month at 8:00 AM' },
 ];
-
-// ─── Catalog of available action types ───────────────────────────────────────
 
 export const CUSTOM_ACTIONS = [
   {
@@ -78,63 +76,77 @@ export const CUSTOM_ACTIONS = [
   },
 ];
 
-// ─── Route definitions ────────────────────────────────────────────────────────
+const VALID_TRIGGER_IDS = new Set(CUSTOM_TRIGGERS.map(t => t.id));
 
-// GET /api/custom-workflows/catalog — trigger + action definitions (no auth needed for UI builder)
+const createWorkflowSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  triggerEvent: z.string().refine(v => VALID_TRIGGER_IDS.has(v), { message: 'Invalid trigger event' }),
+  triggerConditions: z.record(z.unknown()).optional(),
+  actions: z.array(z.object({
+    type: z.string().max(100),
+    config: z.record(z.unknown()),
+  })).min(1, 'At least one action is required').max(10),
+});
+
+const updateWorkflowSchema = createWorkflowSchema.partial().extend({
+  enabled: z.boolean().optional(),
+});
+
 router.get('/catalog', (_req, res) => {
   res.json({ triggers: CUSTOM_TRIGGERS, actions: CUSTOM_ACTIONS });
 });
 
-// GET /api/custom-workflows — list user's custom workflows
-router.get('/', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
+router.get('/', requireAuth, async (req, res) => {
   try {
     const rows = await db
       .select()
       .from(customWorkflows)
-      .where(eq(customWorkflows.userId, req.session.userId))
+      .where(eq(customWorkflows.userId, req.user!.id))
       .orderBy(desc(customWorkflows.createdAt));
     res.json(rows);
-  } catch (err: any) {
-    logger.error('[CustomWorkflow] Error fetching:', err);
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    logger.error('[CustomWorkflow] Error fetching:', error);
+    res.status(500).json({ error: 'Failed to fetch custom workflows' });
   }
 });
 
-// POST /api/custom-workflows — create a new custom workflow
-router.post('/', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
+router.post('/', requireAuth, async (req, res) => {
   try {
-    const { name, description, triggerEvent, triggerConditions, actions } = req.body;
-    if (!name?.trim()) return res.status(400).json({ error: 'name is required' });
-    if (!triggerEvent) return res.status(400).json({ error: 'triggerEvent is required' });
-    if (!Array.isArray(actions) || actions.length === 0) return res.status(400).json({ error: 'At least one action is required' });
+    const parsed = createWorkflowSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+    }
 
+    const { name, description, triggerEvent, triggerConditions, actions } = parsed.data;
     const [row] = await db.insert(customWorkflows).values({
-      userId: req.session.userId,
-      name: name.trim(),
+      userId: req.user!.id,
+      name,
       description: description?.trim() ?? '',
       triggerEvent,
       triggerConditions: triggerConditions ?? {},
       actions,
       enabled: false,
     }).returning();
-    res.json(row);
-  } catch (err: any) {
-    logger.error('[CustomWorkflow] Error creating:', err);
-    res.status(500).json({ error: err.message });
+    res.status(201).json(row);
+  } catch (error) {
+    logger.error('[CustomWorkflow] Error creating:', error);
+    res.status(500).json({ error: 'Failed to create custom workflow' });
   }
 });
 
-// PUT /api/custom-workflows/:id — update a custom workflow
-router.put('/:id', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
+router.put('/:id', requireAuth, async (req, res) => {
   try {
-    const { name, description, triggerEvent, triggerConditions, actions, enabled } = req.body;
+    const parsed = updateWorkflowSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+    }
+
+    const { name, description, triggerEvent, triggerConditions, actions, enabled } = parsed.data;
     const [row] = await db
       .update(customWorkflows)
       .set({
-        ...(name !== undefined && { name: name.trim() }),
+        ...(name !== undefined && { name }),
         ...(description !== undefined && { description: description.trim() }),
         ...(triggerEvent !== undefined && { triggerEvent }),
         ...(triggerConditions !== undefined && { triggerConditions }),
@@ -142,106 +154,103 @@ router.put('/:id', async (req, res) => {
         ...(enabled !== undefined && { enabled }),
         updatedAt: new Date(),
       })
-      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.session.userId)))
+      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.user!.id)))
       .returning();
-    if (!row) return res.status(404).json({ error: 'Not found' });
+    if (!row) return res.status(404).json({ error: 'Workflow not found' });
     res.json(row);
-  } catch (err: any) {
-    logger.error('[CustomWorkflow] Error updating:', err);
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    logger.error('[CustomWorkflow] Error updating:', error);
+    res.status(500).json({ error: 'Failed to update custom workflow' });
   }
 });
 
-// DELETE /api/custom-workflows/:id
-router.delete('/:id', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    await db.delete(customWorkflows).where(
-      and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.session.userId))
-    );
+    const [deleted] = await db.delete(customWorkflows)
+      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.user!.id)))
+      .returning();
+    if (!deleted) return res.status(404).json({ error: 'Workflow not found' });
     res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    logger.error('[CustomWorkflow] Error deleting:', error);
+    res.status(500).json({ error: 'Failed to delete custom workflow' });
   }
 });
 
-// POST /api/custom-workflows/:id/enable
-router.post('/:id/enable', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
+router.post('/:id/enable', requireAuth, async (req, res) => {
   try {
     const [row] = await db
       .update(customWorkflows)
       .set({ enabled: true, updatedAt: new Date() })
-      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.session.userId)))
+      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.user!.id)))
       .returning();
-    if (!row) return res.status(404).json({ error: 'Not found' });
+    if (!row) return res.status(404).json({ error: 'Workflow not found' });
     res.json(row);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    logger.error('[CustomWorkflow] Error enabling:', error);
+    res.status(500).json({ error: 'Failed to enable workflow' });
   }
 });
 
-// POST /api/custom-workflows/:id/disable
-router.post('/:id/disable', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
+router.post('/:id/disable', requireAuth, async (req, res) => {
   try {
     const [row] = await db
       .update(customWorkflows)
       .set({ enabled: false, updatedAt: new Date() })
-      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.session.userId)))
+      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.user!.id)))
       .returning();
-    if (!row) return res.status(404).json({ error: 'Not found' });
+    if (!row) return res.status(404).json({ error: 'Workflow not found' });
     res.json(row);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    logger.error('[CustomWorkflow] Error disabling:', error);
+    res.status(500).json({ error: 'Failed to disable workflow' });
   }
 });
 
-// POST /api/custom-workflows/:id/test — manually trigger a custom workflow
-router.post('/:id/test', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
+router.post('/:id/test', requireAuth, async (req, res) => {
   try {
+    const userId = req.user!.id;
     const [workflow] = await db
       .select()
       .from(customWorkflows)
-      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.session.userId)))
+      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, userId)))
       .limit(1);
 
-    if (!workflow) return res.status(404).json({ error: 'Not found' });
+    if (!workflow) return res.status(404).json({ error: 'Workflow not found' });
 
     const actionsRun: string[] = [];
-    const actions = workflow.actions as Array<{ type: string; config: Record<string, any> }>;
+    const actions = workflow.actions as Array<{ type: string; config: Record<string, unknown> }>;
 
     for (const action of actions) {
       try {
         switch (action.type) {
           case 'push_notification':
             await notificationService.send({
-              userId: req.session.userId,
+              userId,
               type: 'info',
-              title: action.config.title || 'Custom Workflow Triggered',
-              message: action.config.message || `Workflow "${workflow.name}" executed successfully.`,
+              title: String(action.config.title || 'Custom Workflow Triggered'),
+              message: String(action.config.message || `Workflow "${workflow.name}" executed successfully.`),
               link: '/workflow-automations',
             });
             actionsRun.push('Push notification sent');
             break;
           case 'log_note':
-            actionsRun.push(`Note logged: ${action.config.note || '(empty)'}`);
+            actionsRun.push(`Note logged: ${String(action.config.note || '(empty)')}`);
             break;
           case 'email_self':
-            actionsRun.push(`Email queued: "${action.config.subject || 'No subject'}"`);
+            actionsRun.push(`Email queued: "${String(action.config.subject || 'No subject')}"`);
             break;
           case 'social_post':
-            actionsRun.push(`Social post queued for ${action.config.platform || 'all platforms'}`);
+            actionsRun.push(`Social post queued for ${String(action.config.platform || 'all platforms')}`);
             break;
           case 'webhook':
-            if (action.config.url) {
+            if (action.config.url && typeof action.config.url === 'string') {
               try {
                 await fetch(action.config.url, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    ...(action.config.secret ? { Authorization: action.config.secret } : {}),
+                    ...(action.config.secret ? { Authorization: String(action.config.secret) } : {}),
                   },
                   body: JSON.stringify({
                     workflow: workflow.name,
@@ -257,21 +266,21 @@ router.post('/:id/test', async (req, res) => {
             }
             break;
         }
-      } catch (err: any) {
-        actionsRun.push(`Action failed: ${action.type} — ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        actionsRun.push(`Action failed: ${action.type} — ${msg}`);
       }
     }
 
-    // Increment run count
     await db
       .update(customWorkflows)
       .set({ runCount: (workflow.runCount ?? 0) + 1, lastRunAt: new Date(), updatedAt: new Date() })
       .where(eq(customWorkflows.id, workflow.id));
 
     res.json({ success: true, actionsRun });
-  } catch (err: any) {
-    logger.error('[CustomWorkflow] Error testing:', err);
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    logger.error('[CustomWorkflow] Error testing:', error);
+    res.status(500).json({ error: 'Failed to test workflow' });
   }
 });
 

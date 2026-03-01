@@ -160,7 +160,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
     }
 
     const { category = 'files', fileId } = req.body;
-    const userId = (req as any).user?.id || req.session?.userId;
+    const userId = req.user!.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -219,7 +219,7 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
     }
 
     const { chunkIndex, totalChunks, fileId, fileName, fileSize, mimeType, category = 'files' } = req.body;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     if (!fileId || !/^[a-zA-Z0-9_-]+$/.test(fileId)) {
       return res.status(400).json({ error: 'Invalid fileId: must contain only alphanumeric characters, hyphens, and underscores' });
@@ -333,7 +333,7 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
 router.delete('/upload/chunk/:fileId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId } = req.params;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     const chunkInfo = chunkUploads.get(fileId);
     if (chunkInfo && chunkInfo.userId !== userId) {
@@ -449,7 +449,7 @@ router.get('/public/*key', async (req: Request, res: Response) => {
 router.delete('/file/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const { permanent } = req.query;
 
     if (!key.includes(`users/${userId}/`)) {
@@ -502,7 +502,7 @@ router.delete('/file/*key', requireAuth, async (req: Request, res: Response) => 
 router.post('/restore/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     // Find the soft-deleted file in database
     const [deletedFile] = await db.select()
@@ -556,8 +556,7 @@ router.post('/restore/*key', requireAuth, async (req: Request, res: Response) =>
 
 router.get('/quota', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
-    
+    const _userId = req.user!.id;
     const userTier = 'free';
     const quotaLimits: Record<string, number> = {
       free: 5 * 1024 * 1024 * 1024,
@@ -596,7 +595,7 @@ router.get('/quota', requireAuth, async (req: Request, res: Response) => {
 router.post('/rename', requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId, newName } = req.body;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     if (!fileId || !newName) {
       return res.status(400).json({ error: 'fileId and newName are required' });
@@ -622,7 +621,7 @@ router.post('/rename', requireAuth, async (req: Request, res: Response) => {
 router.post('/move', requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId, folderId } = req.body;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     if (!fileId || !folderId) {
       return res.status(400).json({ error: 'fileId and folderId are required' });
@@ -648,7 +647,7 @@ router.post('/move', requireAuth, async (req: Request, res: Response) => {
 router.post('/duplicate', requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId } = req.body;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     if (!fileId) {
       return res.status(400).json({ error: 'fileId is required' });
@@ -769,7 +768,7 @@ router.post('/hybrid/upload', requireAuth, upload.single('file'), async (req: Re
     }
 
     const { folder, forceTier, isPublic } = req.body;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     const result = await hybridStorageService.upload(
       userId,
@@ -810,7 +809,7 @@ router.post('/hybrid/upload', requireAuth, upload.single('file'), async (req: Re
 router.get('/hybrid/file/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     
     const buffer = await hybridStorageService.read(userId, key);
     const metadata = hybridStorageService.getMetadata(key);
@@ -841,7 +840,7 @@ router.get('/hybrid/file/*key', requireAuth, async (req: Request, res: Response)
 router.delete('/hybrid/file/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     const success = await hybridStorageService.delete(userId, key);
 
@@ -861,7 +860,7 @@ router.delete('/hybrid/file/*key', requireAuth, async (req: Request, res: Respon
 
 router.get('/hybrid/list', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const { tier, folder, includePublic } = req.query;
 
     const files = hybridStorageService.listFiles(userId, {
@@ -896,7 +895,7 @@ router.get('/hybrid/list', requireAuth, async (req: Request, res: Response) => {
 
 router.get('/hybrid/analytics', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const analytics = await hybridStorageService.getAnalytics(userId);
 
     res.json(analytics);
@@ -910,7 +909,7 @@ router.get('/hybrid/analytics', requireAuth, async (req: Request, res: Response)
 
 router.get('/hybrid/tier-breakdown', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const breakdown = await hybridStorageService.getTierBreakdown(userId);
 
     res.json(breakdown);
@@ -924,7 +923,7 @@ router.get('/hybrid/tier-breakdown', requireAuth, async (req: Request, res: Resp
 
 router.get('/hybrid/deduplication', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const stats = await hybridStorageService.getDeduplicationStats(userId);
 
     res.json(stats);
@@ -939,7 +938,7 @@ router.get('/hybrid/deduplication', requireAuth, async (req: Request, res: Respo
 router.post('/hybrid/tier-down/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     const metadata = hybridStorageService.getMetadata(key);
     if (!metadata || metadata.userId !== userId) {
@@ -985,7 +984,7 @@ router.post('/hybrid/auto-tier', requireAuth, async (req: Request, res: Response
 router.get('/hybrid/metadata/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     const metadata = hybridStorageService.getMetadata(key);
     if (!metadata) {

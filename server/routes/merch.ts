@@ -3,73 +3,94 @@ import { db } from '../db';
 import { merchItems, merchOrders } from '@shared/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
+import { requireAuth } from '../middleware/auth.js';
+import { z } from 'zod';
 
 const router = Router();
 
-// GET /api/merch - list user's merch items
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+const VALID_CATEGORIES = ['clothing', 'accessories', 'music', 'digital', 'art', 'other'] as const;
+const VALID_ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'] as const;
 
+const createMerchSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  price: z.number().min(0).max(1_000_000),
+  salePrice: z.number().min(0).max(1_000_000).nullable().optional(),
+  imageUrl: z.string().url().max(2048).optional().or(z.literal('')),
+  category: z.enum(VALID_CATEGORIES).optional().default('clothing'),
+  variants: z.array(z.record(z.string(), z.unknown())).optional().default([]),
+  inventory: z.number().int().min(0).optional().default(0),
+  sku: z.string().max(100).optional(),
+  isActive: z.boolean().optional().default(true),
+  isDigital: z.boolean().optional().default(false),
+  downloadUrl: z.string().url().max(2048).optional().or(z.literal('')).nullable(),
+});
+
+const updateMerchSchema = createMerchSchema.partial();
+
+const updateOrderSchema = z.object({
+  status: z.enum(VALID_ORDER_STATUSES).optional(),
+  trackingNumber: z.string().max(200).nullable().optional(),
+});
+
+// GET /api/merch - list user's merch items
+router.get('/', requireAuth, async (req: Request, res: Response) => {
+  try {
     const items = await db.select()
       .from(merchItems)
       .where(eq(merchItems.userId, req.user!.id))
       .orderBy(desc(merchItems.createdAt));
 
     res.json(items);
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error fetching merch items:', error);
     res.status(500).json({ error: 'Failed to fetch merch items' });
   }
 });
 
 // POST /api/merch - create merch item
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    const parsed = createMerchSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
     }
 
-    const { name, description, price, salePrice, imageUrl, category, variants, inventory, sku, isActive, isDigital, downloadUrl } = req.body;
-
-    if (!name || price === undefined) {
-      return res.status(400).json({ error: 'Name and price are required' });
-    }
-
+    const data = parsed.data;
     const [item] = await db.insert(merchItems).values({
       userId: req.user!.id,
-      name,
-      description,
-      price: String(price),
-      salePrice: salePrice ? String(salePrice) : null,
-      imageUrl,
-      category: category || 'clothing',
-      variants: variants || [],
-      inventory: inventory || 0,
-      sku,
-      isActive: isActive !== undefined ? isActive : true,
-      isDigital: isDigital !== undefined ? isDigital : false,
-      downloadUrl,
+      name: data.name,
+      description: data.description,
+      price: String(data.price),
+      salePrice: data.salePrice != null ? String(data.salePrice) : null,
+      imageUrl: data.imageUrl || null,
+      category: data.category,
+      variants: data.variants,
+      inventory: data.inventory,
+      sku: data.sku,
+      isActive: data.isActive,
+      isDigital: data.isDigital,
+      downloadUrl: data.downloadUrl || null,
       soldCount: 0,
     }).returning();
 
     res.status(201).json(item);
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error creating merch item:', error);
     res.status(500).json({ error: 'Failed to create merch item' });
   }
 });
 
-// PUT /api/merch/:id - update merch item
-router.put('/:id', async (req: Request, res: Response) => {
+// PUT /api/merch/:id - update merch item (explicit field allowlist - no body spread)
+router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    const { id } = req.params;
+
+    const parsed = updateMerchSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
     }
 
-    const { id } = req.params;
     const existing = await db.select().from(merchItems)
       .where(and(eq(merchItems.id, id), eq(merchItems.userId, req.user!.id)))
       .limit(1);
@@ -78,35 +99,40 @@ router.put('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Merch item not found' });
     }
 
-    const updates = { ...req.body };
-    // Handle numeric/string conversion for price fields if they are in the body
-    if (updates.price !== undefined) updates.price = String(updates.price);
-    if (updates.salePrice !== undefined) updates.salePrice = updates.salePrice ? String(updates.salePrice) : null;
-    
-    // Remove fields that shouldn't be updated directly via this endpoint if any
-    delete updates.id;
-    delete updates.userId;
-    delete updates.createdAt;
+    const data = parsed.data;
+    const allowedUpdates: Record<string, unknown> = {};
+    if (data.name !== undefined) allowedUpdates.name = data.name;
+    if (data.description !== undefined) allowedUpdates.description = data.description;
+    if (data.price !== undefined) allowedUpdates.price = String(data.price);
+    if (data.salePrice !== undefined) allowedUpdates.salePrice = data.salePrice != null ? String(data.salePrice) : null;
+    if (data.imageUrl !== undefined) allowedUpdates.imageUrl = data.imageUrl || null;
+    if (data.category !== undefined) allowedUpdates.category = data.category;
+    if (data.variants !== undefined) allowedUpdates.variants = data.variants;
+    if (data.inventory !== undefined) allowedUpdates.inventory = data.inventory;
+    if (data.sku !== undefined) allowedUpdates.sku = data.sku;
+    if (data.isActive !== undefined) allowedUpdates.isActive = data.isActive;
+    if (data.isDigital !== undefined) allowedUpdates.isDigital = data.isDigital;
+    if (data.downloadUrl !== undefined) allowedUpdates.downloadUrl = data.downloadUrl || null;
+
+    if (Object.keys(allowedUpdates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
 
     const [updated] = await db.update(merchItems)
-      .set(updates)
+      .set(allowedUpdates)
       .where(and(eq(merchItems.id, id), eq(merchItems.userId, req.user!.id)))
       .returning();
 
     res.json(updated);
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error updating merch item:', error);
     res.status(500).json({ error: 'Failed to update merch item' });
   }
 });
 
 // DELETE /api/merch/:id - delete item
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     const { id } = req.params;
     const existing = await db.select().from(merchItems)
       .where(and(eq(merchItems.id, id), eq(merchItems.userId, req.user!.id)))
@@ -120,40 +146,36 @@ router.delete('/:id', async (req: Request, res: Response) => {
       .where(and(eq(merchItems.id, id), eq(merchItems.userId, req.user!.id)));
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error deleting merch item:', error);
     res.status(500).json({ error: 'Failed to delete merch item' });
   }
 });
 
 // GET /api/merch/orders - list orders
-router.get('/orders', async (req: Request, res: Response) => {
+router.get('/orders', requireAuth, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     const orders = await db.select()
       .from(merchOrders)
       .where(eq(merchOrders.userId, req.user!.id))
       .orderBy(desc(merchOrders.createdAt));
 
     res.json(orders);
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error fetching merch orders:', error);
     res.status(500).json({ error: 'Failed to fetch merch orders' });
   }
 });
 
 // PUT /api/merch/orders/:id - update order status
-router.put('/orders/:id', async (req: Request, res: Response) => {
+router.put('/orders/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     const { id } = req.params;
-    const { status, trackingNumber } = req.body;
+
+    const parsed = updateOrderSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+    }
 
     const existing = await db.select().from(merchOrders)
       .where(and(eq(merchOrders.id, id), eq(merchOrders.userId, req.user!.id)))
@@ -163,66 +185,59 @@ router.put('/orders/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
+    const { status, trackingNumber } = parsed.data;
     const [updated] = await db.update(merchOrders)
-      .set({ 
-        status: status || existing[0].status,
-        trackingNumber: trackingNumber !== undefined ? trackingNumber : existing[0].trackingNumber
+      .set({
+        status: status ?? existing[0].status,
+        trackingNumber: trackingNumber !== undefined ? trackingNumber : existing[0].trackingNumber,
       })
       .where(and(eq(merchOrders.id, id), eq(merchOrders.userId, req.user!.id)))
       .returning();
 
     res.json(updated);
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error updating merch order:', error);
     res.status(500).json({ error: 'Failed to update merch order' });
   }
 });
 
 // GET /api/merch/stats - revenue, orders, bestsellers, inventory alerts
-router.get('/stats', async (req: Request, res: Response) => {
+router.get('/stats', requireAuth, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     const userId = req.user!.id;
 
-    // Total Revenue & Total Orders
     const [orderStats] = await db.select({
       totalRevenue: sql<number>`COALESCE(SUM(${merchOrders.total}), 0)`,
-      totalOrders: sql<number>`COUNT(*)`
+      totalOrders: sql<number>`COUNT(*)`,
     })
-    .from(merchOrders)
-    .where(eq(merchOrders.userId, userId));
+      .from(merchOrders)
+      .where(eq(merchOrders.userId, userId));
 
-    // Orders this month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
     const [monthlyOrders] = await db.select({
-      count: sql<number>`COUNT(*)`
+      count: sql<number>`COUNT(*)`,
     })
-    .from(merchOrders)
-    .where(and(
-      eq(merchOrders.userId, userId),
-      sql`${merchOrders.createdAt} >= ${startOfMonth}`
-    ));
+      .from(merchOrders)
+      .where(and(
+        eq(merchOrders.userId, userId),
+        sql`${merchOrders.createdAt} >= ${startOfMonth}`,
+      ));
 
-    // Best sellers
     const topItems = await db.select()
       .from(merchItems)
       .where(eq(merchItems.userId, userId))
       .orderBy(desc(merchItems.soldCount))
       .limit(5);
 
-    // Low inventory alerts
     const lowInventoryItems = await db.select()
       .from(merchItems)
       .where(and(
         eq(merchItems.userId, userId),
         sql`${merchItems.inventory} < 5`,
-        eq(merchItems.isDigital, false)
+        eq(merchItems.isDigital, false),
       ));
 
     res.json({
@@ -231,10 +246,9 @@ router.get('/stats', async (req: Request, res: Response) => {
       ordersThisMonth: Number(monthlyOrders?.count || 0),
       bestSellers: topItems,
       inventoryAlerts: lowInventoryItems.length,
-      lowInventoryItems
+      lowInventoryItems,
     });
-
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error fetching merch stats:', error);
     res.status(500).json({ error: 'Failed to fetch merch stats' });
   }

@@ -4,8 +4,25 @@ import { db } from '../db';
 import { publishingRights } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
+import { logger } from '../logger.js';
 
 const router = Router();
+
+const insertPublishingSchema = z.object({
+  trackTitle: z.string().min(1).max(500),
+  iswc: z.string().max(20).optional(),
+  isrc: z.string().max(20).optional(),
+  upc: z.string().max(20).optional(),
+  coWriters: z.unknown().optional(),
+  publisherName: z.string().max(500).optional(),
+  proName: z.string().max(200).optional(),
+  proRegistrationId: z.string().max(200).optional(),
+  publishingSplit: z.string().max(50).optional(),
+  writerSplit: z.string().max(50).optional(),
+  copyrightYear: z.number().int().min(1800).max(new Date().getFullYear() + 1).optional(),
+  status: z.enum(['pending', 'confirmed', 'active', 'inactive']).optional(),
+  notes: z.string().max(5000).optional(),
+});
 
 // GET /api/publishing - list registered works
 router.get('/', requireAuth, async (req, res) => {
@@ -18,31 +35,20 @@ router.get('/', requireAuth, async (req, res) => {
       .orderBy(desc(publishingRights.registeredAt));
     res.json(works);
   } catch (error) {
+    logger.error('[Publishing] Failed to fetch registered works:', error);
     res.status(500).json({ error: 'Failed to fetch registered works' });
   }
-});
-
-const insertPublishingSchema = z.object({
-  trackTitle: z.string().min(1),
-  iswc: z.string().optional(),
-  isrc: z.string().optional(),
-  upc: z.string().optional(),
-  coWriters: z.any().optional(),
-  publisherName: z.string().optional(),
-  proName: z.string().optional(),
-  proRegistrationId: z.string().optional(),
-  publishingSplit: z.string().optional(),
-  writerSplit: z.string().optional(),
-  copyrightYear: z.number().optional(),
-  status: z.string().optional(),
-  notes: z.string().optional(),
 });
 
 // POST /api/publishing - register new work
 router.post('/', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const data = insertPublishingSchema.parse(req.body);
+    const parsed = insertPublishingSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+    }
+    const data = parsed.data;
     const [work] = await db
       .insert(publishingRights)
       .values({
@@ -54,9 +60,7 @@ router.post('/', requireAuth, async (req, res) => {
       .returning();
     res.json(work);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
-    }
+    logger.error('[Publishing] Failed to register work:', error);
     res.status(500).json({ error: 'Failed to register work' });
   }
 });
@@ -66,15 +70,19 @@ router.put('/:id', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
-    const data = insertPublishingSchema.partial().parse(req.body);
+    const parsed = insertPublishingSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+    }
     const [updated] = await db
       .update(publishingRights)
-      .set(data)
+      .set(parsed.data)
       .where(and(eq(publishingRights.id, id), eq(publishingRights.userId, userId)))
       .returning();
     if (!updated) return res.status(404).json({ error: 'Work not found' });
     res.json(updated);
   } catch (error) {
+    logger.error('[Publishing] Failed to update work:', error);
     res.status(500).json({ error: 'Failed to update work' });
   }
 });
@@ -91,6 +99,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     if (!deleted) return res.status(404).json({ error: 'Work not found' });
     res.json({ success: true });
   } catch (error) {
+    logger.error('[Publishing] Failed to delete record:', error);
     res.status(500).json({ error: 'Failed to delete record' });
   }
 });
@@ -103,7 +112,7 @@ router.get('/stats', requireAuth, async (req, res) => {
       .select()
       .from(publishingRights)
       .where(eq(publishingRights.userId, userId));
-    
+
     const stats = {
       totalWorks: works.length,
       pendingCount: works.filter(w => w.status === 'pending').length,
@@ -111,6 +120,7 @@ router.get('/stats', requireAuth, async (req, res) => {
     };
     res.json(stats);
   } catch (error) {
+    logger.error('[Publishing] Failed to fetch publishing stats:', error);
     res.status(500).json({ error: 'Failed to fetch publishing stats' });
   }
 });

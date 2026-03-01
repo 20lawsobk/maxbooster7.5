@@ -1,84 +1,13 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { playlistPitches, insertPlaylistPitchSchema } from '@shared/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { and, eq, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { requireAuth } from '../middleware/auth.js';
+import { logger } from '../logger.js';
 
 const router = Router();
 
-// GET /api/playlist-pitching - list user's submissions with status
-router.get('/', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
-  
-  const pitches = await db.select()
-    .from(playlistPitches)
-    .where(eq(playlistPitches.userId, req.session.userId))
-    .orderBy(desc(playlistPitches.createdAt));
-    
-  res.json(pitches);
-});
-
-// POST /api/playlist-pitching - create new pitch
-router.post('/', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
-  
-  try {
-    const validatedData = insertPlaylistPitchSchema.parse(req.body);
-    const [newPitch] = await db.insert(playlistPitches)
-      .values({
-        ...validatedData,
-        userId: req.session.userId,
-      })
-      .returning();
-      
-    res.json(newPitch);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
-    }
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-// PUT /api/playlist-pitching/:id - update pitch
-router.put('/:id', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
-  
-  try {
-    const [updatedPitch] = await db.update(playlistPitches)
-      .set({
-        ...req.body,
-        updatedAt: new Date(),
-      })
-      .where(and(
-        eq(playlistPitches.id, req.params.id),
-        eq(playlistPitches.userId, req.session.userId)
-      ))
-      .returning();
-      
-    if (!updatedPitch) return res.status(404).send('Pitch not found');
-    res.json(updatedPitch);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-// DELETE /api/playlist-pitching/:id - delete pitch
-router.delete('/:id', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
-  
-  const [deletedPitch] = await db.delete(playlistPitches)
-    .where(and(
-      eq(playlistPitches.id, req.params.id),
-      eq(playlistPitches.userId, req.session.userId)
-    ))
-    .returning();
-    
-  if (!deletedPitch) return res.status(404).send('Pitch not found');
-  res.json({ success: true });
-});
-
-// GET /api/playlist-pitching/curators - list known playlist curators
 const CURATORS = [
   { id: '1', name: 'Indie Mono', genre: 'Indie, Pop', followers: '1.2M', submissionUrl: 'https://indiemono.com/submit-music/', email: 'submissions@indiemono.com' },
   { id: '2', name: 'Soundplate', genre: 'Electronic, House', followers: '500K', submissionUrl: 'https://soundplate.com/submit-music/', email: 'info@soundplate.com' },
@@ -102,42 +31,100 @@ const CURATORS = [
   { id: '20', name: 'Eton Messy', genre: 'House, Electronic', followers: '500K', submissionUrl: 'https://etonmessy.com/submit', email: 'info@etonmessy.com' },
 ];
 
-router.get('/curators', (req, res) => {
+router.get('/curators', (_req, res) => {
   res.json(CURATORS);
 });
 
-// GET /api/playlist-pitching/stats - accepted count, pending, rejected, conversion rate
-router.get('/stats', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
-  
-  const stats = await db.select({
-    status: playlistPitches.status,
-    count: sql<number>`count(*)`,
-  })
-  .from(playlistPitches)
-  .where(eq(playlistPitches.userId, req.session.userId))
-  .groupBy(playlistPitches.status);
-  
-  const result = {
-    total: 0,
-    accepted: 0,
-    pending: 0,
-    rejected: 0,
-    conversionRate: 0,
-  };
-  
-  stats.forEach(s => {
-    result.total += Number(s.count);
-    if (s.status === 'accepted') result.accepted = Number(s.count);
-    if (s.status === 'submitted' || s.status === 'under_review') result.pending += Number(s.count);
-    if (s.status === 'rejected') result.rejected = Number(s.count);
-  });
-  
-  if (result.total > 0) {
-    result.conversionRate = (result.accepted / result.total) * 100;
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const pitches = await db.select()
+      .from(playlistPitches)
+      .where(eq(playlistPitches.userId, req.user!.id))
+      .orderBy(desc(playlistPitches.createdAt));
+    res.json(pitches);
+  } catch (error) {
+    logger.error('[PlaylistPitching] Failed to list pitches:', error);
+    res.status(500).json({ error: 'Failed to fetch playlist pitches' });
   }
-  
-  res.json(result);
+});
+
+router.post('/', requireAuth, async (req, res) => {
+  try {
+    const validatedData = insertPlaylistPitchSchema.parse(req.body);
+    const [newPitch] = await db.insert(playlistPitches)
+      .values({ ...validatedData, userId: req.user!.id })
+      .returning();
+    res.status(201).json(newPitch);
+  } catch (error) {
+    logger.error('[PlaylistPitching] Failed to create pitch:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    }
+    res.status(500).json({ error: 'Failed to create playlist pitch' });
+  }
+});
+
+router.put('/:id', requireAuth, async (req, res) => {
+  try {
+    const validatedData = insertPlaylistPitchSchema.partial().parse(req.body);
+    const [updatedPitch] = await db.update(playlistPitches)
+      .set({ ...validatedData, updatedAt: new Date() })
+      .where(and(eq(playlistPitches.id, req.params.id), eq(playlistPitches.userId, req.user!.id)))
+      .returning();
+
+    if (!updatedPitch) return res.status(404).json({ error: 'Pitch not found' });
+    res.json(updatedPitch);
+  } catch (error) {
+    logger.error('[PlaylistPitching] Failed to update pitch:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    }
+    res.status(500).json({ error: 'Failed to update playlist pitch' });
+  }
+});
+
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const [deletedPitch] = await db.delete(playlistPitches)
+      .where(and(eq(playlistPitches.id, req.params.id), eq(playlistPitches.userId, req.user!.id)))
+      .returning();
+
+    if (!deletedPitch) return res.status(404).json({ error: 'Pitch not found' });
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('[PlaylistPitching] Failed to delete pitch:', error);
+    res.status(500).json({ error: 'Failed to delete playlist pitch' });
+  }
+});
+
+router.get('/stats', requireAuth, async (req, res) => {
+  try {
+    const stats = await db.select({
+      status: playlistPitches.status,
+      count: sql<number>`count(*)`,
+    })
+      .from(playlistPitches)
+      .where(eq(playlistPitches.userId, req.user!.id))
+      .groupBy(playlistPitches.status);
+
+    const result = { total: 0, accepted: 0, pending: 0, rejected: 0, conversionRate: 0 };
+
+    stats.forEach(s => {
+      result.total += Number(s.count);
+      if (s.status === 'accepted') result.accepted = Number(s.count);
+      if (s.status === 'submitted' || s.status === 'under_review') result.pending += Number(s.count);
+      if (s.status === 'rejected') result.rejected = Number(s.count);
+    });
+
+    if (result.total > 0) {
+      result.conversionRate = (result.accepted / result.total) * 100;
+    }
+
+    res.json(result);
+  } catch (error) {
+    logger.error('[PlaylistPitching] Failed to fetch stats:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
 });
 
 export default router;

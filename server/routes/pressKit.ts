@@ -3,35 +3,33 @@ import { db } from '../db';
 import { pressKits, insertPressKitSchema } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
-import { storageService } from '../services/storageService';
-import { randomUUID } from 'crypto';
+import { logger } from '../logger.js';
+import { z } from 'zod';
 
 const router = Router();
 
-// GET /api/press-kit - get user's press kit
+const publishSchema = z.object({
+  slug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens').optional(),
+  isPublic: z.boolean().optional(),
+});
+
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userId!;
-    const [pressKit] = await db.select().from(pressKits).where(eq(pressKits.userId, userId)).limit(1);
-    
-    if (!pressKit) {
-      return res.json(null);
-    }
-    
-    res.json(pressKit);
+    const [pressKit] = await db.select().from(pressKits).where(eq(pressKits.userId, req.user!.id)).limit(1);
+    res.json(pressKit ?? null);
   } catch (error) {
+    logger.error('[PressKit] Failed to fetch press kit:', error);
     res.status(500).json({ error: 'Failed to fetch press kit' });
   }
 });
 
-// PUT /api/press-kit - create/update press kit (upsert)
 router.put('/', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const validatedData = insertPressKitSchema.parse({ ...req.body, userId });
-    
+
     const [existing] = await db.select().from(pressKits).where(eq(pressKits.userId, userId)).limit(1);
-    
+
     let result;
     if (existing) {
       [result] = await db.update(pressKits)
@@ -41,77 +39,88 @@ router.put('/', requireAuth, async (req, res) => {
     } else {
       [result] = await db.insert(pressKits).values(validatedData).returning();
     }
-    
+
     res.json(result);
   } catch (error) {
+    logger.error('[PressKit] Failed to update press kit:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    }
     res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid data' });
   }
 });
 
-// POST /api/press-kit/photo - upload photo
-router.post('/photo', requireAuth, async (req, res) => {
-  // Note: Actual file handling usually done via multer in a separate middleware or route like /api/storage/upload
-  // This endpoint might just be for updating the photos array in the press kit
+router.post('/photo', requireAuth, async (_req, res) => {
   res.status(501).json({ error: 'Use /api/storage/upload for direct uploads' });
 });
 
-// DELETE /api/press-kit/photo/:index - remove photo
 router.delete('/photo/:index', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const index = parseInt(req.params.index);
-    
+
+    if (isNaN(index) || index < 0) {
+      return res.status(400).json({ error: 'Invalid index' });
+    }
+
     const [pressKit] = await db.select().from(pressKits).where(eq(pressKits.userId, userId)).limit(1);
     if (!pressKit) return res.status(404).json({ error: 'Press kit not found' });
-    
-    const photos = (pressKit.photos as any[]) || [];
-    if (index < 0 || index >= photos.length) return res.status(400).json({ error: 'Invalid index' });
-    
+
+    const photos = (pressKit.photos as unknown[]) || [];
+    if (index >= photos.length) return res.status(400).json({ error: 'Invalid photo index' });
+
     const newPhotos = [...photos];
     newPhotos.splice(index, 1);
-    
+
     const [updated] = await db.update(pressKits)
       .set({ photos: newPhotos, updatedAt: new Date() })
       .where(eq(pressKits.id, pressKit.id))
       .returning();
-      
+
     res.json(updated);
   } catch (error) {
+    logger.error('[PressKit] Failed to delete photo:', error);
     res.status(500).json({ error: 'Failed to delete photo' });
   }
 });
 
-// GET /api/press-kit/public/:slug - public EPK view (no auth)
 router.get('/public/:slug', async (req, res) => {
   try {
     const [pressKit] = await db.select().from(pressKits).where(eq(pressKits.slug, req.params.slug)).limit(1);
-    
+
     if (!pressKit || !pressKit.isPublic) {
       return res.status(404).json({ error: 'Press kit not found or private' });
     }
-    
+
     res.json(pressKit);
   } catch (error) {
+    logger.error('[PressKit] Failed to fetch public press kit:', error);
     res.status(500).json({ error: 'Failed to fetch public press kit' });
   }
 });
 
-// POST /api/press-kit/publish - generate public link with slug
 router.post('/publish', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userId!;
-    const { slug, isPublic } = req.body;
-    
+    const userId = req.user!.id;
+
+    const parsed = publishSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+    }
+
+    const { slug, isPublic } = parsed.data;
+
     const [existing] = await db.select().from(pressKits).where(eq(pressKits.userId, userId)).limit(1);
     if (!existing) return res.status(404).json({ error: 'Press kit not found' });
-    
+
     const [updated] = await db.update(pressKits)
       .set({ slug, isPublic, updatedAt: new Date() })
       .where(eq(pressKits.id, existing.id))
       .returning();
-      
+
     res.json(updated);
   } catch (error) {
+    logger.error('[PressKit] Failed to publish press kit:', error);
     res.status(500).json({ error: 'Failed to publish press kit' });
   }
 });

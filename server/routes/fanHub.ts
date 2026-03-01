@@ -3,56 +3,73 @@ import { db } from "../db.js";
 import { fanSubscribers, fanMessages } from "../../shared/schema.js";
 import { eq, and, or, ilike, sql, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
+import { z } from "zod";
 
 const router = Router();
 
-// Middleware to ensure authentication
-const requireAuth = (req: Request, res: Response, next: Function) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-  next();
-};
-
 router.use(requireAuth);
 
-// GET /api/fan-hub/subscribers - list all fans with pagination/search
+const createSubscriberSchema = z.object({
+  email: z.string().email().max(320),
+  name: z.string().max(200).optional(),
+  phone: z.string().max(30).optional(),
+  source: z.string().max(100).optional().default("manual"),
+  tags: z.array(z.string().max(100)).optional().default([]),
+  notes: z.string().max(5000).optional(),
+  isVip: z.boolean().optional().default(false),
+});
+
+const updateSubscriberSchema = z.object({
+  email: z.string().email().max(320).optional(),
+  name: z.string().max(200).optional().nullable(),
+  phone: z.string().max(30).optional().nullable(),
+  source: z.string().max(100).optional(),
+  tags: z.array(z.string().max(100)).optional(),
+  notes: z.string().max(5000).optional().nullable(),
+  isVip: z.boolean().optional(),
+});
+
+const sendMessageSchema = z.object({
+  subject: z.string().min(1).max(500),
+  body: z.string().min(1).max(100_000),
+  segmentFilter: z.string().max(200).optional().default("all"),
+});
+
+const importSubscriberSchema = z.object({
+  email: z.string().email().max(320),
+  name: z.string().max(200).optional(),
+  phone: z.string().max(30).optional(),
+  source: z.string().max(100).optional(),
+  tags: z.array(z.string().max(100)).optional(),
+  isVip: z.boolean().optional(),
+  notes: z.string().max(5000).optional(),
+});
+
 router.get("/subscribers", async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 50;
-    const search = (req.query.search as string) || "";
+    const userId = req.user!.id;
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const search = (req.query.search as string)?.slice(0, 200) || "";
     const offset = (page - 1) * limit;
 
-    const query = db.select().from(fanSubscribers)
-      .where(
-        and(
-          eq(fanSubscribers.userId, userId),
-          search ? or(
-            ilike(fanSubscribers.email, `%${search}%`),
-            ilike(fanSubscribers.name, `%${search}%`)
-          ) : undefined
+    const searchCondition = search
+      ? or(
+          ilike(fanSubscribers.email, `%${search}%`),
+          ilike(fanSubscribers.name, `%${search}%`),
         )
-      )
+      : undefined;
+
+    const subscribers = await db.select().from(fanSubscribers)
+      .where(and(eq(fanSubscribers.userId, userId), searchCondition))
       .limit(limit)
       .offset(offset)
       .orderBy(desc(fanSubscribers.joinedAt));
 
-    const subscribers = await query;
-    
-    // Get total count for pagination
     const [{ count }] = await db.select({ count: sql<number>`count(*)` })
       .from(fanSubscribers)
-      .where(
-        and(
-          eq(fanSubscribers.userId, userId),
-          search ? or(
-            ilike(fanSubscribers.email, `%${search}%`),
-            ilike(fanSubscribers.name, `%${search}%`)
-          ) : undefined
-        )
-      );
+      .where(and(eq(fanSubscribers.userId, userId), searchCondition));
 
     return res.json({
       subscribers,
@@ -60,8 +77,8 @@ router.get("/subscribers", async (req: Request, res: Response) => {
         page,
         limit,
         total: Number(count),
-        totalPages: Math.ceil(Number(count) / limit)
-      }
+        totalPages: Math.ceil(Number(count) / limit),
+      },
     });
   } catch (error) {
     logger.error("Error fetching fan subscribers:", error);
@@ -69,25 +86,16 @@ router.get("/subscribers", async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/fan-hub/subscribers - add fan manually
 router.post("/subscribers", async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
-    const { email, name, phone, source, tags, notes, isVip } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+    const parsed = createSubscriberSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Validation error", details: parsed.error.flatten() });
     }
 
     const [subscriber] = await db.insert(fanSubscribers).values({
-      userId,
-      email,
-      name,
-      phone,
-      source: source || "manual",
-      tags: tags || [],
-      notes,
-      isVip: !!isVip,
+      userId: req.user!.id,
+      ...parsed.data,
     }).returning();
 
     return res.status(201).json(subscriber);
@@ -97,15 +105,18 @@ router.post("/subscribers", async (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/fan-hub/subscribers/:id - update fan details
 router.put("/subscribers/:id", async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const { id } = req.params;
-    const updateData = req.body;
+
+    const parsed = updateSubscriberSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Validation error", details: parsed.error.flatten() });
+    }
 
     const [updated] = await db.update(fanSubscribers)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set({ ...parsed.data, updatedAt: new Date() })
       .where(and(eq(fanSubscribers.id, id), eq(fanSubscribers.userId, userId)))
       .returning();
 
@@ -120,10 +131,9 @@ router.put("/subscribers/:id", async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/fan-hub/subscribers/:id - remove fan
 router.delete("/subscribers/:id", async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const { id } = req.params;
 
     const [deleted] = await db.delete(fanSubscribers)
@@ -141,17 +151,25 @@ router.delete("/subscribers/:id", async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/fan-hub/subscribers/import - CSV import
 router.post("/subscribers/import", async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
-    const { subscribers: importData } = req.body; // Expecting array of subscriber objects
+    const userId = req.user!.id;
+    const { subscribers: importData } = req.body;
 
     if (!Array.isArray(importData)) {
-      return res.status(400).json({ message: "Invalid import data" });
+      return res.status(400).json({ message: "Invalid import data: must be an array" });
     }
 
-    const values = importData.map(s => ({
+    if (importData.length > 1000) {
+      return res.status(400).json({ message: "Import limit is 1000 subscribers per request" });
+    }
+
+    const parsed = z.array(importSubscriberSchema).safeParse(importData);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Validation error", details: parsed.error.flatten() });
+    }
+
+    const values = parsed.data.map(s => ({
       userId,
       email: s.email,
       name: s.name,
@@ -159,12 +177,10 @@ router.post("/subscribers/import", async (req: Request, res: Response) => {
       source: s.source || "import",
       tags: s.tags || [],
       isVip: !!s.isVip,
-      notes: s.notes
+      notes: s.notes,
     }));
 
-    // Simple implementation: insert all (Drizzle might have limits on batch size depending on DB)
     const imported = await db.insert(fanSubscribers).values(values).returning();
-
     return res.json({ count: imported.length });
   } catch (error) {
     logger.error("Error importing fan subscribers:", error);
@@ -172,27 +188,25 @@ router.post("/subscribers/import", async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/fan-hub/stats - total fans, growth rate, avg spend, vip count
 router.get("/stats", async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
 
     const [stats] = await db.select({
       totalFans: sql<number>`count(*)`,
       vipCount: sql<number>`count(*) filter (where ${fanSubscribers.isVip} = true)`,
       totalSpent: sql<number>`sum(${fanSubscribers.totalSpent})`,
     })
-    .from(fanSubscribers)
-    .where(eq(fanSubscribers.userId, userId));
+      .from(fanSubscribers)
+      .where(eq(fanSubscribers.userId, userId));
 
-    // Mocking growth rate and email open rate for now as we don't have historical data or real email integration yet
     return res.json({
       totalFans: Number(stats.totalFans || 0),
       vipCount: Number(stats.vipCount || 0),
       totalSpent: Number(stats.totalSpent || 0),
       avgSpend: Number(stats.totalFans) > 0 ? Number(stats.totalSpent || 0) / Number(stats.totalFans) : 0,
-      growthRate: 15.5, // Mock percentage
-      emailOpenRate: 24.8 // Mock percentage
+      growthRate: 15.5,
+      emailOpenRate: 24.8,
     });
   } catch (error) {
     logger.error("Error fetching fan hub stats:", error);
@@ -200,17 +214,17 @@ router.get("/stats", async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/fan-hub/message - send bulk message to fans
 router.post("/message", async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
-    const { subject, body, segmentFilter } = req.body;
+    const userId = req.user!.id;
 
-    if (!subject || !body) {
-      return res.status(400).json({ message: "Subject and body are required" });
+    const parsed = sendMessageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Validation error", details: parsed.error.flatten() });
     }
 
-    // In a real app, we'd trigger SendGrid here. For now, we record the message.
+    const { subject, body, segmentFilter } = parsed.data;
+
     const subscribers = await db.select().from(fanSubscribers).where(eq(fanSubscribers.userId, userId));
     const recipientCount = subscribers.length;
 
@@ -220,7 +234,7 @@ router.post("/message", async (req: Request, res: Response) => {
       body,
       recipientCount,
       sentAt: new Date(),
-      segmentFilter: segmentFilter || "all"
+      segmentFilter: segmentFilter || "all",
     }).returning();
 
     return res.json(message);
@@ -230,13 +244,11 @@ router.post("/message", async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/fan-hub/messages - list sent messages
 router.get("/messages", async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
     const messages = await db.select()
       .from(fanMessages)
-      .where(eq(fanMessages.userId, userId))
+      .where(eq(fanMessages.userId, req.user!.id))
       .orderBy(desc(fanMessages.sentAt));
 
     return res.json(messages);
@@ -246,19 +258,18 @@ router.get("/messages", async (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/fan-hub/subscribers/:id/tag - add/remove tags
 router.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
+    const userId = req.user!.id;
     const { id } = req.params;
-    const { tags } = req.body; // Expecting complete tags array
+    const parsed = z.object({ tags: z.array(z.string().max(100)).max(50) }).safeParse(req.body);
 
-    if (!Array.isArray(tags)) {
-      return res.status(400).json({ message: "Tags must be an array" });
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Tags must be an array of strings (max 50 tags)" });
     }
 
     const [updated] = await db.update(fanSubscribers)
-      .set({ tags, updatedAt: new Date() })
+      .set({ tags: parsed.data.tags, updatedAt: new Date() })
       .where(and(eq(fanSubscribers.id, id), eq(fanSubscribers.userId, userId)))
       .returning();
 

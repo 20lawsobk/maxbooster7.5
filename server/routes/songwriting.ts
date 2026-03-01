@@ -1,51 +1,112 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { songwritingSessions, insertSongwritingSessionSchema } from '@shared/schema';
-import { eq, desc } from 'drizzle-orm';
+import { and, eq, desc } from 'drizzle-orm';
+import { requireAuth } from '../middleware/auth.js';
+import { logger } from '../logger.js';
+import { z } from 'zod';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
-  const sessions = await db.select().from(songwritingSessions)
-    .where(eq(songwritingSessions.userId, req.session.userId))
-    .orderBy(desc(songwritingSessions.updatedAt));
-  res.json(sessions);
+const aiAssistSchema = z.object({
+  prompt: z.string().max(1000).optional(),
+  genre: z.string().max(100).optional(),
+  mood: z.string().max(100).optional(),
+  existing: z.string().max(5000).optional(),
 });
 
-router.post('/', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
+router.get('/', requireAuth, async (req, res) => {
   try {
-    const data = insertSongwritingSessionSchema.parse({ ...req.body, userId: req.session.userId });
-    const [session] = await db.insert(songwritingSessions).values(data).returning();
-    res.json(session);
-  } catch (e: any) {
-    res.status(400).json({ error: e.message });
+    const sessions = await db.select().from(songwritingSessions)
+      .where(eq(songwritingSessions.userId, req.user!.id))
+      .orderBy(desc(songwritingSessions.updatedAt));
+    res.json(sessions);
+  } catch (error) {
+    logger.error('[Songwriting] Failed to list sessions:', error);
+    res.status(500).json({ error: 'Failed to fetch songwriting sessions' });
   }
 });
 
-router.put('/:id', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
-  const [session] = await db.update(songwritingSessions)
-    .set({ ...req.body, updatedAt: new Date() })
-    .where(eq(songwritingSessions.id, req.params.id))
-    .returning();
-  res.json(session);
+router.post('/', requireAuth, async (req, res) => {
+  try {
+    const data = insertSongwritingSessionSchema.parse({ ...req.body, userId: req.user!.id });
+    const [session] = await db.insert(songwritingSessions).values(data).returning();
+    res.status(201).json(session);
+  } catch (error: any) {
+    logger.error('[Songwriting] Failed to create session:', error);
+    if (error?.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    }
+    res.status(500).json({ error: 'Failed to create songwriting session' });
+  }
 });
 
-router.delete('/:id', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
-  await db.delete(songwritingSessions).where(eq(songwritingSessions.id, req.params.id));
-  res.json({ success: true });
+router.put('/:id', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const existing = await db.select().from(songwritingSessions)
+      .where(and(eq(songwritingSessions.id, id), eq(songwritingSessions.userId, userId)))
+      .limit(1);
+
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    const data = insertSongwritingSessionSchema.partial().parse(req.body);
+    const [session] = await db.update(songwritingSessions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(songwritingSessions.id, id), eq(songwritingSessions.userId, userId)))
+      .returning();
+    res.json(session);
+  } catch (error: any) {
+    logger.error('[Songwriting] Failed to update session:', error);
+    if (error?.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    }
+    res.status(500).json({ error: 'Failed to update songwriting session' });
+  }
 });
 
-router.post('/ai-assist', async (req, res) => {
-  if (!req.session.userId) return res.status(401).send('Unauthorized');
-  const { prompt, genre, mood, existing } = req.body;
-  const suggestions: string[] = [];
-  const rhymes = getRhymes(prompt);
-  const chord = getChordSuggestion(genre, mood);
-  res.json({ suggestions, rhymes, chordProgression: chord, structures: getSongStructures() });
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const existing = await db.select().from(songwritingSessions)
+      .where(and(eq(songwritingSessions.id, id), eq(songwritingSessions.userId, userId)))
+      .limit(1);
+
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    await db.delete(songwritingSessions)
+      .where(and(eq(songwritingSessions.id, id), eq(songwritingSessions.userId, userId)));
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('[Songwriting] Failed to delete session:', error);
+    res.status(500).json({ error: 'Failed to delete songwriting session' });
+  }
+});
+
+router.post('/ai-assist', requireAuth, async (req, res) => {
+  try {
+    const parsed = aiAssistSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+    }
+
+    const { prompt, genre, mood } = parsed.data;
+    const suggestions: string[] = [];
+    const rhymes = getRhymes(prompt || '');
+    const chord = getChordSuggestion(genre, mood);
+    res.json({ suggestions, rhymes, chordProgression: chord, structures: getSongStructures() });
+  } catch (error) {
+    logger.error('[Songwriting] AI assist error:', error);
+    res.status(500).json({ error: 'Failed to generate suggestions' });
+  }
 });
 
 function getRhymes(word: string): string[] {

@@ -1,19 +1,26 @@
-/**
- * AI Help Desk API Routes
- */
-
 import { Router, Request, Response } from 'express';
 import { aiHelpDeskService } from '../services/aiHelpDeskService';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
+import { z } from 'zod';
 
 const router = Router();
 
-/**
- * GET /api/help-desk/welcome
- * Get welcome message and initial suggestions
- */
+const chatSchema = z.object({
+  message: z.string().min(1).max(5000),
+  sessionId: z.string().uuid().optional(),
+});
+
+const escalateSchema = z.object({
+  sessionId: z.string().min(1).max(200),
+  reason: z.string().max(2000).optional(),
+});
+
+const endSessionSchema = z.object({
+  sessionId: z.string().min(1).max(200).optional(),
+});
+
 router.get('/welcome', (req: Request, res: Response) => {
   try {
     const response = aiHelpDeskService.getWelcomeMessage();
@@ -23,7 +30,7 @@ router.get('/welcome', (req: Request, res: Response) => {
         name: BUSINESS_CONFIG.helpDesk.aiAssistantName,
         role: BUSINESS_CONFIG.helpDesk.aiAssistantRole,
       },
-      ...response
+      ...response,
     });
   } catch (error) {
     logger.error('Help desk welcome error:', error);
@@ -31,86 +38,80 @@ router.get('/welcome', (req: Request, res: Response) => {
   }
 });
 
-/**
- * POST /api/help-desk/chat
- * Send a message to the AI help desk
- */
 router.post('/chat', async (req: Request, res: Response) => {
   try {
-    const { message, sessionId } = req.body;
-    const userId = (req as any).user?.id;
-    
-    if (!message || typeof message !== 'string') {
+    const parsed = chatSchema.safeParse(req.body);
+    if (!parsed.success) {
       return res.status(400).json({
         success: false,
-        error: 'Message is required'
+        error: 'Validation error',
+        details: parsed.error.flatten(),
       });
     }
-    
+
+    const { message, sessionId } = parsed.data;
+    const userId = req.user?.id;
     const chatSessionId = sessionId || crypto.randomUUID();
-    
+
     const response = await aiHelpDeskService.processMessage(chatSessionId, message, userId);
-    
+
     res.json({
       success: true,
       sessionId: chatSessionId,
       assistant: BUSINESS_CONFIG.helpDesk.aiAssistantName,
-      ...response
+      ...response,
     });
   } catch (error) {
     logger.error('Help desk chat error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to process message'
+      error: 'Failed to process message',
     });
   }
 });
 
-/**
- * POST /api/help-desk/escalate
- * Escalate to human support
- */
 router.post('/escalate', async (req: Request, res: Response) => {
   try {
-    const { sessionId, reason } = req.body;
-    
-    if (!sessionId) {
+    const parsed = escalateSchema.safeParse(req.body);
+    if (!parsed.success) {
       return res.status(400).json({
         success: false,
-        error: 'Session ID is required'
+        error: 'Validation error',
+        details: parsed.error.flatten(),
       });
     }
-    
+
+    const { sessionId, reason } = parsed.data;
     const result = await aiHelpDeskService.escalateToHuman(sessionId, reason || 'User requested human support');
-    
+
     res.json({
       success: true,
-      ...result
+      ...result,
     });
   } catch (error) {
     logger.error('Escalation error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to escalate'
+      error: 'Failed to escalate',
     });
   }
 });
 
-/**
- * POST /api/help-desk/end
- * End a help desk session
- */
 router.post('/end', (req: Request, res: Response) => {
   try {
-    const { sessionId } = req.body;
-    
+    const parsed = endSessionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, error: 'Invalid request' });
+    }
+
+    const { sessionId } = parsed.data;
     if (sessionId) {
       aiHelpDeskService.endConversation(sessionId);
     }
-    
+
     res.json({
       success: true,
-      message: 'Session ended. Thank you for using Max Booster support!'
+      message: 'Session ended. Thank you for using Max Booster support!',
     });
   } catch (error) {
     logger.error('Help desk end session error:', error);
@@ -118,10 +119,6 @@ router.post('/end', (req: Request, res: Response) => {
   }
 });
 
-/**
- * GET /api/help-desk/info
- * Get help desk and company information
- */
 router.get('/info', (req: Request, res: Response) => {
   try {
     res.json({
@@ -130,9 +127,9 @@ router.get('/info', (req: Request, res: Response) => {
       helpDesk: {
         name: BUSINESS_CONFIG.helpDesk.aiAssistantName,
         role: BUSINESS_CONFIG.helpDesk.aiAssistantRole,
-        capabilities: BUSINESS_CONFIG.helpDesk.capabilities
+        capabilities: BUSINESS_CONFIG.helpDesk.capabilities,
       },
-      branding: BUSINESS_CONFIG.branding
+      branding: BUSINESS_CONFIG.branding,
     });
   } catch (error) {
     logger.error('Help desk info error:', error);
