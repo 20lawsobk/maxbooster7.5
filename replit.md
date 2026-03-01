@@ -23,7 +23,7 @@ I prefer iterative development, with clear communication before significant chan
 ### Pagination Applied to All List Endpoints
 Every unbounded list query now uses `parsePaginationParams` middleware (MAX_PAGE_SIZE=500) or inline limits:
 - `server/routes/merch.ts` — GET / (items) + GET /orders now paginated
-- `server/routes/projectBudgets.ts` — GET / paginated
+- `server/routes/projectBudgets.ts` — GET / paginated; GET /:id/items paginated; PUT /:id uses `.omit({ userId: true })` to prevent ownership mutation; PUT /items/:id uses `.omit({ userId: true, budgetId: true })` to prevent both ownership and re-parenting attacks
 - `server/routes/playlistPitching.ts` — GET / paginated; stats endpoint cached with 300s TTL + cache invalidation on POST
 - `server/routes/customWorkflows.ts` — GET / paginated
 - `server/routes/fanHub.ts` — GET /messages paginated; POST /message now uses COUNT aggregate (no full subscriber load)

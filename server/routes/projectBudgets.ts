@@ -36,9 +36,12 @@ router.get('/:id/items', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Budget not found' });
     }
 
+    const { limit, offset } = parsePaginationParams(req);
     const items = await db.select().from(budgetLineItems)
       .where(eq(budgetLineItems.budgetId, id))
-      .orderBy(desc(budgetLineItems.createdAt));
+      .orderBy(desc(budgetLineItems.createdAt))
+      .limit(limit)
+      .offset(offset);
     res.json(items);
   } catch (error) {
     logger.error('[ProjectBudgets] Failed to fetch line items:', error);
@@ -73,7 +76,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Budget not found' });
     }
 
-    const data = insertProjectBudgetSchema.partial().parse(req.body);
+    const data = insertProjectBudgetSchema.partial().omit({ userId: true }).parse(req.body);
     const [item] = await db.update(projectBudgets)
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
@@ -149,7 +152,7 @@ router.put('/items/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Line item not found' });
     }
 
-    const data = insertBudgetLineItemSchema.partial().parse(req.body);
+    const data = insertBudgetLineItemSchema.partial().omit({ userId: true, budgetId: true }).parse(req.body);
     const [item] = await db.update(budgetLineItems)
       .set(data)
       .where(and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)))
