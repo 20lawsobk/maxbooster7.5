@@ -231,10 +231,11 @@ class S3StorageProvider implements StorageProvider {
 class ReplitStorageProvider implements StorageProvider {
   private client: any = null;
   private initPromise: Promise<void>;
+  private bucketId: string;
 
   constructor() {
-    const bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || '';
-    if (!bucketId && !process.env.PRIVATE_OBJECT_DIR) {
+    this.bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || '';
+    if (!this.bucketId && !process.env.PRIVATE_OBJECT_DIR) {
       throw new Error('REPLIT_BUCKET_ID is required for Replit storage provider');
     }
     this.initPromise = this.initClient();
@@ -243,8 +244,19 @@ class ReplitStorageProvider implements StorageProvider {
   private async initClient(): Promise<void> {
     try {
       const { Client } = await import('@replit/object-storage');
-      this.client = new Client();
-      logger.info('[ReplitStorage] @replit/object-storage client initialized');
+      // Pass bucketId explicitly so the SDK skips the sidecar getDefaultBucketId()
+      // fetch at startup — that call was failing due to a race condition where the
+      // sidecar wasn't ready yet when the app booted. Auth tokens are fetched lazily
+      // per-request, when the sidecar is reliably running.
+      const opts = this.bucketId ? { bucketId: this.bucketId } : undefined;
+      const c = new Client(opts);
+      // Await the SDK's own init via getBucket() so any initialization errors
+      // surface here rather than as unhandled rejections during the first upload.
+      // getBucket() correctly handles all states: initializing → awaits promise,
+      // ready → returns bucket, error → throws.
+      await c.getBucket();
+      this.client = c;
+      logger.info(`[ReplitStorage] @replit/object-storage client initialized (bucket: ${this.bucketId || 'default'})`);
     } catch (err) {
       logger.error('[ReplitStorage] Failed to initialize @replit/object-storage client:', err);
     }
