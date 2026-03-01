@@ -38,7 +38,13 @@ Stats endpoints cached with `queryCache.getOrCompute` (300s TTL) + `queryCache.i
 - `fanCampaigns`, `venues`, `radioPitches`, `labelSubmissions`, `sampleClearances`, `musicVideos`, `songwriting`, `merch`, `projectBudgets`, `playlistPitching`
 
 ### Composite DB Indexes (50 indexes)
-Migration script at `server/scripts/addCompositeIndexes.ts` created (userId, createdAt DESC) and (userId, status) composite indexes on all major user-owned tables. Column name corrections applied (storefront_orders→buyer_id/seller_id, notifications→is_read, distro_releases→artist_id). All indexes confirmed present in production DB via pg_indexes verification.
+Migration script at `server/scripts/addCompositeIndexes.ts` created (userId, createdAt DESC) and (userId, status) composite indexes on all major user-owned tables. Column name corrections applied (storefront_orders→buyer_id/seller_id, notifications→is_read, distro_releases→artist_id, distro_tracks→release_id, listings has no status column). All indexes confirmed present in production DB via pg_indexes verification.
+
+### Neon PostgreSQL Migration (Primary + Replica)
+- **Primary DB**: Neon `ep-nameless-mouse` (read-write) — pointed at via `NEON_DATABASE_URL` env var which takes precedence over Replit's runtime-managed `DATABASE_URL` in `server/config/defaults.ts`
+- **Read replica**: Neon `ep-plain-leaf` (confirmed read-only, `pg_is_in_recovery=true`) — set as `DATABASE_REPLICA_URLS`, routes all SELECT queries in production via `dbRead` in `server/db.ts`
+- **Schema**: Full 225-table schema pushed to Neon primary via `drizzle-kit push`; all 47 composite indexes applied; all seed data initialized on first boot
+- **NEON_DATABASE_URL fallback pattern**: `url: process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || ''` in config/defaults.ts
 
 ### Request Correlation IDs (End-to-End Tracing)
 `requestIdMiddleware` (server/middleware/requestId.ts) registered as the first middleware in `registerRoutes`. Every request receives a UUID-based `X-Request-ID` / `X-Correlation-ID` header. Honors upstream IDs from load balancers. Propagates via AsyncLocalStorage so every `logger.*` call in any route handler automatically includes requestId and duration without manual threading. Infrastructure was already built (requestContext.ts + structuredLogger.ts) — this commit wires it live for all traffic.

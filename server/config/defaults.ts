@@ -141,7 +141,7 @@ export const config: AppConfig = {
   port: parseEnvInt('PORT', 5000),
 
   database: {
-    url: process.env.DATABASE_URL || '',
+    url: process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || '',
     poolSize: parseEnvInt('DB_POOL_SIZE', 10),
     maxConnections: parseEnvInt('DB_MAX_CONNECTIONS', 200),
     idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 30000),

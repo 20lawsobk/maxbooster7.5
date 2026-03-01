@@ -39,9 +39,8 @@ const COMPOSITE_INDEXES: Array<{ name: string; table: string; columns: string; w
   // Beats
   { name: 'beats_user_id_created_at_idx', table: 'beats', columns: 'user_id, created_at DESC' },
 
-  // Listings
+  // Listings — no status column in this table
   { name: 'listings_user_id_created_at_idx', table: 'listings', columns: 'user_id, created_at DESC' },
-  { name: 'listings_user_id_status_idx', table: 'listings', columns: 'user_id, status' },
 
   // Storefront orders — uses buyer_id/seller_id, not user_id
   { name: 'storefront_orders_buyer_id_created_at_idx', table: 'storefront_orders', columns: 'buyer_id, created_at DESC' },
@@ -59,15 +58,15 @@ const COMPOSITE_INDEXES: Array<{ name: string; table: string; columns: string; w
   // Invoices
   { name: 'invoices_user_id_created_at_idx', table: 'invoices', columns: 'user_id, created_at DESC' },
 
-  // Notifications
+  // Notifications — column is is_read, not read
   { name: 'notifications_user_id_created_at_idx', table: 'notifications', columns: 'user_id, created_at DESC' },
-  { name: 'notifications_user_id_read_idx', table: 'notifications', columns: 'user_id, read' },
+  { name: 'notifications_user_id_is_read_idx', table: 'notifications', columns: 'user_id, is_read' },
 
-  // Distro releases
-  { name: 'distro_releases_user_id_created_at_idx', table: 'distro_releases', columns: 'user_id, created_at DESC' },
+  // Distro releases — partitioned by artist_id, not user_id
+  { name: 'distro_releases_artist_id_created_at_idx', table: 'distro_releases', columns: 'artist_id, created_at DESC' },
 
-  // Distro tracks
-  { name: 'distro_tracks_user_id_created_at_idx', table: 'distro_tracks', columns: 'user_id, created_at DESC' },
+  // Distro tracks — partitioned by release_id, not user_id
+  { name: 'distro_tracks_release_id_created_at_idx', table: 'distro_tracks', columns: 'release_id, created_at DESC' },
 
   // Content ID registrations
   { name: 'content_id_registrations_user_id_created_at_idx', table: 'content_id_registrations', columns: 'user_id, created_at DESC' },
