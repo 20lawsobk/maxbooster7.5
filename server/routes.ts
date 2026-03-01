@@ -1016,19 +1016,33 @@ export async function registerRoutes(
         }
 
         try {
-          const result = await storeUploadedFile(req.file, req.user!.id, 'avatar');
+          let avatarUrl: string;
 
-          const updatedUser = await storage.updateUser(req.user!.id, { avatarUrl: result.url, profileImageUrl: result.url });
+          try {
+            const result = await storeUploadedFile(req.file, req.user!.id, 'avatar');
+            avatarUrl = result.url;
+          } catch (storeError: any) {
+            // Object Storage unavailable — fall back to storing the processed image
+            // as a base64 data URL directly in the database. Avatars are small
+            // (512x512 WebP ≈ 30-60 KB) so this is safe for the users table.
+            logger.warn('[Avatar] Object Storage unavailable, falling back to data URL:', storeError.message);
+            const { processAvatarImage } = await import('./middleware/uploadHandler.js');
+            const processed = await processAvatarImage(req.file!.buffer);
+            avatarUrl = `data:${processed.mimeType};base64,${processed.buffer.toString('base64')}`;
+            logger.info(`[Avatar] Data URL fallback used for userId=${req.user!.id}, size=${processed.processedSize}B`);
+          }
+
+          const updatedUser = await storage.updateUser(req.user!.id, { avatarUrl, profileImageUrl: avatarUrl });
           if (!updatedUser) {
             logger.error(`[Avatar] updateUser returned null for userId=${req.user!.id}. DB update may have failed.`);
           } else {
-            logger.info(`[Avatar] DB updated for userId=${req.user!.id}, avatarUrl=${updatedUser.avatarUrl}`);
+            logger.info(`[Avatar] DB updated for userId=${req.user!.id}`);
           }
 
           return res.json({
             success: true,
-            profileImageUrl: result.url,
-            avatarUrl: result.url
+            profileImageUrl: avatarUrl,
+            avatarUrl,
           });
         } catch (storeError: any) {
           logger.error("Avatar storage error:", storeError);
