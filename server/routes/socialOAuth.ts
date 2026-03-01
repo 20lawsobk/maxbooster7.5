@@ -32,10 +32,9 @@ const PLATFORMS = {
     scope: 'threads_basic,threads_content_publish',
     clientId: process.env.THREADS_APP_ID,
     clientSecret: process.env.THREADS_APP_SECRET,
-    usePKCE: false,
+    usePKCE: true,
     responseType: 'code',
     enabled: !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
-    redirectUri: process.env.THREADS_REDIRECT_URI,
   },
   tiktok: (() => {
     const env = process.env.TIKTOK_ENV;
@@ -433,6 +432,9 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       } else if (platform === 'threads') {
         tokenParams.set('client_id', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
+        if (stateData.codeVerifier) {
+          tokenParams.set('code_verifier', stateData.codeVerifier);
+        }
       } else {
         tokenParams.set('client_id', config.clientId!);
         tokenParams.set('client_secret', config.clientSecret!);
