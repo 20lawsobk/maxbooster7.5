@@ -1,5 +1,15 @@
 # Max Booster - AI-Powered Music Career Management Platform
 
+## Replit Setup Notes
+
+- **Node.js**: Requires Node.js 22+ (nodejs-22 module installed)
+- **Workflow**: "Start application" runs `npm run dev` on port 5000 (webview)
+- **Database**: PostgreSQL via Replit's built-in database (DATABASE_URL set)
+- **Schema**: Pushed with `drizzle-kit push` - schema in `shared/schema.ts`
+- **Dependencies**: Installed with `npm install --legacy-peer-deps`
+- **Deployment**: Configured for autoscale, build=`npm run build`, run=`npm run start`
+- **Optional services** (require API keys): Redis (REDIS_URL), Stripe, SendGrid, social OAuth providers
+
 ## Overview
 
 Max Booster is an AI-powered, full-stack TypeScript web application designed to empower music artists with comprehensive career management tools. It offers AI-assisted features for social media management, music distribution, analytics, a beat marketplace, career automation, press kit creation, playlist pitching, tour management, merch store integration, sync licensing, publishing rights, A&R submissions, sample clearances, music video production tracking, radio/blog pitching, fan campaigns, revenue intelligence, songwriting, project budget planning, and venue/booking CRM. The platform aims to streamline and optimize various aspects of an artist's career, leveraging AI models fine-tuned specifically for the music industry. The project envisions becoming the go-to platform for artists looking to boost their careers through intelligent automation and insights.
