@@ -23,7 +23,8 @@ export class ReplitChunkStore implements ChunkStore {
     }
     try {
       const { Client } = await import('@replit/object-storage');
-      this.client = new Client();
+      const bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      this.client = new Client(bucketId ? { bucketId } : undefined);
       return this.client;
     } catch (err) {
       throw new Error(`Replit Object Storage not available: ${err}`);

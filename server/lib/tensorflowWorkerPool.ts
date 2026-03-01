@@ -1,6 +1,7 @@
 import { Worker } from 'worker_threads';
 import path from 'path';
 import os from 'os';
+import { existsSync } from 'fs';
 import { logger } from '../logger.js';
 
 // Resolve worker path for both dev (tsx/source) and prod (esbuild/dist) environments
@@ -11,7 +12,6 @@ function resolveWorkerPath(): string {
     path.join(cwd, 'dist/workers/tfWorkerThread.cjs'),
     path.join(cwd, 'dist/workers/tfWorkerThread.js'),
   ];
-  const { existsSync } = require('fs');
   for (const p of candidates) {
     if (existsSync(p)) return p;
   }

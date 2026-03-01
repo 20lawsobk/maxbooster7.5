@@ -158,7 +158,8 @@ export class HybridStorageService {
         if (sidecarAvailable) {
           try {
             const { Client } = await import('@replit/object-storage');
-            const client = new Client();
+            const bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+            const client = new Client(bucketId ? { bucketId } : undefined);
             this.replitClient = client;
             logger.info(`[HybridStorage] Initialized Replit Object Storage (hot tier)`);
           } catch (e) {

@@ -1,5 +1,5 @@
 import { Worker, type Job } from 'bullmq';
-import { getRedisClient } from '../lib/redisClient.js';
+import { newBullMQRedisConnection } from '../lib/redisClient.js';
 import { config } from '../config/defaults.js';
 import { AudioService } from '../services/audioService.js';
 import { RoyaltiesCSVImportService } from '../services/royaltiesCSVImportService.js';
@@ -47,10 +47,17 @@ function checkMemoryUsage(workerName: string): void {
 
 function workerOpts(concurrency: number) {
   return {
-    connection: getRedisClient(),
+    connection: newBullMQRedisConnection(),
     concurrency,
+    autorun: false,
     limiter: { max: concurrency, duration: 1000 },
   };
+}
+
+function startWorkerSafe(w: Worker, name: string): void {
+  setImmediate(() => {
+    w.run().catch(err => logger.error(`[Worker] ${name} run loop failed:`, err));
+  });
 }
 
 let audioWorker: Worker | null = null;
@@ -184,6 +191,11 @@ export async function initializeWorkers(): Promise<void> {
   csvWorker = createCsvWorker();
   analyticsWorker = createAnalyticsWorker();
   emailWorker = createEmailWorker();
+
+  startWorkerSafe(audioWorker, 'audio');
+  startWorkerSafe(csvWorker, 'csv');
+  startWorkerSafe(analyticsWorker, 'analytics');
+  startWorkerSafe(emailWorker, 'email');
 
   logger.info('📋 Active BullMQ workers:');
   logger.info(`   - Audio     (concurrency: ${config.queue.concurrency.audio})`);

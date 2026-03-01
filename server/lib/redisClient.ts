@@ -84,6 +84,36 @@ function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> 
   return client;
 }
 
+/**
+ * Returns a fresh ioredis instance configured for BullMQ.
+ * BullMQ requires maxRetriesPerRequest=null on the connection it uses for
+ * blocking commands (BRPOPLPUSH / BLMOVE). This must NOT be the shared
+ * singleton — each call returns an independent connection so BullMQ can
+ * .duplicate() it safely for its own blocking sub-connection.
+ */
+export function newBullMQRedisConnection(): Redis {
+  const url = (() => {
+    const clusterUrls = (process.env.REDIS_CLUSTER_URLS || '')
+      .split(',').map(u => u.trim()).filter(Boolean);
+    return clusterUrls.length >= 1 ? clusterUrls[0] : process.env.REDIS_URL;
+  })();
+  if (!url) throw new Error('REDIS_URL environment variable is not set');
+
+  const conn = new Redis(url, {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+    lazyConnect: false,
+    connectTimeout: 5000,
+    retryStrategy(times) {
+      if (times > 3) return null;
+      return Math.min(times * 300, 2000);
+    },
+  });
+  conn.on('error', (err) => logger.error('[Redis/BullMQ] Connection error:', err.message));
+  applyIoredisCompatShim(conn);
+  return conn;
+}
+
 export function getRedisClient(): RedisClient {
   if (_redis) return _redis;
 

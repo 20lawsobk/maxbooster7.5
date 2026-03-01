@@ -491,8 +491,11 @@ app.use((req, res, next) => {
       } catch (e) { /* non-critical */ }
     }, 60 * 1000);
     logger.info('[Retention] Feature event buffer flush enqueued (60s interval)');
-  } catch (retentionErr) {
-    logger.warn('[Retention] Background services failed to start:', retentionErr);
+  } catch (retentionErr: any) {
+    const errMsg = retentionErr instanceof Error
+      ? `${retentionErr.message}\n${retentionErr.stack}`
+      : String(retentionErr);
+    logger.warn('[Retention] Background services failed to start:\n' + errMsg);
   }
 
   // JSON 404 handler for unmatched API routes (must be after all API routes)

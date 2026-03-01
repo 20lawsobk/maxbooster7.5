@@ -17,7 +17,7 @@
  */
 
 import { Queue, Worker, Job } from 'bullmq';
-import { getRedisClient } from './redisClient.js';
+import { getRedisClient, newBullMQRedisConnection } from './redisClient.js';
 import { logger } from '../logger.js';
 import { customerHealthScoreService } from '../services/customerHealthScoreService.js';
 import { dunningService } from '../services/dunningService.js';
@@ -58,7 +58,7 @@ export function getRetentionQueue(): Queue {
 }
 
 export function startRetentionWorker(): Worker {
-  const connection = getRedisClient();
+  const connection = newBullMQRedisConnection();
 
   const worker = new Worker(
     RETENTION_QUEUE,
@@ -117,12 +117,19 @@ export function startRetentionWorker(): Worker {
     {
       connection,
       concurrency: WORKER_CONCURRENCY,
+      autorun: false,
       limiter: {
         max: WORKER_CONCURRENCY,
         duration: 1_000,
       },
     }
   );
+
+  setImmediate(() => {
+    worker.run().catch(err => {
+      logger.error('[Worker] Failed to start run loop:', err);
+    });
+  });
 
   worker.on('completed', job => {
     logger.info(`[Worker] ✅ ${job.id} (${job.name}) done`);
