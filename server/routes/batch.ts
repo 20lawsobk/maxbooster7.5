@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { eq, and, inArray, sql, desc } from 'drizzle-orm';
-import { analytics, batchTemplates, distroReleases, posts, userStorageFiles, listings, beats, studioTracks } from '@shared/schema';
+import { eq, and, inArray, sql, desc, isNull } from 'drizzle-orm';
+import { analytics, batchTemplates, distroReleases, posts, userStorageFiles, listings, beats, studioTracks, stemExports } from '@shared/schema';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -406,14 +406,33 @@ router.post('/files/download', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'No IDs provided' });
     }
 
-    const downloadUrl = `/api/files/bulk-download?ids=${ids.join(',')}`;
+    const userId = req.user!.id;
+    const successIds: string[] = [];
+    const failures: Array<{ id: string; error: string }> = [];
+
+    for (const id of ids) {
+      try {
+        const [file] = await db
+          .select({ id: userStorageFiles.id })
+          .from(userStorageFiles)
+          .where(and(eq(userStorageFiles.id, id), eq(userStorageFiles.userId, userId), isNull(userStorageFiles.deletedAt)))
+          .limit(1);
+        if (!file) {
+          failures.push({ id, error: 'File not found or access denied' });
+        } else {
+          successIds.push(id);
+        }
+      } catch (error: any) {
+        failures.push({ id, error: error.message || 'Failed to prepare download' });
+      }
+    }
+
+    const downloadUrl = successIds.length > 0
+      ? `/api/files/bulk-download?ids=${successIds.join(',')}`
+      : null;
 
     res.json({
-      success: ids,
-      failed: [],
-      totalRequested: ids.length,
-      totalSucceeded: ids.length,
-      totalFailed: 0,
+      ...createBatchResult(successIds, failures, ids.length),
       downloadUrl,
     });
   } catch (error) {
@@ -736,11 +755,36 @@ router.post('/tracks/export', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'No IDs provided' });
     }
 
-    const format = data?.format || 'wav';
-    const exportId = `export_${Date.now()}`;
-    const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const userId = req.user!.id;
+    const format = typeof data?.format === 'string' ? data.format : 'wav';
+    const bitDepth = typeof data?.bitDepth === 'number' ? data.bitDepth : 24;
+    const sampleRate = typeof data?.sampleRate === 'number' ? data.sampleRate : 44100;
 
-    batchJobs.set(jobId, {
+    const [firstTrack] = await db
+      .select({ projectId: studioTracks.projectId })
+      .from(studioTracks)
+      .where(eq(studioTracks.id, ids[0]))
+      .limit(1);
+
+    if (!firstTrack) {
+      return res.status(404).json({ message: 'Track not found' });
+    }
+
+    const [exportRecord] = await db
+      .insert(stemExports)
+      .values({
+        projectId: firstTrack.projectId,
+        userId,
+        name: `Batch export ${new Date().toISOString()}`,
+        format,
+        bitDepth,
+        sampleRate,
+        trackIds: ids,
+        status: 'pending',
+      })
+      .returning();
+
+    batchJobs.set(exportRecord.id, {
       status: 'processing',
       processed: 0,
       total: ids.length,
@@ -750,24 +794,14 @@ router.post('/tracks/export', async (req: Request, res: Response) => {
       startTime: Date.now(),
     });
 
-    setTimeout(() => {
-      const job = batchJobs.get(jobId);
-      if (job) {
-        job.status = 'completed';
-        job.processed = ids.length;
-        job.success = ids.length;
-      }
-    }, 2000);
-
     res.json({
       success: ids,
       failed: [],
       totalRequested: ids.length,
       totalSucceeded: ids.length,
       totalFailed: 0,
-      exportId,
-      jobId,
-      downloadUrl: `/api/tracks/exports/${exportId}`,
+      exportId: exportRecord.id,
+      jobId: exportRecord.id,
     });
   } catch (error) {
     logger.error('Batch track export error:', error?.message || error);

@@ -45,19 +45,11 @@
     "appId": "com.blawzmusic.maxbooster",
     "productName": "Max Booster",
     "asar": true,
-    "asarUnpack": [
-      "node_modules/sharp/**/*",
-      "node_modules/@tensorflow/**/*"
-    ],
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
     "files": [
-      "dist/**/*",
       "electron/**/*",
-      "!node_modules/@img/sharp-*/**",
-      "!node_modules/@msgpackr-extract/**",
-      "!**/*.{ts,tsx,map,md}",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
-      "!**/node_modules/.bin"
+      "!electron/package-lock.json"
     ],
     "directories": {
       "output": "dist-installers",

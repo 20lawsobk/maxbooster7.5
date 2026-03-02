@@ -6,6 +6,7 @@ import { storage } from '../storage.js';
 import { notificationService } from '../services/notificationService.js';
 import { pythonAIService } from '../services/pythonAIService.js';
 import { db } from '../db.js';
+import { eq, desc, sql } from 'drizzle-orm';
 import { adCampaigns } from '@shared/schema';
 
 interface AuthenticatedRequest extends Request {
@@ -165,9 +166,28 @@ router.post('/upload-image', requireAuth, async (req, res) => {
 });
 
 // Status endpoint
-router.get('/status', requireAuth, async (req, res) => {
+router.get('/status', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ status: 'active', connectedPlatforms: [], budget: 0, spent: 0 });
+    const userId = req.user!.id;
+    const campaigns = await db
+      .select({
+        platform: adCampaigns.platform,
+        status: adCampaigns.status,
+        budget: adCampaigns.budget,
+      })
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId));
+
+    const activeCampaigns = campaigns.filter(c => c.status === 'active');
+    const connectedPlatforms = [...new Set(activeCampaigns.map(c => c.platform))];
+    const totalBudget = campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
+
+    res.json({
+      status: activeCampaigns.length > 0 ? 'active' : 'inactive',
+      connectedPlatforms,
+      budget: totalBudget,
+      spent: 0,
+    });
   } catch (error) {
     logger.error('Failed to get advertising status:', error);
     res.status(500).json({ error: 'Failed to get status' });
@@ -232,9 +252,15 @@ router.get('/roas/audience-segments', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/roas/campaigns', requireAuth, async (req, res) => {
+router.get('/roas/campaigns', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ campaigns: [] });
+    const userId = req.user!.id;
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .orderBy(desc(adCampaigns.createdAt));
+    res.json({ campaigns });
   } catch (error) {
     logger.error('Failed to get ROAS campaigns:', error);
     res.status(500).json({ error: 'Failed to get ROAS campaigns' });
