@@ -14,7 +14,7 @@ const router = Router();
 
 const runOnceCalls = new Map<string, number[]>();
 function runOnceRateLimit(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id || (req as any).session?.userId || 'anon';
+  const userId = (req as any).user?.id || 'anon';
   const now = Date.now();
   const window = 60 * 1000;
   const maxPerMinute = 3;
@@ -29,7 +29,7 @@ function runOnceRateLimit(req: Request, res: Response, next: NextFunction) {
 
 const simulationCalls = new Map<string, number>();
 function simulationRateLimit(req: Request, res: Response, next: NextFunction) {
-  const userId = (req as any).user?.id || (req as any).session?.userId || 'anon';
+  const userId = (req as any).user?.id || 'anon';
   const now = Date.now();
   const cooldownMs = 30 * 1000;
   const last = simulationCalls.get(userId) || 0;

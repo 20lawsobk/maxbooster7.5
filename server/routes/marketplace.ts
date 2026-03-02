@@ -1132,6 +1132,10 @@ router.get('/audio/*path', async (req: Request, res: Response) => {
     if (typeof fileKey !== 'string') {
       return res.status(400).json({ error: 'Invalid audio path' });
     }
+
+    if (fileKey.includes('..') || fileKey.includes('\0') || fileKey.startsWith('/')) {
+      return res.status(400).json({ error: 'Invalid audio path' });
+    }
     
     if (fileKey.startsWith('uploads/')) {
       fileKey = fileKey.substring('uploads/'.length);
@@ -1199,6 +1203,10 @@ router.get('/cover/*path', async (req: Request, res: Response) => {
     const fileKey = Array.isArray(req.params.path) ? req.params.path.join('/') : req.params.path;
     
     if (typeof fileKey !== 'string') {
+      return res.status(400).json({ error: 'Invalid cover path' });
+    }
+
+    if (fileKey.includes('..') || fileKey.includes('\0') || fileKey.startsWith('/')) {
       return res.status(400).json({ error: 'Invalid cover path' });
     }
     

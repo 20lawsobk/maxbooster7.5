@@ -174,11 +174,10 @@ router.post("/projects/:id/join", async (req: Request, res: Response) => {
   }
 
   try {
-    const role = req.body.role || "member";
     const member = await collaborationService.joinProject(
       req.user.id,
       req.params.id,
-      role
+      "member"
     );
     return res.json(member);
   } catch (error: any) {

@@ -1638,7 +1638,7 @@ router.post('/lyrics', requireAuth, async (req: Request, res: Response) => {
 // AI Master endpoint
 router.post('/ai-master/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id || (req as any).session?.userId;
+    const userId = (req as any).user!.id;
     const { projectId } = req.params;
     const { targetLoudness, genre, preset } = req.body;
     res.json({
@@ -1669,7 +1669,7 @@ router.post('/ai-master/:projectId', requireAuth, async (req: Request, res: Resp
 // AI Mix endpoint
 router.post('/ai-mix/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id || (req as any).session?.userId;
+    const userId = (req as any).user!.id;
     const { projectId } = req.params;
     const { targetGenre, referenceTrack, autoEQ, autoCompression } = req.body;
     res.json({

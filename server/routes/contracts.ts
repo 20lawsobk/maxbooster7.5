@@ -517,6 +517,10 @@ router.get('/invoices/:invoiceId', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
+    if (invoice.userId !== req.user!.id) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
     return res.json(invoice);
   } catch (error: any) {
     logger.error('Error fetching invoice:', error);
@@ -535,6 +539,11 @@ router.patch('/invoices/:invoiceId/status', async (req: Request, res: Response) 
 
     if (!status) {
       return res.status(400).json({ error: 'status is required' });
+    }
+
+    const existing = invoiceService.getInvoice(invoiceId);
+    if (!existing || existing.userId !== req.user!.id) {
+      return res.status(404).json({ error: 'Invoice not found' });
     }
 
     const invoice = invoiceService.updateInvoiceStatus(invoiceId, status, {
@@ -556,6 +565,10 @@ router.get('/invoices/:invoiceId/pdf', async (req: Request, res: Response) => {
     }
 
     const { invoiceId } = req.params;
+    const invoiceCheck = invoiceService.getInvoice(invoiceId);
+    if (!invoiceCheck || invoiceCheck.userId !== req.user!.id) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
     const pdfBuffer = invoiceService.generatePDF(invoiceId);
 
     res.setHeader('Content-Type', 'application/pdf');

@@ -4,7 +4,6 @@ import { logger } from '../../logger';
 
 interface AuthenticatedRequest {
   user?: { id: string };
-  session?: { userId?: string };
   body: any;
   params: any;
   query: any;
@@ -13,7 +12,7 @@ interface AuthenticatedRequest {
 const router = Router();
 
 function getUserId(req: AuthenticatedRequest): string | null {
-  return req.user?.id || req.session?.userId || null;
+  return req.user?.id ?? null;
 }
 
 router.get('/alerts', async (req: AuthenticatedRequest, res: Response) => {
