@@ -4,7 +4,7 @@ import { db } from '../db';
 import { posts, scheduledPostBatches, socialAccounts, socialCampaigns } from '@shared/schema';
 import { bulkSchedulePostSchema, bulkValidatePostSchema } from '@shared/schema';
 import { socialQueueService } from '../services/socialQueueService';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { logger } from '../logger.js';
 
@@ -179,6 +179,32 @@ router.post('/schedule', async (req: AuthenticatedRequest, res) => {
       });
     }
 
+    const accountIds = [...new Set(validatedData.posts.map((p) => p.socialAccountId).filter(Boolean) as string[])];
+    if (accountIds.length > 0) {
+      const ownedAccounts = await db
+        .select({ id: socialAccounts.id })
+        .from(socialAccounts)
+        .where(and(inArray(socialAccounts.id, accountIds), eq(socialAccounts.userId, req.user.id)));
+      const ownedIds = new Set(ownedAccounts.map((a) => a.id));
+      const badIndex = validatedData.posts.findIndex((p) => p.socialAccountId && !ownedIds.has(p.socialAccountId));
+      if (badIndex !== -1) {
+        return res.status(403).json({ error: 'One or more social accounts do not belong to you', index: badIndex });
+      }
+    }
+
+    const campaignIds = [...new Set(validatedData.posts.map((p) => p.campaignId).filter(Boolean) as string[])];
+    if (campaignIds.length > 0) {
+      const ownedCampaigns = await db
+        .select({ id: socialCampaigns.id })
+        .from(socialCampaigns)
+        .where(and(inArray(socialCampaigns.id, campaignIds), eq(socialCampaigns.userId, req.user.id)));
+      const ownedCampaignIds = new Set(ownedCampaigns.map((c) => c.id));
+      const badCampaignIndex = validatedData.posts.findIndex((p) => p.campaignId && !ownedCampaignIds.has(p.campaignId));
+      if (badCampaignIndex !== -1) {
+        return res.status(403).json({ error: 'One or more campaigns do not belong to you', index: badCampaignIndex });
+      }
+    }
+
     const [batch] = await db
       .insert(scheduledPostBatches)
       .values({
@@ -209,10 +235,11 @@ router.post('/schedule', async (req: AuthenticatedRequest, res) => {
     }
 
     const postsToInsert = validatedData.posts.map((post) => ({
+      userId: req.user!.id,
       campaignId: post.campaignId || defaultCampaignId,
       batchId: batch.id,
       platform: post.platform,
-      socialAccountId: post.socialAccountId || nanoid(),
+      socialAccountId: post.socialAccountId || null,
       content: post.content,
       mediaUrls: post.mediaUrls || [],
       status: 'scheduled',

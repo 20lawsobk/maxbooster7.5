@@ -141,7 +141,7 @@ router.put('/:id', requireAuth, requireWorkspaceAdmin, async (req: Authenticated
   }
 });
 
-router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.delete('/:id', requireAuth, requireWorkspaceAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const result = await workspaceService.deleteWorkspace(req.params.id, req.user!.id);
 

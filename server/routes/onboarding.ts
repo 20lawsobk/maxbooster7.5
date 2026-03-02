@@ -83,7 +83,10 @@ router.get('/tasks', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/seed', async (req, res) => {
+router.post('/seed', requireAuth, async (req, res) => {
+  if (!req.user?.isAdmin) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
   try {
     await onboardingService.seedDefaultTasks();
     res.json({ success: true, message: 'Onboarding tasks seeded successfully' });

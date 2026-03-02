@@ -48,14 +48,14 @@ router.post('/', requireAuth, async (req, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
     }
-    const data = parsed.data;
+    const { status: _status, ...data } = parsed.data;
     const [work] = await db
       .insert(publishingRights)
       .values({
         ...data,
         userId,
         registeredAt: new Date(),
-        status: data.status || 'pending',
+        status: 'pending',
       })
       .returning();
     res.json(work);
@@ -74,9 +74,10 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
     }
+    const { status: _status, ...updateData } = parsed.data;
     const [updated] = await db
       .update(publishingRights)
-      .set(parsed.data)
+      .set(updateData)
       .where(and(eq(publishingRights.id, id), eq(publishingRights.userId, userId)))
       .returning();
     if (!updated) return res.status(404).json({ error: 'Work not found' });

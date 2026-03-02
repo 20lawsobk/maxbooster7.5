@@ -100,10 +100,20 @@ router.put('/presave/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+const PRESAVE_EVENTS = ['view', 'presave', 'email', 'click'] as const;
+type PresaveEvent = typeof PRESAVE_EVENTS[number];
+const PLATFORM_RE = /^[a-zA-Z0-9_-]{1,32}$/;
+
 router.post('/presave/:id/analytics', async (req: Request, res: Response) => {
   try {
     const { event, platform } = req.body;
-    await promotionalToolsService.recordPreSaveAnalytics(req.params.id, event, platform);
+    if (!PRESAVE_EVENTS.includes(event as PresaveEvent)) {
+      return res.status(400).json({ error: 'Invalid event type' });
+    }
+    if (platform !== undefined && (typeof platform !== 'string' || !PLATFORM_RE.test(platform))) {
+      return res.status(400).json({ error: 'Invalid platform value' });
+    }
+    await promotionalToolsService.recordPreSaveAnalytics(req.params.id, event as PresaveEvent, platform);
     res.json({ success: true });
   } catch (error) {
     logger.error('Error recording analytics:', error);

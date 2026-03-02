@@ -50,6 +50,8 @@ const businessInfoSchema = z.object({
   country: z.string().min(1),
 });
 
+const KYC_STORAGE_PREFIX = 'kyc-documents/';
+
 const documentUploadSchema = z.object({
   verificationId: z.string().min(1),
   documentType: z.enum([
@@ -70,14 +72,20 @@ const documentUploadSchema = z.object({
   fileName: z.string().min(1),
   fileSize: z.number().positive(),
   mimeType: z.string().min(1),
-  storagePath: z.string().min(1),
+  storagePath: z.string().min(1).refine(
+    (p) => p.startsWith(KYC_STORAGE_PREFIX) && !p.includes('..'),
+    { message: 'Invalid storage path' }
+  ),
   expirationDate: z.string().transform(s => new Date(s)).optional(),
 });
 
 const taxFormSchema = z.object({
   verificationId: z.string().min(1),
   formType: z.enum(['W9', 'W8BEN', 'W8BENE']),
-  documentPath: z.string().min(1),
+  documentPath: z.string().min(1).refine(
+    (p) => p.startsWith(KYC_STORAGE_PREFIX) && !p.includes('..'),
+    { message: 'Invalid document path' }
+  ),
 });
 
 router.post('/start', async (req, res) => {

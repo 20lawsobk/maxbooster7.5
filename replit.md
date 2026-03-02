@@ -235,3 +235,46 @@ All 48 architect verification passes completed across the full codebase. Key are
 10. Session fallback sameSite cookie
 11. AI route rate limiting
 12. Promotional tools IDOR (4 operations)
+
+## Security Hardening — Session 12 (March 2026)
+
+### Fixes Applied (16 issues resolved across 11 files)
+
+**KYC document path validation (server/routes/kyc.ts):**
+- `storagePath` and `documentPath` in Zod schemas now enforce `kyc-documents/` prefix with `..` path traversal guard
+- `KYC_STORAGE_PREFIX` constant extracted for single source of truth
+
+**Achievements auth consistency (server/routes/achievements.ts):**
+- 5 user-specific endpoints (`/user`, `/unnotified`, `/mark-notified/:id`, `/streaks` GET+POST) upgraded from inline `if (!req.user)` checks to `requireAuth` middleware
+- Non-null assertion `req.user!.id` used throughout — no silent failures
+
+**Onboarding seed admin-gate (server/routes/onboarding.ts):**
+- `POST /seed` added `requireAuth` + explicit `req.user?.isAdmin` check (403 if non-admin)
+- Previously unauthenticated endpoint could be called by anyone
+
+**SSRF protection in content analysis (server/routes/content-analysis.ts):**
+- `validateExternalUrl()` helper added: validates protocol (https/http only), rejects localhost and private IP ranges (127.x, 10.x, 192.168.x, 172.16-31.x, 169.254.x, ::1, fc/fd)
+- Applied to all 4 URL-consuming endpoints: `/image`, `/video`, `/audio`, `/website`
+
+**Pre-save analytics event/platform validation (server/routes/promotionalTools.ts):**
+- `PRESAVE_EVENTS` allowlist: `['view', 'presave', 'email', 'click']` — arbitrary event names rejected with 400
+- `PLATFORM_RE` regex (`^[a-zA-Z0-9_-]{1,32}$`) validates optional platform parameter
+- Public endpoint now cannot store arbitrary strings
+
+**Admin email rate limiting (server/routes/admin.ts):**
+- `adminEmailLimiter` added: 20 emails/hour per admin, keyed by `req.user.id` (no IP fallback to avoid IPv6 validation warning)
+- `skip: (req) => !userId` ensures only authenticated requests are counted
+
+**AI routes rate limiting (server/routes/ai.ts):**
+- `router.use(aiRateLimiter)` applied globally — all AI endpoints now rate-limited at 100 req/hr per user
+
+**Workspace delete admin-gate (server/routes/workspace.ts):**
+- `DELETE /:id` upgraded from `requireAuth` only → `requireAuth, requireWorkspaceAdmin`
+- Prevents any authenticated user from attempting to delete workspaces they don't admin
+
+**DNS providers auth (server/routes/dns.ts):**
+- `GET /providers` (DNS provider catalog) added `req.isAuthenticated()` check
+- Previously returned provider list to unauthenticated callers
+
+### Verification Pass Results — Sessions 11-12
+Routes confirmed PASS (no changes needed): billing.ts, advertising.ts (read-only stubs), batch.ts (all stubs—no DB writes), growth.ts, organic.ts (AI computation endpoints—no user-data storage), support.ts, security.ts, merch.ts, platformSync.ts, storefront.ts, export.ts (download ownership check at line ~450), notifications.ts (DELETE ownership check at line ~200), shows.ts, preferences.ts, emailPreferences.ts, undo.ts, careerCoach.ts, artistProgress.ts, personalization.ts, sync.ts (logging stubs only), studioGeneration.ts (projectId not written to DB), studioStems.ts (verifyProjectOwnership), dmca.ts (POST /notice intentionally public per DMCA law), workspace.ts GET/member endpoints

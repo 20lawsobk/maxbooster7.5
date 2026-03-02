@@ -13,6 +13,25 @@ import { db } from '../db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
+const PRIVATE_IP_RE = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|::1$|fc|fd)/i;
+
+function validateExternalUrl(raw: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error('Invalid URL');
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error('Invalid URL protocol');
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === 'localhost' || PRIVATE_IP_RE.test(hostname)) {
+    throw new Error('URL resolves to a private or reserved address');
+  }
+  return parsed.href;
+}
+
 const router = Router();
 
 // Rate limiter for content analysis endpoints (expensive operations)
@@ -76,7 +95,14 @@ router.post('/image', async (req, res) => {
       return res.status(400).json({ error: 'imageUrl is required' });
     }
 
-    const analysis = await contentAnalysisService.analyzeImage(imageUrl);
+    let safeImageUrl: string;
+    try {
+      safeImageUrl = validateExternalUrl(imageUrl);
+    } catch {
+      return res.status(400).json({ error: 'Invalid or unsafe URL' });
+    }
+
+    const analysis = await contentAnalysisService.analyzeImage(safeImageUrl);
 
     res.json({
       success: true,
@@ -106,8 +132,15 @@ router.post('/video', async (req, res) => {
       return res.status(400).json({ error: 'videoUrl is required' });
     }
 
+    let safeVideoUrl: string;
+    try {
+      safeVideoUrl = validateExternalUrl(videoUrl);
+    } catch {
+      return res.status(400).json({ error: 'Invalid or unsafe URL' });
+    }
+
     const analysis = await contentAnalysisService.analyzeVideo(
-      videoUrl,
+      safeVideoUrl,
       duration || 30
     );
 
@@ -139,8 +172,15 @@ router.post('/audio', async (req, res) => {
       return res.status(400).json({ error: 'audioUrl is required' });
     }
 
+    let safeAudioUrl: string;
+    try {
+      safeAudioUrl = validateExternalUrl(audioUrl);
+    } catch {
+      return res.status(400).json({ error: 'Invalid or unsafe URL' });
+    }
+
     const analysis = await contentAnalysisService.analyzeAudio(
-      audioUrl,
+      safeAudioUrl,
       metadata
     );
 
@@ -202,7 +242,14 @@ router.post('/website', async (req, res) => {
       return res.status(400).json({ error: 'url is required' });
     }
 
-    const analysis = await contentAnalysisService.analyzeWebsite(url);
+    let safeUrl: string;
+    try {
+      safeUrl = validateExternalUrl(url);
+    } catch {
+      return res.status(400).json({ error: 'Invalid or unsafe URL' });
+    }
+
+    const analysis = await contentAnalysisService.analyzeWebsite(safeUrl);
 
     res.json({
       success: true,

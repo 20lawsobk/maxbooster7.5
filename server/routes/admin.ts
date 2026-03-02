@@ -5,8 +5,19 @@ import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { killSwitch } from "../safety/killSwitch.js";
 import * as os from 'os';
+import rateLimit from 'express-rate-limit';
 
 const adminRouter = Router();
+
+const adminEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req) => `admin-email:${(req.user as any)?.id ?? 'anon'}`,
+  message: { error: 'Too many email requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => !(req.user as any)?.id,
+});
 
 const errorCounter = { last24h: 0, last7d: 0 };
 
@@ -738,7 +749,7 @@ adminRouter.get("/activity", async (req, res) => {
   }
 });
 
-adminRouter.post("/users/:userId/email", async (req, res) => {
+adminRouter.post("/users/:userId/email", adminEmailLimiter, async (req, res) => {
   try {
     const { userId } = req.params;
     const { subject, message } = req.body;

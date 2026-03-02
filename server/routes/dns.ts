@@ -70,7 +70,8 @@ function domainBelongsToStorefront(domain: string, storefront: { customDomain: s
   return reqRoot === sfRoot;
 }
 
-router.get('/providers', (_req, res) => {
+router.get('/providers', (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
   res.json({
     providers: getSupportedProviders(),
     recordTypes: SUPPORTED_RECORD_TYPES,

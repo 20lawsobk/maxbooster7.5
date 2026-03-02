@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { achievementService } from "../services/achievementService";
 import { logger } from '../logger.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -15,13 +15,9 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/user", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-  
+router.get("/user", requireAuth, async (req: Request, res: Response) => {
   try {
-    const achievements = await achievementService.getUserAchievements(req.user.id);
+    const achievements = await achievementService.getUserAchievements(req.user!.id);
     return res.json(achievements);
   } catch (error) {
     logger.error("Error fetching user achievements:", error?.message || error);
@@ -29,13 +25,9 @@ router.get("/user", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/unnotified", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-  
+router.get("/unnotified", requireAuth, async (req: Request, res: Response) => {
   try {
-    const achievements = await achievementService.getUnnotifiedAchievements(req.user.id);
+    const achievements = await achievementService.getUnnotifiedAchievements(req.user!.id);
     return res.json(achievements);
   } catch (error) {
     logger.error("Error fetching unnotified achievements:", error?.message || error);
@@ -43,13 +35,9 @@ router.get("/unnotified", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/mark-notified/:achievementId", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-  
+router.post("/mark-notified/:achievementId", requireAuth, async (req: Request, res: Response) => {
   try {
-    await achievementService.markAchievementNotified(req.user.id, req.params.achievementId);
+    await achievementService.markAchievementNotified(req.user!.id, req.params.achievementId);
     return res.json({ success: true });
   } catch (error) {
     logger.error("Error marking achievement notified:", error?.message || error);
@@ -70,13 +58,9 @@ router.get("/leaderboard", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/streaks", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-  
+router.get("/streaks", requireAuth, async (req: Request, res: Response) => {
   try {
-    const streaks = await achievementService.getUserStreaks(req.user.id);
+    const streaks = await achievementService.getUserStreaks(req.user!.id);
     return res.json(streaks);
   } catch (error) {
     logger.error("Error fetching streaks:", error?.message || error);
@@ -84,13 +68,9 @@ router.get("/streaks", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/streaks/:type", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-  
+router.post("/streaks/:type", requireAuth, async (req: Request, res: Response) => {
   try {
-    const streak = await achievementService.updateStreak(req.user.id, req.params.type);
+    const streak = await achievementService.updateStreak(req.user!.id, req.params.type);
     return res.json(streak);
   } catch (error) {
     logger.error("Error updating streak:", error?.message || error);

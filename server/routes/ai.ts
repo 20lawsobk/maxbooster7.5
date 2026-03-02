@@ -13,8 +13,11 @@ import {
   type EngagementPredictionOptions,
   type ForecastOptions,
 } from '../services/unifiedAIController.js';
+import { aiRateLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
+
+router.use(aiRateLimiter);
 
 router.post('/content/generate', requireAuth, async (req: Request, res: Response) => {
   try {
