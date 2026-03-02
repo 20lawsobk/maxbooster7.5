@@ -140,26 +140,15 @@ router.get('/analytics', async (req, res) => {
 });
 
 // ============================================================
-// SETTINGS ENDPOINTS
-// ============================================================
-
-router.get('/settings', async (req, res) => {
-  try {
-    res.json({
-      maintenanceMode: false,
-      registrationEnabled: true,
-      emailNotifications: true,
-      maxUploadSize: 100,
-      allowedFileTypes: ['mp3', 'wav', 'flac', 'aiff'],
-    });
-  } catch (error) {
-    logger.error('Error fetching admin settings:', error);
-    res.status(500).json({ error: 'Failed to fetch settings' });
-  }
-});
-
 router.put('/settings', async (req, res) => {
   try {
+    const body = req.body as Record<string, unknown>;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return res.status(400).json({ error: 'Request body must be an object' });
+    }
+    await Promise.all(
+      Object.entries(body).map(([key, value]) => updateSetting(key, value))
+    );
     res.json({ success: true, message: 'Settings updated' });
   } catch (error) {
     logger.error('Error updating admin settings:', error);

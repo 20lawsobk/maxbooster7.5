@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { db } from '../db';
-import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects, studioRecentFiles, studioPinnedFolders } from '@shared/schema';
+import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects, studioRecentFiles, studioPinnedFolders, stemExports, pluginPresets } from '@shared/schema';
 import { notificationService } from '../services/notificationService.js';
 import { eq, and, or, desc, isNull, inArray, sql as drizzleSql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -152,7 +152,14 @@ router.delete('/projects/:projectId', requireAuth, async (req: Request, res: Res
 // GET recent files
 router.get('/recent-files', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ files: [] });
+    const userId = (req as any).user!.id;
+    const files = await db
+      .select()
+      .from(studioRecentFiles)
+      .where(eq(studioRecentFiles.userId, userId))
+      .orderBy(desc(studioRecentFiles.accessedAt))
+      .limit(20);
+    res.json({ files });
   } catch (error: unknown) {
     logger.error('Error fetching recent files:', error);
     res.status(500).json({ error: 'Failed to fetch recent files' });
@@ -1608,12 +1615,25 @@ router.get('/conversions/:conversionId/download', requireAuth, async (req: Reque
 // Lyrics endpoints
 router.get('/lyrics', requireAuth, async (req: Request, res: Response) => {
   try {
+    const userId = (req as any).user!.id;
     const { projectId } = req.query;
+    if (!projectId || typeof projectId !== 'string') {
+      return res.status(400).json({ error: 'projectId query param is required' });
+    }
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+      .limit(1);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    const meta = (project.metadata as Record<string, any>) || {};
     res.json({
       projectId,
-      lyrics: '',
-      sections: [],
-      lastUpdated: null,
+      lyrics: meta.lyrics ?? '',
+      sections: meta.lyricsSections ?? [],
+      lastUpdated: meta.lyricsUpdatedAt ?? null,
     });
   } catch (error: unknown) {
     logger.error('Error fetching lyrics:', error);
@@ -1623,11 +1643,34 @@ router.get('/lyrics', requireAuth, async (req: Request, res: Response) => {
 
 router.post('/lyrics', requireAuth, async (req: Request, res: Response) => {
   try {
+    const userId = (req as any).user!.id;
     const { projectId, lyrics, sections } = req.body;
+    if (!projectId || typeof projectId !== 'string') {
+      return res.status(400).json({ error: 'projectId is required' });
+    }
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+      .limit(1);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    const existingMeta = (project.metadata as Record<string, any>) || {};
+    const updatedMeta = {
+      ...existingMeta,
+      lyrics: lyrics ?? existingMeta.lyrics ?? '',
+      lyricsSections: sections ?? existingMeta.lyricsSections ?? [],
+      lyricsUpdatedAt: new Date().toISOString(),
+    };
+    await db
+      .update(projects)
+      .set({ metadata: updatedMeta, updatedAt: new Date() })
+      .where(eq(projects.id, projectId));
     res.json({
       success: true,
       projectId,
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: updatedMeta.lyricsUpdatedAt,
     });
   } catch (error: unknown) {
     logger.error('Error saving lyrics:', error);
@@ -2430,11 +2473,14 @@ router.post('/projects/:projectId/bulk-move-to-folder', requireAuth, async (req:
 // Stem exports endpoint
 router.get('/stem-exports/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
+    const userId = (req as any).user!.id;
     const { projectId } = req.params;
-    res.json({
-      exports: [],
-      projectId,
-    });
+    const exports = await db
+      .select()
+      .from(stemExports)
+      .where(and(eq(stemExports.projectId, projectId), eq(stemExports.userId, userId)))
+      .orderBy(desc(stemExports.createdAt));
+    res.json({ exports, projectId });
   } catch (error: unknown) {
     logger.error('Error fetching stem exports:', error);
     res.status(500).json({ error: 'Failed to fetch stem exports' });
@@ -2444,15 +2490,36 @@ router.get('/stem-exports/:projectId', requireAuth, async (req: Request, res: Re
 // Project export stems endpoint
 router.post('/projects/:projectId/export-stems', requireAuth, async (req: Request, res: Response) => {
   try {
+    const userId = (req as any).user!.id;
     const { projectId } = req.params;
-    const { format, quality } = req.body;
+    const { format, bitDepth, sampleRate, trackIds, name } = req.body;
+
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const [record] = await db
+      .insert(stemExports)
+      .values({
+        projectId,
+        userId,
+        name: name || `Stem Export ${new Date().toISOString()}`,
+        format: format || 'wav',
+        bitDepth: bitDepth || 24,
+        sampleRate: sampleRate || 44100,
+        trackIds: trackIds || [],
+        status: 'pending',
+      })
+      .returning();
+
     res.json({
       success: true,
-      jobId: `stems_${nanoid()}`,
+      jobId: record.id,
       projectId,
-      format: format || 'wav',
-      quality: quality || 'high',
-      status: 'processing',
+      format: record.format,
+      status: record.status,
+      export: record,
     });
   } catch (error: unknown) {
     logger.error('Error starting stem export:', error);
@@ -4420,30 +4487,40 @@ router.post('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async
     const { projectId, pluginId } = req.params;
     const userId = (req as any).user.id;
     const { name, settings } = req.body;
-    
+
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    
-    if (!name) {
+
+    if (!name || typeof name !== 'string') {
       return res.status(400).json({ error: 'Preset name is required' });
     }
-    
-    const presetId = nanoid();
-    
+
+    const [preset] = await db
+      .insert(pluginPresets)
+      .values({
+        pluginId,
+        userId,
+        name,
+        isFactory: false,
+        parameters: settings || {},
+        metadata: { projectId },
+      })
+      .returning();
+
     res.json({
       success: true,
       outcome: {
         type: 'preset_saved',
         message: `Preset "${name}" saved successfully`,
         data: {
-          presetId,
+          presetId: preset.id,
           pluginId,
-          name,
+          name: preset.name,
           isFactory: false,
           isFavorite: false,
-          createdAt: new Date().toISOString(),
+          createdAt: preset.createdAt,
         },
       },
     });

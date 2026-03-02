@@ -18,6 +18,56 @@ Max Booster is an AI-powered, full-stack TypeScript web application designed to 
 
 I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
 
+## Stub Implementation — Session 16 (March 2026)
+
+### Stubs Replaced With Real DB Operations
+All the following endpoints previously returned hardcoded/empty responses and now perform actual database operations:
+
+**admin/index.ts**
+- Removed duplicate `GET /settings` stub that shadowed the real DB-backed handler (real handler at line ~510 reads from `systemSettings` table)
+- `PUT /settings` now calls `updateSetting()` for every key in the request body (upserts into `systemSettings` table under `platform.` prefix)
+
+**studio.ts** (added imports: `stemExports`, `pluginPresets`)
+- `GET /recent-files` → queries `studioRecentFiles` by userId, ordered by `accessedAt` desc, limit 20
+- `GET /lyrics` → reads `projects.metadata.lyrics` for the given projectId (ownership-checked)
+- `POST /lyrics` → writes lyrics + sections into `projects.metadata` (ownership-checked, updates `updatedAt`)
+- `GET /stem-exports/:projectId` → queries `stemExports` table by projectId + userId
+- `POST /projects/:projectId/export-stems` → inserts into `stemExports` table, returns real record
+- `POST /projects/:projectId/plugins/:pluginId/presets` → inserts into `pluginPresets` table
+
+**batch.ts** (added imports: `distroReleases`, `posts`, `userStorageFiles`, `listings`, `beats`, `studioTracks`)
+- All 16 batch operations now perform real DB mutations with per-ID ownership checks:
+  - `releases/submit` → sets `distroReleases.status = 'pending'` (checked by `artistId`)
+  - `releases/takedown` → sets `distroReleases.status = 'takedown'` (checked by `artistId`)
+  - `releases/update` → updates allowed fields on `distroReleases` (checked by `artistId`)
+  - `releases/delete` → sets `distroReleases.status = 'deleted'` (checked by `artistId`)
+  - `posts/schedule` → sets `posts.scheduledAt` + `status = 'scheduled'` (checked by `userId`)
+  - `posts/delete` → deletes from `posts` (checked by `userId`)
+  - `posts/update` → updates allowed fields on `posts` (checked by `userId`)
+  - `posts/approve` → sets `posts.approvalStatus = 'approved'` with reviewer info
+  - `files/delete` → sets `userStorageFiles.deletedAt = now()` (soft delete, checked by `userId`)
+  - `files/move` → updates `userStorageFiles.folder` (checked by `userId`)
+  - `files/update` → updates `userStorageFiles.metadata/isPublic/folder` (checked by `userId`)
+  - `marketplace/update` → updates `listings` allowed fields (checked by `userId`)
+  - `marketplace/delete` → sets `listings.isPublished = false` (soft delete, checked by `userId`)
+  - `beats/update` → updates allowed fields on `beats` (checked by `userId`)
+  - `beats/delete` → sets `beats.isPublished = false` (checked by `userId`)
+  - `tracks/move` → updates `studioTracks.projectId/order`
+  - `tracks/tag` → merges tags into `studioTracks.metadata`
+  - `tracks/delete` → hard deletes from `studioTracks`
+
+**advertising.ts** (added imports: `db`, `adCampaigns`, `eq` from drizzle-orm)
+- `POST /campaigns` → inserts into `adCampaigns` table with all campaign fields, validation on `name` and `platform`
+- `GET /budget` → aggregates total/daily budget from real `adCampaigns` records for the user
+
+### Deferred (No Matching Infrastructure)
+- Studio export pipeline (no job queue table) — handled by `/api/export` routes already
+- Studio AI music endpoints (ai-master/mix/suggestions) — no external AI audio service
+- Studio audio conversions — needs worker/queue infrastructure
+- advertising.ts ROAS/attribution/budget-pacing — complex derived analytics, no dedicated table
+- webhooks-admin.ts dead letter queue — requires Redis/BullMQ
+- undo.ts — intentional in-memory design for DAW ephemeral undo history
+
 ## Performance Hardening (Current Session - March 2026)
 
 ### Pagination Applied to All List Endpoints
