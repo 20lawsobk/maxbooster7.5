@@ -6,9 +6,9 @@ const config: CapacitorConfig = {
   webDir: 'dist/public',
   
   server: {
-    url: 'https://maxbooster.replit.app',
-    cleartext: false,
-    androidScheme: 'https'
+    hostname: 'maxbooster.replit.app',
+    androidScheme: 'https',
+    cleartext: false
   },
   
   plugins: {

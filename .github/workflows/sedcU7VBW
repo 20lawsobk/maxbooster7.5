@@ -49,9 +49,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Electron process dependencies
-        run: npm install --prefix electron --no-audit
-
       - name: Build web assets
         run: npm run build
         env:
@@ -111,10 +108,6 @@ jobs:
         shell: bash
         run: rm -f package-lock.json && npm install --no-audit
 
-      - name: Install Electron process dependencies
-        shell: bash
-        run: npm install --prefix electron --no-audit
-
       - name: Build web assets
         run: npm run build
         env:
@@ -167,9 +160,6 @@ jobs:
 
       - name: Install dependencies
         run: rm -f package-lock.json && npm install --no-audit
-
-      - name: Install Electron process dependencies
-        run: npm install --prefix electron --no-audit
 
       - name: Build web assets
         run: npm run build

@@ -111,12 +111,16 @@ function buildDesktop(): void {
     log('Warning: Missing icon at electron/assets/icon.png', 'warn');
   }
 
-  if (!pkg.build) {
-    throw new Error('No electron-builder config found in package.json. Add a "build" key.');
+  if (!fs.existsSync('electron/package.json')) {
+    throw new Error('No electron-builder config found at electron/package.json.');
   }
 
   if (!fs.existsSync('electron/main.js') && !fs.existsSync('electron/main.ts')) {
     throw new Error('Electron main process file not found (electron/main.js or electron/main.ts).');
+  }
+
+  if (!fs.existsSync('dist/public/index.html')) {
+    throw new Error('Compiled frontend not found at dist/public/index.html. Run the web build first.');
   }
 
   log(`Building ${APP_NAME} v${pkg.version} for desktop...`, 'info');
@@ -147,13 +151,13 @@ function buildDesktop(): void {
   let buildCmd: string;
   if (platform === 'linux') {
     log('Building Linux packages (AppImage, DEB)...', 'info');
-    buildCmd = 'npx electron-builder --linux';
+    buildCmd = 'npx electron-builder --linux --projectDir electron';
   } else if (platform === 'darwin') {
     log('Building macOS packages (DMG, ZIP)...', 'info');
-    buildCmd = 'npx electron-builder --mac';
+    buildCmd = 'npx electron-builder --mac --projectDir electron';
   } else if (platform === 'win32') {
     log('Building Windows packages (NSIS, Portable)...', 'info');
-    buildCmd = 'npx electron-builder --win';
+    buildCmd = 'npx electron-builder --win --projectDir electron';
   } else {
     throw new Error(`Unsupported build platform: ${platform}. Use GitHub Actions for cross-platform builds.`);
   }

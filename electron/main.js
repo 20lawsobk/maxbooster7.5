@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu, Tray, nativeImage, Notification, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, shell, Menu, Tray, nativeImage, Notification, ipcMain, dialog, net, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -293,7 +293,88 @@ ipcMain.handle('get-file-info', async (event, filePath) => {
   }
 });
 
+function getPublicDir() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'dist', 'public')
+    : path.join(__dirname, '..', 'dist', 'public');
+}
+
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.js':   'application/javascript',
+  '.mjs':  'application/javascript',
+  '.css':  'text/css',
+  '.json': 'application/json',
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif':  'image/gif',
+  '.svg':  'image/svg+xml',
+  '.ico':  'image/x-icon',
+  '.webp': 'image/webp',
+  '.woff': 'font/woff',
+  '.woff2':'font/woff2',
+  '.ttf':  'font/ttf',
+  '.otf':  'font/otf',
+  '.mp3':  'audio/mpeg',
+  '.wav':  'audio/wav',
+  '.mp4':  'video/mp4',
+  '.webm': 'video/webm',
+};
+
+const PASSTHROUGH_PREFIXES = ['/api/', '/ws', '/auth', '/oauth', '/socket.io'];
+
+function shouldPassthrough(pathname) {
+  return PASSTHROUGH_PREFIXES.some(prefix => pathname.startsWith(prefix));
+}
+
+function registerNativeProtocol() {
+  session.defaultSession.protocol.handle('https', async (request) => {
+    try {
+      const url = new URL(request.url);
+
+      if (url.hostname !== 'maxbooster.replit.app' || shouldPassthrough(url.pathname)) {
+        return net.fetch(request, { bypassCustomProtocolHandlers: true });
+      }
+
+      const publicDir = getPublicDir();
+      let filePath = path.join(publicDir, url.pathname === '/' ? '/index.html' : url.pathname);
+
+      let fileExists = false;
+      try {
+        const stat = fs.statSync(filePath);
+        fileExists = stat.isFile();
+        if (stat.isDirectory()) {
+          filePath = path.join(filePath, 'index.html');
+          fileExists = fs.existsSync(filePath);
+        }
+      } catch {
+        fileExists = false;
+      }
+
+      if (!fileExists) {
+        filePath = path.join(publicDir, 'index.html');
+      }
+
+      const ext = path.extname(filePath).toLowerCase();
+      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+      const body = fs.readFileSync(filePath);
+
+      return new Response(body, {
+        status: 200,
+        headers: { 'Content-Type': contentType },
+      });
+    } catch (err) {
+      console.error('[Protocol] Error serving local asset:', err?.message);
+      return net.fetch(request, { bypassCustomProtocolHandlers: true });
+    }
+  });
+}
+
 app.whenReady().then(() => {
+  if (process.env.NODE_ENV !== 'development') {
+    registerNativeProtocol();
+  }
   setupAutoUpdater();
   createWindow();
   createTray();

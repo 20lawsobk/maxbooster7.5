@@ -1902,15 +1902,43 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
 // Studio export endpoints
 router.post('/export', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { projectId, format, quality, settings } = req.body;
-    const jobId = `export_${nanoid()}`;
+    const userId = (req as any).user.id;
+    const { projectId, format, quality, settings, trackIds } = req.body;
+
+    if (!projectId || typeof projectId !== 'string') {
+      return res.status(400).json({ error: 'projectId is required' });
+    }
+
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const resolvedFormat = format || 'wav';
+    const resolvedBitDepth = settings?.bitDepth || 24;
+    const resolvedSampleRate = settings?.sampleRate || 44100;
+
+    const [record] = await db
+      .insert(stemExports)
+      .values({
+        projectId,
+        userId,
+        name: settings?.name || `Export ${new Date().toISOString()}`,
+        format: resolvedFormat,
+        bitDepth: resolvedBitDepth,
+        sampleRate: resolvedSampleRate,
+        trackIds: Array.isArray(trackIds) ? trackIds : [],
+        status: 'pending',
+      })
+      .returning();
+
     res.json({
       success: true,
-      jobId,
+      jobId: record.id,
       projectId,
-      format: format || 'wav',
+      format: record.format,
       quality: quality || 'high',
-      status: 'processing',
+      status: record.status,
     });
   } catch (error: unknown) {
     logger.error('Error starting export:', error);
@@ -1921,11 +1949,29 @@ router.post('/export', requireAuth, async (req: Request, res: Response) => {
 router.get('/export/:jobId/status', requireAuth, async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
+    const userId = (req as any).user.id;
+
+    const [record] = await db
+      .select({
+        id: stemExports.id,
+        status: stemExports.status,
+        outputUrl: stemExports.outputUrl,
+        createdAt: stemExports.createdAt,
+      })
+      .from(stemExports)
+      .where(and(eq(stemExports.id, jobId), eq(stemExports.userId, userId)))
+      .limit(1);
+
+    if (!record) {
+      return res.status(404).json({ error: 'Export job not found' });
+    }
+
+    const isComplete = record.status === 'completed';
     res.json({
-      jobId,
-      status: 'completed',
-      progress: 100,
-      downloadUrl: `/api/studio/export/${jobId}/download`,
+      jobId: record.id,
+      status: record.status,
+      progress: isComplete ? 100 : record.status === 'processing' ? 50 : 0,
+      downloadUrl: record.outputUrl || (isComplete ? `/api/studio/export/${jobId}/download` : null),
     });
   } catch (error: unknown) {
     logger.error('Error checking export status:', error);
@@ -1959,14 +2005,42 @@ router.post('/export/:jobId/upload', requireAuth, async (req: Request, res: Resp
 
 router.post('/clips/audio', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { trackId, startTime, duration, audioData } = req.body;
-    res.json({
-      id: `clip_${nanoid()}`,
-      trackId,
-      startTime: startTime || 0,
-      duration: duration || 0,
-      createdAt: new Date().toISOString(),
+    const userId = (req as any).user.id;
+    const { trackId, projectId, startTime, duration, name, audioUrl } = req.body;
+
+    if (!trackId || typeof trackId !== 'string') {
+      return res.status(400).json({ error: 'trackId is required' });
+    }
+
+    const track = await db.query.studioTracks.findFirst({
+      where: eq(studioTracks.id, trackId),
     });
+
+    if (!track) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    const resolvedProjectId = projectId || track.projectId;
+
+    if (!await verifyProjectOwnership(resolvedProjectId, userId)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const clipId = nanoid();
+    const [clip] = await db
+      .insert(audioClips)
+      .values({
+        id: clipId,
+        projectId: resolvedProjectId,
+        trackId,
+        name: name || `Clip ${new Date().toLocaleTimeString()}`,
+        audioUrl: audioUrl || null,
+        startTime: typeof startTime === 'number' ? startTime : 0,
+        duration: typeof duration === 'number' ? duration : null,
+      })
+      .returning();
+
+    res.status(201).json(clip);
   } catch (error: unknown) {
     logger.error('Error creating audio clip:', error);
     res.status(500).json({ error: 'Failed to create audio clip' });
@@ -4448,22 +4522,38 @@ router.post('/projects/:projectId/plugins/:pluginId/presets/:presetId/apply', re
   try {
     const { projectId, pluginId, presetId } = req.params;
     const userId = (req as any).user.id;
-    
+
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
+
+    const [preset] = await db
+      .select()
+      .from(pluginPresets)
+      .where(
+        and(
+          eq(pluginPresets.id, presetId),
+          eq(pluginPresets.pluginId, pluginId),
+          or(eq(pluginPresets.userId, userId), eq(pluginPresets.isFactory, true))
+        )
+      )
+      .limit(1);
+
+    if (!preset) {
+      return res.status(404).json({ error: 'Preset not found' });
+    }
+
     res.json({
       success: true,
       outcome: {
         type: 'preset_applied',
-        message: 'Preset applied successfully',
+        message: `Preset "${preset.name}" applied successfully`,
         data: {
           pluginId,
-          presetId,
+          presetId: preset.id,
+          name: preset.name,
+          parameters: preset.parameters,
           appliedAt: new Date().toISOString(),
         },
       },

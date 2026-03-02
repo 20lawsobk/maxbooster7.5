@@ -18,7 +18,7 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "electron:dev": "electron .",
-    "electron:build": "electron-builder",
+    "electron:build": "electron-builder --projectDir electron",
     "build:desktop": "tsx scripts/build-apps.ts desktop",
     "build:desktop:full": "FORCE_FULL_BUILD=true tsx scripts/build-apps.ts desktop",
     "build:mobile": "tsx scripts/build-apps.ts mobile",
