@@ -276,6 +276,15 @@ function ensureCapacitorInstalled(): boolean {
  * Set up Capacitor and sync web assets to native projects.
  * Pass webAssetsAlreadyBuilt=true to skip rebuilding the Vite bundle.
  */
+function podAvailable(): boolean {
+  try {
+    execSync('pod --version', { stdio: 'pipe', encoding: 'utf-8' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function buildMobile(webAssetsAlreadyBuilt = false): void {
   log('='.repeat(60), 'info');
   log('BUILDING MOBILE APPLICATIONS', 'info');
@@ -293,8 +302,6 @@ function buildMobile(webAssetsAlreadyBuilt = false): void {
     process.exit(1);
   }
 
-  log('Syncing Capacitor projects...', 'info');
-
   if (!fs.existsSync('android')) {
     log('Adding Android platform...', 'info');
     runCommand('npx cap add android');
@@ -305,13 +312,34 @@ function buildMobile(webAssetsAlreadyBuilt = false): void {
     runCommand('npx cap add ios');
   }
 
-  runCommand('npx cap sync');
+  const hasPod = podAvailable();
+  const isMacOS = process.platform === 'darwin';
 
-  log('Mobile build setup completed!', 'success');
+  if (hasPod && isMacOS) {
+    log('Syncing all Capacitor projects (Android + iOS)...', 'info');
+    runCommand('npx cap sync');
+    log('Mobile build setup completed!', 'success');
+  } else {
+    log('Syncing Android...', 'info');
+    runCommand('npx cap sync android');
+    log('Android sync complete ✓', 'success');
+
+    if (!isMacOS) {
+      log('iOS sync skipped — CocoaPods requires macOS + Xcode', 'warn');
+      log('iOS builds run automatically via GitHub Actions on macOS runners', 'info');
+    } else {
+      log('iOS sync skipped — CocoaPods (pod) not found', 'warn');
+      log('Install CocoaPods: sudo gem install cocoapods', 'info');
+    }
+
+    log('Mobile build setup completed (Android ready)!', 'success');
+  }
+
   console.log('');
   log('Next steps:', 'info');
   log('  Android: npx cap open android   (requires Android Studio)', 'info');
   log('  iOS:     npx cap open ios        (requires macOS + Xcode)', 'info');
+  log('  CI/CD:   GitHub Actions builds both automatically on tagged releases', 'info');
 }
 
 /** Build web assets once, then desktop and mobile. */

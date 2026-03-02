@@ -141,7 +141,7 @@ async function buildAll() {
 
 async function triggerGitHubWorkflows() {
   const pat = process.env.GITHUB_PAT;
-  const repo = process.env.GITHUB_REPO || '20lawsobk/maxbooster7.5';
+  const repo = process.env.GITHUB_REPO || 'blawzmusic/max-booster';
 
   if (!pat) {
     console.log('GITHUB_PAT not set — skipping desktop/mobile build triggers.');
