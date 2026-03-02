@@ -290,7 +290,6 @@ export function AIImageGenerator({
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-indigo-500" />
                     <span className="font-semibold text-sm">AI Visual Spec Generated</span>
-                    <Badge variant="outline" className="text-xs">Use with DALL-E / Midjourney / Flux</Badge>
                   </div>
 
                   <div className="space-y-1">
