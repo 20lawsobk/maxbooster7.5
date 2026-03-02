@@ -575,13 +575,44 @@ router.post('/analytics/export', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { ids, data } = req.body as BatchRequest;
+    const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ message: 'No IDs provided' });
     }
 
-    const format = data?.format || 'csv';
+    const userId = req.user!.id;
+
+    const rows = await db
+      .select({
+        id: analytics.id,
+        platform: analytics.platform,
+        date: analytics.date,
+        streams: analytics.streams,
+        revenue: analytics.revenue,
+        totalListeners: analytics.totalListeners,
+        followers: analytics.followers,
+      })
+      .from(analytics)
+      .where(
+        and(
+          eq(analytics.userId, userId),
+          inArray(analytics.platform, ids)
+        )
+      )
+      .orderBy(desc(analytics.date));
+
     const exportId = `export_${Date.now()}`;
+
+    batchJobs.set(exportId, {
+      status: 'completed',
+      processed: rows.length,
+      total: rows.length,
+      success: rows.length,
+      failed: 0,
+      failures: [],
+      startTime: Date.now(),
+      exportData: rows as unknown as Record<string, unknown>[],
+    });
 
     res.json({
       success: ids,
@@ -590,10 +621,46 @@ router.post('/analytics/export', async (req: Request, res: Response) => {
       totalSucceeded: ids.length,
       totalFailed: 0,
       exportId,
-      downloadUrl: `/api/analytics/exports/${exportId}`,
+      downloadUrl: `/api/batch/analytics/export/${exportId}/download`,
     });
   } catch (error) {
     logger.error('Batch analytics export error:', error?.message || error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.get('/analytics/export/:exportId/download', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { exportId } = req.params;
+    const job = batchJobs.get(exportId);
+
+    if (!job || !job.exportData) {
+      return res.status(404).json({ message: 'Export not found or expired' });
+    }
+
+    const rows = job.exportData;
+    const headers = ['id', 'platform', 'date', 'streams', 'revenue', 'totalListeners', 'followers'];
+    const csvLines = [
+      headers.join(','),
+      ...rows.map(r =>
+        headers.map(h => {
+          const val = r[h];
+          if (val === null || val === undefined) return '';
+          if (val instanceof Date) return val.toISOString();
+          return String(val).replace(/,/g, ';');
+        }).join(',')
+      ),
+    ];
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="analytics-export-${exportId}.csv"`);
+    res.send(csvLines.join('\n'));
+  } catch (error) {
+    logger.error('Analytics export download error:', error?.message || error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -651,7 +718,7 @@ router.post('/analytics/compare', async (req: Request, res: Response) => {
   }
 });
 
-const batchJobs: Map<string, { status: string; processed: number; total: number; success: number; failed: number; failures: Array<{ id: string; error: string }>; currentItem?: string; startTime: number }> = new Map();
+const batchJobs: Map<string, { status: string; processed: number; total: number; success: number; failed: number; failures: Array<{ id: string; error: string }>; currentItem?: string; startTime: number; exportData?: Record<string, unknown>[] }> = new Map();
 
 router.post('/tracks/move', async (req: Request, res: Response) => {
   try {
