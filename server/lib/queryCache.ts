@@ -11,6 +11,7 @@
  */
 
 import { getRedisClient } from './redisConnectionFactory.js';
+import { logger } from '../logger.js';
 
 interface CacheEntry<T> {
   data: T;
@@ -37,7 +38,7 @@ class QueryCache {
         }
       }
     } catch (error: unknown) {
-      // Fall through to memory cache
+      logger.warn('[QueryCache] Redis GET failed — falling through to memory cache:', (error as Error).message);
     }
 
     // Fall back to memory cache
@@ -69,7 +70,7 @@ class QueryCache {
         return; // Success - don't also cache in memory
       }
     } catch (error: unknown) {
-      // Fall through to memory cache
+      logger.warn('[QueryCache] Redis SET failed — falling through to memory cache:', (error as Error).message);
     }
 
     // Fall back to memory cache
@@ -117,7 +118,7 @@ class QueryCache {
         await redis.del(`qcache:${key}`);
       }
     } catch (error: unknown) {
-      // Fall through
+      logger.warn('[QueryCache] Redis DEL failed for invalidate:', (error as Error).message);
     }
 
     this.memoryCache.delete(key);
@@ -136,7 +137,7 @@ class QueryCache {
         }
       }
     } catch (error: unknown) {
-      // Fall through
+      logger.warn('[QueryCache] Redis pattern invalidation failed:', (error as Error).message);
     }
 
     // Memory cache pattern matching
@@ -160,7 +161,7 @@ class QueryCache {
         }
       }
     } catch (error: unknown) {
-      // Fall through
+      logger.warn('[QueryCache] Redis clear failed:', (error as Error).message);
     }
 
     this.memoryCache.clear();

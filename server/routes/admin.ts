@@ -43,8 +43,8 @@ adminRouter.get("/dashboard", (req, res) => {
 adminRouter.get("/users", async (req, res) => {
   try {
     const { page = "1", limit = "20", search = "", status, plan } = req.query;
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(Math.max(1, parseInt(limit as string) || 20), 200);
     const offset = (pageNum - 1) * limitNum;
 
     const conditions = [];
@@ -255,6 +255,7 @@ adminRouter.delete("/users/:userId", async (req, res) => {
     }
 
     await db.delete(users).where(eq(users.id, userId));
+    logger.info(`Admin ${req.user?.email} permanently deleted user ${userId}`);
     res.json({ success: true, message: "User deleted" });
   } catch (error) {
     logger.error("Error deleting user:", error);
@@ -383,8 +384,8 @@ adminRouter.get("/system-health", async (req, res) => {
 adminRouter.get("/moderation/reports", async (req, res) => {
   try {
     const { page = "1", limit = "20" } = req.query;
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(Math.max(1, parseInt(limit as string) || 20), 200);
 
     res.json({
       reports: [],

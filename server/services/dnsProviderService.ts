@@ -115,7 +115,9 @@ class GoDaddyProvider implements DnsProvider {
   async updateRecord(domain: string, record: DnsRecord, originalName: string, originalType: string, credentials: ProviderCredentials): Promise<boolean> {
     const rootDomain = extractRootDomain(domain);
     if (originalName !== record.name || originalType !== record.type) {
-      await this.deleteRecord(domain, originalType, originalName, credentials).catch(() => {});
+      await this.deleteRecord(domain, originalType, originalName, credentials).catch((err: Error) => {
+        logger.error(`[DNS] Failed to delete old record (${originalType} ${originalName}) during update — stale record may remain:`, err.message);
+      });
       return this.addRecord(domain, record, credentials);
     }
     const url = `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records/${originalType}/${originalName}`;

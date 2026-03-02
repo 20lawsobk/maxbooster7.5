@@ -131,3 +131,23 @@ The server serves the frontend using Vite middleware in development and as stati
 - **Audit**: Every deployment (success or failure) written to `optimization_tasks` table — no end-user notifications
 - **Activation**: Set `ENABLE_SELF_EVOLUTION=true` env var (auto-enables on boot) or call `POST /api/auto-updates/silent-deployment/enable` as admin
 - **Admin endpoints**: `GET /api/auto-updates/silent-deployment/status`, `GET /api/auto-updates/silent-deployment/history`, `POST /api/auto-updates/silent-deployment/enable`, `POST /api/auto-updates/silent-deployment/disable`
+
+## Final Production Hardening (March 2026 — Session 3)
+
+All remaining silent failure patterns and security gaps resolved. Three architect reviews completed — final verdict: PRODUCTION READY.
+
+### Silent Failure Fixes
+- **server/lib/queryCache.ts**: All 5 Redis catch blocks now call `logger.warn()` with error message before falling through to memory cache (GET, SET, DEL, invalidatePattern, clear operations)
+- **server/services/dnsProviderService.ts**: DNS record deletion failure during type/name change now calls `logger.error()` — stale records will no longer fail silently
+- **server/services/industryMonitorService.ts**: Upgraded from `Promise.allSettled` → `Promise.all` (RSS + search both required); throws if all 6 RSS feeds fail; logs per-feed/query errors individually
+
+### Admin Security Fixes
+- **server/routes/admin.ts** `/users` endpoint: Added `Math.min(..., 200)` cap on pagination limit — previously allowed unlimited DB queries (DoS vector)
+- **server/routes/admin.ts** `/moderation/reports` endpoint: Same pagination cap applied
+- **server/routes/admin.ts** user delete handler: Added `logger.info()` audit log on successful user deletion — was previously only logging errors
+
+### Verified PASS (No Changes Needed)
+- **billing.ts**: All 20+ routes have `requireAuth`; only `GET /plans` is intentionally public; Stripe webhook uses dedicated `stripeWebhookMiddleware` with full `constructEvent()` signature verification in `server/safety/stripeWebhookSecurity.ts`
+- **errorHandler.ts**: Stack traces only included in development (`NODE_ENV === 'development'`); requestId captured from headers; auditLogger called for every error; consistent `ErrorResponse` shape
+- **shared/schema.ts**: All major userId FK columns have composite indexes (sessions, subscriptions, royalty_transactions, dsp_user_platform_status, nps_responses, cancellation_feedback, feature_events, fan_subscribers, and more)
+- **developerApi.ts**: The `console.error` flagged was inside a code sample string shown to API users — not live server code
