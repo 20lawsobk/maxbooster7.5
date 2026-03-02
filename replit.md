@@ -168,3 +168,24 @@ Three more architect passes run. Six real bugs discovered and fixed across rate 
 - **jsonwebtoken 9.0.3**: `alg: none` rejected automatically when a string secret is provided
 - **queryCache invalidatePattern**: Never receives user input — all callers use hardcoded `createCacheKey` prefixes
 - **Session fixation on login**: `req.session.regenerate()` confirmed at routes.ts lines 317-319 for both login and register
+
+## Verification Pass #5 & #6 — File Upload Security & Marketplace Integrity (March 2026 — Session 5)
+
+### File Upload Security Fixes (server/routes/storage.ts)
+
+**Added two sanitization helpers and wired them into both upload paths:**
+
+- `sanitizeCategory(raw)`: Validates the client-supplied `category` param against an explicit allowlist (`ALLOWED_CATEGORIES` set: audio, tracks, beats, images, covers, avatars, videos, files, documents, stems, projects). Anything outside the allowlist defaults to `'files'`. Previously, an unsanitized category was interpolated directly into the storage key prefix `users/${userId}/${category}` — a path like `../../other-user` could produce unexpected key structures in object storage
+
+- `sanitizeFileName(raw)`: Strips path components via `path.basename()`, replaces all characters outside `[a-zA-Z0-9._- ]` with underscores, and caps at 255 characters. Previously, `req.file.originalname` and client-supplied `fileName` were used verbatim in storage keys — a filename like `../../etc/passwd` or `../other-key` could pollute the storage namespace
+
+- Applied to **single-file upload** (`POST /upload`): `req.body.category` → `sanitizeCategory`, `req.file.originalname` → `sanitizeFileName` (stored as `safeFileName`, used in uploadFile call AND response `name` field)
+
+- Applied to **chunked upload** (`POST /upload/chunk`): `req.body.category` → `sanitizeCategory`, `req.body.fileName` → `sanitizeFileName`. Note: `fileId` was already protected by a strict alphanumeric regex `/^[a-zA-Z0-9_-]+$/` — this was a false positive in the architect's report
+
+### Marketplace & Payment Integrity (Verified PASS — No Changes Needed)
+- **Self-purchase blocked**: `storefront.ts` line 1403: `Cannot purchase from your own storefront` check present
+- **Auth enforced**: Line 1379: `req.isAuthenticated()` check before all purchase routes
+- **Checkout 20-item cap**: Line 1389 enforces maximum 20 items per session
+- **Price from DB, not client**: Stripe `line_items` use server-fetched `stripePriceId`, not any amount from request body — price manipulation is not possible
+- **Architect evidence gap**: Pass #6 was re-verified manually by reading the actual checkout handler (line 1377-1531)

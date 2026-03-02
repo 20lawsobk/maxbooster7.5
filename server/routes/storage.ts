@@ -95,6 +95,21 @@ const MAX_FILE_SIZE = 500 * 1024 * 1024;
 const MAX_CHUNK_SIZE = 10 * 1024 * 1024;
 const CHUNK_TTL = 24 * 60 * 60 * 1000;
 
+const ALLOWED_CATEGORIES = new Set([
+  'audio', 'tracks', 'beats', 'images', 'covers', 'avatars',
+  'videos', 'files', 'documents', 'stems', 'projects',
+]);
+
+function sanitizeCategory(raw: unknown): string {
+  const cat = typeof raw === 'string' ? raw.toLowerCase() : 'files';
+  return ALLOWED_CATEGORIES.has(cat) ? cat : 'files';
+}
+
+function sanitizeFileName(raw: unknown): string {
+  const name = typeof raw === 'string' ? raw : 'upload';
+  return path.basename(name).replace(/[^a-zA-Z0-9._\- ]/g, '_').slice(0, 255) || 'upload';
+}
+
 interface ChunkInfo {
   fileId: string;
   fileName: string;
@@ -159,7 +174,9 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
       return res.status(400).json({ error: 'No file provided' });
     }
 
-    const { category = 'files', fileId } = req.body;
+    const { fileId } = req.body;
+    const category = sanitizeCategory(req.body.category);
+    const safeFileName = sanitizeFileName(req.file.originalname);
     const userId = req.user!.id;
 
     if (!userId) {
@@ -169,7 +186,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
     const key = await storageService.uploadFile(
       req.file.buffer,
       `users/${userId}/${category}`,
-      req.file.originalname,
+      safeFileName,
       req.file.mimetype
     );
 
@@ -178,7 +195,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
     const responseFile = {
       id: fileId || randomUUID(),
       key,
-      name: req.file.originalname,
+      name: safeFileName,
       size: req.file.size,
       type: req.file.mimetype,
       url: await storageService.getDownloadUrl(key),
@@ -218,7 +235,9 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
       return res.status(400).json({ error: 'No chunk provided' });
     }
 
-    const { chunkIndex, totalChunks, fileId, fileName, fileSize, mimeType, category = 'files' } = req.body;
+    const { chunkIndex, totalChunks, fileId, fileName: rawFileName, fileSize, mimeType } = req.body;
+    const category = sanitizeCategory(req.body.category);
+    const fileName = sanitizeFileName(rawFileName);
     const userId = req.user!.id;
 
     if (!fileId || !/^[a-zA-Z0-9_-]+$/.test(fileId)) {
