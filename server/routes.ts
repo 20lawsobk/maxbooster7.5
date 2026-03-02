@@ -64,8 +64,9 @@ async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promis
       return { type: 'router', value: module };
     }
 
-    // Module doesn't export anything usable
-    log(`Warning: ${name} doesn't export a router or setup function`);
+    // Module doesn't export anything usable — this is a programming error, not a runtime condition
+    logger.error(`[routes] Route module '${name}' loaded successfully but exports no router or setup function — check the module's default export`);
+    log(`ERROR: ${name} has no usable export (router or setup function)`);
     return { type: 'skip', value: null };
   } catch (error: any) {
     const criticalRoutes = ['auth', 'billing', 'stripeWebhook', 'admin', 'security', 'storage'];
@@ -4249,7 +4250,11 @@ export async function registerRoutes(
       log('Silent deployment system on standby (set ENABLE_SELF_EVOLUTION=true to activate)');
     }
   } catch (error: any) {
-    log(`Warning: Could not initialize silent deployment service - ${error.message}`);
+    logger.error(`[routes] FATAL: Silent deployment service failed to initialize - ${error.message}`, error.stack || error.message);
+    if (process.env.ENABLE_SELF_EVOLUTION === 'true') {
+      throw new Error(`Silent deployment init failed (ENABLE_SELF_EVOLUTION=true): ${error.message}`);
+    }
+    log(`ERROR: Could not initialize silent deployment service - ${error.message}`);
   }
 
   return httpServer;
