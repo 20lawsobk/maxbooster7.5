@@ -46,7 +46,6 @@ import {
   FileAudio,
   Sparkles,
   Mic2,
-  DollarSign,
   PenLine,
   Plus,
   CheckCircle2,
@@ -653,10 +652,6 @@ export default function Projects() {
               <Mic2 className="w-4 h-4 mr-1" />
               Songwriting
             </TabsTrigger>
-            <TabsTrigger value="budget" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              <DollarSign className="w-4 h-4 mr-1" />
-              Budget Planner
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="projects" className="space-y-6">
@@ -855,9 +850,6 @@ export default function Projects() {
             <SongwritingTab />
           </TabsContent>
 
-          <TabsContent value="budget" className="space-y-6">
-            <BudgetPlannerTab />
-          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>
@@ -1058,190 +1050,6 @@ function SongwritingTab() {
             <Mic2 className="w-16 h-16 mx-auto mb-4 text-gray-200" />
             <h3 className="text-lg font-medium text-gray-500 mb-2">Select a session</h3>
             <p className="text-sm text-gray-400">Choose a session from the list or create a new one to start writing</p>
-          </Card>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function BudgetPlannerTab() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [selectedBudget, setSelectedBudget] = useState<any>(null);
-  const [isNewBudgetOpen, setIsNewBudgetOpen] = useState(false);
-  const [isNewItemOpen, setIsNewItemOpen] = useState(false);
-  const [newBudget, setNewBudget] = useState({ projectName: '', budgetType: 'album', totalBudget: 0, notes: '' });
-  const [newItem, setNewItem] = useState({ category: '', description: '', estimated: 0, vendor: '', notes: '' });
-
-  const { data: budgets = [], isLoading } = useQuery<any[]>({
-    queryKey: ['/api/project-budgets'],
-  });
-
-  const { data: lineItems = [] } = useQuery<any[]>({
-    queryKey: ['/api/project-budgets', selectedBudget?.id, 'items'],
-    queryFn: async () => {
-      if (!selectedBudget?.id) return [];
-      const res = await apiRequest('GET', `/api/project-budgets/${selectedBudget.id}/items`);
-      return res.json();
-    },
-    enabled: !!selectedBudget?.id,
-  });
-
-  const createBudgetMutation = useMutation({
-    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/project-budgets', data); return res.json(); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/project-budgets'] }); setIsNewBudgetOpen(false); setNewBudget({ projectName: '', budgetType: 'album', totalBudget: 0, notes: '' }); toast({ title: 'Budget Created' }); },
-  });
-
-  const createItemMutation = useMutation({
-    mutationFn: async (data: any) => { const res = await apiRequest('POST', `/api/project-budgets/${selectedBudget.id}/items`, data); return res.json(); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/project-budgets', selectedBudget?.id, 'items'] }); setIsNewItemOpen(false); setNewItem({ category: '', description: '', estimated: 0, vendor: '', notes: '' }); toast({ title: 'Expense Added' }); },
-  });
-
-  const deleteItemMutation = useMutation({
-    mutationFn: async (id: string) => { await apiRequest('DELETE', `/api/project-budgets/items/${id}`); },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/project-budgets', selectedBudget?.id, 'items'] }),
-  });
-
-  const totalEstimated = lineItems.reduce((s: number, i: any) => s + (i.estimated || 0), 0);
-  const totalActual = lineItems.reduce((s: number, i: any) => s + (i.actual || 0), 0);
-  const remaining = (selectedBudget?.totalBudget || 0) - totalActual;
-
-  const BUDGET_CATEGORIES = ['Studio Recording', 'Mixing', 'Mastering', 'Music Video', 'Photography', 'PR/Marketing', 'Distribution', 'Merchandise', 'Travel', 'Equipment', 'Session Musicians', 'Other'];
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-1 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Budgets</h2>
-          <Dialog open={isNewBudgetOpen} onOpenChange={setIsNewBudgetOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gradient-bg"><Plus className="w-4 h-4 mr-1" />New</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>New Project Budget</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Project Name</Label><Input placeholder="e.g. Debut Album, Tour 2026..." value={newBudget.projectName} onChange={(e) => setNewBudget({...newBudget, projectName: e.target.value})} /></div>
-                <div><Label>Type</Label>
-                  <Select value={newBudget.budgetType} onValueChange={(v) => setNewBudget({...newBudget, budgetType: v})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {['album','ep','single','music_video','tour','merchandise','marketing'].map(t => <SelectItem key={t} value={t}>{t.replace('_',' ')}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div><Label>Total Budget ($)</Label><Input type="number" value={newBudget.totalBudget} onChange={(e) => setNewBudget({...newBudget, totalBudget: Number(e.target.value)})} /></div>
-                <div><Label>Notes</Label><Textarea value={newBudget.notes} onChange={(e) => setNewBudget({...newBudget, notes: e.target.value})} /></div>
-                <Button className="w-full gradient-bg" onClick={() => createBudgetMutation.mutate(newBudget)} disabled={!newBudget.projectName || createBudgetMutation.isPending}>Create Budget</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {isLoading ? <div className="text-center py-8 text-gray-400">Loading...</div> : budgets.length === 0 ? (
-          <Card className="p-8 text-center">
-            <DollarSign className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className="text-gray-500 text-sm">No budgets yet. Create a budget to track project expenses.</p>
-          </Card>
-        ) : budgets.map((b: any) => (
-          <Card key={b.id} className={`cursor-pointer hover:shadow-md transition-shadow ${selectedBudget?.id === b.id ? 'border-blue-500' : ''}`} onClick={() => setSelectedBudget(b)}>
-            <CardContent className="p-4">
-              <p className="font-semibold text-sm">{b.projectName}</p>
-              <p className="text-xs text-gray-500 mt-1">{b.budgetType} • ${b.totalBudget?.toLocaleString()}</p>
-              <Badge className="mt-2 text-xs" variant="outline">{b.status}</Badge>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="lg:col-span-2 space-y-4">
-        {selectedBudget ? (
-          <>
-            <div className="grid grid-cols-3 gap-4">
-              <Card><CardContent className="p-4 text-center">
-                <p className="text-xs text-gray-500 mb-1">Total Budget</p>
-                <p className="text-xl font-bold text-blue-600">${selectedBudget.totalBudget?.toLocaleString()}</p>
-              </CardContent></Card>
-              <Card><CardContent className="p-4 text-center">
-                <p className="text-xs text-gray-500 mb-1">Spent</p>
-                <p className="text-xl font-bold text-orange-500">${totalActual.toLocaleString()}</p>
-              </CardContent></Card>
-              <Card><CardContent className="p-4 text-center">
-                <p className="text-xs text-gray-500 mb-1">Remaining</p>
-                <p className={`text-xl font-bold ${remaining >= 0 ? 'text-green-600' : 'text-red-500'}`}>${remaining.toLocaleString()}</p>
-              </CardContent></Card>
-            </div>
-
-            <Progress value={selectedBudget.totalBudget > 0 ? (totalActual / selectedBudget.totalBudget) * 100 : 0} className="h-2" />
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Expenses — {selectedBudget.projectName}</CardTitle>
-                  <Dialog open={isNewItemOpen} onOpenChange={setIsNewItemOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm"><Plus className="w-4 h-4 mr-1" />Add Expense</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>Add Expense</DialogTitle></DialogHeader>
-                      <div className="space-y-3">
-                        <div><Label>Category</Label>
-                          <Select value={newItem.category} onValueChange={(v) => setNewItem({...newItem, category: v})}>
-                            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                            <SelectContent>{BUDGET_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                        <div><Label>Description</Label><Input placeholder="What is this expense for?" value={newItem.description} onChange={(e) => setNewItem({...newItem, description: e.target.value})} /></div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div><Label>Estimated ($)</Label><Input type="number" value={newItem.estimated} onChange={(e) => setNewItem({...newItem, estimated: Number(e.target.value)})} /></div>
-                          <div><Label>Vendor</Label><Input placeholder="Studio name, etc." value={newItem.vendor} onChange={(e) => setNewItem({...newItem, vendor: e.target.value})} /></div>
-                        </div>
-                        <Button className="w-full gradient-bg" onClick={() => createItemMutation.mutate(newItem)} disabled={!newItem.category || !newItem.description || createItemMutation.isPending}>Add Expense</Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {lineItems.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8 text-sm">No expenses tracked yet. Add your first expense.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {lineItems.map((item: any) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">{item.category}</Badge>
-                            <span className="text-sm font-medium">{item.description}</span>
-                          </div>
-                          {item.vendor && <p className="text-xs text-gray-400 mt-1">{item.vendor}</p>}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <p className="text-sm font-semibold">${(item.actual || item.estimated)?.toFixed(0)}</p>
-                            {item.actual && item.actual !== item.estimated && <p className="text-xs text-gray-400 line-through">${item.estimated?.toFixed(0)}</p>}
-                          </div>
-                          <Badge className={`text-xs ${item.status === 'paid' ? 'bg-green-100 text-green-700' : item.status === 'due' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
-                            {item.status}
-                          </Badge>
-                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-400" onClick={() => deleteItemMutation.mutate(item.id)}>×</Button>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="flex justify-between pt-3 border-t font-semibold text-sm">
-                      <span>Total Estimated</span>
-                      <span>${totalEstimated.toLocaleString()}</span>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </>
-        ) : (
-          <Card className="p-12 text-center">
-            <DollarSign className="w-16 h-16 mx-auto mb-4 text-gray-200" />
-            <h3 className="text-lg font-medium text-gray-500 mb-2">Select a budget</h3>
-            <p className="text-sm text-gray-400">Choose a project budget to view and track expenses</p>
           </Card>
         )}
       </div>

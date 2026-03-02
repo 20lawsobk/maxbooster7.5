@@ -148,8 +148,6 @@ interface Release {
   spotifyStreams: number;
   appleMusicStreams: number;
   youtubeStreams: number;
-  leaveALegacy: boolean;
-  legacyPrice?: number;
   albumArt?: string;
 }
 
@@ -259,9 +257,6 @@ interface UploadForm {
   // Advanced Settings
   isExplicit: boolean;
   iTunesPricing: string;
-  leaveALegacy: boolean;
-  legacyPrice: number;
-
   // Collaborators & Splits
   collaborators: {
     name: string;
@@ -1009,8 +1004,6 @@ export default function Distribution() {
     selectedPlatforms: ['spotify', 'apple-music', 'youtube-music', 'amazon-music'],
     isExplicit: false,
     iTunesPricing: 'standard',
-    leaveALegacy: false,
-    legacyPrice: 29,
     collaborators: [],
     rightsConfirmed: false,
     contentOriginal: false,
@@ -1154,8 +1147,6 @@ export default function Distribution() {
         selectedPlatforms: ['spotify', 'apple-music', 'youtube-music', 'amazon-music'],
         isExplicit: false,
         iTunesPricing: 'standard',
-        leaveALegacy: false,
-        legacyPrice: 29,
         collaborators: [],
       });
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
@@ -1545,8 +1536,6 @@ export default function Distribution() {
     formData.append('selectedPlatforms', JSON.stringify(uploadForm.selectedPlatforms));
     formData.append('isExplicit', uploadForm.isExplicit.toString());
     formData.append('iTunesPricing', uploadForm.iTunesPricing);
-    formData.append('leaveALegacy', uploadForm.leaveALegacy.toString());
-    formData.append('legacyPrice', uploadForm.legacyPrice.toString());
     formData.append('tracks', JSON.stringify(uploadForm.tracks));
     formData.append('collaborators', JSON.stringify(uploadForm.collaborators));
 
@@ -4249,25 +4238,6 @@ export default function Distribution() {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={uploadForm.leaveALegacy}
-                        onCheckedChange={(checked) =>
-                          setUploadForm((prev) => ({ ...prev, leaveALegacy: checked as boolean }))
-                        }
-                      />
-                      <Label>Enable Leave a Legacy ($29 one-time fee)</Label>
-                    </div>
-                    {uploadForm.leaveALegacy && (
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                        <p className="text-sm text-blue-700 dark:text-blue-300">
-                          Leave a Legacy keeps your music online forever, even if you stop paying
-                          for DistroKid. Your music will never be taken down from stores.
-                        </p>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
 
@@ -4338,14 +4308,6 @@ export default function Distribution() {
                       </div>
                     </div>
 
-                    {uploadForm.leaveALegacy && (
-                      <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-                        <Shield className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                          Leave a Legacy Enabled (+$29)
-                        </span>
-                      </div>
-                    )}
                   </div>
 
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
