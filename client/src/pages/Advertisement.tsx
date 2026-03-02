@@ -102,7 +102,6 @@ interface AdCampaign {
   id: string;
   name: string;
   objective: string;
-  budget: number;
   spent: number;
   impressions: number;
   clicks: number;
@@ -170,7 +169,6 @@ interface AutopilotStatus {
   config: {
     campaignMode?: string;
     objective?: string;
-    budgetOptimization?: boolean;
     targetAudience?: {
       ageMin: number;
       ageMax: number;
@@ -178,7 +176,6 @@ interface AutopilotStatus {
       locations: string[];
     };
     optimizationSettings?: {
-      autoAdjustBudget: boolean;
       viralOptimization: boolean;
       algorithmicTargeting: boolean;
     };
@@ -413,7 +410,6 @@ export default function Advertisement() {
   const [campaignForm, setCampaignForm] = useState({
     name: '',
     objective: '',
-    budget: 100,
     duration: 7,
     targetAudience: {
       ageMin: 18,
@@ -479,7 +475,6 @@ export default function Advertisement() {
       setCampaignForm({
         name: '',
         objective: '',
-        budget: 100,
         duration: 7,
         targetAudience: {
           ageMin: 18,
@@ -647,23 +642,11 @@ export default function Advertisement() {
                     ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Budget (AI Optimized)</Label>
-                    <div className="space-y-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">${campaignForm.budget}</div>
-                        <div className="text-xs text-muted-foreground">AI-optimized budget allocation</div>
-                      </div>
-                      <Slider value={[campaignForm.budget]} onValueChange={(value) => setCampaignForm((prev) => ({ ...prev, budget: value[0] }))} max={1000} min={10} step={10} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Duration (Days)</Label>
-                    <div className="space-y-3">
-                      <Slider value={[campaignForm.duration]} onValueChange={(value) => setCampaignForm((prev) => ({ ...prev, duration: value[0] }))} max={30} min={1} step={1} />
-                      <div className="text-center font-semibold">{campaignForm.duration} days</div>
-                    </div>
+                <div className="space-y-2">
+                  <Label>Duration (Days)</Label>
+                  <div className="space-y-3">
+                    <Slider value={[campaignForm.duration]} onValueChange={(value) => setCampaignForm((prev) => ({ ...prev, duration: value[0] }))} max={30} min={1} step={1} />
+                    <div className="text-center font-semibold">{campaignForm.duration} days</div>
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -1455,7 +1438,7 @@ export default function Advertisement() {
                           {segment.roas >= 5 && segment.overlapPercentage < 25 && (
                             <div className="mt-3 p-2 rounded bg-green-500/10 text-green-600 text-sm flex items-center gap-2">
                               <Sparkles className="w-4 h-4" />
-                              High-value segment with low overlap. Increase budget allocation.
+                              High-value segment with low overlap. AI has prioritized this segment for maximum reach.
                             </div>
                           )}
                         </div>

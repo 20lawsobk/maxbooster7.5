@@ -7,7 +7,6 @@ import { notificationService } from '../services/notificationService.js';
 import { pythonAIService } from '../services/pythonAIService.js';
 import { db } from '../db.js';
 import { adCampaigns } from '@shared/schema';
-import { eq } from 'drizzle-orm';
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
@@ -115,7 +114,7 @@ router.get('/ab-tests', requireAuth, async (req, res) => {
 router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const userId = req.user!.id;
-    const { name, platform, objective, budget, dailyBudget, startDate, endDate, targetAudience, creativeIds } = req.body;
+    const { name, platform, objective, startDate, endDate, targetAudience, creativeIds } = req.body;
 
     if (!name || typeof name !== 'string') {
       return res.status(400).json({ error: 'Campaign name is required' });
@@ -131,8 +130,8 @@ router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) =>
         name,
         platform,
         objective: objective || null,
-        budget: budget ? Number(budget) : 0,
-        dailyBudget: dailyBudget ? Number(dailyBudget) : null,
+        budget: 0,
+        dailyBudget: null,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         targetAudience: targetAudience || null,
@@ -204,25 +203,6 @@ router.get('/attribution/paths', requireAuth, async (req, res) => {
   }
 });
 
-// Budget pacing endpoints
-router.get('/budget-pacing/campaigns', requireAuth, async (req, res) => {
-  try {
-    res.json({ campaigns: [] });
-  } catch (error) {
-    logger.error('Failed to get budget pacing campaigns:', error);
-    res.status(500).json({ error: 'Failed to get budget pacing campaigns' });
-  }
-});
-
-router.get('/budget-pacing/history', requireAuth, async (req, res) => {
-  try {
-    res.json({ history: [] });
-  } catch (error) {
-    logger.error('Failed to get budget pacing history:', error);
-    res.status(500).json({ error: 'Failed to get budget pacing history' });
-  }
-});
-
 // Dashboard endpoints
 router.get('/dashboard/attribution', requireAuth, async (req, res) => {
   try {
@@ -249,15 +229,6 @@ router.get('/roas/audience-segments', requireAuth, async (req, res) => {
   } catch (error) {
     logger.error('Failed to get ROAS audience segments:', error);
     res.status(500).json({ error: 'Failed to get ROAS audience segments' });
-  }
-});
-
-router.get('/roas/budget-optimization', requireAuth, async (req, res) => {
-  try {
-    res.json({ recommendations: [], currentBudget: 0, optimizedBudget: 0 });
-  } catch (error) {
-    logger.error('Failed to get ROAS budget optimization:', error);
-    res.status(500).json({ error: 'Failed to get ROAS budget optimization' });
   }
 });
 
@@ -508,51 +479,6 @@ router.get('/video-templates', requireAuth, async (_req: AuthenticatedRequest, r
   } catch (error) {
     logger.error('Failed to get ad video templates:', error);
     res.status(500).json({ success: false, message: 'Failed to get templates' });
-  }
-});
-
-// GET /api/advertising/budget - Get advertising budget summary
-router.get('/budget', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const userId = req.user!.id;
-
-    const campaigns = await db
-      .select()
-      .from(adCampaigns)
-      .where(eq(adCampaigns.userId, userId));
-
-    const totalBudget = campaigns.reduce((acc, c) => acc + (c.budget || 0), 0);
-    const totalDailyBudget = campaigns.reduce((acc, c) => acc + (c.dailyBudget || 0), 0);
-    const activeCampaigns = campaigns.filter(c => c.status === 'active');
-
-    const now = new Date();
-    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-    res.json({
-      totalBudget,
-      spent: 0,
-      remaining: totalBudget,
-      currency: 'USD',
-      period: 'monthly',
-      periodStart: periodStart.toISOString(),
-      periodEnd: periodEnd.toISOString(),
-      dailyBudget: totalDailyBudget,
-      dailySpent: 0,
-      campaigns: campaigns.map(c => ({
-        id: c.id,
-        name: c.name,
-        platform: c.platform,
-        budget: c.budget,
-        dailyBudget: c.dailyBudget,
-        status: c.status,
-      })),
-      activeCampaignCount: activeCampaigns.length,
-      alerts: [],
-    });
-  } catch (error) {
-    logger.error('Failed to get advertising budget:', error);
-    res.status(500).json({ error: 'Failed to get budget' });
   }
 });
 
