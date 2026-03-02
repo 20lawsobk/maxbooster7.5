@@ -1352,26 +1352,6 @@ router.post('/record/upload', requireAuth, async (req: Request, res: Response) =
   }
 });
 
-router.get('/recent-files', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user.id;
-    const recentProjects = await db.query.studioProjects.findMany({
-      where: eq(studioProjects.userId, userId),
-      orderBy: (studioProjects, { desc }) => [desc(studioProjects.updatedAt)],
-      limit: 10,
-    });
-    res.json(recentProjects.map(p => ({
-      id: p.id,
-      name: p.name,
-      type: 'project',
-      lastOpened: p.updatedAt,
-    })));
-  } catch (error: unknown) {
-    logger.error('Error fetching recent files:', error);
-    res.status(500).json({ error: 'Failed to fetch recent files' });
-  }
-});
-
 router.post('/mix-busses', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
@@ -1974,22 +1954,6 @@ router.post('/export/:jobId/upload', requireAuth, async (req: Request, res: Resp
   } catch (error: unknown) {
     logger.error('Error uploading export:', error);
     res.status(500).json({ error: 'Failed to upload export' });
-  }
-});
-
-// Clips endpoints
-router.patch('/clips/:clipId', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { clipId } = req.params;
-    res.json({
-      success: true,
-      clipId,
-      ...req.body,
-      updatedAt: new Date().toISOString(),
-    });
-  } catch (error: unknown) {
-    logger.error('Error updating clip:', error);
-    res.status(500).json({ error: 'Failed to update clip' });
   }
 });
 
@@ -4447,6 +4411,35 @@ router.post('/projects/:projectId/plugins/load', requireAuth, async (req: Reques
   } catch (error: unknown) {
     logger.error('Error loading plugin:', error);
     res.status(500).json({ error: 'Failed to load plugin' });
+  }
+});
+
+// GET list presets for a plugin
+router.get('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { projectId, pluginId } = req.params;
+    const userId = (req as any).user.id;
+
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const presets = await db
+      .select()
+      .from(pluginPresets)
+      .where(
+        and(
+          eq(pluginPresets.pluginId, pluginId),
+          or(eq(pluginPresets.userId, userId), eq(pluginPresets.isFactory, true))
+        )
+      )
+      .orderBy(pluginPresets.name);
+
+    res.json({ presets, pluginId });
+  } catch (error: unknown) {
+    logger.error('Error fetching plugin presets:', error);
+    res.status(500).json({ error: 'Failed to fetch plugin presets' });
   }
 });
 
