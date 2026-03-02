@@ -596,6 +596,15 @@ router.put('/access/:userId', requireAuth, async (req: AuthenticatedRequest, res
     const validatedData = updateAccessSchema.parse(req.body);
     const { projectId } = req.body;
 
+    if (!projectId) {
+      return res.status(400).json({ error: 'projectId is required' });
+    }
+
+    const isOwner = await verifyProjectAccess(projectId, req.user!.id);
+    if (!isOwner) {
+      return res.status(403).json({ error: 'You do not own this project' });
+    }
+
     let outcomeType: string;
     let message: string;
 

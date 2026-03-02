@@ -13,8 +13,11 @@ import {
 } from '../simulations/realLifeSimulation';
 import { EventGenerator, INDUSTRY_BENCHMARKS } from '../simulations/eventGenerators';
 import { logger } from '../logger.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
+
+router.use(requireAdmin);
 
 // Active simulations storage
 const activeSimulations: Map<string, RealLifeSimulationEngine> = new Map();

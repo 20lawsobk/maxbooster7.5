@@ -59,8 +59,7 @@ router.post('/nps', requireAuth, async (req: any, res) => {
     }
 
     const { score, comment, triggerContext } = parsed.data;
-    const userId = req.user?.id ?? req.session?.userId;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user!.id;
 
     await db.insert(npsResponses).values({
       userId,
@@ -88,8 +87,7 @@ router.post('/cancellation-feedback', requireAuth, async (req: any, res) => {
       return res.status(400).json({ error: 'Invalid feedback data', details: parsed.error.flatten() });
     }
 
-    const userId = req.user?.id ?? req.session?.userId;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user!.id;
 
     await db.insert(cancellationFeedback).values({
       userId,
@@ -111,8 +109,7 @@ router.post('/feature-event', requireAuth, async (req: any, res) => {
       return res.status(400).json({ error: 'Invalid event data' });
     }
 
-    const userId = req.user?.id ?? req.session?.userId;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user!.id;
 
     await pushFeatureEvent({
       userId,
@@ -130,8 +127,7 @@ router.post('/feature-event', requireAuth, async (req: any, res) => {
 
 router.get('/health-score', requireAuth, async (req: any, res) => {
   try {
-    const userId = req.user?.id ?? req.session?.userId;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user!.id;
 
     const [existing] = await db
       .select()

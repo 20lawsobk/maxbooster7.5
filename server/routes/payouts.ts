@@ -6,8 +6,11 @@ import { logger } from '../logger.js';
 import { db } from '../db.js';
 import { eq } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+
+router.use(requireAuth);
 
 /**
  * GET /api/payouts/balance

@@ -9,6 +9,8 @@ import crypto from 'crypto';
 
 const router = Router();
 
+router.use(requireAuth);
+
 interface NotificationPreferences {
   muteAll: boolean;
   quietHours: {

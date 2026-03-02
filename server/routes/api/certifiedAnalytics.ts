@@ -17,7 +17,7 @@ const getUserId = (req: AuthenticatedRequest): string | null => {
 
 router.get('/streams{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -79,7 +79,7 @@ router.get('/playlists{/:trackId}', async (req: AuthenticatedRequest, res: Respo
 
 router.get('/playlists/revenue{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -105,7 +105,7 @@ router.get('/playlists/revenue{/:artistId}', async (req: AuthenticatedRequest, r
 
 router.get('/playlists/editorial{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -124,7 +124,7 @@ router.get('/playlists/editorial{/:artistId}', async (req: AuthenticatedRequest,
 
 router.get('/cohorts{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -162,7 +162,7 @@ router.get('/cohorts{/:artistId}', async (req: AuthenticatedRequest, res: Respon
 
 router.get('/cohorts/retention{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -186,7 +186,7 @@ router.get('/cohorts/retention{/:artistId}', async (req: AuthenticatedRequest, r
 
 router.get('/cohorts/churn{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -205,7 +205,7 @@ router.get('/cohorts/churn{/:artistId}', async (req: AuthenticatedRequest, res: 
 
 router.get('/cohorts/loyalty{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -228,7 +228,7 @@ router.get('/cohorts/loyalty{/:artistId}', async (req: AuthenticatedRequest, res
 
 router.get('/forecast{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -260,7 +260,7 @@ router.get('/forecast{/:artistId}', async (req: AuthenticatedRequest, res: Respo
 
 router.get('/forecast/breakdown{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -286,7 +286,7 @@ router.get('/forecast/breakdown{/:artistId}', async (req: AuthenticatedRequest, 
 
 router.get('/forecast/seasonality{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -337,7 +337,7 @@ router.post('/forecast/release-impact', async (req: AuthenticatedRequest, res: R
 
 router.get('/demographics{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }
@@ -441,7 +441,7 @@ router.get('/sync-status', async (req: AuthenticatedRequest, res: Response) => {
 
 router.get('/overview{/:artistId}', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const artistId = req.params.artistId || getUserId(req);
+    const artistId = getUserId(req);
     if (!artistId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID required' });
     }

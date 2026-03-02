@@ -6,6 +6,9 @@ import { logger } from '../logger.js';
 import { socialFanbaseService } from '../services/socialFanbaseService.js';
 import { organicCompoundingService } from '../services/organicCompoundingService.js';
 import { bridgeInsightsService } from '../services/bridgeInsightsService.js';
+import { db } from '../db.js';
+import { fanSegments } from '@shared/schema';
+import { eq, and } from 'drizzle-orm';
 
 const router = Router();
 
@@ -195,7 +198,11 @@ router.get('/fanbase/segments', requireAuth, async (req, res) => {
 
 router.put('/fanbase/segments/:id', requireAuth, async (req, res) => {
   try {
+    const userId = req.user!.id;
     const segmentId = req.params.id;
+    const [owned] = await db.select({ id: fanSegments.id }).from(fanSegments)
+      .where(and(eq(fanSegments.id, segmentId), eq(fanSegments.userId, userId))).limit(1);
+    if (!owned) return res.status(404).json({ success: false, error: 'Segment not found' });
     const parsed = updateSegmentSchema.parse(req.body);
     
     const segment = await socialFanbaseService.updateSegmentBehavior(segmentId, parsed.signals);
@@ -219,7 +226,11 @@ router.put('/fanbase/segments/:id', requireAuth, async (req, res) => {
 
 router.delete('/fanbase/segments/:id', requireAuth, async (req, res) => {
   try {
+    const userId = req.user!.id;
     const segmentId = req.params.id;
+    const [owned] = await db.select({ id: fanSegments.id }).from(fanSegments)
+      .where(and(eq(fanSegments.id, segmentId), eq(fanSegments.userId, userId))).limit(1);
+    if (!owned) return res.status(404).json({ success: false, error: 'Segment not found' });
     
     const deleted = await socialFanbaseService.deleteSegment(segmentId);
     

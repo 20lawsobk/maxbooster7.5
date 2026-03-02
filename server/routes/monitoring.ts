@@ -5,8 +5,11 @@ import { aiModelManager } from '../services/aiModelManager.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { alertingService } from '../monitoring/alertingService.js';
 import { metricsCollector } from '../monitoring/metricsCollector.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
+
+router.use(requireAdmin);
 
 router.get(
   '/queue-metrics',
@@ -159,13 +162,6 @@ router.post(
   '/set-thresholds',
   asyncHandler(async (req, res) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.isAdmin) {
-        return res.status(403).json({
-          success: false,
-          error: 'Admin access required',
-        });
-      }
-
       const { maxWaitingJobs, maxFailedRate, maxStalledJobs, maxRedisLatency } = req.body;
 
       queueMonitor.setAlertThresholds({
@@ -219,13 +215,6 @@ router.post(
   '/baseline/save',
   asyncHandler(async (req, res) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.isAdmin) {
-        return res.status(403).json({
-          success: false,
-          error: 'Admin access required',
-        });
-      }
-
       const { name } = req.body;
       const baselineName = name || 'baseline';
       const filepath = await metricsCollector.saveBaseline(baselineName);
@@ -274,13 +263,6 @@ router.post(
   '/alerting/test',
   asyncHandler(async (req, res) => {
     try {
-      if (!req.isAuthenticated() || !req.user?.isAdmin) {
-        return res.status(403).json({
-          success: false,
-          error: 'Admin access required',
-        });
-      }
-
       await alertingService.sendAlert({
         severity: 'info',
         title: 'Test Alert',

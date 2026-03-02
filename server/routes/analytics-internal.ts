@@ -11,7 +11,7 @@ import {
   releases
 } from '@shared/schema';
 import { eq, and, desc, sql, gte, lte, count, avg } from 'drizzle-orm';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, requireAdmin } from '../middleware/auth';
 import { logger } from '../logger';
 
 const router = Router();
@@ -109,18 +109,9 @@ const _churnPredictCache: { data: any | null; expiresAt: number } = { data: null
  * Uses a single aggregated LEFT JOIN query — replaces prior O(N) N+1 per-user loop.
  * Cached for 5 minutes so repeated admin page refreshes don't re-scan the DB.
  */
-router.get('/ai/predict-churn', async (req: Request, res: Response) => {
+router.get('/ai/predict-churn', requireAdmin, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const isAdmin = req.user?.role === 'admin';
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    if (!isAdmin) {
-      return res.json({ atRiskUsers: [] });
-    }
 
     if (_churnPredictCache.data && Date.now() < _churnPredictCache.expiresAt) {
       return res.json(_churnPredictCache.data);

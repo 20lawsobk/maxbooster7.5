@@ -434,7 +434,7 @@ router.get('/presets', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.get('/capabilities', async (req: Request, res: Response) => {
+router.get('/capabilities', requireAuth, async (req: Request, res: Response) => {
   try {
     res.json({
       success: true,

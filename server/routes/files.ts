@@ -1002,6 +1002,10 @@ router.get('/transcode/:jobId/status', async (req: Request, res: Response) => {
       });
     }
 
+    if (tracked.userId !== req.user!.id) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
     const elapsedMs = Date.now() - tracked.startedAt;
     const estimatedDurationMs = tracked.estimatedDurationMs || 30000;
     const progress = Math.min(100, Math.floor((elapsedMs / estimatedDurationMs) * 100));

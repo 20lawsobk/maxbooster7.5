@@ -146,7 +146,10 @@ router.patch("/:id", requireAuth, asyncHandler(async (req, res) => {
 
 router.post("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
   try {
+    const userId = req.user!.id;
     const countdownId = req.params.id;
+    const ownership = await releaseCountdownService.getCountdownWithTasks(countdownId, userId);
+    if (!ownership) return res.status(404).json({ success: false, message: 'Countdown not found' });
     const data = addTaskSchema.parse(req.body);
 
     logger.info(`Adding task to countdown ${countdownId}`);
@@ -165,7 +168,10 @@ router.post("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
 
 router.get("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
   try {
+    const userId = req.user!.id;
     const countdownId = req.params.id;
+    const ownership = await releaseCountdownService.getCountdownWithTasks(countdownId, userId);
+    if (!ownership) return res.status(404).json({ success: false, message: 'Countdown not found' });
 
     logger.info(`Fetching tasks for countdown ${countdownId}`);
 
@@ -187,8 +193,11 @@ router.get("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
 
 router.patch("/:id/tasks/:taskId", requireAuth, asyncHandler(async (req, res) => {
   try {
+    const userId = req.user!.id;
     const countdownId = req.params.id;
     const taskId = req.params.taskId;
+    const ownership = await releaseCountdownService.getCountdownWithTasks(countdownId, userId);
+    if (!ownership) return res.status(404).json({ success: false, message: 'Countdown not found' });
     const data = updateTaskSchema.parse(req.body);
 
     logger.info(`Updating task ${taskId} for countdown ${countdownId}`);
@@ -216,7 +225,10 @@ router.patch("/:id/tasks/:taskId", requireAuth, asyncHandler(async (req, res) =>
 
 router.get("/:id/analytics", requireAuth, asyncHandler(async (req, res) => {
   try {
+    const userId = req.user!.id;
     const countdownId = req.params.id;
+    const ownership = await releaseCountdownService.getCountdownWithTasks(countdownId, userId);
+    if (!ownership) return res.status(404).json({ success: false, message: 'Countdown not found' });
 
     logger.info(`Fetching analytics for countdown ${countdownId}`);
 
@@ -234,7 +246,10 @@ router.get("/:id/analytics", requireAuth, asyncHandler(async (req, res) => {
 
 router.post("/:id/analytics/track", requireAuth, asyncHandler(async (req, res) => {
   try {
+    const userId = req.user!.id;
     const countdownId = req.params.id;
+    const ownership = await releaseCountdownService.getCountdownWithTasks(countdownId, userId);
+    if (!ownership) return res.status(404).json({ success: false, message: 'Countdown not found' });
     const { presaves, shares, pageViews } = req.body;
 
     logger.info(`Recording analytics for countdown ${countdownId}`);
@@ -257,7 +272,10 @@ router.post("/:id/analytics/track", requireAuth, asyncHandler(async (req, res) =
 
 router.post("/:id/generate-checklist", requireAuth, asyncHandler(async (req, res) => {
   try {
+    const userId = req.user!.id;
     const countdownId = req.params.id;
+    const ownership = await releaseCountdownService.getCountdownWithTasks(countdownId, userId);
+    if (!ownership) return res.status(404).json({ success: false, message: 'Countdown not found' });
     const { genre, targetAudience } = req.body;
 
     logger.info(`Generating AI checklist for countdown ${countdownId}`);
