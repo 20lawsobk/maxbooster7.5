@@ -77,10 +77,9 @@ class InMemoryDegradedRateLimiter {
 const degradedLimiter = new InMemoryDegradedRateLimiter();
 
 function getClientIP(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') {
-    return forwarded.split(',')[0].trim();
-  }
+  // Use req.ip which respects Express trust proxy configuration.
+  // Never parse X-Forwarded-For directly — a client can inject arbitrary values
+  // into that header and bypass per-IP rate limits by spoofing their IP address.
   return req.ip || req.socket.remoteAddress || 'unknown';
 }
 

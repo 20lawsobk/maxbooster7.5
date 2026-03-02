@@ -151,3 +151,20 @@ All remaining silent failure patterns and security gaps resolved. Three architec
 - **errorHandler.ts**: Stack traces only included in development (`NODE_ENV === 'development'`); requestId captured from headers; auditLogger called for every error; consistent `ErrorResponse` shape
 - **shared/schema.ts**: All major userId FK columns have composite indexes (sessions, subscriptions, royalty_transactions, dsp_user_platform_status, nps_responses, cancellation_feedback, feature_events, fan_subscribers, and more)
 - **developerApi.ts**: The `console.error` flagged was inside a code sample string shown to API users — not live server code
+
+## Verification Pass #4 — Additional Architect Reviews (March 2026 — Session 4)
+
+Three more architect passes run. Six real bugs discovered and fixed across rate limiting, auth middleware, and cluster management.
+
+### Security Fixes
+- **server/middleware/rateLimiter.ts** `getClientIP()`: Removed direct `X-Forwarded-For` header parsing — a client can inject arbitrary values into that header to spoof their IP and bypass per-IP rate limits. Now uses `req.ip` which respects Express `trust proxy` configuration
+- **server/middleware/auth.ts** `requireAdmin()`: Now returns **401** when unauthenticated (previously always returned 403). Returns **403** only when authenticated but not admin. Correct HTTP semantics: 401 = please authenticate, 403 = authenticated but not allowed
+
+### Production Safety Fixes
+- **server/cluster.ts** crash-loop protection: Exit handler previously called `cluster.fork()` unconditionally with no restart limit. A continuously crashing worker would spawn infinite forks in 500ms intervals. Now tracks restart timestamps in a 60-second sliding window — after 10 restarts in 60s, backs off to 30 seconds and logs `[Cluster] Crash-loop detected`
+
+### Verified PASS in This Round (No Changes Needed)
+- **DB SSL**: Neon URL contains `sslmode=require` — SSL enforced at connection string level
+- **jsonwebtoken 9.0.3**: `alg: none` rejected automatically when a string secret is provided
+- **queryCache invalidatePattern**: Never receives user input — all callers use hardcoded `createCacheKey` prefixes
+- **Session fixation on login**: `req.session.regenerate()` confirmed at routes.ts lines 317-319 for both login and register

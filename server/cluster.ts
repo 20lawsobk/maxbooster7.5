@@ -69,11 +69,31 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     cluster.fork();
   }
 
+  // Crash-loop protection: track restart times to detect and back off runaway crashes.
+  const workerRestartTimes: number[] = [];
+  const MAX_RESTARTS_PER_MINUTE = 10;
+  const BACKOFF_DELAY_MS = 30_000;
+
   cluster.on('exit', (worker, code, signal) => {
     const reason = signal ? `signal=${signal}` : `code=${code}`;
     console.error(`[Cluster] Worker ${worker.process.pid} exited (${reason}) — restarting`);
-    // Brief delay before restart to avoid CPU spin if worker crashes immediately
-    setTimeout(() => cluster.fork(), 500);
+
+    const now = Date.now();
+    // Evict timestamps outside the 60-second window
+    while (workerRestartTimes.length > 0 && workerRestartTimes[0] < now - 60_000) {
+      workerRestartTimes.shift();
+    }
+
+    if (workerRestartTimes.length >= MAX_RESTARTS_PER_MINUTE) {
+      console.error(
+        `[Cluster] Crash-loop detected: ${workerRestartTimes.length} restarts in last 60s — ` +
+        `backing off ${BACKOFF_DELAY_MS / 1000}s before next fork`
+      );
+      setTimeout(() => cluster.fork(), BACKOFF_DELAY_MS);
+    } else {
+      workerRestartTimes.push(now);
+      setTimeout(() => cluster.fork(), 500);
+    }
   });
 
   cluster.on('online', (worker) => {
