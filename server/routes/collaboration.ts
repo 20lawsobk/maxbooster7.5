@@ -2,11 +2,19 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 import { db } from '../db';
-import { collaborationComments, collaborationVersions, collaborationAccessRequests } from '@shared/schema';
+import { collaborationComments, collaborationVersions, collaborationAccessRequests, studioProjects } from '@shared/schema';
 import { eq, and, desc, isNull } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+
+async function verifyProjectAccess(projectId: string, userId: string): Promise<boolean> {
+  const [project] = await db
+    .select({ id: studioProjects.id })
+    .from(studioProjects)
+    .where(and(eq(studioProjects.id, projectId), eq(studioProjects.userId, userId)));
+  return !!project;
+}
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -341,6 +349,10 @@ router.post('/version', requireAuth, async (req: AuthenticatedRequest, res: Resp
     const validatedData = createVersionSchema.parse(req.body);
     const userId = req.user!.id;
 
+    if (!(await verifyProjectAccess(validatedData.projectId, userId))) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
     const existingVersions = await db
       .select({ id: collaborationVersions.id })
       .from(collaborationVersions)
@@ -390,6 +402,9 @@ router.post('/version', requireAuth, async (req: AuthenticatedRequest, res: Resp
 router.get('/versions/:projectId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { projectId } = req.params;
+    if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
     const rows = await db
       .select()
       .from(collaborationVersions)
@@ -409,6 +424,9 @@ router.get('/versions/:projectId', requireAuth, async (req: AuthenticatedRequest
 router.put('/versions/:projectId/:versionId/restore', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { projectId, versionId } = req.params;
+    if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
 
     const [target] = await db
       .select()
@@ -444,6 +462,9 @@ router.put('/versions/:projectId/:versionId/restore', requireAuth, async (req: A
 router.post('/versions/:projectId/compare', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { projectId } = req.params;
+    if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
     const { versionAId, versionBId } = req.body;
 
     const rows = await db
@@ -471,6 +492,9 @@ router.post('/versions/:projectId/compare', requireAuth, async (req: Authenticat
 router.delete('/versions/:projectId/:versionId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { projectId, versionId } = req.params;
+    if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
 
     const [target] = await db
       .select()

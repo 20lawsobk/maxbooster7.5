@@ -105,8 +105,8 @@ router.get('/beats', async (req: Request, res: Response) => {
       priceMin: priceMin ? parseFloat(priceMin as string) : undefined,
       priceMax: priceMax ? parseFloat(priceMax as string) : undefined,
       tags: tags ? (tags as string).split(',') : undefined,
-      limit: parseInt(limit as string) || 20,
-      offset: parseInt(offset as string) || 0,
+      limit: Math.min(Math.max(1, parseInt(limit as string) || 20), 200),
+      offset: Math.max(0, parseInt(offset as string) || 0),
     };
 
     // Personalized feeds are cached per-user (30s) to still feel fresh
@@ -546,8 +546,8 @@ router.get('/for-you', async (req: Request, res: Response) => {
     const userId = req.user!.id;
 
     const personalizedBeats = await discoveryAlgorithmService.getPersonalizedFeed(userId, {
-      limit: parseInt(limit as string) || 20,
-      offset: parseInt(offset as string) || 0,
+      limit: Math.min(Math.max(1, parseInt(limit as string) || 20), 200),
+      offset: Math.max(0, parseInt(offset as string) || 0),
       genre: genre as string,
       mood: mood as string,
     });

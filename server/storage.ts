@@ -817,19 +817,22 @@ export class DatabaseStorage implements IStorage {
     return this.getDistroTracksByRelease(releaseId);
   }
 
-  async updateDistroTrack(trackId: string, data: any): Promise<DistroTrack | undefined> {
+  async updateDistroTrack(trackId: string, releaseId: string, data: any): Promise<DistroTrack | undefined> {
     const [track] = await db
       .update(distroTracks)
       .set(data)
-      .where(eq(distroTracks.id, trackId))
+      .where(and(eq(distroTracks.id, trackId), eq(distroTracks.releaseId, releaseId)))
       .returning();
     return track || undefined;
   }
 
-  async deleteDistroTrack(trackId: string): Promise<boolean> {
+  async deleteDistroTrack(trackId: string, releaseId: string): Promise<boolean> {
     try {
-      await db.delete(distroTracks).where(eq(distroTracks.id, trackId));
-      return true;
+      const deleted = await db
+        .delete(distroTracks)
+        .where(and(eq(distroTracks.id, trackId), eq(distroTracks.releaseId, releaseId)))
+        .returning({ id: distroTracks.id });
+      return deleted.length > 0;
     } catch (error) {
       logger.error('Error deleting distro track:', error);
       return false;

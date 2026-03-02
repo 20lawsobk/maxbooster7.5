@@ -136,6 +136,10 @@ export function globalErrorHandler(
   let code = normalized.code;
   let isOperational = normalized.isOperational;
 
+  if (statusCode >= 500 && process.env.NODE_ENV === 'production') {
+    message = 'Internal server error';
+  }
+
   if (normalized.name === 'ZodError') {
     statusCode = 400;
     const issues = normalized.issues || [];

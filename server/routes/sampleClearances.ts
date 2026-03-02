@@ -90,11 +90,12 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Sample clearance not found' });
     }
 
-    const data = insertSampleClearanceSchema.partial().parse({
+    const parsed = insertSampleClearanceSchema.partial().parse({
       ...req.body,
       fee: req.body.fee !== '' && req.body.fee != null ? parseFloat(req.body.fee) : undefined,
       royaltyRate: req.body.royaltyRate !== '' && req.body.royaltyRate != null ? parseFloat(req.body.royaltyRate) : undefined,
     });
+    const { status: _status, userId: _userId, ...data } = parsed;
     const [item] = await db.update(sampleClearances)
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(sampleClearances.id, id), eq(sampleClearances.userId, userId)))

@@ -10,6 +10,33 @@ import { parsePaginationParams } from '../middleware/pagination.js';
 
 const router = Router();
 
+const PRIVATE_IP_PATTERNS = [
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^::1$/,
+  /^fc00:/i,
+  /^fe80:/i,
+  /^localhost$/i,
+];
+
+function isSafeWebhookUrl(rawUrl: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== 'https:') return false;
+  const hostname = parsed.hostname;
+  for (const pattern of PRIVATE_IP_PATTERNS) {
+    if (pattern.test(hostname)) return false;
+  }
+  return true;
+}
+
 export const CUSTOM_TRIGGERS = [
   { id: 'track:uploaded', label: 'Track uploaded', category: 'Music', description: 'A new audio file is uploaded to your library' },
   { id: 'track:mastered', label: 'Track marked as mastered', category: 'Music', description: 'A track status changes to "mastered"' },
@@ -249,23 +276,29 @@ router.post('/:id/test', requireAuth, async (req, res) => {
             break;
           case 'webhook':
             if (action.config.url && typeof action.config.url === 'string') {
-              try {
-                await fetch(action.config.url, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    ...(action.config.secret ? { Authorization: String(action.config.secret) } : {}),
-                  },
-                  body: JSON.stringify({
-                    workflow: workflow.name,
-                    trigger: workflow.triggerEvent,
-                    timestamp: new Date().toISOString(),
-                    test: true,
-                  }),
-                });
-                actionsRun.push(`Webhook called: ${action.config.url}`);
-              } catch {
-                actionsRun.push(`Webhook failed: ${action.config.url}`);
+              const webhookUrl = String(action.config.url);
+              if (!isSafeWebhookUrl(webhookUrl)) {
+                logger.warn(`[CustomWorkflow] Blocked SSRF attempt — unsafe webhook URL: ${webhookUrl}`);
+                actionsRun.push(`Webhook blocked: URL must be a public HTTPS endpoint`);
+              } else {
+                try {
+                  await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(action.config.secret ? { Authorization: String(action.config.secret) } : {}),
+                    },
+                    body: JSON.stringify({
+                      workflow: workflow.name,
+                      trigger: workflow.triggerEvent,
+                      timestamp: new Date().toISOString(),
+                      test: true,
+                    }),
+                  });
+                  actionsRun.push(`Webhook called: ${webhookUrl}`);
+                } catch {
+                  actionsRun.push(`Webhook failed: ${webhookUrl}`);
+                }
               }
             }
             break;

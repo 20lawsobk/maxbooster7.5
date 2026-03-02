@@ -137,10 +137,10 @@ class PromotionalToolsService {
     });
   }
 
-  async updatePreSavePage(pageId: string, updates: Partial<PreSavePage>): Promise<PreSavePage> {
+  async updatePreSavePage(pageId: string, userId: string, updates: Partial<PreSavePage>): Promise<PreSavePage> {
     const [updated] = await db.update(preSavePages)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(preSavePages.id, pageId))
+      .where(and(eq(preSavePages.id, pageId), eq(preSavePages.userId, userId)))
       .returning();
     
     if (!updated) throw new Error('Pre-save page not found');
@@ -193,8 +193,11 @@ class PromotionalToolsService {
     return true;
   }
 
-  async deletePreSavePage(pageId: string): Promise<void> {
-    await db.delete(preSavePages).where(eq(preSavePages.id, pageId));
+  async deletePreSavePage(pageId: string, userId: string): Promise<boolean> {
+    const [deleted] = await db.delete(preSavePages)
+      .where(and(eq(preSavePages.id, pageId), eq(preSavePages.userId, userId)))
+      .returning({ id: preSavePages.id });
+    return !!deleted;
   }
 
   async createPromoCard(
@@ -290,8 +293,11 @@ class PromotionalToolsService {
     return PROMO_CARD_TEMPLATES;
   }
 
-  async deletePromoCard(cardId: string): Promise<void> {
-    await db.delete(promoCards).where(eq(promoCards.id, cardId));
+  async deletePromoCard(cardId: string, userId: string): Promise<boolean> {
+    const [deleted] = await db.delete(promoCards)
+      .where(and(eq(promoCards.id, cardId), eq(promoCards.userId, userId)))
+      .returning({ id: promoCards.id });
+    return !!deleted;
   }
 
   async createMiniVideo(
@@ -347,8 +353,11 @@ class PromotionalToolsService {
     });
   }
 
-  async deleteMiniVideo(videoId: string): Promise<void> {
-    await db.delete(miniVideos).where(eq(miniVideos.id, videoId));
+  async deleteMiniVideo(videoId: string, userId: string): Promise<boolean> {
+    const [deleted] = await db.delete(miniVideos)
+      .where(and(eq(miniVideos.id, videoId), eq(miniVideos.userId, userId)))
+      .returning({ id: miniVideos.id });
+    return !!deleted;
   }
 
   async createSpotifyCanvas(

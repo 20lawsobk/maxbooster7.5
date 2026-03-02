@@ -175,7 +175,7 @@ export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: N
       pipeline.zcard(redisKey);
 
       // Add current request
-      pipeline.zadd(redisKey, now, `${now}-${Math.random()}`);
+      pipeline.zadd(redisKey, now, `${now}-${crypto.randomUUID()}`);
 
       // Set expiration on the key (2 seconds)
       pipeline.expire(redisKey, 2);

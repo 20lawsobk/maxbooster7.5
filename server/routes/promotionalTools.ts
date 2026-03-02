@@ -88,9 +88,13 @@ router.get('/presave/slug/:slug', async (req: Request, res: Response) => {
 
 router.put('/presave/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const page = await promotionalToolsService.updatePreSavePage(req.params.id, req.body);
+    const userId = (req.user as any).id;
+    const page = await promotionalToolsService.updatePreSavePage(req.params.id, userId, req.body);
     res.json(page);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === 'Pre-save page not found') {
+      return res.status(404).json({ error: 'Pre-save page not found' });
+    }
     logger.error('Error updating pre-save page:', error);
     res.status(500).json({ error: 'Failed to update pre-save page' });
   }
@@ -123,7 +127,9 @@ router.post('/presave/:id/email', async (req: Request, res: Response) => {
 
 router.delete('/presave/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    await promotionalToolsService.deletePreSavePage(req.params.id);
+    const userId = (req.user as any).id;
+    const deleted = await promotionalToolsService.deletePreSavePage(req.params.id, userId);
+    if (!deleted) return res.status(404).json({ error: 'Pre-save page not found' });
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting pre-save page:', error);
@@ -177,7 +183,9 @@ router.get('/promo-cards/templates', async (req: Request, res: Response) => {
 
 router.delete('/promo-cards/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    await promotionalToolsService.deletePromoCard(req.params.id);
+    const userId = (req.user as any).id;
+    const deleted = await promotionalToolsService.deletePromoCard(req.params.id, userId);
+    if (!deleted) return res.status(404).json({ error: 'Promo card not found' });
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting promo card:', error);
@@ -223,7 +231,9 @@ router.get('/mini-videos', requireAuth, async (req: Request, res: Response) => {
 
 router.delete('/mini-videos/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    await promotionalToolsService.deleteMiniVideo(req.params.id);
+    const userId = (req.user as any).id;
+    const deleted = await promotionalToolsService.deleteMiniVideo(req.params.id, userId);
+    if (!deleted) return res.status(404).json({ error: 'Mini video not found' });
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting mini video:', error);

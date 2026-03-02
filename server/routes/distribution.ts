@@ -353,7 +353,10 @@ router.patch(
       }
 
       const updates = createTrackSchema.partial().parse(req.body);
-      const track = await storage.updateDistroTrack(trackId, updates);
+      const track = await storage.updateDistroTrack(trackId, releaseId, updates);
+      if (!track) {
+        return res.status(404).json({ error: 'Track not found in this release' });
+      }
 
       res.json(track);
     } catch (error: unknown) {
@@ -380,7 +383,10 @@ router.delete(
         return res.status(404).json({ error: 'Release not found' });
       }
 
-      await storage.deleteDistroTrack(trackId);
+      const deleted = await storage.deleteDistroTrack(trackId, releaseId);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Track not found in this release' });
+      }
       res.json({ success: true });
     } catch (error: unknown) {
       logger.error('Error deleting track:', error);

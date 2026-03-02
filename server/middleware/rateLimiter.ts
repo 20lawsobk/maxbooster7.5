@@ -19,6 +19,9 @@ export const RATE_LIMITS = {
   },
   uploads: {
     perUser: { windowMs: 3600000, max: 50 }
+  },
+  ai: {
+    perUser: { windowMs: 3600000, max: 100 }
   }
 };
 
@@ -400,6 +403,37 @@ export const uploadRateLimiter: RequestHandler = async (
 
   if (!result.allowed) {
     logger.warn(`Upload rate limit exceeded for user: ${userId}`);
+    sendRateLimitExceeded(res, result.resetAt);
+    return;
+  }
+
+  next();
+};
+
+export const aiRateLimiter: RequestHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (process.env.NODE_ENV !== 'production') {
+    next();
+    return;
+  }
+
+  const userId = getUserId(req);
+  if (!userId) {
+    next();
+    return;
+  }
+
+  const key = `ai:user:${userId}`;
+  const { perUser } = RATE_LIMITS.ai;
+
+  const result = await slidingWindowCheck(key, perUser.windowMs, perUser.max);
+  setRateLimitHeaders(res, perUser.max, result.remaining, result.resetAt);
+
+  if (!result.allowed) {
+    logger.warn(`AI rate limit exceeded for user: ${userId}`);
     sendRateLimitExceeded(res, result.resetAt);
     return;
   }

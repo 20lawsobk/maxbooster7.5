@@ -89,7 +89,8 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Submission not found' });
     }
 
-    const data = insertLabelSubmissionSchema.partial().parse(req.body);
+    const parsed = insertLabelSubmissionSchema.partial().parse(req.body);
+    const { status: _status, userId: _userId, ...data } = parsed;
     const [item] = await db.update(labelSubmissions)
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(labelSubmissions.id, id), eq(labelSubmissions.userId, userId)))

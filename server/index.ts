@@ -272,6 +272,7 @@ app.use((req, res, next) => {
       cookie: {
         secure: isProduction,
         httpOnly: true,
+        sameSite: 'lax' as const,
         maxAge: 24 * 60 * 60 * 1000,
       },
     };

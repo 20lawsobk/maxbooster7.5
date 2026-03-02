@@ -87,7 +87,8 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Radio pitch not found' });
     }
 
-    const data = insertRadioPitchSchema.partial().parse(req.body);
+    const parsed = insertRadioPitchSchema.partial().parse(req.body);
+    const { status: _status, userId: _userId, ...data } = parsed;
     const [item] = await db.update(radioPitches)
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(radioPitches.id, id), eq(radioPitches.userId, userId)))

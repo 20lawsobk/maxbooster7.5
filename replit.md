@@ -189,3 +189,49 @@ Three more architect passes run. Six real bugs discovered and fixed across rate 
 - **Checkout 20-item cap**: Line 1389 enforces maximum 20 items per session
 - **Price from DB, not client**: Stripe `line_items` use server-fetched `stripePriceId`, not any amount from request body — price manipulation is not possible
 - **Architect evidence gap**: Pass #6 was re-verified manually by reading the actual checkout handler (line 1377-1531)
+
+## Security Hardening — Session 11 (March 2026)
+
+### Promotional Tools IDOR Fix (4 operations in service + 4 route handlers)
+All delete/update operations in `server/services/promotionalToolsService.ts` previously only filtered by resource `id`, allowing any authenticated user to modify/delete another user's resources (IDOR):
+
+- **`updatePreSavePage(pageId, userId, updates)`** — signature updated; WHERE now uses `and(eq(preSavePages.id, pageId), eq(preSavePages.userId, userId))`. Returns 404 if record not found or doesn't belong to user.
+- **`deletePreSavePage(pageId, userId)`** — now uses `and()` with userId; returns `boolean` for 404 detection via `.returning()`.
+- **`deletePromoCard(cardId, userId)`** — now uses `and()` with `promoCards.userId`; returns `boolean`.
+- **`deleteMiniVideo(videoId, userId)`** — now uses `and()` with `miniVideos.userId`; returns `boolean`.
+
+All four corresponding route handlers in `server/routes/promotionalTools.ts` updated to extract `(req.user as any).id` and pass it to the service, with proper 404 responses when ownership check fails.
+
+### Session Fallback Cookie Security
+`server/index.ts` fallback session config (used when Redis is unavailable) was missing `sameSite`. Added `sameSite: 'lax' as const` to match the primary session configuration.
+
+### AI Route Rate Limiting
+- `server/middleware/rateLimiter.ts`: Added `RATE_LIMITS.ai = { perUser: { windowMs: 3600000, max: 100 } }` and exported `aiRateLimiter` — uses the same Redis sliding window as all other rate limiters.
+- `server/routes/socialAI.ts`: Added `router.use(aiRateLimiter)` to apply per-user rate limiting (100 AI requests/hour) to all AI generation endpoints.
+
+### Verified PASS — Admin & High-Risk Route Audit
+- **`server/routes/paymentBypass.ts`**: Local `requireAdmin` implementation correct — checks `!req.user` (401) then `role !== 'admin'` (403). All endpoints admin-gated. PASS.
+- **`server/routes/killSwitch.ts`**: Local `requireAdmin` correct — checks `!user || user.role !== 'admin'`. PASS.
+- **`server/routes/audit.ts`**: `router.use(requireAdmin)` applied globally. PASS.
+- **`server/routes/payouts.ts`**: Inline `if (!req.user)` checks + ownership check at payout retrieval (`payout.userId !== req.user.id`). Equivalent to `requireAuth`. PASS.
+- **`server/routes/invoices.ts`**: Uses `requireAuth` + scopes by userId + explicit ownership check at GET /:invoiceId. PASS.
+- **`server/routes/backup.ts`**: All routes use `requireAdmin` from central auth.ts. PASS.
+- **`server/routes/contracts.ts`**: Mix of `requireAuth` middleware + inline `req.isAuthenticated()` checks. All mutating routes authenticated. Inline checks use `req.user!.id` for scoping. PASS.
+- **`server/routes/fanCampaigns.ts`**: All endpoints use `requireAuth` and scope by `req.user.id`. PASS.
+- **`server/safety/mandatoryMiddleware.ts`**: Helmet IS configured (security headers). PASS.
+- **`musicVideoProductions.stage`** and **`songwritingSessions.status`**: User-owned workflow state fields — legitimate for users to modify their own records. No admin approval workflow involved. No fix needed.
+
+### Cumulative Security Fix Summary (Sessions 7–11)
+All 48 architect verification passes completed across the full codebase. Key areas fixed:
+1. SSRF in customWorkflows webhooks (isSafeWebhookUrl)
+2. Math.random → crypto.randomUUID in Redis ZADD keys
+3. Distribution track ownership bypass (releaseId in WHERE)
+4. Error handler 500 response masking in production
+5. Collaboration version routes ownership verification
+6. Storage IDOR (GET /file/*key validates users/{userId}/ prefix)
+7. Chunked upload session scope (chunkInfo.userId check)
+8. Label/radio/sample clearance status field protection
+9. Marketplace beats limit cap
+10. Session fallback sameSite cookie
+11. AI route rate limiting
+12. Promotional tools IDOR (4 operations)

@@ -6,8 +6,10 @@ import { unifiedAIController } from '../services/unifiedAIController';
 import { aiContentService } from '../services/aiContentService';
 import { logger } from '../logger';
 import { requireAuth } from '../middleware/auth.js';
+import { aiRateLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
+router.use(aiRateLimiter);
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };

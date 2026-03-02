@@ -270,6 +270,8 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
         createdAt: Date.now(),
       };
       chunkUploads.set(fileId, chunkInfo);
+    } else if (chunkInfo.userId !== userId) {
+      return res.status(403).json({ error: 'Upload session belongs to a different user' });
     }
 
     const tempDir = path.join(process.cwd(), 'uploads', 'temp', fileId);
@@ -376,7 +378,16 @@ router.delete('/upload/chunk/:fileId', requireAuth, async (req: Request, res: Re
 router.get('/file/*key', requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    
+    const requestingUserId = req.user!.id;
+
+    if (key.startsWith('users/')) {
+      const parts = key.split('/');
+      const fileOwnerId = parts[1];
+      if (fileOwnerId !== requestingUserId) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
     let buffer = getCachedAudio(key);
     if (!buffer) {
       buffer = await storageService.downloadFile(key);
