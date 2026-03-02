@@ -88,14 +88,14 @@ class IndustryMonitorService {
 
     logger.info('[IndustryMonitor] Fetching live music industry data...');
 
-    const [rssChanges, searchChanges] = await Promise.allSettled([
+    const [rssChanges, searchChanges] = await Promise.all([
       this.fetchAllRssFeeds(),
       this.fetchSearchIntelligence(),
     ]);
 
     const all: LiveIndustryChange[] = [
-      ...(rssChanges.status === 'fulfilled' ? rssChanges.value : []),
-      ...(searchChanges.status === 'fulfilled' ? searchChanges.value : []),
+      ...rssChanges,
+      ...searchChanges,
     ];
 
     const unique = this.deduplicateByHash(all);
@@ -114,10 +114,20 @@ class IndustryMonitorService {
     );
 
     const all: LiveIndustryChange[] = [];
+    let failCount = 0;
     for (const result of results) {
-      if (result.status === 'fulfilled') all.push(...result.value);
-      else logger.warn('[IndustryMonitor] RSS feed failed:', result.reason?.message);
+      if (result.status === 'fulfilled') {
+        all.push(...result.value);
+      } else {
+        failCount++;
+        logger.error('[IndustryMonitor] RSS feed failed:', result.reason?.message ?? result.reason);
+      }
     }
+
+    if (failCount === RSS_FEEDS.length) {
+      throw new Error(`[IndustryMonitor] All ${RSS_FEEDS.length} RSS feeds failed — no RSS data available`);
+    }
+
     return all;
   }
 
@@ -195,7 +205,7 @@ class IndustryMonitorService {
 
     const changes: LiveIndustryChange[] = [];
 
-    const [tavilyResults, exaResults] = await Promise.allSettled([
+    const [tavilyResults, exaResults] = await Promise.all([
       tavilyKey
         ? Promise.allSettled(MUSIC_INDUSTRY_QUERIES.map(q => this.tavilySearch(q, tavilyKey)))
         : Promise.resolve([]),
@@ -204,16 +214,14 @@ class IndustryMonitorService {
         : Promise.resolve([]),
     ]);
 
-    if (tavilyResults.status === 'fulfilled') {
-      for (const r of tavilyResults.value) {
-        if (r.status === 'fulfilled') changes.push(...r.value);
-      }
+    for (const r of tavilyResults) {
+      if (r.status === 'fulfilled') changes.push(...r.value);
+      else logger.error('[IndustryMonitor] Tavily query failed:', r.reason?.message ?? r.reason);
     }
 
-    if (exaResults.status === 'fulfilled') {
-      for (const r of exaResults.value) {
-        if (r.status === 'fulfilled') changes.push(...r.value);
-      }
+    for (const r of exaResults) {
+      if (r.status === 'fulfilled') changes.push(...r.value);
+      else logger.error('[IndustryMonitor] Exa query failed:', r.reason?.message ?? r.reason);
     }
 
     return changes;
