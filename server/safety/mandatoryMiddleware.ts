@@ -16,6 +16,19 @@ import * as Sentry from '@sentry/node';
 import { DistributedRateLimiter } from '../middleware/scalableRateLimiter.js';
 import { getRedisClient } from '../lib/redisClient.js';
 
+function isInternalIp(ip: string): boolean {
+  if (!ip) return false;
+  const stripped = ip.replace(/^::ffff:/, '');
+  return (
+    stripped === '127.0.0.1' ||
+    stripped === '::1' ||
+    stripped === 'localhost' ||
+    stripped.startsWith('10.') ||
+    stripped.startsWith('172.16.') ||
+    stripped.startsWith('192.168.')
+  );
+}
+
 /**
  * Prototype pollution protection
  * Removes dangerous properties from objects recursively
@@ -314,6 +327,8 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
         maxRequests,
         skip: (req) => {
           if (isDev || isLoadTest) return true;
+          const ip = req.ip || req.socket?.remoteAddress || '';
+          if (isInternalIp(ip)) return true;
           return req.path === '/health' || req.path === '/api/health' || req.path === '/api/version';
         },
         keyGenerator: (req) => {
@@ -348,7 +363,11 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
       {
         windowMs,
         maxRequests,
-        skip: () => isDev || isLoadTest,
+        skip: (req) => {
+          if (isDev || isLoadTest) return true;
+          const ip = req.ip || req.socket?.remoteAddress || '';
+          return isInternalIp(ip);
+        },
         keyGenerator: (req) => {
           const ip = req.ip || req.socket?.remoteAddress || 'unknown';
           return `strict:${ip}`;

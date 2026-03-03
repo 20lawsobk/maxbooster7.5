@@ -1809,7 +1809,8 @@ function Toolbar({
   const [showAddMenu, setShowAddMenu] = useState(false);
 
   return (
-    <div className="bg-[#1f1f23] border-b border-[#333] flex items-center px-3 gap-2 shrink-0 flex-wrap" style={{ height: 'var(--toolbar-h)' }}>
+    <div className="bg-[#1f1f23] border-b border-[#333] shrink-0 overflow-x-auto" style={{ height: 'var(--toolbar-h)' }}>
+      <div className="flex items-center h-full px-3 gap-2 min-w-max">
       <div className="relative">
         <Button
           variant="ghost"
@@ -2076,6 +2077,7 @@ function Toolbar({
           </TooltipTrigger>
           <TooltipContent>Mixer (M)</TooltipContent>
         </Tooltip>
+      </div>
       </div>
     </div>
   );
@@ -3107,9 +3109,34 @@ interface EditorPanelProps {
 }
 
 function EditorPanel({ track, onClose }: EditorPanelProps) {
+  const [height, setHeight] = useState(192);
+  const dragRef = useRef<{ startY: number; startH: number } | null>(null);
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    dragRef.current = { startY: e.clientY, startH: height };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const delta = dragRef.current.startY - ev.clientY;
+      setHeight(Math.max(80, Math.min(600, dragRef.current.startH + delta)));
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    e.preventDefault();
+  };
+
   return (
-    <div className="bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0" style={{ height: 'var(--editor-h)' }}>
-      <div className="h-8 flex items-center justify-between px-3 bg-[#1f1f23] border-b border-[#333]">
+    <div className="bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0" style={{ height }}>
+      <div
+        className="h-1.5 bg-[#333] hover:bg-blue-500/50 active:bg-blue-500 cursor-ns-resize shrink-0 transition-colors"
+        onMouseDown={handleResizeStart}
+        title="Drag to resize"
+      />
+      <div className="h-8 flex items-center justify-between px-3 bg-[#1f1f23] border-b border-[#333] shrink-0">
         <span className="text-sm font-medium">
           {track ? `Editing: ${track.name}` : 'Editor'}
         </span>
@@ -3117,7 +3144,7 @@ function EditorPanel({ track, onClose }: EditorPanelProps) {
           <PanelBottomClose className="h-3.5 w-3.5" />
         </Button>
       </div>
-      <div className="flex-1 flex items-center justify-center text-gray-500">
+      <div className="flex-1 flex items-center justify-center text-gray-500 overflow-hidden">
         {track ? (
           <div className="text-center">
             <Piano className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -3146,7 +3173,26 @@ interface MixerPanelProps {
 
 function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpdateTrack, onClose, projectId }: MixerPanelProps) {
   const [showSnapshotMenu, setShowSnapshotMenu] = useState(false);
+  const [mixerHeight, setMixerHeight] = useState(240);
+  const mixerDragRef = useRef<{ startY: number; startH: number } | null>(null);
   const queryClient = useQueryClient();
+
+  const handleMixerResizeStart = (e: React.MouseEvent) => {
+    mixerDragRef.current = { startY: e.clientY, startH: mixerHeight };
+    const onMove = (ev: MouseEvent) => {
+      if (!mixerDragRef.current) return;
+      const delta = mixerDragRef.current.startY - ev.clientY;
+      setMixerHeight(Math.max(120, Math.min(700, mixerDragRef.current.startH + delta)));
+    };
+    const onUp = () => {
+      mixerDragRef.current = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    e.preventDefault();
+  };
 
   const { data: snapshotsData } = useQuery({
     queryKey: ['mix-snapshots', projectId],
@@ -3193,8 +3239,13 @@ function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpd
   });
 
   return (
-    <div className="bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0" style={{ height: 'var(--mixer-h)' }}>
-      <div className="h-8 flex items-center justify-between px-3 bg-[#1f1f23] border-b border-[#333]">
+    <div className="bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0" style={{ height: mixerHeight }}>
+      <div
+        className="h-1.5 bg-[#333] hover:bg-blue-500/50 active:bg-blue-500 cursor-ns-resize shrink-0 transition-colors"
+        onMouseDown={handleMixerResizeStart}
+        title="Drag to resize"
+      />
+      <div className="h-8 flex items-center justify-between px-3 bg-[#1f1f23] border-b border-[#333] shrink-0">
         <span className="text-sm font-medium">Mixer</span>
         <div className="flex items-center gap-1">
           {projectId && (

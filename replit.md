@@ -92,3 +92,8 @@ Replit internal IPs (`10.x.x.x`), localhost (`127.0.0.1`, `::1`) and loopback va
 - `server/services/selfHealingSecurityEngine.ts` — processSecurityEvent bypass + blockIp bypass
 
 This ensures internal monitoring, health checks, and Replit's own infrastructure (plus test agents) are never locked out. External public traffic remains fully rate-limited and monitored.
+
+**Mandatory middleware limiters** (`server/safety/mandatoryMiddleware.ts`):
+- `isInternalIp()` helper added — checks `127.0.0.1`, `::1`, `10.*`, `172.16.*`, `192.168.*`
+- General mandatory limiter (1000/15min): `skip` now returns `true` for internal IPs
+- Strict auth limiter (50/15min, `/api/auth` + `/api/kill-switch`): `skip` now returns `true` for internal IPs
