@@ -53,6 +53,25 @@ The server serves the frontend using Vite middleware in development and as stati
 - **Version Control**: GitHub (GITHUB_PAT, GITHUB_REPO configured for CI/CD desktop/mobile builds).
 - **Search APIs**: Exa (EXA_API_KEY), Tavily (TAVILY_API_KEY).
 
+## Max AI Assistant
+
+All AI in Max Booster — including the Max assistant — is built and trained entirely in-house by the B-Lawz Music engineering team. No external AI APIs (OpenAI, etc.) are used anywhere.
+
+**Architecture:**
+- `server/services/maxAssistantService.ts`: In-house knowledge engine with 25+ topic entries covering Studio/DAW, distribution, royalties, marketplace, social media, advertising, analytics, career tools, account management, and the in-house AI system itself. Uses word-boundary scoring (not substring) to match user intent.
+- `server/routes/assistant.ts`: REST API — `GET /api/assistant/history`, `POST /api/assistant/chat`, `DELETE /api/assistant/history`
+- `shared/schema.ts`: `assistantConversations` and `assistantMessages` tables for persistent per-user chat history
+
+**Frontend components:**
+- `client/src/components/support/AIAssistantBubble.tsx`: Authenticated-user bubble (cyan/blue, bottom-right). Loads full history from server on open, sends messages via API, supports clearing history.
+- `client/src/components/support/AIAssistantPublic.tsx`: Public/unauthenticated bubble (purple/pink, public pages). Uses the same server API but does not persist history.
+
+**Key behaviors:**
+- Authenticated users: conversation history persists to DB across sessions
+- Unauthenticated users: chat works via API but history is not saved
+- Context-aware follow-up detection using conversation history
+- Comprehensive knowledge base covers all platform features in detail
+
 ## Production Configuration
 
 - **Run Mode**: `npm run start` (production cluster, `dist/cluster.cjs`)

@@ -4242,6 +4242,14 @@ export async function registerRoutes(
   }
 
   try {
+    const assistantRouter = (await import('./routes/assistant.js')).default;
+    app.use('/api/assistant', assistantRouter);
+    log('Loaded route: assistant');
+  } catch (error: any) {
+    log(`Warning: Could not load assistant routes - ${error.message}`);
+  }
+
+  try {
     const { silentDeployment } = await import('./services/silentDeploymentService.js');
     if (process.env.ENABLE_SELF_EVOLUTION === 'true') {
       silentDeployment.enable();

@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Sparkles, X, Send, Lightbulb, Music, TrendingUp, Zap, Minimize2, Maximize2 } from 'lucide-react';
+import { Sparkles, X, Send, Lightbulb, Music, TrendingUp, Zap, Minimize2, Maximize2, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -24,20 +23,28 @@ interface Suggestion {
 const QUICK_SUGGESTIONS: Suggestion[] = [
   { icon: Music, text: 'How do I use the DAW?', color: 'text-purple-400' },
   { icon: TrendingUp, text: 'How does distribution work?', color: 'text-blue-400' },
-  { icon: Zap, text: 'Tell me about AI features', color: 'text-amber-400' },
-  { icon: Lightbulb, text: 'How to monetize my music?', color: 'text-green-400' },
+  { icon: Zap, text: 'Tell me about the AI features', color: 'text-amber-400' },
+  { icon: Lightbulb, text: 'How do I monetize my music?', color: 'text-green-400' },
 ];
 
-const AI_RESPONSES: Record<string, string> = {
-  default: "I'm Max, your AI assistant! I'm here to help you navigate Max Booster. I can answer questions about the Studio, distribution, social media autopilot, advertising campaigns, marketplace features, and more. What would you like to know?",
-  daw: "The Max Booster Studio is a full-featured DAW (Digital Audio Workstation) inspired by Studio One. You can:\n\n• Create and manage unlimited projects\n• Record audio and MIDI tracks\n• Use AI mixing and mastering\n• Apply professional effects and plugins\n• Export in multiple formats\n\nTo get started, click 'Studio' in the sidebar and create a new project!",
-  distribution: "Max Booster offers unlimited music distribution to 150+ platforms including Spotify, Apple Music, Amazon Music, and more. You keep 100% of your royalties!\n\nTo distribute:\n1. Go to Distribution in the sidebar\n2. Upload your finished track\n3. Add metadata (title, artist, cover art)\n4. Select platforms\n5. Submit for review\n\nYour music will go live within 2-3 business days!",
-  ai: "Max Booster includes powerful AI features:\n\n• **AI Mix**: Automatic EQ, compression, and spatial positioning\n• **AI Master**: Professional loudness optimization and finishing\n• **AI Generator**: Create beats and melodies from text descriptions\n• **Social Media Autopilot**: 24/7 automated content posting\n• **Ad Campaign Autopilot**: Organic growth optimization\n\nAll AI is 100% custom-built in-house - no external APIs!",
-  monetize: "Here's how to monetize your music on Max Booster:\n\n• **Distribution**: Earn streaming royalties (100% yours!)\n• **Beat Marketplace**: Sell beats and samples to other artists\n• **Licensing**: Offer exclusive and non-exclusive licenses\n• **Analytics**: Track revenue and optimize your strategy\n\nThe platform handles all payments via Stripe and provides detailed financial reports!",
-  social: "The Social Media Autopilot runs 24/7 and:\n\n• Automatically posts to Instagram, Twitter, Facebook, YouTube\n• Creates engaging content from your music\n• Uses AI to optimize posting times\n• Analyzes performance metrics\n• Grows your audience organically\n\nJust connect your accounts in Settings → Social Media!",
-  advertising: "The Advertising Autopilot is zero-cost organic growth:\n\n• Creates viral-optimized content\n• Posts across all platforms\n• A/B tests different strategies\n• Learns from your best-performing content\n• No ad spend required!\n\nIt's like having a marketing team working 24/7 for free!",
-  marketplace: "The P2P Marketplace lets you:\n\n• Sell beats, samples, and loops\n• Offer exclusive and non-exclusive licenses\n• Set your own prices\n• Get paid via Stripe Connect\n• Build a customer base\n\nTo start selling, go to Marketplace → List Item and upload your products!",
-};
+const WELCOME_MESSAGE = (username?: string): Message => ({
+  id: 'welcome',
+  role: 'assistant',
+  content: username
+    ? `Hey ${username}! I'm Max, your AI assistant — built in-house by the Max Booster team. I remember our full conversation history, so feel free to ask follow-up questions. What can I help you with today?`
+    : "Hey there! I'm Max, your AI assistant, built entirely in-house by the Max Booster team. Ask me anything about the platform — Studio, distribution, royalties, marketplace, social media, advertising, and more. What do you want to know?",
+  timestamp: new Date(),
+});
+
+async function apiFetch(path: string, options?: RequestInit) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    ...options,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
 
 export function AIAssistantBubble() {
   const { user } = useAuth();
@@ -46,59 +53,52 @@ export function AIAssistantBubble() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isTyping]);
+
+  const loadHistory = useCallback(async () => {
+    if (historyLoaded) return;
+    setHistoryLoaded(true);
+
+    if (!user) {
+      setMessages([WELCOME_MESSAGE()]);
+      return;
+    }
+
+    try {
+      const data = await apiFetch('/api/assistant/history');
+      const prior: Message[] = (data.messages || []).map((m: any) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: new Date(m.createdAt),
+      }));
+
+      if (prior.length === 0) {
+        setMessages([WELCOME_MESSAGE(user.username ?? undefined)]);
+      } else {
+        setMessages(prior);
+      }
+    } catch {
+      setMessages([WELCOME_MESSAGE(user.username ?? undefined)]);
+    }
+  }, [user, historyLoaded]);
 
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      const welcomeMessage: Message = {
-        id: '1',
-        role: 'assistant',
-        content: user 
-          ? `Hey ${user.username}! 👋 I'm Max, your AI assistant. I'm here to help you with anything about Max Booster - from using the Studio to growing your music career. What can I help you with today?`
-          : "Hey there! 👋 I'm Max, your AI assistant. I'm here to help you learn about Max Booster and how it can accelerate your music career. What questions do you have?",
-        timestamp: new Date(),
-      };
-      setMessages([welcomeMessage]);
+    if (isOpen) {
+      loadHistory();
     }
-  }, [isOpen, user]);
+  }, [isOpen, loadHistory]);
 
-  const getAIResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('daw') || lowerMessage.includes('studio') || lowerMessage.includes('record') || lowerMessage.includes('mix')) {
-      return AI_RESPONSES.daw;
-    }
-    if (lowerMessage.includes('distribution') || lowerMessage.includes('distribute') || lowerMessage.includes('spotify') || lowerMessage.includes('apple music')) {
-      return AI_RESPONSES.distribution;
-    }
-    if (lowerMessage.includes('ai') || lowerMessage.includes('artificial intelligence')) {
-      return AI_RESPONSES.ai;
-    }
-    if (lowerMessage.includes('monetize') || lowerMessage.includes('money') || lowerMessage.includes('earn') || lowerMessage.includes('revenue')) {
-      return AI_RESPONSES.monetize;
-    }
-    if (lowerMessage.includes('social') || lowerMessage.includes('instagram') || lowerMessage.includes('twitter') || lowerMessage.includes('facebook')) {
-      return AI_RESPONSES.social;
-    }
-    if (lowerMessage.includes('advertising') || lowerMessage.includes('ad') || lowerMessage.includes('marketing') || lowerMessage.includes('growth')) {
-      return AI_RESPONSES.advertising;
-    }
-    if (lowerMessage.includes('marketplace') || lowerMessage.includes('sell') || lowerMessage.includes('beats')) {
-      return AI_RESPONSES.marketplace;
-    }
-    
-    return AI_RESPONSES.default;
-  };
-
-  const handleSendMessage = (messageText?: string) => {
-    const textToSend = messageText || inputValue.trim();
-    if (!textToSend) return;
+  const handleSendMessage = async (messageText?: string) => {
+    const textToSend = (messageText || inputValue).trim();
+    if (!textToSend || isTyping) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -111,27 +111,58 @@ export function AIAssistantBubble() {
     setInputValue('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      const aiResponse: Message = {
+    try {
+      const data = await apiFetch('/api/assistant/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message: textToSend }),
+      });
+
+      const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: getAIResponse(textToSend),
+        content: data.content,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch {
+      const errMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "I'm having trouble connecting right now. Please check your connection and try again.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errMessage]);
+    } finally {
       setIsTyping(false);
-    }, 800);
+    }
   };
 
-  const handleSuggestionClick = (suggestion: Suggestion) => {
-    handleSendMessage(suggestion.text);
+  const handleClearHistory = async () => {
+    if (!user) {
+      setMessages([WELCOME_MESSAGE()]);
+      return;
+    }
+    try {
+      await apiFetch('/api/assistant/history', { method: 'DELETE' });
+    } catch {
+    }
+    setHistoryLoaded(false);
+    setMessages([WELCOME_MESSAGE(user.username ?? undefined)]);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+  };
+
+  const handleOpen = () => {
+    setIsOpen(true);
   };
 
   if (!isOpen) {
     return (
       <div className="fixed bottom-6 right-6 z-50">
         <Button
-          onClick={() => setIsOpen(true)}
+          onClick={handleOpen}
           size="lg"
           className="h-14 w-14 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-200 group"
           data-testid="ai-assistant-bubble"
@@ -144,6 +175,8 @@ export function AIAssistantBubble() {
       </div>
     );
   }
+
+  const showSuggestions = messages.length <= 1 && !isTyping;
 
   return (
     <div className={cn(
@@ -159,10 +192,21 @@ export function AIAssistantBubble() {
               </div>
               <div>
                 <div className="text-sm font-semibold">Max</div>
-                <div className="text-xs text-gray-400 font-normal">Your AI Assistant</div>
+                <div className="text-xs text-gray-400 font-normal">In-House AI Assistant</div>
               </div>
             </CardTitle>
             <div className="flex items-center gap-1">
+              {user && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-400"
+                  onClick={handleClearHistory}
+                  title="Clear conversation history"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -175,14 +219,14 @@ export function AIAssistantBubble() {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0 text-gray-400 hover:text-white"
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </CardHeader>
-        
+
         {!isMinimized && (
           <CardContent className="p-0">
             <ScrollArea ref={scrollRef} className="h-96 p-4">
@@ -197,7 +241,7 @@ export function AIAssistantBubble() {
                   >
                     <div
                       className={cn(
-                        "max-w-[80%] rounded-lg px-4 py-2 whitespace-pre-wrap",
+                        "max-w-[80%] rounded-lg px-4 py-2 whitespace-pre-wrap text-sm",
                         message.role === 'user'
                           ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
                           : 'bg-[#252525] text-gray-100 border border-gray-700'
@@ -207,7 +251,7 @@ export function AIAssistantBubble() {
                     </div>
                   </div>
                 ))}
-                
+
                 {isTyping && (
                   <div className="flex justify-start">
                     <div className="bg-[#252525] text-gray-100 border border-gray-700 rounded-lg px-4 py-2">
@@ -220,7 +264,7 @@ export function AIAssistantBubble() {
                   </div>
                 )}
 
-                {messages.length === 1 && !isTyping && (
+                {showSuggestions && (
                   <div className="grid grid-cols-1 gap-2 mt-4">
                     {QUICK_SUGGESTIONS.map((suggestion, idx) => (
                       <Button
@@ -228,7 +272,7 @@ export function AIAssistantBubble() {
                         variant="outline"
                         size="sm"
                         className="justify-start text-left h-auto py-2 px-3 border-gray-700 hover:border-cyan-500/50 hover:bg-cyan-500/10"
-                        onClick={() => handleSuggestionClick(suggestion)}
+                        onClick={() => handleSendMessage(suggestion.text)}
                       >
                         <suggestion.icon className={cn("h-4 w-4 mr-2 flex-shrink-0", suggestion.color)} />
                         <span className="text-xs text-gray-300">{suggestion.text}</span>
@@ -244,13 +288,19 @@ export function AIAssistantBubble() {
                 <Input
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
                   placeholder="Ask me anything..."
                   className="flex-1 bg-[#252525] border-gray-700 text-white placeholder:text-gray-500"
+                  disabled={isTyping}
                 />
                 <Button
                   onClick={() => handleSendMessage()}
-                  disabled={!inputValue.trim()}
+                  disabled={!inputValue.trim() || isTyping}
                   size="sm"
                   className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
                 >
@@ -258,7 +308,7 @@ export function AIAssistantBubble() {
                 </Button>
               </div>
               <div className="mt-2 text-xs text-gray-500 text-center">
-                AI-powered help • Available 24/7
+                In-house AI • Conversation history saved {user ? '✓' : '(log in to save)'}
               </div>
             </div>
           </CardContent>

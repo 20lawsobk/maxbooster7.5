@@ -5086,3 +5086,34 @@ export const refreshTokens = pgTable("refresh_tokens", {
 export const insertRefreshTokenSchema = createInsertSchema(refreshTokens).omit({ id: true, createdAt: true });
 export type RefreshToken = typeof refreshTokens.$inferSelect;
 export type InsertRefreshToken = typeof refreshTokens.$inferInsert;
+
+// ============================================================================
+// MAX AI ASSISTANT — Persistent Conversation History
+// ============================================================================
+
+export const assistantConversations = pgTable("assistant_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => [
+  index("assistant_conversations_user_id_idx").on(t.userId),
+]);
+
+export const insertAssistantConversationSchema = createInsertSchema(assistantConversations).omit({ id: true, createdAt: true, updatedAt: true });
+export type AssistantConversation = typeof assistantConversations.$inferSelect;
+export type InsertAssistantConversation = typeof assistantConversations.$inferInsert;
+
+export const assistantMessages = pgTable("assistant_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull(),
+  role: varchar("role", { length: 16 }).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => [
+  index("assistant_messages_conversation_id_idx").on(t.conversationId),
+]);
+
+export const insertAssistantMessageSchema = createInsertSchema(assistantMessages).omit({ id: true, createdAt: true });
+export type AssistantMessage = typeof assistantMessages.$inferSelect;
+export type InsertAssistantMessage = typeof assistantMessages.$inferInsert;
