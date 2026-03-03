@@ -15,6 +15,8 @@ import {
   Megaphone,
   ArrowLeft,
   Settings,
+  Trophy,
+  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +39,9 @@ const categoryIcons: Record<NotificationCategory, React.ElementType> = {
   marketplace: ShoppingBag,
   royalties: DollarSign,
   collaboration: Users,
+  achievements: Trophy,
   system: Megaphone,
+  platform_admin: ShieldAlert,
 };
 
 export default function Notifications() {
@@ -70,7 +74,9 @@ export default function Notifications() {
       marketplace: [],
       royalties: [],
       collaboration: [],
+      achievements: [],
       system: [],
+      platform_admin: [],
     };
     notifications.forEach((n) => {
       const category = (n.category || typeToCategory[n.type] || 'system') as NotificationCategory;

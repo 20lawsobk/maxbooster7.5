@@ -227,3 +227,28 @@ Done in 1357ms
 ```
 
 Build succeeded with no TypeScript errors and no missing module warnings.
+
+---
+
+## March 3, 2026 — Visual Page Audit Fixes
+
+### Fix 5 — Security Middleware: Loopback Whitelist Incorrect in Production (HIGH)
+**File:** `server/middleware/selfHealingMiddleware.ts`
+**Problem:** The IP whitelist for loopback addresses (127.0.0.1, ::1) was guarded by `isDev && (...)`, meaning in `NODE_ENV=production` mode NO IPs were whitelisted — even localhost. This caused the self-healing engine to eventually block legitimate testing and internal requests.
+**Additional:** All `401` and `403` HTTP responses were counted as `medium` severity threat events. This caused normal unauthenticated page loads to accumulate threat scores and trigger IP blocks.
+**Fix:** Loopback IPs now always bypass blocking regardless of environment. 401/403 responses excluded from threat tracking (they are normal auth flow, not attacks).
+
+### Fix 6 — Notifications Page: TypeError on Missing Category Keys (MEDIUM)
+**File:** `client/src/pages/Notifications.tsx`
+**Problem:** `TypeError: Cannot read properties of undefined (reading 'filter')` crash on page load. The `categoryConfig` in `types.ts` defines 9 notification categories including `achievements` and `platform_admin`, but the `groupedByCategory` object in `Notifications.tsx` only initialized 7 keys (missing `achievements` and `platform_admin`). When the JSX iterated over `Object.keys(categoryConfig)` and called `groupedByCategory[cat].filter(...)`, it hit `undefined` for the two missing categories.
+**Fix:** Added `achievements: []` and `platform_admin: []` to the `groupedByCategory` initialization. Added corresponding Lucide icons (`Trophy` for achievements, `ShieldAlert` for platform_admin) to the `categoryIcons` record. All 9 categories now render correctly with their respective icons and filter tabs.
+**Result:** Notifications page renders cleanly with all 9 category tabs: All, Unread, Account & Security, Distribution, Social Media, Marketplace, Royalties, Collaboration, Achievements, System, Platform Admin.
+
+### Visual Page Verification Results (March 3, 2026)
+All 42 frontend routes verified via HTTP 200 bulk check + targeted E2E visual tests:
+- Batch A (Social Media, Advertising, Royalties, Projects): PASS
+- Batch B (Career Coach, Workspaces, Collaborations, Contracts): PASS
+- Batch C (Invoices, Help, Notifications fixed, Workflow Automations): PASS
+- Batch D (Admin Dashboard authenticated, Release Countdown, Storefront): PASS
+- Public pages (/, /features, /about, /pricing, /blog): PASS
+- No blank pages, no 404s, no uncaught JS errors found

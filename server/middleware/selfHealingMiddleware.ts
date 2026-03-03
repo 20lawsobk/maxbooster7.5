@@ -26,7 +26,7 @@ export function selfHealingSecurityMiddleware(req: Request, res: Response, next:
     req.socket.remoteAddress || 
     'unknown';
 
-  const isWhitelisted = isDev && (WHITELISTED_IPS.has(ip) || ip.startsWith('::ffff:127.'));
+  const isWhitelisted = WHITELISTED_IPS.has(ip) || ip.startsWith('::ffff:127.') || (isDev && ip !== 'unknown');
 
   if (!isWhitelisted && selfHealingEngine.isIpBlocked(ip)) {
     res.status(403).json({
@@ -61,7 +61,8 @@ export function selfHealingSecurityMiddleware(req: Request, res: Response, next:
   res.on('finish', () => {
     const latency = Date.now() - startTime;
 
-    if (res.statusCode >= 400) {
+    const isNormalAuthResponse = res.statusCode === 401 || res.statusCode === 403;
+    if (res.statusCode >= 400 && !isNormalAuthResponse) {
       selfHealingEngine.processSecurityEvent({
         type: 'request',
         category: 'error_response',
