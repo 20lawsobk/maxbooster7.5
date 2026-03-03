@@ -80,6 +80,13 @@ app.use(compression({ level: 4, threshold: 1024 }));
 app.use(cookieParser());
 const httpServer = createServer(app);
 
+// keepAliveTimeout MUST exceed the upstream load-balancer idle timeout (~60 s on Replit Autoscale).
+// If Node closes a keep-alive socket before the LB does, the LB sends a request on a dead socket
+// and returns a 502. 65 s keeps us safely above the LB window.
+// headersTimeout must be strictly greater than keepAliveTimeout.
+httpServer.keepAliveTimeout = 65_000;
+httpServer.headersTimeout   = 66_000;
+
 // Trust proxy - REQUIRED for secure cookies and rate limiting behind Replit's reverse proxy
 // Use 1 to trust exactly one proxy hop (Replit's reverse proxy) - prevents rate limit bypass
 app.set('trust proxy', 1);
