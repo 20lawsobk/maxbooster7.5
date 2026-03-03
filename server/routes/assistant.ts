@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db.ts';
-import { eq, desc, asc } from 'drizzle-orm';
+import { eq, desc, asc, lt, sql } from 'drizzle-orm';
 import {
   assistantConversations,
   assistantMessages,
@@ -9,6 +9,9 @@ import { generateMaxResponse } from '../services/maxAssistantService.ts';
 import { logger } from '../logger.js';
 
 const router = Router();
+
+const PAGE_SIZE = 40;
+const AI_CONTEXT_MESSAGES = 50;
 
 async function getOrCreateConversation(userId: string): Promise<string> {
   const existing = await db
@@ -30,12 +33,18 @@ async function getOrCreateConversation(userId: string): Promise<string> {
   return created[0].id;
 }
 
+// GET /api/assistant/history
+// Returns the latest PAGE_SIZE messages for the user's conversation.
+// For pagination, pass ?before=<messageId> to get messages older than that ID.
+// Response: { messages, hasMore, total, conversationId }
 router.get('/history', async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     if (!user) {
-      return res.json({ messages: [] });
+      return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
     }
+
+    const beforeId = req.query.before as string | undefined;
 
     const conversation = await db
       .select()
@@ -45,23 +54,74 @@ router.get('/history', async (req: Request, res: Response) => {
       .limit(1);
 
     if (conversation.length === 0) {
-      return res.json({ messages: [] });
+      return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
     }
 
-    const messages = await db
-      .select()
-      .from(assistantMessages)
-      .where(eq(assistantMessages.conversationId, conversation[0].id))
-      .orderBy(asc(assistantMessages.createdAt))
-      .limit(100);
+    const convId = conversation[0].id;
 
-    return res.json({ messages });
+    // Count total messages in this conversation
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(assistantMessages)
+      .where(eq(assistantMessages.conversationId, convId));
+
+    const total = Number(countResult[0]?.count ?? 0);
+
+    // Fetch page of messages.
+    // When `before` cursor is provided, we find messages older than the given message.
+    // Strategy: fetch PAGE_SIZE + 1 rows descending (newest first), then reverse.
+    // This gives us the page of messages that are "before" in time.
+    let fetchedRows;
+
+    if (beforeId) {
+      // Find the createdAt of the cursor message
+      const cursorMsg = await db
+        .select({ createdAt: assistantMessages.createdAt })
+        .from(assistantMessages)
+        .where(eq(assistantMessages.id, beforeId))
+        .limit(1);
+
+      if (cursorMsg.length === 0) {
+        return res.json({ messages: [], hasMore: false, total, conversationId: convId });
+      }
+
+      const cursorDate = cursorMsg[0].createdAt;
+
+      fetchedRows = await db
+        .select()
+        .from(assistantMessages)
+        .where(
+          sql`${assistantMessages.conversationId} = ${convId} AND ${assistantMessages.createdAt} < ${cursorDate}`
+        )
+        .orderBy(desc(assistantMessages.createdAt))
+        .limit(PAGE_SIZE + 1);
+    } else {
+      // Initial load: get the latest PAGE_SIZE messages
+      fetchedRows = await db
+        .select()
+        .from(assistantMessages)
+        .where(eq(assistantMessages.conversationId, convId))
+        .orderBy(desc(assistantMessages.createdAt))
+        .limit(PAGE_SIZE + 1);
+    }
+
+    const hasMore = fetchedRows.length > PAGE_SIZE;
+    const pageRows = hasMore ? fetchedRows.slice(0, PAGE_SIZE) : fetchedRows;
+
+    // Reverse so oldest-first order for display
+    const messages = pageRows.reverse();
+
+    return res.json({ messages, hasMore, total, conversationId: convId });
   } catch (error: any) {
     logger.error('[assistant] Error fetching history:', error.message);
-    return res.json({ messages: [] });
+    return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
   }
 });
 
+// POST /api/assistant/chat
+// Sends a message to Max, persists it, returns the in-house AI response.
+// Body: { message: string }
+// Response: { content, category, confidence, messageId, assistantMessageId }
 router.post('/chat', async (req: Request, res: Response) => {
   try {
     const { message } = req.body;
@@ -75,37 +135,43 @@ router.post('/chat', async (req: Request, res: Response) => {
 
     let history: { role: 'user' | 'assistant'; content: string }[] = [];
     let conversationId: string | null = null;
+    let userMessageId: string | null = null;
+    let assistantMessageId: string | null = null;
 
     if (user) {
       conversationId = await getOrCreateConversation(user.id);
 
-      const priorMessages = await db
+      // Fetch the last AI_CONTEXT_MESSAGES for conversation context
+      const priorRows = await db
         .select()
         .from(assistantMessages)
         .where(eq(assistantMessages.conversationId, conversationId))
-        .orderBy(asc(assistantMessages.createdAt))
-        .limit(20);
+        .orderBy(desc(assistantMessages.createdAt))
+        .limit(AI_CONTEXT_MESSAGES);
 
-      history = priorMessages.map((m) => ({
+      history = priorRows.reverse().map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
       }));
 
-      await db.insert(assistantMessages).values({
-        conversationId,
-        role: 'user',
-        content: trimmed,
-      });
+      // Persist the user's message
+      const [inserted] = await db
+        .insert(assistantMessages)
+        .values({ conversationId, role: 'user', content: trimmed })
+        .returning();
+
+      userMessageId = inserted.id;
     }
 
     const aiResponse = generateMaxResponse(trimmed, history);
 
     if (user && conversationId) {
-      await db.insert(assistantMessages).values({
-        conversationId,
-        role: 'assistant',
-        content: aiResponse.content,
-      });
+      const [aiInserted] = await db
+        .insert(assistantMessages)
+        .values({ conversationId, role: 'assistant', content: aiResponse.content })
+        .returning();
+
+      assistantMessageId = aiInserted.id;
 
       await db
         .update(assistantConversations)
@@ -117,6 +183,8 @@ router.post('/chat', async (req: Request, res: Response) => {
       content: aiResponse.content,
       category: aiResponse.category,
       confidence: aiResponse.confidence,
+      messageId: userMessageId,
+      assistantMessageId,
     });
   } catch (error: any) {
     logger.error('[assistant] Error processing chat:', error.message);
@@ -124,6 +192,8 @@ router.post('/chat', async (req: Request, res: Response) => {
   }
 });
 
+// DELETE /api/assistant/history
+// Clears all messages and conversation records for the user.
 router.delete('/history', async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;

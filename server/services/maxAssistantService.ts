@@ -969,6 +969,8 @@ const STOP_WORDS = new Set([
   'did', 'who', 'now', 'see', 'use', 'two', 'way', 'any', 'has', 'him',
   'them', 'they', 'with', 'have', 'from', 'will', 'been', 'when', 'your',
   'does', 'into', 'just', 'like', 'make', 'some', 'than', 'that', 'this',
+  'how', 'what', 'work', 'tell', 'help', 'give', 'show', 'get', 'much',
+  'about', 'really', 'actually', 'also', 'more', 'which', 'where', 'there',
 ]);
 
 function scoreEntry(entry: KnowledgeEntry, tokens: string[]): number {

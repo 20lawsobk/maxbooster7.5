@@ -3,7 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, X, Send, Lightbulb, Music, TrendingUp, Zap, Minimize2, Maximize2, Trash2 } from 'lucide-react';
+import {
+  Sparkles, X, Send, Lightbulb, Music, TrendingUp, Zap,
+  Minimize2, Maximize2, Trash2, ChevronUp, Loader2,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -31,8 +34,8 @@ const WELCOME_MESSAGE = (username?: string): Message => ({
   id: 'welcome',
   role: 'assistant',
   content: username
-    ? `Hey ${username}! I'm Max, your AI assistant — built in-house by the Max Booster team. I remember our full conversation history, so feel free to ask follow-up questions. What can I help you with today?`
-    : "Hey there! I'm Max, your AI assistant, built entirely in-house by the Max Booster team. Ask me anything about the platform — Studio, distribution, royalties, marketplace, social media, advertising, and more. What do you want to know?",
+    ? `Hey ${username}! I'm Max — built in-house by the B-Lawz Music team. I remember our full conversation history across every session, so feel free to ask follow-up questions anytime. What can I help you with today?`
+    : "Hey there! I'm Max, your in-house AI assistant. Ask me anything about Max Booster — Studio, distribution, royalties, marketplace, social media, advertising, and more. What do you want to know?",
   timestamp: new Date(),
 });
 
@@ -54,13 +57,27 @@ export function AIAssistantBubble() {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalMessages, setTotalMessages] = useState(0);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomAnchorRef = useRef<HTMLDivElement>(null);
+  const shouldScrollToBottom = useRef(true);
+
+  // Scroll to bottom when new messages arrive (but not when loading older)
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (shouldScrollToBottom.current && bottomAnchorRef.current) {
+      bottomAnchorRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isTyping]);
+
+  const mapRow = (m: any): Message => ({
+    id: m.id,
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+    timestamp: new Date(m.createdAt),
+  });
 
   const loadHistory = useCallback(async () => {
     if (historyLoaded) return;
@@ -72,13 +89,11 @@ export function AIAssistantBubble() {
     }
 
     try {
+      shouldScrollToBottom.current = true;
       const data = await apiFetch('/api/assistant/history');
-      const prior: Message[] = (data.messages || []).map((m: any) => ({
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        timestamp: new Date(m.createdAt),
-      }));
+      const prior: Message[] = (data.messages || []).map(mapRow);
+      setHasMore(data.hasMore ?? false);
+      setTotalMessages(data.total ?? prior.length);
 
       if (prior.length === 0) {
         setMessages([WELCOME_MESSAGE(user.username ?? undefined)]);
@@ -91,23 +106,64 @@ export function AIAssistantBubble() {
   }, [user, historyLoaded]);
 
   useEffect(() => {
-    if (isOpen) {
-      loadHistory();
-    }
+    if (isOpen) loadHistory();
   }, [isOpen, loadHistory]);
+
+  const loadOlderMessages = async () => {
+    if (isLoadingOlder || !hasMore) return;
+
+    // Find the oldest message ID as the cursor
+    const currentMessages = messages.filter((m) => m.id !== 'welcome');
+    if (currentMessages.length === 0) return;
+    const oldestId = currentMessages[0].id;
+
+    // Capture current scroll height so we can restore position after prepending
+    const scrollEl = scrollRef.current;
+    const scrollHeightBefore = scrollEl?.scrollHeight ?? 0;
+
+    setIsLoadingOlder(true);
+    shouldScrollToBottom.current = false;
+
+    try {
+      const data = await apiFetch(`/api/assistant/history?before=${encodeURIComponent(oldestId)}`);
+      const older: Message[] = (data.messages || []).map(mapRow);
+
+      if (older.length > 0) {
+        setHasMore(data.hasMore ?? false);
+        setMessages((prev) => [...older, ...prev]);
+
+        // After React renders the prepended messages, restore scroll position
+        requestAnimationFrame(() => {
+          if (scrollEl) {
+            const newScrollHeight = scrollEl.scrollHeight;
+            scrollEl.scrollTop = newScrollHeight - scrollHeightBefore;
+          }
+          shouldScrollToBottom.current = true;
+        });
+      } else {
+        setHasMore(false);
+        shouldScrollToBottom.current = true;
+      }
+    } catch {
+      shouldScrollToBottom.current = true;
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  };
 
   const handleSendMessage = async (messageText?: string) => {
     const textToSend = (messageText || inputValue).trim();
     if (!textToSend || isTyping) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
+    const optimisticUser: Message = {
+      id: `optimistic-${Date.now()}`,
       role: 'user',
       content: textToSend,
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    shouldScrollToBottom.current = true;
+    setMessages((prev) => [...prev, optimisticUser]);
     setInputValue('');
     setIsTyping(true);
 
@@ -117,21 +173,38 @@ export function AIAssistantBubble() {
         body: JSON.stringify({ message: textToSend }),
       });
 
+      // Replace the optimistic message with the server-persisted one (has real ID)
+      const realUserMessage: Message = {
+        id: data.messageId || optimisticUser.id,
+        role: 'user',
+        content: textToSend,
+        timestamp: optimisticUser.timestamp,
+      };
+
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: data.assistantMessageId || `ai-${Date.now()}`,
         role: 'assistant',
         content: data.content,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, aiMessage]);
+
+      setMessages((prev) => [
+        ...prev.filter((m) => m.id !== optimisticUser.id),
+        realUserMessage,
+        aiMessage,
+      ]);
+      setTotalMessages((t) => t + 2);
     } catch {
-      const errMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "I'm having trouble connecting right now. Please check your connection and try again.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errMessage]);
+      setMessages((prev) => [
+        ...prev.filter((m) => m.id !== optimisticUser.id),
+        optimisticUser,
+        {
+          id: `err-${Date.now()}`,
+          role: 'assistant',
+          content: "I'm having trouble connecting right now. Please check your connection and try again.",
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsTyping(false);
     }
@@ -140,22 +213,27 @@ export function AIAssistantBubble() {
   const handleClearHistory = async () => {
     if (!user) {
       setMessages([WELCOME_MESSAGE()]);
+      setHasMore(false);
+      setTotalMessages(0);
       return;
     }
     try {
       await apiFetch('/api/assistant/history', { method: 'DELETE' });
     } catch {
+      // ignore
     }
     setHistoryLoaded(false);
+    setHasMore(false);
+    setTotalMessages(0);
     setMessages([WELCOME_MESSAGE(user.username ?? undefined)]);
-  };
-
-  const handleClose = () => {
-    setIsOpen(false);
   };
 
   const handleOpen = () => {
     setIsOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
   };
 
   if (!isOpen) {
@@ -176,7 +254,8 @@ export function AIAssistantBubble() {
     );
   }
 
-  const showSuggestions = messages.length <= 1 && !isTyping;
+  const nonWelcomeCount = messages.filter((m) => m.id !== 'welcome').length;
+  const showSuggestions = nonWelcomeCount === 0 && !isTyping;
 
   return (
     <div className={cn(
@@ -192,7 +271,14 @@ export function AIAssistantBubble() {
               </div>
               <div>
                 <div className="text-sm font-semibold">Max</div>
-                <div className="text-xs text-gray-400 font-normal">In-House AI Assistant</div>
+                <div className="text-xs text-gray-400 font-normal">
+                  In-House AI
+                  {user && totalMessages > 0 && (
+                    <span className="ml-1 text-cyan-400/70">
+                      · {totalMessages.toLocaleString()} msg{totalMessages !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
               </div>
             </CardTitle>
             <div className="flex items-center gap-1">
@@ -202,7 +288,7 @@ export function AIAssistantBubble() {
                   size="sm"
                   className="h-8 w-8 p-0 text-gray-400 hover:text-red-400"
                   onClick={handleClearHistory}
-                  title="Clear conversation history"
+                  title="Clear all conversation history"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -231,6 +317,33 @@ export function AIAssistantBubble() {
           <CardContent className="p-0">
             <ScrollArea ref={scrollRef} className="h-96 p-4">
               <div className="space-y-4">
+
+                {/* ── Load older messages button ── */}
+                {hasMore && (
+                  <div className="flex justify-center pb-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 gap-1.5"
+                      onClick={loadOlderMessages}
+                      disabled={isLoadingOlder}
+                    >
+                      {isLoadingOlder ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Loading earlier messages…
+                        </>
+                      ) : (
+                        <>
+                          <ChevronUp className="h-3 w-3" />
+                          Load earlier messages
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {/* ── Message list ── */}
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -252,6 +365,7 @@ export function AIAssistantBubble() {
                   </div>
                 ))}
 
+                {/* ── Typing indicator ── */}
                 {isTyping && (
                   <div className="flex justify-start">
                     <div className="bg-[#252525] text-gray-100 border border-gray-700 rounded-lg px-4 py-2">
@@ -264,6 +378,7 @@ export function AIAssistantBubble() {
                   </div>
                 )}
 
+                {/* ── Quick suggestions (only on empty chat) ── */}
                 {showSuggestions && (
                   <div className="grid grid-cols-1 gap-2 mt-4">
                     {QUICK_SUGGESTIONS.map((suggestion, idx) => (
@@ -280,6 +395,9 @@ export function AIAssistantBubble() {
                     ))}
                   </div>
                 )}
+
+                {/* Invisible anchor so we can scroll to bottom */}
+                <div ref={bottomAnchorRef} />
               </div>
             </ScrollArea>
 
@@ -294,7 +412,7 @@ export function AIAssistantBubble() {
                       handleSendMessage();
                     }
                   }}
-                  placeholder="Ask me anything..."
+                  placeholder="Ask me anything…"
                   className="flex-1 bg-[#252525] border-gray-700 text-white placeholder:text-gray-500"
                   disabled={isTyping}
                 />
@@ -308,7 +426,9 @@ export function AIAssistantBubble() {
                 </Button>
               </div>
               <div className="mt-2 text-xs text-gray-500 text-center">
-                In-house AI • Conversation history saved {user ? '✓' : '(log in to save)'}
+                {user
+                  ? 'Infinite history saved · All messages persisted'
+                  : 'In-house AI · Sign in to save your conversation'}
               </div>
             </div>
           </CardContent>
