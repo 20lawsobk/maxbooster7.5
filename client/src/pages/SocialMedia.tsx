@@ -97,6 +97,7 @@ import {
   ThreadsIcon,
   GoogleIcon,
   MetaIcon,
+  XIcon,
 } from '@/components/ui/brand-icons';
 import { ContentCalendarView } from '@/components/social/ContentCalendarView';
 import { SchedulePostDialog, SchedulePostData } from '@/components/social/SchedulePostDialog';
@@ -346,8 +347,8 @@ const SOCIAL_PLATFORMS: SocialPlatform[] = [
   },
   {
     id: 'twitter',
-    name: 'Twitter (X)',
-    icon: MessageCircle,
+    name: 'X (Twitter)',
+    icon: XIcon,
     color: '#000000',
     isConnected: false,
     followers: 0,

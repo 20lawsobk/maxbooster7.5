@@ -12,6 +12,7 @@ interface DownloadAsset {
   downloadUrl: string;
   fileName: string;
   fileSize: string;
+  buildDate?: string;
   fallbackUrl?: string;
   fallbackName?: string;
   extras?: Array<{ label: string; url: string; name: string; size: string }>;
@@ -21,6 +22,7 @@ interface ReleaseData {
   available: boolean;
   version?: string;
   publishedAt?: string;
+  fetchedAt?: string;
   releasesPageUrl?: string;
   allReleasesUrl?: string;
   desktop?: DownloadAsset[];
@@ -29,17 +31,11 @@ interface ReleaseData {
   message?: string;
 }
 
-const GITHUB_RELEASES_URL = 'https://github.com/20lawsobk/maxbooster7.5/releases';
+const GITHUB_ACTIONS_URL = 'https://github.com/20lawsobk/maxbooster7.5/actions';
 
-const platformIcons: Record<string, string> = {
-  Windows: '\u{1FA9F}',
-  macOS: '\u{1F34E}',
-  Linux: '\u{1F427}',
-  Android: '\u{1F4F1}',
-};
-
-const platformStoreIcons: Record<string, string> = {
-  Android: '\u{1F916}',
+const platformDescriptions: Record<string, string> = {
+  Android: 'Android 8.0 or later',
+  iOS: 'iOS 14.0 or later — install via AltStore (free)',
 };
 
 export default function DesktopApp() {
@@ -117,26 +113,35 @@ export default function DesktopApp() {
   const hasMobile = releaseData?.available && releaseData.mobile && releaseData.mobile.length > 0;
 
   function renderDownloadButton(asset: DownloadAsset, isMobile = false) {
+    const isIos = asset.platform === 'iOS';
     return (
       <div className="space-y-3">
         <Button
-          className={`w-full ${isMobile ? 'bg-green-600 hover:bg-green-700' : ''}`}
+          className={`w-full ${isMobile ? (isIos ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700') : ''}`}
           size="lg"
           asChild
         >
-          <a href={asset.downloadUrl} rel="noopener noreferrer">
+          <a href={asset.downloadUrl}>
             <Download className="w-4 h-4 mr-2" />
             Download {asset.platform}
           </a>
         </Button>
         <div className="text-center space-y-1">
           <p className="text-xs text-muted-foreground">
-            {asset.fileName} ({asset.fileSize})
+            {asset.fileName} &bull; {asset.fileSize}
           </p>
+          {asset.buildDate && (
+            <p className="text-xs text-muted-foreground">Built {asset.buildDate}</p>
+          )}
+          {!isIos && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Downloads as a ZIP — extract to get the installer
+            </p>
+          )}
         </div>
         {asset.fallbackUrl && (
           <Button variant="ghost" size="sm" className="w-full text-xs" asChild>
-            <a href={asset.fallbackUrl} rel="noopener noreferrer">
+            <a href={asset.fallbackUrl}>
               <Download className="w-3 h-3 mr-1" />
               Alt: {asset.fallbackName || 'Alternative download'}
             </a>
@@ -157,7 +162,7 @@ export default function DesktopApp() {
               <div className="space-y-1">
                 {asset.extras.map((extra) => (
                   <Button key={extra.url} variant="outline" size="sm" className="w-full text-xs justify-between" asChild>
-                    <a href={extra.url} rel="noopener noreferrer">
+                    <a href={extra.url}>
                       <span>{extra.label}</span>
                       <span className="text-muted-foreground">({extra.size})</span>
                     </a>
@@ -172,7 +177,7 @@ export default function DesktopApp() {
   }
 
   function renderFallbackButton(platform: string, isMobile = false) {
-    const url = releaseData?.allReleasesUrl || GITHUB_RELEASES_URL;
+    const url = releaseData?.allReleasesUrl || GITHUB_ACTIONS_URL;
     return (
       <div className="space-y-3">
         <Button
@@ -186,14 +191,14 @@ export default function DesktopApp() {
           </a>
         </Button>
         <p className="text-xs text-muted-foreground text-center">
-          Opens releases page
+          Opens CI builds page
         </p>
       </div>
     );
   }
 
   const desktopPlatformNames = ['Windows', 'macOS', 'Linux'];
-  const mobilePlatformNames = ['Android'];
+  const mobilePlatformNames = ['Android', 'iOS'];
 
   return (
     <AppLayout>
@@ -294,7 +299,7 @@ export default function DesktopApp() {
           </h2>
         </div>
         <p className="text-center text-muted-foreground max-w-2xl mx-auto">
-          Access Max Booster on your Android phone or tablet. The same powerful features with a touch-optimized interface that adapts to any screen size.
+          Access Max Booster on your Android or iPhone. Touch-optimized interface that adapts to any screen size, fully synced with your account.
         </p>
 
         {loadingRelease ? (
@@ -305,23 +310,43 @@ export default function DesktopApp() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
             {mobilePlatformNames.map((platformName) => {
+              const isIos = platformName === 'iOS';
+              const accentColor = isIos ? 'blue' : 'green';
               const asset = releaseData?.mobile?.find(d => d.platform === platformName);
               return (
-                <Card key={platformName} className="border-2 hover:border-green-500/50 transition-colors">
+                <Card key={platformName} className={`border-2 hover:border-${accentColor}-500/50 transition-colors`}>
                   <CardHeader className="text-center">
                     <div className="mb-4">
-                      <Smartphone className="w-16 h-16 mx-auto text-green-500" />
+                      <Smartphone className={`w-16 h-16 mx-auto text-${accentColor}-500`} />
                     </div>
-                    <CardTitle className="text-2xl flex items-center justify-center gap-2">
-                      <span>{platformStoreIcons[platformName]}</span>
+                    <CardTitle className="text-2xl">
                       {platformName}
                     </CardTitle>
                     <CardDescription className="text-sm">
-                      Android 8.0 or later
+                      {platformDescriptions[platformName] || platformName}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {asset ? renderDownloadButton(asset, true) : renderFallbackButton(platformName, true)}
+                    {asset ? (
+                      renderDownloadButton(asset, true)
+                    ) : isIos ? (
+                      <div className="space-y-3">
+                        <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 text-center space-y-2">
+                          <p className="text-sm font-medium text-blue-500">Build in progress</p>
+                          <p className="text-xs text-muted-foreground">
+                            The iOS IPA is built by Codemagic CI and published here automatically after each commit.
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Once available, install free via{' '}
+                            <a href="https://altstore.io" target="_blank" rel="noopener noreferrer" className="underline text-blue-500">AltStore</a>
+                            {' '}or{' '}
+                            <a href="https://sideloadly.io" target="_blank" rel="noopener noreferrer" className="underline text-blue-500">Sideloadly</a>.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      renderFallbackButton(platformName, true)
+                    )}
                     <p className="text-xs text-muted-foreground text-center">
                       Version: {version}
                     </p>
@@ -349,16 +374,14 @@ export default function DesktopApp() {
         </Card>
       </div>
 
-      {releaseData?.allReleasesUrl && (
-        <div className="flex justify-center">
-          <Button variant="outline" size="lg" asChild>
-            <a href={releaseData.allReleasesUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              View All Releases on GitHub
-            </a>
-          </Button>
-        </div>
-      )}
+      <div className="flex justify-center">
+        <Button variant="outline" size="lg" asChild>
+          <a href={releaseData?.allReleasesUrl || GITHUB_ACTIONS_URL} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="w-4 h-4 mr-2" />
+            View CI Builds on GitHub
+          </a>
+        </Button>
+      </div>
 
       <Card className="border-2 border-amber-500/30 bg-amber-500/5">
         <CardHeader>
@@ -373,7 +396,7 @@ export default function DesktopApp() {
             This is normal and safe - it's the same code as the web version!
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Monitor className="w-5 h-5 text-primary" />
@@ -401,10 +424,10 @@ export default function DesktopApp() {
                 <h4 className="font-semibold">macOS</h4>
               </div>
               <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                <li>Open the .dmg file</li>
-                <li>Drag Max Booster to Applications</li>
+                <li>Extract the downloaded ZIP file</li>
+                <li>Move <strong>Max Booster.app</strong> to Applications</li>
                 <li><strong>Right-click</strong> the app, select "Open"</li>
-                <li>Click "Open" in the confirmation dialog</li>
+                <li>Click "Open" in the Gatekeeper dialog</li>
               </ol>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">
@@ -440,6 +463,36 @@ export default function DesktopApp() {
                 <FileText className="w-3 h-3" />
                 View full Linux guide
               </a>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-blue-500" />
+                <h4 className="font-semibold">iOS (iPhone / iPad)</h4>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The IPA is unsigned. Sideload it for free using one of these tools:
+              </p>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Via AltStore (recommended)</p>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Install <a href="https://altstore.io" target="_blank" rel="noopener noreferrer" className="underline text-blue-500">AltStore</a> on your Mac/PC</li>
+                    <li>Download the .ipa file above</li>
+                    <li>Open AltStore and sideload the IPA</li>
+                    <li>Trust the app in Settings → General → VPN & Device Management</li>
+                  </ol>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Via Sideloadly</p>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Install <a href="https://sideloadly.io" target="_blank" rel="noopener noreferrer" className="underline text-blue-500">Sideloadly</a></li>
+                    <li>Drag the .ipa onto Sideloadly</li>
+                    <li>Sign in with your Apple ID (free)</li>
+                    <li>Trust in Settings after install</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           </div>
 

@@ -34,7 +34,7 @@ env:
 
 jobs:
   build-android:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' ||
       github.event.inputs.platform == 'android' ||
@@ -188,12 +188,18 @@ jobs:
           retention-days: 30
 
   build-ios:
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' ||
       github.event.inputs.platform == 'ios' ||
       github.event.inputs.platform == 'both'
     steps:
+      - name: iOS build requires macOS + Xcode
+        run: |
+          echo "::notice::iOS builds require macOS with Xcode and cannot run on ubuntu-latest."
+          echo "::notice::To build iOS: use a Mac with Xcode 15+, run 'npm run build && npx cap sync ios' then open ios/App/App.xcworkspace in Xcode."
+          echo "iOS_SKIPPED=true" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -203,196 +209,25 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '15.4'
-
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: ios/App/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
       - name: Install dependencies
         run: npm ci
 
-      - name: Build web assets
+      - name: Build web assets (for Capacitor sync reference)
         run: npm run build
         env:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
-      - name: Sync Capacitor iOS
+      - name: iOS build summary
         run: |
-          if [ ! -d "ios" ]; then
-            npx cap add ios
-          fi
-          npx cap sync ios
-
-      - name: Install CocoaPods dependencies
-        working-directory: ios/App
-        run: |
-          pod install || pod install --repo-update
-
-      - name: List available simulators
-        run: xcrun simctl list devices available 2>/dev/null | grep -i "iphone" | head -15 || echo "Could not list simulators"
-
-      - name: Build iOS Simulator (Debug)
-        working-directory: ios/App
-        run: |
-          xcodebuild \
-            -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
-            -derivedDataPath build \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            ONLY_ACTIVE_ARCH=YES \
-            build
-
-      - name: Check iOS Signing Prerequisites
-        id: ios_signing_check
-        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
-        run: |
-          MISSING=""
-          if [ -z "${{ secrets.APPLE_CERTIFICATE_BASE64 }}" ]; then
-            MISSING="${MISSING}APPLE_CERTIFICATE_BASE64 "
-          fi
-          if [ -z "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" ]; then
-            MISSING="${MISSING}APPLE_CERTIFICATE_PASSWORD "
-          fi
-          if [ -z "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" ]; then
-            MISSING="${MISSING}APPLE_PROVISIONING_PROFILE_BASE64 "
-          fi
-          if [ -z "${{ secrets.APPLE_TEAM_ID }}" ]; then
-            MISSING="${MISSING}APPLE_TEAM_ID "
-          fi
-
-          if [ -n "$MISSING" ]; then
-            echo "::warning::Missing iOS signing secrets: $MISSING"
-            echo "::warning::Release build will be skipped. Debug simulator build will still run."
-            echo "IOS_SIGNING_AVAILABLE=false" >> $GITHUB_OUTPUT
-          else
-            echo "All iOS signing secrets are available"
-            echo "IOS_SIGNING_AVAILABLE=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Setup Apple Certificate
-        id: setup_certificate
-        if: (startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release') && steps.ios_signing_check.outputs.IOS_SIGNING_AVAILABLE == 'true'
-        env:
-          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
-          KEYCHAIN_PASSWORD: ${{ github.run_id }}
-        run: |
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          echo -n "$APPLE_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
-          echo -n "$APPLE_PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PP_PATH
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          security import $CERTIFICATE_PATH -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          PROFILE_UUID=$(security cms -D -i $PP_PATH | plutil -extract UUID raw -)
-          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
-
-          PROFILE_NAME=$(security cms -D -i $PP_PATH | plutil -extract Name raw -)
-          echo "PROVISIONING_PROFILE_NAME=${PROFILE_NAME}" >> $GITHUB_ENV
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
-          echo "IOS_SIGNING_CONFIGURED=true" >> $GITHUB_OUTPUT
-          echo "Certificate installed, Profile: ${PROFILE_NAME} (UUID: ${PROFILE_UUID})"
-
-      - name: Create ExportOptions.plist
-        if: steps.setup_certificate.outputs.IOS_SIGNING_CONFIGURED == 'true'
-        run: |
-          cat > ios/App/ExportOptions.plist << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>app-store</string>
-              <key>teamID</key>
-              <string>${{ secrets.APPLE_TEAM_ID }}</string>
-              <key>uploadBitcode</key>
-              <false/>
-              <key>uploadSymbols</key>
-              <true/>
-              <key>signingStyle</key>
-              <string>manual</string>
-              <key>provisioningProfiles</key>
-              <dict>
-                  <key>${{ env.APP_ID }}</key>
-                  <string>${PROVISIONING_PROFILE_NAME}</string>
-              </dict>
-          </dict>
-          </plist>
-          EOF
-
-      - name: Build iOS Archive (Release)
-        if: steps.setup_certificate.outputs.IOS_SIGNING_CONFIGURED == 'true'
-        working-directory: ios/App
-        run: |
-          xcodebuild \
-            -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Release \
-            -sdk iphoneos \
-            -archivePath $RUNNER_TEMP/App.xcarchive \
-            archive
-
-      - name: Export IPA
-        if: steps.setup_certificate.outputs.IOS_SIGNING_CONFIGURED == 'true'
-        working-directory: ios/App
-        run: |
-          xcodebuild \
-            -exportArchive \
-            -archivePath $RUNNER_TEMP/App.xcarchive \
-            -exportPath build/ipa \
-            -exportOptionsPlist ExportOptions.plist
-
-      - name: Cleanup Keychain
-        if: always()
-        run: |
-          if [ -n "${{ env.KEYCHAIN_PATH }}" ]; then
-            security delete-keychain ${{ env.KEYCHAIN_PATH }} || true
-          fi
-
-      - name: Upload iOS Debug Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-simulator-build
-          path: ios/App/build/Build/Products/Debug-iphonesimulator/*.app
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Upload iOS IPA
-        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-release-ipa
-          path: ios/App/build/ipa/*.ipa
-          if-no-files-found: warn
-          retention-days: 30
+          echo "## iOS Build" >> $GITHUB_STEP_SUMMARY
+          echo "IPA compilation requires macOS + Xcode and cannot run on Linux." >> $GITHUB_STEP_SUMMARY
+          echo "To build: open ios/App/App.xcworkspace in Xcode on a Mac." >> $GITHUB_STEP_SUMMARY
+          echo "::notice::iOS builds require macOS + Xcode. Build locally: npm run build && npx cap sync ios, then open ios/App/App.xcworkspace in Xcode."
 
   upload-to-play-store:
     needs: build-android
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') && needs.build-android.result == 'success'
     steps:
       - name: Download Android App Bundle
@@ -427,7 +262,7 @@ jobs:
 
   create-release:
     needs: [build-android, build-ios]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: >-
       always() &&
       startsWith(github.ref, 'refs/tags/v') &&
@@ -494,7 +329,7 @@ jobs:
 
   build-summary:
     needs: [build-android, build-ios]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Build Summary

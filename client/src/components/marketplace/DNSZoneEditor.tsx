@@ -29,18 +29,15 @@ import {
   RefreshCw,
   Save,
   Shield,
-  AlertCircle,
-  CheckCircle,
   Globe,
-  Settings,
   Download,
   Upload,
   Copy,
   Search,
   Filter,
   Loader2,
-  Key,
-  X,
+  Server,
+  CheckCircle,
 } from 'lucide-react';
 
 interface DnsRecord {
@@ -60,15 +57,6 @@ interface DnsTemplate {
   name: string;
   description?: string;
   records: DnsRecord[];
-  createdAt: string;
-}
-
-interface ProviderCredential {
-  id: string;
-  provider: string;
-  domain: string;
-  isVerified: boolean;
-  lastUsedAt: string | null;
   createdAt: string;
 }
 
@@ -95,6 +83,8 @@ const RECORD_TYPE_INFO: Record<string, { description: string; placeholder: strin
   SRV: { description: 'Service location record', placeholder: 'sip.example.com', fields: ['value', 'priority', 'weight', 'port'] },
 };
 
+const MAXBOOSTER_NAMESERVERS = ['ns1.maxbooster.app', 'ns2.maxbooster.app'];
+
 function formatTTL(seconds: number): string {
   if (seconds <= 1) return 'Auto';
   if (seconds < 60) return `${seconds}s`;
@@ -115,7 +105,6 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [showEditRecord, setShowEditRecord] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showConnectProvider, setShowConnectProvider] = useState(false);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [showApplyTemplate, setShowApplyTemplate] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<DnsRecord | null>(null);
@@ -129,27 +118,11 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
   });
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
-  const [connectProvider, setConnectProvider] = useState<'godaddy' | 'cloudflare'>('godaddy');
-  const [connectApiKey, setConnectApiKey] = useState('');
-  const [connectApiSecret, setConnectApiSecret] = useState('');
-
-  const { data: credentialsData } = useQuery({
-    queryKey: ['dns-credentials', storefrontId],
-    queryFn: async () => {
-      const resp = await apiRequest('GET', `/api/dns/${storefrontId}/credentials`);
-      return resp.json();
-    },
-  });
-
-  const hasCredentials = useMemo(() => {
-    const creds = credentialsData?.credentials as ProviderCredential[] | undefined;
-    return creds?.some((c: ProviderCredential) => c.domain === domain && c.isVerified);
-  }, [credentialsData, domain]);
 
   const { data: recordsData, isLoading: recordsLoading, refetch: refetchRecords } = useQuery({
     queryKey: ['dns-records', storefrontId, domain],
     queryFn: async () => {
-      const resp = await apiRequest('GET', `/api/dns/${storefrontId}/records?domain=${encodeURIComponent(domain)}&refresh=${hasCredentials ? 'true' : 'false'}`);
+      const resp = await apiRequest('GET', `/api/dns/${storefrontId}/records?domain=${encodeURIComponent(domain)}`);
       return resp.json();
     },
     enabled: !!domain && !!storefrontId,
@@ -160,24 +133,6 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
     queryFn: async () => {
       const resp = await apiRequest('GET', `/api/dns/${storefrontId}/templates`);
       return resp.json();
-    },
-  });
-
-  const connectMutation = useMutation({
-    mutationFn: async (data: { provider: string; apiKey: string; apiSecret: string; domain: string }) => {
-      const resp = await apiRequest('POST', `/api/dns/${storefrontId}/credentials`, data);
-      return resp.json();
-    },
-    onSuccess: () => {
-      toast({ title: 'Connected', description: 'DNS provider connected and verified.' });
-      setShowConnectProvider(false);
-      setConnectApiKey('');
-      setConnectApiSecret('');
-      queryClient.invalidateQueries({ queryKey: ['dns-credentials', storefrontId] });
-      queryClient.invalidateQueries({ queryKey: ['dns-records', storefrontId, domain] });
-    },
-    onError: () => {
-      toast({ title: 'Connection Failed', description: 'Could not verify credentials. Check your API key and secret.', variant: 'destructive' });
     },
   });
 
@@ -297,13 +252,13 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
   const templates = useMemo(() => (templatesData?.templates as DnsTemplate[]) || [], [templatesData]);
 
   const handleRefresh = useCallback(async () => {
-    if (!hasCredentials) {
-      toast({ title: 'Connect Provider', description: 'Connect your DNS provider to fetch live records.', variant: 'destructive' });
-      return;
-    }
     await refetchRecords();
-    toast({ title: 'Records Refreshed', description: 'DNS records have been synced from your registrar.' });
-  }, [hasCredentials, refetchRecords, toast]);
+    toast({ title: 'Records Refreshed', description: 'DNS records have been reloaded.' });
+  }, [refetchRecords, toast]);
+
+  const handleExportZone = useCallback(() => {
+    window.open(`/api/dns/${storefrontId}/export?domain=${encodeURIComponent(domain)}`, '_blank');
+  }, [storefrontId, domain]);
 
   const openAddRecord = useCallback(() => {
     setEditingRecord({ type: 'A', name: '@', value: '', ttl: 3600 });
@@ -445,6 +400,48 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
 
   return (
     <div className="space-y-4">
+      <Card className="border-purple-500/20 bg-purple-500/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Server className="w-4 h-4 text-purple-400" />
+            Max Booster DNS
+            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30 text-xs">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Active
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Point your domain nameservers to Max Booster to activate full DNS management — no third-party registrar API needed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your Nameservers</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {MAXBOOSTER_NAMESERVERS.map((ns) => (
+                <div key={ns} className="flex items-center justify-between p-2 rounded-md border bg-background/50 font-mono text-sm">
+                  <span>{ns}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => {
+                      navigator.clipboard.writeText(ns);
+                      toast({ title: 'Copied', description: `${ns} copied to clipboard.` });
+                    }}
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground pt-1">
+              Log into your domain registrar (GoDaddy, Namecheap, etc.) and replace the existing nameservers with the two above. Changes propagate within 24-48 hours.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -455,26 +452,7 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
               </CardTitle>
               <CardDescription className="mt-1">
                 Manage DNS records for <span className="font-mono text-foreground">{domain}</span>
-                {recordsData?.syncedAt && (
-                  <span className="ml-2 text-xs">
-                    Last synced: {new Date(recordsData.syncedAt).toLocaleString()}
-                  </span>
-                )}
               </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              {!hasCredentials && (
-                <Button variant="outline" size="sm" onClick={() => setShowConnectProvider(true)}>
-                  <Key className="w-4 h-4 mr-1" />
-                  Connect Provider
-                </Button>
-              )}
-              {hasCredentials && (
-                <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Connected
-                </Badge>
-              )}
             </div>
           </div>
         </CardHeader>
@@ -505,7 +483,7 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
               <RefreshCw className={`w-4 h-4 mr-1 ${recordsLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button size="sm" onClick={openAddRecord} disabled={!hasCredentials}>
+            <Button size="sm" onClick={openAddRecord}>
               <Plus className="w-4 h-4 mr-1" />
               Add Record
             </Button>
@@ -514,11 +492,15 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
               Save as Template
             </Button>
             {templates.length > 0 && (
-              <Button variant="outline" size="sm" onClick={() => setShowApplyTemplate(true)} disabled={!hasCredentials}>
-                <Download className="w-4 h-4 mr-1" />
+              <Button variant="outline" size="sm" onClick={() => setShowApplyTemplate(true)}>
+                <Upload className="w-4 h-4 mr-1" />
                 Apply Template
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={handleExportZone} disabled={!records.length}>
+              <Download className="w-4 h-4 mr-1" />
+              Export Zone
+            </Button>
           </div>
 
           {recordsLoading ? (
@@ -529,15 +511,11 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
           ) : records.length === 0 ? (
             <div className="text-center py-12">
               <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-2">
-                {hasCredentials ? 'No DNS records found.' : 'Connect your DNS provider to view and manage records.'}
-              </p>
-              {!hasCredentials && (
-                <Button variant="outline" onClick={() => setShowConnectProvider(true)}>
-                  <Key className="w-4 h-4 mr-1" />
-                  Connect DNS Provider
-                </Button>
-              )}
+              <p className="text-muted-foreground mb-2">No DNS records yet. Add your first record to get started.</p>
+              <Button onClick={openAddRecord}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add First Record
+              </Button>
             </div>
           ) : (
             <div className="rounded-md border">
@@ -592,10 +570,10 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
                         )}
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditRecord(record)} disabled={!hasCredentials}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditRecord(record)}>
                               <Edit className="w-3.5 h-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => openDeleteConfirm(record)} disabled={!hasCredentials}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => openDeleteConfirm(record)}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>
@@ -611,116 +589,13 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
                   {typeFilter !== 'all' && ` (filtered by ${typeFilter})`}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  Source: {recordsData?.source === 'live' ? 'Live from registrar' : 'Cached'}
+                  Max Booster DNS
                 </span>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
-
-      {credentialsData?.credentials && (credentialsData.credentials as ProviderCredential[]).length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Connected Providers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {(credentialsData.credentials as ProviderCredential[]).map((cred: ProviderCredential) => (
-                <div key={cred.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="capitalize">{cred.provider}</Badge>
-                    <span className="font-mono text-sm">{cred.domain}</span>
-                    {cred.isVerified ? (
-                      <Badge className="bg-green-500/10 text-green-400 border-green-500/30" variant="outline">
-                        <CheckCircle className="w-3 h-3 mr-1" /> Verified
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
-                        <AlertCircle className="w-3 h-3 mr-1" /> Unverified
-                      </Badge>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {cred.lastUsedAt ? `Last used: ${new Date(cred.lastUsedAt).toLocaleDateString()}` : 'Never used'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Dialog open={showConnectProvider} onOpenChange={setShowConnectProvider}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Connect DNS Provider</DialogTitle>
-            <DialogDescription>
-              Enter your registrar API credentials to manage DNS records directly.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Provider</Label>
-              <Select value={connectProvider} onValueChange={(v) => setConnectProvider(v as 'godaddy' | 'cloudflare')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="godaddy">GoDaddy</SelectItem>
-                  <SelectItem value="cloudflare">Cloudflare</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{connectProvider === 'godaddy' ? 'API Key' : 'API Token'}</Label>
-              <Input
-                type="password"
-                value={connectApiKey}
-                onChange={(e) => setConnectApiKey(e.target.value)}
-                placeholder={connectProvider === 'godaddy' ? 'Enter your GoDaddy API key' : 'Enter your Cloudflare API token'}
-              />
-              {connectProvider === 'godaddy' && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Get your API key from <a href="https://developer.godaddy.com/keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">developer.godaddy.com/keys</a>
-                </p>
-              )}
-              {connectProvider === 'cloudflare' && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Create an API token at <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener noreferrer" className="text-primary underline">dash.cloudflare.com/profile/api-tokens</a>
-                </p>
-              )}
-            </div>
-            {connectProvider === 'godaddy' && (
-              <div>
-                <Label>API Secret</Label>
-                <Input
-                  type="password"
-                  value={connectApiSecret}
-                  onChange={(e) => setConnectApiSecret(e.target.value)}
-                  placeholder="Enter your GoDaddy API secret"
-                />
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConnectProvider(false)}>Cancel</Button>
-            <Button
-              onClick={() => connectMutation.mutate({
-                provider: connectProvider,
-                apiKey: connectApiKey,
-                apiSecret: connectProvider === 'cloudflare' ? connectApiKey : connectApiSecret,
-                domain,
-              })}
-              disabled={connectMutation.isPending || !connectApiKey || (connectProvider === 'godaddy' && !connectApiSecret)}
-            >
-              {connectMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Shield className="w-4 h-4 mr-1" />}
-              Connect & Verify
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showAddRecord} onOpenChange={setShowAddRecord}>
         <DialogContent className="max-w-lg">
@@ -775,7 +650,7 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
           <DialogHeader>
             <DialogTitle>Delete DNS Record</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this record? This action will remove it from your registrar and cannot be undone.
+              Are you sure you want to delete this record? This cannot be undone.
             </DialogDescription>
           </DialogHeader>
           {selectedRecord && (
@@ -839,7 +714,7 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Apply DNS Template</DialogTitle>
-            <DialogDescription>Apply a saved DNS configuration to {domain}. This will add/update records.</DialogDescription>
+            <DialogDescription>Apply a saved DNS configuration to {domain}. This will replace existing records.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 max-h-[400px] overflow-y-auto">
             {templates.map((tmpl) => (

@@ -43,7 +43,7 @@ env:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: >-
       github.event.inputs.desktop_platforms == 'linux' ||
       github.event.inputs.desktop_platforms == 'all'
@@ -126,7 +126,7 @@ jobs:
           retention-days: 14
 
   build-macos:
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     if: >-
       github.event.inputs.desktop_platforms == 'macos' ||
       github.event.inputs.desktop_platforms == 'all'
@@ -150,57 +150,22 @@ jobs:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
-      - name: Setup macOS Code Signing
-        id: mac_signing
-        env:
-          MAC_CERTIFICATE_BASE64: ${{ secrets.MAC_CERTIFICATE_BASE64 }}
-          MAC_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ github.run_id }}
-        run: |
-          if [ -z "$MAC_CERTIFICATE_BASE64" ]; then
-            echo "No signing certificate — building unsigned"
-            echo "MAC_SIGNING_CONFIGURED=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          echo -n "$MAC_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security import $CERTIFICATE_PATH -P "$MAC_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
-          echo "MAC_SIGNING_CONFIGURED=true" >> $GITHUB_OUTPUT
-
-      - name: Build macOS packages
-        run: npx electron-builder --mac --publish never --projectDir electron
+      - name: Build macOS packages (cross-compiled from Linux)
+        run: npx electron-builder --mac zip --x64 --arm64 --publish never --projectDir electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-
-      - name: Cleanup Keychain
-        if: always()
-        run: |
-          if [ -n "$KEYCHAIN_PATH" ]; then
-            security delete-keychain "$KEYCHAIN_PATH" || true
-          fi
+          USE_HARD_LINKS: false
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos-builds
-          path: |
-            dist-installers/*.dmg
-            dist-installers/*.zip
+          path: dist-installers/*.zip
           if-no-files-found: warn
           retention-days: 14
 
   build-android:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: >-
       github.event.inputs.mobile_platforms == 'android' ||
       github.event.inputs.mobile_platforms == 'both'
@@ -297,7 +262,7 @@ jobs:
           retention-days: 30
 
   build-ios:
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     if: >-
       github.event.inputs.mobile_platforms == 'ios' ||
       github.event.inputs.mobile_platforms == 'both'
@@ -309,18 +274,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '15.4'
-
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: ios/App/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
       - name: Install dependencies
         run: npm ci
 
@@ -330,42 +283,16 @@ jobs:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
-      - name: Sync Capacitor iOS
+      - name: iOS build summary
         run: |
-          if [ ! -d "ios" ]; then npx cap add ios; fi
-          npx cap sync ios
-
-      - name: Install CocoaPods
-        working-directory: ios/App
-        run: pod install || pod install --repo-update
-
-      - name: Build iOS Simulator (Debug)
-        working-directory: ios/App
-        run: |
-          xcodebuild \
-            -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
-            -derivedDataPath build \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            ONLY_ACTIVE_ARCH=YES \
-            build
-
-      - name: Upload iOS Simulator Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-simulator-build
-          path: ios/App/build/Build/Products/Debug-iphonesimulator/*.app
-          if-no-files-found: warn
-          retention-days: 14
+          echo "## iOS Build" >> $GITHUB_STEP_SUMMARY
+          echo "IPA compilation requires macOS + Xcode and cannot run on Linux." >> $GITHUB_STEP_SUMMARY
+          echo "To build: open ios/App/App.xcworkspace in Xcode on a Mac." >> $GITHUB_STEP_SUMMARY
+          echo "::notice::iOS builds require macOS + Xcode. Build locally: npm run build && npx cap sync ios, then open ios/App/App.xcworkspace in Xcode."
 
   create-release:
     needs: [build-linux, build-windows, build-macos, build-android, build-ios]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: >-
       always() &&
       github.event.inputs.version_tag != '' &&
@@ -427,7 +354,7 @@ jobs:
 
   summary:
     needs: [build-linux, build-windows, build-macos, build-android, build-ios]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Build Summary
