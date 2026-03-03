@@ -11,7 +11,8 @@ import {
   PanelBottomOpen, PanelBottomClose, PanelRightOpen, PanelRightClose,
   Brain, Sparkles, Library, Keyboard, HelpCircle, X, Camera, Check,
   MousePointer2, Pencil, Eraser,
-  Film, Radio, Waves, ArrowUpDown, RotateCcw, Activity, Speaker
+  Film, Radio, Waves, ArrowUpDown, RotateCcw, Activity, Speaker,
+  FileText, Headphones, Maximize2, Minimize2
 } from 'lucide-react';
 import { getShortcutManager } from '@/lib/shortcuts/ShortcutManager';
 import type { ShortcutDefinition } from '@/lib/shortcuts/types';
@@ -46,6 +47,8 @@ import { VideoTrack } from './VideoTrack';
 import { FlowStateImportAudio } from './FlowStateImportAudio';
 import { StemExportDialog } from './StemExportDialog';
 import { StudioStartHub } from './StudioStartHub';
+import { LyricsPanel, LyricSection, makeDefaultSections } from './LyricsPanel';
+import { AudioDeviceDialog } from './AudioDeviceDialog';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -134,6 +137,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [surroundFormat, setSurroundFormat] = useState<'2.0' | '5.1' | '7.1' | '7.1.4' | 'atmos'>('2.0');
 
   const [showVideoTrack, setShowVideoTrack] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [lyricsSections, setLyricsSections] = useState<LyricSection[]>(() => makeDefaultSections());
+  const [lyricsActiveSectionId, setLyricsActiveSectionId] = useState<string>('');
+  const [showAudioDevices, setShowAudioDevices] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const [clipEditParams, setClipEditParams] = useState<Record<string, {
     timeStretch?: number;
@@ -173,6 +181,20 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [project.isDirty]);
+
+  useEffect(() => {
+    const onFSChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFSChange);
+    return () => document.removeEventListener('fullscreenchange', onFSChange);
+  }, []);
+
+  const handleToggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      (containerRef as React.RefObject<HTMLElement>).current?.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  }, [containerRef]);
 
   const storeRef = useRef(store);
   useEffect(() => { storeRef.current = store; });
@@ -382,6 +404,15 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       },
       'studio.toggle-automation': () => setShowAutomation(prev => !prev),
       'studio.toggle-video-track': () => setShowVideoTrack(prev => !prev),
+      'studio.toggle-lyrics': () => setShowLyrics(prev => !prev),
+      'studio.audio-devices': () => setShowAudioDevices(true),
+      'studio.fullscreen': () => {
+        if (!document.fullscreenElement) {
+          (containerRef as React.RefObject<HTMLElement>).current?.requestFullscreen?.().catch(() => {});
+        } else {
+          document.exitFullscreen?.().catch(() => {});
+        }
+      },
       'studio.stop': () => {
         store.stop();
         if (audioInitializedRef.current) audioEngine.stop();
@@ -430,6 +461,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       { id: 'studio.paste-clip', key: 'v', modifiers: ['ctrl'], description: 'Paste clip', category: 'editing', context: 'studio', action: () => dawActionsRef.current['studio.paste-clip']?.() },
       { id: 'studio.toggle-automation', key: 'a', description: 'Toggle automation', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.toggle-automation']?.() },
       { id: 'studio.toggle-video-track', key: 'v', modifiers: ['shift'], description: 'Toggle video track', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.toggle-video-track']?.() },
+      { id: 'studio.toggle-lyrics', key: 'l', modifiers: ['ctrl', 'shift'], description: 'Toggle lyrics panel', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.toggle-lyrics']?.() },
+      { id: 'studio.audio-devices', key: 'd', modifiers: ['ctrl', 'shift'], description: 'Audio device settings', category: 'settings', context: 'studio', action: () => dawActionsRef.current['studio.audio-devices']?.() },
+      { id: 'studio.fullscreen', key: 'F11', description: 'Toggle fullscreen', category: 'view', context: 'studio', action: () => dawActionsRef.current['studio.fullscreen']?.() },
     ];
 
     manager.registerMany(dawShortcuts);
@@ -1004,6 +1038,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             onToggleSurround={() => setShowSurroundPanel(!showSurroundPanel)}
             showVideoTrack={showVideoTrack}
             onToggleVideo={() => setShowVideoTrack(!showVideoTrack)}
+            showLyrics={showLyrics}
+            onToggleLyrics={() => setShowLyrics(!showLyrics)}
+            onOpenAudioDevices={() => setShowAudioDevices(true)}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={handleToggleFullscreen}
           />
 
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -1038,6 +1077,19 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             <EditorPanel
               track={selectedTrack}
               onClose={() => setShowEditor(false)}
+            />
+          )}
+
+          {showLyrics && (
+            <LyricsPanel
+              isPlaying={transport.isPlaying}
+              playheadPosition={livePosition}
+              tempo={transport.tempo}
+              onSeek={handleSeek}
+              sections={lyricsSections}
+              activeSectionId={lyricsActiveSectionId}
+              onSectionsChange={setLyricsSections}
+              onActiveSectionChange={setLyricsActiveSectionId}
             />
           )}
         </div>
@@ -1476,6 +1528,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         onOpenChange={setShowStemExport}
         projectId={projectId}
       />
+
+      <AudioDeviceDialog
+        open={showAudioDevices}
+        onOpenChange={setShowAudioDevices}
+      />
     </div>
   );
 }
@@ -1794,6 +1851,11 @@ interface ToolbarProps {
   onToggleSurround: () => void;
   showVideoTrack: boolean;
   onToggleVideo: () => void;
+  showLyrics: boolean;
+  onToggleLyrics: () => void;
+  onOpenAudioDevices: () => void;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
 }
 
 function Toolbar({
@@ -1804,7 +1866,10 @@ function Toolbar({
   onExport, onImportAudio, onStemExport,
   showAutomation, onToggleAutomation,
   showSurroundPanel, onToggleSurround,
-  showVideoTrack, onToggleVideo
+  showVideoTrack, onToggleVideo,
+  showLyrics, onToggleLyrics,
+  onOpenAudioDevices,
+  isFullscreen, onToggleFullscreen
 }: ToolbarProps) {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showBrowseMenu, setShowBrowseMenu] = useState(false);
@@ -2068,6 +2133,45 @@ function Toolbar({
           </Button>
         </TooltipTrigger>
         <TooltipContent>Keyboard Shortcuts (?)</TooltipContent>
+      </Tooltip>
+
+      {/* ── Lyrics ── */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost" size="sm"
+            onClick={onToggleLyrics}
+            className={cn('h-7 gap-1 text-xs', showLyrics && 'bg-emerald-600/20 text-emerald-400')}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Lyrics
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Lyrics Editor (L)</TooltipContent>
+      </Tooltip>
+
+      {/* ── Audio Devices ── */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="sm" onClick={onOpenAudioDevices} className="h-7 w-7 p-0">
+            <Headphones className="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Audio Device Settings</TooltipContent>
+      </Tooltip>
+
+      {/* ── Fullscreen ── */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost" size="sm"
+            onClick={onToggleFullscreen}
+            className={cn('h-7 w-7 p-0', isFullscreen && 'text-yellow-400')}
+          >
+            {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{isFullscreen ? 'Exit Fullscreen (F11)' : 'Fullscreen (F11)'}</TooltipContent>
       </Tooltip>
 
       <div className="h-5 w-px bg-[#444] mx-0.5" />

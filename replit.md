@@ -105,10 +105,33 @@ This ensures internal monitoring, health checks, and Replit's own infrastructure
 ## Studio DAW — Toolbar & Layout
 
 - **Toolbar height**: 44px base (set in `client/src/hooks/useStudioScale.ts`)
-- **Toolbar layout** (`client/src/components/studio/Toolbar.tsx`): Single-row flex, no wrap. Left-to-right: "Add Track ▾" | Edit modes (Select/Draw/Erase/Slice icons) | Snap | "Browse ▾" | Zoom | [spacer] | "View ▾" | "File ▾" | ⌨ | "Inspector" | "Editor" | "Mixer"
+- **Toolbar layout** (inline in `StudioOneDAW.tsx`): Single-row flex, no wrap. Left-to-right: "Add Track ▾" | Edit modes (Select/Draw/Erase/Slice icons) | Snap | "Browse ▾" | Zoom | [spacer] | "View ▾" | "File ▾" | ⌨ | **Lyrics** | 🎧 | ⛶ | | "Inspector" | "Editor" | "Mixer"
 - **Browse dropdown**: All Plugins, Instruments, Effects (opens plugin browser panel)
 - **View dropdown**: Automation (purple dot), Surround (cyan dot), Video Track (green dot) — View button shows blue indicator when any active
 - **File dropdown**: Export Audio (Ctrl+Shift+E), Import Audio (Ctrl+I), Export Stems (Ctrl+Shift+S)
 - **Transport & toolbar scroll fix**: `overflow-x-auto` + inner `min-w-max` div prevents controls from clipping
 - **EditorPanel**: Drag handle (6px blue), resizable 80–600px, default 192px
 - **MixerPanel**: Drag handle (6px blue), resizable 120–700px, default 240px
+
+### Lyrics Panel (`client/src/components/studio/LyricsPanel.tsx`)
+- Docked bottom panel, drag-resize (80–700px, default 280px), toggled by Lyrics button (Ctrl+Shift+L)
+- Section tabs (Verse=blue, Chorus=pink, Bridge=amber, Intro=indigo, Pre-Chorus=purple, Outro=gray, Custom=green)
+- Per-line numbered text inputs; Enter = new line, Backspace-on-empty = delete line
+- Clock icon stamps playhead time to a line; click timestamp to scrub timeline
+- Auto-scroll follows playhead during playback; "Follow" toggle disables it
+- Font size S/M/L toggle; word count display
+- **State is lifted to StudioOneDAW** (`lyricsSections` + `lyricsActiveSectionId`) so lyrics persist across panel toggles
+
+### Audio Device Management (`client/src/components/studio/AudioDeviceDialog.tsx`)
+- Dialog opened by Headphones toolbar button (Ctrl+Shift+D shortcut)
+- Enumerates real OS audio devices via Web Audio API (`navigator.mediaDevices.enumerateDevices()`)
+- Output + Input device selects; requests microphone permission if needed
+- Sample rate chips: 44.1kHz / 48kHz / 88.2kHz / 96kHz / 192kHz (blue when selected)
+- Buffer size chips: 64 / 128 / 256 / 512 / 1024 / 2048 (purple when selected)
+- Real-time latency estimate; "Test Audio" plays 440Hz sine tone and shows result
+- "Refresh Devices" re-enumerates hardware; "Apply" closes
+
+### Fullscreen Mode
+- Maximize2 / Minimize2 icon at right of toolbar; keyboard shortcut F11
+- Uses Browser Fullscreen API (`containerRef.current.requestFullscreen()`)
+- `fullscreenchange` event listener keeps `isFullscreen` state in sync; button turns yellow when active
