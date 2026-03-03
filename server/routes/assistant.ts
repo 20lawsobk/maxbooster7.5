@@ -121,7 +121,7 @@ router.get('/history', async (req: Request, res: Response) => {
 // POST /api/assistant/chat
 // Sends a message to Max, persists it, returns the in-house AI response.
 // Body: { message: string }
-// Response: { content, category, confidence, messageId, assistantMessageId }
+// Response: { content, category, confidence, proactiveSuggestions, relatedTopics, quickActions, messageId, assistantMessageId }
 router.post('/chat', async (req: Request, res: Response) => {
   try {
     const { message } = req.body;
@@ -183,6 +183,9 @@ router.post('/chat', async (req: Request, res: Response) => {
       content: aiResponse.content,
       category: aiResponse.category,
       confidence: aiResponse.confidence,
+      proactiveSuggestions: aiResponse.proactiveSuggestions ?? [],
+      relatedTopics: aiResponse.relatedTopics ?? [],
+      quickActions: aiResponse.quickActions ?? [],
       messageId: userMessageId,
       assistantMessageId,
     });

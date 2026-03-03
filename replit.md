@@ -8,6 +8,26 @@ Max Booster is an AI-powered, full-stack TypeScript web application designed to 
 
 I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
 
+## Current Production Configuration
+
+- **Workflow:** `npm run start` (runs pre-built `dist/cluster.cjs` in production mode with boosterstate)
+- **Build command:** `npm run build` (esbuild + Vite, outputs to `dist/`)
+- **Port:** 5000
+- **Environment:** All 53 API keys/secrets configured as env vars
+- **Database:** Replit PostgreSQL (primary) + Neon PostgreSQL (replica/backup via NEON_DATABASE_URL)
+- **Cache/Queue:** Redis (REDIS_URL) — cross-instance pub/sub active
+- **Storage:** Replit Object Storage (hot tier, REPLIT_BUCKET_ID set) + Pocket Dimension (cold tier)
+- **Admin:** blawzmusic@gmail.com — account verified and bootstrapped on startup
+
+## Max AI Assistant
+
+- **File:** `server/services/maxAssistantService.ts` (2,108 lines)
+- **Route:** `server/routes/assistant.ts` — POST /api/assistant/chat
+- **Features:** Comprehensive knowledge base (Studio, Distribution, Royalties, Marketplace, Social, Advertising, Analytics, Career Tools, Account, Security)
+- **Proactive Prediction:** Returns `proactiveSuggestions`, `relatedTopics`, `quickActions` per response
+- **Knowledge base entries:** 35 comprehensive entries covering every platform feature
+- **Scoring:** Keyword + related-keyword scoring with follow-up context detection
+
 ## System Architecture
 
 The Max Booster application is structured as a monorepo, separating concerns into distinct directories:
