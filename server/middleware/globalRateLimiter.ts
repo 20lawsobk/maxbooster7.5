@@ -113,9 +113,13 @@ export const globalRateLimiter = rateLimit({
       req.path.startsWith('/@vite/') ||
       req.path.startsWith('/@react-refresh') ||
       req.path.startsWith('/@replit/');
+    const isLocalhost =
+      req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1' ||
+      (typeof req.ip === 'string' && req.ip.startsWith('10.'));
 
     if (isMonitoringEndpoint) return true;
     if (isDevelopment) return true;
+    if (isLocalhost) return true;
     return isStaticAsset;
   },
   handler: (req: Request, res: Response) => {
@@ -137,4 +141,8 @@ export const criticalEndpointLimiter = rateLimit({
     message: 'This endpoint is rate-limited. Please try again later.',
   },
   validate: { trustProxy: false },
+  skip: (req: Request) => {
+    return req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1' ||
+      (typeof req.ip === 'string' && req.ip.startsWith('10.'));
+  },
 });

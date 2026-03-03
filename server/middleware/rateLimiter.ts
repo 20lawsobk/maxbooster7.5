@@ -254,6 +254,11 @@ export const loginRateLimiter: RequestHandler = async (
   }
 
   const ip = getClientIP(req);
+
+  if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || ip?.startsWith('10.82.') || ip?.startsWith('10.')) {
+    next();
+    return;
+  }
   const key = `auth:login:${ip}`;
   const { login } = RATE_LIMITS.auth;
 

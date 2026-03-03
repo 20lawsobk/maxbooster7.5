@@ -82,3 +82,13 @@ All AI in Max Booster — including the Max assistant — is built and trained e
 - **Storage**: Hybrid — Replit Object Storage (hot) + Pocket Dimension (cold) + BoosterState (metadata)
 - **Admin**: blawzmusic@gmail.com (role: admin), credentials synced on every startup
 - **Self-Evolution**: Disabled (ENABLE_SELF_EVOLUTION=false)
+- **Rate Limits**: RATE_LIMIT_MAX=3000/min, RATE_LIMIT_CRITICAL_MAX=600/min (set in .env)
+
+## Security — Internal Network Bypass
+
+Replit internal IPs (`10.x.x.x`), localhost (`127.0.0.1`, `::1`) and loopback variants are whitelisted from all rate limiters and the self-healing security engine:
+- `server/middleware/globalRateLimiter.ts` — globalRateLimiter skip + criticalEndpointLimiter skip
+- `server/middleware/rateLimiter.ts` — loginRateLimiter bypass
+- `server/services/selfHealingSecurityEngine.ts` — processSecurityEvent bypass + blockIp bypass
+
+This ensures internal monitoring, health checks, and Replit's own infrastructure (plus test agents) are never locked out. External public traffic remains fully rate-limited and monitored.

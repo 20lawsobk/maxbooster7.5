@@ -269,7 +269,13 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       metrics: event.metrics || {},
     };
 
-    if (this.blockedIps.has(fullEvent.source.ip)) {
+    const sourceIp = fullEvent.source.ip;
+    if (sourceIp === '127.0.0.1' || sourceIp === '::1' || sourceIp === 'localhost' ||
+        (typeof sourceIp === 'string' && sourceIp.startsWith('10.'))) {
+      return;
+    }
+
+    if (this.blockedIps.has(sourceIp)) {
       this.metrics.threatsBlocked++;
       return;
     }
@@ -554,6 +560,11 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   private async blockIp(ipAddress: string, reason: string, severity: number): Promise<void> {
     if (!ipAddress || ipAddress === 'undefined') {
       logger.warn('Skipping IP block for invalid address');
+      return;
+    }
+
+    if (ipAddress === '127.0.0.1' || ipAddress === '::1' || ipAddress === 'localhost' ||
+        ipAddress.startsWith('10.')) {
       return;
     }
 
