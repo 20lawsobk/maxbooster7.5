@@ -1523,7 +1523,8 @@ function TransportBar({
   onTogglePunchIn, onTogglePunchOut, onPunchInTimeChange, onPunchOutTimeChange, onToggleLoopRecord
 }: TransportBarProps) {
   return (
-    <div className="bg-[#252529] border-b border-[#333] flex items-center px-4 gap-4 shrink-0 flex-wrap" style={{ height: 'var(--transport-h)' }}>
+    <div className="bg-[#252529] border-b border-[#333] shrink-0 overflow-x-auto" style={{ height: 'var(--transport-h)' }}>
+      <div className="flex items-center gap-4 min-w-max h-full px-4">
       <div className="flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -1720,7 +1721,7 @@ function TransportBar({
         <span className="font-mono text-sm">{transport.timeSignature || '4/4'}</span>
       </div>
 
-      <div className="flex-1" />
+      <div className="h-6 w-px bg-[#444]" />
 
       <div className="flex items-center gap-2">
         <Tooltip>
@@ -1761,8 +1762,9 @@ function TransportBar({
 
       <div className="h-6 w-px bg-[#444]" />
 
-      <div className="text-sm text-gray-400 truncate max-w-48">
+      <div className="text-sm text-gray-400 shrink-0 truncate max-w-48">
         {project.name || 'Untitled Project'}
+      </div>
       </div>
     </div>
   );
