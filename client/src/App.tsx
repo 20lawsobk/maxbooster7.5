@@ -34,6 +34,7 @@ const API = lazy(() => import('@/pages/API'));
 const Documentation = lazy(() => import('@/pages/Documentation'));
 const About = lazy(() => import('@/pages/About'));
 const Blog = lazy(() => import('@/pages/Blog'));
+const BlogPost = lazy(() => import('@/pages/BlogPost'));
 const SoloFounderStory = lazy(() => import('@/pages/SoloFounderStory'));
 const SecurityPage = lazy(() => import('@/pages/SecurityPage'));
 const DMCA = lazy(() => import('@/pages/DMCA'));
@@ -118,6 +119,7 @@ function Router() {
       <Route path="/documentation" component={Documentation} />
       <Route path="/about" component={About} />
       <Route path="/blog" component={Blog} />
+      <Route path="/blog/:slug" component={BlogPost} />
       <Route path="/solo-founder-story" component={SoloFounderStory} />
       <Route path="/security" component={SecurityPage} />
       <Route path="/dmca" component={DMCA} />
@@ -150,6 +152,7 @@ function isNativeApp(): boolean {
 }
 
 const PUBLIC_ONLY_ROUTES = ['/', '/about', '/blog', '/features', '/solo-founder-story'];
+const PUBLIC_ONLY_PREFIXES = ['/blog/'];
 
 function AppWithKeyboardShortcuts() {
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
@@ -161,7 +164,7 @@ function AppWithKeyboardShortcuts() {
   }, [user]);
 
   useEffect(() => {
-    if (isNativeApp() && PUBLIC_ONLY_ROUTES.includes(location)) {
+    if (isNativeApp() && (PUBLIC_ONLY_ROUTES.includes(location) || PUBLIC_ONLY_PREFIXES.some((p) => location.startsWith(p)))) {
       setLocation('/dashboard');
     }
   }, [location]);
