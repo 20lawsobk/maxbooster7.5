@@ -118,7 +118,7 @@ async function isDomainAvailable(domain: string, excludeStorefrontId?: string): 
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (allowed.includes(file.mimetype)) {
@@ -1723,7 +1723,7 @@ router.delete('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
 
 const tierAudioUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
   fileFilter: (req, file, cb) => {
     const allowed = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/flac', 'audio/aiff', 'audio/x-aiff', 'audio/mp3'];
     if (allowed.includes(file.mimetype) || file.originalname.match(/\.(mp3|wav|flac|aiff|aif)$/i)) {

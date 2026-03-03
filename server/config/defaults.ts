@@ -174,7 +174,7 @@ export const config: AppConfig = {
   },
 
   upload: {
-    maxFileSize: parseEnvInt('MAX_FILE_SIZE', 104857600), // 100MB
+    maxFileSize: parseEnvInt('MAX_FILE_SIZE', 209715200), // 200MB
     allowedTypes: parseEnvArray('ALLOWED_FILE_TYPES', ['mp3', 'wav', 'flac', 'aiff', 'ogg']),
     useTempStorage: parseEnvBool('USE_TEMP_STORAGE', true), // Default to local for dev
   },

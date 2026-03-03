@@ -28,7 +28,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      spellcheck: true
+      spellcheck: true,
     },
     icon: path.join(__dirname, 'assets', 'icon.png'),
     title: APP_NAME,
@@ -394,6 +394,12 @@ app.whenReady().then(() => {
   if (process.env.NODE_ENV !== 'development') {
     registerNativeProtocol();
   }
+
+  // Allow large file uploads (200MB) from the desktop app
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    callback({ requestHeaders: details.requestHeaders });
+  });
+
   setupAutoUpdater();
   createWindow();
   createTray();

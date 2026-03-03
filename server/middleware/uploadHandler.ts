@@ -154,7 +154,7 @@ export const handleUploadError = (error: unknown, req: Request, res: unknown, ne
     switch (error.code) {
       case 'LIMIT_FILE_SIZE':
         return res.status(413).json({
-          message: 'File too large. Maximum size is 500MB for audio files.',
+          message: 'File too large. Maximum size is 200MB.',
           code: 'FILE_TOO_LARGE',
         });
       case 'LIMIT_FILE_COUNT':

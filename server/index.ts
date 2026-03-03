@@ -131,12 +131,13 @@ declare module "express-session" {
 
 app.use(
   express.json({
-    limit: '5mb',
+    limit: '200mb',
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
+app.use(express.urlencoded({ extended: true, limit: '200mb' }));
 
 app.use(express.urlencoded({ extended: false }));
 

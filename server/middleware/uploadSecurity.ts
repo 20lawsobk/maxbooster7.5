@@ -38,7 +38,7 @@ export const UPLOAD_LIMITS: Record<UploadCategory, UploadLimits> = {
     ],
   },
   document: {
-    maxSize: 20 * 1024 * 1024,
+    maxSize: 200 * 1024 * 1024, // 200MB
     allowedTypes: ['application/pdf'],
   },
 };
