@@ -1,10 +1,53 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { db } from '../db';
 import { autopilotPreferences } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from '../logger';
 
 const router = Router();
+
+const postingScheduleSchema = z.object({
+  timezone: z.string().max(64).optional(),
+  preferredHours: z.array(z.number().int().min(0).max(23)).optional(),
+  preferredDays: z.array(z.string().max(20)).optional(),
+  avoidHours: z.array(z.number().int().min(0).max(23)).optional(),
+  avoidDays: z.array(z.string().max(20)).optional(),
+}).optional();
+
+const contentExamplesSchema = z.object({
+  goodPosts: z.array(z.string().max(500)).optional(),
+  badPosts: z.array(z.string().max(500)).optional(),
+  inspirationalAccounts: z.array(z.string().max(100)).optional(),
+}).optional();
+
+const preferencesSchema = z.object({
+  artistName: z.string().max(200).optional(),
+  artistBio: z.string().max(2000).optional(),
+  genre: z.string().max(100).optional(),
+  subGenres: z.array(z.string().max(100)).optional(),
+  brandVoice: z.string().max(50).optional(),
+  targetAudience: z.string().max(500).optional(),
+  uniqueSellingPoints: z.array(z.string().max(200)).optional(),
+  contentTone: z.string().max(50).optional(),
+  preferredEmojis: z.array(z.string().max(10)).optional(),
+  avoidEmojis: z.boolean().optional(),
+  preferredHashtags: z.array(z.string().max(100)).optional(),
+  avoidHashtags: z.array(z.string().max(100)).optional(),
+  contentThemes: z.array(z.string().max(100)).optional(),
+  avoidTopics: z.array(z.string().max(100)).optional(),
+  callToActionStyle: z.string().max(50).optional(),
+  platformSettings: z.record(z.unknown()).optional(),
+  postingSchedule: postingScheduleSchema,
+  adAutopilotEnabled: z.boolean().optional(),
+  organicGrowthPriority: z.string().max(50).optional(),
+  crossPostingEnabled: z.boolean().optional(),
+  viralOptimizationLevel: z.string().max(50).optional(),
+  contentExamples: contentExamplesSchema,
+  currentReleases: z.array(z.unknown()).optional(),
+  customInstructions: z.string().max(5000).optional(),
+  isActive: z.boolean().optional(),
+});
 
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -67,33 +110,15 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const parsed = preferencesSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0]?.message || 'Invalid input' });
+    }
+
     const data = {
       userId: req.user.id,
-      artistName: req.body.artistName,
-      artistBio: req.body.artistBio,
-      genre: req.body.genre,
-      subGenres: req.body.subGenres,
-      brandVoice: req.body.brandVoice,
-      targetAudience: req.body.targetAudience,
-      uniqueSellingPoints: req.body.uniqueSellingPoints,
-      contentTone: req.body.contentTone,
-      preferredEmojis: req.body.preferredEmojis,
-      avoidEmojis: req.body.avoidEmojis,
-      preferredHashtags: req.body.preferredHashtags,
-      avoidHashtags: req.body.avoidHashtags,
-      contentThemes: req.body.contentThemes,
-      avoidTopics: req.body.avoidTopics,
-      callToActionStyle: req.body.callToActionStyle,
-      platformSettings: req.body.platformSettings,
-      postingSchedule: req.body.postingSchedule,
-      adAutopilotEnabled: req.body.adAutopilotEnabled,
-      organicGrowthPriority: req.body.organicGrowthPriority,
-      crossPostingEnabled: req.body.crossPostingEnabled,
-      viralOptimizationLevel: req.body.viralOptimizationLevel,
-      contentExamples: req.body.contentExamples,
-      currentReleases: req.body.currentReleases,
-      customInstructions: req.body.customInstructions,
-      isActive: req.body.isActive ?? true,
+      ...parsed.data,
+      isActive: parsed.data.isActive ?? true,
       lastUpdated: new Date(),
     };
 
@@ -130,6 +155,11 @@ router.patch('/', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const parsed = preferencesSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0]?.message || 'Invalid input' });
+    }
+
     const [existing] = await db
       .select()
       .from(autopilotPreferences)
@@ -139,10 +169,10 @@ router.patch('/', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Preferences not found. Create them first.' });
     }
 
-    const updateData = { ...req.body, lastUpdated: new Date() };
-    delete updateData.id;
-    delete updateData.userId;
-    delete updateData.createdAt;
+    const updateData = {
+      ...parsed.data,
+      lastUpdated: new Date(),
+    };
 
     const [result] = await db
       .update(autopilotPreferences)

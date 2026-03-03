@@ -202,6 +202,40 @@ const REQUIRED_INDEXES: IndexDefinition[] = [
     columns: ['user_id', 'platform'],
     description: 'Composite index for HyperLearning cycle queries filtering by user and platform',
   },
+  // social_accounts — queried every minute by token refresh monitor
+  {
+    name: 'idx_social_accounts_user_id',
+    table: 'social_accounts',
+    columns: ['user_id'],
+    description: 'Fast social account lookup by user',
+  },
+  {
+    name: 'idx_social_accounts_active_expires',
+    table: 'social_accounts',
+    columns: ['is_active', 'token_expires_at'],
+    description: 'Composite index for token refresh monitor (is_active + token_expires_at range query)',
+  },
+  {
+    name: 'idx_social_accounts_platform_user',
+    table: 'social_accounts',
+    columns: ['platform', 'user_id'],
+    description: 'Platform-specific social account lookups',
+  },
+
+  // autopilot_preferences — queried on every autopilot cycle
+  {
+    name: 'idx_autopilot_preferences_user_id',
+    table: 'autopilot_preferences',
+    columns: ['user_id'],
+    description: 'Fast autopilot preferences lookup by user',
+  },
+  {
+    name: 'idx_autopilot_preferences_active',
+    table: 'autopilot_preferences',
+    columns: ['is_active'],
+    description: 'Filter active autopilot users for scheduler cycles',
+  },
+
   {
     name: 'idx_users_stripe_customer_id',
     table: 'users',
