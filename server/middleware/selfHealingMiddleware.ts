@@ -18,6 +18,20 @@ const WHITELISTED_IPS = new Set([
 
 const isDev = process.env.NODE_ENV !== 'production';
 
+function isInternalIp(ip: string): boolean {
+  if (!ip || ip === 'unknown') return false;
+  const stripped = ip.replace(/^::ffff:/, '');
+  return (
+    stripped === '127.0.0.1' ||
+    stripped === '::1' ||
+    stripped === 'localhost' ||
+    stripped.startsWith('10.') ||
+    stripped.startsWith('172.16.') ||
+    stripped.startsWith('192.168.') ||
+    WHITELISTED_IPS.has(ip)
+  );
+}
+
 export function selfHealingSecurityMiddleware(req: Request, res: Response, next: NextFunction): void {
   const startTime = Date.now();
   
@@ -26,7 +40,7 @@ export function selfHealingSecurityMiddleware(req: Request, res: Response, next:
     req.socket.remoteAddress || 
     'unknown';
 
-  const isWhitelisted = WHITELISTED_IPS.has(ip) || ip.startsWith('::ffff:127.') || (isDev && ip !== 'unknown');
+  const isWhitelisted = isInternalIp(ip) || ip.startsWith('::ffff:127.') || (isDev && ip !== 'unknown');
 
   if (!isWhitelisted && selfHealingEngine.isIpBlocked(ip)) {
     res.status(403).json({

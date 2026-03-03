@@ -1807,36 +1807,53 @@ function Toolbar({
   showVideoTrack, onToggleVideo
 }: ToolbarProps) {
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showBrowseMenu, setShowBrowseMenu] = useState(false);
+  const [showViewMenu, setShowViewMenu] = useState(false);
+  const [showFileMenu, setShowFileMenu] = useState(false);
+
+  useEffect(() => {
+    const close = () => {
+      setShowAddMenu(false);
+      setShowBrowseMenu(false);
+      setShowViewMenu(false);
+      setShowFileMenu(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, []);
+
+  const anyViewActive = showAutomation || showSurroundPanel || showVideoTrack;
 
   return (
-    <div className="bg-[#1f1f23] border-b border-[#333] shrink-0 overflow-x-auto" style={{ height: 'var(--toolbar-h)' }}>
-      <div className="flex items-center h-full px-3 gap-2 min-w-max">
-      <div className="relative">
+    <div
+      className="bg-[#1f1f23] border-b border-[#333] shrink-0 flex items-center gap-1 px-3"
+      style={{ height: 'var(--toolbar-h)' }}
+    >
+      {/* ── Add Track ── */}
+      <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
         <Button
-          variant="ghost"
-          size="sm"
+          variant="ghost" size="sm"
           onClick={() => setShowAddMenu(!showAddMenu)}
-          className="h-7 gap-1.5 text-xs"
+          className="h-7 gap-1.5 text-xs font-medium"
         >
           <Plus className="h-3.5 w-3.5" />
           Add Track
-          <ChevronDown className="h-3 w-3" />
+          <ChevronDown className="h-3 w-3 opacity-60" />
         </Button>
-
         <AnimatePresence>
           {showAddMenu && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full left-0 mt-1 bg-[#2a2a2e] border border-[#444] rounded-lg shadow-xl z-50 py-1 min-w-40"
+              exit={{ opacity: 0, y: -6 }}
+              className="absolute top-full left-0 mt-1 bg-[#2a2a2e] border border-[#444] rounded-lg shadow-xl z-50 py-1 min-w-44"
             >
-              {[
+              {([
                 { type: 'audio' as const, icon: Music, label: 'Audio Track' },
                 { type: 'instrument' as const, icon: Piano, label: 'Instrument Track' },
                 { type: 'midi' as const, icon: Layers, label: 'MIDI Track' },
                 { type: 'bus' as const, icon: Sliders, label: 'Bus Track' },
-              ].map(({ type, icon: Icon, label }) => (
+              ] as const).map(({ type, icon: Icon, label }) => (
                 <button
                   key={type}
                   onClick={() => { onAddTrack(type); setShowAddMenu(false); }}
@@ -1851,71 +1868,26 @@ function Toolbar({
         </AnimatePresence>
       </div>
 
-      <div className="h-5 w-px bg-[#444]" />
+      <div className="h-5 w-px bg-[#444] mx-0.5" />
 
-      <div className="flex items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" onClick={onOpenAllPlugins} className="h-7 gap-1 text-xs">
-              <Library className="h-3.5 w-3.5" />
-              All Plugins
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>All Plugins (Shift+P)</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" onClick={onOpenInstruments} className="h-7 gap-1 text-xs">
-              <Piano className="h-3.5 w-3.5" />
-              Instruments
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Instruments (Shift+I)</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" onClick={onOpenEffects} className="h-7 gap-1 text-xs">
-              <Wand2 className="h-3.5 w-3.5" />
-              Effects
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Effects (Shift+E)</TooltipContent>
-        </Tooltip>
-      </div>
-
-      <div className="h-5 w-px bg-[#444]" />
-
-      <div className="flex items-center gap-1">
-        <Button variant="ghost" size="sm" onClick={onZoomOut} className="h-7 w-7 p-0">
-          <ZoomOut className="h-3.5 w-3.5" />
-        </Button>
-        <span className="text-xs text-gray-400 w-12 text-center">{Math.round(zoom * 100)}%</span>
-        <Button variant="ghost" size="sm" onClick={onZoomIn} className="h-7 w-7 p-0">
-          <ZoomIn className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-
-      <div className="h-5 w-px bg-[#444]" />
-
+      {/* ── Edit Modes ── */}
       {(() => {
         const editMode = useStudioStore((s) => s.view.editMode);
         const setEditMode = useStudioStore((s) => s.setEditMode);
-        const modes = [
-          { mode: 'select', icon: MousePointer2, label: 'Select' },
-          { mode: 'draw', icon: Pencil, label: 'Draw' },
-          { mode: 'erase', icon: Eraser, label: 'Erase' },
-          { mode: 'slice', icon: Scissors, label: 'Slice' },
-        ] as const;
         return (
           <div className="flex items-center gap-0.5">
-            {modes.map(({ mode, icon: MIcon, label }) => (
+            {([
+              { mode: 'select' as const, icon: MousePointer2, label: 'Select (V)' },
+              { mode: 'draw' as const, icon: Pencil, label: 'Draw (B)' },
+              { mode: 'erase' as const, icon: Eraser, label: 'Erase (X)' },
+              { mode: 'slice' as const, icon: Scissors, label: 'Slice (C)' },
+            ]).map(({ mode, icon: MIcon, label }) => (
               <Tooltip key={mode}>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditMode(mode)}
-                    className={cn("h-7 w-7 p-0", editMode === mode && "bg-blue-600/20 text-blue-400")}
+                    variant="ghost" size="sm"
+                    onClick={() => setEditMode(mode as any)}
+                    className={cn('h-7 w-7 p-0', editMode === mode && 'bg-blue-600/20 text-blue-400')}
                   >
                     <MIcon className="h-3.5 w-3.5" />
                   </Button>
@@ -1927,124 +1899,190 @@ function Toolbar({
         );
       })()}
 
-      <div className="h-5 w-px bg-[#444]" />
-
+      {/* ── Snap ── */}
       {(() => {
         const snapToGrid = useStudioStore((s) => s.view.snapToGrid);
         const setView = useStudioStore((s) => s.setView);
         return (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setView({ snapToGrid: !snapToGrid })}
-            className={cn("h-7 gap-1.5 text-xs", snapToGrid && "bg-blue-600/20 text-blue-400")}
-          >
-            <Grid3X3 className="h-3.5 w-3.5" />
-            Snap
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost" size="sm"
+                onClick={() => setView({ snapToGrid: !snapToGrid })}
+                className={cn('h-7 w-7 p-0', snapToGrid && 'bg-blue-600/20 text-blue-400')}
+              >
+                <Grid3X3 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Snap to Grid</TooltipContent>
+          </Tooltip>
         );
       })()}
 
-      <div className="h-5 w-px bg-[#444]" />
+      <div className="h-5 w-px bg-[#444] mx-0.5" />
 
-      <div className="flex items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleAutomation}
-              className={cn("h-7 gap-1 text-xs", showAutomation && "bg-purple-600/20 text-purple-400")}
+      {/* ── Browse dropdown ── */}
+      <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
+        <Button
+          variant="ghost" size="sm"
+          onClick={() => setShowBrowseMenu(!showBrowseMenu)}
+          className="h-7 gap-1 text-xs"
+        >
+          <Library className="h-3.5 w-3.5" />
+          Browse
+          <ChevronDown className="h-3 w-3 opacity-60" />
+        </Button>
+        <AnimatePresence>
+          {showBrowseMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="absolute top-full left-0 mt-1 bg-[#2a2a2e] border border-[#444] rounded-lg shadow-xl z-50 py-1 min-w-36"
             >
-              <Activity className="h-3.5 w-3.5" />
-              Automation
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Toggle Automation Lanes</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleSurround}
-              className={cn("h-7 gap-1 text-xs", showSurroundPanel && "bg-cyan-600/20 text-cyan-400")}
-            >
-              <Speaker className="h-3.5 w-3.5" />
-              Surround
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Surround / Immersive Audio</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleVideo}
-              className={cn("h-7 gap-1 text-xs", showVideoTrack && "bg-green-600/20 text-green-400")}
-            >
-              <Film className="h-3.5 w-3.5" />
-              Video
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Video Track</TooltipContent>
-        </Tooltip>
+              {([
+                { icon: Library, label: 'All Plugins', action: onOpenAllPlugins },
+                { icon: Piano, label: 'Instruments', action: onOpenInstruments },
+                { icon: Wand2, label: 'Effects', action: onOpenEffects },
+              ] as const).map(({ icon: Icon, label, action }) => (
+                <button
+                  key={label}
+                  onClick={() => { action(); setShowBrowseMenu(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[#3a3a3e] transition-colors"
+                >
+                  <Icon className="h-3.5 w-3.5 text-gray-400" />
+                  {label}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="h-5 w-px bg-[#444]" />
+      <div className="h-5 w-px bg-[#444] mx-0.5" />
 
-      <div className="flex items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" onClick={onExport} className="h-7 gap-1 text-xs">
-              <Save className="h-3.5 w-3.5" />
-              Export
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Export Audio (Ctrl+Shift+E)</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" onClick={onImportAudio} className="h-7 gap-1 text-xs">
-              <FolderOpen className="h-3.5 w-3.5" />
-              Import
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Import Audio (Ctrl+I)</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" onClick={onStemExport} className="h-7 gap-1 text-xs">
-              <Layers className="h-3.5 w-3.5" />
-              Stems
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Export Stems (Ctrl+Shift+S)</TooltipContent>
-        </Tooltip>
+      {/* ── Zoom ── */}
+      <div className="flex items-center gap-0.5">
+        <Button variant="ghost" size="sm" onClick={onZoomOut} className="h-7 w-7 p-0">
+          <ZoomOut className="h-3.5 w-3.5" />
+        </Button>
+        <span className="text-xs text-gray-400 w-10 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
+        <Button variant="ghost" size="sm" onClick={onZoomIn} className="h-7 w-7 p-0">
+          <ZoomIn className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
+      {/* ── Spacer ── */}
       <div className="flex-1" />
 
-      <div className="flex items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" onClick={onOpenShortcuts} className="h-7 w-7 p-0">
-              <Keyboard className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Keyboard Shortcuts (?)</TooltipContent>
-        </Tooltip>
+      {/* ── View dropdown ── */}
+      <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
+        <Button
+          variant="ghost" size="sm"
+          onClick={() => setShowViewMenu(!showViewMenu)}
+          className={cn('h-7 gap-1 text-xs relative', anyViewActive && 'text-blue-400')}
+        >
+          <Eye className="h-3.5 w-3.5" />
+          View
+          {anyViewActive && <span className="absolute top-1 right-5 w-1.5 h-1.5 bg-blue-400 rounded-full" />}
+          <ChevronDown className="h-3 w-3 opacity-60" />
+        </Button>
+        <AnimatePresence>
+          {showViewMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="absolute top-full right-0 mt-1 bg-[#2a2a2e] border border-[#444] rounded-lg shadow-xl z-50 py-1 min-w-44"
+            >
+              {([
+                { icon: Activity, label: 'Automation', active: showAutomation, action: onToggleAutomation, dot: 'bg-purple-400' },
+                { icon: Speaker, label: 'Surround', active: showSurroundPanel, action: onToggleSurround, dot: 'bg-cyan-400' },
+                { icon: Film, label: 'Video Track', active: showVideoTrack, action: onToggleVideo, dot: 'bg-green-400' },
+              ] as const).map(({ icon: Icon, label, active, action, dot }) => (
+                <button
+                  key={label}
+                  onClick={() => { action(); setShowViewMenu(false); }}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-[#3a3a3e] transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Icon className={cn('h-3.5 w-3.5', active ? dot.replace('bg-', 'text-') : 'text-gray-400')} />
+                    {label}
+                  </span>
+                  {active && <span className={cn('w-2 h-2 rounded-full shrink-0', dot)} />}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
+      {/* ── File dropdown ── */}
+      <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
+        <Button
+          variant="ghost" size="sm"
+          onClick={() => setShowFileMenu(!showFileMenu)}
+          className="h-7 gap-1 text-xs"
+        >
+          <Save className="h-3.5 w-3.5" />
+          File
+          <ChevronDown className="h-3 w-3 opacity-60" />
+        </Button>
+        <AnimatePresence>
+          {showFileMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="absolute top-full right-0 mt-1 bg-[#2a2a2e] border border-[#444] rounded-lg shadow-xl z-50 py-1 min-w-44"
+            >
+              {([
+                { icon: Save, label: 'Export Audio', hint: 'Ctrl+Shift+E', action: onExport },
+                { icon: FolderOpen, label: 'Import Audio', hint: 'Ctrl+I', action: onImportAudio },
+                { icon: Layers, label: 'Export Stems', hint: 'Ctrl+Shift+S', action: onStemExport },
+              ] as const).map(({ icon: Icon, label, hint, action }) => (
+                <button
+                  key={label}
+                  onClick={() => { action(); setShowFileMenu(false); }}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-[#3a3a3e] transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Icon className="h-3.5 w-3.5 text-gray-400" />
+                    {label}
+                  </span>
+                  <span className="text-[10px] text-gray-500 shrink-0">{hint}</span>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <div className="h-5 w-px bg-[#444] mx-0.5" />
+
+      {/* ── Keyboard Shortcuts ── */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="sm" onClick={onOpenShortcuts} className="h-7 w-7 p-0">
+            <Keyboard className="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Keyboard Shortcuts (?)</TooltipContent>
+      </Tooltip>
+
+      <div className="h-5 w-px bg-[#444] mx-0.5" />
+
+      {/* ── Panel Toggles ── */}
+      <div className="flex items-center gap-0.5">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="ghost"
-              size="sm"
+              variant="ghost" size="sm"
               onClick={onToggleInspector}
-              className={cn("h-7 w-7 p-0", showInspector && "bg-blue-600/20 text-blue-400")}
+              className={cn('h-7 gap-1 text-xs', showInspector && 'bg-blue-600/20 text-blue-400')}
             >
               <PanelRightOpen className="h-3.5 w-3.5" />
+              Inspector
             </Button>
           </TooltipTrigger>
           <TooltipContent>Inspector (I)</TooltipContent>
@@ -2053,12 +2091,12 @@ function Toolbar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="ghost"
-              size="sm"
+              variant="ghost" size="sm"
               onClick={onToggleEditor}
-              className={cn("h-7 w-7 p-0", showEditor && "bg-blue-600/20 text-blue-400")}
+              className={cn('h-7 gap-1 text-xs', showEditor && 'bg-blue-600/20 text-blue-400')}
             >
               <PanelBottomOpen className="h-3.5 w-3.5" />
+              Editor
             </Button>
           </TooltipTrigger>
           <TooltipContent>Editor (E)</TooltipContent>
@@ -2067,17 +2105,16 @@ function Toolbar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="ghost"
-              size="sm"
+              variant="ghost" size="sm"
               onClick={onToggleMixer}
-              className={cn("h-7 w-7 p-0", showMixer && "bg-blue-600/20 text-blue-400")}
+              className={cn('h-7 gap-1 text-xs', showMixer && 'bg-blue-600/20 text-blue-400')}
             >
               <Sliders className="h-3.5 w-3.5" />
+              Mixer
             </Button>
           </TooltipTrigger>
           <TooltipContent>Mixer (M)</TooltipContent>
         </Tooltip>
-      </div>
       </div>
     </div>
   );

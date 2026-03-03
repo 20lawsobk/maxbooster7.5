@@ -5,7 +5,7 @@ const DESIGN_BASELINE = 1440;
 const BASE_SIZES = {
   trackHeaderW: 192,
   transportH: 56,
-  toolbarH: 40,
+  toolbarH: 44,
   inspectorW: 256,
   aiPanelW: 320,
   editorH: 192,

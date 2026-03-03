@@ -97,3 +97,18 @@ This ensures internal monitoring, health checks, and Replit's own infrastructure
 - `isInternalIp()` helper added — checks `127.0.0.1`, `::1`, `10.*`, `172.16.*`, `192.168.*`
 - General mandatory limiter (1000/15min): `skip` now returns `true` for internal IPs
 - Strict auth limiter (50/15min, `/api/auth` + `/api/kill-switch`): `skip` now returns `true` for internal IPs
+
+**SelfHealing middleware** (`server/middleware/selfHealingMiddleware.ts`):
+- `isInternalIp()` helper added — strips `::ffff:` prefix, whitelists `127.0.0.1`, `::1`, `10.*`, `172.16.*`, `192.168.*`
+- IP_BLOCKED check (line 48) only fires when `!isWhitelisted` — internal IPs are always whitelisted, permanently preventing false blocks of Replit test agents
+
+## Studio DAW — Toolbar & Layout
+
+- **Toolbar height**: 44px base (set in `client/src/hooks/useStudioScale.ts`)
+- **Toolbar layout** (`client/src/components/studio/Toolbar.tsx`): Single-row flex, no wrap. Left-to-right: "Add Track ▾" | Edit modes (Select/Draw/Erase/Slice icons) | Snap | "Browse ▾" | Zoom | [spacer] | "View ▾" | "File ▾" | ⌨ | "Inspector" | "Editor" | "Mixer"
+- **Browse dropdown**: All Plugins, Instruments, Effects (opens plugin browser panel)
+- **View dropdown**: Automation (purple dot), Surround (cyan dot), Video Track (green dot) — View button shows blue indicator when any active
+- **File dropdown**: Export Audio (Ctrl+Shift+E), Import Audio (Ctrl+I), Export Stems (Ctrl+Shift+S)
+- **Transport & toolbar scroll fix**: `overflow-x-auto` + inner `min-w-max` div prevents controls from clipping
+- **EditorPanel**: Drag handle (6px blue), resizable 80–600px, default 192px
+- **MixerPanel**: Drag handle (6px blue), resizable 120–700px, default 240px
