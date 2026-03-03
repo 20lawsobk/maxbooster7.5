@@ -26,7 +26,7 @@ env:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: >-
       github.event_name == 'push' ||
       github.event.inputs.platform == 'linux' ||
@@ -93,7 +93,7 @@ jobs:
           retention-days: 14
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     if: >-
       github.event_name == 'push' ||
       github.event.inputs.platform == 'windows' ||
@@ -151,7 +151,7 @@ jobs:
           retention-days: 14
 
   build-macos:
-    runs-on: macos-14
+    runs-on: macos-13
     if: >-
       github.event_name == 'push' ||
       github.event.inputs.platform == 'macos' ||
@@ -246,7 +246,7 @@ jobs:
 
   create-release:
     needs: [build-linux, build-windows, build-macos]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: >-
       always() &&
       startsWith(github.ref, 'refs/tags/v') &&
@@ -324,7 +324,7 @@ jobs:
 
   build-summary:
     needs: [build-linux, build-windows, build-macos]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: always()
     steps:
       - name: Build Summary

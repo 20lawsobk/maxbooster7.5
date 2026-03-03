@@ -43,7 +43,7 @@ env:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: >-
       github.event.inputs.desktop_platforms == 'linux' ||
       github.event.inputs.desktop_platforms == 'all'
@@ -87,7 +87,7 @@ jobs:
           retention-days: 14
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     if: >-
       github.event.inputs.desktop_platforms == 'windows' ||
       github.event.inputs.desktop_platforms == 'all'
@@ -126,7 +126,7 @@ jobs:
           retention-days: 14
 
   build-macos:
-    runs-on: macos-14
+    runs-on: macos-13
     if: >-
       github.event.inputs.desktop_platforms == 'macos' ||
       github.event.inputs.desktop_platforms == 'all'
@@ -200,7 +200,7 @@ jobs:
           retention-days: 14
 
   build-android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: >-
       github.event.inputs.mobile_platforms == 'android' ||
       github.event.inputs.mobile_platforms == 'both'
@@ -297,7 +297,7 @@ jobs:
           retention-days: 30
 
   build-ios:
-    runs-on: macos-14
+    runs-on: macos-13
     if: >-
       github.event.inputs.mobile_platforms == 'ios' ||
       github.event.inputs.mobile_platforms == 'both'
@@ -365,7 +365,7 @@ jobs:
 
   create-release:
     needs: [build-linux, build-windows, build-macos, build-android, build-ios]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: >-
       always() &&
       github.event.inputs.version_tag != '' &&
@@ -427,7 +427,7 @@ jobs:
 
   summary:
     needs: [build-linux, build-windows, build-macos, build-android, build-ios]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: always()
     steps:
       - name: Build Summary
