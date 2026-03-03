@@ -1,53 +1,19 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { announce } from '@/lib/accessibility';
 import { cn } from '@/lib/utils';
 import {
-  Music,
-  Users,
-  Headphones,
-  Building2,
-  Briefcase,
-  ArrowRight,
-  ArrowLeft,
-  Check,
-  X,
-  Sparkles,
-  Info,
-  Target,
-  Share2,
-  DollarSign,
-  Mic2,
-  BarChart3,
-  Zap,
-  HelpCircle,
+  Music, Users, Headphones, Building2, Briefcase,
+  ArrowRight, ArrowLeft, Check, Sparkles, Target,
+  Share2, DollarSign, Mic2, BarChart3, Zap, Trophy,
+  Star, Crown, Flame, Shield, Rocket, Gift,
 } from 'lucide-react';
-
-export interface OnboardingStep {
-  id: string;
-  title: string;
-  description: string;
-  component: React.ComponentType<StepProps>;
-  isRequired: boolean;
-  completedKey: string;
-}
-
-interface StepProps {
-  data: OnboardingData;
-  onDataChange: (data: Partial<OnboardingData>) => void;
-  onNext: () => void;
-  onBack: () => void;
-  canProceed: boolean;
-}
 
 type Persona = 'artist' | 'producer' | 'label' | 'manager';
 type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -58,7 +24,6 @@ interface OnboardingData {
   experienceLevel: ExperienceLevel | null;
   goals: Goal[];
   preferSimplifiedView: boolean;
-  hasSeenTour: boolean;
   connectedPlatforms: string[];
   completedSteps: string[];
 }
@@ -66,601 +31,578 @@ interface OnboardingData {
 interface OnboardingWizardProps {
   onComplete: () => void;
   onSkip: () => void;
-  initialData?: Partial<OnboardingData>;
 }
+
+const STEP_XP = [150, 200, 100, 250];
+const TOTAL_XP = STEP_XP.reduce((a, b) => a + b, 0);
+
+const RANKS = [
+  { min: 0,   label: 'Newcomer',      icon: Star,    color: 'from-slate-500 to-slate-400',  textColor: 'text-slate-400' },
+  { min: 150, label: 'Rising Artist', icon: Flame,   color: 'from-blue-600 to-cyan-400',    textColor: 'text-cyan-400' },
+  { min: 350, label: 'Pro Creator',   icon: Shield,  color: 'from-purple-600 to-pink-400',  textColor: 'text-purple-400' },
+  { min: 450, label: 'Legend',        icon: Crown,   color: 'from-yellow-500 to-orange-400',textColor: 'text-yellow-400' },
+];
+
+const ACHIEVEMENTS = [
+  { atStep: 0, title: 'Identity Confirmed',  desc: 'You chose your path.',    icon: Star,   color: 'text-blue-400' },
+  { atStep: 1, title: 'Goals Locked In',     desc: 'Ambition documented.',    icon: Target, color: 'text-purple-400' },
+  { atStep: 2, title: 'Level Assessed',      desc: 'We know your power.',     icon: Zap,    color: 'text-yellow-400' },
+  { atStep: 3, title: 'Ready to Launch',     desc: 'All systems go.',         icon: Rocket, color: 'text-green-400' },
+];
 
 const personas = [
   {
     value: 'artist' as Persona,
     label: 'Solo Artist',
     icon: Music,
-    description: 'Independent musician or singer creating and releasing your own music',
-    features: ['Music distribution', 'Social media management', 'Analytics'],
+    description: 'Independent musician creating your own music',
+    class: 'The Performer',
+    color: 'from-purple-600 to-pink-500',
+    border: 'border-purple-500/40 hover:border-purple-400',
+    features: ['Music distribution', 'Social autopilot', 'Analytics'],
   },
   {
     value: 'producer' as Persona,
-    label: 'Producer/Beatmaker',
+    label: 'Producer',
     icon: Headphones,
-    description: 'Creating beats, instrumentals, and producing tracks for artists',
-    features: ['Beat marketplace', 'Studio tools', 'Collaboration'],
+    description: 'Creating beats and producing tracks',
+    class: 'The Architect',
+    color: 'from-blue-600 to-cyan-500',
+    border: 'border-blue-500/40 hover:border-blue-400',
+    features: ['Beat marketplace', 'Studio DAW', 'Collaboration'],
   },
   {
     value: 'label' as Persona,
     label: 'Record Label',
     icon: Building2,
-    description: 'Managing multiple artists and their releases',
-    features: ['Multi-artist dashboard', 'Royalty splits', 'Catalog management'],
+    description: 'Managing multiple artists and releases',
+    class: 'The Empire',
+    color: 'from-orange-600 to-yellow-500',
+    border: 'border-orange-500/40 hover:border-orange-400',
+    features: ['Multi-artist dashboard', 'Royalty splits', 'Catalog'],
   },
   {
     value: 'manager' as Persona,
     label: 'Artist Manager',
     icon: Briefcase,
-    description: 'Managing and growing artist careers',
-    features: ['Campaign management', 'Financial tracking', 'Team coordination'],
+    description: 'Growing and managing artist careers',
+    class: 'The Strategist',
+    color: 'from-green-600 to-emerald-400',
+    border: 'border-green-500/40 hover:border-green-400',
+    features: ['Campaign management', 'Financial tracking', 'Team tools'],
   },
 ];
 
 const experienceLevels = [
-  {
-    value: 'beginner' as ExperienceLevel,
-    label: 'Just Starting Out',
-    description: 'New to music production or business',
-    recommendation: 'We\'ll show you simplified views and helpful guides',
-  },
-  {
-    value: 'intermediate' as ExperienceLevel,
-    label: 'Some Experience',
-    description: 'Released music before, know the basics',
-    recommendation: 'Balance of guidance and advanced features',
-  },
-  {
-    value: 'advanced' as ExperienceLevel,
-    label: 'Industry Professional',
-    description: 'Extensive experience in music industry',
-    recommendation: 'Full access to all professional tools',
-  },
+  { value: 'beginner' as ExperienceLevel,     label: 'Rookie',       sublabel: 'Just starting out',          xpBonus: '+10 XP Guidance Bonus', icon: Star },
+  { value: 'intermediate' as ExperienceLevel, label: 'Established',  sublabel: 'Released music before',      xpBonus: '+10 XP Experience Bonus', icon: Shield },
+  { value: 'advanced' as ExperienceLevel,     label: 'Veteran',      sublabel: 'Industry professional',      xpBonus: '+10 XP Pro Bonus', icon: Crown },
 ];
 
 const goals = [
-  { value: 'produce' as Goal, label: 'Produce & Record Music', icon: Mic2 },
-  { value: 'distribute' as Goal, label: 'Distribute to Platforms', icon: Share2 },
-  { value: 'social' as Goal, label: 'Grow Social Media', icon: Users },
-  { value: 'advertising' as Goal, label: 'Run Ad Campaigns', icon: Target },
-  { value: 'marketplace' as Goal, label: 'Sell on Marketplace', icon: DollarSign },
-  { value: 'analytics' as Goal, label: 'Track Analytics', icon: BarChart3 },
-  { value: 'royalties' as Goal, label: 'Manage Royalties', icon: DollarSign },
+  { value: 'produce' as Goal,      label: 'Produce & Record',    icon: Mic2,     xp: 30 },
+  { value: 'distribute' as Goal,   label: 'Distribute Music',    icon: Share2,   xp: 30 },
+  { value: 'social' as Goal,       label: 'Grow Social Media',   icon: Users,    xp: 30 },
+  { value: 'advertising' as Goal,  label: 'Run Ad Campaigns',    icon: Target,   xp: 30 },
+  { value: 'marketplace' as Goal,  label: 'Sell on Marketplace', icon: DollarSign, xp: 30 },
+  { value: 'analytics' as Goal,    label: 'Track Analytics',     icon: BarChart3,xp: 30 },
+  { value: 'royalties' as Goal,    label: 'Collect Royalties',   icon: Trophy,   xp: 30 },
 ];
 
-function PersonaStep({ data, onDataChange }: StepProps) {
-  return (
-    <div className="space-y-6" role="radiogroup" aria-label="Select your account type">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold">Who are you?</h2>
-        <p className="text-muted-foreground">
-          Select your role to personalize your Max Booster experience
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {personas.map((persona) => {
-          const Icon = persona.icon;
-          const isSelected = data.persona === persona.value;
-          return (
-            <button
-              key={persona.value}
-              onClick={() => onDataChange({ persona: persona.value })}
-              role="radio"
-              aria-checked={isSelected}
-              className={cn(
-                'p-4 rounded-xl border-2 transition-all text-left hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 min-h-[120px]',
-                isSelected
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md'
-                  : 'border-border hover:border-blue-300 dark:hover:border-blue-700'
-              )}
-            >
-              <div className="flex items-start gap-3">
-                <div className={cn(
-                  'p-2 rounded-lg',
-                  isSelected ? 'bg-blue-500 text-white' : 'bg-muted'
-                )}>
-                  <Icon className="w-5 h-5" aria-hidden="true" />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{persona.label}</span>
-                    {isSelected && <Check className="w-4 h-4 text-blue-500" aria-hidden="true" />}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{persona.description}</p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {persona.features.map((feature) => (
-                      <Badge key={feature} variant="secondary" className="text-xs">
-                        {feature}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
+function getRank(xp: number) {
+  return [...RANKS].reverse().find(r => xp >= r.min) ?? RANKS[0];
 }
 
-function ExperienceStep({ data, onDataChange }: StepProps) {
+function XPBar({ xp, total }: { xp: number; total: number }) {
+  const pct = Math.round((xp / total) * 100);
+  const rank = getRank(xp);
+  const RankIcon = rank.icon;
   return (
-    <div className="space-y-6" role="radiogroup" aria-label="Select your experience level">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold">What's your experience level?</h2>
-        <p className="text-muted-foreground">
-          This helps us tailor the interface and guidance for you
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        {experienceLevels.map((level) => {
-          const isSelected = data.experienceLevel === level.value;
-          return (
-            <button
-              key={level.value}
-              onClick={() => onDataChange({ 
-                experienceLevel: level.value,
-                preferSimplifiedView: level.value === 'beginner'
-              })}
-              role="radio"
-              aria-checked={isSelected}
-              className={cn(
-                'w-full p-4 rounded-xl border-2 transition-all text-left hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
-                isSelected
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md'
-                  : 'border-border hover:border-blue-300 dark:hover:border-blue-700'
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-lg">{level.label}</span>
-                    {isSelected && <Check className="w-5 h-5 text-blue-500" aria-hidden="true" />}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{level.description}</p>
-                  <div className="flex items-center gap-1 mt-2 text-xs text-blue-600 dark:text-blue-400">
-                    <Info className="w-3 h-3" aria-hidden="true" />
-                    <span>{level.recommendation}</span>
-                  </div>
-                </div>
-                <div className={cn(
-                  'w-6 h-6 rounded-full border-2 flex items-center justify-center',
-                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-border'
-                )}>
-                  {isSelected && <Check className="w-4 h-4 text-white" aria-hidden="true" />}
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function GoalsStep({ data, onDataChange }: StepProps) {
-  const toggleGoal = (goal: Goal) => {
-    const newGoals = data.goals.includes(goal)
-      ? data.goals.filter((g) => g !== goal)
-      : [...data.goals, goal];
-    onDataChange({ goals: newGoals });
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold">What are your goals?</h2>
-        <p className="text-muted-foreground">
-          Select all that apply - we'll customize your dashboard
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="group" aria-label="Select your goals">
-        {goals.map((goal) => {
-          const Icon = goal.icon;
-          const isSelected = data.goals.includes(goal.value);
-          return (
-            <button
-              key={goal.value}
-              onClick={() => toggleGoal(goal.value)}
-              role="checkbox"
-              aria-checked={isSelected}
-              className={cn(
-                'flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
-                isSelected
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
-                  : 'border-border hover:border-blue-300 dark:hover:border-blue-700'
-              )}
-            >
-              <div className={cn(
-                'p-2 rounded-lg transition-colors',
-                isSelected ? 'bg-blue-500 text-white' : 'bg-muted'
-              )}>
-                <Icon className="w-4 h-4" aria-hidden="true" />
-              </div>
-              <span className="font-medium flex-1">{goal.label}</span>
-              <div className={cn(
-                'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
-                isSelected ? 'border-blue-500 bg-blue-500' : 'border-border'
-              )}>
-                {isSelected && <Check className="w-3 h-3 text-white" aria-hidden="true" />}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {data.goals.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4" role="status" aria-live="polite">
-          <div className="flex items-start gap-2">
-            <Sparkles className="w-5 h-5 text-blue-500 mt-0.5" aria-hidden="true" />
-            <div>
-              <p className="font-medium text-blue-900 dark:text-blue-100">
-                {data.goals.length} goal{data.goals.length > 1 ? 's' : ''} selected
-              </p>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                Your dashboard will be optimized for these priorities
-              </p>
-            </div>
-          </div>
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5">
+          <RankIcon className={cn('w-3.5 h-3.5', rank.textColor)} />
+          <span className={cn('text-xs font-bold', rank.textColor)}>{rank.label}</span>
         </div>
-      )}
-    </div>
-  );
-}
-
-function QuickTourStep({ data, onDataChange }: StepProps) {
-  const features = [
-    {
-      title: 'AI-Powered Studio',
-      description: 'Professional DAW with AI mixing and mastering',
-      icon: Mic2,
-    },
-    {
-      title: 'Smart Distribution',
-      description: 'Release to 150+ platforms with one click',
-      icon: Share2,
-    },
-    {
-      title: 'Social Automation',
-      description: 'AI-generated content and scheduling',
-      icon: Users,
-    },
-    {
-      title: 'Real-time Analytics',
-      description: 'Track streams, revenue, and growth',
-      icon: BarChart3,
-    },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 mb-4">
-          <Zap className="w-8 h-8 text-white" aria-hidden="true" />
-        </div>
-        <h2 className="text-2xl font-semibold">You're all set!</h2>
-        <p className="text-muted-foreground">
-          Here's what you can do with Max Booster
-        </p>
+        <span className="text-xs text-white/60">{xp} / {total} XP</span>
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {features.map((feature) => {
-          const Icon = feature.icon;
-          return (
-            <div
-              key={feature.title}
-              className="p-4 rounded-xl border bg-card hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
-                  <Icon className="w-4 h-4" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="flex items-center gap-3 p-4 rounded-xl bg-muted">
-        <Checkbox
-          id="show-tour"
-          checked={data.hasSeenTour}
-          onCheckedChange={(checked) => onDataChange({ hasSeenTour: !!checked })}
+      <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+        <motion.div
+          className={cn('h-full rounded-full bg-gradient-to-r', rank.color)}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
         />
-        <Label htmlFor="show-tour" className="text-sm cursor-pointer">
-          Show me feature tours as I explore (recommended)
-        </Label>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button className="p-1" aria-label="More info about feature tours">
-              <HelpCircle className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p className="max-w-xs">
-              We'll show helpful tooltips when you first visit each feature
-            </p>
-          </TooltipContent>
-        </Tooltip>
       </div>
     </div>
   );
 }
 
-const defaultSteps: OnboardingStep[] = [
-  {
-    id: 'persona',
-    title: 'Select Your Role',
-    description: 'Tell us about yourself',
-    component: PersonaStep,
-    isRequired: true,
-    completedKey: 'persona',
-  },
-  {
-    id: 'experience',
-    title: 'Experience Level',
-    description: 'Customize your interface',
-    component: ExperienceStep,
-    isRequired: true,
-    completedKey: 'experienceLevel',
-  },
-  {
-    id: 'goals',
-    title: 'Your Goals',
-    description: 'Prioritize your dashboard',
-    component: GoalsStep,
-    isRequired: true,
-    completedKey: 'goals',
-  },
-  {
-    id: 'tour',
-    title: 'Quick Tour',
-    description: 'Get started fast',
-    component: QuickTourStep,
-    isRequired: false,
-    completedKey: 'hasSeenTour',
-  },
-];
+function AchievementToast({ achievement, onDone }: { achievement: typeof ACHIEVEMENTS[0]; onDone: () => void }) {
+  const Icon = achievement.icon;
+  useEffect(() => {
+    const t = setTimeout(onDone, 2800);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -40, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.9 }}
+      className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-black/90 border border-yellow-500/40 rounded-2xl px-5 py-3 shadow-2xl shadow-yellow-500/10"
+    >
+      <div className="w-9 h-9 rounded-full bg-yellow-500/20 flex items-center justify-center">
+        <Icon className={cn('w-5 h-5', achievement.color)} />
+      </div>
+      <div>
+        <p className="text-xs text-yellow-400 font-bold tracking-wider uppercase">Achievement Unlocked</p>
+        <p className="text-sm text-white font-semibold">{achievement.title}</p>
+        <p className="text-xs text-white/50">{achievement.desc}</p>
+      </div>
+      <Gift className="w-4 h-4 text-yellow-400 animate-pulse ml-1" />
+    </motion.div>
+  );
+}
 
-export default function OnboardingWizard({
-  onComplete,
-  onSkip,
-  initialData,
-}: OnboardingWizardProps) {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+function XPGain({ amount }: { amount: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 0, scale: 0.8 }}
+      animate={{ opacity: [0, 1, 1, 0], y: [-10, -40, -60, -80], scale: [0.8, 1.2, 1, 0.8] }}
+      transition={{ duration: 1.4, ease: 'easeOut' }}
+      className="fixed top-1/2 left-1/2 -translate-x-1/2 pointer-events-none z-50"
+    >
+      <span className="text-2xl font-black text-yellow-400 drop-shadow-lg">+{amount} XP</span>
+    </motion.div>
+  );
+}
+
+export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) {
+  const [step, setStep] = useState(0);
+  const [xp, setXp] = useState(0);
+  const [showXpGain, setShowXpGain] = useState(false);
+  const [gainAmount, setGainAmount] = useState(0);
+  const [achievement, setAchievement] = useState<typeof ACHIEVEMENTS[0] | null>(null);
+  const [done, setDone] = useState(false);
   const [data, setData] = useState<OnboardingData>({
-    persona: null,
-    experienceLevel: null,
-    goals: [],
-    preferSimplifiedView: false,
-    hasSeenTour: true,
-    connectedPlatforms: [],
-    completedSteps: [],
-    ...initialData,
+    persona: null, experienceLevel: null, goals: [],
+    preferSimplifiedView: false, connectedPlatforms: [], completedSteps: [],
   });
   const { toast } = useToast();
-
-  const currentStep = defaultSteps[currentStepIndex];
-  const progress = ((currentStepIndex + 1) / defaultSteps.length) * 100;
-
-  const canProceed = useCallback(() => {
-    switch (currentStep.id) {
-      case 'persona':
-        return data.persona !== null;
-      case 'experience':
-        return data.experienceLevel !== null;
-      case 'goals':
-        return data.goals.length > 0;
-      case 'tour':
-        return true;
-      default:
-        return false;
-    }
-  }, [currentStep.id, data]);
-
-  const handleDataChange = useCallback((newData: Partial<OnboardingData>) => {
-    setData((prev) => ({ ...prev, ...newData }));
-  }, []);
-
-  const handleNext = useCallback(() => {
-    if (currentStepIndex < defaultSteps.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-      announce(`Step ${currentStepIndex + 2} of ${defaultSteps.length}: ${defaultSteps[currentStepIndex + 1].title}`);
-    }
-  }, [currentStepIndex]);
-
-  const handleBack = useCallback(() => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-      announce(`Step ${currentStepIndex} of ${defaultSteps.length}: ${defaultSteps[currentStepIndex - 1].title}`);
-    }
-  }, [currentStepIndex]);
+  const confettiRef = useRef(false);
 
   const completeMutation = useMutation({
-    mutationFn: async (onboardingData: OnboardingData) => {
-      const payload = {
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/auth/update-onboarding', {
         hasCompletedOnboarding: true,
         onboardingData: {
-          persona: onboardingData.persona,
-          experienceLevel: onboardingData.experienceLevel,
-          goals: onboardingData.goals,
-          preferSimplifiedView: onboardingData.preferSimplifiedView,
-          hasSeenTour: onboardingData.hasSeenTour,
+          accountType: data.persona,
+          goals: data.goals,
+          userLevel: data.experienceLevel,
+          preferSimplifiedView: data.experienceLevel === 'beginner',
         },
-      };
-      const response = await apiRequest('POST', '/api/auth/update-onboarding', payload);
+      });
       return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: '🎉 Welcome to Max Booster!',
-        description: 'Your personalized dashboard is ready.',
-        variant: 'success',
-      });
-      announce('Onboarding complete. Welcome to Max Booster!');
-      onComplete();
+      setDone(true);
+      if (!confettiRef.current) {
+        confettiRef.current = true;
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#a855f7','#ec4899','#facc15','#22d3ee'] });
+        setTimeout(() => confetti({ particleCount: 60, spread: 100, origin: { y: 0.5 }, angle: 60 }), 400);
+        setTimeout(() => confetti({ particleCount: 60, spread: 100, origin: { y: 0.5 }, angle: 120 }), 600);
+      }
     },
-    onError: (error: Error) => {
-      toast({
-        title: 'Setup Failed',
-        description: error.message || 'Failed to complete setup. Please try again.',
-        variant: 'destructive',
-      });
+    onError: () => {
+      toast({ title: 'Setup failed', description: 'Please try again.', variant: 'destructive' });
     },
   });
 
-  const handleComplete = useCallback(() => {
-    completeMutation.mutate(data);
-  }, [completeMutation, data]);
+  const awardXP = (amount: number, achievementIndex?: number) => {
+    setXp(prev => prev + amount);
+    setGainAmount(amount);
+    setShowXpGain(true);
+    setTimeout(() => setShowXpGain(false), 1500);
+    if (achievementIndex !== undefined) {
+      setTimeout(() => setAchievement(ACHIEVEMENTS[achievementIndex]), 600);
+    }
+  };
 
-  useEffect(() => {
-    announce(`Onboarding step ${currentStepIndex + 1} of ${defaultSteps.length}: ${currentStep.title}`);
-  }, [currentStepIndex, currentStep.title]);
+  const canProceed = () => {
+    if (step === 0) return data.persona !== null;
+    if (step === 1) return data.goals.length > 0;
+    if (step === 2) return data.experienceLevel !== null;
+    return true;
+  };
 
-  const StepComponent = currentStep.component;
+  const handleNext = () => {
+    if (!canProceed()) return;
+    awardXP(STEP_XP[step], step);
+    setStep(s => s + 1);
+  };
+
+  const handleBack = () => setStep(s => Math.max(0, s - 1));
+
+  const toggleGoal = (g: Goal) => {
+    setData(d => ({
+      ...d,
+      goals: d.goals.includes(g) ? d.goals.filter(x => x !== g) : [...d.goals, g],
+    }));
+  };
+
+  const rank = getRank(xp);
+  const RankIcon = rank.icon;
+  const progressPct = Math.round((step / 4) * 100);
+
+  const STEP_TITLES = ['Choose Your Class', 'Set Your Goals', 'Assess Your Level', 'Activate Your Arsenal'];
+  const STEP_SUBTITLES = [
+    'Who are you in the music world?',
+    'What do you want to achieve?',
+    "How experienced are you?",
+    'Connect your platforms for max power',
+  ];
+
+  if (done) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-md w-full"
+        >
+          <motion.div
+            animate={{ rotate: [0, -10, 10, -5, 5, 0], scale: [1, 1.15, 1] }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-yellow-500/30"
+          >
+            <Trophy className="w-12 h-12 text-white" />
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="text-4xl font-black text-white mb-2"
+          >
+            Mission Complete!
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-white/60 mb-6"
+          >
+            You've earned <span className="text-yellow-400 font-bold">{xp} XP</span> and reached{' '}
+            <span className={cn('font-bold', rank.textColor)}>{rank.label}</span> rank.
+            Your journey starts now.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="grid grid-cols-2 gap-3 mb-8"
+          >
+            {ACHIEVEMENTS.map((a, i) => {
+              const Icon = a.icon;
+              return (
+                <div key={i} className="flex items-center gap-2 bg-white/5 rounded-xl p-3 border border-white/10">
+                  <Icon className={cn('w-5 h-5 flex-shrink-0', a.color)} />
+                  <span className="text-xs text-white/80 font-medium">{a.title}</span>
+                </div>
+              );
+            })}
+          </motion.div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>
+            <Button
+              onClick={onComplete}
+              size="lg"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg py-6 rounded-2xl"
+            >
+              Enter Max Booster <Rocket className="ml-2 w-5 h-5" />
+            </Button>
+          </motion.div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-blue-950 dark:to-gray-900 p-4"
-      role="main"
-      aria-label="Onboarding wizard"
-    >
-      <Card className="w-full max-w-2xl shadow-2xl">
-        <CardHeader className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                Welcome to Max Booster
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Let's personalize your experience
-              </CardDescription>
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+      <AnimatePresence>
+        {showXpGain && <XPGain amount={gainAmount} key={xp} />}
+        {achievement && (
+          <AchievementToast key={achievement.title} achievement={achievement} onDone={() => setAchievement(null)} />
+        )}
+      </AnimatePresence>
+
+      <div className="w-full max-w-2xl">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <div className={cn('w-7 h-7 rounded-full bg-gradient-to-br flex items-center justify-center', rank.color)}>
+                <RankIcon className="w-3.5 h-3.5 text-white" />
+              </div>
+              <span className="text-sm text-white/70">Max Booster Setup</span>
             </div>
-            <Button
-              variant="ghost"
-              onClick={onSkip}
-              size="sm"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-4 h-4 mr-1" aria-hidden="true" />
-              Skip
-            </Button>
+            <button onClick={onSkip} className="text-xs text-white/30 hover:text-white/60 transition-colors">
+              Skip setup
+            </button>
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                Step {currentStepIndex + 1} of {defaultSteps.length}: {currentStep.title}
-              </span>
-              <span className="font-medium">{Math.round(progress)}%</span>
-            </div>
-            <Progress 
-              value={progress} 
-              className="h-2"
-              aria-label={`Progress: ${Math.round(progress)}% complete`}
-            />
-            <div className="flex justify-between gap-2 mt-2">
-              {defaultSteps.map((step, index) => (
-                <div
-                  key={step.id}
-                  className={cn(
-                    'flex-1 h-1 rounded-full transition-colors',
-                    index <= currentStepIndex ? 'bg-blue-500' : 'bg-muted'
-                  )}
-                  aria-hidden="true"
-                />
-              ))}
-            </div>
+          <XPBar xp={xp} total={TOTAL_XP} />
+          <div className="flex justify-between mt-3">
+            {STEP_TITLES.map((t, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <div className={cn(
+                  'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300',
+                  i < step ? 'bg-green-500 text-white' :
+                  i === step ? 'bg-gradient-to-br from-purple-600 to-pink-500 text-white ring-2 ring-purple-400/40' :
+                  'bg-white/10 text-white/30'
+                )}>
+                  {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
+                </div>
+                <span className={cn('text-[10px] hidden sm:block', i === step ? 'text-white/60' : 'text-white/20')}>
+                  {t.split(' ')[0]}
+                </span>
+              </div>
+            ))}
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-6">
-          <StepComponent
-            data={data}
-            onDataChange={handleDataChange}
-            onNext={handleNext}
-            onBack={handleBack}
-            canProceed={canProceed()}
-          />
+        {/* Step Card */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 40, scale: 0.97 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -40, scale: 0.97 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="bg-white/[0.04] border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-sm"
+          >
+            {/* Step header */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="outline" className="text-[10px] border-white/20 text-white/40 font-mono">
+                  STEP {step + 1} OF 4
+                </Badge>
+                <Badge variant="outline" className="text-[10px] border-yellow-500/30 text-yellow-500/80 font-mono">
+                  +{STEP_XP[step]} XP
+                </Badge>
+              </div>
+              <h2 className="text-2xl font-black text-white">{STEP_TITLES[step]}</h2>
+              <p className="text-white/50 text-sm mt-0.5">{STEP_SUBTITLES[step]}</p>
+            </div>
 
-          <div className="flex items-center justify-between pt-6 border-t">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={currentStepIndex === 0}
-              className="min-w-[100px] min-h-[44px]"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
-              Back
-            </Button>
-
-            {currentStepIndex < defaultSteps.length - 1 ? (
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className="min-w-[100px] min-h-[44px]"
-              >
-                Next
-                <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleComplete}
-                disabled={completeMutation.isPending}
-                className="min-w-[140px] min-h-[44px] bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-              >
-                {completeMutation.isPending ? (
-                  'Setting up...'
-                ) : (
-                  <>
-                    Get Started
-                    <Sparkles className="w-4 h-4 ml-2" aria-hidden="true" />
-                  </>
-                )}
-              </Button>
+            {/* Step 0: Persona / Class Selection */}
+            {step === 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {personas.map(p => {
+                  const Icon = p.icon;
+                  const selected = data.persona === p.value;
+                  return (
+                    <motion.button
+                      key={p.value}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setData(d => ({ ...d, persona: p.value }))}
+                      className={cn(
+                        'relative text-left p-4 rounded-2xl border-2 transition-all duration-200',
+                        selected
+                          ? 'border-white/40 bg-white/10'
+                          : cn('border-white/10 bg-white/[0.02]', p.border),
+                      )}
+                    >
+                      {selected && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute top-3 right-3 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"
+                        >
+                          <Check className="w-3 h-3 text-white" />
+                        </motion.div>
+                      )}
+                      <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3', p.color)}>
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <p className="text-[10px] font-bold tracking-widest uppercase text-white/30 mb-0.5">{p.class}</p>
+                      <p className="font-bold text-white text-sm">{p.label}</p>
+                      <p className="text-xs text-white/40 mt-0.5 leading-relaxed">{p.description}</p>
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {p.features.map(f => (
+                          <span key={f} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/40 border border-white/10">{f}</span>
+                        ))}
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
+
+            {/* Step 1: Goals */}
+            {step === 1 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {goals.map(g => {
+                  const Icon = g.icon;
+                  const selected = data.goals.includes(g.value);
+                  return (
+                    <motion.button
+                      key={g.value}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => toggleGoal(g.value)}
+                      className={cn(
+                        'relative p-4 rounded-2xl border-2 text-left transition-all duration-200',
+                        selected
+                          ? 'border-purple-500/60 bg-purple-500/10'
+                          : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                      )}
+                    >
+                      {selected && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute top-2 right-2 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+                        >
+                          <Check className="w-2.5 h-2.5 text-white" />
+                        </motion.div>
+                      )}
+                      <Icon className={cn('w-5 h-5 mb-2', selected ? 'text-purple-400' : 'text-white/40')} />
+                      <p className={cn('text-xs font-semibold', selected ? 'text-white' : 'text-white/60')}>{g.label}</p>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Step 2: Experience Level */}
+            {step === 2 && (
+              <div className="flex flex-col gap-3">
+                {experienceLevels.map(lvl => {
+                  const Icon = lvl.icon;
+                  const selected = data.experienceLevel === lvl.value;
+                  return (
+                    <motion.button
+                      key={lvl.value}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => setData(d => ({ ...d, experienceLevel: lvl.value }))}
+                      className={cn(
+                        'flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200',
+                        selected
+                          ? 'border-cyan-500/60 bg-cyan-500/10'
+                          : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                      )}
+                    >
+                      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
+                        selected ? 'bg-cyan-500/20' : 'bg-white/5'
+                      )}>
+                        <Icon className={cn('w-5 h-5', selected ? 'text-cyan-400' : 'text-white/40')} />
+                      </div>
+                      <div className="flex-1">
+                        <p className={cn('font-bold text-sm', selected ? 'text-white' : 'text-white/70')}>{lvl.label}</p>
+                        <p className="text-xs text-white/40">{lvl.sublabel}</p>
+                      </div>
+                      <span className={cn('text-[10px] font-bold', selected ? 'text-cyan-400' : 'text-white/20')}>{lvl.xpBonus}</span>
+                      {selected && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                          className="w-5 h-5 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0"
+                        >
+                          <Check className="w-3 h-3 text-white" />
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Step 3: Platform Connections */}
+            {step === 3 && (
+              <div>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {[
+                    { id: 'streaming', label: 'Streaming Platforms', icon: Music, desc: 'Spotify, Apple Music, etc.', color: 'text-green-400' },
+                    { id: 'social', label: 'Social Media', icon: Users, desc: 'Instagram, TikTok, YouTube', color: 'text-pink-400' },
+                    { id: 'distribution', label: 'Distribution', icon: Share2, desc: 'DistroKid, TuneCore, etc.', color: 'text-blue-400' },
+                    { id: 'analytics', label: 'Analytics', icon: BarChart3, desc: 'Spotify for Artists, etc.', color: 'text-purple-400' },
+                  ].map(platform => {
+                    const Icon = platform.icon;
+                    const connected = data.connectedPlatforms.includes(platform.id);
+                    return (
+                      <motion.button
+                        key={platform.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setData(d => ({
+                          ...d,
+                          connectedPlatforms: connected
+                            ? d.connectedPlatforms.filter(x => x !== platform.id)
+                            : [...d.connectedPlatforms, platform.id],
+                        }))}
+                        className={cn(
+                          'p-4 rounded-2xl border-2 text-left transition-all duration-200',
+                          connected
+                            ? 'border-green-500/50 bg-green-500/10'
+                            : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <Icon className={cn('w-5 h-5', connected ? 'text-green-400' : platform.color + '/60')} />
+                          {connected && (
+                            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
+                              className="text-[10px] font-bold text-green-400"
+                            >✓ NOTED</motion.span>
+                          )}
+                        </div>
+                        <p className={cn('text-xs font-semibold', connected ? 'text-white' : 'text-white/60')}>{platform.label}</p>
+                        <p className="text-[10px] text-white/30 mt-0.5">{platform.desc}</p>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-center text-white/30">
+                  You can connect all accounts from Settings after setup — this just tells us your current setup.
+                </p>
+              </div>
+            )}
+
+            {/* Navigation */}
+            <div className="flex items-center justify-between mt-8">
+              <Button
+                variant="ghost"
+                onClick={handleBack}
+                disabled={step === 0}
+                className="text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-20"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" /> Back
+              </Button>
+
+              {step < 3 ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                  className={cn(
+                    'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700',
+                    'text-white font-bold px-6 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed'
+                  )}
+                >
+                  Next <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => { awardXP(STEP_XP[3], 3); completeMutation.mutate(); }}
+                  disabled={completeMutation.isPending}
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-black px-8 rounded-xl"
+                >
+                  {completeMutation.isPending ? 'Launching...' : (
+                    <><Sparkles className="w-4 h-4 mr-1.5" /> Launch My Career</>
+                  )}
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
-}
-
-export function useOnboardingProgress() {
-  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
-
-  const markStepComplete = useCallback((stepId: string) => {
-    setCompletedSteps((prev) => {
-      if (prev.includes(stepId)) return prev;
-      return [...prev, stepId];
-    });
-  }, []);
-
-  const isStepComplete = useCallback((stepId: string) => {
-    return completedSteps.includes(stepId);
-  }, [completedSteps]);
-
-  const getProgress = useCallback(() => {
-    return (completedSteps.length / defaultSteps.length) * 100;
-  }, [completedSteps]);
-
-  return {
-    completedSteps,
-    markStepComplete,
-    isStepComplete,
-    getProgress,
-    totalSteps: defaultSteps.length,
-  };
 }
