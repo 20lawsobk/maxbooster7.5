@@ -151,8 +151,24 @@ function isNativeApp(): boolean {
     !!(window as any).Capacitor?.isNativePlatform?.();
 }
 
-const PUBLIC_ONLY_ROUTES = ['/', '/about', '/blog', '/features', '/solo-founder-story'];
-const PUBLIC_ONLY_PREFIXES = ['/blog/'];
+const PUBLIC_ONLY_ROUTES = [
+  '/',
+  '/about',
+  '/features',
+  '/pricing',
+  '/security',
+  '/dmca',
+  '/terms',
+  '/privacy',
+  '/api-docs',
+  '/documentation',
+  '/solo-founder-story',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+];
+const PUBLIC_ONLY_PREFIXES = ['/blog/', '/register/payment/', '/register/'];
 
 function AppWithKeyboardShortcuts() {
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
