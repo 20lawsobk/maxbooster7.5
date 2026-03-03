@@ -1,0 +1,453 @@
+name: Build All Platforms
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Version tag (e.g. v3.1.0) — leave blank for dev build'
+        required: false
+        default: ''
+      desktop_platforms:
+        description: 'Desktop platforms to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - linux
+          - windows
+          - macos
+      mobile_platforms:
+        description: 'Mobile platforms to build'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - android
+          - ios
+      build_type:
+        description: 'Mobile build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+
+env:
+  NODE_VERSION: '22'
+  JAVA_VERSION: '21'
+  APP_NAME: 'Max Booster'
+  APP_ID: 'com.blawzmusic.maxbooster'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.inputs.desktop_platforms == 'linux' ||
+      github.event.inputs.desktop_platforms == 'all'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools rpm fakeroot dpkg
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Electron dependencies
+        run: npm install --prefix electron --no-audit
+
+      - name: Build web assets
+        run: npm run build
+        env:
+          NODE_ENV: production
+          SKIP_BOOSTERSTATE: '1'
+
+      - name: Build Linux packages
+        run: npx electron-builder --linux --publish never --projectDir electron
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-builds
+          path: |
+            dist-installers/*.AppImage
+            dist-installers/*.deb
+            dist-installers/*.tar.gz
+          if-no-files-found: warn
+          retention-days: 14
+
+  build-windows:
+    runs-on: windows-latest
+    if: >-
+      github.event.inputs.desktop_platforms == 'windows' ||
+      github.event.inputs.desktop_platforms == 'all'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Electron dependencies
+        shell: bash
+        run: npm install --prefix electron --no-audit
+
+      - name: Build web assets
+        run: npm run build
+        env:
+          NODE_ENV: production
+          SKIP_BOOSTERSTATE: '1'
+
+      - name: Build Windows packages
+        run: npx electron-builder --win --publish never --projectDir electron
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-builds
+          path: dist-installers/*.exe
+          if-no-files-found: warn
+          retention-days: 14
+
+  build-macos:
+    runs-on: macos-14
+    if: >-
+      github.event.inputs.desktop_platforms == 'macos' ||
+      github.event.inputs.desktop_platforms == 'all'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Electron dependencies
+        run: npm install --prefix electron --no-audit
+
+      - name: Build web assets
+        run: npm run build
+        env:
+          NODE_ENV: production
+          SKIP_BOOSTERSTATE: '1'
+
+      - name: Setup macOS Code Signing
+        id: mac_signing
+        env:
+          MAC_CERTIFICATE_BASE64: ${{ secrets.MAC_CERTIFICATE_BASE64 }}
+          MAC_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ github.run_id }}
+        run: |
+          if [ -z "$MAC_CERTIFICATE_BASE64" ]; then
+            echo "No signing certificate — building unsigned"
+            echo "MAC_SIGNING_CONFIGURED=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          echo -n "$MAC_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security import $CERTIFICATE_PATH -P "$MAC_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+          echo "MAC_SIGNING_CONFIGURED=true" >> $GITHUB_OUTPUT
+
+      - name: Build macOS packages
+        run: npx electron-builder --mac --publish never --projectDir electron
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Cleanup Keychain
+        if: always()
+        run: |
+          if [ -n "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-builds
+          path: |
+            dist-installers/*.dmg
+            dist-installers/*.zip
+          if-no-files-found: warn
+          retention-days: 14
+
+  build-android:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.inputs.mobile_platforms == 'android' ||
+      github.event.inputs.mobile_platforms == 'both'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 12266719
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+        env:
+          NODE_ENV: production
+          SKIP_BOOSTERSTATE: '1'
+
+      - name: Sync Capacitor Android
+        run: |
+          if [ ! -d "android" ]; then npx cap add android; fi
+          npx cap sync android
+
+      - name: Setup Android Signing
+        if: github.event.inputs.build_type == 'release'
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "::warning::No Android keystore provided — release will be unsigned"
+            exit 0
+          fi
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/release.keystore
+          cat > android/keystore.properties << EOF
+          storeFile=../release.keystore
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - name: Build Android Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Build Android Release APK
+        if: github.event.inputs.build_type == 'release'
+        working-directory: android
+        run: ./gradlew assembleRelease bundleRelease --no-daemon
+
+      - name: Upload Android Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload Android Release APK
+        if: github.event.inputs.build_type == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload Android App Bundle
+        if: github.event.inputs.build_type == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: warn
+          retention-days: 30
+
+  build-ios:
+    runs-on: macos-14
+    if: >-
+      github.event.inputs.mobile_platforms == 'ios' ||
+      github.event.inputs.mobile_platforms == 'both'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.4'
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/App/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+        env:
+          NODE_ENV: production
+          SKIP_BOOSTERSTATE: '1'
+
+      - name: Sync Capacitor iOS
+        run: |
+          if [ ! -d "ios" ]; then npx cap add ios; fi
+          npx cap sync ios
+
+      - name: Install CocoaPods
+        working-directory: ios/App
+        run: pod install || pod install --repo-update
+
+      - name: Build iOS Simulator (Debug)
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            build
+
+      - name: Upload iOS Simulator Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-build
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/*.app
+          if-no-files-found: warn
+          retention-days: 14
+
+  create-release:
+    needs: [build-linux, build-windows, build-macos, build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: >-
+      always() &&
+      github.event.inputs.version_tag != '' &&
+      (needs.build-linux.result == 'success' || needs.build-windows.result == 'success' ||
+       needs.build-macos.result == 'success' || needs.build-android.result == 'success' ||
+       needs.build-ios.result == 'success')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version_tag }}
+          name: "${{ env.APP_NAME }} ${{ github.event.inputs.version_tag }}"
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.event.inputs.version_tag, 'alpha') || contains(github.event.inputs.version_tag, 'beta') || contains(github.event.inputs.version_tag, 'rc') }}
+          files: |
+            artifacts/linux-builds/*
+            artifacts/windows-builds/*
+            artifacts/macos-builds/*
+            artifacts/android-release-apk/*
+            artifacts/android-aab/*
+            artifacts/ios-release-ipa/*
+          body: |
+            ## ${{ env.APP_NAME }} ${{ github.event.inputs.version_tag }}
+
+            ### What's New
+            - Platform-adaptive Lyrics Panel (docked on desktop, full-screen overlay on mobile)
+            - Platform-adaptive Audio Device Management (full enumeration on desktop, permission-based on mobile)
+            - Native Electron fullscreen (uses OS window fullscreen, not browser fullscreen API)
+            - Mobile-optimized touch targets and layouts throughout the DAW
+
+            ### Desktop Downloads
+            | Platform | Format | Notes |
+            |----------|--------|-------|
+            | Windows | NSIS Installer / Portable | Run installer or portable .exe |
+            | macOS | DMG / ZIP | Open DMG and drag to Applications |
+            | Linux | AppImage / DEB / tar.gz | `chmod +x *.AppImage` to run |
+
+            ### Mobile Downloads
+            | Platform | Format | Notes |
+            |----------|--------|-------|
+            | Android | APK | Enable "Install from unknown sources" |
+            | Android | AAB | Upload to Google Play internal testing |
+            | iOS | IPA | Use Apple Transporter for App Store Connect |
+
+            See the automatically generated release notes below for full details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  summary:
+    needs: [build-linux, build-windows, build-macos, build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## Max Booster — All Platform Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Desktop" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux | ${{ needs.build-linux.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows | ${{ needs.build-windows.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS | ${{ needs.build-macos.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Mobile" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Android | ${{ needs.build-android.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| iOS | ${{ needs.build-ios.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Platform-Adaptive Features" >> $GITHUB_STEP_SUMMARY
+          echo "- Lyrics Panel: docked on desktop, full-screen overlay on mobile" >> $GITHUB_STEP_SUMMARY
+          echo "- Audio Devices: full Web Audio API enumeration on desktop/Electron, permission-based on mobile" >> $GITHUB_STEP_SUMMARY
+          echo "- Fullscreen: native Electron window API on desktop, browser Fullscreen API on web" >> $GITHUB_STEP_SUMMARY

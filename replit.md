@@ -133,5 +133,29 @@ This ensures internal monitoring, health checks, and Replit's own infrastructure
 
 ### Fullscreen Mode
 - Maximize2 / Minimize2 icon at right of toolbar; keyboard shortcut F11
-- Uses Browser Fullscreen API (`containerRef.current.requestFullscreen()`)
-- `fullscreenchange` event listener keeps `isFullscreen` state in sync; button turns yellow when active
+- **Platform-adaptive**:
+  - **Electron desktop**: Uses native OS window fullscreen via IPC (`toggle-fullscreen`, `is-fullscreen`, `fullscreen-changed` events in `electron/main.js` + `electron/preload.js`)
+  - **Web / Capacitor**: Uses Browser Fullscreen API (`containerRef.current.requestFullscreen()`)
+- `fullscreenchange` / Electron IPC listener keeps `isFullscreen` state in sync; button turns yellow when active
+
+### Platform Detection (`client/src/hooks/usePlatform.ts`)
+- Exports `usePlatform()` hook and `getPlatform()` utility
+- Returns `{ type, isElectron, isCapacitor, isAndroid, isIOS, isMobile, isDesktop, electronOS }`
+- Detects: Electron via `window.electronAPI?.isElectron`, Capacitor via `window.Capacitor?.isNativePlatform()`
+- Cached on first call (singleton, no React re-renders)
+
+### Mobile Lyrics Panel (`client/src/components/studio/MobileLyricsPanel.tsx`)
+- Full-screen overlay (fixed inset-0, z-50) instead of docked panel — used when `platform.isMobile === true`
+- Shares the same `LyricSection` / `LyricLine` / `SectionType` types from `LyricsPanel.tsx`
+- Touch-friendly: large tap targets, auto-growing textarea, swipeable section tabs
+- Same features as desktop: numbered lines, timestamp stamping, auto-scroll, S/M/L font sizes
+
+### Mobile Audio Dialog (`client/src/components/studio/MobileAudioDialog.tsx`)
+- Bottom-sheet overlay — used when `platform.isMobile === true`
+- Simplified for mobile OS: microphone permission request, sample rate chips, system output (no device enumeration)
+- "Test Audio" button plays 440Hz tone; "Refresh" re-checks permissions
+
+### GitHub Actions CI/CD
+- **`.github/workflows/build-desktop.yml`**: Builds on push/tag — Linux (AppImage, DEB, tar.gz), Windows (NSIS, Portable), macOS (DMG, ZIP). macOS optional code signing via `MAC_CERTIFICATE_BASE64` secret.
+- **`.github/workflows/build-mobile.yml`**: Builds on push/tag — Android (debug APK + release APK + AAB), iOS (Simulator build + IPA). Play Store upload via `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` secret.
+- **`.github/workflows/build-all.yml`**: Manual trigger (`workflow_dispatch`) to build all 5 platforms in one run. Selectable desktop platforms, mobile platforms, and build type (debug/release). Creates a GitHub Release when a `version_tag` is provided.

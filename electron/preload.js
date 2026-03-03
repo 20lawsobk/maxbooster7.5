@@ -57,6 +57,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('update-status', (_event, data) => callback(data));
     return () => ipcRenderer.removeAllListeners('update-status');
   },
+
+  toggleFullscreen: () => ipcRenderer.invoke('toggle-fullscreen'),
+
+  isFullscreen: () => ipcRenderer.invoke('is-fullscreen'),
+
+  onFullscreenChanged: (callback) => {
+    const handler = (_event, val) => callback(val);
+    ipcRenderer.on('fullscreen-changed', handler);
+    return () => ipcRenderer.removeListener('fullscreen-changed', handler);
+  },
 });
 
 window.addEventListener('DOMContentLoaded', () => {

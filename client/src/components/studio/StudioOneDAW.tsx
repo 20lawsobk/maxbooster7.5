@@ -49,6 +49,9 @@ import { StemExportDialog } from './StemExportDialog';
 import { StudioStartHub } from './StudioStartHub';
 import { LyricsPanel, LyricSection, makeDefaultSections } from './LyricsPanel';
 import { AudioDeviceDialog } from './AudioDeviceDialog';
+import MobileLyricsPanel from './MobileLyricsPanel';
+import MobileAudioDialog from './MobileAudioDialog';
+import { usePlatform } from '@/hooks/usePlatform';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -66,6 +69,7 @@ const TRACK_COLORS = [
 ];
 
 export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
+  const platform = usePlatform();
   const store = useUnifiedStore();
   const { tracks, masterTrack, transport, view, project, canUndo, canRedo } = store;
   const { toast } = useToast();
@@ -183,18 +187,27 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   }, [project.isDirty]);
 
   useEffect(() => {
+    if (platform.isElectron && window.electronAPI?.onFullscreenChanged) {
+      const unsub = window.electronAPI.onFullscreenChanged((val) => setIsFullscreen(val));
+      window.electronAPI.isFullscreen?.().then((v) => setIsFullscreen(!!v)).catch(() => {});
+      return () => { if (typeof unsub === 'function') unsub(); };
+    }
     const onFSChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFSChange);
     return () => document.removeEventListener('fullscreenchange', onFSChange);
-  }, []);
+  }, [platform.isElectron]);
 
   const handleToggleFullscreen = useCallback(() => {
+    if (platform.isElectron && window.electronAPI?.toggleFullscreen) {
+      window.electronAPI.toggleFullscreen();
+      return;
+    }
     if (!document.fullscreenElement) {
       (containerRef as React.RefObject<HTMLElement>).current?.requestFullscreen?.().catch(() => {});
     } else {
       document.exitFullscreen?.().catch(() => {});
     }
-  }, [containerRef]);
+  }, [containerRef, platform.isElectron]);
 
   const storeRef = useRef(store);
   useEffect(() => { storeRef.current = store; });
@@ -406,13 +419,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       'studio.toggle-video-track': () => setShowVideoTrack(prev => !prev),
       'studio.toggle-lyrics': () => setShowLyrics(prev => !prev),
       'studio.audio-devices': () => setShowAudioDevices(true),
-      'studio.fullscreen': () => {
-        if (!document.fullscreenElement) {
-          (containerRef as React.RefObject<HTMLElement>).current?.requestFullscreen?.().catch(() => {});
-        } else {
-          document.exitFullscreen?.().catch(() => {});
-        }
-      },
+      'studio.fullscreen': () => handleToggleFullscreen(),
       'studio.stop': () => {
         store.stop();
         if (audioInitializedRef.current) audioEngine.stop();
@@ -1080,7 +1087,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             />
           )}
 
-          {showLyrics && (
+          {showLyrics && !platform.isMobile && (
             <LyricsPanel
               isPlaying={transport.isPlaying}
               playheadPosition={livePosition}
@@ -1092,6 +1099,18 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
               onActiveSectionChange={setLyricsActiveSectionId}
             />
           )}
+
+          <MobileLyricsPanel
+            open={showLyrics && platform.isMobile}
+            onClose={() => setShowLyrics(false)}
+            sections={lyricsSections}
+            activeSectionId={lyricsActiveSectionId}
+            onSectionsChange={setLyricsSections}
+            onActiveSectionChange={setLyricsActiveSectionId}
+            currentTime={livePosition}
+            onSeek={handleSeek}
+            isPlaying={transport.isPlaying}
+          />
         </div>
 
         <AnimatePresence>
@@ -1529,9 +1548,16 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         projectId={projectId}
       />
 
-      <AudioDeviceDialog
-        open={showAudioDevices}
-        onOpenChange={setShowAudioDevices}
+      {!platform.isMobile && (
+        <AudioDeviceDialog
+          open={showAudioDevices}
+          onOpenChange={setShowAudioDevices}
+        />
+      )}
+
+      <MobileAudioDialog
+        open={showAudioDevices && platform.isMobile}
+        onClose={() => setShowAudioDevices(false)}
       />
     </div>
   );

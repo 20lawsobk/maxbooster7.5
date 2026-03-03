@@ -41,6 +41,14 @@ function createWindow() {
     mainWindow.show();
   });
 
+  mainWindow.on('enter-full-screen', () => {
+    if (mainWindow) mainWindow.webContents.send('fullscreen-changed', true);
+  });
+
+  mainWindow.on('leave-full-screen', () => {
+    if (mainWindow) mainWindow.webContents.send('fullscreen-changed', false);
+  });
+
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5000/dashboard');
     mainWindow.webContents.openDevTools();
@@ -225,6 +233,17 @@ function setupAutoUpdater() {
     if (mainWindow) mainWindow.webContents.send('update-status', { status: 'error', message: msg });
   });
 }
+
+ipcMain.handle('toggle-fullscreen', () => {
+  if (!mainWindow) return false;
+  const next = !mainWindow.isFullScreen();
+  mainWindow.setFullScreen(next);
+  return next;
+});
+
+ipcMain.handle('is-fullscreen', () => {
+  return mainWindow ? mainWindow.isFullScreen() : false;
+});
 
 ipcMain.handle('check-for-updates', async () => {
   try {
