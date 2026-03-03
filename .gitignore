@@ -60,3 +60,4 @@ boosterstate/target/
 # Screenshots and videos (large media assets)
 client/public/screenshots/
 client/public/videos/
+.github-runner/
