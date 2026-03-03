@@ -567,41 +567,43 @@ export class RoyaltyEngine {
     const results: RecoupmentResult[] = [];
     let remainingAmount = amount;
 
-    for (const account of activeAccounts) {
-      if (remainingAmount <= 0) break;
+    await db.transaction(async (tx) => {
+      for (const account of activeAccounts) {
+        if (remainingAmount <= 0) break;
 
-      const balance = Number(account.remainingBalance);
-      if (balance <= 0) continue;
+        const balance = Number(account.remainingBalance);
+        if (balance <= 0) continue;
 
-      const recoupmentRate = Number(account.recoupmentRate) / 100;
-      const maxRecoupable = remainingAmount * recoupmentRate;
-      const amountToRecoup = Math.min(maxRecoupable, balance);
-      
-      const newBalance = balance - amountToRecoup;
-      const isFullyRecouped = newBalance <= 0;
+        const recoupmentRate = Number(account.recoupmentRate) / 100;
+        const maxRecoupable = remainingAmount * recoupmentRate;
+        const amountToRecoup = Math.min(maxRecoupable, balance);
 
-      await db
-        .update(recoupmentAccounts)
-        .set({
-          recoupedAmount: sql`${recoupmentAccounts.recoupedAmount} + ${amountToRecoup}`,
-          remainingBalance: String(newBalance),
-          fullyRecoupedAt: isFullyRecouped ? new Date() : null,
-          isActive: !isFullyRecouped,
-          updatedAt: new Date(),
-        })
-        .where(eq(recoupmentAccounts.id, account.id));
+        const newBalance = balance - amountToRecoup;
+        const isFullyRecouped = newBalance <= 0;
 
-      results.push({
-        accountId: account.id,
-        previousBalance: balance,
-        amountApplied: amountToRecoup,
-        newBalance,
-        isFullyRecouped,
-        remainingEarnings: remainingAmount - amountToRecoup,
-      });
+        await tx
+          .update(recoupmentAccounts)
+          .set({
+            recoupedAmount: sql`${recoupmentAccounts.recoupedAmount} + ${amountToRecoup}`,
+            remainingBalance: String(newBalance),
+            fullyRecoupedAt: isFullyRecouped ? new Date() : null,
+            isActive: !isFullyRecouped,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoupmentAccounts.id, account.id));
 
-      remainingAmount -= amountToRecoup;
-    }
+        results.push({
+          accountId: account.id,
+          previousBalance: balance,
+          amountApplied: amountToRecoup,
+          newBalance,
+          isFullyRecouped,
+          remainingEarnings: remainingAmount - amountToRecoup,
+        });
+
+        remainingAmount -= amountToRecoup;
+      }
+    });
 
     return results;
   }

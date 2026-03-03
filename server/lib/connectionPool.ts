@@ -33,6 +33,7 @@ class OptimizedConnectionPool {
   private queryCount = 0;
   private errorCount = 0;
   private avgQueryTime = 0;
+  private monitoringInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.config = this.getOptimalConfig();
@@ -91,7 +92,7 @@ class OptimizedConnectionPool {
   }
 
   private startMonitoring(): void {
-    setInterval(() => {
+    this.monitoringInterval = setInterval(() => {
       const stats = this.getStats();
       
       if (stats.utilizationPercent > 80) {
@@ -102,6 +103,13 @@ class OptimizedConnectionPool {
         logger.warn(`High waiting queue: ${stats.waitingClients} clients waiting`);
       }
     }, 30000);
+  }
+
+  stopMonitoring(): void {
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = null;
+    }
   }
 
   async query<T = any>(text: string, params?: any[]): Promise<T[]> {
@@ -203,6 +211,7 @@ class OptimizedConnectionPool {
 
   async shutdown(): Promise<void> {
     logger.info('Shutting down connection pool...');
+    this.stopMonitoring();
     await this.pool.end();
     logger.info('Connection pool shut down');
   }

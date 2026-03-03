@@ -64,6 +64,15 @@ export function validateScaleConfig(): ValidationResult {
     );
   }
 
+  // ── App URL ───────────────────────────────────────────────────────────────
+  if (!process.env.APP_URL && !process.env.REPLIT_DEV_DOMAIN && !process.env.DOMAIN) {
+    warnings.push(
+      '[ScaleConfig] APP_URL is not set. ' +
+      'Email verification links and OAuth redirect URIs will use a fallback URL. ' +
+      'Set APP_URL=https://your-domain.replit.app for correct email links in production.'
+    );
+  }
+
   // ── BullMQ ────────────────────────────────────────────────────────────────
   const bullConcurrency = parseInt(process.env.BULLMQ_CONCURRENCY ?? '5', 10);
   if (bullConcurrency > 20) {

@@ -1,4 +1,7 @@
 import { storage } from "../storage";
+import { db } from '../db.js';
+import { dspAnalytics } from '@shared/schema';
+import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from "nanoid";
 import type { 
   InsertRelease, 
@@ -273,17 +276,56 @@ export class DistributionService {
   }
 
   /**
-   * Get release analytics
+   * Get release analytics — aggregated from dsp_analytics table
    */
   async getReleaseAnalytics(releaseId: string, userId: string) {
     try {
-      // In production, fetch from platform APIs
+      const rows = await db
+        .select({
+          platform: dspAnalytics.platform,
+          totalStreams: sql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          totalRevenue: sql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
+          totalSaves: sql<number>`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
+          totalListeners: sql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
+        })
+        .from(dspAnalytics)
+        .where(eq(dspAnalytics.releaseId, releaseId))
+        .groupBy(dspAnalytics.platform);
+
+      const totalStreams = rows.reduce((s, r) => s + Number(r.totalStreams), 0);
+      const totalRevenue = rows.reduce((s, r) => s + Number(r.totalRevenue), 0);
+
+      const platforms: Record<string, { streams: number; revenue: number; saves: number; listeners: number }> = {};
+      for (const row of rows) {
+        platforms[row.platform] = {
+          streams: Number(row.totalStreams),
+          revenue: Number(row.totalRevenue),
+          saves: Number(row.totalSaves),
+          listeners: Number(row.totalListeners),
+        };
+      }
+
+      const timeline = await db
+        .select({
+          date: dspAnalytics.date,
+          streams: sql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          revenue: sql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
+        })
+        .from(dspAnalytics)
+        .where(eq(dspAnalytics.releaseId, releaseId))
+        .groupBy(dspAnalytics.date)
+        .orderBy(dspAnalytics.date);
+
       return {
-        totalStreams: 0,
-        totalRevenue: 0,
-        platforms: {},
+        totalStreams,
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        platforms,
         demographics: {},
-        timeline: []
+        timeline: timeline.map(t => ({
+          date: t.date,
+          streams: Number(t.streams),
+          revenue: Math.round(Number(t.revenue) * 100) / 100,
+        })),
       };
     } catch (error: unknown) {
       logger.error("Analytics error:", error);
