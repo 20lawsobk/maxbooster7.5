@@ -8,6 +8,9 @@
     "name": "B-Lawz Music",
     "email": "blawzmusic@gmail.com"
   },
+  "devDependencies": {
+    "electron": "^40.4.1"
+  },
   "dependencies": {
     "electron-updater": "^6.8.3"
   },
