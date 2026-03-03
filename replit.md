@@ -41,13 +41,25 @@ The server serves the frontend using Vite middleware in development and as stati
 
 - **Frontend Frameworks**: React 19, Vite 7, TypeScript, TailwindCSS 4, Wouter, Zustand, TanStack Query.
 - **Backend Frameworks**: Express.js, Node.js 22, tsx.
-- **Database**: PostgreSQL (via Neon serverless), Drizzle ORM.
-- **Caching/Queuing/Sessions**: Redis (for sessions, rate limits, BullMQ queues, pub/sub).
-- **Object Storage**: Replit Object Storage.
-- **Payment Processing**: Stripe.
-- **Email Delivery**: SendGrid.
-- **Error Tracking**: Sentry.
-- **Push Notifications**: Web Push Protocol.
-- **Music Integrations**: Spotify, LabelGrid.
-- **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
-- **Version Control**: GitHub (for CI/CD).
+- **Database**: PostgreSQL (via Neon serverless), Drizzle ORM. NEON_DATABASE_URL configured.
+- **Caching/Queuing/Sessions**: Redis (REDIS_URL configured, Pub/Sub active for cross-instance broadcasting).
+- **Object Storage**: Replit Object Storage (hot tier, runtime-managed bucket).
+- **Payment Processing**: Stripe (STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET, WEBHOOK_SECRET configured; live price IDs fetched automatically).
+- **Email Delivery**: SendGrid (SENDGRID_API_KEY configured).
+- **Error Tracking**: Sentry (SENTRY_DSN configured).
+- **Push Notifications**: Web Push Protocol (VAPID keys configured).
+- **Music Integrations**: Spotify (SPOTIFY_CLIENT_ID/SECRET), LabelGrid (LABELGRID_API_TOKEN).
+- **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok (sandbox+live), YouTube, LinkedIn, Google, Threads — all credentials configured.
+- **Version Control**: GitHub (GITHUB_PAT, GITHUB_REPO configured for CI/CD desktop/mobile builds).
+- **Search APIs**: Exa (EXA_API_KEY), Tavily (TAVILY_API_KEY).
+
+## Production Configuration
+
+- **Run Mode**: `npm run start` (production cluster, `dist/cluster.cjs`)
+- **Build**: `npm run build` (Vite frontend + esbuild server bundle)
+- **Workflow**: Configured for autoscale deployment
+- **Environment**: NODE_ENV=production, all 23 required env vars validated at startup
+- **BoosterState**: Pre-compiled Rust WAL binary at `./boosterstate/target/debug/boosterstate`, port 9877
+- **Storage**: Hybrid — Replit Object Storage (hot) + Pocket Dimension (cold) + BoosterState (metadata)
+- **Admin**: blawzmusic@gmail.com (role: admin), credentials synced on every startup
+- **Self-Evolution**: Disabled (ENABLE_SELF_EVOLUTION=false)
