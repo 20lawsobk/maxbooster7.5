@@ -295,8 +295,8 @@
     "zustand": "^5.0.11"
   },
   "optionalDependencies": {
-    "bufferutil": "^4.1.0",
-    "@esbuild/linux-x64": "^0.27.3"
+    "@esbuild/linux-x64": "^0.27.3",
+    "bufferutil": "^4.1.0"
   },
   "overrides": {
     "minimatch": "^10.2.3",
