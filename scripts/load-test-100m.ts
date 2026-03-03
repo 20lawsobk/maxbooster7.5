@@ -68,12 +68,32 @@ interface Result {
   path: string;
 }
 
-function request(path: string): Promise<Result> {
+// Pre-generate a pool of 10,000 simulated IPs so each VU looks like a unique user.
+// Real traffic has millions of distinct IPs; collapsing all VUs to 127.0.0.1 would
+// trigger per-IP rate limits, which would dominate errors and hide real capacity limits.
+const IP_POOL = Array.from({ length: 10_000 }, (_, i) => {
+  const a = 10 + Math.floor(i / 65536);
+  const b = Math.floor((i % 65536) / 256);
+  const c = i % 256;
+  return `${a}.${b}.${c}.${Math.floor(Math.random() * 254) + 1}`;
+});
+
+let _ipIdx = 0;
+function nextIP(): string { return IP_POOL[_ipIdx++ % IP_POOL.length]; }
+
+function request(path: string, vuIp: string): Promise<Result> {
   return new Promise((resolve) => {
     const t0 = performance.now();
     const req = http.request(
       { hostname: 'localhost', port: 5000, path, method: 'GET',
-        headers: { 'User-Agent': 'MaxBooster-100M-LoadTest/2.0', Accept: 'application/json' },
+        headers: {
+          'User-Agent': 'MaxBooster-100M-LoadTest/2.0',
+          Accept: 'application/json',
+          // Simulate unique client IPs so per-IP rate limits don't artificially cap
+          // all test VUs under a single quota bucket (127.0.0.1).
+          'X-Forwarded-For': vuIp,
+          'X-Real-IP': vuIp,
+        },
         timeout: 8000 },
       (res) => {
         res.resume();                     // drain body
@@ -97,11 +117,12 @@ async function runTier(label: string, vus: number, durationSec: number): Promise
   const results: Result[] = [];
   const deadline = Date.now() + durationSec * 1000;
 
-  // Each VU loops for the full duration (no think-time — worst-case)
+  // Each VU gets its own unique IP, simulating distinct real users.
   const vuWorkers = Array.from({ length: vus }, async () => {
+    const vuIp = nextIP();   // sticky per VU — same user makes repeated requests
     while (Date.now() < deadline) {
       const ep = pickEndpoint();
-      results.push(await request(ep.path));
+      results.push(await request(ep.path, vuIp));
     }
   });
 

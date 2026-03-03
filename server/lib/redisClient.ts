@@ -33,7 +33,11 @@ function buildStandaloneClient(urlOverride?: string): Redis {
     enableReadyCheck: false,
     lazyConnect: false,
     connectTimeout: 5000,
-    commandTimeout: 2000,
+    // 500ms fail-fast: under heavy load Redis commands queue up; a 2s timeout
+    // causes a 2s-deep backlog that stalls every request. 500ms fails fast so
+    // the in-memory fallback takes over without blocking the event loop, while
+    // still allowing enough time for remote Redis TLS handshake on cold start.
+    commandTimeout: 500,
     retryStrategy(times) {
       if (times > 3) return null;
       return Math.min(times * 300, 2000);
@@ -61,7 +65,7 @@ function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> 
     redisOptions: {
       maxRetriesPerRequest: 1,
       enableReadyCheck: false,
-      commandTimeout: 2000,
+      commandTimeout: 500,
       connectTimeout: 5000,
       password: new URL(urls[0]).password || undefined,
       tls: urls[0].startsWith('rediss://') ? {} : undefined,

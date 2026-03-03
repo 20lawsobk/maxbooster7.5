@@ -21,16 +21,16 @@ const COUNTER_KEY = 'api:inflight';
 const MAX_CONCURRENT_REQUESTS = parseInt(process.env.MAX_CONCURRENT_REQUESTS ?? '5000', 10);
 const RETRY_AFTER_SECONDS = 5;
 
-// When Redis is unavailable the global counter is lost and each worker tracks
-// independently. To prevent the total across all workers from silently dwarfing
-// the global limit we divide by the expected total worker count.
-// e.g. global=5000 / (10 replicas × 6 workers) ≈ 83 per process.
-const EXPECTED_TOTAL_WORKERS =
-  parseInt(process.env.MAX_REPLICAS ?? '10', 10) *
-  parseInt(process.env.CLUSTER_WORKERS ?? '6', 10);
+// When Redis is unavailable, each replica falls back to independent per-process tracking.
+// Replicas are separate network endpoints behind a load balancer — they don't share an
+// in-process counter. Dividing by replica count here would be double-counting: each
+// replica already receives only its proportional share of traffic from the load balancer.
+// So we only divide by CLUSTER_WORKERS (the number of worker processes within this replica).
+// e.g. global=8000 / 6 workers ≈ 1333 per process — each process enforces its own slice.
+const CLUSTER_WORKERS_PER_REPLICA = parseInt(process.env.CLUSTER_WORKERS ?? '6', 10);
 const DEGRADED_PER_PROCESS_LIMIT = Math.max(
-  10,
-  Math.ceil(MAX_CONCURRENT_REQUESTS / EXPECTED_TOTAL_WORKERS)
+  50,
+  Math.ceil(MAX_CONCURRENT_REQUESTS / CLUSTER_WORKERS_PER_REPLICA)
 );
 
 const isProduction = () =>
