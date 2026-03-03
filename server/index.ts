@@ -16,6 +16,7 @@ import { verifyReadReplica } from "./db.ts";
 import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
 import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
 import { originValidation } from "./middleware/requestValidation.ts";
+import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.ts";
 import path from "path";
 import crypto from "crypto";
 
@@ -87,9 +88,16 @@ const httpServer = createServer(app);
 httpServer.keepAliveTimeout = 65_000;
 httpServer.headersTimeout   = 66_000;
 
-// Trust proxy - REQUIRED for secure cookies and rate limiting behind Replit's reverse proxy
-// Use 1 to trust exactly one proxy hop (Replit's reverse proxy) - prevents rate limit bypass
-app.set('trust proxy', 1);
+// Trust proxy — configured for Cloudflare + Replit's reverse proxy.
+// Using an IP allowlist (Cloudflare ranges + private/loopback) is more secure than a hop
+// count: Express only trusts X-Forwarded-For when the socket connection itself comes from
+// a listed IP, preventing clients from spoofing their IP by injecting header values.
+app.set('trust proxy', buildTrustProxyValue());
+
+// Cloudflare integration — extracts real client IP from CF-Connecting-IP (validated against
+// Cloudflare's published IP ranges), adds no-store headers on /api routes, and annotates
+// req.isBehindCloudflare / req.realClientIp for downstream middleware (rate limiter, audit log).
+app.use(cloudflareMiddleware);
 
 // ========================================
 // MANDATORY SAFETY MIDDLEWARE (MUST LOAD)

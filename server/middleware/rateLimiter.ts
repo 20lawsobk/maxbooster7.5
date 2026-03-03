@@ -80,10 +80,10 @@ class InMemoryDegradedRateLimiter {
 const degradedLimiter = new InMemoryDegradedRateLimiter();
 
 function getClientIP(req: Request): string {
-  // Use req.ip which respects Express trust proxy configuration.
-  // Never parse X-Forwarded-For directly — a client can inject arbitrary values
-  // into that header and bypass per-IP rate limits by spoofing their IP address.
-  return req.ip || req.socket.remoteAddress || 'unknown';
+  // Prefer the validated real client IP set by cloudflareMiddleware (uses CF-Connecting-IP
+  // only when the socket originates from a verified Cloudflare IP range, preventing spoofing).
+  // Fall back to req.ip which respects Express trust proxy configuration.
+  return (req as any).realClientIp || req.ip || req.socket.remoteAddress || 'unknown';
 }
 
 function getUserId(req: Request): string | null {
