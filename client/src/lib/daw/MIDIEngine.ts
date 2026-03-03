@@ -95,6 +95,7 @@ export class MIDIEngine {
   private midiListeners: Set<MIDIEventListener> = new Set();
   private midiAccess: MIDIAccess | null = null;
   private activeNotes: Map<number, MIDINote> = new Map();
+  private midiInitialized = false;
 
   constructor(transport: TransportEngine, timeline: TimelineEngine) {
     this.transport = transport;
@@ -113,8 +114,17 @@ export class MIDIEngine {
       stepRecordEnabled: false,
       chordMode: false,
     };
+  }
 
-    this.initWebMIDI();
+  /**
+   * Initialize Web MIDI access. Call this only from the studio page on first mount.
+   * Uses localStorage to remember whether the user has already been prompted so
+   * the browser permission dialog only ever appears on /studio.
+   */
+  async initialize(): Promise<void> {
+    if (this.midiInitialized) return;
+    this.midiInitialized = true;
+    await this.initWebMIDI();
   }
 
   private async initWebMIDI(): Promise<void> {
@@ -124,8 +134,10 @@ export class MIDIEngine {
         this.midiAccess.inputs.forEach(input => {
           input.onmidimessage = this.handleMIDIMessage.bind(this);
         });
+        localStorage.setItem('midi_access_prompted', '1');
       } catch (err) {
         logger.info('Web MIDI not available:', err);
+        localStorage.setItem('midi_access_prompted', '1');
       }
     }
   }
