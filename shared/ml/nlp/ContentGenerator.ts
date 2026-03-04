@@ -10,6 +10,11 @@ import {
   SOCIAL_MEDIA_MUSIC_PATTERNS,
   ARTIST_PERSONA_PROFILES,
   MUSIC_GENRE_TAXONOMY,
+  GENRE_VIRAL_HOOKS,
+  PLATFORM_CONTENT_SCRIPTS,
+  CALL_TO_ACTION_LIBRARY,
+  EMOTIONAL_TRIGGER_PATTERNS,
+  VIDEO_CONTENT_TRAINING_PACK,
 } from '../training/musicIndustryTrainingData.js';
 
 export type ContentTone = 'professional' | 'casual' | 'energetic' | 'promotional';
@@ -173,18 +178,70 @@ const MUSIC_VOCABULARY = {
     'vocal', 'harmony', 'groove', 'pulse', 'wave', 'frequency', 'tone', 'mood',
     'studio', 'session', 'recording', 'mix', 'master', 'release', 'album', 'EP',
     'single', 'feature', 'collab', 'remix', 'cover', 'original', 'production',
+    'playlist', 'stream', 'premiere', 'debut', 'era', 'chapter', 'journey',
+    'audience', 'fanbase', 'community', 'movement', 'culture', 'scene',
+    'banger', 'anthem', 'ballad', 'freestyle', 'bars', 'cadence', 'delivery',
+    'arrangement', 'instrumentation', 'sample', 'loop', 'vocal-chop', 'adlib',
   ],
   verbs: [
     'drop', 'release', 'stream', 'play', 'listen', 'vibe', 'feel', 'experience',
     'share', 'support', 'love', 'create', 'produce', 'mix', 'master', 'record',
     'collaborate', 'feature', 'perform', 'rock', 'groove', 'flow', 'hit', 'bang',
+    'save', 'add', 'discover', 'connect', 'inspire', 'move', 'elevate', 'build',
+    'hustle', 'grind', 'push', 'go', 'run', 'climb', 'rise', 'shine',
   ],
   adjectives: [
     'new', 'fresh', 'fire', 'heat', 'hot', 'cold', 'hard', 'soft', 'smooth',
     'raw', 'real', 'authentic', 'unique', 'original', 'amazing', 'incredible',
     'insane', 'crazy', 'wild', 'epic', 'legendary', 'classic', 'timeless',
     'emotional', 'powerful', 'energetic', 'chill', 'mellow', 'intense', 'heavy',
+    'infectious', 'anthemic', 'melodic', 'rhythmic', 'soulful', 'atmospheric',
+    'dark', 'uplifting', 'nostalgic', 'cinematic', 'hypnotic', 'groovy',
+    'undeniable', 'undiscovered', 'independent', 'fearless', 'unapologetic',
   ],
+};
+
+const GENRE_VOCABULARY: Record<string, { nouns: string[]; adjectives: string[]; phrases: string[] }> = {
+  'hip-hop': {
+    nouns: ['bars', 'flow', '808s', 'trap', 'drill', 'ad-libs', 'freestyle', 'punchlines', 'wordplay', 'sauce', 'drip'],
+    adjectives: ['hard', 'fire', 'cold', 'raw', 'gritty', 'slept-on', 'underrated', 'certified', 'street', 'lyrical'],
+    phrases: ['no cap', 'on god', 'straight facts', 'real talk', 'built different', 'different breed', 'can\'t stop won\'t stop'],
+  },
+  'r&b': {
+    nouns: ['falsetto', 'melisma', 'harmonies', 'soul', 'heartbreak', 'feelings', 'love', 'emotions', 'neo-soul', 'groove'],
+    adjectives: ['silky', 'soulful', 'smooth', 'emotional', 'vulnerable', 'intimate', 'sensual', 'healing', 'raw'],
+    phrases: ['in your feelings', 'hits different', 'had me crying', 'spoke to my soul', 'felt every word'],
+  },
+  'pop': {
+    nouns: ['hook', 'chorus', 'bop', 'anthem', 'earworm', 'catchiness', 'radio', 'mainstream', 'stadium'],
+    adjectives: ['catchy', 'anthemic', 'infectious', 'radio-ready', 'feel-good', 'uplifting', 'danceable', 'bright'],
+    phrases: ['can\'t get it out of my head', 'instant classic', 'summer anthem', 'bop of the year'],
+  },
+  'electronic': {
+    nouns: ['drop', 'build-up', 'synth', 'bassline', 'arpeggio', 'filter', 'reverb', 'delay', 'mixing-desk', 'BPM'],
+    adjectives: ['pounding', 'euphoric', 'hypnotic', 'immersive', 'relentless', 'driving', 'ethereal', 'atmospheric'],
+    phrases: ['the drop hits different', 'feel the bass', 'made for the rave', 'headphones required'],
+  },
+  'afrobeats': {
+    nouns: ['riddim', 'percussion', 'rhythm', 'groove', 'culture', 'vibe', 'energy', 'dance-floor', 'diaspora'],
+    adjectives: ['infectious', 'cultural', 'rhythmic', 'vibrant', 'global', 'authentic', 'ancestral', 'jubilant'],
+    phrases: ['made for the dance floor', 'the culture travels', 'rhythm of the continent', 'global takeover'],
+  },
+  'latin': {
+    nouns: ['ritmo', 'sabor', 'fuego', 'corazón', 'dembow', 'clave', 'congos', 'pasión', 'cultura'],
+    adjectives: ['fuego', 'caliente', 'rítmico', 'apasionado', 'tropical', 'urbano', 'bailable', 'romántico'],
+    phrases: ['el ritmo no miente', 'hecho para bailar', 'latin heat', 'la cultura nos une'],
+  },
+  'country': {
+    nouns: ['story', 'heartland', 'roots', 'americana', 'porch', 'road', 'soul', 'truth', 'campfire', 'honesty'],
+    adjectives: ['authentic', 'raw', 'heartfelt', 'honest', 'real', 'gritty', 'soulful', 'country', 'roots-driven'],
+    phrases: ['three chords and the truth', 'written from real life', 'music for real people', 'the heartland speaks'],
+  },
+  'rock': {
+    nouns: ['riff', 'amp', 'distortion', 'guitar', 'power-chord', 'energy', 'stage', 'solo', 'drummer', 'mosh'],
+    adjectives: ['loud', 'raw', 'powerful', 'electric', 'uncompromising', 'anthemic', 'visceral', 'driving'],
+    phrases: ['turn it up', 'built to last', 'rock never dies', 'feel the electricity'],
+  },
 };
 
 const CONTENT_TEMPLATES: Record<string, Record<ContentTone, string[]>> = {
@@ -435,7 +492,7 @@ export class ContentGenerator {
     let caption = this.generateFromTemplate(
       contentType,
       tone,
-      { topic, genre, artistName, trackTitle }
+      { topic, genre, artistName, trackTitle, platform }
     );
 
     if (this.brandVoice) {
@@ -477,10 +534,54 @@ export class ContentGenerator {
     };
   }
 
+  private pickRandom<T>(arr: readonly T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  private getGenreHook(genre: string, platform: string, trackTitle: string): string | null {
+    const normalizedGenre = genre.toLowerCase().replace(/[\s_]/g, '-') as keyof typeof GENRE_VIRAL_HOOKS;
+    const normalizedPlatform = platform.toLowerCase() as keyof (typeof GENRE_VIRAL_HOOKS)[typeof normalizedGenre];
+    const genreHooks = GENRE_VIRAL_HOOKS[normalizedGenre];
+    if (!genreHooks) return null;
+    const platformHooks = (genreHooks as Record<string, readonly string[]>)[normalizedPlatform];
+    if (!platformHooks || platformHooks.length === 0) return null;
+    const hook = this.pickRandom(platformHooks);
+    return hook.replace('{trackTitle}', trackTitle || 'this track').replace('{timestamp}', '0:30').replace('{situation}', 'a real moment');
+  }
+
+  private getGenreAdjective(genre: string): string {
+    const normalizedGenre = genre.toLowerCase().replace(/[\s_]/g, '-');
+    const vocab = GENRE_VOCABULARY[normalizedGenre];
+    if (!vocab) {
+      return this.pickRandom(MUSIC_VOCABULARY.adjectives);
+    }
+    return Math.random() > 0.4
+      ? this.pickRandom(vocab.adjectives)
+      : this.pickRandom(MUSIC_VOCABULARY.adjectives);
+  }
+
+  private getEmotionalTrigger(): string {
+    const categories = Object.values(EMOTIONAL_TRIGGER_PATTERNS);
+    const category = this.pickRandom(categories);
+    return this.pickRandom(category);
+  }
+
+  private getPlatformCTA(platform: string): string {
+    const normalizedPlatform = platform.toLowerCase();
+    const urgentCTAs = CALL_TO_ACTION_LIBRARY.streaming.urgent;
+    const directCTAs = CALL_TO_ACTION_LIBRARY.streaming.direct;
+    const commentCTAs = CALL_TO_ACTION_LIBRARY.engagement.comment_bait;
+    if (normalizedPlatform === 'tiktok') return this.pickRandom(commentCTAs);
+    if (normalizedPlatform === 'youtube') return this.pickRandom(directCTAs);
+    return Math.random() > 0.5
+      ? this.pickRandom(urgentCTAs)
+      : this.pickRandom(directCTAs);
+  }
+
   private generateFromTemplate(
     contentType: string,
     tone: ContentTone,
-    context: { topic: string; genre: string; artistName: string; trackTitle: string }
+    context: { topic: string; genre: string; artistName: string; trackTitle: string; platform?: string }
   ): string {
     const templates = CONTENT_TEMPLATES[contentType]?.[tone] || CONTENT_TEMPLATES.release[tone];
     const template = templates[Math.floor(Math.random() * templates.length)];
@@ -490,17 +591,42 @@ export class ContentGenerator {
     const middle = phrases.middle[Math.floor(Math.random() * phrases.middle.length)];
     const closing = phrases.closing[Math.floor(Math.random() * phrases.closing.length)];
 
+    const genreAdj = this.getGenreAdjective(context.genre);
+
     let result = template
       .replace('{opening}', opening)
       .replace('{middle}', middle)
       .replace('{closing}', closing)
       .replace('{trackTitle}', context.trackTitle || 'the new track')
       .replace('{artistName}', context.artistName || 'the artist')
-      .replace('{genre}', context.genre || 'music')
+      .replace('{genre}', `${genreAdj} ${context.genre || 'music'}`.trim())
       .replace('{topic}', context.topic || 'music');
 
+    const platform = context.platform || 'instagram';
+    const genreHook = context.genre
+      ? this.getGenreHook(context.genre, platform, context.trackTitle)
+      : null;
+
+    if (genreHook && Math.random() > 0.55 && contentType !== 'engagement') {
+      result = `${genreHook}\n\n${result}`;
+    }
+
+    if (Math.random() > 0.65 && contentType === 'release') {
+      const emotionalTrigger = this.getEmotionalTrigger();
+      result = `${result} ${emotionalTrigger}`;
+    }
+
+    if (Math.random() > 0.70) {
+      const platformCTA = this.getPlatformCTA(platform);
+      const cleanCTA = platformCTA
+        .replace('{trackTitle}', context.trackTitle || 'the track')
+        .replace('{streams}', String(Math.floor(Math.random() * 50000 + 5000)))
+        .replace('{days}', String(Math.floor(Math.random() * 7 + 1)));
+      result = `${result} ${cleanCTA}`;
+    }
+
     const markovAddition = this.generateMarkovSequence(5);
-    if (markovAddition && Math.random() > 0.5) {
+    if (markovAddition && Math.random() > 0.6) {
       result = `${result} ${markovAddition}`;
     }
 
