@@ -197,6 +197,11 @@ export const pool = new InstrumentedPool({
   max: config.database.poolSize,
   idleTimeoutMillis: config.database.idleTimeout,
   connectionTimeoutMillis: config.database.connectionTimeout,
+  // Hard cap on individual query execution time. Prevents background jobs
+  // (pattern detection, token refresh, analytics) from holding a connection
+  // for minutes and starving user-facing requests. 30s is generous for any
+  // legitimate OLTP query; anything longer is a runaway job that should fail fast.
+  options: '-c statement_timeout=30000',
 });
 
 export const db = drizzle(pool, { schema });

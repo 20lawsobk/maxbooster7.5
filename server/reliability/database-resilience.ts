@@ -63,9 +63,12 @@ class DatabaseResilience extends EventEmitter {
     try {
       const startTime = Date.now();
 
-      // Simple health check query
-      const sql = neon(process.env.DATABASE_URL!);
-      await sql`SELECT 1 as health_check`;
+      // Use the shared connection pool instead of creating a raw neon() HTTP client
+      // each time. The raw neon() call opens a new HTTP connection to Neon's serverless
+      // API on every health check, which fails ("fetch failed") under network pressure
+      // and leaks sockets. The pool reuses warm WebSocket connections with proper backoff.
+      const { pool } = await import('../db.js');
+      await pool.query('SELECT 1 AS health_check');
 
       const responseTime = Date.now() - startTime;
 
