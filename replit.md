@@ -20,7 +20,8 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **Scalability**: Designed for Replit Autoscale with Redis for shared state across replicas.
 -   **Robust Authentication**: Implements session fixation prevention, JWT bearer tokens with refresh capabilities, and session heartbeat.
 -   **Comprehensive Workflow Automations**: 21 automation templates across five career phases, managed by `musicWorkflowAutomationService.ts` with CRUD, event dispatching, and cron scheduling.
--   **Advertisement and Autopilot Systems**: Exclusively use custom in-house AI models and connected social profiles, avoiding traditional ad platform integrations.
+-   **Advertisement and Autopilot Systems**: Exclusively use custom in-house AI models and connected social profiles, avoiding traditional ad platform integrations. The `CreativeVariantGenerator` Bulk Generate tab is wired to `POST /api/advertising/generate-content` (uses `unifiedAIController`).
+-   **Songwriting AI Assist**: `POST /api/songwriting/ai-assist` uses `unifiedAIController.generateContent()` to generate lyric suggestions, rhyme words, and mood-aware chord progressions (no longer static lookups).
 -   **Read Replica Routing**: PostgreSQL read replica is used for analytical and dashboard reads, offloading the primary database.
 -   **Silent Deployment System**: A self-evolution engine triggers silent deployments with rolling cluster restarts and auto-rollback on degradation.
 -   **Security Hardening**: Includes IDOR prevention, improved session cookie security, AI route rate limiting, Zod-validated input for autopilot preferences (POST/PATCH with allowlisting to prevent mass assignment), authentication consistency, and SSRF protection. Internal IPs are whitelisted from rate limiters and the self-healing security engine to prevent false blocks of internal tools and Replit infrastructure.

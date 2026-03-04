@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -111,6 +113,8 @@ const CTA_SUGGESTIONS = [
 ];
 
 export function CreativeVariantGenerator() {
+  const { toast } = useToast();
+
   const { data: testsData } = useQuery({
     queryKey: ['/api/advertising/ab-tests'],
   });
@@ -139,21 +143,46 @@ export function CreativeVariantGenerator() {
   ];
 
   const [activeTest, setActiveTest] = useState<ABTest | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [autoOptimize, setAutoOptimize] = useState(true);
   const [bulkCount, setBulkCount] = useState(5);
+  const [bulkTopic, setBulkTopic] = useState('');
+  const [bulkAudience, setBulkAudience] = useState('');
+  const [generatedContent, setGeneratedContent] = useState<{ hook?: string; body?: string; cta?: string; caption?: string; hashtags?: string[] } | null>(null);
   const [newVariant, setNewVariant] = useState({
     headline: '',
     description: '',
     cta: 'Start Free Trial',
   });
 
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      const topic = bulkTopic.trim() || 'music distribution and promotion';
+      const res = await apiRequest('POST', '/api/advertising/generate-content', {
+        contentType: 'promotional',
+        platform: 'instagram',
+        topic,
+        tone: 'energetic',
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data?.success && data?.content) {
+        setGeneratedContent(data.content);
+        toast({ title: 'Variants Generated', description: `AI created ${bulkCount} creative variants for your campaign.` });
+      } else {
+        toast({ title: 'Generation Complete', description: 'AI content generated successfully.', variant: 'default' });
+      }
+    },
+    onError: () => {
+      toast({ title: 'Generation Failed', description: 'Could not generate variants. Please try again.', variant: 'destructive' });
+    },
+  });
+
   const handleGenerateVariants = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-    }, 2000);
+    generateMutation.mutate();
   };
+
+  const isGenerating = generateMutation.isPending;
 
   const getStatusBadge = (status: CreativeVariant['status']) => {
     const styles = {
@@ -566,12 +595,20 @@ export function CreativeVariantGenerator() {
 
                 <div className="space-y-2">
                   <Label>Base Content Theme</Label>
-                  <Textarea placeholder="Describe the theme or key message..." />
+                  <Textarea
+                    placeholder="Describe the theme or key message..."
+                    value={bulkTopic}
+                    onChange={(e) => setBulkTopic(e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Target Audience</Label>
-                  <Input placeholder="e.g., Independent musicians, ages 18-35" />
+                  <Input
+                    placeholder="e.g., Independent musicians, ages 18-35"
+                    value={bulkAudience}
+                    onChange={(e) => setBulkAudience(e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-3">
@@ -619,6 +656,56 @@ export function CreativeVariantGenerator() {
                   )}
                   Generate {bulkCount} Variants
                 </Button>
+
+                {generatedContent && (
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-medium text-green-500">
+                      <CheckCircle className="w-4 h-4" />
+                      AI Generated Content
+                    </div>
+                    {generatedContent.hook && (
+                      <div className="p-3 rounded-lg bg-muted/50 border">
+                        <p className="text-xs text-muted-foreground mb-1 font-medium">Hook</p>
+                        <p className="text-sm">{generatedContent.hook}</p>
+                      </div>
+                    )}
+                    {generatedContent.body && (
+                      <div className="p-3 rounded-lg bg-muted/50 border">
+                        <p className="text-xs text-muted-foreground mb-1 font-medium">Body Copy</p>
+                        <p className="text-sm">{generatedContent.body}</p>
+                      </div>
+                    )}
+                    {generatedContent.cta && (
+                      <div className="p-3 rounded-lg bg-muted/50 border">
+                        <p className="text-xs text-muted-foreground mb-1 font-medium">Call to Action</p>
+                        <p className="text-sm font-medium">{generatedContent.cta}</p>
+                      </div>
+                    )}
+                    {!generatedContent.hook && !generatedContent.body && generatedContent.caption && (
+                      <div className="p-3 rounded-lg bg-muted/50 border">
+                        <p className="text-xs text-muted-foreground mb-1 font-medium">Generated Copy</p>
+                        <p className="text-sm whitespace-pre-wrap">{generatedContent.caption}</p>
+                      </div>
+                    )}
+                    {generatedContent.hashtags && generatedContent.hashtags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {generatedContent.hashtags.slice(0, 6).map((tag: string) => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag.startsWith('#') ? tag : `#${tag}`}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setGeneratedContent(null)}
+                    >
+                      Clear Results
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
