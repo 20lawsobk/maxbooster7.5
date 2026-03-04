@@ -165,32 +165,84 @@ router.post('/upload-image', requireAuth, async (req, res) => {
   }
 });
 
-// Status endpoint
+// Advertising autopilot status — returns isRunning, config, modelStatus + campaign metrics
 router.get('/status', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const userId = req.user!.id;
-    const campaigns = await db
-      .select({
-        platform: adCampaigns.platform,
-        status: adCampaigns.status,
-        budget: adCampaigns.budget,
-      })
-      .from(adCampaigns)
-      .where(eq(adCampaigns.userId, userId));
+
+    const [campaigns, autopilotConfig] = await Promise.all([
+      db.select({ platform: adCampaigns.platform, status: adCampaigns.status, budget: adCampaigns.budget })
+        .from(adCampaigns)
+        .where(eq(adCampaigns.userId, userId)),
+      storage.getAdvertisingAutopilotConfig(userId),
+    ]);
 
     const activeCampaigns = campaigns.filter(c => c.status === 'active');
     const connectedPlatforms = [...new Set(activeCampaigns.map(c => c.platform))];
     const totalBudget = campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
 
     res.json({
-      status: activeCampaigns.length > 0 ? 'active' : 'inactive',
-      connectedPlatforms,
-      budget: totalBudget,
-      spent: 0,
+      isRunning: autopilotConfig?.isRunning || false,
+      config: autopilotConfig || null,
+      status: {
+        campaignStatus: activeCampaigns.length > 0 ? 'active' : 'inactive',
+        connectedPlatforms,
+        budget: totalBudget,
+        spent: 0,
+        activeCampaigns: activeCampaigns.length,
+      },
+      modelStatus: {
+        advertising: { trained: false, version: '1.0.0' },
+      },
     });
   } catch (error) {
     logger.error('Failed to get advertising status:', error);
     res.status(500).json({ error: 'Failed to get status' });
+  }
+});
+
+// Start advertising autopilot
+router.post('/start', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const userId = req.user!.id;
+    let config = await storage.getAdvertisingAutopilotConfig(userId);
+    config = { ...(config || {}), isRunning: true, enabled: true };
+    await storage.saveAdvertisingAutopilotConfig(userId, config);
+    logger.info(`✅ Advertising autopilot started for user ${userId}`);
+    res.json({ success: true, message: 'Advertising autopilot activated', config });
+  } catch (error) {
+    logger.error('Failed to start advertising autopilot:', error);
+    res.status(500).json({ error: 'Failed to start advertising autopilot' });
+  }
+});
+
+// Stop advertising autopilot
+router.post('/stop', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const userId = req.user!.id;
+    let config = await storage.getAdvertisingAutopilotConfig(userId);
+    config = { ...(config || {}), isRunning: false, enabled: false };
+    await storage.saveAdvertisingAutopilotConfig(userId, config);
+    logger.info(`⏸️ Advertising autopilot paused for user ${userId}`);
+    res.json({ success: true, message: 'Advertising autopilot paused' });
+  } catch (error) {
+    logger.error('Failed to stop advertising autopilot:', error);
+    res.status(500).json({ error: 'Failed to stop advertising autopilot' });
+  }
+});
+
+// Configure advertising autopilot
+router.post('/configure', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const userId = req.user!.id;
+    const existing = await storage.getAdvertisingAutopilotConfig(userId);
+    const config = { ...(existing || {}), ...req.body };
+    await storage.saveAdvertisingAutopilotConfig(userId, config);
+    logger.info(`⚙️ Advertising autopilot configured for user ${userId}`);
+    res.json({ success: true, message: 'Advertising autopilot configuration updated', config });
+  } catch (error) {
+    logger.error('Failed to configure advertising autopilot:', error);
+    res.status(500).json({ error: 'Failed to configure advertising autopilot' });
   }
 });
 

@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 import { aiModelManager } from '../services/aiModelManager.js';
+import { promotionalToolsService } from '../services/promotionalToolsService.js';
 
 const router = Router();
 
@@ -16,8 +17,8 @@ const autopilotConfigSchema = z.object({
   contentTypes: z.array(z.string()).optional(),
   autoPublish: z.boolean().optional(),
   useMultimodalAnalysis: z.boolean().default(true),
-  autoAnalyzeBeforePosting: z.boolean().default(true), // Automatically analyze content before posting
-  minConfidenceThreshold: z.number().min(0).max(1).default(0.7), // Min confidence to auto-publish
+  autoAnalyzeBeforePosting: z.boolean().default(true),
+  minConfidenceThreshold: z.number().min(0).max(1).default(0.7),
 });
 
 // Get autopilot status
@@ -25,10 +26,8 @@ router.get('/status', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     
-    // Get user's autopilot configuration
     const config = await storage.getAutopilotConfig(userId);
     
-    // Get AI model status
     const socialModel = await aiModelManager.getSocialAutopilot(userId);
     const advertisingModel = await aiModelManager.getAdvertisingAutopilot(userId);
     
@@ -67,7 +66,6 @@ router.post('/start', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     
-    // Get or create config
     let config = await storage.getAutopilotConfig(userId);
     if (!config) {
       config = {
@@ -83,7 +81,6 @@ router.post('/start', requireAuth, async (req, res) => {
       };
     } else {
       config.enabled = true;
-      // Ensure new fields have defaults if not set (backfill existing configs)
       if (config.autoAnalyzeBeforePosting === undefined || config.autoAnalyzeBeforePosting === null) {
         config.autoAnalyzeBeforePosting = true;
       }
@@ -93,6 +90,23 @@ router.post('/start', requireAuth, async (req, res) => {
     }
     
     await storage.saveAutopilotConfig(userId, config);
+
+    setImmediate(async () => {
+      try {
+        const engine = promotionalToolsService.getAutopilotForUser(userId);
+        await engine.configure({
+          enabled: true,
+          platforms: config.platforms || ['instagram', 'twitter'],
+          postingFrequency: config.postingFrequency || 'daily',
+          brandVoice: config.brandVoice || 'professional',
+          contentTypes: config.contentTypes || ['tips', 'insights'],
+          autoPublish: config.autoPublish || false,
+        });
+        logger.info(`✅ Autopilot engine started for user ${userId}`);
+      } catch (err) {
+        logger.warn(`⚠️ Autopilot engine start failed for user ${userId}:`, err);
+      }
+    });
     
     logger.info(`✅ Autopilot started for user ${userId}`);
     
@@ -117,6 +131,16 @@ router.post('/stop', requireAuth, async (req, res) => {
       config.enabled = false;
       await storage.saveAutopilotConfig(userId, config);
     }
+
+    setImmediate(async () => {
+      try {
+        const engine = promotionalToolsService.getAutopilotForUser(userId);
+        await engine.configure({ enabled: false });
+        logger.info(`⏸️ Autopilot engine stopped for user ${userId}`);
+      } catch (err) {
+        logger.warn(`⚠️ Autopilot engine stop failed for user ${userId}:`, err);
+      }
+    });
     
     logger.info(`⏸️ Autopilot stopped for user ${userId}`);
     
@@ -137,6 +161,24 @@ router.post('/configure', requireAuth, async (req, res) => {
     const config = autopilotConfigSchema.parse(req.body);
     
     await storage.saveAutopilotConfig(userId, config);
+
+    if (config.enabled) {
+      setImmediate(async () => {
+        try {
+          const engine = promotionalToolsService.getAutopilotForUser(userId);
+          await engine.configure({
+            enabled: config.enabled,
+            platforms: config.platforms || [],
+            postingFrequency: config.postingFrequency || 'daily',
+            brandVoice: config.brandVoice || 'professional',
+            contentTypes: config.contentTypes || [],
+            autoPublish: config.autoPublish || false,
+          });
+        } catch (err) {
+          logger.warn(`⚠️ Autopilot engine configure failed for user ${userId}:`, err);
+        }
+      });
+    }
     
     logger.info(`⚙️ Autopilot configured for user ${userId}`);
     
@@ -161,20 +203,16 @@ router.post('/recommend', requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const { contentType, includeMultimodal } = req.body;
     
-    // Get AI model
     const socialModel = await aiModelManager.getSocialAutopilot(userId);
     
-    // Get user's analyzed content with multimodal features
     let multimodalFeatures = null;
     if (includeMultimodal !== false) {
       const recentAnalyzedContent = await storage.getRecentAnalyzedContent(userId, 10);
       if (recentAnalyzedContent && recentAnalyzedContent.length > 0) {
-        // Use most recent content features
         multimodalFeatures = recentAnalyzedContent[0].features;
       }
     }
     
-    // Generate recommendations
     const recommendations = await socialModel.generateContentRecommendations(
       contentType || 'general',
       multimodalFeatures
@@ -202,21 +240,18 @@ router.post('/predict-engagement', requireAuth, async (req, res) => {
       return;
     }
     
-    // Get AI model
     const socialModel = await aiModelManager.getSocialAutopilot(userId);
     
-    // Create feature vector with multimodal data
-    const emojiRegex = new RegExp('[\\u{1F300}-\\u{1F9FF}]|[\\u{2600}-\\u{26FF}]|[\\u{2700}-\\u{27BF}]', 'u');
+    const emojiRegex = new RegExp('[\\u{1F300}-\\u{1F9FF}]|[\\\u{2600}-\\u{26FF}]|[\\\u{2700}-\\u{27BF}]', 'u');
     const features = {
       platform,
       contentLength: content.length,
       hasHashtags: content.includes('#'),
       hasEmojis: emojiRegex.test(content),
       hasLinks: content.includes('http'),
-      ...multimodalFeatures, // Include all multimodal features if provided
-    }
+      ...multimodalFeatures,
+    };
     
-    // Predict engagement
     const prediction = await socialModel.predictEngagement(features);
     
     res.json({
@@ -241,14 +276,12 @@ router.post('/save-features', requireAuth, async (req, res) => {
       return;
     }
     
-    // Transform features to database schema
     const featuresToSave: any = {
       contentType,
       contentUrl,
       contentText,
     };
     
-    // Map features by content type
     if (contentType === 'image') {
       featuresToSave.imageComposition = features.composition;
       featuresToSave.imageColors = features.colors;
@@ -275,7 +308,6 @@ router.post('/save-features', requireAuth, async (req, res) => {
       featuresToSave.websiteSeo = features.seo;
     }
     
-    // Save to database
     const featureId = await storage.saveAnalyzedContentFeatures(userId, featuresToSave);
     
     logger.info(`✅ Saved ${contentType} features for user ${userId} autopilot training`);
@@ -298,35 +330,28 @@ router.post('/train', requireAuth, async (req, res) => {
     
     logger.info(`🤖 Starting autopilot AI training for user ${userId} with multimodal features...`);
     
-    // Load historical social posts and ad campaigns
     const posts = await storage.getAllPosts(userId);
     const campaigns = await storage.getAllCampaigns(userId);
-    
-    // Load analyzed content features
     const analyzedFeatures = await storage.getAnalyzedContentForTraining(userId);
     
     logger.info(`📊 Loaded ${posts.length} posts, ${campaigns.length} campaigns, ${analyzedFeatures.length} analyzed features`);
     
-    // Get AI models
     const socialModel = await aiModelManager.getSocialAutopilot(userId);
     const advertisingModel = await aiModelManager.getAdvertisingAutopilot(userId);
     
-    // Enrich posts with analyzed multimodal features
     const enrichedPosts = socialModel.enrichPostsWithAnalyzedFeatures(posts, analyzedFeatures);
-    logger.info(`✅ Enriched ${enrichedPosts.filter(p => p.contentAnalysis).length} posts with multimodal features`);
+    logger.info(`✅ Enriched ${enrichedPosts.filter((p: any) => p.contentAnalysis).length} posts with multimodal features`);
     
-    // Enrich campaigns with analyzed multimodal features
     const enrichedCampaigns = advertisingModel.enrichCampaignsWithAnalyzedFeatures(campaigns, analyzedFeatures);
-    logger.info(`✅ Enriched ${enrichedCampaigns.filter(c => c.contentAnalysis).length} campaigns with multimodal features`);
+    logger.info(`✅ Enriched ${enrichedCampaigns.filter((c: any) => c.contentAnalysis).length} campaigns with multimodal features`);
     
-    // Train models with enriched data
     let socialResult = null;
     let advertisingResult = null;
     
     try {
       if (enrichedPosts.length >= 50) {
         socialResult = await socialModel.trainOnUserEngagementData(enrichedPosts);
-        logger.info(`✅ Social autopilot trained: ${socialResult.postsProcessed} posts, accuracy: ${JSON.stringify(socialResult.accuracy)}`);
+        logger.info(`✅ Social autopilot trained: ${socialResult.postsProcessed} posts`);
       } else {
         logger.warn(`⚠️ Not enough posts for social training (${enrichedPosts.length}/50)`);
       }
@@ -356,8 +381,8 @@ router.post('/train', requireAuth, async (req, res) => {
         posts: enrichedPosts.length,
         campaigns: enrichedCampaigns.length,
         analyzedFeatures: analyzedFeatures.length,
-        enrichedPosts: enrichedPosts.filter(p => p.contentAnalysis).length,
-        enrichedCampaigns: enrichedCampaigns.filter(c => c.contentAnalysis).length,
+        enrichedPosts: enrichedPosts.filter((p: any) => p.contentAnalysis).length,
+        enrichedCampaigns: enrichedCampaigns.filter((c: any) => c.contentAnalysis).length,
       },
     });
   } catch (error) {
