@@ -65,6 +65,7 @@ export async function initializeAdmin() {
         subscriptionStatus: 'active',
         onboardingCompleted: true,
         onboardingStep: 100,
+        emailVerified: true,
         onboardingData: {
           completedAt: new Date().toISOString(),
           skipped: false,
@@ -99,10 +100,11 @@ export async function initializeAdmin() {
         lastName: 'Music',
       });
       
-      // Mark onboarding as complete for new admin
+      // Mark onboarding as complete and email as verified for new admin
       await db.update(users).set({
         onboardingCompleted: true,
         onboardingStep: 100,
+        emailVerified: true,
         onboardingData: {
           completedAt: new Date().toISOString(),
           skipped: false,
