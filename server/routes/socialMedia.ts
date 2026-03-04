@@ -11,6 +11,7 @@ import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
+import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
 
 const router = Router();
 
@@ -1470,7 +1471,7 @@ router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, re
       artist_name, topic, goal, tone, quality,
     } = req.body;
 
-    const result = await pythonAIService.generateVideo({
+    const pyResult = await pythonAIService.generateVideo({
       hook, body, cta,
       platform: platform || 'tiktok',
       aspect_ratio,
@@ -1483,14 +1484,31 @@ router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, re
       quality: quality || 'cinematic',
     });
 
-    if (!result.success || !result.data?.success) {
-      return res.status(500).json({
-        success: false,
-        message: result.data?.error || result.error || 'Video generation failed',
-      });
+    if (pyResult.success && pyResult.data?.success) {
+      return res.json(pyResult.data);
     }
 
-    res.json(result.data);
+    logger.info('[VideoGen] Python AI unavailable, using FFmpeg generator');
+    const result = await generateVideoFFmpeg({
+      topic: topic || hook || body || 'new music',
+      platform: platform || 'tiktok',
+      template: template || 'cinematic_promo',
+      aspect_ratio,
+      duration: duration || 10,
+      tone: tone || 'energetic',
+      goal: goal || 'growth',
+      artist_name,
+      quality: quality || 'cinematic',
+      hook,
+      body,
+      cta,
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ success: false, message: result.error || 'Video generation failed' });
+    }
+
+    res.json(result);
   } catch (error) {
     logger.error('Failed to generate video:', error);
     res.status(500).json({ success: false, message: 'Video generation failed' });
