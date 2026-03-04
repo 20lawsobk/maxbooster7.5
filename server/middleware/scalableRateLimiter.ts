@@ -35,6 +35,12 @@ const skipRateLimiting = (req: Request): boolean => {
   if (path.startsWith('/api/monitoring')) return true;
   if (path.startsWith('/api/system')) return true;
 
+  // Session maintenance endpoints — exempt from global rate limiting
+  // They have their own dedicated auth rate limiter
+  if (path === '/api/auth/refresh-token') return true;
+  if (path === '/api/auth/me') return true;
+  if (path === '/api/auth/heartbeat') return true;
+
   if (path.startsWith('/@fs/')) return true;
   if (path.startsWith('/src/')) return true;
   if (path.startsWith('/node_modules/')) return true;
@@ -254,7 +260,7 @@ export const apiRateLimiter = buildDistributedGlobal(60000, 5000, 'api');
 
 export const aiRateLimiter = buildDistributedGlobal(60000, 2000, 'ai');
 
-export const authRateLimiter = buildDistributedGlobal(900000, 100, 'auth');
+export const authRateLimiter = buildDistributedGlobal(900000, 200, 'auth');
 
 export const createHighScaleRateLimiter = (
   tier: 'monthly' | 'yearly' | 'lifetime' | 'unlimited'

@@ -8,11 +8,11 @@ export const RATE_LIMITS = {
     perUser: { windowMs: 60000, max: 200 }
   },
   auth: {
-    login: { windowMs: 900000, max: 5 },
-    register: { windowMs: 3600000, max: 3 },
-    forgotPassword: { windowMs: 3600000, max: 3 },
-    twoFactor: { windowMs: 300000, max: 5 },
-    captchaThreshold: 3
+    login: { windowMs: 900000, max: 50 },
+    register: { windowMs: 3600000, max: 10 },
+    forgotPassword: { windowMs: 3600000, max: 5 },
+    twoFactor: { windowMs: 300000, max: 15 },
+    captchaThreshold: 15
   },
   billing: {
     perUser: { windowMs: 60000, max: 10 }
@@ -21,7 +21,7 @@ export const RATE_LIMITS = {
     perUser: { windowMs: 3600000, max: 50 }
   },
   ai: {
-    perUser: { windowMs: 3600000, max: 100 }
+    perUser: { windowMs: 3600000, max: 500 }
   }
 };
 

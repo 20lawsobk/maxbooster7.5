@@ -116,10 +116,15 @@ export const globalRateLimiter = rateLimit({
     const isLocalhost =
       req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1' ||
       (typeof req.ip === 'string' && req.ip.startsWith('10.'));
+    const isSessionMaintenance =
+      req.path === '/api/auth/refresh-token' ||
+      req.path === '/api/auth/me' ||
+      req.path === '/api/auth/heartbeat';
 
     if (isMonitoringEndpoint) return true;
     if (isDevelopment) return true;
     if (isLocalhost) return true;
+    if (isSessionMaintenance) return true;
     return isStaticAsset;
   },
   handler: (req: Request, res: Response) => {

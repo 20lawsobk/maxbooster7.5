@@ -353,7 +353,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
   try {
     const isDev = process.env.NODE_ENV !== 'production';
     const isLoadTest = process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
-    const maxRequests = isDev || isLoadTest ? 100_000 : 50;
+    const maxRequests = isDev || isLoadTest ? 100_000 : 200;
     const windowMs = 15 * 60 * 1000;
 
     let redisClient: any = null;
@@ -366,7 +366,12 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
         skip: (req) => {
           if (isDev || isLoadTest) return true;
           const ip = req.ip || req.socket?.remoteAddress || '';
-          return isInternalIp(ip);
+          if (isInternalIp(ip)) return true;
+          // Session maintenance endpoints are exempt — they have their own rate limiter
+          // and are required for every page load (not actual login attempts)
+          const sessionPaths = ['/api/auth/refresh-token', '/api/auth/me', '/api/auth/heartbeat'];
+          if (sessionPaths.includes(req.path)) return true;
+          return false;
         },
         keyGenerator: (req) => {
           const ip = req.ip || req.socket?.remoteAddress || 'unknown';

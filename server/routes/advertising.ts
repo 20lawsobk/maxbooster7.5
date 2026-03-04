@@ -5,6 +5,7 @@ import { unifiedAIController } from '../services/unifiedAIController.js';
 import { storage } from '../storage.js';
 import { notificationService } from '../services/notificationService.js';
 import { pythonAIService } from '../services/pythonAIService.js';
+import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
 import { db } from '../db.js';
 import { eq, desc, sql } from 'drizzle-orm';
 import { adCampaigns } from '@shared/schema';
@@ -467,7 +468,7 @@ router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, re
       tone, goal, artist_name, quality,
     } = req.body;
 
-    const result = await pythonAIService.generateVideo({
+    const pyResult = await pythonAIService.generateVideo({
       topic,
       platform: platform || 'instagram',
       template: template || 'cinematic_promo',
@@ -479,14 +480,28 @@ router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, re
       quality: quality || 'cinematic',
     });
 
-    if (!result.success || !result.data?.success) {
-      return res.status(500).json({
-        success: false,
-        message: result.data?.error || result.error || 'Video generation failed',
-      });
+    if (pyResult.success && pyResult.data?.success) {
+      return res.json(pyResult.data);
     }
 
-    res.json(result.data);
+    logger.info('[AdVideoGen] Python AI unavailable, using FFmpeg generator');
+    const result = await generateVideoFFmpeg({
+      topic: topic || 'music promotion',
+      platform: platform || 'instagram',
+      template: template || 'cinematic_promo',
+      aspect_ratio,
+      duration: duration || 10,
+      tone: tone || 'energetic',
+      goal: goal || 'growth',
+      artist_name,
+      quality: quality || 'cinematic',
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ success: false, message: result.error || 'Video generation failed' });
+    }
+
+    res.json(result);
   } catch (error) {
     logger.error('Failed to generate ad video:', error);
     res.status(500).json({ success: false, message: 'Video generation failed' });

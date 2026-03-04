@@ -203,8 +203,8 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     xxeInjection: /<!ENTITY|<!DOCTYPE[^>]*\[|SYSTEM\s+["']file:|SYSTEM\s+["']http/gi,
     // NoSQL injection patterns
     nosqlInjection: /\$where|\$ne|\$gt|\$lt|\$gte|\$lte|\$in|\$nin|\$or|\$and|\$not|\$regex|\$exists/gi,
-    bruteForce: { threshold: 5, window: 60000 },
-    ddos: { threshold: 100, window: 10000 },
+    bruteForce: { threshold: 20, window: 300000 },
+    ddos: { threshold: 500, window: 10000 },
   };
 
   private rateLimitState: Map<string, { count: number; resetTime: number; blocked: boolean }> = new Map();
@@ -277,6 +277,19 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
     if (this.blockedIps.has(sourceIp)) {
       this.metrics.threatsBlocked++;
+      return;
+    }
+
+    // Skip deep threat analysis for verified browser sessions (reduces false positives)
+    // Real browsers always send a proper User-Agent and make sequential requests
+    const ua = fullEvent.source.userAgent || '';
+    const isLegitimateUserAgent = /Mozilla|Chrome|Safari|Firefox|Edge|Opera/i.test(ua);
+    const isSessionEndpoint =
+      fullEvent.payload.path === '/api/auth/refresh-token' ||
+      fullEvent.payload.path === '/api/auth/me' ||
+      fullEvent.payload.path === '/api/auth/heartbeat';
+
+    if (isSessionEndpoint && isLegitimateUserAgent) {
       return;
     }
 
@@ -433,11 +446,12 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
   private checkRateLimit(ip: string): number {
     const now = Date.now();
-    const state = this.rateLimitState.get(ip) || { count: 0, resetTime: now + 60000, blocked: false };
+    const windowMs = this.threatPatterns.ddos.window;
+    const state = this.rateLimitState.get(ip) || { count: 0, resetTime: now + windowMs, blocked: false };
 
     if (now > state.resetTime) {
       state.count = 1;
-      state.resetTime = now + 60000;
+      state.resetTime = now + windowMs;
       state.blocked = false;
     } else {
       state.count++;
@@ -453,8 +467,14 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     const now = Date.now();
     const existing = this.ipThreatScores.get(ip) || { score: 0, lastUpdate: now, events: 0 };
 
-    const decay = Math.exp(-(now - existing.lastUpdate) / 300000);
-    const newScore = Math.min(1, (existing.score * decay) + (currentThreat * 0.3));
+    // Faster decay for low-threat events (legitimate users recover quickly)
+    // Slower decay for high-threat events (attackers stay flagged longer)
+    const decayHalfLife = currentThreat > 0.7 ? 600000 : 120000;
+    const decay = Math.exp(-(now - existing.lastUpdate) / decayHalfLife);
+
+    // Lower accumulation weight for marginal threats (reduces false positives)
+    const accumulationWeight = currentThreat > 0.5 ? 0.3 : 0.08;
+    const newScore = Math.min(1, (existing.score * decay) + (currentThreat * accumulationWeight));
 
     this.ipThreatScores.set(ip, {
       score: newScore,
@@ -468,19 +488,22 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   private determineActions(threatLevel: number, threatType: string): string[] {
     const actions: string[] = [];
 
-    if (threatLevel >= 0.9) {
+    // Higher thresholds reduce false positives for legitimate heavy users
+    if (threatLevel >= 0.95) {
       actions.push('block_ip');
       actions.push('session_kill');
       actions.push('alert');
-    } else if (threatLevel >= 0.7) {
+    } else if (threatLevel >= 0.85) {
       actions.push('rate_limit');
       actions.push('alert');
-    } else if (threatLevel >= 0.5) {
+    } else if (threatLevel >= 0.7) {
       actions.push('rate_limit');
     }
 
-    if (threatType === 'sql_injection' || threatType === 'command_injection') {
+    // Injection attacks still get immediate IP block at any confirmed level
+    if (threatType === 'sql_injection' || threatType === 'command_injection' || threatType === 'xxe_injection') {
       if (!actions.includes('block_ip')) actions.unshift('block_ip');
+      if (!actions.includes('alert')) actions.push('alert');
     }
 
     return actions;
