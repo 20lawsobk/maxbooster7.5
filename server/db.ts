@@ -197,11 +197,18 @@ export const pool = new InstrumentedPool({
   max: config.database.poolSize,
   idleTimeoutMillis: config.database.idleTimeout,
   connectionTimeoutMillis: config.database.connectionTimeout,
-  // Hard cap on individual query execution time. Prevents background jobs
-  // (pattern detection, token refresh, analytics) from holding a connection
-  // for minutes and starving user-facing requests. 30s is generous for any
-  // legitimate OLTP query; anything longer is a runaway job that should fail fast.
-  options: '-c statement_timeout=30000',
+});
+
+// Hard cap on individual query execution time — set at session level on every
+// new connection so it survives pool recycling. Prevents runaway background jobs
+// (pattern detection, token refresh, analytics) from holding a connection for
+// minutes and starving user-facing requests. Using pool.on('connect') rather
+// than the 'options' startup parameter is safer with Neon's WebSocket proxy,
+// which may not forward arbitrary startup options to the backend.
+pool.on('connect', (client: any) => {
+  client.query("SET statement_timeout = '30000'").catch((err: Error) => {
+    logger.warn('[DB] Failed to set statement_timeout on new connection:', err.message);
+  });
 });
 
 export const db = drizzle(pool, { schema });

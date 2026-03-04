@@ -32,6 +32,13 @@ export async function getRedisClient(): Promise<any> {
       redisClient = new Redis(config.redis.url, {
         maxRetriesPerRequest: config.redis.maxRetries,
         retryStrategy: (times) => Math.min(times * config.redis.retryDelay, 2000),
+        // Hard caps so a blocked/unreachable Redis host fails fast at startup
+        // instead of hanging the event loop for the OS-level TCP timeout (~75s).
+        // 2s connect is generous for a remote Redis with TLS; 500ms command
+        // timeout matches the tuned value in redisClient.ts.
+        connectTimeout: 2000,
+        commandTimeout: 500,
+        enableReadyCheck: false,
       });
       redisClient.on('error', (err) => logger.error('Redis error:', err));
       applyIoredisCompatShim(redisClient);
@@ -53,6 +60,9 @@ export async function createRedisClient(): Promise<any> {
     const client = new Redis(config.redis.url, {
       maxRetriesPerRequest: config.redis.maxRetries,
       retryStrategy: (times) => Math.min(times * config.redis.retryDelay, 2000),
+      connectTimeout: 2000,
+      commandTimeout: 500,
+      enableReadyCheck: false,
     });
     client.on('error', (err) => logger.error('Redis error (new client):', err));
     applyIoredisCompatShim(client);
