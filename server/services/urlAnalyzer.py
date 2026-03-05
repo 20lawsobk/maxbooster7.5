@@ -258,7 +258,9 @@ TONE_KEYWORDS: dict[str, list[str]] = {
     'romantic':    ['love', 'romance', 'heart', 'baby', 'forever', 'kiss', 'beautiful',
                     'soulmate', 'passion', 'intimate', 'tender', 'miss you', 'feelings'],
     'motivational':['grind', 'hustle', 'rise', 'goals', 'success', 'win', 'champion',
-                    'believe', 'mindset', 'ambition', 'level up', 'legacy', 'unstoppable'],
+                    'believe', 'mindset', 'ambition', 'level up', 'legacy', 'unstoppable',
+                    'career', 'achieve', 'grow', 'build', 'boost', 'level', 'power',
+                    'professional', 'artist', 'creator', 'producer'],
     'dark':        ['dark', 'pain', 'struggle', 'demons', 'shadow', 'cold', 'alone',
                     'betrayal', 'hurt', 'lost', 'broken', 'storm', 'war', 'street'],
     'uplifting':   ['positive', 'joy', 'happy', 'vibe', 'good', 'smile', 'sunshine',
@@ -266,9 +268,15 @@ TONE_KEYWORDS: dict[str, list[str]] = {
     'chill':       ['chill', 'relax', 'laid back', 'smooth', 'mellow', 'vibe', 'easy',
                     'lo-fi', 'sunset', 'weekend', 'drift', 'float', 'lofi'],
     'informative': ['learn', 'tips', 'guide', 'how to', 'explained', 'breakdown',
-                    'analysis', 'review', 'report', 'insight', 'data', 'facts'],
+                    'analysis', 'review', 'report', 'insight', 'data', 'facts',
+                    'analytics', 'management', 'distribution', 'licensing', 'royalt',
+                    'streaming', 'marketplace', 'automation', 'coaching'],
     'promotional': ['new', 'out now', 'available', 'launch', 'release', 'drop', 'debut',
-                    'exclusive', 'limited', 'pre-order', 'announcement', 'coming soon'],
+                    'exclusive', 'limited', 'pre-order', 'announcement', 'coming soon',
+                    'all-in-one', 'platform', 'powered', 'features', 'suite', 'tools',
+                    'ai-powered', 'global', 'professional', 'powered by', 'sign up',
+                    'get started', 'free trial', 'join', 'try', 'start', 'discover',
+                    'introducing', 'now live', 'deploy', 'built for', 'designed for'],
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1129,12 +1137,17 @@ def build_summary(title: str, description: str, artist: str, track: str,
         return f'Artist: {artist}'
     if title:
         clean = re.sub(r'\s*[\|\-–—]\s*.{1,40}$', '', title).strip()
-        if len(clean) > 10:
-            return clean
-    if h1 and h1 != title:
-        return h1[:160]
+        # If the cleaned title is a short brand name (< 30 chars) and we have a
+        # richer description, use the description — brand names alone are not useful
+        # as a summary for content generation.
+        if clean and len(clean) > 10:
+            if len(clean) >= 30 or not description:
+                return clean
+            # Short brand name: fall through to description below
+    if h1 and h1 != title and len(h1) > 20:
+        return h1[:200]
     if description:
-        return description[:200]
+        return description[:220]
     if paragraphs:
         return paragraphs[0][:200]
     return title[:160] if title else ''
