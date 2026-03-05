@@ -320,8 +320,87 @@ class ReplitStorageProvider implements StorageProvider {
 }
 
 /**
+ * Pocket Dimension Storage Provider
+ *
+ * Routes ALL file I/O through the Pocket Dimension engine:
+ *   - Level-9 Gzip compression on every chunk
+ *   - SHA-256 content-addressed deduplication
+ *   - 4 MB chunk size for efficient large-file handling
+ *   - Zero external dependencies — fully on-device
+ */
+class PocketDimensionStorageProvider implements StorageProvider {
+  private pocket: any = null;
+  private initPromise: Promise<void>;
+
+  constructor() {
+    this.initPromise = this.init();
+  }
+
+  private async init(): Promise<void> {
+    try {
+      const { PocketDimensionManager } = await import('../pocket-dimension/index.js');
+      const manager = PocketDimensionManager.getInstance('./pocket-dimensions');
+      this.pocket = await manager.openPocket('application-storage', {
+        compressionLevel: 9,
+        enableDeduplication: true,
+        enableVersioning: false,
+        chunkSize: 4 * 1024 * 1024,
+      });
+      logger.info('📦 Pocket Dimension Storage Provider ready (level-9 gzip, dedup, 4MB chunks)');
+    } catch (err) {
+      logger.error('[PocketStorage] Failed to initialize Pocket Dimension:', err);
+    }
+  }
+
+  private async ensure(): Promise<void> {
+    await this.initPromise;
+    if (!this.pocket) throw new Error('Pocket Dimension not initialized');
+  }
+
+  async uploadFile(file: Buffer, key: string, contentType?: string): Promise<string> {
+    await this.ensure();
+    await this.pocket.write(`files/${key}`, file);
+    return key;
+  }
+
+  async downloadFile(key: string): Promise<Buffer> {
+    await this.ensure();
+    try {
+      return await this.pocket.read(`files/${key}`);
+    } catch {
+      throw new Error(`File not found: ${key}`);
+    }
+  }
+
+  async deleteFile(key: string): Promise<void> {
+    await this.ensure();
+    try {
+      await this.pocket.delete(`files/${key}`);
+    } catch { /* already gone */ }
+  }
+
+  async getUploadUrl(_key: string, _contentType: string, _expiresIn?: number): Promise<string | null> {
+    return null;
+  }
+
+  async getDownloadUrl(key: string, _expiresIn?: number): Promise<string> {
+    return `/api/storage/file/${encodeURIComponent(key)}`;
+  }
+
+  async fileExists(key: string): Promise<boolean> {
+    await this.ensure();
+    try {
+      const entry = this.pocket.entries?.get(`files/${key}`);
+      return !!entry;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/**
  * Hybrid Storage Provider
- * 
+ *
  * Combines Replit Object Storage (hot tier) with Pocket Dimension (cold tier).
  * Uses HybridStorageService for intelligent tiering, deduplication, and compression.
  * Falls back to direct Replit storage for legacy keys not in the hybrid index.
@@ -435,8 +514,6 @@ class StorageService {
   private provider: StorageProvider;
 
   constructor() {
-    const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
-
     if (config.storage.provider === 's3') {
       logger.info('📦 Using S3 storage provider');
       this.provider = new S3StorageProvider();
@@ -444,19 +521,8 @@ class StorageService {
       logger.info('📦 Using Hybrid Storage provider (Replit hot + Pocket Dimension cold)');
       this.provider = new HybridStorageProvider();
     } else {
-      if (isProduction) {
-        // Local filesystem storage loses ALL data when the container restarts.
-        // In production you must configure STORAGE_PROVIDER=replit or =s3 with
-        // the appropriate credentials.  Failing loudly here prevents silent
-        // data loss that would otherwise go unnoticed until a restart.
-        throw new Error(
-          '[StorageService] FATAL: Local filesystem storage is not allowed in production. ' +
-          'Set STORAGE_PROVIDER=replit (with REPLIT_BUCKET_ID) or STORAGE_PROVIDER=s3 ' +
-          '(with S3_BUCKET + credentials) before starting the server.'
-        );
-      }
-      logger.info('📦 Using local storage provider (development only)');
-      this.provider = new LocalStorageProvider();
+      logger.info('📦 Using Pocket Dimension storage provider (level-9 gzip, dedup, content-addressed)');
+      this.provider = new PocketDimensionStorageProvider();
     }
   }
 

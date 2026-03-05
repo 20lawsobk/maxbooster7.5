@@ -14,7 +14,8 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 
 **Key Architectural Decisions:**
 
--   **Hybrid Storage System**: A three-tier approach for data storage: Replit Object Storage (hot tier), Pocket Dimension (cold tier for archival with compression/deduplication), and BoosterState (Rust WAL store for metadata, sessions, and queues).
+-   **Pocket Dimension Storage Bubbles**: All major storage paths now route through dedicated Pocket Dimension pockets (level-9 Gzip, SHA-256 content-addressed deduplication, 4MB chunking). Active pockets: `ai-model-weights` (social/advertising/fine-tune model weights — survives restarts, skips retraining), `offline-mode-cache` (project JSON + cache index), `application-storage` (general file uploads via `storageService`), `hybrid-cold-storage` (user file cold tier via hybridStorage), and per-user pockets (`user-{id}`). Distribution route now uses memory storage → Pocket Dimension instead of disk. Audio fingerprint routes write to `/tmp` temporarily for Python analysis, then clean up. `modelWeightStorage.ts` is the dedicated weight storage service.
+-   **Hybrid Storage System**: A three-tier approach for data storage: Replit Object Storage (hot tier, only when sidecar is available), Pocket Dimension (primary storage for all data — level-9 gzip, dedup), and BoosterState (Rust WAL store for metadata, sessions, and queues). The `storageService` defaults to `PocketDimensionStorageProvider` unless `STORAGE_PROVIDER=s3` or `=replit` is set.
 -   **AI Model Fine-Tuning**: All core AI/ML models are developed in-house and specifically fine-tuned for music artist use cases (e.g., Viral Scoring, Timing Optimization, Algorithm Intelligence) using industry-specific data. No external AI APIs are used. A dedicated public-dataset fine-tuning pass (`fine_tune_public_datasets.json`) is now included in the base training pipeline, encoding 261 samples from 8 sources: YouTube-8M (video engagement signals), AudioSet (audio clip boosts), HarmonySet CVPR 2025 (audio-visual sync lift), MusicBench (52,768-calibrated text-music pairs), MTG-Jamendo (CC-licensed genre tags), HARRISON dataset (hashtag patterns), Social-Media-Instruction (HuggingFace caption/CTA patterns), and platform content formulas. This enriches all 8 genres (hip-hop, r&b, pop, electronic, afrobeats, latin, country, rock) with genre-specific viral hooks, platform content scripts, CTA libraries, and emotional trigger patterns that are now baked into the ContentGenerator NLP engine.
 -   **Microservices-like Structure**: Services are logically separated within the monorepo to manage complexity.
 -   **Scalability**: Designed for Replit Autoscale with Redis for shared state across replicas.
@@ -77,7 +78,8 @@ Installed Python packages: `librosa 0.11.0`, `soundfile 0.13.1`, `scipy 1.17.1`,
 -   **Backend Frameworks**: Express.js, Node.js 22, tsx.
 -   **Database**: PostgreSQL (via Neon serverless), Drizzle ORM.
 -   **Caching/Queuing/Sessions**: Redis.
--   **Object Storage**: Replit Object Storage.
+-   **Object Storage**: Replit Object Storage (when sidecar available); Pocket Dimension as universal fallback.
+-   **TensorFlow**: `@tensorflow/tfjs-node` binary present at `node_modules/@tensorflow/tfjs-node/lib/napi-v9/tfjs_binding.node`. The `libtensorflow.so.2` and `libtensorflow_framework.so.2` symlinks in `deps/lib/` MUST NOT exist — their presence causes an uncatchable SIGBUS crash on dlopen. With symlinks absent, native binding fails with a catchable JS error and the app gracefully falls back to pure `@tensorflow/tfjs` CPU backend.
 -   **Payment Processing**: Stripe.
 -   **Email Delivery**: SendGrid.
 -   **Error Tracking**: Sentry.

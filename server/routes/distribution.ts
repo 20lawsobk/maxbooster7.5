@@ -82,21 +82,9 @@ interface PayoutRecord {
 
 const router = Router();
 
-// Configure multer for audio and artwork uploads
-const uploadDir = path.join(process.cwd(), 'uploads', 'distribution');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
+// Configure multer for audio and artwork uploads — memory storage, routed to Pocket Dimension
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: uploadDir,
-    filename: (req, file, cb) => {
-      const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      const ext = path.extname(file.originalname);
-      cb(null, `${uniqueSuffix}${ext}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 200 * 1024 * 1024, // 200MB
   },
@@ -2115,7 +2103,14 @@ router.post('/fingerprint/check', requireAuth, upload.single('audio'), async (re
       data = duplicateCheckSchema.parse(req.body);
     }
     
-    const audioPath = file ? file.path : data.audioPath;
+    let audioPath = data.audioPath;
+    let tmpPath: string | null = null;
+    if (file) {
+      const os = await import('os');
+      tmpPath = path.join(os.tmpdir(), `fp_check_${Date.now()}${path.extname(file.originalname || '.mp3')}`);
+      fs.writeFileSync(tmpPath, file.buffer);
+      audioPath = tmpPath;
+    }
     if (!audioPath) {
       return res.status(400).json({ error: 'Audio file or path is required' });
     }
@@ -2129,6 +2124,7 @@ router.post('/fingerprint/check', requireAuth, upload.single('audio'), async (re
         excludeOwn: data.excludeOwn,
       }
     );
+    if (tmpPath) fs.unlink(tmpPath, () => {});
 
     res.json({
       isDuplicate: result.isDuplicate,
@@ -2166,11 +2162,16 @@ router.post('/fingerprint/generate', requireAuth, upload.single('audio'), async 
       return res.status(400).json({ error: 'trackId and releaseId are required' });
     }
 
-    const fingerprint = await audioFingerprintService.generateFingerprint(
-      file.path,
-      trackId,
-      releaseId
-    );
+    const os = await import('os');
+    const tmpPath = path.join(os.tmpdir(), `fp_gen_${Date.now()}${path.extname(file.originalname || '.mp3')}`);
+    fs.writeFileSync(tmpPath, file.buffer);
+
+    let fingerprint: any;
+    try {
+      fingerprint = await audioFingerprintService.generateFingerprint(tmpPath, trackId, releaseId);
+    } finally {
+      fs.unlink(tmpPath, () => {});
+    }
 
     res.json({
       success: true,
@@ -3474,10 +3475,8 @@ router.post('/transfer/validate', requireAuth, upload.single('file'), async (req
       return res.status(400).json({ error: 'Distributor must be specified' });
     }
 
-    const csvContent = fs.readFileSync(file.path, 'utf-8');
+    const csvContent = file.buffer.toString('utf-8');
     const validation = await distributionDataTransferService.validateImportData(csvContent, distributor);
-
-    fs.unlinkSync(file.path);
 
     res.json(validation);
   } catch (error: unknown) {
@@ -3501,10 +3500,8 @@ router.post('/transfer/import', requireAuth, upload.single('file'), async (req: 
       return res.status(400).json({ error: 'Distributor must be specified' });
     }
 
-    const csvContent = fs.readFileSync(file.path, 'utf-8');
+    const csvContent = file.buffer.toString('utf-8');
     const job = await distributionDataTransferService.importFromDistributor(userId, distributor, csvContent);
-
-    fs.unlinkSync(file.path);
 
     res.json({
       success: true,

@@ -14,12 +14,7 @@ import {
   VIDEO_CONTENT_TRAINING_PACK,
   getHashtagsForGenre,
 } from '../../shared/ml/training/musicIndustryTrainingData.js';
-import fs from 'fs';
-import path from 'path';
-
-const WEIGHTS_DIR = path.join(process.cwd(), 'ai_model', 'weights');
-const SOCIAL_BASE_WEIGHTS = path.join(WEIGHTS_DIR, 'social_base.json');
-const ADVERTISING_BASE_WEIGHTS = path.join(WEIGHTS_DIR, 'advertising_base.json');
+import { modelWeightStorage } from './modelWeightStorage.js';
 
 const PLATFORMS = ['instagram', 'tiktok', 'twitter', 'youtube', 'facebook'];
 const MEDIA_TYPES: Array<'text' | 'image' | 'video' | 'carousel'> = ['text', 'image', 'video', 'carousel'];
@@ -411,8 +406,8 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
 
 async function trainAndSaveSocialBase(): Promise<boolean> {
   try {
-    if (fs.existsSync(SOCIAL_BASE_WEIGHTS)) {
-      logger.info('[BaseTrainer] Social base weights already exist, skipping re-training');
+    if (await modelWeightStorage.exists('social_base')) {
+      logger.info('[BaseTrainer] Social base weights found in storage, skipping re-training');
       return true;
     }
 
@@ -426,16 +421,15 @@ async function trainAndSaveSocialBase(): Promise<boolean> {
     logger.info(`[BaseTrainer] Social training complete: ${result.postsProcessed} posts, models: ${result.modelsTrained.join(', ')}`);
 
     const state = model.serializeMetadata ? model.serializeMetadata() : null;
-    fs.mkdirSync(WEIGHTS_DIR, { recursive: true });
-    fs.writeFileSync(SOCIAL_BASE_WEIGHTS, JSON.stringify({
+    await modelWeightStorage.save('social_base', {
       trainedAt: new Date().toISOString(),
       postsProcessed: result.postsProcessed,
       modelsTrained: result.modelsTrained,
       accuracy: result.accuracy,
       state,
-    }, null, 2));
+    });
 
-    logger.info(`[BaseTrainer] Social base weights saved to ${SOCIAL_BASE_WEIGHTS}`);
+    logger.info('[BaseTrainer] Social base weights saved to storage bubble');
     return true;
   } catch (err) {
     logger.error('[BaseTrainer] Social autopilot training failed:', err);
@@ -445,8 +439,8 @@ async function trainAndSaveSocialBase(): Promise<boolean> {
 
 async function trainAndSaveAdvertisingBase(): Promise<boolean> {
   try {
-    if (fs.existsSync(ADVERTISING_BASE_WEIGHTS)) {
-      logger.info('[BaseTrainer] Advertising base weights already exist, skipping re-training');
+    if (await modelWeightStorage.exists('advertising_base')) {
+      logger.info('[BaseTrainer] Advertising base weights found in storage, skipping re-training');
       return true;
     }
 
@@ -479,8 +473,7 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
     logger.info(`[BaseTrainer] Advertising training complete: ${result.campaignsProcessed} campaigns processed`);
 
     const state = model.serializeMetadata ? model.serializeMetadata() : null;
-    fs.mkdirSync(WEIGHTS_DIR, { recursive: true });
-    fs.writeFileSync(ADVERTISING_BASE_WEIGHTS, JSON.stringify({
+    await modelWeightStorage.save('advertising_base', {
       trainedAt: new Date().toISOString(),
       version: '2.0',
       datasets: {
@@ -491,9 +484,9 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
       },
       campaignsProcessed: result.campaignsProcessed,
       state,
-    }, null, 2));
+    });
 
-    logger.info(`[BaseTrainer] Advertising base weights v2.0 saved — organic-as-ads + paid benchmarks trained`);
+    logger.info('[BaseTrainer] Advertising base weights v2.0 saved to storage bubble — organic-as-ads + paid benchmarks trained');
     return true;
   } catch (err) {
     logger.error('[BaseTrainer] Advertising autopilot training failed:', err);
@@ -514,8 +507,6 @@ async function trainMusicGenerator(): Promise<boolean> {
   }
 }
 
-const FINE_TUNE_WEIGHTS = path.join(WEIGHTS_DIR, 'fine_tune_public_datasets.json');
-
 /**
  * Fine-tunes the content generation models using patterns sourced from
  * publicly available music industry datasets:
@@ -533,6 +524,11 @@ const FINE_TUNE_WEIGHTS = path.join(WEIGHTS_DIR, 'fine_tune_public_datasets.json
  */
 async function fineTuneWithPublicDatasets(): Promise<boolean> {
   try {
+    if (await modelWeightStorage.exists('fine_tune_public_datasets')) {
+      logger.info('[BaseTrainer] Fine-tune weights found in storage, skipping re-training');
+      return true;
+    }
+
     logger.info('[BaseTrainer] ── Fine-tuning with public music industry datasets ──');
 
     const genres = Object.keys(GENRE_VIRAL_HOOKS) as Array<keyof typeof GENRE_VIRAL_HOOKS>;
@@ -667,14 +663,13 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
       genreEngagementMatrix: videoEngagementMatrix,
     };
 
-    fs.mkdirSync(WEIGHTS_DIR, { recursive: true });
-    fs.writeFileSync(FINE_TUNE_WEIGHTS, JSON.stringify(fineTuneWeights, null, 2));
+    await modelWeightStorage.save('fine_tune_public_datasets', fineTuneWeights);
 
     logger.info('[BaseTrainer] ══════════════════════════════════════════════════════════');
     logger.info(`[BaseTrainer] Fine-tuning complete — ${totalSamples} total samples encoded`);
     logger.info(`[BaseTrainer]   Genres enriched: ${genres.join(', ')}`);
     logger.info(`[BaseTrainer]   Platforms: ${platforms.join(', ')}`);
-    logger.info(`[BaseTrainer]   Weights saved: ${FINE_TUNE_WEIGHTS}`);
+    logger.info('[BaseTrainer]   Weights saved to Pocket Dimension storage bubble');
     logger.info('[BaseTrainer] ══════════════════════════════════════════════════════════');
 
     return true;
@@ -718,28 +713,13 @@ export async function runBaseModelTraining(): Promise<void> {
 }
 
 export function loadSocialBaseState(): any | null {
-  try {
-    if (!fs.existsSync(SOCIAL_BASE_WEIGHTS)) return null;
-    return JSON.parse(fs.readFileSync(SOCIAL_BASE_WEIGHTS, 'utf-8'));
-  } catch {
-    return null;
-  }
+  return modelWeightStorage.load('social_base');
 }
 
 export function loadAdvertisingBaseState(): any | null {
-  try {
-    if (!fs.existsSync(ADVERTISING_BASE_WEIGHTS)) return null;
-    return JSON.parse(fs.readFileSync(ADVERTISING_BASE_WEIGHTS, 'utf-8'));
-  } catch {
-    return null;
-  }
+  return modelWeightStorage.load('advertising_base');
 }
 
 export function loadFineTuneState(): any | null {
-  try {
-    if (!fs.existsSync(FINE_TUNE_WEIGHTS)) return null;
-    return JSON.parse(fs.readFileSync(FINE_TUNE_WEIGHTS, 'utf-8'));
-  } catch {
-    return null;
-  }
+  return modelWeightStorage.load('fine_tune_public_datasets');
 }

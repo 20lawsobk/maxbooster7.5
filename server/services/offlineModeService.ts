@@ -5,6 +5,7 @@ import { projects, studioTracks, audioClips } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
+import { PocketDimensionManager } from '../pocket-dimension/index.js';
 
 export interface OfflineProject {
   id: string;
@@ -89,10 +90,8 @@ const DEFAULT_SETTINGS: OfflineSettings = {
   offlineNotifications: true,
 };
 
-const OFFLINE_CACHE_DIR = path.join(process.cwd(), 'data', 'offline-cache');
-const OFFLINE_AUDIO_DIR = path.join(OFFLINE_CACHE_DIR, 'audio');
-const OFFLINE_PROJECTS_DIR = path.join(OFFLINE_CACHE_DIR, 'projects');
-const CACHE_INDEX_FILE = path.join(OFFLINE_CACHE_DIR, 'cache-index.json');
+const OFFLINE_AUDIO_DIR = path.join(process.cwd(), 'data', 'offline-cache', 'audio');
+const POCKET_ID = 'offline-mode-cache';
 
 class OfflineModeService extends EventEmitter {
   private cachedProjects: Map<string, OfflineProject> = new Map();
@@ -101,6 +100,8 @@ class OfflineModeService extends EventEmitter {
   private syncQueue: string[] = [];
   private isSyncing: boolean = false;
   private lastOnlineCheck: Date = new Date();
+  private pocket: any = null;
+  private pocketReady: Promise<void>;
   private offlineCapabilities: OfflineCapabilities = {
     projectEditing: true,
     audioPlayback: true,
@@ -116,90 +117,67 @@ class OfflineModeService extends EventEmitter {
 
   constructor() {
     super();
-    this.initializeCacheDirectories();
-    this.loadCacheIndex();
+    fs.mkdirSync(OFFLINE_AUDIO_DIR, { recursive: true });
+    this.pocketReady = this.initPocket();
     this.startConnectivityMonitor();
   }
 
-  private initializeCacheDirectories(): void {
+  private async initPocket(): Promise<void> {
     try {
-      if (!fs.existsSync(OFFLINE_CACHE_DIR)) {
-        fs.mkdirSync(OFFLINE_CACHE_DIR, { recursive: true });
-      }
-      if (!fs.existsSync(OFFLINE_AUDIO_DIR)) {
-        fs.mkdirSync(OFFLINE_AUDIO_DIR, { recursive: true });
-      }
-      if (!fs.existsSync(OFFLINE_PROJECTS_DIR)) {
-        fs.mkdirSync(OFFLINE_PROJECTS_DIR, { recursive: true });
-      }
-      logger.info('Offline cache directories initialized');
+      const manager = PocketDimensionManager.getInstance('./pocket-dimensions');
+      this.pocket = await manager.openPocket(POCKET_ID, {
+        compressionLevel: 9,
+        enableDeduplication: true,
+        enableVersioning: false,
+        chunkSize: 2 * 1024 * 1024,
+      });
+      logger.info('[OfflineCache] Pocket Dimension storage bubble opened (level-9 gzip, dedup)');
+      await this.loadCacheIndex();
     } catch (error) {
-      logger.error('Failed to initialize offline cache directories:', error);
+      logger.error('[OfflineCache] Failed to open Pocket Dimension, cache unavailable:', error);
     }
   }
 
-  private loadCacheIndex(): void {
+  private async loadCacheIndex(): Promise<void> {
+    if (!this.pocket) return;
     try {
-      if (fs.existsSync(CACHE_INDEX_FILE)) {
-        const indexData = fs.readFileSync(CACHE_INDEX_FILE, 'utf8');
-        const index = JSON.parse(indexData);
-        
-        for (const [projectId, rawProject] of Object.entries(index.projects || {})) {
-          const project = rawProject as any;
-          
-          project.cachedAt = new Date(project.cachedAt);
-          project.lastSyncAt = new Date(project.lastSyncAt);
-          
-          if (project.audioFiles) {
-            for (const audioFile of project.audioFiles) {
-              audioFile.cachedAt = new Date(audioFile.cachedAt);
+      const raw = await this.pocket.read('index/cache-index.json');
+      const index = JSON.parse(raw.toString('utf-8'));
+      for (const [projectId, rawProject] of Object.entries(index.projects || {})) {
+        const project = rawProject as any;
+        project.cachedAt = new Date(project.cachedAt);
+        project.lastSyncAt = new Date(project.lastSyncAt);
+        if (project.audioFiles) {
+          for (const af of project.audioFiles) af.cachedAt = new Date(af.cachedAt);
+          project.audioFiles = project.audioFiles.filter((af: OfflineAudioFile) => {
+            if (af.path.startsWith('/') || af.path.includes('offline-cache')) {
+              return fs.existsSync(af.path);
             }
-          }
-          
-          const projectFilePath = path.join(OFFLINE_PROJECTS_DIR, `${projectId}.json`);
-          if (fs.existsSync(projectFilePath)) {
-            try {
-              const projectDataRaw = fs.readFileSync(projectFilePath, 'utf8');
-              project.projectData = JSON.parse(projectDataRaw);
-            } catch (err) {
-              logger.warn(`Failed to reload project data for ${projectId}:`, err);
-            }
-          }
-          
-          if (project.audioFiles) {
-            project.audioFiles = project.audioFiles.filter((af: OfflineAudioFile) => {
-              if (af.path.startsWith('/') || af.path.includes('offline-cache')) {
-                return fs.existsSync(af.path);
-              }
-              return true;
-            });
-          }
-          
-          this.cachedProjects.set(projectId, project as OfflineProject);
+            return true;
+          });
         }
-        
-        if (index.settings) {
-          this.settings = { ...DEFAULT_SETTINGS, ...index.settings };
-        }
-        logger.info(`Loaded ${this.cachedProjects.size} cached projects from disk`);
+        try {
+          const projBuf = await this.pocket.read(`projects/${projectId}.json`);
+          project.projectData = JSON.parse(projBuf.toString('utf-8'));
+        } catch { /* project data missing */ }
+        this.cachedProjects.set(projectId, project as OfflineProject);
       }
-    } catch (error) {
-      logger.error('Failed to load cache index:', error);
-    }
+      if (index.settings) this.settings = { ...DEFAULT_SETTINGS, ...index.settings };
+      logger.info(`[OfflineCache] Loaded ${this.cachedProjects.size} cached projects from Pocket Dimension`);
+    } catch { /* no index yet — first run */ }
   }
 
   private saveCacheIndex(): void {
-    try {
-      const index = {
-        version: 1,
-        updatedAt: new Date().toISOString(),
-        settings: this.settings,
-        projects: Object.fromEntries(this.cachedProjects),
-      };
-      fs.writeFileSync(CACHE_INDEX_FILE, JSON.stringify(index, null, 2));
-    } catch (error) {
-      logger.error('Failed to save cache index:', error);
-    }
+    if (!this.pocket) return;
+    const index = {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      settings: this.settings,
+      projects: Object.fromEntries(this.cachedProjects),
+    };
+    this.pocket.write('index/cache-index.json', Buffer.from(JSON.stringify(index, null, 2))).catch((err: any) =>
+      logger.error('[OfflineCache] Failed to save cache index:', err)
+    );
   }
 
   private async downloadAudioFile(audioUrl: string, projectId: string, clipId: string): Promise<{ localPath: string; size: number }> {
@@ -335,8 +313,9 @@ class OfflineModeService extends EventEmitter {
       const metadataSize = Buffer.byteLength(serializedData, 'utf8');
       const totalSize = metadataSize + totalAudioSize;
 
-      const projectFilePath = path.join(OFFLINE_PROJECTS_DIR, `${projectId}.json`);
-      fs.writeFileSync(projectFilePath, serializedData);
+      if (this.pocket) {
+        await this.pocket.write(`projects/${projectId}.json`, Buffer.from(serializedData));
+      }
 
       const offlineProject: OfflineProject = {
         id: `offline-${projectId}`,
@@ -380,11 +359,9 @@ class OfflineModeService extends EventEmitter {
     }
 
     try {
-      const projectFilePath = path.join(OFFLINE_PROJECTS_DIR, `${projectId}.json`);
-      if (fs.existsSync(projectFilePath)) {
-        fs.unlinkSync(projectFilePath);
+      if (this.pocket) {
+        await this.pocket.delete(`projects/${projectId}.json`).catch(() => {});
       }
-
       const projectAudioDir = path.join(OFFLINE_AUDIO_DIR, projectId);
       if (fs.existsSync(projectAudioDir)) {
         fs.rmSync(projectAudioDir, { recursive: true, force: true });
