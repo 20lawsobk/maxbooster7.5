@@ -44,6 +44,15 @@ import {
   Newspaper,
   ShoppingBag,
   Star,
+  Eye,
+  Heart,
+  Play,
+  Timer,
+  Tag,
+  MapPin,
+  Mic,
+  DollarSign,
+  Database,
 } from 'lucide-react';
 
 const PLATFORMS = [
@@ -277,16 +286,39 @@ export function ContentGenerator() {
       return;
     }
 
+    const urlContext = urlAnalysis ? {
+      genre:          urlAnalysis.genre && urlAnalysis.genre !== 'default' ? urlAnalysis.genre : undefined,
+      artistName:     urlAnalysis.artist || undefined,
+      trackTitle:     urlAnalysis.track || undefined,
+      albumName:      urlAnalysis.album || undefined,
+      label:          urlAnalysis.label || undefined,
+      releaseDate:    urlAnalysis.release_date || undefined,
+      duration:       urlAnalysis.duration || undefined,
+      contentType:    urlAnalysis.content_type && urlAnalysis.content_type !== 'website' ? urlAnalysis.content_type : undefined,
+      contentCategory: urlAnalysis.content_category && urlAnalysis.content_category !== 'general' ? urlAnalysis.content_category : undefined,
+      keywords:       urlAnalysis.keywords?.length ? urlAnalysis.keywords : undefined,
+      tags:           urlAnalysis.tags?.length ? urlAnalysis.tags : undefined,
+      // Engagement context (lets AI reference popularity)
+      viewCount:      urlAnalysis.view_count ?? undefined,
+      likeCount:      urlAnalysis.like_count ?? undefined,
+      playCount:      urlAnalysis.play_count ?? undefined,
+      // Event context
+      eventDate:      urlAnalysis.event_date || undefined,
+      eventLocation:  urlAnalysis.event_location || undefined,
+      performers:     urlAnalysis.performers?.length ? urlAnalysis.performers : undefined,
+      // Product context
+      price:          urlAnalysis.price || undefined,
+      brand:          urlAnalysis.brand || undefined,
+      rating:         urlAnalysis.rating || undefined,
+      // Platform
+      sourcePlatform: urlAnalysis.platform && urlAnalysis.platform !== 'web' ? urlAnalysis.platform : undefined,
+    } : {};
+
     aiGenerateMutation.mutate({
       topic: contentPrompt,
       platform: selectedPlatform,
       tone: selectedTone,
-      ...(urlAnalysis && {
-        genre: urlAnalysis.genre && urlAnalysis.genre !== 'default' ? urlAnalysis.genre : undefined,
-        artistName: urlAnalysis.artist || undefined,
-        trackTitle: urlAnalysis.track || undefined,
-        contentType: urlAnalysis.content_type !== 'website' ? urlAnalysis.content_type : undefined,
-      }),
+      ...urlContext,
     });
   };
 
@@ -460,33 +492,55 @@ export function ContentGenerator() {
                   </div>
 
                   {urlAnalysis && (
-                    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+                    <div className="rounded-md border bg-muted/30 p-3 space-y-2.5">
+
+                      {/* ── Header row: image + title + basic metadata ── */}
                       <div className="flex items-start gap-3">
-                        {urlAnalysis.og_image && (
+                        {(urlAnalysis.thumbnail_url || urlAnalysis.og_image) && (
                           <img
-                            src={urlAnalysis.og_image}
+                            src={urlAnalysis.thumbnail_url || urlAnalysis.og_image}
                             alt=""
                             className="w-16 h-16 object-cover rounded-md flex-shrink-0"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{urlAnalysis.title || urlAnalysis.domain}</p>
+                          <p className="text-sm font-semibold truncate">{urlAnalysis.title || urlAnalysis.domain}</p>
+
+                          {/* Artist / Track / Album */}
+                          {urlAnalysis.artist && (
+                            <p className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1">
+                              <Mic className="w-3 h-3" />
+                              {urlAnalysis.artist}
+                              {urlAnalysis.track && ` — ${urlAnalysis.track}`}
+                              {urlAnalysis.album && !urlAnalysis.track && ` · ${urlAnalysis.album}`}
+                            </p>
+                          )}
+                          {urlAnalysis.track && !urlAnalysis.artist && (
+                            <p className="text-xs text-primary font-medium mt-0.5">{urlAnalysis.track}</p>
+                          )}
+                          {urlAnalysis.album && urlAnalysis.artist && urlAnalysis.track && (
+                            <p className="text-xs text-muted-foreground mt-0.5">Album: {urlAnalysis.album}</p>
+                          )}
+
+                          {/* Author / Published */}
+                          {urlAnalysis.author && !urlAnalysis.artist && (
+                            <p className="text-xs text-muted-foreground mt-0.5">by {urlAnalysis.author}</p>
+                          )}
                           {urlAnalysis.summary && urlAnalysis.summary !== urlAnalysis.title && (
                             <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{urlAnalysis.summary}</p>
                           )}
-                          {urlAnalysis.author && (
-                            <p className="text-xs text-muted-foreground mt-0.5">by {urlAnalysis.author}</p>
-                          )}
                         </div>
                       </div>
+
+                      {/* ── Classification badges ── */}
                       <div className="flex flex-wrap gap-1.5">
                         <Badge variant="secondary" className="text-xs flex items-center gap-1">
                           {CATEGORY_ICON[urlAnalysis.platform_category] || <Globe className="w-3 h-3" />}
-                          {urlAnalysis.platform !== 'web' ? urlAnalysis.platform : urlAnalysis.domain}
+                          {urlAnalysis.platform !== 'web' ? urlAnalysis.platform.replace(/_/g, ' ') : urlAnalysis.domain}
                         </Badge>
                         {urlAnalysis.content_type && urlAnalysis.content_type !== 'website' && (
-                          <Badge variant="outline" className="text-xs">{urlAnalysis.content_type}</Badge>
+                          <Badge variant="outline" className="text-xs">{urlAnalysis.content_type.replace(/_/g, ' ')}</Badge>
                         )}
                         {urlAnalysis.genre && urlAnalysis.genre !== 'default' && (
                           <Badge variant="outline" className="text-xs">{urlAnalysis.genre}</Badge>
@@ -494,18 +548,167 @@ export function ContentGenerator() {
                         {urlAnalysis.tone && urlAnalysis.tone !== 'default' && (
                           <Badge variant="outline" className="text-xs">{urlAnalysis.tone}</Badge>
                         )}
-                        {urlAnalysis.published && (
-                          <Badge variant="outline" className="text-xs">
-                            {urlAnalysis.published.slice(0, 10)}
-                          </Badge>
+                        {urlAnalysis.language && urlAnalysis.language !== 'en' && (
+                          <Badge variant="outline" className="text-xs uppercase">{urlAnalysis.language}</Badge>
                         )}
                       </div>
+
+                      {/* ── Music metadata row ── */}
+                      {(urlAnalysis.duration || urlAnalysis.release_date || urlAnalysis.label || urlAnalysis.isrc) && (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          {urlAnalysis.duration && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Timer className="w-3 h-3" />{urlAnalysis.duration}
+                            </span>
+                          )}
+                          {urlAnalysis.release_date && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />{urlAnalysis.release_date.slice(0, 10)}
+                            </span>
+                          )}
+                          {urlAnalysis.label && (
+                            <span className="text-xs text-muted-foreground">{urlAnalysis.label}</span>
+                          )}
+                          {urlAnalysis.isrc && (
+                            <span className="text-xs text-muted-foreground font-mono">ISRC: {urlAnalysis.isrc}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Engagement stats ── */}
+                      {(urlAnalysis.view_count != null || urlAnalysis.like_count != null ||
+                        urlAnalysis.play_count != null || urlAnalysis.subscriber_count != null) && (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          {urlAnalysis.view_count != null && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Eye className="w-3 h-3" />{urlAnalysis.view_count.toLocaleString()} views
+                            </span>
+                          )}
+                          {urlAnalysis.like_count != null && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Heart className="w-3 h-3" />{urlAnalysis.like_count.toLocaleString()} likes
+                            </span>
+                          )}
+                          {urlAnalysis.play_count != null && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Play className="w-3 h-3" />{urlAnalysis.play_count.toLocaleString()} plays
+                            </span>
+                          )}
+                          {urlAnalysis.subscriber_count != null && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Users className="w-3 h-3" />{
+                                typeof urlAnalysis.subscriber_count === 'number'
+                                  ? urlAnalysis.subscriber_count.toLocaleString()
+                                  : urlAnalysis.subscriber_count
+                              } subscribers
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Article metadata ── */}
+                      {(urlAnalysis.reading_time_minutes || urlAnalysis.published || urlAnalysis.section) && (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          {urlAnalysis.reading_time_minutes && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="w-3 h-3" />{urlAnalysis.reading_time_minutes} min read
+                            </span>
+                          )}
+                          {urlAnalysis.published && !urlAnalysis.release_date && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />{urlAnalysis.published.slice(0, 10)}
+                            </span>
+                          )}
+                          {urlAnalysis.section && (
+                            <span className="text-xs text-muted-foreground">{urlAnalysis.section}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Event details ── */}
+                      {(urlAnalysis.event_date || urlAnalysis.event_location || (urlAnalysis.performers && urlAnalysis.performers.length > 0)) && (
+                        <div className="space-y-1">
+                          {urlAnalysis.event_date && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />{urlAnalysis.event_date.slice(0, 16).replace('T', ' ')}
+                            </p>
+                          )}
+                          {urlAnalysis.event_location && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />{urlAnalysis.event_location}
+                            </p>
+                          )}
+                          {urlAnalysis.performers && urlAnalysis.performers.length > 0 && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Mic className="w-3 h-3" />{urlAnalysis.performers.slice(0, 4).join(', ')}
+                              {urlAnalysis.performers.length > 4 && ` +${urlAnalysis.performers.length - 4}`}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Product info ── */}
+                      {(urlAnalysis.price || urlAnalysis.brand || urlAnalysis.rating) && (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          {urlAnalysis.price && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" />
+                              {urlAnalysis.currency && urlAnalysis.currency !== 'USD' ? `${urlAnalysis.currency} ` : ''}
+                              {urlAnalysis.price}
+                            </span>
+                          )}
+                          {urlAnalysis.brand && (
+                            <span className="text-xs text-muted-foreground">{urlAnalysis.brand}</span>
+                          )}
+                          {urlAnalysis.rating && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Star className="w-3 h-3" />{urlAnalysis.rating}
+                              {urlAnalysis.review_count && ` (${urlAnalysis.review_count.toLocaleString()})`}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Tracklist / album tracks ── */}
+                      {urlAnalysis.tracklist && urlAnalysis.tracklist.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">
+                            Tracklist ({urlAnalysis.track_count || urlAnalysis.tracklist.length} tracks):
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {urlAnalysis.tracklist.slice(0, 6).map((t: string, i: number) => (
+                              <span key={i} className="text-xs bg-muted rounded px-1.5 py-0.5">{t}</span>
+                            ))}
+                            {urlAnalysis.tracklist.length > 6 && (
+                              <span className="text-xs text-muted-foreground">+{urlAnalysis.tracklist.length - 6} more</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── Tags (author-assigned) ── */}
+                      {urlAnalysis.tags && urlAnalysis.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          <Tag className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          {urlAnalysis.tags.slice(0, 8).map((tag: string) => (
+                            <span
+                              key={tag}
+                              className="text-xs bg-primary/10 text-primary rounded px-1.5 py-0.5 cursor-pointer hover:bg-primary/20"
+                              onClick={() => setContentPrompt((p) => p ? `${p}, ${tag}` : tag)}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* ── Keywords (extracted) ── */}
                       {urlAnalysis.keywords && urlAnalysis.keywords.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {urlAnalysis.keywords.slice(0, 5).map((kw: string) => (
+                          {urlAnalysis.keywords.slice(0, 8).map((kw: string) => (
                             <span
                               key={kw}
-                              className="text-xs bg-primary/10 text-primary rounded px-1.5 py-0.5 cursor-pointer hover:bg-primary/20"
+                              className="text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5 cursor-pointer hover:bg-muted/80"
                               onClick={() => setContentPrompt((p) => p ? `${p}, ${kw}` : kw)}
                             >
                               {kw}
@@ -513,10 +716,20 @@ export function ContentGenerator() {
                           ))}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-green-500" />
-                        Topic auto-filled below — edit if needed, then generate
-                      </p>
+
+                      {/* ── Data sources + success message ── */}
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-green-500" />
+                          Topic auto-filled below — edit if needed, then generate
+                        </p>
+                        {urlAnalysis.data_sources && urlAnalysis.data_sources.length > 0 && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1" title={urlAnalysis.data_sources.join(', ')}>
+                            <Database className="w-3 h-3" />
+                            {urlAnalysis.data_sources.length} source{urlAnalysis.data_sources.length !== 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

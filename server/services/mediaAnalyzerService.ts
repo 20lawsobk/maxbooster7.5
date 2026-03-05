@@ -17,32 +17,79 @@ const SERVICE_DIR   = path.join(process.cwd(), 'server', 'services');
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface UrlAnalysis {
+  // Core identifiers
   url:               string;
   domain:            string;
   platform:          string;
   platform_category: string;
   is_music:          boolean;
+  // Basic metadata
   title:             string;
   description:       string;
   author:            string;
   published:         string;
+  modified:          string;
   og_image:          string;
+  thumbnail_url:     string;
   canonical:         string;
-  keywords:          string[];
-  headings:          string[];
-  body_preview:      string;
-  summary:           string;
+  language:          string;
+  // Classification
+  content_type:      string;
+  content_category:  string;
+  genre:             string;
+  tone:              string;
+  // Music-specific
   artist:            string;
   track:             string;
   album:             string;
-  genre:             string;
-  tone:              string;
-  content_type:      string;
-  content_category:  string;
+  duration:          string;
+  release_date:      string;
+  label:             string;
+  isrc:              string;
+  bpm:               string;
+  tracklist?:        string[];
+  track_count?:      number;
+  members?:          string[];
+  // Content arrays
+  keywords:          string[];
+  tags:              string[];
+  headings:          string[];
+  body_preview:      string;
+  summary:           string;
+  // Engagement metrics (null when unavailable)
+  view_count?:       number | null;
+  like_count?:       number | null;
+  comment_count?:    number | null;
+  play_count?:       number | null;
+  share_count?:      number | null;
+  subscriber_count?: number | string | null;
+  // Media
+  embed_url?:        string;
+  // Article
+  reading_time_minutes?: number | null;
+  word_count?:       number | null;
+  section?:          string;
+  // Event-specific
+  event_date?:       string;
+  event_end_date?:   string;
+  event_location?:   string;
+  performers?:       string[];
+  organizer?:        string;
+  // Product-specific
+  price?:            string;
+  currency?:         string;
+  brand?:            string;
+  rating?:           string;
+  review_count?:     number | null;
+  // Platform IDs
   final_url?:        string;
   youtube_id?:       string;
   spotify_type?:     string;
   spotify_id?:       string;
+  apple_music_type?: string;
+  apple_music_id?:   string;
+  // Meta
+  data_sources?:     string[];
   error?:            string;
 }
 
@@ -141,7 +188,7 @@ function runPython(script: string, arg: string, timeout = 20_000): Promise<unkno
 
 export async function analyzeUrl(url: string): Promise<UrlAnalysis> {
   const script = path.join(SERVICE_DIR, 'urlAnalyzer.py');
-  const result = await runPython(script, url, 15_000) as UrlAnalysis;
+  const result = await runPython(script, url, 30_000) as UrlAnalysis;
   return result;
 }
 
@@ -190,20 +237,51 @@ export function urlToContentSeed(a: UrlAnalysis) {
     : a.summary || a.title || a.domain || a.url;
   return {
     topic,
-    genre:            a.genre            || 'default',
-    tone:             a.tone             || 'default',
-    artist:           a.artist           || '',
-    track:            a.track            || '',
-    author:           a.author           || '',
-    content_type:     a.content_type     || 'website',
-    content_category: a.content_category || 'general',
-    is_music:         a.is_music,
-    platform_hint:    a.platform,
+    genre:             a.genre            || 'default',
+    tone:              a.tone             || 'default',
+    artist:            a.artist           || '',
+    track:             a.track            || '',
+    album:             a.album            || '',
+    author:            a.author           || '',
+    label:             a.label            || '',
+    release_date:      a.release_date     || '',
+    duration:          a.duration         || '',
+    content_type:      a.content_type     || 'website',
+    content_category:  a.content_category || 'general',
+    is_music:          a.is_music,
+    platform:          a.platform,
     platform_category: a.platform_category || 'web',
-    og_image:         a.og_image || '',
-    keywords:         a.keywords || [],
-    headings:         a.headings || [],
-    body_preview:     a.body_preview || '',
+    og_image:          a.og_image         || '',
+    thumbnail_url:     a.thumbnail_url    || '',
+    embed_url:         a.embed_url        || '',
+    keywords:          a.keywords         || [],
+    tags:              a.tags             || [],
+    headings:          a.headings         || [],
+    body_preview:      a.body_preview     || '',
+    // Engagement
+    view_count:        a.view_count       ?? null,
+    like_count:        a.like_count       ?? null,
+    play_count:        a.play_count       ?? null,
+    subscriber_count:  a.subscriber_count ?? null,
+    // Event-specific
+    event_date:        a.event_date       || '',
+    event_location:    a.event_location   || '',
+    performers:        a.performers       || [],
+    // Product-specific
+    price:             a.price            || '',
+    currency:          a.currency         || '',
+    brand:             a.brand            || '',
+    rating:            a.rating           || '',
+    // Article-specific
+    reading_time_minutes: a.reading_time_minutes ?? null,
+    section:           a.section          || '',
+    // Platform IDs
+    youtube_id:        a.youtube_id       || '',
+    spotify_id:        a.spotify_id       || '',
+    spotify_type:      a.spotify_type     || '',
+    // Metadata
+    language:          a.language         || '',
+    data_sources:      a.data_sources     || [],
   };
 }
 
