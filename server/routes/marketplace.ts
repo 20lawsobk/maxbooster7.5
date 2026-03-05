@@ -2,6 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
+import fs from 'fs';
+import os from 'os';
 import { z } from 'zod';
 import { discoveryAlgorithmService } from '../services/discoveryAlgorithmService';
 import { marketplaceService } from '../services/marketplaceService';
@@ -16,6 +18,7 @@ import { eq, and, gte, sql, desc, asc } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
 import { distributedCache } from '../infrastructure/distributedCache.js';
+import { pythonAIService } from '../services/pythonAIService.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -1066,6 +1069,35 @@ router.post('/upload', upload.fields([
         },
       ],
     });
+
+    // Auto-tag BPM/key via Python librosa analysis if not provided by user
+    if (files?.audioFile?.[0] && (!tempo || !key)) {
+      const audioBuffer = files.audioFile[0].buffer;
+      const ext = path.extname(files.audioFile[0].originalname) || '.mp3';
+      const tmpPath = path.join(os.tmpdir(), `beat_autotag_${listing.id}${ext}`);
+      setImmediate(async () => {
+        try {
+          fs.writeFileSync(tmpPath, audioBuffer);
+          const available = await pythonAIService.isAvailable();
+          if (available) {
+            const analysis = await pythonAIService.analyzeAudio(tmpPath, false);
+            if (analysis.success && analysis.data) {
+              const updateData: any = {};
+              if (!tempo && analysis.data.bpm) updateData.bpm = Math.round(analysis.data.bpm);
+              if (!key && analysis.data.key) updateData.key = analysis.data.key;
+              if (Object.keys(updateData).length > 0) {
+                await db.update(listings).set(updateData).where(eq(listings.id, listing.id));
+                logger.info(`[AutoTag] Beat ${listing.id} tagged: BPM=${updateData.bpm ?? 'kept'} key=${updateData.key ?? 'kept'}`);
+              }
+            }
+          }
+        } catch (tagErr) {
+          logger.warn('[AutoTag] Failed to auto-tag beat:', tagErr);
+        } finally {
+          try { fs.unlinkSync(tmpPath); } catch {}
+        }
+      });
+    }
 
     // Notify admin about new marketplace listing awaiting review (async, non-blocking)
     setImmediate(async () => {

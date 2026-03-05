@@ -37,6 +37,24 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **Studio DAW UI/UX**: Features a customizable toolbar, resizable panels (Editor, Mixer, Lyrics), platform-adaptive fullscreen mode, and comprehensive audio device management with Web Audio API integration. Mobile-specific UI components (`MobileLyricsPanel`, `MobileAudioDialog`) are implemented for touch-friendly interactions.
 -   **CI/CD**: GitHub Actions workflows automate builds for desktop (Linux, Windows, macOS) and mobile (Android, iOS) platforms, supporting both debug and release builds, and GitHub Release creation.
 
+## Python Audio Analysis Engine (librosa)
+
+Installed Python packages: `librosa 0.11.0`, `soundfile 0.13.1`, `scipy 1.17.1`, `scikit-learn 1.8.0`, `basic-pitch`. These power server-side audio intelligence:
+
+- **`POST /api/audio/analyze-file`** — Full librosa analysis on any stored file: BPM (154ms warm), musical key (Krumhansl–Schmuckler profile), Camelot wheel number, genre estimation (MFCC-based), LUFS loudness, spectral centroid/rolloff, zero-crossing rate, optional MFCC+chroma vectors.
+- **`GET /api/audio/analysis-features`** — Reports which features and packages are available.
+- **Auto-BPM/key tagging on beat upload** — When a beat is uploaded to the marketplace without a BPM or key, the audio buffer is written to a temp file, librosa analysis runs asynchronously in the background, and the listing is updated automatically.
+- Python AI service exposes `/analyze/audio` and `/analyze/audio-features` endpoints on port 9878.
+
+## Distribution Analytics Fixes
+
+- **`GET /api/distribution/:id/streams-revenue`** — New route. Tries LabelGrid first (if `labelGridReleaseId` metadata exists), then falls back to `royaltyTransactions` table. Returns `{ streams, downloads, revenue, platforms[] }`.
+- **`GET /api/distribution/analytics/growth`** — Enhanced: now aggregates from both `analytics` table AND `royaltyTransactions` to compute real totals. Also returns `revenue`, `downloads`, and month-over-month `growth` percentage.
+
+## TikTok Production Mode
+
+`TIKTOK_ENV` changed from `sandbox` to `production`. The platform now uses `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET` for OAuth flows instead of the sandbox credentials. Separate circuit breaker for `tiktok` in `externalServices.ts`.
+
 ## External Dependencies
 
 -   **Frontend Frameworks**: React 19, Vite 7, TypeScript, TailwindCSS 4, Wouter, Zustand, TanStack Query.

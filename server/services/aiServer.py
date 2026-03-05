@@ -482,6 +482,132 @@ def generate_visual_spec(req: VisualSpecRequest):
     return {'success': True, 'template': tmpl, 'style': tmpl, 'platform': req.platform,
             'processing_time_ms': 30}
 
+# ── Audio Analysis (librosa) ───────────────────────────────────────────────────
+
+_librosa_available: Optional[bool] = None
+
+def _check_librosa() -> bool:
+    global _librosa_available
+    if _librosa_available is None:
+        try:
+            import librosa  # noqa
+            _librosa_available = True
+        except ImportError:
+            _librosa_available = False
+    return _librosa_available
+
+class AudioAnalysisRequest(BaseModel):
+    file_path: str
+    detailed: bool = False
+
+CHROMA_KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+CAMELOT_MAP = {
+    'C major': '8B', 'G major': '9B', 'D major': '10B', 'A major': '11B',
+    'E major': '12B', 'B major': '1B', 'F# major': '2B', 'C# major': '3B',
+    'G# major': '4B', 'D# major': '5B', 'A# major': '6B', 'F major': '7B',
+    'A minor': '8A', 'E minor': '9A', 'B minor': '10A', 'F# minor': '11A',
+    'C# minor': '12A', 'G# minor': '1A', 'D# minor': '2A', 'A# minor': '3A',
+    'F minor': '4A', 'C minor': '5A', 'G minor': '6A', 'D minor': '7A',
+}
+
+def _detect_key(y, sr) -> tuple[str, str, float]:
+    import numpy as np
+    import librosa
+    chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
+    chroma_mean = chroma.mean(axis=1)
+    major_profile = np.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88])
+    minor_profile = np.array([6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17])
+    major_scores, minor_scores = [], []
+    for shift in range(12):
+        rolled = np.roll(chroma_mean, -shift)
+        major_scores.append(float(np.corrcoef(rolled, major_profile)[0, 1]))
+        minor_scores.append(float(np.corrcoef(rolled, minor_profile)[0, 1]))
+    best_major = max(range(12), key=lambda i: major_scores[i])
+    best_minor = max(range(12), key=lambda i: minor_scores[i])
+    if major_scores[best_major] >= minor_scores[best_minor]:
+        key_name = f'{CHROMA_KEYS[best_major]} major'
+        confidence = major_scores[best_major]
+    else:
+        key_name = f'{CHROMA_KEYS[best_minor]} minor'
+        confidence = minor_scores[best_minor]
+    camelot = CAMELOT_MAP.get(key_name, '?')
+    return key_name, camelot, round(max(0.0, min(1.0, (confidence + 1) / 2)), 3)
+
+def _detect_genre(mfcc_mean) -> str:
+    import numpy as np
+    brightness = float(np.mean(mfcc_mean[2:6]))
+    bass_energy = float(np.mean(mfcc_mean[0:3]))
+    if bass_energy > 5 and brightness < -10:
+        return 'hip-hop'
+    elif bass_energy > 5 and brightness > -5:
+        return 'electronic'
+    elif brightness > 0:
+        return 'pop'
+    elif bass_energy < 0:
+        return 'r&b'
+    else:
+        return 'other'
+
+@app.post('/analyze/audio')
+def analyze_audio(req: AudioAnalysisRequest):
+    t0 = time.time()
+    if not _check_librosa():
+        raise HTTPException(503, 'librosa not installed')
+    import librosa
+    import numpy as np
+    fp = req.file_path
+    if not os.path.isabs(fp):
+        fp = str(WORKSPACE_DIR / fp.lstrip('/'))
+    if not os.path.exists(fp):
+        raise HTTPException(404, f'File not found: {fp}')
+    try:
+        y, sr = librosa.load(fp, sr=None, mono=True, duration=120.0)
+        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+        bpm = round(float(tempo[0]) if hasattr(tempo, '__len__') else float(tempo), 1)
+        key_name, camelot, key_confidence = _detect_key(y, sr)
+        rms = float(np.sqrt(np.mean(y ** 2)))
+        loudness_lufs = round(20 * np.log10(rms + 1e-9), 1)
+        duration = round(len(y) / sr, 2)
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+        mfcc_mean = mfcc.mean(axis=1)
+        genre = _detect_genre(mfcc_mean)
+        spectral_centroid = float(librosa.feature.spectral_centroid(y=y, sr=sr).mean())
+        spectral_rolloff = float(librosa.feature.spectral_rolloff(y=y, sr=sr).mean())
+        zcr = float(librosa.feature.zero_crossing_rate(y).mean())
+        result: Dict[str, Any] = {
+            'success': True,
+            'bpm': bpm,
+            'key': key_name,
+            'camelot': camelot,
+            'key_confidence': key_confidence,
+            'genre': genre,
+            'duration': duration,
+            'sample_rate': sr,
+            'loudness_lufs': loudness_lufs,
+            'spectral_centroid_hz': round(spectral_centroid, 1),
+            'spectral_rolloff_hz': round(spectral_rolloff, 1),
+            'zero_crossing_rate': round(zcr, 4),
+            'processing_time_ms': round((time.time() - t0) * 1000),
+        }
+        if req.detailed:
+            chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
+            result['chroma_mean'] = [round(float(v), 4) for v in chroma.mean(axis=1)]
+            result['mfcc_mean'] = [round(float(v), 4) for v in mfcc_mean]
+            result['energy'] = round(float(np.sum(y ** 2) / len(y)), 6)
+        return result
+    except Exception as e:
+        raise HTTPException(500, f'Audio analysis failed: {e}')
+
+@app.get('/analyze/audio-features')
+def audio_features_info():
+    return {
+        'available': _check_librosa(),
+        'features': ['bpm', 'key', 'camelot', 'key_confidence', 'genre', 'duration',
+                     'loudness_lufs', 'spectral_centroid_hz', 'spectral_rolloff_hz',
+                     'zero_crossing_rate', 'chroma_mean', 'mfcc_mean'],
+        'packages': ['librosa', 'soundfile', 'scipy', 'scikit-learn', 'pedalboard', 'basic-pitch'],
+    }
+
 # ── Entry point ────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     port = int(os.environ.get('AI_SERVICE_PORT', 9878))

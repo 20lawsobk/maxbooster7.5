@@ -17,6 +17,7 @@ import {
   distroReleases,
   distroTracks,
   instantPayouts,
+  royaltyTransactions,
   hyperFollowPages,
   jwtTokens,
   refreshTokens,
@@ -989,25 +990,54 @@ export class DatabaseStorage implements IStorage {
       .where(eq(analytics.userId, userId))
       .orderBy(desc(analytics.date))
       .limit(30);
-    
-    if (userAnalytics.length === 0) {
+
+    const [txRow] = await db
+      .select({
+        totalRevenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+        totalStreams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+        txCount: sql<number>`COUNT(*)`,
+      })
+      .from(royaltyTransactions)
+      .where(eq(royaltyTransactions.userId, userId));
+
+    const txRevenue = Number(txRow?.totalRevenue ?? 0);
+    const txStreams = Number(txRow?.totalStreams ?? 0);
+
+    if (userAnalytics.length === 0 && txStreams === 0 && txRevenue === 0) {
       return null;
     }
-    
-    const totalStreams = userAnalytics.reduce((sum, a) => sum + (a.streams || 0), 0);
+
+    const totalStreams = userAnalytics.reduce((sum, a) => sum + (a.streams || 0), 0) + txStreams;
     const totalListeners = userAnalytics.reduce((sum, a) => sum + (a.listeners || 0), 0);
     const totalSaves = userAnalytics.reduce((sum, a) => sum + (a.saves || 0), 0);
     const totalPlaylists = userAnalytics.reduce((sum, a) => sum + (a.playlistAdds || 0), 0);
-    
+    const totalRevenue = txRevenue;
+
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const thisMonthAnalytics = userAnalytics.filter(a => a.date && new Date(a.date) >= thisMonthStart);
+    const prevMonthAnalytics = userAnalytics.filter(a => a.date && new Date(a.date) >= prevMonthStart && new Date(a.date) < thisMonthStart);
+    const thisMonthStreams = thisMonthAnalytics.reduce((s, a) => s + (a.streams || 0), 0);
+    const prevMonthStreams = prevMonthAnalytics.reduce((s, a) => s + (a.streams || 0), 0);
+    const streamGrowth = prevMonthStreams > 0
+      ? Math.round(((thisMonthStreams - prevMonthStreams) / prevMonthStreams) * 100)
+      : 0;
+
     return {
       totalStreams,
-      streamGrowth: 0,
+      streamGrowth,
       monthlyListeners: totalListeners,
       listenerGrowth: 0,
       saves: totalSaves,
       saveGrowth: 0,
       playlistAdds: totalPlaylists,
       playlistGrowth: 0,
+      totalRevenue,
+      downloads: 0,
+      revenue: totalRevenue,
+      growth: streamGrowth,
       rawData: userAnalytics,
     };
   }

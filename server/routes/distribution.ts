@@ -1501,6 +1501,83 @@ router.get('/releases/:id/analytics', requireAuth, async (req: Request, res: Res
   }
 });
 
+// GET /api/distribution/:id/streams-revenue - Per-release streams & revenue
+router.get('/:id/streams-revenue', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { id } = req.params;
+
+    const release = await storage.getDistroRelease(id);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const metadata = release.metadata as any;
+
+    // Try LabelGrid first if the release is distributed
+    if (metadata?.labelGridReleaseId) {
+      try {
+        const lgAnalytics = await labelGridService.getReleaseAnalytics(metadata.labelGridReleaseId);
+        const totalRevenue = lgAnalytics.totalRevenue ?? 0;
+        const totalStreams = lgAnalytics.totalStreams ?? 0;
+        const platforms = lgAnalytics.platforms ?? {};
+        const platformList = Object.entries(platforms).map(([name, data]: [string, any]) => ({
+          name,
+          streams: data.streams ?? 0,
+          revenue: data.revenue ?? 0,
+          downloads: data.downloads ?? 0,
+        }));
+        return res.json({
+          releaseId: id,
+          streams: totalStreams,
+          downloads: platformList.reduce((s: number, p: any) => s + (p.downloads ?? 0), 0),
+          revenue: totalRevenue,
+          platforms: platformList,
+          source: 'labelgrid',
+        });
+      } catch (lgErr) {
+        logger.warn('[Distribution] LabelGrid analytics fetch failed, falling back to DB:', lgErr);
+      }
+    }
+
+    // Fall back to royalty transactions in the database
+    const [txRow] = await db
+      .select({
+        totalRevenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+        totalStreams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+      })
+      .from(royaltyTransactions)
+      .where(eq(royaltyTransactions.releaseId, id));
+
+    const platformRows = await db
+      .select({
+        platform: royaltyTransactions.platform,
+        revenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+        streams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+      })
+      .from(royaltyTransactions)
+      .where(eq(royaltyTransactions.releaseId, id))
+      .groupBy(royaltyTransactions.platform);
+
+    return res.json({
+      releaseId: id,
+      streams: Number(txRow?.totalStreams ?? 0),
+      downloads: 0,
+      revenue: Number(txRow?.totalRevenue ?? 0),
+      platforms: platformRows.map(r => ({
+        name: r.platform ?? 'Unknown',
+        streams: Number(r.streams),
+        revenue: Number(r.revenue),
+        downloads: 0,
+      })),
+      source: 'database',
+    });
+  } catch (error: unknown) {
+    logger.error('Error fetching release streams-revenue:', error);
+    res.status(500).json({ error: 'Failed to fetch streams and revenue' });
+  }
+});
+
 // ===========================
 // DISTRIBUTION RIGOR ENDPOINTS
 // ===========================

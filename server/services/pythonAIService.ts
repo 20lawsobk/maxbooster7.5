@@ -409,6 +409,39 @@ export class PythonAIService {
       return { success: false, error: 'AI Model service unavailable' };
     }
   }
+
+  async analyzeAudio(filePath: string, detailed = false): Promise<AIModelResponse<any>> {
+    try {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/audio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_path: filePath, detailed }),
+      }, 60000);
+      if (!response.ok) {
+        const err = await response.text();
+        return { success: false, error: `Audio analysis failed: ${err}` };
+      }
+      const data = await response.json();
+      return { success: true, data };
+    } catch (e: any) {
+      return { success: false, error: `Audio analysis error: ${e.message}` };
+    }
+  }
+
+  async getAudioFeatureInfo(): Promise<AIModelResponse<any>> {
+    try {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/audio-features`, {
+        method: 'GET',
+      }, 5000);
+      if (!response.ok) {
+        return { success: false, error: 'Failed to get audio feature info' };
+      }
+      const data = await response.json();
+      return { success: true, data };
+    } catch {
+      return { success: false, error: 'AI Model service unavailable' };
+    }
+  }
 }
 
 export const pythonAIService = PythonAIService.getInstance();

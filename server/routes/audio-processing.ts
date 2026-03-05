@@ -468,4 +468,46 @@ router.get('/capabilities', requireAuth, async (req: Request, res: Response) => 
   }
 });
 
+/**
+ * POST /api/audio/analyze-file
+ * Run librosa-powered analysis (BPM, key, genre, loudness) on an uploaded or stored file.
+ * Body: { filePath: string, detailed?: boolean }
+ *       filePath is relative to workspace root or absolute
+ */
+router.post('/analyze-file', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { filePath, detailed = false } = req.body;
+    if (!filePath || typeof filePath !== 'string') {
+      return res.status(400).json({ error: 'filePath is required' });
+    }
+    const { pythonAIService } = await import('../services/pythonAIService.js');
+    const available = await pythonAIService.isAvailable();
+    if (!available) {
+      return res.status(503).json({ error: 'Audio analysis service unavailable' });
+    }
+    const result = await pythonAIService.analyzeAudio(filePath, Boolean(detailed));
+    if (!result.success) {
+      return res.status(500).json({ error: result.error || 'Analysis failed' });
+    }
+    return res.json({ success: true, ...result.data });
+  } catch (error: any) {
+    logger.error('Audio file analysis error:', error?.message);
+    res.status(500).json({ error: 'Audio analysis failed' });
+  }
+});
+
+/**
+ * GET /api/audio/analysis-features
+ * Returns info about available analysis features and package status.
+ */
+router.get('/analysis-features', async (_req: Request, res: Response) => {
+  try {
+    const { pythonAIService } = await import('../services/pythonAIService.js');
+    const result = await pythonAIService.getAudioFeatureInfo();
+    return res.json(result.data ?? { available: false });
+  } catch (error: any) {
+    res.json({ available: false, error: error?.message });
+  }
+});
+
 export default router;
