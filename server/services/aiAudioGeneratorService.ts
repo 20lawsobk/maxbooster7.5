@@ -4,13 +4,12 @@
  * Provides REST API endpoints for the in-house AI audio generation system
  */
 
-import path from 'path';
-import fs from 'fs/promises';
 import wavefilePkg from 'wavefile';
 const WaveFile = (wavefilePkg as any).WaveFile || wavefilePkg;
 
 import { AIAudioGenerator, type GenerationOutput, type GenerationType } from '../../shared/ml/audio/AIAudioGenerator.js';
 import { logger } from '../logger.js';
+import { storageService } from './storageService.js';
 
 // Initialize generator
 const audioGenerator = new AIAudioGenerator(48000);
@@ -55,9 +54,6 @@ export interface GenerationResult {
 }
 
 async function saveToWav(audioData: Float32Array, sampleRate: number): Promise<string> {
-  const outputDir = path.join(process.cwd(), 'public', 'generated-content', 'audio');
-  await fs.mkdir(outputDir, { recursive: true });
-
   const int16Data = new Int16Array(audioData.length);
   for (let i = 0; i < audioData.length; i++) {
     int16Data[i] = Math.max(-32768, Math.min(32767, Math.floor(audioData[i] * 32767)));
@@ -67,11 +63,11 @@ async function saveToWav(audioData: Float32Array, sampleRate: number): Promise<s
   wav.fromScratch(1, sampleRate, '16', Array.from(int16Data));
 
   const filename = `ai_generated_${Date.now()}_${Math.random().toString(36).substring(7)}.wav`;
-  const filepath = path.join(outputDir, filename);
+  const key = `generated-content/audio/${filename}`;
+  const buffer = Buffer.from(wav.toBuffer());
 
-  await fs.writeFile(filepath, wav.toBuffer());
-
-  return `/generated-content/audio/${filename}`;
+  await storageService.uploadFile(buffer, key, 'audio/wav');
+  return await storageService.getDownloadUrl(key);
 }
 
 export async function generateFromText(request: TextToAudioRequest): Promise<GenerationResult> {

@@ -2,43 +2,58 @@ import { spawn } from 'child_process';
 import { logger } from '../../logger.js';
 import cron from 'node-cron';
 import fs from 'fs';
-import path from 'path';
-import { pipeline } from 'stream/promises';
+import { storageService } from '../storageService.js';
 
-const BACKUP_DIR = '/tmp/database-backups';
-const MAX_BACKUPS = 7; // Keep last 7 days of backups
-const RPO_TARGET = 24; // Recovery Point Objective: 24 hours (daily backups)
-const RTO_TARGET = 30; // Recovery Time Objective: 30 minutes
+const BACKUP_PREFIX = 'database-backups';
+const BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index.json`;
+const MAX_BACKUPS = 7;
+const RPO_TARGET = 24;
+const RTO_TARGET = 30;
+
+interface BackupEntry {
+  name: string;
+  key: string;
+  date: string;
+  size: number;
+}
+
+async function loadIndex(): Promise<BackupEntry[]> {
+  try {
+    const buf = await storageService.downloadFile(BACKUP_INDEX_KEY);
+    return JSON.parse(buf.toString('utf-8')) as BackupEntry[];
+  } catch {
+    return [];
+  }
+}
+
+async function saveIndex(entries: BackupEntry[]): Promise<void> {
+  await storageService.uploadFile(
+    Buffer.from(JSON.stringify(entries, null, 2), 'utf-8'),
+    BACKUP_INDEX_KEY,
+    'application/json',
+  );
+}
 
 export class DatabaseBackupService {
   private backupSchedule: cron.ScheduledTask | null = null;
   private isInitialized = false;
 
   async initialize() {
-    // Validate DATABASE_URL before initializing
     if (!process.env.DATABASE_URL) {
       logger.warn('⚠️  DATABASE_URL not configured - backup service disabled');
       return;
     }
 
-    // Only initialize in production or when explicitly enabled
     if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_BACKUPS !== 'true') {
       logger.info('ℹ️  Database backups disabled (not in production)');
       logger.info('   Set ENABLE_BACKUPS=true to enable in development');
       return;
     }
 
-    // Ensure backup directory exists
-    if (!fs.existsSync(BACKUP_DIR)) {
-      fs.mkdirSync(BACKUP_DIR, { recursive: true });
-      logger.info(`Created backup directory: ${BACKUP_DIR}`);
-    }
-
-    // Schedule daily backups at 2 AM UTC
     this.scheduleBackups();
     this.isInitialized = true;
-    
-    logger.info('✅ Database Backup Service initialized');
+
+    logger.info('✅ Database Backup Service initialized (Pocket Dimension storage)');
     logger.info(`   RPO Target: ${RPO_TARGET} hours`);
     logger.info(`   RTO Target: ${RTO_TARGET} minutes`);
     logger.info(`   Backup Schedule: Daily at 2 AM UTC`);
@@ -46,7 +61,6 @@ export class DatabaseBackupService {
   }
 
   private scheduleBackups() {
-    // Schedule backups daily at 2 AM UTC
     this.backupSchedule = cron.schedule('0 2 * * *', async () => {
       logger.info('🔄 Starting scheduled database backup...');
       try {
@@ -66,145 +80,113 @@ export class DatabaseBackupService {
       throw new Error('DATABASE_URL not configured');
     }
 
-    if (!fs.existsSync(BACKUP_DIR)) {
-      fs.mkdirSync(BACKUP_DIR, { recursive: true });
-    }
-
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFile = path.join(BACKUP_DIR, `backup-${timestamp}.sql`);
+    const name = `backup-${timestamp}.sql`;
+    const key = `${BACKUP_PREFIX}/${name}`;
 
-    return new Promise((resolve, reject) => {
-      const pgDump = spawn('pg_dump', [process.env.DATABASE_URL!], {
-        env: process.env,
-      });
+    const tmpPath = `/tmp/${name}`;
 
-      const writeStream = fs.createWriteStream(backupFile);
-
+    await new Promise<void>((resolve, reject) => {
+      const pgDump = spawn('pg_dump', [process.env.DATABASE_URL!], { env: process.env });
+      const writeStream = fs.createWriteStream(tmpPath);
       let errorOutput = '';
-      let pipelineComplete = false;
-      let pgDumpExited = false;
-      let pgDumpCode: number | null = null;
+      let pipelineDone = false;
+      let exited = false;
+      let exitCode: number | null = null;
 
-      pgDump.stderr.on('data', (data) => {
-        errorOutput += data.toString();
+      pgDump.stderr.on('data', (d) => { errorOutput += d.toString(); });
+
+      writeStream.on('finish', () => {
+        pipelineDone = true;
+        check();
       });
 
-      // Use pipeline for proper stream cleanup and error handling
-      pipeline(pgDump.stdout, writeStream)
-        .then(() => {
-          pipelineComplete = true;
-          checkCompletion();
-        })
-        .catch((err) => {
-          logger.error('❌ Backup stream error:', err.message);
-          reject(new Error(`Backup stream failed: ${err.message}`));
-        });
+      pgDump.stdout.pipe(writeStream);
 
       pgDump.on('close', (code) => {
-        pgDumpExited = true;
-        pgDumpCode = code;
-        checkCompletion();
+        exited = true;
+        exitCode = code;
+        check();
       });
 
-      pgDump.on('error', (error) => {
-        logger.error('❌ pg_dump process error:', error);
-        reject(error);
-      });
+      pgDump.on('error', reject);
 
-      // Only resolve/reject after both pipeline completes AND pgDump exits
-      function checkCompletion() {
-        if (!pipelineComplete || !pgDumpExited) return;
-        
-        if (pgDumpCode === 0) {
-          const stats = fs.statSync(backupFile);
-          logger.info(`✅ Backup created successfully: ${backupFile}`);
-          logger.info(`   Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
-          resolve(backupFile);
-        } else {
-          logger.error(`❌ Backup failed with code ${pgDumpCode}:`, errorOutput);
-          reject(new Error(`Backup failed: ${errorOutput}`));
-        }
+      function check() {
+        if (!pipelineDone || !exited) return;
+        if (exitCode === 0) resolve();
+        else reject(new Error(`pg_dump failed (code ${exitCode}): ${errorOutput}`));
       }
     });
+
+    const sqlBuffer = fs.readFileSync(tmpPath);
+    fs.unlinkSync(tmpPath);
+
+    await storageService.uploadFile(sqlBuffer, key, 'application/sql');
+
+    const sizeMB = (sqlBuffer.length / 1024 / 1024).toFixed(2);
+    logger.info(`✅ Backup stored in Pocket Dimension: ${name} (${sizeMB} MB)`);
+
+    const index = await loadIndex();
+    index.push({ name, key, date: new Date().toISOString(), size: sqlBuffer.length });
+    await saveIndex(index);
+
+    return key;
   }
 
-  private async cleanOldBackups() {
+  private async cleanOldBackups(): Promise<void> {
     try {
-      if (!fs.existsSync(BACKUP_DIR)) {
-        return;
-      }
-      const files = fs.readdirSync(BACKUP_DIR)
-        .filter(f => f.startsWith('backup-') && f.endsWith('.sql'))
-        .map(f => ({
-          name: f,
-          path: path.join(BACKUP_DIR, f),
-          time: fs.statSync(path.join(BACKUP_DIR, f)).mtime.getTime(),
-        }))
-        .sort((a, b) => b.time - a.time);
+      const index = await loadIndex();
+      const sorted = [...index].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      // Keep only the most recent MAX_BACKUPS
-      if (files.length > MAX_BACKUPS) {
-        const filesToDelete = files.slice(MAX_BACKUPS);
-        for (const file of filesToDelete) {
-          fs.unlinkSync(file.path);
-          logger.info(`🗑️  Deleted old backup: ${file.name}`);
+      if (sorted.length > MAX_BACKUPS) {
+        const toDelete = sorted.slice(MAX_BACKUPS);
+        for (const entry of toDelete) {
+          try {
+            await storageService.deleteFile(entry.key);
+            logger.info(`🗑️  Deleted old backup: ${entry.name}`);
+          } catch {
+            logger.warn(`Could not delete backup ${entry.name} from storage`);
+          }
         }
-        logger.info(`✅ Cleaned ${filesToDelete.length} old backup(s)`);
+        await saveIndex(sorted.slice(0, MAX_BACKUPS));
+        logger.info(`✅ Cleaned ${toDelete.length} old backup(s)`);
       }
     } catch (error: unknown) {
       logger.error('Error cleaning old backups:', error);
     }
   }
 
-  async restoreBackup(backupFile: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      logger.info(`🔄 Starting database restore from: ${backupFile}`);
+  async restoreBackup(key: string): Promise<void> {
+    const tmpPath = `/tmp/restore-${Date.now()}.sql`;
+    try {
+      const buf = await storageService.downloadFile(key);
+      fs.writeFileSync(tmpPath, buf);
 
-      const psql = spawn('psql', [process.env.DATABASE_URL || '', '-f', backupFile], {
-        env: process.env,
+      await new Promise<void>((resolve, reject) => {
+        const psql = spawn('psql', [process.env.DATABASE_URL || '', '-f', tmpPath], { env: process.env });
+        let errorOutput = '';
+        psql.stderr.on('data', (d) => { errorOutput += d.toString(); });
+        psql.on('close', (code) => {
+          if (code === 0) {
+            logger.info('✅ Database restored successfully');
+            resolve();
+          } else {
+            reject(new Error(`Restore failed (code ${code}): ${errorOutput}`));
+          }
+        });
+        psql.on('error', reject);
       });
-
-      let errorOutput = '';
-      psql.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-      });
-
-      psql.on('close', (code) => {
-        if (code === 0) {
-          logger.info('✅ Database restored successfully');
-          resolve();
-        } else {
-          logger.error(`❌ Restore failed with code ${code}:`, errorOutput);
-          reject(new Error(`Restore failed: ${errorOutput}`));
-        }
-      });
-
-      psql.on('error', (error) => {
-        logger.error('❌ psql process error:', error);
-        reject(error);
-      });
-    });
+    } finally {
+      try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+    }
   }
 
-  async listBackups() {
+  async listBackups(): Promise<{ name: string; date: Date; size: number; key: string }[]> {
     try {
-      if (!fs.existsSync(BACKUP_DIR)) {
-        return [];
-      }
-      const files = fs.readdirSync(BACKUP_DIR)
-        .filter(f => f.startsWith('backup-') && f.endsWith('.sql'))
-        .map(f => {
-          const stats = fs.statSync(path.join(BACKUP_DIR, f));
-          return {
-            name: f,
-            date: stats.mtime,
-            size: stats.size,
-            path: path.join(BACKUP_DIR, f),
-          };
-        })
-        .sort((a, b) => b.date.getTime() - a.date.getTime());
-
-      return files;
+      const index = await loadIndex();
+      return index
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .map((e) => ({ name: e.name, date: new Date(e.date), size: e.size, key: e.key }));
     } catch (error: unknown) {
       logger.error('Error listing backups:', error);
       return [];
@@ -217,7 +199,7 @@ export class DatabaseBackupService {
       rto: RTO_TARGET,
       retentionDays: MAX_BACKUPS,
       schedule: 'Daily at 2 AM UTC',
-      backupDirectory: BACKUP_DIR,
+      storageBackend: 'Pocket Dimension',
     };
   }
 

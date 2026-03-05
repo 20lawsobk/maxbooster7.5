@@ -25,6 +25,7 @@ import { storage } from './storage.js';
 import { customAI } from './custom-ai-engine.js';
 import * as esbuild from 'esbuild';
 import { industryMonitor } from './services/industryMonitorService.js';
+import { storageService } from './services/storageService.js';
 
 interface IndustryChange {
   id: string;
@@ -93,7 +94,7 @@ export class SelfEvolutionEngine extends EventEmitter {
   private readonly MAX_CHANGES_IN_MEMORY = 500;
   private readonly MAX_UPGRADES_IN_MEMORY = 200;
   private readonly MAX_SEEN_IDS = 2000;
-  private readonly STATE_FILE = path.join(process.cwd(), '.evolution-state.json');
+  private readonly STATE_KEY = 'evolution-state/state.json';
   private readonly MAX_BOOSTER_MODULES = [
     'studio', 'distribution', 'social', 'advertising', 
     'marketplace', 'analytics', 'security', 'monetization'
@@ -108,11 +109,11 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private async seedSeenIdsFromDisk(): Promise<void> {
     try {
-      const raw = await fs.readFile(this.STATE_FILE, 'utf-8');
-      const state = JSON.parse(raw) as { seenChangeIds?: string[] };
+      const buf = await storageService.downloadFile(this.STATE_KEY);
+      const state = JSON.parse(buf.toString('utf-8')) as { seenChangeIds?: string[] };
       if (Array.isArray(state.seenChangeIds)) {
         for (const id of state.seenChangeIds) this.seenChangeIds.add(id);
-        logger.info(`🧬 Restored ${this.seenChangeIds.size} seen change IDs from state file`);
+        logger.info(`🧬 Restored ${this.seenChangeIds.size} seen change IDs from Pocket Dimension`);
       }
     } catch {
       logger.info('🧬 No prior evolution state found — starting fresh');
@@ -123,9 +124,11 @@ export class SelfEvolutionEngine extends EventEmitter {
     try {
       const ids = Array.from(this.seenChangeIds);
       const state = { seenChangeIds: ids, savedAt: new Date().toISOString() };
-      const tmp = this.STATE_FILE + '.tmp';
-      await fs.writeFile(tmp, JSON.stringify(state, null, 2), 'utf-8');
-      await fs.rename(tmp, this.STATE_FILE);
+      await storageService.uploadFile(
+        Buffer.from(JSON.stringify(state, null, 2), 'utf-8'),
+        this.STATE_KEY,
+        'application/json',
+      );
     } catch (e) {
       logger.warn('Failed to persist evolution state:', e);
     }
