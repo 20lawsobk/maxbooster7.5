@@ -11,6 +11,17 @@ __pycache__
 .config/
 .replit
 
+# npm/node caches (large and regeneratable)
+node_modules/.cache
+node_modules/.yarn-integrity
+
+# Large desktop/mobile app binary artifacts (not needed for Cloud Run)
+electron/
+electron-out/
+node_modules/electron/dist
+node_modules/electron-builder
+node_modules/electron-publish
+
 # Rust build artifacts (347MB)
 boosterstate/target
 boosterstate/src

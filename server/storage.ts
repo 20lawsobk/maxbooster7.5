@@ -193,18 +193,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllEnabledAutopilotConfigs(): Promise<any[]> {
-    const rows = await dbRead.execute(sql`
+    const result = await dbRead.execute(sql`
       SELECT id, preferences
       FROM users
       WHERE (preferences->>'advertisingAutopilotConfig')::jsonb->>'enabled' = 'true'
       LIMIT 1000
     `);
-    return (rows as any[]).map((user: any) => {
-      const config = typeof user.preferences === 'string'
-        ? JSON.parse(user.preferences)?.advertisingAutopilotConfig
-        : user.preferences?.advertisingAutopilotConfig;
+    const rows = (result as any).rows ?? result;
+    return Array.isArray(rows) ? rows.map((user: any) => {
+      const prefs = typeof user.preferences === 'string'
+        ? JSON.parse(user.preferences)
+        : (user.preferences ?? {});
+      const config = prefs?.advertisingAutopilotConfig;
       return { userId: user.id, ...config };
-    });
+    }) : [];
   }
 
   async getUserAIModel(userId: string, modelType: string): Promise<any | undefined> {
