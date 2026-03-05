@@ -365,6 +365,17 @@ export async function registerRoutes(
     });
   });
 
+  // Auth: Inactivity heartbeat — called by the frontend whenever the user is active.
+  // Rolling session auto-extends the cookie. No DB update needed.
+  app.post("/api/auth/heartbeat", (req: Request, res: Response) => {
+    const userId = req.session?.userId || (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ ok: false });
+    }
+    req.session.touch?.();
+    return res.json({ ok: true });
+  });
+
   // Auth: Session refresh heartbeat (keeps session alive, renews CSRF)
   app.post("/api/auth/refresh-token", async (req: Request, res: Response) => {
     const userId = req.session?.userId || req.user?.id;
