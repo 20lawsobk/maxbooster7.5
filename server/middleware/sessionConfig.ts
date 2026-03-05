@@ -1,8 +1,11 @@
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
+import connectPgSimple from 'connect-pg-simple';
 import crypto from 'crypto';
 import { getRedisClient } from '../lib/redisClient.js';
 import { logger } from '../logger.js';
+
+const PgSessionStore = connectPgSimple(session);
 
 /**
  * Adapter that wraps an ioredis client to satisfy the connect-redis v9 interface,
@@ -86,6 +89,50 @@ export async function createSessionStore(): Promise<session.Store> {
     const errMsg = error instanceof Error ? error.message : String(error);
     logger.error('❌ Failed to create Redis session store:', errMsg);
     throw new Error(`Session store initialization failed: ${errMsg}. Sessions cannot be stored safely.`);
+  }
+}
+
+/**
+ * Create a PostgreSQL-backed session store using the app's existing DB connection.
+ * Shared across all cluster workers — unlike MemoryStore which is per-process.
+ * Falls back gracefully if the table can't be created.
+ */
+export async function createPgSessionStore(): Promise<session.Store> {
+  try {
+    const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('No database connection string available');
+    }
+
+    const store = new PgSessionStore({
+      conString: connectionString,
+      createTableIfMissing: true,
+      tableName: 'session',
+      ttl: 24 * 60 * 60, // 24 hours in seconds
+      pruneSessionInterval: 60 * 60, // Prune expired sessions every hour
+    });
+
+    // Verify the store is working
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('PG session store ping timed out')), 5000);
+      (store as any).pool?.query('SELECT 1', (err: any) => {
+        clearTimeout(timeout);
+        if (err) reject(err);
+        else resolve();
+      });
+      // If pool isn't exposed, just resolve — createTableIfMissing handles setup
+      if (!(store as any).pool) {
+        clearTimeout(timeout);
+        resolve();
+      }
+    });
+
+    logger.info('✅ PostgreSQL session store ready (shared across all workers)');
+    return store;
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    logger.error('❌ PostgreSQL session store failed:', errMsg);
+    throw new Error(`PostgreSQL session store failed: ${errMsg}`);
   }
 }
 

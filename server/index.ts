@@ -13,7 +13,7 @@ import compression from "compression";
 import { logger } from "./logger.ts";
 import { setupStartupEndpoints } from "./startup-probes.ts";
 import { verifyReadReplica } from "./db.ts";
-import { createSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
+import { createSessionStore, createPgSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
 import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
 import { originValidation } from "./middleware/requestValidation.ts";
 import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.ts";
@@ -283,29 +283,38 @@ app.use((req, res, next) => {
       logger.warn(`⚠️ Distributed cache connect failed (non-fatal): ${e.message}`);
     });
   } catch (error: any) {
-    // Redis unavailable — fall back to in-memory store with a warning.
-    // This keeps the server alive in both dev and prod; sessions won't
-    // survive a restart but the app remains functional.
+    // Redis unavailable — try PostgreSQL session store (shared across cluster workers).
     logger.warn(`⚠️ Redis session store unavailable: ${error.message}`);
-    logger.warn('⚠️  Falling back to in-memory session store — sessions will not persist across restarts');
+    logger.warn('⚠️  Falling back to PostgreSQL session store (shared, persistent)');
 
-    const MemoryStore = session.MemoryStore;
-    activeSessionStore = new MemoryStore();
+    try {
+      activeSessionStore = await createPgSessionStore();
+      const pgSessionConfig = getSessionConfig(activeSessionStore);
+      app.use(session(pgSessionConfig));
+      logger.info('✅ Session store: PostgreSQL (shared across all workers)');
+    } catch (pgError: any) {
+      // PostgreSQL also failed — last resort: in-memory store (dev only)
+      logger.error(`❌ PostgreSQL session store also failed: ${pgError.message}`);
+      logger.warn('⚠️  Last resort: in-memory session store (not shared across workers — dev only)');
 
-    const fallbackSessionConfig = {
-      store: activeSessionStore,
-      secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
-      resave: false,
-      saveUninitialized: false,
-      name: 'sessionId',
-      cookie: {
-        secure: isProduction,
-        httpOnly: true,
-        sameSite: 'lax' as const,
-        maxAge: 24 * 60 * 60 * 1000,
-      },
-    };
-    app.use(session(fallbackSessionConfig));
+      const MemoryStore = session.MemoryStore;
+      activeSessionStore = new MemoryStore();
+
+      const fallbackSessionConfig = {
+        store: activeSessionStore,
+        secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
+        resave: false,
+        saveUninitialized: false,
+        name: 'sessionId',
+        cookie: {
+          secure: isProduction,
+          httpOnly: true,
+          sameSite: 'lax' as const,
+          maxAge: 24 * 60 * 60 * 1000,
+        },
+      };
+      app.use(session(fallbackSessionConfig));
+    }
   }
   
   // Export session store for WebSocket authentication
