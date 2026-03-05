@@ -39,16 +39,17 @@ export function TokenRefreshHandler({
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Use a ref so changing this never causes the callback or effect to re-run
+  const isRefreshingRef = useRef(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Stable callback — no state in deps, so identity never changes between renders
   const handleTokenRefresh = useCallback(async (): Promise<TokenRefreshResult> => {
-    if (!user || isRefreshing) {
+    if (!user || isRefreshingRef.current) {
       return { success: true, outcome: 'session_valid' };
     }
 
-    setIsRefreshing(true);
+    isRefreshingRef.current = true;
 
     try {
       const response = await apiRequest('POST', '/api/auth/refresh-token');
@@ -65,7 +66,7 @@ export function TokenRefreshHandler({
         onRefreshSuccess?.(result);
         return result;
       } else {
-        const outcome: TokenRefreshOutcome = 
+        const outcome: TokenRefreshOutcome =
           data.action === 'reauth_required' ? 'reauth_required' :
           data.error === 'session_expired' ? 'token_expired_during_operation' :
           'token_refresh_failed';
@@ -104,29 +105,21 @@ export function TokenRefreshHandler({
 
       return result;
     } finally {
-      setIsRefreshing(false);
+      isRefreshingRef.current = false;
     }
-  }, [user, isRefreshing, onRefreshSuccess, onRefreshFailure, onReauthRequired, silentRefresh, toast]);
+  // Intentionally omit isRefreshingRef — refs are stable and don't need listing.
+  // onRefresh*/onReauth*/silentRefresh/toast/queryClient are safe to omit since
+  // they are either stable refs or the effect only cares about user/refreshInterval.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
-    if (!user) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      return;
-    }
+    if (!user) return;
 
     handleTokenRefresh();
 
-    intervalRef.current = setInterval(handleTokenRefresh, refreshInterval);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
+    const id = setInterval(handleTokenRefresh, refreshInterval);
+    return () => clearInterval(id);
   }, [user, refreshInterval, handleTokenRefresh]);
 
   useEffect(() => {
@@ -137,9 +130,7 @@ export function TokenRefreshHandler({
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user, handleTokenRefresh]);
 
   return null;
@@ -155,8 +146,8 @@ export function useTokenRefresh() {
       const response = await apiRequest('POST', '/api/auth/refresh-token');
       const data = await response.json();
 
-      const outcome: TokenRefreshOutcome = data.success 
-        ? 'token_refresh_successful' 
+      const outcome: TokenRefreshOutcome = data.success
+        ? 'token_refresh_successful'
         : data.action === 'reauth_required' ? 'reauth_required' : 'token_refresh_failed';
 
       setLastOutcome(outcome);
