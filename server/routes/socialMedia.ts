@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
 import { logger } from '../logger';
 import { competitorBenchmarkService } from '../services/competitorBenchmarkService';
@@ -12,6 +12,11 @@ import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
 import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
+import { audioUpload, artworkUpload } from '../middleware/uploadHandler.js';
+import {
+  analyzeUrl, analyzeAudio, analyzeImage,
+  urlToContentSeed, audioToContentSeed, imageToContentSeed,
+} from '../services/mediaAnalyzerService.js';
 
 const router = Router();
 
@@ -1963,5 +1968,163 @@ router.post('/generate-image', requireAuth, async (req: AuthenticatedRequest, re
     res.status(500).json({ success: false, message: 'Image generation failed' });
   }
 });
+
+// ── Media-to-Content: URL ─────────────────────────────────────────────────────
+
+router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { url, platform } = req.body;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ success: false, message: 'url is required' });
+    }
+
+    const analysis = await analyzeUrl(url.trim());
+    if (analysis.error && !analysis.title) {
+      return res.status(422).json({ success: false, message: analysis.error, analysis });
+    }
+
+    const seed = urlToContentSeed(analysis);
+
+    // Auto-generate social content from the extracted data
+    const content = await unifiedAIController.generateContent({
+      type:       'social_post',
+      platform:   platform || 'instagram',
+      topic:      seed.topic,
+      tone:       seed.tone || 'default',
+      genre:      seed.genre,
+      artistName: seed.artist,
+      trackTitle: seed.track,
+    });
+
+    res.json({
+      success:  true,
+      analysis,
+      seed,
+      content:  content?.content || content || null,
+    });
+  } catch (error) {
+    logger.error('analyze-url failed:', error);
+    res.status(500).json({ success: false, message: 'URL analysis failed' });
+  }
+});
+
+// ── Media-to-Content: Audio ───────────────────────────────────────────────────
+
+router.post(
+  '/analyze-audio',
+  requireAuth,
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    audioUpload.single('audio')(req as any, res as any, next);
+  },
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (!file) {
+        return res.status(400).json({ success: false, message: 'audio file is required (field: audio)' });
+      }
+
+      const analysis = await analyzeAudio(file.buffer, file.originalname);
+      if (analysis.error) {
+        return res.status(422).json({ success: false, message: analysis.error, analysis });
+      }
+
+      const seed    = audioToContentSeed(analysis);
+      const platform = (req.body.platform as string) || 'instagram';
+
+      // Generate content from audio features
+      const content = await unifiedAIController.generateContent({
+        type:       'social_post',
+        platform,
+        topic:      seed.topic,
+        tone:       'default',
+        genre:      seed.genre,
+        artistName: seed.artist,
+        trackTitle: seed.track,
+      });
+
+      // Produce a video config the frontend can use to call /generate-video
+      const videoConfig = {
+        genre:    analysis.genre,
+        topic:    seed.topic,
+        tone:     'default',
+        speed:    undefined as number | undefined,  // let NN decide
+        bg:       '0x1a1a2e',
+        ac:       '0xe94560',
+        duration: 15,
+        platform,
+      };
+
+      res.json({
+        success:  true,
+        analysis,
+        seed,
+        content:  content?.content || content || null,
+        video_config: videoConfig,
+      });
+    } catch (error) {
+      logger.error('analyze-audio failed:', error);
+      res.status(500).json({ success: false, message: 'Audio analysis failed' });
+    }
+  },
+);
+
+// ── Media-to-Content: Image ───────────────────────────────────────────────────
+
+router.post(
+  '/analyze-image',
+  requireAuth,
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    artworkUpload.single('image')(req as any, res as any, next);
+  },
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (!file) {
+        return res.status(400).json({ success: false, message: 'image file is required (field: image)' });
+      }
+
+      const analysis = await analyzeImage(file.buffer, file.originalname);
+      if (analysis.error) {
+        return res.status(422).json({ success: false, message: analysis.error, analysis });
+      }
+
+      const seed     = imageToContentSeed(analysis);
+      const platform = (req.body.platform as string) || 'instagram';
+
+      // Generate content from visual mood
+      const content = await unifiedAIController.generateContent({
+        type:       'social_post',
+        platform,
+        topic:      `${analysis.mood} visual aesthetic, ${analysis.genre_hint} music`,
+        tone:       analysis.tone || 'default',
+        genre:      analysis.genre_hint,
+        artistName: (req.body.artist_name as string) || '',
+      });
+
+      // Video config with extracted colors baked in
+      const videoConfig = {
+        genre:    analysis.genre_hint,
+        topic:    `${analysis.mood} aesthetic`,
+        tone:     analysis.tone || 'default',
+        bg:       analysis.bg_color,
+        ac:       analysis.ac_color,
+        duration: 15,
+        platform,
+      };
+
+      res.json({
+        success:  true,
+        analysis,
+        seed,
+        content:  content?.content || content || null,
+        video_config: videoConfig,
+        palette:  analysis.palette.slice(0, 5),
+      });
+    } catch (error) {
+      logger.error('analyze-image failed:', error);
+      res.status(500).json({ success: false, message: 'Image analysis failed' });
+    }
+  },
+);
 
 export default router;
