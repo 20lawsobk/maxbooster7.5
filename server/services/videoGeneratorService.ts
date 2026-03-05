@@ -21,7 +21,7 @@
  * Quality:     Professional motion-graphics grade; 8 music-industry visual styles
  */
 
-import { execFile, spawn } from 'child_process';
+import { execFile, execFileSync, spawn } from 'child_process';
 import { promisify } from 'util';
 import { mkdirSync, existsSync, unlinkSync } from 'fs';
 import path from 'path';
@@ -31,7 +31,25 @@ import { logger } from '../logger.js';
 
 const execFileAsync = promisify(execFile);
 
-const FFMPEG               = process.env.FFMPEG_PATH || 'ffmpeg';
+function resolveFFmpegPath(): string {
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+  try {
+    const p = execFileSync('/bin/sh', ['-c', 'which ffmpeg'], { timeout: 3000 }).toString().trim();
+    if (p) return p;
+  } catch {}
+  const candidates = [
+    '/run/current-system/sw/bin/ffmpeg',
+    '/usr/bin/ffmpeg',
+    '/usr/local/bin/ffmpeg',
+    '/nix/var/nix/profiles/default/bin/ffmpeg',
+  ];
+  for (const c of candidates) {
+    if (existsSync(c)) return c;
+  }
+  return 'ffmpeg';
+}
+
+const FFMPEG               = resolveFFmpegPath();
 const OUTPUT_DIR           = path.join(process.cwd(), 'uploads', 'videos');
 const TEMP_DIR             = path.join(process.cwd(), 'uploads', 'video_temp');
 const FONT_DIR             = '/usr/share/fonts/truetype/dejavu';
