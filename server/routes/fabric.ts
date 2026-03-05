@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
-import { fabricStorage, fabricNodeRegistry } from '../pocket-dimension/fabric/index.js';
+import { fabricStorage, fabricNodeRegistry, autoClusterManager } from '../pocket-dimension/fabric/index.js';
 import { logger } from '../logger.js';
 
 interface AuthenticatedRequest extends Request {
@@ -180,6 +180,49 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res: Respons
     res.json(stats);
   } catch (err: any) {
     logger.error('[FabricRoute] getStats:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get('/cluster/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+    const nodes = await fabricNodeRegistry.listAllNodes();
+    const pdNodes = nodes.filter(n => n.backendType === 'pocket-dimension');
+    const status = autoClusterManager.getStatus();
+    res.json({
+      cluster: {
+        totalNodes: pdNodes.length,
+        healthyNodes: pdNodes.filter(n => n.healthy).length,
+        nodes: pdNodes.map(n => ({
+          id: n.id,
+          pocketName: (n.backendConfig as any).pocketName,
+          region: n.region,
+          healthy: n.healthy,
+          utilizationPercent: n.capacityBytes > 0
+            ? ((n.usedBytes / n.capacityBytes) * 100).toFixed(1)
+            : '0.0',
+          usedBytes: n.usedBytes,
+          capacityBytes: n.capacityBytes,
+          lastHeartbeat: n.lastHeartbeat,
+        })),
+      },
+      autoScaler: status,
+    });
+  } catch (err: any) {
+    logger.error('[FabricRoute] cluster/status:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/cluster/evaluate', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+    logger.info('[FabricRoute] Manual cluster evaluation triggered');
+    const result = await autoClusterManager.evaluate();
+    res.json({ triggered: true, ...result });
+  } catch (err: any) {
+    logger.error('[FabricRoute] cluster/evaluate:', err);
     res.status(500).json({ message: err.message });
   }
 });

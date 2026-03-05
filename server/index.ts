@@ -684,11 +684,15 @@ app.use((req, res, next) => {
           logger.warn(`⚠️ [Storage] Hybrid Storage init: ${e.message}`);
         }
 
-        // 0e. Pocket Dimension Fabric (Distributed storage layer)
+        // 0e. Pocket Dimension Fabric (Distributed storage layer + Auto-cluster)
         try {
-          const { initializeFabric } = await import('./pocket-dimension/fabric/index.js');
+          const { initializeFabric, autoClusterManager } = await import('./pocket-dimension/fabric/index.js');
           await initializeFabric();
           logger.info('✅ [PocketFabric] Distributed fabric storage initialized');
+          killSwitch.registerSystem('pocket-fabric-autocluster', {
+            kill: () => autoClusterManager.stop(),
+            resume: () => autoClusterManager.start(),
+          });
         } catch (e: any) {
           logger.warn(`⚠️ [PocketFabric] Fabric init: ${e.message}`);
         }

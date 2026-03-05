@@ -6,6 +6,7 @@ import { ChunkIndex } from './infra/ChunkIndex.js';
 import { NodeRegistry } from './infra/NodeRegistry.js';
 import { PlacementStrategy } from './control/PlacementStrategy.js';
 import { Rebalancer } from './control/Rebalancer.js';
+import { AutoClusterManager, DEFAULT_RULES } from './control/AutoClusterManager.js';
 import { PocketDimensionChunkStore } from './storage/PocketDimensionChunkStore.js';
 import type { ChunkStore } from './storage/ChunkStore.js';
 import type { NodeId } from './types.js';
@@ -14,10 +15,10 @@ import { logger } from '../../logger.js';
 export type { PocketStorageService } from './PocketStorageService.js';
 export type { ChunkStore } from './storage/ChunkStore.js';
 export * from './types.js';
+export { AutoClusterManager, DEFAULT_RULES } from './control/AutoClusterManager.js';
 
-const CLUSTER_SIZE = 3;
-const CLUSTER_REGIONS = ['us-east', 'us-west', 'eu-west'];
-const CLUSTER_NODE_NAMES = Array.from({ length: CLUSTER_SIZE }, (_, i) => `fabric-cluster-${i}`);
+const SEED_CLUSTER_SIZE = 3;
+const SEED_REGIONS = ['us-east', 'us-west', 'eu-west'];
 
 const nodeRegistry = new NodeRegistry();
 const pocketRegistry = new PocketRegistry();
@@ -39,6 +40,12 @@ function chunkStoreFactory(nodeId: NodeId): ChunkStore {
   return store;
 }
 
+function onNodeSpawned(nodeId: NodeId, pocketName: string, store: ChunkStore): void {
+  nodePocketMap.set(nodeId, pocketName);
+  chunkStoreCache.set(nodeId, store);
+  logger.info(`[PocketFabric] Auto-spawned node wired into fabric: ${pocketName} (id=${nodeId})`);
+}
+
 export const fabricStorage = new PocketStorageService(
   pocketRegistry,
   volumeRegistry,
@@ -56,17 +63,34 @@ export const fabricRebalancer = new Rebalancer(
   chunkStoreFactory,
 );
 
+export const autoClusterManager = new AutoClusterManager(
+  nodeRegistry,
+  chunkIndex,
+  placement,
+  chunkStoreFactory,
+  onNodeSpawned,
+  {
+    ...DEFAULT_RULES,
+    minNodes: 3,
+    maxNodes: 20,
+    utilizationHighWatermark: 0.70,
+    utilizationPerNodeHighWatermark: 0.80,
+    cooldownMs: 10 * 60 * 1000,
+    checkIntervalMs: 5 * 60 * 1000,
+    capacityBytesPerNode: 100 * 1024 * 1024 * 1024,
+  },
+);
+
 export { nodeRegistry as fabricNodeRegistry };
 
 export async function initializeFabric(): Promise<void> {
   fabricRebalancer.start();
 
   try {
-    const existingNodes = await nodeRegistry.listHealthyNodes();
-
+    const existingNodes = await nodeRegistry.listAllNodes();
     const pdNodes = existingNodes.filter(n => n.backendType === 'pocket-dimension');
 
-    if (pdNodes.length >= CLUSTER_SIZE) {
+    if (pdNodes.length >= SEED_CLUSTER_SIZE) {
       for (const node of pdNodes) {
         const pocketName = (node.backendConfig as any).pocketName as string;
         if (pocketName) {
@@ -75,40 +99,41 @@ export async function initializeFabric(): Promise<void> {
         }
       }
       logger.info(`[PocketFabric] Fabric initialized — ${pdNodes.length} node(s) active`);
-      return;
-    }
+    } else {
+      for (let i = 0; i < SEED_CLUSTER_SIZE; i++) {
+        const pocketName = `fabric-cluster-${i}`;
+        const alreadyRegistered = pdNodes.find(
+          n => (n.backendConfig as any).pocketName === pocketName
+        );
 
-    for (let i = 0; i < CLUSTER_SIZE; i++) {
-      const pocketName = CLUSTER_NODE_NAMES[i];
-      const alreadyRegistered = existingNodes.find(
-        n => n.backendType === 'pocket-dimension' && (n.backendConfig as any).pocketName === pocketName
-      );
+        let nodeId: NodeId;
+        if (alreadyRegistered) {
+          nodeId = alreadyRegistered.id;
+          logger.info(`[PocketFabric] Node ${i} already registered: ${pocketName}`);
+        } else {
+          const node = await nodeRegistry.registerNode({
+            region: SEED_REGIONS[i],
+            costTier: 'standard',
+            backendType: 'pocket-dimension',
+            backendConfig: { pocketName },
+            capacityBytes: 100 * 1024 * 1024 * 1024,
+            usedBytes: 0,
+            healthy: true,
+          });
+          nodeId = node.id;
+          logger.info(`[PocketFabric] Registered cluster node ${i}: ${pocketName} (${SEED_REGIONS[i]})`);
+        }
 
-      let nodeId: NodeId;
-
-      if (alreadyRegistered) {
-        nodeId = alreadyRegistered.id;
-        logger.info(`[PocketFabric] Node ${i} already registered: ${pocketName}`);
-      } else {
-        const node = await nodeRegistry.registerNode({
-          region: CLUSTER_REGIONS[i],
-          costTier: 'standard',
-          backendType: 'pocket-dimension',
-          backendConfig: { pocketName },
-          capacityBytes: 100 * 1024 * 1024 * 1024,
-          usedBytes: 0,
-          healthy: true,
-        });
-        nodeId = node.id;
-        logger.info(`[PocketFabric] Registered cluster node ${i}: ${pocketName} (${CLUSTER_REGIONS[i]})`);
+        nodePocketMap.set(nodeId, pocketName);
+        chunkStoreCache.set(nodeId, new PocketDimensionChunkStore(pocketName));
       }
 
-      nodePocketMap.set(nodeId, pocketName);
-      chunkStoreCache.set(nodeId, new PocketDimensionChunkStore(pocketName));
+      const total = (await nodeRegistry.listAllNodes()).filter(n => n.backendType === 'pocket-dimension').length;
+      logger.info(`[PocketFabric] Cluster ready — ${total} Pocket Dimension node(s) active`);
     }
 
-    const totalNodes = (await nodeRegistry.listHealthyNodes()).filter(n => n.backendType === 'pocket-dimension').length;
-    logger.info(`[PocketFabric] Cluster ready — ${totalNodes} Pocket Dimension node(s) active`);
+    autoClusterManager.start();
+    logger.info('[PocketFabric] Auto-cluster manager started');
   } catch (err) {
     logger.error('[PocketFabric] Failed to initialize fabric:', err);
   }
