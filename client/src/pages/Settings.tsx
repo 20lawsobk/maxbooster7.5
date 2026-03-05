@@ -122,10 +122,12 @@ export default function Settings() {
     setAvatarUrl(user?.avatarUrl || user?.profileImageUrl || '');
   }, [user?.avatarUrl, user?.profileImageUrl]);
 
-  // Query for full profile data
-  const { data: fullProfile, isError } = useQuery({
+  // Query for full profile data (supplemental — user from useRequireSubscription is the auth source)
+  const { data: fullProfile } = useQuery({
     queryKey: ['/api/auth/profile'],
     enabled: !!user,
+    retry: 1,
+    staleTime: 60_000,
   });
 
   // Query for notification settings
@@ -641,14 +643,6 @@ export default function Settings() {
   };
 
   if (!user) return null;
-
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
 
   return (
     <AppLayout>
