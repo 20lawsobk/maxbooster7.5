@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { Input } from '@/components/ui/input';
 import {
   Wand2,
   Globe,
@@ -36,6 +37,13 @@ import {
   Zap,
   Bot,
   FileText,
+  Link,
+  ChevronDown,
+  ChevronUp,
+  Music,
+  Newspaper,
+  ShoppingBag,
+  Star,
 } from 'lucide-react';
 
 const PLATFORMS = [
@@ -122,6 +130,11 @@ export function ContentGenerator() {
   const [selectedTone, setSelectedTone] = useState('energetic');
   const [aiResult, setAiResult] = useState<AIGenerateResult | null>(null);
   const [variantCount, setVariantCount] = useState(3);
+
+  const [showUrlImport, setShowUrlImport] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [urlAnalysis, setUrlAnalysis] = useState<any>(null);
+  const [urlImporting, setUrlImporting] = useState(false);
 
   const { data: trendingTopics, isLoading: loadingTrends } = useQuery<TrendingTopic[]>({
     queryKey: ['/api/social/ai-content/trending-topics'],
@@ -306,6 +319,68 @@ export function ContentGenerator() {
     });
   };
 
+  const TONE_DETECT_MAP: Record<string, string> = {
+    hype: 'energetic',
+    motivational: 'energetic',
+    uplifting: 'casual',
+    chill: 'casual',
+    romantic: 'casual',
+    dark: 'edgy',
+    informative: 'professional',
+    promotional: 'promotional',
+    default: 'energetic',
+  };
+
+  const CATEGORY_ICON: Record<string, React.ReactNode> = {
+    music:       <Music className="w-3 h-3" />,
+    music_news:  <Music className="w-3 h-3" />,
+    news:        <Newspaper className="w-3 h-3" />,
+    tech:        <Zap className="w-3 h-3" />,
+    business:    <Star className="w-3 h-3" />,
+    culture:     <Star className="w-3 h-3" />,
+    event:       <Calendar className="w-3 h-3" />,
+    product:     <ShoppingBag className="w-3 h-3" />,
+    ecommerce:   <ShoppingBag className="w-3 h-3" />,
+    social:      <Globe className="w-3 h-3" />,
+    video:       <Globe className="w-3 h-3" />,
+    entertainment:<Globe className="w-3 h-3" />,
+  };
+
+  const handleUrlImport = async () => {
+    if (!importUrl.trim()) return;
+    setUrlImporting(true);
+    setUrlAnalysis(null);
+    try {
+      const res = await apiRequest('POST', '/api/social/analyze-url', {
+        url: importUrl.trim(),
+        platform: selectedPlatform,
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Analysis failed');
+      const analysis = data.analysis;
+      setUrlAnalysis(analysis);
+
+      const prompt = analysis.summary || analysis.title || importUrl;
+      setContentPrompt(prompt);
+
+      const mappedTone = TONE_DETECT_MAP[analysis.tone] || 'energetic';
+      if (mappedTone) setSelectedTone(mappedTone);
+
+      toast({
+        title: 'URL imported',
+        description: `Loaded from ${analysis.domain || analysis.platform}`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Import failed',
+        description: err.message || 'Could not analyze that URL',
+        variant: 'destructive',
+      });
+    } finally {
+      setUrlImporting(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -336,6 +411,113 @@ export function ContentGenerator() {
           </TabsList>
 
           <TabsContent value="generate" className="space-y-4">
+
+            {/* ── URL Import ─────────────────────────────────────────────── */}
+            <div className="border rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowUrlImport((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium bg-muted/40 hover:bg-muted/70 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Link className="w-4 h-4 text-primary" />
+                  Import from URL
+                  <span className="text-xs text-muted-foreground font-normal">
+                    — any link: music, news, article, product, social post…
+                  </span>
+                </span>
+                {showUrlImport ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+
+              {showUrlImport && (
+                <div className="px-4 py-3 space-y-3 border-t bg-background">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="https://open.spotify.com/track/… or any URL"
+                      value={importUrl}
+                      onChange={(e) => setImportUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleUrlImport()}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleUrlImport}
+                      disabled={urlImporting || !importUrl.trim()}
+                      size="sm"
+                    >
+                      {urlImporting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Link className="w-4 h-4" />
+                      )}
+                      <span className="ml-2">{urlImporting ? 'Importing…' : 'Import'}</span>
+                    </Button>
+                  </div>
+
+                  {urlAnalysis && (
+                    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+                      <div className="flex items-start gap-3">
+                        {urlAnalysis.og_image && (
+                          <img
+                            src={urlAnalysis.og_image}
+                            alt=""
+                            className="w-16 h-16 object-cover rounded-md flex-shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{urlAnalysis.title || urlAnalysis.domain}</p>
+                          {urlAnalysis.summary && urlAnalysis.summary !== urlAnalysis.title && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{urlAnalysis.summary}</p>
+                          )}
+                          {urlAnalysis.author && (
+                            <p className="text-xs text-muted-foreground mt-0.5">by {urlAnalysis.author}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                          {CATEGORY_ICON[urlAnalysis.platform_category] || <Globe className="w-3 h-3" />}
+                          {urlAnalysis.platform !== 'web' ? urlAnalysis.platform : urlAnalysis.domain}
+                        </Badge>
+                        {urlAnalysis.content_type && urlAnalysis.content_type !== 'website' && (
+                          <Badge variant="outline" className="text-xs">{urlAnalysis.content_type}</Badge>
+                        )}
+                        {urlAnalysis.genre && urlAnalysis.genre !== 'default' && (
+                          <Badge variant="outline" className="text-xs">{urlAnalysis.genre}</Badge>
+                        )}
+                        {urlAnalysis.tone && urlAnalysis.tone !== 'default' && (
+                          <Badge variant="outline" className="text-xs">{urlAnalysis.tone}</Badge>
+                        )}
+                        {urlAnalysis.published && (
+                          <Badge variant="outline" className="text-xs">
+                            {urlAnalysis.published.slice(0, 10)}
+                          </Badge>
+                        )}
+                      </div>
+                      {urlAnalysis.keywords && urlAnalysis.keywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {urlAnalysis.keywords.slice(0, 5).map((kw: string) => (
+                            <span
+                              key={kw}
+                              className="text-xs bg-primary/10 text-primary rounded px-1.5 py-0.5 cursor-pointer hover:bg-primary/20"
+                              onClick={() => setContentPrompt((p) => p ? `${p}, ${kw}` : kw)}
+                            >
+                              {kw}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        Topic auto-filled below — edit if needed, then generate
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* ────────────────────────────────────────────────────────────── */}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
