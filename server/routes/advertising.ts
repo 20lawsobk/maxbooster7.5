@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { unifiedAIController } from '../services/unifiedAIController.js';
 import { storage } from '../storage.js';
@@ -424,7 +424,7 @@ router.post('/optimize-campaign', requireAuth, async (req, res) => {
 });
 
 // AI-powered content generation for ads
-router.post('/generate-content', requireAuth, async (req, res) => {
+router.post('/generate-content', requireAuthOnly, async (req, res) => {
   try {
     const { 
       campaignId, 
@@ -461,7 +461,7 @@ router.post('/generate-content', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       topic, platform, template, aspect_ratio, duration,
@@ -508,7 +508,7 @@ router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, re
   }
 });
 
-router.post('/generate-image', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/generate-image', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { topic, platform, tone, goal, artist_name, style } = req.body;
 
@@ -552,7 +552,7 @@ router.post('/generate-image', requireAuth, async (req: AuthenticatedRequest, re
   }
 });
 
-router.get('/video-templates', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+router.get('/video-templates', requireAuthOnly, async (_req: AuthenticatedRequest, res: Response) => {
   try {
     const result = await pythonAIService.getCinematicTemplates();
     if (result.success && result.data) {

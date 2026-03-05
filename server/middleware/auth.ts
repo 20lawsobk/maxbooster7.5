@@ -67,6 +67,40 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
   next();
 };
 
+/**
+ * Auth-only guard — verifies the user is logged in.
+ * Does NOT apply trial-expiry or subscription-expiry gates.
+ * Use on content generation endpoints that are already behind
+ * the frontend's protected-route subscription check.
+ */
+export const requireAuthOnly = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = await jwtAuthService.verifyAccessToken(token);
+        if (decoded) {
+          const user = await storage.getUser(decoded.userId);
+          if (user) {
+            req.user = user;
+            req.isAuthenticated = () => true;
+          }
+        }
+      } catch (err) {
+        logger.error('[Auth] JWT verification error:', err);
+      }
+    }
+  }
+
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    res.status(401).json({ message: 'Authentication required' });
+    return;
+  }
+
+  next();
+};
+
 export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
     return res.status(401).json({ message: 'Authentication required' });

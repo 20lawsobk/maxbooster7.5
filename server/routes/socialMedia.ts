@@ -9,7 +9,7 @@ import { db } from '../db';
 import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts, storefronts, listings } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
 import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
 import { audioUpload, artworkUpload } from '../middleware/uploadHandler.js';
@@ -971,7 +971,7 @@ router.get('/unified-calendar/queue', requireAuth, async (req: AuthenticatedRequ
 // =========================================
 
 // Generate AI content for multiple platforms
-router.post('/generate-content', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/generate-content', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { platforms = ['instagram'], contentType = 'post', topic = 'new music', tone = 'energetic' } = req.body;
 
@@ -1292,7 +1292,7 @@ async function extractUrlMetadata(url: string): Promise<{
 }
 
 // Generate content from any URL (websites, music, videos, articles, products, etc.)
-router.post('/generate-from-url', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { url, platforms = ['instagram'], tone = 'energetic', format = 'text', targetAudience = '' } = req.body;
 
@@ -1468,7 +1468,7 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
   }
 });
 
-router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       hook, body, cta, platform, aspect_ratio, template,
@@ -1520,7 +1520,7 @@ router.post('/generate-video', requireAuth, async (req: AuthenticatedRequest, re
   }
 });
 
-router.get('/video-templates', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+router.get('/video-templates', requireAuthOnly, async (_req: AuthenticatedRequest, res: Response) => {
   try {
     const result = await pythonAIService.getCinematicTemplates();
     if (result.success && result.data) {
@@ -1925,7 +1925,7 @@ router.post('/veo-campaign/promote-listing', requireAuth, async (req: Authentica
   }
 });
 
-router.post('/generate-image', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/generate-image', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { topic, platform, tone, goal, artist_name, style } = req.body;
 
