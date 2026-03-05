@@ -781,20 +781,188 @@ def generate_script(req: ScriptRequest):
 
 @app.post('/generate/image')
 def generate_image(req: ImageRequest):
-    # Return a placeholder visual spec (no external image gen service)
-    return {'success': True, 'url': None, 'width': req.width, 'height': req.height,
-            'prompt': req.prompt, 'note': 'Visual spec generated'}
+    # Delegate to the full visual spec generator for a rich response
+    spec = _gen_visual_spec(
+        topic=req.prompt or '',
+        artist='', track='', genre='', tone='energetic',
+        platform='instagram', thumbnail_url='', keywords=[], description=''
+    )
+    return {**spec, 'url': None, 'width': req.width, 'height': req.height}
+
+# ── Prompt-driven visual spec generator ────────────────────────────────────────
+
+_GENRE_TEMPLATES = {
+    'hip-hop':    ('cinematic_promo', '#1a1a2e', '#e94560', '#ffffff'),
+    'trap':       ('fire_ember',      '#1a0500', '#ff4500', '#ffffff'),
+    'r&b':        ('aurora',          '#0d1b2a', '#d4af37', '#ffffff'),
+    'soul':       ('gold_luxury',     '#1a1000', '#d4af37', '#ffffff'),
+    'pop':        ('music_video',     '#1a0030', '#ff00ff', '#ffffff'),
+    'electronic': ('neon_pulse',      '#0d0221', '#00fff5', '#ffffff'),
+    'edm':        ('neon_pulse',      '#0d0221', '#00fff5', '#ffffff'),
+    'country':    ('storyteller',     '#2a1a0a', '#aa7755', '#ffffff'),
+    'folk':       ('vintage_film',    '#2a1a0a', '#aa7755', '#f5f0e8'),
+    'rock':       ('dark_cinema',     '#0a0a0a', '#cc4444', '#ffffff'),
+    'jazz':       ('gold_luxury',     '#1a1000', '#d4af37', '#f5f0e8'),
+    'classical':  ('elegant_minimal', '#fafafa', '#8b7355', '#1a1a1a'),
+    'reggae':     ('ocean_wave',      '#001a3a', '#00aa44', '#ffffff'),
+    'afrobeats':  ('music_video',     '#1a0500', '#ff8800', '#ffffff'),
+    'latin':      ('fire_ember',      '#1a0500', '#ff6600', '#ffffff'),
+    'platform':   ('elegant_minimal', '#1a1a2e', '#6655aa', '#ffffff'),
+    'event':      ('gold_luxury',     '#1a1000', '#d4af37', '#ffffff'),
+    'beat':       ('cinematic_promo', '#1a1a2e', '#e94560', '#ffffff'),
+}
+
+_PLATFORM_ASPECT = {
+    'tiktok':     '9:16',
+    'instagram':  '1:1',
+    'youtube':    '16:9',
+    'twitter':    '16:9',
+    'facebook':   '16:9',
+    'linkedin':   '16:9',
+    'reels':      '9:16',
+    'stories':    '9:16',
+}
+
+def _gen_visual_spec(
+    topic: str, artist: str, track: str, genre: str, tone: str,
+    platform: str, thumbnail_url: str, keywords: list, description: str
+) -> dict:
+    """Generate a rich, prompt-driven visual spec from URL analysis context."""
+    import random
+
+    ctx = _parse_topic(topic)
+
+    # Determine content-type key for template selection
+    if ctx['is_platform']:
+        genre_key = 'platform'
+    elif ctx['is_event']:
+        genre_key = 'event'
+    elif ctx['is_beat']:
+        genre_key = 'beat'
+    else:
+        raw_genre = (genre or ctx.get('genre') or 'hip-hop').lower().strip()
+        # Normalise: keep & for r&b, convert spaces to hyphens, try direct match then fallback
+        genre_key = raw_genre.replace(' ', '-')
+        if genre_key not in _GENRE_TEMPLATES:
+            genre_key = genre_key.replace('&', '')  # e.g. 'rb' won't match either, handled below
+        if genre_key not in _GENRE_TEMPLATES:
+            # Try partial match
+            for k in _GENRE_TEMPLATES:
+                if k in raw_genre or raw_genre in k:
+                    genre_key = k
+                    break
+            else:
+                genre_key = 'hip-hop'
+
+    tmpl_id, bg_color, accent_color, text_color = _GENRE_TEMPLATES.get(
+        genre_key, _GENRE_TEMPLATES['hip-hop']
+    )
+
+    # Build overlay texts from actual content
+    title_text = track or (ctx['quoted'][0] if ctx['quoted'] else ctx['primary'])
+    subtitle_text = artist or ''
+    if not subtitle_text and ctx['subtitle']:
+        # Try to pull genre/style from subtitle as a secondary label
+        subtitle_text = ctx['subtitle'].split('—')[0].strip()[:40]
+
+    # Short tagline: use descriptors or first meaningful phrase from topic
+    if ctx['descriptors']:
+        tagline = ' | '.join(ctx['descriptors'][:2]).capitalize()
+    elif keywords:
+        tagline = ' | '.join(keywords[:2])
+    elif description:
+        tagline = description[:60].rsplit(' ', 1)[0]
+    else:
+        tagline = genre.upper() if genre else ''
+
+    # Visual mood derived from tone + genre
+    mood_map = {
+        'energetic': 'High-energy, bold contrasts, dynamic motion',
+        'chill':     'Soft gradients, ambient glow, floating particles',
+        'hype':      'Explosive colors, rapid cuts, intense lighting',
+        'emotional': 'Moody atmosphere, deep shadows, warm highlights',
+        'professional': 'Clean lines, minimal text, premium feel',
+        'casual':    'Bright, friendly, approachable palette',
+    }
+    visual_mood = mood_map.get(tone or 'energetic', mood_map['energetic'])
+
+    # Platform aspect ratio
+    aspect_ratio = _PLATFORM_ASPECT.get(platform or 'instagram', '1:1')
+
+    # Build color palette (bg + accent + 2 intermediate)
+    def hex_mid(c1: str, c2: str) -> str:
+        """Simple midpoint between two hex colors."""
+        try:
+            r1, g1, b1 = int(c1[1:3], 16), int(c1[3:5], 16), int(c1[5:7], 16)
+            r2, g2, b2 = int(c2[1:3], 16), int(c2[3:5], 16), int(c2[5:7], 16)
+            return f'#{(r1+r2)//2:02x}{(g1+g2)//2:02x}{(b1+b2)//2:02x}'
+        except Exception:
+            return accent_color
+
+    mid1 = hex_mid(bg_color, accent_color)
+    palette = [bg_color, mid1, accent_color, text_color]
+
+    # Video config that can be passed directly to /generate-video
+    video_config = {
+        'template':     tmpl_id,
+        'bg_color':     bg_color,
+        'accent_color': accent_color,
+        'text_color':   text_color,
+        'topic':        title_text or topic,
+        'artist_name':  artist or '',
+        'hook':         title_text,
+        'body':         subtitle_text or tagline,
+        'cta':          ('Sign Up Free — Link in Bio 🔗' if ctx['is_platform']
+                         else 'License This Beat — Link in Bio 🎛️' if ctx['is_beat']
+                         else 'Get Tickets — Link in Bio 🎟️' if ctx['is_event']
+                         else 'Stream Now — Link in Bio 🔗'),
+        'platform':     platform or 'instagram',
+        'aspect_ratio': aspect_ratio,
+        'duration':     15,
+        'tone':         tone or 'energetic',
+        'quality':      'cinematic',
+        'genre':        genre or genre_key,
+    }
+
+    return {
+        'success':       True,
+        'template':      tmpl_id,
+        'template_name': next((t['name'] for t in TEMPLATES if t['id'] == tmpl_id), tmpl_id),
+        'bg_color':      bg_color,
+        'accent_color':  accent_color,
+        'text_color':    text_color,
+        'color_palette': palette,
+        'title_text':    title_text,
+        'subtitle_text': subtitle_text,
+        'tagline':       tagline,
+        'visual_mood':   visual_mood,
+        'aspect_ratio':  aspect_ratio,
+        'thumbnail_url': thumbnail_url or '',
+        'video_config':  video_config,
+        'platform':      platform or 'instagram',
+        'genre':         genre or genre_key,
+        'processing_time_ms': 30,
+    }
+
+class VisualSpecFullRequest(BaseModel):
+    topic:         str = ''
+    artist:        str = ''
+    track:         str = ''
+    genre:         str = ''
+    tone:          str = 'energetic'
+    platform:      str = 'instagram'
+    thumbnail_url: str = ''
+    keywords:      list = []
+    description:   str = ''
 
 @app.post('/generate/visual-spec')
-def generate_visual_spec(req: VisualSpecRequest):
-    import random
-    templates_for_genre = {
-        'hip-hop': 'cinematic_promo', 'trap': 'fire_ember', 'r&b': 'aurora',
-        'pop': 'neon_pulse', 'electronic': 'neon_pulse', 'country': 'storyteller',
-    }
-    tmpl = templates_for_genre.get(req.genre or 'hip-hop', 'cinematic_promo')
-    return {'success': True, 'template': tmpl, 'style': tmpl, 'platform': req.platform,
-            'processing_time_ms': 30}
+def generate_visual_spec(req: VisualSpecFullRequest):
+    return _gen_visual_spec(
+        topic=req.topic, artist=req.artist, track=req.track,
+        genre=req.genre, tone=req.tone, platform=req.platform,
+        thumbnail_url=req.thumbnail_url, keywords=req.keywords,
+        description=req.description,
+    )
 
 # ── Audio Analysis (librosa) ───────────────────────────────────────────────────
 

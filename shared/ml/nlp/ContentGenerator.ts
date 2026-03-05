@@ -42,6 +42,9 @@ export interface CaptionResult {
   characterCount: number;
   estimatedEngagement: number;
   toneMatch: number;
+  hook?: string;
+  body?: string;
+  cta?: string;
 }
 
 export interface MarkovTransition {
@@ -578,59 +581,198 @@ export class ContentGenerator {
       : this.pickRandom(directCTAs);
   }
 
+  /**
+   * Parse the topic string (which may contain enriched URL context) into structured fields.
+   * Mirrors the Python _parse_topic() logic so both engines behave consistently.
+   */
+  private parseTopicContext(topic: string, artistName: string, trackTitle: string, genre: string) {
+    const STOP = new Set([
+      'the','a','an','and','or','but','in','on','at','to','for','of','with',
+      'is','are','was','were','be','been','by','from','as','this','that','it',
+      'its','their','our','your','my','we','they','you','i','me','all','just',
+      'more','can','will','have','has','had','do','does','not','no','so','if',
+      'new','out','get','best','great','how','what','when','where','which',
+    ]);
+
+    // Extract [Features: ...] block
+    const featuresMatch = topic.match(/\[Features?: ([^\]]+)\]/i);
+    const features = featuresMatch
+      ? featuresMatch[1].split(',').map(f => f.trim()).filter(Boolean)
+      : [];
+    const cleanTopic = topic.replace(/\[Features?:[^\]]+\]/gi, '').trim().replace(/^\s*[-—|•]+\s*/, '');
+
+    // Extract [Stats: ...] block (engagement signals)
+    const statsMatch = topic.match(/\[Stats?: ([^\]]+)\]/i);
+    const stats = statsMatch ? statsMatch[1].trim() : '';
+    const cleanFull = cleanTopic.replace(/\[Stats?:[^\]]+\]/gi, '').trim();
+
+    // Extract quoted titles e.g. "Song Name"
+    const quoted = Array.from(cleanFull.matchAll(/['"]([^'"]{2,60})['"]/g)).map(m => m[1]);
+
+    // Split on em-dash, pipe, or " - " (space-hyphen-space)
+    const parts = cleanFull.split(/\s*[—|•]\s*|\s+-\s+/).map(p => p.trim()).filter(p => p.length > 1);
+    const primary = parts[0] || cleanFull;
+    const subtitle = parts.slice(1).join(' — ');
+
+    // Content words (not stop words, not too short)
+    const allWords = (cleanFull + ' ' + features.join(' ')).match(/\b[a-zA-Z]{3,}\b/g) || [];
+    const contentWords = [...new Set(allWords.filter(w => !STOP.has(w.toLowerCase())))].slice(0, 10);
+
+    // Descriptors (tone/mood words)
+    const DESCRIPTOR_RE = /\b(chill|dreamy|smooth|raw|dark|deep|fresh|warm|bright|bold|gritty|acoustic|electric|indie|underground|experimental|authentic|organic|exclusive|iconic|trending|emerging|emotional|upbeat|melancholy|uplifting|powerful|gentle|fierce|energetic|vibrant|nostalgic)\b/gi;
+    const descriptors = [...new Set(Array.from(cleanFull.matchAll(DESCRIPTOR_RE)).map(m => m[1].toLowerCase()))].slice(0, 4);
+
+    // Content-type flags
+    const isPlatform = /\b(platform|app|software|management|marketplace|distribution|SaaS|AI-powered|music career|music business)\b/i.test(topic);
+    const isEvent = /\b(show|concert|tour|gig|performance|festival|event|live\s+at|live\s+show)\b/i.test(cleanFull);
+    const isBeat = /\b(beat|instrumental|sample|loop|type\s*beat|prod(?:uced)?)\b/i.test(cleanFull);
+    const isRelease = Boolean(quoted.length || trackTitle || /\b(single|track|song|album|ep|mixtape|release|drop|out\s*now)\b/i.test(cleanFull));
+
+    return {
+      primary: trackTitle || primary,
+      subtitle,
+      parts,
+      features,
+      quoted: trackTitle ? [trackTitle, ...quoted] : quoted,
+      descriptors,
+      contentWords,
+      stats,
+      isPlatform,
+      isEvent,
+      isBeat,
+      isRelease,
+      artistName: artistName || '',
+      genre,
+    };
+  }
+
+  /**
+   * Builds hook + body + CTA directly from the user's prompt words.
+   * Used instead of template-based generation so content reflects the actual topic.
+   */
+  private buildFromPrompt(
+    ctx: ReturnType<typeof this.parseTopicContext>,
+    tone: ContentTone,
+    platform: string
+  ): { hook: string; body: string; cta: string } {
+    const TONE_EMOJI: Record<string, string[]> = {
+      energetic:   ['🔥', '🚀', '💥', '⚡', '🎯'],
+      promotional: ['🚀', '💡', '🎯', '✅', '🔑'],
+      casual:      ['✨', '💯', '🎵', '🙌', '💪'],
+      professional:['🎯', '📈', '✅', '🏆', '💼'],
+    };
+    const emojiPool = TONE_EMOJI[tone] || TONE_EMOJI.energetic;
+    const e1 = emojiPool[Math.floor(Math.random() * 3)];
+    const e2 = emojiPool[Math.floor(Math.random() * emojiPool.length)];
+
+    const title = ctx.quoted[0] ? `"${ctx.quoted[0]}"` : ctx.primary;
+    const adj = ctx.descriptors[0] || '';
+    const adjCap = adj ? adj.charAt(0).toUpperCase() + adj.slice(1) + ' ' : '';
+
+    // ── Hook ─────────────────────────────────────────────────────────
+    let hookOptions: string[];
+    if (ctx.isPlatform) {
+      const shortName = ctx.primary.includes(' - ') ? ctx.primary.split(' - ')[0].trim() : ctx.primary;
+      hookOptions = [
+        `Meet ${shortName} ${e1}`,
+        `Introducing ${shortName} — built for artists like you ${e1}`,
+        `${shortName} is changing the game ${e1}`,
+        `Have you discovered ${shortName} yet? ${e1}`,
+        `Why every artist needs ${shortName} ${e2}`,
+      ];
+    } else if (ctx.isEvent) {
+      hookOptions = [
+        `${e1} ${ctx.primary} — don't miss this`,
+        `See you there: ${ctx.primary} ${e1}`,
+        `Don't miss ${ctx.primary} ${e1}`,
+        `${ctx.primary} is LIVE — get your tickets ${e1}`,
+      ];
+    } else if (ctx.isBeat) {
+      hookOptions = [
+        `${e1} New beat: ${title}`,
+        `Beat drop: ${title} ${e1}`,
+        `${title} — available now ${e1}`,
+        `${e1} ${title} — fire your next project up`,
+      ];
+    } else if (ctx.isRelease) {
+      const subHint = ctx.subtitle
+        ? ctx.subtitle.split('—')[0].split(',')[0].split('about')[0].trim().slice(0, 38)
+        : (adj ? `${adjCap}release` : 'new release');
+      hookOptions = [
+        `${e1} ${title} is out now`,
+        `New music: ${title} ${e1}`,
+        `You need to hear ${title} right now ${e2}`,
+        `${title} — ${subHint} ${e1}`.trim(),
+        `Stream ${title} — this one hits different ${e2}`,
+      ];
+    } else {
+      const descHint = ctx.subtitle.split('—')[0].trim() || adj;
+      hookOptions = [
+        `${e1} ${ctx.primary}`,
+        `${ctx.primary} ${e1}`,
+        `Check this out: ${ctx.primary} ${e1}`,
+        descHint ? `${e1} ${ctx.primary} — ${descHint}` : `${e1} ${ctx.primary}`,
+      ];
+    }
+    const hook = hookOptions.filter(o => o.trim())[Math.floor(Math.random() * hookOptions.length)];
+
+    // ── Body ──────────────────────────────────────────────────────────
+    const segments: string[] = [];
+    if (ctx.isPlatform) {
+      if (ctx.features.length) {
+        segments.push(ctx.features.slice(0, 3).join(' | '));
+        if (ctx.features.length > 3) segments.push(ctx.features.slice(3, 6).join(' | '));
+      } else if (ctx.subtitle) {
+        segments.push(ctx.subtitle);
+      }
+      const closers = ['All the tools you need, in one place', 'Manage, distribute, and promote — all in one', 'Built to grow your career'];
+      segments.push(closers[Math.floor(Math.random() * closers.length)]);
+    } else if (ctx.isEvent) {
+      if (ctx.subtitle) segments.push(ctx.subtitle);
+      if (!segments.length) segments.push(ctx.primary);
+    } else if (ctx.isRelease || ctx.quoted.length) {
+      if (ctx.subtitle) {
+        segments.push(ctx.subtitle);
+      } else if (ctx.descriptors.length) {
+        segments.push(`A ${ctx.descriptors.slice(0, 2).join(', ')} sound that speaks for itself`);
+      } else {
+        segments.push('This one is different — hit play and find out');
+      }
+      if (ctx.stats) segments.push(ctx.stats);
+    } else if (ctx.isBeat) {
+      if (ctx.subtitle) segments.push(ctx.subtitle);
+      if (ctx.descriptors.length) segments.push(`${adjCap}sound ready for your next project`);
+    } else {
+      if (ctx.subtitle) segments.push(ctx.subtitle);
+      if (!ctx.subtitle && ctx.contentWords.length) segments.push(ctx.contentWords.slice(0, 4).join(' | '));
+      if (!segments.length) segments.push(ctx.primary);
+    }
+    const body = segments.filter(Boolean).join(' | ');
+
+    // ── CTA ───────────────────────────────────────────────────────────
+    const ctaMap: Record<string, string[]> = {
+      platform: ['Try it free — link in bio 🔗', 'Sign up today — link in bio 🚀', 'Start your free trial — link in bio'],
+      event:    ['Grab your tickets — link in bio 🎟️', 'Get tickets now 🎟️', 'RSVP — link in bio'],
+      beat:     ['License this beat — DM or link in bio 🎛️', 'Grab the beat — link in bio'],
+      release:  ['Stream now — link in bio 🔗', 'Listen on all platforms 🎵', 'Save this one 🎵', 'Follow for more music 🎵'],
+      general:  ['Follow for more 🎵', 'Share with someone who needs this ✨', 'Drop your thoughts below 👇'],
+    };
+    const ctaKey = ctx.isPlatform ? 'platform' : ctx.isEvent ? 'event' : ctx.isBeat ? 'beat' : ctx.isRelease ? 'release' : 'general';
+    const ctaOptions = ctaMap[ctaKey];
+    const cta = ctaOptions[Math.floor(Math.random() * ctaOptions.length)];
+
+    return { hook, body, cta };
+  }
+
   private generateFromTemplate(
     contentType: string,
     tone: ContentTone,
     context: { topic: string; genre: string; artistName: string; trackTitle: string; platform?: string }
   ): string {
-    const templates = CONTENT_TEMPLATES[contentType]?.[tone] || CONTENT_TEMPLATES.release[tone];
-    const template = templates[Math.floor(Math.random() * templates.length)];
-
-    const phrases = TONE_PHRASES[tone];
-    const opening = phrases.opening[Math.floor(Math.random() * phrases.opening.length)];
-    const middle = phrases.middle[Math.floor(Math.random() * phrases.middle.length)];
-    const closing = phrases.closing[Math.floor(Math.random() * phrases.closing.length)];
-
-    const genreAdj = this.getGenreAdjective(context.genre);
-
-    let result = template
-      .replace('{opening}', opening)
-      .replace('{middle}', middle)
-      .replace('{closing}', closing)
-      .replace('{trackTitle}', context.trackTitle || 'the new track')
-      .replace('{artistName}', context.artistName || 'the artist')
-      .replace('{genre}', `${genreAdj} ${context.genre || 'music'}`.trim())
-      .replace('{topic}', context.topic || 'music');
-
-    const platform = context.platform || 'instagram';
-    const genreHook = context.genre
-      ? this.getGenreHook(context.genre, platform, context.trackTitle)
-      : null;
-
-    if (genreHook && Math.random() > 0.55 && contentType !== 'engagement') {
-      result = `${genreHook}\n\n${result}`;
-    }
-
-    if (Math.random() > 0.65 && contentType === 'release') {
-      const emotionalTrigger = this.getEmotionalTrigger();
-      result = `${result} ${emotionalTrigger}`;
-    }
-
-    if (Math.random() > 0.70) {
-      const platformCTA = this.getPlatformCTA(platform);
-      const cleanCTA = platformCTA
-        .replace('{trackTitle}', context.trackTitle || 'the track')
-        .replace('{streams}', String(Math.floor(Math.random() * 50000 + 5000)))
-        .replace('{days}', String(Math.floor(Math.random() * 7 + 1)));
-      result = `${result} ${cleanCTA}`;
-    }
-
-    const markovAddition = this.generateMarkovSequence(5);
-    if (markovAddition && Math.random() > 0.6) {
-      result = `${result} ${markovAddition}`;
-    }
-
-    return result;
+    // Delegate to prompt-driven builder instead of template slots
+    const ctx = this.parseTopicContext(context.topic, context.artistName, context.trackTitle, context.genre);
+    const { hook, body, cta } = this.buildFromPrompt(ctx, tone, context.platform || 'instagram');
+    return `${hook}\n\n${body}\n\n${cta}`;
   }
 
   private generateMarkovSequence(maxWords: number): string {

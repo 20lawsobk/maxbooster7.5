@@ -727,6 +727,8 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       trackTitle,
       albumName,
       label,
+      releaseDate,
+      duration,
       // URL analysis context
       urlContentType,    // raw content_type from URL analysis: 'website', 'track', 'video', etc.
       contentCategory,   // e.g. 'music', 'general', 'tech', 'events'
@@ -734,6 +736,18 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       tags,              // string[] from URL analysis
       urlDescription,    // summary/description from URL analysis
       sourcePlatform,    // e.g. 'youtube', 'spotify'
+      // Engagement signals from URL analysis
+      viewCount,
+      likeCount,
+      playCount,
+      // Event-specific fields
+      eventDate,
+      eventLocation,
+      performers,
+      // Product-specific fields
+      price,
+      brand,
+      rating,
     } = req.body;
 
     const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'];
@@ -753,15 +767,54 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
     // Genre detection: skip for website content types; use rawGenre or detect from topic
     const detectedGenre = rawGenre || (isWebsitePromo ? 'pop' : detectGenre(String(topic)));
 
-    // Build a rich context descriptor from URL analysis fields
+    // Build a rich context descriptor from all available URL analysis fields
     const contextParts: string[] = [];
+
+    // Core identity
     if (trackTitle) contextParts.push(`"${trackTitle}"`);
     if (artistName) contextParts.push(`by ${artistName}`);
     if (albumName && !trackTitle) contextParts.push(`from album "${albumName}"`);
     if (label) contextParts.push(`on ${label}`);
+
+    // User's own prompt is always included
     contextParts.push(String(topic));
-    if (urlDescription && urlDescription !== topic) contextParts.push(urlDescription);
-    if (keywords?.length) contextParts.push(`[Features: ${(keywords as string[]).slice(0, 6).join(', ')}]`);
+
+    // URL-derived description (only if it adds new info)
+    if (urlDescription && urlDescription !== String(topic)) contextParts.push(urlDescription);
+
+    // Music metadata
+    const musicMeta: string[] = [];
+    if (releaseDate) musicMeta.push(`released ${releaseDate}`);
+    if (duration) musicMeta.push(`${duration}`);
+    if (musicMeta.length) contextParts.push(musicMeta.join(', '));
+
+    // Engagement signals — let AI reference real numbers when available
+    const engagementParts: string[] = [];
+    if (viewCount && Number(viewCount) > 1000) {
+      engagementParts.push(`${Number(viewCount).toLocaleString()} views`);
+    }
+    if (likeCount && Number(likeCount) > 100) {
+      engagementParts.push(`${Number(likeCount).toLocaleString()} likes`);
+    }
+    if (playCount && Number(playCount) > 1000) {
+      engagementParts.push(`${Number(playCount).toLocaleString()} plays`);
+    }
+    if (engagementParts.length) contextParts.push(`[Stats: ${engagementParts.join(', ')}]`);
+
+    // Event context
+    const eventParts: string[] = [];
+    if (eventDate) eventParts.push(eventDate);
+    if (eventLocation) eventParts.push(`at ${eventLocation}`);
+    if (performers?.length) eventParts.push(`featuring ${(performers as string[]).slice(0, 3).join(', ')}`);
+    if (eventParts.length) contextParts.push(eventParts.join(' '));
+
+    // Product/brand context
+    if (brand && brand !== artistName) contextParts.push(`by ${brand}`);
+    if (price) contextParts.push(`${price}`);
+    if (rating) contextParts.push(`${rating} rating`);
+
+    // Keywords as features list (feeds the [Features:] parser in Python AI)
+    if (keywords?.length) contextParts.push(`[Features: ${(keywords as string[]).slice(0, 8).join(', ')}]`);
 
     const enrichedTopic = contextParts.filter(Boolean).join(' — ');
 

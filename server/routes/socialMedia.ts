@@ -1967,42 +1967,49 @@ router.post('/veo-campaign/promote-listing', requireAuth, async (req: Authentica
 
 router.post('/generate-image', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { topic, platform, tone, goal, artist_name, style } = req.body;
+    const {
+      topic, platform, tone, goal, artist_name, style,
+      // URL analysis context
+      artist, track, genre, thumbnail_url, keywords, description,
+      urlDescription, artistName, trackTitle, urlContentType, contentCategory,
+    } = req.body;
 
     if (!topic) {
       return res.status(400).json({ success: false, message: 'Topic is required' });
     }
 
-    const result = await pythonAIService.generateImage({
-      topic,
-      platform: platform || 'instagram',
-      tone: tone || 'energetic',
-      goal: goal || 'growth',
-      artist_name,
-      style: style || 'modern',
+    // Build enriched topic string from URL analysis context (same as /generate route)
+    const contextParts: string[] = [];
+    const resolvedTrack = track || trackTitle;
+    const resolvedArtist = artist || artistName || artist_name;
+    if (resolvedTrack) contextParts.push(`"${resolvedTrack}"`);
+    if (resolvedArtist) contextParts.push(`by ${resolvedArtist}`);
+    contextParts.push(String(topic));
+    if (urlDescription && urlDescription !== topic) contextParts.push(urlDescription);
+    if (description && description !== topic) contextParts.push(description);
+    const enrichedTopic = contextParts.filter(Boolean).join(' — ');
+
+    // Generate a rich visual spec from URL context
+    const specResult = await pythonAIService.generateVisualSpec({
+      topic:         enrichedTopic || topic,
+      platform:      platform || 'instagram',
+      tone:          tone || 'energetic',
+      artist:        resolvedArtist || '',
+      track:         resolvedTrack || '',
+      genre:         genre || '',
+      thumbnail_url: thumbnail_url || '',
+      keywords:      Array.isArray(keywords) ? keywords : [],
+      description:   description || urlDescription || '',
     });
 
-    if (!result.success) {
-      const specResult = await pythonAIService.generateVisualSpec({
-        topic,
-        platform: platform || 'instagram',
-        tone: tone || 'energetic',
-        goal: goal || 'growth',
-        artist_name,
-        style: style || 'modern',
+    if (!specResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: specResult.error || 'Visual spec generation failed',
       });
-
-      if (!specResult.success) {
-        return res.status(500).json({
-          success: false,
-          message: specResult.error || 'Image generation failed',
-        });
-      }
-
-      return res.json({ success: true, visual_spec: specResult.data, image_url: null });
     }
 
-    res.json({ success: true, ...result.data });
+    res.json({ success: true, visual_spec: specResult.data, image_url: null, ...specResult.data });
   } catch (error) {
     logger.error('Failed to generate social image:', error);
     res.status(500).json({ success: false, message: 'Image generation failed' });

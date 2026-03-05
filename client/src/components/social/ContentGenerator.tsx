@@ -53,6 +53,10 @@ import {
   Mic,
   DollarSign,
   Database,
+  Film,
+  Palette,
+  Video,
+  Image,
 } from 'lucide-react';
 
 const PLATFORMS = [
@@ -144,6 +148,7 @@ export function ContentGenerator() {
   const [importUrl, setImportUrl] = useState('');
   const [urlAnalysis, setUrlAnalysis] = useState<any>(null);
   const [urlImporting, setUrlImporting] = useState(false);
+  const [visualSpec, setVisualSpec] = useState<any>(null);
 
   const { data: trendingTopics, isLoading: loadingTrends } = useQuery<TrendingTopic[]>({
     queryKey: ['/api/social/ai-content/trending-topics'],
@@ -276,6 +281,40 @@ export function ContentGenerator() {
     },
   });
 
+  const generateVisualMutation = useMutation({
+    mutationFn: async () => {
+      const body: any = {
+        topic: contentPrompt || urlAnalysis?.title || '',
+        platform: selectedPlatform,
+        tone: selectedTone,
+      };
+      if (urlAnalysis) {
+        body.artist        = urlAnalysis.artist || undefined;
+        body.artistName    = urlAnalysis.artist || undefined;
+        body.track         = urlAnalysis.track || undefined;
+        body.trackTitle    = urlAnalysis.track || undefined;
+        body.genre         = urlAnalysis.genre && urlAnalysis.genre !== 'default' ? urlAnalysis.genre : undefined;
+        body.thumbnail_url = urlAnalysis.thumbnail_url || urlAnalysis.og_image || undefined;
+        body.keywords      = urlAnalysis.keywords?.length ? urlAnalysis.keywords : undefined;
+        body.description   = urlAnalysis.summary || undefined;
+        body.urlDescription = urlAnalysis.summary || undefined;
+        body.urlContentType = urlAnalysis.content_type || undefined;
+      }
+      const res = await apiRequest('POST', '/api/social/generate-image', body);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        setVisualSpec(data);
+      } else {
+        toast({ title: 'Visual Generation Failed', description: data.message, variant: 'destructive' });
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: 'Visual Generation Failed', description: error.message || 'Unable to generate visual spec', variant: 'destructive' });
+    },
+  });
+
   const handleGenerateContent = () => {
     if (!contentPrompt.trim()) {
       toast({
@@ -390,6 +429,7 @@ export function ContentGenerator() {
     if (!importUrl.trim()) return;
     setUrlImporting(true);
     setUrlAnalysis(null);
+    setVisualSpec(null);
     try {
       const res = await apiRequest('POST', '/api/social/analyze-url', {
         url: importUrl.trim(),
@@ -730,6 +770,107 @@ export function ContentGenerator() {
                             <Database className="w-3 h-3" />
                             {urlAnalysis.data_sources.length} source{urlAnalysis.data_sources.length !== 1 ? 's' : ''}
                           </p>
+                        )}
+                      </div>
+
+                      {/* ── Visual Content Generator ── */}
+                      <div className="border-t pt-2.5 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-medium flex items-center gap-1.5">
+                            <Film className="w-3.5 h-3.5 text-primary" />
+                            Visual Content
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => generateVisualMutation.mutate()}
+                            disabled={generateVisualMutation.isPending}
+                            className="h-7 text-xs"
+                          >
+                            {generateVisualMutation.isPending ? (
+                              <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                            ) : (
+                              <Palette className="w-3 h-3 mr-1" />
+                            )}
+                            {generateVisualMutation.isPending ? 'Generating…' : 'Generate Visual Brief'}
+                          </Button>
+                        </div>
+
+                        {visualSpec && (
+                          <div className="rounded-md overflow-hidden border">
+                            {/* Color palette strip */}
+                            <div className="h-2 flex">
+                              {visualSpec.color_palette?.map((color: string, i: number) => (
+                                <div key={i} className="flex-1" style={{ backgroundColor: color }} />
+                              ))}
+                            </div>
+
+                            <div className="p-2.5 space-y-2">
+                              {/* Template preview */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium flex items-center gap-1.5">
+                                  <Image className="w-3 h-3" />
+                                  {visualSpec.template_name || visualSpec.template}
+                                </span>
+                                <span className="text-xs text-muted-foreground">{visualSpec.aspect_ratio}</span>
+                              </div>
+
+                              {/* Text overlays preview */}
+                              <div
+                                className="rounded p-2 text-center space-y-0.5"
+                                style={{
+                                  backgroundColor: visualSpec.bg_color,
+                                  borderLeft: `3px solid ${visualSpec.accent_color}`,
+                                }}
+                              >
+                                {visualSpec.title_text && (
+                                  <p className="text-xs font-bold truncate" style={{ color: visualSpec.text_color }}>
+                                    {visualSpec.title_text}
+                                  </p>
+                                )}
+                                {visualSpec.subtitle_text && (
+                                  <p className="text-xs truncate" style={{ color: visualSpec.accent_color }}>
+                                    {visualSpec.subtitle_text}
+                                  </p>
+                                )}
+                                {visualSpec.tagline && (
+                                  <p className="text-xs italic truncate" style={{ color: visualSpec.text_color, opacity: 0.7 }}>
+                                    {visualSpec.tagline}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Visual mood */}
+                              {visualSpec.visual_mood && (
+                                <p className="text-xs text-muted-foreground italic">{visualSpec.visual_mood}</p>
+                              )}
+
+                              {/* Generate Video CTA */}
+                              <Button
+                                size="sm"
+                                className="w-full h-7 text-xs"
+                                onClick={() => {
+                                  const vc = visualSpec.video_config || {};
+                                  const params = new URLSearchParams({
+                                    template:     vc.template || 'cinematic_promo',
+                                    bg_color:     (vc.bg_color || '#1a1a2e').replace('#', ''),
+                                    accent_color: (vc.accent_color || '#e94560').replace('#', ''),
+                                    topic:        vc.topic || contentPrompt || '',
+                                    artist_name:  vc.artist_name || urlAnalysis?.artist || '',
+                                    hook:         vc.hook || '',
+                                    body:         vc.body || '',
+                                    cta:          vc.cta || '',
+                                    platform:     vc.platform || selectedPlatform,
+                                    tone:         vc.tone || selectedTone,
+                                  });
+                                  window.location.href = `/video-generator?${params.toString()}`;
+                                }}
+                              >
+                                <Video className="w-3 h-3 mr-1" />
+                                Create Promotional Video
+                              </Button>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
