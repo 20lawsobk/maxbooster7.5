@@ -1750,6 +1750,428 @@ Your dashboard has an interactive onboarding checklist showing your progress. Co
 **Deduplication:**
 If multiple users upload the same audio sample, it's stored once and referenced multiple times — saving space and improving the platform's efficiency for everyone.`,
   },
+
+  // ── AI VIDEO GENERATOR ────────────────────────────────────────────────────
+  {
+    keywords: ['video', 'music video', 'ai video', 'generate video', 'cinematic video', 'visual', 'video generator', 'make video', 'create video', 'video for music', 'lyric video', 'visualizer'],
+    category: 'studio',
+    relatedKeywords: ['social media', 'youtube', 'tiktok', 'instagram reels', 'distribution'],
+    nextSteps: ['Export your video to YouTube or Instagram Reels', 'Use the AI Video on TikTok with the Social Media Autopilot', 'Add your branding overlay before exporting', 'Share the cinematic video on all connected social platforms'],
+    answer: `The AI Cinematic Video Generator creates professional music videos and visual content from your audio — powered entirely by Max Booster's in-house AI.
+
+**What it does:**
+• Converts your music into a full cinematic music video automatically
+• AI generates scene compositions, transitions, and visual effects in sync with your audio
+• Cuts synchronized to beat drops and song structure
+• Multiple visual styles to choose from:
+  - **Cinematic** — film-quality scenes and color grading
+  - **Lo-Fi** — retro, warm-toned aesthetic
+  - **Abstract** — motion graphics and particle effects
+  - **Performance** — artist-in-studio simulated footage
+  - **Lyric Video** — animated lyrics over visual backgrounds
+
+**Export formats:**
+• 1080p Full HD for standard uploads
+• 4K Ultra HD for premium quality
+• Ready for YouTube, TikTok, Instagram Reels, and Facebook
+
+**Customization:**
+• Artist name and logo overlays
+• Custom color palette to match your brand
+• Intro/outro bumper frames
+
+**How to use:**
+1. In Studio, open your finished project
+2. Click "Generate Video" in the toolbar
+3. Choose your visual style and brand preferences
+4. Hit Generate — your video is ready in minutes
+5. Export and share directly to connected social accounts
+
+No video editing skills required. The AI handles every frame end to end.`,
+  },
+
+  // ── FAN HUB & COMMUNITY ───────────────────────────────────────────────────
+  {
+    keywords: ['fan hub', 'fan community', 'fan engagement', 'fans', 'community', 'fan club', 'fan page', 'engage fans', 'fan interaction', 'fan base', 'fanbase'],
+    category: 'social',
+    relatedKeywords: ['social media', 'autopilot', 'analytics', 'fan campaign'],
+    nextSteps: ['Set up a Fan Campaign to grow your community', 'Use the Social Media Autopilot to keep fans engaged automatically', 'Track your audience demographics in the Analytics dashboard', 'Send a pre-save campaign to your fanbase before your next release'],
+    answer: `The Fan Hub is your centralized space for building and engaging your fan community on Max Booster.
+
+**Fan Hub Features:**
+• Fan list management — view and organize your subscriber and follower base
+• Fan segmentation — group fans by genre preference, location, or engagement level
+• Direct messaging (fan broadcast) — send updates to your entire fanbase at once
+• Fan activity feed — see who's listening, sharing, and commenting in real time
+• Exclusive content drops — share unreleased material, stems, or behind-the-scenes with superfans
+• Fan milestones — celebrate streaming, follower, and purchase milestones with your community
+
+**Fan Campaigns:**
+• Pre-release hype campaigns — build anticipation with countdowns and teasers
+• Merch giveaways — run limited campaigns for merchandise drops
+• Fan voting — let your community vote on song names, artwork, or setlists
+• UGC (User Generated Content) campaigns — encourage fans to create content around your music
+• Playlist collaboration — invite fans to submit songs to a shared playlist
+
+**Integration with other Max Booster tools:**
+• Autopilot auto-posts engage your fanbase across all platforms
+• Analytics shows your most engaged fans and territories
+• Marketplace notifies superfans of new beat or merch drops
+
+Building a loyal fan community is one of the most powerful career accelerators — Fan Hub makes it automatic.`,
+  },
+
+  // ── CONTRACTS ─────────────────────────────────────────────────────────────
+  {
+    keywords: ['contract', 'music contract', 'agreement', 'deal', 'record deal', 'publishing deal', 'licensing agreement', 'feature agreement', 'collaborator contract', 'contract management'],
+    category: 'career',
+    relatedKeywords: ['sync licensing', 'royalty split', 'publishing', 'marketplace license', 'legal'],
+    nextSteps: ['Set up a royalty split for your collaborators alongside the contract', 'Register the track in the Sync Licensing portal after the agreement is signed', 'Export a PDF copy of the contract for your records', 'Use the Contract alongside a Marketplace license for beat sales'],
+    answer: `Max Booster's Contract Management system lets you draft, send, and manage music industry agreements — all without a lawyer for standard deals.
+
+**Contract Types Supported:**
+• **Feature/Collaboration Agreements** — terms for featured artist appearances
+• **Beat Purchase/License Agreements** — exclusive and non-exclusive beat deals
+• **Co-Writer Agreements** — split percentages and publishing rights for co-written songs
+• **Producer Agreements** — producer credit, advance, and point structure
+• **Sync Licensing Contracts** — permission for film, TV, and commercial use
+• **Management Agreements** — manager commissions and responsibilities
+• **Distribution Agreements** — label or distributor deal terms
+
+**How to use:**
+1. Go to Career → Contracts
+2. Choose a contract template
+3. Fill in the parties, terms, and payment structure
+4. Send via email for digital signature
+5. Store and track signed contracts in your dashboard
+
+**Key features:**
+• Pre-built templates for every common music deal type
+• Digital signature support — no printing or scanning needed
+• Contract status tracking — pending, signed, expired
+• Linked to Royalty Splits — contract terms auto-populate split percentages
+• PDF export for your personal records
+• Reminders for contract renewal and expiry dates
+
+**Important note:** For complex deals (major label, large sync placements), always consult a music attorney. Max Booster contracts are designed for standard independent artist agreements.`,
+  },
+
+  // ── RADIO PITCHING ────────────────────────────────────────────────────────
+  {
+    keywords: ['radio', 'radio pitch', 'radio submission', 'fm radio', 'internet radio', 'radio station', 'radio play', 'airplay', 'radio promotion', 'college radio', 'submit to radio'],
+    category: 'career',
+    relatedKeywords: ['distribution', 'playlist pitching', 'career coach', 'sync licensing', 'analytics'],
+    nextSteps: ['Submit your radio pitch at least 4 weeks before your release date', 'Pair your radio campaign with a Social Media Autopilot burst for maximum reach', 'Track airplay royalties in your Royalties dashboard', 'Follow up your radio submission with an EPK (Electronic Press Kit)'],
+    answer: `The Radio Pitch Tool lets you submit tracks to FM stations, internet radio networks, and college radio programs — directly from Max Booster.
+
+**Radio submission types:**
+• **FM/Terrestrial Radio** — submit to commercial and independent FM stations
+• **Internet Radio** — Pandora, iHeart, SiriusXM, and independent streams
+• **College Radio** — CMJ-affiliated and independent college stations
+• **Gospel/Christian Radio** — faith-based radio networks
+• **Genre-specific Radio** — Hip-Hop, R&B, Country, Electronic, Latin networks
+
+**How to submit:**
+1. Go to Career → Radio Pitch
+2. Select your track and target radio format
+3. Fill in your pitch: artist bio, track description, target audience
+4. Choose your target stations or let AI recommend based on genre
+5. Submit — confirmation sent to your dashboard
+
+**What Max Booster's AI optimizes:**
+• Matching your track's genre and energy to the right station formats
+• Pitch copy written by AI based on your artist profile and track metadata
+• Submission timing recommendations based on release window
+• Follow-up reminder scheduling
+
+**Tracking:**
+• View submission status per station
+• Track airplay reports linked to your royalty earnings
+• Monitor which stations are spinning your music via integrated airplay data
+
+**Pro Tip:** Submit your radio pitch at least 4 weeks before your release date. Most stations need advance time to add tracks to their rotation.`,
+  },
+
+  // ── FAN CAMPAIGNS ─────────────────────────────────────────────────────────
+  {
+    keywords: ['fan campaign', 'campaign', 'presave', 'pre-save', 'pre save', 'release campaign', 'music campaign', 'launch campaign', 'promotional campaign', 'countdown campaign'],
+    category: 'social',
+    relatedKeywords: ['social media autopilot', 'distribution', 'release', 'fan hub', 'analytics'],
+    nextSteps: ['Launch a pre-save campaign 2-4 weeks before your release', 'Connect your social accounts to auto-post campaign content', 'Pair the campaign with a release countdown for maximum hype', 'Monitor campaign performance in the Analytics dashboard'],
+    answer: `Fan Campaigns are coordinated promotional efforts built inside Max Booster to drive engagement and momentum around your music releases and brand.
+
+**Campaign Types:**
+• **Pre-Save Campaign** — drive Spotify/Apple Music saves before your release date
+• **Release Launch Campaign** — multi-platform announcement when your music goes live
+• **Behind-the-Scenes Series** — teaser content dripped out over days/weeks before release
+• **Merchandise Drop Campaign** — announce and promote a new merch item
+• **Fan Voting Campaign** — engage fans in naming a song, picking artwork, or setting a setlist
+• **UGC (User Generated Content) Campaign** — prompt fans to create content using your music
+• **Milestone Celebration Campaign** — 1M streams, 10K followers, album anniversary
+
+**How to create a campaign:**
+1. Go to Social → Campaigns (or Career → Fan Campaigns)
+2. Choose a campaign type and set your goal
+3. Set the campaign date range and target platforms
+4. AI generates all content variants — captions, hashtags, visuals guidance
+5. Publish to the Content Calendar for review or activate Autopilot for fully automatic posting
+
+**Campaign Analytics:**
+• Impressions and reach per platform
+• Pre-save conversion rate
+• Click-through rate on campaign links
+• Fan growth attributed to the campaign
+• Best-performing content variants
+
+**Pro Tip:** A 2-week pre-save campaign before your release typically increases Day 1 stream counts by 30-50% compared to no campaign.`,
+  },
+
+  // ── RELEASE COUNTDOWN ─────────────────────────────────────────────────────
+  {
+    keywords: ['release countdown', 'countdown', 'pre-release', 'pre release', 'hype', 'teaser', 'upcoming release', 'dropping soon', 'countdown timer', 'release date'],
+    category: 'distribution',
+    relatedKeywords: ['fan campaign', 'social media autopilot', 'pre-save', 'distribution', 'release'],
+    nextSteps: ['Activate the Social Media Autopilot to post countdown content automatically', 'Launch a pre-save campaign alongside the countdown', 'Submit your playlist pitch during the countdown period', 'Prepare your release announcement content in the Content Calendar'],
+    answer: `Release Countdown is a built-in feature that builds anticipation for your upcoming music drop with automated teaser content, timers, and pre-release assets.
+
+**What the Release Countdown does:**
+• Generates a shareable countdown timer page linked to your release
+• AI creates a sequence of teaser posts leading up to your release date
+• Pre-save link generation — fans can add your music to their library before it's live
+• Custom countdown graphics — artwork countdown posts with your branding
+• Automatically activates full release announcement content on drop day
+
+**How to set up:**
+1. When creating a Distribution release, set a future release date
+2. Toggle "Enable Release Countdown"
+3. Choose countdown duration (7 days, 14 days, 21 days, 30 days)
+4. Select which content types to generate (teasers, previews, behind-scenes)
+5. Connect your social accounts — Autopilot handles the rest
+
+**Generated countdown assets:**
+• "X days until drop" social posts (auto-generated daily)
+• 15-second audio snippet posts (excerpt of your track)
+• Behind-the-scenes studio content using your project files
+• Final "Tomorrow is the day" hype post
+• Release day announcement post with streaming links
+
+**Pre-save integration:**
+• Spotify pre-save link embedded in all countdown posts
+• Apple Music pre-add link
+• Fan email capture for release notification
+
+**Tracking:**
+• Pre-save count in real time
+• Link clicks and reach per countdown post
+• Conversion rate from teaser to pre-save`,
+  },
+
+  // ── MERCH / MERCHANDISE ───────────────────────────────────────────────────
+  {
+    keywords: ['merch', 'merchandise', 'merch store', 't-shirt', 'hoodie', 'clothing', 'sell merch', 'artist merch', 'fan merch', 'print on demand', 'merch drop'],
+    category: 'marketplace',
+    relatedKeywords: ['fan hub', 'fan campaign', 'storefront', 'marketplace', 'royalties'],
+    nextSteps: ['Promote your merch drop with a Fan Campaign', 'Add your merch store link to all social profiles', 'Use the Autopilot to auto-post merch announcements', 'Run a limited-time drop campaign for new merch items'],
+    answer: `Max Booster includes a built-in Merchandise storefront so you can sell artist merch directly to your fans alongside your music and beats.
+
+**What you can sell:**
+• T-Shirts, hoodies, hats, and custom apparel
+• Posters and art prints
+• Digital merchandise (exclusive stems, samples, sessions)
+• Bundles (music + merch packages)
+• Limited edition drops — time-limited availability to create urgency
+
+**Print-on-Demand integration:**
+• No inventory required — products are printed and shipped on purchase
+• International shipping handled automatically
+• Returns and fulfillment managed by the platform
+• Your profit margin per item shown before you list
+
+**How to set up:**
+1. Go to Marketplace → Merch Store
+2. Upload your artwork or designs
+3. Choose product types and sizes
+4. Set your price (platform shows your profit margin)
+5. Publish — your merch is live immediately
+
+**Merch + Music bundles:**
+• Sell beats + a t-shirt together as a package
+• Offer album + hoodie pre-order bundles
+• Exclusive merch unlocks for fans who stream a certain amount
+
+**Merch Analytics:**
+• Sales by item and variant
+• Revenue per product
+• Customer location data
+• Conversion rate from store visits to purchase
+
+**Fan Campaign integration:**
+• Launch a "Merch Drop" campaign and Autopilot handles all the announcement posts automatically`,
+  },
+
+  // ── WORKSPACES ────────────────────────────────────────────────────────────
+  {
+    keywords: ['workspace', 'workspaces', 'organize', 'organization', 'project folder', 'band account', 'team', 'label account', 'multiple artists', 'manage artists'],
+    category: 'account',
+    relatedKeywords: ['collaboration', 'royalty split', 'contracts', 'studio', 'distribution'],
+    nextSteps: ['Invite team members to your workspace in Settings → Workspace', 'Set permissions so collaborators can only access what they need', 'Create separate workspaces for different artist projects', 'Assign royalty splits across workspace members'],
+    answer: `Workspaces let you organize your Max Booster account for different artists, bands, or projects — and invite team members with controlled access.
+
+**What Workspaces do:**
+• Create separate environments for each artist or project you manage
+• Invite collaborators, managers, or band members with role-based access
+• Keep royalties, analytics, and releases separated by workspace
+• Switch between workspaces without logging out
+
+**Workspace roles:**
+• **Owner** — full control over all features, billing, and settings
+• **Admin** — manage releases, social accounts, and team members
+• **Collaborator** — access Studio and specific projects only
+• **Viewer** — read-only access to analytics and royalty reports
+
+**Who uses Workspaces:**
+• **Managers** managing multiple artists from one dashboard
+• **Record labels** running multiple artist accounts under one roof
+• **Bands** splitting access across members
+• **Solo artists** with a manager or publicist who needs limited access
+
+**How to set up:**
+1. Go to Settings → Workspace
+2. Click "Create New Workspace" or "Invite Member"
+3. Assign a role to each team member
+4. Each workspace has its own storage, releases, and analytics
+
+**Workspace isolation:**
+• Music files, projects, and releases are completely separated
+• Analytics and royalties are workspace-specific
+• Social accounts are per-workspace — no crossover posting
+
+Multiple workspaces are available on all paid plans.`,
+  },
+
+  // ── SELF-EVOLUTION ENGINE ─────────────────────────────────────────────────
+  {
+    keywords: ['self evolution', 'self-evolution', 'evolving ai', 'ai learning', 'ai improve', 'platform learn', 'adaptive ai', 'ai retrain', 'train model', 'model update', 'ai evolution'],
+    category: 'assistant',
+    relatedKeywords: ['in-house ai', 'ai technology', 'max booster ai', 'pocket dimension'],
+    nextSteps: ['Your usage automatically contributes to improving the platform AI', 'No action required — the Self-Evolution Engine runs automatically'],
+    answer: `The Self-Evolution Engine is Max Booster's proprietary AI retraining system that continuously improves every AI feature on the platform based on real usage patterns.
+
+**How it works:**
+• Usage data from the platform (anonymized and aggregated) feeds into retraining pipelines
+• AI models update automatically on a scheduled cycle without any downtime
+• Each AI feature — mixing, mastering, content generation, beat generation — improves independently
+• New patterns detected in usage trigger targeted model updates for that specific feature
+
+**What gets better over time:**
+• **AI Mixer/Mastering** — learns from thousands of tracks processed to improve tonal and dynamic accuracy
+• **Social Content AI** — improves caption quality based on which posts generate the highest engagement
+• **Beat Generator** — learns from the most popular generated beats to create better starting points
+• **Max AI Assistant** — expands its knowledge base as new features ship and new user questions arrive
+• **Advertising Autopilot** — learns which campaign patterns generate the best organic growth
+
+**Technical details:**
+• Models are stored in the Pocket Dimension storage fabric (custom distributed storage)
+• PocketFabric Cluster (3-node auto-scaling AI compute) handles retraining workloads
+• Training jobs run on a dedicated compute schedule — no impact on platform performance
+• Model versions are versioned and rolled back automatically if performance drops
+
+**For users:**
+• You don't need to do anything — the AI gets better the more you use Max Booster
+• Improvements deploy silently in the background
+• Your data privacy is fully protected — all learning uses aggregated, anonymized patterns
+
+Max Booster is one of the only platforms where the AI is genuinely self-improving from real music career data.`,
+  },
+
+  // ── MAX BOOSTER OVERVIEW ──────────────────────────────────────────────────
+  {
+    keywords: ['what is max booster', 'about max booster', 'max booster platform', 'what does max booster do', 'max booster features', 'everything max booster', 'platform overview', 'all features', 'what can max booster do', 'tell me about max booster', 'overview', 'platform summary'],
+    category: 'general',
+    relatedKeywords: ['studio', 'distribution', 'royalties', 'marketplace', 'social', 'analytics', 'career'],
+    nextSteps: ['Explore the Studio to start making music', 'Submit your first release via Distribution', 'Connect your social accounts for Autopilot', 'Check your career score in the Analytics Dashboard'],
+    answer: `**Max Booster** is the all-in-one AI music career management platform for independent artists — built by B-Lawz Music.
+
+It replaces every tool you'd need to run a music career, from production to streaming to marketing to monetization. Everything runs on custom in-house AI — no OpenAI, no external APIs.
+
+---
+
+## 🎚️ Studio (Professional DAW)
+• Unlimited multi-track audio and MIDI recording
+• AI Mixer and AI Mastering (loudness targeting for Spotify, Apple Music, Tidal, YouTube)
+• AI Beat Generator — create full beats and melodies from text descriptions
+• Stem Separation, MIDI Piano Roll, VST Plugin Bridge
+• Real-time collaboration, cloud save, and export to WAV/MP3/FLAC/stems
+• AI Cinematic Video Generator — turn your audio into a full music video
+
+## 🌍 Distribution (150+ Platforms)
+• One-click release to Spotify, Apple Music, YouTube Music, Amazon, Tidal, Deezer, TikTok, Instagram, Pandora, SoundCloud, Boomplay, Beatport, and 140+ more
+• Auto ISRC and UPC generation
+• Playlist pitching to Spotify editorial and curators
+• Pre-save campaigns and release countdown automation
+• Smart content ID and copyright protection
+
+## 💰 Royalties (100% Retention)
+• Keep 100% of your streaming royalties — Max Booster takes nothing
+• Real-time earnings dashboard per track, platform, and territory
+• Royalty splits for collaborators (auto-calculated)
+• Publishing rights and PRO registration guidance (ASCAP, BMI)
+• Sync licensing revenue tracking
+• Instant Payout / Royalty Advance — access future earnings early
+• Revenue Intelligence — 90-day AI earnings forecast
+
+## 🛒 Beat Marketplace
+• Sell beats, loops, samples, and preset packs with full license control
+• Non-Exclusive, Exclusive, and Unlimited license tiers
+• Custom branded storefront with a unique URL
+• Merch store — sell apparel and limited-edition drops alongside music
+• Integrated Stripe checkout — no third-party redirects
+• Bundle pricing and conversion analytics
+
+## 📱 Social Media Autopilot
+• Connect Instagram, Twitter/X, TikTok, Facebook, YouTube, LinkedIn
+• AI generates captions, hashtags, and emojis — platform-optimized
+• AI-Optimized Timing — posts go out at peak audience hours
+• Content Calendar, Burst Mode, Brand Voice consistency
+• A/B Testing — finds your best-performing caption hooks automatically
+• Fan Campaigns — pre-save, merch drops, countdowns, and UGC campaigns
+• Fan Hub — broadcast to your community, exclusive content drops
+
+## 📊 Analytics & Insights
+• Executive Dashboard with career health score
+• Streams, listeners, plays, and engagement per track and platform
+• Audience demographics (age, gender, location) and territory maps
+• Revenue analytics linked to your royalty dashboard
+• Predictive insights and competitor benchmarking
+
+## 🚀 Advertising Autopilot
+• Zero-budget organic growth campaigns — no ad spend required
+• AI builds and executes full promotional campaigns automatically
+• A/B content testing to identify winning angles
+• Multi-platform management from a single dashboard
+
+## 🎤 Career Tools
+• AI Career Coach — personalized strategy based on your metrics and goals
+• Electronic Press Kit (EPK) generator
+• Tour and Venue Management
+• Sync Licensing Portal — submit to TV, film, and brand placements
+• Songwriting Assistant (AI co-writer)
+• Contract Management — draft, send, and track music industry agreements
+• Radio Pitch Tool — submit to FM, internet, and college radio
+• Sample Clearance Tracker
+• Project Budget Planner
+• Release Countdown and Fan Campaign Manager
+
+## 🤖 In-House AI Engine
+• Every AI feature is proprietary — no third-party AI APIs
+• Self-Evolution Engine — models continuously retrain on real platform data
+• Pocket Dimension distributed storage for AI model weights
+• PocketFabric 3-node auto-scaling compute cluster
+
+---
+
+**Plans:** Free (limited), Monthly, Yearly, and Lifetime — you keep 100% of royalties on all paid plans.`,
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1827,6 +2249,46 @@ const PROACTIVE_FLOWS: Record<string, string[]> = {
     'Ask me "what should I do next?" for personalized step suggestions based on your goal',
     'Ask about any specific feature for a detailed walkthrough',
     'I can explain how any two features work together — just ask',
+  ],
+  video: [
+    'Export your music video to YouTube and TikTok after generation',
+    'Share your cinematic video using the Social Media Autopilot for hands-free promotion',
+    'Add branding overlays before exporting to keep your visual identity consistent',
+    'Use Lyric Video style for tracks with a strong vocal performance',
+  ],
+  campaign: [
+    'Launch a pre-save campaign 2-4 weeks before your release date for maximum Day-1 streams',
+    'Pair your Fan Campaign with Release Countdown posts for high-momentum launches',
+    'Track campaign conversions in Analytics to see which content drove the most pre-saves',
+    'Reuse winning campaign content structures for your next release',
+  ],
+  merch: [
+    'Promote your merch drop with a Fan Campaign for maximum visibility',
+    'Add your merch store link to every social media bio',
+    'Bundle merch with a music release for higher average order value',
+    'Use the Autopilot to announce new merch drops automatically across all platforms',
+  ],
+  contracts: [
+    'Pair your contract with a Royalty Split to automate payment distribution',
+    'Register your track in the Sync Licensing portal after signing a placement agreement',
+    'Export signed contracts as PDFs for your personal records',
+    'Set contract expiry reminders so you never miss a renewal date',
+  ],
+  radio: [
+    'Submit your radio pitch at least 4 weeks before your release date',
+    'Pair your radio push with a Social Media Burst Mode campaign',
+    'Track airplay royalties through your Royalties dashboard',
+    'Update your EPK before submitting to major stations',
+  ],
+  workspace: [
+    'Set collaborator permissions before sharing your workspace with a manager or band member',
+    'Create a separate workspace for each artist if you manage multiple acts',
+    'Review workspace member access every few months to keep permissions current',
+  ],
+  general: [
+    'The Max Assistant can guide you through any feature — just ask',
+    'Check your Career Health Score weekly in the Analytics Dashboard',
+    'Use the Platform Overview to discover features you haven\'t tried yet',
   ],
 };
 

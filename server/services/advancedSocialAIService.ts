@@ -22,6 +22,257 @@ import { userBrandVoices, autopilotPreferences, socialConnections } from '@share
 import { eq } from 'drizzle-orm';
 
 // ============================================================================
+// MAX BOOSTER PLATFORM KNOWLEDGE
+// Injected into content generation engine so every AI post reflects the full
+// breadth of what Max Booster offers independent musicians.
+// ============================================================================
+
+export const MAX_BOOSTER_PLATFORM_KNOWLEDGE = {
+  name: 'Max Booster',
+  tagline: 'The all-in-one AI music career management platform for independent artists.',
+  owner: 'B-Lawz Music',
+
+  coreFeatures: {
+    studio: {
+      name: 'Studio DAW',
+      description: 'Professional-grade digital audio workstation built 100% in-house.',
+      highlights: [
+        'Unlimited multi-track audio and MIDI recording',
+        'AI Mixer — automatic level balance, EQ, compression, spatial imaging',
+        'AI Mastering — loudness targeting for Spotify (-14 LUFS), Apple Music (-16 LUFS), YouTube, Tidal',
+        'AI Generator — create beats, melodies, chord progressions from text descriptions',
+        'Stem Separation — isolate vocals, drums, bass, and instruments from any audio',
+        'MIDI Piano Roll editor with virtual instruments',
+        'Real-time collaboration with other artists',
+        'VST plugin bridge for external plugins',
+        'Comping — select best takes across multiple recordings',
+        'Export to WAV, MP3, FLAC, and individual stems',
+        'Reference Track Matching — match the tonal character of any reference',
+        'Cloud save — projects auto-save, never lose work',
+      ],
+    },
+
+    distribution: {
+      name: 'Music Distribution',
+      description: 'One-click delivery to 150+ streaming platforms worldwide.',
+      highlights: [
+        '150+ platforms including Spotify, Apple Music, YouTube Music, Amazon Music, Tidal, Deezer, TikTok, Instagram, Pandora, SoundCloud, Boomplay, Anghami, iHeart, Napster, Beatport, Traxsource, and more',
+        'Auto-generate ISRC codes for every track',
+        'Auto-generate UPC barcodes for every release',
+        'Playlist pitching to Spotify editorial and platform curators',
+        'LabelGrid submission portal for label distribution',
+        'Pre-save campaigns — build momentum before your release goes live',
+        'Release date scheduling — plan drops weeks in advance',
+        'Metadata management — edit song info, album art, credits anytime',
+        'Cover art requirements: 3000x3000px, JPG or PNG',
+        'Audio requirements: WAV or FLAC, 16-bit minimum',
+        'Timeline: most releases live within 1-3 business days',
+        'Smart content ID — automatic copyright protection across platforms',
+      ],
+    },
+
+    royalties: {
+      name: 'Royalties & Payments',
+      description: 'Full royalty tracking and payout management — keep 100% of what you earn.',
+      highlights: [
+        '100% royalty retention — Max Booster takes 0% of your streaming earnings',
+        'Real-time earnings dashboard with per-platform and per-track breakdowns',
+        'Earnings by territory — see which countries stream you most',
+        'Monthly payouts once you reach the $10 minimum threshold',
+        'Royalty splits — automatically divide earnings among collaborators by percentage',
+        'Publishing rights management — mechanical and performance royalties',
+        'PRO registration guidance (ASCAP, BMI, SOCAN)',
+        'Sync licensing revenue tracking for TV, film, and commercial placements',
+        'Instant Payout / Royalty Advance — cash out future earnings early',
+        'Revenue Intelligence — 90-day earnings forecast powered by AI',
+        'Tax report export for year-end filing',
+        'Stripe-powered secure payment processing',
+      ],
+    },
+
+    marketplace: {
+      name: 'Beat Marketplace',
+      description: 'Built-in storefront to sell beats, loops, samples, and presets directly to artists.',
+      highlights: [
+        'Sell beats with Non-Exclusive, Exclusive, and Unlimited license tiers',
+        'Custom license templates — set your own terms',
+        'Watermarked MP3 preview generation (automatic)',
+        'Custom branded storefront with unique URL',
+        'Bundle pricing — offer discounts on multi-beat purchases',
+        'Marketplace Analytics — conversion rates, top performers, revenue trends',
+        'Social media auto-promotion of new beat uploads via Autopilot integration',
+        'Instant delivery to buyers after purchase',
+        'Sell samples, loops, and preset packs alongside beats',
+        'Integrated checkout — Stripe-powered, no third-party redirects',
+      ],
+    },
+
+    socialMedia: {
+      name: 'Social Media Autopilot',
+      description: 'AI-powered automated posting and growth engine across all major platforms.',
+      highlights: [
+        'Connect Instagram, Twitter/X, TikTok, Facebook, YouTube, LinkedIn',
+        'AI generates platform-optimized captions, hashtags, and emojis automatically',
+        'AI-Optimized Timing — posts go out at peak audience engagement hours',
+        'Content Calendar — plan and schedule posts weeks in advance',
+        'Burst Mode — high-frequency posting around release dates for maximum momentum',
+        'AI Content Variants — multiple caption versions generated for A/B testing',
+        'A/B Testing — automatically test caption hooks to find top performers',
+        'Brand Voice — AI learns your style and maintains consistency across posts',
+        'Audience segmentation — tailor content by genre, fanbase, and objective',
+        'Engagement metrics — track likes, comments, shares, click-through per post',
+        'Auto-hashtag optimization — trending and niche hashtags per genre',
+      ],
+    },
+
+    advertisingAutopilot: {
+      name: 'Advertising Autopilot',
+      description: 'Zero-budget organic growth campaigns powered by AI — no ad spend required.',
+      highlights: [
+        'AI builds and runs full promotional campaigns without paid advertising',
+        'Organic growth tactics — smart engagement, cross-posting, and discovery optimization',
+        'A/B content testing — identifies which angles resonate with your audience',
+        'Campaign scheduling aligned with release strategy',
+        'Multi-platform campaign management from a single dashboard',
+        'Performance analytics — impressions, reach, and conversion tracking',
+        'Fan targeting — reach listeners who already follow similar artists',
+      ],
+    },
+
+    analytics: {
+      name: 'Analytics & Insights',
+      description: 'Deep listener intelligence and career performance metrics in real time.',
+      highlights: [
+        'Executive Dashboard — career health score and overall performance overview',
+        'Stream counts, listener counts, and play data per track and platform',
+        'Audience demographics — age, gender, and location breakdowns',
+        'Territory maps — visualize where your listeners are geographically',
+        'Social engagement metrics — linked to every post and campaign',
+        'Revenue analytics — earnings by track, platform, and territory',
+        'Trend detection — rising tracks and growing territories highlighted automatically',
+        'Competitor benchmarking — compare your growth to similar artists',
+        'Predictive insights — AI suggests actions to grow based on your data',
+      ],
+    },
+
+    careerTools: {
+      name: 'Career Tools',
+      description: 'End-to-end music career management beyond production and distribution.',
+      highlights: [
+        'AI Career Coach — personalized strategy based on your goals and current metrics',
+        'Electronic Press Kit (EPK) generator — professional bio, photos, and credits',
+        'Tour & Venue Management — track shows, booking, and logistics',
+        'Sync Licensing Portal — submit tracks for TV, film, and brand placements',
+        'Songwriting Assistant — verse/chorus structure, lyric co-writing with AI',
+        'Sample Clearance Tracker — manage samples used in your productions',
+        'Project Budget Planner — track production and marketing spend',
+        'Contract Management — draft and manage music contracts',
+        'Radio Pitch Tool — submit tracks for FM, internet, and playlist radio',
+        'Fan Campaign Manager — coordinate fan engagement campaigns',
+        'Release Countdown — build pre-release anticipation with countdown assets',
+      ],
+    },
+
+    videoGenerator: {
+      name: 'AI Cinematic Video Generator',
+      description: 'Generate professional music videos and visual content from audio — 100% in-house AI.',
+      highlights: [
+        'Convert your music into full cinematic music videos automatically',
+        'AI generates scene compositions, transitions, and visual effects',
+        'Multiple visual styles: Cinematic, Lo-Fi, Abstract, Performance, Lyric Video',
+        'Sync visual cuts to beat drops and song structure automatically',
+        'Export in 1080p and 4K for YouTube, TikTok, and Instagram Reels',
+        'Add custom branding — artist name, logo overlays, and color palette',
+        'No video editing skills required — AI handles everything end to end',
+        '100% in-house technology, no external rendering APIs',
+      ],
+    },
+
+    aiTechnology: {
+      name: 'In-House AI Engine',
+      description: 'Every AI feature on Max Booster runs on proprietary models — no OpenAI, no external APIs.',
+      highlights: [
+        'AdvancedMusicAI — beat and melody generation model',
+        'Max AI Assistant — conversational platform guide trained on all Max Booster features',
+        'Social Content AI — engagement-optimized post generation',
+        'AI Mixer / Mastering Engine — audio processing and loudness optimization',
+        'Self-Evolution Engine — AI models continuously retrain on platform usage patterns',
+        'Pocket Dimension — custom distributed storage fabric for all AI model weights',
+        'PocketFabric Cluster — 3-node auto-scaling AI compute layer',
+        'Zero dependency on third-party AI providers — all data stays on-platform',
+      ],
+    },
+
+    subscriptionPlans: {
+      name: 'Subscription Plans',
+      description: 'Flexible plans for every stage of your music career.',
+      plans: [
+        { name: 'Free', details: 'Core tools with usage limits — get started at no cost' },
+        { name: 'Monthly', details: 'Full platform access, billed monthly' },
+        { name: 'Yearly', details: 'Full platform access with annual savings' },
+        { name: 'Lifetime', details: 'One-time payment, permanent access to all features' },
+      ],
+      note: '100% royalty retention on all paid plans. No hidden fees.',
+    },
+  },
+
+  keyUSPs: [
+    'All-in-one platform — Studio, Distribution, Royalties, Marketplace, Social, Analytics, and Career tools in one place',
+    '100% royalty retention — keep every dollar you earn from streaming',
+    '150+ distribution platforms — widest global reach available',
+    'Zero external AI APIs — all models are custom-built and proprietary',
+    'Organic advertising — AI-powered growth without ad spend',
+    'Self-evolving AI — the platform gets smarter the more you use it',
+    'No experience required — AI handles the technical complexity so you can focus on music',
+  ],
+
+  hashtags: {
+    brand: ['#MaxBooster', '#BLawzMusic', '#MaxBoosterAI'],
+    music: ['#IndieArtist', '#MusicDistribution', '#MusicProduction', '#NewMusic', '#MusicBusiness'],
+    ai: ['#AIMusic', '#MusicTech', '#AIProducer', '#FutureOfMusic'],
+    distribution: ['#MusicRelease', '#StreamingNow', '#IndependentArtist', '#MusicForAll'],
+    studio: ['#StudioLife', '#BeatMaker', '#Producer', '#RecordingStudio', '#DAW'],
+  },
+} as const;
+
+// Helper: detect if a topic or content request is about Max Booster features
+export function detectMaxBoosterContext(topic?: string): {
+  isMaxBoosterTopic: boolean;
+  relevantFeature?: keyof typeof MAX_BOOSTER_PLATFORM_KNOWLEDGE['coreFeatures'];
+  keywords: string[];
+} {
+  if (!topic) return { isMaxBoosterTopic: false, keywords: [] };
+  const lower = topic.toLowerCase();
+
+  const featureMap: Array<{
+    feature: keyof typeof MAX_BOOSTER_PLATFORM_KNOWLEDGE['coreFeatures'];
+    triggers: string[];
+  }> = [
+    { feature: 'studio', triggers: ['studio', 'daw', 'record', 'mix', 'master', 'beat', 'produce', 'track', 'stem'] },
+    { feature: 'distribution', triggers: ['distribut', 'release', 'spotify', 'apple music', 'streaming', 'platform', 'isrc', 'upc', 'playlist pitch'] },
+    { feature: 'royalties', triggers: ['royalt', 'earnings', 'payout', 'revenue', 'income', 'publish', 'split'] },
+    { feature: 'marketplace', triggers: ['marketplace', 'beat store', 'sell beat', 'license', 'storefront'] },
+    { feature: 'socialMedia', triggers: ['social', 'autopilot', 'instagram', 'tiktok', 'twitter', 'content', 'post', 'caption'] },
+    { feature: 'analytics', triggers: ['analytics', 'stats', 'dashboard', 'insight', 'stream count', 'listener'] },
+    { feature: 'videoGenerator', triggers: ['video', 'music video', 'visual', 'cinematic', 'reel'] },
+    { feature: 'careerTools', triggers: ['career', 'epk', 'press kit', 'sync', 'tour', 'radio', 'contract', 'songwrit'] },
+    { feature: 'aiTechnology', triggers: ['ai', 'artificial intelligence', 'max booster', 'in-house', 'proprietary'] },
+  ];
+
+  for (const { feature, triggers } of featureMap) {
+    if (triggers.some(t => lower.includes(t))) {
+      return {
+        isMaxBoosterTopic: true,
+        relevantFeature: feature,
+        keywords: triggers.filter(t => lower.includes(t)),
+      };
+    }
+  }
+
+  return { isMaxBoosterTopic: false, keywords: [] };
+}
+
+// ============================================================================
 // TYPES AND INTERFACES
 // ============================================================================
 
@@ -644,37 +895,77 @@ class AdvancedSocialAIService {
 
     const bodyParts: string[] = [];
 
-    const contentBodies: Record<string, string[]> = {
-      announcement: [
-        `${artist || 'We'} just dropped something special.`,
-        `${topic} is the result of months of hard work and dedication.`,
-        `This ${genre} experience is unlike anything before.`,
-      ],
-      behind_scenes: [
-        `Here's an exclusive look at how ${topic} came together.`,
-        `The creative process is messy, beautiful, and worth sharing.`,
-        `Every great song has a story behind it.`,
-      ],
-      engagement: [
-        `We want to hear from you.`,
-        `Your feedback shapes what we create next.`,
-        `This community means everything.`,
-      ],
-      promotional: [
-        `${topic} is available on all platforms.`,
-        `Stream it, share it, make it yours.`,
-        `Don't miss this ${genre} masterpiece.`,
-      ],
-      storytelling: [
-        `When ${artist || 'I'} started working on ${topic}, something clicked.`,
-        `Music has always been about connection.`,
-        `This track represents a new chapter.`,
-      ],
-    };
+    const mbContext = detectMaxBoosterContext(topic);
 
-    const contentType = request.contentType || 'announcement';
-    const bodies = contentBodies[contentType] || contentBodies.announcement;
-    bodyParts.push(...bodies.slice(0, 2));
+    if (mbContext.isMaxBoosterTopic && mbContext.relevantFeature) {
+      const feature = MAX_BOOSTER_PLATFORM_KNOWLEDGE.coreFeatures[mbContext.relevantFeature];
+      const highlights = ('highlights' in feature) ? feature.highlights : [];
+      const pick = (arr: readonly string[], n: number) => arr.slice(0, n);
+
+      const platformBodies: Record<string, string[]> = {
+        announcement: [
+          `${feature.description}`,
+          pick(highlights, 2).join('. ') + '.',
+          `${artist || 'We'} use Max Booster to power the entire music career — from studio to streaming.`,
+        ],
+        behind_scenes: [
+          `Here's what's inside: ${pick(highlights, 2).join(', ')}.`,
+          `${feature.description} — built for artists like you.`,
+          `The technology behind the music is just as important as the music itself.`,
+        ],
+        engagement: [
+          `Which feature matters most to you? ${pick(highlights, 2).join(' or ')}?`,
+          `Independent artists deserve enterprise-level tools. That's why Max Booster was built.`,
+          `What's your biggest challenge with ${mbContext.keywords[0] || 'music'}?`,
+        ],
+        promotional: [
+          `${feature.name} — ${feature.description}`,
+          `Highlights: ${pick(highlights, 3).join(' | ')}.`,
+          `${MAX_BOOSTER_PLATFORM_KNOWLEDGE.tagline}`,
+        ],
+        storytelling: [
+          `When ${artist || 'I'} started using ${feature.name}, everything changed.`,
+          `${feature.description}`,
+          `${pick(highlights, 1)[0]}. That's the Max Booster difference.`,
+        ],
+      };
+
+      const contentType = request.contentType || 'announcement';
+      const bodies = platformBodies[contentType] || platformBodies.announcement;
+      bodyParts.push(...bodies.slice(0, 2));
+    } else {
+      const contentBodies: Record<string, string[]> = {
+        announcement: [
+          `${artist || 'We'} just dropped something special.`,
+          `${topic} is the result of months of hard work and dedication.`,
+          `This ${genre} experience is unlike anything before.`,
+        ],
+        behind_scenes: [
+          `Here's an exclusive look at how ${topic} came together.`,
+          `The creative process is messy, beautiful, and worth sharing.`,
+          `Every great song has a story behind it.`,
+        ],
+        engagement: [
+          `We want to hear from you.`,
+          `Your feedback shapes what we create next.`,
+          `This community means everything.`,
+        ],
+        promotional: [
+          `${topic} is available on all platforms.`,
+          `Stream it, share it, make it yours.`,
+          `Don't miss this ${genre} masterpiece.`,
+        ],
+        storytelling: [
+          `When ${artist || 'I'} started working on ${topic}, something clicked.`,
+          `Music has always been about connection.`,
+          `This track represents a new chapter.`,
+        ],
+      };
+
+      const contentType = request.contentType || 'announcement';
+      const bodies = contentBodies[contentType] || contentBodies.announcement;
+      bodyParts.push(...bodies.slice(0, 2));
+    }
 
     if (tone.emotionality > 0.7) {
       bodyParts.push(`We put our heart and soul into this.`);
@@ -769,6 +1060,26 @@ class AdvancedSocialAIService {
       if (!hashtags.includes(topicTag)) {
         hashtags.push(topicTag);
       }
+    }
+
+    const mbContext = detectMaxBoosterContext(request.topic);
+    if (mbContext.isMaxBoosterTopic && mbContext.relevantFeature) {
+      const featureHashtagMap: Record<string, string[]> = {
+        studio: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.studio,
+        distribution: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.distribution,
+        royalties: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#Royalties'],
+        marketplace: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.studio, '#BeatSales'],
+        socialMedia: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music,
+        analytics: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#MusicAnalytics'],
+        videoGenerator: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#MusicVideo'],
+        careerTools: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#MusicBusiness'],
+        aiTechnology: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.ai,
+        advertisingAutopilot: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#MusicMarketing'],
+        subscriptionPlans: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.brand,
+      };
+      const featureTags = featureHashtagMap[mbContext.relevantFeature] || [];
+      hashtags.push(...featureTags.slice(0, 2));
+      hashtags.push(MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.brand[0]);
     }
 
     return [...new Set(hashtags)].slice(0, targetCount);
