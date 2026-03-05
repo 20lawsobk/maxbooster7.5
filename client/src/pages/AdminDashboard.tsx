@@ -91,7 +91,6 @@ export default function AdminDashboard() {
   const {
     data: auditResults,
     isLoading: auditLoading,
-    isError: auditError,
     refetch: refetchAudit,
   } = useQuery({
     queryKey: ['/api/audit/results'],
@@ -198,13 +197,6 @@ export default function AdminDashboard() {
     return null;
   }
 
-  if (auditError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
 
   // Direct data assignment - no fallbacks
   const auditData = auditResults;

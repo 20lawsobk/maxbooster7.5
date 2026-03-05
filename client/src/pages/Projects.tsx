@@ -126,7 +126,7 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const { invalidateOnProjectChange } = useAnalyticsInvalidation();
 
-  const { data: projectsData, isLoading: projectsLoading, isError } = useQuery<ProjectsApiResponse>({
+  const { data: projectsData, isLoading: projectsLoading} = useQuery<ProjectsApiResponse>({
     queryKey: ['/api/projects'],
     enabled: !!user,
   });
@@ -436,15 +436,7 @@ export default function Projects() {
     );
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  return (
+return (
     <AppLayout>
       <div className="p-6" role="main" aria-label="Projects management">
         {/* Header Actions */}

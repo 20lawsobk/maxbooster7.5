@@ -84,7 +84,7 @@ export default function Workspaces() {
   
   const workspaceOutcome = useWorkspaceOutcome();
 
-  const { data: workspacesData, isLoading, isError } = useQuery<{ workspaces: Workspace[] }>({
+  const { data: workspacesData, isLoading} = useQuery<{ workspaces: Workspace[] }>({
     queryKey: ['/api/workspace/user/workspaces'],
     enabled: !!user,
   });
@@ -284,15 +284,7 @@ export default function Workspaces() {
     return null;
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  const workspaces = workspacesData?.workspaces || [];
+const workspaces = workspacesData?.workspaces || [];
   const members = membersData?.members || [];
   const roles = rolesData?.roles || [];
   const activities = activitiesData?.activities || [];

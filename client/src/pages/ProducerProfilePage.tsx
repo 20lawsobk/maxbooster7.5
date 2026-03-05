@@ -104,7 +104,7 @@ export default function ProducerProfilePage() {
     },
   });
 
-  const { data: producer, isLoading: producerLoading, isError } = useQuery<Producer>({
+  const { data: producer, isLoading: producerLoading} = useQuery<Producer>({
     queryKey: ['producer', producerId],
     queryFn: async () => {
       const res = await apiRequest('GET', `/api/marketplace/producers/${producerId}`);
@@ -162,15 +162,7 @@ export default function ProducerProfilePage() {
     );
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  if (!producer) {
+if (!producer) {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center h-96 space-y-4">

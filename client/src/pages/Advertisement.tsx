@@ -423,7 +423,7 @@ export default function Advertisement() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { data: campaigns = [], isLoading: campaignsLoading, isError: advertError } = useQuery<AdCampaign[]>({
+  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery<AdCampaign[]>({
     queryKey: ['/api/advertising/campaigns'],
     enabled: !!user,
   });
@@ -512,13 +512,6 @@ export default function Advertisement() {
     );
   }
 
-  if (advertError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
 
   const adObjectives = [
     { value: 'awareness', label: 'Brand Awareness', icon: Eye },

@@ -182,7 +182,7 @@ export function PlaylistTracking({
   const [activeTab, setActiveTab] = useState('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'removed'>('all');
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading} = useQuery({
     queryKey: ['/api/analytics/playlists', timeRange],
     queryFn: async () => {
       const response = await fetch(`/api/analytics/dashboard?range=${timeRange}`, {
@@ -244,15 +244,7 @@ export function PlaylistTracking({
     return <PlaylistTrackingSkeleton />;
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  if (!hasData) {
+if (!hasData) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">

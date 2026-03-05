@@ -915,7 +915,7 @@ export default function Marketplace() {
     queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
   };
 
-  const { data: beats = [], isLoading: beatsLoading, isError } = useQuery<Beat[]>({
+  const { data: beats = [], isLoading: beatsLoading} = useQuery<Beat[]>({
     queryKey: ['/api/marketplace/beats', searchQuery, selectedGenre, selectedMood, sortBy],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -1869,15 +1869,7 @@ export default function Marketplace() {
     );
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  return (
+return (
     <AppLayout>
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200/60 dark:border-gray-700">

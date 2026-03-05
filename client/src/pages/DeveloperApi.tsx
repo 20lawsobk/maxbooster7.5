@@ -95,7 +95,7 @@ export default function DeveloperApi() {
   );
 
   // Fetch API keys
-  const { data: apiKeysData, isLoading: keysLoading, isError } = useQuery({
+  const { data: apiKeysData, isLoading: keysLoading} = useQuery({
     queryKey: ['/api/developer/keys'],
     enabled: !!user,
   });
@@ -258,15 +258,7 @@ print('Demographics:', demographics)`,
     );
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  return (
+return (
     <AppLayout>
       <div className="container mx-auto py-8 px-4 max-w-7xl">
         {/* Header */}

@@ -208,7 +208,7 @@ export default function Storefront() {
     }
   }, [toast]);
 
-  const { data: storefront, isLoading: storefrontLoading, isError } = useQuery<Storefront>({
+  const { data: storefront, isLoading: storefrontLoading} = useQuery<Storefront>({
     queryKey: [`/api/storefront/public/${slug}`],
     enabled: !!slug,
     retry: 1,
@@ -431,15 +431,7 @@ export default function Storefront() {
     );
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  if (!storefront || !storefront.isActive || !storefront.isPublic) {
+if (!storefront || !storefront.isActive || !storefront.isPublic) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="max-w-md w-full mx-4">

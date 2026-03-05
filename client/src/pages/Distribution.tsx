@@ -1113,7 +1113,7 @@ export default function Distribution() {
   const [generatedUPC, setGeneratedUPC] = useState<string>('');
 
   // Data Queries
-  const { data: releases = [], isLoading: releasesLoading, isError } = useQuery<Release[]>({
+  const { data: releases = [], isLoading: releasesLoading} = useQuery<Release[]>({
     queryKey: ['/api/distribution/releases'],
     enabled: !!user,
   });
@@ -1654,15 +1654,7 @@ export default function Distribution() {
     return <ComingSoonDistribution />;
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  return (
+return (
     <AppLayout>
       {isLoading ? (
         <div className="max-w-7xl mx-auto p-6 space-y-6">

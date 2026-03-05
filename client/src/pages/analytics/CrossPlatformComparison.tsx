@@ -202,7 +202,7 @@ export function CrossPlatformComparison({
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading} = useQuery({
     queryKey: ['/api/analytics/cross-platform', timeRange],
     queryFn: async () => {
       const response = await fetch(`/api/analytics-alerts/cross-platform-comparison`, {
@@ -279,15 +279,7 @@ export function CrossPlatformComparison({
     );
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Failed to load data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  return (
+return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
