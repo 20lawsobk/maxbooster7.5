@@ -211,8 +211,8 @@ export function ContentGenerator() {
   });
 
   const aiGenerateMutation = useMutation({
-    mutationFn: async (data: { topic: string; platform: string; tone: string }) => {
-      const res = await apiRequest('POST', '/api/social/ai/generate', data);
+    mutationFn: async (data: { topic: string; platform: string; tone: string; genre?: string; artistName?: string; trackTitle?: string; contentType?: string }) => {
+      const res = await apiRequest('POST', '/api/social/generate', data);
       return await res.json() as AIGenerateResult;
     },
     onSuccess: (data) => {
@@ -281,6 +281,12 @@ export function ContentGenerator() {
       topic: contentPrompt,
       platform: selectedPlatform,
       tone: selectedTone,
+      ...(urlAnalysis && {
+        genre: urlAnalysis.genre && urlAnalysis.genre !== 'default' ? urlAnalysis.genre : undefined,
+        artistName: urlAnalysis.artist || undefined,
+        trackTitle: urlAnalysis.track || undefined,
+        contentType: urlAnalysis.content_type !== 'website' ? urlAnalysis.content_type : undefined,
+      }),
     });
   };
 
