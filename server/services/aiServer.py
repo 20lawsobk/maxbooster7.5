@@ -100,34 +100,55 @@ ASPECT_RATIOS = [
 ]
 
 # ── Content generation ─────────────────────────────────────────────────────────
-HOOK_TEMPLATES = {
-    'energetic':  ["🔥 {topic} just dropped!", "This {topic} slaps different 🎵", "You need to hear {topic} NOW"],
-    'chill':      ["Vibing to {topic} 🎶", "Lost in {topic} tonight ✨", "Let {topic} wash over you"],
-    'hype':       ["🚀 {topic} IS HERE", "MASSIVE DROP: {topic} 🔥", "{topic} about to go viral"],
-    'emotional':  ["This {topic} hits different 💔", "{topic} gave me chills ✨", "Had to share {topic}"],
-    'promotional':["Discover {topic} 🚀", "Have you tried {topic} yet?", "{topic} is changing the game 🎯"],
-    'informative':["Meet {topic} 💡", "Here's why {topic} is a must-have 🔑", "{topic} — built for creators like you"],
-    'professional':["Introducing {topic} 🎯", "{topic}: the platform music creators need", "Elevate your career with {topic}"],
+# ── Prompt-Driven Content Assembler ───────────────────────────────────────────
+# Generates content FROM the user's actual words — no fixed template phrases.
+# The hook, body, and CTA are all constructed using extracted context from the prompt.
+
+_STOP_WORDS = frozenset({
+    'the','a','an','and','or','but','in','on','at','to','for','of','with',
+    'is','are','was','were','be','been','being','by','from','as','this',
+    'that','these','those','it','its','their','our','your','my','we',
+    'they','you','i','me','him','her','all','just','more','also','can',
+    'will','have','has','had','do','does','did','not','no','so','if',
+    'then','than','because','which','when','where','how','what','new',
+    'up','out','get','one','two','three','first','last','best','great',
+})
+
+_TONE_EMOJIS = {
+    'energetic':   ['🔥', '🚀', '💥', '⚡', '🎯', '💫'],
+    'chill':       ['✨', '🌙', '💫', '🎶', '🌊', '🍃'],
+    'hype':        ['🔥', '🚀', '💥', '🎉', '👑', '⚡'],
+    'emotional':   ['💔', '✨', '🥹', '💙', '🌙', '💫'],
+    'promotional': ['🚀', '💡', '🎯', '✅', '🔑', '⭐'],
+    'informative': ['💡', '🔑', '📌', '✅', '🎯', '💼'],
+    'professional':['🎯', '📈', '✅', '🏆', '💼', '🔑'],
+    'casual':      ['✨', '💯', '🎵', '🙌', '😤', '💪'],
 }
-BODY_TEMPLATES = {
-    'hip-hop':    ["Bars are hitting 🎤 | Stream on all platforms | New vibes dropping daily"],
-    'r&b':        ["Smooth grooves 🎵 | Love & soul in every note | Stream everywhere"],
-    'pop':        ["Catchy hooks 🎶 | Feel-good energy | Your new favorite song"],
-    'platform':   [
-        "All-in-one music career management 🎛️ | Built for independent artists | Start today",
-        "Professional tools for serious musicians 🎯 | Distribution, promotion & analytics in one place",
-        "AI-powered career tools 🤖 | Grow your fanbase, protect your royalties, own your journey",
-    ],
-    'saas':       [
-        "Powerful features | Streamlined workflow | Made for creators 💡",
-        "Built to help you succeed 🚀 | Professional-grade tools for every stage of your career",
-    ],
-    'default':    ["Fresh sound 🎵 | Quality music | Available everywhere"],
+
+_CTA_BY_TYPE = {
+    'platform':  ["Try it free — link in bio 🔗", "Sign up today — link in bio 🚀",
+                  "Join thousands of independent artists 🎵", "Start your free trial — link in bio"],
+    'event':     ["Grab your tickets — link in bio 🎟️", "Get tickets now 🎟️", "RSVP — link in bio"],
+    'beat':      ["License this beat — DM or link in bio 🎛️", "Grab the beat — link in bio",
+                  "Available for purchase — DM me 🎛️"],
+    'release':   ["Stream now — link in bio 🔗", "Listen on all platforms 🎵",
+                  "Save this one 🎵", "Follow for more music 🎵"],
+    'general':   ["Follow for more 🎵", "Share with someone who needs this ✨",
+                  "Drop your thoughts below 👇", "Save this for later 🔖"],
 }
-CTA_TEMPLATES_MUSIC = ["Follow for daily music drops", "Stream now — link in bio 🔗",
-                       "Save this for the vibe 🎵", "Share with someone who needs this ✨"]
-CTA_TEMPLATES_PLATFORM = ["Try it free — link in bio 🔗", "Sign up today and level up your career 🚀",
-                          "Join thousands of independent artists 🎵", "Start your free trial — link in bio"]
+
+_GENRE_TAG_SETS = {
+    'hip-hop':    ['#hiphop','#rap','#newmusic','#unsigned','#bars','#trap','#rapper'],
+    'r&b':        ['#rnb','#soul','#newmusic','#grooves','#vibes','#soulmusic','#rnbmusic'],
+    'pop':        ['#pop','#newmusic','#popmusic','#indieartist','#mainstream','#bop'],
+    'electronic': ['#edm','#electronic','#beats','#dj','#dancemusic','#producer','#techno'],
+    'reggae':     ['#reggae','#afrobeats','#dancehall','#afropop','#roots'],
+    'rock':       ['#rock','#indie','#alternative','#guitar','#indierock','#altrock'],
+    'jazz':       ['#jazz','#jazzmusic','#soulmusic','#livemusic','#jazzvibes'],
+    'country':    ['#country','#countrymusic','#folk','#americana','#nashville'],
+    'latin':      ['#latin','#latinmusic','#reggaeton','#latinpop','#salsa'],
+    'classical':  ['#classical','#classicalmusic','#orchestral','#piano'],
+}
 
 _PLATFORM_KEYWORDS = re.compile(
     r'\b(platform|app|software|tool|management|marketplace|distribution|SaaS|AI-powered|'
@@ -136,6 +157,18 @@ _PLATFORM_KEYWORDS = re.compile(
     re.IGNORECASE
 )
 _FEATURES_MARKER = re.compile(r'\[Features?:', re.IGNORECASE)
+_GENRE_HINTS = {
+    'hip-hop':    ['rap','bars','rhyme','flow','drill','trap','cypher','freestyle','verse','mc','rapper'],
+    'r&b':        ['rnb','r&b','soul','groove','smooth','neo-soul','vibe','vibes'],
+    'pop':        ['pop','mainstream','chart','radio','anthem','bop'],
+    'electronic': ['edm','electronic','house','techno','dance','dj','synth','bass','808'],
+    'reggae':     ['reggae','dancehall','afrobeats','afropop','roots','riddim'],
+    'rock':       ['rock','metal','punk','guitar','alternative','indie','band','grunge'],
+    'jazz':       ['jazz','blues','funk','saxophone','trumpet','swing','bebop'],
+    'country':    ['country','folk','bluegrass','nashville','acoustic','americana'],
+    'latin':      ['latin','salsa','reggaeton','cumbia','bachata','merengue'],
+    'classical':  ['classical','orchestra','symphony','piano','violin','chamber'],
+}
 
 def _is_platform_promo(topic: str, genre: str) -> bool:
     """Return True when topic describes a music platform/SaaS rather than a music release."""
@@ -145,34 +178,270 @@ def _is_platform_promo(topic: str, genre: str) -> bool:
         return True
     return False
 
-def _gen_content(topic: str, platform: str, tone: str, genre: str) -> dict:
-    import random
-    is_platform = _is_platform_promo(topic, genre)
+def _parse_topic(topic: str) -> dict:
+    """Parse user's raw topic/prompt into structured context for content assembly."""
+    features_match = re.search(r'\[Features?: ([^\]]+)\]', topic, re.IGNORECASE)
+    features = [f.strip() for f in features_match.group(1).split(',')] if features_match else []
+    clean = re.sub(r'\[Features?:[^\]]+\]', '', topic).strip().strip(' —-|')
 
-    if is_platform:
-        hook_list = HOOK_TEMPLATES.get(tone, HOOK_TEMPLATES.get('promotional', HOOK_TEMPLATES['energetic']))
-        clean_name = re.split(r'\s*[—\-]\s*|\[Features', topic)[0].strip()
-        hook = random.choice(hook_list).replace('{topic}', clean_name or topic)
-        body = random.choice(BODY_TEMPLATES['platform'])
-        cta  = random.choice(CTA_TEMPLATES_PLATFORM)
-        tags = ['#musictech','#indieartist','#musicproduction','#musicbusiness',
-                '#musicdistribution','#beatmaker','#musicmarketing','#musiccareer',
-                '#AImusic','#musiccreator','#musicentrepreneur','#artistdevelopment']
-        random.shuffle(tags)
-    else:
-        hook_list = HOOK_TEMPLATES.get(tone, HOOK_TEMPLATES['energetic'])
-        hook = random.choice(hook_list).replace('{topic}', topic or 'this track')
-        body_list = BODY_TEMPLATES.get(genre, BODY_TEMPLATES['default'])
-        body = random.choice(body_list)
-        cta  = random.choice(CTA_TEMPLATES_MUSIC)
-        tags = ['#newmusic','#musicartist','#indieartist','#streamingmusic',f'#{genre.replace("-","")}',
-                '#hiphop','#rnb','#newrelease','#musicproducer','#unsigned']
-        random.shuffle(tags)
+    quoted = re.findall(r'[\'\"](.*?)[\'\"]', clean)
+    # Split on em-dash, pipe, bullet, AND space-hyphen-space (but not hyphens within words)
+    parts = [p.strip() for p in re.split(r'\s*[—|•]\s*|\s+-\s+', clean) if p.strip() and len(p.strip()) > 1]
+    primary = parts[0] if parts else clean
+    subtitle = ' — '.join(parts[1:]) if len(parts) > 1 else ''
+
+    # Extract content words but skip very common generic ones even beyond stop words
+    _EXTRA_SKIP = _STOP_WORDS | {
+        'about','long','ride','rides','car','night','late','day','time','way','want','make',
+        'like','love','good','feel','know','see','look','come','take','give','say','song',
+        'music','artist','track','album','single','release','free','live','show','set',
+        'video','platform','management','career','studio','distribution','production',
+        'market','place','service','system','tool','app','use','using',
+    }
+    all_words = re.findall(r'\b[a-zA-Z]{3,}\b', clean + ' ' + ' '.join(features))
+    content_words = list(dict.fromkeys([w for w in all_words if w.lower() not in _EXTRA_SKIP]))[:12]
+
+    _DESCRIPTORS = re.compile(
+        r'\b(chill|dreamy|smooth|raw|dark|deep|fresh|sweet|warm|bright|rich|pure|classic|'
+        r'modern|nostalgic|emotional|upbeat|melancholy|uplifting|powerful|gentle|fierce|'
+        r'energetic|vibrant|bold|gritty|acoustic|electric|live|indie|underground|experimental|'
+        r'innovative|authentic|organic|exclusive|rare|special|iconic|trending|emerging|rising)\b',
+        re.IGNORECASE
+    )
+    descriptors = list(dict.fromkeys(_DESCRIPTORS.findall(clean.lower())))[:4]
+
+    is_platform = _is_platform_promo(topic, '')
+    is_event = bool(re.search(r'\b(show|concert|tour|gig|performance|festival|event|live\s+at|live\s+show)\b', clean, re.I))
+    is_beat = bool(re.search(r'\b(beat|instrumental|sample|loop|type\s*beat|prod(?:uced)?)\b', clean, re.I))
+    is_release = bool(quoted or re.search(r'\b(single|track|song|album|ep|mixtape|release|drop|out\s*now|now\s*playing)\b', clean, re.I))
+
+    detected_genre = None
+    lower_clean = clean.lower()
+    for g, kws in _GENRE_HINTS.items():
+        if any(k in lower_clean for k in kws):
+            detected_genre = g
+            break
 
     return {
+        'primary': primary,
+        'subtitle': subtitle,
+        'parts': parts,
+        'features': features,
+        'quoted': quoted,
+        'descriptors': descriptors,
+        'content_words': content_words,
+        'is_platform': is_platform,
+        'is_event': is_event,
+        'is_beat': is_beat,
+        'is_release': is_release,
+        'genre': detected_genre,
+        'raw': clean,
+    }
+
+def _emoji(tone: str, seed: int = 0) -> str:
+    import random
+    pool = _TONE_EMOJIS.get(tone, _TONE_EMOJIS['energetic'])
+    return pool[seed % len(pool)]
+
+def _build_hook(ctx: dict, tone: str) -> str:
+    """Construct a hook sentence using the user's primary entity and tone."""
+    import random
+    primary = ctx['primary']
+    subtitle = ctx['subtitle']
+    quoted = ctx['quoted']
+    descs = ctx['descriptors']
+    e1, e2 = _emoji(tone, 0), _emoji(tone, 2)
+    title = f'"{quoted[0]}"' if quoted else primary
+    adj = descs[0] if descs else ''
+    adj_cap = adj.capitalize() + ' ' if adj else ''
+
+    # Short label from subtitle for use in hooks (first descriptive clause, max 38 chars)
+    def _short_sub(sub: str, max_len: int = 38) -> str:
+        first = sub.split('—')[0].split(',')[0].split('about')[0].strip()
+        return first[:max_len].rsplit(' ', 1)[0].rstrip(' -—') if len(first) > max_len else first
+
+    if ctx['is_platform']:
+        # Shorten the primary name if it contains a descriptor after a dash
+        short_primary = primary.split(' - ')[0].strip() if ' - ' in primary else primary
+        opts = [
+            f"Meet {short_primary} {e1}",
+            f"Introducing {short_primary} — built for artists like you {e1}",
+            f"{short_primary} is changing the game {e1}",
+            f"Have you discovered {short_primary} yet? {e1}",
+            f"Why every artist needs {short_primary} {e2}",
+        ]
+    elif ctx['is_event']:
+        opts = [
+            f"{e1} {primary} — don't miss this",
+            f"See you there: {primary} {e1}",
+            f"Don't miss {primary} {e1}",
+            f"{primary} is LIVE — get your tickets {e1}",
+        ]
+    elif ctx['is_beat']:
+        beat_title = f'"{quoted[0]}"' if quoted else primary
+        sub_hint = _short_sub(subtitle) if subtitle else ''
+        opts = [
+            f"{e1} New beat: {beat_title}",
+            f"Beat drop: {beat_title} {e1}",
+            f"{beat_title} — {sub_hint} {e1}" if sub_hint else f"{beat_title} available now {e1}",
+            f"{e1} {beat_title} — fire your next project up {e2}",
+        ]
+    elif ctx['is_release'] or quoted:
+        sub_hint = _short_sub(subtitle) if subtitle else (f'{adj_cap}release' if adj else 'new release')
+        opts = [
+            f"{e1} {title} is out now",
+            f"New music: {title} {e1}",
+            f"You need to hear {title} right now {e2}",
+            f"{title} — {sub_hint} {e1}" if sub_hint else f"{e1} {title}",
+            f"Stream {title} — this one hits different {e2}",
+        ]
+    else:
+        desc_hint = subtitle.split('—')[0].strip() if subtitle else adj
+        opts = [
+            f"{e1} {primary}",
+            f"{primary} {e1}",
+            f"Check this out: {primary} {e1}",
+            f"{e1} {primary}{f' — {desc_hint}' if desc_hint else ''}",
+        ]
+
+    return random.choice([o for o in opts if o.strip()])
+
+def _build_body(ctx: dict) -> str:
+    """Assemble body content directly from the user's own words — no pre-written phrases."""
+    import random
+    subtitle = ctx['subtitle']
+    features = ctx['features']
+    descs = ctx['descriptors']
+    content_words = ctx['content_words']
+    quoted = ctx['quoted']
+    title = f'"{quoted[0]}"' if quoted else ctx['primary']
+
+    segments = []
+
+    if ctx['is_platform']:
+        if features:
+            segments.append(' | '.join(features[:3]))
+            if len(features) > 3:
+                segments.append(' | '.join(features[3:6]))
+        elif subtitle:
+            segments.append(subtitle)
+        else:
+            segments.append(f"Built for independent artists and music creators")
+        closer = random.choice([
+            "All the tools you need, in one place",
+            "Manage, distribute, and promote — all in one",
+            "Built to grow your career",
+        ])
+        segments.append(closer)
+
+    elif ctx['is_release'] or quoted:
+        if subtitle:
+            segments.append(subtitle)
+        elif descs:
+            desc_str = ', '.join(descs[:2])
+            segments.append(f"A {desc_str} sound that speaks for itself")
+        if content_words:
+            extra = [w for w in content_words if w.lower() not in {d.lower() for d in descs}][:3]
+            if extra and not subtitle:
+                segments.append(' | '.join(extra))
+        if not segments:
+            segments.append(f"This one is different — hit play and find out")
+
+    elif ctx['is_beat']:
+        if subtitle:
+            segments.append(subtitle)
+        if descs:
+            segments.append(f"{descs[0].capitalize()} sound, ready for your next project")
+        elif content_words:
+            segments.append(' | '.join(content_words[:3]))
+
+    elif ctx['is_event']:
+        # Subtitle already carries date/location/show type — use it as-is
+        if subtitle:
+            segments.append(subtitle)
+        if not segments:
+            segments.append(ctx['primary'])
+
+    else:
+        if subtitle:
+            segments.append(subtitle)
+        # Only add content words if subtitle didn't already cover the topic
+        if content_words and not subtitle:
+            segments.append(' | '.join(content_words[:4]))
+        if not segments:
+            segments.append(ctx['primary'])
+
+    return ' | '.join([s for s in segments if s]) or ctx['primary']
+
+def _build_cta(ctx: dict) -> str:
+    import random
+    if ctx['is_platform']:
+        key = 'platform'
+    elif ctx['is_event']:
+        key = 'event'
+    elif ctx['is_beat']:
+        key = 'beat'
+    elif ctx['is_release']:
+        key = 'release'
+    else:
+        key = 'general'
+    return random.choice(_CTA_BY_TYPE[key])
+
+def _build_hashtags(ctx: dict, genre: str) -> list:
+    """Derive hashtags from the user's actual words + genre context."""
+    import random
+    tags = set()
+
+    if ctx['is_platform']:
+        base = ['#musictech','#indieartist','#musicproduction','#musicbusiness',
+                '#musicdistribution','#beatmaker','#musicmarketing','#musiccareer',
+                '#AImusic','#musiccreator','#musicentrepreneur','#artistdevelopment']
+        tags.update(random.sample(base, min(6, len(base))))
+    else:
+        genre_resolved = genre or ctx.get('genre') or 'pop'
+        base = _GENRE_TAG_SETS.get(genre_resolved, ['#newmusic','#indieartist','#musicartist'])
+        tags.update(random.sample(base, min(4, len(base))))
+        tags.update(['#streamingmusic','#musicproducer'])
+        if ctx['is_event']:
+            tags.update(['#livemusic','#concert','#musicfestival'])
+        if ctx['is_beat']:
+            tags.update(['#beatmaker','#producer','#freebeat','#typebeat'])
+
+    skip = _STOP_WORDS | {
+        'music','artist','track','song','album','single','release','out','now','new',
+        'about','long','ride','rides','car','night','late','day','time','way',
+        'video','platform','management','career','studio','distribution','production',
+        'market','place','service','system','tool','app','live','show','set',
+        'lawz','music','free','good','feel','want','make','like','love','know',
+    }
+    for word in ctx['content_words'][:8]:
+        if word.lower() not in skip and len(word) > 3:
+            tag = '#' + word.lower().replace('-', '')
+            if 3 < len(tag) <= 32:
+                tags.add(tag)
+
+    for q in ctx['quoted'][:1]:
+        tag = '#' + re.sub(r'[^a-zA-Z0-9]', '', q)
+        if len(tag) > 2:
+            tags.add(tag)
+
+    result = list(tags)
+    random.shuffle(result)
+    return result[:12]
+
+def _gen_content(topic: str, platform: str, tone: str, genre: str) -> dict:
+    """Generate social media content from the user's actual prompt — no hardcoded template phrases."""
+    ctx = _parse_topic(topic)
+    hook     = _build_hook(ctx, tone)
+    body     = _build_body(ctx)
+    cta      = _build_cta(ctx)
+    hashtags = _build_hashtags(ctx, genre or ctx.get('genre') or '')
+    caption  = f"{hook}\n\n{body}\n\n{cta}"
+    return {
         'success': True, 'platform': platform,
-        'caption': f"{hook}\n\n{body}\n\n{' '.join(tags[:6])}",
-        'content': body, 'hashtags': tags[:8], 'hook': hook, 'body': body, 'cta': cta,
+        'caption': caption,
+        'content': body, 'hashtags': hashtags,
+        'hook': hook, 'body': body, 'cta': cta,
         'posting_time': '7:00 PM', 'processing_time_ms': 50,
     }
 
