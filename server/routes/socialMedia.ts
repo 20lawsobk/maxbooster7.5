@@ -1476,24 +1476,33 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       artist_name, topic, goal, tone, quality,
     } = req.body;
 
-    const pyResult = await pythonAIService.generateVideo({
-      hook, body, cta,
-      platform: platform || 'tiktok',
-      aspect_ratio,
-      template: template || 'cinematic_promo',
-      duration: duration || 10,
-      bg_color, text_color, accent_color,
-      artist_name, topic,
-      goal: goal || 'growth',
-      tone: tone || 'energetic',
-      quality: quality || 'cinematic',
-    });
+    const pyAvailable = await pythonAIService.isAvailable();
 
-    if (pyResult.success && pyResult.data?.success) {
-      return res.json(pyResult.data);
+    if (pyAvailable) {
+      logger.info('[VideoGen] Python AI service available — starting async job');
+      const jobResult = await pythonAIService.startVideoJob({
+        hook, body, cta, topic,
+        platform: platform || 'tiktok',
+        aspect_ratio,
+        template: template || 'cinematic_promo',
+        duration: duration || 10,
+        artist_name,
+        goal: goal || 'growth',
+        tone: tone || 'energetic',
+        quality: quality || 'cinematic',
+      });
+
+      if (jobResult.success && jobResult.data?.job_id) {
+        return res.json({
+          success: true,
+          job_id: jobResult.data.job_id,
+          status: 'processing',
+          message: 'Video generation started. Poll /api/social/video-job/:jobId for progress.',
+        });
+      }
     }
 
-    logger.info('[VideoGen] Python AI unavailable, using FFmpeg generator');
+    logger.info('[VideoGen] Using synchronous FFmpeg generator');
     const result = await generateVideoFFmpeg({
       topic: topic || hook || body || 'new music',
       platform: platform || 'tiktok',
@@ -1517,6 +1526,20 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
   } catch (error) {
     logger.error('Failed to generate video:', error);
     res.status(500).json({ success: false, message: 'Video generation failed' });
+  }
+});
+
+router.get('/video-job/:jobId', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { jobId } = req.params;
+    const result = await pythonAIService.getVideoJobStatus(jobId);
+    if (!result.success) {
+      return res.status(503).json({ success: false, status: 'error', message: result.error });
+    }
+    res.json(result.data);
+  } catch (error) {
+    logger.error('Failed to poll video job:', error);
+    res.status(500).json({ success: false, status: 'error', message: 'Job status check failed' });
   }
 });
 

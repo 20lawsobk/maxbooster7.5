@@ -91,6 +91,7 @@ export function ServerVideoGenerator({
   const [customArtistName, setCustomArtistName] = useState(artistName);
   const [quality, setQuality] = useState<'cinematic' | 'quick'>('cinematic');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingStage, setGeneratingStage] = useState<string>('');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoInfo, setVideoInfo] = useState<{
     hook: string;
@@ -110,6 +111,39 @@ export function ServerVideoGenerator({
     setAspectRatio(PLATFORM_DEFAULT_RATIO[platform] || '9:16');
   }, [platform]);
 
+  const applyVideoResult = (data: any) => {
+    setVideoUrl(data.url);
+    setVideoInfo({
+      hook: data.hook,
+      body: data.body,
+      cta: data.cta,
+      source: data.source,
+      width: data.width,
+      height: data.height,
+      processingTime: Math.round(data.processing_time_ms || 0),
+      renderTime: Math.round(data.render_time_ms || 0),
+      scenesRendered: data.scenes_rendered || 1,
+      templateName: data.template_name || data.template,
+      quality: data.quality || quality,
+    });
+    onVideoGenerated(data.url);
+  };
+
+  const pollJobUntilDone = async (jobId: string): Promise<any> => {
+    const maxAttempts = 60;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const resp = await fetch(`/api/social/video-job/${jobId}`, { credentials: 'include' });
+      const body = await resp.text();
+      let data: any;
+      try { data = JSON.parse(body); } catch { throw new Error('Unexpected response from server'); }
+      if (data.status === 'done' && data.success && data.url) return data;
+      if (data.status === 'error') throw new Error(data.error || 'Video generation failed');
+      setGeneratingStage(`Rendering… (${Math.round((i + 1) * 2)}s)`);
+    }
+    throw new Error('Video generation timed out. Please try again.');
+  };
+
   const handleGenerate = async () => {
     if (!topic.trim()) {
       toast({
@@ -121,6 +155,7 @@ export function ServerVideoGenerator({
     }
 
     setIsGenerating(true);
+    setGeneratingStage('Starting…');
     setVideoUrl(null);
     setVideoInfo(null);
 
@@ -142,29 +177,25 @@ export function ServerVideoGenerator({
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Video generation failed');
+      const rawText = await response.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(response.ok ? 'Invalid server response' : `Server error (${response.status})`);
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.message || data?.error || 'Video generation failed');
+      }
+
+      if (data.job_id && data.status === 'processing') {
+        setGeneratingStage('Rendering frames…');
+        data = await pollJobUntilDone(data.job_id);
+      }
 
       if (data.success && data.url) {
-        setVideoUrl(data.url);
-        setVideoInfo({
-          hook: data.hook,
-          body: data.body,
-          cta: data.cta,
-          source: data.source,
-          width: data.width,
-          height: data.height,
-          processingTime: Math.round(data.processing_time_ms),
-          renderTime: Math.round(data.render_time_ms || 0),
-          scenesRendered: data.scenes_rendered || 1,
-          templateName: data.template_name || data.template,
-          quality: data.quality || quality,
-        });
-        onVideoGenerated(data.url);
+        applyVideoResult(data);
         toast({
           title: 'Video Generated',
           description: `${data.width}x${data.height} cinematic video ready (${data.scenes_rendered || 1} scenes)`,
@@ -354,7 +385,7 @@ export function ServerVideoGenerator({
           {isGenerating ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {isCinematic ? 'Rendering Cinematic Video...' : 'Generating Video...'}
+              {generatingStage || (isCinematic ? 'Rendering Cinematic Video…' : 'Generating Video…')}
             </>
           ) : (
             <>

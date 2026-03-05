@@ -134,6 +134,8 @@ export interface HealthResult {
 export class PythonAIService {
   private static instance: PythonAIService;
   private available: boolean | null = null;
+  private lastCheckMs = 0;
+  private readonly RECHECK_INTERVAL_MS = 30_000;
 
   static getInstance(): PythonAIService {
     if (!PythonAIService.instance) {
@@ -143,24 +145,29 @@ export class PythonAIService {
   }
 
   async isAvailable(): Promise<boolean> {
-    if (this.available !== null) return this.available;
+    const now = Date.now();
+    if (this.available === true) return true;
+    if (this.available === false && now - this.lastCheckMs < this.RECHECK_INTERVAL_MS) return false;
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/health`, {
         method: 'GET',
       }, 5000);
       this.available = response.ok;
+      this.lastCheckMs = now;
       if (this.available) {
         logger.info('[PythonAI] AI Content Model service is available');
       }
       return this.available;
     } catch {
       this.available = false;
+      this.lastCheckMs = now;
       return false;
     }
   }
 
   resetAvailability(): void {
     this.available = null;
+    this.lastCheckMs = 0;
   }
 
   async generateScript(idea: string, platform: string, goal = 'growth', tone = 'energetic'): Promise<AIModelResponse<ScriptResult>> {
@@ -335,9 +342,47 @@ export class PythonAIService {
     });
   }
 
+  async startVideoJob(options: {
+    hook?: string; body?: string; cta?: string; topic?: string;
+    platform?: string; aspect_ratio?: string; template?: string;
+    duration?: number; artist_name?: string; genre?: string;
+    tone?: string; goal?: string; quality?: string;
+  }): Promise<AIModelResponse<{ job_id: string; status: string }>> {
+    return callAIModel<{ job_id: string; status: string }>('/generate-video', {
+      hook: options.hook || '',
+      body: options.body || '',
+      cta: options.cta || '',
+      topic: options.topic,
+      platform: options.platform || 'tiktok',
+      aspect_ratio: options.aspect_ratio,
+      template: options.template || 'cinematic_promo',
+      duration: options.duration || 10,
+      artist_name: options.artist_name,
+      genre: options.genre || 'hip-hop',
+      tone: options.tone || 'energetic',
+      goal: options.goal || 'growth',
+      quality: options.quality || 'cinematic',
+    });
+  }
+
+  async getVideoJobStatus(jobId: string): Promise<AIModelResponse<any>> {
+    try {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/video-job/${jobId}`, {
+        method: 'GET',
+      }, 10000);
+      if (!response.ok) {
+        return { success: false, error: `Job status check failed: ${response.status}` };
+      }
+      const data = await response.json();
+      return { success: true, data };
+    } catch {
+      return { success: false, error: 'AI Model service unavailable' };
+    }
+  }
+
   async getCinematicTemplates(): Promise<AIModelResponse<any>> {
     try {
-      const response = await fetchWithTimeout(`${AI_MODEL_URL}/generate/video/templates`, {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/cinematic-templates`, {
         method: 'GET',
       }, 10000);
       if (!response.ok) {

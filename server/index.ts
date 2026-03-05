@@ -19,6 +19,7 @@ import { originValidation } from "./middleware/requestValidation.ts";
 import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.ts";
 import path from "path";
 import crypto from "crypto";
+import { spawn, ChildProcess } from "child_process";
 
 // MANDATORY safety imports - these MUST load successfully
 import {
@@ -568,6 +569,53 @@ app.use((req, res, next) => {
     const { setupVite } = await import("./vite.js");
     await setupVite(httpServer, app);
   }
+
+  // ── Python AI microservice (port 9878) ──────────────────────────────────────
+  (async function startPythonAIService() {
+    const aiServerPath = path.join(process.cwd(), 'server', 'services', 'aiServer.py');
+    let proc: ChildProcess | null = null;
+    let restartCount = 0;
+
+    async function isPortBound(port: number): Promise<boolean> {
+      try {
+        const resp = await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(2000) });
+        return resp.ok;
+      } catch {
+        return false;
+      }
+    }
+
+    async function launch() {
+      if (restartCount > 10) {
+        logger.warn('[PyAI] Too many restarts — giving up');
+        return;
+      }
+      if (await isPortBound(9878)) {
+        logger.info('[PyAI] Service already running on port 9878 — skipping launch');
+        return;
+      }
+      proc = spawn('python3', [aiServerPath], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, AI_SERVICE_PORT: '9878' },
+      });
+      proc.stdout?.on('data', (d: Buffer) => logger.info(`[PyAI] ${d.toString().trim()}`));
+      proc.stderr?.on('data', (d: Buffer) => {
+        const msg = d.toString().trim();
+        if (msg && !msg.includes('INFO') && !msg.includes('started server')) logger.warn(`[PyAI] ${msg}`);
+      });
+      proc.on('exit', (code, signal) => {
+        if (signal === 'SIGTERM' || signal === 'SIGKILL') return;
+        restartCount++;
+        logger.warn(`[PyAI] Exited (${code}) — restarting in 5s (attempt ${restartCount})`);
+        setTimeout(launch, 5000);
+      });
+      logger.info('[PyAI] Python AI service launched on port 9878');
+    }
+
+    await launch();
+
+    process.on('exit', () => { try { proc?.kill('SIGTERM'); } catch {} });
+  })();
 
   // Server is already listening (early listen above). Kick off deferred init now.
   log(`all middleware and routes registered — kicking off autonomous systems`);
