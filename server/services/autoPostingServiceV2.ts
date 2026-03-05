@@ -4,6 +4,7 @@ import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 import axios from 'axios';
 import type { User } from '../../shared/schema.js';
+import { autopilotLearningService } from './autopilotLearningService.js';
 
 export interface PostContent {
   text: string;
@@ -103,6 +104,26 @@ class AutoPostingServiceV2 {
             status: results.every(r => r.success) ? 'completed' : 'failed',
             results,
           });
+
+          for (const result of results) {
+            if (result.success) {
+              autopilotLearningService.recordPerformance(
+                post.userId,
+                {
+                  platform: result.platform,
+                  contentType: 'post',
+                  hookType: 'organic',
+                  hashtags: post.content.hashtags || [],
+                  contentText: post.content.text,
+                  mediaType: post.content.mediaType || null,
+                  postId: result.postId || null,
+                  postedAt: new Date(),
+                  metadata: { scheduledPostId: post.id, source: 'autopilot_v2', createdBy: post.createdBy },
+                },
+                { likes: 0, comments: 0, shares: 0, impressions: 0, clicks: 0, saves: 0, reach: 0 }
+              ).catch(err => logger.warn('Learning record failed (non-fatal):', err?.message));
+            }
+          }
 
           await storage.trackSocialPost({
             userId: post.userId,

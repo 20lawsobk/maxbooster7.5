@@ -175,7 +175,7 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason: any) => {
   const msg = reason?.message || String(reason);
-  const isNonFatal = /ECONNREFUSED|ECONNRESET|socket|fetch failed|Failed to fetch/i.test(msg);
+  const isNonFatal = /ECONNREFUSED|ECONNRESET|socket|fetch failed|Failed to fetch|Command timed out|Connection is closed/i.test(msg);
   if (isNonFatal) {
     logger.warn('⚠️ Non-fatal network error (ignoring):', msg);
     return;

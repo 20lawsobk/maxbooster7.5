@@ -17,6 +17,8 @@ import { InactivityManager } from '@/components/auth/InactivityManager';
 import { UndoProvider } from '@/contexts/UndoContext';
 import { UndoToast } from '@/components/undo/UndoToast';
 import { ShortcutProvider } from '@/contexts/ShortcutContext';
+import { OfflineProvider } from '@/components/offline/OfflineProvider';
+import { ConnectionStatusBar } from '@/components/ConnectionStatusBar';
 import { CommandPalette } from '@/components/commands/CommandPalette';
 import { ShortcutGuide, QuickActionBar } from '@/components/shortcuts';
 import { useAuth } from '@/hooks/useAuth';
@@ -336,34 +338,37 @@ function App() {
   useAutoUpdate();
 
   return (
-    <UndoProvider maxHistorySize={100} persistToStorage={true}>
-      <ShortcutProvider persistConfig={true}>
-        <Toaster />
-        <CookieConsentBanner />
-        <InstallBanner />
-        <OAuthCallbackHandler />
-        <DeepLinkHandler />
-        <TokenRefreshHandler refreshInterval={5 * 60 * 1000} silentRefresh={true} />
-        <InactivityManager />
-        <AIAssistantManager />
-        <NPSSurveyManager />
-        <UndoToast />
-        <CommandPalette />
-        <ShortcutGuide />
-        <QuickActionBar position="bottom-right" />
-        <div id="main-content" role="main" tabIndex={-1}>
-          <Suspense
-            fallback={
-              <div role="status" aria-label="Loading application">
-                <InstantSkeleton variant="page" />
-              </div>
-            }
-          >
-            <AppWithKeyboardShortcuts />
-          </Suspense>
-        </div>
-      </ShortcutProvider>
-    </UndoProvider>
+    <OfflineProvider showToasts={true} autoSync={true}>
+      <UndoProvider maxHistorySize={100} persistToStorage={true}>
+        <ShortcutProvider persistConfig={true}>
+          <Toaster />
+          <CookieConsentBanner />
+          <InstallBanner />
+          <OAuthCallbackHandler />
+          <DeepLinkHandler />
+          <TokenRefreshHandler refreshInterval={5 * 60 * 1000} silentRefresh={true} />
+          <InactivityManager />
+          <AIAssistantManager />
+          <NPSSurveyManager />
+          <UndoToast />
+          <CommandPalette />
+          <ShortcutGuide />
+          <QuickActionBar position="bottom-right" />
+          <ConnectionStatusBar />
+          <div id="main-content" role="main" tabIndex={-1}>
+            <Suspense
+              fallback={
+                <div role="status" aria-label="Loading application">
+                  <InstantSkeleton variant="page" />
+                </div>
+              }
+            >
+              <AppWithKeyboardShortcuts />
+            </Suspense>
+          </div>
+        </ShortcutProvider>
+      </UndoProvider>
+    </OfflineProvider>
   );
 }
 

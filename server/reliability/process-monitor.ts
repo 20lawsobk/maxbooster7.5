@@ -121,7 +121,11 @@ class ProcessMonitor extends EventEmitter {
       });
     });
 
-    process.on('unhandledRejection', (reason) => {
+    process.on('unhandledRejection', (reason: any) => {
+      const msg = reason?.message || String(reason);
+      if (/ECONNREFUSED|ECONNRESET|Command timed out|Connection is closed/i.test(msg)) {
+        return;
+      }
       this.addAlert({
         type: 'restart',
         severity: 'critical',

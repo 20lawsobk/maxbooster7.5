@@ -3,6 +3,7 @@ import { logger } from '../logger.js';
 import axios from 'axios';
 import type { User } from '../../shared/schema.js';
 import { socialOAuth } from './socialOAuthService.js';
+import { autopilotLearningService } from './autopilotLearningService.js';
 
 /**
  * Auto-Posting Service
@@ -674,6 +675,27 @@ class AutoPostingService {
               await storage.updateScheduledPostStatus(postId, 'completed', results);
 
               logger.info(`Completed scheduled post ${postId}`);
+
+              // Feed results into the autopilot learning engine (fire-and-forget)
+              for (const result of results) {
+                if (result.success) {
+                  autopilotLearningService.recordPerformance(
+                    scheduledPost.userId,
+                    {
+                      platform: result.platform,
+                      contentType: 'post',
+                      hookType: 'organic',
+                      hashtags: scheduledPost.content.hashtags || [],
+                      contentText: scheduledPost.content.text,
+                      mediaType: scheduledPost.content.mediaType || null,
+                      postId: result.postId || null,
+                      postedAt: new Date(),
+                      metadata: { scheduledPostId: postId, source: 'autopilot' },
+                    },
+                    { likes: 0, comments: 0, shares: 0, impressions: 0, clicks: 0, saves: 0, reach: 0 }
+                  ).catch(err => logger.warn('Learning record failed (non-fatal):', err?.message));
+                }
+              }
             } catch (error: any) {
               logger.error(`Failed scheduled post ${postId}:`, error);
               scheduledPost.status = 'failed';

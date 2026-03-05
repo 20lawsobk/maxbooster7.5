@@ -51,6 +51,21 @@ Installed Python packages: `librosa 0.11.0`, `soundfile 0.13.1`, `scipy 1.17.1`,
 - **`GET /api/distribution/:id/streams-revenue`** — New route. Tries LabelGrid first (if `labelGridReleaseId` metadata exists), then falls back to `royaltyTransactions` table. Returns `{ streams, downloads, revenue, platforms[] }`.
 - **`GET /api/distribution/analytics/growth`** — Enhanced: now aggregates from both `analytics` table AND `royaltyTransactions` to compute real totals. Also returns `revenue`, `downloads`, and month-over-month `growth` percentage.
 
+## Redis Crash Fix (Stable Startup)
+
+`server/workers/index.ts`, `server/reliability-system.ts`, and `server/reliability/process-monitor.ts` all have `process.on('unhandledRejection')` handlers. Each now treats `Command timed out` and `Connection is closed` as non-fatal (same as `ECONNREFUSED`). This prevents the app from restarting itself every boot when Redis is temporarily slow during cold start. The app now stays stable across restarts.
+
+## Offline Mode Activated in UI
+
+`OfflineProvider` and `ConnectionStatusBar` are now mounted at the root of `App.tsx`. The `OfflineProvider` wraps the entire app tree, enabling:
+- Offline context available app-wide via `useOfflineContext()`
+- `ConnectionStatusBar` shows a dismissible banner when the user goes offline, reconnects, or has a slow connection
+- Background sync queue (`OfflineQueue` + `SyncManager`) activates on reconnect
+
+## Autopilot Learning Feedback Loop
+
+`autopilotLearningService.recordPerformance()` is now called immediately after every successfully auto-posted piece of content in both `autoPostingService.ts` (V1, queue processor) and `autoPostingServiceV2.ts` (V2, Booster queue consumer). Records platform, content type, hashtags, text, media type, posting time, and initial analytics (zeros — the model learns timing and content patterns even without engagement data). Errors are caught non-fatally so learning failures never break posting.
+
 ## TikTok Production Mode
 
 `TIKTOK_ENV` changed from `sandbox` to `production`. The platform now uses `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET` for OAuth flows instead of the sandbox credentials. Separate circuit breaker for `tiktok` in `externalServices.ts`.

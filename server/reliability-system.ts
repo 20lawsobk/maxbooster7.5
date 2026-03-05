@@ -86,14 +86,13 @@ class MaxBooster247System extends EventEmitter {
 
     process.on('unhandledRejection', (reason: any) => {
       // Don't restart on temporary connection errors - let services reconnect
-      const isConnectionError = reason?.message?.includes('ECONNREFUSED') ||
-                                reason?.message?.includes('ECONNRESET') ||
-                                reason?.message?.includes('Connection') ||
+      const msg = reason?.message || String(reason);
+      const isConnectionError = /ECONNREFUSED|ECONNRESET|Connection|Command timed out|Connection is closed/i.test(msg) ||
                                 reason?.code === 'ECONNREFUSED' ||
                                 reason?.code === 'ECONNRESET';
       
       if (isConnectionError) {
-        logger.warn('⚠️ Connection error detected (will retry automatically):', String(reason));
+        logger.warn('⚠️ Connection error detected (will retry automatically):', msg);
         return; // Don't restart for connection errors
       }
       
