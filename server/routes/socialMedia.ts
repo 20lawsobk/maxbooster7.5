@@ -1479,7 +1479,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
     const pyAvailable = await pythonAIService.isAvailable();
 
     if (pyAvailable) {
-      logger.info('[VideoGen] Python AI service available — starting async job');
+      logger.info('[VideoGen] Python AI service available — starting server-side job');
       const jobResult = await pythonAIService.startVideoJob({
         hook, body, cta, topic,
         platform: platform || 'tiktok',
@@ -1493,12 +1493,29 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       });
 
       if (jobResult.success && jobResult.data?.job_id) {
-        return res.json({
-          success: true,
-          job_id: jobResult.data.job_id,
-          status: 'processing',
-          message: 'Video generation started. Poll /api/social/video-job/:jobId for progress.',
-        });
+        const jobId = jobResult.data.job_id;
+        logger.info(`[VideoGen] Polling job ${jobId} server-side (avoids multi-replica routing)`);
+        const maxAttempts = 90;
+        let jobFailed = false;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          await new Promise(r => setTimeout(r, 2000));
+          const statusResult = await pythonAIService.getVideoJobStatus(jobId);
+          if (statusResult.success && statusResult.data) {
+            const d = statusResult.data;
+            if (d.status === 'done' && d.success && d.url) {
+              logger.info(`[VideoGen] Python job done in ~${(attempt + 1) * 2}s`);
+              return res.json(d);
+            }
+            if (d.status === 'error') {
+              logger.warn('[VideoGen] Python job failed, falling back to FFmpeg:', d.error);
+              jobFailed = true;
+              break;
+            }
+          }
+        }
+        if (!jobFailed) {
+          logger.warn('[VideoGen] Python job timed out server-side, falling back to FFmpeg');
+        }
       }
     }
 
