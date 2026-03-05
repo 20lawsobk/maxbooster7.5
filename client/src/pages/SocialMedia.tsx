@@ -605,6 +605,7 @@ export default function SocialMedia() {
       tone: string;
       topic?: string;
       format?: string;
+      [key: string]: unknown;
     }) => {
       const response = await apiRequest('POST', '/api/social/generate-content', data);
       return response.json();
@@ -996,6 +997,7 @@ export default function SocialMedia() {
       platforms: selectedPlatforms,
       tone: selectedTone,
       format: regularContentFormat,
+      topic: postContent.trim() || undefined,
     });
   };
 

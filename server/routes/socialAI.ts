@@ -725,6 +725,15 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       genre: rawGenre,
       artistName,
       trackTitle,
+      albumName,
+      label,
+      // URL analysis context
+      urlContentType,    // raw content_type from URL analysis: 'website', 'track', 'video', etc.
+      contentCategory,   // e.g. 'music', 'general', 'tech', 'events'
+      keywords,          // string[] from URL analysis
+      tags,              // string[] from URL analysis
+      urlDescription,    // summary/description from URL analysis
+      sourcePlatform,    // e.g. 'youtube', 'spotify'
     } = req.body;
 
     const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'];
@@ -738,15 +747,23 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
                               contentType === 'announcement' ? 'announcement' :
                               contentType === 'tips' ? 'engagement' : 'promotional';
 
-    // Detect genre from topic if not explicitly provided
-    const detectedGenre = rawGenre || detectGenre(String(topic));
+    // Determine if URL source is a website/platform/SaaS (not a music track/artist/video page)
+    const isWebsitePromo = urlContentType === 'website';
 
-    // Enrich topic with artist/track context for better content
-    const enrichedTopic = [
-      trackTitle ? `"${trackTitle}"` : null,
-      artistName ? `by ${artistName}` : null,
-      topic,
-    ].filter(Boolean).join(' — ');
+    // Genre detection: skip for website content types; use rawGenre or detect from topic
+    const detectedGenre = rawGenre || (isWebsitePromo ? 'pop' : detectGenre(String(topic)));
+
+    // Build a rich context descriptor from URL analysis fields
+    const contextParts: string[] = [];
+    if (trackTitle) contextParts.push(`"${trackTitle}"`);
+    if (artistName) contextParts.push(`by ${artistName}`);
+    if (albumName && !trackTitle) contextParts.push(`from album "${albumName}"`);
+    if (label) contextParts.push(`on ${label}`);
+    contextParts.push(String(topic));
+    if (urlDescription && urlDescription !== topic) contextParts.push(urlDescription);
+    if (keywords?.length) contextParts.push(`[Features: ${(keywords as string[]).slice(0, 6).join(', ')}]`);
+
+    const enrichedTopic = contextParts.filter(Boolean).join(' — ');
 
     const result = await unifiedAIController.generateContent({
       tone: resolvedTone,
@@ -768,7 +785,24 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
     const hook: string = data?.hook || '';
     const body: string = data?.body || '';
     const cta: string = data?.cta || '';
-    const hashtags: string[] = data?.hashtags || [];
+    const aiHashtags: string[] = data?.hashtags || [];
+
+    // When URL analysis provides tags/keywords, build context-specific hashtags
+    // and override the AI's generic music hashtags (e.g., for website/platform promos)
+    let hashtags: string[] = aiHashtags;
+    const urlTags: string[] = Array.isArray(tags) ? tags : [];
+    const urlKeywords: string[] = Array.isArray(keywords) ? keywords : [];
+    const combined = [...urlTags, ...urlKeywords];
+    if (combined.length >= 3) {
+      const contextHashtags = combined
+        .map((t: string) => '#' + t.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, ''))
+        .filter((t: string) => t.length > 2 && t.length < 32);
+      const unique = [...new Set(contextHashtags)];
+      if (unique.length >= 3) {
+        hashtags = unique.slice(0, 15);
+      }
+    }
+
     const caption: string = data?.caption || `${hook}\n\n${body}\n\n${cta}`;
 
     // Real-life simulation parameters

@@ -10,6 +10,7 @@ FastAPI server on port 9878 that handles:
 """
 
 import os
+import re
 import sys
 import json
 import time
@@ -104,26 +105,70 @@ HOOK_TEMPLATES = {
     'chill':      ["Vibing to {topic} 🎶", "Lost in {topic} tonight ✨", "Let {topic} wash over you"],
     'hype':       ["🚀 {topic} IS HERE", "MASSIVE DROP: {topic} 🔥", "{topic} about to go viral"],
     'emotional':  ["This {topic} hits different 💔", "{topic} gave me chills ✨", "Had to share {topic}"],
+    'promotional':["Discover {topic} 🚀", "Have you tried {topic} yet?", "{topic} is changing the game 🎯"],
+    'informative':["Meet {topic} 💡", "Here's why {topic} is a must-have 🔑", "{topic} — built for creators like you"],
+    'professional':["Introducing {topic} 🎯", "{topic}: the platform music creators need", "Elevate your career with {topic}"],
 }
 BODY_TEMPLATES = {
     'hip-hop':    ["Bars are hitting 🎤 | Stream on all platforms | New vibes dropping daily"],
     'r&b':        ["Smooth grooves 🎵 | Love & soul in every note | Stream everywhere"],
     'pop':        ["Catchy hooks 🎶 | Feel-good energy | Your new favorite song"],
+    'platform':   [
+        "All-in-one music career management 🎛️ | Built for independent artists | Start today",
+        "Professional tools for serious musicians 🎯 | Distribution, promotion & analytics in one place",
+        "AI-powered career tools 🤖 | Grow your fanbase, protect your royalties, own your journey",
+    ],
+    'saas':       [
+        "Powerful features | Streamlined workflow | Made for creators 💡",
+        "Built to help you succeed 🚀 | Professional-grade tools for every stage of your career",
+    ],
     'default':    ["Fresh sound 🎵 | Quality music | Available everywhere"],
 }
-CTA_TEMPLATES = ["Follow for daily music drops", "Stream now — link in bio 🔗",
-                 "Save this for the vibe 🎵", "Share with someone who needs this ✨"]
+CTA_TEMPLATES_MUSIC = ["Follow for daily music drops", "Stream now — link in bio 🔗",
+                       "Save this for the vibe 🎵", "Share with someone who needs this ✨"]
+CTA_TEMPLATES_PLATFORM = ["Try it free — link in bio 🔗", "Sign up today and level up your career 🚀",
+                          "Join thousands of independent artists 🎵", "Start your free trial — link in bio"]
+
+_PLATFORM_KEYWORDS = re.compile(
+    r'\b(platform|app|software|tool|management|marketplace|distribution|SaaS|AI-powered|'
+    r'career management|beat marketplace|DAW|streaming service|analytics|autopilot|royalt|'
+    r'music career|music business|independent artist platform)\b',
+    re.IGNORECASE
+)
+_FEATURES_MARKER = re.compile(r'\[Features?:', re.IGNORECASE)
+
+def _is_platform_promo(topic: str, genre: str) -> bool:
+    """Return True when topic describes a music platform/SaaS rather than a music release."""
+    if _FEATURES_MARKER.search(topic):
+        return True
+    if _PLATFORM_KEYWORDS.search(topic):
+        return True
+    return False
 
 def _gen_content(topic: str, platform: str, tone: str, genre: str) -> dict:
     import random
-    hook_list = HOOK_TEMPLATES.get(tone, HOOK_TEMPLATES['energetic'])
-    hook = random.choice(hook_list).replace('{topic}', topic or 'this track')
-    body_list = BODY_TEMPLATES.get(genre, BODY_TEMPLATES['default'])
-    body = random.choice(body_list)
-    cta  = random.choice(CTA_TEMPLATES)
-    tags = ['#newmusic','#musicartist','#indieartist','#streamingmusic',f'#{genre.replace("-","")}',
-            '#hiphop','#rnb','#newrelease','#musicproducer','#unsigned']
-    random.shuffle(tags)
+    is_platform = _is_platform_promo(topic, genre)
+
+    if is_platform:
+        hook_list = HOOK_TEMPLATES.get(tone, HOOK_TEMPLATES.get('promotional', HOOK_TEMPLATES['energetic']))
+        clean_name = re.split(r'\s*[—\-]\s*|\[Features', topic)[0].strip()
+        hook = random.choice(hook_list).replace('{topic}', clean_name or topic)
+        body = random.choice(BODY_TEMPLATES['platform'])
+        cta  = random.choice(CTA_TEMPLATES_PLATFORM)
+        tags = ['#musictech','#indieartist','#musicproduction','#musicbusiness',
+                '#musicdistribution','#beatmaker','#musicmarketing','#musiccareer',
+                '#AImusic','#musiccreator','#musicentrepreneur','#artistdevelopment']
+        random.shuffle(tags)
+    else:
+        hook_list = HOOK_TEMPLATES.get(tone, HOOK_TEMPLATES['energetic'])
+        hook = random.choice(hook_list).replace('{topic}', topic or 'this track')
+        body_list = BODY_TEMPLATES.get(genre, BODY_TEMPLATES['default'])
+        body = random.choice(body_list)
+        cta  = random.choice(CTA_TEMPLATES_MUSIC)
+        tags = ['#newmusic','#musicartist','#indieartist','#streamingmusic',f'#{genre.replace("-","")}',
+                '#hiphop','#rnb','#newrelease','#musicproducer','#unsigned']
+        random.shuffle(tags)
+
     return {
         'success': True, 'platform': platform,
         'caption': f"{hook}\n\n{body}\n\n{' '.join(tags[:6])}",

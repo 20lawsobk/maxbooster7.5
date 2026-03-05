@@ -174,12 +174,13 @@ export class PythonAIService {
     return callAIModel<ScriptResult>('/generate/script', { idea, platform, goal, tone });
   }
 
-  async generateContent(platform: string, topic: string, tone = 'energetic', goal = 'growth', includeHashtags = true): Promise<AIModelResponse<ContentResult>> {
+  async generateContent(platform: string, topic: string, tone = 'energetic', goal = 'growth', includeHashtags = true, genre?: string): Promise<AIModelResponse<ContentResult>> {
     return callAIModel<ContentResult>('/generate/content', {
       platform,
       topic,
       tone,
       goal,
+      genre: genre || undefined,
       include_hashtags: includeHashtags,
       include_distribution: true,
     });

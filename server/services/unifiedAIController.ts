@@ -240,7 +240,8 @@ export class UnifiedAIController {
             options.topic || options.genre || 'new music',
             options.tone || 'energetic',
             'growth',
-            true
+            true,
+            options.genre
           );
           if (aiResult.success && aiResult.data && aiResult.data.hook && aiResult.data.body && aiResult.data.cta) {
             const d = aiResult.data;

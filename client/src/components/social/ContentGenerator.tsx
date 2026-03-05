@@ -294,10 +294,12 @@ export function ContentGenerator() {
       label:          urlAnalysis.label || undefined,
       releaseDate:    urlAnalysis.release_date || undefined,
       duration:       urlAnalysis.duration || undefined,
+      urlContentType: urlAnalysis.content_type || undefined,
       contentType:    urlAnalysis.content_type && urlAnalysis.content_type !== 'website' ? urlAnalysis.content_type : undefined,
-      contentCategory: urlAnalysis.content_category && urlAnalysis.content_category !== 'general' ? urlAnalysis.content_category : undefined,
+      contentCategory: urlAnalysis.content_category || undefined,
       keywords:       urlAnalysis.keywords?.length ? urlAnalysis.keywords : undefined,
       tags:           urlAnalysis.tags?.length ? urlAnalysis.tags : undefined,
+      urlDescription: urlAnalysis.summary && urlAnalysis.summary !== contentPrompt ? urlAnalysis.summary : undefined,
       // Engagement context (lets AI reference popularity)
       viewCount:      urlAnalysis.view_count ?? undefined,
       likeCount:      urlAnalysis.like_count ?? undefined,
