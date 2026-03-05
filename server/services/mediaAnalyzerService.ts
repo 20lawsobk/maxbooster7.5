@@ -17,20 +17,33 @@ const SERVICE_DIR   = path.join(process.cwd(), 'server', 'services');
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface UrlAnalysis {
-  url:          string;
-  platform:     string;
-  is_music:     boolean;
-  title:        string;
-  description:  string;
-  artist:       string;
-  track:        string;
-  album:        string;
-  genre:        string;
-  tone:         string;
-  og_image:     string;
-  summary:      string;
-  content_type: string;
-  error?:       string;
+  url:               string;
+  domain:            string;
+  platform:          string;
+  platform_category: string;
+  is_music:          boolean;
+  title:             string;
+  description:       string;
+  author:            string;
+  published:         string;
+  og_image:          string;
+  canonical:         string;
+  keywords:          string[];
+  headings:          string[];
+  body_preview:      string;
+  summary:           string;
+  artist:            string;
+  track:             string;
+  album:             string;
+  genre:             string;
+  tone:              string;
+  content_type:      string;
+  content_category:  string;
+  final_url?:        string;
+  youtube_id?:       string;
+  spotify_type?:     string;
+  spotify_id?:       string;
+  error?:            string;
 }
 
 export interface AudioAnalysis {
@@ -174,15 +187,23 @@ export async function analyzeImage(
 export function urlToContentSeed(a: UrlAnalysis) {
   const topic = a.track
     ? `${a.track}${a.artist ? ` by ${a.artist}` : ''}`
-    : a.title || a.summary || a.url;
+    : a.summary || a.title || a.domain || a.url;
   return {
     topic,
-    genre:   a.genre  || 'hip-hop',
-    tone:    a.tone   || 'default',
-    artist:  a.artist || '',
-    track:   a.track  || '',
-    platform_hint: a.platform,
-    og_image: a.og_image || '',
+    genre:            a.genre            || 'default',
+    tone:             a.tone             || 'default',
+    artist:           a.artist           || '',
+    track:            a.track            || '',
+    author:           a.author           || '',
+    content_type:     a.content_type     || 'website',
+    content_category: a.content_category || 'general',
+    is_music:         a.is_music,
+    platform_hint:    a.platform,
+    platform_category: a.platform_category || 'web',
+    og_image:         a.og_image || '',
+    keywords:         a.keywords || [],
+    headings:         a.headings || [],
+    body_preview:     a.body_preview || '',
   };
 }
 
