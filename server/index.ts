@@ -88,6 +88,19 @@ const httpServer = createServer(app);
 httpServer.keepAliveTimeout = 65_000;
 httpServer.headersTimeout   = 66_000;
 
+// START LISTENING IMMEDIATELY so deployment health checks succeed.
+// /health (registered above by setupStartupEndpoints) responds with 200 at once.
+// Session middleware and API routes are wired up in the async IIFE below —
+// requests that arrive before they are ready will get 404/503 for a few seconds,
+// which is acceptable; the deployment health check only needs /health to pass.
+{
+  const _earlyPort = parseInt(process.env.PORT || "5000", 10);
+  httpServer.listen(
+    { port: _earlyPort, host: "0.0.0.0", reusePort: true },
+    () => log(`serving on port ${_earlyPort} (early listen — full init in progress)`)
+  );
+}
+
 // Trust proxy — configured for Cloudflare + Replit's reverse proxy.
 // Using an IP allowlist (Cloudflare ranges + private/loopback) is more secure than a hop
 // count: Express only trusts X-Forwarded-For when the socket connection itself comes from
@@ -255,7 +268,7 @@ app.use((req, res, next) => {
   let activeSessionStore: any = null;
 
   const redisTimeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Redis session store init timed out after 15s')), 15000)
+    setTimeout(() => reject(new Error('Redis session store init timed out after 5s')), 5000)
   );
 
   try {
@@ -547,23 +560,9 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-
-      // Defer heavy autonomous systems initialization to background after server is listening
-      // This allows the landing page to load immediately during cold starts
-      setImmediate(async () => {
+  // Server is already listening (early listen above). Kick off deferred init now.
+  log(`all middleware and routes registered — kicking off autonomous systems`);
+  setImmediate(async () => {
         logger.info('');
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
         logger.info('🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)');
@@ -775,8 +774,6 @@ app.use((req, res, next) => {
         }).catch(() => {});
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
       });
-    },
-  );
 })().catch((error) => {
   logger.error('FATAL: Server startup failed:', error);
   process.exit(1);
