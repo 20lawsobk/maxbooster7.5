@@ -193,16 +193,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllEnabledAutopilotConfigs(): Promise<any[]> {
-    const allUsers = await dbRead.select().from(users);
-    return allUsers
-      .filter((user: any) => {
-        const config = (user.preferences as any)?.advertisingAutopilotConfig;
-        return config && config.enabled === true;
-      })
-      .map((user: any) => ({
-        userId: user.id,
-        ...(user.preferences as any)?.advertisingAutopilotConfig,
-      }));
+    const rows = await dbRead.execute(sql`
+      SELECT id, preferences
+      FROM users
+      WHERE (preferences->>'advertisingAutopilotConfig')::jsonb->>'enabled' = 'true'
+      LIMIT 1000
+    `);
+    return (rows as any[]).map((user: any) => {
+      const config = typeof user.preferences === 'string'
+        ? JSON.parse(user.preferences)?.advertisingAutopilotConfig
+        : user.preferences?.advertisingAutopilotConfig;
+      return { userId: user.id, ...config };
+    });
   }
 
   async getUserAIModel(userId: string, modelType: string): Promise<any | undefined> {
@@ -684,82 +686,65 @@ export class DatabaseStorage implements IStorage {
 
   async getProducers(): Promise<any[]> {
     try {
-      const allUsers = await dbRead.select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-        username: users.username,
-        avatarUrl: users.avatarUrl,
-        bio: users.bio,
-        location: users.location,
-        website: users.website,
-        role: users.role,
-        subscriptionTier: users.subscriptionTier,
-      }).from(users).limit(50);
-      
-      const producerData = await Promise.all(allUsers.map(async (u) => {
-        const userBeats = await dbRead.select().from(listings).where(eq(listings.userId, u.id));
-        const beatsCount = userBeats.length;
+      const rows = await dbRead.execute(sql`
+        SELECT
+          u.id,
+          u.first_name,
+          u.last_name,
+          u.username,
+          u.avatar_url,
+          u.bio,
+          u.location,
+          u.website,
+          u.role,
+          u.subscription_tier,
+          COALESCE(l.beats_count, 0)::int        AS beats_count,
+          COALESCE(o.sales_count, 0)::int        AS sales_count,
+          COALESCE(sf.followers_count, 0)::int   AS followers_count,
+          COALESCE(ROUND(sr.avg_rating::numeric, 1), 0) AS avg_rating
+        FROM users u
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS beats_count FROM listings WHERE user_id = u.id
+        ) l ON true
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS sales_count FROM orders WHERE seller_id = u.id AND status = 'completed'
+        ) o ON true
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS followers_count
+          FROM storefront_follows sf2
+          JOIN storefronts s ON sf2.storefront_id = s.id
+          WHERE s.user_id = u.id
+        ) sf ON true
+        LEFT JOIN LATERAL (
+          SELECT COALESCE(AVG(sr2.rating), 0) AS avg_rating
+          FROM storefront_ratings sr2
+          JOIN storefronts s ON sr2.storefront_id = s.id
+          WHERE s.user_id = u.id
+        ) sr ON true
+        LIMIT 50
+      `);
 
-        const userStorefront = await dbRead.select({ id: storefronts.id })
-          .from(storefronts)
-          .where(eq(storefronts.userId, u.id))
-          .limit(1);
-        const storefrontId = userStorefront[0]?.id;
-
-        let followersCount = 0;
-        let avgRating = 0;
-        let salesCount = 0;
-
-        if (storefrontId) {
-          const [followResult] = await dbRead.select({ count: sql<number>`count(*)::int` })
-            .from(storefrontFollows)
-            .where(eq(storefrontFollows.storefrontId, storefrontId));
-          followersCount = followResult?.count || 0;
-
-          const [ratingResult] = await dbRead.select({ avg: sql<number>`coalesce(avg(${storefrontRatings.rating}), 0)` })
-            .from(storefrontRatings)
-            .where(eq(storefrontRatings.storefrontId, storefrontId));
-          avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
-        }
-
-        const [salesResult] = await dbRead.select({ count: sql<number>`count(*)::int` })
-          .from(orders)
-          .where(and(eq(orders.sellerId, u.id), eq(orders.status, 'completed')));
-        salesCount = salesResult?.count || 0;
-
-        if (avgRating === 0 && userBeats.length > 0) {
-          const beatRatings = userBeats
-            .filter(b => ((b.metadata as any)?.avgRating || 0) > 0)
-            .map(b => (b.metadata as any).avgRating);
-          if (beatRatings.length > 0) {
-            avgRating = Math.round((beatRatings.reduce((s: number, r: number) => s + r, 0) / beatRatings.length) * 10) / 10;
-          }
-        }
-        
-        const displayName = u.username || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Producer';
+      return (rows as any[]).map((u: any) => {
+        const displayName = u.username || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Producer';
         return {
           id: u.id,
           username: u.username || displayName,
           displayName,
-          avatar: u.avatarUrl || '',
-          avatarUrl: u.avatarUrl || '',
+          avatar: u.avatar_url || '',
+          avatarUrl: u.avatar_url || '',
           bio: u.bio || '',
           location: u.location || '',
           website: u.website || '',
-          verified: u.role === 'admin' || u.subscriptionTier === 'lifetime',
-          followers: followersCount,
+          verified: u.role === 'admin' || u.subscription_tier === 'lifetime',
+          followers: Number(u.followers_count) || 0,
           following: 0,
-          sales: salesCount,
-          beats: beatsCount,
-          rating: avgRating,
+          sales: Number(u.sales_count) || 0,
+          beats: Number(u.beats_count) || 0,
+          rating: Number(u.avg_rating) || 0,
           joinedAt: '',
           socialLinks: {},
         };
-      }));
-      
-      return producerData;
+      });
     } catch (error) {
       logger.error('Error getting producers:', error);
       return [];

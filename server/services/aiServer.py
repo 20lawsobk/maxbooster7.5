@@ -598,6 +598,52 @@ def analyze_audio(req: AudioAnalysisRequest):
     except Exception as e:
         raise HTTPException(500, f'Audio analysis failed: {e}')
 
+@app.post('/analyze/transcribe')
+def transcribe_audio(req: AudioAnalysisRequest):
+    """MIDI transcription via basic-pitch. Returns MIDI file path + note events."""
+    try:
+        from basic_pitch.inference import predict
+        from basic_pitch import ICASSP_2022_MODEL_PATH
+    except ImportError:
+        raise HTTPException(500, 'basic-pitch not installed')
+    
+    fp = req.file_path
+    if not os.path.isabs(fp):
+        fp = str(WORKSPACE_DIR / fp.lstrip('/'))
+    if not os.path.exists(fp):
+        raise HTTPException(404, f'File not found: {fp}')
+    
+    try:
+        t0 = time.time()
+        model_output, midi_data, note_events = predict(fp)
+        
+        midi_dir = WORKSPACE_DIR / 'uploads' / 'midi'
+        midi_dir.mkdir(parents=True, exist_ok=True)
+        midi_filename = f'transcription_{uuid.uuid4()}.mid'
+        midi_path = midi_dir / midi_filename
+        midi_data.write(str(midi_path))
+        
+        notes = []
+        for evt in note_events:
+            notes.append({
+                'start_time': round(float(evt[0]), 3),
+                'end_time': round(float(evt[1]), 3),
+                'pitch': int(evt[2]),
+                'velocity': int(evt[3] * 127),
+                'confidence': round(float(evt[4]), 3),
+            })
+        
+        return {
+            'success': True,
+            'midi_path': f'/uploads/midi/{midi_filename}',
+            'note_count': len(notes),
+            'notes': notes[:200],
+            'processing_time_ms': round((time.time() - t0) * 1000),
+        }
+    except Exception as e:
+        raise HTTPException(500, f'MIDI transcription failed: {e}')
+
+
 @app.get('/analyze/audio-features')
 def audio_features_info():
     return {

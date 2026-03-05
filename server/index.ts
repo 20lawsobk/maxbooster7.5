@@ -531,6 +531,16 @@ app.use((req, res, next) => {
       } catch (e) { /* non-critical */ }
     }, 60 * 1000);
     logger.info('[Retention] Feature event buffer flush enqueued (60s interval)');
+
+    // Engagement analytics refresh: collect real engagement data from platform APIs
+    // for all active campaigns every 8 hours (platform API rate-limit friendly)
+    setInterval(async () => {
+      try {
+        const { advertisingDispatchService } = await import('./services/advertisingDispatchService.js');
+        await advertisingDispatchService.collectAllActiveEngagement();
+      } catch (e: any) { logger.warn('[Engagement] Refresh failed (non-fatal):', e?.message); }
+    }, 8 * 60 * 60 * 1000);
+    logger.info('[Engagement] Social engagement refresh cron started (8h interval)');
   } catch (retentionErr: any) {
     const errMsg = retentionErr instanceof Error
       ? `${retentionErr.message}\n${retentionErr.stack}`

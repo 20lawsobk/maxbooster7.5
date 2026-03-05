@@ -294,6 +294,76 @@ const REQUIRED_INDEXES: IndexDefinition[] = [
     columns: ['executed_at'],
     description: 'Time-ordered execution log queries',
   },
+
+  // orders — queried for sales counts and seller dashboard
+  {
+    name: 'idx_orders_seller_id',
+    table: 'orders',
+    columns: ['seller_id'],
+    description: 'Fast seller order history lookup',
+  },
+  {
+    name: 'idx_orders_seller_id_status',
+    table: 'orders',
+    columns: ['seller_id', 'status'],
+    description: 'Composite index for completed-orders-per-seller count (getProducers)',
+  },
+  {
+    name: 'idx_orders_user_id',
+    table: 'orders',
+    columns: ['user_id'],
+    description: 'Fast buyer order history lookup (user_id = buyer in orders table)',
+  },
+  {
+    name: 'idx_orders_status',
+    table: 'orders',
+    columns: ['status'],
+    description: 'Filter orders by fulfillment status',
+  },
+
+  // storefront_follows — queried for follower counts per producer
+  {
+    name: 'idx_storefront_follows_storefront_id',
+    table: 'storefront_follows',
+    columns: ['storefront_id'],
+    description: 'Follower count aggregation per storefront (getProducers JOIN)',
+  },
+  {
+    name: 'idx_storefront_follows_user_id',
+    table: 'storefront_follows',
+    columns: ['user_id'],
+    description: 'Following list for a given user',
+  },
+
+  // storefront_ratings — queried for average rating per producer
+  {
+    name: 'idx_storefront_ratings_storefront_id',
+    table: 'storefront_ratings',
+    columns: ['storefront_id'],
+    description: 'Rating aggregation per storefront (getProducers JOIN)',
+  },
+
+  // storefronts — joined from users.id frequently
+  {
+    name: 'idx_storefronts_user_id',
+    table: 'storefronts',
+    columns: ['user_id'],
+    description: 'Fast storefront lookup by owner user_id',
+  },
+
+  // royalty_transactions — queried in distribution analytics
+  {
+    name: 'idx_royalty_transactions_user_id',
+    table: 'royalty_transactions',
+    columns: ['user_id'],
+    description: 'User royalty transaction history',
+  },
+  {
+    name: 'idx_royalty_transactions_release_id',
+    table: 'royalty_transactions',
+    columns: ['release_id'],
+    description: 'Per-release revenue aggregation',
+  },
 ];
 
 export interface IndexCreationResult {
@@ -349,9 +419,9 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
       const columnsId = sql.join(index.columns.map(c => sql.identifier(c)), sql`, `);
       
       if (index.unique) {
-        await db.execute(sql`CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS ${indexNameId} ON ${tableId} (${columnsId})`);
+        await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS ${indexNameId} ON ${tableId} (${columnsId})`);
       } else {
-        await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${indexNameId} ON ${tableId} (${columnsId})`);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS ${indexNameId} ON ${tableId} (${columnsId})`);
       }
 
       created.push(index.name);

@@ -510,4 +510,32 @@ router.get('/analysis-features', async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/audio/transcribe
+ * Transcribe audio to MIDI using basic-pitch.
+ * Body: { filePath: string }
+ * Returns: { success, midi_path, note_count, notes[], processing_time_ms }
+ */
+router.post('/transcribe', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { filePath } = req.body;
+    if (!filePath || typeof filePath !== 'string') {
+      return res.status(400).json({ error: 'filePath is required' });
+    }
+    const { pythonAIService } = await import('../services/pythonAIService.js');
+    const available = await pythonAIService.isAvailable();
+    if (!available) {
+      return res.status(503).json({ error: 'MIDI transcription service unavailable' });
+    }
+    const result = await pythonAIService.transcribeToMidi(filePath);
+    if (!result.success) {
+      return res.status(500).json({ error: result.error || 'Transcription failed' });
+    }
+    return res.json(result.data);
+  } catch (error: any) {
+    logger.error('MIDI transcription error:', error?.message);
+    res.status(500).json({ error: 'MIDI transcription failed' });
+  }
+});
+
 export default router;

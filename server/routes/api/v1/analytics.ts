@@ -14,6 +14,19 @@ router.use(apiKeyService.validateApiKey);
 router.use(apiKeyService.rateLimitApiKey);
 router.use(apiKeyService.trackApiUsage);
 
+// IDOR protection: an API key can only access its own user's data.
+// If :artistId is provided and differs from the key owner, reject.
+router.param('artistId', (req: ApiKeyRequest, res, next, artistId) => {
+  const userId = req.apiKey?.userId;
+  if (userId && artistId && artistId !== userId) {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'API keys can only access data belonging to their owner',
+    });
+  }
+  next();
+});
+
 /**
  * GET /api/v1/analytics/platforms
  * List all connected platforms for the authenticated user

@@ -442,6 +442,24 @@ export class PythonAIService {
       return { success: false, error: 'AI Model service unavailable' };
     }
   }
+
+  async transcribeToMidi(filePath: string): Promise<AIModelResponse<any>> {
+    try {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_path: filePath }),
+      }, 120000);
+      if (!response.ok) {
+        const err = await response.text();
+        return { success: false, error: `MIDI transcription failed: ${err}` };
+      }
+      const data = await response.json();
+      return { success: true, data };
+    } catch (e: any) {
+      return { success: false, error: `MIDI transcription error: ${e.message}` };
+    }
+  }
 }
 
 export const pythonAIService = PythonAIService.getInstance();

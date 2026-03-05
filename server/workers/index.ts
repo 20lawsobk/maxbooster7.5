@@ -51,6 +51,9 @@ function workerOpts(concurrency: number) {
     concurrency,
     autorun: false,
     limiter: { max: concurrency, duration: 1000 },
+    lockDuration: 120000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
   };
 }
 
