@@ -64,6 +64,12 @@ export default function Login() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
 
+  const redirectAfterLogin = (() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const r = urlParams.get('redirect');
+    return r && r.startsWith('/') ? r : '/dashboard';
+  })();
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get('error');
@@ -219,7 +225,7 @@ export default function Login() {
         description: "You've successfully signed in.",
       });
       queryClient.setQueryData(['/api/auth/me'], data);
-      navigate('/dashboard');
+      navigate(redirectAfterLogin);
     } catch (error: unknown) {
       const err = error as Error;
       toast({
@@ -268,7 +274,7 @@ export default function Login() {
         title: 'Welcome to Demo Mode!',
         description: 'Explore all Max Booster features with sample data.',
       });
-      navigate('/dashboard');
+      navigate(redirectAfterLogin);
     } catch (error) {
       toast({
         title: 'Connection Error',

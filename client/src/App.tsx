@@ -176,11 +176,27 @@ const PUBLIC_ONLY_PREFIXES = ['/blog/', '/register/payment/', '/register/'];
 function AppWithKeyboardShortcuts() {
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
   const [location, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
     setAuthState(!!user);
   }, [user]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (user) return;
+    const isPublic =
+      PUBLIC_ONLY_ROUTES.includes(location) ||
+      PUBLIC_ONLY_PREFIXES.some(p => location.startsWith(p)) ||
+      location.startsWith('/storefront/') ||
+      location.startsWith('/store/') ||
+      location.startsWith('/handle-link') ||
+      location === '/verification' ||
+      location === '/pricing';
+    if (!isPublic) {
+      setLocation(`/login?redirect=${encodeURIComponent(location)}`);
+    }
+  }, [user, isLoading, location]);
 
   useEffect(() => {
     if (isNativeApp() && (PUBLIC_ONLY_ROUTES.includes(location) || PUBLIC_ONLY_PREFIXES.some((p) => location.startsWith(p)))) {

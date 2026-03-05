@@ -185,6 +185,11 @@ export function ServerVideoGenerator({
         throw new Error(response.ok ? 'Invalid server response' : `Server error (${response.status})`);
       }
 
+      if (response.status === 401) {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(data?.message || data?.error || 'Video generation failed');
       }
