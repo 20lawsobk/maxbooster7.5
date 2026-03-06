@@ -26,7 +26,7 @@ Profiling:
 """
 
 import numpy as np
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from .profiler import Profiler, get_profiler
 from .graph import Graph, GraphRecorder
@@ -248,6 +248,61 @@ class DigitalGPU:
                                   shape_in=A.shape, shape_out=A.shape,
                                   backend=self._backend_name):
             return self.backend.element_add(A, B, dtype=dtype)
+
+    def upgrade_to_gpu(self) -> str:
+        """
+        Phase 2: Upgrade to the best available local GPU backend.
+        Detects Numba JIT and switches automatically.
+        Returns the name of the backend selected.
+        """
+        from .backends.gpu_backend import LocalGPUBackend
+        new_backend = LocalGPUBackend()
+        self.set_backend(new_backend)
+        return new_backend.name
+
+    def optimize_graph(self, graph: Graph,
+                       passes=('fusion', 'dead_code', 'tile_search'),
+                       verbose: bool = False) -> Graph:
+        """
+        Phase 3: Run the GraphOptimizer on a recorded graph.
+        Returns an optimized copy of the graph.
+        """
+        from .optimizer import GraphOptimizer
+        opt = GraphOptimizer(self.backend, self.profiler, verbose=verbose)
+        return opt.optimize(graph, passes=passes)
+
+    def auto_tune(self, n_trials: int = 5,
+                  verbose: bool = True) -> Dict[str, Any]:
+        """
+        Phase 3: Run the AutoTuner agent.
+        Profiles hot kernels, grid-searches configs, persists best config.
+        Returns dict of TuneResult objects.
+        """
+        from .agent_tuner import AutoTuner
+        tuner = AutoTuner(self, n_top_kernels=5, verbose=verbose)
+        return tuner.tune_and_apply(n_trials=n_trials)
+
+    def hardware_sim(self, array_n: int = 16,
+                     freq_ghz: float = 1.0) -> 'MaxCoreTile':
+        """
+        Phase 4: Create a MaxCore tile simulator.
+        Returns a MaxCoreTile instance for cycle-accurate GEMM simulation.
+        """
+        from .hardware.maxcore_tile import MaxCoreTile, PEConfig
+        return MaxCoreTile(PEConfig(array_n=array_n, freq_ghz=freq_ghz))
+
+    def generate_rtl(self, array_n: int = 16, freq_ghz: float = 1.0,
+                     output_dir: str = './maxcore_rtl/') -> str:
+        """
+        Phase 4: Generate SystemVerilog RTL for a MaxCore tile.
+        Writes .sv files to output_dir. Returns the output directory path.
+        """
+        from .hardware.maxcore_tile import PEConfig
+        from .hardware.rtl_gen import RTLGenerator
+        config = PEConfig(array_n=array_n, freq_ghz=freq_ghz)
+        gen = RTLGenerator(config)
+        gen.generate_all()
+        return gen.write(output_dir=output_dir)
 
 
 _global_gpu: Optional[DigitalGPU] = None
