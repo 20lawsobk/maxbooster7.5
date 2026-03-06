@@ -51,6 +51,9 @@ export interface ContentContext {
   recentPerformance?: RecentPerformance;
   avoidTopics?: string[];
   preferredHashtags?: string[];
+  releasePhase?: 'pre-release' | 'launch' | 'first-week' | 'sustain' | 'milestone';
+  contentFormula?: string;
+  streamCount?: number;
 }
 
 export interface BrandVoiceData {
@@ -131,6 +134,82 @@ const CTA_PATTERNS = [
   /(check it out|listen now|stream now|watch now|link in bio|tap the link)/i,
   /(share|comment|tag|follow|subscribe|like)/i,
   /(don't miss|limited time|exclusive|first to hear)/i,
+];
+
+// ─── 12 PROVEN VIRAL CONTENT FORMULAS ─────────────────────────────────────────
+// Each formula has a distinct psychological entry point. Advanced AI cycles
+// through these to ensure content diversity and maximize engagement vectors.
+const CONTENT_FORMULA_LIBRARY: Record<string, {
+  name: string;
+  triggers: string[];
+  bestFor: string[];
+  hookSignals: RegExp[];
+  engagementBoost: number;
+}> = {
+  curiosity_gap:     { name: 'Curiosity Gap',        triggers: ['curiosity','fomo'],                     bestFor: ['viral','engagement'],   hookSignals: [/nobody (told|shows|talks)/i, /they don't want/i, /the secret/i, /nobody expected/i], engagementBoost: 18 },
+  before_after:      { name: 'Before/After',          triggers: ['inspiration','transformation'],         bestFor: ['awareness','viral'],    hookSignals: [/from .+ to/i, /before.*after/i, /used to.*now/i, /i started with/i],               engagementBoost: 14 },
+  social_proof:      { name: 'Social Proof Stack',    triggers: ['fomo','authority'],                     bestFor: ['conversions','awareness'],hookSignals: [/\d+k? (streams|plays|followers)/i, /everyone is/i, /response has been/i],            engagementBoost: 12 },
+  challenge_dare:    { name: 'Challenge / Dare',      triggers: ['competition','identity'],               bestFor: ['viral','engagement'],   hookSignals: [/i dare you/i, /challenge/i, /try (not to|this)/i, /can you/i],                      engagementBoost: 16 },
+  insider_secret:    { name: 'Insider Secret',        triggers: ['exclusivity','authority'],              bestFor: ['awareness','engagement'],hookSignals: [/nobody talks about/i, /secret to/i, /what they don't tell/i, /insider/i],            engagementBoost: 15 },
+  misconception:     { name: 'Misconception Correction',triggers:['authority','surprise'],               bestFor: ['engagement','viral'],   hookSignals: [/unpopular opinion/i, /hot take/i, /you're wrong about/i, /myth/i],                  engagementBoost: 13 },
+  countdown:         { name: 'Countdown / Urgency',   triggers: ['fomo','urgency'],                       bestFor: ['conversions','awareness'],hookSignals: [/\d+ (days|hours|hours) (left|until|away)/i, /dropping/i, /coming soon/i, /launches/i],engagementBoost: 11 },
+  milestone:         { name: 'Milestone Celebration', triggers: ['social_proof','community'],             bestFor: ['awareness','engagement'],hookSignals: [/(hit|reached|crossed) \d+/i, /milestone/i, /thank you for/i, /we made it/i],          engagementBoost: 10 },
+  relatable_moment:  { name: 'Relatable Moment',      triggers: ['recognition','humor'],                  bestFor: ['viral','engagement'],   hookSignals: [/pov:/i, /me when/i, /not me/i, /tell me why/i, /who else/i],                        engagementBoost: 14 },
+  transformation:    { name: 'Transformation Story',  triggers: ['inspiration','hope'],                   bestFor: ['viral','awareness'],    hookSignals: [/this changed (everything|me)/i, /i was.*years old/i, /turning point/i],              engagementBoost: 15 },
+  community_shoutout:{ name: 'Community Shoutout',    triggers: ['belonging','gratitude'],                bestFor: ['engagement','awareness'],hookSignals: [/for my (fans|community|day ones|supporters)/i, /thank you.*community/i, /this one is for/i],engagementBoost: 9 },
+  industry_truth:    { name: 'Industry Truth',        triggers: ['validation','empowerment'],             bestFor: ['viral','engagement'],   hookSignals: [/industry/i, /label/i, /streams pay/i, /independent artist/i, /nobody tells you/i],   engagementBoost: 16 },
+};
+
+// ─── PSYCHOLOGICAL TRIGGER LAYER COMBINATIONS ─────────────────────────────────
+// Stacking 2-3 triggers multiplies engagement exponentially. Each objective has
+// optimal trigger combos based on audience psychology research.
+const PSYCHOLOGICAL_TRIGGER_LAYERS: Record<string, { triggers: string[]; scoreBoost: number }[]> = {
+  awareness:    [
+    { triggers: ['curiosity', 'exclusivity'],         scoreBoost: 12 },
+    { triggers: ['social_proof', 'authority'],         scoreBoost: 10 },
+    { triggers: ['inspiration', 'community'],          scoreBoost: 9  },
+  ],
+  engagement:   [
+    { triggers: ['curiosity', 'identity', 'challenge'],scoreBoost: 16 },
+    { triggers: ['vulnerability', 'recognition'],      scoreBoost: 14 },
+    { triggers: ['humor', 'belonging'],                scoreBoost: 12 },
+  ],
+  conversions:  [
+    { triggers: ['fomo', 'social_proof', 'urgency'],  scoreBoost: 18 },
+    { triggers: ['authority', 'exclusivity'],          scoreBoost: 14 },
+    { triggers: ['social_proof', 'community'],         scoreBoost: 11 },
+  ],
+  viral:        [
+    { triggers: ['curiosity', 'surprise', 'identity'],scoreBoost: 20 },
+    { triggers: ['vulnerability', 'hope', 'community'],scoreBoost: 18 },
+    { triggers: ['controversy', 'validation'],         scoreBoost: 16 },
+  ],
+};
+
+// ─── RELEASE PHASE URGENCY MODIFIERS ──────────────────────────────────────────
+// Engagement prediction multipliers based on release timing
+const RELEASE_PHASE_MULTIPLIERS: Record<string, number> = {
+  'pre-release': 1.08,  // Anticipation builds organic reach
+  'launch':      1.22,  // First 24h: highest algorithmic push window
+  'first-week':  1.15,  // Playlist/chart window still open
+  'sustain':     1.00,  // Standard baseline
+  'milestone':   1.12,  // Celebration posts get strong re-share
+};
+
+// ─── SELF-IDENTIFICATION PHRASES ──────────────────────────────────────────────
+// Phrases that make the reader see themselves in the content. Boosts comments
+// and shares because people tag friends who "fit" the identity described.
+const SELF_IDENTIFICATION_PHRASES = [
+  'For the artists who are still building',
+  'This one is for the people who feel everything',
+  "If you've ever written a song at 3am and wondered if it matters",
+  'For everyone who told you it was just a hobby',
+  'For the independent artists grinding without a label',
+  'If you believe in the music before anyone else does',
+  'For the ones who never stopped creating even when nobody was watching',
+  'For the fans who stream on repeat and never skip',
+  'If music has ever saved you on a hard day — this one is for you',
+  'For the bedroom producers who became everything',
 ];
 
 class ContentQualityPipeline {
@@ -614,14 +693,18 @@ class ContentQualityPipeline {
     const sentiment = this.scoreSentiment(content, context.objective);
     const brandAlignment = this.scoreBrandAlignment(content, context);
     const engagement = this.predictEngagement(content, headline, context);
+    const specificity = this.scoreSpecificity(content, headline);
+    const emotionalArc = this.scoreEmotionalArc(content, headline);
 
     const weights = {
-      engagement: 0.25,
-      clarity: 0.15,
-      sentiment: 0.15,
-      brandAlignment: 0.15,
+      engagement: 0.22,
+      clarity: 0.12,
+      sentiment: 0.12,
+      brandAlignment: 0.12,
       hookStrength: 0.15,
-      callToActionEffectiveness: 0.15,
+      callToActionEffectiveness: 0.12,
+      specificity: 0.08,
+      emotionalArc: 0.07,
     };
 
     const platformPenalty = platformOpt.isValid ? 0 : 15;
@@ -632,7 +715,9 @@ class ContentQualityPipeline {
       sentiment * weights.sentiment +
       brandAlignment * weights.brandAlignment +
       hookStrength * weights.hookStrength +
-      ctaEffectiveness * weights.callToActionEffectiveness -
+      ctaEffectiveness * weights.callToActionEffectiveness +
+      specificity * weights.specificity +
+      emotionalArc * weights.emotionalArc -
       platformPenalty
     ));
 
@@ -788,22 +873,132 @@ class ContentQualityPipeline {
   }
 
   private predictEngagement(content: string, headline: string, context: ContentContext): number {
-    let score = 60;
+    let score = 55;
+    const lower = content.toLowerCase();
+    const headlineLower = headline.toLowerCase();
 
-    if (content.includes('?')) score += 10;
-    if (content.match(/\btag\b|\bshare\b|\bcomment\b/i)) score += 8;
-    if (headline.match(/^(🔥|💥|⚡|🚀)/)) score += 5;
+    // ── Hook quality ──────────────────────────────────────────────────────────
+    if (headline.match(/^(🔥|💥|⚡|🚀|🚨|👀|💀|🤯|💯)/)) score += 7;
+    if (/\?$/.test(headline)) score += 6;                           // Question hooks
+    if (/^[A-Z]{2,}/.test(headline)) score += 4;                    // Caps-led hooks
+    if (/nobody (told|talks|shows)/i.test(headline)) score += 9;    // Curiosity gap
+    if (/unpopular opinion|hot take|real talk/i.test(headline)) score += 8; // Opinion hook
+    if (/pov:|when you|tell me why/i.test(headline)) score += 7;   // Relatable hook
 
-    const engagementMultipliers: Record<string, number> = {
-      awareness: 0.9,
-      engagement: 1.1,
-      conversions: 0.85,
-      viral: 1.2,
+    // ── Engagement triggers in body ────────────────────────────────────────
+    if (lower.includes('?')) score += 8;                             // Questions drive comments
+    if (lower.match(/\btag\b|\bshare\b|\bcomment\b|\bdrop\b/i)) score += 7; // Action words
+    if (lower.match(/\b(you|your|yours)\b/)) score += 5;            // Direct address
+    if (lower.match(/\bi\b.*\bfeel\b|\bwhen i\b|\bi wrote\b/i)) score += 6; // Personal narrative
+
+    // ── Self-identification phrases ─────────────────────────────────────────
+    if (lower.match(/for (the|everyone|the artists|the people|anyone)/i)) score += 7;
+    if (lower.match(/if you'?ve? (ever|always)|if you believe/i)) score += 6;
+
+    // ── Specificity signals (concrete > generic) ───────────────────────────
+    if (/\d+/.test(content)) score += 5;                            // Numbers = specificity
+    if (/\d+(k|m)\s+(streams|plays|followers)/i.test(lower)) score += 8; // Stream counts
+    if (/(3am|2am|midnight|late night|studio at)/i.test(lower)) score += 6; // Time specifics
+
+    // ── Emotional arc signals ──────────────────────────────────────────────
+    const hasHook = HOOK_PATTERNS.some(p => p.test(headline));
+    const hasTension = /almost|thought about|wasn't sure|hard (day|time|moment)|darkest/i.test(lower);
+    const hasResolution = /but then|then it (clicked|hit)|finally|now i (know|realize|see)/i.test(lower);
+    if (hasHook && hasTension) score += 8;                          // Hook + tension = high engagement
+    if (hasHook && hasTension && hasResolution) score += 6;         // Full arc bonus
+
+    // ── Content formula detection ──────────────────────────────────────────
+    let formulaBoost = 0;
+    for (const formula of Object.values(CONTENT_FORMULA_LIBRARY)) {
+      if (formula.bestFor.includes(context.objective)) {
+        const formulaMatch = formula.hookSignals.some(sig => sig.test(headline) || sig.test(lower));
+        if (formulaMatch) { formulaBoost = Math.max(formulaBoost, formula.engagementBoost); }
+      }
+    }
+    score += Math.min(18, formulaBoost);
+
+    // ── Psychological trigger layer detection ──────────────────────────────
+    const triggerLayers = PSYCHOLOGICAL_TRIGGER_LAYERS[context.objective] || [];
+    for (const layer of triggerLayers) {
+      const matchCount = layer.triggers.filter(t => lower.includes(t)).length;
+      if (matchCount >= 2) { score += layer.scoreBoost; break; } // First combo match wins
+    }
+
+    // ── Release phase multiplier ───────────────────────────────────────────
+    const phaseMultiplier = RELEASE_PHASE_MULTIPLIERS[context.releasePhase || 'sustain'] || 1.0;
+    score *= phaseMultiplier;
+
+    // ── Objective multiplier ───────────────────────────────────────────────
+    const objectiveMultipliers: Record<string, number> = {
+      awareness: 0.92, engagement: 1.12, conversions: 0.88, viral: 1.20,
     };
+    score *= objectiveMultipliers[context.objective] || 1;
 
-    score *= engagementMultipliers[context.objective] || 1;
+    // ── Content length sweet spot ──────────────────────────────────────────
+    if (content.length > 80 && content.length < 350) score += 8;
+    else if (content.length > 50 && content.length < 80) score += 5;
+    else if (content.length > 350 && content.length < 600) score += 4;
 
-    if (content.length > 50 && content.length < 300) score += 10;
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  private scoreSpecificity(content: string, headline: string): number {
+    let score = 45;
+    const full = `${headline} ${content}`.toLowerCase();
+
+    // Numbers signal specificity (research: +36% CTR on numeric hooks)
+    const numbers = (full.match(/\d+/g) || []).length;
+    score += Math.min(20, numbers * 5);
+
+    // Time-specific references
+    if (/(3am|2am|midnight|at \d+(am|pm)|last night|this morning|tonight)/i.test(full)) score += 8;
+
+    // Specific music industry metrics
+    if (/\d+(k|m)\s*(streams?|plays?|followers?|listeners?)/i.test(full)) score += 10;
+    if (/(charted|playlisted|placed|curated|certified)/i.test(full)) score += 8;
+
+    // Named song/album titles (quoted text)
+    if (/"[^"]{2,}"/.test(full) || /\u201c[^\u201d]{2,}\u201d/.test(full)) score += 8;
+
+    // Concrete sensory/location details
+    if (/(studio|booth|mic|headphones|board|session)/i.test(full)) score += 5;
+    if (/(wrote this|started with|began as|voice memo|track \d+)/i.test(full)) score += 6;
+
+    // Generic penalty — catch-all generic phrases reduce specificity
+    const genericPhrases = ['new music', 'check it out', 'excited to share', 'something special', 'hard work'];
+    const genericMatches = genericPhrases.filter(p => full.includes(p)).length;
+    score -= genericMatches * 4;
+
+    return Math.max(0, Math.min(100, score));
+  }
+
+  private scoreEmotionalArc(content: string, headline: string): number {
+    let score = 40;
+    const full = `${headline} ${content}`.toLowerCase();
+
+    // Hook element (emotional entry point)
+    const hookPresent = HOOK_PATTERNS.some(p => p.test(headline));
+    if (hookPresent) score += 15;
+
+    // Context setting (why should I care)
+    if (/(this (track|song|record|single)|when (i|we)|the (story|moment|night|day))/i.test(full)) score += 10;
+
+    // Tension element (conflict/struggle — creates narrative pull)
+    if (/(almost|nearly|didn't think|wasn't sure|hard (to|day|time)|struggle|darkest|almost quit)/i.test(full)) score += 12;
+
+    // Resolution (payoff — releases narrative tension)
+    if (/(finally|clicked|realized|turned out|ended up|now it's|glad i did|worth it)/i.test(full)) score += 10;
+
+    // CTA as call-to-action close
+    if (/(link in bio|stream|listen|share|tell me|drop a|comment)/i.test(full)) score += 8;
+
+    // Full arc bonus (all 5 elements present)
+    const hasAll = hookPresent &&
+      /(this (track|song|record)|when i|the story)/i.test(full) &&
+      /(almost|struggle|darkest)/i.test(full) &&
+      /(finally|clicked|worth it)/i.test(full) &&
+      /(stream|share|comment)/i.test(full);
+    if (hasAll) score += 15;
 
     return Math.max(0, Math.min(100, score));
   }

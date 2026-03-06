@@ -628,6 +628,26 @@ export class ContentGenerator {
     const isBeat = /\b(beat|instrumental|sample|loop|type\s*beat|prod(?:uced)?)\b/i.test(cleanFull);
     const isRelease = Boolean(quoted.length || trackTitle || /\b(single|track|song|album|ep|mixtape|release|drop|out\s*now)\b/i.test(cleanFull));
 
+    // ── Release phase detection ────────────────────────────────────────────────
+    // Determines where we are in the release cycle based on topic context.
+    // Pre-release: teasing/coming soon language
+    // Launch: "out now", "just dropped", immediate release language
+    // First-week: "first week", "chart week", day 2-7 framing
+    // Milestone: number achievements, thank-you framing
+    // Sustain: default / no specific phase signal
+    let releasePhase: 'pre-release' | 'launch' | 'first-week' | 'sustain' | 'milestone' = 'sustain';
+    if (isRelease) {
+      if (/\b(coming soon|dropping|countdown|pre.?save|tease|teaser|dropping\s+soon|this\s+friday|release\s+date)\b/i.test(cleanFull)) {
+        releasePhase = 'pre-release';
+      } else if (/\b(out\s*now|just\s*dropped|available\s*now|live\s*now|officially\s*out|drop\s*day|day\s*one|release\s*day)\b/i.test(cleanFull)) {
+        releasePhase = 'launch';
+      } else if (/\b(first\s*week|chart\s*week|first\s*24|48\s*hours|day\s*[2-7]|still\s*(charting|climbing))\b/i.test(cleanFull)) {
+        releasePhase = 'first-week';
+      } else if (/\b(\d+k|\d+\s*million|milestone|crossed|hit\s+\d|reached|thank\s+you\s+for|\d+\s*(streams|plays|followers))\b/i.test(cleanFull)) {
+        releasePhase = 'milestone';
+      }
+    }
+
     return {
       primary: trackTitle || primary,
       subtitle,
@@ -641,6 +661,7 @@ export class ContentGenerator {
       isEvent,
       isBeat,
       isRelease,
+      releasePhase,
       artistName: artistName || '',
       genre,
     };
@@ -766,6 +787,45 @@ export class ContentGenerator {
       const subHint = ctx.subtitle
         ? ctx.subtitle.split('—')[0].split(',')[0].split('about')[0].trim().slice(0, 38)
         : (adj ? `${adjCap}release` : 'new release');
+
+      // ── Curiosity gap hooks for release content ─────────────────────────
+      const curiosityGapHooks = [
+        `Nobody told me ${title} would do this... ${e1}`,
+        `I discovered something when I listened back to ${title} at 3am ${e2}`,
+        `The reason ${title} keeps getting added to playlists — it's not what you think ${e1}`,
+        `Wait until you hear what's hidden in the production of ${title} ${e2}`,
+        `Something in ${title} was only noticed after 1,000 plays. Can you hear it? ${e1}`,
+        `Most artists never drop a song like ${title}. Here's why ${e2}`,
+      ];
+
+      // ── Release phase-specific hooks ─────────────────────────────────────
+      const phaseHooks: Record<string, string[]> = {
+        'pre-release': [
+          `Something big is coming. ${title} drops soon — pre-save now ${e1}`,
+          `Been working on ${title} for months. The countdown starts now ${e2}`,
+          `Pre-save ${title} before it drops. You don't want to miss day one ${e1}`,
+          `${title} is the project I've been building toward. Coming soon ${e2}`,
+        ],
+        'launch': [
+          `Day one. ${title} is live everywhere RIGHT NOW ${e1}`,
+          `The wait is finally over — ${title} just dropped ${e2}`,
+          `IT'S OUT. ${title} is on every platform right now — go stream it ${e1}`,
+          `${title} is officially here. First 24 hours determine everything ${e2}`,
+        ],
+        'first-week': [
+          `${title} is in its first week and the response has been unreal ${e1}`,
+          `Still streaming ${title}? Good. First week numbers matter for playlisting ${e2}`,
+          `${title} is climbing. Keep the momentum going this week ${e1}`,
+        ],
+        'milestone': [
+          `${title} just hit a milestone I didn't expect this fast ${e1}`,
+          `Can't believe the numbers on ${title} right now. Thank you ${e2}`,
+          `${title} reached something incredible. This community did that ${e1}`,
+        ],
+        'sustain': [],
+      };
+      const phaseSpecific = phaseHooks[ctx.releasePhase || 'sustain'] || [];
+
       hookOptions = [
         `${e1} ${title} is out now`,
         `New music: ${title} ${e1}`,
@@ -780,6 +840,8 @@ export class ContentGenerator {
         `This is the one y'all have been asking for — ${title} ${e2}`,
         `Save it. Share it. Tell a friend. ${title} is out now ${e1}`,
         artist ? `${artist} just dropped ${title} and it goes crazy ${e1}` : `This goes crazy — ${title} out now ${e1}`,
+        ...curiosityGapHooks.slice(0, 2),
+        ...phaseSpecific.slice(0, 2),
         ...genreHookOptions.slice(0, 4),
       ];
     } else {
@@ -845,9 +907,25 @@ export class ContentGenerator {
           'I poured everything into this record. Hope it reaches you',
           'No skips. Start from track one. Trust me',
           'This track represents a new chapter. Glad it finally exists',
+          'Three months. Forty scrapped versions. One record that made it worth it',
+          `${title} started as a voice memo. What you're hearing now is that idea, fully realized`,
+          'The most personal thing you can create is also the most universal. That\'s what this is',
         ];
         segments.push(genericReleaseBodies[Math.floor(Math.random() * genericReleaseBodies.length)]);
       }
+
+      // ── Self-identification phrases (added 50% of the time) ──────────────
+      const selfIdPhrases = [
+        'For the ones who feel everything a little too deeply — this one is for you',
+        'If you\'ve ever needed something to just understand you, I hope this finds you',
+        'For the artists who are still building — keep going',
+        'For everyone who streams music at 2am when everything feels too loud',
+        'If music has ever pulled you through a hard day, you already understand what this is',
+      ];
+      if (Math.random() < 0.50) {
+        segments.push(selfIdPhrases[Math.floor(Math.random() * selfIdPhrases.length)]);
+      }
+
       if (ctx.stats) segments.push(ctx.stats);
     } else if (ctx.isBeat) {
       if (ctx.subtitle) segments.push(ctx.subtitle);
@@ -884,7 +962,7 @@ export class ContentGenerator {
         'RSVP — link in bio',
         'Presale link in bio — first come, first served 🔗',
         "Don't wait — last tickets going fast 🎟️",
-        'Drop your city below if you're coming 👇',
+        "Drop your city below if you're coming 👇",
         'VIP packages still available — link in bio 🎟️',
         'See you on the road — tickets in bio 🎤',
       ],
@@ -921,7 +999,7 @@ export class ContentGenerator {
         'What do you think? Drop it in the comments 💬',
         'Follow for the full rollout — nothing getting missed 🔔',
         'Like if you agree ❤️',
-        'Repost if you're a real one 🔄',
+        "Repost if you're a real one 🔄",
       ],
     };
     const ctaKey = ctx.isPlatform ? 'platform' : ctx.isEvent ? 'event' : ctx.isBeat ? 'beat' : ctx.isRelease ? 'release' : 'general';
