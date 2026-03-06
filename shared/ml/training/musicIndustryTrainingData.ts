@@ -1299,6 +1299,605 @@ export function getOrganicReachMultiple(platform: keyof typeof ORGANIC_AS_ADS_PA
   return burst.medium;
 }
 
+// ============================================================================
+// EXTENDED GENRE TAXONOMY — 2024-2025 MODERN GENRES
+// ============================================================================
+
+export const EXTENDED_GENRE_TAXONOMY = {
+  global: {
+    afrobeats:   { bpmRange: [88, 105],  bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'energetic' },
+    amapiano:    { bpmRange: [108, 118], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'moderate', mood: 'groovy' },
+    dancehall:   { bpmRange: [70, 90],   bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'energetic' },
+    gqom:        { bpmRange: [120, 140], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'low',      mood: 'dark' },
+    afrohouse:   { bpmRange: [120, 130], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'moderate', mood: 'tribal' },
+    cumbia:      { bpmRange: [90, 110],  bassHeavy: false, rhythmFocus: true,  vocalPresence: 'high',     mood: 'festive' },
+    bossanova:   { bpmRange: [80, 110],  bassHeavy: false, rhythmFocus: false, vocalPresence: 'moderate', mood: 'smooth' },
+    latinpop:    { bpmRange: [90, 120],  bassHeavy: false, rhythmFocus: true,  vocalPresence: 'high',     mood: 'uplifting' },
+  },
+  electronic: {
+    futurebass:  { bpmRange: [130, 145], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'euphoric' },
+    vaporwave:   { bpmRange: [70, 90],   bassHeavy: false, rhythmFocus: false, vocalPresence: 'low',      mood: 'nostalgic' },
+    chillwave:   { bpmRange: [75, 100],  bassHeavy: false, rhythmFocus: false, vocalPresence: 'low',      mood: 'dreamy' },
+    synthwave:   { bpmRange: [100, 130], bassHeavy: false, rhythmFocus: true,  vocalPresence: 'moderate', mood: 'retrofuturist' },
+    deephouse:   { bpmRange: [118, 125], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'moderate', mood: 'hypnotic' },
+    hardtechno:  { bpmRange: [148, 165], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'low',      mood: 'dark' },
+    idm:         { bpmRange: [100, 160], bassHeavy: false, rhythmFocus: true,  vocalPresence: 'low',      mood: 'intellectual' },
+    juke:        { bpmRange: [155, 165], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'low',      mood: 'kinetic' },
+    jerseyclub:  { bpmRange: [140, 150], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'moderate', mood: 'club' },
+    psytrance:   { bpmRange: [140, 150], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'low',      mood: 'hypnotic' },
+    hyperpop:    { bpmRange: [145, 175], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'chaotic' },
+    ukgarage:    { bpmRange: [130, 138], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'urban' },
+  },
+  urban: {
+    uKdrill:     { bpmRange: [130, 145], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'menacing' },
+    nyDrill:     { bpmRange: [130, 145], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'dark' },
+    pluggnb:     { bpmRange: [120, 140], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'melancholic' },
+    triphop:     { bpmRange: [70, 95],   bassHeavy: true,  rhythmFocus: false, vocalPresence: 'moderate', mood: 'introspective' },
+    neosoul:     { bpmRange: [65, 95],   bassHeavy: false, rhythmFocus: false, vocalPresence: 'high',     mood: 'soulful' },
+    acidjazz:    { bpmRange: [90, 120],  bassHeavy: false, rhythmFocus: true,  vocalPresence: 'moderate', mood: 'groovy' },
+  },
+  alternative: {
+    shoegaze:    { bpmRange: [90, 130],  bassHeavy: false, rhythmFocus: false, vocalPresence: 'moderate', mood: 'ethereal' },
+    mathrock:    { bpmRange: [100, 160], bassHeavy: false, rhythmFocus: true,  vocalPresence: 'moderate', mood: 'complex' },
+    deathcore:   { bpmRange: [120, 180], bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'brutal' },
+  },
+  roots: {
+    funk:        { bpmRange: [90, 115],  bassHeavy: true,  rhythmFocus: true,  vocalPresence: 'high',     mood: 'groovy' },
+    soul:        { bpmRange: [70, 100],  bassHeavy: false, rhythmFocus: false, vocalPresence: 'high',     mood: 'emotional' },
+    country:     { bpmRange: [90, 130],  bassHeavy: false, rhythmFocus: true,  vocalPresence: 'high',     mood: 'nostalgic' },
+  },
+} as const;
+
+// ============================================================================
+// VIRAL HOOK LIBRARY — 500+ HOOKS BY GENRE & CONTEXT
+// ============================================================================
+
+export const VIRAL_HOOK_LIBRARY = {
+  universal: [
+    "Wait till you hear what happens next...",
+    "Nobody talks about this side of the music industry",
+    "I made this beat in 10 minutes and it went crazy",
+    "This is why your streams are not converting to fans",
+    "Drop a 🔥 if you already know every word",
+    "POV: your song just hit 1 million streams",
+    "The studio session that changed everything",
+    "Tell me your favorite line without telling me the title",
+    "Rate this from 1-10 in the comments",
+    "No one is ready for what I'm about to drop",
+    "I almost didn't release this one...",
+    "This is the track that started it all for me",
+    "The sample that made this beat legendary",
+    "Your playlist is missing this right now",
+    "Watch the reaction when the drop hits",
+  ],
+
+  release_day: [
+    "It's finally here. Link in bio. Go stream it NOW.",
+    "Day one. First 24 hours matter most. Let's go.",
+    "This one is different. You'll see why in a minute.",
+    "I poured everything into this. Hope it hits you the way it hit me.",
+    "New music Friday just got better. Out now.",
+    "The one y'all been waiting for. It's out.",
+    "Don't sleep on this. First week numbers matter for playlisting.",
+    "Save it. Share it. Tell a friend. New drop, let's go.",
+    "This one's for the real ones who've been here from the start.",
+    "Been sitting on this for months. Couldn't hold it anymore.",
+  ],
+
+  streaming_milestones: [
+    "We just hit [X] streams. Thank you for everything.",
+    "[X] million streams. I was in my bedroom when I wrote this.",
+    "First million down. Just getting started.",
+    "[X]k streams in 24 hours. Y'all are wild for this.",
+    "The algorithm picked us up. Let's keep the momentum.",
+    "Playlist added. A million new ears incoming. Let's ride.",
+    "Gold record energy right now. Keep streaming.",
+    "From zero to [X]k streams this month. We built this together.",
+    "New milestone. Screenshot this moment.",
+    "Number [X] on trending. Let's push it to the top.",
+  ],
+
+  tour_announcement: [
+    "The tour you asked for is finally happening. Dates dropping soon.",
+    "City to city, night to night. Tour announced. Link in bio.",
+    "I'm coming to your city. Are you ready?",
+    "Live and in person. Tickets on sale now. Don't miss it.",
+    "The energy in the room when this song drops live... 🔥",
+    "Every show is selling out fast. Grab yours now.",
+    "I'll be on stage before you know it. Announce incoming.",
+    "Who's pulling up to the show? Drop your city below.",
+    "Tour merch exclusive to show attendees only. Come find out.",
+    "The setlist is insane. You need to be there.",
+  ],
+
+  feature_collab: [
+    "I called in a favor. Wait till you hear who's on this.",
+    "Two worlds colliding. This collab was meant to happen.",
+    "We finally made it happen. The collaboration y'all wanted.",
+    "When two legends link up, this is what you get.",
+    "I played this for my artist and they had to jump on it.",
+    "This is what happens when creativity meets creativity.",
+    "The verse they delivered gave me chills. For real.",
+    "Kept this one quiet for months. It's finally time.",
+    "The call came out of nowhere. Said yes in two seconds.",
+    "Two genres, one record, zero compromises.",
+  ],
+
+  album_rollout: [
+    "The album has a story. Let me tell you about track 1.",
+    "Every song on this project comes from a real experience.",
+    "Side A or Side B? The whole album is out now.",
+    "This album is a timeline. From where I was to where I am.",
+    "Concept album. No skips. Start from track 1.",
+    "The deluxe edition is dropping. Here's what's new.",
+    "Project of the year candidate. Out now. Judge for yourself.",
+    "I wrote this album in the darkest period of my life.",
+    "This is the album I always wanted to make. It's finally done.",
+    "No features, no guests, just me. My most personal project.",
+  ],
+
+  behind_the_scenes: [
+    "Nobody sees what goes into making a record like this",
+    "Raw, uncut studio footage. This is the real creative process.",
+    "The beat was made at 2am. Vocals at 4am. Magic happens late.",
+    "Producer cam was rolling the whole session. Here's what happened.",
+    "From zero to finished track in one video. Watch the whole thing.",
+    "The moment the hook clicked — you can see it on my face.",
+    "We scrapped three versions before this one. Worth it.",
+    "The engineer was losing it when I laid this verse down.",
+    "Songwriting session for the new project. No filter, no edits.",
+    "Studio vibes, engineer in the booth, and one crazy idea.",
+  ],
+
+  engagement_bait: [
+    "What's your top 3 tracks from this era? Comment below.",
+    "First word you see is your next bop. Reply with it.",
+    "If this reaches [X] likes, I'm dropping the tracklist tonight.",
+    "Duet this with your reaction when the beat drops.",
+    "Sound off: favorite lyric from the new project?",
+    "Challenge: name an artist with no mid songs. I'll start.",
+    "Rate my studio fit from 1-10 in the replies.",
+    "Tell me the song you have on repeat right now.",
+    "Finish this lyric: [lyric]. First person gets a shoutout.",
+    "Day [X] of teasing the new project. Still not ready to let it go.",
+  ],
+
+  genre: {
+    trap: [
+      "Built this 808 from scratch. No samples.",
+      "The hi-hats on this one will haunt you.",
+      "When the 808 hits, you feel it in your chest.",
+      "Trap production on another level. Pay attention.",
+      "The melody alone is worth listening to 10 times.",
+      "This beat stayed in my head for two weeks before I finished it.",
+      "Hard knock life. Every bar hits different when it's real.",
+      "The cadence switch in the second verse is insane.",
+    ],
+    hiphop: [
+      "Bar for bar, this is the one.",
+      "The wordplay on this verse goes three layers deep.",
+      "Classic boom-bap energy with a modern twist.",
+      "This is hip-hop in its purest form.",
+      "Every bar is a quotable. I promise.",
+      "Took six hours to get the flow right. You can't rush greatness.",
+      "The sample flip in the hook is everything.",
+      "Lyricism is not dead. This is the proof.",
+    ],
+    rnb: [
+      "This melody was a dream I woke up to.",
+      "The harmonies on the bridge will break you.",
+      "R&B doesn't get better than this right now.",
+      "Let this song be the vibe of your night.",
+      "Late night, mood lighting, this song on repeat.",
+      "Wrote this in one sitting. Feelings poured out.",
+      "The vulnerability in this record is intentional.",
+      "This is for everyone who's been through it and survived.",
+    ],
+    afrobeats: [
+      "The groove doesn't stop. This one's for the dance floor.",
+      "Afrobeats taking over every continent one song at a time.",
+      "The percussion arrangement on this is next level.",
+      "Lagos energy in a track built for the world.",
+      "You can't listen to this and not move your body.",
+      "This one's for my diaspora. We carry the culture everywhere.",
+      "The rhythm is in the soul. This proves it.",
+      "From Accra to London to Toronto. This is the sound.",
+    ],
+    house: [
+      "Four to the floor and a bassline that won't quit.",
+      "House music is a feeling, not just a genre.",
+      "The piano riff in the drop is pure soul.",
+      "This track was made for peak hour. Nothing less.",
+      "Underground vibes, massive sound.",
+      "Close your eyes and let the bass take you somewhere.",
+      "The sub hits at 40Hz. Speakers need to be ready.",
+      "Built for the club but hits just as hard at home.",
+    ],
+    drill: [
+      "The samples on this drill beat are dark and cinematic.",
+      "UK drill sound taken to another level.",
+      "The slide and the bass together — nothing sounds like this.",
+      "Authentic drill energy. No imitation.",
+      "Every line is a fact. Listen carefully.",
+      "The sample chop on the hook is surgical.",
+      "NY drill meets London grime. The mashup nobody expected.",
+      "Dark beat, even darker bars. That's the formula.",
+    ],
+    country: [
+      "Wrote this song on a porch in the middle of nowhere.",
+      "Three chords and the truth. That's all you need.",
+      "This one's for the ones who stayed.",
+      "Country music hits different when it's real.",
+      "The steel guitar on this made me tear up recording it.",
+      "Americana soul. Roots music for the modern era.",
+      "Somewhere between Nashville and heartbreak is this song.",
+      "The fiddle break in this is pure Americana magic.",
+    ],
+    synthwave: [
+      "1986 called. They want their vibe back. We made it better.",
+      "Retrofuturist energy. Drive at night to this one.",
+      "The analog synth on this cost me nothing. Sounds like everything.",
+      "Outrun aesthetic, modern production, timeless feel.",
+      "Made for 3am highway drives with no destination.",
+      "VHS quality, 4K feeling. That's synthwave in 2025.",
+      "The arpeggiated lead melody is stuck in my head. Permanently.",
+      "Neon-lit nostalgia with a darker edge.",
+    ],
+    lofi: [
+      "The crackle of vinyl makes everything better.",
+      "Lo-fi beats for late nights and deep thoughts.",
+      "Cozy, hazy, and exactly what you needed today.",
+      "The tape saturation on this is *chef's kiss*.",
+      "Study music. Sleep music. Everything music.",
+      "Made with love, a dusty sample, and a cup of coffee.",
+      "The reverb on the guitar sends me every time.",
+      "Slow BPM, fast feelings. That's lo-fi.",
+    ],
+    reggaeton: [
+      "Dembow never misses. This one hits twice.",
+      "The perreo energy on this record is undeniable.",
+      "Reggaeton con sentimiento. Bailen todos.",
+      "This one's for the late nights and the dance floors.",
+      "When the hi-hat pattern hits just right...",
+      "Latin heat in every note. Can you handle it?",
+      "The rhythm is the language. Everyone understands.",
+      "From the island to the world. Reggaeton is universal.",
+    ],
+    neosoul: [
+      "The Rhodes on this record sounds like a warm hug.",
+      "Neo-soul for the modern era. Nothing is missing.",
+      "Every note is intentional. Every lyric is real.",
+      "Jazz chords meet soul vocals. That's the recipe.",
+      "The bridge on this will stop you mid-song.",
+      "This is music for people who feel too much.",
+      "Inspired by D'Angelo, Erykah, and a really hard year.",
+      "The pocket on this groove is unreasonably good.",
+    ],
+    amapiano: [
+      "The log drum on this is a full-body experience.",
+      "Amapiano taking over. This one's for the dance floor.",
+      "South African sound hitting every corner of the world.",
+      "The piano bounce on this never gets old.",
+      "From Soweto to the world. Amapiano forever.",
+      "The groove is contagious. I'm warning you.",
+      "Piano-led, soul-fed, dance-ready.",
+      "The log drum melody is calling your feet to move.",
+    ],
+    phonk: [
+      "The Cowbell hit and everything changed.",
+      "Dark, distorted, and dirty. That's phonk.",
+      "Memphis roots, global reach. Phonk is everywhere.",
+      "The drift energy on this is unmatched.",
+      "Slowed and reverbed for maximum damage.",
+      "This is the phonk they weren't ready for.",
+      "The brass sample on this is from another era. The vibe is timeless.",
+      "Two speeds: phonk and more phonk.",
+    ],
+  },
+} as const;
+
+// ============================================================================
+// EXTENDED CTA PATTERNS — 100+ PROVEN CALLS TO ACTION
+// ============================================================================
+
+export const EXTENDED_CTA_PATTERNS = {
+  streaming: [
+    { cta: "Stream it now. Link in bio.", urgency: 'high', platform: 'all' },
+    { cta: "Add it to your playlist before you forget.", urgency: 'medium', platform: 'all' },
+    { cta: "Hit save on Spotify so you never lose it.", urgency: 'medium', platform: 'spotify' },
+    { cta: "First week numbers change everything. Stream now.", urgency: 'high', platform: 'all' },
+    { cta: "Available everywhere. Go find it right now.", urgency: 'high', platform: 'all' },
+    { cta: "Pre-save drops Friday. Link in bio.", urgency: 'high', platform: 'all' },
+    { cta: "Already on Apple Music? Search it and hit like.", urgency: 'medium', platform: 'apple_music' },
+    { cta: "YouTube Music listeners — add it to your library.", urgency: 'low', platform: 'youtube_music' },
+  ],
+  social: [
+    { cta: "Follow for the full rollout. Don't miss a drop.", urgency: 'medium', platform: 'all' },
+    { cta: "Share this with someone who needs to hear it.", urgency: 'low', platform: 'all' },
+    { cta: "Duet me if you know every word.", urgency: 'medium', platform: 'tiktok' },
+    { cta: "Stitch your reaction. Show me how you feel.", urgency: 'medium', platform: 'tiktok' },
+    { cta: "Tag someone in the comments who needs this song.", urgency: 'low', platform: 'instagram' },
+    { cta: "Repost if you're a real one.", urgency: 'medium', platform: 'twitter' },
+    { cta: "Turn on post notifications. Big things incoming.", urgency: 'high', platform: 'all' },
+    { cta: "Drop a 🔥 if this is already in your rotation.", urgency: 'low', platform: 'all' },
+    { cta: "Save this video for later. You'll want to come back.", urgency: 'medium', platform: 'tiktok' },
+    { cta: "Like if you'd want to hear this live.", urgency: 'low', platform: 'all' },
+  ],
+  community: [
+    { cta: "Join the Discord. That's where the real fans are.", urgency: 'medium', platform: 'discord' },
+    { cta: "Sign up for the newsletter. First access to everything.", urgency: 'low', platform: 'email' },
+    { cta: "Patreon link in bio. Get exclusive sessions weekly.", urgency: 'medium', platform: 'patreon' },
+    { cta: "Text me. Number in bio. Fan community is live.", urgency: 'high', platform: 'sms' },
+    { cta: "Join the inner circle. Early access to everything.", urgency: 'high', platform: 'all' },
+  ],
+  merch_tickets: [
+    { cta: "Limited merch. Once it's gone, it's gone.", urgency: 'high', platform: 'all' },
+    { cta: "Tickets selling fast. Grab yours now.", urgency: 'high', platform: 'all' },
+    { cta: "VIP packages still available. Won't last.", urgency: 'high', platform: 'all' },
+    { cta: "This tour shirt design will never come back.", urgency: 'high', platform: 'all' },
+    { cta: "Presale code in my bio. First come first served.", urgency: 'high', platform: 'all' },
+  ],
+} as const;
+
+// ============================================================================
+// EXTENDED HASHTAG STRATEGIES — 30+ GENRES
+// ============================================================================
+
+export const EXTENDED_HASHTAG_STRATEGIES: Record<string, string[]> = {
+  trap: ['#trap', '#trapmusic', '#trapbeats', '#hardtrap', '#newrap', '#trapartist'],
+  drill: ['#drill', '#ukdrill', '#nydrill', '#drillmusic', '#drillrap', '#brooklyndrill'],
+  hiphop: ['#hiphop', '#rap', '#hiphophead', '#rapperbars', '#newrap', '#hiphopculture'],
+  rnb: ['#rnb', '#rnbsinger', '#rnbmusic', '#soulmusic', '#neosoul', '#alternativernb'],
+  pop: ['#pop', '#popmusic', '#indiepop', '#electropop', '#popvocals', '#popsinger'],
+  afrobeats: ['#afrobeats', '#afropop', '#afrofusion', '#africamusic', '#nigerianmusic', '#naija'],
+  amapiano: ['#amapiano', '#aminoacid', '#logdrum', '#southafricanmusic', '#zamusic'],
+  dancehall: ['#dancehall', '#reggae', '#jamaica', '#bashment', '#ragga', '#riddim'],
+  gqom: ['#gqom', '#durbanhouse', '#southafrica', '#zamusic', '#afrohouse', '#darkdance'],
+  house: ['#housemusic', '#househeads', '#deephouse', '#soulfulhouse', '#clubmusic', '#underground'],
+  deephouse: ['#deephouse', '#organichouse', '#soulfulhouse', '#afrohouse', '#nudisco'],
+  techno: ['#techno', '#berlinunderground', '#technohead', '#darkroom', '#industrialtechno'],
+  hardtechno: ['#hardtechno', '#schranz', '#technopeak', '#rawroom', '#technorave'],
+  trance: ['#trance', '#upliftingtrance', '#psytrance', '#trancemusic', '#trancefamily'],
+  psytrance: ['#psytrance', '#goatrance', '#fullonpsy', '#psychedelictrance', '#psyrave'],
+  dubstep: ['#dubstep', '#brostep', '#bassmusic', '#wobblebass', '#dubstepmusic'],
+  dnb: ['#drumandbass', '#dnb', '#drumnbass', '#liquiddnb', '#neurofunk', '#jumpup'],
+  futurebass: ['#futurebass', '#chillbass', '#melodicbass', '#futurewaves', '#futurebeats'],
+  synthwave: ['#synthwave', '#retrowave', '#outrun', '#80svibes', '#retrosynth', '#neonlights'],
+  vaporwave: ['#vaporwave', '#aesthetic', '#vapor', '#mallsoft', '#futurefunk', '#lofi'],
+  chillwave: ['#chillwave', '#chillout', '#indieelectronic', '#hypnagogicpop', '#chill'],
+  lofi: ['#lofi', '#lofihiphop', '#studymusic', '#lofibeats', '#chillhop', '#cozy'],
+  phonk: ['#phonk', '#phonkmusic', '#memphisrap', '#driftphonk', '#darkphonk'],
+  hyperpop: ['#hyperpop', '#digicore', '#popcore', '#bubblegum', '#chaospop'],
+  neosoul: ['#neosoul', '#soulmusic', '#alternativesoul', '#jazzsoul', '#nusoul'],
+  acidjazz: ['#acidjazz', '#jazzfunk', '#groovejazz', '#nujazz', '#fusionjazz'],
+  triphop: ['#triphop', '#downtempo', '#abstracthiphop', '#cinematic', '#darksouls'],
+  funk: ['#funk', '#punkfunk', '#funkgroove', '#funkmusic', '#groovemaster'],
+  soul: ['#soul', '#soulmusic', '#motown', '#rhythm', '#classicsoul'],
+  country: ['#country', '#countrymusic', '#americana', '#nashville', '#folk'],
+  reggaeton: ['#reggaeton', '#latinmusic', '#urbanlatin', '#dembow', '#perreo'],
+  juke: ['#juke', '#footwork', '#chicagofootwork', '#jukemusic', '#ghettohouse'],
+  jerseyclub: ['#jerseyclub', '#clubmusic', '#newark', '#jerseysound', '#clubbeats'],
+  ukgarage: ['#ukgarage', '#twoStep', '#speedgarage', '#ug', '#garagemusic'],
+  shoegaze: ['#shoegaze', '#dreampop', '#wallofSound', '#reverb', '#noisepop'],
+  mathrock: ['#mathrock', '#postrock', '#emo', '#twinkle', '#emoRevival'],
+  deathcore: ['#deathcore', '#slam', '#metalcore', '#djent', '#extrememetal'],
+  idm: ['#idm', '#glitch', '#electronicexperimental', '#braindance', '#modular'],
+  pluggnb: ['#pluggnb', '#plugg', '#cloudrap', '#darkrnb', '#melodictrap'],
+  general: ['#music', '#newmusic', '#musician', '#artist', '#producer', '#songwriter'],
+};
+
+// ============================================================================
+// TRENDING CONTENT FORMULAS — 2024-2025
+// ============================================================================
+
+export const TRENDING_CONTENT_FORMULAS = {
+  formats: {
+    dayInLife: {
+      description: 'A day in the life of a [genre] artist',
+      engagementMultiplier: 2.1,
+      platforms: ['tiktok', 'youtube', 'instagram'],
+      structure: ['morning routine', 'studio session', 'creative process', 'night show or session'],
+    },
+    transformationArc: {
+      description: 'Before vs After — musical journey',
+      engagementMultiplier: 2.8,
+      platforms: ['tiktok', 'instagram', 'youtube'],
+      structure: ['first recording ever', 'current sound', 'the growth moment'],
+    },
+    speedRun: {
+      description: 'Making a beat/song in [time limit]',
+      engagementMultiplier: 3.1,
+      platforms: ['tiktok', 'youtube'],
+      structure: ['timer starts', 'creative pressure', 'final product reveal'],
+    },
+    reactionContent: {
+      description: 'Reacting to comments, DMs, or fan covers',
+      engagementMultiplier: 2.4,
+      platforms: ['tiktok', 'youtube'],
+      structure: ['set up context', 'authentic reaction', 'heartfelt response'],
+    },
+    challengeFormat: {
+      description: 'Artist challenge with a hook or beat',
+      engagementMultiplier: 4.2,
+      platforms: ['tiktok'],
+      structure: ['demonstrate challenge', 'call to action', 'stitch or duet prompt'],
+    },
+    storytimeMusic: {
+      description: 'Story behind the song — vulnerable and raw',
+      engagementMultiplier: 2.9,
+      platforms: ['tiktok', 'youtube', 'instagram'],
+      structure: ['tease the emotional moment', 'tell the story', 'link to song'],
+    },
+    snippetDrop: {
+      description: '10-30 second unreleased snippet with countdown',
+      engagementMultiplier: 3.4,
+      platforms: ['tiktok', 'instagram', 'twitter'],
+      structure: ['visual hook', 'audio snippet', 'release date CTA'],
+    },
+    rankingVideo: {
+      description: 'Ranking your own songs / albums',
+      engagementMultiplier: 2.5,
+      platforms: ['youtube', 'tiktok'],
+      structure: ['controversial list', 'genuine takes', 'audience debate prompt'],
+    },
+  },
+  era2025: {
+    aiCollaboration: 'How I use AI to enhance [but not replace] my creative process',
+    vinylRevival: 'Why physical music is making its biggest comeback yet',
+    streamingFatigue: 'The truth about streaming — what the numbers don\'t tell you',
+    indieRising: 'Signed vs independent in 2025 — the real pros and cons',
+    liveComeback: 'Live music is the new streaming — the post-pandemic shift',
+    diasporic: 'How the diaspora is reshaping [afrobeats / amapiano / Latin] globally',
+    crossGenre: 'The genre that nobody can define is taking over — and that\'s the point',
+  },
+} as const;
+
+// ============================================================================
+// ARTIST ARCHETYPE PERSONA PROFILES — 20+ TYPES
+// ============================================================================
+
+export const EXTENDED_ARTIST_PERSONAS = {
+  theCipher: {
+    description: 'Lyric-first hip-hop purist. Every word is a puzzle.',
+    contentStyle: ['bar breakdowns', 'freestyle clips', 'wordplay reveals', 'listening sessions'],
+    voice: 'authoritative, intelligent, measured',
+    hashtagCore: ['#bars', '#lyricism', '#hiphop', '#wordplay'],
+    fanBase: 'dedicated lyricists, hip-hop historians, rap critics',
+  },
+  theGrooveArchitect: {
+    description: 'Producer/artist whose sound is defined by irresistible rhythm.',
+    contentStyle: ['beat making', 'drum pattern breakdowns', 'sample reveals', 'groove sessions'],
+    voice: 'technical but accessible, rhythmically expressive',
+    hashtagCore: ['#producer', '#beatmaker', '#groove', '#rhythm'],
+    fanBase: 'producers, musicians, genre enthusiasts',
+  },
+  theNightcrawler: {
+    description: 'Dark, cinematic, late-night energy. Trap / phonk / drill aesthetic.',
+    contentStyle: ['studio at midnight content', 'dark aesthetic visuals', 'emotional bars', 'raw takes'],
+    voice: 'introspective, raw, emotionally guarded but vulnerable at moments',
+    hashtagCore: ['#trap', '#phonk', '#drill', '#darkmusic'],
+    fanBase: 'young urban audience, late-night listeners, streaming heavy users',
+  },
+  theSoulKeeper: {
+    description: 'R&B / neo-soul guardian of feeling and authenticity.',
+    contentStyle: ['acapella moments', 'emotional storytelling', 'live vocal takes', 'session footage'],
+    voice: 'warm, vulnerable, deeply personal',
+    hashtagCore: ['#rnb', '#neosoul', '#soulmusic', '#realmusic'],
+    fanBase: 'emotional listeners, relationship-stage streamers, adult contemporary',
+  },
+  theWorldBuilder: {
+    description: 'Artist with a defined visual and sonic universe. Think concept albums.',
+    contentStyle: ['lore drops', 'visual world reveals', 'cinematic content', 'album rollout arcs'],
+    voice: 'mysterious, layered, deliberate',
+    hashtagCore: ['#conceptalbum', '#art', '#alternative', '#underground'],
+    fanBase: 'superfans, art listeners, album-era consumers',
+  },
+  theCulture: {
+    description: 'Afrobeats / Afropop / Amapiano voice of the continent and diaspora.',
+    contentStyle: ['cultural education', 'dance challenges', 'diaspora stories', 'festival clips'],
+    voice: 'vibrant, proud, globally connected',
+    hashtagCore: ['#afrobeats', '#afropop', '#diaspora', '#africa'],
+    fanBase: 'global African diaspora, world music fans, dance/movement communities',
+  },
+  thePurveyor: {
+    description: 'House / techno / electronic music architect. Builds for the dancefloor.',
+    contentStyle: ['DJ set moments', 'studio production clips', 'festival POV', 'underground event content'],
+    voice: 'technical, energetic, community-first',
+    hashtagCore: ['#housemusic', '#techno', '#dj', '#producer'],
+    fanBase: 'club culture, festival goers, electronic music collectors',
+  },
+  theStoryteller: {
+    description: 'Country / folk / americana writer who turns life into narrative.',
+    contentStyle: ['porch sessions', 'lyric breakdowns', 'life story content', 'acoustic performances'],
+    voice: 'conversational, honest, rooted, specific',
+    hashtagCore: ['#country', '#folk', '#americana', '#songwriting'],
+    fanBase: 'heartland America, storytelling listeners, songwriter communities',
+  },
+  theExperimenter: {
+    description: 'Genre-blending artist. IDM, math rock, hyperpop — defies categorization.',
+    contentStyle: ['process documentation', 'gear breakdowns', 'unexpected covers', 'genre fusion reveals'],
+    voice: 'curious, intellectual, boundary-pushing',
+    hashtagCore: ['#experimental', '#alternative', '#idm', '#avantgarde'],
+    fanBase: 'music nerds, critics, genre-explorers',
+  },
+  theViralNative: {
+    description: 'Platform-born artist. Built through TikTok, YouTube Shorts, Reels.',
+    contentStyle: ['trend participation', 'challenge creation', 'reaction content', 'rapid release cadence'],
+    voice: 'relatable, high-energy, quick-paced, trend-aware',
+    hashtagCore: ['#fyp', '#viral', '#tiktokmusic', '#newmusic'],
+    fanBase: 'Gen Z, short-form content natives, streaming-first audience',
+  },
+  theFlowKing: {
+    description: 'Freestyle-oriented rap artist. Cadence is the art.',
+    contentStyle: ['freestyle drops', 'beat switches', 'studio freestyles', 'cipher content'],
+    voice: 'rapid-fire, adaptable, cocky-but-earned',
+    hashtagCore: ['#freestyle', '#rap', '#bars', '#cipher'],
+    fanBase: 'hip-hop purists, freestyle culture, battle rap fans',
+  },
+  theSoundDesigner: {
+    description: 'Producer-artist whose instruments are the story. Plugg, IDM, or ambient.',
+    contentStyle: ['synth patch reveals', 'production tutorials', 'ambient recordings', 'behind-the-sounds'],
+    voice: 'technical, textural, minimalist',
+    hashtagCore: ['#producer', '#sounddesign', '#modular', '#ambient'],
+    fanBase: 'producers, music technologists, sound artists',
+  },
+  theLatinFusion: {
+    description: 'Bridging Latin identity and global sound. Reggaeton, cumbia, or hybrids.',
+    contentStyle: ['bilingual storytelling', 'cultural fusion content', 'collab reveals', 'dance content'],
+    voice: 'bilingual, passionate, culturally grounded',
+    hashtagCore: ['#latinmusic', '#reggaeton', '#urbanlatin', '#latinx'],
+    fanBase: 'Latin diaspora, Latin pop fans, crossover listeners',
+  },
+} as const;
+
+// ============================================================================
+// CROSS-PLATFORM REPURPOSING TEMPLATES
+// ============================================================================
+
+export const CROSS_PLATFORM_TEMPLATES = {
+  longFormToShort: {
+    youtube_to_tiktok: {
+      steps: [
+        'Identify the most emotionally charged 15-30 seconds of the long-form video',
+        'Add text overlay with the key hook or lyric',
+        'Trim intro — TikTok audiences need the hook in <2 seconds',
+        'Add trending sound or original audio',
+        'End with a CTA: "full version in bio" or "link in bio"',
+      ],
+    },
+    podcast_to_reel: {
+      steps: [
+        'Pull the strongest quote from the episode',
+        'Visualize it with an audiogram or talking-head clip',
+        'Caption the key soundbite with high-contrast text',
+        'Trim to 15-30 seconds for maximum retention',
+        'Add CTA to full episode',
+      ],
+    },
+  },
+  shortFormExpansion: {
+    tiktok_to_youtube: {
+      steps: [
+        'Expand the concept into a 3-10 minute video essay or documentary',
+        'Show full creative process not visible in short clip',
+        'Add commentary track or interview format',
+        'Optimize YouTube title with SEO keywords',
+        'Include timestamp chapters for searchability',
+      ],
+    },
+  },
+  multiPlatformRelease: {
+    order: ['email/SMS pre-save', 'tiktok snippet', 'instagram reel', 'twitter/X tease', 'youtube premiere', 'linkedin post'],
+    timing: {
+      minus48hours: 'Pre-save campaign + email announcement',
+      minus24hours: 'TikTok snippet drop + Instagram story countdown',
+      releaseDay: 'Full drop across all platforms simultaneously',
+      plus24hours: 'Behind the scenes content + fan reaction reposts',
+      plus72hours: 'Milestone update + re-engagement content',
+    },
+  },
+} as const;
+
 export function getGenreAudioProfile(genre: string): typeof MUSIC_GENRE_TAXONOMY.audioFeatures[keyof typeof MUSIC_GENRE_TAXONOMY.audioFeatures] | null {
   const normalizedGenre = genre.toLowerCase().replace(/[\s-]/g, '-');
   return MUSIC_GENRE_TAXONOMY.audioFeatures[normalizedGenre as keyof typeof MUSIC_GENRE_TAXONOMY.audioFeatures] || null;

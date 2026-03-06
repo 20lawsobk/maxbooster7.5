@@ -1802,3 +1802,374 @@ export class SynthesizerEngine {
 }
 
 export default SynthesizerEngine;
+
+// ============================================================================
+// FM SYNTHESIS ENGINE — 4-OPERATOR DX7-STYLE
+// ============================================================================
+
+export interface FMOperator {
+  ratio: number;       // Frequency ratio relative to carrier
+  level: number;       // Output level 0-1
+  attack: number;
+  decay: number;
+  sustain: number;
+  release: number;
+  detune: number;      // Cents offset
+  feedback?: number;   // Self-modulation 0-1 (operator 1 only)
+}
+
+export interface FMAlgorithm {
+  name: string;
+  carriers: number[];         // Operator indices that produce audio output
+  modulations: Array<{ mod: number; car: number }>; // Modulation routing
+}
+
+// Classic DX7 algorithms (simplified to 4 operators)
+export const FM_ALGORITHMS: Record<string, FMAlgorithm> = {
+  dx7_1: {
+    name: 'Stack (Op4→Op3→Op2→Op1)',
+    carriers: [0],
+    modulations: [{ mod: 3, car: 2 }, { mod: 2, car: 1 }, { mod: 1, car: 0 }],
+  },
+  dx7_5: {
+    name: 'Additive (4 carriers)',
+    carriers: [0, 1, 2, 3],
+    modulations: [],
+  },
+  dx7_7: {
+    name: 'Double Stack (Op4→Op3, Op2→Op1)',
+    carriers: [0, 2],
+    modulations: [{ mod: 3, car: 2 }, { mod: 1, car: 0 }],
+  },
+  organ: {
+    name: 'Organ (Op3→Op1, Op4→Op2, additive)',
+    carriers: [0, 1],
+    modulations: [{ mod: 2, car: 0 }, { mod: 3, car: 1 }],
+  },
+  bell: {
+    name: 'Bell (Op2+Op4 mod Op1, Op3 mod Op1)',
+    carriers: [0],
+    modulations: [{ mod: 1, car: 0 }, { mod: 2, car: 0 }, { mod: 3, car: 2 }],
+  },
+};
+
+// Preset operator configs for common FM tones
+export const FM_PRESETS: Record<string, { operators: FMOperator[]; algorithm: string }> = {
+  electric_piano: {
+    algorithm: 'dx7_7',
+    operators: [
+      { ratio: 1.0, level: 0.9, attack: 0.002, decay: 1.2, sustain: 0.4, release: 0.8, detune: 0 },
+      { ratio: 14.0, level: 0.6, attack: 0.001, decay: 0.4, sustain: 0.0, release: 0.2, detune: 2 },
+      { ratio: 1.0, level: 0.8, attack: 0.002, decay: 1.5, sustain: 0.5, release: 1.0, detune: 0 },
+      { ratio: 11.0, level: 0.5, attack: 0.001, decay: 0.3, sustain: 0.0, release: 0.2, detune: -3 },
+    ],
+  },
+  dx_bell: {
+    algorithm: 'bell',
+    operators: [
+      { ratio: 1.0, level: 0.85, attack: 0.001, decay: 3.0, sustain: 0.0, release: 2.0, detune: 0 },
+      { ratio: 3.5, level: 0.7, attack: 0.001, decay: 2.0, sustain: 0.0, release: 1.5, detune: 5 },
+      { ratio: 1.0, level: 0.5, attack: 0.001, decay: 1.0, sustain: 0.0, release: 0.5, detune: 0 },
+      { ratio: 7.0, level: 0.4, attack: 0.001, decay: 1.5, sustain: 0.0, release: 1.0, detune: -4 },
+    ],
+  },
+  fm_bass: {
+    algorithm: 'dx7_1',
+    operators: [
+      { ratio: 1.0, level: 0.95, attack: 0.002, decay: 0.5, sustain: 0.6, release: 0.3, detune: 0 },
+      { ratio: 1.0, level: 0.8, attack: 0.001, decay: 0.3, sustain: 0.0, release: 0.1, detune: 0, feedback: 0.3 },
+      { ratio: 0.5, level: 0.6, attack: 0.001, decay: 0.2, sustain: 0.0, release: 0.1, detune: 0 },
+      { ratio: 2.0, level: 0.5, attack: 0.001, decay: 0.15, sustain: 0.0, release: 0.05, detune: 3 },
+    ],
+  },
+  organ: {
+    algorithm: 'organ',
+    operators: [
+      { ratio: 1.0, level: 0.7, attack: 0.01, decay: 0.1, sustain: 0.9, release: 0.05, detune: 0 },
+      { ratio: 2.0, level: 0.5, attack: 0.01, decay: 0.1, sustain: 0.9, release: 0.05, detune: 0 },
+      { ratio: 3.0, level: 0.3, attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.05, detune: 0 },
+      { ratio: 4.0, level: 0.2, attack: 0.01, decay: 0.1, sustain: 0.7, release: 0.05, detune: 0 },
+    ],
+  },
+  metal_lead: {
+    algorithm: 'dx7_1',
+    operators: [
+      { ratio: 1.0, level: 1.0, attack: 0.005, decay: 0.3, sustain: 0.8, release: 0.5, detune: 0 },
+      { ratio: 1.0, level: 0.9, attack: 0.001, decay: 0.2, sustain: 0.7, release: 0.2, detune: 7, feedback: 0.5 },
+      { ratio: 3.0, level: 0.6, attack: 0.001, decay: 0.1, sustain: 0.0, release: 0.05, detune: 0 },
+      { ratio: 5.0, level: 0.4, attack: 0.001, decay: 0.08, sustain: 0.0, release: 0.03, detune: -5 },
+    ],
+  },
+};
+
+function adsrEnvelope(t: number, duration: number, a: number, d: number, s: number, r: number): number {
+  if (t < a) return t / a;
+  if (t < a + d) return 1 - (1 - s) * ((t - a) / d);
+  if (t < duration - r) return s;
+  const rt = t - (duration - r);
+  return s * (1 - rt / r);
+}
+
+export function generateFMTone(
+  frequency: number,
+  duration: number,
+  sampleRate: number,
+  presetName: string = 'electric_piano',
+  velocity: number = 0.8,
+): Float32Array {
+  const preset = FM_PRESETS[presetName] || FM_PRESETS.electric_piano;
+  const algorithm = FM_ALGORITHMS[preset.algorithm] || FM_ALGORITHMS.dx7_7;
+  const totalSamples = Math.ceil(duration * sampleRate);
+  const output = new Float32Array(totalSamples);
+
+  const phases = new Float32Array(4);
+  const modSignals = new Float32Array(4);
+
+  for (let n = 0; n < totalSamples; n++) {
+    const t = n / sampleRate;
+
+    // Compute each operator's envelope and output
+    for (let i = 0; i < 4; i++) {
+      const op = preset.operators[i];
+      const env = adsrEnvelope(t, duration, op.attack, op.decay, op.sustain, op.release);
+      const freq = frequency * op.ratio * Math.pow(2, (op.detune || 0) / 1200);
+      const phaseInc = (2 * Math.PI * freq) / sampleRate;
+
+      // Self-feedback for operator 1 style
+      const fb = op.feedback ? op.feedback * modSignals[i] * 0.3 : 0;
+      modSignals[i] = Math.sin(phases[i] + fb) * env * op.level;
+      phases[i] = (phases[i] + phaseInc) % (2 * Math.PI);
+    }
+
+    // Apply modulation routing
+    const modulated = new Float32Array(4);
+    for (let i = 0; i < 4; i++) modulated[i] = modSignals[i];
+    for (const route of algorithm.modulations) {
+      modulated[route.car] = Math.sin(
+        Math.asin(Math.max(-1, Math.min(1, modulated[route.car]))) + modulated[route.mod] * Math.PI
+      );
+    }
+
+    // Sum carriers
+    let sample = 0;
+    for (const ci of algorithm.carriers) {
+      sample += modulated[ci];
+    }
+    output[n] = Math.max(-1, Math.min(1, sample * velocity / algorithm.carriers.length));
+  }
+
+  return output;
+}
+
+// ============================================================================
+// WAVETABLE OSCILLATOR — Morphing Between Waveforms
+// ============================================================================
+
+export type WaveShape = 'sine' | 'triangle' | 'sawtooth' | 'square' | 'pulse25';
+
+const WAVE_FNS: Record<WaveShape, (phase: number) => number> = {
+  sine:      (p) => Math.sin(p),
+  triangle:  (p) => (2 / Math.PI) * Math.asin(Math.sin(p)),
+  sawtooth:  (p) => (p / Math.PI) - 1,
+  square:    (p) => p < Math.PI ? 1 : -1,
+  pulse25:   (p) => p < Math.PI * 0.5 ? 1 : -1,
+};
+
+export function generateWavetableTone(
+  frequency: number,
+  duration: number,
+  sampleRate: number,
+  startShape: WaveShape = 'sine',
+  endShape: WaveShape = 'sawtooth',
+  morphTime: number = 0.5,
+  detune: number = 0,
+): Float32Array {
+  const totalSamples = Math.ceil(duration * sampleRate);
+  const output = new Float32Array(totalSamples);
+  const freq = frequency * Math.pow(2, detune / 1200);
+  const phaseInc = (2 * Math.PI * freq) / sampleRate;
+  let phase = 0;
+
+  const startFn = WAVE_FNS[startShape] || WAVE_FNS.sine;
+  const endFn = WAVE_FNS[endShape] || WAVE_FNS.sawtooth;
+
+  for (let n = 0; n < totalSamples; n++) {
+    const t = n / sampleRate;
+    const morphAmt = Math.min(1, t / Math.max(morphTime, 0.001));
+    const s = startFn(phase) * (1 - morphAmt) + endFn(phase) * morphAmt;
+    output[n] = s;
+    phase = (phase + phaseInc) % (2 * Math.PI);
+  }
+  return output;
+}
+
+// ============================================================================
+// ADVANCED DSP EFFECTS
+// ============================================================================
+
+/** Schroeder plate reverb model (simplified). */
+export class PlateReverb {
+  private buffers: Float32Array[];
+  private positions: number[];
+  private sizes: number[];
+  private decays: number[];
+  private sr: number;
+
+  constructor(sampleRate: number, roomSize: number = 0.7, damping: number = 0.5) {
+    this.sr = sampleRate;
+    // Comb filter delays (prime numbers of samples)
+    this.sizes = [1031, 1153, 1237, 1301].map(d => Math.floor(d * roomSize));
+    this.decays = this.sizes.map(s => Math.exp(-3.0 * s / (sampleRate * Math.max(0.1, damping))));
+    this.buffers = this.sizes.map(s => new Float32Array(s));
+    this.positions = new Array(4).fill(0);
+  }
+
+  process(input: number, mix: number = 0.3): number {
+    let out = 0;
+    for (let i = 0; i < this.sizes.length; i++) {
+      const pos = this.positions[i];
+      const delayed = this.buffers[i][pos];
+      this.buffers[i][pos] = input + delayed * this.decays[i];
+      this.positions[i] = (pos + 1) % this.sizes[i];
+      out += delayed;
+    }
+    return input * (1 - mix) + out * (mix / this.sizes.length);
+  }
+}
+
+/** Stereo chorus/flanger effect. */
+export class ChorusFlanger {
+  private buffer: Float32Array;
+  private writePos: number = 0;
+  private maxDelay: number;
+  private sr: number;
+
+  constructor(sampleRate: number) {
+    this.sr = sampleRate;
+    this.maxDelay = Math.floor(sampleRate * 0.05); // 50ms max delay
+    this.buffer = new Float32Array(this.maxDelay + 1);
+  }
+
+  process(
+    input: number,
+    rate: number = 0.5,       // LFO rate Hz
+    depth: number = 0.004,    // LFO depth in seconds
+    feedback: number = 0.2,   // Feedback amount
+    time: number = 0,         // Current time in seconds
+  ): { left: number; right: number } {
+    // Two LFOs 90° apart for stereo spread
+    const lfo1 = Math.sin(2 * Math.PI * rate * time);
+    const lfo2 = Math.sin(2 * Math.PI * rate * time + Math.PI * 0.5);
+
+    const delay1 = Math.max(1, Math.floor((depth * 0.5 + depth * 0.5 * lfo1) * this.sr));
+    const delay2 = Math.max(1, Math.floor((depth * 0.5 + depth * 0.5 * lfo2) * this.sr));
+
+    const readPos1 = (this.writePos - delay1 + this.buffer.length) % this.buffer.length;
+    const readPos2 = (this.writePos - delay2 + this.buffer.length) % this.buffer.length;
+
+    const d1 = this.buffer[readPos1];
+    const d2 = this.buffer[readPos2];
+
+    this.buffer[this.writePos] = input + d1 * feedback;
+    this.writePos = (this.writePos + 1) % this.buffer.length;
+
+    return {
+      left:  input * 0.7 + d1 * 0.3,
+      right: input * 0.7 + d2 * 0.3,
+    };
+  }
+}
+
+/** Tape saturation simulation (soft-clip + 2nd harmonic distortion). */
+export function tapeSaturate(sample: number, drive: number = 0.5): number {
+  const k = 1 + drive * 4;
+  // 2nd harmonic distortion + soft clip
+  const driven = sample * k;
+  const saturated = driven / (1 + Math.abs(driven));
+  // Add subtle even harmonic
+  return saturated + sample * sample * drive * 0.05;
+}
+
+/** Phaser effect — 4-stage all-pass filter chain. */
+export class Phaser {
+  private aps: Array<{ z: number }> = Array.from({ length: 4 }, () => ({ z: 0 }));
+  private phase: number = 0;
+
+  process(input: number, rate: number = 0.5, depth: number = 0.7, sampleRate: number = 48000): number {
+    this.phase += (2 * Math.PI * rate) / sampleRate;
+    if (this.phase > 2 * Math.PI) this.phase -= 2 * Math.PI;
+
+    const freq = 200 + 1800 * (0.5 + 0.5 * Math.sin(this.phase)) * depth;
+    const g = Math.tan(Math.PI * freq / sampleRate);
+    const coef = (g - 1) / (g + 1);
+
+    let x = input;
+    for (const ap of this.aps) {
+      const out = coef * x + ap.z;
+      ap.z = x - coef * out;
+      x = out;
+    }
+    return input * 0.5 + x * 0.5;
+  }
+}
+
+/** Formant filter for vowel-like resonances. */
+export function formantFilter(
+  input: Float32Array,
+  sampleRate: number,
+  vowel: 'a' | 'e' | 'i' | 'o' | 'u' = 'a',
+  wet: number = 0.6,
+): Float32Array {
+  // Vowel formant frequencies (F1, F2, F3) and bandwidths
+  const formants: Record<string, Array<[number, number]>> = {
+    a: [[800, 80],  [1200, 120], [2800, 200]],
+    e: [[400, 60],  [2200, 120], [2900, 150]],
+    i: [[300, 60],  [2700, 100], [3200, 150]],
+    o: [[400, 80],  [750, 100],  [2400, 200]],
+    u: [[300, 80],  [600, 80],   [2300, 200]],
+  };
+
+  const fmts = formants[vowel];
+  const output = new Float32Array(input.length);
+
+  for (const [f, bw] of fmts) {
+    const w0 = 2 * Math.PI * f / sampleRate;
+    const alpha = Math.sin(w0) * bw / (2 * f);
+    const b0 =  alpha;
+    const b2 = -alpha;
+    const a0 =  1 + alpha;
+    const a1 = -2 * Math.cos(w0);
+    const a2 =  1 - alpha;
+
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (let n = 0; n < input.length; n++) {
+      const x = input[n];
+      const y = (b0 * x + 0 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      output[n] += y;
+    }
+  }
+
+  for (let n = 0; n < input.length; n++) {
+    output[n] = input[n] * (1 - wet) + output[n] * wet / fmts.length;
+  }
+  return output;
+}
+
+/** Ring modulator — multiplies signal by a carrier sine. */
+export function ringModulate(
+  input: Float32Array,
+  sampleRate: number,
+  carrierFreq: number = 440,
+  wet: number = 0.5,
+): Float32Array {
+  const output = new Float32Array(input.length);
+  const phaseInc = (2 * Math.PI * carrierFreq) / sampleRate;
+  let phase = 0;
+  for (let n = 0; n < input.length; n++) {
+    const modulated = input[n] * Math.sin(phase);
+    output[n] = input[n] * (1 - wet) + modulated * wet;
+    phase = (phase + phaseInc) % (2 * Math.PI);
+  }
+  return output;
+}

@@ -167,6 +167,183 @@ def progress_bar(w: int, h: int, color: str, height: int = 4) -> str:
     )
 
 
+# ============================================================================
+# ADVANCED CINEMATIC EFFECTS
+# ============================================================================
+
+def chromatic_aberration(offset: int = 3) -> str:
+    """RGB channel split effect for psychedelic/glitch aesthetic."""
+    off = max(1, min(15, offset))
+    return (
+        f"[in]split=3[r][g][b];"
+        f"[r]lutrgb=g=0:b=0,pad=iw+{2*off}:ih:{off}:0[rp];"
+        f"[g]lutrgb=r=0:b=0[gp];"
+        f"[b]lutrgb=r=0:g=0,pad=iw+{2*off}:ih:0:0[bp];"
+        f"[rp][gp]blend=all_mode=addition:all_opacity=1[rg];"
+        f"[rg][bp]blend=all_mode=addition:all_opacity=1[ca];"
+        f"[ca]crop=iw-{2*off}:ih:{off}:0"
+    )
+
+
+def vhs_glitch(intensity: float = 0.4, fps: int = 30) -> str:
+    """VHS tape glitch — scan jitter and horizontal distortion."""
+    intens = max(0.1, min(1.0, intensity))
+    amp = int(intens * 20)
+    return (
+        f"geq=lum='if(gt(random(0)\\,{1-intens*0.1})\\,lum(X\\,Y)\\,lum(X+{amp}*(random(1)-0.5)\\,Y))'"
+        f":cb='cb(X\\,Y)':cr='cr(X\\,Y)',"
+        f"noise=alls={int(intens*8)}:allf=t,"
+        f"hue=s={1-intens*0.3}"
+    )
+
+
+def bloom_glow(radius: int = 25, intensity: float = 0.45) -> str:
+    """Bloom/glow effect — highlights bleed into dark areas."""
+    r = max(5, min(60, radius))
+    i = max(0.1, min(0.9, intensity))
+    return (
+        f"split[orig][blur];"
+        f"[blur]gblur=sigma={r},curves=r='0/0 0.5/0.7 1/1':g='0/0 0.5/0.7 1/1':b='0/0 0.5/0.7 1/1'[bloomed];"
+        f"[orig][bloomed]blend=all_mode=screen:all_opacity={i}"
+    )
+
+
+def zoom_blur(amount: float = 0.06) -> str:
+    """Radial zoom blur — cinematic speed effect."""
+    a = max(0.01, min(0.2, amount))
+    return f"zoompan=z='1+{a}*sin(on/30*PI)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=iw:ih:fps=30"
+
+
+def holographic_shimmer(speed: float = 2.0, hue_range: float = 0.3) -> str:
+    """Holographic rainbow shimmer — cycling hue shift over time."""
+    s = max(0.5, min(6.0, speed))
+    h = max(0.1, min(1.0, hue_range))
+    return (
+        f"hue=h='{h*360}*sin(2*PI*{s}*t)':s='1+0.3*cos(2*PI*{s}*t)',"
+        f"eq=saturation=1.4:contrast=1.05"
+    )
+
+
+def double_exposure_blend(opacity: float = 0.5) -> str:
+    """Double exposure blend — overlaid image transparency for artistic effect."""
+    o = max(0.1, min(0.9, opacity))
+    return f"blend=all_mode=overlay:all_opacity={o}"
+
+
+def scanlines(h: int, spacing: int = 3, opacity: float = 0.12, animated: bool = False) -> str:
+    """CRT scan line overlay. Animated version scrolls lines downward."""
+    if animated:
+        return f"geq=lum='lum(X\\,Y)*(1-{opacity}*lt(mod(Y+t*60\\,{spacing})\\,1))':cb='cb(X\\,Y)':cr='cr(X\\,Y)'"
+    return f"geq=lum='lum(X\\,Y)*(1-{opacity}*(1-mod(Y\\,{spacing})/({spacing}-1)))':cb='cb(X\\,Y)':cr='cr(X\\,Y)'"
+
+
+def pixel_sort(threshold: float = 0.5, axis: str = 'h') -> str:
+    """Pixel sorting glitch effect — sorts pixels by brightness in a direction."""
+    t = max(0.1, min(0.9, threshold))
+    if axis == 'v':
+        return f"geq=lum='if(gt(lum(X\\,Y)\\,{t*255})\\,lum(X\\,Y)\\,lum(X\\,max(0\\,Y-1)))':cb='cb(X\\,Y)':cr='cr(X\\,Y)'"
+    return f"geq=lum='if(gt(lum(X\\,Y)\\,{t*255})\\,lum(X\\,Y)\\,lum(max(0\\,X-1)\\,Y))':cb='cb(X\\,Y)':cr='cr(X\\,Y)'"
+
+
+def color_grade_neon_underground() -> str:
+    """Deep purple-to-neon-pink gradient grade. Underground club aesthetic."""
+    return (
+        "curves=r='0/0 0.2/0.3 0.6/0.8 1/1':g='0/0 0.3/0.1 0.7/0.6 1/0.9':b='0/0.1 0.3/0.4 0.7/0.9 1/1',"
+        "eq=saturation=1.7:contrast=1.15:brightness=-0.02"
+    )
+
+
+def color_grade_golden_hour() -> str:
+    """Warm cinematic golden-hour look. Sunset release aesthetic."""
+    return (
+        "curves=r='0/0.05 0.3/0.4 0.7/0.85 1/1':g='0/0 0.3/0.28 0.7/0.72 1/0.92':b='0/0 0.3/0.18 0.7/0.55 1/0.75',"
+        "colorbalance=rs=0.15:gs=0.05:bs=-0.15:rm=0.1:gm=0.02:bm=-0.08,"
+        "eq=saturation=1.2"
+    )
+
+
+def color_grade_dark_academia() -> str:
+    """Desaturated warm tones with lifted shadows. Moody intellectual aesthetic."""
+    return (
+        "curves=r='0/0.08 0.3/0.32 0.7/0.75 1/0.95':g='0/0.05 0.3/0.28 0.7/0.7 1/0.9':b='0/0.02 0.3/0.2 0.7/0.6 1/0.82',"
+        "eq=saturation=0.75:contrast=1.1"
+    )
+
+
+def color_grade_hyperpop() -> str:
+    """Oversaturated, blown highlights, neon pastels. Hyperpop chaos."""
+    return (
+        "eq=saturation=2.2:contrast=1.3:brightness=0.05,"
+        "curves=r='0/0 0.4/0.55 0.8/0.95 1/1':g='0/0 0.4/0.45 0.8/0.85 1/1':b='0/0 0.4/0.6 0.8/1.0 1/1'"
+    )
+
+
+def color_grade_afro_vibes() -> str:
+    """Warm, saturated, rich tones. Afrobeats / African sun energy."""
+    return (
+        "colorbalance=rs=0.1:gs=0.08:bs=-0.12:rm=0.08:gm=0.05:bm=-0.1,"
+        "eq=saturation=1.4:contrast=1.08:brightness=0.02,"
+        "curves=r='0/0 0.3/0.35 0.7/0.8 1/1'"
+    )
+
+
+def color_grade_lofi_chill() -> str:
+    """Faded, warm, low-contrast tape look. Lo-fi chill aesthetic."""
+    return (
+        "curves=r='0/0.08 0.3/0.35 0.7/0.72 1/0.9':g='0/0.06 0.3/0.3 0.7/0.65 1/0.85':b='0/0.12 0.3/0.3 0.7/0.6 1/0.78',"
+        "eq=saturation=0.65:contrast=0.92,"
+        "noise=alls=5:allf=t"
+    )
+
+
+def color_grade_drill_streets() -> str:
+    """Cold, desaturated, high-contrast. UK/NY drill street aesthetic."""
+    return (
+        "colorbalance=rs=-0.08:gs=-0.05:bs=0.12:rm=-0.05:gm=-0.02:bm=0.08,"
+        "eq=saturation=0.55:contrast=1.35:brightness=-0.03"
+    )
+
+
+def color_grade_techno_industrial() -> str:
+    """Stark monochrome teal-shift. Industrial techno aesthetic."""
+    return (
+        "hue=s=0.3,"
+        "colorbalance=rs=-0.1:gs=0:bs=0.2,"
+        "eq=contrast=1.4:brightness=-0.05"
+    )
+
+
+def text_animation_typewriter(fontfile: str, text: str, color: str, size: int,
+                               x: str, y: str, start: float = 0.3, speed: int = 8) -> str:
+    """Typewriter text reveal — characters appear one at a time."""
+    chars = min(len(text), 80)
+    parts = []
+    for i in range(1, chars + 1):
+        t_start = start + i * (1 / speed)
+        t_end = start + chars * (1 / speed) + 3.0
+        sub = text[:i].replace("'", "\\'")
+        parts.append(
+            f"drawtext=fontfile={fontfile}:text='{sub}':fontcolor={color}:fontsize={size}"
+            f":x={x}:y={y}:enable='between(t\\,{t_start:.3f}\\,{t_end:.3f})'"
+        )
+    return ",".join(parts)
+
+
+def text_animation_glitch_reveal(fontfile: str, text: str, color: str, size: int,
+                                  x: str, y: str, start: float = 0.3) -> str:
+    """Glitch-style text reveal — text flickers in with offset layers."""
+    safe_text = text.replace("'", "\\'")
+    parts = []
+    for i, (ox, oy, op, t_off) in enumerate([(-3, 0, 0.5, 0), (3, 0, 0.5, 0.05), (0, 0, 1.0, 0.1)]):
+        xstr = f"({x})+{ox}" if ox != 0 else x
+        ystr = f"({y})+{oy}" if oy != 0 else y
+        parts.append(
+            f"drawtext=fontfile={fontfile}:text='{safe_text}':fontcolor={color}@{op}"
+            f":fontsize={size}:x={xstr}:y={ystr}:enable='gte(t\\,{start+t_off:.2f})'"
+        )
+    return ",".join(parts)
+
+
 XFADE_TRANSITIONS = [
     "fade", "fadeblack", "fadewhite", "wipeleft", "wiperight",
     "wipeup", "wipedown", "slideleft", "slideright", "slideup",

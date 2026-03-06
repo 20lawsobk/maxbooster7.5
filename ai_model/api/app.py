@@ -84,10 +84,10 @@ async def startup():
     print("[AI Model] Initializing Max Booster AI Content Model...")
     tokenizer = SimpleTokenizer()
 
-    dim = int(os.environ.get("AI_MODEL_DIM", "128"))
-    n_layers = int(os.environ.get("AI_MODEL_LAYERS", "3"))
-    n_heads = int(os.environ.get("AI_MODEL_HEADS", "4"))
-    max_len = int(os.environ.get("AI_MODEL_MAX_LEN", "128"))
+    dim = int(os.environ.get("AI_MODEL_DIM", "512"))
+    n_layers = int(os.environ.get("AI_MODEL_LAYERS", "8"))
+    n_heads = int(os.environ.get("AI_MODEL_HEADS", "8"))
+    max_len = int(os.environ.get("AI_MODEL_MAX_LEN", "1024"))
 
     if os.path.exists(WEIGHTS_PATH):
         print(f"[AI Model] Loading weights from {WEIGHTS_PATH}")
