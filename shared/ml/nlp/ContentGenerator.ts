@@ -15,6 +15,8 @@ import {
   CALL_TO_ACTION_LIBRARY,
   EMOTIONAL_TRIGGER_PATTERNS,
   VIDEO_CONTENT_TRAINING_PACK,
+  VIRAL_CONTENT_CORPUS,
+  VIRAL_CONTENT_CORPUS_FLAT,
 } from '../training/musicIndustryTrainingData.js';
 
 export type ContentTone = 'professional' | 'casual' | 'energetic' | 'promotional';
@@ -33,6 +35,7 @@ export interface GenerationOptions {
   artistName?: string;
   trackTitle?: string;
   contentType?: 'release' | 'behind-the-scenes' | 'announcement' | 'engagement' | 'promotional';
+  patternWeights?: Record<string, number>;
 }
 
 export interface CaptionResult {
@@ -388,6 +391,15 @@ const LANGUAGE_PHRASES: Record<Language, Record<string, string[]>> = {
   },
 };
 
+export interface BeamContext {
+  objective: string;
+  genre?: string;
+  platform: string;
+  releasePhase?: string;
+  tone?: string;
+  patternWeights?: Record<string, number>;
+}
+
 export class ContentGenerator {
   private ngramModel: NGramModel;
   private trainingCorpus: string[] = [];
@@ -422,24 +434,7 @@ export class ContentGenerator {
       });
     });
 
-    const musicPhrases = [
-      'new music dropping soon stay tuned for the heat',
-      'this track represents everything I stand for as an artist',
-      'late nights in the studio paying off with this one',
-      'grateful for everyone who supports the journey',
-      'the energy in this one is unmatched feeling blessed',
-      'collaboration with some incredible artists coming soon',
-      'streaming now on all major platforms show some love',
-      'behind every song is a story waiting to be told',
-      'the beat hits different at 2am in the studio',
-      'music is my therapy and I hope it helps you too',
-      'new single out now link in bio stream and share',
-      'vibing to the new project cant wait for yall to hear it',
-      'production on point thanks to the amazing team',
-      'this one is for the real ones who been here since day one',
-      'fresh sounds for your playlist add it now',
-    ];
-    corpus.push(...musicPhrases);
+    corpus.push(...VIRAL_CONTENT_CORPUS_FLAT);
 
     return corpus;
   }
@@ -490,12 +485,14 @@ export class ContentGenerator {
       artistName = '',
       trackTitle = '',
       contentType = 'release',
+      patternWeights,
     } = options;
 
     let caption = this.generateFromTemplate(
       contentType,
       tone,
-      { topic, genre, artistName, trackTitle, platform }
+      { topic, genre, artistName, trackTitle, platform },
+      patternWeights
     );
 
     if (this.brandVoice) {
@@ -671,10 +668,158 @@ export class ContentGenerator {
    * Builds hook + body + CTA directly from the user's prompt words.
    * Used instead of template-based generation so content reflects the actual topic.
    */
+  // ── Beam Search Candidate Scorer ───────────────────────────────────────────
+  // Lightweight inline scorer (~0.5ms) — no async, no external calls.
+  // Rates how well a candidate aligns with the generation context.
+  private scoreCandidate(text: string, ctx: BeamContext): number {
+    if (!text || !text.trim()) return 0;
+    const lower = text.toLowerCase();
+    let score = 50;
+
+    const objectiveSignals: Record<string, string[]> = {
+      release:    ['out now', 'stream', 'listen', 'drop', 'available', 'platform', 'spotify', 'first week'],
+      viral:      ['wait', 'nobody', 'hidden', 'secret', 'discover', 'can\'t believe', 'you won\'t', 'nobody told'],
+      engagement: ['comment', 'tell me', 'rate', 'drop', 'thoughts', 'think', 'reply', 'honest', 'below'],
+      event:      ['ticket', 'live', 'show', 'rsvp', 'stage', 'city', 'come', 'night', 'venue'],
+      beat:       ['license', 'exclusive', 'available', 'beat', 'dm', 'rates', 'grab', 'project'],
+      platform:   ['sign up', 'try', 'free', 'start', 'join', 'link', 'account', 'tools', 'artist'],
+      general:    ['music', 'sound', 'artist', 'create', 'studio', 'record'],
+    };
+    const sigs = objectiveSignals[ctx.objective] || objectiveSignals.general;
+    sigs.forEach(s => { if (lower.includes(s)) score += 8; });
+
+    const platformSignals: Record<string, string[]> = {
+      tiktok:    ['pov', 'stitch', 'duet', 'comment', 'tell me why', 'not me'],
+      instagram: ['save', 'link in bio', 'double tap', 'tagged', 'reel'],
+      twitter:   ['thread', 'unpopular opinion', 'hot take', 'hear me out', 'real talk', 'agree or not'],
+      youtube:   ['subscribe', 'notification', 'watch', 'premiere', 'shorts'],
+      facebook:  ['share', 'event', 'rsvp', 'group'],
+      linkedin:  ['professional', 'industry', 'career', 'network'],
+    };
+    const platSigs = platformSignals[ctx.platform] || [];
+    platSigs.forEach(s => { if (lower.includes(s)) score += 6; });
+
+    if (ctx.releasePhase) {
+      const phaseSignals: Record<string, string[]> = {
+        'pre-release': ['coming', 'soon', 'countdown', 'pre-save', 'drops', 'waiting', 'building'],
+        'launch':      ['out now', 'right now', 'today', 'just dropped', 'available', 'live everywhere', 'it\'s out'],
+        'first-week':  ['first week', 'streaming', 'climbing', 'momentum', 'numbers', 'playlisting'],
+        'milestone':   ['milestone', 'can\'t believe', 'thank you', 'reached', 'crossed', 'numbers'],
+        'sustain':     ['playlist', 'stream', 'share', 'save', 'add it'],
+      };
+      const phaseSigs = phaseSignals[ctx.releasePhase] || [];
+      phaseSigs.forEach(s => { if (lower.includes(s)) score += 5; });
+    }
+
+    if (ctx.genre) {
+      const genreVocab: Record<string, string[]> = {
+        'hip-hop':    ['bar', 'lyric', 'flow', 'wordplay', 'quotable', 'booth', 'verse'],
+        'trap':       ['808', 'hi-hat', 'production', 'hard', 'bass', 'slide'],
+        'r&b':        ['melody', 'harmony', 'feel', 'emotion', 'late night', 'mood', 'chord'],
+        'pop':        ['hook', 'playlist', 'radio', 'anthemic', 'stuck in', 'head'],
+        'afrobeats':  ['groove', 'dance', 'percussion', 'vibe', 'floor'],
+        'electronic': ['drop', 'bassline', 'synth', 'four to the floor'],
+        'country':    ['heartland', 'story', 'honest', 'roots', 'road'],
+        'indie':      ['authentic', 'crafted', 'independent', 'bedroom', 'lo-fi'],
+      };
+      const genreVoc = genreVocab[ctx.genre.toLowerCase()] || [];
+      genreVoc.forEach(s => { if (lower.includes(s)) score += 4; });
+    }
+
+    if (/\d+/.test(lower)) score += 5;
+    if (/3am|midnight|2am|24 hour/.test(lower)) score += 4;
+    if (/nobody|wait until|discover|secret|hidden|you won't believe|can't believe/.test(lower)) score += 8;
+    if (/honest|real|truth|vulnerable|personal|heart|soul|genuine/.test(lower)) score += 6;
+
+    if (ctx.tone) {
+      const toneSignals: Record<string, string[]> = {
+        energetic:    ['fire', 'hit', 'crazy', 'insane', 'energy', 'hype', 'banger'],
+        casual:       ['vibes', 'honestly', 'real talk', 'lowkey', 'ngl', 'vibe'],
+        professional: ['represents', 'dedicated', 'craft', 'industry', 'career', 'curated'],
+        promotional:  ['stream', 'available', 'out now', 'link', 'platform', 'save'],
+      };
+      const toneSigs = toneSignals[ctx.tone] || [];
+      toneSigs.forEach(s => { if (lower.includes(s)) score += 3; });
+    }
+
+    if (ctx.patternWeights) {
+      for (const [pattern, weight] of Object.entries(ctx.patternWeights)) {
+        if (lower.includes(pattern.toLowerCase()) && weight > 1.0) {
+          score = Math.min(score * weight, score + 30);
+          break;
+        }
+      }
+    }
+
+    return Math.max(1, score);
+  }
+
+  // ── Beam Selection ─────────────────────────────────────────────────────────
+  // Scores all pool candidates, applies temperature-scaled softmax weighting,
+  // then does weighted random selection — high-quality bias with variance preserved.
+  private beamSelect(pool: string[], ctx: BeamContext, temperature: number = 0.6): string {
+    const valid = pool.filter(o => o && o.trim());
+    if (!valid.length) return '';
+    if (valid.length === 1) return valid[0];
+
+    const scores = valid.map(item => this.scoreCandidate(item, ctx));
+    const maxScore = Math.max(...scores);
+    const weights = scores.map(s => Math.exp((s - maxScore) / (temperature * maxScore / 100 + 1)));
+    const total = weights.reduce((a, b) => a + b, 0);
+
+    let rand = Math.random() * total;
+    for (let i = 0; i < valid.length; i++) {
+      rand -= weights[i];
+      if (rand <= 0) return valid[i];
+    }
+    return valid[valid.length - 1];
+  }
+
+  // ── Markov Body Generator ──────────────────────────────────────────────────
+  // Generates novel body text from the trained n-gram model.
+  // Returns null if the model lacks sufficient training data.
+  private generateMarkovBody(ctx: ReturnType<typeof this.parseTopicContext>, tone: ContentTone): string | null {
+    if (this.ngramModel.startSequences.length < 10) return null;
+
+    const contentKeywords = ctx.isRelease  ? ['the wait', 'this is', 'every single', 'nothing was', 'I put', 'been sitting', 'this one'] :
+                            ctx.isBeat     ? ['the beat', 'built this', 'this melody'] :
+                            ctx.isEvent    ? ['the energy', 'come be', 'see you'] :
+                                            ['the story', 'I wrote', 'music has', 'this track'];
+
+    let candidateStarts = this.ngramModel.startSequences.filter(seq =>
+      contentKeywords.some(kw => seq.toLowerCase().startsWith(kw.toLowerCase()))
+    );
+    if (!candidateStarts.length) {
+      candidateStarts = this.ngramModel.startSequences;
+    }
+
+    const startSeq = candidateStarts[Math.floor(Math.random() * candidateStarts.length)];
+    let currentState = startSeq;
+    const words = startSeq.split(' ');
+
+    const targetLength = 16 + Math.floor(Math.random() * 8);
+    for (let i = 0; i < targetLength; i++) {
+      const transition = this.ngramModel.transitions.get(currentState);
+      if (!transition || transition.totalCount === 0) break;
+      const nextWord = this.weightedRandomChoice(transition.nextWords, transition.totalCount);
+      if (!nextWord) break;
+      words.push(nextWord);
+      const stateTokens = currentState.split(' ');
+      stateTokens.shift();
+      stateTokens.push(nextWord);
+      currentState = stateTokens.join(' ');
+    }
+
+    if (words.length < 8) return null;
+    const result = words.join(' ');
+    return result.charAt(0).toUpperCase() + result.slice(1);
+  }
+
   private buildFromPrompt(
     ctx: ReturnType<typeof this.parseTopicContext>,
     tone: ContentTone,
-    platform: string
+    platform: string,
+    patternWeights?: Record<string, number>
   ): { hook: string; body: string; cta: string } {
     const TONE_EMOJI: Record<string, string[]> = {
       energetic:   ['🔥', '🚀', '💥', '⚡', '🎯', '💣', '🎤', '🔊'],
@@ -691,6 +836,17 @@ export class ContentGenerator {
     const adjCap = adj ? adj.charAt(0).toUpperCase() + adj.slice(1) + ' ' : '';
     const genre = ctx.genre || '';
     const artist = ctx.artistName || '';
+
+    // ── Beam context for quality-biased candidate selection ──────────────
+    const objective = ctx.isPlatform ? 'platform' : ctx.isEvent ? 'event' : ctx.isBeat ? 'beat' : ctx.isRelease ? 'release' : 'general';
+    const beamCtx: BeamContext = {
+      objective,
+      genre: genre || undefined,
+      platform,
+      releasePhase: ctx.releasePhase || undefined,
+      tone,
+      patternWeights,
+    };
 
     // ── GENRE-SPECIFIC HOOK POOLS ──────────────────────────────────────
     const genreHooks: Record<string, string[]> = {
@@ -858,7 +1014,7 @@ export class ContentGenerator {
         ...genreHookOptions.slice(0, 3),
       ];
     }
-    const hook = hookOptions.filter(o => o.trim())[Math.floor(Math.random() * hookOptions.length)];
+    const hook = this.beamSelect(hookOptions, beamCtx);
 
     // ── Body ──────────────────────────────────────────────────────────
     const segments: string[] = [];
@@ -878,7 +1034,7 @@ export class ContentGenerator {
         'From studio to streaming — one platform handles it all',
         'Stop grinding harder. Start working smarter',
       ];
-      segments.push(closers[Math.floor(Math.random() * closers.length)]);
+      segments.push(this.beamSelect(closers, beamCtx));
     } else if (ctx.isEvent) {
       if (ctx.subtitle) segments.push(ctx.subtitle);
       if (!segments.length) segments.push(ctx.primary);
@@ -888,7 +1044,7 @@ export class ContentGenerator {
         'The setlist has been carefully crafted for this night.',
         'Live music hits different. Come experience it in person.',
       ];
-      segments.push(eventBodies[Math.floor(Math.random() * eventBodies.length)]);
+      segments.push(this.beamSelect(eventBodies, beamCtx));
     } else if (ctx.isRelease || ctx.quoted.length) {
       if (ctx.subtitle) {
         segments.push(ctx.subtitle);
@@ -899,7 +1055,7 @@ export class ContentGenerator {
           `Pure ${adj || 'raw'} energy captured in a single track`,
           `${adjCap}sound built from real experiences — no filler, no compromise`,
         ];
-        segments.push(descBodies[Math.floor(Math.random() * descBodies.length)]);
+        segments.push(this.beamSelect(descBodies, beamCtx));
       } else {
         const genericReleaseBodies = [
           'This one is different — hit play and find out',
@@ -911,7 +1067,12 @@ export class ContentGenerator {
           `${title} started as a voice memo. What you're hearing now is that idea, fully realized`,
           'The most personal thing you can create is also the most universal. That\'s what this is',
         ];
-        segments.push(genericReleaseBodies[Math.floor(Math.random() * genericReleaseBodies.length)]);
+        const markovBody = Math.random() < 0.25 ? this.generateMarkovBody(ctx, tone) : null;
+        if (markovBody) {
+          segments.push(markovBody);
+        } else {
+          segments.push(this.beamSelect(genericReleaseBodies, beamCtx));
+        }
       }
 
       // ── Self-identification phrases (added 50% of the time) ──────────────
@@ -923,7 +1084,7 @@ export class ContentGenerator {
         'If music has ever pulled you through a hard day, you already understand what this is',
       ];
       if (Math.random() < 0.50) {
-        segments.push(selfIdPhrases[Math.floor(Math.random() * selfIdPhrases.length)]);
+        segments.push(this.beamSelect(selfIdPhrases, { ...beamCtx, objective: 'engagement' }));
       }
 
       if (ctx.stats) segments.push(ctx.stats);
@@ -936,7 +1097,7 @@ export class ContentGenerator {
         `Exclusive and non-exclusive licenses available`,
         `Produced with intention — every layer has a purpose`,
       ];
-      segments.push(beatBodies[Math.floor(Math.random() * beatBodies.length)]);
+      segments.push(this.beamSelect(beatBodies, beamCtx));
     } else {
       if (ctx.subtitle) segments.push(ctx.subtitle);
       if (!ctx.subtitle && ctx.contentWords.length) segments.push(ctx.contentWords.slice(0, 4).join(' | '));
@@ -1004,7 +1165,7 @@ export class ContentGenerator {
     };
     const ctaKey = ctx.isPlatform ? 'platform' : ctx.isEvent ? 'event' : ctx.isBeat ? 'beat' : ctx.isRelease ? 'release' : 'general';
     const ctaOptions = ctaMap[ctaKey];
-    const cta = ctaOptions[Math.floor(Math.random() * ctaOptions.length)];
+    const cta = this.beamSelect(ctaOptions, beamCtx);
 
     return { hook, body, cta };
   }
@@ -1012,11 +1173,11 @@ export class ContentGenerator {
   private generateFromTemplate(
     contentType: string,
     tone: ContentTone,
-    context: { topic: string; genre: string; artistName: string; trackTitle: string; platform?: string }
+    context: { topic: string; genre: string; artistName: string; trackTitle: string; platform?: string },
+    patternWeights?: Record<string, number>
   ): string {
-    // Delegate to prompt-driven builder instead of template slots
     const ctx = this.parseTopicContext(context.topic, context.artistName, context.trackTitle, context.genre);
-    const { hook, body, cta } = this.buildFromPrompt(ctx, tone, context.platform || 'instagram');
+    const { hook, body, cta } = this.buildFromPrompt(ctx, tone, context.platform || 'instagram', patternWeights);
     return `${hook}\n\n${body}\n\n${cta}`;
   }
 

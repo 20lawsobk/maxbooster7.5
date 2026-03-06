@@ -193,6 +193,59 @@ class AutopilotLearningService {
     }
   }
 
+  // ── Engagement Feedback Loop ───────────────────────────────────────────────
+  // Returns per-artist content pattern weights derived from real post performance.
+  // These weights are passed to ContentGenerator to bias beam search candidate
+  // selection toward patterns that have historically driven higher engagement
+  // for this specific artist and platform.
+  //
+  // Return format: { 'curiosity gap': 1.6, 'release': 1.2, 'organic': 1.0 }
+  // A weight of 1.0 = baseline. >1.0 = this hook type outperforms average.
+  async getContentPatternWeights(
+    userId: string,
+    platform?: string
+  ): Promise<Record<string, number>> {
+    try {
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+      const conditions = [
+        eq(autopilotLearningData.userId, userId),
+        gte(autopilotLearningData.createdAt, sixtyDaysAgo),
+        ...(platform ? [eq(autopilotLearningData.platform, platform)] : []),
+      ];
+
+      const rows = await db
+        .select({
+          hookType: autopilotLearningData.hookType,
+          avgEngagement: avg(autopilotLearningData.engagementRate),
+          postCount: count(),
+        })
+        .from(autopilotLearningData)
+        .where(and(...conditions))
+        .groupBy(autopilotLearningData.hookType)
+        .orderBy(desc(avg(autopilotLearningData.engagementRate)));
+
+      const populated = rows.filter(r => r.hookType && Number(r.postCount) >= 2);
+      if (populated.length === 0) return {};
+
+      const engagements = populated.map(r => parseFloat(String(r.avgEngagement)) || 0);
+      const globalAvg = engagements.reduce((a, b) => a + b, 0) / engagements.length || 1;
+
+      const weights: Record<string, number> = {};
+      for (const row of populated) {
+        const eng = parseFloat(String(row.avgEngagement)) || 0;
+        const relativeWeight = globalAvg > 0 ? eng / globalAvg : 1.0;
+        weights[row.hookType!] = Math.max(0.5, Math.min(2.5, relativeWeight));
+      }
+
+      return weights;
+    } catch (error) {
+      logger.error('Failed to get content pattern weights:', error);
+      return {};
+    }
+  }
+
   async getRecommendations(userId: string): Promise<Recommendation[]> {
     try {
       const recommendations: Recommendation[] = [];
