@@ -1,8 +1,13 @@
 """
-Diffusion trainer v3 — self-improving with long-term memory.
+Diffusion trainer v4 — self-improving with long-term memory + rich training data.
 
-New in v3:
-  - 100+ training prompts across 12 scene categories (was 30 across 7)
+New in v4:
+  - 700+ training prompts across 20 scene categories (was 124 across 12)
+  - training_data_v2.py: 62 rich PIL visual templates (perspective stages, LED walls,
+    skylines, neon grids, jazz setups, pipe ceilings, mirror balls, etc.)
+  - Blended frame source: 50% rich templates + 35% scene renderer + 15% procedural
+  - 8 new scene categories: dj_booth, street_art, music_video_set, album_cover_shoot,
+    hip_hop_cypher, luxury_yacht, gospel_choir, trap_aesthetic
   - LongTermMemory integration: scene mastery, experience replay, session log
   - RotatingBatchScheduler: priority-weighted scene sampling + auto-shuffle
   - 20% of each epoch replays hard examples from memory buffer
@@ -33,7 +38,7 @@ META_PATH    = os.path.join(_here, 'meta.json')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 100+ training prompts across 12 scene categories
+# 600+ training prompts across 20 scene categories
 # ══════════════════════════════════════════════════════════════════════════════
 
 SCENE_PROMPTS = {
@@ -51,6 +56,24 @@ SCENE_PROMPTS = {
         'headline act concert stage confetti crowd dark explosive energetic',
         'comeback concert stage dramatic lighting crowd emotion performer',
         'opening night concert stage debut crowd excitement performer neon',
+        'arena tour stage production pyrotechnics crowd dark spectacular',
+        'stadium concert night aerial view crowd wave lights massive epic',
+        'concert stage LED screen performer silhouette crowd sea of lights',
+        'hip hop fest stage crowd packed dark strobe performer energy',
+        'live band stage concert rock drums guitar crowd moshing intense',
+        'soul r&b singer stage spotlight crowd emotional intimate concert',
+        'trap artist concert stage designer lights crowd money throw moment',
+        'afrobeats concert stage dancers crowd colorful vibrant energetic',
+        'latin concert stage performer horns crowd festive warm vibrant',
+        'pop superstar stadium stage dancers elaborate production crowd',
+        'gospel concert stage choir performer crowd uplifted spiritual',
+        'rap battle stage dark crowd circle energy underground raw',
+        'indie concert small venue stage crowd close performer authentic',
+        'jazz performer stage spotlight small crowd intimate atmospheric',
+        'reggae concert outdoor stage crowd palm trees sunset warm',
+        'drill music concert dark stage uk style crowd intense moody',
+        'country concert stage open air crowd stars sunset warm energy',
+        'metal concert stage mosh pit crowd dark intense red lighting',
     ],
 
     'city_nights': [
@@ -66,6 +89,24 @@ SCENE_PROMPTS = {
         'chicago night city lake skyline dark cold blue lights cinematic',
         'tokyo city night neon signs rain dark foreign language blur',
         'city intersection night crosswalk rain neon lights dark wet pavement',
+        'city bridge at night reflections lights traffic long exposure',
+        'urban skyline night storm lightning distant buildings dramatic',
+        'nighttime city park trees lights bench solitary cinematic moody',
+        'taxi yellow city night traffic blur bokeh wet street',
+        'city rooftop edge night view lights wind dark peaceful alone',
+        'subway station night urban dark commuters blur motion lights',
+        'city alley night graffiti wet stone lantern dark atmospheric',
+        'london city night fog river bridge lights dark cold cinematic',
+        'miami night ocean drive neon cars lights warm vibrant energy',
+        'paris city night lights eiffel dark romantic dreamy',
+        'toronto night city cold dark winter lights frozen cinematic',
+        'dubai night skyline ultramodern lights spectacular desert dark',
+        'night city rain puddle reflection lone figure umbrella dark',
+        'city highway interchange night traffic lights aerial dark',
+        'downtown detroit night abandoned buildings dark haunted cinematic',
+        'houston city night spread lights vast dark country feel',
+        'night city fog grey muted ambient quiet lonely dark',
+        'berlin city night cold industrial lights dark underground vibe',
     ],
 
     'studio_session': [
@@ -81,6 +122,24 @@ SCENE_PROMPTS = {
         'grammy studio session legendary vintage console warm amber legendary',
         'analog tape recording studio warm vintage equipment amber glow',
         'studio engineer mixing board dark focused blue glow professional',
+        'producer in studio dark laptop glow beat making focused intense',
+        'recording session vocalist emotional take warm booth glow soft',
+        'studio session collaboration friends creative energy warm dark',
+        'home studio morning light wood desk guitar coffee beats relaxed',
+        'mastering studio reference monitors speaker dark professional',
+        'studio bass guitar amp recording warm vintage tone close-up',
+        'drum recording studio isolation booth microphones live kit sound',
+        'string section orchestral studio recording classical warm formal',
+        'studio session singer headphones eyes closed emotional take raw',
+        'producer notes handwritten dark studio coffee late night session',
+        'beatmaker studio dark phone glow laptop beats fingers keys',
+        'studio session rap artist booth animated delivery energy raw',
+        'piano studio session white keys hands warm light wood grain',
+        'music producer awards plaques studio wall dark accomplishment',
+        'control room glass window artist singing warm professional',
+        'studio patch bay cables wires hardware warm amber vintage',
+        'songwriter acoustic guitar notebook studio couch warm focused',
+        'studio session keyboard synth producer dark electric warm glow',
     ],
 
     'golden_hour': [
@@ -96,6 +155,24 @@ SCENE_PROMPTS = {
         'mountain vista golden sunset clouds warm dramatic epic cinematic',
         'sunflower field golden afternoon warm light peaceful countryside',
         'vineyard golden hour rows vines warm sky romantic Europe',
+        'prairie sunset golden grass wind endless sky vast freedom',
+        'california golden hour pacific coast highway cliff ocean warm',
+        'canyon golden hour rock formations shadows dramatic warm glow',
+        'lakeside golden sunset reflection water trees mirror warm',
+        'city skyline golden hour orange sky buildings silhouette cinematic',
+        'golden hour corn field midwest wide sky peaceful countryside',
+        'savanna golden hour africa trees silhouette warm cinematic',
+        'cherry blossom golden hour pink petals warm spring soft',
+        'alps mountain golden hour snow peaks warm alpenglow dramatic',
+        'golden hour rooftop couple silhouette city backdrop romantic',
+        'tropical beach golden hour palms warm turquoise ocean magical',
+        'wheat field golden harvest sunset warm nostalgic rural',
+        'rolling hills golden hour sheep pastoral warm cinematic Europe',
+        'canyonlands golden hour sandstone warm orange plateau vast',
+        'river valley golden hour fog mist forest warm ethereal',
+        'lighthouse golden hour coastal cliff ocean dramatic warm cinematic',
+        'scottish highlands golden hour moorland dramatic sky warm',
+        'rice terraces golden hour asia green gradient warm terraced',
     ],
 
     'neon_cityscape': [
@@ -111,6 +188,24 @@ SCENE_PROMPTS = {
         'underground tunnel neon strips dark train station future glow',
         'vaporwave neon sunset grid dark aesthetic purple pink glow',
         'blade runner city rain neon dark dystopia glow cinematic fog',
+        'neon kanji signs rain japan dark electric alley glow wet',
+        'retrowave neon palm trees grid perspective dark purple sun',
+        'neon city low angle wet street glow colorful dark rain cinematic',
+        'cyberpunk alley vendor neon steam dark crowd future electric',
+        'pink neon light apartment window dark city rain blur outside',
+        'neon grid tunnel fly through dark electric speed motion',
+        'korean street neon signs bright night rain dark reflective pavement',
+        'neon circle rings dark abstract electric glow vibrant rotating',
+        'lo-fi neon city sketch dark purple pink animated grain vibe',
+        'outrun aesthetic car night highway neon grid dark speed glow',
+        'holo neon display dark digital glitch interference electric',
+        'neon holographic text dark city float cinematic sci-fi glow',
+        'cyberpunk rooftop garden neon plants dark rain city glow future',
+        'electric arcs dark neon lightning jagged vivid',
+        'neon ocean underwater coral dark electric bioluminescent glow',
+        'neon graffiti dark wall glow color spray paint electric vibrant',
+        'synthwave sunset behind city neon grid dark nostalgic',
+        'neon bar sign dark window rain reflection bokeh night city',
     ],
 
     'music_festival': [
@@ -126,6 +221,24 @@ SCENE_PROMPTS = {
         'festival main stage fireworks night crowd dark celebration epic',
         'reggae festival beach outdoor palm trees crowd relaxed warm',
         'jazz festival outdoors summer band crowd elegant warm afternoon',
+        'festival crowd aerial view drone colorful tents thousands summer',
+        'music festival backstage area crew equipment dark preparation',
+        'festival wristband crowd hands up stage night lights energy',
+        'afrofusion festival dance stage crowd colorful vibrant outdoor day',
+        'summer music festival meadow flags crowd stage distant warm',
+        'hip hop festival outdoor stage crowd sun glasses gold chains',
+        'festival campsite night tents fires crowd stars outdoor dark',
+        'bonaroo festival tennessee outdoor stage summer massive crowd',
+        'festival press pit photographers crowd barrier stage dark',
+        'rave festival open air night dark laser crowd massive energy',
+        'festival crowd moshing front barrier stage intense energy dark',
+        'electronic music festival desert night black rock crowd strobe',
+        'folk music festival wooden stage acoustic crowd trees warm day',
+        'latin music festival outdoor stage crowd dancers colorful vibrant',
+        'gospel festival outdoor crowd hands raised spiritual warm daylight',
+        'beach festival sunset ocean stage crowd warm sand barefoot',
+        'carnival music festival parade float crowd colorful vibrant',
+        'world music festival diverse crowd instruments cultural outdoor',
     ],
 
     'rooftop_view': [
@@ -137,6 +250,28 @@ SCENE_PROMPTS = {
         'rooftop bar city night lights cocktail intimate warm romantic',
         'rooftop garden city green plants warm afternoon peaceful bohemian',
         'rooftop helipad city skyline night dark dramatic cinematic aerial',
+        'rooftop alone night cold city lights blanket introspective dark',
+        'rooftop new year fireworks city below crowd celebration night',
+        'rooftop art installation city backdrop creative lighting warm',
+        'rooftop yoga sunrise city golden morning peaceful mindful calm',
+        'high rise rooftop edge vertigo dark city below dramatic cinematic',
+        'rooftop solar panels city green sustainability view aerial',
+        'helicopter landing rooftop city night dark dramatic cinematic',
+        'rooftop restaurant outdoor dining city lights warm evening date',
+        'rooftop jump silhouette city sunset dramatic freerunning dark',
+        'rooftop graffiti artist city skyline spray paint creative dark',
+        'rooftop telescope night sky city stars astronomy wonder',
+        'penthouse terrace infinity pool night city reflection dark luxury',
+        'rooftop beekeeping urban garden city backdrop warm sustainable',
+        'rooftop movie screening night city crowd projector warm summer',
+        'rooftop fire pit gathering city night warm social cozy',
+        'rooftop sunrise meditation city golden calm peaceful awakening',
+        'rooftop basketball hoop city skyline urban sport athletic',
+        'rooftop concert small intimate city backdrop night lights warm',
+        'rooftop fashion shoot city backdrop model golden hour cinematic',
+        'water tower rooftop city view industrial metal warm afternoon',
+        'rooftop stairwell dark city below vertigo dramatic geometric',
+        'rooftop rain alone city lights blur dark melancholy introspective',
     ],
 
     'underground_club': [
@@ -149,6 +284,27 @@ SCENE_PROMPTS = {
         'underground jazz club dark intimate stage dim amber blue smoke',
         'hip hop underground cipher dark crowd rapper mic pass',
         'drill music dark underground basement studio gritty London Chicago',
+        'dark club booth VIP leather dark champagne night exclusive',
+        'nightclub bathroom dark mirror lights harsh brutal authentic',
+        'club door bouncer line outside dark cold urban night queue',
+        'underground bunker rave berlin dark concrete industrial strobe',
+        'club smoke machine haze purple laser dark bodies dancing bass',
+        'after-hours club dark sun coming up small crowd intimate',
+        'underground reggae soundsystem dark bass crowd jam crowd',
+        'acid house underground dark minimal crowd sweat bass pure',
+        'underground club coat check dark corridor night beginning',
+        'club exit dark alley rain 3am night end of the night',
+        'underground venue secret door entrance dark exclusive small',
+        'UK garage underground dark sweat bass crowd night intimate',
+        'drum and bass club dark mosh crowd intense bass low ceiling',
+        'club visuals dark projection trippy abstract crowd hypnotic',
+        'underground hip hop night dark bar MCs crowd graffiti',
+        'club speaker stack dark bass woofer cone subwoofer close',
+        'underground rave old building dark history walls art crowd',
+        'nightclub empty after closing dark lights still on eerie',
+        'underground club card table dark poker chips vibes cinematic',
+        'club backstage green room dark performer waiting nervous',
+        'underground dance floor dark circle crowd center all eyes',
     ],
 
     'rain_mood': [
@@ -161,6 +317,27 @@ SCENE_PROMPTS = {
         'thunderstorm dark city dramatic lightning brief flash cinematic',
         'misty rain bridge dark city silhouette dramatic moody blue',
         'drizzle cafe window dark street lights blur warm inside cold out',
+        'rain smell petrichor earth dark garden morning solitary',
+        'rain highway driving dark blur red taillights lonely night',
+        'rain bus window dark city smear lights contemplative quiet',
+        'rain jazz club dark umbrella enter wet lonely warm inside',
+        'rain drops race glass window dark competition metaphor alone',
+        'rain puddle foot splash dark slow motion melancholy street',
+        'rain studio dark window producer listening moody atmosphere',
+        'storm rain dark ocean waves dramatic ship nautical cinematic',
+        'rain church dark empty pew wet shoes quiet spiritual',
+        'rain subway entrance dark city steps umbrella wet pavement',
+        'rain car interior dark windshield wiper city night thinking',
+        'rain late night walk dark no umbrella soaked moody choice',
+        'rain rooftop dark city mist wet concrete alone feeling',
+        'rain park bench dark alone figure sitting somber melancholy',
+        'rain memorial dark flowers wet stone reflection sad quiet',
+        'rain festival aftermath dark mud empty stage silent morning',
+        'rain airport dark window plane delayed quiet waiting alone',
+        'rain book window dark tea warm cozy read storm outside',
+        'rain lover window dark city separate glass longing apart',
+        'rain tears dark close up face wet emotion raw authentic',
+        'rain cold breath dark winter puddle boots walk home slow',
     ],
 
     'morning_light': [
@@ -173,6 +350,27 @@ SCENE_PROMPTS = {
         'morning light church stained glass warm rays spiritual uplift',
         'dawn mountain peak sunrise clouds below warm dramatic epic',
         'morning kitchen warm golden light coffee steam peaceful domestic',
+        'morning dew grass warm light drops sparkle peaceful nature',
+        'dawn jogger park warm mist golden silhouette energetic hopeful',
+        'morning stretch yoga mat warm golden light window peaceful',
+        'sunrise boat dock water warm golden reflection peaceful fish',
+        'morning train window warm countryside golden blur peaceful commute',
+        'alarm clock morning dark room golden light peeking curtain',
+        'sunrise balcony coffee warm golden city waking up peaceful',
+        'morning market warm vendors light sunrise fresh produce vibrant',
+        'dawn desert sunrise warm colors orange vast silence peaceful',
+        'morning airport sunrise warm travelers new journey hopeful',
+        'sunrise ocean horizon warm pink gold vast peaceful hopeful',
+        'morning light leaves warm dappled forest floor peaceful walk',
+        'dawn chorus birds warm morning light mist soft peaceful',
+        'morning studio warm light musician awake fresh start create',
+        'sunrise over snow warm orange white vast silence serene',
+        'morning prayer warm light spiritual person kneeling hopeful',
+        'early morning city warm few people peaceful before hustle',
+        'dawn fishing warm orange water reflection rod quiet peaceful',
+        'morning gratitude journal warm golden light quiet thankful',
+        'sunrise hot air balloon warm sky golden voyage freedom',
+        'morning light flowers garden warm dew petals nature calm',
     ],
 
     'warehouse_rave': [
@@ -184,6 +382,28 @@ SCENE_PROMPTS = {
         'factory rave dark machinery shadows DJ booth crowd underground',
         'warehouse art show dark moody crowd installation light projection',
         'industrial nightclub dark metal aesthetic underground bass music',
+        'old factory warehouse rave dark graffiti concrete pillars bass',
+        'warehouse scaffolding lights dark industrial rave artist crowd',
+        'rave warehouse morning dark last song crowd tired beautiful',
+        'warehouse rave cold dark breath visible strobe industrial',
+        'port warehouse dark shipping containers rave crowd massive',
+        'warehouse roof open dark sky stars crowd rave incredible',
+        'industrial complex dark turbines rave surreal cinematic crowd',
+        'warehouse rave projection mapping dark walls morphing crowd',
+        'old abattoir rave dark history texture crowd art collision',
+        'warehouse rave fire exit dark red sign emergency backdrop',
+        'cold warehouse winter dark coats rave crowd breath steam',
+        'warehouse rave bathroom dark graffiti tile wet floor authentic',
+        'old mill warehouse dark wood beam rave crowd warm bass',
+        'warehouse rave queue outside dark cold night anticipation',
+        'loading dock warehouse dark rave trucks industrial authentic',
+        'warehouse rave early hours dark small crowd pure music',
+        'silo warehouse dark circular rave crowd ring acoustic',
+        'warehouse bunker dark cold concrete rave art installation',
+        'night warehouse rave rain dark outside roof leak atmospheric',
+        'industrial rave dark cable drums scaffold light rigging',
+        'warehouse gallery rave dark art pieces illuminated crowd view',
+        'warehouse rave dawn dark sky lightens last hour bittersweet',
     ],
 
     'intimate_venue': [
@@ -196,6 +416,293 @@ SCENE_PROMPTS = {
         'speakeasy intimate bar live band warm dark brass wood vintage',
         'living room session intimate acoustic warm friends recording circle',
         'rooftop intimate concert sunset small crowd warm personal special',
+        'house concert living room dark performer small crowd magical',
+        'bookshop evening intimate reading performance warm cozy dim',
+        'wine bar intimate jazz trio warm candlelight close audience',
+        'studio apartment intimate session friends circle guitar warm',
+        'theatre black box intimate dark experimental performance close',
+        'intimate radio station session warm performer small microphone',
+        'backyard show warm evening intimate neighborhood crowd special',
+        'mountain cabin intimate acoustic warm fireplace guitar simple',
+        'boat deck intimate concert dark ocean stars crowd special',
+        'museum after-hours intimate performance installation dark warm',
+        'loft apartment dark intimate concert exposed brick warm wood',
+        'library concert series intimate quiet warm respectful crowd',
+        'basement venue intimate dark raw performance local original',
+        'church crypt intimate dark acoustic echo warm stone ancient',
+        'intimate outdoor garden concert warm lanterns summer evening',
+        'record store intimate performance warm vinyl walls crowd close',
+        'intimate venue green room backstage warm small talk before show',
+        'private dining room serenade intimate dark warm romantic music',
+        'hospital ward intimate acoustic soothing warm healing music',
+        'prison yard intimate concert dark guard tower crowd moved',
+        'underground passage intimate busker dark echo warm resonant',
+    ],
+
+    # ── 8 new scene categories ──────────────────────────────────────────────
+
+    'dj_booth': [
+        'dj booth turntables cdj mixer dark club crowd behind performer',
+        'dj set dark club raised booth crowd below lights laser mixing',
+        'edm dj booth dark stadium crowd hands up laser spectacular',
+        'house music dj dark intimate club booth crowd close warm',
+        'dj controller laptop dark glow festival booth crowd night',
+        'turntablist dj scratch dark vinyl record booth intimate raw',
+        'dj booth crowd energy dark neon hands raised peak moment',
+        'open format dj booth dark wedding crowd dressed up fun',
+        'dj headphones one ear dark booth focused technique booth',
+        'dj booth sunrise dark crowd festival morning light end',
+        'mobile dj setup dark event room crowd birthday party fun',
+        'dj booth production crowd dark confetti celebration pop moment',
+        'back-to-back dj set dark club two performers crowd energy',
+        'dj booth silent disco headphones dark crowd individual journey',
+        'legendary dj dark residency crowd devoted fans intimate ritual',
+        'dj booth crowd recording phone dark moment capture share',
+        'dj sweat dark club physical booth marathon performance endure',
+        'dj vinyl crate dark records digging booth preparation before',
+        'dj booth dark club glass of water crowd pause brief',
+        'dj equipment dark flight cases road touring lifestyle grind',
+        'dj booth dark festival massive crowd sunrise outdoor epic',
+        'dj booth dark pink room neon aesthetics instagram model crowd',
+        'underground dj dark booth warehouse anonymous crowd pure music',
+        'dj transition dark crowd crescendo build up drop energy',
+        'dj booth technical rider dark setup soundcheck afternoon preparation',
+        'dj music video dark performance edited rapid cut energy',
+        'classic dj dark hip hop turntables two decks battle focus',
+        'dj booth dark celebrity guest surprise crowd reaction joy',
+        'dj booth raised platform dark crowd sea lights depth visual',
+        'dj set end dark crowd applause sweaty fulfilled satisfied',
+    ],
+
+    'street_art': [
+        'graffiti mural wall bright colorful urban outdoor daylight vivid',
+        'street art large scale building facade outdoor bold colors paint',
+        'graffiti artist spray paint dark wall urban night stealth',
+        'mural portrait face urban wall colorful realistic outdoor',
+        'stencil street art urban wall minimal dark bold message',
+        'graffiti letters wildstyle dark alley colorful complex design',
+        'street art festival outdoor walls colorful artists community',
+        'graffiti hall of fame dark pillars under bridge vibrant',
+        'street art abstract geometric wall colors outdoor urban',
+        'paste-up street art urban wall layered faces city dark alley',
+        'graffiti crew dark night wall urban illegal authentic raw',
+        'street mural tribute dark wall memorial emotional community',
+        'wheat paste art dark wet paper urban wall morning reveal',
+        'graffiti train yard dark freight cars paint industrial',
+        'street art 3D illusion wall outdoor crowd tourist wonder',
+        'graffiti museum dark gallery exhibition legitimized art',
+        'mural hip hop culture dark wall turntable spray breakdance mic',
+        'street art nature urban green leaves urban concrete contrast',
+        'graffiti throw-up dark quick style lettering urban wall raw',
+        'street art commentary political dark urban message bold',
+        'mural black and white dark portrait face urban realistic',
+        'graffiti bombing dark city night comprehensive systematic',
+        'street art invisible dark UV reactive light hidden message',
+        'urban wall art installation dark projection onto paint night',
+        'graffiti colorful abstract dark alley entrance urban funky',
+        'mural female face dark bright colors flowers urban beauty',
+        'street art music note instruments dark wall vibrant culture',
+        'graffiti crew tag dark name location time history document',
+        'sticker street art dark lamp post layers collected urban',
+        'mural neighborhood pride dark bright community identity local',
+    ],
+
+    'music_video_set': [
+        'music video set production cameras lights crew dark cinematic',
+        'music video elaborate set piece dancers performers dark theatrical',
+        'music video green screen studio dark futuristic effects composite',
+        'rap music video mansion exterior dark luxury cars posse',
+        'music video rooftop set dark city background performers sunset',
+        'music video retro set vintage 80s warm colorful aesthetic',
+        'music video underwater dark blue slow motion ethereal surreal',
+        'music video space set dark stars floating zero gravity sci-fi',
+        'music video desert location dark heat vehicle explosion cinematic',
+        'music video cemetery dark gothic theatrical performers mist',
+        'music video car driving night dark city chase action energy',
+        'music video fashion shoot dark high concept minimal elegant',
+        'rnb music video luxury interior dark warm candles intimate',
+        'music video club scene dark crowded performers dance energy',
+        'music video montage dark fast cut city scenes quick urban',
+        'music video rain dark performer soaked emotional dramatic',
+        'music video abandoned building dark cinematic art direction',
+        'music video boxing ring dark fighters sweat intense dramatic',
+        'music video crowd controlled extras dark performer center',
+        'music video choreography dark synchronized dancers precise',
+        'music video night street dark alley performer environment',
+        'music video behind the scenes dark camera crew set life',
+        'music video wardrobe dark costume designer rack hanging',
+        'music video storyboard dark planning creative director vision',
+        'music video budget luxury dark helicopter aerial shots epic',
+        'music video concept art dark mood board visual aesthetic',
+        'music video director monitor dark review shot playback',
+        'music video crane shot dark ascending performers below small',
+        'music video studio soundstage dark bare bones pure performance',
+        'music video premiere red carpet dark crowd media flashbulbs',
+    ],
+
+    'album_cover_shoot': [
+        'album cover shoot dark moody studio portrait dramatic light',
+        'album cover bright bold graphic design typography abstract',
+        'album cover outdoor location dark cinematic wide shot artist',
+        'album cover close-up face dark high contrast black white',
+        'album cover concept dark surreal artistic unusual visual',
+        'album cover vintage warm retro aesthetic grain film photography',
+        'album cover minimalist dark simple icon powerful message',
+        'album cover water dark underwater submerged ethereal blue',
+        'album cover fire dark flames warm dramatic elemental power',
+        'album cover city scape dark artist small scale urban epic',
+        'album cover painting dark oil fine art classical reference',
+        'album cover night sky dark stars milky way vast cosmic',
+        'album cover nature dark forest lone figure atmospheric mist',
+        'album cover abstract dark shapes texture layer composition',
+        'album cover fashion high end dark editorial styled portrait',
+        'album cover band group shot dark ensemble formation cool',
+        'album cover hands dark close gesture meaning intentional',
+        'album cover crowd dark artist among people belonging identity',
+        'album cover light leak dark analog film beautiful error',
+        'album cover dusk dark blue hour city silhouette emotional',
+        'album cover double exposure dark face merged landscape',
+        'album cover object symbolic dark meaningful still life art',
+        'album cover silhouette dark backlit single figure powerful',
+        'album cover illustration dark painted artistic commissioned',
+        'album cover gold dark metallic foil luxury premium exclusive',
+        'album cover neon dark one light source dramatic simple',
+        'album cover motion blur dark movement energy kinetic speed',
+        'album cover reflection dark mirror puddle surface artistic',
+        'album cover spiral dark pattern hypnotic graphic bold',
+        'album cover black nothing dark negative space bold statement',
+    ],
+
+    'hip_hop_cypher': [
+        'hip hop cypher circle dark underground raw freestyle energy',
+        'rap cipher dark concrete outdoor night crew authentic raw',
+        'freestyle circle dark parking garage urban night underground',
+        'hip hop cipher dark park benches night crew watching energy',
+        'rap battle dark outdoor circle two performers facing clash',
+        'cypher dark basement boom bap beats rap passing mic',
+        'hip hop cipher dark community center youth raw expression',
+        'rap group dark rehearsal space chemistry recording together',
+        'cypher dark cardboard breakdancer center circle cheering',
+        'hip hop cipher dark legendary spot known underground sacred',
+        'freestyle rap dark subway car moving performance energy',
+        'cipher dark high school courtyard youth expression power',
+        'hip hop cipher dark rooftop night city lights backdrop',
+        'rap group dark studio couch listening playback vibing',
+        'cypher dark warehouse industrial rap culture authentic',
+        'hip hop cipher dark tour bus performer warming up pre-show',
+        'rap battle dark tournament stage competitive performance',
+        'cypher dark festival side stage crowd watching listening',
+        'hip hop cipher dark rain outdoor dedicated artists wet',
+        'rap group session dark home studio recording together bond',
+        'cypher dark train platform underground commuter unexpected',
+        'hip hop cipher dark cultural center community building',
+        'rap cipher dark basketball court night lights concrete raw',
+        'cypher dark legendary night historical spot music culture',
+        'hip hop cipher dark record label showcase discovering',
+        'freestyle rap dark corner store steps block culture local',
+        'cypher dark barbershop classic culture neighborhood connection',
+        'hip hop cipher documentary dark camera natural moment',
+        'rap dark cipher practice before event warm up group',
+        'hip hop cipher dark ending night dap hugs departing until next',
+    ],
+
+    'luxury_yacht': [
+        'yacht luxury ocean dark night exclusive party lifestyle rich',
+        'superyacht deck sunset warm ocean breeze calm rich glamour',
+        'yacht interior dark luxurious wood leather gold exclusive',
+        'yacht bow dark ocean horizon distant dramatic speed wake',
+        'yacht party night dark water lights music crowd exclusive',
+        'superyacht aerial dark ocean blue water white deck luxury',
+        'yacht captain bridge dark controls navigation professional',
+        'yacht at anchor dark ocean stars remote peace exclusive',
+        'yacht tender dark water transport small boat luxury access',
+        'yacht sunset ocean warm silhouette person rich calm',
+        'yacht dock marina dark night other boats lights reflection',
+        'yacht champagne dark deck celebration luxury drink toast',
+        'yacht music video dark ocean lifestyle expensive backdrop',
+        'yacht bedroom dark porthole ocean view exclusive rest',
+        'yacht dining dark formal table ocean view luxury service',
+        'yacht swimming platform dark jump ocean swim luxury',
+        'yacht deck dark sunrise morning coffee exclusive peace',
+        'yacht storm dark ocean dramatic waves dangerous cinematic',
+        'yacht radar dark technical navigation professional seamanship',
+        'yacht flag dark wind international waters freedom symbol',
+        'yacht fuel stop dark port exotic location refueling stop',
+        'yacht charter dark guest luxury experience money cant buy',
+        'yacht fishing dark deep sea rods serious sport',
+        'yacht bbq dark grill deck friends summer luxury casual',
+        'yacht helipad dark helicopter landing luxury arrival epic',
+        'yacht music performance dark live artist ocean backdrop',
+        'yacht night dark underwater lights glowing pool ocean',
+        'yacht race dark competitive sailing crew athletic ocean',
+        'yacht crew uniform dark professional service crew proud',
+        'yacht sunset champagne dark two people silhouette romance',
+    ],
+
+    'gospel_choir': [
+        'gospel choir robes dark church stage singing powerful spiritual',
+        'church choir stained glass light rays dark pews congregation',
+        'gospel performance dark stage hands raised emotional spiritual',
+        'choir arrangement dark risers rows voices unified powerful',
+        'church revival dark crowd standing clapping music spirit',
+        'gospel pianist dark organ church music leader worship',
+        'choir dark recording studio session producers mixing gospel',
+        'praise team dark contemporary church band screens worship',
+        'gospel singer soloist dark spotlight emotional powerful moment',
+        'church choir dark robes white gold formal Sunday service',
+        'gospel award ceremony dark stage performing excellence',
+        'choir dark rehearsal notes music stands director focused',
+        'church dark Christmas choir candles warm sacred tradition',
+        'gospel workshop dark conference singers learning technique',
+        'choir dark international competition performance excellence',
+        'church dark baptism choir singing water spiritual ritual',
+        'gospel song dark video shoot natural performance authentic',
+        'choir dark school auditorium young voices future talent',
+        'church dark congregation hands raised worship surrender',
+        'gospel radio dark station live recording intimate authentic',
+        'choir dark harmonies complex arrangement beauty voices blend',
+        'church bells dark morning sound beginning calling faithful',
+        'gospel dark funeral emotional comfort community gathering',
+        'choir dark wedding ceremony sacred moment voices beautiful',
+        'church dark Easter sunrise service outdoor worship nature',
+        'gospel dark hip hop fusion contemporary artistic creative',
+        'choir dark march protest civil rights justice spiritual',
+        'church dark pipe organ dark instrument ancient powerful sound',
+        'gospel dark television broadcast living rooms nationwide',
+        'choir dark standing ovation emotional overwhelmed beautiful',
+    ],
+
+    'trap_aesthetic': [
+        'trap aesthetic dark luxury interior moody cinematic expensive',
+        'trap house dark minimal luxury furniture expensive drapes',
+        'dark trap aesthetic money stacks dark moody cinematic',
+        'trap dark cars garage expensive collection lifestyle flex',
+        'trap music video dark set luxury moody rain window inside',
+        'trap aesthetic dark jewellery ice chain watch close-up',
+        'dark trap mansion pool night outdoor lights minimal',
+        'trap dark recording session studio gold dark expensive',
+        'trap aesthetic dark wardrobe designer labels luxury close-up',
+        'dark trap art direction minimal purple haze expensive moody',
+        'trap dark lifestyle private jet leather seats luxury flex',
+        'trap aesthetic dark shoes collection shelves obsession value',
+        'dark trap environment sparse luxury furniture single bulb',
+        'trap dark club VIP section exclusive dark expensive service',
+        'trap aesthetic dark city night expensive hotel penthouse',
+        'dark trap sensibility expensive humble origin contrast',
+        'trap dark aesthetic rain window dark city luxury inside',
+        'dark trap mansion hallway dark long expensive marble',
+        'trap aesthetic dark candle lit room expensive moody intimate',
+        'dark trap art gallery dark expensive exclusive opening night',
+        'trap dark recording contract signing dark moment historic',
+        'dark trap lifestyle montage dark cars women money music',
+        'trap aesthetic dark fire place luxury cabin expensive mountain',
+        'dark trap safe full cash dark cinematic important moment',
+        'trap dark phone screen dark content creation hustle always',
+        'dark trap success dark office expensive suit elevated taste',
+        'trap aesthetic dark empty street dark rain alone reflection',
+        'dark trap beginnings dark project housing contrast now',
+        'trap dark aesthetic expensive perfume dark bottle close-up',
+        'dark trap energy dark studio session focused late night',
     ],
 }
 
@@ -205,7 +712,7 @@ ALL_PAIRS = [
     for scene, prompts in SCENE_PROMPTS.items()
     for prompt in prompts
 ]
-print(f"[DiffusionTrainer v3] Dataset: {len(ALL_PAIRS)} prompts "
+print(f"[DiffusionTrainer v4] Dataset: {len(ALL_PAIRS)} prompts "
       f"across {len(SCENE_PROMPTS)} scene categories", flush=True)
 
 
@@ -221,28 +728,62 @@ def _load_frame_generator():
     return fg
 
 _fg_cache = None
+_v2_cache = None
+
+
+def _load_training_data_v2():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        'training_data_v2',
+        os.path.join(_here, 'training_data_v2.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
 
 def _generate_training_frame(scene: str, frame_idx: int, res: int = 48) -> np.ndarray:
-    global _fg_cache
-    try:
-        if _fg_cache is None:
-            _fg_cache = _load_frame_generator()
-        fg = _fg_cache
-        config = {
-            'resolution': (res * 4, res * 4),
-            'scene_prompt': scene,
-            'title': 'MaxBooster', 'artist': 'AI', 'genre': 'hip-hop',
-            'frame_index': frame_idx, 'fps': 30,
-            'show_title': False, 'show_progress': False,
-        }
-        frame_bytes = fg.generate_frame(config)
-        from PIL import Image
-        import io
-        img = Image.open(io.BytesIO(frame_bytes)).convert('RGB').resize((res, res), Image.BILINEAR)
-        arr = np.array(img, dtype=np.float32) / 127.5 - 1.0
-        return arr
-    except Exception:
-        return _procedural_frame(scene, res)
+    """
+    Blended frame source:
+      50% → training_data_v2 rich PIL templates  (most visual variety)
+      35% → frameGenerator scene renderer        (realistic rendered scenes)
+      15% → procedural fallback                  (colour/shape diversity)
+    """
+    global _fg_cache, _v2_cache
+    source = frame_idx % 20
+
+    # ── 50% training_data_v2 rich templates (0..9)
+    if source < 10:
+        try:
+            if _v2_cache is None:
+                _v2_cache = _load_training_data_v2()
+            return _v2_cache.generate_frame(scene, frame_idx, res)
+        except Exception:
+            pass
+
+    # ── 35% frameGenerator scene renderer (10..16)
+    if source < 17:
+        try:
+            if _fg_cache is None:
+                _fg_cache = _load_frame_generator()
+            fg = _fg_cache
+            config = {
+                'resolution': (res * 4, res * 4),
+                'scene_prompt': scene,
+                'title': 'MaxBooster', 'artist': 'AI', 'genre': 'hip-hop',
+                'frame_index': frame_idx, 'fps': 30,
+                'show_title': False, 'show_progress': False,
+            }
+            frame_bytes = fg.generate_frame(config)
+            from PIL import Image
+            import io
+            img = Image.open(io.BytesIO(frame_bytes)).convert('RGB').resize((res, res), Image.BILINEAR)
+            arr = np.array(img, dtype=np.float32) / 127.5 - 1.0
+            return arr
+        except Exception:
+            pass
+
+    # ── 15% procedural fallback (17..19) or any failure above
+    return _procedural_frame(scene, res)
 
 
 def _procedural_frame(scene: str, res: int) -> np.ndarray:
@@ -263,6 +804,14 @@ def _procedural_frame(scene: str, res: int) -> np.ndarray:
         'morning_light':    [(0.9, 0.75, 0.4), (0.95, 0.6, 0.3)],
         'warehouse_rave':   [(0.15, 0.05, 0.1), (0.5, 0.1, 0.1)],
         'intimate_venue':   [(0.6, 0.4, 0.15), (0.4, 0.25, 0.05)],
+        'dj_booth':         [(0.1, 0.0, 0.4), (0.5, 0.0, 0.6)],
+        'street_art':       [(0.9, 0.3, 0.1), (0.1, 0.7, 0.2)],
+        'music_video_set':  [(0.2, 0.1, 0.3), (0.6, 0.2, 0.4)],
+        'album_cover_shoot':[(0.1, 0.1, 0.1), (0.8, 0.7, 0.6)],
+        'hip_hop_cypher':   [(0.15, 0.1, 0.2), (0.4, 0.3, 0.1)],
+        'luxury_yacht':     [(0.0, 0.3, 0.7), (0.9, 0.9, 0.95)],
+        'gospel_choir':     [(0.8, 0.7, 0.3), (0.95, 0.9, 0.6)],
+        'trap_aesthetic':   [(0.05, 0.02, 0.05), (0.3, 0.2, 0.4)],
     }
     colors = palettes.get(scene, [(0.3, 0.3, 0.3)])
 
