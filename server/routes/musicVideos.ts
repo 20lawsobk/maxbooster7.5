@@ -6,6 +6,11 @@ import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { queryCache, createCacheKey } from '../lib/queryCache.js';
 import { parsePaginationParams } from '../middleware/pagination.js';
+import {
+  getDiffusionTrainingStatus,
+  trainDiffusionModel,
+  generateDiffusionFrames,
+} from '../services/diffusionVideoService.js';
 
 const router = Router();
 const CACHE_TTL = 300;
@@ -128,6 +133,90 @@ router.delete('/:id', requireAuth, async (req, res) => {
   } catch (error) {
     logger.error('[MusicVideos] Failed to delete:', error);
     res.status(500).json({ error: 'Failed to delete music video production' });
+  }
+});
+
+// ── In-house Diffusion Video Engine endpoints ─────────────────────────────
+
+router.get('/diffusion/status', requireAuth, async (_req, res) => {
+  try {
+    const status = getDiffusionTrainingStatus();
+    res.json({
+      ...status,
+      message: status.trained
+        ? `Neural model trained — ${status.epochs} epochs, loss ${status.finalLoss?.toFixed(4)}, ${status.weightsSizeKB} KB`
+        : 'Model not trained. POST /diffusion/train to train from scratch.',
+    });
+  } catch (err) {
+    logger.error('[Diffusion] Status error:', err);
+    res.status(500).json({ error: 'Failed to get diffusion model status' });
+  }
+});
+
+router.post('/diffusion/train', requireAuth, async (req, res) => {
+  const { nSamples = 300, nEpochs = 15 } = req.body ?? {};
+  const logs: string[] = [];
+
+  logger.info(`[Diffusion] Training started: ${nSamples} samples × ${nEpochs} epochs`);
+
+  // Return immediately — training runs asynchronously and stores weights to disk
+  res.json({
+    message: `Training started in background: ${nSamples} samples × ${nEpochs} epochs (~4-6 min on CPU).`,
+    note: 'Poll GET /api/music-videos/diffusion/status to check when done.',
+    nSamples,
+    nEpochs,
+  });
+
+  // Run training (non-blocking after response)
+  trainDiffusionModel({
+    nSamples,
+    nEpochs,
+    onLog: (line) => {
+      logs.push(line);
+      logger.info(`[Diffusion:train] ${line}`);
+    },
+  }).then((status) => {
+    logger.info(`[Diffusion] Training complete. loss=${status.finalLoss?.toFixed(4)}`);
+  }).catch((err) => {
+    logger.error('[Diffusion] Training failed:', err);
+  });
+});
+
+router.post('/diffusion/generate', requireAuth, async (req, res) => {
+  try {
+    const {
+      prompt       = '',
+      genre        = 'hip-hop',
+      nFrames      = 15,
+      fps          = 30,
+      frameSize    = 512,
+      guidanceScale = 2.5,
+    } = req.body ?? {};
+
+    const status = getDiffusionTrainingStatus();
+    if (!status.trained) {
+      return res.status(400).json({
+        error: 'Diffusion model not trained yet.',
+        hint: 'POST /api/music-videos/diffusion/train first.',
+      });
+    }
+
+    logger.info(`[Diffusion] Generating: prompt="${prompt}" genre=${genre} frames=${nFrames}`);
+
+    const result = await generateDiffusionFrames({
+      prompt, genre, nFrames, fps, frameSize, guidanceScale,
+    });
+
+    res.json({
+      framePaths: result.framePaths,
+      frameCount: result.frameCount,
+      elapsedMs:  result.elapsedMs,
+      modelMeta:  result.modelMeta,
+      message:    `Generated ${result.frameCount} frames in ${(result.elapsedMs / 1000).toFixed(1)}s`,
+    });
+  } catch (err) {
+    logger.error('[Diffusion] Generate error:', err);
+    res.status(500).json({ error: 'Diffusion generation failed', details: String(err) });
   }
 });
 
