@@ -154,23 +154,44 @@ router.get('/diffusion/status', requireAuth, async (_req, res) => {
 });
 
 router.post('/diffusion/train', requireAuth, async (req, res) => {
-  const { nSamples = 300, nEpochs = 15 } = req.body ?? {};
-  const logs: string[] = [];
+  // tier: 'quick' (~19min) | 'medium' (~76min) | 'deep' (~190min, Veo-level depth)
+  const { tier = 'quick', nSamples, nEpochs } = req.body ?? {};
 
-  logger.info(`[Diffusion] Training started: ${nSamples} samples × ${nEpochs} epochs`);
+  const tierDefaults: Record<string, { n: number; e: number; eta: string }> = {
+    quick:  { n: 300,  e: 10, eta: '~19 min' },
+    medium: { n: 600,  e: 20, eta: '~76 min' },
+    deep:   { n: 1000, e: 30, eta: '~190 min' },
+  };
+  const cfg = tierDefaults[tier] ?? tierDefaults.quick;
+  const finalSamples = nSamples ?? cfg.n;
+  const finalEpochs  = nEpochs  ?? cfg.e;
 
-  // Return immediately — training runs asynchronously and stores weights to disk
+  logger.info(`[Diffusion] Training started: tier=${tier} ${finalSamples} samples × ${finalEpochs} epochs`);
+
   res.json({
-    message: `Training started in background: ${nSamples} samples × ${nEpochs} epochs (~4-6 min on CPU).`,
-    note: 'Poll GET /api/music-videos/diffusion/status to check when done.',
-    nSamples,
-    nEpochs,
+    message:  `Training started (tier='${tier}'): ${finalSamples} samples × ${finalEpochs} epochs (${cfg.eta} on CPU).`,
+    note:     'Poll GET /api/music-videos/diffusion/status to check when done.',
+    tier,
+    nSamples: finalSamples,
+    nEpochs:  finalEpochs,
+    estimatedTime: cfg.eta,
+    architecture: {
+      parameters:    '1.2M',
+      channels:      [32, 64, 96],
+      attention:     true,
+      residualBlocks: true,
+      emaWeights:    true,
+      cosineSchedule: true,
+      perceptualLoss: true,
+    },
   });
 
-  // Run training (non-blocking after response)
+  const logs: string[] = [];
+
   trainDiffusionModel({
-    nSamples,
-    nEpochs,
+    tier:     tier as 'quick' | 'medium' | 'deep',
+    nSamples: nSamples ?? undefined,
+    nEpochs:  nEpochs  ?? undefined,
     onLog: (line) => {
       logs.push(line);
       logger.info(`[Diffusion:train] ${line}`);

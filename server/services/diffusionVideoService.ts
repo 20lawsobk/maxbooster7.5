@@ -74,15 +74,17 @@ export function getDiffusionTrainingStatus(): TrainingStatus {
 export function trainDiffusionModel(opts: {
   nSamples?: number;
   nEpochs?:  number;
+  tier?:     'quick' | 'medium' | 'deep';
   onLog?:    (line: string) => void;
 } = {}): Promise<TrainingStatus> {
   return new Promise((resolve, reject) => {
     const args = [
       SYNTH_SCRIPT,
       '--train-only',
-      '--samples', String(opts.nSamples ?? 600),
-      '--epochs',  String(opts.nEpochs  ?? 25),
+      '--tier', opts.tier ?? 'quick',
     ];
+    if (opts.nSamples) args.push('--samples', String(opts.nSamples));
+    if (opts.nEpochs)  args.push('--epochs',  String(opts.nEpochs));
 
     const proc = spawn('python3', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 

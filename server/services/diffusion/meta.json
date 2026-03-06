@@ -1,12 +1,23 @@
 {
+  "version": 2,
   "epochs": 2,
-  "samples": 5,
-  "final_loss": 1.385693573951721,
-  "total_seconds": 0.7185707092285156,
+  "samples": 4,
+  "final_loss": 23.31927728652954,
+  "total_seconds": 7.379549026489258,
   "losses": [
-    1.5105027675628662,
-    1.385693573951721
+    64.86932325363159,
+    23.31927728652954
   ],
   "resolution": 32,
-  "T": 100
+  "T": 10,
+  "schedule": "cosine",
+  "ema_decay": 0.9995,
+  "perceptual_loss": true,
+  "channels": [
+    32,
+    64,
+    96
+  ],
+  "attention": true,
+  "resblocks": true
 }
