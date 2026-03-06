@@ -1,7 +1,8 @@
 import { storage } from "../storage";
 import { db } from '../db.js';
-import { dspAnalytics } from '@shared/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { dspAnalytics, releases } from '@shared/schema';
+import { eq, and, sql as drizzleSql } from 'drizzle-orm';
+import { notificationService } from './notificationService.js';
 import { nanoid } from "nanoid";
 import type { 
   InsertRelease, 
@@ -206,15 +207,72 @@ export class DistributionService {
     status: string;
     liveDate?: string;
     errorMessage?: string;
+    externalId?: string;
   }): Promise<void> {
     try {
-      // In production:
-      // 1. Verify webhook signature
-      // 2. Find release by external ID
-      // 3. Update platform status
-      // 4. Notify user of status change
-
       logger.info("DSP Webhook received:", payload);
+
+      const { provider, releaseId, status, liveDate, errorMessage } = payload;
+
+      // Map DSP status strings to internal status values
+      const STATUS_MAP: Record<string, string> = {
+        live:               'live',
+        delivered:          'live',
+        approved:           'live',
+        distributed:        'live',
+        rejected:           'rejected',
+        failed:             'rejected',
+        error:              'rejected',
+        takedown_requested: 'takedown',
+        taken_down:         'takedown',
+        processing:         'processing',
+        pending:            'processing',
+        in_review:          'in_review',
+      };
+      const internalStatus = STATUS_MAP[status.toLowerCase()] || status;
+
+      // Update the release status in DB
+      const updatedRows = await db
+        .update(releases)
+        .set({
+          status: internalStatus,
+          ...(liveDate ? { releaseDate: new Date(liveDate) } : {}),
+          metadata: drizzleSql`
+            COALESCE(metadata, '{}'::jsonb) ||
+            ${JSON.stringify({ [`${provider}_status`]: status, [`${provider}_updated_at`]: new Date().toISOString(), ...(errorMessage ? { [`${provider}_error`]: errorMessage } : {}) })}::jsonb
+          `,
+        })
+        .where(eq(releases.id, releaseId))
+        .returning();
+
+      if (!updatedRows.length) {
+        logger.warn("DSP Webhook: release not found", { releaseId, provider });
+        return;
+      }
+
+      const release = updatedRows[0];
+
+      // Build a meaningful notification for the artist
+      const NOTIF: Record<string, { title: string; body: string; type: string }> = {
+        live:      { title: '🎉 Your release is now live!',       body: `"${release.title}" is now streaming on ${provider}.`,                type: 'release' },
+        rejected:  { title: '⚠️ Release rejected by distributor', body: `"${release.title}" was rejected by ${provider}${errorMessage ? `: ${errorMessage}` : ''}. Please review and resubmit.`, type: 'system' },
+        takedown:  { title: '📥 Takedown processed',              body: `"${release.title}" has been taken down from ${provider}.`,           type: 'release' },
+        processing:{ title: '⏳ Release being processed',          body: `"${release.title}" is now in delivery queue on ${provider}.`,        type: 'release' },
+        in_review: { title: '🔍 Release under review',            body: `"${release.title}" is under review by ${provider}.`,                 type: 'release' },
+      };
+
+      const notifData = NOTIF[internalStatus];
+      if (notifData && release.userId) {
+        await notificationService.sendNotification(
+          release.userId,
+          notifData.type as any,
+          notifData.title,
+          notifData.body,
+          { releaseId, provider, status: internalStatus }
+        );
+      }
+
+      logger.info("DSP Webhook processed successfully", { releaseId, provider, internalStatus });
     } catch (error: unknown) {
       logger.error("Error handling DSP webhook:", error);
       throw new Error("Failed to handle DSP webhook");
@@ -283,10 +341,10 @@ export class DistributionService {
       const rows = await db
         .select({
           platform: dspAnalytics.platform,
-          totalStreams: sql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
-          totalRevenue: sql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
-          totalSaves: sql<number>`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
-          totalListeners: sql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
+          totalStreams: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          totalRevenue: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
+          totalSaves: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
+          totalListeners: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
         })
         .from(dspAnalytics)
         .where(eq(dspAnalytics.releaseId, releaseId))
@@ -308,8 +366,8 @@ export class DistributionService {
       const timeline = await db
         .select({
           date: dspAnalytics.date,
-          streams: sql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
-          revenue: sql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
+          streams: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          revenue: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
         })
         .from(dspAnalytics)
         .where(eq(dspAnalytics.releaseId, releaseId))

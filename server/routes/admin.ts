@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db.js";
-import { users, projects, releases, analytics, posts, orders, systemSettings } from "../../shared/schema.js";
+import { users, projects, releases, analytics, posts, orders, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { killSwitch } from "../safety/killSwitch.js";
@@ -802,5 +802,116 @@ function formatUptime(seconds: number): string {
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;
 }
+
+// ============================================================================
+// FINANCIAL CONFIG — Admin-editable rates and settings
+// ============================================================================
+
+// GET /api/admin/financial-config/royalty-rates
+adminRouter.get('/financial-config/royalty-rates', async (req, res) => {
+  try {
+    const rates = await db.select().from(platformRoyaltyRates).orderBy(platformRoyaltyRates.displayName);
+    res.json({ success: true, rates });
+  } catch (err) {
+    logger.error('Error fetching royalty rates:', err);
+    res.status(500).json({ error: 'Failed to fetch royalty rates' });
+  }
+});
+
+// PATCH /api/admin/financial-config/royalty-rates/:id
+adminRouter.patch('/financial-config/royalty-rates/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { baseRatePerStream, premiumMultiplier, notes } = req.body;
+    const updates: any = { updatedAt: new Date() };
+    if (baseRatePerStream !== undefined) updates.baseRatePerStream = parseFloat(baseRatePerStream);
+    if (premiumMultiplier !== undefined) updates.premiumMultiplier = parseFloat(premiumMultiplier);
+    if (notes !== undefined) updates.notes = notes;
+
+    const [updated] = await db
+      .update(platformRoyaltyRates)
+      .set(updates)
+      .where(eq(platformRoyaltyRates.id, id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: 'Rate not found' });
+    res.json({ success: true, rate: updated });
+  } catch (err) {
+    logger.error('Error updating royalty rate:', err);
+    res.status(500).json({ error: 'Failed to update royalty rate' });
+  }
+});
+
+// GET /api/admin/financial-config/tax-treaties
+adminRouter.get('/financial-config/tax-treaties', async (req, res) => {
+  try {
+    const treaties = await db.select().from(taxTreatyRates).orderBy(taxTreatyRates.countryName);
+    res.json({ success: true, treaties });
+  } catch (err) {
+    logger.error('Error fetching tax treaty rates:', err);
+    res.status(500).json({ error: 'Failed to fetch tax treaty rates' });
+  }
+});
+
+// PATCH /api/admin/financial-config/tax-treaties/:id
+adminRouter.patch('/financial-config/tax-treaties/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { withholdingRate, treatyRate, hasTreaty, notes } = req.body;
+    const updates: any = { updatedAt: new Date() };
+    if (withholdingRate !== undefined) updates.withholdingRate = parseFloat(withholdingRate);
+    if (treatyRate !== undefined) updates.treatyRate = parseFloat(treatyRate);
+    if (hasTreaty !== undefined) updates.hasTreaty = Boolean(hasTreaty);
+    if (notes !== undefined) updates.notes = notes;
+
+    const [updated] = await db
+      .update(taxTreatyRates)
+      .set(updates)
+      .where(eq(taxTreatyRates.id, id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: 'Treaty not found' });
+    res.json({ success: true, treaty: updated });
+  } catch (err) {
+    logger.error('Error updating tax treaty rate:', err);
+    res.status(500).json({ error: 'Failed to update tax treaty rate' });
+  }
+});
+
+// GET /api/admin/financial-config/label-settings
+adminRouter.get('/financial-config/label-settings', async (req, res) => {
+  try {
+    const settings = await db.select().from(labelSettings).orderBy(labelSettings.key);
+    res.json({ success: true, settings });
+  } catch (err) {
+    logger.error('Error fetching label settings:', err);
+    res.status(500).json({ error: 'Failed to fetch label settings' });
+  }
+});
+
+// PATCH /api/admin/financial-config/label-settings/:key
+adminRouter.patch('/financial-config/label-settings/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+    if (!value) return res.status(400).json({ error: 'value is required' });
+
+    const [updated] = await db
+      .update(labelSettings)
+      .set({ value, updatedAt: new Date() })
+      .where(eq(labelSettings.key, key))
+      .returning();
+
+    if (!updated) {
+      // Upsert if key doesn't exist
+      const [inserted] = await db.insert(labelSettings).values({ key, value }).returning();
+      return res.json({ success: true, setting: inserted });
+    }
+    res.json({ success: true, setting: updated });
+  } catch (err) {
+    logger.error('Error updating label setting:', err);
+    res.status(500).json({ error: 'Failed to update label setting' });
+  }
+});
 
 export default adminRouter;

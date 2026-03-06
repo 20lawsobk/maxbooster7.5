@@ -43,11 +43,11 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
       const response = await apiRequest('POST', '/api/auth/2fa/setup');
       const data = await response.json();
 
-      setQrCode(
-        data.qrCode ||
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
-      );
-      setSecret(data.secret || 'MOCK2FASECRETKEY');
+      if (!data.secret || !data.qrCode) {
+        throw new Error('Server did not return a valid 2FA secret. Please try again.');
+      }
+      setQrCode(data.qrCode);
+      setSecret(data.secret);
       setStep('verify');
     } catch (error: unknown) {
       const errorObj = error as { message?: string; status?: number };

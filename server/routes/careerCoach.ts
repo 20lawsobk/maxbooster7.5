@@ -236,4 +236,14 @@ router.get('/analyze', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
+router.get('/patterns', requireAuth, asyncHandler(async (req, res) => {
+  try {
+    const patterns = careerCoachService.getPatternLibrary();
+    res.json({ success: true, data: { patterns, total: patterns.length } });
+  } catch (error: any) {
+    logger.error('Error fetching pattern library:', error?.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}));
+
 export default router;

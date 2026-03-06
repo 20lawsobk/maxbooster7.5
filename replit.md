@@ -41,6 +41,7 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **Offline Mode**: `OfflineProvider` and `ConnectionStatusBar` enable app-wide offline context, a dismissible banner, and a background sync queue.
 -   **Autopilot Learning Feedback Loop**: `autopilotLearningService.recordPerformance()` is called after successful auto-posts to record initial analytics and learn timing/content patterns.
 -   **TikTok Production Mode**: Switched `TIKTOK_ENV` to `production` using production client credentials.
+-   **Financial Config Admin UI**: Admin panel "Financial Config" tab lets admin edit DSP royalty rates (per-stream base rate, premium multiplier), tax treaty withholding rates per country, and label settings (ISRC registrant code, UPC prefix, etc.) with inline editing. Backend routes: `GET/PATCH /api/admin/financial-config/royalty-rates/:id`, `GET/PATCH /api/admin/financial-config/tax-treaties/:id`, `GET/PATCH /api/admin/financial-config/label-settings/:key`.
 
 ## External Dependencies
 

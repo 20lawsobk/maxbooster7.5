@@ -28,7 +28,19 @@ import {
   Clock,
   CheckCircle2,
   Star,
+  ListChecks,
+  Timer,
+  BarChart2,
 } from 'lucide-react';
+
+interface RecommendationMetadata {
+  patternId?: string;
+  area?: string;
+  severity?: string;
+  steps?: string[];
+  expectedImpact?: string;
+  timeframe?: string;
+}
 
 interface Recommendation {
   id: string;
@@ -38,6 +50,7 @@ interface Recommendation {
   priority: number;
   actionUrl: string | null;
   createdAt: string;
+  metadata?: RecommendationMetadata;
 }
 
 interface Goal {
@@ -95,6 +108,110 @@ const typeIcons: Record<string, React.ReactNode> = {
   engagement_boost: <Star className="h-4 w-4" />,
   growth_opportunity: <Sparkles className="h-4 w-4" />,
 };
+
+function RecCard({
+  rec,
+  onComplete,
+  onDismiss,
+  onNavigate,
+}: {
+  rec: Recommendation;
+  onComplete: () => void;
+  onDismiss: () => void;
+  onNavigate: (url: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const steps = rec.metadata?.steps;
+  const impact = rec.metadata?.expectedImpact;
+  const timeframe = rec.metadata?.timeframe;
+
+  return (
+    <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 border overflow-hidden">
+      <div className="p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2 flex-1">
+            <div className="mt-0.5 text-purple-600">
+              {typeIcons[rec.type] || <Sparkles className="h-4 w-4" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="font-medium text-sm">{rec.title}</p>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] px-1.5 py-0 shrink-0 ${priorityColors[rec.priority]}`}
+                >
+                  {priorityLabels[rec.priority]}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">{rec.description}</p>
+              {(steps || impact || timeframe) && (
+                <button
+                  className="mt-1.5 text-[10px] text-purple-600 hover:underline flex items-center gap-1"
+                  onClick={() => setExpanded(e => !e)}
+                >
+                  <ListChecks className="h-3 w-3" />
+                  {expanded ? 'Hide action steps' : 'Show action steps'}
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {rec.actionUrl && (
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onNavigate(rec.actionUrl!)}>
+                <ArrowRight className="h-3 w-3" />
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-green-600" onClick={onComplete}>
+              <Check className="h-3 w-3" />
+            </Button>
+            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-gray-400" onClick={onDismiss}>
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      </div>
+      {expanded && (steps || impact || timeframe) && (
+        <div className="border-t bg-purple-50 dark:bg-purple-950/20 px-3 py-2.5 space-y-2">
+          {steps && steps.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-purple-700 dark:text-purple-400 uppercase tracking-wide flex items-center gap-1 mb-1">
+                <ListChecks className="h-3 w-3" /> Action Steps
+              </p>
+              <ol className="space-y-1">
+                {steps.map((step, i) => (
+                  <li key={i} className="text-xs text-gray-700 dark:text-gray-300 flex items-start gap-1.5">
+                    <span className="text-purple-500 font-bold shrink-0">{i + 1}.</span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {(impact || timeframe) && (
+            <div className="flex gap-3 pt-1">
+              {impact && (
+                <div className="flex-1">
+                  <p className="text-[10px] font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide flex items-center gap-1 mb-0.5">
+                    <BarChart2 className="h-3 w-3" /> Expected Impact
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{impact}</p>
+                </div>
+              )}
+              {timeframe && (
+                <div className="shrink-0">
+                  <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide flex items-center gap-1 mb-0.5">
+                    <Timer className="h-3 w-3" /> Timeframe
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{timeframe}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AICareerCoach() {
   const [, setLocation] = useLocation();
@@ -297,60 +414,13 @@ export function AICareerCoach() {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-2 mt-2">
                   {recommendations.slice(1).map((rec) => (
-                    <div
+                    <RecCard
                       key={rec.id}
-                      className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 flex-1">
-                          <div className="mt-0.5 text-purple-600">
-                            {typeIcons[rec.type] || <Sparkles className="h-4 w-4" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-medium text-sm truncate">{rec.title}</p>
-                              <Badge 
-                                variant="outline" 
-                                className={`text-[10px] px-1.5 py-0 ${priorityColors[rec.priority]}`}
-                              >
-                                {priorityLabels[rec.priority]}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {rec.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {rec.actionUrl && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() => setLocation(rec.actionUrl!)}
-                            >
-                              <ArrowRight className="h-3 w-3" />
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 text-green-600"
-                            onClick={() => completeMutation.mutate(rec.id)}
-                          >
-                            <Check className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 text-gray-400"
-                            onClick={() => dismissMutation.mutate(rec.id)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                      rec={rec}
+                      onComplete={() => completeMutation.mutate(rec.id)}
+                      onDismiss={() => dismissMutation.mutate(rec.id)}
+                      onNavigate={(url) => setLocation(url)}
+                    />
                   ))}
                 </CollapsibleContent>
               </Collapsible>
@@ -408,7 +478,7 @@ export function AICareerCoach() {
                 <Target className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                 <p className="text-sm text-muted-foreground mb-3">No active goals yet</p>
                 <div className="flex flex-wrap gap-2 justify-center">
-                  {['streams', 'followers', 'releases'].map((type) => (
+                  {['streams', 'followers', 'releases', 'revenue', 'playlists', 'engagement'].map((type) => (
                     <Button
                       key={type}
                       size="sm"
@@ -418,7 +488,7 @@ export function AICareerCoach() {
                       disabled={createSmartGoalMutation.isPending}
                     >
                       <Sparkles className="h-3 w-3 mr-1" />
-                      {type.charAt(0).toUpperCase() + type.slice(1)} Goal
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
                     </Button>
                   ))}
                 </div>

@@ -9,6 +9,7 @@ import {
   projectRoyaltySplits,
   releases,
   users,
+  platformRoyaltyRates,
   type RoyaltyStatement,
   type InsertRoyaltyStatement,
   type RecoupmentAccount,
@@ -279,10 +280,23 @@ export class RoyaltyEngine {
     const dspSlug = stream.dsp.toLowerCase().replace(/\s+/g, '_');
     
     const customRate = await this.getDspRate(dspSlug, stream.territory, stream.reportDate);
-    const baseRate = customRate || DSP_BASE_RATES[dspSlug] || DSP_BASE_RATES.default;
-    
+    // Fallback chain: time-effective custom rate → admin-editable DB rate → hardcoded default
+    let baseRate: number;
+    let dbPremiumMultiplier: number = 1.0;
+    if (customRate) {
+      baseRate = customRate;
+    } else {
+      const dbRate = await this.getPlatformBaseRateFromDB(dspSlug);
+      if (dbRate) {
+        baseRate = dbRate.baseRate;
+        dbPremiumMultiplier = dbRate.premiumMultiplier;
+      } else {
+        baseRate = DSP_BASE_RATES[dspSlug] || DSP_BASE_RATES.default;
+      }
+    }
+
     const territoryMultiplier = TERRITORY_MULTIPLIERS[stream.territory] || TERRITORY_MULTIPLIERS.default;
-    const premiumMultiplier = stream.isUserCentric ? (DSP_PREMIUM_MULTIPLIERS[dspSlug] || 1.0) : 1.0;
+    const premiumMultiplier = stream.isUserCentric ? (dbPremiumMultiplier || DSP_PREMIUM_MULTIPLIERS[dspSlug] || 1.0) : 1.0;
     
     const effectiveRate = baseRate * territoryMultiplier * premiumMultiplier;
     const perStreamRate = effectiveRate;
@@ -803,6 +817,37 @@ export class RoyaltyEngine {
       .limit(1);
 
     return rate ? Number(rate.ratePerStream) : null;
+  }
+
+  // In-memory cache for platform_royalty_rates (TTL: 1 hour)
+  private _platformRatesCache: { data: Map<string, { baseRate: number; premiumMultiplier: number }>; expiresAt: number } | null = null;
+
+  private async getPlatformBaseRateFromDB(dspSlug: string): Promise<{ baseRate: number; premiumMultiplier: number } | null> {
+    const now = Date.now();
+
+    // Populate cache if empty or expired
+    if (!this._platformRatesCache || now > this._platformRatesCache.expiresAt) {
+      try {
+        const rows = await db.select().from(platformRoyaltyRates);
+        const map = new Map<string, { baseRate: number; premiumMultiplier: number }>();
+        for (const row of rows) {
+          map.set(row.platform, {
+            baseRate: row.baseRatePerStream,
+            premiumMultiplier: row.premiumMultiplier,
+          });
+        }
+        this._platformRatesCache = { data: map, expiresAt: now + 3600_000 };
+      } catch (err) {
+        logger.warn('Failed to load platform royalty rates from DB, using hardcoded fallback:', err);
+        return null;
+      }
+    }
+
+    return this._platformRatesCache.data.get(dspSlug) ?? null;
+  }
+
+  invalidatePlatformRatesCache() {
+    this._platformRatesCache = null;
   }
 
   private async getExchangeRate(

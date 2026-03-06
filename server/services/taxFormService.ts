@@ -2,6 +2,8 @@ import { nanoid } from 'nanoid';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { logger } from '../logger.js';
+import { db } from '../db.js';
+import { taxTreatyRates } from '@shared/schema';
 
 export type TaxFormType = 'W-9' | 'W-8BEN' | 'W-8BEN-E' | '1099-MISC' | '1099-NEC' | '1099-K';
 
@@ -119,6 +121,85 @@ const treatyRates: Record<string, number> = {
 
 class TaxFormService {
   private taxForms: Map<string, GeneratedTaxForm> = new Map();
+
+  // DB-backed treaty rate cache (TTL: 1 hour)
+  private _treatyCache: { data: Record<string, number>; expiresAt: number } | null = null;
+
+  private async getTreatyRatesFromDB(): Promise<Record<string, number>> {
+    const now = Date.now();
+    if (this._treatyCache && now < this._treatyCache.expiresAt) {
+      return this._treatyCache.data;
+    }
+    try {
+      const rows = await db.select().from(taxTreatyRates);
+      const map: Record<string, number> = {};
+      for (const row of rows) {
+        if (row.hasTreaty) {
+          map[row.countryCode] = row.treatyRate;
+        }
+      }
+      this._treatyCache = { data: map, expiresAt: now + 3600_000 };
+      return map;
+    } catch (err) {
+      logger.warn('Failed to load tax treaty rates from DB, using hardcoded fallback:', err);
+      return treatyRates; // fall back to hardcoded
+    }
+  }
+
+  invalidateTreatyCache() {
+    this._treatyCache = null;
+  }
+
+  async calculateWithholdingAsync(
+    grossAmount: number,
+    isUSPerson: boolean,
+    country?: string,
+    hasTreatyBenefits?: boolean,
+    hasValidW9?: boolean,
+    hasBackupWithholding?: boolean
+  ): Promise<WithholdingCalculation> {
+    const dbTreatyRates = await this.getTreatyRatesFromDB();
+
+    if (isUSPerson) {
+      if (hasBackupWithholding || !hasValidW9) {
+        const rate = withholdingRates.backup_withholding;
+        const withholdingAmount = grossAmount * (rate / 100);
+        return {
+          grossAmount,
+          withholdingRate: rate,
+          withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+          netAmount: grossAmount - withholdingAmount,
+          reason: hasBackupWithholding
+            ? 'Backup withholding applied (missing or invalid TIN)'
+            : 'Backup withholding - W-9 not on file',
+        };
+      }
+      return { grossAmount, withholdingRate: 0, withholdingAmount: 0, netAmount: grossAmount, reason: 'US person with valid W-9 - no withholding required' };
+    }
+
+    if (hasTreatyBenefits && country && dbTreatyRates[country] !== undefined) {
+      const rate = dbTreatyRates[country];
+      const withholdingAmount = grossAmount * (rate / 100);
+      return {
+        grossAmount,
+        withholdingRate: rate,
+        withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+        netAmount: grossAmount - withholdingAmount,
+        reason: `Treaty rate applied for ${country}`,
+        treatyApplied: true,
+      };
+    }
+
+    const rate = withholdingRates.default_foreign;
+    const withholdingAmount = grossAmount * (rate / 100);
+    return {
+      grossAmount,
+      withholdingRate: rate,
+      withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+      netAmount: grossAmount - withholdingAmount,
+      reason: 'Standard 30% withholding for foreign payee',
+    };
+  }
 
   calculateWithholding(
     grossAmount: number,

@@ -2129,73 +2129,153 @@ export class AIMusicService {
     };
   }
 
+  /**
+   * Applies frequency-band isolation using overlap-add with a Hann window to reduce
+   * spectral leakage artifacts. Each stem type gets a carefully tuned attenuation curve
+   * that targets its primary frequency region while rolling off adjacent content cleanly.
+   *
+   * Method: frequency_band_isolation (not ML-based source separation).
+   * Limitations: stereo bleed remains; transient content (drums) overlaps with other stems.
+   * For true source-separated stems, use a Demucs or Spleeter Python subprocess.
+   */
   private applyFrequencyBandFilter(
     audioData: Float32Array,
     stemType: string,
     sampleRate: number
   ): Float32Array {
     const fftSize = 4096;
+    const hopSize = fftSize / 4; // 75% overlap for smoother reconstruction
     const fft = new FFT(fftSize);
-    const filtered = new Float32Array(audioData.length);
+    const output = new Float32Array(audioData.length);
+    const windowSum = new Float32Array(audioData.length);
 
-    for (let i = 0; i < audioData.length - fftSize; i += fftSize / 2) {
-      const chunk = Array.from(audioData.slice(i, i + fftSize));
+    // Pre-compute Hann window for analysis and synthesis
+    const hannWindow = new Float32Array(fftSize);
+    for (let n = 0; n < fftSize; n++) {
+      hannWindow[n] = 0.5 * (1 - Math.cos((2 * Math.PI * n) / (fftSize - 1)));
+    }
 
-      while (chunk.length < fftSize) {
-        chunk.push(0);
+    for (let i = 0; i <= audioData.length - fftSize; i += hopSize) {
+      // Apply Hann window to the analysis frame
+      const windowed: number[] = new Array(fftSize);
+      for (let n = 0; n < fftSize; n++) {
+        windowed[n] = audioData[i + n] * hannWindow[n];
       }
 
       const complexArray = fft.createComplexArray();
-      fft.realTransform(complexArray, chunk);
+      fft.realTransform(complexArray, windowed);
 
+      // Apply frequency-domain attenuation
       for (let j = 0; j < fftSize / 2; j++) {
         const freq = (j * sampleRate) / fftSize;
-        const attenuation = this.getFrequencyAttenuation(freq, stemType);
-
-        complexArray[j * 2] *= attenuation;
-        complexArray[j * 2 + 1] *= attenuation;
+        const gain = this.getFrequencyAttenuation(freq, stemType);
+        complexArray[j * 2]     *= gain;
+        complexArray[j * 2 + 1] *= gain;
+        // Mirror for conjugate symmetry
+        if (j > 0 && j < fftSize / 2) {
+          const mi = fftSize - j;
+          if (mi < fftSize / 2 * 2) {
+            complexArray[mi * 2]     *= gain;
+            complexArray[mi * 2 + 1] *= gain;
+          }
+        }
       }
 
       const inverseOutput = fft.createComplexArray();
       fft.inverseTransform(inverseOutput, complexArray);
 
-      for (let j = 0; j < fftSize && i + j < filtered.length; j++) {
-        filtered[i + j] = inverseOutput[j * 2];
+      // Overlap-add with synthesis Hann window
+      for (let n = 0; n < fftSize && i + n < output.length; n++) {
+        const synthSample = inverseOutput[n * 2] * hannWindow[n];
+        output[i + n]     += synthSample;
+        windowSum[i + n]  += hannWindow[n] * hannWindow[n];
       }
     }
 
-    return filtered;
+    // Normalize by window overlap sum to reconstruct correct amplitude
+    for (let i = 0; i < output.length; i++) {
+      if (windowSum[i] > 1e-8) {
+        output[i] /= windowSum[i];
+      }
+    }
+
+    return output;
   }
 
+  /**
+   * Returns a gain (0–1) for each frequency bin based on the target stem type.
+   * Curves use smooth linear transitions to avoid spectral ringing at cutoff edges.
+   *
+   * Band design reference (Hz):
+   *  bass    : sub-bass 20–80, bass 80–300, soft roll-off 300–500
+   *  drums   : kick 40–120, snare body 200–800, snare air 5k–12k, cymbal 8k–20k
+   *  vocals  : presence 300–3400, formant boost 800–3000, de-ess attenuation above 7k
+   *  melody  : upper-mid fundamental 500–8000, harmonic overtones up to 12k
+   *  harmony : broad mid-to-high 200–12000
+   */
   private getFrequencyAttenuation(frequency: number, stemType: string): number {
+    // Inline smooth step: cubic ease between two frequency points
+    const smoothStep = (f: number, lo: number, hi: number, gainLo: number, gainHi: number) => {
+      if (f <= lo) return gainLo;
+      if (f >= hi) return gainHi;
+      const t = (f - lo) / (hi - lo);
+      const s = t * t * (3 - 2 * t); // cubic Hermite
+      return gainLo + s * (gainHi - gainLo);
+    };
+
     switch (stemType) {
       case 'bass':
-        if (frequency < 150) return 1.0;
-        if (frequency < 300) return 1.0 - (frequency - 150) / 150;
-        return 0.2;
+        // Full below 80 Hz, peak at 200 Hz, roll off to 0.05 above 500 Hz
+        if (frequency < 80)   return 1.0;
+        if (frequency < 200)  return smoothStep(frequency, 80,  200,  1.0, 1.0);
+        if (frequency < 500)  return smoothStep(frequency, 200, 500,  1.0, 0.15);
+        if (frequency < 800)  return smoothStep(frequency, 500, 800,  0.15, 0.04);
+        return 0.04;
 
       case 'drums':
-        if (frequency < 100) return 0.8;
-        if (frequency < 5000) return 1.0;
-        if (frequency < 10000) return 0.8;
-        return 0.4;
-
-      case 'vocals':
-        if (frequency < 200) return 0.3;
-        if (frequency < 4000) return 1.0;
-        if (frequency < 8000) return 0.8;
-        return 0.4;
-
-      case 'melody':
-        if (frequency < 300) return 0.4;
-        if (frequency < 5000) return 0.9;
-        if (frequency < 10000) return 0.7;
+        // Kick: 40–120 Hz; snare body: 180–900 Hz; snare crack + cymbals: 4k–20k
+        if (frequency < 40)   return 0.3;
+        if (frequency < 80)   return smoothStep(frequency, 40,  80,   0.3,  1.0);
+        if (frequency < 150)  return 1.0; // kick body
+        if (frequency < 200)  return smoothStep(frequency, 150, 200,  1.0,  0.5);
+        if (frequency < 300)  return smoothStep(frequency, 200, 300,  0.5,  1.0);
+        if (frequency < 900)  return 1.0; // snare body
+        if (frequency < 2000) return smoothStep(frequency, 900, 2000, 1.0,  0.4);
+        if (frequency < 4000) return smoothStep(frequency, 2000,4000, 0.4,  0.85);
+        if (frequency < 12000)return 0.85; // cymbal / hi-hat
+        if (frequency < 18000)return smoothStep(frequency, 12000,18000,0.85,0.3);
         return 0.3;
 
+      case 'vocals':
+        // Attenuate sub/bass below 300 Hz, peak vocal presence 800–3400 Hz, gentle high roll-off
+        if (frequency < 100)  return 0.05;
+        if (frequency < 300)  return smoothStep(frequency, 100, 300,  0.05, 0.5);
+        if (frequency < 500)  return smoothStep(frequency, 300, 500,  0.5,  0.85);
+        if (frequency < 800)  return smoothStep(frequency, 500, 800,  0.85, 1.0);
+        if (frequency < 3400) return 1.0; // core vocal formant range
+        if (frequency < 5000) return smoothStep(frequency, 3400,5000, 1.0,  0.75);
+        if (frequency < 8000) return smoothStep(frequency, 5000,8000, 0.75, 0.45);
+        if (frequency < 12000)return smoothStep(frequency, 8000,12000,0.45, 0.2);
+        return 0.1;
+
+      case 'melody':
+        // Suppress sub and bass, focus on upper fundamentals and harmonics
+        if (frequency < 200)  return 0.1;
+        if (frequency < 500)  return smoothStep(frequency, 200, 500,  0.1,  0.6);
+        if (frequency < 1000) return smoothStep(frequency, 500, 1000, 0.6,  1.0);
+        if (frequency < 8000) return 1.0;
+        if (frequency < 12000)return smoothStep(frequency, 8000,12000,1.0,  0.55);
+        if (frequency < 16000)return smoothStep(frequency, 12000,16000,0.55,0.2);
+        return 0.1;
+
       case 'harmony':
-        if (frequency < 500) return 0.5;
-        if (frequency < 8000) return 0.8;
-        return 0.4;
+        // Broad mid-to-high band, attenuate extreme sub and very high frequencies
+        if (frequency < 100)  return 0.15;
+        if (frequency < 300)  return smoothStep(frequency, 100, 300,  0.15, 0.7);
+        if (frequency < 800)  return smoothStep(frequency, 300, 800,  0.7,  1.0);
+        if (frequency < 10000)return 1.0;
+        if (frequency < 14000)return smoothStep(frequency, 10000,14000,1.0, 0.4);
+        return 0.2;
 
       default:
         return 0.5;

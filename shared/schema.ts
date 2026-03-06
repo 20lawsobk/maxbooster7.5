@@ -5117,3 +5117,72 @@ export const assistantMessages = pgTable("assistant_messages", {
 export const insertAssistantMessageSchema = createInsertSchema(assistantMessages).omit({ id: true, createdAt: true });
 export type AssistantMessage = typeof assistantMessages.$inferSelect;
 export type InsertAssistantMessage = typeof assistantMessages.$inferInsert;
+
+// ============================================================================
+// FINANCIAL CONFIG — database-driven rates (admin-editable, no deploy needed)
+// ============================================================================
+
+export const platformRoyaltyRates = pgTable("platform_royalty_rates", {
+  id:                  serial("id").primaryKey(),
+  platform:            text("platform").notNull().unique(),
+  displayName:         text("display_name").notNull(),
+  baseRatePerStream:   real("base_rate_per_stream").notNull(),
+  premiumMultiplier:   real("premium_multiplier").default(1.0).notNull(),
+  territoryMultipliers:jsonb("territory_multipliers"),
+  notes:               text("notes"),
+  updatedAt:           timestamp("updated_at").defaultNow(),
+});
+export const insertPlatformRoyaltyRateSchema = createInsertSchema(platformRoyaltyRates).omit({ id: true, updatedAt: true });
+export type PlatformRoyaltyRate = typeof platformRoyaltyRates.$inferSelect;
+export type InsertPlatformRoyaltyRate = typeof platformRoyaltyRates.$inferInsert;
+
+export const taxTreatyRates = pgTable("tax_treaty_rates", {
+  id:               serial("id").primaryKey(),
+  countryCode:      text("country_code").notNull().unique(),
+  countryName:      text("country_name").notNull(),
+  withholdingRate:  real("withholding_rate").notNull(),
+  treatyRate:       real("treaty_rate").notNull(),
+  hasTreaty:        boolean("has_treaty").default(true).notNull(),
+  notes:            text("notes"),
+  updatedAt:        timestamp("updated_at").defaultNow(),
+});
+export const insertTaxTreatyRateSchema = createInsertSchema(taxTreatyRates).omit({ id: true, updatedAt: true });
+export type TaxTreatyRate = typeof taxTreatyRates.$inferSelect;
+export type InsertTaxTreatyRate = typeof taxTreatyRates.$inferInsert;
+
+// ============================================================================
+// STUDIO SAMPLES — database-backed sample library
+// ============================================================================
+
+export const studioSamples = pgTable("studio_samples", {
+  id:          text("id").primaryKey(),
+  name:        text("name").notNull(),
+  category:    text("category").notNull(),
+  subcategory: text("subcategory"),
+  tags:        text("tags").array(),
+  tempo:       integer("tempo"),
+  key:         text("key"),
+  duration:    real("duration"),
+  audioUrl:    text("audio_url").notNull(),
+  isBuiltIn:   boolean("is_built_in").default(true).notNull(),
+  userId:      varchar("user_id"),
+  createdAt:   timestamp("created_at").defaultNow(),
+});
+export const insertStudioSampleSchema = createInsertSchema(studioSamples).omit({ createdAt: true });
+export type StudioSample = typeof studioSamples.$inferSelect;
+export type InsertStudioSample = typeof studioSamples.$inferInsert;
+
+// ============================================================================
+// LABEL SETTINGS — ISRC registrant, UPC company prefix, etc.
+// ============================================================================
+
+export const labelSettings = pgTable("label_settings", {
+  id:                 serial("id").primaryKey(),
+  key:                text("key").notNull().unique(),
+  value:              text("value").notNull(),
+  description:        text("description"),
+  updatedAt:          timestamp("updated_at").defaultNow(),
+});
+export const insertLabelSettingSchema = createInsertSchema(labelSettings).omit({ id: true, updatedAt: true });
+export type LabelSetting = typeof labelSettings.$inferSelect;
+export type InsertLabelSetting = typeof labelSettings.$inferInsert;

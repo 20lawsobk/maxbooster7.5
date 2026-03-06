@@ -87,6 +87,11 @@ import {
   FileWarning,
   Globe,
   LayoutDashboard,
+  Sliders,
+  Percent,
+  Save,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -188,6 +193,7 @@ const ADMIN_NAV_ITEMS = [
   { id: 'moderation', label: 'Content Moderation', icon: Flag },
   { id: 'system', label: 'System Health', icon: Server },
   { id: 'analytics', label: 'Platform Analytics', icon: BarChart3 },
+  { id: 'financial', label: 'Financial Config', icon: Sliders },
   { id: 'killswitch', label: 'Kill Switch', icon: Power },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -1243,6 +1249,227 @@ export default function Admin() {
     </div>
   );
 
+  const FinancialConfigPanel = () => {
+    const [editingRate, setEditingRate] = useState<{ id: number; field: string; value: string } | null>(null);
+    const [editingSetting, setEditingSetting] = useState<{ key: string; value: string } | null>(null);
+    const [editingTreaty, setEditingTreaty] = useState<{ id: number; field: string; value: string } | null>(null);
+
+    const { data: ratesData, refetch: refetchRates } = useQuery<{ rates: any[] }>({
+      queryKey: ['/api/admin/financial-config/royalty-rates'],
+    });
+    const { data: treatiesData, refetch: refetchTreaties } = useQuery<{ treaties: any[] }>({
+      queryKey: ['/api/admin/financial-config/tax-treaties'],
+    });
+    const { data: settingsData, refetch: refetchSettings } = useQuery<{ settings: any[] }>({
+      queryKey: ['/api/admin/financial-config/label-settings'],
+    });
+
+    const updateRateMutation = useMutation({
+      mutationFn: async ({ id, field, value }: { id: number; field: string; value: string }) => {
+        const res = await apiRequest('PATCH', `/api/admin/financial-config/royalty-rates/${id}`, { [field]: parseFloat(value) });
+        return res.json();
+      },
+      onSuccess: () => { refetchRates(); setEditingRate(null); toast({ title: 'Rate updated successfully' }); },
+      onError: () => toast({ title: 'Update failed', variant: 'destructive' }),
+    });
+
+    const updateTreatyMutation = useMutation({
+      mutationFn: async ({ id, field, value }: { id: number; field: string; value: string }) => {
+        const res = await apiRequest('PATCH', `/api/admin/financial-config/tax-treaties/${id}`, { [field]: parseFloat(value) });
+        return res.json();
+      },
+      onSuccess: () => { refetchTreaties(); setEditingTreaty(null); toast({ title: 'Treaty rate updated' }); },
+      onError: () => toast({ title: 'Update failed', variant: 'destructive' }),
+    });
+
+    const updateSettingMutation = useMutation({
+      mutationFn: async ({ key, value }: { key: string; value: string }) => {
+        const res = await apiRequest('PATCH', `/api/admin/financial-config/label-settings/${key}`, { value });
+        return res.json();
+      },
+      onSuccess: () => { refetchSettings(); setEditingSetting(null); toast({ title: 'Setting updated' }); },
+      onError: () => toast({ title: 'Update failed', variant: 'destructive' }),
+    });
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold">Financial Configuration</h2>
+          <p className="text-muted-foreground text-sm">Manage DSP royalty rates, tax treaty rates, and label settings. Changes take effect within 1 hour (cache TTL).</p>
+        </div>
+
+        {/* Royalty Rates */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5" /> DSP Royalty Rates</CardTitle>
+            <CardDescription>Per-stream base rates in USD. Edit inline — changes update the active royalty calculation engine.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Platform</TableHead>
+                  <TableHead>Base Rate / Stream</TableHead>
+                  <TableHead>Premium Multiplier</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ratesData?.rates?.map((r: any) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{r.displayName}</TableCell>
+                    <TableCell>
+                      {editingRate?.id === r.id && editingRate.field === 'baseRatePerStream' ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            className="w-28 h-7 text-xs"
+                            type="number"
+                            step="0.00001"
+                            value={editingRate.value}
+                            onChange={e => setEditingRate({ ...editingRate, value: e.target.value })}
+                            autoFocus
+                          />
+                          <Button size="sm" className="h-7 px-2" onClick={() => updateRateMutation.mutate({ id: r.id, field: 'baseRatePerStream', value: editingRate.value })}>
+                            <Save className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingRate(null)}>✕</Button>
+                        </div>
+                      ) : (
+                        <span className="font-mono">${r.baseRatePerStream.toFixed(5)}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingRate?.id === r.id && editingRate.field === 'premiumMultiplier' ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            className="w-20 h-7 text-xs"
+                            type="number"
+                            step="0.01"
+                            value={editingRate.value}
+                            onChange={e => setEditingRate({ ...editingRate, value: e.target.value })}
+                            autoFocus
+                          />
+                          <Button size="sm" className="h-7 px-2" onClick={() => updateRateMutation.mutate({ id: r.id, field: 'premiumMultiplier', value: editingRate.value })}>
+                            <Save className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingRate(null)}>✕</Button>
+                        </div>
+                      ) : (
+                        <span className="font-mono">{r.premiumMultiplier.toFixed(2)}×</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(r.updatedAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingRate({ id: r.id, field: 'baseRatePerStream', value: r.baseRatePerStream.toString() })}>Rate</Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingRate({ id: r.id, field: 'premiumMultiplier', value: r.premiumMultiplier.toString() })}>Premium</Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Label Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Settings className="w-5 h-5" /> Label Settings</CardTitle>
+            <CardDescription>ISRC registrant code, UPC company prefix, and other label-level configuration.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {settingsData?.settings?.map((s: any) => (
+              <div key={s.key} className="flex items-start justify-between gap-4 py-2 border-b last:border-0">
+                <div className="flex-1">
+                  <p className="text-sm font-medium font-mono">{s.key}</p>
+                  <p className="text-xs text-muted-foreground">{s.description}</p>
+                </div>
+                {editingSetting?.key === s.key ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      className="w-40 h-7 text-xs font-mono"
+                      value={editingSetting.value}
+                      onChange={e => setEditingSetting({ ...editingSetting, value: e.target.value })}
+                      autoFocus
+                    />
+                    <Button size="sm" className="h-7 px-2" onClick={() => updateSettingMutation.mutate({ key: s.key, value: editingSetting.value })}>
+                      <Save className="w-3 h-3" />
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingSetting(null)}>✕</Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="font-mono">{s.value}</Badge>
+                    <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingSetting({ key: s.key, value: s.value })}><Edit className="w-3 h-3" /></Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Tax Treaty Rates */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Percent className="w-5 h-5" /> Tax Treaty Withholding Rates</CardTitle>
+            <CardDescription>US tax treaty withholding rates by country. Standard rate is 30% for non-treaty countries. Treaty rate = 0 means full exemption.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Country</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Std Rate %</TableHead>
+                  <TableHead>Treaty Rate %</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {treatiesData?.treaties?.map((t: any) => (
+                  <TableRow key={t.id}>
+                    <TableCell className="font-medium">{t.countryName}</TableCell>
+                    <TableCell><Badge variant="outline">{t.countryCode}</Badge></TableCell>
+                    <TableCell className="font-mono">{t.withholdingRate}%</TableCell>
+                    <TableCell>
+                      {editingTreaty?.id === t.id && editingTreaty.field === 'treatyRate' ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            className="w-16 h-7 text-xs"
+                            type="number"
+                            step="1"
+                            min="0"
+                            max="30"
+                            value={editingTreaty.value}
+                            onChange={e => setEditingTreaty({ ...editingTreaty, value: e.target.value })}
+                            autoFocus
+                          />
+                          <Button size="sm" className="h-7 px-2" onClick={() => updateTreatyMutation.mutate({ id: t.id, field: 'treatyRate', value: editingTreaty.value })}>
+                            <Save className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingTreaty(null)}>✕</Button>
+                        </div>
+                      ) : (
+                        <span className={`font-mono font-semibold ${t.treatyRate === 0 ? 'text-green-600' : 'text-amber-600'}`}>{t.treatyRate}%</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-48 truncate">{t.notes}</TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingTreaty({ id: t.id, field: 'treatyRate', value: t.treatyRate.toString() })}>Edit Rate</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'overview': return renderOverview();
@@ -1250,6 +1477,7 @@ export default function Admin() {
       case 'moderation': return renderModeration();
       case 'system': return renderSystemHealth();
       case 'analytics': return renderAnalytics();
+      case 'financial': return <FinancialConfigPanel />;
       case 'killswitch': return renderKillSwitch();
       case 'settings': return renderSettings();
       default: return renderOverview();

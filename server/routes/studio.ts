@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { db } from '../db';
-import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects, studioRecentFiles, studioPinnedFolders, stemExports, pluginPresets } from '@shared/schema';
+import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects, studioRecentFiles, studioPinnedFolders, stemExports, pluginPresets, studioSamples } from '@shared/schema';
 import { notificationService } from '../services/notificationService.js';
-import { eq, and, or, desc, isNull, inArray, sql as drizzleSql } from 'drizzle-orm';
+import { eq, and, or, desc, isNull, inArray, sql as drizzleSql, ilike, arrayOverlaps } from 'drizzle-orm';
 import { z } from 'zod';
 import { studioService } from '../services/studioService';
 import { logger } from '../logger.js';
@@ -226,47 +226,88 @@ router.get('/samples', requireAuth, async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const { category, subcategory, search, tags, tempo, key, limit = '50', offset = '0' } = req.query;
 
-    let samples = [...BUILT_IN_SAMPLES];
-
-    if (category) {
-      samples = samples.filter(s => s.category === category);
-    }
-    if (subcategory) {
-      samples = samples.filter(s => s.subcategory === subcategory);
-    }
-    if (search) {
-      const searchLower = (search as string).toLowerCase();
-      samples = samples.filter(s => 
-        s.name.toLowerCase().includes(searchLower) ||
-        s.tags.some(t => t.toLowerCase().includes(searchLower))
-      );
-    }
-    if (tags) {
-      const tagList = (tags as string).split(',');
-      samples = samples.filter(s => 
-        tagList.some(tag => s.tags.includes(tag.trim().toLowerCase()))
-      );
-    }
-    if (tempo) {
-      const targetTempo = parseInt(tempo as string);
-      samples = samples.filter(s => s.tempo && Math.abs(s.tempo - targetTempo) <= 10);
-    }
-    if (key) {
-      samples = samples.filter(s => s.key === key);
-    }
-
-    const total = samples.length;
     const limitNum = Math.min(parseInt(limit as string), 100);
     const offsetNum = parseInt(offset as string);
+
+    // Build DB query conditions
+    const conditions: any[] = [
+      or(eq(studioSamples.isBuiltIn, true), eq(studioSamples.userId, userId))
+    ];
+    if (category) conditions.push(eq(studioSamples.category, category as string));
+    if (subcategory) conditions.push(eq(studioSamples.subcategory, subcategory as string));
+    if (key) conditions.push(eq(studioSamples.key, key as string));
+    if (search) {
+      const term = `%${(search as string).toLowerCase()}%`;
+      conditions.push(ilike(studioSamples.name, term));
+    }
+    if (tags) {
+      const tagList = (tags as string).split(',').map(t => t.trim().toLowerCase());
+      conditions.push(arrayOverlaps(studioSamples.tags, tagList));
+    }
+
+    // Try DB first; fall back to hardcoded array if DB is empty or errors
+    let dbSamples: any[] = [];
+    try {
+      dbSamples = await db
+        .select()
+        .from(studioSamples)
+        .where(and(...conditions))
+        .limit(limitNum)
+        .offset(offsetNum);
+    } catch (dbErr) {
+      logger.warn('DB samples query failed, using hardcoded fallback:', dbErr);
+    }
+
+    // If DB returned results, use them. Otherwise fall back to in-memory array.
+    if (dbSamples.length > 0) {
+      const countRows = await db
+        .select({ count: drizzleSql<number>`COUNT(*)` })
+        .from(studioSamples)
+        .where(and(...conditions));
+      const total = Number(countRows[0]?.count ?? 0);
+
+      // Filter by tempo tolerance if specified (done in JS since SQL range on nullable needs casting)
+      if (tempo) {
+        const targetTempo = parseInt(tempo as string);
+        dbSamples = dbSamples.filter(s => s.tempo && Math.abs(s.tempo - targetTempo) <= 10);
+      }
+
+      return res.json({
+        samples: dbSamples.map(s => ({
+          id: s.id, name: s.name, category: s.category, subcategory: s.subcategory,
+          tags: s.tags || [], tempo: s.tempo, key: s.key, duration: s.duration,
+          audioUrl: s.audioUrl, isBuiltIn: s.isBuiltIn, createdAt: s.createdAt,
+        })),
+        categories: SAMPLE_CATEGORIES,
+        total,
+        limit: limitNum,
+        offset: offsetNum,
+        source: 'database',
+      });
+    }
+
+    // Fallback: in-memory hardcoded samples
+    let samples = [...BUILT_IN_SAMPLES];
+    if (category)   samples = samples.filter(s => s.category === category);
+    if (subcategory)samples = samples.filter(s => s.subcategory === subcategory);
+    if (search) {
+      const sl = (search as string).toLowerCase();
+      samples = samples.filter(s => s.name.toLowerCase().includes(sl) || s.tags.some(t => t.toLowerCase().includes(sl)));
+    }
+    if (tags) {
+      const tl = (tags as string).split(',');
+      samples = samples.filter(s => tl.some(t => s.tags.includes(t.trim().toLowerCase())));
+    }
+    if (tempo) {
+      const tgt = parseInt(tempo as string);
+      samples = samples.filter(s => s.tempo && Math.abs(s.tempo - tgt) <= 10);
+    }
+    if (key) samples = samples.filter(s => s.key === key);
+
+    const total = samples.length;
     samples = samples.slice(offsetNum, offsetNum + limitNum);
 
-    res.json({
-      samples,
-      categories: SAMPLE_CATEGORIES,
-      total,
-      limit: limitNum,
-      offset: offsetNum,
-    });
+    res.json({ samples, categories: SAMPLE_CATEGORIES, total, limit: limitNum, offset: offsetNum, source: 'hardcoded' });
   } catch (error: unknown) {
     logger.error('Error fetching samples:', error);
     res.status(500).json({ error: 'Failed to fetch samples' });
@@ -341,15 +382,73 @@ router.post('/samples/search', requireAuth, async (req: Request, res: Response) 
   }
 });
 
-// POST record upload
-router.post('/record/upload', requireAuth, async (req: Request, res: Response) => {
-  try {
-    res.json({ success: true, fileId: `recording_${nanoid()}`, url: null });
-  } catch (error: unknown) {
-    logger.error('Error uploading recording:', error);
-    res.status(500).json({ error: 'Failed to upload recording' });
+// POST record upload — accepts multipart audio file from the browser MediaRecorder API
+router.post(
+  '/record/upload',
+  requireAuth,
+  audioUpload.single('audio'),
+  handleUploadError,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ error: 'No audio file provided' });
+      }
+
+      const { trackId, projectId, duration, name: recordingName } = req.body;
+
+      // Store to object storage and get a persistent URL
+      const { url, key } = await storeUploadedFile(file, userId, 'audio');
+
+      const clipId = nanoid();
+      const clipName = recordingName || `Recording ${new Date().toLocaleTimeString()}`;
+
+      // If trackId + projectId provided, persist as an audio clip
+      if (trackId && projectId) {
+        if (!await verifyProjectOwnership(projectId, userId)) {
+          return res.status(404).json({ error: 'Project not found' });
+        }
+
+        const [clip] = await db
+          .insert(audioClips)
+          .values({
+            id: clipId,
+            trackId,
+            name: clipName,
+            startTime: 0,
+            duration: duration ? parseFloat(duration) : 0,
+            sourceUrl: url,
+          })
+          .returning();
+
+        logger.info('Recording uploaded and persisted', { clipId, trackId, projectId, userId });
+
+        return res.status(201).json({
+          success: true,
+          fileId: clipId,
+          url,
+          key,
+          clip,
+          message: 'Recording saved successfully',
+        });
+      }
+
+      // No track context — return URL only so client can place it manually
+      return res.status(201).json({
+        success: true,
+        fileId: clipId,
+        url,
+        key,
+        message: 'Recording uploaded successfully',
+      });
+    } catch (error: unknown) {
+      logger.error('Error uploading recording:', error);
+      res.status(500).json({ error: 'Failed to upload recording' });
+    }
   }
-});
+);
 
 // GET mix busses for project - NOTE: Track routes consolidated below to avoid duplicates
 

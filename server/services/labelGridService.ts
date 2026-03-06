@@ -13,7 +13,10 @@
 import axios from 'axios';
 import { storage } from '../storage';
 import type { Release, DistributionPackage } from '@shared/schema';
+import { labelSettings } from '@shared/schema';
 import { logger } from '../logger.js';
+import { db } from '../db.js';
+import { eq } from 'drizzle-orm';
 
 interface LabelGridConfig {
   apiKey: string;
@@ -318,12 +321,23 @@ export class LabelGridService {
   }
 
   /**
-   * Generate UPC code
+   * Read a single setting from label_settings table, with a default fallback.
+   */
+  private async getLabelSetting(key: string, defaultValue: string): Promise<string> {
+    try {
+      const [row] = await db.select().from(labelSettings).where(eq(labelSettings.key, key)).limit(1);
+      return row?.value ?? defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Generate UPC code using GS1 company prefix from label settings.
+   * Update the 'upc_company_prefix' setting in Admin → Financial Config to use your registered prefix.
    */
   private async generateUPC(): Promise<string> {
-    // In production, you would register for GS1 company prefix
-    // For now, generate a valid format UPC-A (12 digits)
-    const prefix = '123456'; // Company prefix (would be assigned by GS1)
+    const prefix = await this.getLabelSetting('upc_company_prefix', '123456');
     const product = Math.floor(Math.random() * 10000)
       .toString()
       .padStart(5, '0');
@@ -332,22 +346,20 @@ export class LabelGridService {
   }
 
   /**
-   * Generate ISRC code
+   * Generate ISRC code using registrant code from label settings.
+   * ISRC format: CC-XXX-YY-NNNNN
+   *   CC  = Country code (US)
+   *   XXX = Registrant code — update 'isrc_registrant_code' in Admin → Financial Config
+   *   YY  = Year of reference
+   *   NNNNN = Unique designation code
    */
   private async generateISRC(trackId: string): Promise<string> {
-    // ISRC format: CC-XXX-YY-NNNNN
-    // CC = Country code (US)
-    // XXX = Registrant code (would be assigned)
-    // YY = Year
-    // NNNNN = Unique ID
-
+    const registrant = await this.getLabelSetting('isrc_registrant_code', 'MXB');
     const country = 'US';
-    const registrant = 'MXB'; // Max Booster registrant code
     const year = new Date().getFullYear().toString().slice(-2);
     const uniqueId = Math.floor(Math.random() * 100000)
       .toString()
       .padStart(5, '0');
-
     return `${country}-${registrant}-${year}-${uniqueId}`;
   }
 
