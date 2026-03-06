@@ -112,6 +112,16 @@ class ViralScoringService {
     { pattern: /^[A-Z]{2,}/, score: 62 },
     // Emoji-led hooks — moderate
     { pattern: /^(🔥|💀|😭|🤯|⚡|🚨|👀|💯|🎵|🎤|🎶)/, score: 58 },
+    // Release & milestone hooks — music-specific
+    { pattern: /^(it'?s (finally|officially) here|out now|new music|new single|just dropped)/i, score: 85 },
+    { pattern: /^(wait (for|till)|watch what happens|the drop at|rate this)/i, score: 79 },
+    { pattern: /^(bar for bar|lyricism|wordplay|flow|cadence|bars)/i, score: 74 },
+    { pattern: /^(i almost didn't release|been sitting on this|kept this quiet|nobody expected)/i, score: 81 },
+    { pattern: /^(day one|first 24|first week|this week only|only \d+ left)/i, score: 77 },
+    // Transformation / journey hooks
+    { pattern: /^(from (bedroom|zero|broke|nothing) to|my (journey|story|struggle)|i started with)/i, score: 84 },
+    // Achievement / milestone hooks
+    { pattern: /(\d+k?m? (streams?|plays?|followers?|listeners?)|playlist (added|placement)|charted|trending)/i, score: 82 },
   ];
 
   // Fine-tuned emotional triggers — calibrated for music content audiences
@@ -149,6 +159,44 @@ class ViralScoringService {
     { keyword: 'never', weight: 6 },
     { keyword: 'always', weight: 5 },
     { keyword: 'new', weight: 5 },
+    // Additional music-community emotional triggers (v2 expansion)
+    { keyword: 'dope', weight: 7 },
+    { keyword: 'insane', weight: 8 },
+    { keyword: 'crazy', weight: 7 },
+    { keyword: 'heat', weight: 7 },
+    { keyword: 'slappin', weight: 7 },
+    { keyword: 'legendary', weight: 8 },
+    { keyword: 'iconic', weight: 8 },
+    { keyword: 'goated', weight: 8 },
+    { keyword: 'underrated', weight: 7 },
+    { keyword: 'raw', weight: 6 },
+    { keyword: 'authentic', weight: 6 },
+    { keyword: 'real', weight: 5 },
+    { keyword: 'honest', weight: 6 },
+    { keyword: 'vulnerable', weight: 7 },
+    { keyword: 'therapy', weight: 7 },
+    { keyword: 'darkest', weight: 7 },
+    { keyword: 'breakthrough', weight: 7 },
+    { keyword: 'movement', weight: 7 },
+    { keyword: 'milestone', weight: 6 },
+    { keyword: 'charted', weight: 7 },
+    { keyword: 'playlisted', weight: 7 },
+    { keyword: 'curated', weight: 5 },
+    { keyword: 'debut', weight: 6 },
+    { keyword: 'unreleased', weight: 8 },
+    { keyword: 'first look', weight: 7 },
+    { keyword: 'sneak peek', weight: 7 },
+    { keyword: 'behind the scenes', weight: 6 },
+    { keyword: 'no skips', weight: 8 },
+    { keyword: 'replay value', weight: 7 },
+    { keyword: 'earworm', weight: 7 },
+    { keyword: 'stuck in my head', weight: 7 },
+    { keyword: 'can\'t stop listening', weight: 8 },
+    { keyword: 'on repeat', weight: 7 },
+    { keyword: 'goosebumps', weight: 8 },
+    { keyword: 'chills', weight: 7 },
+    { keyword: 'emotional', weight: 7 },
+    { keyword: 'crying', weight: 7 },
   ];
 
   // Fine-tuned hashtag optima — based on current 2024-2026 platform research

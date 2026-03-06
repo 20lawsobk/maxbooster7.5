@@ -656,10 +656,10 @@ export class ContentGenerator {
     platform: string
   ): { hook: string; body: string; cta: string } {
     const TONE_EMOJI: Record<string, string[]> = {
-      energetic:   ['🔥', '🚀', '💥', '⚡', '🎯'],
-      promotional: ['🚀', '💡', '🎯', '✅', '🔑'],
-      casual:      ['✨', '💯', '🎵', '🙌', '💪'],
-      professional:['🎯', '📈', '✅', '🏆', '💼'],
+      energetic:   ['🔥', '🚀', '💥', '⚡', '🎯', '💣', '🎤', '🔊'],
+      promotional: ['🚀', '💡', '🎯', '✅', '🔑', '📢', '🆕', '🎉'],
+      casual:      ['✨', '💯', '🎵', '🙌', '💪', '😤', '👀', '🎶'],
+      professional:['🎯', '📈', '✅', '🏆', '💼', '🎼', '🎹', '📊'],
     };
     const emojiPool = TONE_EMOJI[tone] || TONE_EMOJI.energetic;
     const e1 = emojiPool[Math.floor(Math.random() * 3)];
@@ -668,6 +668,55 @@ export class ContentGenerator {
     const title = ctx.quoted[0] ? `"${ctx.quoted[0]}"` : ctx.primary;
     const adj = ctx.descriptors[0] || '';
     const adjCap = adj ? adj.charAt(0).toUpperCase() + adj.slice(1) + ' ' : '';
+    const genre = ctx.genre || '';
+    const artist = ctx.artistName || '';
+
+    // ── GENRE-SPECIFIC HOOK POOLS ──────────────────────────────────────
+    const genreHooks: Record<string, string[]> = {
+      'hip-hop': [
+        `Bar for bar, ${title} is the one ${e1}`,
+        `Lyricism is not dead — ${title} is the proof ${e1}`,
+        `Every bar is a quotable. I promise ${e1}`,
+        `The wordplay on this goes three layers deep ${e2}`,
+        `Classic boom-bap energy with a modern twist ${e1}`,
+      ],
+      'trap': [
+        `The 808 on ${title} hits different at max volume ${e1}`,
+        `Built this from scratch — no samples, no shortcuts ${e1}`,
+        `The hi-hats alone are worth the listen ${e2}`,
+        `When the 808 drops, you feel it in your chest ${e1}`,
+        `Hard production + real bars = ${title} ${e1}`,
+      ],
+      'r&b': [
+        `This melody was a dream I woke up to ${e1}`,
+        `${title} — late night, mood lighting, repeat ${e1}`,
+        `The harmonies on the bridge of ${title} will break you ${e2}`,
+        `Wrote this in one sitting. Feelings poured out ${e1}`,
+        `R&B for people who actually feel things ${e1}`,
+      ],
+      'pop': [
+        `${title} is that song you add to every playlist ${e1}`,
+        `One play and you'll have ${title} stuck in your head all week ${e1}`,
+        `Built for playlists, made for people — ${title} is out ${e2}`,
+        `The hook on ${title} was designed to get in your head ${e1}`,
+        `Anthemic energy. ${title} is the one ${e1}`,
+      ],
+      'afrobeats': [
+        `The groove doesn't stop — ${title} is for the dance floor ${e1}`,
+        `You can't listen to ${title} and not move your body ${e1}`,
+        `Lagos energy built for the world — ${title} is out ${e2}`,
+        `The percussion arrangement on ${title} is next level ${e1}`,
+        `Afrobeats taking over. ${title} is the proof ${e1}`,
+      ],
+      'electronic': [
+        `The drop on ${title} was engineered to break speakers ${e1}`,
+        `Four to the floor and a bassline that won't quit ${e1}`,
+        `Close your eyes and let ${title} take you somewhere ${e2}`,
+        `House music is a feeling. ${title} is the feeling ${e1}`,
+        `Built for peak hour, hits just as hard at home ${e1}`,
+      ],
+    };
+    const genreHookOptions = genre ? (genreHooks[genre.toLowerCase()] || []) : [];
 
     // ── Hook ─────────────────────────────────────────────────────────
     let hookOptions: string[];
@@ -679,6 +728,11 @@ export class ContentGenerator {
         `${shortName} is changing the game ${e1}`,
         `Have you discovered ${shortName} yet? ${e1}`,
         `Why every artist needs ${shortName} ${e2}`,
+        `The all-in-one music career platform artists actually use ${e1}`,
+        `${shortName} — more artists, more music, more wins ${e1}`,
+        `Stop sleeping on ${shortName} — your career needs this ${e2}`,
+        `If you're serious about your music career, you need ${shortName} ${e1}`,
+        `This is how independent artists compete with majors — ${shortName} ${e1}`,
       ];
     } else if (ctx.isEvent) {
       hookOptions = [
@@ -686,6 +740,13 @@ export class ContentGenerator {
         `See you there: ${ctx.primary} ${e1}`,
         `Don't miss ${ctx.primary} ${e1}`,
         `${ctx.primary} is LIVE — get your tickets ${e1}`,
+        `I'm coming to your city ${e2} — ${ctx.primary}`,
+        `Who's pulling up? ${ctx.primary} is happening ${e1}`,
+        `The energy in that room is going to be insane — ${ctx.primary} ${e1}`,
+        `Every show is selling out fast. ${ctx.primary} ${e2}`,
+        `The setlist for ${ctx.primary} is something else. Be there ${e1}`,
+        `Live and in person. ${ctx.primary} — tickets on sale now ${e1}`,
+        ...genreHookOptions.slice(0, 3),
       ];
     } else if (ctx.isBeat) {
       hookOptions = [
@@ -693,6 +754,13 @@ export class ContentGenerator {
         `Beat drop: ${title} ${e1}`,
         `${title} — available now ${e1}`,
         `${e1} ${title} — fire your next project up`,
+        `Nobody is making beats like ${title} right now ${e1}`,
+        `This beat stayed in my head for two weeks before I finished it ${e2}`,
+        `${title} — the melody alone is worth 10 plays ${e1}`,
+        `Produced ${title} from scratch. Tell me what it's missing ${e1}`,
+        `${adjCap}beat alert: ${title} is ready for someone's verse ${e1}`,
+        `The type beat nobody asked for, everybody needed — ${title} ${e2}`,
+        ...genreHookOptions.slice(0, 3),
       ];
     } else if (ctx.isRelease) {
       const subHint = ctx.subtitle
@@ -704,6 +772,15 @@ export class ContentGenerator {
         `You need to hear ${title} right now ${e2}`,
         `${title} — ${subHint} ${e1}`.trim(),
         `Stream ${title} — this one hits different ${e2}`,
+        `I almost didn't release ${title}... glad I did ${e1}`,
+        `${title} is finally here. I poured everything into this ${e1}`,
+        `Day one. First 24 hours matter most — ${title} is out ${e2}`,
+        `Don't sleep on ${title}. First week numbers matter for playlisting ${e1}`,
+        `Been sitting on ${title} for months. Couldn't hold it anymore ${e1}`,
+        `This is the one y'all have been asking for — ${title} ${e2}`,
+        `Save it. Share it. Tell a friend. ${title} is out now ${e1}`,
+        artist ? `${artist} just dropped ${title} and it goes crazy ${e1}` : `This goes crazy — ${title} out now ${e1}`,
+        ...genreHookOptions.slice(0, 4),
       ];
     } else {
       const descHint = ctx.subtitle.split('—')[0].trim() || adj;
@@ -712,6 +789,11 @@ export class ContentGenerator {
         `${ctx.primary} ${e1}`,
         `Check this out: ${ctx.primary} ${e1}`,
         descHint ? `${e1} ${ctx.primary} — ${descHint}` : `${e1} ${ctx.primary}`,
+        `Nobody talks about this: ${ctx.primary} ${e1}`,
+        `Wait till you hear what happens next — ${ctx.primary} ${e2}`,
+        `The studio session that changed everything ${e1}`,
+        `No one is ready for what I'm about to share ${e1}`,
+        ...genreHookOptions.slice(0, 3),
       ];
     }
     const hook = hookOptions.filter(o => o.trim())[Math.floor(Math.random() * hookOptions.length)];
@@ -725,23 +807,58 @@ export class ContentGenerator {
       } else if (ctx.subtitle) {
         segments.push(ctx.subtitle);
       }
-      const closers = ['All the tools you need, in one place', 'Manage, distribute, and promote — all in one', 'Built to grow your career'];
+      const closers = [
+        'All the tools you need, in one place',
+        'Manage, distribute, and promote — all in one',
+        'Built to grow your career',
+        'Independent artists deserve enterprise-level tools',
+        'The music industry changed. Your tools should too',
+        'From studio to streaming — one platform handles it all',
+        'Stop grinding harder. Start working smarter',
+      ];
       segments.push(closers[Math.floor(Math.random() * closers.length)]);
     } else if (ctx.isEvent) {
       if (ctx.subtitle) segments.push(ctx.subtitle);
       if (!segments.length) segments.push(ctx.primary);
+      const eventBodies = [
+        'The energy in that room is going to be unreal.',
+        'Every show is a once-in-a-lifetime moment. Come be part of it.',
+        'The setlist has been carefully crafted for this night.',
+        'Live music hits different. Come experience it in person.',
+      ];
+      segments.push(eventBodies[Math.floor(Math.random() * eventBodies.length)]);
     } else if (ctx.isRelease || ctx.quoted.length) {
       if (ctx.subtitle) {
         segments.push(ctx.subtitle);
       } else if (ctx.descriptors.length) {
-        segments.push(`A ${ctx.descriptors.slice(0, 2).join(', ')} sound that speaks for itself`);
+        const descBodies = [
+          `A ${ctx.descriptors.slice(0, 2).join(', ')} sound that speaks for itself`,
+          `${adjCap}music made for people who feel everything`,
+          `Pure ${adj || 'raw'} energy captured in a single track`,
+          `${adjCap}sound built from real experiences — no filler, no compromise`,
+        ];
+        segments.push(descBodies[Math.floor(Math.random() * descBodies.length)]);
       } else {
-        segments.push('This one is different — hit play and find out');
+        const genericReleaseBodies = [
+          'This one is different — hit play and find out',
+          'Every lyric came from a real place. Hope it resonates',
+          'I poured everything into this record. Hope it reaches you',
+          'No skips. Start from track one. Trust me',
+          'This track represents a new chapter. Glad it finally exists',
+        ];
+        segments.push(genericReleaseBodies[Math.floor(Math.random() * genericReleaseBodies.length)]);
       }
       if (ctx.stats) segments.push(ctx.stats);
     } else if (ctx.isBeat) {
       if (ctx.subtitle) segments.push(ctx.subtitle);
-      if (ctx.descriptors.length) segments.push(`${adjCap}sound ready for your next project`);
+      const beatBodies = [
+        `${adjCap}sound ready for your next project`,
+        `Available for licensing. DM for rates or use the link`,
+        `Built for artists who want something different`,
+        `Exclusive and non-exclusive licenses available`,
+        `Produced with intention — every layer has a purpose`,
+      ];
+      segments.push(beatBodies[Math.floor(Math.random() * beatBodies.length)]);
     } else {
       if (ctx.subtitle) segments.push(ctx.subtitle);
       if (!ctx.subtitle && ctx.contentWords.length) segments.push(ctx.contentWords.slice(0, 4).join(' | '));
@@ -751,11 +868,61 @@ export class ContentGenerator {
 
     // ── CTA ───────────────────────────────────────────────────────────
     const ctaMap: Record<string, string[]> = {
-      platform: ['Try it free — link in bio 🔗', 'Sign up today — link in bio 🚀', 'Start your free trial — link in bio'],
-      event:    ['Grab your tickets — link in bio 🎟️', 'Get tickets now 🎟️', 'RSVP — link in bio'],
-      beat:     ['License this beat — DM or link in bio 🎛️', 'Grab the beat — link in bio'],
-      release:  ['Stream now — link in bio 🔗', 'Listen on all platforms 🎵', 'Save this one 🎵', 'Follow for more music 🎵'],
-      general:  ['Follow for more 🎵', 'Share with someone who needs this ✨', 'Drop your thoughts below 👇'],
+      platform: [
+        'Try it free — link in bio 🔗',
+        'Sign up today — link in bio 🚀',
+        'Start your free trial — link in bio',
+        'Get started free — no credit card needed 🔗',
+        'Join thousands of artists already using it — link in bio',
+        'See why artists are switching — link in bio 🎯',
+        'Claim your free account — link in bio ✅',
+        'Try it risk-free — link in bio 🚀',
+      ],
+      event: [
+        'Grab your tickets — link in bio 🎟️',
+        'Get tickets now — selling fast 🎟️',
+        'RSVP — link in bio',
+        'Presale link in bio — first come, first served 🔗',
+        "Don't wait — last tickets going fast 🎟️",
+        'Drop your city below if you're coming 👇',
+        'VIP packages still available — link in bio 🎟️',
+        'See you on the road — tickets in bio 🎤',
+      ],
+      beat: [
+        'License this beat — DM or link in bio 🎛️',
+        'Grab the beat — link in bio',
+        'Exclusive and non-exclusive available — DM for rates 🎛️',
+        'BUY NOW — link in bio before someone else does 🔥',
+        'For licensing info, DM or tap the link 🎧',
+        'Secured by first come, first served — link in bio 🎛️',
+        'Perfect for your next project — grab it in bio 🎯',
+        'This one is EXCLUSIVE — DM while it lasts 🔒',
+      ],
+      release: [
+        'Stream now — link in bio 🔗',
+        'Listen on all platforms 🎵',
+        'Save this one 🎵',
+        'Follow for more music 🎵',
+        'Add it to your playlist before you forget 🎶',
+        'First week numbers change everything — stream now 📈',
+        'Hit save on Spotify so you never lose it 💚',
+        'Share with someone who needs this in their life 🔗',
+        'Available everywhere — go run the numbers up 🚀',
+        "Don't sleep — first 24 hours matter most ⏰",
+        'Drop a 🔥 in the comments if you already know every word',
+      ],
+      general: [
+        'Follow for more 🎵',
+        'Share with someone who needs this ✨',
+        'Drop your thoughts below 👇',
+        'Turn on post notifications — big things incoming 🔔',
+        'Save this for later 💾',
+        'Tag someone who needs to see this 👇',
+        'What do you think? Drop it in the comments 💬',
+        'Follow for the full rollout — nothing getting missed 🔔',
+        'Like if you agree ❤️',
+        'Repost if you're a real one 🔄',
+      ],
     };
     const ctaKey = ctx.isPlatform ? 'platform' : ctx.isEvent ? 'event' : ctx.isBeat ? 'beat' : ctx.isRelease ? 'release' : 'general';
     const ctaOptions = ctaMap[ctaKey];

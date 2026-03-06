@@ -578,12 +578,26 @@ class AutoPostGenerator {
       `Introducing ${topic} by ${artist}`,
       `${artist} - ${topic} is here!`,
       `New from ${artist}: ${topic}`,
+      `${topic} — the new chapter from ${artist}`,
+      `${artist} just dropped something special: ${topic}`,
+      `Meet ${topic} — ${artist}'s newest work`,
+      `The one you've been waiting for: ${topic} by ${artist}`,
+      `${artist} has entered a new era with ${topic}`,
+      `No more waiting — ${topic} is officially here`,
     ];
     return templates[Math.floor(Math.random() * templates.length)];
   }
 
   private generateAwarenessBody(artist: string, topic: string, tone: string): string {
-    return `Hey everyone! I'm excited to share ${topic} with you. This has been a labor of love and I can't wait for you to experience it. Let me know your thoughts!`;
+    const bodies = [
+      `Hey everyone! I'm excited to share ${topic} with you. This has been a labor of love and I can't wait for you to experience it. Let me know your thoughts!`,
+      `${topic} is finally here. I spent months on this — every detail was intentional. I hope it hits you the way it hit me when I finished it.`,
+      `Proud to introduce ${topic}. ${artist} has been building to this moment and it's finally time to share it with the world. This is just the beginning.`,
+      `The story behind ${topic} is personal. This music comes from a real place, and I believe you'll feel that when you press play.`,
+      `${topic} represents everything I've been working toward. Every lyric, every note, every decision — made with purpose. Grateful to share this with you all.`,
+      `I've been holding onto ${topic} for a while, and today I finally get to let it go. Hope it resonates. Your ears are the last stop on a long journey.`,
+    ];
+    return bodies[Math.floor(Math.random() * bodies.length)];
   }
 
   private generateEngagementHeadline(artist: string, topic: string, tone: string): string {
@@ -592,12 +606,26 @@ class AutoPostGenerator {
       `${artist} wants YOUR opinion on ${topic}`,
       `Help me decide: ${topic}`,
       `Question for you about ${topic}`,
+      `Real talk — what's your first reaction to ${topic}?`,
+      `Be honest: does ${topic} hit different for you?`,
+      `I need my day ones to weigh in on ${topic}`,
+      `Rate ${topic} from 1-10 — be brutally honest`,
+      `What's your favorite part of ${topic}? Drop it below`,
+      `Settle this for me: does ${topic} belong in your rotation?`,
     ];
     return templates[Math.floor(Math.random() * templates.length)];
   }
 
   private generateEngagementBody(artist: string, topic: string, tone: string): string {
-    return `I've been working on ${topic} and would love your feedback! What resonates with you? Drop a comment and let's connect. Your input means everything to me!`;
+    const bodies = [
+      `I've been working on ${topic} and would love your feedback! What resonates with you? Drop a comment and let's connect. Your input means everything to me!`,
+      `${topic} means a lot to me but at the end of the day, it's you who decides if it's real. Tell me what you think — no filter. Your honest reaction matters.`,
+      `We built ${topic} for people like you. Now I'm genuinely curious: what hits first — the beat, the lyrics, or the overall vibe? Comment below 👇`,
+      `Here's the thing about ${topic} — I wrote it for a specific feeling. Did it land? Let me know in the comments. Connecting with you is the whole point.`,
+      `Working on the next project and ${topic} is going to be a big part of it. What do you want more of? What can ${artist} do better? Real answers only.`,
+      `Your playlist, your rules — but I'll be honest, ${topic} was made with you in mind. Tell me if I got it right. First comment gets a shoutout.`,
+    ];
+    return bodies[Math.floor(Math.random() * bodies.length)];
   }
 
   private generateConversionHeadline(artist: string, topic: string, tone: string): string {
@@ -606,12 +634,26 @@ class AutoPostGenerator {
       `Don't miss ${topic} by ${artist}`,
       `${topic} is LIVE - Listen Now`,
       `${artist}: ${topic} Available Everywhere`,
+      `⏰ ${topic} is LIVE right now — first 24 hours matter`,
+      `🔥 ${topic} out NOW — go run the numbers up`,
+      `${topic} just hit all platforms — save it before you forget`,
+      `Stream ${topic} — every play counts this week`,
+      `IT'S OUT. ${topic} by ${artist} — go stream it now`,
+      `${topic} is charting. Don't sleep on it — stream now`,
     ];
     return templates[Math.floor(Math.random() * templates.length)];
   }
 
   private generateConversionBody(artist: string, topic: string, tone: string): string {
-    return `${topic} is officially out NOW on all streaming platforms! 🎵 I poured my heart into this and I hope it moves you. Stream it, save it, share it with someone who needs to hear it!`;
+    const bodies = [
+      `${topic} is officially out NOW on all streaming platforms! 🎵 I poured my heart into this and I hope it moves you. Stream it, save it, share it with someone who needs to hear it!`,
+      `This is it. ${topic} is live on Spotify, Apple Music, YouTube, and everywhere else. The first 24 hours are everything — every stream, every save, every share makes a difference right now.`,
+      `${topic} is out and the response has already been incredible. If you haven't streamed it yet, now is the time. Add it to your playlist, hit save, and let the algorithm know you're here.`,
+      `${artist} just released ${topic} and the numbers are already moving. Don't get left behind — stream it right now, link in bio. Let's get this to the playlist curators.`,
+      `${topic} is available everywhere right now. I don't ask for much — just one honest listen. If it hits, share it. If it hits twice, add it to your playlist. That's all I need.`,
+      `New music from ${artist}: ${topic} is live. This one was built for streaming, built for repeat plays, and built for YOUR playlist. Go find out why. Link in bio.`,
+    ];
+    return bodies[Math.floor(Math.random() * bodies.length)];
   }
 
   private generateViralHeadline(artist: string, topic: string, tone: string): string {
@@ -620,12 +662,27 @@ class AutoPostGenerator {
       `This ${topic} will blow your mind`,
       `${artist} just changed the game with ${topic}`,
       `Everyone's talking about ${topic} - here's why`,
+      `POV: You just discovered your new favorite song 👀`,
+      `Nobody was ready for ${topic}. Not even me`,
+      `I almost didn't release ${topic}... biggest mistake that would've been`,
+      `${topic} hits different at 2AM — don't say I didn't warn you`,
+      `The song that breaks every rule — and works anyway: ${topic}`,
+      `Unpopular opinion: ${topic} is the best thing ${artist} has ever done`,
+      `Rate this 1-10 in the comments — ${topic} just dropped 🔥`,
     ];
     return templates[Math.floor(Math.random() * templates.length)];
   }
 
   private generateViralBody(artist: string, topic: string, tone: string): string {
-    return `I've been waiting to share this moment with you... ${topic} is finally here and it's everything I hoped it would be. This is more than just music - it's a movement. Tag someone who needs this in their life RIGHT NOW! 🚀`;
+    const bodies = [
+      `I've been waiting to share this moment with you... ${topic} is finally here and it's everything I hoped it would be. This is more than just music - it's a movement. Tag someone who needs this in their life RIGHT NOW! 🚀`,
+      `${topic} wasn't supposed to be this good. I was just in the studio working and something clicked — and now I can't stop listening to it. The fact that this is real is still wild to me. Tell a friend.`,
+      `I don't usually say this about my own music, but ${topic} is the one. I played it for people who don't even like this genre and they were asking me to replay it. Make your own judgment — link in bio.`,
+      `Hot take: ${topic} doesn't sound like anything else in ${artist}'s catalog. That's intentional. That's growth. That's the sound of an artist who refuses to make the same thing twice. Judge it yourself.`,
+      `${topic} is the song I wrote when I stopped trying to make what people expected and started making what I actually felt. Turns out — the most personal thing you can create is also the most universal. This one's for everyone.`,
+      `Some songs are made. ${topic} happened. There's a difference. I was in the studio at 2AM, not planning anything, and in two hours the whole thing was done. Those are always the real ones. Tag someone who needs to hear this.`,
+    ];
+    return bodies[Math.floor(Math.random() * bodies.length)];
   }
 
   private generateHashtags(topic: string, platforms: string[]): string[] {

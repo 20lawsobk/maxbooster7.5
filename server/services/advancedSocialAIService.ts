@@ -672,7 +672,7 @@ const VIRAL_PATTERNS = [
   {
     id: 'controversy',
     name: 'Controversial Take',
-    triggers: ['unpopular opinion', 'hot take', 'controversial', 'i said what i said'],
+    triggers: ['unpopular opinion', 'hot take', 'controversial', 'i said what i said', 'real talk', 'fight me'],
     emotionalHooks: ['surprise', 'disagreement', 'validation'],
     shareMultiplier: 1.8,
     riskLevel: 0.6,
@@ -680,7 +680,7 @@ const VIRAL_PATTERNS = [
   {
     id: 'relatable',
     name: 'Relatable Moment',
-    triggers: ['pov', 'me when', 'that feeling', 'who else', 'y\'all ever'],
+    triggers: ['pov', 'me when', 'that feeling', 'who else', "y'all ever", 'can we talk about', 'not me'],
     emotionalHooks: ['recognition', 'humor', 'connection'],
     shareMultiplier: 1.5,
     riskLevel: 0.1,
@@ -688,7 +688,7 @@ const VIRAL_PATTERNS = [
   {
     id: 'transformation',
     name: 'Transformation Story',
-    triggers: ['from', 'to', 'before', 'after', 'glow up', 'journey'],
+    triggers: ['from', 'to', 'before', 'after', 'glow up', 'journey', 'i used to', 'look at me now'],
     emotionalHooks: ['inspiration', 'hope', 'motivation'],
     shareMultiplier: 1.4,
     riskLevel: 0.05,
@@ -696,7 +696,7 @@ const VIRAL_PATTERNS = [
   {
     id: 'exclusive',
     name: 'Exclusive Access',
-    triggers: ['behind the scenes', 'exclusive', 'first look', 'sneak peek'],
+    triggers: ['behind the scenes', 'exclusive', 'first look', 'sneak peek', 'unreleased', "you don't usually see"],
     emotionalHooks: ['curiosity', 'fomo', 'connection'],
     shareMultiplier: 1.3,
     riskLevel: 0.1,
@@ -704,7 +704,7 @@ const VIRAL_PATTERNS = [
   {
     id: 'challenge',
     name: 'Challenge/CTA',
-    triggers: ['challenge', 'can you', 'tag someone', 'duet this'],
+    triggers: ['challenge', 'can you', 'tag someone', 'duet this', 'stitch this', 'rate this', 'react to this'],
     emotionalHooks: ['competition', 'belonging', 'excitement'],
     shareMultiplier: 1.6,
     riskLevel: 0.1,
@@ -712,10 +712,74 @@ const VIRAL_PATTERNS = [
   {
     id: 'breaking',
     name: 'Breaking News',
-    triggers: ['breaking', 'just in', 'announcement', 'happening now'],
+    triggers: ['breaking', 'just in', 'announcement', 'happening now', 'official', 'just announced'],
     emotionalHooks: ['urgency', 'fomo', 'importance'],
     shareMultiplier: 1.7,
     riskLevel: 0.2,
+  },
+  {
+    id: 'milestone',
+    name: 'Milestone Celebration',
+    triggers: ['streams', 'million', 'chart', 'playlist', 'milestone', 'certified', 'platinum', 'gold'],
+    emotionalHooks: ['celebration', 'pride', 'community'],
+    shareMultiplier: 1.45,
+    riskLevel: 0.05,
+  },
+  {
+    id: 'vulnerability',
+    name: 'Vulnerable Moment',
+    triggers: ['i almost quit', "didn't think", 'almost gave up', 'darkest', 'struggled', 'therapy', 'real with you'],
+    emotionalHooks: ['empathy', 'connection', 'inspiration'],
+    shareMultiplier: 1.65,
+    riskLevel: 0.15,
+  },
+  {
+    id: 'discovery',
+    name: 'Discovery Hook',
+    triggers: ['just found', 'you need to hear', 'your playlist is missing', 'sleeping on', 'hidden gem'],
+    emotionalHooks: ['curiosity', 'discovery', 'fomo'],
+    shareMultiplier: 1.5,
+    riskLevel: 0.05,
+  },
+  {
+    id: 'industry_truth',
+    name: 'Industry Truth',
+    triggers: ['nobody tells you', 'music industry', 'label', 'streams pay', 'independent artist', 'the truth about'],
+    emotionalHooks: ['validation', 'anger', 'empowerment'],
+    shareMultiplier: 1.75,
+    riskLevel: 0.3,
+  },
+  {
+    id: 'process_reveal',
+    name: 'Process Reveal',
+    triggers: ['made this in', 'studio session', 'how i made', 'from scratch', 'making of', 'producer cam'],
+    emotionalHooks: ['curiosity', 'admiration', 'inspiration'],
+    shareMultiplier: 1.35,
+    riskLevel: 0.05,
+  },
+  {
+    id: 'replay_bait',
+    name: 'Replay Value Signal',
+    triggers: ["can't stop", 'on repeat', 'replay', 'no skips', 'earworm', 'stuck in my head', 'goosebumps'],
+    emotionalHooks: ['curiosity', 'fomo', 'social_proof'],
+    shareMultiplier: 1.55,
+    riskLevel: 0.05,
+  },
+  {
+    id: 'community_love',
+    name: 'Community Appreciation',
+    triggers: ['thank you', 'because of you', 'this community', 'my supporters', 'day ones', 'real ones'],
+    emotionalHooks: ['gratitude', 'belonging', 'pride'],
+    shareMultiplier: 1.3,
+    riskLevel: 0.0,
+  },
+  {
+    id: 'curiosity_gap',
+    name: 'Curiosity Gap',
+    triggers: ['wait till you hear', 'nobody expected', "you won't believe", 'i almost', 'something happened', 'crazy story'],
+    emotionalHooks: ['curiosity', 'anticipation', 'surprise'],
+    shareMultiplier: 1.72,
+    riskLevel: 0.15,
   },
 ];
 
@@ -740,6 +804,56 @@ const SEMANTIC_WORD_WEIGHTS: Record<string, { engagement: number; virality: numb
   'secret': { engagement: 0.85, virality: 0.8, sentiment: 0.6 },
   'reveal': { engagement: 0.8, virality: 0.75, sentiment: 0.7 },
   'collab': { engagement: 0.8, virality: 0.7, sentiment: 0.75 },
+  'banger': { engagement: 0.9, virality: 0.85, sentiment: 0.9 },
+  'heat': { engagement: 0.85, virality: 0.8, sentiment: 0.85 },
+  'slaps': { engagement: 0.88, virality: 0.82, sentiment: 0.88 },
+  'dope': { engagement: 0.82, virality: 0.76, sentiment: 0.85 },
+  'legendary': { engagement: 0.87, virality: 0.82, sentiment: 0.92 },
+  'iconic': { engagement: 0.86, virality: 0.81, sentiment: 0.9 },
+  'goated': { engagement: 0.88, virality: 0.84, sentiment: 0.92 },
+  'authentic': { engagement: 0.78, virality: 0.68, sentiment: 0.88 },
+  'real': { engagement: 0.72, virality: 0.65, sentiment: 0.82 },
+  'honest': { engagement: 0.75, virality: 0.67, sentiment: 0.85 },
+  'vulnerable': { engagement: 0.82, virality: 0.76, sentiment: 0.88 },
+  'emotional': { engagement: 0.83, virality: 0.77, sentiment: 0.82 },
+  'milestone': { engagement: 0.78, virality: 0.72, sentiment: 0.8 },
+  'charted': { engagement: 0.82, virality: 0.78, sentiment: 0.82 },
+  'playlisted': { engagement: 0.79, virality: 0.74, sentiment: 0.8 },
+  'debut': { engagement: 0.77, virality: 0.7, sentiment: 0.78 },
+  'unreleased': { engagement: 0.86, virality: 0.82, sentiment: 0.75 },
+  'acoustic': { engagement: 0.72, virality: 0.62, sentiment: 0.82 },
+  'studio': { engagement: 0.71, virality: 0.6, sentiment: 0.72 },
+  'recording': { engagement: 0.7, virality: 0.58, sentiment: 0.7 },
+  'session': { engagement: 0.68, virality: 0.6, sentiment: 0.7 },
+  'beat': { engagement: 0.76, virality: 0.72, sentiment: 0.75 },
+  'bars': { engagement: 0.8, virality: 0.75, sentiment: 0.8 },
+  'hook': { engagement: 0.75, virality: 0.7, sentiment: 0.75 },
+  'chorus': { engagement: 0.72, virality: 0.66, sentiment: 0.76 },
+  'movement': { engagement: 0.8, virality: 0.78, sentiment: 0.82 },
+  'journey': { engagement: 0.75, virality: 0.68, sentiment: 0.82 },
+  'story': { engagement: 0.77, virality: 0.7, sentiment: 0.82 },
+  'chapter': { engagement: 0.72, virality: 0.64, sentiment: 0.78 },
+  'raw': { engagement: 0.78, virality: 0.72, sentiment: 0.78 },
+  'powerful': { engagement: 0.8, virality: 0.73, sentiment: 0.88 },
+  'massive': { engagement: 0.83, virality: 0.78, sentiment: 0.82 },
+  'crazy': { engagement: 0.82, virality: 0.78, sentiment: 0.8 },
+  'wild': { engagement: 0.8, virality: 0.76, sentiment: 0.78 },
+  'epic': { engagement: 0.83, virality: 0.79, sentiment: 0.88 },
+  'playlist': { engagement: 0.75, virality: 0.68, sentiment: 0.72 },
+  'spotify': { engagement: 0.72, virality: 0.64, sentiment: 0.7 },
+  'certified': { engagement: 0.78, virality: 0.73, sentiment: 0.78 },
+  'gold': { engagement: 0.82, virality: 0.76, sentiment: 0.84 },
+  'platinum': { engagement: 0.86, virality: 0.82, sentiment: 0.88 },
+  'independent': { engagement: 0.74, virality: 0.68, sentiment: 0.8 },
+  'unsigned': { engagement: 0.72, virality: 0.66, sentiment: 0.78 },
+  'underrated': { engagement: 0.8, virality: 0.76, sentiment: 0.75 },
+  'replay': { engagement: 0.82, virality: 0.78, sentiment: 0.82 },
+  'earworm': { engagement: 0.83, virality: 0.8, sentiment: 0.82 },
+  'chills': { engagement: 0.85, virality: 0.79, sentiment: 0.88 },
+  'goosebumps': { engagement: 0.86, virality: 0.8, sentiment: 0.88 },
+  'therapy': { engagement: 0.82, virality: 0.76, sentiment: 0.88 },
+  'healing': { engagement: 0.8, virality: 0.74, sentiment: 0.9 },
+  'breakthrough': { engagement: 0.82, virality: 0.76, sentiment: 0.84 },
 };
 
 // ============================================================================
@@ -835,46 +949,89 @@ class AdvancedSocialAIService {
     const topic = request.topic || 'new music';
     const artist = request.artistName || '';
     
+    const genreKey = (request.genre || '').toLowerCase();
+    const genreHookAddons: Record<string, string[]> = {
+      'hip-hop': [`Bar for bar, ${topic} is the one 🎤`, `Lyricism is not dead. ${topic} is the proof 🔥`, `The wordplay on ${topic} goes three layers deep 💯`],
+      'trap': [`The 808 on ${topic} hits at max volume 🔊`, `Built this from scratch — no shortcuts 🔥`, `When the 808 drops, you feel it in your chest ⚡`],
+      'r&b': [`This melody was a dream I woke up to ✨`, `${topic} — late night, mood lighting, repeat 💜`, `The harmonies on this bridge will break you ✨`],
+      'pop': [`${topic} is that song you add to every playlist 🎵`, `One play and ${topic} is stuck in your head all week 🎵`, `The hook was designed to get in your head 🎯`],
+      'afrobeats': [`The groove on ${topic} doesn't stop 🔥`, `You cannot listen to ${topic} and not move your body 🎶`, `Lagos energy built for the world 🔥`],
+      'electronic': [`The drop on ${topic} was engineered to break speakers ⚡`, `Four to the floor and a bassline that won't quit 🎧`, `Built for peak hour, hits just as hard at home 🔊`],
+      'drill': [`The samples on ${topic} are dark and cinematic 🖤`, `Authentic drill energy. No imitation 🔥`, `Every line is a fact. Listen carefully 💯`],
+      'country': [`Wrote this on a porch in the middle of nowhere 🎸`, `Three chords and the truth — ${topic} ✨`, `Country music hits different when it's real 🎸`],
+    };
+    const genreHooks = genreHookAddons[genreKey] || [];
+
     const hookTemplates: Record<string, string[]> = {
       announcement: [
         `🚨 ${topic.toUpperCase()} ALERT`,
         `IT'S FINALLY HERE: ${topic}`,
         `The wait is OVER`,
         `🔥 OUT NOW: ${topic}`,
+        `No more waiting. ${topic} is officially live 🚀`,
+        `Day one. ${topic} just dropped everywhere 🎵`,
+        `Been sitting on ${topic} for months. It's finally time 👀`,
+        `I almost didn't release ${topic}... biggest mistake that would've been 🔥`,
+        `New era starts today — ${topic} is out now 🚨`,
+        `The one y'all have been asking for. ${topic} is live 🎤`,
+        ...genreHooks.slice(0, 2),
       ],
       behind_scenes: [
         `A little peek behind the curtain...`,
         `Studio vibes 🎚️`,
         `The making of ${topic}`,
         `You don't usually see this part...`,
+        `Nobody sees what goes into a record like this 🎧`,
+        `Raw, uncut studio footage. The real creative process 📹`,
+        `The beat was made at 2am. Vocals at 4am. Magic happens late 🌙`,
+        `The moment the hook clicked — you can see it on my face 👀`,
+        `We scrapped three versions before this one. Worth it ✨`,
+        `Producer cam was rolling the whole session. Here's what happened 🎥`,
+        ...genreHooks.slice(0, 2),
       ],
       engagement: [
         `Real talk:`,
         `I need your honest opinion`,
         `Let's settle this:`,
         `Question for my day ones:`,
+        `Be brutally honest — does ${topic} hit?`,
+        `What's your first reaction to ${topic}? Tell me 👇`,
+        `Rate ${topic} 1-10. I read every comment 💬`,
+        `Hot take incoming — fight me in the comments 🌶️`,
+        `Tell me what you think before I drop the next one 🤔`,
+        `Your feedback shapes what ${artist || 'we'} create next 👇`,
+        `Sound off: what hits first — the beat, the lyrics, or the vibe?`,
       ],
       promotional: [
         `${topic} is LIVE`,
         `Don't sleep on this`,
         `This is what you've been waiting for`,
         `${topic} available NOW`,
+        `Stream ${topic} — every play counts this week 📈`,
+        `Your playlist needs ${topic} right now 🎵`,
+        `First 24 hours are everything — ${topic} is out ⏰`,
+        `Add ${topic} to your playlist before you forget 🔗`,
+        `${topic} hit all platforms. Go run the numbers up 🚀`,
+        `Don't let the algorithm hide ${topic} from you — stream it now 🎧`,
       ],
       storytelling: [
         `Let me tell you something...`,
         `The story behind ${topic}`,
         `This is personal`,
         `I've never shared this before`,
+        `I wrote ${topic} when I almost quit music 💔`,
+        `The real story behind ${topic} — nothing was manufactured`,
+        `${topic} came from my darkest moment. Writing it was therapy`,
+        `Every lyric in ${topic} is from a real experience. No filler 🎵`,
+        `I almost deleted ${topic} a hundred times. Glad I didn't`,
+        `Some songs are made. ${topic} happened. There's a difference ✨`,
+        ...genreHooks.slice(0, 2),
       ],
     };
 
     const contentType = request.contentType || 'announcement';
     const templates = hookTemplates[contentType] || hookTemplates.announcement;
     let hook = templates[Math.floor(Math.random() * templates.length)];
-
-    if (artist && !hook.includes(artist)) {
-      hook = `${artist}: ${hook}`;
-    }
 
     if (tone.energy > 0.7 && !hook.includes('🔥') && !hook.includes('!')) {
       hook = hook + ' 🔥';
@@ -934,45 +1091,117 @@ class AdvancedSocialAIService {
       const bodies = platformBodies[contentType] || platformBodies.announcement;
       bodyParts.push(...bodies.slice(0, 2));
     } else {
-      const contentBodies: Record<string, string[]> = {
+      const contentBodyVariants: Record<string, string[][]> = {
         announcement: [
-          `${artist || 'We'} just dropped something special.`,
-          `${topic} is the result of months of hard work and dedication.`,
-          `This ${genre} experience is unlike anything before.`,
+          [
+            `${artist || 'I'} just dropped something different — and ${topic} is it.`,
+            `This ${genre} experience was built from real moments. You can feel the difference.`,
+            `Stream it, save it, tell a friend. The first 24 hours determine everything.`,
+          ],
+          [
+            `${topic} is finally out. I spent months on this — every detail matters.`,
+            `This is ${artist || 'my'} most honest work yet. No features, no safety net — just ${genre}.`,
+            `Link in bio. Go run it up.`,
+          ],
+          [
+            `The wait ends today. ${topic} by ${artist || 'me'} is live on every platform.`,
+            `I poured everything into this. The production, the lyrics, the mix — nothing was rushed.`,
+            `First week numbers change the trajectory. If this hits you, share it right now.`,
+          ],
         ],
         behind_scenes: [
-          `Here's an exclusive look at how ${topic} came together.`,
-          `The creative process is messy, beautiful, and worth sharing.`,
-          `Every great song has a story behind it.`,
+          [
+            `Here's an exclusive look at how ${topic} came together — nothing scripted.`,
+            `The creative process for this one was messy, emotional, and totally worth it.`,
+            `Every great song has a story. Here's ours.`,
+          ],
+          [
+            `The studio sessions for ${topic} were unlike anything before. Raw footage below.`,
+            `We scrapped two full versions before landing on this one. The third version is the one.`,
+            `The moment the hook clicked — I knew. You'll feel it too.`,
+          ],
+          [
+            `Three months of sessions. Forty tracks scrapped. One record that made everything worth it.`,
+            `${topic} started as a voice memo at 2am. What you're hearing now is that idea, fully realized.`,
+            `This is what the making of ${genre} looks like when nobody is watching.`,
+          ],
         ],
         engagement: [
-          `We want to hear from you.`,
-          `Your feedback shapes what we create next.`,
-          `This community means everything.`,
+          [
+            `I want to hear from you — your feedback shapes what ${artist || 'I'} create next.`,
+            `This community has pushed the music further than anything else. Tell me what you need.`,
+            `Drop your honest reaction. No filter necessary.`,
+          ],
+          [
+            `${topic} was made with you in mind. Did it land? Tell me in the comments.`,
+            `I read every comment. Every one. Your reaction to this genuinely matters.`,
+            `What hits first — the beat, the vocals, or the overall vibe? Comment below.`,
+          ],
+          [
+            `Real question: does ${topic} deserve to be in your rotation? Be brutally honest.`,
+            `I don't want hype. I want real feedback. What works and what doesn't?`,
+            `First 10 people who comment get a shoutout. I see you.`,
+          ],
         ],
         promotional: [
-          `${topic} is available on all platforms.`,
-          `Stream it, share it, make it yours.`,
-          `Don't miss this ${genre} masterpiece.`,
+          [
+            `${topic} is available on all platforms right now.`,
+            `Stream it, share it, add it to your playlist — every action helps this week.`,
+            `Don't let the algorithm bury it. Your streams make the difference.`,
+          ],
+          [
+            `${artist || 'My'} new ${genre} track ${topic} is everywhere — Spotify, Apple Music, YouTube.`,
+            `Add it to your playlist before you forget. This one has real replay value.`,
+            `The people who support early are the ones who get to say they were there first.`,
+          ],
+          [
+            `${topic} is live and the early response is already incredible.`,
+            `Join the thousands of people who already added this to their rotation.`,
+            `Be on it early. Your playlist, your culture.`,
+          ],
         ],
         storytelling: [
-          `When ${artist || 'I'} started working on ${topic}, something clicked.`,
-          `Music has always been about connection.`,
-          `This track represents a new chapter.`,
+          [
+            `When ${artist || 'I'} started working on ${topic}, something finally clicked.`,
+            `Music has always been about connection — and this track was built for that purpose.`,
+            `This represents a new chapter. And it's just getting started.`,
+          ],
+          [
+            `${topic} was written during the hardest stretch of ${artist ? artist + "'s" : 'my'} life.`,
+            `The vulnerability in these lyrics is real. Nothing was manufactured.`,
+            `If you've ever felt like this, I hope this finds you at the right time.`,
+          ],
+          [
+            `I almost didn't release ${topic}. A hundred second-guesses later — here we are.`,
+            `The most personal thing you can create is also the most universal. That's what this is.`,
+            `Writing this was therapy. Releasing it is a leap of faith.`,
+          ],
         ],
       };
 
       const contentType = request.contentType || 'announcement';
-      const bodies = contentBodies[contentType] || contentBodies.announcement;
-      bodyParts.push(...bodies.slice(0, 2));
+      const bodyVariantList = contentBodyVariants[contentType] || contentBodyVariants.announcement;
+      const selectedBodyVariant = bodyVariantList[Math.floor(Math.random() * bodyVariantList.length)];
+      bodyParts.push(...selectedBodyVariant.slice(0, 2));
     }
 
     if (tone.emotionality > 0.7) {
-      bodyParts.push(`We put our heart and soul into this.`);
+      const emotionalClosers = [
+        `We put our heart and soul into this.`,
+        `Every note was made with intention.`,
+        `This one comes from a real place.`,
+        `Music is how I speak when words aren't enough.`,
+      ];
+      bodyParts.push(emotionalClosers[Math.floor(Math.random() * emotionalClosers.length)]);
     }
 
     if (request.objective === 'conversions') {
-      bodyParts.push(`Available for a limited time.`);
+      const urgencyLines = [
+        `Available for a limited time.`,
+        `First week numbers determine everything.`,
+        `Every stream in the first 24 hours counts double.`,
+      ];
+      bodyParts.push(urgencyLines[Math.floor(Math.random() * urgencyLines.length)]);
     }
 
     let body = bodyParts.join(' ');
@@ -995,26 +1224,57 @@ class AdvancedSocialAIService {
     const ctasByObjective: Record<string, string[]> = {
       awareness: [
         'Follow for more 🔔',
-        'Turn on notifications!',
-        'More coming soon',
+        'Turn on notifications — big things coming!',
+        'More coming soon. Stay locked in 👀',
+        'Follow to stay in the loop 🔔',
+        'Hit follow — you do not want to miss the next drop',
+        'Follow + notification bell = first to know 🔔',
+        "This is just the start. Don't miss what comes next",
+        'New era. New sound. Follow along 🎵',
+        "Drop a 💬 below if you're here for the whole journey",
+        'Share with someone who needs to discover this artist 🎵',
       ],
       engagement: [
         'Drop your thoughts below! 👇',
         'Tag someone who needs to hear this!',
         'Comment your take!',
-        'What do you think?',
+        'What do you think? Drop it below 👇',
+        'Rate this 1-10 in the comments. Be honest.',
+        'First 10 comments get a shoutout 👀',
+        'Tell me what hits first — beat, hook, or vibe?',
+        "Agree or disagree? Fight me in the comments 🌶️",
+        "Your feedback changes what I create next. Real talk 👇",
+        'Drop a 🔥 if you already have this on repeat',
+        'Stitch/Duet this with your reaction!',
+        'What do YOU want to hear next? Comment below.',
       ],
       conversions: [
-        'Link in bio to listen!',
+        'Link in bio to listen! 🔗',
         'Stream now on all platforms! 🎧',
         'Tap the link to get it!',
         'Available everywhere - go run it up! 💯',
+        'Add it to your playlist before you forget 🎵',
+        "First week is everything — stream it now ⏰",
+        'Hit save on Spotify. Your playlist will thank you 💚',
+        'Go stream it, save it, share it — that order 📈',
+        'Link in bio. Every play this week matters 🔗',
+        'Available on Spotify, Apple Music, YouTube — everywhere 🎧',
+        "Don't sleep — first 24 hours are the most important ⏰",
+        "Share with three people who need this in their life 🔗",
       ],
       viral: [
         'Share if you agree! 🔄',
         'Save this for later! 💾',
         'Send this to someone who gets it!',
         'Duet/Stitch this!',
+        'Tag the person who needs to hear this right now 👇',
+        "Send this to someone who hasn't discovered this yet 🎵",
+        "If this hits, share it. One share changes everything 🔄",
+        "Your timeline needs this. Post it 🔄",
+        "Tag someone who'll be on repeat all week 🎶",
+        "Repost if you're a real one 🔄",
+        'Save now, thank me later 💾',
+        "This is the one you send in the group chat 📲",
       ],
     };
 
@@ -1221,6 +1481,20 @@ class AdvancedSocialAIService {
         hashtags,
         predictedScore: 74 + Math.random() * 10,
         differentiator: 'Storytelling approach for deeper engagement',
+      });
+    }
+
+    if (count > 4) {
+      variants.push({
+        id: 'variant_milestone',
+        type: 'milestone',
+        content: `We made it. 🏆\n\n${body}\n\nThank you for being part of this journey. ${cta}`,
+        headline: 'We made it. 🏆',
+        hook: 'We made it. 🏆',
+        cta: `Thank you for being part of this journey. ${cta}`,
+        hashtags,
+        predictedScore: 76 + Math.random() * 10,
+        differentiator: 'Milestone/community celebration — highest brand loyalty response',
       });
     }
 
