@@ -158,9 +158,9 @@ router.post('/diffusion/train', requireAuth, async (req, res) => {
   const { tier = 'quick', nSamples, nEpochs } = req.body ?? {};
 
   const tierDefaults: Record<string, { n: number; e: number; eta: string }> = {
-    quick:  { n: 300,  e: 10, eta: '~19 min' },
-    medium: { n: 600,  e: 20, eta: '~76 min' },
-    deep:   { n: 1000, e: 30, eta: '~190 min' },
+    quick:  { n: 300,  e: 10, eta: '~28 min'  },
+    medium: { n: 600,  e: 20, eta: '~110 min' },
+    deep:   { n: 1000, e: 30, eta: '~275 min' },
   };
   const cfg = tierDefaults[tier] ?? tierDefaults.quick;
   const finalSamples = nSamples ?? cfg.n;
@@ -211,7 +211,7 @@ router.post('/diffusion/generate', requireAuth, async (req, res) => {
       nFrames      = 15,
       fps          = 30,
       frameSize    = 512,
-      guidanceScale = 2.5,
+      guidanceScale = 5.0,
     } = req.body ?? {};
 
     const status = getDiffusionTrainingStatus();

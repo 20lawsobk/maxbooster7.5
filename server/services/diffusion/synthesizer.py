@@ -40,13 +40,13 @@ from .layers    import EMA
 from .trainer   import (train as run_training, load_for_inference,
                         is_trained, get_meta, WEIGHTS_PATH)
 
-SYNTH_RES = 32    # model native resolution (upscaled at output)
+SYNTH_RES = 48    # 48×48 native — 2.25× more pixels than 32×32, highest quality on CPU
 
 # Training tiers
 TIERS = {
-    'quick':  {'n_samples': 300,  'n_epochs': 10},   # ~19 min
-    'medium': {'n_samples': 600,  'n_epochs': 20},   # ~76 min
-    'deep':   {'n_samples': 1000, 'n_epochs': 30},   # ~190 min (Veo-level depth)
+    'quick':  {'n_samples': 300,  'n_epochs': 10, 'res': 48},  # ~28 min
+    'medium': {'n_samples': 600,  'n_epochs': 20, 'res': 48},  # ~110 min (default)
+    'deep':   {'n_samples': 1000, 'n_epochs': 30, 'res': 48},  # ~275 min (max quality)
 }
 
 # Genre → prompt mapping
@@ -77,26 +77,54 @@ GENRE_PROMPT_MAP = {
 }
 
 
-def _post_process(frame_f32: np.ndarray, contrast: float = 1.15,
-                  sharpen: float = 0.25) -> np.ndarray:
+def _post_process(frame_f32: np.ndarray, contrast: float = 1.25,
+                  sharpen: float = 0.45) -> np.ndarray:
     """
-    Post-process a generated frame for better visual quality.
+    Quality-focused post-processing pipeline.
 
-    contrast: multiply deviation from mean (>1 = more contrast)
-    sharpen: unsharp mask strength (0 = none)
+    Stages:
+      1. Contrast boost — punch up mid-tones without clipping
+      2. Unsharp mask — recover high-frequency detail lost during diffusion
+      3. Saturation boost — denoised frames tend to look washed out; compensate
+
+    contrast: multiplier on deviation from mean (1.25 = 25% more punch)
+    sharpen:  unsharp mask weight (0.45 = strong crisp edges without artefacts)
     Returns [H, W, 3] uint8
     """
-    # Contrast boost
+    from scipy.ndimage import gaussian_filter
+
+    # Contrast boost (per-channel, preserves colour balance)
     mean = frame_f32.mean(axis=(0, 1), keepdims=True)
     frame_f32 = mean + (frame_f32 - mean) * contrast
 
-    # Unsharp mask (sharpening)
+    # Unsharp mask: radius=0.8 avoids ringing, strength 0.45 adds crispness
     if sharpen > 0:
-        from scipy.ndimage import gaussian_filter
-        blurred = gaussian_filter(frame_f32, sigma=1.0)
+        blurred = gaussian_filter(frame_f32, sigma=0.8)
         frame_f32 = frame_f32 + sharpen * (frame_f32 - blurred)
 
+    # Mild saturation boost (convert to YCbCr space, boost chroma)
+    luma   = 0.299 * frame_f32[:,:,0] + 0.587 * frame_f32[:,:,1] + 0.114 * frame_f32[:,:,2]
+    luma   = luma[:, :, np.newaxis]
+    chroma = frame_f32 - luma
+    frame_f32 = (luma + chroma * 1.3).clip(0, 1)
+
     return (frame_f32.clip(0, 1) * 255).astype(np.uint8)
+
+
+def _quality_upscale(img_pil, target_size: tuple) -> 'PIL.Image.Image':
+    """
+    High-quality upscaling: 48×48 → target (e.g. 512×512).
+
+    Strategy:
+      1. 2× bicubic intermediate — smoother than one-shot to avoid artefacts
+      2. Final Lanczos — best resampling filter for photographic detail
+    """
+    from PIL import Image
+    w, h = target_size
+    mid_w, mid_h = min(img_pil.width * 2, w), min(img_pil.height * 2, h)
+    if mid_w < w:
+        img_pil = img_pil.resize((mid_w, mid_h), Image.BICUBIC)
+    return img_pil.resize((w, h), Image.LANCZOS)
 
 
 class DiffusionSynthesizer:
@@ -107,7 +135,7 @@ class DiffusionSynthesizer:
     GroupNorm, FiLM conditioning, EMA weights, cosine noise schedule, DDIM.
     """
 
-    def __init__(self, T: int = 100, ddim_steps: int = 30):
+    def __init__(self, T: int = 100, ddim_steps: int = 50):
         self.T          = T
         self.ddim_steps = ddim_steps
         self._loaded    = False
@@ -162,7 +190,7 @@ class DiffusionSynthesizer:
                  genre:  str  = 'hip-hop',
                  n_frames: int = 15,
                  fps: int  = 30,
-                 guidance_scale: float = 3.0,
+                 guidance_scale: float = 5.0,
                  upscale_to: tuple = None,
                  post_process: bool = True) -> list:
         """
@@ -201,7 +229,7 @@ class DiffusionSynthesizer:
                 arr = _post_process(arr.astype(np.float32) / 255.0)
             img = Image.fromarray(arr, mode='RGB')
             if upscale_to:
-                img = img.resize(upscale_to, Image.BICUBIC)
+                img = _quality_upscale(img, upscale_to)
             pil_frames.append(img)
 
         return pil_frames
@@ -211,7 +239,7 @@ class DiffusionSynthesizer:
                           genre:  str = 'hip-hop',
                           n_frames: int = 15,
                           upscale_to: tuple = (512, 512),
-                          guidance_scale: float = 3.0,
+                          guidance_scale: float = 5.0,
                           post_process: bool = True) -> list:
         os.makedirs(out_dir, exist_ok=True)
         frames = self.generate(prompt=prompt, genre=genre, n_frames=n_frames,

@@ -270,13 +270,13 @@ def _build_cond(time_enc, text_enc, t, prompt):
 
 # ── Main training function ─────────────────────────────────────────────────
 
-def train(n_samples:  int   = 300,
-          n_epochs:   int   = 10,
+def train(n_samples:  int   = 600,
+          n_epochs:   int   = 20,
           lr:         float = 2e-4,
           lr_min:     float = 5e-6,
-          res:        int   = 32,
+          res:        int   = 48,
           T:          int   = 100,
-          log_every:  int   = 50,
+          log_every:  int   = 100,
           resume:     bool  = True,
           ema_decay:  float = 0.9995,
           use_perceptual: bool = True,
@@ -286,9 +286,9 @@ def train(n_samples:  int   = 300,
     Full advanced training run.
 
     Training tiers (adjust via API):
-      Quick  (default): n_samples=300,  n_epochs=10  → ~19 min  CPU
-      Medium:           n_samples=600,  n_epochs=20  → ~76 min  CPU
-      Deep:             n_samples=1000, n_epochs=30  → ~190 min CPU (Veo-level depth)
+      Quick:            n_samples=300,  n_epochs=10  → ~28 min  CPU  @ 48×48
+      Medium (default): n_samples=600,  n_epochs=20  → ~110 min CPU  @ 48×48
+      Deep:             n_samples=1000, n_epochs=30  → ~275 min CPU  @ 48×48 (highest quality)
 
     Features:
       - EMA weights (0.9995 decay)
