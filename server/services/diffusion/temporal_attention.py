@@ -98,16 +98,28 @@ class TemporalAttention1D:
 
         self._cache  = None
 
+        # Persistent dict views for optimizer/serialization compatibility
+        self._params_dict = {
+            'W_qkv': self.W_qkv, 'b_qkv': self.b_qkv,
+            'W_o':   self.W_o,   'b_o':   self.b_o,
+            'ln_gamma': self.ln_gamma, 'ln_beta': self.ln_beta,
+            'pos_embed': self.pos_embed,
+        }
+        self._grads_dict = {
+            'W_qkv': self.d_W_qkv, 'b_qkv': self.d_b_qkv,
+            'W_o':   self.d_W_o,   'b_o':   self.d_b_o,
+            'ln_gamma': np.zeros_like(self.ln_gamma),
+            'ln_beta':  np.zeros_like(self.ln_beta),
+            'pos_embed': self.d_pos,
+        }
+
     @property
     def params(self):
-        return [self.W_qkv, self.b_qkv, self.W_o, self.b_o,
-                self.ln_gamma, self.ln_beta, self.pos_embed]
+        return self._params_dict
 
     @property
     def grads(self):
-        return [self.d_W_qkv, self.d_b_qkv, self.d_W_o, self.d_b_o,
-                np.zeros_like(self.ln_gamma), np.zeros_like(self.ln_beta),
-                self.d_pos]
+        return self._grads_dict
 
     def _layer_norm(self, x: np.ndarray, eps=1e-5):
         """LayerNorm over last axis. Returns (normalized, mean, var)."""
@@ -242,7 +254,7 @@ class TemporalAttention1D:
         return dx
 
     def _get_param_grad_pairs(self):
-        return list(zip(self.params, self.grads))
+        return [(self.params, self.grads)]
 
     def param_count(self) -> int:
-        return sum(p.size for p in self.params)
+        return sum(v.size for v in self.params.values())

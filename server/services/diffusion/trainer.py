@@ -1190,3 +1190,268 @@ def load_for_inference(model, time_enc, text_enc):
         _load_all(model, time_enc, text_enc, WEIGHTS_PATH)
         return True
     return False
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# v4 Training Engine — UNetV4, 100K prompts, T=32 temporal sequences
+# ══════════════════════════════════════════════════════════════════════════════
+
+WEIGHTS_V4_PATH = os.path.join(_here, 'weights_v4.npz')
+META_V4_PATH    = os.path.join(_here, 'meta_v4.json')
+
+# v4 uses 256-dim conditioning: 128 time + 128 text
+_TIME_ENC_DIM_V4 = 128
+_TEXT_ENC_DIM_V4 = 128
+_COND_DIM_V4     = 256
+
+
+def _build_cond_v4(time_enc, text_enc, t, prompt):
+    """256-dim conditioning for v4: time(128) + text(128)"""
+    t_emb  = time_enc.forward(t)
+    tokens = tokenize(prompt)
+    tx_emb = text_enc.forward(tokens)
+    return np.concatenate([t_emb, tx_emb]).astype(np.float32)
+
+
+def _save_v4(model, time_enc, text_enc, losses=None):
+    weights = model.get_named_weights()
+    for k, v in time_enc.params.items():
+        weights[f'time_enc_v4_{k}'] = v
+    for k, v in text_enc.params.items():
+        weights[f'text_enc_v4_{k}'] = v
+    np.savez_compressed(WEIGHTS_V4_PATH, **weights)
+    kb = os.path.getsize(WEIGHTS_V4_PATH) // 1024
+    print(f"[DiffusionTrainer v4] Saved weights ({kb} KB) → {WEIGHTS_V4_PATH}", flush=True)
+
+
+def _load_v4(model, time_enc, text_enc):
+    if not os.path.exists(WEIGHTS_V4_PATH):
+        return False
+    try:
+        data = dict(np.load(WEIGHTS_V4_PATH, allow_pickle=False))
+    except Exception as e:
+        print(f"[DiffusionTrainer v4] Could not load weights (corrupt?): {e}", flush=True)
+        return False
+    try:
+        model.load_named_weights(data)
+    except Exception as e:
+        print(f"[DiffusionTrainer v4] Load error (non-fatal): {e}")
+    for k in time_enc.params:
+        key = f'time_enc_v4_{k}'
+        if key in data and data[key].shape == time_enc.params[k].shape:
+            time_enc.params[k] = data[key].astype(np.float32)
+    for k in text_enc.params:
+        key = f'text_enc_v4_{k}'
+        if key in data and data[key].shape == text_enc.params[k].shape:
+            text_enc.params[k] = data[key].astype(np.float32)
+    print(f"[DiffusionTrainer v4] Loaded weights from {WEIGHTS_V4_PATH}", flush=True)
+    return True
+
+
+def train_v4(n_epochs: int = 5,
+             n_samples: int = 500,
+             T: int = 4,
+             res: int = 96,
+             lr: float = 2e-4,
+             ema_decay: float = 0.9998,
+             use_perceptual: bool = True,
+             session_label: str = 'v4_quick') -> dict:
+    """
+    Train the v4 UNet (300M params, T-frame sequences, 100K prompts).
+
+    Progressive training schedule (suggested):
+      Phase 1 (T=4,  quick): Spatial quality foundation
+      Phase 2 (T=8,  medium): Short motion learning
+      Phase 3 (T=16, deep):   Medium motion coherence
+      Phase 4 (T=32, deep):   Full video coherence
+
+    Args:
+        n_epochs:    Training epochs
+        n_samples:   Samples per epoch
+        T:           Temporal sequence length (4/8/16/32)
+        res:         Spatial resolution (96 for v4 native)
+        lr:          Learning rate
+        ema_decay:   EMA decay rate (higher = slower adaptation)
+        use_perceptual: Use Sobel edge + FFT loss
+        session_label: Label for memory/logging
+    """
+    from .unet_v4 import UNetV4
+    from .frame_extractor import FrameExtractor
+    from .training_data_v3 import get_all_prompts, get_scenes
+
+    print(f"\n{'='*70}", flush=True)
+    print(f"[DiffusionTrainer v4] Starting: {session_label}", flush=True)
+    print(f"  Model: UNetV4 (~300M params, T={T} frames, {res}×{res})", flush=True)
+    print(f"  Epochs: {n_epochs}  |  Samples/epoch: {n_samples}", flush=True)
+    print(f"  LR: {lr}  |  EMA: {ema_decay}  |  Perceptual: {use_perceptual}", flush=True)
+    print(f"{'='*70}", flush=True)
+
+    # ── Build model ───────────────────────────────────────────────────────────
+    from .encoder import TimeEncoder, TextEncoder
+    model    = UNetV4(cond_dim=_COND_DIM_V4, T=T)
+    param_count = model.count_params()
+    print(f"[DiffusionTrainer v4] Model params: {param_count:,} ({param_count/1e6:.1f}M)",
+          flush=True)
+
+    time_enc = TimeEncoder(emb_dim=_TIME_ENC_DIM_V4)
+    text_enc = TextEncoder(emb_dim=_TEXT_ENC_DIM_V4)
+    scheduler = DDPMScheduler(T=1000, schedule='cosine')
+    extractor = FrameExtractor(T=T, H=res, W=res)
+
+    # ── Try loading existing v4 weights ──────────────────────────────────────
+    _load_v4(model, time_enc, text_enc)
+    model.set_training(True)
+
+    # ── Optimizer ─────────────────────────────────────────────────────────────
+    all_pairs = model._get_param_grad_pairs_flat()
+    # Add time/text encoder params
+    all_pairs.append((time_enc.params, time_enc.grads))
+    all_pairs.append((text_enc.params, text_enc.grads))
+    opt = Adam(lr=lr)
+    ema = EMA(decay=ema_decay)
+
+    # ── 100K prompt library ───────────────────────────────────────────────────
+    print(f"[DiffusionTrainer v4] Loading 100K prompt library...", flush=True)
+    all_scene_prompts = get_all_prompts(target=100_000)
+    scenes = list(all_scene_prompts.keys())
+    print(f"[DiffusionTrainer v4] {sum(len(v) for v in all_scene_prompts.values()):,} "
+          f"prompts across {len(scenes)} scenes", flush=True)
+
+    # Flatten for rotation
+    flat_pairs = []
+    for sc, prompts in all_scene_prompts.items():
+        flat_pairs.extend([(sc, p) for p in prompts])
+    rng = np.random.default_rng(42)
+    rng.shuffle(flat_pairs)
+
+    losses    = []
+    total_time = 0.0
+    step_count = 0
+    memory = LongTermMemory()
+
+    for epoch in range(n_epochs):
+        epoch_losses = []
+        epoch_start  = time.time()
+        sample_pairs = flat_pairs[:n_samples]  # rotate each epoch
+        flat_pairs   = flat_pairs[n_samples:] + flat_pairs[:n_samples]  # cycle
+
+        for i, (scene, prompt) in enumerate(sample_pairs):
+            try:
+                # Sample frame sequence from extractor
+                frame_seq = extractor.sample(scene, seed=step_count)
+                frame_seq = extractor.augment(frame_seq, seed=step_count)
+                # frame_seq: (T, H, W, 3) float32 in [-1, 1]
+
+                # Sample noise timestep
+                t_idx = rng.integers(1, 1000)
+                noise = np.random.randn(*frame_seq.shape).astype(np.float32)
+
+                # Add noise to ALL T frames (same t_idx for temporal coherence)
+                alpha = float(scheduler.alpha_bar[t_idx])
+                x_noisy = math.sqrt(alpha) * frame_seq + math.sqrt(1 - alpha) * noise
+
+                # Build 256-dim conditioning
+                cond = _build_cond_v4(time_enc, text_enc, t_idx, prompt)
+
+                # Forward pass: predict noise for all T frames
+                model.zero_grads()
+                pred_noise = model.forward(x_noisy, cond)
+                # pred_noise: (T, H, W, 3)
+
+                # Loss across all T frames
+                if use_perceptual:
+                    total_loss = 0.0
+                    total_dloss = np.zeros_like(pred_noise)
+                    for t_frame in range(T):
+                        fl, dfl = perceptual_loss(pred_noise[t_frame], noise[t_frame])
+                        total_loss += fl / T
+                        total_dloss[t_frame] = dfl / T
+
+                    # Temporal consistency loss: penalize frame-to-frame inconsistency
+                    if T > 1:
+                        for tf in range(T - 1):
+                            diff = pred_noise[tf + 1] - pred_noise[tf]
+                            temporal_loss = np.mean(diff ** 2) * 0.05
+                            total_loss += temporal_loss
+                            total_dloss[tf]     -= 0.1 * diff / diff.size
+                            total_dloss[tf + 1] += 0.1 * diff / diff.size
+                    loss  = total_loss
+                    dloss = total_dloss
+                else:
+                    diff  = pred_noise - noise
+                    loss  = float(np.mean(diff ** 2))
+                    dloss = (2.0 / pred_noise.size) * diff
+
+                # Backward + update
+                model.backward(dloss)
+                _clip_gradients(all_pairs, max_norm=1.0)
+                opt.step(all_pairs)
+                ema.update(all_pairs)
+
+                epoch_losses.append(float(loss))
+                losses.append(float(loss))
+                step_count += 1
+
+                if i % 50 == 0:
+                    avg = float(np.mean(epoch_losses[-50:]))
+                    print(f"[v4] Ep {epoch+1}/{n_epochs}  step {i+1}/{n_samples}  "
+                          f"loss={avg:.4f}  scene={scene[:20]}", flush=True)
+
+            except Exception as e:
+                print(f"[DiffusionTrainer v4] Step error (skip): {e}", flush=True)
+                continue
+
+        epoch_time  = time.time() - epoch_start
+        total_time += epoch_time
+        mean_loss   = float(np.mean(epoch_losses)) if epoch_losses else 0.0
+        print(f"[DiffusionTrainer v4] Epoch {epoch+1} done: "
+              f"loss={mean_loss:.4f}  time={epoch_time:.0f}s", flush=True)
+
+        # EMA snapshot + save
+        backup = ema.apply(all_pairs)
+        _save_v4(model, time_enc, text_enc, losses)
+        ema.restore(all_pairs, backup)
+
+    # ── Final save + metadata ─────────────────────────────────────────────────
+    backup = ema.apply(all_pairs)
+    _save_v4(model, time_enc, text_enc, losses)
+    ema.restore(all_pairs, backup)
+
+    meta = {
+        'version':          4,
+        'epochs':           n_epochs,
+        'samples_per_epoch': n_samples,
+        'final_loss':       float(losses[-1]) if losses else 0.0,
+        'total_seconds':    total_time,
+        'resolution':       res,
+        'T':                T,
+        'channels':         [128, 256, 512, 1024],
+        'levels':           5,
+        'resblocks':        4,
+        'bottleneck_depth': 6,
+        'attention_levels': 5,
+        'temporal_attn':    True,
+        'param_count':      param_count,
+        'scene_categories': len(scenes),
+        'total_prompts':    len(flat_pairs),
+        'ema_decay':        ema_decay,
+        'session_label':    session_label,
+    }
+    with open(META_V4_PATH, 'w') as f:
+        json.dump(meta, f, indent=2)
+
+    memory.complete_session(meta, total_time)
+    print(f"[DiffusionTrainer v4] Complete. Total time: {total_time:.0f}s  "
+          f"Final loss: {losses[-1]:.4f}", flush=True)
+    return meta
+
+
+def is_trained_v4() -> bool:
+    return os.path.exists(WEIGHTS_V4_PATH)
+
+
+def get_meta_v4() -> dict:
+    if os.path.exists(META_V4_PATH):
+        with open(META_V4_PATH) as f:
+            return json.load(f)
+    return {}
