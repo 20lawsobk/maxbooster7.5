@@ -47,11 +47,14 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 
 - **Node.js**: Version 22 (required for `engines: { node: ">=22" }`)
 - **Python**: 3.11 with uvicorn, fastapi, pydantic (for Python AI microservice on port 9878)
-- **Database**: Replit PostgreSQL (DATABASE_URL and SESSION_SECRET are set as secrets)
-- **Workflow**: `NODE_ENV=development npx tsx server/index.ts` on port 5000 (webview)
-- **Dev mode**: Vite runs as middleware inside Express — both frontend and backend on port 5000
-- **Optional services**: Redis (for caching/sessions), Stripe, SendGrid — warnings appear but app works without them
-- **Deployment**: Autoscale, build with `npm run build`, run with `node --max-old-space-size=4096 dist/cluster.cjs`
+- **Database**: Neon PostgreSQL (NEON_DATABASE_URL), Replit PostgreSQL as fallback (DATABASE_URL)
+- **Workflow**: `npm run start` on port 5000 (production mode, webview)
+- **Production mode**: `npm run build` (esbuild bundles server to dist/cluster.cjs, Vite builds client to dist/public), then `npm run start` (starts Node cluster)
+- **Hybrid Storage**: Replit Object Storage (REPLIT_BUCKET_ID: replit-objstore-3eab39bb-cd26-43db-9900-1e811e2220fe) as hot tier + Pocket Dimension (custom compression/dedup) as cold tier + BoosterState (Rust WAL, port 9877) for metadata/queues
+- **Redis**: REDIS_URL set (redis://...cloud.rlrcp.com) — BullMQ workers, Redis session store, cross-instance WebSocket PubSub all active
+- **All API keys configured**: Stripe (live), SendGrid, Sentry, all OAuth providers (Facebook, Instagram, TikTok, Twitter, LinkedIn, YouTube, Google, Threads, Spotify), LabelGrid, Exa, Tavily, GitHub PAT
+- **Admin**: ADMIN_EMAIL=blawzmusic@gmail.com, ADMIN_USERNAME=B-Lawz Music (bootstrapped)
+- **Deployment**: Autoscale, build with `npm run build`, run with `npm run start`
 
 ## External Dependencies
 
