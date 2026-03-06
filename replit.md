@@ -43,6 +43,16 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **TikTok Production Mode**: Switched `TIKTOK_ENV` to `production` using production client credentials.
 -   **Financial Config Admin UI**: Admin panel "Financial Config" tab lets admin edit DSP royalty rates (per-stream base rate, premium multiplier), tax treaty withholding rates per country, and label settings (ISRC registrant code, UPC prefix, etc.) with inline editing. Backend routes: `GET/PATCH /api/admin/financial-config/royalty-rates/:id`, `GET/PATCH /api/admin/financial-config/tax-treaties/:id`, `GET/PATCH /api/admin/financial-config/label-settings/:key`.
 
+## Replit Environment Setup
+
+- **Node.js**: Version 22 (required for `engines: { node: ">=22" }`)
+- **Python**: 3.11 with uvicorn, fastapi, pydantic (for Python AI microservice on port 9878)
+- **Database**: Replit PostgreSQL (DATABASE_URL and SESSION_SECRET are set as secrets)
+- **Workflow**: `NODE_ENV=development npx tsx server/index.ts` on port 5000 (webview)
+- **Dev mode**: Vite runs as middleware inside Express — both frontend and backend on port 5000
+- **Optional services**: Redis (for caching/sessions), Stripe, SendGrid — warnings appear but app works without them
+- **Deployment**: Autoscale, build with `npm run build`, run with `node --max-old-space-size=4096 dist/cluster.cjs`
+
 ## External Dependencies
 
 -   **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
