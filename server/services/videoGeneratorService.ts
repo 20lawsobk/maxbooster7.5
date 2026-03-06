@@ -3,10 +3,14 @@
  *
  * Architecture: Two-stage pipeline
  *   Stage 1 — Python frame generator (frameGenerator.py):
- *     - 8 animated background styles rendered with NumPy (plasma_fractal, galaxy_spiral,
- *       neon_tunnel, aurora_curtains, warp_speed, liquid_metal, fire_embers, crystal_facets)
+ *     - 13 visual styles: 8 abstract NumPy + 5 realistic scene environments
+ *       Abstract: plasma_fractal, galaxy_spiral, neon_tunnel, aurora_curtains,
+ *                 warp_speed, liquid_metal, fire_embers, crystal_facets
+ *       Realistic: concert_stage, city_nights, studio_session, golden_hour, neon_cityscape
+ *     - scene_prompt: free-text description auto-selects scene style + artist silhouettes
  *     - Genre-calibrated style selection and palette mapping
  *     - Live EQ visualizer overlay (32-bar music spectrum)
+ *     - Human figure silhouettes, crowd rendering, environmental animation
  *     - Renders at 2x downscale internally → FFmpeg scales up (4x faster)
  *     - Piped as raw RGB24 directly to FFmpeg stdin (zero intermediate files)
  *   Stage 2 — FFmpeg compositor:
@@ -18,7 +22,8 @@
  *     - Logo overlay (optional, auto-positioned top-right)
  *
  * Performance: ~25–35s render time for a 15s 1080×1920 video (no GPU required)
- * Quality:     Professional motion-graphics grade; 8 music-industry visual styles
+ * Quality:     Professional motion-graphics grade; 13 music-industry visual styles
+ *              including 5 realistic environments with human figures
  */
 
 import { execFile, execFileSync, spawn } from 'child_process';
@@ -308,6 +313,7 @@ interface SceneSpec {
   height: number;
   outPath: string;
   genre?: string;
+  scene_prompt?: string;
 }
 
 // ── PYTHON FRAME PIPELINE ─────────────────────────────────────────────────────
@@ -321,12 +327,11 @@ async function renderWithPython(
   genre: string,
   textVfParts: string[],
   outPath: string,
+  scenePrompt?: string,
 ): Promise<void> {
-  const pythonStyle = BG_TO_PYTHON[style.bgType] || 'plasma_fractal';
   const fps = 30;
 
-  const pythonCfg = JSON.stringify({
-    style:        pythonStyle,
+  const pythonCfgObj: Record<string, unknown> = {
     width:        innerW,
     height:       innerH,
     duration:     dur,
@@ -340,7 +345,15 @@ async function renderWithPython(
     eq_n_bars:    32,
     speed:        1.0,
     intensity:    0.88,
-  });
+  };
+
+  if (scenePrompt && scenePrompt.trim()) {
+    pythonCfgObj.scene_prompt = scenePrompt.trim();
+  } else {
+    pythonCfgObj.style = BG_TO_PYTHON[style.bgType] || 'plasma_fractal';
+  }
+
+  const pythonCfg = JSON.stringify(pythonCfgObj);
 
   // Scale up from internal resolution, then apply text overlays
   const scaleFilter = innerW !== width
@@ -464,8 +477,10 @@ async function renderScene(spec: SceneSpec): Promise<void> {
     }
   }
 
-  if (style.bgType === 'solid') {
-    // Solid background — fast FFmpeg-only path
+  const scenePrompt = spec.scene_prompt || '';
+
+  if (style.bgType === 'solid' && !scenePrompt) {
+    // Solid background — fast FFmpeg-only path (only when no scene prompt)
     const vf = ['format=yuv420p', ...textVfParts].join(',');
     await execFileAsync(FFMPEG, [
       '-y',
@@ -477,12 +492,12 @@ async function renderScene(spec: SceneSpec): Promise<void> {
       outPath,
     ], { timeout: 90_000 });
   } else {
-    // Animated background — Python NumPy engine piped to FFmpeg
+    // Animated background — Python NumPy/PIL scene engine piped to FFmpeg
     // Render at half resolution internally, FFmpeg scales up (4x faster)
     const scale  = 2;
     const innerW = Math.floor(width / scale);
     const innerH = Math.floor(height / scale);
-    await renderWithPython(innerW, innerH, width, height, dur, style, genre, textVfParts, outPath);
+    await renderWithPython(innerW, innerH, width, height, dur, style, genre, textVfParts, outPath, scenePrompt || undefined);
   }
 }
 
@@ -591,6 +606,7 @@ export interface VideoGenOptions {
   body?: string;
   cta?: string;
   logo_path?: string;
+  scene_prompt?: string;
 }
 
 export interface VideoGenResult {
@@ -628,6 +644,10 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
   const totalDur    = Math.max(6, Math.min(opts.duration || 15, 30));
   const genre       = (opts.genre || 'default').toLowerCase();
   const audioProfile = AUDIO_PROFILES[genre] || AUDIO_PROFILES.default;
+
+  // ── Scene prompt: explicit → derived from topic+genre → undefined (Python uses genre defaults)
+  const scenePrompt = opts.scene_prompt?.trim() ||
+    (opts.topic ? `${opts.topic} ${genre} music` : undefined);
 
   // ── AI content generation ──
   let hook = opts.hook || '';
@@ -686,9 +706,9 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
       tempFiles.push(hookPath, bodyPath, ctaPath);
 
       await Promise.all([
-        renderScene({ type: 'hook', primaryText: hook, artistName: opts.artist_name, duration: sceneDurations[0], style, width, height, outPath: hookPath, genre }),
-        renderScene({ type: 'body', primaryText: body, artistName: opts.artist_name, duration: sceneDurations[1], style, width, height, outPath: bodyPath, genre }),
-        renderScene({ type: 'cta',  primaryText: cta,  secondaryText: body, artistName: opts.artist_name, duration: sceneDurations[2], style, width, height, outPath: ctaPath, genre }),
+        renderScene({ type: 'hook', primaryText: hook, artistName: opts.artist_name, duration: sceneDurations[0], style, width, height, outPath: hookPath, genre, scene_prompt: scenePrompt }),
+        renderScene({ type: 'body', primaryText: body, artistName: opts.artist_name, duration: sceneDurations[1], style, width, height, outPath: bodyPath, genre, scene_prompt: scenePrompt }),
+        renderScene({ type: 'cta',  primaryText: cta,  secondaryText: body, artistName: opts.artist_name, duration: sceneDurations[2], style, width, height, outPath: ctaPath, genre, scene_prompt: scenePrompt }),
       ]);
 
       // ── Combine with xfade ──
@@ -779,7 +799,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
         `:alpha='if(lt(t\\,${(ctaStart+0.3).toFixed(1)})\\,min(1\\,(t-${ctaStart.toFixed(1)})*3)\\,1)'`
       );
 
-      if (style.bgType === 'solid') {
+      if (style.bgType === 'solid' && !scenePrompt) {
         await execFileAsync(FFMPEG, [
           '-y',
           '-f', 'lavfi', '-i', `color=c=${style.bg}:s=${width}x${height}:d=${totalDur}:r=30`,
@@ -792,7 +812,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
         const scale  = 2;
         const innerW = Math.floor(width / scale);
         const innerH = Math.floor(height / scale);
-        await renderWithPython(innerW, innerH, width, height, totalDur, style, genre, vfParts, scenePath);
+        await renderWithPython(innerW, innerH, width, height, totalDur, style, genre, vfParts, scenePath, scenePrompt || undefined);
       }
 
       // Add audio + optional logo
