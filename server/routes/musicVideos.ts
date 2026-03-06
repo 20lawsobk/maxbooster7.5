@@ -241,4 +241,43 @@ router.post('/diffusion/generate', requireAuth, async (req, res) => {
   }
 });
 
+// ── Background self-training control endpoints ─────────────────────────────
+
+router.get('/diffusion/background/status', requireAuth, async (req, res) => {
+  try {
+    const { getBackgroundStatus } = await import('../services/diffusionBackgroundTrainer.js');
+    res.json(getBackgroundStatus());
+  } catch {
+    res.json({ running: false, error: 'Background trainer not loaded' });
+  }
+});
+
+router.post('/diffusion/background/start', requireAuth, async (req, res) => {
+  try {
+    const { startBackgroundTraining, getBackgroundStatus } = await import('../services/diffusionBackgroundTrainer.js');
+    startBackgroundTraining();
+    res.json({ message: 'Background self-training started', status: getBackgroundStatus() });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not start background trainer', details: String(err) });
+  }
+});
+
+router.post('/diffusion/background/stop', requireAuth, async (req, res) => {
+  try {
+    const { force } = req.body ?? {};
+    const { stopBackgroundTraining, forceStopBackgroundTraining, getBackgroundStatus } = await import('../services/diffusionBackgroundTrainer.js');
+    if (force) {
+      forceStopBackgroundTraining();
+    } else {
+      stopBackgroundTraining();
+    }
+    res.json({
+      message: force ? 'Background training force-stopped' : 'Background training will stop after current session',
+      status: getBackgroundStatus(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not stop background trainer', details: String(err) });
+  }
+});
+
 export default router;

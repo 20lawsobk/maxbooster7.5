@@ -843,6 +843,15 @@ app.use((req, res, next) => {
         import('./services/baseModelTrainer.js').then(({ runBaseModelTraining }) => {
           runBaseModelTraining().catch((e) => { logger.warn('[BaseTrainer] Background training error:', e instanceof Error ? e.message : String(e)); });
         }).catch(() => {});
+
+        // Diffusion self-training: starts 60s after boot so server is stable first
+        setTimeout(() => {
+          import('./services/diffusionBackgroundTrainer.js').then(({ startBackgroundTraining }) => {
+            startBackgroundTraining();
+            logger.info('🎬 [DiffBG] Diffusion self-training loop started — model will continuously improve in the background');
+          }).catch((e) => logger.warn('[DiffBG] Could not start background trainer:', e?.message));
+        }, 60_000);
+
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
       });
 })().catch((error) => {
