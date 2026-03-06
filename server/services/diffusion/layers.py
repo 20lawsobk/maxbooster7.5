@@ -15,6 +15,17 @@ Convolution via vectorized im2col (stride tricks) — no Python loops.
 
 import numpy as np
 import math
+import sys as _sys
+import os as _os
+
+_services_dir = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+if _services_dir not in _sys.path:
+    _sys.path.insert(0, _services_dir)
+try:
+    from digitalgpu import get_gpu as _get_gpu
+    _GPU_AVAILABLE = True
+except Exception:
+    _GPU_AVAILABLE = False
 
 
 # ── Utility: im2col / col2im ───────────────────────────────────────────────
@@ -73,7 +84,11 @@ class Conv2D:
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         cols, H_out, W_out = im2col(x, self.k, self.k, self.stride, self.pad)
-        out_flat = cols @ self.params['W'].T + self.params['b']
+        if _GPU_AVAILABLE:
+            out_flat = _get_gpu().conv2d(cols, self.params['W'],
+                                         bias=self.params['b'])
+        else:
+            out_flat = cols @ self.params['W'].T + self.params['b']
         self._cache = (x.shape, cols)
         return out_flat.reshape(H_out, W_out, self.c_out)
 
@@ -221,6 +236,9 @@ class Linear:
 
     def forward(self, x):
         self._x = x
+        if _GPU_AVAILABLE:
+            return _get_gpu().gemm(x, self.params['W'].T,
+                                   bias=self.params['b'])
         return x @ self.params['W'].T + self.params['b']
 
     def backward(self, dout):
@@ -279,30 +297,40 @@ class SelfAttention2D:
         x_norm = self.norm.forward(x)
         x_flat = x_norm.reshape(N, C)       # [N, C]
 
-        Q = x_flat @ self.params['Wq'].T    # [N, C]
-        K = x_flat @ self.params['Wk'].T
-        V = x_flat @ self.params['Wv'].T
+        if _GPU_AVAILABLE:
+            _gpu = _get_gpu()
+            Q_flat = _gpu.gemm(x_flat, self.params['Wq'].T)   # [N, C]
+            K_flat = _gpu.gemm(x_flat, self.params['Wk'].T)
+            V_flat = _gpu.gemm(x_flat, self.params['Wv'].T)
+        else:
+            Q_flat = x_flat @ self.params['Wq'].T
+            K_flat = x_flat @ self.params['Wk'].T
+            V_flat = x_flat @ self.params['Wv'].T
 
         # Split heads: [N, h, d]
-        Q = Q.reshape(N, h, d)
-        K = K.reshape(N, h, d)
-        V = V.reshape(N, h, d)
+        Q = Q_flat.reshape(N, h, d)
+        K = K_flat.reshape(N, h, d)
+        V = V_flat.reshape(N, h, d)
 
-        # Scaled dot-product attention per head: [h, N, N]
-        # Attn[i,j] = softmax(Q[i] · K[j] / sqrt(d))
-        attn_logits = np.einsum('nhd,mhd->hnm', Q, K) * self.scale  # [h, N, N]
+        # TATTN — fused scaled dot-product attention
+        if _GPU_AVAILABLE:
+            out_heads, attn_weights = _get_gpu().attention(
+                Q, K, V, scale=self.scale)
+        else:
+            attn_logits = np.einsum('nhd,mhd->hnm', Q, K) * self.scale
+            attn_logits -= attn_logits.max(axis=-1, keepdims=True)
+            attn_weights = np.exp(attn_logits)
+            attn_weights /= attn_weights.sum(axis=-1, keepdims=True) + 1e-9
+            out_heads = np.einsum('hnm,mhd->nhd', attn_weights, V)
 
-        # Numerical stable softmax
-        attn_logits -= attn_logits.max(axis=-1, keepdims=True)
-        attn_weights = np.exp(attn_logits)
-        attn_weights /= attn_weights.sum(axis=-1, keepdims=True) + 1e-9  # [h, N, N]
-
-        # Weighted sum of values: [h, N, d] → [N, h*d] = [N, C]
-        out_heads = np.einsum('hnm,mhd->nhd', attn_weights, V)  # [N, h, d]
-        out_flat  = out_heads.reshape(N, C)
+        out_flat = out_heads.reshape(N, C)
 
         # Output projection
-        out = out_flat @ self.params['Wo'].T + self.params['bo']   # [N, C]
+        if _GPU_AVAILABLE:
+            out = _get_gpu().gemm(out_flat, self.params['Wo'].T,
+                                  bias=self.params['bo'])
+        else:
+            out = out_flat @ self.params['Wo'].T + self.params['bo']
 
         self._cache = (x, x_norm, x_flat, Q, K, V, attn_weights, out_flat, H, W, C, N)
         # Residual connection: output + input
