@@ -15,6 +15,7 @@ import {
   Sliders,
   ChevronDown,
   MessageSquare,
+  LayoutGrid,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -268,6 +269,63 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
       });
     }
   }, [generatedTrack, onTrackGenerated, toast]);
+
+  const [isGeneratingArrangement, setIsGeneratingArrangement] = useState(false);
+
+  const handleGenerateArrangement = useCallback(async () => {
+    if (!onTrackGenerated) {
+      toast({
+        title: 'Open a project first',
+        description: 'Open a project to add the arrangement to the timeline',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsGeneratingArrangement(true);
+    try {
+      const res = await apiRequest('POST', '/api/studio/generation/pattern/arrangement', {
+        genre: selectedGenre,
+        key,
+        scale: scale.toLowerCase(),
+        tempo,
+        complexity,
+        bars,
+      });
+      const data = await res.json() as any;
+      if (data?.arrangement) {
+        const tracks = [
+          { key: 'melody', label: 'AI Melody', category: 'melodic' },
+          { key: 'bass',   label: 'AI Bass',   category: 'melodic' },
+          { key: 'pad',    label: 'AI Pad',     category: 'melodic' },
+          { key: 'drums',  label: 'AI Drums',   category: 'drums'   },
+        ];
+        for (const t of tracks) {
+          const track = data.arrangement[t.key];
+          if (track) {
+            onTrackGenerated({
+              audioFilePath: track.audioFilePath || '',
+              parameters: { key, scale: scale.toLowerCase(), tempo, genre: selectedGenre },
+              duration: (bars * 4 * 60) / tempo,
+              generatedNotes: track.notes || [],
+              generatedChords: track.chords || [],
+            });
+          }
+        }
+        toast({
+          title: 'Full Arrangement Added',
+          description: `${selectedGenre} arrangement — melody, bass, pad, and drums added to timeline`,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Arrangement Failed',
+        description: error.message || 'Failed to generate full arrangement',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingArrangement(false);
+    }
+  }, [selectedGenre, key, scale, tempo, complexity, bars, onTrackGenerated, toast]);
 
   const selectedGenreData = GENRES.find(g => g.id === selectedGenre);
 
@@ -540,10 +598,10 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
         </AnimatePresence>
       </div>
 
-      <div className="p-4 border-t border-zinc-800">
+      <div className="p-4 border-t border-zinc-800 flex flex-col gap-2">
         <Button
           onClick={handleGenerate}
-          disabled={isGenerating}
+          disabled={isGenerating || isGeneratingArrangement}
           className={cn(
             'w-full py-6 text-lg font-semibold',
             `bg-gradient-to-r ${selectedGenreData?.color || 'from-purple-600 to-pink-600'}`
@@ -558,6 +616,24 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
             <>
               <Sparkles className="w-5 h-5 mr-2" />
               Generate Music
+            </>
+          )}
+        </Button>
+        <Button
+          onClick={handleGenerateArrangement}
+          disabled={isGenerating || isGeneratingArrangement}
+          variant="outline"
+          className="w-full border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+        >
+          {isGeneratingArrangement ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Building Arrangement...
+            </>
+          ) : (
+            <>
+              <LayoutGrid className="w-4 h-4 mr-2" />
+              Generate Full Arrangement
             </>
           )}
         </Button>

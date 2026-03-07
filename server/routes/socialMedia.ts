@@ -2043,11 +2043,41 @@ router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: 
       trackTitle: seed.track,
     });
 
+    const videoConfig = {
+      topic:    seed.topic,
+      genre:    seed.genre || 'hip-hop',
+      tone:     seed.tone  || 'energetic',
+      platform: platform   || 'tiktok',
+      duration: 15,
+      artist_name: seed.artist || '',
+      hook:     seed.track
+        ? `${seed.track}${seed.artist ? ` — ${seed.artist}` : ''}`
+        : seed.topic.slice(0, 60),
+    };
+
+    const audioStyle = {
+      genre:    seed.genre   || 'hip-hop',
+      mood:     seed.tone    || 'energetic',
+      prompt:   `${seed.genre || 'hip-hop'} beat for "${seed.topic.slice(0, 40)}"`,
+      bpm:      seed.genre === 'trap' ? 140 : seed.genre === 'r&b' ? 90 : 120,
+    };
+
+    const imagePrompt = [
+      seed.artist ? `Artist: ${seed.artist}` : '',
+      seed.track  ? `Track: ${seed.track}` : '',
+      seed.genre  ? `Genre: ${seed.genre}` : '',
+      seed.tone   ? `Mood: ${seed.tone}` : '',
+      seed.og_image ? `Reference image: ${seed.og_image}` : '',
+    ].filter(Boolean).join('. ') || seed.topic;
+
     res.json({
-      success:  true,
+      success:      true,
       analysis,
       seed,
-      content:  content?.content || content || null,
+      content:      content?.content || content || null,
+      video_config: videoConfig,
+      audio_style:  audioStyle,
+      image_prompt: imagePrompt,
     });
   } catch (error) {
     logger.error('analyze-url failed:', error);

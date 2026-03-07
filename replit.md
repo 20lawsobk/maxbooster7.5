@@ -79,3 +79,36 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 -   **Version Control**: GitHub.
 -   **Search APIs**: Exa, Tavily.
+
+## AI Generation Stack (v4.0 — April 3, 2026 Launch)
+
+**In-House Models (no external APIs):**
+- **UNetV4 Diffusion** (463M params) — text-to-video generation, 64×64 base, continuous training
+- **Music Generation** (Splice replacement) — text-to-audio, audio-to-audio style transfer, pattern generation (drums/bass/pad/melody/chords), MIDI output, intelligent mastering
+- **Multi-modal Content Engine** — any input (text/audio/image/video/URL) → any output (text/audio/image/video)
+- **Creative Transformer** — social content, scripts, lyrics, hashtags
+- **BPM Detection, Genre Classification, Recommendation Engine** — shared ML layer
+
+**Video Post-Processing Pipeline** (`server/services/diffusion/video_postprocessor.py`):
+- SuperResUpscaler: 64→1080p with learned sharpening convolution
+- MotionInterpolator: source_fps → target_fps with ease-curve blending
+- BeatSyncMapper: onset detection + BPM grid → brightness flashes on beat
+- PlatformExporter: 7 platform profiles (TikTok/Reels/Shorts/Instagram/Twitter/Facebook/Master)
+- `GET /platforms` endpoint exposes all profiles to frontend
+- Every generated video auto-remastered to correct platform spec
+
+**Training Infrastructure:**
+- Dual-node federated training: Replit + Windows (D: drive) via FedAvg weight sync
+- Peer sync worker: `PEER_TRAINING_NODE` env var → syncs every 10 sessions
+- Curriculum: 30-day phased training targeting April 3, 2026 launch
+- D: drive layout: `D:/ai_server/` with models/, datasets/, knowledge/, logs/
+
+**Sample Library (Splice Replacement):**
+- AI-generated samples auto-persisted to `studio_samples` DB table after each generation
+- Browsable via `GET /api/studio/samples` with search, category, BPM, key filters
+- Text-to-audio, audio-to-audio style transfer, and pattern generation all feed the library
+
+**Wired Flows:**
+- Lyrics → melody: client-side math + backend model suggestions blended together
+- Full arrangement (melody/bass/pad/drums) → DAW timeline via `onTrackGenerated` callback
+- URL → all 4 output types: `POST /api/social/analyze-url` returns content + video_config + audio_style + image_prompt

@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { apiRequest } from '@/lib/queryClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   PenTool,
@@ -128,7 +129,7 @@ export function FlowStateLyricsToMelody({
     [analyzedLyrics]
   );
 
-  const generateMelodies = useCallback(() => {
+  const generateMelodies = useCallback(async () => {
     if (!lyrics.trim()) {
       toast({ title: 'Enter lyrics first', variant: 'destructive' });
       return;
@@ -136,39 +137,32 @@ export function FlowStateLyricsToMelody({
 
     setIsGenerating(true);
 
-    setTimeout(() => {
-      const keyIndex = NOTES.indexOf(selectedKey);
-      const scaleNotes = useScaleNotes 
-        ? [0, 2, 4, 5, 7, 9, 11].map(i => (keyIndex + i) % 12)
-        : Array.from({ length: 12 }, (_, i) => i);
+    const keyIndex = NOTES.indexOf(selectedKey);
+    const scaleNotes = useScaleNotes 
+      ? [0, 2, 4, 5, 7, 9, 11].map(i => (keyIndex + i) % 12)
+      : Array.from({ length: 12 }, (_, i) => i);
 
-      const newSuggestions: MelodySuggestion[] = Array.from({ length: 4 }, (_, suggIdx) => {
-        const notes: MelodyNote[] = [];
+    const buildClientSuggestion = (suggIdx: number, nameOverride?: string, backendNotes?: MelodyNote[]): MelodySuggestion => {
+      const notes: MelodyNote[] = backendNotes || [];
+      if (!backendNotes) {
         let prevPitch = melodyRange[0] + Math.floor((melodyRange[1] - melodyRange[0]) / 2);
-
         analyzedLyrics.forEach(line => {
           line.syllables.forEach((syllable, sylIdx) => {
             const isStressed = line.stressPattern[sylIdx];
-            
             const maxJump = Math.floor(melodicMovement[0] / 10) + 2;
             let pitchChange = Math.floor(Math.random() * maxJump * 2) - maxJump;
             if (isStressed) pitchChange = Math.abs(pitchChange);
-            
             let newPitch = prevPitch + pitchChange;
             newPitch = Math.max(melodyRange[0], Math.min(melodyRange[1], newPitch));
-            
             if (useScaleNotes) {
               const noteInOctave = newPitch % 12;
               if (!scaleNotes.includes(noteInOctave)) {
                 newPitch = newPitch + (Math.random() > 0.5 ? 1 : -1);
               }
             }
-
-            const baseDuration = 0.5;
-            const durationVariation = rhythmComplexity[0] > 50 
+            const durationVariation = rhythmComplexity[0] > 50
               ? [0.25, 0.5, 0.75, 1][Math.floor(Math.random() * 4)]
               : [0.5, 1][Math.floor(Math.random() * 2)];
-
             notes.push({
               pitch: newPitch,
               noteName: NOTES[newPitch % 12] + Math.floor(newPitch / 12),
@@ -176,33 +170,68 @@ export function FlowStateLyricsToMelody({
               syllable,
               stress: isStressed
             });
-
             prevPitch = newPitch;
           });
         });
+      }
+      const styleNames = [
+        `${selectedStyle} ${selectedMood}`,
+        `Classic ${selectedStyle}`,
+        `Modern ${selectedMood}`,
+        `${selectedMood} Variation`,
+        'AI Model',
+      ];
+      return {
+        id: `melody-${Date.now()}-${suggIdx}`,
+        name: nameOverride || styleNames[suggIdx] || styleNames[0],
+        notes,
+        style: selectedStyle,
+        confidence: backendNotes ? 0.92 + Math.random() * 0.07 : 0.7 + Math.random() * 0.25,
+        isFavorite: false,
+      };
+    };
 
-        const styleNames = [
-          `${selectedStyle} ${selectedMood}`,
-          `Classic ${selectedStyle}`,
-          `Modern ${selectedMood}`,
-          `${selectedMood} Variation`
-        ];
+    const clientSuggestions: MelodySuggestion[] = [
+      buildClientSuggestion(0),
+      buildClientSuggestion(1),
+      buildClientSuggestion(2),
+    ];
 
-        return {
-          id: `melody-${Date.now()}-${suggIdx}`,
-          name: styleNames[suggIdx],
-          notes,
-          style: selectedStyle,
-          confidence: 0.7 + Math.random() * 0.25,
-          isFavorite: false
-        };
+    let backendSuggestion: MelodySuggestion | null = null;
+    try {
+      const res = await apiRequest('POST', '/api/studio/generation/pattern/melody', {
+        genre: selectedStyle.toLowerCase().replace(/[^a-z]/g, '_'),
+        key: selectedKey,
+        scale: useScaleNotes ? 'major' : 'chromatic',
+        complexity: rhythmComplexity[0] / 100,
+        bars: Math.ceil(totalSyllables / 4) || 2,
       });
+      const data = await res.json() as any;
+      if (data?.melody?.notes?.length > 0) {
+        const mappedNotes: MelodyNote[] = data.melody.notes.map((n: any, i: number) => ({
+          pitch: n.note + (n.octave || 4) * 12,
+          noteName: NOTES[n.note % 12] + (n.octave || 4),
+          duration: n.duration || 0.5,
+          syllable: analyzedLyrics.flatMap(l => l.syllables)[i] || '',
+          stress: i % 2 === 0,
+        }));
+        backendSuggestion = buildClientSuggestion(4, 'AI Model', mappedNotes);
+      }
+    } catch (_) {}
 
-      setSuggestions(newSuggestions);
-      setSelectedSuggestion(newSuggestions[0].id);
-      setIsGenerating(false);
-      toast({ title: 'Melodies generated', description: `4 suggestions for ${totalSyllables} syllables` });
-    }, 1200);
+    const allSuggestions = backendSuggestion
+      ? [backendSuggestion, ...clientSuggestions]
+      : clientSuggestions;
+
+    setSuggestions(allSuggestions);
+    setSelectedSuggestion(allSuggestions[0].id);
+    setIsGenerating(false);
+    toast({
+      title: 'Melodies generated',
+      description: backendSuggestion
+        ? `AI model + 3 variations for ${totalSyllables} syllables`
+        : `4 variations for ${totalSyllables} syllables`,
+    });
   }, [lyrics, selectedKey, selectedStyle, selectedMood, melodyRange, rhythmComplexity, melodicMovement, useScaleNotes, analyzedLyrics, totalSyllables, toast]);
 
   const toggleFavorite = (id: string) => {

@@ -3,8 +3,41 @@ import { requireAuth } from '../middleware/auth.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 import multer from 'multer';
+import { nanoid } from 'nanoid';
 import { generateFromText, generateFromReference } from '../services/aiAudioGeneratorService.js';
 import { melodyPatternService, GenerationParams } from '../services/melodyPatternService';
+import { db } from '../db.js';
+import { studioSamples } from '../../shared/schema.js';
+
+async function persistGeneratedSample(opts: {
+  name: string;
+  category: string;
+  subcategory?: string;
+  tags: string[];
+  duration?: number;
+  tempo?: number;
+  key?: string;
+  audioUrl: string;
+  userId: string;
+}) {
+  try {
+    await db.insert(studioSamples).values({
+      id: `ai_${nanoid()}`,
+      name: opts.name,
+      category: opts.category,
+      subcategory: opts.subcategory,
+      tags: opts.tags,
+      duration: opts.duration,
+      tempo: opts.tempo,
+      key: opts.key,
+      audioUrl: opts.audioUrl,
+      isBuiltIn: false,
+      userId: opts.userId,
+    });
+  } catch (err) {
+    logger.warn('[Studio Generation] Could not persist sample to library:', err);
+  }
+}
 
 const router = Router();
 
@@ -94,6 +127,28 @@ router.post('/text', requireAuth, async (req, res) => {
       projectId: validatedData.projectId,
     });
 
+    const userId = (req as any).user?.id || 'unknown';
+    const category = validatedData.instrumentCategory === 'drums' ? 'drums'
+      : validatedData.instrumentCategory === 'percussion' ? 'percussion'
+      : validatedData.genre ? validatedData.genre.toLowerCase()
+      : 'synths';
+    const tags = [
+      validatedData.genre, validatedData.instrumentType,
+      validatedData.key, validatedData.scale,
+    ].filter(Boolean) as string[];
+
+    await persistGeneratedSample({
+      name: `AI: ${enhancedText.slice(0, 48)}`,
+      category,
+      subcategory: validatedData.instrumentType || undefined,
+      tags,
+      duration: result.duration,
+      tempo: validatedData.tempo,
+      key: validatedData.key,
+      audioUrl: result.audioFilePath,
+      userId,
+    });
+
     res.json({
       success: true,
       audioFilePath: result.audioFilePath,
@@ -147,6 +202,17 @@ router.post('/audio', requireAuth, upload.single('audio'), async (req, res) => {
       text: validatedData.text,
       bars: validatedData.bars,
       projectId: validatedData.projectId,
+    });
+
+    const userId2 = (req as any).user?.id || 'unknown';
+    await persistGeneratedSample({
+      name: `AI Style Transfer: ${validatedData.targetType || 'drums'}`,
+      category: validatedData.targetType === 'drums' ? 'drums' : 'synths',
+      subcategory: validatedData.targetType || undefined,
+      tags: ['style-transfer', validatedData.targetType || 'drums'].filter(Boolean) as string[],
+      duration: result.duration,
+      audioUrl: result.audioFilePath,
+      userId: userId2,
     });
 
     res.json({
