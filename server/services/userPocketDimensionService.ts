@@ -51,7 +51,7 @@ export class UserPocketDimensionService {
         version: '1.0.0',
       }));
       
-      const defaultFolders = ['audio', 'artwork', 'documents', 'beats', 'stems', 'exports'];
+      const defaultFolders = ['audio', 'artwork', 'documents', 'beats', 'stems', 'exports', 'ai-journey'];
       for (const folder of defaultFolders) {
         await pocket.write(`${folder}/.gitkeep`, '');
       }
@@ -281,6 +281,102 @@ export class UserPocketDimensionService {
     }
     
     return await pocket.createNestedDimension(dimensionName);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AI JOURNEY METHODS
+  // All per-user AI knowledge lives in the ai-journey/ folder of each pocket.
+  // Base model knowledge lives on the D: drive Model Knowledge Server.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Record one AI generation event in the user's journey.
+   * Appended to ai-journey/generation-history.json (capped at 1000 entries).
+   */
+  async recordGeneration(userId: string, meta: {
+    prompt:      string;
+    type:        'video' | 'audio' | 'image' | 'beat';
+    durationSec?: number;
+    genre?:       string;
+    mood?:        string;
+    rating?:      number;
+    createdAt?:   string;
+  }): Promise<void> {
+    const pocket = await this.getUserPocket(userId);
+    if (!pocket) return;
+
+    const KEY = 'ai-journey/generation-history.json';
+    let history: any[] = [];
+    try {
+      const raw = await pocket.read(KEY);
+      history = JSON.parse(raw.toString());
+    } catch {}
+
+    history.push({ ...meta, createdAt: meta.createdAt ?? new Date().toISOString() });
+    if (history.length > 1000) history = history.slice(-1000);
+
+    await pocket.write(KEY, JSON.stringify(history));
+    logger.debug(`[AIJourney] Recorded ${meta.type} generation for user ${userId}`);
+  }
+
+  /**
+   * Get or update a user's AI preference profile.
+   * Stored in ai-journey/profile.json — accumulates taste signals over time.
+   */
+  async getAiProfile(userId: string): Promise<Record<string, any>> {
+    const pocket = await this.getUserPocket(userId);
+    if (!pocket) return {};
+    try {
+      const raw = await pocket.read('ai-journey/profile.json');
+      return JSON.parse(raw.toString());
+    } catch {
+      return {};
+    }
+  }
+
+  async updateAiProfile(userId: string, updates: Record<string, any>): Promise<void> {
+    const pocket = await this.getUserPocket(userId);
+    if (!pocket) return;
+    const current = await this.getAiProfile(userId);
+    const merged  = { ...current, ...updates, updatedAt: new Date().toISOString() };
+    await pocket.write('ai-journey/profile.json', JSON.stringify(merged));
+  }
+
+  /**
+   * Get a user's recent generation history.
+   */
+  async getGenerationHistory(userId: string, limit = 50): Promise<any[]> {
+    const pocket = await this.getUserPocket(userId);
+    if (!pocket) return [];
+    try {
+      const raw     = await pocket.read('ai-journey/generation-history.json');
+      const history = JSON.parse(raw.toString()) as any[];
+      return history.slice(-limit);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Save a fine-tune delta for this user (personalisation weights offset).
+   * Stored as binary in ai-journey/fine-tune-delta.bin — applied on top of
+   * the base model weights that live on the D: drive Model Knowledge Server.
+   */
+  async saveFinetuneDelata(userId: string, deltaBytes: Buffer): Promise<void> {
+    const pocket = await this.getUserPocket(userId);
+    if (!pocket) return;
+    await pocket.write('ai-journey/fine-tune-delta.bin', deltaBytes);
+    logger.info(`[AIJourney] Saved fine-tune delta (${deltaBytes.length} bytes) for user ${userId}`);
+  }
+
+  async getFinetuneDelata(userId: string): Promise<Buffer | null> {
+    const pocket = await this.getUserPocket(userId);
+    if (!pocket) return null;
+    try {
+      return await pocket.read('ai-journey/fine-tune-delta.bin');
+    } catch {
+      return null;
+    }
   }
 
   /**
