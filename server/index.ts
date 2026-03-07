@@ -859,16 +859,36 @@ app.use((req, res, next) => {
   process.exit(1);
 });
 
-// Graceful shutdown — closes DB pool cleanly so in-flight requests and transactions complete
+// Graceful shutdown — stops accepting new connections, drains in-flight requests,
+// then closes the DB pool. Hard-exits after 10 s so autoscale SIGKILL is never needed.
 async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   logger.info(`[Shutdown] Received ${signal}, starting graceful shutdown...`);
+
+  // Hard deadline: exit no matter what after 10 s (autoscale gives ~30 s before SIGKILL).
+  const hardExit = setTimeout(() => {
+    logger.error('[Shutdown] Hard timeout reached — forcing exit');
+    process.exit(exitCode);
+  }, 10_000);
+  hardExit.unref(); // do not keep the event loop alive just for this timer
+
   try {
+    // 1. Stop the HTTP server so the load balancer stops routing new requests here.
+    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
+    logger.info('[Shutdown] HTTP server closed');
+  } catch (err) {
+    logger.error('[Shutdown] Error closing HTTP server:', err);
+  }
+
+  try {
+    // 2. Close the database pool so in-flight queries complete before the process exits.
     const { pool } = await import('./db.js');
     await pool.end();
     logger.info('[Shutdown] Database pool closed');
   } catch (err) {
     logger.error('[Shutdown] Error during graceful shutdown:', err);
   }
+
+  clearTimeout(hardExit);
   process.exit(exitCode);
 }
 

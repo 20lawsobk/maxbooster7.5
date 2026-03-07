@@ -100,6 +100,42 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     console.log(`[Cluster] Worker ${worker.process.pid} online`);
   });
 
+  // Graceful shutdown for the cluster primary.
+  // Autoscale sends SIGTERM to the process group when scaling down a replica.
+  // The primary must propagate the signal to all workers and wait for them to drain
+  // before exiting. Hard-exits after 25 s (autoscale sends SIGKILL at ~30 s).
+  function primaryShutdown(signal: string): void {
+    console.log(`[Cluster] Primary received ${signal} — draining ${Object.keys(cluster.workers ?? {}).length} worker(s)`);
+
+    const hardExit = setTimeout(() => {
+      console.error('[Cluster] Primary hard timeout — forcing exit');
+      process.exit(0);
+    }, 25_000);
+    hardExit.unref();
+
+    // Forward SIGTERM to all workers so they trigger their own graceful shutdown.
+    const workers = Object.values(cluster.workers ?? {}).filter(Boolean) as import('cluster').Worker[];
+    workers.forEach((w) => {
+      try { w.process.kill('SIGTERM'); } catch { /* worker may already be gone */ }
+    });
+
+    // Exit once all workers have exited.
+    let remaining = workers.length;
+    if (remaining === 0) { clearTimeout(hardExit); process.exit(0); return; }
+
+    cluster.on('exit', () => {
+      remaining--;
+      if (remaining <= 0) {
+        console.log('[Cluster] All workers exited — primary shutting down');
+        clearTimeout(hardExit);
+        process.exit(0);
+      }
+    });
+  }
+
+  process.on('SIGTERM', () => primaryShutdown('SIGTERM'));
+  process.on('SIGINT',  () => primaryShutdown('SIGINT'));
+
   // Rolling restart triggered by SilentDeploymentService after self-evolution files land.
   // Cycles workers one at a time: old exits → new forks and comes online → repeat.
   // Zero downtime: at least one worker is always serving traffic.
