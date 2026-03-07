@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -78,6 +79,7 @@ interface AutopilotPreferencesData {
   contentThemes: string[];
   avoidTopics: string[];
   callToActionStyle: string;
+  contentQualityThreshold: number;
   platformSettings: Record<string, PlatformSetting>;
   postingSchedule: PostingSchedule;
   adAutopilotEnabled: boolean;
@@ -106,6 +108,7 @@ const defaultPreferences: AutopilotPreferencesData = {
   contentThemes: [],
   avoidTopics: [],
   callToActionStyle: 'direct',
+  contentQualityThreshold: 90,
   platformSettings: {},
   postingSchedule: {
     timezone: 'America/New_York',
@@ -443,6 +446,27 @@ export function AutopilotPreferences() {
                     onCheckedChange={(checked) => setPreferences({ ...preferences, avoidEmojis: checked })}
                   />
                   <Label htmlFor="avoidEmojis">Avoid using emojis</Label>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+                    <span className="text-sm font-semibold text-purple-300">AI Quality Gate — Active</span>
+                  </div>
+                  <span className="text-xs font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                    {preferences.contentQualityThreshold}% minimum
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Before any post goes live, the autopilot runs up to 8 generation rounds with A/B variant testing until a piece of content scores at least {preferences.contentQualityThreshold}/100. Every rejected attempt is archived in Pocket Dimension to continuously train the models. The AI learns 3x faster than human capacity — the bar stays high and the output keeps improving.
+                </p>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div
+                    className="bg-purple-500 h-1.5 rounded-full transition-all"
+                    style={{ width: `${preferences.contentQualityThreshold}%` }}
+                  />
                 </div>
               </div>
 

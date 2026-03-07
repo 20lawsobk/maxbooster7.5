@@ -3,6 +3,7 @@ import { logger } from '../logger.js';
 import { aiModelManager } from './aiModelManager.js';
 import { autoPostingService, type PostContent } from './autoPostingService.js';
 import { contentQualityPipeline, type ContentVariant, type ContentScores } from './contentQualityPipeline';
+import { contentQualityGate } from './contentQualityGate.js';
 import { dynamicTrendsService } from './dynamicTrendsService';
 import { aiTranslationService, type TranslatedContent } from './aiTranslationService';
 import { pythonAIService } from './pythonAIService.js';
@@ -80,24 +81,25 @@ class AutoPostGenerator {
     const primaryPlatform = platforms[0];
     
     try {
-      const variantCount = request.generateVariants || 3;
-      const { selected, variants, context } = await contentQualityPipeline.generateAndSelect(
-        userId,
-        {
-          topic: request.topic || 'new music',
-          objective: request.objective || 'engagement',
-          platform: primaryPlatform,
-          tone: request.tone,
-          targetAudience: request.targetAudience,
-          genre: request.genre,
-        },
-        variantCount,
-        55
-      );
+      const gateResult = await contentQualityGate.run(userId, {
+        topic: request.topic || 'new music',
+        objective: request.objective || 'engagement',
+        platform: primaryPlatform,
+        tone: request.tone,
+        targetAudience: request.targetAudience,
+        genre: request.genre,
+      });
 
-      if (!selected) {
-        logger.warn('No variant met quality threshold, falling back to legacy generation');
-        return this.generateSocialContent(userId, request);
+      const selected = gateResult.winner;
+      const variants = [selected, ...gateResult.rejectedVariants];
+
+      if (gateResult.passedOnAttempt > 1) {
+        logger.info(
+          `[AutoPost] Quality gate: passed on attempt ${gateResult.passedOnAttempt}/${5}, ` +
+          `tried ${gateResult.totalVariantsTried} variants, ` +
+          `score=${selected.scores.overall.toFixed(1)}, threshold=${gateResult.thresholdUsed}, ` +
+          `archived=${gateResult.storedKey ?? 'no'}`
+        );
       }
 
       const trendingHashtags = await dynamicTrendsService.getOptimizedHashtags(
@@ -457,9 +459,9 @@ class AutoPostGenerator {
     results?: any;
     veoAssets?: string[];
   }> {
-    const content = await this.generateSocialContent(userId, request);
+    const content = await this.generateEnhancedContent(userId, request);
 
-    logger.info(`Generated social content for user ${userId}: "${content.headline}"`);
+    logger.info(`Generated social content for user ${userId}: "${content.headline}" (score=${content.qualityScores?.overall?.toFixed(1) ?? 'N/A'})`);
 
     let veoAssets: string[] = [];
     if (content.mediaType === 'video' && trackInfo) {
@@ -520,10 +522,12 @@ class AutoPostGenerator {
     scheduled?: boolean;
     results?: any;
   }> {
-    // Generate viral content with AI prediction
-    const content = await this.generateViralContent(userId, request);
+    const content = await this.generateEnhancedContent(userId, {
+      ...request,
+      objective: 'viral',
+    });
 
-    logger.info(`Generated viral content for user ${userId}: "${content.headline}" (viral score: ${content.viralScore?.toFixed(2)})`);
+    logger.info(`Generated viral content for user ${userId}: "${content.headline}" (score=${content.qualityScores?.overall?.toFixed(1) ?? 'N/A'})`);
 
     // Prepare post content
     const postContent: PostContent = {

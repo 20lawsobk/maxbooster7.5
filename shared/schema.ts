@@ -3981,6 +3981,7 @@ export const autopilotPreferences = pgTable("autopilot_preferences", {
   contentThemes: jsonb("content_themes").$type<string[]>(), // e.g. ['new releases', 'behind the scenes', 'fan engagement']
   avoidTopics: jsonb("avoid_topics").$type<string[]>(),
   callToActionStyle: text("call_to_action_style"), // 'direct' | 'subtle' | 'question' | 'urgency'
+  contentQualityThreshold: integer("content_quality_threshold").default(90), // 0-100, minimum score before auto-posting
   
   // Platform-Specific Settings
   platformSettings: jsonb("platform_settings").$type<{
