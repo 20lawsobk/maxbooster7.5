@@ -276,7 +276,12 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
           origin.endsWith('.repl.co') ||
           origin.endsWith('.replit.app');
 
-        if (isReplitDomain) {
+        // Allow localhost / 127.0.0.1 origins (Replit webview preview)
+        const isLocalOrigin =
+          origin.startsWith('http://localhost:') ||
+          origin.startsWith('http://127.0.0.1:');
+
+        if (isReplitDomain || isLocalOrigin) {
           callback(null, true);
           return;
         }

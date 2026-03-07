@@ -1,4 +1,4 @@
-import { logger } from 'logger';
+import { logger } from '@/lib/logger';
 /**
  * External Link Utility
  * Provides secure methods to open external URLs in the user's browser

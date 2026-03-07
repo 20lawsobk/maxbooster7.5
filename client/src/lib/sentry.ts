@@ -1,4 +1,4 @@
-import { logger } from 'logger';
+import { logger } from '@/lib/logger';
 export type SentryLevel = 'fatal' | 'error' | 'warning' | 'info' | 'debug';
 
 export interface SentryBreadcrumb {

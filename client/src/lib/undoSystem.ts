@@ -1,4 +1,4 @@
-import { logger } from 'logger';
+import { logger } from '@/lib/logger';
 export type UndoActionType = 'create' | 'update' | 'delete' | 'move' | 'reorder' | 'batch' | 'custom';
 
 export interface UndoAction<T = unknown> {

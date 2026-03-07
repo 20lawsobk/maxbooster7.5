@@ -23,7 +23,7 @@ import { spawn, ChildProcess } from "child_process";
 
 // MANDATORY safety imports - these MUST load successfully
 import {
-  initializeSafetyystems,
+  initializeSafetySystems,
   applyMandatoryMiddleware,
   globalErrorHandler as safetyErrorHandler,
   sanitizationMiddleware,
@@ -339,7 +339,7 @@ app.use((req, res, next) => {
   // INITIALIZE PRODUCTION SAFETY SYSTEMS
   // ========================================
   try {
-    const safetyResult = await initializeSafetyystems();
+    const safetyResult = await initializeSafetySystems();
     if (!safetyResult.success) {
       logger.warn(`⚠️ Safety systems initialized with warnings: ${safetyResult.errors.join(', ')}`);
     }

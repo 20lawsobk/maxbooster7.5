@@ -3036,16 +3036,36 @@ export async function registerRoutes(
       if (pocket && pocket.userId !== req.user.id) {
         return res.status(403).json({ message: "Access denied" });
       }
-      const { filename, content } = req.body;
+      const { filename, content, mimeType, folder } = req.body;
+      if (!filename || content === undefined) {
+        return res.status(400).json({ message: "filename and content are required" });
+      }
+      const userId = req.user.id;
+      const fileKey = `pocket/${pocketId}/${Date.now()}_${filename}`;
+      const contentBuffer = Buffer.from(typeof content === 'string' ? content : JSON.stringify(content));
+      const sizeBytes = contentBuffer.length;
+      const [inserted] = await db.insert(userStorageFiles).values({
+        userId,
+        storageId: pocketId,
+        fileName: filename,
+        fileKey,
+        mimeType: mimeType || 'text/plain',
+        sizeBytes,
+        folder: folder || '/',
+        isPublic: false,
+        metadata: { writtenAt: new Date().toISOString() },
+      }).returning();
       return res.json({
         success: true,
-        fileId: `file_${Date.now()}`,
+        fileId: inserted.id,
+        fileKey,
         pocketId,
         filename,
+        sizeBytes,
         message: 'File written successfully',
       });
     } catch (error) {
-      logger.info("Pocket write error:", error);
+      logger.error("Pocket write error:", error);
       return res.status(500).json({ message: "Failed to write to pocket" });
     }
   });

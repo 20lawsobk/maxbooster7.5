@@ -5,17 +5,8 @@
  * Behaviour differs by environment:
  *   Development — all levels logged to console with colour-coded prefixes
  *   Production  — only 'error' and 'warn' are emitted (reduces console noise)
- *
- * Delegates to the browser's native `logger` (or console) so log output can be
- * captured by dev tools and Sentry breadcrumbs.
- *
- * Usage:
- *   import { logger } from '@/lib/logger';
- *   logger.info('User authenticated', { userId });
- *   logger.error('Payment failed', error, 'BillingPage');
  */
 
-import { logger } from 'logger';
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
 interface LogEntry {
@@ -47,7 +38,6 @@ class Logger {
     if (this.isDevelopment) {
       return true;
     }
-
     return level === 'error' || level === 'warn';
   }
 
@@ -63,13 +53,15 @@ class Logger {
       const style = this.getConsoleStyle(level);
 
       if (data !== undefined) {
-        logger.info(`%c${prefix} ${message}`, style, data);
+        console.log(`%c${prefix} ${message}`, style, data);
       } else {
-        logger.info(`%c${prefix} ${message}`, style);
+        console.log(`%c${prefix} ${message}`, style);
       }
     } else {
       if (level === 'error') {
-        logger.error(logEntry.message, logEntry.data);
+        console.error(logEntry.message, logEntry.data);
+      } else if (level === 'warn') {
+        console.warn(logEntry.message, logEntry.data);
       }
     }
   }

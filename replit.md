@@ -80,6 +80,20 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **Version Control**: GitHub.
 -   **Search APIs**: Exa, Tavily.
 
+## Production Hardening (v4.1 — March 2026)
+
+**Critical bugs fixed:**
+- `client/src/lib/logger.ts`: Removed broken `import { logger } from 'logger'` (non-existent npm package causing infinite recursion stack overflow). Replaced all internal `logger.info/error()` calls with direct `console.log/error/warn()` — the client Logger class IS the logger, so it must not self-reference.
+- `client/src/lib/offline/index.ts`: `initOfflineQueue`, `initDraftStorage`, `initOfflineCache`, and `initSyncManager` were only re-exported (not locally imported), making them undefined when called inside `initOfflineSystem()`. Added proper local imports for all four functions.
+- `client/src/lib/externalLinks.ts`, `offlineStorage.ts`, `sentry.ts`, `undoSystem.ts`: All had `import { logger } from 'logger'` (non-existent package). Fixed to `import { logger } from '@/lib/logger'`.
+- `server/safety/mandatoryMiddleware.ts`: CORS middleware was blocking `http://127.0.0.1:5000` and `http://localhost:*` origins in production, causing all static asset requests from Replit's webview preview to return 500. Added `isLocalOrigin` check to allow localhost/127.0.0.1 origins alongside Replit domains.
+- `server/safety/index.ts` + `server/index.ts`: Typo `initializeSafetyystems` → `initializeSafetySystems` (consistent rename across both files).
+- `server/routes.ts`: Pocket Dimension write endpoint (`POST /api/pocket/:pocketId/write`) was a stub returning fake success without persisting anything. Fixed to actually insert into `userStorageFiles` table with proper content-addressed key, size tracking, and DB record.
+- Missing `client/src/data/blogPosts.ts`: File referenced by `Blog.tsx` and `BlogPost.tsx` didn't exist, breaking production Vite build. Created complete data file with 5 industry-relevant blog posts, `BlogPost`/`BlogSection` TypeScript interfaces, and `getBlogPostBySlug`/`getRelatedPosts` helper functions.
+
+**Environment variables added:**
+- `WEBHOOK_SECRET`: Required by `server/services/webhookReliabilityService.ts` in production. Set as 64-char hex random secret.
+
 ## Codebase Polish (v4.0 full sweep)
 
 **Bugs fixed:**

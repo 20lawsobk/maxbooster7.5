@@ -102,7 +102,7 @@ import { logger } from '../logger.js';
  * Initialize all safety systems
  * Call this during server startup
  */
-export async function initializeSafetyystems(): Promise<{
+export async function initializeSafetySystems(): Promise<{
   success: boolean;
   errors: string[];
 }> {
