@@ -111,7 +111,6 @@
     "@sentry/node": "^10.40.0",
     "@sentry/profiling-node": "^10.40.0",
     "@tensorflow/tfjs": "^4.22.0",
-    "@tensorflow/tfjs-node": "^4.22.0",
     "@types/canvas-confetti": "^1.9.0",
     "archiver": "^7.0.1",
     "axios": "^1.13.5",
@@ -167,6 +166,7 @@
     "zod-validation-error": "^5.0.0"
   },
   "devDependencies": {
+    "@tensorflow/tfjs-node": "^4.22.0",
     "@capacitor/android": "^8.1.0",
     "@capacitor/app": "^8.0.1",
     "@capacitor/browser": "^8.0.1",
