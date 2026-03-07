@@ -118,8 +118,8 @@ def build_curriculum() -> List[CurriculumPhase]:
             T           = 4,
             res         = 64,
             lr          = 2e-4,
-            n_samples_per_session = 200,
-            n_epochs_per_session  = 3,
+            n_samples_per_session = 400,
+            n_epochs_per_session  = 5,
             training_focus = 'spatial_quality',
             datasets    = [
                 'synthetic',        # Always available — procedural frames
@@ -150,8 +150,8 @@ def build_curriculum() -> List[CurriculumPhase]:
             T           = 8,
             res         = 64,
             lr          = 1e-4,
-            n_samples_per_session = 300,
-            n_epochs_per_session  = 4,
+            n_samples_per_session = 500,
+            n_epochs_per_session  = 6,
             training_focus = 'motion_coherence',
             datasets    = [
                 'synthetic',        # Still used as baseline

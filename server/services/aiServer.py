@@ -1284,7 +1284,7 @@ def _training_worker(mode: str, n_sessions: int, phase_id: int | None):
 
             _trainer2.run_session = _patched_rs
             _trainer2.run_month(
-                sleep_between_sessions_sec=120,
+                sleep_between_sessions_sec=15,
                 stop_event=_stop_event,
                 deadline_str='2026-04-03',
             )

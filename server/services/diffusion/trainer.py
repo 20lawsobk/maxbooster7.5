@@ -1213,6 +1213,10 @@ def _build_cond_v4(time_enc, text_enc, t, prompt):
     return np.concatenate([t_emb, tx_emb]).astype(np.float32)
 
 
+WEIGHTS_V4_BEST_PATH = os.path.join(_here, 'weights_v4_best.npz')
+_best_loss_v4 = [float('inf')]  # module-level tracker across sessions
+
+
 def _save_v4(model, time_enc, text_enc, losses=None):
     weights = model.get_named_weights()
     for k, v in time_enc.params.items():
@@ -1222,6 +1226,16 @@ def _save_v4(model, time_enc, text_enc, losses=None):
     np.savez_compressed(WEIGHTS_V4_PATH, **weights)
     kb = os.path.getsize(WEIGHTS_V4_PATH) // 1024
     print(f"[DiffusionTrainer v4] Saved weights ({kb} KB) → {WEIGHTS_V4_PATH}", flush=True)
+
+    # Keep a separate best-weights file that only updates on a new record low
+    if losses:
+        current_loss = float(np.mean(losses[-10:])) if len(losses) >= 10 else float(losses[-1])
+        if current_loss < _best_loss_v4[0]:
+            _best_loss_v4[0] = current_loss
+            import shutil as _sh
+            _sh.copy2(WEIGHTS_V4_PATH, WEIGHTS_V4_BEST_PATH)
+            print(f"[DiffusionTrainer v4] New best loss {current_loss:.5f} → "
+                  f"saved best checkpoint", flush=True)
 
 
 def _load_v4(model, time_enc, text_enc):
@@ -1364,11 +1378,28 @@ def train_v4(n_epochs: int = 5,
     step_count = 0
     memory = LongTermMemory()
 
+    # LR warmup: ramp from lr/10 → lr over the first min(3, n_epochs//3) epochs,
+    # then cosine decay from lr → lr*0.05 for the remaining epochs.
+    _warmup_epochs = min(3, max(1, n_epochs // 3))
+
+    def _epoch_lr(epoch_idx: int) -> float:
+        if epoch_idx < _warmup_epochs:
+            return lr * (0.1 + 0.9 * (epoch_idx + 1) / _warmup_epochs)
+        progress = (epoch_idx - _warmup_epochs) / max(1, n_epochs - _warmup_epochs)
+        cosine   = 0.5 * (1.0 + math.cos(math.pi * progress))
+        return lr * (0.05 + 0.95 * cosine)  # decays to 5% of lr
+
     for epoch in range(n_epochs):
         epoch_losses = []
         epoch_start  = time.time()
         sample_pairs = flat_pairs[:n_samples]  # rotate each epoch
         flat_pairs   = flat_pairs[n_samples:] + flat_pairs[:n_samples]  # cycle
+
+        # Apply per-epoch LR schedule
+        opt.lr = _epoch_lr(epoch)
+        if epoch == 0 or epoch == _warmup_epochs:
+            print(f"[DiffusionTrainer v4] LR schedule: epoch {epoch+1} lr={opt.lr:.2e}",
+                  flush=True)
 
         for i, (scene, prompt) in enumerate(sample_pairs):
             try:
@@ -1402,14 +1433,17 @@ def train_v4(n_epochs: int = 5,
                         total_loss += fl / T
                         total_dloss[t_frame] = dfl / T
 
-                    # Temporal consistency loss: penalize frame-to-frame inconsistency
+                    # Temporal consistency loss: penalize frame-to-frame inconsistency.
+                    # Weight scales with T — more frames = stronger pressure on coherence.
                     if T > 1:
+                        tc_weight = 0.05 + 0.02 * (T - 1)   # 0.05 at T=1..T=2, ~0.35 at T=16
+                        tc_weight = min(tc_weight, 0.20)     # cap at 0.20
                         for tf in range(T - 1):
                             diff = pred_noise[tf + 1] - pred_noise[tf]
-                            temporal_loss = np.mean(diff ** 2) * 0.05
+                            temporal_loss = np.mean(diff ** 2) * tc_weight
                             total_loss += temporal_loss
-                            total_dloss[tf]     -= 0.1 * diff / diff.size
-                            total_dloss[tf + 1] += 0.1 * diff / diff.size
+                            total_dloss[tf]     -= 2.0 * tc_weight * diff / diff.size
+                            total_dloss[tf + 1] += 2.0 * tc_weight * diff / diff.size
                     loss  = total_loss
                     dloss = total_dloss
                 else:
