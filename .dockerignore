@@ -11,19 +11,14 @@ __pycache__
 .config/
 .replit
 
-# npm/node caches (large and regeneratable)
-node_modules/.cache
-node_modules/.yarn-integrity
-
-# Heavy ML native bindings not needed at runtime (162MB — falls back to pure-JS tfjs)
-node_modules/@tensorflow/tfjs-node
+# All npm packages — excluded entirely to keep the deployment layer small.
+# The build command (npm install && npm run build) installs them fresh in the
+# deployment container, so they are available at both build-time and runtime.
+node_modules/
 
 # Large desktop/mobile app binary artifacts (not needed for Cloud Run)
 electron/
 electron-out/
-node_modules/electron/dist
-node_modules/electron-builder
-node_modules/electron-publish
 
 # Rust build artifacts (347MB)
 boosterstate/target
@@ -56,22 +51,11 @@ scripts/
 .agents/
 attached_assets/
 
-# Source files (compiled into dist/ by Vite and esbuild)
-client/src
-shared/
-script/
-server/
-
-# Config files (only needed at build time)
+# Test files only
 *.test.*
 *.spec.*
-tsconfig*.json
-tsconfig.json
-vite.config.ts
-drizzle.config.ts
-tailwind.config.ts
-postcss.config.js
-components.json
+
+# Capacitor / mobile configs (not needed in deployment container)
 capacitor.config.ts
 capacitor.config.json
 
