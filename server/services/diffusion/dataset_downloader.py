@@ -56,8 +56,12 @@ DOWNLOAD_PLAN: List[DownloadTask] = [
                  'https://os.unil.cloud.switch.ch/fma/fma_small.zip',
                  est_gb=8.0, music=True, priority=1),
 
-    DownloadTask('ucf101',      'huggingface', 'sayakpaul/ucf101-subset',
+    DownloadTask('ucf101',      'huggingface', 'kiyoonkim/ucf-101-gulprgb',
                  est_gb=6.5, music=False, priority=1,
+                 extra={'hf_method': 'snapshot', 'ignore_patterns': ['*.bin', '*.pt', '*.avi']}),
+
+    DownloadTask('hmdb51',      'huggingface', 'kiyoonkim/hmdb51-gulprgb',
+                 est_gb=2.0, music=False, priority=1,
                  extra={'hf_method': 'snapshot', 'ignore_patterns': ['*.bin', '*.pt']}),
 
     DownloadTask('maestro',     'huggingface', 'roszcz/maestro-v1-sustain',
@@ -67,10 +71,6 @@ DOWNLOAD_PLAN: List[DownloadTask] = [
     DownloadTask('fma_medium',  'http',
                  'https://os.unil.cloud.switch.ch/fma/fma_medium.zip',
                  est_gb=22.0, music=True, priority=2),
-
-    DownloadTask('hmdb51',      'http',
-                 'https://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar',
-                 est_gb=2.0, music=False, priority=2),
 
     # ── Tier 3: HuggingFace streaming — variable size ────────────────────────
     DownloadTask('audiocaps',   'huggingface', 'd0rj/audiocaps',
@@ -211,34 +211,68 @@ def download_http(task: DownloadTask, dest_dir: Path) -> int:
     dest_file = dest_dir / fname
 
     if dest_file.exists():
-        log(f"  {task.name}: already on disk at {dest_file}")
-        return dest_file.stat().st_size
+        actual_gb = dest_file.stat().st_size / 1e9
+        expected_gb = task.est_gb
+        if actual_gb >= expected_gb * 0.90:
+            log(f"  {task.name}: already on disk at {dest_file} ({actual_gb:.2f}GB)")
+            return dest_file.stat().st_size
+        log(f"  {task.name}: partial file {actual_gb:.2f}GB / {expected_gb:.1f}GB — resuming")
 
     log(f"  {task.name}: downloading {url}")
     log(f"  {task.name}: est size {task.est_gb:.1f}GB — free {free_gb():.1f}GB")
 
-    try:
-        import requests as _requests
-        with _requests.get(url, stream=True, timeout=60,
-                           headers={'User-Agent': 'Mozilla/5.0'}) as r:
-            r.raise_for_status()
-            total = int(r.headers.get('content-length', 0))
-            downloaded = 0
-            last_log = 0
-            with open(dest_file, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8 * 1024 * 1024):
-                    if chunk:
-                        f.write(chunk)
-                        downloaded += len(chunk)
-                        gb = downloaded / 1e9
-                        if gb - last_log >= 1.0:
-                            pct = f"{100*downloaded/total:.0f}%" if total else "?"
-                            log(f"  {task.name}: {gb:.1f}GB ({pct})")
-                            last_log = gb
-    except Exception as e:
-        if dest_file.exists():
-            dest_file.unlink()
-        raise e
+    HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+        'Referer': 'https://github.com/mdeff/fma',
+        'Accept': '*/*',
+    }
+    MAX_RETRIES = 5
+    import requests as _requests
+
+    for attempt in range(MAX_RETRIES):
+        resume_pos = dest_file.stat().st_size if dest_file.exists() else 0
+        headers = {**HEADERS}
+        if resume_pos > 0:
+            headers['Range'] = f'bytes={resume_pos}-'
+            log(f"  {task.name}: resuming from {resume_pos / 1e9:.2f}GB (attempt {attempt+1})")
+
+        try:
+            with _requests.get(url, stream=True, timeout=(30, 300),
+                               headers=headers, allow_redirects=True) as r:
+                if r.status_code == 416:
+                    log(f"  {task.name}: range not satisfiable — file may be complete")
+                    break
+                r.raise_for_status()
+
+                total = int(r.headers.get('content-length', 0)) + resume_pos
+                downloaded = resume_pos
+                last_log = downloaded / 1e9
+                mode = 'ab' if resume_pos > 0 and r.status_code == 206 else 'wb'
+
+                with open(dest_file, mode) as f:
+                    for chunk in r.iter_content(chunk_size=4 * 1024 * 1024):
+                        if chunk:
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                            gb = downloaded / 1e9
+                            if gb - last_log >= 1.0:
+                                pct = f"{100*downloaded/total:.0f}%" if total else "?"
+                                log(f"  {task.name}: {gb:.1f}GB / {total/1e9:.1f}GB ({pct})")
+                                last_log = gb
+            break
+        except (_requests.exceptions.ChunkedEncodingError,
+                _requests.exceptions.ConnectionError,
+                _requests.exceptions.ReadTimeout) as e:
+            log(f"  {task.name}: connection error on attempt {attempt+1}: {e} — retrying...")
+            time.sleep(5 * (attempt + 1))
+            if attempt == MAX_RETRIES - 1:
+                if dest_file.exists():
+                    dest_file.unlink()
+                raise RuntimeError(f"Download failed after {MAX_RETRIES} attempts: {e}")
+        except Exception as e:
+            if dest_file.exists():
+                dest_file.unlink()
+            raise e
 
     size = dest_file.stat().st_size
     log(f"  {task.name}: downloaded {size / 1e9:.2f}GB — extracting...")
@@ -267,6 +301,15 @@ def extract(archive: Path, dest: Path):
 
 def download_huggingface(task: DownloadTask, dest_dir: Path) -> int:
     dest_dir.mkdir(parents=True, exist_ok=True)
+    method = task.extra.get('hf_method', 'stream')
+
+    if method == 'snapshot':
+        log(f"  {task.name}: streaming from HuggingFace ({task.source})")
+        try:
+            return _hf_snapshot(task, dest_dir)
+        except Exception as e:
+            raise RuntimeError(f"HuggingFace snapshot failed: {e}")
+
     manifest = dest_dir / 'manifest.jsonl'
 
     if manifest.exists():
@@ -277,10 +320,6 @@ def download_huggingface(task: DownloadTask, dest_dir: Path) -> int:
     log(f"  {task.name}: streaming from HuggingFace ({task.source})")
 
     try:
-        method = task.extra.get('hf_method', 'stream')
-
-        if method == 'snapshot':
-            return _hf_snapshot(task, dest_dir)
 
         from datasets import load_dataset
         import json as _json
