@@ -23,6 +23,7 @@ import {
   Plus,
   Download,
   Tag,
+  Wand2,
   Waveform,
   Loader2
 } from 'lucide-react';
@@ -413,6 +414,23 @@ export function FlowStateSampleBrowser({
 
           {/* Sample List */}
           <ScrollArea className="flex-1">
+            {filteredSamples.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center text-zinc-500">
+                {samples.length === 0 ? (
+                  <>
+                    <Wand2 className="w-10 h-10 mb-3 opacity-20" />
+                    <p className="text-sm font-medium text-zinc-400">No samples yet</p>
+                    <p className="text-xs mt-1">Generate audio in the AI Music Generator to build your library</p>
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-10 h-10 mb-3 opacity-20" />
+                    <p className="text-sm font-medium text-zinc-400">No results</p>
+                    <p className="text-xs mt-1">Try a different search term or filter</p>
+                  </>
+                )}
+              </div>
+            )}
             {viewMode === 'list' ? (
               <div className="p-2 space-y-1">
                 {filteredSamples.map(sample => (

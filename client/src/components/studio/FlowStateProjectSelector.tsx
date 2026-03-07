@@ -7,6 +7,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -87,6 +97,12 @@ export function FlowStateProjectSelector({
   const [newProjectTitle, setNewProjectTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ open: false, title: '', description: '', onConfirm: () => {} });
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ['/api/studio/projects'],
@@ -163,26 +179,7 @@ export function FlowStateProjectSelector({
     }
   }, [newProjectTitle, onNewProject, onProjectSelect, queryClient, toast]);
 
-  const handleSelectProject = useCallback(async (project: Project) => {
-    if (isDirty && onSaveProject) {
-      const shouldSave = window.confirm('You have unsaved changes. Save before switching projects?');
-      if (shouldSave) {
-        setIsSaving(true);
-        try {
-          await onSaveProject();
-          toast({ title: 'Project saved' });
-        } catch (saveError) {
-          setIsSaving(false);
-          const shouldContinue = window.confirm('Failed to save. Switch anyway and lose changes?');
-          if (!shouldContinue) {
-            return;
-          }
-        } finally {
-          setIsSaving(false);
-        }
-      }
-    }
-
+  const doLoadProject = useCallback(async (project: Project) => {
     try {
       const loaded = await dawCore.project.loadFromBackend(project.id);
       if (loaded) {
@@ -193,20 +190,53 @@ export function FlowStateProjectSelector({
         logger.warn('[ProjectSelector] Project loaded with basic metadata only - proceeding');
         onProjectSelect(project.id, project.title);
         setIsOpen(false);
-        toast({ 
+        toast({
           title: `Opened "${project.title}"`,
           description: 'Some DAW settings may not be restored'
         });
       }
     } catch (error) {
       logger.error('[ProjectSelector] Failed to load project:', error);
-      toast({ 
-        title: 'Failed to load project', 
-        description: 'Please try again or create a new project',
-        variant: 'destructive' 
+      toast({
+        title: 'Failed to load project',
+        variant: 'destructive'
       });
     }
-  }, [isDirty, onSaveProject, onProjectSelect, toast]);
+  }, [onProjectSelect, toast]);
+
+  const handleSelectProject = useCallback(async (project: Project) => {
+    if (isDirty && onSaveProject) {
+      setConfirmDialog({
+        open: true,
+        title: 'Unsaved Changes',
+        description: 'You have unsaved changes. Save before switching projects?',
+        onConfirm: async () => {
+          setConfirmDialog(d => ({ ...d, open: false }));
+          setIsSaving(true);
+          try {
+            await onSaveProject();
+            toast({ title: 'Project saved' });
+            await doLoadProject(project);
+          } catch {
+            setConfirmDialog({
+              open: true,
+              title: 'Save Failed',
+              description: 'Could not save the project. Switch anyway and lose changes?',
+              onConfirm: async () => {
+                setConfirmDialog(d => ({ ...d, open: false }));
+                await doLoadProject(project);
+              },
+            });
+          } finally {
+            setIsSaving(false);
+          }
+        },
+      });
+      return;
+    }
+
+    await doLoadProject(project);
+  }, [isDirty, onSaveProject, doLoadProject, setConfirmDialog, toast]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -425,6 +455,34 @@ export function FlowStateProjectSelector({
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(d => ({ ...d, open }))}
+      >
+        <AlertDialogContent className="bg-zinc-900 border-zinc-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              {confirmDialog.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700"
+              onClick={() => setConfirmDialog(d => ({ ...d, open: false }))}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={confirmDialog.onConfirm}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

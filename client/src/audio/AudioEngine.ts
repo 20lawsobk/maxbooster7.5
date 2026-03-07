@@ -128,6 +128,8 @@ export class WebAudioEngine extends BaseAudioEngine {
   private analyser: AnalyserNode | null = null;
   private trackNodes: Map<string, { gain: GainNode; pan: StereoPannerNode; plugins: AudioNode[] }> = new Map();
   private meterTimerId: number | null = null;
+  private _lastCpuSampleTime: number | null = null;
+  private _lastAudioTime: number | null = null;
   
   async initialize(): Promise<void> {
     this.context = new AudioContext({
@@ -227,7 +229,12 @@ export class WebAudioEngine extends BaseAudioEngine {
       this.callbacks?.onMeterUpdate('master', db, db);
       
       const cpuTime = performance.now();
-      this.state.cpuUsage = Math.min(100, Math.random() * 5 + 2);
+      const elapsed = cpuTime - (this._lastCpuSampleTime ?? cpuTime);
+      const audioTime = this.context ? this.context.currentTime - (this._lastAudioTime ?? this.context.currentTime) : 0;
+      this._lastCpuSampleTime = cpuTime;
+      this._lastAudioTime = this.context?.currentTime ?? 0;
+      const load = elapsed > 0 ? Math.min(100, (audioTime / (elapsed / 1000)) * 100) : 0;
+      this.state.cpuUsage = Math.round(load * 10) / 10;
       
     }, 1000 / 30);
   }

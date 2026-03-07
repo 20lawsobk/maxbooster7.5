@@ -349,8 +349,12 @@ export function FlowStateLyricsToMelody({
             <PenTool className="w-5 h-5 text-rose-400" />
           </div>
           <div>
-            <h2 className="font-semibold">Lyrics to Melody</h2>
-            <p className="text-xs text-zinc-500">AI-powered melody generation from lyrics</p>
+            <h2 className="font-semibold">Melody Generator</h2>
+            <p className="text-xs text-zinc-500">
+              {inputMode === 'audio'
+                ? 'Hum, sing, or upload audio to extract a melody'
+                : 'AI-powered melody generation from lyrics'}
+            </p>
           </div>
         </div>
         <Badge variant="outline" className="text-rose-400 border-rose-400/30">
@@ -636,10 +640,20 @@ Leads me to where I belong"
           {/* Suggestions List */}
           <div className="flex-1 overflow-auto p-4">
             {suggestions.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-zinc-500">
+              <div className="h-full flex flex-col items-center justify-center text-zinc-500 text-center px-6">
                 <Music className="w-16 h-16 mb-4 opacity-20" />
-                <p className="text-lg font-medium">No Melodies Yet</p>
-                <p className="text-sm mt-1">Enter lyrics and generate melodies</p>
+                <p className="text-lg font-medium text-zinc-400">No Melodies Yet</p>
+                {inputMode === 'audio' ? (
+                  <>
+                    <p className="text-sm mt-2 text-zinc-500">Tap the mic to record a hum or upload an audio file</p>
+                    <p className="text-xs mt-1 text-zinc-600">The AI will detect notes and convert them into a melody</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm mt-2 text-zinc-500">Type your lyrics on the left and hit Generate</p>
+                    <p className="text-xs mt-1 text-zinc-600">Or switch to Audio mode to hum a melody instead</p>
+                  </>
+                )}
               </div>
             ) : (
               <div className="space-y-4">

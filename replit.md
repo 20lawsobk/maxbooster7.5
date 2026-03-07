@@ -80,6 +80,20 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **Version Control**: GitHub.
 -   **Search APIs**: Exa, Tavily.
 
+## Codebase Polish (v4.0 polish pass)
+
+**Backend hardening:**
+- `server/routes/socialMedia.ts`: Inbox `limit`/`offset` params now validated with `Number()` + NaN guard and clamped (1–200)
+- `server/routes/studioGeneration.ts` `/audio-to-melody`: Python stderr is now captured and surfaced as a readable error message instead of a generic 500
+- `server/services/aiServer.py` `/analyze/audio`: Path traversal protection — all file paths resolved to realpath and validated against WORKSPACE_DIR; 403 returned for paths outside workspace
+- `server/services/aiServer.py` `_detect_key()`: Graceful fallback for audio shorter than 0.5s; falls back to `chroma_stft` if CQT fails; returns default 'C major' if all attempts fail
+
+**Frontend quality:**
+- `AudioEngine.ts`: CPU usage metric replaced — no longer random; now derived from actual Web Audio context timing delta
+- `FlowStateProjectSelector.tsx`: Replaced both `window.confirm` calls with proper `AlertDialog` components matching the design system
+- `FlowStateLyricsToMelody.tsx`: Header subtitle dynamically reflects active input mode (Lyrics vs Audio); empty state message tailored to each mode
+- `FlowStateSampleBrowser.tsx`: Added empty state — shows "Generate audio to build your library" when no samples exist, and "No results / Try a different filter" when search yields nothing
+
 ## AI Generation Stack (v4.0 — April 3, 2026 Launch)
 
 **In-House Models (no external APIs):**

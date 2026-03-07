@@ -505,17 +505,28 @@ router.post('/audio-to-melody', requireAuth, upload.single('audio'), async (req,
   try {
     fs.writeFileSync(tmpPath, file.buffer);
 
-    const { stdout } = await execFileAsync(
-      'python3',
-      ['server/services/audioAnalyzer.py', tmpPath, 'pitch_track'],
-      { timeout: 45_000 }
-    );
+    let stdout = '';
+    let stderr = '';
+    try {
+      const out = await execFileAsync(
+        'python3',
+        ['server/services/audioAnalyzer.py', tmpPath, 'pitch_track'],
+        { timeout: 45_000 }
+      );
+      stdout = out.stdout;
+      stderr = out.stderr;
+    } catch (execErr: any) {
+      const msg = execErr?.stderr?.trim() || execErr?.message || 'Pitch tracking process failed';
+      logger.error('[audio-to-melody] execFile error:', msg);
+      return res.status(500).json({ error: 'Pitch tracking failed. Make sure the audio contains a clear melody.' });
+    }
 
     let result: any;
     try {
       result = JSON.parse(stdout.trim());
     } catch {
-      return res.status(500).json({ error: 'Pitch tracker returned invalid JSON' });
+      logger.error('[audio-to-melody] Invalid JSON from pitch tracker. stderr:', stderr);
+      return res.status(500).json({ error: 'Pitch tracker returned unexpected output.' });
     }
 
     if (result.error) {

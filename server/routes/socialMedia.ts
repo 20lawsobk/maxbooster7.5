@@ -601,8 +601,8 @@ router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res: Respons
       .from(socialInboxMessages)
       .where(eq(socialInboxMessages.userId, userId))
       .orderBy(desc(socialInboxMessages.createdAt))
-      .limit(parseInt(limit as string))
-      .offset(parseInt(offset as string));
+      .limit(Math.max(1, Math.min(200, Number(limit) || 50)))
+      .offset(Math.max(0, Number(offset) || 0));
 
     const messages = await query;
     

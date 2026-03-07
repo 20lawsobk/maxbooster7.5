@@ -1062,7 +1062,16 @@ CAMELOT_MAP = {
 def _detect_key(y, sr) -> tuple[str, str, float]:
     import numpy as np
     import librosa
-    chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
+    min_samples = int(sr * 0.5)
+    if len(y) < min_samples:
+        return 'C major', '8B', 0.0
+    try:
+        chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
+    except Exception:
+        try:
+            chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+        except Exception:
+            return 'C major', '8B', 0.0
     chroma_mean = chroma.mean(axis=1)
     major_profile = np.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88])
     minor_profile = np.array([6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17])
@@ -1104,11 +1113,16 @@ def analyze_audio(req: AudioAnalysisRequest):
         raise HTTPException(503, 'librosa not installed')
     import librosa
     import numpy as np
-    fp = req.file_path
-    if not os.path.isabs(fp):
-        fp = str(WORKSPACE_DIR / fp.lstrip('/'))
+    fp_raw = req.file_path
+    if os.path.isabs(fp_raw):
+        fp = os.path.realpath(fp_raw)
+    else:
+        fp = os.path.realpath(str(WORKSPACE_DIR / fp_raw.lstrip('/')))
+    workspace_real = os.path.realpath(str(WORKSPACE_DIR))
+    if not fp.startswith(workspace_real + os.sep) and fp != workspace_real:
+        raise HTTPException(403, 'Access to this path is not permitted')
     if not os.path.exists(fp):
-        raise HTTPException(404, f'File not found: {fp}')
+        raise HTTPException(404, 'File not found')
     try:
         y, sr = librosa.load(fp, sr=None, mono=True, duration=120.0)
         tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
@@ -1156,12 +1170,17 @@ def transcribe_audio(req: AudioAnalysisRequest):
     except ImportError:
         raise HTTPException(500, 'basic-pitch not installed')
     
-    fp = req.file_path
-    if not os.path.isabs(fp):
-        fp = str(WORKSPACE_DIR / fp.lstrip('/'))
+    fp_raw2 = req.file_path
+    if os.path.isabs(fp_raw2):
+        fp = os.path.realpath(fp_raw2)
+    else:
+        fp = os.path.realpath(str(WORKSPACE_DIR / fp_raw2.lstrip('/')))
+    workspace_real2 = os.path.realpath(str(WORKSPACE_DIR))
+    if not fp.startswith(workspace_real2 + os.sep) and fp != workspace_real2:
+        raise HTTPException(403, 'Access to this path is not permitted')
     if not os.path.exists(fp):
-        raise HTTPException(404, f'File not found: {fp}')
-    
+        raise HTTPException(404, 'File not found')
+
     try:
         t0 = time.time()
         model_output, midi_data, note_events = predict(fp)
