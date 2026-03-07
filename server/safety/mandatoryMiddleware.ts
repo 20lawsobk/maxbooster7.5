@@ -248,43 +248,52 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
 
   // 4. CORS (required)
   try {
-    const isDev = process.env.NODE_ENV !== 'production';
-    const corsOrigin = process.env.CORS_ORIGIN || true; // Allow all origins by default (with malicious pattern rejection)
-    
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Explicit allowlist. In production this includes the deployed domain plus all
+    // Replit preview/dev subdomains (used by Replit's webview and deployment system).
+    // In development every origin is permitted so local tooling is not blocked.
+    const explicitOrigin = process.env.CORS_ORIGIN
+      || process.env.DOMAIN
+      || process.env.APP_URL
+      || '';
+
+    const allowedExactOrigins: string[] = explicitOrigin
+      ? explicitOrigin.split(',').map((o) => o.trim()).filter(Boolean)
+      : [];
+
     app.use(cors({
       origin: (origin, callback) => {
+        // Same-origin or server-to-server requests (no Origin header) are always OK.
         if (!origin) {
           callback(null, true);
           return;
         }
-        
-        const maliciousPatterns = [
-          /^https?:\/\/evil[-.]?/i,
-          /^https?:\/\/malicious[-.]?/i,
-          /^https?:\/\/attacker[-.]?/i,
-          /^https?:\/\/.*[-.]evil[-.]?/i,
-          /^https?:\/\/.*[-.]attacker[-.]?/i,
-          /^https?:\/\/.*[-.]malicious[-.]?/i,
-          /^https?:\/\/[^/]*evil[^/]*/i,
-        ];
-        
-        const isMalicious = maliciousPatterns.some(pattern => pattern.test(origin));
-        if (isMalicious) {
-          callback(new Error('Origin not allowed by CORS'));
+
+        // Always allow Replit's own preview / webview / deployment domains.
+        const isReplitDomain =
+          origin.endsWith('.replit.dev') ||
+          origin.endsWith('.repl.co') ||
+          origin.endsWith('.replit.app');
+
+        if (isReplitDomain) {
+          callback(null, true);
           return;
         }
-        
-        // Allow Replit domains in production
-        const isReplitDomain = origin.includes('.replit.dev') || 
-                               origin.includes('.repl.co') || 
-                               origin.includes('.replit.app');
-        
-        if (corsOrigin === true || isReplitDomain) {
+
+        if (!isProduction) {
+          // Development — allow everything (localhost, ngrok, etc.)
           callback(null, true);
-        } else if (typeof corsOrigin === 'string') {
-          callback(null, corsOrigin === origin);
+          return;
+        }
+
+        // Production — enforce explicit allowlist.
+        const allowed = allowedExactOrigins.includes(origin);
+        if (allowed) {
+          callback(null, true);
         } else {
-          callback(null, true); // Default to allowing (with malicious check already done)
+          logger.warn(`[CORS] Blocked origin in production: ${origin}`);
+          callback(new Error('Origin not allowed by CORS'));
         }
       },
       credentials: true,
@@ -293,7 +302,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
       exposedHeaders: ['Content-Length', 'Content-Range', 'Accept-Ranges', 'Content-Type'],
     }));
     loadedMiddleware.push('cors');
-    logger.info('   ✓ CORS middleware (malicious origin rejection enabled)');
+    logger.info('   ✓ CORS middleware (production allowlist enforced)');
   } catch (error) {
     failedMiddleware.push('cors');
     logger.error('   ✗ CORS middleware FAILED', error);

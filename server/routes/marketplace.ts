@@ -21,7 +21,37 @@ import { distributedCache } from '../infrastructure/distributedCache.js';
 import { pythonAIService } from '../services/pythonAIService.js';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+
+const ALLOWED_AUDIO_MIMES = new Set([
+  'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav',
+  'audio/flac', 'audio/x-flac', 'audio/aiff', 'audio/x-aiff',
+  'audio/ogg', 'audio/aac', 'audio/mp4', 'audio/x-m4a',
+]);
+const ALLOWED_IMAGE_MIMES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+]);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 200 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.fieldname === 'audioFile') {
+      if (ALLOWED_AUDIO_MIMES.has(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`Invalid audio file type: ${file.mimetype}. Allowed: mp3, wav, flac, aiff, ogg, aac, m4a`));
+      }
+    } else if (file.fieldname === 'coverArt') {
+      if (ALLOWED_IMAGE_MIMES.has(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`Invalid image file type: ${file.mimetype}. Allowed: jpeg, png, webp, gif`));
+      }
+    } else {
+      cb(null, true);
+    }
+  },
+});
 
 const purchaseSchema = z.object({
   beatId: z.string().min(1, 'beatId is required'),

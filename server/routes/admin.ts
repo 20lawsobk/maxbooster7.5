@@ -821,7 +821,8 @@ adminRouter.get('/financial-config/royalty-rates', async (req, res) => {
 // PATCH /api/admin/financial-config/royalty-rates/:id
 adminRouter.patch('/financial-config/royalty-rates/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) return res.status(400).json({ error: 'Invalid rate ID' });
     const { baseRatePerStream, premiumMultiplier, notes } = req.body;
     const updates: any = { updatedAt: new Date() };
     if (baseRatePerStream !== undefined) updates.baseRatePerStream = parseFloat(baseRatePerStream);
@@ -856,7 +857,8 @@ adminRouter.get('/financial-config/tax-treaties', async (req, res) => {
 // PATCH /api/admin/financial-config/tax-treaties/:id
 adminRouter.patch('/financial-config/tax-treaties/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) return res.status(400).json({ error: 'Invalid treaty ID' });
     const { withholdingRate, treatyRate, hasTreaty, notes } = req.body;
     const updates: any = { updatedAt: new Date() };
     if (withholdingRate !== undefined) updates.withholdingRate = parseFloat(withholdingRate);

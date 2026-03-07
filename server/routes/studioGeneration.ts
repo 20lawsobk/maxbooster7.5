@@ -499,7 +499,8 @@ router.post('/audio-to-melody', requireAuth, upload.single('audio'), async (req,
   const { promisify } = await import('util');
   const execFileAsync = promisify(execFile);
 
-  const ext = file.originalname.split('.').pop() || 'wav';
+  const rawExt = (file.originalname.split('.').pop() || 'wav').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const ext = rawExt || 'wav';
   const tmpPath = path.join(os.tmpdir(), `pitch_${Date.now()}.${ext}`);
 
   try {
