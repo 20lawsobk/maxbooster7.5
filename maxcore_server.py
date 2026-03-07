@@ -348,7 +348,7 @@ def get_sessions():
     return sessions[-50:]
 
 
-# ── Dataset registry ────────────────────────────────────────────────────────────
+# ── Dataset registry & streaming ────────────────────────────────────────────────
 
 @app.get("/datasets/list")
 def datasets_list():
@@ -357,18 +357,137 @@ def datasets_list():
     The Replit training node uses this to know what data is accessible.
     """
     result = {}
-    for p in DATA_DIR.iterdir():
-        if not p.is_dir():
-            continue
-        files = list(p.rglob("*"))
-        total = sum(f.stat().st_size for f in files if f.is_file())
-        result[p.name] = {
-            "path":      str(p),
-            "files":     len([f for f in files if f.is_file()]),
-            "total_gb":  round(total / 1e9, 3),
-            "available": total > 0,
-        }
+    if DATA_DIR.exists():
+        for p in DATA_DIR.iterdir():
+            if not p.is_dir():
+                continue
+            files = list(p.rglob("*"))
+            total = sum(f.stat().st_size for f in files if f.is_file())
+            result[p.name] = {
+                "path":      str(p),
+                "files":     len([f for f in files if f.is_file()]),
+                "total_gb":  round(total / 1e9, 3),
+                "available": total > 0,
+            }
     return {"datasets": result, "root": str(DATA_DIR)}
+
+
+@app.get("/datasets/manifest")
+def datasets_manifest():
+    """
+    Return the full D: drive dataset manifest — what's planned + what's present.
+    Used by the Replit node to display setup progress.
+    """
+    sys.path.insert(0, str(DIFFUSION.parent))
+    try:
+        from diffusion.dataset_downloader import DOWNLOAD_PLAN
+        plan = []
+        for t in DOWNLOAD_PLAN:
+            if not t.d_drive:
+                continue
+            present = (DATA_DIR / t.name).exists() and any(
+                True for _ in (DATA_DIR / t.name).rglob("*") if _.is_file()
+            )
+            plan.append({
+                "name":     t.name,
+                "est_gb":   t.est_gb,
+                "music":    t.music,
+                "priority": t.priority,
+                "present":  present,
+                "note":     t.extra.get("note", ""),
+            })
+        total_present = sum(p["est_gb"] for p in plan if p["present"])
+        total_planned = sum(p["est_gb"] for p in plan)
+        return {
+            "datasets":      plan,
+            "total_planned_gb": round(total_planned, 1),
+            "total_present_gb": round(total_present, 1),
+        }
+    except Exception as e:
+        return {"error": str(e), "datasets": []}
+
+
+@app.get("/datasets/stream")
+def datasets_stream(
+    dataset: str = "any",
+    n: int = 4,
+    h: int = 64,
+    w: int = 64,
+    seed: int = 0,
+):
+    """
+    Stream n random frames from a dataset on the D: drive.
+    Returns a JSON envelope containing base64-encoded float32 numpy arrays.
+
+    The training nodes call this when local datasets aren't available.
+    Falls back to synthetic noise frames if the dataset isn't present yet.
+
+    Query params:
+      dataset — dataset name or 'any' to pick available
+      n       — number of frames (T)
+      h, w    — frame height/width
+      seed    — random seed
+    """
+    import base64 as _b64
+
+    rng = np.random.default_rng(seed)
+    H, W, T = min(h, 256), min(w, 256), min(n, 32)
+
+    # Try to find real frames from a dataset directory
+    frames = None
+    candidates = []
+
+    if DATA_DIR.exists():
+        if dataset == "any":
+            candidates = [p for p in DATA_DIR.iterdir() if p.is_dir()]
+        else:
+            cand = DATA_DIR / dataset
+            if cand.is_dir():
+                candidates = [cand]
+
+    for ds_dir in rng.permutation(candidates) if candidates else []:
+        img_files = list(ds_dir.rglob("*.jpg")) + list(ds_dir.rglob("*.png"))
+        if len(img_files) < T:
+            continue
+        chosen = [img_files[i] for i in rng.choice(len(img_files), T, replace=False)]
+        try:
+            from PIL import Image as _PILImage
+            loaded = []
+            for fpath in chosen:
+                img = _PILImage.open(fpath).convert("RGB").resize((W, H))
+                arr = (np.array(img, dtype=np.float32) / 127.5) - 1.0
+                loaded.append(arr)
+            frames = np.stack(loaded, axis=0)   # (T, H, W, 3)
+            break
+        except Exception:
+            continue
+
+    # Synthetic fallback — structured noise with spatial patterns
+    if frames is None:
+        frames = rng.normal(0, 0.3, (T, H, W, 3)).astype(np.float32)
+        # Add low-frequency spatial structure so it's not pure noise
+        xx = np.linspace(-1, 1, W)
+        yy = np.linspace(-1, 1, H)
+        gx, gy = np.meshgrid(xx, yy)
+        for t in range(T):
+            freq   = rng.uniform(1, 4)
+            angle  = rng.uniform(0, np.pi)
+            wave   = np.sin(freq * (gx * np.cos(angle) + gy * np.sin(angle)) * np.pi)
+            frames[t, :, :, :] += (wave[:, :, None] * 0.4).astype(np.float32)
+        frames = np.clip(frames, -1, 1)
+
+    # Encode as base64 bytes
+    raw     = frames.astype(np.float32).tobytes()
+    encoded = _b64.b64encode(raw).decode("ascii")
+
+    return {
+        "dataset":  dataset,
+        "shape":    list(frames.shape),   # [T, H, W, 3]
+        "dtype":    "float32",
+        "encoding": "base64",
+        "data":     encoded,
+        "synthetic": frames is None,
+    }
 
 
 # ── Training control ───────────────────────────────────────────────────────────

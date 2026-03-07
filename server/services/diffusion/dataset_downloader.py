@@ -38,6 +38,7 @@ class DownloadTask:
     est_gb:      float
     music:       bool = True
     priority:    int  = 2      # 1=high 2=med 3=low
+    d_drive:     bool = False  # True = too large for Replit, store on D: drive
     extra:       dict = field(default_factory=dict)
 
 
@@ -109,7 +110,129 @@ DOWNLOAD_PLAN: List[DownloadTask] = [
     DownloadTask('fma_large',   'http',
                  'https://os.unil.cloud.switch.ch/fma/fma_large.zip',
                  est_gb=93.0, music=True, priority=3),
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # D: DRIVE DATASETS — Too large for Replit. Download to D:\ai_server\datasets\
+    # The local MaxCore server streams samples to both training nodes via HTTP.
+    # Install instructions per dataset printed by: python maxcore_server.py --datasets
+    # ══════════════════════════════════════════════════════════════════════════
+
+    # ── Motion & Video (D: drive) ─────────────────────────────────────────────
+    DownloadTask('kinetics700', 'huggingface', 'kinetics700-2020',
+                 est_gb=450.0, music=False, priority=1, d_drive=True,
+                 extra={'hf_method': 'snapshot',
+                        'note': '700 action classes, 650K clips — primary motion teacher'}),
+
+    DownloadTask('webvid10m', 'huggingface', 'TempoFunk/webvid-10M',
+                 est_gb=2500.0, music=True, priority=2, d_drive=True,
+                 extra={'hf_method': 'snapshot',
+                        'note': '10M video+caption pairs — best text-to-video alignment data'}),
+
+    DownloadTask('vggsound_full', 'huggingface', 'Loie/VGGSound',
+                 est_gb=450.0, music=True, priority=2, d_drive=True,
+                 extra={'hf_method': 'snapshot',
+                        'note': '200K clips with audio-visual labels — strong AV correspondence'}),
+
+    DownloadTask('hdvila_subset', 'huggingface', 'HuggingFaceM4/webdataset-vlm-testsets',
+                 est_gb=120.0, music=False, priority=3, d_drive=True,
+                 extra={'note': 'HD video-text pairs — sharpens temporal coherence'}),
+
+    # ── Audio & Music (D: drive) ──────────────────────────────────────────────
+    DownloadTask('audioset_strong', 'huggingface', 'agkphysics/AudioSet',
+                 est_gb=2000.0, music=True, priority=2, d_drive=True,
+                 extra={'hf_method': 'snapshot',
+                        'note': '2M YouTube clips, 527 sound classes — audio conditioning backbone'}),
+
+    DownloadTask('mtg_jamendo', 'http',
+                 'https://huggingface.co/datasets/MTG/mtg-jamendo-dataset/resolve/main/data/autotagging.tsv',
+                 est_gb=60.0, music=True, priority=1, d_drive=True,
+                 extra={'note': '55K CC-licensed music tracks, genre/mood/instrument tags'}),
+
+    DownloadTask('nsynth', 'huggingface', 'Ivan-ZNN/NSynth',
+                 est_gb=22.0, music=True, priority=1, d_drive=True,
+                 extra={'hf_method': 'snapshot',
+                        'note': '300K annotated musical notes — instrument + pitch conditioning'}),
+
+    DownloadTask('magnatagatune', 'huggingface', 'rdiehl/magnatagatune',
+                 est_gb=4.5, music=True, priority=1, d_drive=True,
+                 extra={'note': '25K clips, 188 music tags — mood + style labelling'}),
+
+    DownloadTask('emopia', 'huggingface', 'Nyanko7/emopia',
+                 est_gb=1.5, music=True, priority=2, d_drive=True,
+                 extra={'note': 'Piano MIDI with emotion quadrants (valence/arousal)'}),
+
+    DownloadTask('medley_solos', 'huggingface', 'rdiehl/medley-solos-db',
+                 est_gb=0.8, music=True, priority=1, d_drive=True,
+                 extra={'note': '21K clips, 8 instrument classes — clean instrument recognition'}),
+
+    DownloadTask('maestro_full', 'http',
+                 'https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip',
+                 est_gb=120.0, music=True, priority=1, d_drive=True,
+                 extra={'note': 'Maestro v3 full — 200hrs piano audio + MIDI pairs'}),
+
+    # ── Visual Aesthetics (D: drive) ──────────────────────────────────────────
+    DownloadTask('laion_aesthetics_v2', 'huggingface', 'laion/laion2B-en-aesthetic',
+                 est_gb=240.0, music=False, priority=2, d_drive=True,
+                 extra={'hf_method': 'snapshot',
+                        'note': '2.3B image-text pairs filtered to aesthetic score ≥5 — visual quality'}),
+
+    DownloadTask('openimages_v7', 'huggingface', 'ILSVRC/imagenet-1k',
+                 est_gb=155.0, music=False, priority=3, d_drive=True,
+                 extra={'hf_method': 'snapshot',
+                        'note': 'ImageNet-1K + OpenImages V7 — visual scene variety'}),
+
+    DownloadTask('diffusiondb_large', 'huggingface', 'poloclub/diffusiondb',
+                 est_gb=88.0, music=False, priority=2, d_drive=True,
+                 extra={'hf_method': 'snapshot', 'config': 'large_random',
+                        'note': '1M Stable Diffusion prompts + images — prompt engineering corpus'}),
+
+    # ── Extended Music Videos (D: drive, yt-dlp) ─────────────────────────────
+    DownloadTask('musicvideo_hq', 'ytdlp',
+                 'official music video HD 4K 2023 2024',
+                 est_gb=500.0, music=True, priority=2, d_drive=True,
+                 extra={'max_clips': 10000, 'duration': 30,
+                        'note': '10K high-quality music videos — the primary video teacher'}),
+
+    DownloadTask('albumart_ytdlp', 'ytdlp',
+                 'album art aesthetic lofi chill music visualizer 4k',
+                 est_gb=50.0, music=True, priority=2, d_drive=True,
+                 extra={'max_clips': 2000, 'duration': 15,
+                        'note': 'Album art + lofi aesthetic videos'}),
+
+    DownloadTask('concert_live_hd', 'ytdlp',
+                 'live concert performance stadium arena HD',
+                 est_gb=200.0, music=True, priority=3, d_drive=True,
+                 extra={'max_clips': 4000, 'duration': 30,
+                        'note': 'Live performance footage — stage lighting, crowd dynamics'}),
 ]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# D: Drive dataset manifest — printed as a setup guide
+# ─────────────────────────────────────────────────────────────────────────────
+
+def print_d_drive_manifest():
+    """Print a setup guide for all D: drive datasets."""
+    d_tasks = [t for t in DOWNLOAD_PLAN if t.d_drive]
+    total   = sum(t.est_gb for t in d_tasks)
+    print()
+    print("=" * 70)
+    print("  D: DRIVE DATASET MANIFEST")
+    print(f"  {len(d_tasks)} datasets | ~{total/1024:.1f} TB total")
+    print("  Save to: D:\\ai_server\\datasets\\<name>\\")
+    print("=" * 70)
+    for t in d_tasks:
+        note = t.extra.get('note', '')
+        src  = t.source if t.method in ('huggingface', 'http') else f'yt-dlp: "{t.source}"'
+        print(f"\n  [{t.name}]  ~{t.est_gb:.0f} GB")
+        print(f"    Source : {src}")
+        if note:
+            print(f"    Why    : {note}")
+        if t.method == 'huggingface':
+            print(f"    Get it : huggingface-cli download {t.source} --local-dir D:\\ai_server\\datasets\\{t.name}")
+        elif t.method == 'http':
+            print(f"    Get it : curl -L \"{t.source}\" -o D:\\ai_server\\datasets\\{t.name}.zip")
+        else:
+            print(f"    Get it : yt-dlp \"{t.source}\" -o D:\\ai_server\\datasets\\{t.name}\\%(id)s.%(ext)s --max-downloads {t.extra.get('max_clips', 1000)}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

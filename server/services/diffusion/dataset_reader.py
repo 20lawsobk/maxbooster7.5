@@ -324,6 +324,85 @@ class AudioCapsReader:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# RemoteDatasetClient — pulls frames from D: drive peer node via HTTP
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RemoteDatasetClient:
+    """
+    Fetches training samples from the MaxCore Model Knowledge Server
+    (D: drive local node) over HTTP when datasets aren't available locally.
+
+    Set PEER_TRAINING_NODE env var to enable, e.g.:
+        PEER_TRAINING_NODE=http://192.168.1.50:8000
+
+    Falls back silently if the peer is unreachable.
+    """
+
+    def __init__(self, peer_url: str):
+        self._base    = peer_url.rstrip('/')
+        self._ok      = True    # set False on repeated failures to stop hammering
+        self._fails   = 0
+        self._max_fails = 5     # give up after 5 consecutive failures
+        self._catalog: Optional[List[str]] = None  # known dataset names
+
+    def _get(self, path: str, timeout: int = 10) -> Optional[bytes]:
+        if not self._ok:
+            return None
+        import urllib.request as _ur
+        import urllib.error   as _ue
+        try:
+            with _ur.urlopen(f'{self._base}{path}', timeout=timeout) as r:
+                data = r.read()
+            self._fails = 0
+            return data
+        except Exception:
+            self._fails += 1
+            if self._fails >= self._max_fails:
+                self._ok = False
+            return None
+
+    def available_datasets(self) -> List[str]:
+        """Return list of dataset names present on the D: drive node."""
+        if self._catalog is not None:
+            return self._catalog
+        raw = self._get('/datasets/list')
+        if not raw:
+            return []
+        try:
+            obj  = json.loads(raw)
+            self._catalog = [k for k, v in obj.get('datasets', {}).items()
+                             if v.get('available')]
+            return self._catalog
+        except Exception:
+            return []
+
+    def sample_frames(self, T: int, H: int, W: int,
+                      seed: int = 0,
+                      dataset: str = 'any') -> Optional[np.ndarray]:
+        """
+        Fetch a (T, H, W, 3) float32 frame sequence from the peer node.
+        Returns None on any failure so callers can fall back to synthetic.
+        """
+        import base64 as _b64
+        path = f'/datasets/stream?dataset={dataset}&n={T}&h={H}&w={W}&seed={seed}'
+        raw  = self._get(path, timeout=15)
+        if not raw:
+            return None
+        try:
+            obj    = json.loads(raw)
+            data   = _b64.b64decode(obj['data'])
+            shape  = tuple(obj['shape'])
+            frames = np.frombuffer(data, dtype=np.float32).reshape(shape)
+            return frames
+        except Exception:
+            return None
+
+    @property
+    def is_alive(self) -> bool:
+        return self._ok
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # DatasetReader — unified interface
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -361,25 +440,45 @@ class DatasetReader:
             r for r in [self._hmdb51, self._ucf101] if r is not None
         ]
 
+        # Remote dataset client — connects to D: drive peer node if configured
+        peer_url = os.environ.get('PEER_TRAINING_NODE', '').strip().rstrip('/')
+        self._remote: Optional[RemoteDatasetClient] = (
+            RemoteDatasetClient(peer_url) if peer_url else None
+        )
+        if self._remote:
+            print(f'[DatasetReader] Remote client → {peer_url}', flush=True)
+
     # ── Frame sampling ─────────────────────────────────────────────────────
 
     def sample_frames(self, T: int, H: int, W: int,
                       seed: int = 0) -> Optional[np.ndarray]:
         """
         Sample a T-frame sequence from a random real video dataset.
-        Returns (T, H, W, 3) float32 in [-1, 1] or None if unavailable.
-        """
-        if not self._video_readers:
-            return None
+        Priority:
+          1. Local HMDB51 / UCF101 (if downloaded to Replit)
+          2. Remote D: drive peer node (if PEER_TRAINING_NODE is set)
+          3. Returns None — caller synthesises procedural frames
 
-        rng = random.Random(seed)
-        reader = rng.choice(self._video_readers)
-        result = reader.sample_random_clip(T, H, W, seed)
-        if result is None and len(self._video_readers) > 1:
-            # Fallback to other reader
-            other = [r for r in self._video_readers if r is not reader]
-            result = other[0].sample_random_clip(T, H, W, seed + 1)
-        return result
+        Returns (T, H, W, 3) float32 in [-1, 1] or None.
+        """
+        # 1 — local readers
+        if self._video_readers:
+            rng    = random.Random(seed)
+            reader = rng.choice(self._video_readers)
+            result = reader.sample_random_clip(T, H, W, seed)
+            if result is None and len(self._video_readers) > 1:
+                other  = [r for r in self._video_readers if r is not reader]
+                result = other[0].sample_random_clip(T, H, W, seed + 1)
+            if result is not None:
+                return result
+
+        # 2 — remote D: drive node (kinetics700, webvid10m, vggsound_full, etc.)
+        if self._remote and self._remote.is_alive:
+            result = self._remote.sample_frames(T, H, W, seed=seed, dataset='any')
+            if result is not None:
+                return result
+
+        return None
 
     def has_video_data(self) -> bool:
         return any(r.n_clips > 0 for r in self._video_readers)
