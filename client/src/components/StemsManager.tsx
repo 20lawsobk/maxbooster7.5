@@ -11,6 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Play, Pause, Trash2, Upload, Download, DollarSign, Music2, FileAudio } from 'lucide-react';
 import { StemUploadDialog } from './StemUploadDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +67,7 @@ const STEM_TYPE_LABELS: Record<string, string> = {
 export function StemsManager({ listingId, isOwner }: StemsManagerProps) {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [playingStem, setPlayingStem] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -118,9 +129,7 @@ export function StemsManager({ listingId, isOwner }: StemsManagerProps) {
   });
 
   const handleDelete = (stemId: string) => {
-    if (confirm('Are you sure you want to delete this stem?')) {
-      deleteStemMutation.mutate(stemId);
-    }
+    setPendingDeleteId(stemId);
   };
 
   const handlePurchase = (stemId: string) => {
@@ -289,6 +298,31 @@ export function StemsManager({ listingId, isOwner }: StemsManagerProps) {
           listingId={listingId}
         />
       )}
+
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Stem</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this stem? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDeleteId) {
+                  deleteStemMutation.mutate(pendingDeleteId);
+                  setPendingDeleteId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

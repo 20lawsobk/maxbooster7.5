@@ -1224,12 +1224,10 @@ export default function Analytics() {
       }
     },
     onConnect: () => {
-      console.info('📊 Analytics WebSocket connected');
       sendMessage({ type: 'subscribe_analytics', data: null });
       setConnectionLostTime(null);
     },
     onDisconnect: () => {
-      console.info('📊 Analytics WebSocket disconnected');
       setConnectionLostTime(Date.now());
       if (!pollingIntervalRef.current) {
         pollingIntervalRef.current = setInterval(() => {

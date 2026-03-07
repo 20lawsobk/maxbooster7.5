@@ -341,13 +341,22 @@ router.post('/devices/trust', requireAuth, async (req: AuthenticatedRequest, res
       });
     }
 
+    await db.update(sessions)
+      .set({ trusted: !!trusted })
+      .where(
+        and(
+          eq(sessions.id, deviceId),
+          eq(sessions.userId, userId)
+        )
+      );
+
     const outcome = trusted ? 'device_trusted' : 'device_untrusted';
-    
+
     res.json({
       success: true,
       message: trusted ? 'Device marked as trusted' : 'Device marked as untrusted',
       deviceId,
-      trusted,
+      trusted: !!trusted,
       outcome
     });
   } catch (error) {

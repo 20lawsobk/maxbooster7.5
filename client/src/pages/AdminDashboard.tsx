@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { useRequireAdmin } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1197,6 +1198,7 @@ export default function AdminDashboard() {
 
 // Token Management Tab Component
 function TokenManagementTab() {
+  const { toast } = useToast();
   const [tokenUserId, setTokenUserId] = useState('');
   const [revokeTokenId, setRevokeTokenId] = useState('');
 
@@ -1211,9 +1213,10 @@ function TokenManagementTab() {
       return response.json();
     },
     onSuccess: (data) => {
-      alert(
-        `Token issued!\nAccess Token: ${data.accessToken.substring(0, 20)}...\nRefresh Token: ${data.refreshToken.substring(0, 20)}...`
-      );
+      toast({
+        title: 'Token issued',
+        description: `Access: ${data.accessToken?.substring(0, 20)}...  Refresh: ${data.refreshToken?.substring(0, 20)}...`,
+      });
     },
   });
 
@@ -1229,7 +1232,7 @@ function TokenManagementTab() {
       return response.json();
     },
     onSuccess: () => {
-      alert('Token revoked successfully');
+      toast({ title: 'Token revoked', description: 'The token has been revoked successfully.' });
       setRevokeTokenId('');
     },
   });
@@ -1293,6 +1296,7 @@ function TokenManagementTab() {
 
 // Webhook Monitor Tab Component
 function WebhookMonitorTab() {
+  const { toast } = useToast();
   const [eventId, setEventId] = useState('');
 
   const { data: dlqData, isLoading: dlqLoading } = useQuery({
@@ -1309,7 +1313,7 @@ function WebhookMonitorTab() {
       return response.json();
     },
     onSuccess: () => {
-      alert('Webhook retry initiated');
+      toast({ title: 'Retry initiated', description: 'The webhook event has been queued for retry.' });
     },
   });
 

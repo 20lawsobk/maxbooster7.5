@@ -26,6 +26,7 @@ import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { logger } from '../logger.js';
 
 const SYNTH_SCRIPT = path.join(__dirname, 'diffusion', 'synthesizer.py');
 const META_PATH    = path.join(__dirname, 'diffusion', 'meta.json');
@@ -211,7 +212,7 @@ function _sleep(ms: number): Promise<void> {
  */
 export function startBackgroundTraining(): void {
   if (state.running) {
-    console.log('[DiffBG] Already running — ignoring start request');
+    logger.info('[DiffBG] Already running — ignoring start request');
     return;
   }
   _stopFlag     = false;
@@ -219,9 +220,9 @@ export function startBackgroundTraining(): void {
   state.paused  = false;
   _syncMemoryStats();
   _trainingLoop().catch(err =>
-    console.error('[DiffBG] Unhandled loop error:', err)
+    logger.error('[DiffBG] Unhandled loop error:', err)
   );
-  console.log('[DiffBG] Background self-training started');
+  logger.info('[DiffBG] Background self-training started');
 }
 
 /**
@@ -233,7 +234,7 @@ export function stopBackgroundTraining(): void {
   if (_loopTimer) { clearTimeout(_loopTimer); _loopTimer = null; }
   state.paused = true;
   _saveStatus();
-  console.log('[DiffBG] Stop requested — will halt after current session');
+  logger.info('[DiffBG] Stop requested — will halt after current session');
 }
 
 /**
@@ -250,7 +251,7 @@ export function forceStopBackgroundTraining(): void {
   state.paused  = false;
   state.pid     = null;
   _saveStatus();
-  console.log('[DiffBG] Force-stopped');
+  logger.info('[DiffBG] Force-stopped');
 }
 
 export function isBackgroundTraining(): boolean {

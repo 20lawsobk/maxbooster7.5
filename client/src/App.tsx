@@ -319,12 +319,8 @@ function AppWithKeyboardShortcuts() {
 
   useEffect(() => {
     const cleanup = setupLinkPrefetching();
-    const prefetchTimer = setTimeout(() => {
-      prefetchAdjacentRoutes(location);
-    }, 1500);
     return () => {
       cleanup();
-      clearTimeout(prefetchTimer);
     };
   }, []);
 

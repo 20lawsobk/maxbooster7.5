@@ -564,6 +564,7 @@ export default function Marketplace() {
   const [activeTab, setActiveTab] = useState('browse');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [pendingDeleteProductId, setPendingDeleteProductId] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedMood, setSelectedMood] = useState('');
@@ -3716,11 +3717,7 @@ return (
                               variant="ghost" 
                               size="sm" 
                               className="text-destructive hover:text-destructive text-xs"
-                              onClick={() => {
-                                if (confirm('Are you sure you want to delete this product?')) {
-                                  deleteItemMutation.mutate(item.id);
-                                }
-                              }}
+                              onClick={() => setPendingDeleteProductId(item.id)}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -5257,6 +5254,32 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={pendingDeleteProductId !== null} onOpenChange={(open) => { if (!open) setPendingDeleteProductId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this product? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDeleteProductId !== null) {
+                  deleteItemMutation.mutate(pendingDeleteProductId);
+                  setPendingDeleteProductId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Discount Dialog */}
       <Dialog open={!!discountBeat} onOpenChange={(open) => !open && setDiscountBeat(null)}>
         <DialogContent className="bg-white dark:bg-gray-800">

@@ -38,6 +38,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { useStudioStore } from '@/lib/studioStore';
+import { useToast } from '@/hooks/use-toast';
 
 interface MIDINote {
   id: string;
@@ -178,6 +179,7 @@ export function ScoreEditor({
   currentTime = 0,
 }: ScoreEditorProps) {
   const { tempo, timeSignature, snapEnabled, snapResolution } = useStudioStore();
+  const { toast } = useToast();
   
   const [tool, setTool] = useState<'select' | 'pencil' | 'eraser'>('pencil');
   const [zoom, setZoom] = useState(100);
@@ -725,8 +727,11 @@ export function ScoreEditor({
   }, [selectedNotes, notes, onNotesChange, editingLyric, handleLyricSubmit, updateNote]);
   
   const handleExportPDF = useCallback(() => {
-    alert('PDF Export functionality will be available in a future update. The score can be printed using the Print button.');
-  }, []);
+    toast({
+      title: 'PDF Export Coming Soon',
+      description: 'PDF export will be available in a future update. Use the Print button to print the score.',
+    });
+  }, [toast]);
   
   const handlePrint = useCallback(() => {
     if (!canvasRef.current) return;

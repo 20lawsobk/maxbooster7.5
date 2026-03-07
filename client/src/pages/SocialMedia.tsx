@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useLocation } from 'wouter';
@@ -441,6 +451,7 @@ export default function SocialMedia() {
   const [postContent, setPostContent] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  const [pendingDeleteCalendarPostId, setPendingDeleteCalendarPostId] = useState<string | null>(null);
   const [selectedTone, setSelectedTone] = useState('professional');
   const [contentUrl, setContentUrl] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
@@ -1194,9 +1205,7 @@ export default function SocialMedia() {
   };
 
   const handleDeleteCalendarPost = (postId: string) => {
-    if (confirm('Are you sure you want to delete this scheduled post?')) {
-      deleteCalendarPostMutation.mutate(postId);
-    }
+    setPendingDeleteCalendarPostId(postId);
   };
 
   const handlePublishCalendarPost = (postId: string) => {
@@ -3227,6 +3236,30 @@ return (
         </Tabs>
       </div>
       )}
+      <AlertDialog open={pendingDeleteCalendarPostId !== null} onOpenChange={(open) => { if (!open) setPendingDeleteCalendarPostId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Scheduled Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this scheduled post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDeleteCalendarPostId !== null) {
+                  deleteCalendarPostMutation.mutate(pendingDeleteCalendarPostId);
+                  setPendingDeleteCalendarPostId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

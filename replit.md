@@ -80,19 +80,40 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **Version Control**: GitHub.
 -   **Search APIs**: Exa, Tavily.
 
-## Codebase Polish (v4.0 polish pass)
+## Codebase Polish (v4.0 full sweep)
+
+**Bugs fixed:**
+- `server/routes/api/v1/analytics.ts` `/platforms`: Platform token mapping was wrong — `spotify` and `soundcloud` were reading `facebookToken`/`tiktokToken`. Fixed to only surface the 5 platforms that have actual OAuth token columns (`youtube`, `facebook`, `instagram`, `twitter`, `tiktok`)
+- `server/routes/auth.ts` `/devices/trust`: This endpoint was a complete no-op — it returned success without saving anything to the DB. Fixed: `trusted` boolean column added to `sessions` table and the endpoint now persists via `db.update()`
+- `shared/schema.ts` `sessions`: Added `trusted boolean DEFAULT false` column
 
 **Backend hardening:**
 - `server/routes/socialMedia.ts`: Inbox `limit`/`offset` params now validated with `Number()` + NaN guard and clamped (1–200)
-- `server/routes/studioGeneration.ts` `/audio-to-melody`: Python stderr is now captured and surfaced as a readable error message instead of a generic 500
-- `server/services/aiServer.py` `/analyze/audio`: Path traversal protection — all file paths resolved to realpath and validated against WORKSPACE_DIR; 403 returned for paths outside workspace
-- `server/services/aiServer.py` `_detect_key()`: Graceful fallback for audio shorter than 0.5s; falls back to `chroma_stft` if CQT fails; returns default 'C major' if all attempts fail
+- `server/routes/studioGeneration.ts` `/audio-to-melody`: Python stderr captured and surfaced as a readable error message
+- `server/services/aiServer.py` `/analyze/audio`: Path traversal protection — realpath + WORKSPACE_DIR boundary check; 403 for paths outside workspace
+- `server/services/aiServer.py` `_detect_key()`: Graceful fallback for clips < 0.5s; `chroma_stft` fallback if CQT fails; default 'C major' if all attempts fail
+
+**console.log/info → structured logger:**
+- `server/services/diffusionBackgroundTrainer.ts`: All 4 `console.log`/`console.error` calls replaced with `logger.info`/`logger.error`
+- `client/src/pages/Analytics.tsx`: Removed 2 `console.info` calls from WebSocket connect/disconnect handlers
+
+**Native browser dialogs eliminated (10 instances replaced with AlertDialog/toast):**
+- `FlowStateProjectSelector.tsx`: Both `window.confirm` calls (unsaved-changes + delete project)
+- `StemsManager.tsx`: `confirm('delete stem?')` → AlertDialog with Cancel/Delete
+- `CustomWorkflowBuilder.tsx` `WorkflowCard`: `confirm('Delete workflow?')` → AlertDialog  
+- `ScoreEditor.tsx`: `alert('PDF Export...')` → toast notification
+- `AdminDashboard.tsx` `TokenManagementTab`: `alert()` for token issued → toast; `alert('revoked')` → toast
+- `AdminDashboard.tsx` `WebhookMonitorTab`: `alert('retry initiated')` → toast
+- `Landing.tsx`: `alert('Too many requests')` → destructive toast
+- `Marketplace.tsx`: Inline `confirm('delete product?')` → AlertDialog with pendingDeleteProductId state
+- `MerchStore.tsx`: Inline `confirm('Are you sure?')` → AlertDialog with pendingDeleteId state
+- `SocialMedia.tsx`: `confirm('delete scheduled post?')` → AlertDialog with pendingDeleteCalendarPostId state
 
 **Frontend quality:**
-- `AudioEngine.ts`: CPU usage metric replaced — no longer random; now derived from actual Web Audio context timing delta
-- `FlowStateProjectSelector.tsx`: Replaced both `window.confirm` calls with proper `AlertDialog` components matching the design system
-- `FlowStateLyricsToMelody.tsx`: Header subtitle dynamically reflects active input mode (Lyrics vs Audio); empty state message tailored to each mode
-- `FlowStateSampleBrowser.tsx`: Added empty state — shows "Generate audio to build your library" when no samples exist, and "No results / Try a different filter" when search yields nothing
+- `AudioEngine.ts`: CPU usage now derived from actual Web Audio context timing delta (was `Math.random()`)
+- `FlowStateLyricsToMelody.tsx`: Mode-aware header subtitle and empty state (Lyrics vs Audio input)
+- `FlowStateSampleBrowser.tsx`: Empty state for no samples + no search results
+- `App.tsx`: Removed duplicate `prefetchAdjacentRoutes` call from initial mount effect (the location-change effect handles this correctly on its own)
 
 ## AI Generation Stack (v4.0 — April 3, 2026 Launch)
 

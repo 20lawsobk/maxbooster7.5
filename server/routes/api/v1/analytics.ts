@@ -42,10 +42,7 @@ router.get('/platforms', async (req: ApiKeyRequest, res) => {
     // Get user's connected platform tokens
     const [user] = await db
       .select({
-        spotify: users.facebookToken,
-        appleMusic: users.instagramToken,
         youtube: users.youtubeToken,
-        soundcloud: users.tiktokToken,
         facebook: users.facebookToken,
         instagram: users.instagramToken,
         twitter: users.twitterToken,
@@ -59,12 +56,9 @@ router.get('/platforms', async (req: ApiKeyRequest, res) => {
       return res.status(404).json({ error: 'Not Found', message: 'User not found' });
     }
 
-    // Build list of connected platforms
+    // Build list of connected platforms (only includes platforms with OAuth tokens in the schema)
     const platforms = [];
-    if (user.spotify) platforms.push({ name: 'Spotify', status: 'connected' });
-    if (user.appleMusic) platforms.push({ name: 'Apple Music', status: 'connected' });
     if (user.youtube) platforms.push({ name: 'YouTube', status: 'connected' });
-    if (user.soundcloud) platforms.push({ name: 'SoundCloud', status: 'connected' });
     if (user.facebook) platforms.push({ name: 'Facebook', status: 'connected' });
     if (user.instagram) platforms.push({ name: 'Instagram', status: 'connected' });
     if (user.twitter) platforms.push({ name: 'Twitter', status: 'connected' });

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +60,7 @@ const demoSlides = [
 ];
 
 export default function Landing() {
+  const { toast } = useToast();
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -79,7 +81,7 @@ export default function Landing() {
       if (response.ok) {
         window.location.href = '/dashboard';
       } else if (response.status === 429) {
-        alert('Too many demo requests. Please try again later.');
+        toast({ title: 'Too many requests', description: 'Please try again later.', variant: 'destructive' });
       } else {
         setIsVideoOpen(true);
       }

@@ -10,6 +10,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -389,6 +399,7 @@ function WorkflowCard({
 }) {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const triggerDef = catalog.triggers.find((t) => t.id === workflow.triggerEvent);
 
@@ -512,9 +523,7 @@ function WorkflowCard({
             size="sm"
             variant="ghost"
             className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive ml-auto"
-            onClick={() => {
-              if (confirm(`Delete "${workflow.name}"?`)) deleteMutation.mutate();
-            }}
+            onClick={() => setConfirmDeleteOpen(true)}
             disabled={deleteMutation.isPending}
           >
             {deleteMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
@@ -522,6 +531,26 @@ function WorkflowCard({
           </Button>
         </div>
       </CardContent>
+
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Workflow</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &ldquo;{workflow.name}&rdquo;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { setConfirmDeleteOpen(false); deleteMutation.mutate(); }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

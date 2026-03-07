@@ -393,9 +393,12 @@ export function FlowStateProjectSelector({
                           className="text-red-400 focus:text-red-400"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (confirm('Delete this project?')) {
-                              deleteMutation.mutate(project.id);
-                            }
+                            setConfirmDialog({
+                              open: true,
+                              title: 'Delete Project',
+                              description: `Are you sure you want to delete "${project.title}"? This cannot be undone.`,
+                              onConfirm: () => deleteMutation.mutate(project.id),
+                            });
                           }}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
