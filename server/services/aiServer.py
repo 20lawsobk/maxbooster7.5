@@ -26,6 +26,23 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+# ── Post-processor (platform-optimised export) ──────────────────────────────
+try:
+    from diffusion.video_postprocessor import PlatformExporter, PLATFORMS as _PP_PLATFORMS
+    _PP_EXPORTER: Optional['PlatformExporter'] = None
+
+    def _get_exporter() -> 'PlatformExporter':
+        global _PP_EXPORTER
+        if _PP_EXPORTER is None:
+            _PP_EXPORTER = PlatformExporter(ffmpeg=FFMPEG)
+        return _PP_EXPORTER
+
+    HAS_POSTPROC = True
+    print('[AIServer] Video post-processor loaded', flush=True)
+except Exception as _e:
+    HAS_POSTPROC = False
+    print(f'[AIServer] Post-processor unavailable: {_e}', flush=True)
+
 # ── Paths ──────────────────────────────────────────────────────────────────────
 SERVICE_DIR   = Path(__file__).parent
 WORKSPACE_DIR = SERVICE_DIR.parent.parent          # /home/runner/workspace
@@ -654,6 +671,31 @@ def _generate_video_sync(opts: dict) -> dict:
             pass
 
     render_ms = int((time.time() - t0) * 1000)
+
+    # ── Platform-optimised remaster ─────────────────────────────────────────
+    remaster_applied = False
+    if HAS_POSTPROC:
+        try:
+            import tempfile as _tf
+            remaster_name = f'rm_{out_name}'
+            remaster_path = str(OUTPUT_DIR / remaster_name)
+            user_audio    = opts.get('audio_path') or None
+            bpm_val       = opts.get('bpm') or None
+            _get_exporter().remaster_video(
+                input_path  = out_path,
+                output_path = remaster_path,
+                platform    = platform,
+                audio_path  = user_audio,
+                genre       = genre,
+                bpm         = bpm_val,
+            )
+            # Swap the remaster in as the final output
+            os.replace(remaster_path, out_path)
+            remaster_applied = True
+            print(f'[AIServer] Platform remaster applied ({platform})', flush=True)
+        except Exception as _re:
+            print(f'[AIServer] Remaster skipped: {_re}', flush=True)
+
     return {
         'success': True,
         'url': f'/uploads/videos/{out_name}',
@@ -667,8 +709,10 @@ def _generate_video_sync(opts: dict) -> dict:
         'render_time_ms': render_ms,
         'scenes_rendered': 3,
         'quality': quality,
-        'capabilities': ['animated_background','multi_scene','audio_track'],
+        'capabilities': ['animated_background','multi_scene','audio_track',
+                         'platform_optimised' if remaster_applied else 'standard_export'],
         'aspect_ratio': ar_str,
+        'platform_optimised': remaster_applied,
     }
 
 # ── FastAPI app ────────────────────────────────────────────────────────────────
@@ -692,6 +736,8 @@ class VideoRequest(BaseModel):
     goal:        Optional[str] = 'growth'
     artist_name: Optional[str] = None
     quality:     Optional[str] = 'cinematic'
+    bpm:         Optional[float] = None
+    audio_path:  Optional[str] = None
 
 class ContentRequest(BaseModel):
     platform:          str = 'tiktok'
@@ -733,7 +779,28 @@ class VisualSpecRequest(BaseModel):
 @app.get('/health')
 def health():
     return {'status': 'ok', 'model_loaded': True, 'vocab_size': 50257,
-            'device': 'cpu', 'version': '1.0.0'}
+            'device': 'cpu', 'version': '1.0.0',
+            'post_processor': HAS_POSTPROC}
+
+@app.get('/platforms')
+def list_platforms():
+    """Return all supported export platforms with their specs."""
+    if not HAS_POSTPROC:
+        return {'platforms': []}
+    return {
+        'platforms': [
+            {
+                'id':       k,
+                'name':     k.replace('_', ' ').title(),
+                'width':    v['width'],
+                'height':   v['height'],
+                'fps':      v['fps'],
+                'max_dur':  v['max_dur'],
+                'notes':    v.get('notes', ''),
+            }
+            for k, v in _PP_PLATFORMS.items()
+        ]
+    }
 
 @app.post('/generate-video')
 def generate_video(req: VideoRequest, background_tasks: BackgroundTasks):
