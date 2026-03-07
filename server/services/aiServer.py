@@ -1448,6 +1448,153 @@ def train_schedule():
         return {'success': False, 'error': str(e)}
 
 
+# ── Weight sync: serve + receive weights for peer FedAvg ──────────────────────
+
+from fastapi import Request as _Request
+from fastapi.responses import Response as _Response
+
+@app.get('/weights')
+def serve_weights():
+    """Serve weights_v4.npz so a peer training node can download them."""
+    from diffusion.trainer import WEIGHTS_V4_PATH
+    if not os.path.exists(WEIGHTS_V4_PATH):
+        raise HTTPException(status_code=404, detail='No weights yet.')
+    with open(WEIGHTS_V4_PATH, 'rb') as f:
+        data = f.read()
+    return _Response(
+        content=data,
+        media_type='application/octet-stream',
+        headers={'Content-Disposition': 'attachment; filename=weights_v4.npz'},
+    )
+
+
+@app.post('/weights/merge')
+async def merge_peer_weights(request: _Request):
+    """
+    Receive weights from a peer training node.
+    Performs Federated Averaging: merged = (local + peer) / 2
+    Then saves merged weights as the new weights_v4.npz.
+    """
+    import io as _io
+    from diffusion.trainer import WEIGHTS_V4_PATH, WEIGHTS_V4_BEST_PATH
+
+    body = await request.body()
+    if len(body) < 100:
+        raise HTTPException(status_code=400, detail='Empty weight payload.')
+
+    if not os.path.exists(WEIGHTS_V4_PATH):
+        # No local weights yet — just save the peer's as starting point
+        with open(WEIGHTS_V4_PATH, 'wb') as f:
+            f.write(body)
+        return {'merged': 0, 'note': 'No local weights — saved peer weights as initial'}
+
+    local_data  = dict(np.load(WEIGHTS_V4_PATH,      allow_pickle=False))
+    peer_data   = dict(np.load(_io.BytesIO(body),    allow_pickle=False))
+
+    merged, skipped = {}, 0
+    for k in local_data:
+        if k in peer_data and local_data[k].shape == peer_data[k].shape:
+            merged[k] = ((local_data[k].astype(np.float32)
+                          + peer_data[k].astype(np.float32)) * 0.5)
+        else:
+            merged[k] = local_data[k]
+            skipped   += 1
+
+    np.savez_compressed(WEIGHTS_V4_PATH, **merged)
+    kb = os.path.getsize(WEIGHTS_V4_PATH) // 1024
+    print(f'[PeerSync] FedAvg merged {len(merged)} arrays ({skipped} skipped, shape mismatch). '
+          f'{kb} KB saved.', flush=True)
+
+    with _train_lock:
+        _train_state['last_merge'] = _t_mod.time()
+
+    return {
+        'merged':  len(merged),
+        'skipped': skipped,
+        'kb':      kb,
+    }
+
+
+# ── Peer sync worker: push/pull weights with local training node ───────────────
+
+_t_mod = __import__('time')
+
+def _peer_sync_worker(peer_url: str, sync_every_sessions: int = 10):
+    """
+    Background worker: every `sync_every_sessions` training sessions,
+    pull the peer's weights, FedAvg merge them, then push our merged
+    weights back to the peer.
+
+    Set PEER_TRAINING_NODE env var to enable, e.g.:
+        PEER_TRAINING_NODE=http://192.168.1.100:8000
+    """
+    import urllib.request as _urllib
+    import urllib.error  as _urlerr
+
+    print(f'[PeerSync] Worker started — peer: {peer_url}, '
+          f'sync every {sync_every_sessions} sessions', flush=True)
+
+    last_synced_at = 0  # session_count at last sync
+
+    while True:
+        _t_mod.sleep(60)  # check every minute
+
+        with _train_lock:
+            sessions = _train_state.get('session_count', 0)
+            status   = _train_state.get('status', 'idle')
+
+        if status not in ('running', 'idle'):
+            continue
+        if sessions - last_synced_at < sync_every_sessions:
+            continue
+
+        try:
+            # 1. Pull peer weights
+            print(f'[PeerSync] Pulling weights from {peer_url}/weights ...', flush=True)
+            req = _urllib.Request(f'{peer_url}/weights')
+            with _urllib.urlopen(req, timeout=60) as resp:
+                peer_bytes = resp.read()
+
+            # 2. FedAvg merge locally
+            import io as _io
+            from diffusion.trainer import WEIGHTS_V4_PATH
+            if os.path.exists(WEIGHTS_V4_PATH):
+                local_data = dict(np.load(WEIGHTS_V4_PATH, allow_pickle=False))
+                peer_data  = dict(np.load(_io.BytesIO(peer_bytes), allow_pickle=False))
+                merged = {}
+                for k in local_data:
+                    if k in peer_data and local_data[k].shape == peer_data[k].shape:
+                        merged[k] = ((local_data[k].astype(np.float32)
+                                      + peer_data[k].astype(np.float32)) * 0.5)
+                    else:
+                        merged[k] = local_data[k]
+                np.savez_compressed(WEIGHTS_V4_PATH, **merged)
+                print(f'[PeerSync] Merged {len(merged)} arrays from peer.', flush=True)
+                with _train_lock:
+                    _train_state['last_merge'] = _t_mod.time()
+
+            # 3. Push merged weights back to peer
+            with open(WEIGHTS_V4_PATH, 'rb') as f:
+                merged_bytes = f.read()
+            push_req = _urllib.Request(
+                f'{peer_url}/weights',
+                data=merged_bytes,
+                method='POST',
+                headers={'Content-Type': 'application/octet-stream'},
+            )
+            with _urllib.urlopen(push_req, timeout=60) as resp:
+                result = json.loads(resp.read())
+            print(f'[PeerSync] Pushed merged weights to peer → {result}', flush=True)
+
+            last_synced_at = sessions
+
+        except _urlerr.URLError as e:
+            print(f'[PeerSync] Peer unreachable ({peer_url}): {e.reason}. '
+                  f'Will retry next cycle.', flush=True)
+        except Exception as e:
+            print(f'[PeerSync] Sync error: {e}', flush=True)
+
+
 # ── Auto-start background training on server boot ─────────────────────────────
 @app.on_event('startup')
 async def _auto_start_training():
@@ -1481,6 +1628,20 @@ async def _auto_start_training():
     _train_thread.start()
     print('[AIServer] Background training auto-started (continuous, deadline 2026-04-03)',
           flush=True)
+
+    # Start peer sync worker if a local training node is configured
+    peer_url = os.environ.get('PEER_TRAINING_NODE', '').strip().rstrip('/')
+    if peer_url:
+        sync_thread = _threading.Thread(
+            target=_peer_sync_worker,
+            args=(peer_url, 10),
+            daemon=True,
+            name='PeerSyncWorker',
+        )
+        sync_thread.start()
+        print(f'[AIServer] Peer sync worker started → {peer_url}', flush=True)
+    else:
+        print('[AIServer] No PEER_TRAINING_NODE set — solo training mode', flush=True)
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
