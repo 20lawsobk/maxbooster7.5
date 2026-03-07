@@ -596,23 +596,70 @@ class CurriculumTrainer:
     def run_month(
         self,
         sessions_per_day: int = 3,
-        sleep_between_sessions_sec: int = 60,
+        sleep_between_sessions_sec: int = 120,
+        stop_event=None,
+        deadline_str: str = '2026-04-03',
     ):
         """
-        Run the full 30-day curriculum. Intended for background daemon.
-        Loops continuously, sleeping between sessions.
+        Run the continuous training curriculum until the deadline date.
+        Intended for background daemon — survives server restarts via saved
+        curriculum_progress.json and weights_v4.npz.
+
+        Args:
+            sleep_between_sessions_sec: seconds to sleep between sessions (default 2 min)
+            stop_event:  threading.Event — set it to gracefully stop the loop
+            deadline_str: ISO date string — training stops after this date
         """
-        print("[CurriculumTrainer] Starting 30-day curriculum", flush=True)
-        while self.scheduler.current_day <= 30:
+        from datetime import datetime, timezone
+        deadline = datetime.fromisoformat(deadline_str).replace(tzinfo=timezone.utc)
+        now_fn   = lambda: datetime.now(timezone.utc)
+
+        print(f"[CurriculumTrainer] Auto-training started — running until {deadline_str}",
+              flush=True)
+
+        consecutive_errors = 0
+        MAX_ERRORS = 5
+
+        while True:
+            # Stop conditions
+            if stop_event is not None and stop_event.is_set():
+                print("[CurriculumTrainer] Stop event received — halting.", flush=True)
+                break
+            if now_fn() >= deadline:
+                print("[CurriculumTrainer] Deadline reached — training complete!", flush=True)
+                break
+            if self.scheduler.current_day > 30:
+                print("[CurriculumTrainer] 30-day curriculum complete!", flush=True)
+                break
+
             status = self.scheduler.get_status()
-            print(f"\n[CurriculumTrainer] Day {status['current_day']} | "
-                  f"Phase {status['current_phase']}: {status['phase_name']}", flush=True)
+            days_left = (deadline - now_fn()).days
+            print(f"\n[CurriculumTrainer] Day {status['current_day']}/30 | "
+                  f"Phase {status['current_phase']}: {status['phase_name']} | "
+                  f"{days_left}d until April 3", flush=True)
+
             try:
                 self.run_session()
+                consecutive_errors = 0
             except Exception as e:
-                print(f"[CurriculumTrainer] Session error: {e}", flush=True)
-            time.sleep(sleep_between_sessions_sec)
-        print("[CurriculumTrainer] 30-day curriculum complete!", flush=True)
+                consecutive_errors += 1
+                print(f"[CurriculumTrainer] Session error ({consecutive_errors}/{MAX_ERRORS}): "
+                      f"{e}", flush=True)
+                if consecutive_errors >= MAX_ERRORS:
+                    print("[CurriculumTrainer] Too many consecutive errors — pausing 10 min",
+                          flush=True)
+                    for _ in range(600):
+                        if stop_event and stop_event.is_set():
+                            break
+                        time.sleep(1)
+                    consecutive_errors = 0
+                    continue
+
+            # Sleep between sessions
+            for _ in range(sleep_between_sessions_sec):
+                if stop_event and stop_event.is_set():
+                    break
+                time.sleep(1)
 
     def get_status(self) -> Dict[str, Any]:
         return self.scheduler.get_status()

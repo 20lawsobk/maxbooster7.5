@@ -1239,6 +1239,10 @@ export default function Admin() {
               <MessageSquare className="h-4 w-4 mr-2" />
               Support Dashboard
             </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/admin/training')}>
+              <Cpu className="h-4 w-4 mr-2" />
+              Model Training
+            </Button>
             <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/admin/autonomy')}>
               <Zap className="h-4 w-4 mr-2" />
               Autonomy Controls

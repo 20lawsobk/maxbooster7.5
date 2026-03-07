@@ -1136,6 +1136,353 @@ def audio_features_info():
         'packages': ['librosa', 'soundfile', 'scipy', 'scikit-learn', 'pedalboard', 'basic-pitch'],
     }
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# Training API — UNetV4 diffusion model training
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import threading as _threading
+
+_train_state: dict = {
+    'status':      'idle',       # idle | running | stopping | stopped | error
+    'phase':       0,
+    'phase_name':  '',
+    'epoch':       0,
+    'step':        0,
+    'loss':        None,
+    'loss_history': [],
+    'total_samples': 0,
+    'session_count': 0,
+    'start_time':  None,
+    'elapsed_sec': 0,
+    'error':       None,
+    'weights_path': None,
+    'last_save':   None,
+    'dataset_stats': {},
+}
+_train_lock   = _threading.Lock()
+_train_thread: _threading.Thread | None = None
+_stop_event   = _threading.Event()
+
+DIFFUSION_DIR = SERVICE_DIR / 'diffusion'
+
+
+def _set_train_state(**kwargs):
+    with _train_lock:
+        _train_state.update(kwargs)
+
+
+def _training_worker(mode: str, n_sessions: int, phase_id: int | None):
+    """Background thread: runs CurriculumTrainer sessions."""
+    import sys as _sys
+    if str(DIFFUSION_DIR.parent) not in _sys.path:
+        _sys.path.insert(0, str(DIFFUSION_DIR.parent))
+
+    try:
+        from diffusion.training_curriculum import CurriculumTrainer
+        from diffusion.dataset_reader import get_reader as _get_dr
+
+        # Populate dataset stats at start
+        try:
+            dr = _get_dr()
+            _set_train_state(dataset_stats=dr.get_stats())
+        except Exception:
+            pass
+
+        trainer = CurriculumTrainer()
+
+        def _run_one_session(phase=None):
+            """Run a single session and update shared state."""
+            if _stop_event.is_set():
+                return False
+
+            sched   = trainer.scheduler
+            phase_o = phase if phase else sched.current_phase
+            _set_train_state(
+                status     = 'running',
+                phase      = phase_o.phase_id,
+                phase_name = phase_o.name,
+                epoch      = 0,
+            )
+
+            import time as _time
+            t0 = _time.time()
+            meta = trainer.run_session(phase)
+            elapsed = _time.time() - t0
+
+            loss = meta.get('final_loss', meta.get('mean_loss', None))
+            with _train_lock:
+                _train_state['session_count'] += 1
+                _train_state['total_samples'] += (
+                    meta.get('samples_per_epoch', 0) * meta.get('epochs', 0)
+                )
+                _train_state['elapsed_sec'] += elapsed
+                if loss is not None:
+                    _train_state['loss'] = round(float(loss), 6)
+                    _train_state['loss_history'].append({
+                        'session': _train_state['session_count'],
+                        'loss':    round(float(loss), 6),
+                        'phase':   phase_o.phase_id,
+                        'ts':      _time.time(),
+                    })
+                    # Keep last 200 points
+                    if len(_train_state['loss_history']) > 200:
+                        _train_state['loss_history'] = _train_state['loss_history'][-200:]
+                _train_state['weights_path'] = meta.get('weights_path', None)
+                _train_state['last_save']    = _time.time()
+            return True
+
+        import time as _t
+        _set_train_state(start_time=_t.time())
+
+        if mode == 'session':
+            _run_one_session()
+
+        elif mode == 'day':
+            for _ in range(n_sessions):
+                if _stop_event.is_set():
+                    break
+                _run_one_session()
+
+        elif mode == 'continuous':
+            # run_month() handles the April 3 deadline, consecutive error backoff,
+            # and clean shutdown via stop_event. Patch run_session to sync shared state.
+            from diffusion.training_curriculum import CurriculumTrainer as _CT2
+            _trainer2 = _CT2()
+            _orig_rs  = _trainer2.run_session
+
+            def _patched_rs(phase=None):
+                import time as _t2
+                sched   = _trainer2.scheduler
+                phase_o = phase if phase else sched.current_phase
+                _set_train_state(
+                    status     = 'running',
+                    phase      = phase_o.phase_id,
+                    phase_name = phase_o.name,
+                )
+                t0   = _t2.time()
+                meta = _orig_rs(phase)
+                elapsed = _t2.time() - t0
+                loss = meta.get('final_loss', meta.get('mean_loss', None))
+                with _train_lock:
+                    _train_state['session_count'] += 1
+                    _train_state['total_samples'] += (
+                        meta.get('samples_per_epoch', 0) * meta.get('epochs', 0)
+                    )
+                    _train_state['elapsed_sec'] += elapsed
+                    if loss is not None:
+                        _train_state['loss'] = round(float(loss), 6)
+                        _train_state['loss_history'].append({
+                            'session': _train_state['session_count'],
+                            'loss':    round(float(loss), 6),
+                            'phase':   _train_state['phase'],
+                            'ts':      _t2.time(),
+                        })
+                        if len(_train_state['loss_history']) > 200:
+                            _train_state['loss_history'] = _train_state['loss_history'][-200:]
+                    _train_state['last_save'] = _t2.time()
+                return meta
+
+            _trainer2.run_session = _patched_rs
+            _trainer2.run_month(
+                sleep_between_sessions_sec=120,
+                stop_event=_stop_event,
+                deadline_str='2026-04-03',
+            )
+
+        _set_train_state(
+            status = 'stopped' if _stop_event.is_set() else 'idle',
+        )
+
+    except Exception as e:
+        import traceback as _tb
+        _set_train_state(status='error', error=str(e))
+        print(f'[TrainingWorker] Error: {e}\n{_tb.format_exc()}', flush=True)
+
+
+class TrainStartRequest(BaseModel):
+    mode: str = 'session'       # 'session' | 'day' | 'continuous'
+    n_sessions: int = 3
+    phase_id: Optional[int] = None
+
+
+class TrainSessionRequest(BaseModel):
+    phase_id: Optional[int] = None
+    n_epochs: int = 5
+    n_samples: int = 500
+    T: int = 4
+    res: int = 96
+    lr: float = 2e-4
+
+
+@app.post('/train/start')
+def train_start(req: TrainStartRequest):
+    global _train_thread
+    with _train_lock:
+        if _train_state['status'] == 'running':
+            return {'success': False, 'error': 'Training already running',
+                    'status': _train_state['status']}
+
+        _stop_event.clear()
+        _train_state['error'] = None
+
+    _train_thread = _threading.Thread(
+        target=_training_worker,
+        args=(req.mode, req.n_sessions, req.phase_id),
+        daemon=True,
+        name='UNetV4Trainer',
+    )
+    _train_thread.start()
+    return {'success': True, 'mode': req.mode, 'status': 'running'}
+
+
+@app.post('/train/stop')
+def train_stop():
+    _stop_event.set()
+    _set_train_state(status='stopping')
+    return {'success': True, 'status': 'stopping'}
+
+
+@app.get('/train/status')
+def train_status():
+    with _train_lock:
+        state = dict(_train_state)
+    # Compute live elapsed
+    import time as _t
+    if state['start_time'] and state['status'] == 'running':
+        state['elapsed_sec'] = round(_t.time() - state['start_time'])
+    return state
+
+
+@app.post('/train/session')
+def train_single_session(req: TrainSessionRequest):
+    """Run a single training session with explicit parameters (blocking, short timeout)."""
+    global _train_thread
+    with _train_lock:
+        if _train_state['status'] == 'running':
+            return {'success': False, 'error': 'Training already running'}
+
+    _stop_event.clear()
+    _set_train_state(status='running', error=None)
+
+    import sys as _sys
+    if str(DIFFUSION_DIR.parent) not in _sys.path:
+        _sys.path.insert(0, str(DIFFUSION_DIR.parent))
+
+    import threading as _t2
+    result_box: list = []
+
+    def _run():
+        try:
+            from diffusion.trainer import train_v4
+            meta = train_v4(
+                n_epochs      = req.n_epochs,
+                n_samples     = req.n_samples,
+                T             = req.T,
+                res           = req.res,
+                lr            = req.lr,
+                session_label = f'api_session_T{req.T}',
+            )
+            result_box.append({'success': True, 'meta': meta})
+        except Exception as e:
+            result_box.append({'success': False, 'error': str(e)})
+        finally:
+            _set_train_state(status='idle')
+
+    t = _t2.Thread(target=_run, daemon=True)
+    t.start()
+    t.join(timeout=3600)   # max 1 hour blocking
+
+    if result_box:
+        return result_box[0]
+    return {'success': False, 'error': 'Training thread did not complete'}
+
+
+@app.get('/train/datasets')
+def train_datasets():
+    """Return stats on all downloaded training datasets."""
+    try:
+        import sys as _sys
+        if str(DIFFUSION_DIR.parent) not in _sys.path:
+            _sys.path.insert(0, str(DIFFUSION_DIR.parent))
+        from diffusion.dataset_reader import get_reader
+        reader = get_reader()
+        stats  = reader.get_stats()
+
+        # Add disk usage info per dataset dir
+        datasets_dir = Path(stats['datasets_dir'])
+        disk_info: dict = {}
+        if datasets_dir.exists():
+            for d in sorted(datasets_dir.iterdir()):
+                if d.is_dir() and not d.name.startswith('.'):
+                    try:
+                        size = sum(f.stat().st_size for f in d.rglob('*') if f.is_file())
+                        disk_info[d.name] = round(size / 1e9, 3)
+                    except Exception:
+                        disk_info[d.name] = 0.0
+
+        return {
+            'success':   True,
+            'stats':     stats,
+            'disk_gb':   disk_info,
+            'total_gb':  round(sum(disk_info.values()), 2),
+        }
+    except Exception as e:
+        return {'success': False, 'error': str(e), 'stats': {}}
+
+
+@app.get('/train/schedule')
+def train_schedule():
+    """Return the full 30-day curriculum schedule."""
+    try:
+        import sys as _sys
+        if str(DIFFUSION_DIR.parent) not in _sys.path:
+            _sys.path.insert(0, str(DIFFUSION_DIR.parent))
+        from diffusion.training_curriculum import CurriculumTrainer
+        trainer = CurriculumTrainer()
+        return {
+            'success':       True,
+            'schedule':      trainer.get_schedule(),
+            'current_status': trainer.scheduler.get_status(),
+        }
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+
+# ── Auto-start background training on server boot ─────────────────────────────
+@app.on_event('startup')
+async def _auto_start_training():
+    """
+    Automatically start continuous background training when the AI server boots.
+    Resumes from existing weights_v4.npz + curriculum_progress.json if present.
+    Runs until April 3, 2026 — the launch deadline.
+    """
+    import asyncio as _asyncio
+
+    # Brief delay so the server fully initialises before training starts
+    await _asyncio.sleep(5)
+
+    global _train_thread
+    with _train_lock:
+        if _train_state['status'] == 'running':
+            print('[AIServer] Training already running — skipping auto-start', flush=True)
+            return
+
+        _stop_event.clear()
+        _train_state['error']   = None
+        _train_state['status']  = 'running'
+        _train_state['start_time'] = __import__('time').time()
+
+    _train_thread = _threading.Thread(
+        target=_training_worker,
+        args=('continuous', 3, None),
+        daemon=True,
+        name='UNetV4TrainerBG',
+    )
+    _train_thread.start()
+    print('[AIServer] Background training auto-started (continuous, deadline 2026-04-03)',
+          flush=True)
+
+
 # ── Entry point ────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     port = int(os.environ.get('AI_SERVICE_PORT', 9878))

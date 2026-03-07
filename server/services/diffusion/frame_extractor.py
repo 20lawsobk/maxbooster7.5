@@ -299,11 +299,17 @@ class FrameExtractor:
     """
     Unified frame sequence extractor for v4 video training.
 
-    Sampling strategy per batch:
-      40% — Scene renderer (most temporally coherent)
-      30% — PIL template animations (highest visual quality)
-      20% — Procedural motion (most diverse)
-      10% — Video cache (real video, when available)
+    Sampling strategy (when real datasets available):
+      25% — Real dataset frames (HMDB51 / UCF101 gulp_rgb)
+      35% — Scene renderer (most temporally coherent)
+      25% — PIL template animations (highest visual quality)
+      15% — Procedural motion (most diverse)
+
+    Sampling strategy (synthetic-only fallback):
+      40% — Scene renderer
+      30% — PIL template animations
+      20% — Procedural motion
+      10% — Video cache
 
     Usage:
         extractor = FrameExtractor(T=32, H=96, W=96)
@@ -318,8 +324,23 @@ class FrameExtractor:
         self.T = T
         self.H = H
         self.W = W
-        self._video_cache = None
-        self._cache_loaded = False
+        self._video_cache   = None
+        self._cache_loaded  = False
+        self._real_reader   = None
+        self._real_checked  = False
+
+    def _get_real_reader(self):
+        """Lazy-init the real dataset reader. Returns None if no video data available."""
+        if not self._real_checked:
+            self._real_checked = True
+            try:
+                from .dataset_reader import get_reader
+                r = get_reader()
+                if r.has_video_data():
+                    self._real_reader = r
+            except Exception:
+                pass
+        return self._real_reader
 
     def _load_video_cache(self):
         if not self._cache_loaded:
@@ -330,20 +351,37 @@ class FrameExtractor:
                source: str = 'auto') -> np.ndarray:
         """
         Sample a single T-frame sequence for a given scene.
-        source: 'auto' | 'renderer' | 'template' | 'procedural' | 'cache'
+        source: 'auto' | 'real_dataset' | 'renderer' | 'template' | 'procedural' | 'cache'
         """
         rng = np.random.default_rng(seed)
+        real_reader = self._get_real_reader()
 
         if source == 'auto':
             r = rng.random()
-            if r < 0.40:
-                source = 'renderer'
-            elif r < 0.70:
-                source = 'template'
-            elif r < 0.90:
-                source = 'procedural'
+            if real_reader is not None:
+                if r < 0.25:
+                    source = 'real_dataset'
+                elif r < 0.60:
+                    source = 'renderer'
+                elif r < 0.85:
+                    source = 'template'
+                else:
+                    source = 'procedural'
             else:
-                source = 'cache'
+                if r < 0.40:
+                    source = 'renderer'
+                elif r < 0.70:
+                    source = 'template'
+                elif r < 0.90:
+                    source = 'procedural'
+                else:
+                    source = 'cache'
+
+        if source == 'real_dataset' and real_reader is not None:
+            result = real_reader.sample_frames(self.T, self.H, self.W, seed=seed)
+            if result is not None:
+                return result
+            source = 'renderer'
 
         if source == 'renderer':
             return extract_from_scene_renderer(scene, self.T, self.H, self.W, seed)

@@ -1310,12 +1310,30 @@ def train_v4(n_epochs: int = 5,
     opt = Adam(lr=lr)
     ema = EMA(decay=ema_decay)
 
-    # ── 100K prompt library ───────────────────────────────────────────────────
+    # ── 100K prompt library + real dataset prompts ────────────────────────────
     print(f"[DiffusionTrainer v4] Loading 100K prompt library...", flush=True)
     all_scene_prompts = get_all_prompts(target=100_000)
     scenes = list(all_scene_prompts.keys())
     print(f"[DiffusionTrainer v4] {sum(len(v) for v in all_scene_prompts.values()):,} "
           f"prompts across {len(scenes)} scenes", flush=True)
+
+    # Load real dataset prompts (MusicCaps / AudioCaps) — 20% blend
+    _real_captions: list = []
+    try:
+        from .dataset_reader import get_reader as _get_dr
+        _dr = _get_dr()
+        if _dr.has_prompt_data():
+            _real_captions = _dr._musiccaps.sample_batch(500, seed=0) if _dr._musiccaps else []
+            if not _real_captions and _dr._audiocaps:
+                _real_captions = [_dr._audiocaps.sample_caption(seed=i) for i in range(500)]
+            print(f"[DiffusionTrainer v4] Real captions: {len(_real_captions)} "
+                  f"(MusicCaps/AudioCaps)", flush=True)
+        if _dr.has_video_data():
+            stats = _dr.get_stats()
+            print(f"[DiffusionTrainer v4] Real video clips: "
+                  f"HMDB51={stats['hmdb51_clips']} UCF101={stats['ucf101_clips']}", flush=True)
+    except Exception as _e:
+        print(f"[DiffusionTrainer v4] Dataset reader unavailable: {_e}", flush=True)
 
     # Flatten for rotation
     flat_pairs = []
@@ -1323,6 +1341,23 @@ def train_v4(n_epochs: int = 5,
         flat_pairs.extend([(sc, p) for p in prompts])
     rng = np.random.default_rng(42)
     rng.shuffle(flat_pairs)
+
+    # Pre-mix 20% real captions into flat_pairs (paired with nearest scene)
+    if _real_captions:
+        real_pairs = [(scenes[i % len(scenes)], cap) for i, cap in enumerate(_real_captions)]
+        n_real_per_10 = max(1, len(real_pairs) * 2 // len(flat_pairs))
+        mixed = []
+        real_iter = iter(real_pairs * 10)
+        for j, pair in enumerate(flat_pairs):
+            if j % 5 == 0:
+                try:
+                    mixed.append(next(real_iter))
+                except StopIteration:
+                    pass
+            mixed.append(pair)
+        flat_pairs = mixed
+        print(f"[DiffusionTrainer v4] Mixed {len(real_pairs)} real captions into "
+              f"{len(flat_pairs)} total pairs", flush=True)
 
     losses    = []
     total_time = 0.0

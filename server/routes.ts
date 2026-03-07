@@ -3553,6 +3553,8 @@ export async function registerRoutes(
     import("./routes/batch.ts"),
   ]);
   app.use("/api/admin", adminRouter);
+  const { default: trainingRouter } = await import("./routes/training.js");
+  app.use("/api/training", trainingRouter);
   app.use("/api/paid", paidRouter);
   app.use("/api/artist-progress", artistProgressRouter);
   app.use("/api/artist-profiles", artistProfilesRouter);
