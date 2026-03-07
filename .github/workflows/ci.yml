@@ -1,0 +1,145 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+  pull_request:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript type check
+        run: npm run check
+
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+        env:
+          NODE_ENV: production
+          SKIP_BOOSTERSTATE: '1'
+
+      - name: Verify build output
+        run: |
+          echo "=== Build Outputs ==="
+          ls -lh dist/public/ 2>/dev/null || echo "No dist/public found"
+          ls -lh dist/*.js 2>/dev/null || echo "No dist JS files found"
+          echo "=== Checking index.html ==="
+          test -f dist/public/index.html && echo "✅ index.html present" || echo "❌ index.html missing"
+          echo "=== Checking server bundle ==="
+          test -f dist/index.js && echo "✅ Server bundle present" || echo "❌ Server bundle missing"
+
+      - name: Upload build artifacts (for inspection)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-dist
+          path: |
+            dist/public/index.html
+            dist/index.js
+          if-no-files-found: warn
+          retention-days: 3
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit (high severity and above)
+        run: npm audit --audit-level=high --json | tee audit-report.json || true
+
+      - name: Parse and display audit results
+        run: |
+          node -e "
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('audit-report.json', 'utf8'));
+            const vulns = report.metadata?.vulnerabilities ?? {};
+            const total = Object.values(vulns).reduce((a, b) => a + b, 0);
+            console.log('== npm audit summary ==');
+            Object.entries(vulns).forEach(([sev, count]) => {
+              if (count > 0) console.log(\`  \${sev}: \${count}\`);
+            });
+            const highPlus = (vulns.high ?? 0) + (vulns.critical ?? 0);
+            if (highPlus > 0) {
+              console.error(\`❌ \${highPlus} high/critical vulnerabilities found\`);
+              process.exit(1);
+            } else {
+              console.log('✅ No high/critical vulnerabilities');
+            }
+          "
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-report
+          path: audit-report.json
+          retention-days: 7
+
+  ci-summary:
+    name: CI Summary
+    needs: [typecheck, build, security]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | ${{ needs.typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Audit | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.typecheck.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.security.result }}" == "success" ]]; then
+            echo "✅ All checks passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ One or more checks failed" >> $GITHUB_STEP_SUMMARY
+          fi
