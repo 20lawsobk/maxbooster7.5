@@ -2,20 +2,27 @@ import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import { rm, readFile, access } from "fs/promises";
 
-// server deps to bundle to reduce openat(2) syscalls
-// which helps cold start times - keep this list small!
-const allowlist = [
-  "axios",
-  "cors",
-  "date-fns",
-  "drizzle-orm",
-  "drizzle-zod",
+// On VM deployment cold-start bundling gives no benefit — externalize everything.
+// Keeping the allowlist empty ensures ALL dependencies are loaded from node_modules,
+// which keeps dist/index.cjs small (only application code, no vendor code).
+const allowlist: string[] = [];
+
+// Explicit force-external list as a safety net (catches scoped packages that
+// the allDeps filter might miss if they appear as transitive imports).
+const forceExternal = [
+  // TensorFlow — already externalized by allDeps, but belt-and-suspenders
+  "@tensorflow/tfjs",
+  "@tensorflow/tfjs-node",
+  // Framework / ORM
   "express",
   "express-rate-limit",
   "express-session",
+  "drizzle-orm",
+  "drizzle-zod",
+  // Auth
+  "passport",
+  "passport-local",
   "jsonwebtoken",
-  "memorystore",
-  "nanoid",
   "otplib",
   "@otplib/core",
   "@otplib/hotp",
@@ -23,45 +30,45 @@ const allowlist = [
   "@otplib/uri",
   "@otplib/plugin-base32-scure",
   "@otplib/plugin-crypto-noble",
-  "passport",
-  "passport-local",
-  "zod",
-  "zod-validation-error",
-];
-
-// Heavy native/large packages that must ALWAYS be external
-// These cause bundle size bloat and initialization timeouts
-const forceExternal = [
-  "@tensorflow/tfjs",
-  "@tensorflow/tfjs-node",
-  "sharp",
+  "openid-client",
   "bcrypt",
+  // HTTP / networking
+  "axios",
+  "cors",
+  "helmet",
+  // DB / cache / queue
   "pg",
   "ioredis",
   "redis",
   "bullmq",
-  "stripe",
+  "connect-pg-simple",
+  "connect-redis",
+  "memorystore",
+  "@neondatabase/serverless",
+  // Storage / media
+  "sharp",
   "multer",
   "archiver",
-  "@neondatabase/serverless",
-  "@sendgrid/mail",
-  "googleapis",
-  "@aws-sdk/client-s3",
-  "@aws-sdk/s3-request-presigner",
-  "@replit/object-storage",
-  "connect-pg-simple",
   "music-metadata",
   "node-wav",
   "wavefile",
+  "@aws-sdk/client-s3",
+  "@aws-sdk/s3-request-presigner",
+  "@replit/object-storage",
+  // Third-party services
+  "stripe",
+  "@sendgrid/mail",
+  "googleapis",
   "twitter-api-v2",
-  "openid-client",
-  "helmet",
+  // Observability
   "@sentry/node",
   "@sentry/profiling-node",
-  "connect-redis",
-  "ioredis",
-  "bullmq",
   "prom-client",
+  // Utilities (large)
+  "date-fns",
+  "zod",
+  "zod-validation-error",
+  "nanoid",
 ];
 
 async function buildAll() {
@@ -119,7 +126,7 @@ async function buildAll() {
     define: {
       "process.env.NODE_ENV": '"production"',
     },
-    minify: false,
+    minify: true,
     external: uniqueExternals,
     logLevel: "info" as const,
     treeShaking: true,
