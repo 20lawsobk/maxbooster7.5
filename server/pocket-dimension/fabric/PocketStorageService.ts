@@ -7,6 +7,9 @@ import type { ChunkIndex } from './infra/ChunkIndex.js';
 import type { NodeRegistry } from './infra/NodeRegistry.js';
 import type { PlacementStrategy } from './control/PlacementStrategy.js';
 import type { ChunkStore } from './storage/ChunkStore.js';
+import { compressionRouter } from './compression/CompressionProfileRouter.js';
+import { cdcChunker } from './compression/ContentDefinedChunker.js';
+import type { StoreOptions } from './compression/types.js';
 import { logger } from '../../logger.js';
 
 const DEFAULT_CHUNK_SIZE = 8 * 1024 * 1024;
@@ -51,6 +54,7 @@ export class PocketStorageService {
     data: Buffer,
     originalName: string,
     contentType = 'application/octet-stream',
+    storeOpts: StoreOptions = {},
   ): Promise<ObjectId> {
     const pocket = await this.pocketRegistry.getPocket(pocketId);
     if (!pocket) throw new Error(`Pocket ${pocketId} not found`);
@@ -58,37 +62,64 @@ export class PocketStorageService {
     const volume = await this.volumeRegistry.getVolume(volumeId);
     if (!volume || volume.pocketId !== pocketId) throw new Error(`Volume ${volumeId} not found in pocket ${pocketId}`);
 
-    const objectId = randomUUID() as ObjectId;
     const contentHash = createHash('sha256').update(data).digest('hex');
 
-    interface ChunkMeta { id: ChunkId; nodeIds: NodeId[]; sizeBytes: number; checksum: string; }
+    const existingObjects = await this.objectIndex.listObjects(volumeId);
+    const duplicate = existingObjects.find(o => o.contentHash === contentHash);
+    if (duplicate) {
+      logger.info(`[PocketFabric] Dedup hit: object ${duplicate.id} already stores hash ${contentHash.substring(0, 12)}… — skipping store`);
+      return duplicate.id;
+    }
+
+    const compressionResult = await compressionRouter.process(data, originalName, contentType, {
+      ...storeOpts,
+      sizeHintBytes: data.length,
+    });
+
+    logger.info(
+      `[PocketFabric] Compressed ${originalName}: ${data.length} → ${compressionResult.compressedBytes} bytes ` +
+      `(${compressionResult.ratio.toFixed(2)}×) profile=${compressionResult.profile} codec=${compressionResult.codec}`,
+    );
+
+    const compressedData = compressionResult.data;
+    const cdcChunks = cdcChunker.chunk(compressedData);
+
+    const objectId = randomUUID() as ObjectId;
+
+    interface ChunkMeta { id: ChunkId; nodeIds: NodeId[]; sizeBytes: number; checksum: string; isDedup: boolean; }
     const chunkMetas: ChunkMeta[] = [];
 
-    for (let offset = 0; offset < data.length; offset += DEFAULT_CHUNK_SIZE) {
-      const chunk = data.subarray(offset, Math.min(offset + DEFAULT_CHUNK_SIZE, data.length));
-      const chunkId = randomUUID() as ChunkId;
-      const chunkChecksum = createHash('sha256').update(chunk).digest('hex');
+    for (const cdcChunk of cdcChunks) {
+      const chunkId = cdcChunk.hash as ChunkId;
+      const chunkChecksum = cdcChunk.hash;
 
-      const decision = await this.placement.placeChunk(chunkId, chunk.length, pocket.policy);
+      const existingLoc = await this.chunkIndex.getChunkLocation(chunkId);
+      if (existingLoc) {
+        logger.debug(`[PocketFabric] Chunk dedup: ${chunkId.substring(0, 12)}… already stored`);
+        chunkMetas.push({ id: chunkId, nodeIds: existingLoc.nodeIds, sizeBytes: cdcChunk.length, checksum: chunkChecksum, isDedup: true });
+        continue;
+      }
+
+      const decision = await this.placement.placeChunk(chunkId, cdcChunk.length, pocket.policy);
 
       await Promise.all(decision.nodeIds.map(async nodeId => {
         const store = this.chunkStoreFactory(nodeId);
-        await store.putChunk(chunkId, chunk);
+        await store.putChunk(chunkId, cdcChunk.data);
       }));
-
-      chunkMetas.push({ id: chunkId, nodeIds: decision.nodeIds, sizeBytes: chunk.length, checksum: chunkChecksum });
 
       await Promise.all(decision.nodeIds.map(async nodeId => {
         const node = await this.nodeRegistry.getNode(nodeId);
-        if (node) await this.nodeRegistry.updateNode(nodeId, { usedBytes: node.usedBytes + chunk.length });
+        if (node) await this.nodeRegistry.updateNode(nodeId, { usedBytes: node.usedBytes + cdcChunk.data.length });
       }));
+
+      chunkMetas.push({ id: chunkId, nodeIds: decision.nodeIds, sizeBytes: cdcChunk.data.length, checksum: chunkChecksum, isDedup: false });
     }
 
     const chunkIds = chunkMetas.map(c => c.id);
 
     const obj = await this.objectIndex.putObject(volumeId, originalName, contentType, data.length, chunkIds, contentHash, objectId);
 
-    await Promise.all(chunkMetas.map(meta =>
+    await Promise.all(chunkMetas.filter(c => !c.isDedup).map(meta =>
       this.chunkIndex.putChunkLocation({
         id: meta.id,
         objectId: obj.id,
@@ -98,7 +129,15 @@ export class PocketStorageService {
       })
     ));
 
-    logger.info(`[PocketFabric] Stored object ${obj.id} (${data.length} bytes, ${chunkIds.length} chunks) in pocket=${pocketId} volume=${volumeId}`);
+    const dedupCount = chunkMetas.filter(c => c.isDedup).length;
+    const newCount = chunkMetas.filter(c => !c.isDedup).length;
+
+    logger.info(
+      `[PocketFabric] Stored ${obj.id} — ${data.length} bytes raw → ${compressedData.length} compressed ` +
+      `(${compressionResult.ratio.toFixed(2)}×) — ${cdcChunks.length} CDC chunks ` +
+      `(${newCount} new, ${dedupCount} deduped) in pocket=${pocketId}`,
+    );
+
     return obj.id;
   }
 
