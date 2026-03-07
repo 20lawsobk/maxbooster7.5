@@ -14,7 +14,12 @@ import {
   ChevronRight,
   Volume2,
   Sliders,
-  Heart
+  Heart,
+  Mic,
+  MicOff,
+  Upload,
+  FileAudio,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -122,6 +127,12 @@ export function FlowStateLyricsToMelody({
   const [suggestions, setSuggestions] = useState<MelodySuggestion[]>([]);
   const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
   const [previewPlaying, setPreviewPlaying] = useState<string | null>(null);
+
+  const [inputMode, setInputMode] = useState<'lyrics' | 'audio'>('lyrics');
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [isAnalyzingAudio, setIsAnalyzingAudio] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
   const analyzedLyrics = useMemo(() => analyzeLyrics(lyrics), [lyrics]);
   const totalSyllables = useMemo(
@@ -234,6 +245,79 @@ export function FlowStateLyricsToMelody({
     });
   }, [lyrics, selectedKey, selectedStyle, selectedMood, melodyRange, rhythmComplexity, melodicMovement, useScaleNotes, analyzedLyrics, totalSyllables, toast]);
 
+  const analyzeAudioMelody = useCallback(async (file: File) => {
+    setIsAnalyzingAudio(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', file);
+      const res = await fetch('/api/studio/generation/audio-to-melody', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      const data = await res.json() as any;
+      if (!res.ok || data.error) {
+        toast({ title: 'Analysis failed', description: data.error || 'Could not extract melody from audio', variant: 'destructive' });
+        return;
+      }
+      const notes: MelodyNote[] = (data.notes as any[]).map((n: any) => ({
+        pitch: n.pitch,
+        noteName: n.noteName,
+        duration: n.duration,
+        syllable: '',
+        stress: n.stress,
+      }));
+      const suggestion: MelodySuggestion = {
+        id: `audio-${Date.now()}`,
+        name: `From Audio${data.detected_key ? ` (${data.detected_key})` : ''}`,
+        notes,
+        style: 'Detected',
+        confidence: 0.96,
+        isFavorite: false,
+      };
+      setSuggestions(prev => [suggestion, ...prev]);
+      setSelectedSuggestion(suggestion.id);
+      if (data.detected_key) setSelectedKey(data.detected_key);
+      toast({
+        title: 'Melody extracted',
+        description: `${data.note_count} notes detected${data.detected_key ? ` in ${data.detected_key}` : ''}${data.bpm ? ` @ ${data.bpm} BPM` : ''}`,
+      });
+    } catch (err) {
+      toast({ title: 'Analysis failed', description: 'Could not reach the server', variant: 'destructive' });
+    } finally {
+      setIsAnalyzingAudio(false);
+    }
+  }, [toast, setSelectedKey]);
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const file = new File([blob], `recording_${Date.now()}.webm`, { type: 'audio/webm' });
+        setAudioFile(file);
+        analyzeAudioMelody(file);
+      };
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch {
+      toast({ title: 'Microphone unavailable', description: 'Allow microphone access to record', variant: 'destructive' });
+    }
+  }, [toast, analyzeAudioMelody]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    setIsRecording(false);
+    setMediaRecorder(null);
+  }, [mediaRecorder]);
+
   const toggleFavorite = (id: string) => {
     setSuggestions(prev => prev.map(s =>
       s.id === id ? { ...s, isFavorite: !s.isFavorite } : s
@@ -276,9 +360,39 @@ export function FlowStateLyricsToMelody({
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel - Lyrics Input */}
+        {/* Left Panel - Input */}
         <div className="w-80 border-r border-zinc-800 flex flex-col">
-          {/* Lyrics Textarea */}
+
+          {/* Mode Toggle */}
+          <div className="flex p-3 gap-2 border-b border-zinc-800">
+            <button
+              onClick={() => setInputMode('lyrics')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors',
+                inputMode === 'lyrics'
+                  ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                  : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+              )}
+            >
+              <PenTool className="w-3.5 h-3.5" />
+              Lyrics
+            </button>
+            <button
+              onClick={() => setInputMode('audio')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors',
+                inputMode === 'audio'
+                  ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                  : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+              )}
+            >
+              <FileAudio className="w-3.5 h-3.5" />
+              Audio
+            </button>
+          </div>
+
+          {inputMode === 'lyrics' ? (
+          /* Lyrics Textarea */
           <div className="p-4 flex-1">
             <Label className="text-sm mb-2 block">Enter Your Lyrics</Label>
             <Textarea
@@ -308,6 +422,82 @@ Leads me to where I belong"
               </div>
             )}
           </div>
+          ) : (
+          /* Audio Input */
+          <div className="p-4 flex-1 flex flex-col gap-4">
+            <div>
+              <Label className="text-sm mb-1 block">Hum, sing, or upload audio</Label>
+              <p className="text-xs text-zinc-500 mb-3">
+                The AI will detect the melody from your voice or any audio file and convert it into notes.
+              </p>
+            </div>
+
+            {/* Mic Record */}
+            <div className="flex flex-col items-center gap-3 p-4 bg-zinc-900 rounded-xl border border-zinc-800">
+              <div className={cn(
+                'w-16 h-16 rounded-full flex items-center justify-center transition-all',
+                isRecording
+                  ? 'bg-red-500/20 border-2 border-red-500 animate-pulse'
+                  : 'bg-zinc-800 border-2 border-zinc-700 hover:border-rose-500/50'
+              )}>
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={isAnalyzingAudio}
+                  className="w-full h-full flex items-center justify-center rounded-full"
+                >
+                  {isRecording
+                    ? <MicOff className="w-6 h-6 text-red-400" />
+                    : <Mic className="w-6 h-6 text-zinc-300" />
+                  }
+                </button>
+              </div>
+              <span className="text-xs text-zinc-400">
+                {isRecording ? 'Recording… tap to stop' : 'Tap to record'}
+              </span>
+            </div>
+
+            <div className="text-xs text-zinc-600 text-center">— or —</div>
+
+            {/* File Upload */}
+            <label className={cn(
+              'flex flex-col items-center gap-2 p-4 bg-zinc-900 rounded-xl border-2 border-dashed cursor-pointer transition-colors',
+              isAnalyzingAudio ? 'border-rose-500/50 cursor-wait' : 'border-zinc-700 hover:border-rose-500/40'
+            )}>
+              <input
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                disabled={isAnalyzingAudio || isRecording}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) { setAudioFile(f); analyzeAudioMelody(f); }
+                  e.target.value = '';
+                }}
+              />
+              {isAnalyzingAudio ? (
+                <>
+                  <RefreshCw className="w-6 h-6 text-rose-400 animate-spin" />
+                  <span className="text-xs text-rose-400">Analyzing melody…</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-6 h-6 text-zinc-400" />
+                  <span className="text-xs text-zinc-400">Upload MP3 / WAV / M4A</span>
+                </>
+              )}
+            </label>
+
+            {audioFile && !isAnalyzingAudio && (
+              <div className="flex items-center gap-2 p-2 bg-zinc-900 rounded-lg border border-zinc-800">
+                <FileAudio className="w-4 h-4 text-rose-400 shrink-0" />
+                <span className="text-xs text-zinc-300 truncate flex-1">{audioFile.name}</span>
+                <button onClick={() => setAudioFile(null)}>
+                  <X className="w-3 h-3 text-zinc-500 hover:text-zinc-300" />
+                </button>
+              </div>
+            )}
+          </div>
+          )}
 
           {/* Settings */}
           <div className="p-4 border-t border-zinc-800 space-y-4">
@@ -401,6 +591,7 @@ Leads me to where I belong"
 
           {/* Generate Button */}
           <div className="p-4 border-t border-zinc-800">
+            {inputMode === 'lyrics' ? (
             <Button
               className="w-full bg-rose-500 hover:bg-rose-600"
               onClick={generateMelodies}
@@ -418,6 +609,25 @@ Leads me to where I belong"
                 </>
               )}
             </Button>
+            ) : (
+            <Button
+              className="w-full bg-rose-500 hover:bg-rose-600"
+              onClick={() => audioFile && analyzeAudioMelody(audioFile)}
+              disabled={isAnalyzingAudio || isRecording || !audioFile}
+            >
+              {isAnalyzingAudio ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <FileAudio className="w-4 h-4 mr-2" />
+                  {audioFile ? 'Re-analyze Audio' : 'Upload or Record First'}
+                </>
+              )}
+            </Button>
+            )}
           </div>
         </div>
 

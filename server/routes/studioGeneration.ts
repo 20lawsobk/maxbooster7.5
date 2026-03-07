@@ -486,4 +486,64 @@ router.post('/pattern/arrangement', requireAuth, async (req, res) => {
   }
 });
 
+router.post('/audio-to-melody', requireAuth, upload.single('audio'), async (req, res) => {
+  const file = (req as any).file as Express.Multer.File | undefined;
+  if (!file) {
+    return res.status(400).json({ error: 'No audio file provided' });
+  }
+
+  const os = await import('os');
+  const path = await import('path');
+  const fs = await import('fs');
+  const { execFile } = await import('child_process');
+  const { promisify } = await import('util');
+  const execFileAsync = promisify(execFile);
+
+  const ext = file.originalname.split('.').pop() || 'wav';
+  const tmpPath = path.join(os.tmpdir(), `pitch_${Date.now()}.${ext}`);
+
+  try {
+    fs.writeFileSync(tmpPath, file.buffer);
+
+    const { stdout } = await execFileAsync(
+      'python3',
+      ['server/services/audioAnalyzer.py', tmpPath, 'pitch_track'],
+      { timeout: 45_000 }
+    );
+
+    let result: any;
+    try {
+      result = JSON.parse(stdout.trim());
+    } catch {
+      return res.status(500).json({ error: 'Pitch tracker returned invalid JSON' });
+    }
+
+    if (result.error) {
+      return res.status(422).json({ error: result.error });
+    }
+
+    const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const melodyNotes = (result.notes as any[]).map((n: any) => ({
+      pitch: n.midi,
+      noteName: NOTES[n.midi % 12] + n.octave,
+      duration: n.duration_beats,
+      syllable: '',
+      stress: n.position_beats % 1 < 0.1,
+    }));
+
+    res.json({
+      success: true,
+      notes: melodyNotes,
+      detected_key: result.detected_key,
+      bpm: result.bpm,
+      note_count: result.note_count,
+    });
+  } catch (err: any) {
+    logger.error('[audio-to-melody] Error:', err);
+    res.status(500).json({ error: 'Pitch tracking failed' });
+  } finally {
+    try { (await import('fs')).unlinkSync(tmpPath); } catch {}
+  }
+});
+
 export default router;

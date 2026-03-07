@@ -661,9 +661,177 @@ def analyze_audio(filepath: str) -> dict:
     return result
 
 
+# ── Pitch Tracker (audio → melody notes) ──────────────────────────────────────
+
+NOTE_NAMES_PITCH = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+def _autocorr_f0(frame: np.ndarray, sr: int,
+                 fmin: float = 80.0, fmax: float = 1200.0) -> Optional[float]:
+    """Return fundamental frequency of a mono frame using normalised autocorrelation."""
+    N = len(frame)
+    if N < 2:
+        return None
+    # Windowed frame
+    win = frame * np.hanning(N)
+    # Full autocorrelation
+    corr = np.correlate(win, win, mode='full')
+    corr = corr[N - 1:]          # keep non-negative lags only
+    # Search range in lag samples
+    lag_min = max(1, int(sr / fmax))
+    lag_max = min(N - 1, int(sr / fmin))
+    if lag_min >= lag_max:
+        return None
+    segment = corr[lag_min:lag_max]
+    if segment.max() < 1e-6:
+        return None
+    lag = int(np.argmax(segment)) + lag_min
+    f0 = sr / lag
+    return float(f0)
+
+
+def pitch_track(filepath: str) -> dict:
+    """
+    Detect a melodic note sequence from an audio file.
+    Returns a list of notes: {midi, note_name, octave, duration_beats, position_beats}
+    Uses autocorrelation F0 estimation + RMS onset segmentation.
+    No heavy ML dependencies — NumPy + FFmpeg only.
+    """
+    target_sr = 22050
+    hop = 512          # ~23 ms per frame
+    frame_len = 2048   # ~93 ms window
+    silence_rms = 0.01
+
+    # ── decode to raw PCM via ffmpeg ───────────────────────────────────────────
+    cmd = [
+        FFMPEG, '-y', '-v', 'error',
+        '-i', filepath,
+        '-ac', '1', '-ar', str(target_sr),
+        '-f', 'f32le', '-',
+    ]
+    try:
+        raw = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=30)
+    except Exception as e:
+        return {'error': f'FFmpeg decode failed: {e}'}
+
+    pcm = np.frombuffer(raw, dtype=np.float32)
+    if len(pcm) < frame_len:
+        return {'error': 'Audio too short for pitch tracking'}
+
+    # ── frame-level pitch + energy ─────────────────────────────────────────────
+    frame_pitches: list[Optional[float]] = []
+    frame_energies: list[float] = []
+
+    n_frames = (len(pcm) - frame_len) // hop
+    for i in range(n_frames):
+        start = i * hop
+        frame = pcm[start: start + frame_len]
+        rms = float(np.sqrt(np.mean(frame ** 2)))
+        frame_energies.append(rms)
+        if rms < silence_rms:
+            frame_pitches.append(None)
+        else:
+            f0 = _autocorr_f0(frame, target_sr)
+            frame_pitches.append(f0)
+
+    # ── quantise F0 → MIDI ─────────────────────────────────────────────────────
+    frame_midi: list[Optional[int]] = []
+    for f0 in frame_pitches:
+        if f0 is None:
+            frame_midi.append(None)
+        else:
+            midi = 69 + 12 * math.log2(f0 / 440.0 + 1e-12)
+            midi_q = int(round(midi))
+            if 36 <= midi_q <= 96:
+                frame_midi.append(midi_q)
+            else:
+                frame_midi.append(None)
+
+    # ── segment consecutive identical MIDI notes ───────────────────────────────
+    seconds_per_frame = hop / target_sr
+    notes_raw: list[dict] = []
+    i = 0
+    while i < len(frame_midi):
+        m = frame_midi[i]
+        if m is None:
+            i += 1
+            continue
+        # extend run of same note ±1 semitone tolerance
+        j = i + 1
+        run_notes = [m]
+        while j < len(frame_midi) and frame_midi[j] is not None:
+            if abs(frame_midi[j] - m) <= 1:
+                run_notes.append(frame_midi[j])
+                j += 1
+            else:
+                break
+        # use median pitch of run to reduce vibrato noise
+        midi_med = int(round(float(np.median(run_notes))))
+        duration_s = (j - i) * seconds_per_frame
+        if duration_s >= 0.05:   # drop sub-50 ms blips
+            notes_raw.append({
+                'midi':       midi_med,
+                'start_s':    i * seconds_per_frame,
+                'duration_s': duration_s,
+            })
+        i = j
+
+    if not notes_raw:
+        return {'error': 'No pitched notes detected in audio. Try singing, humming, or playing a melody.'}
+
+    # ── BPM estimate for beat-relative timing ─────────────────────────────────
+    try:
+        bpm_val, _ = estimate_bpm_autocorr(pcm, target_sr)
+        bpm = float(bpm_val)
+        if bpm < 40 or bpm > 220:
+            bpm = 120.0
+    except Exception:
+        bpm = 120.0
+
+    beats_per_second = bpm / 60.0
+
+    # ── convert to beat-relative durations + snap to rhythmic grid ────────────
+    GRID = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0]
+
+    def snap(val: float) -> float:
+        return min(GRID, key=lambda g: abs(g - val))
+
+    notes_out: list[dict] = []
+    for n in notes_raw:
+        dur_beats_raw = n['duration_s'] * beats_per_second
+        dur_beats = snap(max(0.25, dur_beats_raw))
+        pos_beats = n['start_s'] * beats_per_second
+        pc = n['midi'] % 12
+        octave = n['midi'] // 12 - 1
+        notes_out.append({
+            'midi':           n['midi'],
+            'note_name':      NOTE_NAMES_PITCH[pc],
+            'octave':         octave,
+            'duration_beats': dur_beats,
+            'position_beats': round(pos_beats, 3),
+        })
+
+    # ── detect key from extracted notes ───────────────────────────────────────
+    pitch_counts = [0] * 12
+    for n in notes_out:
+        pitch_counts[n['midi'] % 12] += 1
+    dominant_pc = int(np.argmax(pitch_counts))
+    detected_key = NOTE_NAMES_PITCH[dominant_pc]
+
+    return {
+        'notes':        notes_out,
+        'bpm':          round(bpm, 1),
+        'detected_key': detected_key,
+        'note_count':   len(notes_out),
+    }
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print(json.dumps({'error': 'Usage: audioAnalyzer.py <filepath>'}))
+        print(json.dumps({'error': 'Usage: audioAnalyzer.py <filepath> [pitch_track]'}))
         sys.exit(1)
-    out = analyze_audio(sys.argv[1])
+    mode = sys.argv[2] if len(sys.argv) > 2 else 'analyze'
+    if mode == 'pitch_track':
+        out = pitch_track(sys.argv[1])
+    else:
+        out = analyze_audio(sys.argv[1])
     print(json.dumps(out))
