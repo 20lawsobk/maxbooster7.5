@@ -6,7 +6,8 @@ src = f.read_text(encoding='utf-8')
 original = src
 
 fixes = {
-    "rdiehl/medley-solos-db": "https://zenodo.org/record/3464302/files/Medley-solos-DB.tar.gz",
+    "rdiehl/medley-solos-db": "https://zenodo.org/records/3464302/files/Medley-solos-DB.tar.gz",
+    "zenodo.org/record/3464302": "zenodo.org/records/3464302",
     "rdiehl/magnatagatune":   "ccmusic-database/magnatagatune",
     "Ivan-ZNN/NSynth":        "https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-train.jsonwav.tar.gz",
     "kinetics700-2020":       "HuggingFaceM4/kinetics700-2020",

@@ -83,7 +83,7 @@ DATASETS_PLAN: List[Dataset] = [
             ]}),
 
     # Medley-Solos-DB — Zenodo direct download (rdiehl/medley-solos-db doesn't exist on HF)
-    Dataset('medley_solos',   'http', 'https://zenodo.org/record/3464302/files/Medley-solos-DB.tar.gz',
+    Dataset('medley_solos',   'http', 'https://zenodo.org/records/3464302/files/Medley-solos-DB.tar.gz',
             est_gb=0.8,   music=True,  priority=1,
             note='21K clips across 8 instrument classes'),
 
