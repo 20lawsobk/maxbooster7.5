@@ -82,8 +82,8 @@ DATASETS_PLAN: List[Dataset] = [
                 ('https://mirg.city.ac.uk/datasets/magnatagatune/clip_info_final.csv', 'clip_info_final.csv'),
             ]}),
 
-    # Medley-Solos-DB — HuggingFace mirror (Zenodo record 3464302 returns 403)
-    Dataset('medley_solos',   'hf',   'lostanlen/medley-solos-db',
+    # Medley-Solos-DB — Zenodo 3464278 (confirmed by soundata library; 3464302 = wrong record)
+    Dataset('medley_solos',   'http', 'https://zenodo.org/records/3464278/files/Medley-solos-DB.tar.gz?download=1',
             est_gb=0.8,   music=True,  priority=1,
             note='21K clips across 8 instrument classes'),
 
@@ -91,14 +91,14 @@ DATASETS_PLAN: List[Dataset] = [
             est_gb=1.5,   music=True,  priority=2,
             note='Piano MIDI with emotion quadrants (valence/arousal)'),
 
-    # NSynth — Google Magenta Storage (official source)
+    # NSynth — tensorflow.org CDN mirror (GCS magentadata bucket returns 404)
     Dataset('nsynth',         'http_multi', '',
             est_gb=22.0,  music=True,  priority=1,
             note='300K annotated musical notes — instrument + pitch conditioning',
             extra={'files': [
-                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-train.jsonwav.tar.gz', 'nsynth-train.jsonwav.tar.gz'),
-                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-valid.jsonwav.tar.gz', 'nsynth-valid.jsonwav.tar.gz'),
-                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-test.jsonwav.tar.gz',  'nsynth-test.jsonwav.tar.gz'),
+                ('http://download.magenta.tensorflow.org/datasets/nsynth/nsynth-train.jsonwav.tar.gz', 'nsynth-train.jsonwav.tar.gz'),
+                ('http://download.magenta.tensorflow.org/datasets/nsynth/nsynth-valid.jsonwav.tar.gz', 'nsynth-valid.jsonwav.tar.gz'),
+                ('http://download.magenta.tensorflow.org/datasets/nsynth/nsynth-test.jsonwav.tar.gz',  'nsynth-test.jsonwav.tar.gz'),
             ]}),
 
     Dataset('maestro_v3',     'http', 'https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip',
@@ -142,15 +142,12 @@ DATASETS_PLAN: List[Dataset] = [
             note='2.3B image-text pairs at aesthetic score ≥5 — visual quality',
             extra={'streaming': True}),
 
-    # MTG-Jamendo — Zenodo direct download (MTG/mtg-jamendo-dataset HF repo is private/missing)
-    Dataset('mtg_jamendo',    'http_multi', '',
+    # MTG-Jamendo — Zenodo record 3826813 requires account login; HF repo is private.
+    # Download manually: https://mtg.upf.edu/download/datasets/mtg-jamendo
+    # Then place files in D:\ai_server\datasets\mtg_jamendo\
+    Dataset('mtg_jamendo',    'skip', '',
             est_gb=60.0,  music=True,  priority=1,
-            note='55K CC-licensed music tracks, genre/mood/instrument tags',
-            extra={'files': [
-                ('https://zenodo.org/records/3826813/files/raw_30s_segments_mp3.zip?download=1', 'raw_30s_segments_mp3.zip'),
-                ('https://zenodo.org/records/3826813/files/autotagging.tsv?download=1',          'autotagging.tsv'),
-                ('https://zenodo.org/records/3826813/files/tracks.tsv?download=1',               'tracks.tsv'),
-            ]}),
+            note='55K CC-licensed music tracks — MANUAL DOWNLOAD REQUIRED (Zenodo login needed)'),
 
     # ── yt-dlp music video sets ─────────────────────────────────────────────
     Dataset('musicvideo_hq',  'ytdlp', 'official music video HD 4K 2023 2024',
@@ -223,8 +220,21 @@ def _http_download(url: str, dest: Path, filename: Optional[str] = None):
     tmp = filepath.with_suffix(filepath.suffix + '.tmp')
 
     if filepath.exists():
-        print(f"  Already downloaded: {fname}", flush=True)
-        return filepath
+        # Verify local size against server to catch incomplete files wrongly finalized
+        local_size = filepath.stat().st_size
+        try:
+            head_req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}, method='HEAD')
+            with urllib.request.urlopen(head_req, timeout=30) as r:
+                server_size = int(r.headers.get('Content-Length', 0))
+            if server_size > 0 and local_size < server_size * 0.99:
+                print(f"  [WARN] {fname}: local {local_size/1e9:.2f} GB but server reports {server_size/1e9:.2f} GB — incomplete file, re-downloading", flush=True)
+                filepath.rename(tmp)  # treat as partial, resume from where we left off
+            else:
+                print(f"  Already downloaded: {fname} ({local_size/1e9:.2f} GB)", flush=True)
+                return filepath
+        except Exception:
+            print(f"  Already downloaded: {fname}", flush=True)
+            return filepath
 
     # Resume support: check existing tmp size
     resume_pos = tmp.stat().st_size if tmp.exists() else 0
@@ -509,7 +519,10 @@ def run(
         _mark(ds.name, 'downloading')
         ok = False
         try:
-            if ds.method == 'hf':
+            if ds.method == 'skip':
+                print(f"  [SKIP] Requires manual download — {ds.note}", flush=True)
+                ok = False
+            elif ds.method == 'hf':
                 ok = _download_hf(ds, dest)
             elif ds.method == 'http':
                 ok = _download_http(ds, dest)
