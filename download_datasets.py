@@ -728,10 +728,8 @@ if __name__ == '__main__':
     if args.hf_token:
         HF_TOKEN = args.hf_token
     if args.threads is not None:
-        global CHUNK_THREADS
         CHUNK_THREADS = max(1, args.threads)
     if args.parallel is not None:
-        global PARALLEL_DATASETS
         PARALLEL_DATASETS = max(1, args.parallel)
 
     if args.reset:
