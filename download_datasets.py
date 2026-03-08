@@ -9,12 +9,15 @@ Usage:
     python download_datasets.py
 
 Options:
-    python download_datasets.py --list          # Show all datasets + status
-    python download_datasets.py --only music    # Music datasets only
-    python download_datasets.py --only video    # Video datasets only
-    python download_datasets.py --name nsynth   # One specific dataset
-    python download_datasets.py --skip-large    # Skip anything over 100GB
-    python download_datasets.py --hf-token TOKEN  # HF token for gated repos
+    python download_datasets.py --list             # Show all datasets + status
+    python download_datasets.py --only music       # Music datasets only
+    python download_datasets.py --only video       # Video datasets only
+    python download_datasets.py --name nsynth      # One specific dataset
+    python download_datasets.py --skip-large       # Skip anything over 100 GB
+    python download_datasets.py --hf-token TOKEN   # HF token for gated repos
+    python download_datasets.py --reset NAME       # Clear a dataset so it retries
+    python download_datasets.py --threads 16       # Parallel streams per file (default 8)
+    python download_datasets.py --parallel 3       # Concurrent datasets at once (default 1)
 
 Requirements:
     pip install huggingface_hub datasets requests tqdm
@@ -28,12 +31,19 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+
 from pathlib import Path
 from typing import List, Optional
+
+# ── Speed tuning (override via CLI: --threads N  --parallel N) ───────────────
+CHUNK_THREADS    = 8   # parallel byte-range streams per file (set 1 to disable)
+PARALLEL_DATASETS = 1  # concurrent datasets downloading at once
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -212,80 +222,179 @@ def _ensure_pkg(pkg: str, import_name: Optional[str] = None):
         print(f"  Installing/repairing {pkg}...", flush=True)
         subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--upgrade', pkg])
 
-def _http_download(url: str, dest: Path, filename: Optional[str] = None):
-    """Download a file over HTTP with progress bar. Resumes partial downloads."""
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    fname = filename or url.split('/')[-1].split('?')[0]
+_PRINT_LOCK = threading.Lock()
+
+def _print(msg: str, end: str = '\n'):
+    with _PRINT_LOCK:
+        print(msg, end=end, flush=True)
+
+def _http_head(url: str) -> tuple[int, bool]:
+    """Return (content_length, accepts_ranges) via HEAD request."""
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}, method='HEAD')
+        with urllib.request.urlopen(req, timeout=30) as r:
+            total = int(r.headers.get('Content-Length', 0))
+            ranges = r.headers.get('Accept-Ranges', '').strip().lower() == 'bytes'
+            return total, ranges
+    except Exception:
+        return 0, False
+
+def _http_download_chunk(url: str, start: int, end: int, part_path: Path,
+                          counter: list, lock: threading.Lock, total: int):
+    """Download a single byte-range chunk to part_path. Updates counter[0] with bytes done."""
+    existing = part_path.stat().st_size if part_path.exists() else 0
+    expected = end - start + 1
+    if existing == expected:
+        with lock:
+            counter[0] += existing
+        return  # already complete
+
+    resume = existing
+    headers = {
+        'User-Agent': 'Mozilla/5.0',
+        'Range': f'bytes={start + resume}-{end}',
+    }
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req, timeout=180) as resp:
+        mode = 'ab' if resume else 'wb'
+        with open(part_path, mode) as f:
+            buf_size = 8 * 1024 * 1024  # 8 MB read buffer
+            while True:
+                buf = resp.read(buf_size)
+                if not buf:
+                    break
+                f.write(buf)
+                with lock:
+                    counter[0] += len(buf)
+                    done = counter[0]
+                    pct  = done / total * 100
+                _print(f"\r  {done/1e6:.0f} MB / {total/1e6:.0f} MB  ({pct:.1f}%)  [{CHUNK_THREADS} streams]", end='')
+
+def _http_download_parallel(url: str, dest: Path, fname: str, total: int) -> Path:
+    """Split file into CHUNK_THREADS equal byte-range parts, download in parallel, then concatenate."""
     filepath = dest / fname
-    tmp = filepath.with_suffix(filepath.suffix + '.tmp')
+    tmp      = filepath.with_suffix(filepath.suffix + '.tmp')
+    part_dir = dest / f'.{fname}.parts'
+    part_dir.mkdir(parents=True, exist_ok=True)
 
-    if filepath.exists():
-        # Verify local size against server to catch incomplete files wrongly finalized
-        local_size = filepath.stat().st_size
-        try:
-            head_req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}, method='HEAD')
-            with urllib.request.urlopen(head_req, timeout=30) as r:
-                server_size = int(r.headers.get('Content-Length', 0))
-            if server_size > 0 and local_size < server_size * 0.99:
-                print(f"  [WARN] {fname}: local {local_size/1e9:.2f} GB but server reports {server_size/1e9:.2f} GB — incomplete file, re-downloading", flush=True)
-                filepath.rename(tmp)  # treat as partial, resume from where we left off
-            else:
-                print(f"  Already downloaded: {fname} ({local_size/1e9:.2f} GB)", flush=True)
-                return filepath
-        except Exception:
-            print(f"  Already downloaded: {fname}", flush=True)
-            return filepath
+    chunk_size = (total + CHUNK_THREADS - 1) // CHUNK_THREADS
+    ranges = [(i * chunk_size, min((i + 1) * chunk_size - 1, total - 1)) for i in range(CHUNK_THREADS)]
+    parts  = [part_dir / f'part{i:04d}' for i in range(len(ranges))]
 
-    # Resume support: check existing tmp size
-    resume_pos = tmp.stat().st_size if tmp.exists() else 0
+    counter: list = [sum(p.stat().st_size for p in parts if p.exists())]
+    lock = threading.Lock()
+
+    _print(f"  Parallel download: {CHUNK_THREADS} streams × {chunk_size/1e6:.0f} MB", end='')
+    _print('')
+
+    with ThreadPoolExecutor(max_workers=CHUNK_THREADS) as ex:
+        futures = {
+            ex.submit(_http_download_chunk, url, s, e, p, counter, lock, total): i
+            for i, ((s, e), p) in enumerate(zip(ranges, parts))
+        }
+        for f in as_completed(futures):
+            exc = f.exception()
+            if exc:
+                raise exc
+    _print('')
+
+    # Concatenate parts → tmp → filepath
+    _print(f"  Assembling {fname}...", end='')
+    with open(tmp, 'wb') as out:
+        for p in parts:
+            out.write(p.read_bytes())
+    _print(' done')
+
+    actual = tmp.stat().st_size
+    if actual < total * 0.99:
+        raise Exception(f"Assembly incomplete: {actual/1e9:.2f} GB of {total/1e9:.2f} GB")
+
+    tmp.rename(filepath)
+    shutil.rmtree(part_dir, ignore_errors=True)
+    return filepath
+
+def _http_download_sequential(url: str, dest: Path, fname: str,
+                               total: int, resume_pos: int = 0) -> Path:
+    """Single-stream download with resume and progress bar."""
+    filepath = dest / fname
+    tmp      = filepath.with_suffix(filepath.suffix + '.tmp')
 
     headers = {'User-Agent': 'Mozilla/5.0'}
     if resume_pos > 0:
         headers['Range'] = f'bytes={resume_pos}-'
-        print(f"  Resuming {fname} from {resume_pos / 1e6:.0f} MB...", flush=True)
+        _print(f"  Resuming {fname} from {resume_pos/1e6:.0f} MB...")
 
     req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=180) as resp:
             total_raw = int(resp.headers.get('Content-Length', 0))
-            total = total_raw + resume_pos if resume_pos else total_raw
-            chunk = 1024 * 1024  # 1MB
-            done  = resume_pos
-            mode  = 'ab' if resume_pos > 0 else 'wb'
+            total     = total_raw + resume_pos if resume_pos else (total or total_raw)
+            done      = resume_pos
+            mode      = 'ab' if resume_pos else 'wb'
+            buf_size  = 8 * 1024 * 1024  # 8 MB read buffer
             with open(tmp, mode) as f:
                 while True:
-                    buf = resp.read(chunk)
+                    buf = resp.read(buf_size)
                     if not buf:
                         break
                     f.write(buf)
                     done += len(buf)
                     if total:
-                        pct = done / total * 100
-                        mb  = done / 1e6
-                        print(f"\r  {mb:.0f} MB / {total/1e6:.0f} MB  ({pct:.1f}%)", end='', flush=True)
-        print(flush=True)
+                        _print(f"\r  {done/1e6:.0f} MB / {total/1e6:.0f} MB  ({done/total*100:.1f}%)", end='')
+        _print('')
     except urllib.error.HTTPError as e:
         if e.code == 416 and tmp.exists():
-            # 416 = server says we already have all bytes — finalize the file
-            print(f"\n  Already complete (416), finalizing...", flush=True)
+            _print('\n  Already complete (416), finalizing...')
             tmp.rename(filepath)
             return filepath
-        print(f"\n  [WARN] Download interrupted: {e}", flush=True)
+        _print(f'\n  [WARN] Download interrupted: {e}')
         raise
     except Exception as e:
-        print(f"\n  [WARN] Download interrupted: {e}", flush=True)
+        _print(f'\n  [WARN] Download interrupted: {e}')
         raise
 
-    # Verify we received the full file before finalizing
     actual = tmp.stat().st_size
-    if total > 0 and actual < total:
+    if total > 0 and actual < total * 0.99:
         raise Exception(
             f"Incomplete download: received {actual/1e6:.0f} MB of {total/1e6:.0f} MB "
             f"({actual/total*100:.1f}%) — connection closed early, will resume next run"
         )
-
     tmp.rename(filepath)
     return filepath
+
+def _http_download(url: str, dest: Path, filename: Optional[str] = None) -> Path:
+    """Download a file. Uses parallel chunked streams for large files; sequential otherwise."""
+    dest.mkdir(parents=True, exist_ok=True)
+    fname    = filename or url.split('/')[-1].split('?')[0]
+    filepath = dest / fname
+    tmp      = filepath.with_suffix(filepath.suffix + '.tmp')
+
+    # ── Existing file: verify size against server ─────────────────────────────
+    if filepath.exists():
+        local_size = filepath.stat().st_size
+        try:
+            server_size, _ = _http_head(url)
+            if server_size > 0 and local_size < server_size * 0.99:
+                _print(f"  [WARN] {fname}: local {local_size/1e9:.2f} GB vs server {server_size/1e9:.2f} GB — resuming")
+                filepath.rename(tmp)  # demote to .tmp so it resumes
+            else:
+                _print(f"  Already downloaded: {fname} ({local_size/1e9:.2f} GB)")
+                return filepath
+        except Exception:
+            _print(f"  Already downloaded: {fname}")
+            return filepath
+
+    # ── Decide: parallel chunked vs sequential ────────────────────────────────
+    PARALLEL_MIN = 50 * 1024 * 1024  # 50 MB threshold
+    total, accepts_ranges = _http_head(url)
+
+    if total > PARALLEL_MIN and accepts_ranges and CHUNK_THREADS > 1 and not tmp.exists():
+        # Fresh large file → parallel chunked download
+        return _http_download_parallel(url, dest, fname, total)
+
+    # Sequential (small file, no Range support, or resuming an existing .tmp)
+    resume_pos = tmp.stat().st_size if tmp.exists() else 0
+    return _http_download_sequential(url, dest, fname, total, resume_pos)
 
 def _extract(filepath: Path, dest: Path):
     """Extract zip or tar archives."""
@@ -382,43 +491,59 @@ def _download_http(ds: Dataset, dest: Path):
 
 
 def _download_http_multi(ds: Dataset, dest: Path):
-    """Download multiple files (e.g. multi-part archives or split dataset files)."""
+    """Download multiple files in parallel, then join any multi-part archives."""
     dest.mkdir(parents=True, exist_ok=True)
     files = ds.extra.get('files', [])
     if not files:
-        print(f"  [WARN] No files defined for {ds.name}", flush=True)
+        _print(f"  [WARN] No files defined for {ds.name}")
         return False
 
-    all_ok = True
-    for url, fname in files:
-        print(f"  Downloading {fname}...", flush=True)
+    _print(f"  Downloading {len(files)} files in parallel...")
+    results: dict[str, bool] = {}
+
+    def _dl_one(url_fname):
+        url, fname = url_fname
+        _print(f"  → {fname}")
         try:
-            filepath = _http_download(url, dest, fname)
-            # Extract non-split archives immediately
-            if not fname.endswith(('.001', '.002', '.003')):
+            _http_download(url, dest, fname)
+            return fname, True
+        except Exception as e:
+            _print(f"  [WARN] Failed to download {fname}: {e}")
+            return fname, False
+
+    with ThreadPoolExecutor(max_workers=min(len(files), CHUNK_THREADS)) as ex:
+        for fname, ok in ex.map(_dl_one, files):
+            results[fname] = ok
+
+    all_ok = all(results.values())
+
+    # Extract non-split archives
+    for _, fname in files:
+        if results.get(fname) and not fname.endswith(('.001', '.002', '.003')):
+            fp = dest / fname
+            if fp.exists():
                 try:
-                    _extract(filepath, dest)
+                    _extract(fp, dest)
                 except Exception:
                     pass
-        except Exception as e:
-            print(f"  [WARN] Failed to download {fname}: {e}", flush=True)
-            all_ok = False
 
-    # Attempt to join and extract multi-part zips (zip.001 + zip.002 + ...)
-    parts = [dest / f for _, f in files if f.endswith('.001')]
-    for part1 in parts:
-        base = str(part1)[:-4]  # strip .001
-        out_zip = dest / (Path(base).name)
-        part_files = sorted(dest.glob(Path(base).name + '.*'))
+    # Join and extract multi-part zips (zip.001 + zip.002 + ...)
+    for _, fname in files:
+        if not fname.endswith('.001'):
+            continue
+        base     = fname[:-4]
+        out_zip  = dest / base
+        part_files = sorted(dest.glob(base + '.*'))
         if len(part_files) > 1 and not out_zip.exists():
-            print(f"  Joining multi-part archive: {out_zip.name}...", flush=True)
+            _print(f"  Joining multi-part archive: {out_zip.name}...")
             try:
                 with open(out_zip, 'wb') as out_f:
                     for pf in part_files:
                         out_f.write(pf.read_bytes())
                 _extract(out_zip, dest)
             except Exception as e:
-                print(f"  [WARN] Multi-part join failed: {e}", flush=True)
+                _print(f"  [WARN] Multi-part join failed: {e}")
+
     return all_ok
 
 
@@ -500,27 +625,27 @@ def run(
     if dry_run:
         print("  DRY RUN — no downloads will be made\n")
 
-    for ds in targets:
+    def _process_one(ds: Dataset):
         dest = DATASETS / ds.name
 
         if _is_done(ds.name):
-            print(f"  ✓ {ds.name:<25} already complete — skipping", flush=True)
-            continue
+            _print(f"  ✓ {ds.name:<25} already complete — skipping")
+            return
 
         size_str = f"{ds.est_gb:.0f} GB" if ds.est_gb < 1000 else f"{ds.est_gb/1024:.1f} TB"
-        print(f"\n{'='*65}", flush=True)
-        print(f"  [{ds.name}]  ~{size_str}  (priority {ds.priority})", flush=True)
-        print(f"  {ds.note}", flush=True)
+        _print(f"\n{'='*65}")
+        _print(f"  [{ds.name}]  ~{size_str}  (priority {ds.priority})")
+        _print(f"  {ds.note}")
 
         if dry_run:
-            print(f"  DRY RUN: would download via {ds.method}", flush=True)
-            continue
+            _print(f"  DRY RUN: would download via {ds.method}")
+            return
 
         _mark(ds.name, 'downloading')
         ok = False
         try:
             if ds.method == 'skip':
-                print(f"  [SKIP] Requires manual download — {ds.note}", flush=True)
+                _print(f"  [SKIP] Requires manual download — {ds.note}")
                 ok = False
             elif ds.method == 'hf':
                 ok = _download_hf(ds, dest)
@@ -531,23 +656,35 @@ def run(
             elif ds.method == 'ytdlp':
                 ok = _download_ytdlp(ds, dest)
         except KeyboardInterrupt:
-            print(f"\n  Interrupted during {ds.name}. Progress saved.", flush=True)
+            _print(f"\n  Interrupted during {ds.name}. Progress saved.")
             _mark(ds.name, 'interrupted')
             sys.exit(0)
         except Exception as e:
-            print(f"  [ERROR] {e}", flush=True)
+            _print(f"  [ERROR] {ds.name}: {e}")
             ok = False
 
         if ok:
             _mark(ds.name, 'done')
-            print(f"  ✓ {ds.name} complete", flush=True)
+            _print(f"  ✓ {ds.name} complete")
         else:
             _mark(ds.name, 'failed', 'download error')
-            print(f"  ✗ {ds.name} failed — check connection and retry", flush=True)
+            _print(f"  ✗ {ds.name} failed — check connection and retry")
 
-    print(f"\n{'='*65}", flush=True)
-    print("  All downloads complete.", flush=True)
-    print(f"  Datasets saved to: {DATASETS}", flush=True)
+    if PARALLEL_DATASETS > 1:
+        _print(f"  Parallel mode: up to {PARALLEL_DATASETS} datasets simultaneously\n")
+        with ThreadPoolExecutor(max_workers=PARALLEL_DATASETS) as ex:
+            futures = [ex.submit(_process_one, ds) for ds in targets]
+            for f in as_completed(futures):
+                exc = f.exception()
+                if exc and not isinstance(exc, SystemExit):
+                    _print(f"  [ERROR] {exc}")
+    else:
+        for ds in targets:
+            _process_one(ds)
+
+    _print(f"\n{'='*65}")
+    _print("  All downloads complete.")
+    _print(f"  Datasets saved to: {DATASETS}")
 
 
 def list_datasets():
@@ -582,10 +719,20 @@ if __name__ == '__main__':
                         help='HuggingFace access token for gated/private repos')
     parser.add_argument('--reset',      type=str, default=None, metavar='NAME',
                         help='Clear a dataset from the done-status so it will be retried (e.g. --reset fma_large)')
+    parser.add_argument('--threads',    type=int, default=None, metavar='N',
+                        help=f'Parallel byte-range streams per file (default: {CHUNK_THREADS})')
+    parser.add_argument('--parallel',   type=int, default=None, metavar='N',
+                        help=f'Concurrent datasets downloading at once (default: {PARALLEL_DATASETS})')
     args = parser.parse_args()
 
     if args.hf_token:
         HF_TOKEN = args.hf_token
+    if args.threads is not None:
+        global CHUNK_THREADS
+        CHUNK_THREADS = max(1, args.threads)
+    if args.parallel is not None:
+        global PARALLEL_DATASETS
+        PARALLEL_DATASETS = max(1, args.parallel)
 
     if args.reset:
         status = _load_status()
