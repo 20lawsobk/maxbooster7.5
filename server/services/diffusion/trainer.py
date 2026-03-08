@@ -1218,21 +1218,52 @@ _best_loss_v4 = [float('inf')]  # module-level tracker across sessions
 
 
 def _save_v4(model, time_enc, text_enc, losses=None):
+    """
+    Atomic save: write to a .tmp file then os.replace() so a mid-write crash
+    never corrupts the live weights file.  Also rotates 3 rolling checkpoints
+    (.ckpt0 = newest, .ckpt2 = oldest) so training can always roll back one step.
+    """
+    import shutil as _sh
+
     weights = model.get_named_weights()
     for k, v in time_enc.params.items():
         weights[f'time_enc_v4_{k}'] = v
     for k, v in text_enc.params.items():
         weights[f'text_enc_v4_{k}'] = v
-    np.savez_compressed(WEIGHTS_V4_PATH, **weights)
-    kb = os.path.getsize(WEIGHTS_V4_PATH) // 1024
-    print(f"[DiffusionTrainer v4] Saved weights ({kb} KB) → {WEIGHTS_V4_PATH}", flush=True)
+
+    tmp_path = WEIGHTS_V4_PATH + '.tmp'
+    try:
+        np.savez_compressed(tmp_path, **weights)
+
+        # Rotate checkpoints before overwriting: .ckpt0 → .ckpt1 → .ckpt2
+        for i in range(2, -1, -1):
+            src = WEIGHTS_V4_PATH + (f'.ckpt{i-1}' if i > 0 else '')
+            dst = WEIGHTS_V4_PATH + f'.ckpt{i}'
+            if os.path.exists(src):
+                try:
+                    _sh.copy2(src, dst)
+                except OSError:
+                    pass
+
+        os.replace(tmp_path, WEIGHTS_V4_PATH)
+        kb = os.path.getsize(WEIGHTS_V4_PATH) // 1024
+        print(f"[DiffusionTrainer v4] Saved weights ({kb} KB) → {WEIGHTS_V4_PATH}", flush=True)
+
+    except Exception as e:
+        print(f"[DiffusionTrainer v4] Weight save FAILED: {e} — rolling back to .ckpt0", flush=True)
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        ckpt0 = WEIGHTS_V4_PATH + '.ckpt0'
+        if os.path.exists(ckpt0):
+            _sh.copy2(ckpt0, WEIGHTS_V4_PATH)
+            print("[DiffusionTrainer v4] Rollback to .ckpt0 successful", flush=True)
+        return
 
     # Keep a separate best-weights file that only updates on a new record low
     if losses:
         current_loss = float(np.mean(losses[-10:])) if len(losses) >= 10 else float(losses[-1])
         if current_loss < _best_loss_v4[0]:
             _best_loss_v4[0] = current_loss
-            import shutil as _sh
             _sh.copy2(WEIGHTS_V4_PATH, WEIGHTS_V4_BEST_PATH)
             print(f"[DiffusionTrainer v4] New best loss {current_loss:.5f} → "
                   f"saved best checkpoint", flush=True)
@@ -1241,10 +1272,24 @@ def _save_v4(model, time_enc, text_enc, losses=None):
 def _load_v4(model, time_enc, text_enc):
     if not os.path.exists(WEIGHTS_V4_PATH):
         return False
-    try:
-        data = dict(np.load(WEIGHTS_V4_PATH, allow_pickle=False))
-    except Exception as e:
-        print(f"[DiffusionTrainer v4] Could not load weights (corrupt?): {e}", flush=True)
+
+    # Try live weights first, then fall back through checkpoints if corrupt
+    candidates = [WEIGHTS_V4_PATH] + [WEIGHTS_V4_PATH + f'.ckpt{i}' for i in range(3)]
+    data = None
+    for candidate in candidates:
+        if not os.path.exists(candidate):
+            continue
+        try:
+            data = dict(np.load(candidate, allow_pickle=False))
+            if candidate != WEIGHTS_V4_PATH:
+                import shutil as _sh
+                _sh.copy2(candidate, WEIGHTS_V4_PATH)
+                print(f"[DiffusionTrainer v4] Recovered from checkpoint: {candidate}", flush=True)
+            break
+        except Exception as e:
+            print(f"[DiffusionTrainer v4] {candidate} unreadable ({e}) — trying next checkpoint", flush=True)
+    if data is None:
+        print("[DiffusionTrainer v4] All checkpoints unreadable — starting from scratch", flush=True)
         return False
     try:
         model.load_named_weights(data)

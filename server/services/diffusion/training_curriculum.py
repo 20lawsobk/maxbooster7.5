@@ -293,9 +293,28 @@ class CurriculumScheduler:
         }
 
     def _save_progress(self):
+        """Atomic write — write to .tmp then rename so a crash never corrupts the file."""
         os.makedirs(os.path.dirname(self.progress_path), exist_ok=True)
-        with open(self.progress_path, 'w') as f:
-            json.dump(self.progress, f, indent=2)
+        tmp = self.progress_path + '.tmp'
+        try:
+            with open(tmp, 'w') as f:
+                json.dump(self.progress, f, indent=2)
+            os.replace(tmp, self.progress_path)
+
+            # Rotate: keep 3 rolling backups (.bak0 newest, .bak2 oldest)
+            for i in range(2, -1, -1):
+                src = self.progress_path + (f'.bak{i-1}' if i > 0 else '')
+                dst = self.progress_path + f'.bak{i}'
+                if os.path.exists(src):
+                    try:
+                        import shutil as _sh
+                        _sh.copy2(src, dst)
+                    except OSError:
+                        pass
+        except Exception as e:
+            print(f"[CurriculumScheduler] Progress save failed: {e}", flush=True)
+            if os.path.exists(tmp):
+                os.remove(tmp)
 
     @property
     def current_day(self) -> int:
