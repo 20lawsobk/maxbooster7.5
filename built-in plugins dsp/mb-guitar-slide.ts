@@ -1,0 +1,5 @@
+import type { PluginDefinition } from '../server/services/pluginHostService';
+
+const MbGuitarSlidePlugin: PluginDefinition = { id: 'mb-guitar-slide', slug: 'mb-guitar-slide', name: 'MB Slide Guitar', category: 'instrument', type: 'guitar' as any, version: '1.0.0', description: 'Delta blues slide guitar with bottleneck tone', author: 'Max Booster', oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.45 }, { type: 'sine', detune: 0, gain: 0.35 }, { type: 'triangle', detune: 7, gain: 0.2 }], envelope: { attack: 0.01, decay: 0.4, sustain: 0.5, release: 0.5 }, parameters: [{ id: 'slide', name: 'Slide', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'drive', name: 'Drive', type: 'float', defaultValue: 0.3, minValue: 0, maxValue: 1, automatable: true }, { id: 'vibrato', name: 'Vibrato', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { slide: 0.6, drive: 0.3, vibrato: 0.5, volume: 0.8 } };
+
+export default MbGuitarSlidePlugin;

@@ -1,60 +1,8 @@
-import { PIANO_PLUGINS, STRINGS_PLUGINS, DRUMS_PLUGINS, BASS_PLUGINS, PAD_PLUGINS, SYNTH_PLUGINS, FM_PLUGINS, WAVETABLE_PLUGINS, SAMPLER_PLUGINS } from '../../../built-in plugins dsp/instrumentPlugins';
-import { REVERB_PLUGINS, DELAY_PLUGINS, COMPRESSOR_PLUGINS, EQ_PLUGINS, DISTORTION_PLUGINS, MODULATION_PLUGINS, DYNAMICS_PLUGINS, VOCAL_PLUGINS, MICROPHONE_PLUGINS } from '../../../built-in plugins dsp/effectPlugins';
-import { ADDITIONAL_SYNTH_PLUGINS, ADDITIONAL_EFFECT_PLUGINS } from '../../../built-in plugins dsp/expandedPlugins';
-import { ALL_ADDITIONAL_INSTRUMENTS } from '../../../built-in plugins dsp/additionalInstrumentPlugins';
-import { ALL_ADDITIONAL_EFFECTS } from '../../../built-in plugins dsp/additionalEffectPlugins';
 import type { PluginDefinition } from '../pluginHostService';
+import { ALL_PLUGINS } from '../../../built-in plugins dsp/index';
 
-export const EXPANDED_INSTRUMENTS: PluginDefinition[] = [
-  ...PIANO_PLUGINS,
-  ...STRINGS_PLUGINS,
-  ...DRUMS_PLUGINS,
-  ...BASS_PLUGINS,
-  ...PAD_PLUGINS,
-  ...SYNTH_PLUGINS,
-  ...FM_PLUGINS,
-  ...WAVETABLE_PLUGINS,
-  ...SAMPLER_PLUGINS,
-  ...ADDITIONAL_SYNTH_PLUGINS,
-  ...ALL_ADDITIONAL_INSTRUMENTS,
-];
+export const EXPANDED_INSTRUMENTS: PluginDefinition[] = ALL_PLUGINS.filter(p => p.category === 'instrument');
+export const EXPANDED_EFFECTS: PluginDefinition[] = ALL_PLUGINS.filter(p => p.category === 'effect');
 
-export const EXPANDED_EFFECTS: PluginDefinition[] = [
-  ...REVERB_PLUGINS,
-  ...DELAY_PLUGINS,
-  ...COMPRESSOR_PLUGINS,
-  ...EQ_PLUGINS,
-  ...DISTORTION_PLUGINS,
-  ...MODULATION_PLUGINS,
-  ...DYNAMICS_PLUGINS,
-  ...VOCAL_PLUGINS,
-  ...MICROPHONE_PLUGINS,
-  ...ADDITIONAL_EFFECT_PLUGINS,
-  ...ALL_ADDITIONAL_EFFECTS,
-];
-
-export const ALL_PLUGINS: PluginDefinition[] = [
-  ...EXPANDED_INSTRUMENTS,
-  ...EXPANDED_EFFECTS,
-];
-
-export {
-  PIANO_PLUGINS,
-  STRINGS_PLUGINS,
-  DRUMS_PLUGINS,
-  BASS_PLUGINS,
-  PAD_PLUGINS,
-  SYNTH_PLUGINS,
-  FM_PLUGINS,
-  WAVETABLE_PLUGINS,
-  SAMPLER_PLUGINS,
-  REVERB_PLUGINS,
-  DELAY_PLUGINS,
-  COMPRESSOR_PLUGINS,
-  EQ_PLUGINS,
-  DISTORTION_PLUGINS,
-  MODULATION_PLUGINS,
-  DYNAMICS_PLUGINS,
-  VOCAL_PLUGINS,
-  MICROPHONE_PLUGINS,
-};
+export { ALL_PLUGINS };
+export default ALL_PLUGINS;

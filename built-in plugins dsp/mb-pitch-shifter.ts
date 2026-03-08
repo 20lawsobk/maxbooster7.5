@@ -1,0 +1,23 @@
+import type { PluginDefinition } from '../server/services/pluginHostService';
+
+const MbPitchShifterPlugin: PluginDefinition = {
+    id: 'mb-pitch-shifter',
+    slug: 'mb-pitch-shifter',
+    name: 'MB Pitch Shifter',
+    category: 'effect',
+    type: 'eq',
+    version: '1.0.0',
+    description: 'High-quality pitch shifting with formant preservation',
+    author: 'Max Booster',
+    parameters: [
+      { id: 'semitones', name: 'Semitones', type: 'float', defaultValue: 0, minValue: -24, maxValue: 24, automatable: true },
+      { id: 'cents', name: 'Fine Tune', type: 'float', defaultValue: 0, minValue: -100, maxValue: 100, unit: 'cents', automatable: true },
+      { id: 'formant', name: 'Formant Shift', type: 'float', defaultValue: 0, minValue: -12, maxValue: 12, unit: 'semitones', automatable: true },
+      { id: 'preserve_formant', name: 'Preserve Formant', type: 'bool', defaultValue: true, automatable: false },
+      { id: 'grain_size', name: 'Grain Size', type: 'float', defaultValue: 50, minValue: 10, maxValue: 200, unit: 'ms', automatable: true },
+      { id: 'mix', name: 'Mix', type: 'float', defaultValue: 1, minValue: 0, maxValue: 1, automatable: true },
+    ],
+    defaultPreset: { semitones: 0, cents: 0, formant: 0, preserve_formant: true, grain_size: 50, mix: 1 },
+  };
+
+export default MbPitchShifterPlugin;
