@@ -82,8 +82,8 @@ DATASETS_PLAN: List[Dataset] = [
                 ('https://mirg.city.ac.uk/datasets/magnatagatune/clip_info_final.csv', 'clip_info_final.csv'),
             ]}),
 
-    # Medley-Solos-DB — Zenodo direct download (rdiehl/medley-solos-db doesn't exist on HF)
-    Dataset('medley_solos',   'http', 'https://zenodo.org/records/3464302/files/Medley-solos-DB.tar.gz?download=1',
+    # Medley-Solos-DB — HuggingFace mirror (Zenodo record 3464302 returns 403)
+    Dataset('medley_solos',   'hf',   'lostanlen/medley-solos-db',
             est_gb=0.8,   music=True,  priority=1,
             note='21K clips across 8 instrument classes'),
 
@@ -91,14 +91,14 @@ DATASETS_PLAN: List[Dataset] = [
             est_gb=1.5,   music=True,  priority=2,
             note='Piano MIDI with emotion quadrants (valence/arousal)'),
 
-    # NSynth — Google Storage direct download (Ivan-ZNN/NSynth doesn't exist on HF)
+    # NSynth — Google Magenta Storage (official source)
     Dataset('nsynth',         'http_multi', '',
             est_gb=22.0,  music=True,  priority=1,
             note='300K annotated musical notes — instrument + pitch conditioning',
             extra={'files': [
-                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-train.jsonwav.tar.gz',  'nsynth-train.tar.gz'),
-                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-valid.jsonwav.tar.gz',  'nsynth-valid.tar.gz'),
-                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-test.jsonwav.tar.gz',   'nsynth-test.tar.gz'),
+                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-train.jsonwav.tar.gz', 'nsynth-train.jsonwav.tar.gz'),
+                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-valid.jsonwav.tar.gz', 'nsynth-valid.jsonwav.tar.gz'),
+                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-test.jsonwav.tar.gz',  'nsynth-test.jsonwav.tar.gz'),
             ]}),
 
     Dataset('maestro_v3',     'http', 'https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip',
@@ -142,9 +142,15 @@ DATASETS_PLAN: List[Dataset] = [
             note='2.3B image-text pairs at aesthetic score ≥5 — visual quality',
             extra={'streaming': True}),
 
-    Dataset('mtg_jamendo',    'hf',   'MTG/mtg-jamendo-dataset',
+    # MTG-Jamendo — Zenodo direct download (MTG/mtg-jamendo-dataset HF repo is private/missing)
+    Dataset('mtg_jamendo',    'http_multi', '',
             est_gb=60.0,  music=True,  priority=1,
-            note='55K CC-licensed music tracks, genre/mood/instrument tags'),
+            note='55K CC-licensed music tracks, genre/mood/instrument tags',
+            extra={'files': [
+                ('https://zenodo.org/records/3826813/files/raw_30s_segments_mp3.zip?download=1', 'raw_30s_segments_mp3.zip'),
+                ('https://zenodo.org/records/3826813/files/autotagging.tsv?download=1',          'autotagging.tsv'),
+                ('https://zenodo.org/records/3826813/files/tracks.tsv?download=1',               'tracks.tsv'),
+            ]}),
 
     # ── yt-dlp music video sets ─────────────────────────────────────────────
     Dataset('musicvideo_hq',  'ytdlp', 'official music video HD 4K 2023 2024',
@@ -166,15 +172,21 @@ DATASETS_PLAN: List[Dataset] = [
 # ── Status tracking ───────────────────────────────────────────────────────────
 
 def _load_status() -> dict:
-    if STATUS_FILE.exists():
-        try:
-            return json.loads(STATUS_FILE.read_text())
-        except Exception:
-            pass
+    try:
+        if STATUS_FILE.exists():
+            try:
+                return json.loads(STATUS_FILE.read_text())
+            except Exception:
+                pass
+    except OSError as e:
+        print(f"  [WARN] Cannot read status file (drive unavailable?): {e}", flush=True)
     return {}
 
 def _save_status(status: dict):
-    STATUS_FILE.write_text(json.dumps(status, indent=2, default=str))
+    try:
+        STATUS_FILE.write_text(json.dumps(status, indent=2, default=str))
+    except OSError as e:
+        print(f"  [WARN] Cannot save status file (drive unavailable?): {e}", flush=True)
 
 def _mark(name: str, state: str, note: str = ""):
     status = _load_status()
@@ -253,6 +265,14 @@ def _http_download(url: str, dest: Path, filename: Optional[str] = None):
     except Exception as e:
         print(f"\n  [WARN] Download interrupted: {e}", flush=True)
         raise
+
+    # Verify we received the full file before finalizing
+    actual = tmp.stat().st_size
+    if total > 0 and actual < total:
+        raise Exception(
+            f"Incomplete download: received {actual/1e6:.0f} MB of {total/1e6:.0f} MB "
+            f"({actual/total*100:.1f}%) — connection closed early, will resume next run"
+        )
 
     tmp.rename(filepath)
     return filepath
@@ -547,10 +567,23 @@ if __name__ == '__main__':
     parser.add_argument('--dry-run',    action='store_true',  help='Show plan without downloading')
     parser.add_argument('--hf-token',   type=str, default=None, metavar='TOKEN',
                         help='HuggingFace access token for gated/private repos')
+    parser.add_argument('--reset',      type=str, default=None, metavar='NAME',
+                        help='Clear a dataset from the done-status so it will be retried (e.g. --reset fma_large)')
     args = parser.parse_args()
 
     if args.hf_token:
         HF_TOKEN = args.hf_token
+
+    if args.reset:
+        status = _load_status()
+        name = args.reset
+        if name in status:
+            del status[name]
+            _save_status(status)
+            print(f"  ✓ Reset '{name}' — it will be re-downloaded on next run")
+        else:
+            print(f"  '{name}' was not in the status file (already cleared or never ran)")
+        sys.exit(0)
 
     if args.list:
         list_datasets()
