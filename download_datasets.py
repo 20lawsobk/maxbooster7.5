@@ -242,6 +242,14 @@ def _http_download(url: str, dest: Path, filename: Optional[str] = None):
                         mb  = done / 1e6
                         print(f"\r  {mb:.0f} MB / {total/1e6:.0f} MB  ({pct:.1f}%)", end='', flush=True)
         print(flush=True)
+    except urllib.error.HTTPError as e:
+        if e.code == 416 and tmp.exists():
+            # 416 = server says we already have all bytes — finalize the file
+            print(f"\n  Already complete (416), finalizing...", flush=True)
+            tmp.rename(filepath)
+            return filepath
+        print(f"\n  [WARN] Download interrupted: {e}", flush=True)
+        raise
     except Exception as e:
         print(f"\n  [WARN] Download interrupted: {e}", flush=True)
         raise
