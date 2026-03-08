@@ -14,9 +14,10 @@ Options:
     python download_datasets.py --only video    # Video datasets only
     python download_datasets.py --name nsynth   # One specific dataset
     python download_datasets.py --skip-large    # Skip anything over 100GB
+    python download_datasets.py --hf-token TOKEN  # HF token for gated repos
 
 Requirements:
-    pip install huggingface_hub requests tqdm
+    pip install huggingface_hub datasets requests tqdm
 
 All downloads resume if interrupted. Already-complete datasets are skipped.
 """
@@ -30,7 +31,7 @@ import sys
 import time
 import urllib.request
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -48,7 +49,7 @@ STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
 @dataclass
 class Dataset:
     name:     str
-    method:   str        # 'hf' | 'http' | 'ytdlp'
+    method:   str        # 'hf' | 'http' | 'http_multi' | 'ytdlp'
     source:   str
     est_gb:   float
     music:    bool
@@ -59,7 +60,7 @@ class Dataset:
 
 DATASETS_PLAN: List[Dataset] = [
 
-    # ── Small/medium — can also go on Replit, but faster here ──────────────
+    # ── Small/medium — verified public HF repos ────────────────────────────
     Dataset('gtzan',          'hf',   'marsyas/gtzan',
             est_gb=1.5,   music=True,  priority=1,
             note='Genre classification, 1K clips across 10 genres'),
@@ -68,11 +69,21 @@ DATASETS_PLAN: List[Dataset] = [
             est_gb=0.1,   music=True,  priority=1,
             note='5K high-quality music captions from Google'),
 
-    Dataset('magnatagatune',  'hf',   'rdiehl/magnatagatune',
+    # MagnaTagATune — direct HTTP from MIRLAB (more reliable than HF mirrors)
+    Dataset('magnatagatune',  'http_multi',
+            'https://mirg.city.ac.uk/datasets/magnatagatune/',
             est_gb=4.5,   music=True,  priority=1,
-            note='25K clips, 188 mood/style/instrument tags'),
+            note='25K clips, 188 mood/style/instrument tags',
+            extra={'files': [
+                ('https://mirg.city.ac.uk/datasets/magnatagatune/mp3.zip.001', 'mp3.zip.001'),
+                ('https://mirg.city.ac.uk/datasets/magnatagatune/mp3.zip.002', 'mp3.zip.002'),
+                ('https://mirg.city.ac.uk/datasets/magnatagatune/mp3.zip.003', 'mp3.zip.003'),
+                ('https://mirg.city.ac.uk/datasets/magnatagatune/annotations_final.csv', 'annotations_final.csv'),
+                ('https://mirg.city.ac.uk/datasets/magnatagatune/clip_info_final.csv', 'clip_info_final.csv'),
+            ]}),
 
-    Dataset('medley_solos',   'hf',   'rdiehl/medley-solos-db',
+    # Medley-Solos-DB — Zenodo direct download (rdiehl/medley-solos-db doesn't exist on HF)
+    Dataset('medley_solos',   'http', 'https://zenodo.org/record/3464302/files/Medley-solos-DB.tar.gz',
             est_gb=0.8,   music=True,  priority=1,
             note='21K clips across 8 instrument classes'),
 
@@ -80,9 +91,15 @@ DATASETS_PLAN: List[Dataset] = [
             est_gb=1.5,   music=True,  priority=2,
             note='Piano MIDI with emotion quadrants (valence/arousal)'),
 
-    Dataset('nsynth',         'hf',   'Ivan-ZNN/NSynth',
+    # NSynth — Google Storage direct download (Ivan-ZNN/NSynth doesn't exist on HF)
+    Dataset('nsynth',         'http_multi', '',
             est_gb=22.0,  music=True,  priority=1,
-            note='300K annotated musical notes — instrument + pitch conditioning'),
+            note='300K annotated musical notes — instrument + pitch conditioning',
+            extra={'files': [
+                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-train.jsonwav.tar.gz',  'nsynth-train.tar.gz'),
+                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-valid.jsonwav.tar.gz',  'nsynth-valid.tar.gz'),
+                ('https://storage.googleapis.com/magentadata/datasets/nsynth/nsynth-test.jsonwav.tar.gz',   'nsynth-test.tar.gz'),
+            ]}),
 
     Dataset('maestro_v3',     'http', 'https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip',
             est_gb=120.0, music=True,  priority=1,
@@ -102,7 +119,8 @@ DATASETS_PLAN: List[Dataset] = [
             note='1M Stable Diffusion prompts + images — visual quality training',
             extra={'config': 'large_random_1k'}),
 
-    Dataset('kinetics700',    'hf',   'kinetics700-2020',
+    # Kinetics-700 — correct HF repo ID (was missing username prefix)
+    Dataset('kinetics700',    'hf',   'HuggingFaceM4/kinetics700-2020',
             est_gb=450.0, music=False, priority=1,
             note='700 action classes, 650K clips — primary motion teacher'),
 
@@ -160,7 +178,7 @@ def _save_status(status: dict):
 
 def _mark(name: str, state: str, note: str = ""):
     status = _load_status()
-    status[name] = {'state': state, 'ts': datetime.utcnow().isoformat(), 'note': note}
+    status[name] = {'state': state, 'ts': datetime.now(timezone.utc).isoformat(), 'note': note}
     _save_status(status)
 
 def _is_done(name: str) -> bool:
@@ -175,50 +193,95 @@ def _run(cmd: List[str], cwd: Optional[Path] = None) -> int:
     return result.returncode
 
 def _ensure_pkg(pkg: str, import_name: Optional[str] = None):
+    mod = import_name or pkg.replace('-', '_')
     try:
-        __import__(import_name or pkg)
-    except ImportError:
-        print(f"  Installing {pkg}...", flush=True)
-        subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', pkg])
+        m = __import__(mod)
+        # Verify the package is functional (datasets sometimes installs broken)
+        if mod == 'datasets':
+            from datasets import load_dataset  # noqa: F401
+    except (ImportError, Exception):
+        print(f"  Installing/repairing {pkg}...", flush=True)
+        subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--upgrade', pkg])
 
-def _http_download(url: str, dest: Path):
-    """Download a file over HTTP with progress bar."""
+def _http_download(url: str, dest: Path, filename: Optional[str] = None):
+    """Download a file over HTTP with progress bar. Resumes partial downloads."""
     dest.parent.mkdir(parents=True, exist_ok=True)
-    tmp = dest.with_suffix('.tmp')
+    fname = filename or url.split('/')[-1].split('?')[0]
+    filepath = dest / fname
+    tmp = filepath.with_suffix(filepath.suffix + '.tmp')
+
+    if filepath.exists():
+        print(f"  Already downloaded: {fname}", flush=True)
+        return filepath
+
+    # Resume support: check existing tmp size
+    resume_pos = tmp.stat().st_size if tmp.exists() else 0
+
     headers = {'User-Agent': 'Mozilla/5.0'}
+    if resume_pos > 0:
+        headers['Range'] = f'bytes={resume_pos}-'
+        print(f"  Resuming {fname} from {resume_pos / 1e6:.0f} MB...", flush=True)
+
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        total = int(resp.headers.get('Content-Length', 0))
-        chunk = 1024 * 1024  # 1MB chunks
-        done  = 0
-        with open(tmp, 'wb') as f:
-            while True:
-                buf = resp.read(chunk)
-                if not buf:
-                    break
-                f.write(buf)
-                done += len(buf)
-                if total:
-                    pct = done / total * 100
-                    mb  = done / 1e6
-                    print(f"\r  {mb:.0f} MB / {total/1e6:.0f} MB  ({pct:.1f}%)", end='', flush=True)
-    tmp.rename(dest)
-    print()
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            total_raw = int(resp.headers.get('Content-Length', 0))
+            total = total_raw + resume_pos if resume_pos else total_raw
+            chunk = 1024 * 1024  # 1MB
+            done  = resume_pos
+            mode  = 'ab' if resume_pos > 0 else 'wb'
+            with open(tmp, mode) as f:
+                while True:
+                    buf = resp.read(chunk)
+                    if not buf:
+                        break
+                    f.write(buf)
+                    done += len(buf)
+                    if total:
+                        pct = done / total * 100
+                        mb  = done / 1e6
+                        print(f"\r  {mb:.0f} MB / {total/1e6:.0f} MB  ({pct:.1f}%)", end='', flush=True)
+        print(flush=True)
+    except Exception as e:
+        print(f"\n  [WARN] Download interrupted: {e}", flush=True)
+        raise
+
+    tmp.rename(filepath)
+    return filepath
+
+def _extract(filepath: Path, dest: Path):
+    """Extract zip or tar archives."""
+    name = filepath.name
+    if name.endswith('.zip') or name.endswith('.zip.001'):
+        print(f"  Extracting {name}...", flush=True)
+        import zipfile
+        try:
+            with zipfile.ZipFile(filepath) as z:
+                z.extractall(dest)
+        except zipfile.BadZipFile:
+            print(f"  [WARN] {name} may be a multi-part zip — skipping extraction (join parts manually)", flush=True)
+    elif name.endswith(('.tar.gz', '.tgz')):
+        print(f"  Extracting {name}...", flush=True)
+        import tarfile
+        with tarfile.open(filepath) as t:
+            t.extractall(dest)
+    print(f"  Extracted to {dest}", flush=True)
 
 # ── Downloaders ───────────────────────────────────────────────────────────────
+
+HF_TOKEN: Optional[str] = None  # set via --hf-token arg
+
 
 def _download_hf(ds: Dataset, dest: Path):
     """Download from HuggingFace Hub using huggingface_hub."""
     _ensure_pkg('huggingface_hub')
-    from huggingface_hub import snapshot_download, hf_hub_download
+    from huggingface_hub import snapshot_download
 
-    config = ds.extra.get('config')
+    config   = ds.extra.get('config')
     streaming = ds.extra.get('streaming', False)
 
     if streaming:
-        # Very large datasets: stream metadata only, then queue full download
-        print(f"  [{ds.name}] Streaming dataset — downloading metadata + first shard only.", flush=True)
-        print(f"  Full {ds.est_gb:.0f} GB download will continue in background.", flush=True)
+        print(f"  [{ds.name}] Large streaming dataset — downloading metadata + first shard only.", flush=True)
 
     kwargs = dict(
         repo_id=ds.source,
@@ -226,24 +289,24 @@ def _download_hf(ds: Dataset, dest: Path):
         local_dir=str(dest),
         ignore_patterns=['*.bin', '*.pt', '*.pth', '__pycache__/*'],
     )
-    if config:
-        kwargs['repo_id'] = ds.source
-        # pass config via subset name if supported
+    if HF_TOKEN:
+        kwargs['token'] = HF_TOKEN
 
     try:
         snapshot_download(**kwargs)
         return True
     except Exception as e:
         print(f"  [WARN] snapshot_download failed: {e}", flush=True)
-        # Try datasets library as fallback
+        # Fallback: try datasets library
         try:
             _ensure_pkg('datasets')
             from datasets import load_dataset
-            kw = dict(split='train', streaming=True)
+            kw: dict = {'split': 'train', 'streaming': True, 'trust_remote_code': True}
             if config:
                 kw['name'] = config
+            if HF_TOKEN:
+                kw['token'] = HF_TOKEN
             dataset = load_dataset(ds.source, **kw)
-            # Save first 1000 rows as JSONL manifest
             dest.mkdir(parents=True, exist_ok=True)
             manifest = dest / 'manifest.jsonl'
             n = 0
@@ -253,7 +316,7 @@ def _download_hf(ds: Dataset, dest: Path):
                     n += 1
                     if n >= 1000:
                         break
-            print(f"  Saved {n} rows to {manifest}", flush=True)
+            print(f"  Saved {n} rows manifest to {manifest}", flush=True)
             return True
         except Exception as e2:
             print(f"  [WARN] datasets fallback also failed: {e2}", flush=True)
@@ -261,35 +324,64 @@ def _download_hf(ds: Dataset, dest: Path):
 
 
 def _download_http(ds: Dataset, dest: Path):
-    """Download via direct HTTP URL."""
+    """Download a single file via direct HTTP URL."""
     dest.mkdir(parents=True, exist_ok=True)
     url      = ds.source
     filename = url.split('/')[-1].split('?')[0] or f'{ds.name}.zip'
-    filepath = dest / filename
-
-    if filepath.exists():
-        print(f"  Already downloaded: {filepath.name}", flush=True)
-        return True
 
     print(f"  Downloading {filename} ({ds.est_gb:.0f} GB)...", flush=True)
     try:
-        _http_download(url, filepath)
+        filepath = _http_download(url, dest, filename)
     except Exception as e:
         print(f"  [WARN] Download failed: {e}", flush=True)
         return False
 
-    # Extract zip/tar if applicable
-    if filename.endswith('.zip'):
-        print(f"  Extracting {filename}...", flush=True)
-        import zipfile
-        with zipfile.ZipFile(filepath) as z:
-            z.extractall(dest)
-        print(f"  Extracted to {dest}", flush=True)
-    elif filename.endswith(('.tar.gz', '.tgz')):
-        import tarfile
-        with tarfile.open(filepath) as t:
-            t.extractall(dest)
+    try:
+        _extract(filepath, dest)
+    except Exception as e:
+        print(f"  [WARN] Extraction failed (file still saved): {e}", flush=True)
     return True
+
+
+def _download_http_multi(ds: Dataset, dest: Path):
+    """Download multiple files (e.g. multi-part archives or split dataset files)."""
+    dest.mkdir(parents=True, exist_ok=True)
+    files = ds.extra.get('files', [])
+    if not files:
+        print(f"  [WARN] No files defined for {ds.name}", flush=True)
+        return False
+
+    all_ok = True
+    for url, fname in files:
+        print(f"  Downloading {fname}...", flush=True)
+        try:
+            filepath = _http_download(url, dest, fname)
+            # Extract non-split archives immediately
+            if not fname.endswith(('.001', '.002', '.003')):
+                try:
+                    _extract(filepath, dest)
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"  [WARN] Failed to download {fname}: {e}", flush=True)
+            all_ok = False
+
+    # Attempt to join and extract multi-part zips (zip.001 + zip.002 + ...)
+    parts = [dest / f for _, f in files if f.endswith('.001')]
+    for part1 in parts:
+        base = str(part1)[:-4]  # strip .001
+        out_zip = dest / (Path(base).name)
+        part_files = sorted(dest.glob(Path(base).name + '.*'))
+        if len(part_files) > 1 and not out_zip.exists():
+            print(f"  Joining multi-part archive: {out_zip.name}...", flush=True)
+            try:
+                with open(out_zip, 'wb') as out_f:
+                    for pf in part_files:
+                        out_f.write(pf.read_bytes())
+                _extract(out_zip, dest)
+            except Exception as e:
+                print(f"  [WARN] Multi-part join failed: {e}", flush=True)
+    return all_ok
 
 
 def _download_ytdlp(ds: Dataset, dest: Path):
@@ -361,6 +453,10 @@ def run(
     print(f"  Target dir : {DATASETS}")
     print(f"  Datasets   : {len(targets)} ({present} already done)")
     print(f"  Est. total : {total_gb/1024:.1f} TB  ({total_gb:.0f} GB)")
+    if HF_TOKEN:
+        print(f"  HF Token   : set (authenticated)")
+    else:
+        print(f"  HF Token   : not set (gated repos may fail — use --hf-token)")
     print()
 
     if dry_run:
@@ -389,6 +485,8 @@ def run(
                 ok = _download_hf(ds, dest)
             elif ds.method == 'http':
                 ok = _download_http(ds, dest)
+            elif ds.method == 'http_multi':
+                ok = _download_http_multi(ds, dest)
             elif ds.method == 'ytdlp':
                 ok = _download_ytdlp(ds, dest)
         except KeyboardInterrupt:
@@ -439,7 +537,12 @@ if __name__ == '__main__':
                         help='Download a single dataset by name')
     parser.add_argument('--skip-large', action='store_true',  help='Skip datasets over 100 GB')
     parser.add_argument('--dry-run',    action='store_true',  help='Show plan without downloading')
+    parser.add_argument('--hf-token',   type=str, default=None, metavar='TOKEN',
+                        help='HuggingFace access token for gated/private repos')
     args = parser.parse_args()
+
+    if args.hf_token:
+        HF_TOKEN = args.hf_token
 
     if args.list:
         list_datasets()
