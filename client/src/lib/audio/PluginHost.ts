@@ -1,15 +1,15 @@
-import { BasePlugin } from '../../../../built-in plugins dsp/client/BasePlugin';
-import { CompressorPlugin } from '../../../../built-in plugins dsp/client/CompressorPlugin';
-import { EQPlugin } from '../../../../built-in plugins dsp/client/EQPlugin';
-import { ReverbPlugin } from '../../../../built-in plugins dsp/client/ReverbPlugin';
-import { DelayPlugin } from '../../../../built-in plugins dsp/client/DelayPlugin';
-import { DistortionPlugin } from '../../../../built-in plugins dsp/client/DistortionPlugin';
-import { ChorusPlugin } from '../../../../built-in plugins dsp/client/ChorusPlugin';
-import { FlangerPlugin } from '../../../../built-in plugins dsp/client/FlangerPlugin';
-import { PhaserPlugin } from '../../../../built-in plugins dsp/client/PhaserPlugin';
-import { DeEsserPlugin } from '../../../../built-in plugins dsp/client/DeEsserPlugin';
-import { VocoderPlugin } from '../../../../built-in plugins dsp/client/VocoderPlugin';
-import { DynamicEQPlugin } from '../../../../built-in plugins dsp/client/DynamicEQPlugin';
+import { BasePlugin } from '../../../../built-in plugins dsp/BasePlugin';
+import { CompressorPlugin } from '../../../../built-in plugins dsp/CompressorPlugin';
+import { EQPlugin } from '../../../../built-in plugins dsp/EQPlugin';
+import { ReverbPlugin } from '../../../../built-in plugins dsp/ReverbPlugin';
+import { DelayPlugin } from '../../../../built-in plugins dsp/DelayPlugin';
+import { DistortionPlugin } from '../../../../built-in plugins dsp/DistortionPlugin';
+import { ChorusPlugin } from '../../../../built-in plugins dsp/ChorusPlugin';
+import { FlangerPlugin } from '../../../../built-in plugins dsp/FlangerPlugin';
+import { PhaserPlugin } from '../../../../built-in plugins dsp/PhaserPlugin';
+import { DeEsserPlugin } from '../../../../built-in plugins dsp/DeEsserPlugin';
+import { VocoderPlugin } from '../../../../built-in plugins dsp/VocoderPlugin';
+import { DynamicEQPlugin } from '../../../../built-in plugins dsp/DynamicEQPlugin';
 
 /**
  * Plugin Host - Manages audio plugin chains
