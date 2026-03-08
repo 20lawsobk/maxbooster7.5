@@ -3575,6 +3575,9 @@ export async function registerRoutes(
   app.use("/api/admin", adminRouter);
   const { default: trainingRouter } = await import("./routes/training.js");
   app.use("/api/training", trainingRouter);
+
+  const { default: maxcoreRouter } = await import("./routes/maxcore.js");
+  app.use("/api/maxcore", maxcoreRouter);
   app.use("/api/paid", paidRouter);
   app.use("/api/artist-progress", artistProgressRouter);
   app.use("/api/artist-profiles", artistProfilesRouter);

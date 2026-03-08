@@ -32,10 +32,22 @@ Endpoints (all prefixed /):
   GET  /knowledge/curriculum          — curriculum progress JSON
   POST /knowledge/curriculum          — update curriculum progress
   GET  /knowledge/loss-history        — all-time loss history
+  GET  /knowledge/sessions            — last 50 training sessions
   GET  /datasets/list                 — datasets on D: drive with sizes
+  GET  /datasets/manifest             — full download plan vs. present data
+  GET  /datasets/stream               — stream random frames from a dataset
   POST /train/start                   — start background training
   POST /train/stop                    — stop background training
   GET  /train/status                  — live training metrics
+
+Remote control (proxied via Replit /api/maxcore/*):
+  GET  /control/status                — full snapshot (CPU/RAM/disk + training + curriculum)
+  GET  /control/logs?n=300            — last N lines from training log
+  DELETE /control/logs                — clear all log files
+  POST /control/restart               — graceful restart (watchdog relaunches in ~5 s)
+  POST /control/shutdown              — stop training + exit; watchdog does NOT relaunch
+  POST /control/trigger-session       — run one extra training session immediately
+  POST /control/set-phase             — force curriculum to a specific phase (1–4)
 """
 
 import io
@@ -82,6 +94,7 @@ _lock  = threading.Lock()
 _stop  = threading.Event()
 _thread: Optional[threading.Thread] = None
 _best_loss = [float("inf")]
+_SERVER_START = time.time()
 
 _state: Dict[str, Any] = {
     "status":        "idle",
@@ -518,6 +531,217 @@ def train_stop():
 def train_status():
     with _lock:
         return dict(_state)
+
+
+# ── Remote control ─────────────────────────────────────────────────────────────
+#
+# These endpoints let the Replit server (or any trusted peer) fully control
+# this machine without needing physical access.  All mutating actions write
+# a small flag-file so the watchdog can pick up the intent even if the
+# Python process crashes mid-action.
+
+CTRL_DIR   = ROOT / "control"
+CTRL_DIR.mkdir(exist_ok=True)
+
+
+def _disk_usage() -> dict:
+    try:
+        usage = shutil.disk_usage(str(ROOT))
+        return {
+            "total_gb": round(usage.total / 1e9, 1),
+            "used_gb":  round(usage.used  / 1e9, 1),
+            "free_gb":  round(usage.free  / 1e9, 1),
+        }
+    except Exception:
+        return {}
+
+
+def _ram_usage() -> dict:
+    try:
+        import psutil
+        vm = psutil.virtual_memory()
+        return {
+            "total_gb":   round(vm.total   / 1e9, 1),
+            "used_gb":    round(vm.used    / 1e9, 1),
+            "available_gb": round(vm.available / 1e9, 1),
+            "percent":    vm.percent,
+        }
+    except Exception:
+        return {}
+
+
+def _cpu_percent() -> float:
+    try:
+        import psutil
+        return psutil.cpu_percent(interval=0.2)
+    except Exception:
+        return -1.0
+
+
+def _tail_logs(n: int = 200) -> list:
+    """Return last n lines from the most-recently-modified log in LOGS_DIR."""
+    logs = sorted(LOGS_DIR.glob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not logs:
+        return []
+    try:
+        lines = logs[0].read_text(errors="replace").splitlines()
+        return lines[-n:]
+    except Exception:
+        return []
+
+
+@app.get("/control/status")
+def control_status():
+    """Full system snapshot: hardware metrics + training state + curriculum."""
+    with _lock:
+        snap = dict(_state)
+
+    curriculum = {}
+    if CURRICULUM.exists():
+        try:
+            curriculum = json.loads(CURRICULUM.read_text())
+        except Exception:
+            pass
+
+    loss_recent = []
+    if LOSS_LOG.exists():
+        try:
+            loss_recent = json.loads(LOSS_LOG.read_text())[-10:]
+        except Exception:
+            pass
+
+    return {
+        "machine":   {
+            "cpu_percent": _cpu_percent(),
+            "ram":         _ram_usage(),
+            "disk":        _disk_usage(),
+        },
+        "training":  snap,
+        "weights": {
+            "current_kb":   (WEIGHTS.stat().st_size // 1024) if WEIGHTS.exists() else 0,
+            "best_kb":      (WEIGHTS_BEST.stat().st_size // 1024) if WEIGHTS_BEST.exists() else 0,
+            "versions":     len(list((MODELS_DIR / "versions").glob("*.npz"))),
+        },
+        "curriculum":    curriculum,
+        "loss_recent":   loss_recent,
+        "server_uptime": round(time.time() - _SERVER_START, 1),
+        "server_version": "3.1.0",
+    }
+
+
+@app.get("/control/logs")
+def control_logs(n: int = 300):
+    """Return the last n lines from the current training log file."""
+    return {"lines": _tail_logs(n)}
+
+
+@app.delete("/control/logs")
+def control_clear_logs():
+    """Truncate all log files in LOGS_DIR (keeps the files, empties them)."""
+    cleared = []
+    for lf in LOGS_DIR.glob("*.log"):
+        try:
+            lf.write_text("")
+            cleared.append(lf.name)
+        except Exception:
+            pass
+    return {"cleared": cleared}
+
+
+@app.post("/control/restart")
+def control_restart():
+    """
+    Ask the watchdog to restart the server process.
+    Writes a restart-flag file that watchdog.ps1 detects on its next loop,
+    then exits this process gracefully (watchdog will relaunch it).
+    """
+    flag = CTRL_DIR / "restart.flag"
+    flag.write_text(datetime.utcnow().isoformat())
+
+    def _do_exit():
+        time.sleep(1)
+        os._exit(0)
+
+    threading.Thread(target=_do_exit, daemon=True).start()
+    return {"ok": True, "detail": "Restart signal sent — watchdog will relaunch in ~5 s"}
+
+
+@app.post("/control/shutdown")
+def control_shutdown():
+    """
+    Graceful shutdown: stop training, write a shutdown flag, then exit.
+    Watchdog will NOT auto-restart when it sees the shutdown flag.
+    """
+    _stop.set()
+    flag = CTRL_DIR / "shutdown.flag"
+    flag.write_text(datetime.utcnow().isoformat())
+
+    def _do_exit():
+        time.sleep(2)
+        os._exit(0)
+
+    threading.Thread(target=_do_exit, daemon=True).start()
+    return {"ok": True, "detail": "Shutdown signal sent"}
+
+
+@app.post("/control/trigger-session")
+def control_trigger_session():
+    """
+    Run one extra training session immediately, outside the normal schedule.
+    Returns quickly — the session runs in a background thread.
+    """
+    if not DIFFUSION.exists():
+        raise HTTPException(503, "diffusion/ folder not found on this machine")
+
+    def _run():
+        try:
+            from diffusion.training_curriculum import CurriculumTrainer
+            t = CurriculumTrainer(progress_path=str(CURRICULUM))
+            meta = t.run_session()
+            loss = meta.get("final_loss", meta.get("mean_loss"))
+            _append_session(meta)
+            if loss is not None:
+                with _lock:
+                    _state["session_count"] += 1
+                    _state["loss"] = round(float(loss), 6)
+                    _append_loss(_state["session_count"], round(float(loss), 6), _state["phase"])
+            print(f"[control/trigger-session] done — loss={loss}", flush=True)
+        except Exception as e:
+            print(f"[control/trigger-session] ERROR: {e}", flush=True)
+
+    threading.Thread(target=_run, daemon=True, name="TriggerSession").start()
+    return {"ok": True, "detail": "Extra session started in background"}
+
+
+class SetPhaseBody(BaseModel):
+    phase: int
+
+
+@app.post("/control/set-phase")
+def control_set_phase(body: SetPhaseBody):
+    """
+    Force-advance the curriculum to a specific phase (1-4).
+    Writes directly into the curriculum progress JSON.
+    """
+    if not 1 <= body.phase <= 4:
+        raise HTTPException(400, "phase must be 1–4")
+
+    progress = {}
+    if CURRICULUM.exists():
+        try:
+            progress = json.loads(CURRICULUM.read_text())
+        except Exception:
+            pass
+
+    progress["current_phase"] = body.phase
+    progress["forced_at"]     = datetime.utcnow().isoformat()
+
+    tmp = str(CURRICULUM) + ".tmp"
+    Path(tmp).write_text(json.dumps(progress, indent=2))
+    os.replace(tmp, str(CURRICULUM))
+
+    _upd(phase=body.phase)
+    return {"ok": True, "phase": body.phase}
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────

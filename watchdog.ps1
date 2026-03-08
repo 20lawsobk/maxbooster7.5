@@ -290,6 +290,29 @@ while ($true) {
             $lastPhaseCheck = Get-Date
         }
 
+        # ── Remote control flag files (written by /control/restart and /control/shutdown) ──
+        $ctrlDir      = Join-Path $SERVER_DIR "control"
+        $restartFlag  = Join-Path $ctrlDir "restart.flag"
+        $shutdownFlag = Join-Path $ctrlDir "shutdown.flag"
+
+        if (Test-Path $shutdownFlag) {
+            Write-Log "SHUTDOWN flag detected — stopping server and exiting watchdog" 'WARN'
+            Remove-Item $shutdownFlag -Force -ErrorAction SilentlyContinue
+            if ($proc -and -not $proc.HasExited) {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            }
+            exit 0
+        }
+
+        if (Test-Path $restartFlag) {
+            Write-Log "RESTART flag detected — bouncing server process" 'WARN'
+            Remove-Item $restartFlag -Force -ErrorAction SilentlyContinue
+            if ($proc -and -not $proc.HasExited) {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            }
+            $needRestart = $true
+        }
+
         if ($needRestart) {
             Write-Log "Waiting ${backoff}s before restart..."
             Start-Sleep -Seconds $backoff
