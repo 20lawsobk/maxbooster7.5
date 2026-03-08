@@ -5,7 +5,14 @@ import { logger } from '../logger.js';
 import { autopilotLearningService } from './autopilotLearningService.js';
 import { EventEmitter } from 'events';
 
-const LEARNING_MULTIPLIER = 3.0;
+// Learning capacity configuration
+// Baseline: average human = 1x
+// Owner learning rate: associates degree (24 months) completed in 1 month = 24x average human
+// Target: 3x owner capacity = 3 × 24 = 72x average human
+const HUMAN_BASELINE         = 1.0;
+const OWNER_LEARNING_RATE    = 24.0;  // 24x faster than average human
+const OWNER_MULTIPLIER       = 3.0;   // autopilots run at 3x the owner's capacity
+const LEARNING_MULTIPLIER    = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 72x
 const HUMAN_ANALYSIS_DIMENSIONS = 5;
 const HYPER_ANALYSIS_DIMENSIONS = HUMAN_ANALYSIS_DIMENSIONS * LEARNING_MULTIPLIER;
 
@@ -123,7 +130,7 @@ class HyperLearningEngine extends EventEmitter {
 
   constructor() {
     super();
-    logger.info('🧠 HyperLearning Engine initialized - 3x human learning capacity');
+    logger.info(`🧠 HyperLearning Engine initialized — ${LEARNING_MULTIPLIER}x human capacity (3x owner · 24x baseline)`);
   }
 
   private initializeMetrics(): LearningMetrics {
