@@ -1,5 +1,0 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
-
-const MbMalletCelestaPlugin: PluginDefinition = { id: 'mb-mallet-celesta', slug: 'mb-mallet-celesta', name: 'MB Celesta', category: 'instrument', type: 'mallet' as any, version: '1.0.0', description: 'Ethereal celesta with delicate crystalline tone', author: 'Max Booster', oscillators: [{ type: 'sine', detune: 0, gain: 0.5 }, { type: 'sine', detune: 1200, gain: 0.3 }, { type: 'triangle', detune: 2400, gain: 0.2 }], envelope: { attack: 0.001, decay: 1.0, sustain: 0.1, release: 0.6 }, parameters: [{ id: 'brightness', name: 'Brightness', type: 'float', defaultValue: 0.7, minValue: 0, maxValue: 1, automatable: true }, { id: 'shimmer', name: 'Shimmer', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'damper', name: 'Damper', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.7, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { brightness: 0.7, shimmer: 0.5, damper: 0.4, volume: 0.7 } };
-
-export default MbMalletCelestaPlugin;

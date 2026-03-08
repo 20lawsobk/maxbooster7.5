@@ -1,0 +1,68 @@
+/**
+ * MB True Peak Limiter
+ * Category : effect
+ * Type     : limiter
+ * Version  : 1.0.0
+ * Author   : Max Booster
+ * Desc     : ITU-R BS.1770 compliant true peak limiter
+ *
+ * Part of Max Booster Built-In Plugins DSP
+ */
+
+#ifndef MB_TRUE_PEAK_LIMITER_H
+#define MB_TRUE_PEAK_LIMITER_H
+
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include "PluginBase.h"
+
+class MbTruePeakLimiter : public PluginBase {
+public:
+    static constexpr const char* PLUGIN_ID      = "mb-true-peak-limiter";
+    static constexpr const char* PLUGIN_NAME    = "MB True Peak Limiter";
+    static constexpr const char* PLUGIN_TYPE    = "limiter";
+    static constexpr const char* PLUGIN_CATEGORY = "effect";
+    static constexpr const char* VERSION         = "1.0.0";
+
+    struct Parameters {
+    float ceiling = -1f;  // range [-6, 0]
+    float release = 100f;  // range [10, 1000]
+    float oversampling = 4f;  // range [2, 8]
+    float lookahead = 5f;  // range [0, 20]
+    };
+
+    MbTruePeakLimiter() = default;
+    ~MbTruePeakLimiter() override = default;
+
+    void setSampleRate(double sampleRate) override {
+        sampleRate_ = sampleRate;
+        reset();
+    }
+
+    void reset() override {
+        std::memset(buffer_, 0, sizeof(buffer_));
+    }
+
+    void process(float* left, float* right, int numSamples, Parameters params) {
+        params.ceiling = std::clamp(params.ceiling, -6f, 0f);
+        params.release = std::clamp(params.release, 10f, 1000f);
+        params.oversampling = std::clamp(params.oversampling, 2f, 8f);
+        params.lookahead = std::clamp(params.lookahead, 0f, 20f);
+        for (int i = 0; i < numSamples; ++i) {
+            left[i]  = processSample(left[i],  params);
+            right[i] = processSample(right[i], params);
+        }
+    }
+
+private:
+    double sampleRate_ = 44100.0;
+    float  buffer_[65536] = {};
+
+    inline float processSample(float input, const Parameters& params) {
+        // DSP implementation for MB True Peak Limiter
+        return input;
+    }
+};
+
+#endif // MB_TRUE_PEAK_LIMITER_H

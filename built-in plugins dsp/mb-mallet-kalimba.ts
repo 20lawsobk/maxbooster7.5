@@ -1,5 +1,0 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
-
-const MbMalletKalimbaPlugin: PluginDefinition = { id: 'mb-mallet-kalimba', slug: 'mb-mallet-kalimba', name: 'MB Kalimba', category: 'instrument', type: 'mallet' as any, version: '1.0.0', description: 'African thumb piano with metallic tine sound', author: 'Max Booster', oscillators: [{ type: 'sine', detune: 0, gain: 0.5 }, { type: 'triangle', detune: 0, gain: 0.3 }, { type: 'sine', detune: 2400, gain: 0.2 }], envelope: { attack: 0.001, decay: 1.0, sustain: 0.1, release: 0.5 }, parameters: [{ id: 'buzz', name: 'Buzz', type: 'float', defaultValue: 0.3, minValue: 0, maxValue: 1, automatable: true }, { id: 'brightness', name: 'Brightness', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'body', name: 'Body Resonance', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { buzz: 0.3, brightness: 0.6, body: 0.5, volume: 0.8 } };
-
-export default MbMalletKalimbaPlugin;

@@ -1,5 +1,0 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
-
-const MbSamplerPlugin: PluginDefinition = { id: 'mb-sampler', slug: 'mb-sampler', name: 'MB Sampler', category: 'instrument', type: 'sampler', version: '1.0.0', description: 'Professional sampler with multi-sample support', author: 'Max Booster', oscillators: [], envelope: { attack: 0.001, decay: 0.1, sustain: 1.0, release: 0.2 }, parameters: [{ id: 'startPoint', name: 'Start Point', type: 'float', defaultValue: 0, minValue: 0, maxValue: 1, automatable: true }, { id: 'endPoint', name: 'End Point', type: 'float', defaultValue: 1, minValue: 0, maxValue: 1, automatable: true }, { id: 'filterCutoff', name: 'Filter', type: 'float', defaultValue: 1, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { startPoint: 0, endPoint: 1, filterCutoff: 1, volume: 0.8 } };
-
-export default MbSamplerPlugin;

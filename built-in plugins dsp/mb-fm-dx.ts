@@ -1,5 +1,0 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
-
-const MbFmDxPlugin: PluginDefinition = { id: 'mb-fm-dx', slug: 'mb-fm-dx', name: 'MB DX7 Classic', category: 'instrument', type: 'fm', version: '1.0.0', description: 'Classic 6-operator FM synthesis', author: 'Max Booster', oscillators: [{ type: 'sine', detune: 0, gain: 0.8 }], envelope: { attack: 0.01, decay: 0.5, sustain: 0.5, release: 0.3 }, parameters: [{ id: 'algorithm', name: 'Algorithm', type: 'float', defaultValue: 1, minValue: 1, maxValue: 32, automatable: false }, { id: 'modIndex', name: 'Mod Index', type: 'float', defaultValue: 3, minValue: 0, maxValue: 20, automatable: true }, { id: 'feedback', name: 'Feedback', type: 'float', defaultValue: 0.3, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { algorithm: 1, modIndex: 3, feedback: 0.3, volume: 0.8 } };
-
-export default MbFmDxPlugin;

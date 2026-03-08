@@ -1,5 +1,0 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
-
-const MbGuitarSteelPlugin: PluginDefinition = { id: 'mb-guitar-steel', slug: 'mb-guitar-steel', name: 'MB Pedal Steel', category: 'instrument', type: 'guitar' as any, version: '1.0.0', description: 'Country pedal steel guitar with crying tone', author: 'Max Booster', oscillators: [{ type: 'sine', detune: 0, gain: 0.45 }, { type: 'triangle', detune: 3, gain: 0.3 }, { type: 'sawtooth', detune: 0, gain: 0.25 }], envelope: { attack: 0.01, decay: 0.8, sustain: 0.5, release: 0.8 }, parameters: [{ id: 'pedal', name: 'Pedal', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'vibrato', name: 'Vibrato', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'tone', name: 'Tone', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { pedal: 0.5, vibrato: 0.4, tone: 0.6, volume: 0.8 } };
-
-export default MbGuitarSteelPlugin;

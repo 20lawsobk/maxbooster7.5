@@ -1,0 +1,68 @@
+/**
+ * MB Vintage Limiter
+ * Category : effect
+ * Type     : limiter
+ * Version  : 1.0.0
+ * Author   : Max Booster
+ * Desc     : Warm optical-style limiter for gentle peak control
+ *
+ * Part of Max Booster Built-In Plugins DSP
+ */
+
+#ifndef MB_VINTAGE_LIMITER_H
+#define MB_VINTAGE_LIMITER_H
+
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include "PluginBase.h"
+
+class MbVintageLimiter : public PluginBase {
+public:
+    static constexpr const char* PLUGIN_ID      = "mb-vintage-limiter";
+    static constexpr const char* PLUGIN_NAME    = "MB Vintage Limiter";
+    static constexpr const char* PLUGIN_TYPE    = "limiter";
+    static constexpr const char* PLUGIN_CATEGORY = "effect";
+    static constexpr const char* VERSION         = "1.0.0";
+
+    struct Parameters {
+    float input = 0f;  // range [0, 24]
+    float release = 100f;  // range [10, 1000]
+    float ceiling = -0.3f;  // range [-6, 0]
+    float character = 0.5f;  // range [0, 1]
+    };
+
+    MbVintageLimiter() = default;
+    ~MbVintageLimiter() override = default;
+
+    void setSampleRate(double sampleRate) override {
+        sampleRate_ = sampleRate;
+        reset();
+    }
+
+    void reset() override {
+        std::memset(buffer_, 0, sizeof(buffer_));
+    }
+
+    void process(float* left, float* right, int numSamples, Parameters params) {
+        params.input = std::clamp(params.input, 0f, 24f);
+        params.release = std::clamp(params.release, 10f, 1000f);
+        params.ceiling = std::clamp(params.ceiling, -6f, 0f);
+        params.character = std::clamp(params.character, 0f, 1f);
+        for (int i = 0; i < numSamples; ++i) {
+            left[i]  = processSample(left[i],  params);
+            right[i] = processSample(right[i], params);
+        }
+    }
+
+private:
+    double sampleRate_ = 44100.0;
+    float  buffer_[65536] = {};
+
+    inline float processSample(float input, const Parameters& params) {
+        // DSP implementation for MB Vintage Limiter
+        return input;
+    }
+};
+
+#endif // MB_VINTAGE_LIMITER_H

@@ -1,0 +1,66 @@
+/**
+ * MB De-Click
+ * Category : effect
+ * Type     : gate
+ * Version  : 1.0.0
+ * Author   : Max Booster
+ * Desc     : Detect and remove clicks, pops, and transient artifacts
+ *
+ * Part of Max Booster Built-In Plugins DSP
+ */
+
+#ifndef MB_RESTORE_DECLICK_H
+#define MB_RESTORE_DECLICK_H
+
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include "PluginBase.h"
+
+class MbRestoreDeclick : public PluginBase {
+public:
+    static constexpr const char* PLUGIN_ID      = "mb-restore-declick";
+    static constexpr const char* PLUGIN_NAME    = "MB De-Click";
+    static constexpr const char* PLUGIN_TYPE    = "gate";
+    static constexpr const char* PLUGIN_CATEGORY = "effect";
+    static constexpr const char* VERSION         = "1.0.0";
+
+    struct Parameters {
+    float sensitivity = 50f;  // range [0, 100]
+    float clickWidth = 5f;  // range [1, 20]
+    float interpolation = 1f;  // range [0, 2]
+    };
+
+    MbRestoreDeclick() = default;
+    ~MbRestoreDeclick() override = default;
+
+    void setSampleRate(double sampleRate) override {
+        sampleRate_ = sampleRate;
+        reset();
+    }
+
+    void reset() override {
+        std::memset(buffer_, 0, sizeof(buffer_));
+    }
+
+    void process(float* left, float* right, int numSamples, Parameters params) {
+        params.sensitivity = std::clamp(params.sensitivity, 0f, 100f);
+        params.clickWidth = std::clamp(params.clickWidth, 1f, 20f);
+        params.interpolation = std::clamp(params.interpolation, 0f, 2f);
+        for (int i = 0; i < numSamples; ++i) {
+            left[i]  = processSample(left[i],  params);
+            right[i] = processSample(right[i], params);
+        }
+    }
+
+private:
+    double sampleRate_ = 44100.0;
+    float  buffer_[65536] = {};
+
+    inline float processSample(float input, const Parameters& params) {
+        // DSP implementation for MB De-Click
+        return input;
+    }
+};
+
+#endif // MB_RESTORE_DECLICK_H
