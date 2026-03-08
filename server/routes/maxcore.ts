@@ -1,5 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { logger } from "../logger.js";
+import fs from "fs";
+import path from "path";
 
 const router = Router();
 
@@ -152,6 +154,60 @@ router.post("/shutdown", async (req, res) => {
   }
   logger.warn("[MaxCore] Remote SHUTDOWN triggered by admin");
   send(res, await peer("POST", "/control/shutdown", undefined, 5_000));
+});
+
+// ── Downloader supervisor control ─────────────────────────────────────────────
+// These write/remove the stop-flag file that run_downloader.py watches.
+
+const ROOT_DIR      = path.resolve(process.cwd());
+const CTRL_DIR      = path.join(ROOT_DIR, "control");
+const DL_STOP_FLAG  = path.join(CTRL_DIR, "downloader.stop");
+const MC_STOP_FLAG  = path.join(CTRL_DIR, "maxcore.stop");
+
+function ensureCtrl() {
+  try { fs.mkdirSync(CTRL_DIR, { recursive: true }); } catch {}
+}
+
+router.get("/downloader/status", (_req, res) => {
+  ensureCtrl();
+  const stopped = fs.existsSync(DL_STOP_FLAG);
+  res.json({ stopped, flag: DL_STOP_FLAG });
+});
+
+router.post("/downloader/stop", (req, res) => {
+  const { confirm } = req.body || {};
+  if (confirm !== "STOP") {
+    return res.status(400).json({ error: 'Send { "confirm": "STOP" } to confirm' });
+  }
+  ensureCtrl();
+  fs.writeFileSync(DL_STOP_FLAG, new Date().toISOString());
+  logger.warn("[MaxCore] Dataset Downloader STOP flag written by admin");
+  res.json({ ok: true, detail: "Downloader will stop after current dataset completes" });
+});
+
+router.post("/downloader/start", (_req, res) => {
+  ensureCtrl();
+  try { fs.unlinkSync(DL_STOP_FLAG); } catch {}
+  logger.info("[MaxCore] Dataset Downloader stop flag cleared — supervisor will restart");
+  res.json({ ok: true, detail: "Stop flag removed. Supervisor will restart the downloader on its next loop (within 5 s)" });
+});
+
+router.post("/maxcore/stop", (req, res) => {
+  const { confirm } = req.body || {};
+  if (confirm !== "STOP") {
+    return res.status(400).json({ error: 'Send { "confirm": "STOP" } to confirm' });
+  }
+  ensureCtrl();
+  fs.writeFileSync(MC_STOP_FLAG, new Date().toISOString());
+  logger.warn("[MaxCore] MaxCore Server STOP flag written by admin");
+  res.json({ ok: true, detail: "MaxCore supervisor will stop after current child exits" });
+});
+
+router.post("/maxcore/start", (_req, res) => {
+  ensureCtrl();
+  try { fs.unlinkSync(MC_STOP_FLAG); } catch {}
+  logger.info("[MaxCore] MaxCore stop flag cleared — supervisor will restart server");
+  res.json({ ok: true, detail: "Stop flag removed. Supervisor will restart MaxCore on its next loop" });
 });
 
 export default router;
