@@ -122,44 +122,42 @@ class ContentVariantGeneratorService {
     return await getRedisClient();
   }
 
-  async generateCaptionVariants(original: string, count: number = 5): Promise<string[]> {
+  async generateCaptionVariants(original: string, count: number = 30): Promise<string[]> {
     const variants: string[] = [];
     const topic = this.extractTopic(original);
     const audience = this.inferAudience(original);
 
+    // Hyper A/B: cycle all platforms × all tones for maximum variate coverage
+    const platforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin'];
+    const tones = ['energetic', 'chill', 'inspirational', 'curious', 'bold', 'intimate'];
+    const goals = ['growth', 'engagement', 'conversion', 'awareness', 'retention'];
+
     let aiVariantsGenerated = 0;
     if (await pythonAIService.isAvailable()) {
       try {
-        const platforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook'];
-        for (let i = 0; i < Math.min(count, platforms.length); i++) {
-          const result = await pythonAIService.generateContent(
-            platforms[i], topic, 'energetic', 'growth', false
-          );
+        for (let i = 0; i < count && aiVariantsGenerated < count; i++) {
+          const platform = platforms[i % platforms.length];
+          const tone    = tones[i % tones.length];
+          const goal    = goals[i % goals.length];
+          const result  = await pythonAIService.generateContent(platform, topic, tone, goal, false);
           if (result.success && result.data && result.data.hook) {
             variants.push(`${result.data.hook}\n\n${result.data.body}\n\n${result.data.cta}`);
             aiVariantsGenerated++;
           }
         }
       } catch (err) {
-        logger.warn('[VariantGen] Python AI failed, using template variants:', err);
+        logger.warn('[VariantGen] Python AI failed, filling with template variants:', err);
       }
     }
 
+    // Fill remaining slots by cycling all hook templates across multiple passes
     const hookTypes = Object.keys(this.hookTemplates);
-    const usedTypes = new Set<string>();
     const remaining = count - aiVariantsGenerated;
 
-    for (let i = 0; i < Math.min(remaining, hookTypes.length); i++) {
-      let hookType = hookTypes[i % hookTypes.length];
-      
-      while (usedTypes.has(hookType) && usedTypes.size < hookTypes.length) {
-        hookType = hookTypes[Math.floor(Math.random() * hookTypes.length)];
-      }
-      usedTypes.add(hookType);
-
-      const template = this.hookTemplates[hookType][
-        Math.floor(Math.random() * this.hookTemplates[hookType].length)
-      ];
+    for (let i = 0; i < remaining; i++) {
+      const hookType = hookTypes[i % hookTypes.length];
+      const templates = this.hookTemplates[hookType];
+      const template  = templates[(Math.floor(i / hookTypes.length)) % templates.length];
 
       const newHook = template
         .replace('{topic}', topic)
@@ -168,11 +166,11 @@ class ContentVariantGeneratorService {
 
       const bodyLines = original.split('\n').slice(1).join('\n');
       const variant = `${newHook}\n\n${bodyLines || original}`;
-      
+
       variants.push(this.enhanceWithEmotions(variant));
     }
 
-    logger.info(`📝 Generated ${variants.length} caption variants (${aiVariantsGenerated} AI-powered)`);
+    logger.info(`📝 Generated ${variants.length} caption variates (${aiVariantsGenerated} AI-powered) for hyper A/B`);
     return variants;
   }
 
@@ -464,14 +462,14 @@ class ContentVariantGeneratorService {
       recommendations.push('Question-based hooks typically increase engagement by 20%');
     }
 
-    recommendations.push('A/B test your top 2 variants to find the best performer');
+    recommendations.push(`Hyper A/B test your top 30 variates simultaneously — winner declared at 80% confidence with 30 impressions/variate`);
 
     return recommendations;
   }
 
   async createABTest(
     content: ContentData,
-    variantCount: number = 2
+    variantCount: number = 30
   ): Promise<{ variants: Variant[]; testId: string; recommendation: string }> {
     const result = await this.generateVariants(content, variantCount);
     const testId = nanoid();
@@ -479,7 +477,7 @@ class ContentVariantGeneratorService {
     return {
       variants: result.variants.slice(0, variantCount),
       testId,
-      recommendation: `Test ${variantCount} variants over 24-48 hours with equal audience distribution`,
+      recommendation: `Hyper A/B: ${variantCount} variates running simultaneously — winner declared at 80% confidence (≥30 impressions/variate)`,
     };
   }
 }

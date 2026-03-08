@@ -666,3 +666,39 @@ class CurriculumTrainer:
 
     def get_schedule(self) -> List[Dict[str, Any]]:
         return self.scheduler.get_full_schedule()
+
+    def record_engagement_signal(self, signal: Dict[str, Any]) -> None:
+        """
+        Called by the /train/feedback endpoint when the autopilots report a
+        high-engagement post or an A/B test winner.  The signal is appended to
+        the curriculum progress under 'engagement_signals' so the next call to
+        run_session() can incorporate it as a bias toward the winning visual style.
+
+        The DiffusionTrainer reads self.scheduler.progress['engagement_signals']
+        before each synthetic data generation pass and up-weights scene categories
+        that match the winning content_type / platform combination.
+        """
+        signals = self.scheduler.progress.setdefault('engagement_signals', [])
+        signals.append({
+            'trigger':         signal.get('trigger', 'unknown'),
+            'platform':        signal.get('platform', 'unknown'),
+            'content_type':    signal.get('content_type', 'unknown'),
+            'hook_type':       signal.get('hook_type', 'unknown'),
+            'engagement_rate': float(signal.get('engagement_rate', 0)),
+            'curriculum_hint': signal.get('curriculum_hint', ''),
+            'variate_count':   int(signal.get('variate_count', 1)),
+            'received_at':     signal.get('received_at', 0),
+        })
+
+        # Keep only the 500 most-recent signals to avoid unbounded growth
+        if len(signals) > 500:
+            self.scheduler.progress['engagement_signals'] = signals[-500:]
+
+        self.scheduler._save_progress()
+        print(
+            f"[CurriculumTrainer] Engagement signal recorded — "
+            f"platform={signal.get('platform')} "
+            f"engagement={signal.get('engagement_rate', 0):.2f}% "
+            f"trigger={signal.get('trigger')}",
+            flush=True,
+        )

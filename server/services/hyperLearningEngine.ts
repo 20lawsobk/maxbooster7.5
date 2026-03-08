@@ -16,6 +16,15 @@ const LEARNING_MULTIPLIER    = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 72x
 const HUMAN_ANALYSIS_DIMENSIONS = 5;
 const HYPER_ANALYSIS_DIMENSIONS = HUMAN_ANALYSIS_DIMENSIONS * LEARNING_MULTIPLIER;
 
+// Hyper A/B testing — 30 simultaneous variates for maximum signal density
+const HYPER_AB_VARIATES         = 30;
+// Min impressions per variate (not total) before evaluating winners
+const AB_MIN_IMPRESSIONS_PER_VARIATE = 30;
+// Lower confidence bar at scale — 30 variates provide enough signal at 0.80
+const AB_SIGNIFICANCE_THRESHOLD = 0.80;
+// AI server for CurriculumTrainer / DiffusionTrainer dispatch
+const AI_SERVER_URL = process.env.PEER_TRAINING_NODE || 'http://localhost:8000';
+
 interface MicroPattern {
   id: string;
   type: 'character_count' | 'emoji_density' | 'hashtag_position' | 'word_sentiment' | 'timing_precision' | 
@@ -122,6 +131,7 @@ class HyperLearningEngine extends EventEmitter {
   private predictiveModels: Map<string, PredictiveModel> = new Map();
   private abTestQueue: Map<string, ABTestResult> = new Map();
   private learningMetrics: LearningMetrics = this.initializeMetrics();
+  private pendingTrainingSignals: Record<string, unknown>[] = [];
   
   private readonly LEARNING_INTERVAL_MS = 5 * 60 * 1000;
   private readonly MICRO_PATTERN_THRESHOLD = 0.15;
@@ -1570,21 +1580,83 @@ class HyperLearningEngine extends EventEmitter {
     const results: ABTestResult[] = [];
     
     this.abTestQueue.forEach((test, id) => {
+      const minImpressionsRequired = test.variants.length * AB_MIN_IMPRESSIONS_PER_VARIATE;
       const totalImpressions = test.variants.reduce((s, v) => s + v.impressions, 0);
-      if (totalImpressions > 1000) {
+
+      if (totalImpressions >= minImpressionsRequired) {
         const sortedVariants = [...test.variants].sort((a, b) => b.engagementRate - a.engagementRate);
-        if (sortedVariants[0].statisticalSignificance > 0.95) {
-          test.winner = sortedVariants[0].id;
-          test.confidenceLevel = sortedVariants[0].statisticalSignificance;
-          test.learnings.push(`Variant ${sortedVariants[0].id} outperformed by ${((sortedVariants[0].engagementRate / sortedVariants[1].engagementRate - 1) * 100).toFixed(1)}%`);
+        const winner = sortedVariants[0];
+        const runnerUp = sortedVariants[1];
+
+        if (winner.statisticalSignificance >= AB_SIGNIFICANCE_THRESHOLD) {
+          test.winner = winner.id;
+          test.confidenceLevel = winner.statisticalSignificance;
+
+          const upliftPct = runnerUp && runnerUp.engagementRate > 0
+            ? ((winner.engagementRate / runnerUp.engagementRate - 1) * 100).toFixed(1)
+            : '100';
+
+          test.learnings.push(
+            `Winner (${winner.id}) beat ${sortedVariants.length - 1} variates` +
+            ` by ${upliftPct}% engagement uplift` +
+            ` (confidence ${(winner.statisticalSignificance * 100).toFixed(0)}%,` +
+            ` ${totalImpressions} impressions across ${test.variants.length} variates)`
+          );
+
           results.push(test);
           this.abTestQueue.delete(id);
+
+          this.dispatchDiffusionTrainingSignal(test, winner).catch(err =>
+            logger.warn('[HyperLearning] DiffusionTrainer dispatch failed:', err)
+          );
         }
       }
     });
 
     this.learningMetrics.abTestsCompleted += results.length;
     return results;
+  }
+
+  private async dispatchDiffusionTrainingSignal(
+    test: ABTestResult,
+    winner: ABTestResult['variants'][number]
+  ): Promise<void> {
+    try {
+      const payload = {
+        source:           'hyper_ab_test',
+        test_id:          test.id,
+        winner_id:        winner.id,
+        engagement_rate:  winner.engagementRate,
+        confidence:       winner.statisticalSignificance,
+        variate_count:    test.variants.length,
+        learnings:        test.learnings,
+        trigger:          'ab_winner',
+        curriculum_hint:  'reinforce_winning_visual_style',
+      };
+
+      const resp = await fetch(`${AI_SERVER_URL}/train/feedback`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+        signal:  AbortSignal.timeout(5000),
+      });
+
+      if (resp.ok) {
+        logger.info(
+          `[HyperLearning] DiffusionTrainer notified — winner variant ${winner.id}` +
+          ` (${(winner.engagementRate).toFixed(2)}% engagement, ${test.variants.length} variates tested)`
+        );
+      } else {
+        logger.warn(`[HyperLearning] DiffusionTrainer returned ${resp.status} — training signal queued locally`);
+        this.pendingTrainingSignals.push(payload);
+      }
+    } catch {
+      this.pendingTrainingSignals.push({
+        source: 'hyper_ab_test', test_id: test.id, winner_id: winner.id,
+        queued_at: Date.now(),
+      });
+      logger.warn('[HyperLearning] AI server unreachable — training signal queued for next sync');
+    }
   }
 
   private async runRealTimeAdaptation(): Promise<{ adaptationsApplied: number }> {

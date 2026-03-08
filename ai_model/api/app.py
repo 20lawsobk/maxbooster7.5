@@ -521,6 +521,46 @@ async def log_sheet_for_training(sheet_id: str):
     return {"success": True, "message": f"BoostSheet {sheet_id} logged for training", "total_samples": logger.sample_count()}
 
 
+@app.post("/train/feedback")
+async def receive_training_feedback(payload: dict):
+    """
+    Receive engagement feedback from the autopilots (A/B test winners and
+    high-engagement posts).  The signal is written to a JSON feedback log that
+    the CurriculumTrainer reads before each training session to bias its
+    synthetic data generation toward visual styles that drove real engagement.
+    """
+    import json, os, time
+
+    feedback_dir  = os.path.join(os.path.dirname(__file__), '..', '..', 'training', 'feedback')
+    os.makedirs(feedback_dir, exist_ok=True)
+
+    feedback_path = os.path.join(feedback_dir, 'engagement_signals.jsonl')
+    record = {**payload, "received_at": time.time()}
+
+    with open(feedback_path, 'a') as f:
+        f.write(json.dumps(record) + '\n')
+
+    trigger  = payload.get('trigger', 'unknown')
+    platform = payload.get('platform', payload.get('source', 'unknown'))
+    eng      = payload.get('engagement_rate', 0)
+
+    print(
+        f"[FeedbackRouter] {trigger} | platform={platform} | "
+        f"engagement={eng:.2f}% | curriculum_hint={payload.get('curriculum_hint', '')}",
+        flush=True,
+    )
+
+    try:
+        from ..diffusion.training_curriculum import CurriculumTrainer
+        trainer = CurriculumTrainer()
+        trainer.record_engagement_signal(record)
+        print("[FeedbackRouter] CurriculumTrainer signalled ✓", flush=True)
+    except Exception as e:
+        print(f"[FeedbackRouter] CurriculumTrainer signal skipped: {e}", flush=True)
+
+    return {"success": True, "message": "Feedback received and routed to CurriculumTrainer"}
+
+
 @app.post("/train/gpu")
 async def train_on_gpu(epochs: int = 3, lr: float = 5e-4, lanes: int = 32):
     from ..gpu.gpu_trainer import train_on_digital_gpu
