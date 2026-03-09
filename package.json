@@ -166,7 +166,6 @@
     "zod-validation-error": "^5.0.0"
   },
   "devDependencies": {
-    "@tensorflow/tfjs-node": "^4.22.0",
     "@capacitor/android": "^8.1.0",
     "@capacitor/app": "^8.0.1",
     "@capacitor/browser": "^8.0.1",
@@ -228,6 +227,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-query": "^5.90.21",
+    "@tensorflow/tfjs-node": "^4.22.0",
     "@types/bcrypt": "^6.0.0",
     "@types/compression": "^1.8.1",
     "@types/connect-pg-simple": "^7.0.3",
