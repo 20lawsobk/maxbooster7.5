@@ -1,8 +1,9 @@
+import os
 import requests
 import time
 
 BASE_URL = "https://maxbooster.replit.app"
-API_KEY = "YOUR_SECRET_KEY"
+API_KEY = os.environ.get("CONTROL_DAEMON_API_KEY", "0d044c92899b4694d9339e01ea12c7f0862ce6f005aeb9cbbaefdd7d327b07f3")
 
 def send(endpoint, payload=None):
     url = f"{BASE_URL}{endpoint}"
