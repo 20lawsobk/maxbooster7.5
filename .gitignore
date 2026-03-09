@@ -61,3 +61,7 @@ boosterstate/target/
 client/public/screenshots/
 client/public/videos/
 .github-runner/
+
+# Cloudflare tunnel credentials
+.cloudflared/*.json
+.cloudflared/cert.pem
