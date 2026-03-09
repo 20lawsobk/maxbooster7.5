@@ -1,55 +1,39 @@
 module.exports = {
   apps: [
     {
-      name: "control_daemon",
-      script: "daemon/control_daemon.py",
-      interpreter: "python",
-      cwd: "D:/ai_server",
+      name: "cloudflared",
+      script: "D:/ai_server/cloudflared/cloudflared.exe",
+      args: "tunnel run ai_server",
       autorestart: true,
-      watch: false,
-      max_restarts: 10,
-      out_file: "logs/daemon_stdout.log",
-      error_file: "logs/daemon_stderr.log"
+      watch: false
     },
     {
-      name: "cloudflared",
-      script: "cloudflared.exe",
-      args: "tunnel run ai_server",
-      cwd: "D:/ai_server/cloudflared",
+      name: "control_daemon",
+      script: "python",
+      args: "D:/ai_server/daemon/control_daemon.py",
       autorestart: true,
-      watch: false,
-      out_file: "logs/cloudflared_stdout.log",
-      error_file: "logs/cloudflared_stderr.log"
+      watch: false
     },
     {
       name: "gpu_monitor",
-      script: "workers/gpu_monitor.py",
-      interpreter: "python",
-      cwd: "D:/ai_server",
+      script: "python",
+      args: "D:/ai_server/workers/gpu_monitor.py",
       autorestart: true,
-      watch: false,
-      out_file: "logs/gpu_stdout.log",
-      error_file: "logs/gpu_stderr.log"
+      watch: false
     },
     {
       name: "dataset_worker",
-      script: "workers/dataset_worker.py",
-      interpreter: "python",
-      cwd: "D:/ai_server",
+      script: "python",
+      args: "D:/ai_server/workers/dataset_worker.py",
       autorestart: true,
-      watch: false,
-      out_file: "logs/dataset_stdout.log",
-      error_file: "logs/dataset_stderr.log"
+      watch: false
     },
     {
       name: "training_scheduler",
-      script: "workers/training_scheduler.py",
-      interpreter: "python",
-      cwd: "D:/ai_server",
+      script: "python",
+      args: "D:/ai_server/workers/training_scheduler.py",
       autorestart: true,
-      watch: false,
-      out_file: "logs/training_stdout.log",
-      error_file: "logs/training_stderr.log"
+      watch: false
     }
   ]
 }

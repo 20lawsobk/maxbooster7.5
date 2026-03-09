@@ -8,11 +8,11 @@ def send(endpoint, payload=None):
     url = f"{BASE_URL}{endpoint}"
     headers = {"Authorization": f"Bearer {API_KEY}"}
 
-    for attempt in range(3):
+    for _ in range(3):
         try:
             r = requests.post(url, json=payload, headers=headers, timeout=10)
             return r.json()
-        except Exception:
+        except:
             time.sleep(1)
 
     return {"error": "connection_failed"}
