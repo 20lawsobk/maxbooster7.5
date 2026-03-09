@@ -20,11 +20,16 @@ from datetime import datetime
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Optional
 
-BASE_DIR   = Path("/home/runner/workspace/data/training_datasets")
+BASE_DIR   = Path(os.environ.get("DATASET_DIR", "/home/runner/workspace/data/training_datasets"))
 STATUS_FILE = BASE_DIR / ".download_status.json"
 LOG_FILE    = BASE_DIR / ".download_log.txt"
 DISK_RESERVE_GB = 20          # keep 20GB free as buffer
 MAX_DISK_GB     = 249         # workspace capacity
+
+# ── D: Drive daemon routing ───────────────────────────────────────────────────
+DAEMON_URL     = os.environ.get("CONTROL_DAEMON_URL", "").rstrip("/")
+DAEMON_API_KEY = os.environ.get("CONTROL_DAEMON_API_KEY", "")
+D_DRIVE_DIR    = os.environ.get("D_DRIVE_DATASET_DIR", r"D:\ai_server\datasets")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Download plan — ordered by priority + feasibility
@@ -46,70 +51,70 @@ DOWNLOAD_PLAN: List[DownloadTask] = [
 
     # ── Tier 1: Small, fully automatable, high music value ───────────────────
     DownloadTask('gtzan',       'huggingface', 'marsyas/gtzan',
-                 est_gb=1.5, music=True, priority=1,
+                 est_gb=1.5, music=True, priority=1, d_drive=True,
                  extra={'hf_method': 'snapshot', 'ignore_patterns': ['*.bin', '*.pt']}),
 
     DownloadTask('fma_metadata','http',
                  'https://os.unil.cloud.switch.ch/fma/fma_metadata.zip',
-                 est_gb=0.35, music=True, priority=1),
+                 est_gb=0.35, music=True, priority=1, d_drive=True),
 
     DownloadTask('fma_small',   'http',
                  'https://os.unil.cloud.switch.ch/fma/fma_small.zip',
-                 est_gb=8.0, music=True, priority=1),
+                 est_gb=8.0, music=True, priority=1, d_drive=True),
 
     DownloadTask('ucf101',      'huggingface', 'kiyoonkim/ucf-101-gulprgb',
-                 est_gb=6.5, music=False, priority=1,
+                 est_gb=6.5, music=False, priority=1, d_drive=True,
                  extra={'hf_method': 'snapshot', 'ignore_patterns': ['*.bin', '*.pt', '*.avi']}),
 
     DownloadTask('hmdb51',      'huggingface', 'kiyoonkim/hmdb51-gulprgb',
-                 est_gb=2.0, music=False, priority=1,
+                 est_gb=2.0, music=False, priority=1, d_drive=True,
                  extra={'hf_method': 'snapshot', 'ignore_patterns': ['*.bin', '*.pt']}),
 
     DownloadTask('maestro',     'huggingface', 'roszcz/maestro-v1-sustain',
-                 est_gb=8.0, music=True, priority=1),
+                 est_gb=8.0, music=True, priority=1, d_drive=True),
 
     # ── Tier 2: Medium — direct HTTP ─────────────────────────────────────────
     DownloadTask('fma_medium',  'http',
                  'https://os.unil.cloud.switch.ch/fma/fma_medium.zip',
-                 est_gb=22.0, music=True, priority=2),
+                 est_gb=22.0, music=True, priority=2, d_drive=True),
 
     # ── Tier 3: HuggingFace streaming — variable size ────────────────────────
     DownloadTask('audiocaps',   'huggingface', 'd0rj/audiocaps',
-                 est_gb=2.0, music=True, priority=2),
+                 est_gb=2.0, music=True, priority=2, d_drive=True),
 
     DownloadTask('musiccaps',   'huggingface', 'google/MusicCaps',
-                 est_gb=0.1, music=True, priority=1,
+                 est_gb=0.1, music=True, priority=1, d_drive=True,
                  extra={'max_rows': 5000}),
 
     DownloadTask('vggsound_meta', 'huggingface', 'Loie/VGGSound',
-                 est_gb=0.5, music=True, priority=2,
+                 est_gb=0.5, music=True, priority=2, d_drive=True,
                  extra={'hf_method': 'snapshot', 'ignore_patterns': ['*.bin', '*.pt', '*.mp4']}),
 
     # ── Tier 4: yt-dlp — music subsets only ──────────────────────────────────
     DownloadTask('musicav_ytdlp', 'ytdlp',
                  'musical instrument performance concert live',
-                 est_gb=5.0, music=True, priority=2,
+                 est_gb=5.0, music=True, priority=2, d_drive=True,
                  extra={'max_clips': 200, 'duration': 10}),
 
     DownloadTask('concert_ytdlp', 'ytdlp',
                  'live concert performance stage 4k',
-                 est_gb=5.0, music=True, priority=3,
+                 est_gb=5.0, music=True, priority=3, d_drive=True,
                  extra={'max_clips': 150, 'duration': 15}),
 
     DownloadTask('beatdance_ytdlp', 'ytdlp',
                  'dance choreography music synchronized beat',
-                 est_gb=5.0, music=True, priority=3,
+                 est_gb=5.0, music=True, priority=3, d_drive=True,
                  extra={'max_clips': 150, 'duration': 10}),
 
     DownloadTask('genrevis_ytdlp', 'ytdlp',
                  'music video hip hop trap aesthetics visualizer',
-                 est_gb=5.0, music=True, priority=2,
+                 est_gb=5.0, music=True, priority=2, d_drive=True,
                  extra={'max_clips': 200, 'duration': 10}),
 
     # ── Tier 5: FMA large (if space allows) ──────────────────────────────────
     DownloadTask('fma_large',   'http',
                  'https://os.unil.cloud.switch.ch/fma/fma_large.zip',
-                 est_gb=93.0, music=True, priority=3),
+                 est_gb=93.0, music=True, priority=3, d_drive=True),
 
     # ══════════════════════════════════════════════════════════════════════════
     # D: DRIVE DATASETS — Too large for Replit. Download to D:\ai_server\datasets\
@@ -321,6 +326,32 @@ def dir_size_bytes(path: Path) -> int:
 
 def can_fit(est_gb: float) -> bool:
     return free_gb() > est_gb + DISK_RESERVE_GB
+
+
+def dispatch_to_daemon(task: DownloadTask) -> bool:
+    """Send a download task to the Windows control daemon. Returns True on success."""
+    if not DAEMON_URL:
+        return False
+    import requests as _req
+    headers = {"Authorization": f"Bearer {DAEMON_API_KEY}"}
+    payload = {
+        "dataset": task.name,
+        "repo":    task.source,
+        "method":  task.method,
+        "extra":   task.extra,
+        "dest":    D_DRIVE_DIR,
+    }
+    try:
+        r = _req.post(f"{DAEMON_URL}/start_download", json=payload,
+                      headers=headers, timeout=15)
+        if r.status_code == 200:
+            log(f"  {task.name}: dispatched to daemon → {D_DRIVE_DIR}")
+            return True
+        log(f"  {task.name}: daemon rejected request ({r.status_code}): {r.text[:120]}")
+        return False
+    except Exception as e:
+        log(f"  {task.name}: daemon unreachable ({e}) — cannot dispatch")
+        return False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -582,8 +613,10 @@ def run_downloads(resume: bool = True):
 
     log("=" * 60)
     log("POCKET DIMENSION DATASET DOWNLOADER")
-    log(f"Storage: {BASE_DIR}")
-    log(f"Free: {free_gb():.1f}GB  Used: {used_gb():.1f}GB")
+    log(f"Primary storage : D: drive ({D_DRIVE_DIR})")
+    log(f"Daemon URL      : {DAEMON_URL or '(not configured — set CONTROL_DAEMON_URL)'}")
+    log(f"Replit fallback : {BASE_DIR}")
+    log(f"Free (Replit)   : {free_gb():.1f}GB  Used: {used_gb():.1f}GB")
     log("=" * 60)
 
     plan = sorted(DOWNLOAD_PLAN, key=lambda t: (t.priority, t.est_gb))
@@ -592,11 +625,30 @@ def run_downloads(resume: bool = True):
     completed = 0
     skipped = 0
     failed = 0
+    dispatched = 0
 
     for task in plan:
         if resume and status.is_done(task.name):
             log(f"[SKIP] {task.name}: already complete")
             completed += 1
+            continue
+
+        # ── Route d_drive tasks to Windows daemon (D: is primary) ────────────
+        if task.d_drive:
+            log(f"\n[D:DRIVE] {task.name} ({task.method}, est {task.est_gb:.1f}GB)")
+            if DAEMON_URL:
+                ok = dispatch_to_daemon(task)
+                if ok:
+                    status.mark_done(task.name, int(task.est_gb * 1e9), D_DRIVE_DIR)
+                    dispatched += 1
+                    completed += 1
+                else:
+                    status.mark_failed(task.name, "daemon dispatch failed")
+                    failed += 1
+            else:
+                log(f"  [WAITING] {task.name}: daemon not configured — set CONTROL_DAEMON_URL to enable D: drive downloads")
+                status.mark_skipped(task.name, "CONTROL_DAEMON_URL not set")
+                skipped += 1
             continue
 
         if not can_fit(task.est_gb):
