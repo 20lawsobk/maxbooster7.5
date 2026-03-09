@@ -1,7 +1,7 @@
 import requests
 import time
 
-BASE_URL = "https://ai.yourdomain.com"
+BASE_URL = "https://maxbooster.replit.app"
 API_KEY = "YOUR_SECRET_KEY"
 
 def send(endpoint, payload=None):

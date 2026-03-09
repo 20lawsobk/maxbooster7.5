@@ -1,6 +1,6 @@
 orchestration:
   dataset_root: "D:\\ai_server\\datasets"
-  control_endpoint: "https://ai.yourdomain.com"
+  control_endpoint: "https://maxbooster.replit.app"
   modules:
     - dataset_manager
     - gpu_scheduler
