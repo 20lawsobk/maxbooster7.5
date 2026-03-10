@@ -44,21 +44,42 @@ Progressive training:
   Phase 4: T=32, 96×96  — full video coherence (final form)
 """
 
+import os
 import numpy as np
 import math
 from .layers import (Conv2D, ResBlock, SelfAttention2D, GroupNorm,
                      Linear, SiLU, MaxPool2x2, upsample2x, upsample2x_backward)
 from .temporal_attention import TemporalAttention1D
 
-# ── Architecture constants ────────────────────────────────────────────────────
-CH0      = 128
-CH1      = 256
-CH2      = 512
-CH3      = 1024
-CH4      = 1024
-COND_DIM = 256   # time(128) + text(128) — doubled for richer conditioning
-N_RES    = 4     # ResBlocks per level (was 2)
-N_BOT    = 6     # ResBlocks at bottleneck (was 3)
+# ── Architecture constants (FULL — for GPU / Windows D: drive server) ─────────
+CH0_FULL      = 128
+CH1_FULL      = 256
+CH2_FULL      = 512
+CH3_FULL      = 1024
+CH4_FULL      = 1024
+COND_DIM_FULL = 256
+N_RES_FULL    = 4
+N_BOT_FULL    = 6
+
+# ── Architecture constants (LITE — for CPU / Replit, ~6M params) ─────────────
+CH0_LITE      = 32
+CH1_LITE      = 64
+CH2_LITE      = 128
+CH3_LITE      = 256
+CH4_LITE      = 256
+COND_DIM_LITE = 128
+N_RES_LITE    = 2
+N_BOT_LITE    = 3
+
+# ── Default (module-level) constants stay FULL for backward compat ────────────
+CH0      = CH0_FULL
+CH1      = CH1_FULL
+CH2      = CH2_FULL
+CH3      = CH3_FULL
+CH4      = CH4_FULL
+COND_DIM = COND_DIM_FULL
+N_RES    = N_RES_FULL
+N_BOT    = N_BOT_FULL
 
 
 # ── Depthwise-separable Conv2D ────────────────────────────────────────────────
@@ -345,17 +366,19 @@ class Bottleneck:
     3×3 = 9 spatial positions — all attention ops are nearly free at this scale.
     """
 
-    def __init__(self, c: int, cond_dim: int, T: int = 32):
-        self.c = c
-        self.T = T
-        # 6 deep ResBlocks with progressively more sophisticated attention
-        self.res_blocks = [ResBlock(c, c) for _ in range(N_BOT)]
-        # 24-head spatial attention after block 3 and block 6
-        self.spatial_attn1  = SelfAttention2D(c, n_heads=32)
-        self.spatial_attn2  = SelfAttention2D(c, n_heads=32)
-        # 32-head temporal attention after spatial attention
-        self.temporal_attn1 = TemporalAttention1D(c, heads=min(32, c // 32), T=T)
-        self.temporal_attn2 = TemporalAttention1D(c, heads=min(32, c // 32), T=T)
+    def __init__(self, c: int, cond_dim: int, T: int = 32, n_bot: int = N_BOT_FULL):
+        self.c     = c
+        self.T     = T
+        self.n_bot = n_bot
+        half       = max(1, n_bot // 2)
+        self.half  = half
+        self.res_blocks = [ResBlock(c, c) for _ in range(n_bot)]
+        n_heads_sa      = min(32, max(1, c // 32))
+        n_heads_ta      = min(32, max(1, c // 32))
+        self.spatial_attn1  = SelfAttention2D(c, n_heads=n_heads_sa)
+        self.spatial_attn2  = SelfAttention2D(c, n_heads=n_heads_sa)
+        self.temporal_attn1 = TemporalAttention1D(c, heads=n_heads_ta, T=T)
+        self.temporal_attn2 = TemporalAttention1D(c, heads=n_heads_ta, T=T)
         self.cond           = ConditioningInjectorV4(cond_dim, c)
         self._cache         = {}
 
@@ -363,8 +386,8 @@ class Bottleneck:
         T = x_seq.shape[0]
         out = x_seq.copy()
 
-        # Blocks 0-2
-        for i in range(3):
+        # Blocks 0..half-1
+        for i in range(self.half):
             frame_outs = []
             for t in range(T):
                 frame_outs.append(self.res_blocks[i].forward(out[t]))
@@ -377,8 +400,8 @@ class Bottleneck:
         out = np.stack(sa_outs, axis=0)
         out = self.temporal_attn1.forward(out)
 
-        # Blocks 3-5
-        for i in range(3, 6):
+        # Blocks half..n_bot-1
+        for i in range(self.half, self.n_bot):
             frame_outs = []
             for t in range(T):
                 frame_outs.append(self.res_blocks[i].forward(out[t]))
@@ -410,16 +433,16 @@ class Bottleneck:
         d = self.temporal_attn2.backward(d)
         d = np.stack([self.spatial_attn2.backward(d[t]) for t in range(T)], axis=0)
 
-        # Blocks 5-3 backward
-        for i in range(5, 2, -1):
+        # Blocks n_bot-1..half backward
+        for i in range(self.n_bot - 1, self.half - 1, -1):
             d = np.stack([self.res_blocks[i].backward(d[t]) for t in range(T)], axis=0)
 
         # Mid temporal + spatial backward
         d = self.temporal_attn1.backward(d)
         d = np.stack([self.spatial_attn1.backward(d[t]) for t in range(T)], axis=0)
 
-        # Blocks 2-0 backward
-        for i in range(2, -1, -1):
+        # Blocks half-1..0 backward
+        for i in range(self.half - 1, -1, -1):
             d = np.stack([self.res_blocks[i].backward(d[t]) for t in range(T)], axis=0)
 
         return d
@@ -565,78 +588,91 @@ class DecoderLevel:
 
 class UNetV4:
     """
-    5-level video-native U-Net, ~300M parameters.
-    Processes T-frame sequences, produces T-frame noise predictions.
+    5-level video-native U-Net.
+    Full mode: ~300M params (for GPU / Windows D: drive).
+    Lite mode:   ~6M params (for CPU / Replit — auto-selected when
+                 MAXCORE_LITE=1 or no GPU detected).
 
-    When T=1: behaves identically to a standard image diffusion model.
-    When T>1: temporal attention ensures motion coherence across frames.
+    Processes T-frame sequences, produces T-frame noise predictions.
 
     Input:
         x_seq: (T, H, W, 3)     — noisy video frames
-        cond:  (COND_DIM,)       — 256-dim conditioning: time(128)+text(128)
+        cond:  (COND_DIM,)       — conditioning: time+text
     Output:
         (T, H, W, 3)             — predicted noise for each frame
     """
 
-    def __init__(self, cond_dim: int = COND_DIM, T: int = 32):
+    def __init__(self, cond_dim: int = COND_DIM, T: int = 32,
+                 lite: bool = False):
+        if lite:
+            _CH0      = CH0_LITE
+            _CH1      = CH1_LITE
+            _CH2      = CH2_LITE
+            _CH3      = CH3_LITE
+            _CH4      = CH4_LITE
+            _N_RES    = N_RES_LITE
+        else:
+            _CH0      = CH0_FULL
+            _CH1      = CH1_FULL
+            _CH2      = CH2_FULL
+            _CH3      = CH3_FULL
+            _CH4      = CH4_FULL
+            _N_RES    = N_RES_FULL
+
         self.cond_dim = cond_dim
         self.T        = T
+        self.lite     = lite
 
         # ── Encoder ──────────────────────────────────────────────────────────
-        # L0: 3 → CH0=128, 96×96,  LightResBlock (4 blocks, no attention)
         self.enc0 = EncoderLevel(
-            3, CH0, cond_dim, n_res=N_RES, T=T, use_light=True)
+            3, _CH0, cond_dim, n_res=_N_RES, T=T, use_light=True)
 
-        # L1: CH0 → CH1=256, 48×48, LightResBlock (4 blocks, no attention)
         self.enc1 = EncoderLevel(
-            CH0, CH1, cond_dim, n_res=N_RES, T=T, use_light=True)
+            _CH0, _CH1, cond_dim, n_res=_N_RES, T=T, use_light=True)
 
-        # L2: CH1 → CH2=512, 24×24, standard ResBlock + 8-head spatial
         self.enc2 = EncoderLevel(
-            CH1, CH2, cond_dim, n_res=N_RES,
-            spatial_attn_heads=8, temporal_attn_heads=0, T=T)
+            _CH1, _CH2, cond_dim, n_res=_N_RES,
+            spatial_attn_heads=min(8, _CH2 // 16), temporal_attn_heads=0, T=T)
 
-        # L3: CH2 → CH3=1024, 12×12, standard + 16-head spatial + 8-head temporal
         self.enc3 = EncoderLevel(
-            CH2, CH3, cond_dim, n_res=N_RES,
-            spatial_attn_heads=16, temporal_attn_heads=8, T=T)
+            _CH2, _CH3, cond_dim, n_res=_N_RES,
+            spatial_attn_heads=min(16, _CH3 // 16),
+            temporal_attn_heads=min(8, _CH3 // 32), T=T)
 
-        # L4: CH3 → CH4=1024, 6×6, standard + 16-head spatial + 16-head temporal
         self.enc4 = EncoderLevel(
-            CH3, CH4, cond_dim, n_res=N_RES,
-            spatial_attn_heads=16, temporal_attn_heads=16, T=T)
+            _CH3, _CH4, cond_dim, n_res=_N_RES,
+            spatial_attn_heads=min(16, _CH4 // 16),
+            temporal_attn_heads=min(16, _CH4 // 16), T=T)
 
-        # ── Bottleneck: 3×3 spatial, 6 ResBlocks, max attention ─────────────
-        self.bottleneck = Bottleneck(CH4, cond_dim, T=T)
+        # ── Bottleneck ────────────────────────────────────────────────────────
+        _N_BOT = N_BOT_LITE if lite else N_BOT_FULL
+        self.bottleneck = Bottleneck(_CH4, cond_dim, T=T, n_bot=_N_BOT)
 
         # ── Decoder ──────────────────────────────────────────────────────────
-        # Dec4: upsample + skip from enc4, CH4+CH4 → CH3
         self.dec4 = DecoderLevel(
-            CH4, CH4, CH3, cond_dim, n_res=N_RES,
-            spatial_attn_heads=16, temporal_attn_heads=min(16, CH3 // 64), T=T)
+            _CH4, _CH4, _CH3, cond_dim, n_res=_N_RES,
+            spatial_attn_heads=min(16, _CH3 // 16),
+            temporal_attn_heads=min(16, _CH3 // 16), T=T)
 
-        # Dec3: CH3+CH3 → CH2
         self.dec3 = DecoderLevel(
-            CH3, CH3, CH2, cond_dim, n_res=N_RES,
-            spatial_attn_heads=16, temporal_attn_heads=8, T=T)
+            _CH3, _CH3, _CH2, cond_dim, n_res=_N_RES,
+            spatial_attn_heads=min(16, _CH2 // 16),
+            temporal_attn_heads=min(8, _CH2 // 16), T=T)
 
-        # Dec2: CH2+CH2 → CH1
         self.dec2 = DecoderLevel(
-            CH2, CH2, CH1, cond_dim, n_res=N_RES,
-            spatial_attn_heads=8, T=T)
+            _CH2, _CH2, _CH1, cond_dim, n_res=_N_RES,
+            spatial_attn_heads=min(8, _CH1 // 16), T=T)
 
-        # Dec1: CH1+CH1 → CH0, LightResBlock
         self.dec1 = DecoderLevel(
-            CH1, CH1, CH0, cond_dim, n_res=N_RES, T=T, use_light=True)
+            _CH1, _CH1, _CH0, cond_dim, n_res=_N_RES, T=T, use_light=True)
 
-        # Dec0: CH0+CH0 → CH0, LightResBlock
         self.dec0 = DecoderLevel(
-            CH0, CH0, CH0, cond_dim, n_res=N_RES, T=T, use_light=True)
+            _CH0, _CH0, _CH0, cond_dim, n_res=_N_RES, T=T, use_light=True)
 
         # ── Output head ───────────────────────────────────────────────────────
-        self.out_gn   = GroupNorm(CH0, G=min(32, CH0))
+        self.out_gn   = GroupNorm(_CH0, G=min(32, _CH0))
         self.out_act  = SiLU()
-        self.out_conv = Conv2D(CH0, 3, k=1, pad=0)
+        self.out_conv = Conv2D(_CH0, 3, k=1, pad=0)
 
         self._cache = {}
 

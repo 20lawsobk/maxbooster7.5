@@ -1199,10 +1199,11 @@ def load_for_inference(model, time_enc, text_enc):
 WEIGHTS_V4_PATH = os.path.join(_here, 'weights_v4.npz')
 META_V4_PATH    = os.path.join(_here, 'meta_v4.json')
 
-# v4 uses 256-dim conditioning: 128 time + 128 text
-_TIME_ENC_DIM_V4 = 128
-_TEXT_ENC_DIM_V4 = 128
-_COND_DIM_V4     = 256
+# v4 conditioning dims — halved automatically in lite (CPU/Replit) mode
+_LITE_MODE_V4    = os.environ.get('MAXCORE_LITE', '0') == '1'
+_TIME_ENC_DIM_V4 = 64  if _LITE_MODE_V4 else 128
+_TEXT_ENC_DIM_V4 = 64  if _LITE_MODE_V4 else 128
+_COND_DIM_V4     = 128 if _LITE_MODE_V4 else 256
 
 
 def _build_cond_v4(time_enc, text_enc, t, prompt):
@@ -1338,16 +1339,18 @@ def train_v4(n_epochs: int = 5,
     from .frame_extractor import FrameExtractor
     from .training_data_v3 import get_all_prompts, get_scenes
 
+    _mode_tag = "LITE/CPU" if _LITE_MODE_V4 else "FULL/GPU"
+    _param_est = "~6M" if _LITE_MODE_V4 else "~300M"
     print(f"\n{'='*70}", flush=True)
     print(f"[DiffusionTrainer v4] Starting: {session_label}", flush=True)
-    print(f"  Model: UNetV4 (~300M params, T={T} frames, {res}×{res})", flush=True)
+    print(f"  Model: UNetV4 ({_param_est} params, {_mode_tag}, T={T} frames, {res}×{res})", flush=True)
     print(f"  Epochs: {n_epochs}  |  Samples/epoch: {n_samples}", flush=True)
     print(f"  LR: {lr}  |  EMA: {ema_decay}  |  Perceptual: {use_perceptual}", flush=True)
     print(f"{'='*70}", flush=True)
 
     # ── Build model ───────────────────────────────────────────────────────────
     from .encoder import TimeEncoder, TextEncoder
-    model    = UNetV4(cond_dim=_COND_DIM_V4, T=T)
+    model    = UNetV4(cond_dim=_COND_DIM_V4, T=T, lite=_LITE_MODE_V4)
     param_count = model.count_params()
     print(f"[DiffusionTrainer v4] Model params: {param_count:,} ({param_count/1e6:.1f}M)",
           flush=True)
