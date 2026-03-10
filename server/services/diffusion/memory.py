@@ -127,7 +127,7 @@ class LongTermMemory:
     # ── Persistence ────────────────────────────────────────────────────────
 
     def load(self):
-        """Load memory from disk. Silently starts fresh if missing/corrupt."""
+        """Load memory from disk. Backs up corrupted file before starting fresh."""
         if not os.path.exists(self.path):
             return
         try:
@@ -139,7 +139,16 @@ class LongTermMemory:
                   f"{self._state['total_steps']:,} total steps, "
                   f"replay={len(self.replay)} examples")
         except Exception as e:
-            print(f"[LongTermMemory] Could not load (starting fresh): {e}")
+            backup_path = self.path + '.corrupted'
+            try:
+                import shutil
+                shutil.copy2(self.path, backup_path)
+                print(f"[LongTermMemory] WARNING: memory.json is corrupted ({e}) — "
+                      f"backed up to {backup_path} and starting fresh. "
+                      f"Training progress is preserved in backup.")
+            except Exception as backup_err:
+                print(f"[LongTermMemory] WARNING: memory.json is corrupted ({e}) — "
+                      f"could not back up ({backup_err}), starting fresh.")
             self._state = self._default_state()
 
     def save(self):
@@ -299,7 +308,7 @@ class RotatingBatchScheduler:
 
         for scene_idx, count in enumerate(scene_counts):
             scene = self.scenes[scene_idx]
-            scene_data = [(f, p) for f, p in self.dataset if True]  # uses full dataset
+            scene_data = self.dataset  # use full dataset directly — no copy needed
             # Filter by scene approximately
             scene_samples = [
                 (f, p) for f, p in self.dataset

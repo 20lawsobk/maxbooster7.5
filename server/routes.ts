@@ -220,13 +220,21 @@ export async function registerRoutes(
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await storage.createUser({
-        email,
-        password: hashedPassword,
-        username: username || null,
-        firstName: firstName || "",
-        lastName: lastName || ""
-      });
+      let user;
+      try {
+        user = await storage.createUser({
+          email,
+          password: hashedPassword,
+          username: username || null,
+          firstName: firstName || "",
+          lastName: lastName || ""
+        });
+      } catch (createErr: any) {
+        if (createErr?.code === '23505' || createErr?.message?.toLowerCase().includes('unique')) {
+          return res.status(400).json({ message: "Email already registered" });
+        }
+        throw createErr;
+      }
 
       const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
 
@@ -473,7 +481,7 @@ export async function registerRoutes(
     }
     try {
       const { firstName, lastName, bio, website, location, socialLinks } = req.body;
-      const stripHtml = (str: string | undefined) => str ? str.replace(/<[^>]*>/g, '').trim() : str;
+      const stripHtml = (str: string | undefined) => str ? str.replace(/[<>&"'`]/g, '').trim() : str;
       await storage.updateUser(req.user.id, {
         firstName: stripHtml(firstName),
         lastName: stripHtml(lastName),

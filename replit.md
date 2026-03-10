@@ -161,3 +161,29 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 - Lyrics → melody: client-side math + backend model suggestions blended together
 - Full arrangement (melody/bass/pad/drums) → DAW timeline via `onTrackGenerated` callback
 - URL → all 4 output types: `POST /api/social/analyze-url` returns content + video_config + audio_style + image_prompt
+## Codebase Security & Reliability Audit (March 10, 2026)
+
+**Python fixes applied:**
+- `server/services/diffusion/memory.py`: Corrupted memory.json now backed up to `memory.json.corrupted` before starting fresh — training progress never silently lost
+- `server/services/diffusion/memory.py`: `RotatingBatchScheduler` removed useless full-dataset copy (`[(f,p) for f,p in dataset if True]`) — direct reference used instead
+- `workers/dataset_manager.py`: Fixed unclosed file handle (`open().close()` → `with open() as f`), fixed `subprocess.run(shell=True)` to use list args with return code checking
+- `workers/gpu_scheduler.py`: Fixed `subprocess.run(shell=True)` without return code check — training failures no longer silently marked as idle; exit codes logged
+- `maxcore_server.py`: Fixed bare `except Exception: pass` in `_append_loss` and `_append_session` — now logs warnings with error detail
+
+**TypeScript/server fixes applied:**
+- `server/safety/stripeWebhookSecurity.ts`: Replaced in-memory `Set<string>` idempotency with Redis-backed (24h TTL, fallback to memory). Survives restarts and multi-instance deployments
+- `server/routes.ts`: Strengthened HTML sanitization from `/<[^>]*>/g` (bypassable) to `/[<>&"'\`]/g` (strips all injection chars)
+- `server/routes.ts`: Registration race condition fixed — `createUser` now wrapped in try/catch that handles DB unique constraint (code 23505) gracefully
+
+**Frontend fixes applied:**
+- `client/src/pages/ShowPage.tsx`: Emergency stop now clears countdown interval and resets countdown state — next song no longer auto-starts after emergency stop
+- `client/src/pages/ShowPage.tsx`: Added unmount cleanup useEffect for countdown interval — no memory leak on navigation
+- `client/src/components/search/SearchSuggestions.tsx`: Removed `dangerouslySetInnerHTML` XSS risk — search suggestions now render as safe text content
+
+**Database fixes applied:**
+- `migrations/0011_add_missing_indexes.sql`: Added indexes for `users.password_reset_token`, `users.google_id`, `users.stripe_customer_id`, `ai_models.model_type`, `ai_models.status`
+- `shared/schema.ts`: Schema updated with matching drizzle index definitions
+- `migrations/0005_api_tier_enum_update.sql` → renamed to `migrations/0012_api_tier_enum_update.sql` to resolve conflict with `0005_jazzy_excalibur.sql`
+
+**Outstanding issue:**
+- `CONTROL_DAEMON_URL` is set to `https://maxbooster.replit.app` (wrong) — must be updated to the actual Cloudflare tunnel URL for the Windows GPU server to receive dataset download jobs. The Dataset Downloader will remain at 7/32 until this is corrected.

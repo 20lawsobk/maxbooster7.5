@@ -122,8 +122,8 @@ def _append_loss(session: int, loss: float, phase: int):
     if LOSS_LOG.exists():
         try:
             history = json.loads(LOSS_LOG.read_text())
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[MaxCore] WARNING: loss log corrupted, resetting: {e}", flush=True)
     history.append({"session": session, "loss": loss,
                      "phase": phase, "ts": time.time()})
     LOSS_LOG.write_text(json.dumps(history[-2000:], indent=2))
@@ -134,8 +134,8 @@ def _append_session(meta: dict):
     if SESSION_LOG.exists():
         try:
             log = json.loads(SESSION_LOG.read_text())
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[MaxCore] WARNING: session log corrupted, resetting: {e}", flush=True)
     log.append({**meta, "saved_at": datetime.utcnow().isoformat()})
     SESSION_LOG.write_text(json.dumps(log[-500:], indent=2))
 

@@ -40,7 +40,11 @@ export const users = pgTable("users", {
   emailVerificationToken: text("email_verification_token"),
   emailVerificationExpires: timestamp("email_verification_expires"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  passwordResetTokenIdx: index("users_password_reset_token_idx").on(table.passwordResetToken),
+  googleIdIdx: index("users_google_id_idx").on(table.googleId),
+  stripeCustomerIdIdx: index("users_stripe_customer_id_idx").on(table.stripeCustomerId),
+}));
 
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -2534,7 +2538,10 @@ export const aiModels = pgTable("ai_models", {
   lastTrainedAt: timestamp("last_trained_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at"),
-});
+}, (table) => ({
+  modelTypeIdx: index("ai_models_model_type_idx").on(table.modelType),
+  statusIdx: index("ai_models_status_idx").on(table.status),
+}));
 
 export type AiModel = typeof aiModels.$inferSelect;
 export const insertAiModelSchema = createInsertSchema(aiModels).omit({ id: true, createdAt: true });

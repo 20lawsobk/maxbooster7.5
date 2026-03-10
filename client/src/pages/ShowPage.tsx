@@ -261,6 +261,15 @@ export default function ShowPage() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    };
+  }, []);
+
   const handlePlay = useCallback(() => {
     setIsPlaying(true);
     setEmergencyStopActive(false);
@@ -280,6 +289,11 @@ export default function ShowPage() {
     setIsPlaying(false);
     setSongProgress(0);
     setEmergencyStopActive(true);
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setCountdownSeconds(null);
     metronome.stop();
     toast({
       title: 'Emergency Stop',

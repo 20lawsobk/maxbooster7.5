@@ -20,18 +20,25 @@ class DatasetManager:
         if os.path.exists(os.path.join(target, ".incomplete")):
             return self.resume(dataset, repo)
 
-        open(os.path.join(target, ".incomplete"), "w").close()
+        with open(os.path.join(target, ".incomplete"), "w") as _f:
+            pass
 
-        cmd = f"git lfs clone {repo} {target}"
-        subprocess.run(cmd, shell=True)
+        cmd = ["git", "lfs", "clone", repo, target]
+        result = subprocess.run(cmd, shell=False)
+        if result.returncode != 0:
+            print(f"[DatasetManager] ERROR: git lfs clone failed (exit {result.returncode}) for {dataset}")
+            return False
 
         os.remove(os.path.join(target, ".incomplete"))
         return True
 
     def resume(self, dataset, repo):
         target = self.ensure_dir(dataset)
-        cmd = f"git -C {target} lfs fetch --all"
-        subprocess.run(cmd, shell=True)
+        cmd = ["git", "-C", target, "lfs", "fetch", "--all"]
+        result = subprocess.run(cmd, shell=False)
+        if result.returncode != 0:
+            print(f"[DatasetManager] ERROR: git lfs fetch failed (exit {result.returncode}) for {dataset}")
+            return False
         return True
 
     def verify(self, dataset):

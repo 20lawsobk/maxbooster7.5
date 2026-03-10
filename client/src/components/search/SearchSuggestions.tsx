@@ -310,10 +310,9 @@ function SuggestionItem({
       onClick={onClick}
     >
       {icon}
-      <span
-        className="flex-1 text-sm truncate"
-        dangerouslySetInnerHTML={{ __html: highlighted || text }}
-      />
+      <span className="flex-1 text-sm truncate">
+        {highlighted || text}
+      </span>
       {type && type !== 'query' && (
         <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-500">
           {type}
