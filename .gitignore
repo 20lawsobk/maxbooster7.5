@@ -65,3 +65,12 @@ client/public/videos/
 # Cloudflare tunnel credentials
 .cloudflared/*.json
 .cloudflared/cert.pem
+
+# Security auto-fix: required gitignore entries
+.env.production
+.env.staging
+*.pem
+*.p12
+*.pfx
+service-account*.json
+.config/
