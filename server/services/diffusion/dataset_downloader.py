@@ -627,6 +627,9 @@ def run_downloads(resume: bool = True):
     failed = 0
     dispatched = 0
 
+    # Datasets small enough to store on Replit when D: drive daemon is offline
+    REPLIT_FALLBACK_MAX_GB = 30.0
+
     for task in plan:
         if resume and status.is_done(task.name):
             log(f"[SKIP] {task.name}: already complete")
@@ -636,19 +639,53 @@ def run_downloads(resume: bool = True):
         # ── Route d_drive tasks to Windows daemon (D: is primary) ────────────
         if task.d_drive:
             log(f"\n[D:DRIVE] {task.name} ({task.method}, est {task.est_gb:.1f}GB)")
+
+            # Try daemon first — it's the primary storage for D: drive
             if DAEMON_URL:
                 ok = dispatch_to_daemon(task)
                 if ok:
                     status.mark_done(task.name, int(task.est_gb * 1e9), D_DRIVE_DIR)
                     dispatched += 1
                     completed += 1
+                    continue
+
+            # Daemon unavailable (or not configured) — fall back to Replit local
+            # storage for small datasets so work keeps progressing
+            if task.est_gb <= REPLIT_FALLBACK_MAX_GB and can_fit(task.est_gb):
+                if DAEMON_URL:
+                    log(f"  {task.name}: daemon offline — falling back to Replit local storage")
                 else:
-                    status.mark_failed(task.name, "daemon dispatch failed")
+                    log(f"  {task.name}: daemon not configured — downloading to Replit storage")
+                dest = BASE_DIR / task.name
+                status.mark_started(task.name)
+                try:
+                    if task.method == 'http':
+                        bytes_stored = download_http(task, dest)
+                    elif task.method == 'huggingface':
+                        bytes_stored = download_huggingface(task, dest)
+                    elif task.method == 'ytdlp':
+                        bytes_stored = download_ytdlp(task, dest)
+                    else:
+                        raise ValueError(f"Unknown method: {task.method}")
+                    status.mark_done(task.name, bytes_stored, dest)
+                    total_downloaded += bytes_stored
+                    completed += 1
+                    log(f"[DONE-LOCAL] {task.name}: {bytes_stored / 1e9:.3f}GB on Replit (will sync to D: drive when daemon is live)")
+                except Exception as e:
+                    status.mark_failed(task.name, str(e))
                     failed += 1
+                    log(f"[FAIL] {task.name}: {e}")
             else:
-                log(f"  [WAITING] {task.name}: daemon not configured — set CONTROL_DAEMON_URL to enable D: drive downloads")
-                status.mark_skipped(task.name, "CONTROL_DAEMON_URL not set")
-                skipped += 1
+                # Dataset too large for Replit fallback — needs D: drive
+                reason = (
+                    f"daemon unreachable, {task.est_gb:.0f}GB too large for Replit fallback"
+                    if DAEMON_URL else
+                    f"CONTROL_DAEMON_URL not set, {task.est_gb:.0f}GB too large for Replit"
+                )
+                log(f"  [PENDING-D-DRIVE] {task.name}: {reason}")
+                log(f"  → Will download automatically once daemon is live after deployment")
+                status.mark_failed(task.name, reason)
+                failed += 1
             continue
 
         if not can_fit(task.est_gb):

@@ -13,11 +13,15 @@
  * - Circuit breaker pattern for external services
  */
 
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { existsSync, readFileSync } from 'fs';
 import { db } from './db.js';
 import { sql } from 'drizzle-orm';
 import { logger } from './logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 interface ProbeStatus {
   name: string;
