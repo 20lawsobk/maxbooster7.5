@@ -34,6 +34,7 @@ import {
 // Scale infrastructure
 import { distributedCache } from "./infrastructure/distributedCache.ts";
 import prometheusRouter, { httpRequestDuration, httpRequestTotal } from "./routes/prometheus.ts";
+import helmet from "helmet";
 
 // Dynamic imports for monitoring services (optional)
 let metricsCollector: any = null;
@@ -71,6 +72,8 @@ async function loadOptionalModules() {
 }
 
 const app = express();
+
+app.use(helmet({ contentSecurityPolicy: false })); // Security auto-fix
 
 setupStartupEndpoints(app);
 

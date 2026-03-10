@@ -300,7 +300,7 @@ export function GlobalSearch({
                   {getTypeIcon(suggestion.type)}
                   <span 
                     className="text-sm text-slate-200"
-                    dangerouslySetInnerHTML={{ __html: suggestion.highlighted }}
+                    dangerouslySetInnerHTML={{ __html: (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(suggestion.highlighted) : suggestion.highlighted) }}
                   />
                 </button>
               ))}

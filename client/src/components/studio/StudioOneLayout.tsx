@@ -127,7 +127,7 @@ export function StudioOneLayout({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: cssVariables }} />
+      <style dangerouslySetInnerHTML={{ __html: (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(cssVariables) : cssVariables) }} />
       
       <div 
         ref={containerRef as React.RefObject<HTMLDivElement>}
