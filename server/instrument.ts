@@ -14,8 +14,8 @@ const dsn = process.env.SENTRY_DSN;
 
 Sentry.init({
   dsn: isProduction ? dsn : undefined,
-  tracesSampleRate: isProduction ? 1.0 : 0,
-  profilesSampleRate: isProduction ? 1.0 : 0,
+  tracesSampleRate: isProduction ? 0.2 : 0,
+  profilesSampleRate: isProduction ? 0.05 : 0,
   environment: process.env.NODE_ENV || 'development',
   beforeSend(event) {
     if (!isProduction) return null;

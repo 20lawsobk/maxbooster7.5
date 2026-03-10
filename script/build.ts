@@ -131,6 +131,8 @@ async function buildAll() {
     external: uniqueExternals,
     logLevel: "info" as const,
     treeShaking: true,
+    legalComments: "none" as const,
+    drop: ["debugger"] as ("debugger" | "console")[],
   };
 
   await Promise.all([

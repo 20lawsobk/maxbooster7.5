@@ -7,6 +7,26 @@ import { and, eq } from 'drizzle-orm';
 
 const SITE_URL = 'https://maxbooster.replit.app';
 
+interface CacheEntry<T> { value: T; expiresAt: number; }
+function makeCache<T>(ttlMs: number) {
+  const store = new Map<string, CacheEntry<T>>();
+  return {
+    get(key: string): T | undefined {
+      const entry = store.get(key);
+      if (!entry) return undefined;
+      if (Date.now() > entry.expiresAt) { store.delete(key); return undefined; }
+      return entry.value;
+    },
+    set(key: string, value: T) {
+      store.set(key, { value, expiresAt: Date.now() + ttlMs });
+    },
+  };
+}
+
+const subdomainCache = makeCache<string | null>(60_000);
+const customDomainCache = makeCache<string | null>(60_000);
+const metaCache = makeCache<{ title: string; description: string; image: string; url: string } | null>(120_000);
+
 const BASE_DOMAINS = [
   'maxbooster.replit.app',
   'maxbooster.app',
@@ -26,27 +46,35 @@ function extractSubdomain(hostname: string): string | null {
 }
 
 async function getStorefrontSlugForSubdomain(subdomain: string): Promise<string | null> {
+  const cached = subdomainCache.get(subdomain);
+  if (cached !== undefined) return cached;
   try {
     const [store] = await db
       .select({ slug: storefronts.slug })
       .from(storefronts)
       .where(and(eq(storefronts.subdomain, subdomain), eq(storefronts.isSubdomainActive, true)))
       .limit(1);
-    return store?.slug ?? null;
+    const result = store?.slug ?? null;
+    subdomainCache.set(subdomain, result);
+    return result;
   } catch {
     return null;
   }
 }
 
 async function getStorefrontSlugForCustomDomain(hostname: string): Promise<string | null> {
+  const host = hostname.split(':')[0].toLowerCase();
+  const cached = customDomainCache.get(host);
+  if (cached !== undefined) return cached;
   try {
-    const host = hostname.split(':')[0].toLowerCase();
     const [store] = await db
       .select({ slug: storefronts.slug })
       .from(storefronts)
       .where(and(eq(storefronts.customDomain, host), eq(storefronts.isCustomDomainActive, true)))
       .limit(1);
-    return store?.slug ?? null;
+    const result = store?.slug ?? null;
+    customDomainCache.set(host, result);
+    return result;
   } catch {
     return null;
   }
@@ -58,6 +86,9 @@ function isMaxBoosterDomain(hostname: string): boolean {
 }
 
 async function getMetaForPath(reqPath: string): Promise<{ title: string; description: string; image: string; url: string } | null> {
+  const cached = metaCache.get(reqPath);
+  if (cached !== undefined) return cached;
+  let result: { title: string; description: string; image: string; url: string } | null = null;
   try {
     const beatMatch = reqPath.match(/^\/marketplace\/beat\/(\d+)/);
     if (beatMatch) {
@@ -65,7 +96,7 @@ async function getMetaForPath(reqPath: string): Promise<{ title: string; descrip
       const [beat] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
       if (beat) {
         const metadata = beat.metadata as Record<string, any> | null;
-        return {
+        result = {
           title: `${beat.title} - Beat on Max Booster Marketplace`,
           description: `${beat.title} by ${beat.sellerName || 'Producer'} | ${metadata?.genre || 'Beat'} | ${metadata?.bpm ? metadata.bpm + ' BPM' : ''} | $${beat.price || '0'} | License and download on Max Booster`,
           image: beat.artworkUrl || `${SITE_URL}/og-image.png`,
@@ -74,22 +105,24 @@ async function getMetaForPath(reqPath: string): Promise<{ title: string; descrip
       }
     }
 
-    const storefrontMatch = reqPath.match(/^\/storefront\/([^/]+)/);
-    if (storefrontMatch) {
-      const slug = storefrontMatch[1];
-      const [store] = await db.select().from(storefronts).where(eq(storefronts.slug, slug)).limit(1);
-      if (store) {
-        return {
-          title: `${store.displayName || store.slug} - Producer Storefront on Max Booster`,
-          description: store.bio || `Browse beats and music from ${store.displayName || store.slug} on Max Booster Marketplace`,
-          image: store.bannerUrl || store.avatarUrl || `${SITE_URL}/og-image.png`,
-          url: `${SITE_URL}/storefront/${slug}`,
-        };
+    if (!result) {
+      const storefrontMatch = reqPath.match(/^\/storefront\/([^/]+)/);
+      if (storefrontMatch) {
+        const slug = storefrontMatch[1];
+        const [store] = await db.select().from(storefronts).where(eq(storefronts.slug, slug)).limit(1);
+        if (store) {
+          result = {
+            title: `${store.displayName || store.slug} - Producer Storefront on Max Booster`,
+            description: store.bio || `Browse beats and music from ${store.displayName || store.slug} on Max Booster Marketplace`,
+            image: store.bannerUrl || store.avatarUrl || `${SITE_URL}/og-image.png`,
+            url: `${SITE_URL}/storefront/${slug}`,
+          };
+        }
       }
     }
 
-    if (reqPath === '/marketplace') {
-      return {
+    if (!result && reqPath === '/marketplace') {
+      result = {
         title: 'Beat Marketplace - Max Booster',
         description: 'Browse and license beats from top producers. Find the perfect beat for your next hit with advanced AI-powered discovery, instant licensing, and secure payments.',
         image: `${SITE_URL}/og-image.png`,
@@ -99,7 +132,8 @@ async function getMetaForPath(reqPath: string): Promise<{ title: string; descrip
   } catch (error) {
     // Metadata fetch failed - continue with default meta
   }
-  return null;
+  metaCache.set(reqPath, result);
+  return result;
 }
 
 function escapeHtml(str: string): string {
