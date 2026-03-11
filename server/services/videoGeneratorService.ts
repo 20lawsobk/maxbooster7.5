@@ -387,12 +387,14 @@ async function renderWithPython(
     });
 
     let ffErr = '';
+    let pyErr = '';
     let rejected = false;
     const doReject = (err: Error) => { if (!rejected) { rejected = true; reject(err); } };
 
     ffmpeg.stderr.on('data', (d: Buffer) => { ffErr += d.toString(); });
     python.stderr.on('data', (d: Buffer) => {
       const msg = d.toString();
+      pyErr += msg;
       if (!msg.includes('RuntimeWarning')) logger.debug('[FrameGen]', msg.trim());
     });
 
@@ -404,7 +406,13 @@ async function renderWithPython(
       try { python.stdout.unpipe(ffmpeg.stdin); } catch {}
       try { ffmpeg.stdin.destroy(); } catch {}
       if (code === 0) resolve();
-      else doReject(new Error(`FFmpeg exited ${code}: ${ffErr.slice(-300)}`));
+      else {
+        const ffErrSnip = ffErr.slice(-1000);
+        const pyErrSnip = pyErr.slice(-200).trim();
+        logger.error(`[VideoGen] FFmpeg stderr tail: ${ffErrSnip}`);
+        if (pyErrSnip) logger.error(`[VideoGen] Python stderr tail: ${pyErrSnip}`);
+        doReject(new Error(`FFmpeg exited ${code}: ${ffErrSnip}`));
+      }
     });
 
     python.on('close', (code) => {
@@ -444,7 +452,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
         `:x=(w-text_w)/2:y=(h-text_h)/4:alpha='min(1\\,t*3)'`
       );
       textVfParts.push(
-        `drawbox=x=(w-w*0.5)/2:y=h*0.42:w=w*0.5:h=4:color=${style.ac}:t=fill` +
+        `drawbox=x=iw/4:y=ih*0.42:w=iw/2:h=4:color=${style.ac}:t=fill` +
         `:enable='gte(t\\,0.4)'`
       );
       break;
