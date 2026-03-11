@@ -23,7 +23,17 @@ Sentry.init({
   },
 });
 
+// Pipe/stream errors (EPIPE, ECONNRESET, ECONNABORTED) are non-fatal — they occur
+// when a client disconnects mid-stream or an FFmpeg/child process exits while
+// Node.js is still writing to it. Log them as warnings and continue.
+const NON_FATAL_CODES = new Set(['EPIPE', 'ECONNRESET', 'ECONNABORTED']);
+
 process.on('uncaughtException', (err) => {
+  const code = (err as NodeJS.ErrnoException).code;
+  if (code && NON_FATAL_CODES.has(code)) {
+    logger.warn({ err, type: 'non-fatal-uncaughtException', code }, `Non-fatal ${code}: ${err.message}`);
+    return;
+  }
   logger.error({ err, type: 'uncaughtException' }, `FATAL uncaughtException: ${err.message}`);
   if (isProduction) Sentry.captureException(err);
   Sentry.close(2000).finally(() => process.exit(1));
