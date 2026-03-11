@@ -260,6 +260,25 @@ const TEMPLATE_STYLES: Record<string, TemplateStyle> = {
 };
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Strip characters that can break FFmpeg's filter option parser from video overlay text.
+ * Applied BEFORE escFFmpeg. Removes: URLs, hashtags, @mentions, emoji, non-ASCII,
+ * single quotes/apostrophes, and pipe chars. Collapses extra whitespace.
+ */
+function sanitizeVideoText(text: string, maxLen = 120): string {
+  const clean = text
+    .replace(/https?:\/\/\S+/g, '')           // strip URLs
+    .replace(/#\w+/g, '')                       // strip hashtags
+    .replace(/@\w+/g, '')                       // strip @mentions
+    .replace(/[^\x00-\x7F]/g, '')              // strip non-ASCII (emoji, Unicode)
+    .replace(/['"]/g, '')                       // strip single/double quotes (filter breakers)
+    .replace(/[|]/g, '-')                       // replace pipes with dashes
+    .replace(/\s+/g, ' ')                       // collapse whitespace
+    .trim();
+  return clean.length > maxLen ? clean.slice(0, maxLen).trim() : clean;
+}
+
 function escFFmpeg(text: string): string {
   return text
     .replace(/\\/g, '\\\\')
@@ -362,6 +381,8 @@ async function renderWithPython(
     : '';
   const vf = `${scaleFilter}format=yuv420p,${textVfParts.join(',')}`;
 
+  logger.debug('[VideoGen] vf filter string:', vf);
+
   return new Promise<void>((resolve, reject) => {
     const python = spawn('python3', [FRAME_GENERATOR_PATH, pythonCfg]);
     const ffmpeg = spawn(FFMPEG, [
@@ -437,7 +458,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
   textVfParts.push(`drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style.ac}@0.28:t=fill`);
 
   if (artistName) {
-    const at = escFFmpeg(artistName.toUpperCase());
+    const at = escFFmpeg(sanitizeVideoText(artistName).toUpperCase());
     textVfParts.push(
       `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=${style.ac}:fontsize=${Math.floor(bs * 0.62)}` +
       `:x=(w-text_w)/2:y=h*0.05:alpha='min(1\\,t*4)'`
@@ -446,7 +467,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
 
   switch (spec.type) {
     case 'hook': {
-      const ht = escFFmpeg(wrap(primaryText, mc));
+      const ht = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc));
       textVfParts.push(
         `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style.tc}:fontsize=${hs}` +
         `:x=(w-text_w)/2:y=(h-text_h)/4:alpha='min(1\\,t*3)'`
@@ -458,13 +479,13 @@ async function renderScene(spec: SceneSpec): Promise<void> {
       break;
     }
     case 'body': {
-      const bt = escFFmpeg(wrap(primaryText, mc + 4));
+      const bt = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 4));
       textVfParts.push(
         `drawtext=fontfile=${font}:text='${bt}':fontcolor=${style.tc}:fontsize=${bs}` +
         `:x=(w-text_w)/2:y=(h-text_h)/2:alpha='min(1\\,t*3)'`
       );
       if (secondaryText) {
-        const st = escFFmpeg(wrap(secondaryText, mc + 8));
+        const st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 8));
         textVfParts.push(
           `drawtext=fontfile=${FONTS.regular}:text='${st}':fontcolor=${style.tc}@0.70:fontsize=${Math.floor(bs * 0.72)}` +
           `:x=(w-text_w)/2:y=h*0.66:alpha='min(1\\,max(0\\,(t-0.4)*3))'`
@@ -476,7 +497,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
       const boxW = Math.floor(width * 0.82);
       const boxX = Math.floor((width - boxW) / 2);
       const boxY = Math.floor(height * 0.68);
-      const ct   = escFFmpeg(wrap(primaryText, mc + 2));
+      const ct   = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 2));
       textVfParts.push(
         `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${cs + 44}:color=${style.cta_bg}@0.92:t=fill` +
         `:enable='gte(t\\,0.2)'`
@@ -490,7 +511,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
         `:x=(w-text_w)/2:y=h*0.70:alpha='min(1\\,t*5)'`
       );
       if (secondaryText) {
-        const st = escFFmpeg(wrap(secondaryText, mc + 4));
+        const st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 4));
         textVfParts.push(
           `drawtext=fontfile=${FONTS.regular}:text='${st}':fontcolor=${style.tc}:fontsize=${bs}` +
           `:x=(w-text_w)/2:y=(h-text_h)/2:alpha='min(1\\,max(0\\,(t-0.3)*3))'`
@@ -802,11 +823,11 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
       vfParts.push(`drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style.ac}@0.28:t=fill`);
 
       if (opts.artist_name) {
-        const at = escFFmpeg(opts.artist_name.toUpperCase());
+        const at = escFFmpeg(sanitizeVideoText(opts.artist_name).toUpperCase());
         vfParts.push(`drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=${style.ac}:fontsize=${Math.floor(bs * 0.62)}:x=(w-text_w)/2:y=h*0.05`);
       }
 
-      const ht = escFFmpeg(wrap(hook, mc));
+      const ht = escFFmpeg(wrap(sanitizeVideoText(hook), mc));
       vfParts.push(
         `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style.tc}:fontsize=${hs}` +
         `:x=(w-text_w)/2:y=(h-text_h)/4` +
@@ -814,7 +835,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
         `:alpha='if(lt(t\\,0.8)\\,min(1\\,(t-0.3)*2)\\,if(gt(t\\,${(hookEnd-0.5).toFixed(1)})\\,max(0\\,(${hookEnd.toFixed(1)}-t)*2)\\,1))'`
       );
 
-      const bt = escFFmpeg(wrap(body, mc));
+      const bt = escFFmpeg(wrap(sanitizeVideoText(body), mc));
       vfParts.push(
         `drawtext=fontfile=${FONTS.regular}:text='${bt}':fontcolor=${style.tc}:fontsize=${bs}` +
         `:x=(w-text_w)/2:y=(h-text_h)/2` +
@@ -823,7 +844,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
       );
 
       vfParts.push(`drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${cs + 44}:color=${style.cta_bg}@0.90:t=fill:enable='between(t\\,${ctaStart.toFixed(1)}\\,${totalDur})'`);
-      const ct = escFFmpeg(wrap(cta, mc));
+      const ct = escFFmpeg(wrap(sanitizeVideoText(cta), mc));
       vfParts.push(
         `drawtext=fontfile=${font}:text='${ct}':fontcolor=white:fontsize=${cs}` +
         `:x=(w-text_w)/2:y=h*0.72` +
