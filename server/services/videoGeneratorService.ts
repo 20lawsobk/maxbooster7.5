@@ -269,6 +269,7 @@ function escFFmpeg(text: string): string {
     .replace(/\[/g, '\\[')
     .replace(/\]/g, '\\]')
     .replace(/,/g, '\\,')
+    .replace(/%/g, '%%')   // FFmpeg drawtext uses % for format specifiers (e.g. %{pts})
     .replace(/\n/g, '\\n');
 }
 
@@ -719,11 +720,11 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
       const ctaPath  = tempPath('cta');
       tempFiles.push(hookPath, bodyPath, ctaPath);
 
-      await Promise.all([
-        renderScene({ type: 'hook', primaryText: hook, artistName: opts.artist_name, duration: sceneDurations[0], style, width, height, outPath: hookPath, genre, scene_prompt: scenePrompt }),
-        renderScene({ type: 'body', primaryText: body, artistName: opts.artist_name, duration: sceneDurations[1], style, width, height, outPath: bodyPath, genre, scene_prompt: scenePrompt }),
-        renderScene({ type: 'cta',  primaryText: cta,  secondaryText: body, artistName: opts.artist_name, duration: sceneDurations[2], style, width, height, outPath: ctaPath, genre, scene_prompt: scenePrompt }),
-      ]);
+      // Render scenes sequentially — parallel Python processes each allocate ~180MB of
+      // numpy frame buffers (540×960×RGB24×30fps×Ns) and OOM-kill each other on Replit.
+      await renderScene({ type: 'hook', primaryText: hook, artistName: opts.artist_name, duration: sceneDurations[0], style, width, height, outPath: hookPath, genre, scene_prompt: scenePrompt });
+      await renderScene({ type: 'body', primaryText: body, artistName: opts.artist_name, duration: sceneDurations[1], style, width, height, outPath: bodyPath, genre, scene_prompt: scenePrompt });
+      await renderScene({ type: 'cta',  primaryText: cta,  secondaryText: body, artistName: opts.artist_name, duration: sceneDurations[2], style, width, height, outPath: ctaPath, genre, scene_prompt: scenePrompt });
 
       // ── Combine with xfade ──
       const combinedPath = tempPath('combined');
