@@ -190,43 +190,116 @@ function getBgVfPrefix(bgType: BgType, bg: string, width: number, height: number
 }
 
 // ── AUDIO ENGINE ──────────────────────────────────────────────────────────────
-// Genre-calibrated procedural chord tones — no external audio files required.
-const AUDIO_PROFILES: Record<string, { expr: string; filters: string }> = {
+// Three-layer synthesis per genre: sub bass + beat pulse + chord pad.
+// Each layer is a separate FFmpeg lavfi aevalsrc input, mixed via amix,
+// then shaped with acompressor + EQ for a music-like result.
+//
+// Formula guide:
+//   bass  — constant sub-bass foundation (50–100 Hz, rich harmonics)
+//   beat  — amplitude-modulated kick: pow(abs(sin(PI*bps*t)),pw) gates the
+//            bass carrier to create a punchy beat at the song's BPM
+//   pad   — chord/melody layer (mid-range harmony, lower volume)
+//   bps   — beats per second (BPM / 60)
+//   pw    — sharpness exponent for the beat envelope (higher = punchier)
+//   filters — per-genre EQ + compression chain applied after amix
+
+interface AudioProfile {
+  bass: string;
+  beat: string;
+  pad: string;
+  bps: number;
+  pw: number;
+  filters: string;
+}
+
+const AUDIO_PROFILES: Record<string, AudioProfile> = {
   'hip-hop': {
-    expr: '0.12*sin(2*PI*55*t)+0.08*sin(2*PI*110*t)+0.05*sin(2*PI*165*t)+0.03*sin(2*PI*220*t)',
-    filters: 'lowpass=f=800,bass=g=4,volume=0.70,dynaudnorm',
+    // 90 BPM — deep 808 sub, punchy kick envelope, Cm chord pad
+    bps: 1.5, pw: 8,
+    bass: '0.22*sin(2*PI*55*t)+0.14*sin(2*PI*110*t)+0.07*sin(2*PI*165*t)+0.04*sin(2*PI*220*t)',
+    beat: '0.40*pow(abs(sin(PI*1.5*t)),8)*sin(2*PI*55*t)+0.12*pow(abs(sin(PI*3.0*t)),10)*sin(2*PI*220*t)',
+    pad:  '0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*311.13*t)+0.04*sin(2*PI*392.00*t)+0.03*sin(2*PI*523.25*t)',
+    filters: 'equalizer=f=60:width_type=o:width=1.5:g=5,equalizer=f=200:width_type=o:width=2:g=3,lowpass=f=8000,acompressor=threshold=0.3:ratio=5:attack=3:release=40,bass=g=4,dynaudnorm=p=0.95',
+  },
+  'trap': {
+    // 70 BPM half-time — booming 808, tight hi-hat rolls, minimal chord
+    bps: 1.167, pw: 10,
+    bass: '0.28*sin(2*PI*41.2*t)+0.18*sin(2*PI*82.4*t)+0.08*sin(2*PI*123.6*t)+0.04*sin(2*PI*164.8*t)',
+    beat: '0.50*pow(abs(sin(PI*1.167*t)),10)*sin(2*PI*41.2*t)+0.08*pow(abs(sin(PI*7.0*t)),14)*(sin(2*PI*6000*t)+sin(2*PI*6273*t))',
+    pad:  '0.04*sin(2*PI*220*t)+0.03*sin(2*PI*261.63*t)+0.025*sin(2*PI*329.63*t)',
+    filters: 'equalizer=f=45:width_type=o:width=1:g=7,equalizer=f=160:width_type=o:width=2:g=4,lowpass=f=6000,acompressor=threshold=0.25:ratio=8:attack=1:release=25,bass=g=6,dynaudnorm=p=0.95',
   },
   'r&b': {
-    expr: '0.10*sin(2*PI*110*t)+0.08*sin(2*PI*138.59*t)+0.07*sin(2*PI*164.81*t)+0.04*sin(2*PI*220*t)',
-    filters: 'lowpass=f=1200,treble=g=-2,volume=0.70,dynaudnorm',
+    // 80 BPM — smooth Am7 chord, soft kick, silky pad
+    bps: 1.333, pw: 6,
+    bass: '0.18*sin(2*PI*110*t)+0.12*sin(2*PI*138.59*t)+0.09*sin(2*PI*164.81*t)+0.06*sin(2*PI*220*t)+0.04*sin(2*PI*277.18*t)',
+    beat: '0.30*pow(abs(sin(PI*1.333*t)),6)*sin(2*PI*110*t)+0.08*pow(abs(sin(PI*2.667*t)),8)*sin(2*PI*330*t)',
+    pad:  '0.06*sin(2*PI*220*t)+0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.04*sin(2*PI*440*t)',
+    filters: 'equalizer=f=80:width_type=o:width=2:g=3,equalizer=f=3000:width_type=o:width=3:g=-2,treble=g=-1,lowpass=f=12000,acompressor=threshold=0.35:ratio=4:attack=5:release=60,dynaudnorm=p=0.90',
   },
   'pop': {
-    expr: '0.08*sin(2*PI*261.63*t)+0.07*sin(2*PI*329.63*t)+0.06*sin(2*PI*392.00*t)+0.04*sin(2*PI*523.25*t)',
-    filters: 'treble=g=3,volume=0.75,dynaudnorm',
+    // 120 BPM — bright C major, tight 4-on-the-floor kick, sparkly pad
+    bps: 2.0, pw: 8,
+    bass: '0.18*sin(2*PI*65.41*t)+0.12*sin(2*PI*130.81*t)+0.07*sin(2*PI*196*t)+0.04*sin(2*PI*261.63*t)',
+    beat: '0.38*pow(abs(sin(PI*2.0*t)),8)*sin(2*PI*65.41*t)+0.10*pow(abs(sin(PI*4.0*t)),10)*sin(2*PI*392*t)',
+    pad:  '0.07*sin(2*PI*261.63*t)+0.06*sin(2*PI*329.63*t)+0.06*sin(2*PI*392*t)+0.04*sin(2*PI*523.25*t)+0.03*sin(2*PI*659.26*t)',
+    filters: 'equalizer=f=100:width_type=o:width=2:g=2,treble=g=3,equalizer=f=8000:width_type=o:width=2:g=2,acompressor=threshold=0.3:ratio=4:attack=3:release=35,dynaudnorm=p=0.92',
   },
   'electronic': {
-    expr: '0.15*sin(2*PI*55*t)+0.10*sin(2*PI*110*t)+0.05*sin(2*PI*440*t)+0.03*sin(2*PI*880*t)',
-    filters: 'lowpass=f=2000,bass=g=6,treble=g=4,volume=0.80,dynaudnorm',
+    // 128 BPM EDM — pounding kick, saw-like bass, supersawpad chord
+    bps: 2.133, pw: 10,
+    bass: '0.24*sin(2*PI*55*t)+0.16*sin(2*PI*110*t)+0.10*sin(2*PI*165*t)+0.06*sin(2*PI*220*t)+0.03*sin(2*PI*275*t)',
+    beat: '0.50*pow(abs(sin(PI*2.133*t)),10)*sin(2*PI*55*t)+0.12*pow(abs(sin(PI*2.133*t)),12)*(sin(2*PI*440*t)+sin(2*PI*443*t))',
+    pad:  '0.05*(sin(2*PI*440*t)+sin(2*PI*441.5*t))+0.04*(sin(2*PI*523.25*t)+sin(2*PI*524.8*t))+0.03*sin(2*PI*659.26*t)',
+    filters: 'equalizer=f=60:width_type=o:width=1:g=6,treble=g=4,equalizer=f=200:width_type=o:width=2:g=3,acompressor=threshold=0.2:ratio=8:attack=1:release=20,bass=g=5,dynaudnorm=p=0.95',
   },
   'afrobeats': {
-    expr: '0.10*sin(2*PI*220*t)+0.08*sin(2*PI*261.63*t)+0.07*sin(2*PI*293.66*t)+0.05*sin(2*PI*349.23*t)',
-    filters: 'lowpass=f=1500,volume=0.75,dynaudnorm',
+    // 95 BPM — warm Am tonality, syncopated feel, tropical percussive pad
+    bps: 1.583, pw: 7,
+    bass: '0.20*sin(2*PI*110*t)+0.14*sin(2*PI*146.83*t)+0.10*sin(2*PI*164.81*t)+0.06*sin(2*PI*220*t)',
+    beat: '0.35*pow(abs(sin(PI*1.583*t)),7)*sin(2*PI*110*t)+0.12*pow(abs(sin(PI*3.167*t)),8)*sin(2*PI*349.23*t)',
+    pad:  '0.06*sin(2*PI*220*t)+0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.04*sin(2*PI*440*t)',
+    filters: 'equalizer=f=90:width_type=o:width=2:g=4,treble=g=2,lowpass=f=14000,acompressor=threshold=0.32:ratio=4:attack=4:release=45,dynaudnorm=p=0.90',
   },
   'latin': {
-    expr: '0.09*sin(2*PI*196*t)+0.08*sin(2*PI*246.94*t)+0.07*sin(2*PI*293.66*t)+0.05*sin(2*PI*392*t)',
-    filters: 'treble=g=2,volume=0.75,dynaudnorm',
+    // 100 BPM — bright Dm tonality, salsa-inflected rhythm, treble-forward
+    bps: 1.667, pw: 7,
+    bass: '0.18*sin(2*PI*73.42*t)+0.13*sin(2*PI*146.83*t)+0.09*sin(2*PI*195.99*t)+0.05*sin(2*PI*293.66*t)',
+    beat: '0.36*pow(abs(sin(PI*1.667*t)),7)*sin(2*PI*73.42*t)+0.14*pow(abs(sin(PI*3.333*t)),9)*sin(2*PI*392*t)',
+    pad:  '0.06*sin(2*PI*293.66*t)+0.05*sin(2*PI*349.23*t)+0.04*sin(2*PI*440*t)+0.04*sin(2*PI*587.33*t)',
+    filters: 'treble=g=3,equalizer=f=100:width_type=o:width=2:g=3,lowpass=f=16000,acompressor=threshold=0.3:ratio=4:attack=3:release=35,dynaudnorm=p=0.92',
   },
   'country': {
-    expr: '0.08*sin(2*PI*196*t)+0.07*sin(2*PI*246.94*t)+0.06*sin(2*PI*329.63*t)+0.04*sin(2*PI*392*t)',
-    filters: 'treble=g=2,lowpass=f=3000,volume=0.70,dynaudnorm',
+    // 90 BPM — G major, warm twangy chord, steady kick
+    bps: 1.5, pw: 6,
+    bass: '0.16*sin(2*PI*98*t)+0.12*sin(2*PI*130.81*t)+0.08*sin(2*PI*196*t)+0.05*sin(2*PI*261.63*t)',
+    beat: '0.32*pow(abs(sin(PI*1.5*t)),6)*sin(2*PI*98*t)+0.10*pow(abs(sin(PI*3.0*t)),7)*sin(2*PI*392*t)',
+    pad:  '0.06*sin(2*PI*196*t)+0.05*sin(2*PI*246.94*t)+0.05*sin(2*PI*293.66*t)+0.04*sin(2*PI*392*t)',
+    filters: 'treble=g=2,equalizer=f=120:width_type=o:width=2:g=2,lowpass=f=12000,acompressor=threshold=0.35:ratio=3:attack=5:release=50,dynaudnorm=p=0.88',
   },
   'rock': {
-    expr: '0.12*sin(2*PI*82.41*t)+0.09*sin(2*PI*110*t)+0.07*sin(2*PI*164.81*t)+0.05*sin(2*PI*220*t)',
-    filters: 'bass=g=5,treble=g=3,volume=0.80,dynaudnorm',
+    // 120 BPM — power chord E5, distorted edge via harmonics, driving beat
+    bps: 2.0, pw: 8,
+    bass: '0.22*sin(2*PI*82.41*t)+0.15*sin(2*PI*164.81*t)+0.09*sin(2*PI*247.22*t)+0.06*sin(2*PI*329.63*t)+0.04*sin(2*PI*412.04*t)',
+    beat: '0.45*pow(abs(sin(PI*2.0*t)),8)*sin(2*PI*82.41*t)+0.12*pow(abs(sin(PI*4.0*t)),10)*(sin(2*PI*440*t)+sin(2*PI*880*t))*0.5',
+    pad:  '0.05*(sin(2*PI*329.63*t)+sin(2*PI*493.88*t)+sin(2*PI*659.26*t))',
+    filters: 'bass=g=5,treble=g=3,equalizer=f=250:width_type=o:width=2:g=3,equalizer=f=5000:width_type=o:width=2:g=2,acompressor=threshold=0.25:ratio=6:attack=2:release=30,dynaudnorm=p=0.95',
+  },
+  'jazz': {
+    // 120 BPM swing — Dm7 chord, walking-bass feel, mellow
+    bps: 2.0, pw: 5,
+    bass: '0.15*sin(2*PI*73.42*t)+0.11*sin(2*PI*110*t)+0.08*sin(2*PI*146.83*t)+0.06*sin(2*PI*220*t)',
+    beat: '0.25*pow(abs(sin(PI*2.0*t)),5)*sin(2*PI*73.42*t)+0.08*pow(abs(sin(PI*3.0*t)),6)*sin(2*PI*349.23*t)',
+    pad:  '0.05*sin(2*PI*220*t)+0.04*sin(2*PI*261.63*t)+0.04*sin(2*PI*311.13*t)+0.04*sin(2*PI*392*t)+0.03*sin(2*PI*466.16*t)',
+    filters: 'equalizer=f=150:width_type=o:width=2:g=2,treble=g=-1,lowpass=f=10000,acompressor=threshold=0.4:ratio=3:attack=8:release=80,dynaudnorm=p=0.85',
   },
   default: {
-    expr: '0.08*sin(2*PI*110*t)+0.06*sin(2*PI*138.59*t)+0.05*sin(2*PI*164.81*t)+0.03*sin(2*PI*220*t)',
-    filters: 'lowpass=f=2000,volume=0.65,dynaudnorm',
+    // 100 BPM — neutral Am chord, gentle beat, balanced
+    bps: 1.667, pw: 7,
+    bass: '0.18*sin(2*PI*110*t)+0.12*sin(2*PI*138.59*t)+0.08*sin(2*PI*164.81*t)+0.05*sin(2*PI*220*t)',
+    beat: '0.32*pow(abs(sin(PI*1.667*t)),7)*sin(2*PI*110*t)+0.09*pow(abs(sin(PI*3.333*t)),8)*sin(2*PI*330*t)',
+    pad:  '0.05*sin(2*PI*220*t)+0.04*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.03*sin(2*PI*440*t)',
+    filters: 'equalizer=f=80:width_type=o:width=2:g=3,lowpass=f=12000,acompressor=threshold=0.3:ratio=4:attack=4:release=40,dynaudnorm=p=0.90',
   },
 };
 
@@ -587,51 +660,94 @@ async function combineScenes(
 }
 
 // ── AUDIO + LOGO FINALIZER ────────────────────────────────────────────────────
+// Builds a 3-layer synthesized beat (bass + beat + pad), mixes the layers,
+// applies genre EQ + compressor, and optionally mixes in a user-supplied
+// audio file (at 0.85 volume) alongside the procedural bed (at 0.20 volume).
 async function applyAudioAndLogo(
   videoPath: string,
   outputPath: string,
   totalDur: number,
-  audioProfile: { expr: string; filters: string },
+  audioProfile: AudioProfile,
   logoPath?: string,
+  userAudioPath?: string,
 ): Promise<void> {
-  const audioSrc = `aevalsrc=${audioProfile.expr}:s=44100:c=stereo`;
-  const fadeDur  = Math.min(1.5, totalDur * 0.12);
-  const fadeOut  = Math.max(0, totalDur - fadeDur);
+  const fadeDur = Math.min(1.5, totalDur * 0.10);
+  const fadeOut = Math.max(0, totalDur - fadeDur);
+  const fd      = fadeDur.toFixed(2);
+  const fo      = fadeOut.toFixed(2);
 
-  if (logoPath && existsSync(logoPath)) {
-    // ── video + audio + logo overlay ──
-    const ffmpegArgs = [
-      '-y',
-      '-i', videoPath,
-      '-f', 'lavfi', '-i', audioSrc,
-      '-i', logoPath,
-      '-filter_complex',
-        `[2:v]scale=iw*0.14:ih*0.14[logo];` +
-        `[0:v][logo]overlay=W-w-24:24:enable='between(t\\,0\\,${totalDur})'[vout];` +
-        `[1:a]${audioProfile.filters},afade=t=in:st=0:d=${fadeDur},afade=t=out:st=${fadeOut.toFixed(2)}:d=${fadeDur}[aout]`,
-      '-map', '[vout]', '-map', '[aout]',
-      '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
-      '-c:a', 'aac', '-b:a', '128k',
-      '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
-      '-t', String(totalDur),
-      outputPath,
-    ];
-    await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 90_000 });
-  } else {
-    // ── video + audio only ──
-    const ffmpegArgs = [
-      '-y',
-      '-i', videoPath,
-      '-f', 'lavfi', '-i', audioSrc,
-      '-map', '0:v', '-map', '1:a',
-      '-c:v', 'copy',
-      '-af', `${audioProfile.filters},afade=t=in:st=0:d=${fadeDur},afade=t=out:st=${fadeOut.toFixed(2)}:d=${fadeDur}`,
-      '-c:a', 'aac', '-b:a', '128k',
-      '-t', String(totalDur),
-      outputPath,
-    ];
-    await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 90_000 });
+  // ── Three lavfi sources for layered synthesis ──────────────────────────────
+  const src1 = `aevalsrc=${audioProfile.bass}:s=44100:c=stereo`;
+  const src2 = `aevalsrc=${audioProfile.beat}:s=44100:c=stereo`;
+  const src3 = `aevalsrc=${audioProfile.pad}:s=44100:c=stereo`;
+
+  const hasLogo = !!(logoPath && existsSync(logoPath));
+  const hasUser = !!(userAudioPath && existsSync(userAudioPath));
+
+  // Build input list: [0]=video, [1]=bass, [2]=beat, [3]=pad, [4?]=logo, [5?]=user audio
+  const inputs: string[] = ['-i', videoPath];
+  inputs.push('-f', 'lavfi', '-i', src1);
+  inputs.push('-f', 'lavfi', '-i', src2);
+  inputs.push('-f', 'lavfi', '-i', src3);
+
+  let logoIdx = -1;
+  let userIdx = -1;
+
+  if (hasLogo) {
+    logoIdx = 4;
+    inputs.push('-i', logoPath!);
   }
+  if (hasUser) {
+    userIdx = hasLogo ? 5 : 4;
+    inputs.push('-i', userAudioPath!);
+  }
+
+  // ── filter_complex ─────────────────────────────────────────────────────────
+  // 1) Mix the 3 procedural layers → apply genre EQ/compressor → fade
+  // 2) If user audio provided: mix it (dominant) with procedural bed (ambient)
+  // 3) If logo provided: scale + overlay
+  const parts: string[] = [];
+  const outputLabels: string[] = ['-map', '[vfinal]', '-map', '[afinal]'];
+
+  // Video chain
+  if (hasLogo) {
+    parts.push(
+      `[${logoIdx}:v]scale=iw*0.14:ih*0.14[logo]`,
+      `[0:v][logo]overlay=W-w-24:24:enable='between(t\\,0\\,${totalDur})'[vfinal]`,
+    );
+  } else {
+    parts.push(`[0:v]copy[vfinal]`);
+  }
+
+  // Procedural synth mix (bass=1, beat=2, pad=3)
+  parts.push(`[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1.2 0.9 0.5[synth_raw]`);
+  parts.push(`[synth_raw]${audioProfile.filters},afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[synth]`);
+
+  if (hasUser) {
+    // User audio: normalize + fade, then blend with procedural bed (user dominant)
+    parts.push(
+      `[${userIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
+      `volume=0.88,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
+    );
+    parts.push(`[user_a][synth]amix=inputs=2:normalize=0:weights=1.0 0.22[afinal]`);
+  } else {
+    parts.push(`[synth]volume=1.0[afinal]`);
+  }
+
+  const ffmpegArgs = [
+    '-y',
+    ...inputs,
+    '-filter_complex', parts.join(';'),
+    ...outputLabels,
+    '-c:v', hasLogo ? 'libx264' : 'copy',
+    ...(hasLogo ? ['-preset', 'fast', '-crf', '22', '-pix_fmt', 'yuv420p'] : []),
+    '-c:a', 'aac', '-b:a', '160k',
+    '-movflags', '+faststart',
+    '-t', String(totalDur),
+    outputPath,
+  ];
+
+  await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 90_000 });
 }
 
 // ── PUBLIC INTERFACE ──────────────────────────────────────────────────────────
@@ -650,6 +766,7 @@ export interface VideoGenOptions {
   body?: string;
   cta?: string;
   logo_path?: string;
+  user_audio_path?: string;
   scene_prompt?: string;
   bg_color?: string;
   accent_color?: string;
@@ -773,7 +890,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
       const filename = `video_${randomBytes(6).toString('hex')}.mp4`;
       const finalPath = path.join(OUTPUT_DIR, filename);
       const combinedDur = sceneDurations.reduce((a, b) => a + b, 0) - 2 * 0.5;
-      await applyAudioAndLogo(combinedPath, finalPath, combinedDur, audioProfile, opts.logo_path);
+      await applyAudioAndLogo(combinedPath, finalPath, combinedDur, audioProfile, opts.logo_path, opts.user_audio_path);
 
       const renderMs = Date.now() - renderStart;
       cleanup(...tempFiles);
@@ -868,10 +985,10 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
         await renderWithPython(innerW, innerH, width, height, totalDur, style, genre, vfParts, scenePath, scenePrompt || undefined);
       }
 
-      // Add audio + optional logo
+      // Add audio + optional logo + optional user audio
       const filename = `video_${randomBytes(6).toString('hex')}.mp4`;
       const finalPath = path.join(OUTPUT_DIR, filename);
-      await applyAudioAndLogo(scenePath, finalPath, totalDur, audioProfile, opts.logo_path);
+      await applyAudioAndLogo(scenePath, finalPath, totalDur, audioProfile, opts.logo_path, opts.user_audio_path);
 
       const renderMs = Date.now() - renderStart;
       cleanup(...tempFiles);

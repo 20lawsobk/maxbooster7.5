@@ -64,6 +64,9 @@ export interface ContentResult {
   hook: string;
   body: string;
   cta: string;
+  video_hook?: string;
+  video_body?: string;
+  video_cta?: string;
   visual_spec?: any;
   posting_time?: string;
   processing_time_ms: number;
@@ -80,6 +83,9 @@ export interface MultiPlatformResult {
     hook: string;
     body: string;
     cta: string;
+    video_hook?: string;
+    video_body?: string;
+    video_cta?: string;
     format: string;
     target_audience?: string;
     sourceUrl?: string;
@@ -174,13 +180,16 @@ export class PythonAIService {
     return callAIModel<ScriptResult>('/generate/script', { idea, platform, goal, tone });
   }
 
-  async generateContent(platform: string, topic: string, tone = 'energetic', goal = 'growth', includeHashtags = true, genre?: string): Promise<AIModelResponse<ContentResult>> {
+  async generateContent(platform: string, topic: string, tone = 'energetic', goal = 'growth', includeHashtags = true, genre?: string, artist?: string, track?: string, contentType?: string): Promise<AIModelResponse<ContentResult>> {
     return callAIModel<ContentResult>('/generate/content', {
       platform,
       topic,
       tone,
       goal,
-      genre: genre || undefined,
+      genre:         genre       || undefined,
+      artist:        artist      || undefined,
+      track:         track       || undefined,
+      content_type:  contentType || undefined,
       include_hashtags: includeHashtags,
       include_distribution: true,
     });
@@ -191,18 +200,26 @@ export class PythonAIService {
     topic: string;
     tone?: string;
     goal?: string;
+    genre?: string;
+    artist?: string;
+    track?: string;
+    contentType?: string;
     targetAudience?: string;
     format?: string;
     url?: string;
   }): Promise<AIModelResponse<MultiPlatformResult>> {
     return callAIModel<MultiPlatformResult>('/generate/multi-platform', {
-      platforms: options.platforms,
-      topic: options.topic,
-      tone: options.tone || 'energetic',
-      goal: options.goal || 'growth',
+      platforms:       options.platforms,
+      topic:           options.topic,
+      tone:            options.tone      || 'energetic',
+      goal:            options.goal      || 'growth',
+      genre:           options.genre     || undefined,
+      artist:          options.artist    || undefined,
+      track:           options.track     || undefined,
+      content_type:    options.contentType || undefined,
       target_audience: options.targetAudience,
-      format: options.format || 'text',
-      url: options.url,
+      format:          options.format    || 'text',
+      url:             options.url,
     });
   }
 
@@ -349,6 +366,7 @@ export class PythonAIService {
     platform?: string; aspect_ratio?: string; template?: string;
     duration?: number; artist_name?: string; genre?: string;
     tone?: string; goal?: string; quality?: string;
+    user_audio_path?: string;
   }): Promise<AIModelResponse<{ job_id: string; status: string }>> {
     return callAIModel<{ job_id: string; status: string }>('/generate-video', {
       hook: options.hook || '',
@@ -364,6 +382,7 @@ export class PythonAIService {
       tone: options.tone || 'energetic',
       goal: options.goal || 'growth',
       quality: options.quality || 'cinematic',
+      user_audio_path: options.user_audio_path || undefined,
     });
   }
 

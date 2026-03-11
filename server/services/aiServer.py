@@ -446,19 +446,106 @@ def _build_hashtags(ctx: dict, genre: str) -> list:
     random.shuffle(result)
     return result[:12]
 
-def _gen_content(topic: str, platform: str, tone: str, genre: str) -> dict:
+def _build_video_hook(artist: str, track: str, genre: str, tone: str) -> str:
+    """Short, punchy hook for video overlay — max ~8 words, attention-grabbing."""
+    import random
+    e = _emoji(tone, 0)
+    e2 = _emoji(tone, 2)
+    if track and artist:
+        opts = [
+            f"{e} {track} — out now",
+            f"You need to hear {track} {e}",
+            f"{track} just dropped {e}",
+            f"New {genre or 'music'}: {track} {e}",
+            f"{e2} {track} by {artist}",
+        ]
+    elif track:
+        opts = [
+            f"{e} {track} — out now",
+            f"New drop: {track} {e}",
+            f"Stream {track} now {e}",
+        ]
+    elif artist:
+        opts = [
+            f"{e} New music from {artist}",
+            f"{artist} just dropped {e}",
+            f"Listen to {artist} {e2}",
+        ]
+    else:
+        opts = [
+            f"{e} New music just dropped",
+            f"You gotta hear this {e}",
+            f"{e2} This one hits different",
+        ]
+    return random.choice(opts)
+
+def _build_video_body(artist: str, track: str, genre: str, description: str) -> str:
+    """Concise 1-2 line body for video overlay."""
+    import random
+    parts = []
+    if genre and genre != 'default':
+        parts.append(f"{genre.title()} vibes")
+    if description and len(description) > 10:
+        clean = description[:70].rsplit(' ', 1)[0]
+        parts.append(clean)
+    elif artist and track:
+        parts.append(f"Stream {track} by {artist}")
+    elif artist:
+        parts.append(f"Music by {artist}")
+    if not parts:
+        opts = ["Stream now on all platforms", "Available everywhere", "Out now on all platforms"]
+        return random.choice(opts)
+    return ' — '.join(parts[:2])
+
+def _build_video_cta(content_type: str) -> str:
+    """Short, action-oriented CTA for video overlay."""
+    import random
+    cta_map = {
+        'music':   ["Stream now — link in bio", "Listen now", "Out on all platforms"],
+        'video':   ["Watch now — link in bio", "See the full video", "Link in bio"],
+        'event':   ["Get tickets — link in bio", "RSVP now", "Secure your spot"],
+        'beat':    ["License now — DM me", "Grab the beat — link in bio", "Available now"],
+        'release': ["Stream now — link in bio", "Save this one", "Out on all platforms"],
+        'article': ["Read more — link in bio", "Full story in bio", "Learn more"],
+    }
+    pool = cta_map.get(content_type or 'music', cta_map['music'])
+    return random.choice(pool)
+
+def _gen_content(topic: str, platform: str, tone: str, genre: str,
+                 artist: str = '', track: str = '', content_type: str = '') -> dict:
     """Generate social media content from the user's actual prompt — no hardcoded template phrases."""
-    ctx = _parse_topic(topic)
+    # If we have explicit artist/track, build a clean topic for the parser
+    if artist and track and not topic.startswith('"'):
+        enriched_topic = f'"{track}" by {artist}'
+        if genre and genre != 'default':
+            enriched_topic += f' — {genre}'
+    elif artist and not topic:
+        enriched_topic = f'New music by {artist}'
+    else:
+        enriched_topic = topic
+
+    ctx = _parse_topic(enriched_topic)
+    # Override detected genre if explicitly provided
+    if genre and genre != 'default':
+        ctx['genre'] = genre
+
     hook     = _build_hook(ctx, tone)
     body     = _build_body(ctx)
     cta      = _build_cta(ctx)
     hashtags = _build_hashtags(ctx, genre or ctx.get('genre') or '')
+
+    # Build video-optimized versions (shorter, punchier)
+    video_hook = _build_video_hook(artist, track, genre, tone)
+    video_body = _build_video_body(artist, track, genre, ctx.get('subtitle', ''))
+    video_cta  = _build_video_cta(content_type or ('music' if ctx['is_release'] else 'general'))
+
     caption  = f"{hook}\n\n{body}\n\n{cta}"
     return {
         'success': True, 'platform': platform,
         'caption': caption,
         'content': body, 'hashtags': hashtags,
         'hook': hook, 'body': body, 'cta': cta,
+        'video_hook': video_hook, 'video_body': video_body, 'video_cta': video_cta,
         'posting_time': '7:00 PM', 'processing_time_ms': 50,
     }
 
@@ -634,30 +721,94 @@ def _generate_video_sync(opts: dict) -> dict:
     if r.returncode != 0:
         raise RuntimeError(f'FFmpeg xfade failed (code {r.returncode}): {r.stderr.decode()[-400:]}')
 
-    # ── Add procedural audio ────────────────────────────────────────────────
-    AUDIO_PROFILES = {
-        'hip-hop':    "0.12*sin(2*PI*55*t)+0.08*sin(2*PI*110*t)+0.05*sin(2*PI*165*t)+0.03*sin(2*PI*220*t)",
-        'trap':       "0.15*sin(2*PI*55*t)+0.10*sin(2*PI*110*t)+0.05*sin(2*PI*440*t)+0.03*sin(2*PI*880*t)",
-        'r&b':        "0.10*sin(2*PI*110*t)+0.08*sin(2*PI*138.59*t)+0.07*sin(2*PI*164.81*t)+0.04*sin(2*PI*220*t)",
-        'pop':        "0.08*sin(2*PI*261.63*t)+0.07*sin(2*PI*329.63*t)+0.06*sin(2*PI*392.00*t)+0.04*sin(2*PI*523.25*t)",
-        'electronic': "0.10*sin(2*PI*220*t)+0.08*sin(2*PI*261.63*t)+0.07*sin(2*PI*293.66*t)+0.05*sin(2*PI*349.23*t)",
-        'country':    "0.09*sin(2*PI*196*t)+0.08*sin(2*PI*246.94*t)+0.07*sin(2*PI*293.66*t)+0.05*sin(2*PI*392*t)",
-        'rock':       "0.12*sin(2*PI*82.41*t)+0.09*sin(2*PI*110*t)+0.07*sin(2*PI*164.81*t)+0.05*sin(2*PI*220*t)",
-        'default':    "0.08*sin(2*PI*110*t)+0.06*sin(2*PI*138.59*t)+0.05*sin(2*PI*164.81*t)+0.03*sin(2*PI*220*t)",
+    # ── Add procedural audio (3-layer synthesis) ─────────────────────────────
+    # Each genre has: bass (sub foundation), beat (amplitude-modulated kick),
+    # pad (chord harmony). All three are mixed via amix then EQ + compressed.
+    AUDIO_PROFILES_3L = {
+        'hip-hop': {
+            'bass': '0.22*sin(2*PI*55*t)+0.14*sin(2*PI*110*t)+0.07*sin(2*PI*165*t)+0.04*sin(2*PI*220*t)',
+            'beat': '0.40*pow(abs(sin(PI*1.5*t)),8)*sin(2*PI*55*t)+0.12*pow(abs(sin(PI*3.0*t)),10)*sin(2*PI*220*t)',
+            'pad':  '0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*311.13*t)+0.04*sin(2*PI*392.00*t)+0.03*sin(2*PI*523.25*t)',
+            'filters': 'equalizer=f=60:width_type=o:width=1.5:g=5,equalizer=f=200:width_type=o:width=2:g=3,lowpass=f=8000,acompressor=threshold=0.3:ratio=5:attack=3:release=40,bass=g=4,dynaudnorm=p=0.95',
+        },
+        'trap': {
+            'bass': '0.28*sin(2*PI*41.2*t)+0.18*sin(2*PI*82.4*t)+0.08*sin(2*PI*123.6*t)+0.04*sin(2*PI*164.8*t)',
+            'beat': '0.50*pow(abs(sin(PI*1.167*t)),10)*sin(2*PI*41.2*t)+0.08*pow(abs(sin(PI*7.0*t)),14)*(sin(2*PI*6000*t)+sin(2*PI*6273*t))',
+            'pad':  '0.04*sin(2*PI*220*t)+0.03*sin(2*PI*261.63*t)+0.025*sin(2*PI*329.63*t)',
+            'filters': 'equalizer=f=45:width_type=o:width=1:g=7,equalizer=f=160:width_type=o:width=2:g=4,lowpass=f=6000,acompressor=threshold=0.25:ratio=8:attack=1:release=25,bass=g=6,dynaudnorm=p=0.95',
+        },
+        'r&b': {
+            'bass': '0.18*sin(2*PI*110*t)+0.12*sin(2*PI*138.59*t)+0.09*sin(2*PI*164.81*t)+0.06*sin(2*PI*220*t)+0.04*sin(2*PI*277.18*t)',
+            'beat': '0.30*pow(abs(sin(PI*1.333*t)),6)*sin(2*PI*110*t)+0.08*pow(abs(sin(PI*2.667*t)),8)*sin(2*PI*330*t)',
+            'pad':  '0.06*sin(2*PI*220*t)+0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.04*sin(2*PI*440*t)',
+            'filters': 'equalizer=f=80:width_type=o:width=2:g=3,equalizer=f=3000:width_type=o:width=3:g=-2,treble=g=-1,lowpass=f=12000,acompressor=threshold=0.35:ratio=4:attack=5:release=60,dynaudnorm=p=0.90',
+        },
+        'pop': {
+            'bass': '0.18*sin(2*PI*65.41*t)+0.12*sin(2*PI*130.81*t)+0.07*sin(2*PI*196*t)+0.04*sin(2*PI*261.63*t)',
+            'beat': '0.38*pow(abs(sin(PI*2.0*t)),8)*sin(2*PI*65.41*t)+0.10*pow(abs(sin(PI*4.0*t)),10)*sin(2*PI*392*t)',
+            'pad':  '0.07*sin(2*PI*261.63*t)+0.06*sin(2*PI*329.63*t)+0.06*sin(2*PI*392*t)+0.04*sin(2*PI*523.25*t)+0.03*sin(2*PI*659.26*t)',
+            'filters': 'equalizer=f=100:width_type=o:width=2:g=2,treble=g=3,equalizer=f=8000:width_type=o:width=2:g=2,acompressor=threshold=0.3:ratio=4:attack=3:release=35,dynaudnorm=p=0.92',
+        },
+        'electronic': {
+            'bass': '0.24*sin(2*PI*55*t)+0.16*sin(2*PI*110*t)+0.10*sin(2*PI*165*t)+0.06*sin(2*PI*220*t)+0.03*sin(2*PI*275*t)',
+            'beat': '0.50*pow(abs(sin(PI*2.133*t)),10)*sin(2*PI*55*t)+0.12*pow(abs(sin(PI*2.133*t)),12)*(sin(2*PI*440*t)+sin(2*PI*443*t))',
+            'pad':  '0.05*(sin(2*PI*440*t)+sin(2*PI*441.5*t))+0.04*(sin(2*PI*523.25*t)+sin(2*PI*524.8*t))+0.03*sin(2*PI*659.26*t)',
+            'filters': 'equalizer=f=60:width_type=o:width=1:g=6,treble=g=4,equalizer=f=200:width_type=o:width=2:g=3,acompressor=threshold=0.2:ratio=8:attack=1:release=20,bass=g=5,dynaudnorm=p=0.95',
+        },
+        'rock': {
+            'bass': '0.22*sin(2*PI*82.41*t)+0.15*sin(2*PI*164.81*t)+0.09*sin(2*PI*247.22*t)+0.06*sin(2*PI*329.63*t)+0.04*sin(2*PI*412.04*t)',
+            'beat': '0.45*pow(abs(sin(PI*2.0*t)),8)*sin(2*PI*82.41*t)+0.12*pow(abs(sin(PI*4.0*t)),10)*(sin(2*PI*440*t)+sin(2*PI*880*t))*0.5',
+            'pad':  '0.05*(sin(2*PI*329.63*t)+sin(2*PI*493.88*t)+sin(2*PI*659.26*t))',
+            'filters': 'bass=g=5,treble=g=3,equalizer=f=250:width_type=o:width=2:g=3,acompressor=threshold=0.25:ratio=6:attack=2:release=30,dynaudnorm=p=0.95',
+        },
+        'country': {
+            'bass': '0.16*sin(2*PI*98*t)+0.12*sin(2*PI*130.81*t)+0.08*sin(2*PI*196*t)+0.05*sin(2*PI*261.63*t)',
+            'beat': '0.32*pow(abs(sin(PI*1.5*t)),6)*sin(2*PI*98*t)+0.10*pow(abs(sin(PI*3.0*t)),7)*sin(2*PI*392*t)',
+            'pad':  '0.06*sin(2*PI*196*t)+0.05*sin(2*PI*246.94*t)+0.05*sin(2*PI*293.66*t)+0.04*sin(2*PI*392*t)',
+            'filters': 'treble=g=2,equalizer=f=120:width_type=o:width=2:g=2,lowpass=f=12000,acompressor=threshold=0.35:ratio=3:attack=5:release=50,dynaudnorm=p=0.88',
+        },
+        'default': {
+            'bass': '0.18*sin(2*PI*110*t)+0.12*sin(2*PI*138.59*t)+0.08*sin(2*PI*164.81*t)+0.05*sin(2*PI*220*t)',
+            'beat': '0.32*pow(abs(sin(PI*1.667*t)),7)*sin(2*PI*110*t)+0.09*pow(abs(sin(PI*3.333*t)),8)*sin(2*PI*330*t)',
+            'pad':  '0.05*sin(2*PI*220*t)+0.04*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.03*sin(2*PI*440*t)',
+            'filters': 'equalizer=f=80:width_type=o:width=2:g=3,lowpass=f=12000,acompressor=threshold=0.3:ratio=4:attack=4:release=40,dynaudnorm=p=0.90',
+        },
     }
-    audio_expr = AUDIO_PROFILES.get(genre, AUDIO_PROFILES['default'])
-    fd = combo_dur
-    fa = min(1.5, fd * 0.08)
+    ap = AUDIO_PROFILES_3L.get(genre, AUDIO_PROFILES_3L['default'])
+    fa = min(1.5, combo_dur * 0.10)
+    fo = max(0, combo_dur - fa)
+
+    user_audio = opts.get('user_audio_path') or None
+    has_user   = bool(user_audio and os.path.exists(user_audio))
+
+    # Inputs: [0]=video, [1]=bass, [2]=beat, [3]=pad, [4?]=user_audio
+    a_inputs = [
+        '-i', temp_combo,
+        '-f', 'lavfi', '-i', f"aevalsrc={ap['bass']}:s=44100:c=stereo",
+        '-f', 'lavfi', '-i', f"aevalsrc={ap['beat']}:s=44100:c=stereo",
+        '-f', 'lavfi', '-i', f"aevalsrc={ap['pad']}:s=44100:c=stereo",
+    ]
+    if has_user:
+        a_inputs += ['-i', user_audio]
+    user_idx = 4 if has_user else -1
+
+    synth_mix  = '[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1.2 0.9 0.5[synth_raw]'
+    synth_proc = f"[synth_raw]{ap['filters']},afade=t=in:st=0:d={fa:.2f},afade=t=out:st={fo:.2f}:d={fa:.2f}[synth]"
+    if has_user:
+        fc = (f'{synth_mix};{synth_proc};'
+              f'[{user_idx}:a]aformat=sample_rates=44100:channel_layouts=stereo,'
+              f'volume=0.88,afade=t=in:st=0:d={fa:.2f},afade=t=out:st={fo:.2f}:d={fa:.2f}[user_a];'
+              f'[user_a][synth]amix=inputs=2:normalize=0:weights=1.0 0.22[afinal]')
+    else:
+        fc = f'{synth_mix};{synth_proc};[synth]volume=1.0[afinal]'
+
     audio_cmd = [
         FFMPEG, '-y',
-        '-i', temp_combo,
-        '-f', 'lavfi', '-i', f'aevalsrc={audio_expr}:s=44100:c=stereo',
-        '-filter_complex',
-        f'[1:a]volume=0.22,afade=t=in:st=0:d={fa:.2f},'
-        f'afade=t=out:st={max(0,fd-fa):.2f}:d={fa:.2f}[aout]',
-        '-map', '0:v', '-map', '[aout]',
-        '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k',
-        '-shortest', '-movflags', '+faststart', out_path,
+        *a_inputs,
+        '-filter_complex', fc,
+        '-map', '0:v', '-map', '[afinal]',
+        '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k',
+        '-t', str(combo_dur), '-movflags', '+faststart', out_path,
     ]
     result = subprocess.run(audio_cmd, capture_output=True, timeout=120)
     if result.returncode != 0:
@@ -745,6 +896,9 @@ class ContentRequest(BaseModel):
     tone:              Optional[str] = 'energetic'
     goal:              Optional[str] = 'growth'
     genre:             Optional[str] = 'hip-hop'
+    artist:            Optional[str] = None
+    track:             Optional[str] = None
+    content_type:      Optional[str] = None
     include_hashtags:  bool = True
     include_distribution: bool = False
 
@@ -754,6 +908,9 @@ class MultiPlatformRequest(BaseModel):
     tone:           Optional[str] = 'energetic'
     goal:           Optional[str] = 'growth'
     genre:          Optional[str] = 'hip-hop'
+    artist:         Optional[str] = None
+    track:          Optional[str] = None
+    content_type:   Optional[str] = None
     target_audience: Optional[str] = None
     format:         Optional[str] = 'text'
 
@@ -828,14 +985,24 @@ def cinematic_templates():
 
 @app.post('/generate/content')
 def generate_content(req: ContentRequest):
-    result = _gen_content(req.topic, req.platform, req.tone or 'energetic', req.genre or 'hip-hop')
+    result = _gen_content(
+        req.topic, req.platform,
+        req.tone or 'energetic', req.genre or 'hip-hop',
+        artist=req.artist or '', track=req.track or '',
+        content_type=req.content_type or '',
+    )
     return result
 
 @app.post('/generate/multi-platform')
 def generate_multi_platform(req: MultiPlatformRequest):
     results = []
     for plat in req.platforms:
-        r = _gen_content(req.topic, plat, req.tone or 'energetic', req.genre or 'hip-hop')
+        r = _gen_content(
+            req.topic, plat,
+            req.tone or 'energetic', req.genre or 'hip-hop',
+            artist=req.artist or '', track=req.track or '',
+            content_type=req.content_type or '',
+        )
         results.append(r)
     return {'success': True, 'generated_content': results,
             'platforms': req.platforms, 'processing_time_ms': 80}

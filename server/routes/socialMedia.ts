@@ -1300,40 +1300,28 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
       return res.status(400).json({ message: 'URL is required' });
     }
 
-    // Fetch and analyze the URL
-    const metadata = await extractUrlMetadata(url);
-    
-    // Build topic from extracted metadata
-    let topic = metadata.title || metadata.description || 'check this out';
-    
-    // Enhance topic based on content type
-    const typeMessages: Record<string, string> = {
-      'music': `${topic} - stream now`,
-      'video': `${topic} - watch now`,
-      'article': `${topic} - read more`,
-      'product': `${topic} - shop now`,
-      'event': `${topic} - get tickets`,
-      'social': `${topic} - follow for more`,
-      'website': topic,
-      'podcast': `${topic} - listen now`,
-      'livestream': `${topic} - tune in live`,
-      'crowdfunding': `${topic} - support now`,
-      'merch': `${topic} - grab yours`,
-      'playlist': `${topic} - add to your library`,
-      'nft': `${topic} - collect now`,
-      'press': `${topic} - read the feature`,
-      'portfolio': `${topic} - explore more`,
-      'collaboration': `${topic} - check out our collab`,
-      'education': `${topic} - learn more`,
-    };
-    
-    topic = typeMessages[metadata.type] || topic;
+    // Use the rich Python URL analyzer for full metadata extraction
+    const analysis = await analyzeUrl(url.trim());
+    const seed = urlToContentSeed(analysis);
 
-    const topicWithAudience = targetAudience 
-      ? `${topic} (targeting: ${targetAudience})` 
-      : topic;
+    // Build a clean, structured topic for the AI model — no pollution from targetAudience or format
+    let topic: string;
+    if (seed.track && seed.artist) {
+      topic = `"${seed.track}" by ${seed.artist}`;
+      if (seed.genre && seed.genre !== 'default') topic += ` — ${seed.genre}`;
+    } else if (seed.track) {
+      topic = `"${seed.track}"`;
+    } else if (seed.artist) {
+      topic = `New music by ${seed.artist}`;
+    } else if (analysis.title) {
+      // Use the page title, cleaned up
+      topic = analysis.title.replace(/\s*[-|–]\s*\S+$/, '').trim().slice(0, 80);
+    } else {
+      topic = seed.topic.slice(0, 80);
+    }
 
-    const formatPrefix = format !== 'text' ? `[${format.toUpperCase()} content] ` : '';
+    // Derive the content_type for better CTA selection
+    const contentType = seed.content_type || seed.platform_category || 'general';
 
     const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'];
     const validTones = ['professional', 'casual', 'energetic', 'promotional'];
@@ -1344,9 +1332,13 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
     if (pyAvailable) {
       const pyResult = await pythonAIService.generateMultiPlatform({
         platforms,
-        topic: topicWithAudience.substring(0, 150),
+        topic: topic.substring(0, 120),
         tone: validTones.includes(tone) ? tone : 'energetic',
         goal: 'growth',
+        genre:       seed.genre   || 'hip-hop',
+        artist:      seed.artist  || undefined,
+        track:       seed.track   || undefined,
+        contentType: contentType  || undefined,
         format,
         url,
         targetAudience: targetAudience || undefined,
@@ -1354,21 +1346,42 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
 
       if (pyResult.success && pyResult.data?.generated_content) {
         for (const item of pyResult.data.generated_content) {
+          // Social caption gets the URL appended; video content stays clean
           const captionText = item.content.includes(url) ? item.content : item.content + `\n\n🔗 ${url}`;
           generatedContent.push({
-            platform: item.platform,
-            caption: captionText,
-            content: captionText,
-            hashtags: item.hashtags,
-            hook: item.hook,
-            body: item.body,
-            cta: item.cta,
-            sourceUrl: url,
-            extractedTitle: metadata.title,
-            contentType: metadata.type,
+            platform:       item.platform,
+            caption:        captionText,
+            content:        captionText,
+            hashtags:       item.hashtags,
+            // Social hook/body/cta (full-length for captions)
+            hook:           item.hook,
+            body:           item.body,
+            cta:            item.cta,
+            // Video-optimized hook/body/cta (short & punchy for overlay text)
+            video_hook:     item.video_hook || item.hook,
+            video_body:     item.video_body || item.body,
+            video_cta:      item.video_cta  || item.cta,
+            // Metadata for the video generator
+            artist_name:    seed.artist || '',
+            genre:          seed.genre  || 'hip-hop',
+            bg_color:       analysis.platform === 'youtube'  ? '#0f0f0f'
+                          : analysis.platform === 'spotify'  ? '#191414'
+                          : analysis.platform === 'soundcloud' ? '#1a0a00'
+                          : '#1a1a2e',
+            accent_color:   seed.genre === 'trap'       ? '#ff3c00'
+                          : seed.genre === 'r&b'        ? '#c77dff'
+                          : seed.genre === 'pop'        ? '#00d4ff'
+                          : seed.genre === 'edm'        ? '#00ffcc'
+                          : seed.genre === 'country'    ? '#d4af37'
+                          : seed.genre === 'rock'       ? '#ff4500'
+                          : '#e94560',
+            thumbnail_url:  seed.og_image || seed.thumbnail_url || '',
+            sourceUrl:      url,
+            extractedTitle: analysis.title,
+            contentType,
             format,
             targetAudience: targetAudience || undefined,
-            source: 'python_ai_model',
+            source:         'python_ai_model',
           });
         }
       }
@@ -1379,30 +1392,38 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
         if (!validPlatforms.includes(platform)) continue;
 
         const result = await unifiedAIController.generateContent({
-          tone: validTones.includes(tone) ? tone : 'energetic',
+          tone:            validTones.includes(tone) ? tone : 'energetic',
           platform,
-          topic: (formatPrefix + topicWithAudience).substring(0, 150),
-          contentType: metadata.contentType,
+          topic:           topic.substring(0, 120),
+          genre:           seed.genre || 'hip-hop',
+          artistName:      seed.artist || '',
+          trackTitle:      seed.track  || '',
           includeHashtags: true,
-          includeEmojis: true,
+          includeEmojis:   true,
         });
 
         if (result.success && result.data) {
           const captionText = result.data.caption + `\n\n🔗 ${url}`;
           generatedContent.push({
             platform,
-            caption: captionText,
-            content: captionText,
-            hashtags: result.data.hashtags,
-            emojis: result.data.emojis,
-            characterCount: result.data.characterCount,
-            estimatedEngagement: result.data.estimatedEngagement,
-            sourceUrl: url,
-            extractedTitle: metadata.title,
-            contentType: metadata.type,
+            caption:        captionText,
+            content:        captionText,
+            hashtags:       result.data.hashtags,
+            hook:           result.data.hook,
+            body:           result.data.body,
+            cta:            result.data.cta,
+            video_hook:     result.data.hook,
+            video_body:     result.data.body,
+            video_cta:      result.data.cta,
+            artist_name:    seed.artist || '',
+            genre:          seed.genre  || 'hip-hop',
+            thumbnail_url:  seed.og_image || seed.thumbnail_url || '',
+            sourceUrl:      url,
+            extractedTitle: analysis.title,
+            contentType,
             format,
             targetAudience: targetAudience || undefined,
-            source: 'unified_ai',
+            source:         'unified_ai',
           });
         }
       }
@@ -1414,9 +1435,14 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
       url,
       platforms,
       metadata: {
-        title: metadata.title,
-        description: metadata.description?.substring(0, 200),
-        type: metadata.type,
+        title:       analysis.title,
+        description: analysis.description?.substring(0, 200),
+        type:        contentType,
+        artist:      seed.artist || '',
+        track:       seed.track  || '',
+        genre:       seed.genre  || '',
+        thumbnail:   seed.og_image || seed.thumbnail_url || '',
+        platform:    analysis.platform,
       },
     });
   } catch (error) {
@@ -1474,6 +1500,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       hook, body, cta, platform, aspect_ratio, template,
       duration, bg_color, text_color, accent_color,
       artist_name, topic, goal, tone, quality,
+      user_audio_path,
     } = req.body;
 
     const pyAvailable = await pythonAIService.isAvailable();
@@ -1490,6 +1517,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
         goal: goal || 'growth',
         tone: tone || 'energetic',
         quality: quality || 'cinematic',
+        user_audio_path: user_audio_path || undefined,
       });
 
       if (jobResult.success && jobResult.data?.job_id) {
@@ -1535,6 +1563,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       cta,
       bg_color: bg_color || undefined,
       accent_color: accent_color || undefined,
+      user_audio_path: user_audio_path || undefined,
     });
 
     if (!result.success) {
@@ -2034,13 +2063,21 @@ router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: 
 
     const seed = urlToContentSeed(analysis);
 
-    // Auto-generate social content from the extracted data
+    // Auto-generate social content from the extracted data using rich context
+    const aiTopic = seed.track && seed.artist
+      ? `"${seed.track}" by ${seed.artist}${seed.genre && seed.genre !== 'default' ? ` — ${seed.genre}` : ''}`
+      : seed.track
+        ? `"${seed.track}"`
+        : seed.artist
+          ? `New music by ${seed.artist}`
+          : seed.topic.slice(0, 80);
+
     const content = await unifiedAIController.generateContent({
       type:       'social_post',
       platform:   platform || 'instagram',
-      topic:      seed.topic,
-      tone:       seed.tone || 'default',
-      genre:      seed.genre,
+      topic:      aiTopic,
+      tone:       seed.tone !== 'default' ? seed.tone : 'energetic',
+      genre:      seed.genre !== 'default' ? seed.genre : 'hip-hop',
       artistName: seed.artist,
       trackTitle: seed.track,
     });
@@ -2056,22 +2093,63 @@ router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: 
       'rock':       { bg: '#1a0000', ac: '#ff4500' },
       'jazz':       { bg: '#0a0a1a', ac: '#d4af37' },
       'classical':  { bg: '#1a1a10', ac: '#c0c0c0' },
+      'reggae':     { bg: '#001a0a', ac: '#00aa44' },
+      'latin':      { bg: '#1a0500', ac: '#ff6600' },
     };
+
+    // Platform-specific overrides
+    const platformColorMap: Record<string, { bg: string; ac: string }> = {
+      'youtube':    { bg: '#0f0f0f', ac: '#ff0000' },
+      'spotify':    { bg: '#191414', ac: '#1db954' },
+      'soundcloud': { bg: '#1a0a00', ac: '#ff5500' },
+      'tiktok':     { bg: '#010101', ac: '#69c9d0' },
+      'apple_music':{ bg: '#1c1c1e', ac: '#fc3c44' },
+    };
+
     const genreKey = (seed.genre || 'hip-hop').toLowerCase();
-    const colors = genreColorMap[genreKey] || { bg: '#1a1a2e', ac: '#e94560' };
+    const platformKey = (analysis.platform || '').toLowerCase();
+    const colors = platformColorMap[platformKey] || genreColorMap[genreKey] || { bg: '#1a1a2e', ac: '#e94560' };
+
+    // Use AI-generated hook/body/cta for the video overlay when available
+    const aiHook = content?.data?.hook || '';
+    const aiBody = content?.data?.body || '';
+    const aiCta  = content?.data?.cta  || '';
+
+    // Build punchy video-specific text (fallback from AI result)
+    const videoHook = aiHook || (seed.track && seed.artist
+      ? `${seed.track} — out now`
+      : seed.track
+        ? `New drop: ${seed.track}`
+        : seed.artist
+          ? `New music from ${seed.artist}`
+          : aiTopic.slice(0, 50));
+
+    const videoBody = aiBody || (seed.artist && seed.track
+      ? `${seed.genre && seed.genre !== 'default' ? seed.genre.charAt(0).toUpperCase() + seed.genre.slice(1) + ' — ' : ''}Stream by ${seed.artist}`
+      : 'Stream now on all platforms');
+
+    const videoCtaMap: Record<string, string> = {
+      'music':   'Stream now — link in bio',
+      'video':   'Watch now — link in bio',
+      'event':   'Get tickets — link in bio',
+      'article': 'Read more — link in bio',
+      'podcast': 'Listen now — link in bio',
+    };
+    const videoCta = aiCta || videoCtaMap[seed.content_type] || 'Follow for more';
 
     const videoConfig = {
-      topic:       seed.topic,
-      genre:       seed.genre || 'hip-hop',
-      tone:        seed.tone  || 'energetic',
-      platform:    platform   || 'tiktok',
-      duration:    15,
-      artist_name: seed.artist || '',
-      hook:        seed.track
-        ? `${seed.track}${seed.artist ? ` — ${seed.artist}` : ''}`
-        : seed.topic.slice(0, 60),
-      bg_color:    colors.bg,
+      topic:        aiTopic,
+      genre:        seed.genre    || 'hip-hop',
+      tone:         seed.tone !== 'default' ? seed.tone : 'energetic',
+      platform:     platform      || 'tiktok',
+      duration:     15,
+      artist_name:  seed.artist   || '',
+      hook:         videoHook,
+      body:         videoBody,
+      cta:          videoCta,
+      bg_color:     colors.bg,
       accent_color: colors.ac,
+      thumbnail_url: seed.og_image || seed.thumbnail_url || '',
     };
 
     const audioStyle = {

@@ -2176,10 +2176,13 @@ return (
                                     topic={item.extractedTitle || item.content || 'New music'}
                                     tone={selectedTone}
                                     goal="growth"
-                                    artistName={user?.displayName || user?.username || ''}
-                                    initialHook={item.hook || ''}
-                                    initialBody={item.body || ''}
-                                    initialCta={item.cta || ''}
+                                    artistName={item.artist_name || user?.displayName || user?.username || ''}
+                                    initialHook={item.video_hook || item.hook || ''}
+                                    initialBody={item.video_body || item.body || ''}
+                                    initialCta={item.video_cta || item.cta || ''}
+                                    initialTemplate={item.genre === 'trap' ? 'fire_ember' : item.genre === 'r&b' ? 'aurora' : item.genre === 'pop' ? 'music_video' : item.genre === 'edm' ? 'neon_pulse' : 'cinematic_promo'}
+                                    initialBgColor={item.bg_color || ''}
+                                    initialAccentColor={item.accent_color || ''}
                                     onVideoGenerated={(videoUrl: string) => {
                                       const updated = [...urlGeneratedContent];
                                       updated[index] = { ...updated[index], mediaUrl: videoUrl };
