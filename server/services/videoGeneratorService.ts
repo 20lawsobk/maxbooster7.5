@@ -29,6 +29,7 @@
 import { execFile, execFileSync, spawn } from 'child_process';
 import { promisify } from 'util';
 import { mkdirSync, existsSync, unlinkSync } from 'fs';
+import os from 'os';
 import path from 'path';
 import { randomBytes } from 'crypto';
 import { unifiedAIController } from './unifiedAIController.js';
@@ -663,6 +664,44 @@ async function combineScenes(
 // Builds a 3-layer synthesized beat (bass + beat + pad), mixes the layers,
 // applies genre EQ + compressor, and optionally mixes in a user-supplied
 // audio file (at 0.85 volume) alongside the procedural bed (at 0.20 volume).
+/**
+ * Generate a TTS voiceover WAV using FFmpeg's built-in flite filter.
+ * Text is spoken in the order: hook → body → cta (separated by pauses).
+ * Returns the path to the generated WAV file, or null on failure.
+ */
+async function generateVoiceover(
+  hook: string,
+  body: string,
+  cta: string,
+  totalDur: number,
+): Promise<string | null> {
+  try {
+    // Build spoken text: hook . pause . body . pause . cta
+    const spoken = [hook, body, cta]
+      .map(t => t.replace(/['"\\]/g, ' ').replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .join(' ... ');
+
+    const outPath = path.join(os.tmpdir(), `vo_${randomBytes(6).toString('hex')}.wav`);
+
+    // Use flite lavfi source → trim to video duration → PCM WAV
+    await execFileAsync(FFMPEG, [
+      '-y',
+      '-f', 'lavfi',
+      '-i', `flite=text='${spoken.replace(/'/g, '')}':voice=kal`,
+      '-t', String(totalDur),
+      '-ar', '44100',
+      '-ac', '2',
+      outPath,
+    ], { timeout: 30_000 });
+
+    return existsSync(outPath) ? outPath : null;
+  } catch (e) {
+    logger.warn('[VideoGen] Voiceover generation failed, skipping:', e);
+    return null;
+  }
+}
+
 async function applyAudioAndLogo(
   videoPath: string,
   outputPath: string,
@@ -670,6 +709,7 @@ async function applyAudioAndLogo(
   audioProfile: AudioProfile,
   logoPath?: string,
   userAudioPath?: string,
+  voiceoverText?: { hook: string; body: string; cta: string },
 ): Promise<void> {
   const fadeDur = Math.min(1.5, totalDur * 0.10);
   const fadeOut = Math.max(0, totalDur - fadeDur);
@@ -684,7 +724,19 @@ async function applyAudioAndLogo(
   const hasLogo = !!(logoPath && existsSync(logoPath));
   const hasUser = !!(userAudioPath && existsSync(userAudioPath));
 
-  // Build input list: [0]=video, [1]=bass, [2]=beat, [3]=pad, [4?]=logo, [5?]=user audio
+  // Generate voiceover TTS if requested (uses flite — no external deps)
+  let voiceoverPath: string | null = null;
+  if (voiceoverText) {
+    voiceoverPath = await generateVoiceover(
+      voiceoverText.hook,
+      voiceoverText.body,
+      voiceoverText.cta,
+      totalDur,
+    );
+  }
+  const hasVoiceover = !!(voiceoverPath && existsSync(voiceoverPath));
+
+  // Build input list: [0]=video, [1]=bass, [2]=beat, [3]=pad, [4?]=logo, [5?]=user audio, [6?]=voiceover
   const inputs: string[] = ['-i', videoPath];
   inputs.push('-f', 'lavfi', '-i', src1);
   inputs.push('-f', 'lavfi', '-i', src2);
@@ -692,20 +744,23 @@ async function applyAudioAndLogo(
 
   let logoIdx = -1;
   let userIdx = -1;
+  let voIdx   = -1;
+  let nextIdx = 4;
 
   if (hasLogo) {
-    logoIdx = 4;
+    logoIdx = nextIdx++;
     inputs.push('-i', logoPath!);
   }
   if (hasUser) {
-    userIdx = hasLogo ? 5 : 4;
+    userIdx = nextIdx++;
     inputs.push('-i', userAudioPath!);
+  }
+  if (hasVoiceover) {
+    voIdx = nextIdx++;
+    inputs.push('-i', voiceoverPath!);
   }
 
   // ── filter_complex ─────────────────────────────────────────────────────────
-  // 1) Mix the 3 procedural layers → apply genre EQ/compressor → fade
-  // 2) If user audio provided: mix it (dominant) with procedural bed (ambient)
-  // 3) If logo provided: scale + overlay
   const parts: string[] = [];
   const outputLabels: string[] = ['-map', '[vfinal]', '-map', '[afinal]'];
 
@@ -723,7 +778,25 @@ async function applyAudioAndLogo(
   parts.push(`[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1.2 0.9 0.5[synth_raw]`);
   parts.push(`[synth_raw]${audioProfile.filters},afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[synth]`);
 
-  if (hasUser) {
+  if (hasVoiceover && hasUser) {
+    // Voiceover + user audio + procedural bed
+    parts.push(
+      `[${voIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
+      `volume=1.1,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[vo_a]`,
+    );
+    parts.push(
+      `[${userIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
+      `volume=0.55,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
+    );
+    parts.push(`[vo_a][user_a][synth]amix=inputs=3:normalize=0:weights=1.1 0.55 0.18[afinal]`);
+  } else if (hasVoiceover) {
+    // Voiceover + procedural bed (voiceover dominant, music ambient)
+    parts.push(
+      `[${voIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
+      `volume=1.2,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[vo_a]`,
+    );
+    parts.push(`[vo_a][synth]amix=inputs=2:normalize=0:weights=1.2 0.20[afinal]`);
+  } else if (hasUser) {
     // User audio: normalize + fade, then blend with procedural bed (user dominant)
     parts.push(
       `[${userIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
@@ -748,6 +821,11 @@ async function applyAudioAndLogo(
   ];
 
   await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 90_000 });
+
+  // Clean up temp voiceover file
+  if (hasVoiceover && voiceoverPath) {
+    try { unlinkSync(voiceoverPath); } catch {}
+  }
 }
 
 // ── PUBLIC INTERFACE ──────────────────────────────────────────────────────────
@@ -767,6 +845,7 @@ export interface VideoGenOptions {
   cta?: string;
   logo_path?: string;
   user_audio_path?: string;
+  voiceover?: boolean;
   scene_prompt?: string;
   bg_color?: string;
   accent_color?: string;
@@ -890,7 +969,8 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
       const filename = `video_${randomBytes(6).toString('hex')}.mp4`;
       const finalPath = path.join(OUTPUT_DIR, filename);
       const combinedDur = sceneDurations.reduce((a, b) => a + b, 0) - 2 * 0.5;
-      await applyAudioAndLogo(combinedPath, finalPath, combinedDur, audioProfile, opts.logo_path, opts.user_audio_path);
+      await applyAudioAndLogo(combinedPath, finalPath, combinedDur, audioProfile, opts.logo_path, opts.user_audio_path,
+        opts.voiceover ? { hook, body, cta } : undefined);
 
       const renderMs = Date.now() - renderStart;
       cleanup(...tempFiles);
@@ -988,7 +1068,8 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
       // Add audio + optional logo + optional user audio
       const filename = `video_${randomBytes(6).toString('hex')}.mp4`;
       const finalPath = path.join(OUTPUT_DIR, filename);
-      await applyAudioAndLogo(scenePath, finalPath, totalDur, audioProfile, opts.logo_path, opts.user_audio_path);
+      await applyAudioAndLogo(scenePath, finalPath, totalDur, audioProfile, opts.logo_path, opts.user_audio_path,
+        opts.voiceover ? { hook, body, cta } : undefined);
 
       const renderMs = Date.now() - renderStart;
       cleanup(...tempFiles);

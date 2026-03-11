@@ -126,6 +126,9 @@ export function ServerVideoGenerator({
   const [imageAnalysis, setImageAnalysis] = useState<any>(null);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
 
+  // Voiceover
+  const [voiceover, setVoiceover] = useState(false);
+
   // Common state
   const [aspectRatio, setAspectRatio] = useState(PLATFORM_DEFAULT_RATIO[platform] || '9:16');
   const [duration, setDuration] = useState(10);
@@ -260,6 +263,7 @@ export function ServerVideoGenerator({
       quality: useTemplate ? 'cinematic' : undefined,
       bg_color: initialBgColor || undefined,
       accent_color: initialAccentColor || undefined,
+      voiceover,
     });
   };
 
@@ -306,6 +310,7 @@ export function ServerVideoGenerator({
       tone: vc.tone || tone,
       bg_color: vc.bg,
       accent_color: vc.ac,
+      voiceover,
     });
   };
 
@@ -355,6 +360,7 @@ export function ServerVideoGenerator({
       tone: vc.tone || tone,
       bg_color: vc.bg,
       accent_color: vc.ac,
+      voiceover,
     });
   };
 
@@ -724,6 +730,19 @@ export function ServerVideoGenerator({
             className="h-9"
           />
         </div>
+
+        {/* Voiceover toggle */}
+        <button
+          onClick={() => setVoiceover(!voiceover)}
+          className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+            voiceover
+              ? 'border-primary bg-primary/5 text-primary'
+              : 'border-border text-muted-foreground hover:border-primary/50'
+          }`}
+        >
+          <Mic className="h-3 w-3" />
+          {voiceover ? 'Voiceover: ON' : 'Add voiceover (AI reads your text)'}
+        </button>
 
         {/* Generate button */}
         <Button

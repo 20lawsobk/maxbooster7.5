@@ -1,7 +1,4 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
 import { storage } from '../storage';
 import { logger } from '../logger';
 import { competitorBenchmarkService } from '../services/competitorBenchmarkService';
@@ -1503,7 +1500,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       hook, body, cta, platform, aspect_ratio, template,
       duration, bg_color, text_color, accent_color,
       artist_name, topic, goal, tone, quality,
-      user_audio_path,
+      user_audio_path, voiceover,
     } = req.body;
 
     const pyAvailable = await pythonAIService.isAvailable();
@@ -1521,6 +1518,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
         tone: tone || 'energetic',
         quality: quality || 'cinematic',
         user_audio_path: user_audio_path || undefined,
+        voiceover: !!voiceover,
       });
 
       if (jobResult.success && jobResult.data?.job_id) {
@@ -1567,6 +1565,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       bg_color: bg_color || undefined,
       accent_color: accent_color || undefined,
       user_audio_path: user_audio_path || undefined,
+      voiceover: !!voiceover,
     });
 
     if (!result.success) {

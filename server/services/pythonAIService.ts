@@ -367,6 +367,7 @@ export class PythonAIService {
     duration?: number; artist_name?: string; genre?: string;
     tone?: string; goal?: string; quality?: string;
     user_audio_path?: string;
+    voiceover?: boolean;
   }): Promise<AIModelResponse<{ job_id: string; status: string }>> {
     return callAIModel<{ job_id: string; status: string }>('/generate-video', {
       hook: options.hook || '',
@@ -383,6 +384,7 @@ export class PythonAIService {
       goal: options.goal || 'growth',
       quality: options.quality || 'cinematic',
       user_audio_path: options.user_audio_path || undefined,
+      voiceover: options.voiceover || false,
     });
   }
 
