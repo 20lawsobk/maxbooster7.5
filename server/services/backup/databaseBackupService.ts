@@ -100,6 +100,12 @@ export class DatabaseBackupService {
         pipelineDone = true;
         check();
       });
+      writeStream.on('error', (err) => reject(err));
+
+      // Absorb EPIPE on pgDump stdout in case writeStream closes early
+      pgDump.stdout.on('error', (e: NodeJS.ErrnoException) => {
+        if (e.code !== 'EPIPE' && e.code !== 'ECONNRESET') reject(e);
+      });
 
       pgDump.stdout.pipe(writeStream);
 

@@ -899,6 +899,9 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM', 0));
 process.on('SIGINT', () => gracefulShutdown('SIGINT', 0));
 
 process.on('uncaughtException', (error: Error) => {
+  // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
+  const code = (error as NodeJS.ErrnoException).code;
+  if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
   logger.error('[Process] Uncaught exception — shutting down:', error);
   gracefulShutdown('uncaughtException', 1);
 });

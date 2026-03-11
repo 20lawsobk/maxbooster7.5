@@ -79,26 +79,30 @@ class MaxBooster247System extends EventEmitter {
 
     // Handle critical errors with auto-restart
     process.on('uncaughtException', (error) => {
+      // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
       logger.error('🚨 CRITICAL: Uncaught Exception:', error.message);
       this.metrics.errorCount++;
       this.attemptRestart('uncaught-exception', error.message);
     });
 
     process.on('unhandledRejection', (reason: any) => {
-      // Don't restart on temporary connection errors - let services reconnect
       const msg = reason?.message || String(reason);
-      const isConnectionError = /ECONNREFUSED|ECONNRESET|Connection|Command timed out|Connection is closed/i.test(msg) ||
-                                reason?.code === 'ECONNREFUSED' ||
-                                reason?.code === 'ECONNRESET';
-      
-      if (isConnectionError) {
-        logger.warn('⚠️ Connection error detected (will retry automatically):', msg);
-        return; // Don't restart for connection errors
+      const code = reason?.code;
+      // Non-fatal: stream errors, transient network/connection failures
+      const isNonFatal = (
+        code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED' ||
+        /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|Connection|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch/i.test(msg)
+      );
+      if (isNonFatal) {
+        logger.warn('⚠️ Non-fatal rejection (will retry automatically):', msg);
+        return;
       }
-      
-      logger.error('🚨 CRITICAL: Unhandled Rejection:', reason);
+      // Only increment error count, do NOT attempt restart on unhandled rejections —
+      // transient async errors (DB timeouts, API failures) should not restart the process.
+      logger.error('🚨 Unhandled Rejection (logged, no restart):', msg);
       this.metrics.errorCount++;
-      this.attemptRestart('unhandled-rejection', String(reason));
     });
   }
 

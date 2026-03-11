@@ -211,6 +211,12 @@ pool.on('connect', (client: any) => {
   });
 });
 
+// Pool-level error handler — prevents unhandled 'error' events from idle client
+// disconnects from becoming uncaughtExceptions and crashing the process.
+pool.on('error', (err: Error) => {
+  logger.error('[DB] Idle client error (pool):', err.message);
+});
+
 export const db = drizzle(pool, { schema });
 
 // Read replica routing: production-only read-write split.
@@ -229,6 +235,13 @@ const replicaPool = replicaUrl
       connectionTimeoutMillis: config.database.connectionTimeout,
     })
   : null;
+
+// Prevent uncaughtException from replica pool idle client disconnects
+if (replicaPool) {
+  replicaPool.on('error', (err: Error) => {
+    logger.error('[DB] Idle client error (replica pool):', err.message);
+  });
+}
 
 if (isProduction && replicaPool) {
   logger.info('[db] Read replica pool created — will verify connectivity at startup');

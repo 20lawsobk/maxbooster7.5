@@ -377,19 +377,33 @@ async function renderWithPython(
 
     python.stdout.pipe(ffmpeg.stdin);
 
+    // Absorb EPIPE on ffmpeg.stdin — this fires when FFmpeg exits early (e.g. filter
+    // error) while Python is still writing frames. Without this listener the error
+    // propagates as an uncaughtException and crashes the entire server.
+    ffmpeg.stdin.on('error', (e: NodeJS.ErrnoException) => {
+      if (e.code === 'EPIPE' || e.code === 'ECONNRESET') return; // expected on early FFmpeg exit
+      logger.warn('[VideoGen] ffmpeg.stdin error:', e.message);
+    });
+
     let ffErr = '';
+    let rejected = false;
+    const doReject = (err: Error) => { if (!rejected) { rejected = true; reject(err); } };
+
     ffmpeg.stderr.on('data', (d: Buffer) => { ffErr += d.toString(); });
     python.stderr.on('data', (d: Buffer) => {
       const msg = d.toString();
       if (!msg.includes('RuntimeWarning')) logger.debug('[FrameGen]', msg.trim());
     });
 
-    python.on('error', (e) => reject(new Error(`Python error: ${e.message}`)));
-    ffmpeg.on('error', (e) => reject(new Error(`FFmpeg error: ${e.message}`)));
+    python.on('error', (e) => doReject(new Error(`Python error: ${e.message}`)));
+    ffmpeg.on('error', (e) => doReject(new Error(`FFmpeg error: ${e.message}`)));
 
     ffmpeg.on('close', (code) => {
+      // Stop Python from writing more frames into a now-closed FFmpeg stdin
+      try { python.stdout.unpipe(ffmpeg.stdin); } catch {}
+      try { ffmpeg.stdin.destroy(); } catch {}
       if (code === 0) resolve();
-      else reject(new Error(`FFmpeg exited ${code}: ${ffErr.slice(-300)}`));
+      else doReject(new Error(`FFmpeg exited ${code}: ${ffErr.slice(-300)}`));
     });
 
     python.on('close', (code) => {

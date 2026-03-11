@@ -112,6 +112,9 @@ class ProcessMonitor extends EventEmitter {
 
     // Track uncaught exceptions (should be rare with our error handling)
     process.on('uncaughtException', (error) => {
+      // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
       this.addAlert({
         type: 'restart',
         severity: 'critical',

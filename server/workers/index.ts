@@ -172,19 +172,28 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 process.on('uncaughtException', (error) => {
+  // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
+  const code = (error as NodeJS.ErrnoException).code;
+  if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
   logger.error('❌ Uncaught exception:', error);
   gracefulShutdown('uncaughtException');
 });
 
 process.on('unhandledRejection', (reason: any) => {
   const msg = reason?.message || String(reason);
-  const isNonFatal = /ECONNREFUSED|ECONNRESET|socket|fetch failed|Failed to fetch|Command timed out|Connection is closed/i.test(msg);
+  const code = reason?.code;
+  // Never crash the worker process on transient/stream/network errors
+  const isNonFatal = (
+    code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED' ||
+    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|socket|fetch failed|Failed to fetch|Command timed out|Connection is closed|AbortError/i.test(msg)
+  );
   if (isNonFatal) {
-    logger.warn('⚠️ Non-fatal network error (ignoring):', msg);
+    logger.warn('⚠️ Non-fatal rejection (ignoring):', msg);
     return;
   }
-  logger.error('❌ Unhandled rejection:', msg);
-  gracefulShutdown('unhandledRejection');
+  // Log the error but do NOT shut down — worker errors should not kill the whole server.
+  // The job will be retried by BullMQ's built-in retry/DLQ mechanism.
+  logger.error('❌ Unhandled rejection (workers):', msg);
 });
 
 export async function initializeWorkers(): Promise<void> {

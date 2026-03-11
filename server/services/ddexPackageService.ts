@@ -283,14 +283,11 @@ export class DDEXPackageService {
     const output = require('fs').createWriteStream(outputPath);
 
     return new Promise((resolve, reject) => {
-      output.on('close', () => {
-        resolve(outputPath);
-      });
-
-      archive.on('error', (err: Error) => {
-        reject(err);
-      });
-
+      let settled = false;
+      const settle = (fn: () => void) => { if (!settled) { settled = true; fn(); } };
+      output.on('close', () => settle(resolve.bind(null, outputPath)));
+      output.on('error', (err: Error) => settle(() => reject(err)));
+      archive.on('error', (err: Error) => settle(() => reject(err)));
       archive.pipe(output);
 
       // Add XML file

@@ -606,10 +606,8 @@ export class DistributionService {
           resolve();
         });
 
-        archive.on("error", (err) => {
-          reject(err);
-        });
-
+        output.on("error", (err) => reject(err));
+        archive.on("error", (err) => reject(err));
         archive.pipe(output);
 
         // Add metadata.json

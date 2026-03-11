@@ -269,6 +269,16 @@ export function handleUnhandledRejection(server?: Server) {
   process.on('unhandledRejection', (reason: unknown, _promise: Promise<any>) => {
     const info = extractReasonInfo(reason);
 
+    // Non-fatal: stream/pipe errors, connection resets, fetch failures
+    const isNonFatal = (
+      info.code === 'EPIPE' || info.code === 'ECONNRESET' || info.code === 'ECONNABORTED' ||
+      /EPIPE|ECONNRESET|ECONNABORTED/i.test(info.message)
+    );
+    if (isNonFatal) {
+      logger.warn(`Non-fatal stream rejection (${info.code ?? 'unknown'}): ${info.message}`);
+      return;
+    }
+
     const isRedisError = (
       (info.message.includes('ECONNREFUSED') && (info.message.includes('6379') || info.code === 'ECONNREFUSED')) ||
       info.message.includes('Redis') ||
@@ -308,6 +318,13 @@ export function handleUnhandledRejection(server?: Server) {
 
 export function handleUncaughtException(server?: Server) {
   process.on('uncaughtException', (error: Error) => {
+    // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors
+    // (e.g. FFmpeg exits mid-render, client disconnects mid-stream)
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') {
+      logger.warn(`Non-fatal stream error (${code}): ${error.message}`);
+      return;
+    }
     logger.error('UNCAUGHT EXCEPTION:', {
       error: error.message,
       stack: error.stack,

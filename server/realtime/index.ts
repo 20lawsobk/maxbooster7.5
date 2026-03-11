@@ -74,6 +74,12 @@ async function authenticateFromSession(request: IncomingMessage): Promise<string
 function initializeNotificationServer(httpServer: HttpServer): void {
   notificationWss = new WebSocketServer({ noServer: true });
 
+  // Server-level error handler: prevents protocol/handshake errors from becoming
+  // uncaughtExceptions that crash the process.
+  notificationWss.on('error', (err: Error) => {
+    logger.error('[WS] Notification server error:', err.message);
+  });
+
   httpServer.on('upgrade', async (request, socket, head) => {
     const pathname = parseUrl(request.url || '').pathname;
 
