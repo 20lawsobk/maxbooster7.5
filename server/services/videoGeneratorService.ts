@@ -630,6 +630,8 @@ export interface VideoGenOptions {
   cta?: string;
   logo_path?: string;
   scene_prompt?: string;
+  bg_color?: string;
+  accent_color?: string;
 }
 
 export interface VideoGenResult {
@@ -661,7 +663,14 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
 
   const platform    = opts.platform || 'tiktok';
   const templateKey = (opts.template && TEMPLATE_STYLES[opts.template]) ? opts.template : 'cinematic_promo';
-  const style       = TEMPLATE_STYLES[templateKey];
+  const baseStyle   = TEMPLATE_STYLES[templateKey];
+  // Allow callers (e.g. audio/image analysis) to supply extracted colors that override template defaults
+  const normalizeHex = (c?: string) => c ? c.replace(/^#/, '0x') : undefined;
+  const customBg     = normalizeHex(opts.bg_color);
+  const customAc     = normalizeHex(opts.accent_color);
+  const style: TemplateStyle = (customBg || customAc)
+    ? { ...baseStyle, ...(customBg ? { bg: customBg, cta_bg: customBg } : {}), ...(customAc ? { ac: customAc } : {}) }
+    : baseStyle;
   const ratio       = opts.aspect_ratio || PLATFORM_RATIOS[platform] || '9:16';
   const [width, height] = ASPECT_RATIOS[ratio] || [1080, 1920];
   const totalDur    = Math.max(6, Math.min(opts.duration || 15, 30));

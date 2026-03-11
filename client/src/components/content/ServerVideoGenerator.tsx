@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -22,6 +23,13 @@ import {
   Film,
   Zap,
   Layers,
+  Mic,
+  Image,
+  FileText,
+  Upload,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface ServerVideoGeneratorProps {
@@ -32,7 +40,16 @@ interface ServerVideoGeneratorProps {
   artistName?: string;
   onVideoGenerated: (url: string) => void;
   className?: string;
+  // Pre-population props (used when arriving from URL params / ContentGenerator redirect)
+  initialHook?: string;
+  initialBody?: string;
+  initialCta?: string;
+  initialTemplate?: string;
+  initialBgColor?: string;
+  initialAccentColor?: string;
 }
+
+type InputMode = 'text' | 'audio' | 'image';
 
 const CINEMATIC_TEMPLATES = [
   { id: 'cinematic_promo', name: 'Cinematic Promo', description: 'Film-quality dramatic lighting', category: 'promo', color: '#e94560', icon: Film },
@@ -46,14 +63,6 @@ const CINEMATIC_TEMPLATES = [
   { id: 'ocean_wave', name: 'Ocean Wave', description: 'Calming ocean gradients', category: 'calm', color: '#006994', icon: Sparkles },
   { id: 'fire_ember', name: 'Fire & Ember', description: 'Intense warm tones', category: 'intense', color: '#ff4500', icon: Zap },
   { id: 'storyteller', name: 'Storyteller', description: 'Narrative progression', category: 'narrative', color: '#2d2d44', icon: Layers },
-];
-
-const QUICK_TEMPLATES = [
-  { id: 'promo', name: 'Quick Promo', color: '#e94560' },
-  { id: 'lyric', name: 'Quick Lyric', color: '#ffd700' },
-  { id: 'announcement', name: 'Quick Announce', color: '#0f3460' },
-  { id: 'minimal', name: 'Quick Minimal', color: '#333333' },
-  { id: 'neon', name: 'Quick Neon', color: '#ff6ec7' },
 ];
 
 const ASPECT_RATIOS = [
@@ -76,40 +85,73 @@ const PLATFORM_DEFAULT_RATIO: Record<string, string> = {
 
 export function ServerVideoGenerator({
   platform,
-  topic,
+  topic: topicProp,
   tone = 'energetic',
   goal = 'growth',
-  artistName = '',
+  artistName: artistNameProp = '',
   onVideoGenerated,
   className = '',
+  initialHook = '',
+  initialBody = '',
+  initialCta = '',
+  initialTemplate = '',
+  initialBgColor = '',
+  initialAccentColor = '',
 }: ServerVideoGeneratorProps) {
   const { toast } = useToast();
 
-  const [selectedTemplate, setSelectedTemplate] = useState('cinematic_promo');
+  const [inputMode, setInputMode] = useState<InputMode>('text');
+
+  // Text mode state
+  const [textTopic, setTextTopic] = useState('');
+  const [hook, setHook] = useState(initialHook);
+  const [body, setBody] = useState(initialBody);
+  const [cta, setCta] = useState(initialCta);
+  const [showAdvanced, setShowAdvanced] = useState(
+    !!(initialHook || initialBody || initialCta)
+  );
+  const [useTemplate, setUseTemplate] = useState(!!initialTemplate);
+  const [selectedTemplate, setSelectedTemplate] = useState(
+    initialTemplate || 'cinematic_promo'
+  );
+
+  // Audio mode state
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioAnalysis, setAudioAnalysis] = useState<any>(null);
+  const [isAnalyzingAudio, setIsAnalyzingAudio] = useState(false);
+
+  // Image mode state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imageAnalysis, setImageAnalysis] = useState<any>(null);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+
+  // Common state
   const [aspectRatio, setAspectRatio] = useState(PLATFORM_DEFAULT_RATIO[platform] || '9:16');
   const [duration, setDuration] = useState(10);
-  const [customArtistName, setCustomArtistName] = useState(artistName);
-  const [quality, setQuality] = useState<'cinematic' | 'quick'>('cinematic');
+  const [customArtistName, setCustomArtistName] = useState(artistNameProp);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingStage, setGeneratingStage] = useState<string>('');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [videoInfo, setVideoInfo] = useState<{
-    hook: string;
-    body: string;
-    cta: string;
-    source: string;
-    width: number;
-    height: number;
-    processingTime: number;
-    renderTime: number;
-    scenesRendered: number;
-    templateName: string;
-    quality: string;
-  } | null>(null);
+  const [videoInfo, setVideoInfo] = useState<any | null>(null);
+
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setAspectRatio(PLATFORM_DEFAULT_RATIO[platform] || '9:16');
   }, [platform]);
+
+  useEffect(() => {
+    if (topicProp && !textTopic) setTextTopic(topicProp);
+  }, [topicProp]);
+
+  // Clean up image preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    };
+  }, [imagePreviewUrl]);
 
   const applyVideoResult = (data: any) => {
     setVideoUrl(data.url);
@@ -124,7 +166,7 @@ export function ServerVideoGenerator({
       renderTime: Math.round(data.render_time_ms || 0),
       scenesRendered: data.scenes_rendered || 1,
       templateName: data.template_name || data.template,
-      quality: data.quality || quality,
+      quality: data.quality,
     });
     onVideoGenerated(data.url);
   };
@@ -134,9 +176,9 @@ export function ServerVideoGenerator({
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(r => setTimeout(r, 2000));
       const resp = await fetch(`/api/social/video-job/${jobId}`, { credentials: 'include' });
-      const body = await resp.text();
+      const text = await resp.text();
       let data: any;
-      try { data = JSON.parse(body); } catch { throw new Error('Unexpected response from server'); }
+      try { data = JSON.parse(text); } catch { throw new Error('Unexpected response from server'); }
       if (data.status === 'done' && data.success && data.url) return data;
       if (data.status === 'error') throw new Error(data.error || 'Video generation failed');
       setGeneratingStage(`Rendering… (${Math.round((i + 1) * 2)}s)`);
@@ -144,66 +186,47 @@ export function ServerVideoGenerator({
     throw new Error('Video generation timed out. Please try again.');
   };
 
-  const handleGenerate = async () => {
-    if (!topic.trim()) {
-      toast({
-        title: 'Topic Required',
-        description: 'Please enter a topic or description for the video.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  const callGenerateVideo = async (payload: Record<string, any>) => {
     setIsGenerating(true);
     setGeneratingStage('Starting…');
     setVideoUrl(null);
     setVideoInfo(null);
-
     try {
       const response = await fetch('/api/social/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          topic,
           platform,
-          template: selectedTemplate,
           aspect_ratio: aspectRatio,
           duration,
           tone,
           goal,
           artist_name: customArtistName || undefined,
-          quality,
+          ...payload,
         }),
       });
 
       const rawText = await response.text();
       let data: any;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
+      try { data = JSON.parse(rawText); } catch {
         throw new Error(response.ok ? 'Invalid server response' : `Server error (${response.status})`);
       }
-
       if (response.status === 401) {
         window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
         return;
       }
-
-      if (!response.ok) {
-        throw new Error(data?.message || data?.error || 'Video generation failed');
-      }
+      if (!response.ok) throw new Error(data?.message || data?.error || 'Video generation failed');
 
       if (data.job_id && data.status === 'processing') {
         setGeneratingStage('Rendering frames…');
         data = await pollJobUntilDone(data.job_id);
       }
-
       if (data.success && data.url) {
         applyVideoResult(data);
         toast({
           title: 'Video Generated',
-          description: `${data.width}x${data.height} cinematic video ready (${data.scenes_rendered || 1} scenes)`,
+          description: `${data.width}×${data.height} video ready (${data.scenes_rendered || 1} scene${data.scenes_rendered !== 1 ? 's' : ''})`,
         });
       } else {
         throw new Error(data.error || 'Video generation failed');
@@ -216,109 +239,441 @@ export function ServerVideoGenerator({
       });
     } finally {
       setIsGenerating(false);
+      setGeneratingStage('');
     }
   };
 
-  const isCinematic = quality === 'cinematic';
-  const templates = isCinematic ? CINEMATIC_TEMPLATES : QUICK_TEMPLATES;
+  // ── Text mode ────────────────────────────────────────────────────────────────
+
+  const handleGenerateFromText = async () => {
+    const topic = textTopic.trim() || topicProp.trim();
+    if (!topic && !hook) {
+      toast({ title: 'Content Required', description: 'Enter a topic or hook text.', variant: 'destructive' });
+      return;
+    }
+    await callGenerateVideo({
+      topic: topic || hook,
+      hook: hook || undefined,
+      body: body || undefined,
+      cta: cta || undefined,
+      template: useTemplate ? selectedTemplate : undefined,
+      quality: useTemplate ? 'cinematic' : undefined,
+      bg_color: initialBgColor || undefined,
+      accent_color: initialAccentColor || undefined,
+    });
+  };
+
+  // ── Audio mode ───────────────────────────────────────────────────────────────
+
+  const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAudioFile(file);
+    setAudioAnalysis(null);
+  };
+
+  const handleAnalyzeAudio = async () => {
+    if (!audioFile) return;
+    setIsAnalyzingAudio(true);
+    try {
+      const form = new FormData();
+      form.append('audio', audioFile);
+      form.append('platform', platform);
+      const resp = await fetch('/api/social/analyze-audio', {
+        method: 'POST',
+        credentials: 'include',
+        body: form,
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.success) throw new Error(data.message || 'Audio analysis failed');
+      setAudioAnalysis(data);
+      toast({ title: 'Audio Analyzed', description: `Detected: ${data.analysis?.genre || 'music'} — ${data.analysis?.tempo ? Math.round(data.analysis.tempo) + ' BPM' : ''}` });
+    } catch (err: any) {
+      toast({ title: 'Analysis Failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsAnalyzingAudio(false);
+    }
+  };
+
+  const handleGenerateFromAudio = async () => {
+    if (!audioAnalysis) {
+      toast({ title: 'Analyze First', description: 'Analyze your audio file before generating.', variant: 'destructive' });
+      return;
+    }
+    const vc = audioAnalysis.video_config || {};
+    await callGenerateVideo({
+      topic: vc.topic || audioAnalysis.seed?.topic || 'music',
+      tone: vc.tone || tone,
+      bg_color: vc.bg,
+      accent_color: vc.ac,
+    });
+  };
+
+  // ── Image mode ───────────────────────────────────────────────────────────────
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImageAnalysis(null);
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setImagePreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleAnalyzeImage = async () => {
+    if (!imageFile) return;
+    setIsAnalyzingImage(true);
+    try {
+      const form = new FormData();
+      form.append('image', imageFile);
+      form.append('platform', platform);
+      if (customArtistName) form.append('artist_name', customArtistName);
+      const resp = await fetch('/api/social/analyze-image', {
+        method: 'POST',
+        credentials: 'include',
+        body: form,
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.success) throw new Error(data.message || 'Image analysis failed');
+      setImageAnalysis(data);
+      toast({ title: 'Image Analyzed', description: `Mood: ${data.analysis?.mood || 'detected'} — colors extracted` });
+    } catch (err: any) {
+      toast({ title: 'Analysis Failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsAnalyzingImage(false);
+    }
+  };
+
+  const handleGenerateFromImage = async () => {
+    if (!imageAnalysis) {
+      toast({ title: 'Analyze First', description: 'Analyze your image before generating.', variant: 'destructive' });
+      return;
+    }
+    const vc = imageAnalysis.video_config || {};
+    await callGenerateVideo({
+      topic: vc.topic || imageAnalysis.seed?.topic || 'music aesthetic',
+      tone: vc.tone || tone,
+      bg_color: vc.bg,
+      accent_color: vc.ac,
+    });
+  };
+
+  // ── Mode can be reset ─────────────────────────────────────────────────────────
+
+  const resetVideo = () => { setVideoUrl(null); setVideoInfo(null); };
+
+  const inputModes: { id: InputMode; label: string; icon: React.ReactNode }[] = [
+    { id: 'text', label: 'Text', icon: <FileText className="h-3.5 w-3.5" /> },
+    { id: 'audio', label: 'Audio', icon: <Mic className="h-3.5 w-3.5" /> },
+    { id: 'image', label: 'Image', icon: <Image className="h-3.5 w-3.5" /> },
+  ];
 
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Film className="h-5 w-5" />
-          Cinematic AI Video Studio
+          AI Video Studio
         </CardTitle>
         <CardDescription>
-          Multi-scene cinematic videos with animated backgrounds, transitions, and color grading
+          Generate cinematic videos from text, audio, or artwork
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Button
-            variant={isCinematic ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => {
-              setQuality('cinematic');
-              setSelectedTemplate('cinematic_promo');
-              setDuration(10);
-            }}
-            className="flex-1"
-          >
-            <Film className="h-3.5 w-3.5 mr-1.5" />
-            Cinematic
-          </Button>
-          <Button
-            variant={!isCinematic ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => {
-              setQuality('quick');
-              setSelectedTemplate('promo');
-              setDuration(8);
-            }}
-            className="flex-1"
-          >
-            <Zap className="h-3.5 w-3.5 mr-1.5" />
-            Quick
-          </Button>
+
+        {/* Input mode tabs */}
+        <div className="flex rounded-lg border overflow-hidden">
+          {inputModes.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => { setInputMode(m.id); resetVideo(); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors ${
+                inputMode === m.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {m.icon}
+              {m.label}
+            </button>
+          ))}
         </div>
 
-        <div>
-          <Label className="text-xs font-medium text-muted-foreground mb-2 block">
-            <Layout className="h-3.5 w-3.5 inline mr-1" />
-            {isCinematic ? 'Cinematic Template' : 'Quick Template'}
-          </Label>
-          {isCinematic ? (
-            <div className="grid grid-cols-3 gap-1.5 max-h-[280px] overflow-y-auto pr-1">
-              {CINEMATIC_TEMPLATES.map((t) => {
-                const Icon = t.icon;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setSelectedTemplate(t.id)}
-                    className={`p-2 rounded-lg border text-left transition-all ${
-                      selectedTemplate === t.id
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div
-                        className="w-4 h-4 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: t.color }}
-                      />
-                      <Icon className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                    </div>
-                    <span className="text-[11px] font-medium block leading-tight">{t.name}</span>
-                    <span className="text-[10px] text-muted-foreground block leading-tight mt-0.5">{t.description}</span>
-                  </button>
-                );
-              })}
+        {/* ── TEXT MODE ── */}
+        {inputMode === 'text' && (
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Topic / Description
+              </Label>
+              <Textarea
+                value={textTopic}
+                onChange={(e) => setTextTopic(e.target.value)}
+                placeholder={topicProp || 'e.g., New single dropping Friday, behind the scenes studio session…'}
+                rows={3}
+                className="resize-none"
+              />
             </div>
-          ) : (
-            <div className="grid grid-cols-5 gap-1.5">
-              {QUICK_TEMPLATES.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedTemplate(t.id)}
-                  className={`p-2 rounded-lg border text-center transition-all ${
-                    selectedTemplate === t.id
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <div
-                    className="w-5 h-5 rounded-full mx-auto mb-1"
-                    style={{ backgroundColor: t.color }}
+
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {showAdvanced ? 'Hide' : 'Add'} hook / body / CTA (optional)
+            </button>
+
+            {showAdvanced && (
+              <div className="space-y-2 pl-2 border-l-2 border-muted">
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Hook (opening line)</Label>
+                  <Input
+                    value={hook}
+                    onChange={(e) => setHook(e.target.value)}
+                    placeholder="Attention-grabbing first line…"
+                    className="h-8 text-sm"
                   />
-                  <span className="text-[11px] font-medium block">{t.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Body (main message)</Label>
+                  <Input
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder="Core message…"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1 block">CTA (call to action)</Label>
+                  <Input
+                    value={cta}
+                    onChange={(e) => setCta(e.target.value)}
+                    placeholder="Stream now, follow for more…"
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            )}
 
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setUseTemplate(!useTemplate)}
+                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                  useTemplate
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-border text-muted-foreground hover:border-primary/50'
+                }`}
+              >
+                <Layout className="h-3 w-3" />
+                {useTemplate ? 'Template: ON' : 'Use a template (optional)'}
+              </button>
+            </div>
+
+            {useTemplate && (
+              <div className="grid grid-cols-3 gap-1.5 max-h-[200px] overflow-y-auto pr-1">
+                {CINEMATIC_TEMPLATES.map((t) => {
+                  const Icon = t.icon;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedTemplate(t.id)}
+                      className={`p-2 rounded-lg border text-left transition-all ${
+                        selectedTemplate === t.id
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: t.color }} />
+                        <Icon className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      </div>
+                      <span className="text-[11px] font-medium block leading-tight">{t.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── AUDIO MODE ── */}
+        {inputMode === 'audio' && (
+          <div className="space-y-3">
+            <input
+              ref={audioInputRef}
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={handleAudioFileChange}
+            />
+            <button
+              onClick={() => audioInputRef.current?.click()}
+              className={`w-full rounded-lg border-2 border-dashed p-6 flex flex-col items-center gap-2 transition-colors ${
+                audioFile ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/30'
+              }`}
+            >
+              {audioFile ? (
+                <>
+                  <CheckCircle className="h-8 w-8 text-primary" />
+                  <span className="text-sm font-medium">{audioFile.name}</span>
+                  <span className="text-xs text-muted-foreground">{(audioFile.size / 1024 / 1024).toFixed(2)} MB — click to change</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-sm font-medium">Upload an audio file</span>
+                  <span className="text-xs text-muted-foreground">MP3, WAV, AAC, FLAC, OGG</span>
+                </>
+              )}
+            </button>
+
+            {audioFile && !audioAnalysis && (
+              <Button
+                onClick={handleAnalyzeAudio}
+                disabled={isAnalyzingAudio}
+                variant="outline"
+                className="w-full"
+              >
+                {isAnalyzingAudio ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Analyzing audio…</>
+                ) : (
+                  <><Sparkles className="h-4 w-4 mr-2" />Analyze Audio</>
+                )}
+              </Button>
+            )}
+
+            {audioAnalysis && (
+              <div className="bg-muted/40 rounded-lg p-3 space-y-1.5 text-xs">
+                <p className="font-medium text-sm">Audio Analyzed</p>
+                {audioAnalysis.analysis?.genre && (
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground">Genre:</span>
+                    <Badge variant="secondary" className="text-[10px] h-4">{audioAnalysis.analysis.genre}</Badge>
+                  </div>
+                )}
+                {audioAnalysis.analysis?.tempo && (
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground">Tempo:</span>
+                    <span>{Math.round(audioAnalysis.analysis.tempo)} BPM</span>
+                  </div>
+                )}
+                {audioAnalysis.analysis?.key && (
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground">Key:</span>
+                    <span>{audioAnalysis.analysis.key}</span>
+                  </div>
+                )}
+                {audioAnalysis.seed?.topic && (
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground">Topic:</span>
+                    <span className="text-foreground">{audioAnalysis.seed.topic}</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => { setAudioAnalysis(null); setAudioFile(null); }}
+                  className="text-[10px] text-muted-foreground underline pt-1"
+                >
+                  Clear and re-upload
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── IMAGE MODE ── */}
+        {inputMode === 'image' && (
+          <div className="space-y-3">
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageFileChange}
+            />
+            <button
+              onClick={() => imageInputRef.current?.click()}
+              className={`w-full rounded-lg border-2 border-dashed transition-colors overflow-hidden ${
+                imageFile ? 'border-primary' : 'border-border hover:border-primary/50'
+              }`}
+            >
+              {imagePreviewUrl ? (
+                <div className="relative">
+                  <img
+                    src={imagePreviewUrl}
+                    alt="Artwork preview"
+                    className="w-full max-h-48 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <span className="text-white text-sm font-medium">Click to change</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 flex flex-col items-center gap-2">
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-sm font-medium">Upload artwork or image</span>
+                  <span className="text-xs text-muted-foreground">JPG, PNG, WEBP — colors & mood are extracted</span>
+                </div>
+              )}
+            </button>
+
+            {imageFile && !imageAnalysis && (
+              <Button
+                onClick={handleAnalyzeImage}
+                disabled={isAnalyzingImage}
+                variant="outline"
+                className="w-full"
+              >
+                {isAnalyzingImage ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Analyzing image…</>
+                ) : (
+                  <><Sparkles className="h-4 w-4 mr-2" />Analyze Image</>
+                )}
+              </Button>
+            )}
+
+            {imageAnalysis && (
+              <div className="bg-muted/40 rounded-lg p-3 space-y-2 text-xs">
+                <p className="font-medium text-sm">Image Analyzed</p>
+                {imageAnalysis.analysis?.mood && (
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground">Mood:</span>
+                    <span>{imageAnalysis.analysis.mood}</span>
+                  </div>
+                )}
+                {imageAnalysis.analysis?.genre_hint && (
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground">Genre hint:</span>
+                    <Badge variant="secondary" className="text-[10px] h-4">{imageAnalysis.analysis.genre_hint}</Badge>
+                  </div>
+                )}
+                {imageAnalysis.palette && imageAnalysis.palette.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground block mb-1">Extracted palette:</span>
+                    <div className="flex gap-1.5">
+                      {imageAnalysis.palette.slice(0, 5).map((color: string, i: number) => (
+                        <div
+                          key={i}
+                          className="w-7 h-7 rounded-full border border-white/20 shadow-sm"
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => { setImageAnalysis(null); setImageFile(null); if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl); setImagePreviewUrl(null); }}
+                  className="text-[10px] text-muted-foreground underline pt-1"
+                >
+                  Clear and re-upload
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Common options ── */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
@@ -331,7 +686,7 @@ export function ServerVideoGenerator({
               <SelectContent>
                 {ASPECT_RATIOS.map((ar) => (
                   <SelectItem key={ar.id} value={ar.id}>
-                    <span>{ar.name}</span>
+                    {ar.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -348,22 +703,11 @@ export function ServerVideoGenerator({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {isCinematic ? (
-                  <>
-                    <SelectItem value="8">8 seconds</SelectItem>
-                    <SelectItem value="10">10 seconds</SelectItem>
-                    <SelectItem value="15">15 seconds</SelectItem>
-                    <SelectItem value="20">20 seconds</SelectItem>
-                    <SelectItem value="30">30 seconds</SelectItem>
-                  </>
-                ) : (
-                  <>
-                    <SelectItem value="5">5 seconds</SelectItem>
-                    <SelectItem value="8">8 seconds</SelectItem>
-                    <SelectItem value="10">10 seconds</SelectItem>
-                    <SelectItem value="15">15 seconds</SelectItem>
-                  </>
-                )}
+                <SelectItem value="8">8 seconds</SelectItem>
+                <SelectItem value="10">10 seconds</SelectItem>
+                <SelectItem value="15">15 seconds</SelectItem>
+                <SelectItem value="20">20 seconds</SelectItem>
+                <SelectItem value="30">30 seconds</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -376,30 +720,43 @@ export function ServerVideoGenerator({
           <Input
             value={customArtistName}
             onChange={(e) => setCustomArtistName(e.target.value)}
-            placeholder="Your artist/brand name"
+            placeholder="Your artist or brand name"
             className="h-9"
           />
         </div>
 
+        {/* Generate button */}
         <Button
-          onClick={handleGenerate}
-          disabled={isGenerating || !topic.trim()}
+          onClick={
+            inputMode === 'text' ? handleGenerateFromText
+            : inputMode === 'audio' ? handleGenerateFromAudio
+            : handleGenerateFromImage
+          }
+          disabled={
+            isGenerating ||
+            (inputMode === 'text' && !textTopic.trim() && !topicProp.trim() && !hook.trim()) ||
+            (inputMode === 'audio' && !audioAnalysis) ||
+            (inputMode === 'image' && !imageAnalysis)
+          }
           className="w-full"
           size="lg"
         >
           {isGenerating ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {generatingStage || (isCinematic ? 'Rendering Cinematic Video…' : 'Generating Video…')}
+              {generatingStage || 'Generating Video…'}
             </>
           ) : (
             <>
-              {isCinematic ? <Film className="h-4 w-4 mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              {isCinematic ? 'Generate Cinematic Video' : 'Generate Quick Video'}
+              <Film className="h-4 w-4 mr-2" />
+              {inputMode === 'text' ? 'Generate Video from Text'
+               : inputMode === 'audio' ? 'Generate Video from Audio'
+               : 'Generate Video from Image'}
             </>
           )}
         </Button>
 
+        {/* Result */}
         {videoUrl && (
           <div className="space-y-3">
             <div className="rounded-lg overflow-hidden border bg-black">
@@ -417,18 +774,8 @@ export function ServerVideoGenerator({
               <div className="bg-muted/50 rounded-lg p-3 space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className="text-[10px]">
-                    {videoInfo.width}x{videoInfo.height}
+                    {videoInfo.width}×{videoInfo.height}
                   </Badge>
-                  <Badge variant="secondary" className="text-[10px]">
-                    <Sparkles className="h-2.5 w-2.5 mr-1" />
-                    {videoInfo.source === 'ai_model' ? 'AI Generated' : 'Template'}
-                  </Badge>
-                  {videoInfo.quality === 'cinematic' && (
-                    <Badge variant="default" className="text-[10px]">
-                      <Film className="h-2.5 w-2.5 mr-1" />
-                      Cinematic
-                    </Badge>
-                  )}
                   {videoInfo.scenesRendered > 1 && (
                     <Badge variant="outline" className="text-[10px]">
                       <Layers className="h-2.5 w-2.5 mr-1" />
@@ -438,16 +785,17 @@ export function ServerVideoGenerator({
                   <Badge variant="outline" className="text-[10px]">
                     {(videoInfo.processingTime / 1000).toFixed(1)}s render
                   </Badge>
+                  {videoInfo.source === 'ai_model' && (
+                    <Badge variant="default" className="text-[10px]">
+                      <Sparkles className="h-2.5 w-2.5 mr-1" />
+                      AI Generated
+                    </Badge>
+                  )}
                 </div>
-                {videoInfo.templateName && (
-                  <div className="text-[11px] text-muted-foreground">
-                    Template: {videoInfo.templateName}
-                  </div>
-                )}
                 {videoInfo.hook && (
                   <div className="text-xs">
                     <span className="font-medium">Hook:</span>{' '}
-                    <span className="text-muted-foreground">{videoInfo.hook.substring(0, 100)}</span>
+                    <span className="text-muted-foreground">{videoInfo.hook.substring(0, 120)}</span>
                   </div>
                 )}
               </div>
@@ -455,7 +803,7 @@ export function ServerVideoGenerator({
 
             <a
               href={videoUrl}
-              download={`maxbooster-cinematic-${platform}-video.mp4`}
+              download={`maxbooster-video-${platform}.mp4`}
               className="inline-flex items-center justify-center w-full rounded-md text-sm font-medium h-9 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
             >
               <Download className="h-4 w-4 mr-2" />

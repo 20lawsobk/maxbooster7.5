@@ -118,7 +118,6 @@ import { UnifiedInbox } from '@/components/social/UnifiedInbox';
 import { SocialListening } from '@/components/social/SocialListening';
 import { CompetitorBenchmarking } from '@/components/social/CompetitorBenchmarking';
 import { UnifiedCalendar } from '@/components/social/UnifiedCalendar';
-import { VideoContentGenerator, Platform as VideoGeneratorPlatform } from '@/components/content/VideoContentGenerator';
 import { ServerVideoGenerator } from '@/components/content/ServerVideoGenerator';
 import { AIImageGenerator, type ImagePlatform as AIImagePlatform } from '@/components/content/AIImageGenerator';
 import {
@@ -1571,17 +1570,6 @@ return (
 
                   {regularContentFormat === 'video' ? (
                     <>
-                      <div>
-                        <Label>Topic / Content Description</Label>
-                        <Textarea
-                          value={postContent}
-                          onChange={(e) => setPostContent(e.target.value)}
-                          placeholder="Describe the video content you want to create (e.g., 'New single announcement', 'Behind the scenes studio session')"
-                          rows={3}
-                          data-testid="textarea-video-topic"
-                        />
-                      </div>
-
                       <ServerVideoGenerator
                         platform={selectedPlatforms[0] || 'tiktok'}
                         topic={postContent || ''}
@@ -2183,18 +2171,16 @@ return (
                                 </div>
                               ) : item.format === 'video' && !item.mediaUrl ? (
                                 <div className="mb-2">
-                                  <VideoContentGenerator
-                                    platform={(item.platform === 'twitter' ? 'twitter' :
-                                              item.platform === 'instagram' ? 'instagram' :
-                                              item.platform === 'meta' ? 'instagram' :
-                                              item.platform === 'tiktok' ? 'tiktok' :
-                                              item.platform === 'youtube' ? 'youtube' :
-                                              item.platform === 'facebook' ? 'facebook' :
-                                              item.platform === 'linkedin' ? 'linkedin' :
-                                              'instagram') as VideoGeneratorPlatform}
-                                    contentText={item.content || 'Create engaging content'}
-                                    artistName={user?.displayName || user?.username || 'Artist'}
-                                    onVideoGenerated={async (videoUrl: string, blob: Blob) => {
+                                  <ServerVideoGenerator
+                                    platform={item.platform === 'meta' ? 'instagram' : (item.platform || 'tiktok')}
+                                    topic={item.extractedTitle || item.content || 'New music'}
+                                    tone={selectedTone}
+                                    goal="growth"
+                                    artistName={user?.displayName || user?.username || ''}
+                                    initialHook={item.hook || ''}
+                                    initialBody={item.body || ''}
+                                    initialCta={item.cta || ''}
+                                    onVideoGenerated={(videoUrl: string) => {
                                       const updated = [...urlGeneratedContent];
                                       updated[index] = { ...updated[index], mediaUrl: videoUrl };
                                       setUrlGeneratedContent(updated);

@@ -1523,7 +1523,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
     const result = await generateVideoFFmpeg({
       topic: topic || hook || body || 'new music',
       platform: platform || 'tiktok',
-      template: template || 'cinematic_promo',
+      template: template || undefined,
       aspect_ratio,
       duration: duration || 10,
       tone: tone || 'energetic',
@@ -1533,6 +1533,8 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       hook,
       body,
       cta,
+      bg_color: bg_color || undefined,
+      accent_color: accent_color || undefined,
     });
 
     if (!result.success) {
@@ -2043,16 +2045,33 @@ router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: 
       trackTitle: seed.track,
     });
 
+    // Derive genre-based default colors for the video template
+    const genreColorMap: Record<string, { bg: string; ac: string }> = {
+      'trap':       { bg: '#0a0a0a', ac: '#ff3c00' },
+      'hip-hop':    { bg: '#1a1a2e', ac: '#e94560' },
+      'r&b':        { bg: '#1a0a2e', ac: '#c77dff' },
+      'pop':        { bg: '#0d0d1a', ac: '#00d4ff' },
+      'edm':        { bg: '#000d1a', ac: '#00ffcc' },
+      'country':    { bg: '#1a1000', ac: '#d4af37' },
+      'rock':       { bg: '#1a0000', ac: '#ff4500' },
+      'jazz':       { bg: '#0a0a1a', ac: '#d4af37' },
+      'classical':  { bg: '#1a1a10', ac: '#c0c0c0' },
+    };
+    const genreKey = (seed.genre || 'hip-hop').toLowerCase();
+    const colors = genreColorMap[genreKey] || { bg: '#1a1a2e', ac: '#e94560' };
+
     const videoConfig = {
-      topic:    seed.topic,
-      genre:    seed.genre || 'hip-hop',
-      tone:     seed.tone  || 'energetic',
-      platform: platform   || 'tiktok',
-      duration: 15,
+      topic:       seed.topic,
+      genre:       seed.genre || 'hip-hop',
+      tone:        seed.tone  || 'energetic',
+      platform:    platform   || 'tiktok',
+      duration:    15,
       artist_name: seed.artist || '',
-      hook:     seed.track
+      hook:        seed.track
         ? `${seed.track}${seed.artist ? ` — ${seed.artist}` : ''}`
         : seed.topic.slice(0, 60),
+      bg_color:    colors.bg,
+      accent_color: colors.ac,
     };
 
     const audioStyle = {
