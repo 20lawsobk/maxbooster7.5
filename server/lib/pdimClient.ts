@@ -35,6 +35,9 @@ export class PdimRedisClient extends EventEmitter {
   }
 
   private async exec(command: (string | number | null)[]): Promise<any> {
+    const [cmd, ...rawArgs] = command;
+    // The PDIM server validates all args as strings — coerce numbers/nulls
+    const args = rawArgs.map(a => (a === null ? '' : String(a)));
     try {
       const res = await fetch(this.execUrl, {
         method: 'POST',
@@ -42,7 +45,7 @@ export class PdimRedisClient extends EventEmitter {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.bearerToken}`,
         },
-        body: JSON.stringify(command),
+        body: JSON.stringify({ cmd, args }),
         signal: AbortSignal.timeout(5000),
       });
 
@@ -54,12 +57,20 @@ export class PdimRedisClient extends EventEmitter {
       const data = await res.json();
       if (data !== null && typeof data === 'object') {
         if ('result' in data) return data.result;
-        if ('error' in data) throw new Error(String(data.error));
+        if ('error' in data) {
+          const errMsg = String(data.error);
+          // Unsupported commands: return safe defaults instead of crashing
+          if (errMsg.startsWith('ERR unknown command')) {
+            logger.warn(`[PDIM] Unsupported command [${cmd}] — returning null`);
+            return null;
+          }
+          throw new Error(errMsg);
+        }
       }
       return data;
     } catch (err: any) {
       if (err.name !== 'AbortError') {
-        logger.error(`[PDIM] exec error [${command[0]}]: ${err.message}`);
+        logger.error(`[PDIM] exec error [${cmd}]: ${err.message}`);
       }
       throw err;
     }
