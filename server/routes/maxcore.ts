@@ -5,8 +5,9 @@ import path from "path";
 
 const router = Router();
 
-const PEER = process.env.PEER_TRAINING_NODE || "http://localhost:8000";
+const PEER = process.env.PEER_TRAINING_NODE || process.env.MBS_AI_TRAINING_URL || "http://localhost:8000";
 const TIMEOUT_MS = 12_000;
+const MBS_KEY = process.env.MBS_AI_TRAINING_KEY || '';
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
@@ -29,10 +30,12 @@ async function peer(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (MBS_KEY) headers["Authorization"] = `Bearer ${MBS_KEY}`;
     const opts: RequestInit = {
       method,
       signal: controller.signal,
-      headers: { "Content-Type": "application/json" },
+      headers,
     };
     if (body !== undefined) opts.body = JSON.stringify(body);
     const res = await fetch(`${PEER}${path}`, opts);

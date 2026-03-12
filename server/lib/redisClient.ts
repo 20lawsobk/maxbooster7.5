@@ -19,6 +19,7 @@
 import Redis from 'ioredis';
 import { logger } from '../logger.js';
 import { applyIoredisCompatShim } from './redisCompat.js';
+import { getPdimClient, isPdimConfigured } from './pdimClient.js';
 
 type RedisClient = Redis | InstanceType<typeof Redis.Cluster>;
 
@@ -96,6 +97,12 @@ function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> 
  * .duplicate() it safely for its own blocking sub-connection.
  */
 export function newBullMQRedisConnection(): Redis {
+  // When PDIM is configured, return a PDIM client duplicate for BullMQ
+  if (isPdimConfigured()) {
+    logger.info('[Redis/BullMQ] Using PDIM HTTP client for BullMQ connection');
+    return getPdimClient().duplicate() as unknown as Redis;
+  }
+
   const url = (() => {
     const clusterUrls = (process.env.REDIS_CLUSTER_URLS || '')
       .split(',').map(u => u.trim()).filter(Boolean);
@@ -120,6 +127,13 @@ export function newBullMQRedisConnection(): Redis {
 
 export function getRedisClient(): RedisClient {
   if (_redis) return _redis;
+
+  // Prefer PDIM (external Pocket Dimension / Redis replacement) when configured
+  if (isPdimConfigured()) {
+    logger.info('[Redis] PDIM_HTTP_EXEC_URL detected — routing all Redis operations through PDIM');
+    _redis = getPdimClient() as unknown as RedisClient;
+    return _redis;
+  }
 
   const clusterUrls = (process.env.REDIS_CLUSTER_URLS || '')
     .split(',')

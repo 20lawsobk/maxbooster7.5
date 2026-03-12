@@ -25,6 +25,7 @@ import { promisify } from 'util';
 import { EventEmitter } from 'events';
 import fs from 'fs/promises';
 import path from 'path';
+import { getPdimClient, isPdimConfigured } from '../lib/pdimClient.js';
 
 const pipelineAsync = promisify(pipeline);
 
@@ -363,6 +364,15 @@ export class PocketDimension extends EventEmitter {
   }
 
   private async persistChunk(id: string, data: Buffer): Promise<void> {
+    if (isPdimConfigured()) {
+      try {
+        const key = `pdim:chunk:${this.id}:${id}`;
+        await getPdimClient().set(key, data.toString('base64'));
+        return;
+      } catch (err: any) {
+        // fall through to disk
+      }
+    }
     const chunkDir = path.join(this.storagePath, this.id, 'chunks');
     await fs.mkdir(chunkDir, { recursive: true });
     await fs.writeFile(path.join(chunkDir, id), data);
@@ -397,10 +407,24 @@ export class PocketDimension extends EventEmitter {
     let data = this.chunkData.get(id);
     
     if (!data) {
-      // Load from disk
-      const chunkPath = path.join(this.storagePath, this.id, 'chunks', id);
-      data = await fs.readFile(chunkPath);
-      this.chunkData.set(id, data);
+      if (isPdimConfigured()) {
+        try {
+          const key = `pdim:chunk:${this.id}:${id}`;
+          const encoded = await getPdimClient().get(key);
+          if (encoded) {
+            data = Buffer.from(encoded, 'base64');
+            this.chunkData.set(id, data);
+          }
+        } catch (err: any) {
+          // fall through to disk
+        }
+      }
+      if (!data) {
+        // Load from disk
+        const chunkPath = path.join(this.storagePath, this.id, 'chunks', id);
+        data = await fs.readFile(chunkPath);
+        this.chunkData.set(id, data);
+      }
     }
     
     // Decrypt if needed

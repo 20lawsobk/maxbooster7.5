@@ -74,3 +74,6 @@ client/public/videos/
 *.pfx
 service-account*.json
 .config/
+
+# Security auto-fix: required entries
+.env.development

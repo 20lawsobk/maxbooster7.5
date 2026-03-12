@@ -20,22 +20,24 @@ import { logger } from '../logger.js';
 import Redis from 'ioredis';
 import { config } from '../config/defaults.js';
 import { applyIoredisCompatShim } from './redisCompat.js';
+import { getPdimClient, isPdimConfigured } from './pdimClient.js';
 
 export type RedisClientType = any;
 
 let redisClient: Redis | null = null;
 
 export async function getRedisClient(): Promise<any> {
-  // Production: Use real Redis (ioredis)
+  // Priority 1: PDIM (Pocket Dimension external server)
+  if (isPdimConfigured()) {
+    return getPdimClient();
+  }
+
+  // Priority 2: Real Redis via ioredis
   if (config.redis.url) {
     if (!redisClient) {
       redisClient = new Redis(config.redis.url, {
         maxRetriesPerRequest: config.redis.maxRetries,
         retryStrategy: (times) => Math.min(times * config.redis.retryDelay, 2000),
-        // Hard caps so a blocked/unreachable Redis host fails fast at startup
-        // instead of hanging the event loop for the OS-level TCP timeout (~75s).
-        // 2s connect is generous for a remote Redis with TLS; 500ms command
-        // timeout matches the tuned value in redisClient.ts.
         connectTimeout: 2000,
         commandTimeout: 500,
         enableReadyCheck: false,
@@ -56,6 +58,9 @@ export async function getRedisClient(): Promise<any> {
 }
 
 export async function createRedisClient(): Promise<any> {
+  if (isPdimConfigured()) {
+    return getPdimClient().duplicate();
+  }
   if (config.redis.url) {
     const client = new Redis(config.redis.url, {
       maxRetriesPerRequest: config.redis.maxRetries,
