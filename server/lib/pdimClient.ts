@@ -150,18 +150,6 @@ export class PdimRedisClient extends EventEmitter {
     };
   }
 
-  /**
-   * BullMQ calls info() to detect the Redis version and database type.
-   * Return a minimal INFO response that satisfies the version check.
-   */
-  async info(): Promise<string> {
-    return [
-      '# Server',
-      'redis_version:7.0.0',
-      'maxmemory_policy:noeviction',
-    ].join('\r\n');
-  }
-
   async sendCommand(args: string[]): Promise<any> { return this.exec(args); }
 
   // ── String commands ───────────────────────────────────────────────────────
