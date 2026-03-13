@@ -19,10 +19,15 @@ import { logger } from '../logger.js';
 
 type CbState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 
+// VM-reserved deployment: PDIM is always-on, restarts in seconds not minutes.
+// Keep backoff tight so a brief hiccup doesn't block logins for 15+ seconds.
+const INITIAL_BACKOFF_MS = 2_000;
+const MAX_BACKOFF_MS     = 10_000;
+
 let _state: CbState   = 'CLOSED';
 let _failures         = 0;
 let _openUntil        = 0;
-let _backoffMs        = 15_000;
+let _backoffMs        = INITIAL_BACKOFF_MS;
 let _halfOpenFlight   = false;
 
 export function cbRecordFailure(): void {
@@ -36,14 +41,14 @@ export function cbRecordFailure(): void {
     _halfOpenFlight = false;
     _openUntil      = Date.now() + _backoffMs;
     logger.warn(`[PDIM] Circuit OPEN — backing off ${_backoffMs / 1000}s after ${_failures} failure(s)`);
-    _backoffMs      = Math.min(_backoffMs * 2, 120_000);
+    _backoffMs      = Math.min(_backoffMs * 2, MAX_BACKOFF_MS);
   }
 }
 
 export function cbRecordSuccess(): void {
   const wasOpen = _state !== 'CLOSED';
   _failures       = 0;
-  _backoffMs      = 15_000;
+  _backoffMs      = INITIAL_BACKOFF_MS;
   _state          = 'CLOSED';
   _halfOpenFlight = false;
   if (wasOpen) {

@@ -13,7 +13,7 @@ import compression from "compression";
 import { logger } from "./logger.ts";
 import { setupStartupEndpoints } from "./startup-probes.ts";
 import { verifyReadReplica } from "./db.ts";
-import { createSessionStore, createPgSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
+import { createFallbackSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
 import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
 import { originValidation } from "./middleware/requestValidation.ts";
 import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.ts";
@@ -271,55 +271,19 @@ app.use((req, res, next) => {
   // Store reference to session store for WebSocket authentication
   let activeSessionStore: any = null;
 
-  const redisTimeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Redis session store init timed out after 5s')), 5000)
-  );
+  // FallbackSessionStore: always initializes PG first (guaranteed), then tries
+  // Redis/PDIM. If PDIM is up → Redis is primary, PG is auto-fallback.
+  // If PDIM is down → PG serves sessions immediately; Redis resumes when PDIM
+  // comes back (checked every 30 s). Logins never fail due to PDIM being down.
+  activeSessionStore = await createFallbackSessionStore();
+  const sessionConfig = getSessionConfig(activeSessionStore);
+  app.use(session(sessionConfig));
+  logger.info('✅ Session store initialized (FallbackSessionStore: Redis/PDIM → PG)');
 
-  try {
-    // Try to create Redis session store — race against a 15-second timeout
-    activeSessionStore = await Promise.race([createSessionStore(), redisTimeout]);
-    const sessionConfig = getSessionConfig(activeSessionStore);
-    app.use(session(sessionConfig));
-    logger.info('✅ Production session store initialized (Redis)');
-
-    // Connect distributed cache to Redis now that Redis is confirmed available
-    await distributedCache.connect().catch((e: any) => {
-      logger.warn(`⚠️ Distributed cache connect failed (non-fatal): ${e.message}`);
-    });
-  } catch (error: any) {
-    // Redis unavailable — try PostgreSQL session store (shared across cluster workers).
-    logger.warn(`⚠️ Redis session store unavailable: ${error.message}`);
-    logger.warn('⚠️  Falling back to PostgreSQL session store (shared, persistent)');
-
-    try {
-      activeSessionStore = await createPgSessionStore();
-      const pgSessionConfig = getSessionConfig(activeSessionStore);
-      app.use(session(pgSessionConfig));
-      logger.info('✅ Session store: PostgreSQL (shared across all workers)');
-    } catch (pgError: any) {
-      // PostgreSQL also failed — last resort: in-memory store (dev only)
-      logger.error(`❌ PostgreSQL session store also failed: ${pgError.message}`);
-      logger.warn('⚠️  Last resort: in-memory session store (not shared across workers — dev only)');
-
-      const MemoryStore = session.MemoryStore;
-      activeSessionStore = new MemoryStore();
-
-      const fallbackSessionConfig = {
-        store: activeSessionStore,
-        secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
-        resave: false,
-        saveUninitialized: false,
-        name: 'sessionId',
-        cookie: {
-          secure: isProduction,
-          httpOnly: true,
-          sameSite: 'lax' as const,
-          maxAge: 24 * 60 * 60 * 1000,
-        },
-      };
-      app.use(session(fallbackSessionConfig));
-    }
-  }
+  // Connect distributed cache to Redis (non-fatal if PDIM is down)
+  await distributedCache.connect().catch((e: any) => {
+    logger.warn(`⚠️ Distributed cache connect failed (non-fatal): ${e.message}`);
+  });
   
   // Export session store for WebSocket authentication
   (global as any).__activeSessionStore = activeSessionStore;
