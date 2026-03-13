@@ -25,7 +25,7 @@ import { db } from '../db.js';
 import { customerHealthScores, sessions, featureEvents, users, subscriptions } from '@shared/schema';
 import { eq, and, gte, count, countDistinct, desc, gt, asc, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
-import { getRedisClient } from '../lib/redisClient.js';
+import { newBullMQRedisConnection } from '../lib/redisClient.js';
 import { Queue } from 'bullmq';
 
 export type RiskLevel = 'healthy' | 'at_risk' | 'churning';
@@ -292,7 +292,7 @@ class CustomerHealthScoreService {
 
   async batchCompute(limit = 500): Promise<void> {
     try {
-      const redis = getRedisClient();
+      const redis = newBullMQRedisConnection();
       if (redis) {
         const queue = new Queue('retention-jobs', { connection: redis });
         await queue.add('health-score-batch', { cursor: 0, batchSize: 100 });

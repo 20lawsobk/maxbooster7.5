@@ -97,20 +97,19 @@ function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> 
  * .duplicate() it safely for its own blocking sub-connection.
  */
 export function newBullMQRedisConnection(): Redis {
-  // When PDIM is configured it fully replaces Redis — route BullMQ through it.
-  // PdimRedisClient implements connect/disconnect/duplicate so BullMQ's
-  // isRedisInstance() check passes and no fallback to localhost:6379 occurs.
-  if (isPdimConfigured()) {
-    logger.info('[Redis/BullMQ] Using PDIM HTTP client for BullMQ connection');
-    return getPdimClient().duplicate() as unknown as Redis;
-  }
-
+  // BullMQ requires Lua scripting (EVAL) for all atomic queue operations.
+  // PDIM does not support EVAL ("ERR unknown command 'EVAL'"), so BullMQ
+  // MUST always use a real ioredis TCP connection — never PDIM.
   const url = (() => {
     const clusterUrls = (process.env.REDIS_CLUSTER_URLS || '')
       .split(',').map(u => u.trim()).filter(Boolean);
     return clusterUrls.length >= 1 ? clusterUrls[0] : process.env.REDIS_URL;
   })();
-  if (!url) throw new Error('REDIS_URL environment variable is not set');
+  if (!url) throw new Error('REDIS_URL environment variable is not set for BullMQ');
+
+  if (isPdimConfigured()) {
+    logger.info('[Redis/BullMQ] PDIM active for app ops — BullMQ using direct ioredis (EVAL required)');
+  }
 
   const conn = new Redis(url, {
     maxRetriesPerRequest: null,

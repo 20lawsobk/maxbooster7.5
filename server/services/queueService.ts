@@ -88,7 +88,7 @@ export interface CSVImportResult {
 
 function makeQueueOptions(): QueueOptions {
   return {
-    connection: getRedisClient(),
+    connection: newBullMQRedisConnection(),
     defaultJobOptions: {
       attempts: 3,
       backoff: { type: 'exponential', delay: 2000 },

@@ -1,5 +1,5 @@
 import { Worker, type Job } from 'bullmq';
-import { getRedisClient } from '../lib/redisClient.js';
+import { newBullMQRedisConnection } from '../lib/redisClient.js';
 import { logger } from '../logger.js';
 import { AUTONOMOUS_QUEUE } from '../services/autonomousJobScheduler.js';
 
@@ -33,7 +33,7 @@ export function createAutonomousWorker(): Worker {
       }
     },
     {
-      connection: getRedisClient(),
+      connection: newBullMQRedisConnection(),
       concurrency: 2,
       removeOnComplete: { count: 10 },
       removeOnFail: { count: 50 },
