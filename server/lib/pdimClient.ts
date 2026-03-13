@@ -18,6 +18,22 @@ export class PdimRedisClient extends EventEmitter {
   private execUrl: string;
   private bearerToken: string;
 
+  /**
+   * BullMQ reads this._client.options.keyPrefix to validate no prefix is set,
+   * and uses this._client.options as its opts. Supply safe defaults.
+   */
+  public readonly options: {
+    keyPrefix?: string;
+    maxRetriesPerRequest: null;
+    enableReadyCheck: boolean;
+    enableOfflineQueue: boolean;
+  } = {
+    keyPrefix: undefined,
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+    enableOfflineQueue: false,
+  };
+
   constructor(execUrl?: string, bearerToken?: string) {
     super();
     this.execUrl = execUrl || process.env.PDIM_HTTP_EXEC_URL || '';
@@ -111,8 +127,40 @@ export class PdimRedisClient extends EventEmitter {
     return new PdimRedisClient(this.execUrl, this.bearerToken);
   }
 
+  // Required by BullMQ's isRedisInstance() check: ['connect', 'disconnect', 'duplicate']
+  async connect(): Promise<void> {
+    // PDIM is HTTP-based — already "connected" on construction; no-op here
+    this.emit('connect');
+    this.emit('ready');
+  }
+
   async quit(): Promise<'OK'> { return 'OK'; }
   async disconnect(): Promise<void> {}
+
+  /**
+   * BullMQ calls defineCommand() to register Lua scripts as named commands.
+   * We store each script and attach a callable method that runs it via EVAL.
+   */
+  defineCommand(name: string, opts: { numberOfKeys: number; lua: string }): void {
+    (this as any)[name] = async (...callArgs: any[]): Promise<any> => {
+      const numKeys = opts.numberOfKeys;
+      const keys = callArgs.slice(0, numKeys);
+      const args = callArgs.slice(numKeys);
+      return this.exec(['EVAL', opts.lua, String(numKeys), ...keys, ...args]);
+    };
+  }
+
+  /**
+   * BullMQ calls info() to detect the Redis version and database type.
+   * Return a minimal INFO response that satisfies the version check.
+   */
+  async info(): Promise<string> {
+    return [
+      '# Server',
+      'redis_version:7.0.0',
+      'maxmemory_policy:noeviction',
+    ].join('\r\n');
+  }
 
   async sendCommand(args: string[]): Promise<any> { return this.exec(args); }
 

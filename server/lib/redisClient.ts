@@ -97,7 +97,9 @@ function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> 
  * .duplicate() it safely for its own blocking sub-connection.
  */
 export function newBullMQRedisConnection(): Redis {
-  // When PDIM is configured, return a PDIM client duplicate for BullMQ
+  // When PDIM is configured it fully replaces Redis — route BullMQ through it.
+  // PdimRedisClient implements connect/disconnect/duplicate so BullMQ's
+  // isRedisInstance() check passes and no fallback to localhost:6379 occurs.
   if (isPdimConfigured()) {
     logger.info('[Redis/BullMQ] Using PDIM HTTP client for BullMQ connection');
     return getPdimClient().duplicate() as unknown as Redis;

@@ -49,7 +49,7 @@ let _queue: Queue | null = null;
 export function getRetentionQueue(): Queue {
   if (_queue) return _queue;
 
-  const connection = getRedisClient();
+  const connection = newBullMQRedisConnection();
   _queue = new Queue(RETENTION_QUEUE, {
     connection,
     defaultJobOptions: JOB_DEFAULTS,

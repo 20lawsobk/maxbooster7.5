@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { getRedisClient } from '../lib/redisClient.js';
+import { newBullMQRedisConnection } from '../lib/redisClient.js';
 import { logger } from '../logger.js';
 
 export const AUTONOMOUS_QUEUE = 'autonomous';
@@ -9,7 +9,7 @@ let _queue: Queue | null = null;
 function getQueue(): Queue {
   if (!_queue) {
     _queue = new Queue(AUTONOMOUS_QUEUE, {
-      connection: getRedisClient(),
+      connection: newBullMQRedisConnection(),
       defaultJobOptions: {
         removeOnComplete: { count: 10 },
         removeOnFail: { count: 50 },

@@ -58,6 +58,7 @@ export async function getRedisClient(): Promise<any> {
 }
 
 export async function createRedisClient(): Promise<any> {
+  // PDIM fully replaces Redis — use it when configured
   if (isPdimConfigured()) {
     return getPdimClient().duplicate();
   }

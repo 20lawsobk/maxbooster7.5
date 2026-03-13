@@ -1,5 +1,5 @@
 import { Queue, QueueOptions } from 'bullmq';
-import { getRedisClient } from '../lib/redisClient.js';
+import { getRedisClient, newBullMQRedisConnection } from '../lib/redisClient.js';
 import { config } from '../config/defaults.js';
 import { logger } from '../logger.js';
 
