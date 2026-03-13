@@ -46,11 +46,18 @@ function checkMemoryUsage(workerName: string): void {
 }
 
 function workerOpts(concurrency: number) {
+  // PDIM is an HTTP-backed Redis replacement — each redis.call() inside a Lua
+  // script costs ~100-300 ms over the network.  Keep concurrency low and add a
+  // generous drainDelay so idle workers back off instead of hammering the Lua
+  // executor with continuous moveToActive polls.
+  const pdimConcurrency = Math.min(concurrency, 2);
   return {
     connection: newBullMQRedisConnection(),
-    concurrency,
+    concurrency: pdimConcurrency,
     autorun: false,
-    limiter: { max: concurrency, duration: 1000 },
+    drainDelay: 5000,          // wait 5 s before re-polling an empty queue
+    runRetryDelay: 15000,      // explicit: wait 15 s after any worker error before retrying
+    limiter: { max: pdimConcurrency, duration: 1000 },
     lockDuration: 120000,
     stalledInterval: 30000,
     maxStalledCount: 2,

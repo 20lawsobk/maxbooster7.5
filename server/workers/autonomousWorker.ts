@@ -34,7 +34,9 @@ export function createAutonomousWorker(): Worker {
     },
     {
       connection: newBullMQRedisConnection(),
-      concurrency: 2,
+      concurrency: 1,
+      drainDelay: 5000,
+      runRetryDelay: 15000,
       removeOnComplete: { count: 10 },
       removeOnFail: { count: 50 },
     },

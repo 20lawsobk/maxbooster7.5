@@ -116,10 +116,12 @@ export function startRetentionWorker(): Worker {
     },
     {
       connection,
-      concurrency: WORKER_CONCURRENCY,
+      concurrency: Math.min(WORKER_CONCURRENCY, 2),
+      runRetryDelay: 15000,
       autorun: false,
+      drainDelay: 5000,
       limiter: {
-        max: WORKER_CONCURRENCY,
+        max: Math.min(WORKER_CONCURRENCY, 2),
         duration: 1_000,
       },
     }

@@ -81,9 +81,26 @@ export class PdimRedisClient extends EventEmitter {
 
       if (!res.ok) {
         const text = await res.text().catch(() => '');
+        // Only trip the circuit breaker on 5xx server errors or when PDIM is
+        // completely unreachable.  4xx errors are client-side mistakes (bad
+        // arguments, unsupported command, etc.) — they don't indicate an outage.
+        if (res.status >= 500) {
+          cbRecord503();
+          _counted = true;
+        }
+        const errMsg = `PDIM HTTP ${res.status}: ${text.slice(0, 120)}`;
+        logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+        throw new Error(errMsg);
+      }
+
+      // Detect when PDIM returns non-JSON (e.g. Replit's "app not running" HTML page).
+      // Treat this as a 503-equivalent — trip the circuit breaker.
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        const body = await res.text().catch(() => '(unreadable)');
         cbRecord503();
         _counted = true;
-        const errMsg = `PDIM HTTP ${res.status}: ${text.slice(0, 120)}`;
+        const errMsg = `PDIM returned non-JSON (${contentType.split(';')[0].trim() || 'unknown type'}): ${body.slice(0, 80)}`;
         logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
         throw new Error(errMsg);
       }
@@ -237,7 +254,14 @@ export class PdimRedisClient extends EventEmitter {
   async hsetnx(key: string, field: string, value: string): Promise<0 | 1> { return this.exec(['HSETNX', key, field, value]); }
   async hdel(key: string, ...fields: string[]): Promise<number> { return this.exec(['HDEL', key, ...fields]); }
   async hmget(key: string, ...fields: string[]): Promise<(string | null)[]> { return this.exec(['HMGET', key, ...fields]); }
-  async hmset(key: string, ...args: any[]): Promise<'OK'> { return this.exec(['HMSET', key, ...args]); }
+  async hmset(key: string, ...args: any[]): Promise<'OK'> {
+    // PDIM only accepts HSET with a single field-value pair.  Split HMSET
+    // (which can carry N pairs) into sequential HSET calls.
+    for (let i = 0; i < args.length - 1; i += 2) {
+      await this.exec(['HSET', key, args[i], args[i + 1]]);
+    }
+    return 'OK';
+  }
   async hgetall(key: string): Promise<Record<string, string>> {
     const result = await this.exec(['HGETALL', key]);
     return result ?? {};

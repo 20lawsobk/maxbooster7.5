@@ -23,25 +23,52 @@ import { cbIsOpen } from './pdimCircuitBreaker.js';
 const _msgUnpacker = new Unpackr({ useRecords: false });
 
 /**
- * Hard cap on concurrent wasmoon Worker threads.
- * Each Worker loads the full WASM binary; too many simultaneously causes a
- * segmentation fault from memory exhaustion. When the cap is hit, new Lua
- * script calls fail immediately (BullMQ will retry later) rather than
- * accumulating Workers that crash the process.
+ * Async semaphore for wasmoon Worker threads.
+ *
+ * Each Worker loads the full WASM binary and makes multiple HTTP calls to
+ * PDIM — too many simultaneously exhausts memory and saturates the HTTP
+ * connection pool.  Instead of rejecting callers when the cap is hit (which
+ * causes BullMQ to retry immediately and create a storm), we queue waiting
+ * callers and resolve them as slots free up.
+ *
+ * MAX_WAIT_MS: maximum time a caller will wait for a slot before giving up.
  */
 const MAX_CONCURRENT_WORKERS = 6;
-let _activeWorkers = 0;
+const MAX_WAIT_MS = 30_000;
+// How long to sleep before rejecting when the circuit is OPEN.
+// BullMQ uses onlyEmitError:true so our rejection is swallowed and treated as
+// "no job" — without this sleep the poll loop runs at full speed, saturating
+// the event loop and preventing HTTP requests from being handled.
+const CIRCUIT_OPEN_BACKOFF_MS = 5_000;
 
-function _acquireWorkerSlot(): boolean {
+let _activeWorkers = 0;
+const _waitQueue: Array<() => void> = [];
+
+async function _acquireWorkerSlot(): Promise<void> {
   if (_activeWorkers < MAX_CONCURRENT_WORKERS) {
     _activeWorkers++;
-    return true;
+    return;
   }
-  return false;
+  // Queue the caller until a slot frees up.
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const idx = _waitQueue.indexOf(resolver);
+      if (idx !== -1) _waitQueue.splice(idx, 1);
+      reject(new Error('[LuaExecutor] Timeout waiting for worker slot (30s)'));
+    }, MAX_WAIT_MS);
+    const resolver = () => { clearTimeout(timer); _activeWorkers++; resolve(); };
+    _waitQueue.push(resolver);
+  });
 }
 
 function _releaseWorkerSlot(): void {
-  if (_activeWorkers > 0) _activeWorkers--;
+  if (_waitQueue.length > 0) {
+    // Hand the slot directly to the next waiter — activeWorkers stays the same.
+    const next = _waitQueue.shift()!;
+    next();
+  } else {
+    if (_activeWorkers > 0) _activeWorkers--;
+  }
 }
 
 // process.cwd() always resolves to the project root regardless of CJS/ESM build format
@@ -71,7 +98,11 @@ function syncRedisCall(cmd, args) {
   const len    = Atomics.load(lenBuf, 0);
   const raw    = Buffer.from(new Uint8Array(sab, SAB_HEADER_BYTES, len)).toString('utf8');
   if (status === 2) throw new Error(raw); // propagates as Lua error
-  return JSON.parse(raw);
+  // Reviver: convert every JSON null to false.
+  // wasmoon checks if JS values are Promises by accessing .then — calling
+  // null.then throws "Cannot read properties of null".  Lua false is the
+  // conventional Redis nil substitute and is correctly falsy in if-guards.
+  return JSON.parse(raw, (_k, v) => v === null ? false : v);
 }
 
 function makeCmsgpack() {
@@ -157,16 +188,31 @@ export async function execLuaViaPdim(
   // Skip Worker spawn entirely when PDIM is known to be down.
   // The circuit breaker trips after 5 consecutive failures and backs off.
   // This prevents wasmoon WASM Workers from accumulating and causing a segfault.
+  //
+  // IMPORTANT: BullMQ uses onlyEmitError:true for moveToActive, which means our
+  // rejection is swallowed and treated as "no job" — causing a tight poll loop
+  // because BullMQ's `this.drained` is never set and drainDelay never kicks in.
+  // We add an explicit backoff sleep here so each poll cycle waits before returning,
+  // regardless of what BullMQ does with the error.
   if (cbIsOpen()) {
+    await new Promise<void>(r => setTimeout(r, CIRCUIT_OPEN_BACKOFF_MS));
     return Promise.reject(new Error('[LuaExecutor] PDIM circuit OPEN — skipping Worker spawn'));
   }
 
-  // Belt-and-suspenders: hard cap on concurrent Worker threads regardless of
-  // circuit state (e.g. a burst of requests before the circuit trips).
-  if (!_acquireWorkerSlot()) {
-    return Promise.reject(new Error(
-      `[LuaExecutor] Worker pool full (${MAX_CONCURRENT_WORKERS} active) — try again later`,
-    ));
+  // Acquire a Worker slot — queues the caller (up to MAX_WAIT_MS) rather than
+  // rejecting immediately.  This prevents BullMQ from producing a retry storm.
+  await _acquireWorkerSlot();
+
+  // Re-check circuit AFTER acquiring the slot.  If the circuit opened while
+  // this caller was queued, sleep then release so the wait-queue drain is
+  // throttled (≤ 6 rejects per CIRCUIT_OPEN_BACKOFF_MS) instead of cascading
+  // instantly and saturating the event loop.
+  if (cbIsOpen()) {
+    // Sleep BEFORE releasing the slot so the drain cascade is throttled —
+    // the next waiter won't get the slot until this sleep expires.
+    await new Promise<void>(r => setTimeout(r, CIRCUIT_OPEN_BACKOFF_MS));
+    _releaseWorkerSlot();
+    return Promise.reject(new Error('[LuaExecutor] PDIM circuit OPEN (post-queue) — skipping Worker spawn'));
   }
 
   return new Promise((resolve, reject) => {
@@ -196,7 +242,19 @@ export async function execLuaViaPdim(
         let payload: string;
         let status: 1 | 2;
         try {
-          const r = await pdimExec([msg.cmd, ...msg.args]);
+          let r: any;
+          const cmd = (msg.cmd as string).toUpperCase();
+          if (cmd === 'HMSET') {
+            // PDIM's Redis only accepts HSET with one field-value pair at a time.
+            // Split "HMSET key f1 v1 f2 v2 ..." into sequential HSET calls.
+            const [key, ...pairs] = msg.args as string[];
+            for (let i = 0; i < pairs.length - 1; i += 2) {
+              r = await pdimExec(['HSET', key, pairs[i], pairs[i + 1]]);
+            }
+            r = r ?? 'OK';
+          } else {
+            r = await pdimExec([msg.cmd, ...msg.args]);
+          }
           payload = JSON.stringify(r ?? null);
           status  = 1; // success
         } catch (e: any) {
