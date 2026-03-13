@@ -125,6 +125,14 @@ async function buildAll() {
     format: "cjs" as const,
     define: {
       "process.env.NODE_ENV": '"production"',
+      // Replace import.meta.url with a CJS-compatible variable so esbuild
+      // stops emitting "import.meta is not available with cjs" warnings.
+      "import.meta.url": "__importMetaUrl__",
+    },
+    // Banner runs before any bundled code — defines the CJS equivalent of
+    // import.meta.url so every file in the bundle resolves it correctly.
+    banner: {
+      js: `const __importMetaUrl__ = require("url").pathToFileURL(__filename).href;`,
     },
     minify: true,
     minifySyntax: true,
