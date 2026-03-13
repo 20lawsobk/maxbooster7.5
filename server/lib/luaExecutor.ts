@@ -1,0 +1,186 @@
+/**
+ * LuaExecutor — runs BullMQ Lua scripts locally in a Worker thread using
+ * wasmoon (WebAssembly Lua 5.4), bypassing PDIM's broken async Lua runtime.
+ *
+ * Root problem with PDIM EVAL:
+ *   PDIM implements redis.call() as an async Promise chain internally.
+ *   BullMQ's Lua scripts use redis.call() synchronously (standard Redis model).
+ *   When redis.call() returns nil, PDIM tries .then(null) and crashes.
+ *
+ * Solution:
+ *   1. Run the Lua script in a Worker thread (can block with Atomics.wait).
+ *   2. Inject redis.call() as a synchronous function that uses SharedArrayBuffer
+ *      IPC to call the main thread, which awaits PDIM HTTP and writes the result.
+ *   3. Pre-decode msgpack Buffer ARGV values before passing to the worker,
+ *      so cmsgpack.unpack() receives already-decoded Lua tables (identity fn).
+ */
+
+import { Worker } from 'worker_threads';
+import { Unpackr } from 'msgpackr';
+import { logger } from '../logger.js';
+
+const _msgUnpacker = new Unpackr({ useRecords: false });
+
+// process.cwd() always resolves to the project root regardless of CJS/ESM build format
+const _projectRoot = process.cwd();
+const _wasmoonUrl  = `file://${_projectRoot}/node_modules/wasmoon/dist/index.js`;
+const _msgpackrUrl = `file://${_projectRoot}/node_modules/msgpackr/dist/node.cjs`;
+
+const WORKER_CODE = `
+import { workerData, parentPort } from 'worker_threads';
+const { LuaFactory } = await import('${_wasmoonUrl}');
+const { Unpackr, Packr } = await import('${_msgpackrUrl}');
+const _unpack = new Unpackr({ useRecords: false });
+const _pack   = new Packr({ useRecords: false });
+
+const SAB_HEADER_BYTES = 8;
+const SAB_DATA_BYTES   = 131072; // 128 KB max per Redis response
+// SAB control values: 0=waiting, 1=success result, 2=error (main thread threw)
+
+function syncRedisCall(cmd, args) {
+  const sab     = new SharedArrayBuffer(SAB_HEADER_BYTES + SAB_DATA_BYTES);
+  const control = new Int32Array(sab, 0, 1);
+  const lenBuf  = new Int32Array(sab, 4, 1);
+  Atomics.store(control, 0, 0);
+  parentPort.postMessage({ type: 'redis', cmd, args, sab });
+  Atomics.wait(control, 0, 0); // blocks worker until main thread signals
+  const status = Atomics.load(control, 0);
+  const len    = Atomics.load(lenBuf, 0);
+  const raw    = Buffer.from(new Uint8Array(sab, SAB_HEADER_BYTES, len)).toString('utf8');
+  if (status === 2) throw new Error(raw); // propagates as Lua error
+  return JSON.parse(raw);
+}
+
+function makeCmsgpack() {
+  return {
+    unpack(data) {
+      if (data === null || data === undefined) return null;
+      // Pre-decoded JS object passed from main thread (Buffer ARGV) → identity
+      if (typeof data === 'object') return data;
+      // Binary string (from Redis or unmodified ARGV) → decode with msgpackr
+      if (typeof data === 'string') {
+        try { return _unpack.unpack(Buffer.from(data, 'binary')); }
+        catch { return null; }
+      }
+      return null;
+    },
+    pack(data) {
+      return _pack.pack(data).toString('binary');
+    }
+  };
+}
+
+const { script, keys, argv } = workerData;
+const engine = await new LuaFactory().createEngine({ openStandardLibs: true });
+
+try {
+  engine.global.set('KEYS', keys);
+  engine.global.set('ARGV', argv);
+
+  engine.global.set('redis', {
+    call(...all) {
+      const [cmd, ...args] = all;
+      const r = syncRedisCall(String(cmd), args.map(a => (a == null ? '' : String(a))));
+      return r === null ? false : r; // Redis nil → Lua false
+    },
+    pcall(...all) {
+      const [cmd, ...args] = all;
+      try {
+        const r = syncRedisCall(String(cmd), args.map(a => (a == null ? '' : String(a))));
+        return r === null ? false : r;
+      } catch(e) {
+        return { err: e.message };
+      }
+    }
+  });
+
+  engine.global.set('cmsgpack', makeCmsgpack());
+  engine.global.set('cjson', {
+    decode(s) { try { return JSON.parse(s); } catch { return null; } },
+    encode(v) { return JSON.stringify(v); }
+  });
+
+  // Lua 5.1 compat: unpack() was moved to table.unpack() in Lua 5.2+
+  const fullScript = 'unpack = table.unpack\\n' + script;
+  const result = await engine.doString(fullScript);
+  parentPort.postMessage({ type: 'result', result });
+} catch(e) {
+  parentPort.postMessage({ type: 'error', error: e.message });
+} finally {
+  engine.global.close();
+}
+`;
+
+export async function execLuaViaPdim(
+  pdimExec: (args: string[]) => Promise<any>,
+  script: string,
+  numKeys: number,
+  allArgs: any[],
+): Promise<any> {
+  const keys = allArgs.slice(0, numKeys).map(String);
+
+  const argv = allArgs.slice(numKeys).map((arg: any) => {
+    if (arg instanceof Buffer || arg instanceof Uint8Array) {
+      try {
+        return _msgUnpacker.unpack(arg);
+      } catch {
+        return Buffer.from(arg).toString('binary');
+      }
+    }
+    if (arg === null || arg === undefined) return '';
+    return typeof arg === 'string' ? arg : String(arg);
+  });
+
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const settle = (fn: () => void) => { if (!settled) { settled = true; fn(); } };
+
+    const worker = new Worker(WORKER_CODE, {
+      eval: true,
+      workerData: { script, keys, argv },
+    });
+
+    const tmout = setTimeout(() => {
+      settle(() => {
+        worker.terminate();
+        reject(new Error('[LuaExecutor] script timeout (10s)'));
+      });
+    }, 10000);
+
+    worker.on('message', async (msg: any) => {
+      if (msg.type === 'redis') {
+        let payload: string;
+        let status: 1 | 2;
+        try {
+          const r = await pdimExec([msg.cmd, ...msg.args]);
+          payload = JSON.stringify(r ?? null);
+          status  = 1; // success
+        } catch (e: any) {
+          logger.warn(`[LuaExecutor] redis.call(${msg.cmd}) → PDIM error: ${e.message}`);
+          payload = `ERR PDIM unavailable: ${e.message}`;
+          status  = 2; // error — Lua will throw
+        }
+        const buf  = Buffer.from(payload, 'utf8');
+        const sab  = msg.sab as SharedArrayBuffer;
+        const ctrl = new Int32Array(sab, 0, 1);
+        const len  = new Int32Array(sab, 4, 1);
+        const data = new Uint8Array(sab, 8);
+        buf.copy(Buffer.from(data.buffer, data.byteOffset, data.byteLength));
+        Atomics.store(len,  0, buf.length);
+        Atomics.store(ctrl, 0, status);
+        Atomics.notify(ctrl, 0, 1);
+      } else if (msg.type === 'result') {
+        clearTimeout(tmout);
+        settle(() => { worker.terminate(); resolve(msg.result); });
+      } else if (msg.type === 'error') {
+        clearTimeout(tmout);
+        settle(() => { worker.terminate(); reject(new Error(msg.error)); });
+      }
+    });
+
+    worker.on('error', (err) => {
+      clearTimeout(tmout);
+      settle(() => reject(err));
+    });
+  });
+}

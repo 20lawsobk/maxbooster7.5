@@ -12,9 +12,7 @@
 
 import { EventEmitter } from 'events';
 import { logger } from '../logger.js';
-import { Unpackr } from 'msgpackr';
-
-const _msgUnpacker = new Unpackr({ useRecords: false });
+import { execLuaViaPdim } from './luaExecutor.js';
 
 export class PdimRedisClient extends EventEmitter {
   public status: string = 'ready';
@@ -145,25 +143,20 @@ export class PdimRedisClient extends EventEmitter {
    *
    * Calling convention: BullMQ invokes the created method as
    *   client[name](argsArray)  — a SINGLE array argument (ioredis flattens it internally).
-   * We replicate that flattening here.
    *
-   * For scripts that use cmsgpack.unpack():
-   *   1. Decode any Buffer/Uint8Array ARGV values with msgpackr → JSON string.
-   *   2. Prepend a cmsgpack stub to the Lua script that uses cjson instead.
-   *   PDIM supports cjson but not the Redis-native cmsgpack C module.
+   * Implementation: All Lua scripts run locally in a Worker thread via wasmoon
+   * (WebAssembly Lua 5.4). redis.call() inside Lua uses synchronous SharedArrayBuffer
+   * IPC to call back into the main thread, which forwards to PDIM over HTTP.
+   *
+   * This completely sidesteps PDIM's broken async Lua runtime where redis.call()
+   * returns Promises that Lua cannot await, causing .then(null) crashes on nil.
    */
   defineCommand(name: string, opts: { numberOfKeys: number; lua: string }): void {
     const self = this;
     const numKeys = opts.numberOfKeys;
-    const usesCmsgpack = opts.lua.includes('cmsgpack');
-
-    // Prepend stub once at define-time if the script uses cmsgpack
-    const lua = usesCmsgpack
-      ? 'local cmsgpack = { unpack = cjson.decode, pack = cjson.encode }\n' + opts.lua
-      : opts.lua;
+    const lua = opts.lua;
 
     (this as any)[name] = async function () {
-      // ioredis-style: if called with a single array argument, use it as the flat args list
       let flatArgs: any[];
       if (arguments.length === 1 && Array.isArray(arguments[0])) {
         flatArgs = arguments[0];
@@ -171,25 +164,12 @@ export class PdimRedisClient extends EventEmitter {
         flatArgs = Array.from(arguments);
       }
 
-      const keys = flatArgs.slice(0, numKeys);
-      let argv = flatArgs.slice(numKeys);
-
-      // Decode any msgpack-encoded Buffer/Uint8Array ARGV values → JSON string
-      // so cjson.decode() in the Lua stub can unpack them correctly.
-      if (usesCmsgpack) {
-        argv = argv.map((arg: any) => {
-          if (arg instanceof Buffer || arg instanceof Uint8Array) {
-            try {
-              return JSON.stringify(_msgUnpacker.unpack(arg));
-            } catch {
-              return String(arg);
-            }
-          }
-          return arg;
-        });
-      }
-
-      return self.exec(['EVAL', lua, String(numKeys), ...keys, ...argv]);
+      return execLuaViaPdim(
+        (args: string[]) => self.sendCommand(args),
+        lua,
+        numKeys,
+        flatArgs,
+      );
     };
   }
 

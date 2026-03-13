@@ -97,12 +97,14 @@ function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> 
  * .duplicate() it safely for its own blocking sub-connection.
  */
 export function newBullMQRedisConnection(): Redis {
-  // BullMQ Lua scripts use redis.call() synchronously — the standard Redis model.
-  // PDIM implements redis.call() as an async Promise chain internally; when any
-  // call returns nil (empty key, empty queue), PDIM tries .then(null) and crashes.
-  // This is a PDIM Lua runtime limitation — BullMQ must always use real ioredis.
+  // When PDIM is configured, route BullMQ through PDIM.
+  // The LuaExecutor (wasmoon + Worker threads + SharedArrayBuffer) runs BullMQ's
+  // Lua scripts locally, making redis.call() truly synchronous from Lua's perspective
+  // while dispatching individual Redis commands to PDIM over HTTP.
+  // This fixes the PDIM Lua runtime limitation (async redis.call → .then(null) crash).
   if (isPdimConfigured()) {
-    logger.info('[Redis/BullMQ] PDIM active — BullMQ using direct ioredis (async Lua not compatible)');
+    logger.info('[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor');
+    return getPdimClient().duplicate() as unknown as Redis;
   }
 
   const url = (() => {

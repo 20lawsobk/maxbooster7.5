@@ -160,7 +160,7 @@
     "tar": "^7.5.9",
     "tweetnacl": "^1.0.3",
     "twitter-api-v2": "^1.29.0",
-    "update": "^0.4.2",
+    "wasmoon": "^1.16.0",
     "wavefile": "^11.0.0",
     "ws": "^8.19.0",
     "xmlbuilder2": "^4.0.3",
