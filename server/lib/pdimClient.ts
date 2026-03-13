@@ -12,6 +12,9 @@
 
 import { EventEmitter } from 'events';
 import { logger } from '../logger.js';
+import { Unpackr } from 'msgpackr';
+
+const _msgUnpacker = new Unpackr({ useRecords: false });
 
 export class PdimRedisClient extends EventEmitter {
   public status: string = 'ready';
@@ -139,14 +142,54 @@ export class PdimRedisClient extends EventEmitter {
 
   /**
    * BullMQ calls defineCommand() to register Lua scripts as named commands.
-   * We store each script and attach a callable method that runs it via EVAL.
+   *
+   * Calling convention: BullMQ invokes the created method as
+   *   client[name](argsArray)  — a SINGLE array argument (ioredis flattens it internally).
+   * We replicate that flattening here.
+   *
+   * For scripts that use cmsgpack.unpack():
+   *   1. Decode any Buffer/Uint8Array ARGV values with msgpackr → JSON string.
+   *   2. Prepend a cmsgpack stub to the Lua script that uses cjson instead.
+   *   PDIM supports cjson but not the Redis-native cmsgpack C module.
    */
   defineCommand(name: string, opts: { numberOfKeys: number; lua: string }): void {
-    (this as any)[name] = async (...callArgs: any[]): Promise<any> => {
-      const numKeys = opts.numberOfKeys;
-      const keys = callArgs.slice(0, numKeys);
-      const args = callArgs.slice(numKeys);
-      return this.exec(['EVAL', opts.lua, String(numKeys), ...keys, ...args]);
+    const self = this;
+    const numKeys = opts.numberOfKeys;
+    const usesCmsgpack = opts.lua.includes('cmsgpack');
+
+    // Prepend stub once at define-time if the script uses cmsgpack
+    const lua = usesCmsgpack
+      ? 'local cmsgpack = { unpack = cjson.decode, pack = cjson.encode }\n' + opts.lua
+      : opts.lua;
+
+    (this as any)[name] = async function () {
+      // ioredis-style: if called with a single array argument, use it as the flat args list
+      let flatArgs: any[];
+      if (arguments.length === 1 && Array.isArray(arguments[0])) {
+        flatArgs = arguments[0];
+      } else {
+        flatArgs = Array.from(arguments);
+      }
+
+      const keys = flatArgs.slice(0, numKeys);
+      let argv = flatArgs.slice(numKeys);
+
+      // Decode any msgpack-encoded Buffer/Uint8Array ARGV values → JSON string
+      // so cjson.decode() in the Lua stub can unpack them correctly.
+      if (usesCmsgpack) {
+        argv = argv.map((arg: any) => {
+          if (arg instanceof Buffer || arg instanceof Uint8Array) {
+            try {
+              return JSON.stringify(_msgUnpacker.unpack(arg));
+            } catch {
+              return String(arg);
+            }
+          }
+          return arg;
+        });
+      }
+
+      return self.exec(['EVAL', lua, String(numKeys), ...keys, ...argv]);
     };
   }
 

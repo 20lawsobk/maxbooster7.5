@@ -97,12 +97,12 @@ function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> 
  * .duplicate() it safely for its own blocking sub-connection.
  */
 export function newBullMQRedisConnection(): Redis {
-  // BullMQ requires Redis-native cmsgpack (C module) inside its Lua scripts.
-  // PDIM's Lua runtime lacks cmsgpack → workers crash with
-  // "attempt to index a nil value (global 'cmsgpack')".
-  // BullMQ MUST always use a real ioredis TCP connection — never PDIM.
+  // BullMQ Lua scripts use redis.call() synchronously — the standard Redis model.
+  // PDIM implements redis.call() as an async Promise chain internally; when any
+  // call returns nil (empty key, empty queue), PDIM tries .then(null) and crashes.
+  // This is a PDIM Lua runtime limitation — BullMQ must always use real ioredis.
   if (isPdimConfigured()) {
-    logger.info('[Redis/BullMQ] PDIM active for app ops — BullMQ using direct ioredis (cmsgpack required)');
+    logger.info('[Redis/BullMQ] PDIM active — BullMQ using direct ioredis (async Lua not compatible)');
   }
 
   const url = (() => {
