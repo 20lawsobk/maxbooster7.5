@@ -333,10 +333,54 @@ export class PdimRedisClient extends EventEmitter {
   async rpoplpush(src: string, dst: string): Promise<string | null> { return this.exec(['RPOPLPUSH', src, dst]); }
   lmove = (src: string, dst: string, srcDir: string, dstDir: string) => this.exec(['LMOVE', src, dst, srcDir, dstDir]);
 
-  // ── Stream commands ────────────────────────────────────────────────────────
-  async xadd(key: string, id: string, ...args: any[]): Promise<string | null> { return this.exec(['XADD', key, id, ...args]); }
+  // ── Stream commands (full Redis Streams support) ──────────────────────────
+  /** XADD key [MAXLEN [~] count] [MINID [~] id] [NOMKSTREAM] id field value [field value ...] */
+  async xadd(key: string, ...args: any[]): Promise<string | null> { return this.exec(['XADD', key, ...args]); }
+  /** XTRIM key MAXLEN|MINID [~] threshold */
   async xtrim(key: string, strategy: string, ...args: any[]): Promise<number> { return this.exec(['XTRIM', key, strategy, ...args]); }
+  /** XLEN key */
   async xlen(key: string): Promise<number> { return this.exec(['XLEN', key]); }
+  /** XRANGE key start end [COUNT count] */
+  async xrange(key: string, start: string, end: string, ...args: any[]): Promise<any[]> { return this.exec(['XRANGE', key, start, end, ...args]); }
+  /** XREVRANGE key end start [COUNT count] */
+  async xrevrange(key: string, end: string, start: string, ...args: any[]): Promise<any[]> { return this.exec(['XREVRANGE', key, end, start, ...args]); }
+  /** XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] id [id ...] */
+  async xread(...args: any[]): Promise<any[] | null> { return this.exec(['XREAD', ...args]); }
+  /** XDEL key id [id ...] */
+  async xdel(key: string, ...ids: string[]): Promise<number> { return this.exec(['XDEL', key, ...ids]); }
+  /** XACK key group id [id ...] */
+  async xack(key: string, group: string, ...ids: string[]): Promise<number> { return this.exec(['XACK', key, group, ...ids]); }
+  /** XGROUP CREATE|SETID|DESTROY|CREATECONSUMER|DELCONSUMER key group id */
+  async xgroup(subCmd: string, key: string, group: string, ...args: any[]): Promise<any> { return this.exec(['XGROUP', subCmd, key, group, ...args]); }
+  /** XCLAIM key group consumer min-idle-time id [id ...] */
+  async xclaim(key: string, group: string, consumer: string, minIdleTime: number, ...args: any[]): Promise<any[]> { return this.exec(['XCLAIM', key, group, consumer, minIdleTime, ...args]); }
+  /** XAUTOCLAIM key group consumer min-idle-time start [COUNT count] */
+  async xautoclaim(key: string, group: string, consumer: string, minIdleTime: number, start: string, ...args: any[]): Promise<any> { return this.exec(['XAUTOCLAIM', key, group, consumer, minIdleTime, start, ...args]); }
+  /** XPENDING key group [[IDLE min-idle-time] start end count [consumer]] */
+  async xpending(key: string, group: string, ...args: any[]): Promise<any[]> { return this.exec(['XPENDING', key, group, ...args]); }
+  /** XINFO STREAM|GROUPS|CONSUMERS|FULL key */
+  async xinfo(subCmd: string, key: string, ...args: any[]): Promise<any> { return this.exec(['XINFO', subCmd, key, ...args]); }
+  /**
+   * XREADGROUP — not yet supported by PDIM; returns empty result so callers
+   * degrade gracefully instead of throwing.
+   */
+  async xreadgroup(..._args: any[]): Promise<any[] | null> { return null; }
+
+  // ── camelCase stream aliases (node-redis v4 compat) ───────────────────────
+  xAdd        = (key: string, ...args: any[]) => this.xadd(key, ...args);
+  xTrim       = (key: string, s: string, ...a: any[]) => this.xtrim(key, s, ...a);
+  xLen        = (key: string) => this.xlen(key);
+  xRange      = (key: string, s: string, e: string, ...a: any[]) => this.xrange(key, s, e, ...a);
+  xRevRange   = (key: string, e: string, s: string, ...a: any[]) => this.xrevrange(key, e, s, ...a);
+  xRead       = (...args: any[]) => this.xread(...args);
+  xReadGroup  = (...args: any[]) => this.xreadgroup(...args);
+  xDel        = (key: string, ...ids: string[]) => this.xdel(key, ...ids);
+  xAck        = (key: string, g: string, ...ids: string[]) => this.xack(key, g, ...ids);
+  xGroup      = (sub: string, key: string, g: string, ...a: any[]) => this.xgroup(sub, key, g, ...a);
+  xClaim      = (key: string, g: string, c: string, t: number, ...a: any[]) => this.xclaim(key, g, c, t, ...a);
+  xAutoClaim  = (key: string, g: string, c: string, t: number, s: string, ...a: any[]) => this.xautoclaim(key, g, c, t, s, ...a);
+  xPending    = (key: string, g: string, ...a: any[]) => this.xpending(key, g, ...a);
+  xInfo       = (sub: string, key: string, ...a: any[]) => this.xinfo(sub, key, ...a);
 
   // ── Lua eval ──────────────────────────────────────────────────────────────
   /**
