@@ -311,6 +311,42 @@ export class PdimRedisClient extends EventEmitter {
   async zremrangebyscore(key: string, min: any, max: any): Promise<number> { return this.exec(['ZREMRANGEBYSCORE', key, min, max]); }
   async zremrangebyrank(key: string, start: number, stop: number): Promise<number> { return this.exec(['ZREMRANGEBYRANK', key, start, stop]); }
 
+  // ── Sorted set blocking commands (polyfilled — PDIM has no blocking support) ─
+  /**
+   * BZPOPMIN — PDIM doesn't support blocking commands.
+   * Poll with ZPOPMIN every 200ms until a result arrives or timeout expires.
+   * timeout=0 is capped at 5s to avoid infinite loops.
+   */
+  async bzpopmin(key: string, timeout: number): Promise<[string, string, string] | null> {
+    const deadline = Date.now() + (timeout > 0 ? timeout * 1000 : 5000);
+    while (Date.now() < deadline) {
+      const result = await this.exec(['ZPOPMIN', key, '1']).catch(() => null);
+      if (Array.isArray(result) && result.length >= 2) {
+        return [key, result[0], result[1]];
+      }
+      await new Promise(r => setTimeout(r, 200));
+    }
+    return null;
+  }
+
+  // ── List atomic move ───────────────────────────────────────────────────────
+  async rpoplpush(src: string, dst: string): Promise<string | null> { return this.exec(['RPOPLPUSH', src, dst]); }
+  lmove = (src: string, dst: string, srcDir: string, dstDir: string) => this.exec(['LMOVE', src, dst, srcDir, dstDir]);
+
+  // ── Stream commands ────────────────────────────────────────────────────────
+  async xadd(key: string, id: string, ...args: any[]): Promise<string | null> { return this.exec(['XADD', key, id, ...args]); }
+  async xtrim(key: string, strategy: string, ...args: any[]): Promise<number> { return this.exec(['XTRIM', key, strategy, ...args]); }
+  async xlen(key: string): Promise<number> { return this.exec(['XLEN', key]); }
+
+  // ── Lua eval ──────────────────────────────────────────────────────────────
+  /**
+   * eval() — PDIM supports EVAL via its HTTP exec endpoint.
+   * Signature matches ioredis: eval(script, numkeys, ...keys_and_args)
+   */
+  async eval(script: string, numkeys: number | string, ...args: any[]): Promise<any> {
+    return this.exec(['EVAL', script, numkeys, ...args]);
+  }
+
   // ── Pub/Sub ───────────────────────────────────────────────────────────────
   async publish(channel: string, message: string): Promise<number> { return this.exec(['PUBLISH', channel, message]); }
   subscribe(_channel: string, _callback?: Function): Promise<void> { return Promise.resolve(); }

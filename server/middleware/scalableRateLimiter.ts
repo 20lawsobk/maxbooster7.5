@@ -61,53 +61,28 @@ export class DistributedRateLimiter {
     this.redisClient = redisClient ?? null;
   }
 
-  private static readonly SLIDING_WINDOW_LUA = `
-    local key        = KEYS[1]
-    local now        = tonumber(ARGV[1])
-    local window_ms  = tonumber(ARGV[2])
-    local max_req    = tonumber(ARGV[3])
-    local window_start = now - window_ms
-
-    redis.call('ZREMRANGEBYSCORE', key, 0, window_start)
-    local count = tonumber(redis.call('ZCARD', key))
-
-    if count >= max_req then
-      return {1, 0}
-    end
-
-    redis.call('ZADD', key, now, now .. ':' .. math.random())
-    redis.call('PEXPIRE', key, window_ms)
-
-    return {0, max_req - count - 1}
-  `;
-
   async isRateLimited(key: string): Promise<{ limited: boolean; remaining: number }> {
     if (this.redisClient) {
       try {
         const redisKey = `ratelimit:${key}`;
-        const now = Date.now();
+        const windowSecs = Math.ceil(this.config.windowMs / 1000);
 
-        const result = await this.redisClient.eval(
-          DistributedRateLimiter.SLIDING_WINDOW_LUA,
-          1,
-          redisKey,
-          String(now),
-          String(this.config.windowMs),
-          String(this.config.maxRequests)
-        ) as [number, number];
+        // Fixed-window counter using INCR + EXPIRE — no Lua required, fully PDIM-compatible.
+        const count: number = await this.redisClient.incr(redisKey);
+        if (count === 1) {
+          // First request in this window — set the expiry
+          await this.redisClient.expire(redisKey, windowSecs);
+        }
 
-        return {
-          limited: result[0] === 1,
-          remaining: Math.max(0, result[1] ?? 0),
-        };
+        const limited = count > this.config.maxRequests;
+        const remaining = Math.max(0, this.config.maxRequests - count);
+        return { limited, remaining };
       } catch (error) {
         if (isProductionEnv()) {
-          // In production: fail-open (allow the request) but never use per-instance tracking.
-          // Per-instance tracking causes divergent state across cluster workers.
-          logger.error('[RateLimit] Redis Lua eval failed in production — failing open (request allowed):', error);
+          logger.error('[RateLimit] Redis counter failed in production — failing open (request allowed):', error);
           return { limited: false, remaining: this.config.maxRequests };
         }
-        logger.warn('[RateLimit] Redis Lua eval failed in dev — using local fallback');
+        logger.warn('[RateLimit] Redis counter failed in dev — using local fallback');
       }
     }
 
