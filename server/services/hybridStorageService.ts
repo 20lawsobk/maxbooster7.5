@@ -22,7 +22,7 @@
 import { pocketManager, PocketDimension } from '../pocket-dimension/index.js';
 import { createHash } from 'crypto';
 import { logger } from '../logger.js';
-import fs from 'fs/promises';
+import { getPdimClient } from '../lib/pdimClient.js';
 
 const COLD_TIER_THRESHOLD_DAYS = 30;
 const COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -138,41 +138,9 @@ export class HybridStorageService {
     if (this.initialized) return;
 
     try {
-      const bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_OBJSTORE_BUCKET_ID || '';
-      if (bucketId || process.env.PRIVATE_OBJECT_DIR) {
-        // The @replit/object-storage Client internally fetches http://127.0.0.1:1106
-        // (the Replit object-storage sidecar). This sidecar is ONLY available in the
-        // Replit IDE / Reserved VM — it does NOT exist in Cloud Run / Autoscale.
-        // Probe the sidecar first with a short timeout so we never create a Client
-        // that fires an unhandled rejection in production.
-        let sidecarAvailable = false;
-        try {
-          const probe = await fetch('http://127.0.0.1:1106/object-storage/default-bucket', {
-            signal: AbortSignal.timeout(600),
-          });
-          sidecarAvailable = probe.ok || probe.status < 500;
-        } catch {
-          sidecarAvailable = false;
-        }
-
-        if (sidecarAvailable) {
-          try {
-            const { Client } = await import('@replit/object-storage');
-            const bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
-            const client = new Client(bucketId ? { bucketId } : undefined);
-            this.replitClient = client;
-            logger.info(`[HybridStorage] Initialized Replit Object Storage (hot tier)`);
-          } catch (e) {
-            logger.warn('[HybridStorage] Failed to initialize @replit/object-storage client, falling back to Pocket Dimension only');
-            this.replitClient = null;
-          }
-        } else {
-          logger.warn('[HybridStorage] Object Storage sidecar not reachable (Cloud Run / Autoscale), using Pocket Dimension only');
-          this.replitClient = null;
-        }
-      } else {
-        logger.warn('[HybridStorage] No Replit bucket ID found, all storage will use Pocket Dimension');
-      }
+      // PDIM is the only storage backend. Replit Object Storage is disabled.
+      this.replitClient = null;
+      logger.info('[HybridStorage] PDIM is the sole storage backend — Replit Object Storage disabled');
 
       this.coldPocket = await pocketManager.openPocket('hybrid-cold-storage', {
         compressionLevel: 9,
@@ -193,20 +161,20 @@ export class HybridStorageService {
 
   private async loadIndex(): Promise<void> {
     try {
-      const indexPath = './data/hybrid-storage-index.json';
-      const data = await fs.readFile(indexPath, 'utf-8');
-      const index = JSON.parse(data);
+      const raw = await getPdimClient().get('hybrid:storage:index');
+      if (!raw) throw new Error('No index in PDIM');
+      const index = JSON.parse(raw);
       
       this.fileIndex = new Map(
         Object.entries(index.files || {}).map(([k, v]: [string, any]) => [
           k,
-          { ...v, createdAt: new Date(v.createdAt), lastAccessed: new Date(v.lastAccessed), location: v.location || (v.tier === 'hot' ? 'replit' : 'pocket-dimension') }
+          { ...v, createdAt: new Date(v.createdAt), lastAccessed: new Date(v.lastAccessed), location: 'pocket-dimension' }
         ])
       );
       this.contentHashIndex = new Map(Object.entries(index.contentHashes || {}));
       this.publicContentHashes = new Map(Object.entries(index.publicHashes || {}));
       
-      logger.info(`[HybridStorage] Loaded index with ${this.fileIndex.size} entries`);
+      logger.info(`[HybridStorage] Loaded index from PDIM with ${this.fileIndex.size} entries`);
     } catch {
       this.fileIndex = new Map();
       this.contentHashIndex = new Map();
@@ -216,15 +184,14 @@ export class HybridStorageService {
 
   private async saveIndex(): Promise<void> {
     try {
-      await fs.mkdir('./data', { recursive: true });
-      await fs.writeFile('./data/hybrid-storage-index.json', JSON.stringify({
+      await getPdimClient().set('hybrid:storage:index', JSON.stringify({
         files: Object.fromEntries(this.fileIndex),
         contentHashes: Object.fromEntries(this.contentHashIndex),
         publicHashes: Object.fromEntries(this.publicContentHashes),
         updatedAt: new Date().toISOString(),
-      }, null, 2));
+      }));
     } catch (error) {
-      logger.error('[HybridStorage] Failed to save index:', error);
+      logger.error('[HybridStorage] Failed to save index to PDIM:', error);
     }
   }
 

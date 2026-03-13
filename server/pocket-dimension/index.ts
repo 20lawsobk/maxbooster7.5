@@ -23,9 +23,7 @@ import { createGzip, createGunzip, constants as zlibConstants } from 'zlib';
 import { pipeline, Readable, Writable, Transform } from 'stream';
 import { promisify } from 'util';
 import { EventEmitter } from 'events';
-import fs from 'fs/promises';
-import path from 'path';
-import { getPdimClient, isPdimConfigured } from '../lib/pdimClient.js';
+import { getPdimClient } from '../lib/pdimClient.js';
 
 const pipelineAsync = promisify(pipeline);
 
@@ -201,38 +199,34 @@ export class PocketDimension extends EventEmitter {
   async open(): Promise<void> {
     if (this.isOpen) return;
     
-    // Ensure storage directory exists
-    await fs.mkdir(path.join(this.storagePath, this.id), { recursive: true });
-    
-    // Load metadata if exists
+    // Load metadata and index from PDIM
     try {
-      const metaPath = path.join(this.storagePath, this.id, 'metadata.json');
-      const metaData = await fs.readFile(metaPath, 'utf-8');
-      this.metadata = JSON.parse(metaData);
-      
-      // Load encryption key if the dimension was encrypted
-      if (this.metadata.encrypted && !this.encryptionKey) {
-        const keyPath = path.join(this.storagePath, this.id, '.keyfile');
-        try {
-          const keyData = await fs.readFile(keyPath, 'utf-8');
-          const keyInfo = JSON.parse(keyData);
+      const metaRaw = await getPdimClient().get(`pdim:meta:${this.id}:metadata`);
+      if (metaRaw) {
+        this.metadata = JSON.parse(metaRaw);
+        
+        // Load encryption key if the dimension was encrypted
+        if (this.metadata.encrypted && !this.encryptionKey) {
+          const keyRaw = await getPdimClient().get(`pdim:meta:${this.id}:keyfile`);
+          if (!keyRaw) {
+            throw new Error(`Encrypted pocket dimension ${this.id} is missing its keyfile - data cannot be decrypted`);
+          }
+          const keyInfo = JSON.parse(keyRaw);
           this.rawEncryptionKey = keyInfo.key;
           this.encryptionKey = scryptSync(keyInfo.key, 'pocket-dimension-salt', 32);
-        } catch {
-          throw new Error(`Encrypted pocket dimension ${this.id} is missing its keyfile - data cannot be decrypted`);
+        }
+        
+        const indexRaw = await getPdimClient().get(`pdim:meta:${this.id}:index`);
+        if (indexRaw) {
+          const index = JSON.parse(indexRaw);
+          this.entries = new Map(Object.entries(index.entries));
+          this.chunks = new Map(Object.entries(index.chunks));
         }
       }
-      
-      // Load index
-      const indexPath = path.join(this.storagePath, this.id, 'index.json');
-      const indexData = await fs.readFile(indexPath, 'utf-8');
-      const index = JSON.parse(indexData);
-      
-      this.entries = new Map(Object.entries(index.entries));
-      this.chunks = new Map(Object.entries(index.chunks));
+      // If no metadata in PDIM, start fresh (new dimension)
     } catch (error: any) {
       if (error.message?.includes('keyfile')) {
-        throw error;  // Re-throw keyfile errors
+        throw error;
       }
       // New dimension, start fresh
     }
@@ -257,22 +251,19 @@ export class PocketDimension extends EventEmitter {
   }
 
   private async persistMetadata(): Promise<void> {
-    const metaPath = path.join(this.storagePath, this.id, 'metadata.json');
-    await fs.writeFile(metaPath, JSON.stringify(this.metadata, null, 2));
+    await getPdimClient().set(`pdim:meta:${this.id}:metadata`, JSON.stringify(this.metadata));
     
-    const indexPath = path.join(this.storagePath, this.id, 'index.json');
-    await fs.writeFile(indexPath, JSON.stringify({
+    await getPdimClient().set(`pdim:meta:${this.id}:index`, JSON.stringify({
       entries: Object.fromEntries(this.entries),
       chunks: Object.fromEntries(this.chunks),
-    }, null, 2));
+    }));
     
-    // Persist encryption key if encrypted (stored separately for security)
+    // Persist encryption key if encrypted
     if (this.rawEncryptionKey) {
-      const keyPath = path.join(this.storagePath, this.id, '.keyfile');
-      await fs.writeFile(keyPath, JSON.stringify({
+      await getPdimClient().set(`pdim:meta:${this.id}:keyfile`, JSON.stringify({
         key: this.rawEncryptionKey,
         createdAt: new Date().toISOString(),
-      }, null, 2), { mode: 0o600 });  // Only owner can read/write
+      }));
     }
   }
 
@@ -364,18 +355,8 @@ export class PocketDimension extends EventEmitter {
   }
 
   private async persistChunk(id: string, data: Buffer): Promise<void> {
-    if (isPdimConfigured()) {
-      try {
-        const key = `pdim:chunk:${this.id}:${id}`;
-        await getPdimClient().set(key, data.toString('base64'));
-        return;
-      } catch (err: any) {
-        // fall through to disk
-      }
-    }
-    const chunkDir = path.join(this.storagePath, this.id, 'chunks');
-    await fs.mkdir(chunkDir, { recursive: true });
-    await fs.writeFile(path.join(chunkDir, id), data);
+    const key = `pdim:chunk:${this.id}:${id}`;
+    await getPdimClient().set(key, data.toString('base64'));
   }
 
   // ============================================================================
@@ -407,24 +388,13 @@ export class PocketDimension extends EventEmitter {
     let data = this.chunkData.get(id);
     
     if (!data) {
-      if (isPdimConfigured()) {
-        try {
-          const key = `pdim:chunk:${this.id}:${id}`;
-          const encoded = await getPdimClient().get(key);
-          if (encoded) {
-            data = Buffer.from(encoded, 'base64');
-            this.chunkData.set(id, data);
-          }
-        } catch (err: any) {
-          // fall through to disk
-        }
+      const key = `pdim:chunk:${this.id}:${id}`;
+      const encoded = await getPdimClient().get(key);
+      if (!encoded) {
+        throw new Error(`Chunk not found in PDIM: ${id}`);
       }
-      if (!data) {
-        // Load from disk
-        const chunkPath = path.join(this.storagePath, this.id, 'chunks', id);
-        data = await fs.readFile(chunkPath);
-        this.chunkData.set(id, data);
-      }
+      data = Buffer.from(encoded, 'base64');
+      this.chunkData.set(id, data);
     }
     
     // Decrypt if needed
