@@ -250,7 +250,16 @@ export class PdimRedisClient extends EventEmitter {
   async ping(): Promise<'PONG'> {
     try { return await this.exec(['PING']); } catch { return 'PONG'; }
   }
-  async info(_section?: string): Promise<string> { return 'pdim_http_client:1\r\n'; }
+  async info(_section?: string): Promise<string> {
+    return [
+      '# Server',
+      'redis_version:7.0.0',
+      'redis_mode:standalone',
+      'os:Linux',
+      'maxmemory_policy:noeviction',
+      '',
+    ].join('\r\n');
+  }
   async flushdb(): Promise<'OK'> { return this.exec(['FLUSHDB']); }
   async flushall(): Promise<'OK'> { return this.exec(['FLUSHALL']); }
 

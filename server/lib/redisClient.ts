@@ -97,19 +97,20 @@ function buildClusterClient(urls: string[]): InstanceType<typeof Redis.Cluster> 
  * .duplicate() it safely for its own blocking sub-connection.
  */
 export function newBullMQRedisConnection(): Redis {
-  // BullMQ requires Lua scripting (EVAL) for all atomic queue operations.
-  // PDIM does not support EVAL ("ERR unknown command 'EVAL'"), so BullMQ
-  // MUST always use a real ioredis TCP connection — never PDIM.
+  // BullMQ requires Redis-native cmsgpack (C module) inside its Lua scripts.
+  // PDIM's Lua runtime lacks cmsgpack → workers crash with
+  // "attempt to index a nil value (global 'cmsgpack')".
+  // BullMQ MUST always use a real ioredis TCP connection — never PDIM.
+  if (isPdimConfigured()) {
+    logger.info('[Redis/BullMQ] PDIM active for app ops — BullMQ using direct ioredis (cmsgpack required)');
+  }
+
   const url = (() => {
     const clusterUrls = (process.env.REDIS_CLUSTER_URLS || '')
       .split(',').map(u => u.trim()).filter(Boolean);
     return clusterUrls.length >= 1 ? clusterUrls[0] : process.env.REDIS_URL;
   })();
   if (!url) throw new Error('REDIS_URL environment variable is not set for BullMQ');
-
-  if (isPdimConfigured()) {
-    logger.info('[Redis/BullMQ] PDIM active for app ops — BullMQ using direct ioredis (EVAL required)');
-  }
 
   const conn = new Redis(url, {
     maxRetriesPerRequest: null,
