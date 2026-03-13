@@ -18,8 +18,31 @@
 import { Worker } from 'worker_threads';
 import { Unpackr } from 'msgpackr';
 import { logger } from '../logger.js';
+import { cbIsOpen } from './pdimCircuitBreaker.js';
 
 const _msgUnpacker = new Unpackr({ useRecords: false });
+
+/**
+ * Hard cap on concurrent wasmoon Worker threads.
+ * Each Worker loads the full WASM binary; too many simultaneously causes a
+ * segmentation fault from memory exhaustion. When the cap is hit, new Lua
+ * script calls fail immediately (BullMQ will retry later) rather than
+ * accumulating Workers that crash the process.
+ */
+const MAX_CONCURRENT_WORKERS = 6;
+let _activeWorkers = 0;
+
+function _acquireWorkerSlot(): boolean {
+  if (_activeWorkers < MAX_CONCURRENT_WORKERS) {
+    _activeWorkers++;
+    return true;
+  }
+  return false;
+}
+
+function _releaseWorkerSlot(): void {
+  if (_activeWorkers > 0) _activeWorkers--;
+}
 
 // process.cwd() always resolves to the project root regardless of CJS/ESM build format
 const _projectRoot = process.cwd();
@@ -131,9 +154,30 @@ export async function execLuaViaPdim(
     return typeof arg === 'string' ? arg : String(arg);
   });
 
+  // Skip Worker spawn entirely when PDIM is known to be down.
+  // The circuit breaker trips after 5 consecutive failures and backs off.
+  // This prevents wasmoon WASM Workers from accumulating and causing a segfault.
+  if (cbIsOpen()) {
+    return Promise.reject(new Error('[LuaExecutor] PDIM circuit OPEN — skipping Worker spawn'));
+  }
+
+  // Belt-and-suspenders: hard cap on concurrent Worker threads regardless of
+  // circuit state (e.g. a burst of requests before the circuit trips).
+  if (!_acquireWorkerSlot()) {
+    return Promise.reject(new Error(
+      `[LuaExecutor] Worker pool full (${MAX_CONCURRENT_WORKERS} active) — try again later`,
+    ));
+  }
+
   return new Promise((resolve, reject) => {
     let settled = false;
-    const settle = (fn: () => void) => { if (!settled) { settled = true; fn(); } };
+    const settle = (fn: () => void) => {
+      if (!settled) {
+        settled = true;
+        _releaseWorkerSlot();
+        fn();
+      }
+    };
 
     const worker = new Worker(WORKER_CODE, {
       eval: true,
@@ -156,8 +200,9 @@ export async function execLuaViaPdim(
           payload = JSON.stringify(r ?? null);
           status  = 1; // success
         } catch (e: any) {
-          logger.warn(`[LuaExecutor] redis.call(${msg.cmd}) → PDIM error: ${e.message}`);
-          payload = `ERR PDIM unavailable: ${e.message}`;
+          const short = (e.message as string).slice(0, 200);
+          logger.warn(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
+          payload = `ERR ${short}`;
           status  = 2; // error — Lua will throw
         }
         const buf  = Buffer.from(payload, 'utf8');

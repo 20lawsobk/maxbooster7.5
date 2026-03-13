@@ -13,6 +13,12 @@
 import { EventEmitter } from 'events';
 import { logger } from '../logger.js';
 import { execLuaViaPdim } from './luaExecutor.js';
+import {
+  cbAllowRequest,
+  cbRecordFailure as cbRecord503,
+  cbRecordSuccess,
+  cbHalfOpenFailed,
+} from './pdimCircuitBreaker.js';
 
 export class PdimRedisClient extends EventEmitter {
   public status: string = 'ready';
@@ -55,6 +61,13 @@ export class PdimRedisClient extends EventEmitter {
     const [cmd, ...rawArgs] = command;
     // The PDIM server validates all args as strings — coerce numbers/nulls
     const args = rawArgs.map(a => (a === null ? '' : String(a)));
+
+    // Circuit breaker: fail-fast when PDIM is known to be unreachable
+    if (!cbAllowRequest()) {
+      throw new Error(`[PDIM] Circuit OPEN — ${cmd} rejected (backing off until PDIM recovers)`);
+    }
+
+    let _counted = false; // prevent double-counting in the catch block
     try {
       const res = await fetch(this.execUrl, {
         method: 'POST',
@@ -68,10 +81,16 @@ export class PdimRedisClient extends EventEmitter {
 
       if (!res.ok) {
         const text = await res.text().catch(() => '');
-        throw new Error(`PDIM HTTP ${res.status}: ${text}`);
+        cbRecord503();
+        _counted = true;
+        const errMsg = `PDIM HTTP ${res.status}: ${text.slice(0, 120)}`;
+        logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+        throw new Error(errMsg);
       }
 
       const data = await res.json();
+      cbRecordSuccess(); // a successful response resets the counter + closes circuit
+
       if (data !== null && typeof data === 'object') {
         if ('result' in data) return data.result;
         if ('error' in data) {
@@ -86,9 +105,15 @@ export class PdimRedisClient extends EventEmitter {
       }
       return data;
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        logger.error(`[PDIM] exec error [${cmd}]: ${err.message}`);
+      // Network-level failures (ECONNREFUSED, timeout, HALF_OPEN failure) also count
+      if (!_counted && err.name !== 'AbortError' && !err.message.startsWith('[PDIM] Circuit')) {
+        cbRecord503();
       }
+      if (!_counted) {
+        // Only log errors we haven't already logged inline
+        logger.error(`[PDIM] exec error [${cmd}]: ${err.message.slice(0, 200)}`);
+      }
+      cbHalfOpenFailed(); // release HALF_OPEN probe slot so next interval can retry
       throw err;
     }
   }
@@ -338,3 +363,4 @@ export function getPdimClient(): PdimRedisClient {
 export function isPdimConfigured(): boolean {
   return !!(process.env.PDIM_HTTP_EXEC_URL && process.env.PDIM_BEARER_TOKEN);
 }
+
