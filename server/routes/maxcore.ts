@@ -2,12 +2,141 @@ import { Router, Request, Response, NextFunction } from "express";
 import { logger } from "../logger.js";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 
 const router = Router();
 
-const PEER = process.env.PEER_TRAINING_NODE || process.env.MBS_AI_TRAINING_URL || "http://localhost:8000";
+const RAW_PEER   = process.env.PEER_TRAINING_NODE || process.env.MBS_AI_TRAINING_URL || "";
 const TIMEOUT_MS = 12_000;
-const MBS_KEY = process.env.MBS_AI_TRAINING_KEY || '';
+const MBS_KEY    = process.env.MBS_AI_TRAINING_KEY || '';
+
+// ── PDIM peer detection ───────────────────────────────────────────────────────
+// Accepts pdim://TOKEN@host/path  →  uses PDIM exec endpoint as command bus.
+
+interface PdimPeer { type: "pdim"; execUrl: string; token: string; }
+interface HttpPeer { type: "http"; baseUrl: string; }
+type PeerCfg = PdimPeer | HttpPeer;
+
+function parsePeer(raw: string): PeerCfg {
+  if (raw.startsWith("pdim://")) {
+    try {
+      const withoutScheme = raw.slice("pdim://".length);
+      const atIdx = withoutScheme.indexOf("@");
+      const token  = withoutScheme.slice(0, atIdx);
+      const rest   = withoutScheme.slice(atIdx + 1);
+      const execUrl = `https://${rest}/exec`;
+      return { type: "pdim", execUrl, token };
+    } catch {
+      // fall through to http fallback
+    }
+  }
+  const base = raw || "http://localhost:8000";
+  return { type: "http", baseUrl: base };
+}
+
+const PEER_CFG: PeerCfg = parsePeer(RAW_PEER);
+
+logger.info(`[MaxCore] Peer mode: ${PEER_CFG.type} — ${PEER_CFG.type === "pdim" ? PEER_CFG.execUrl : (PEER_CFG as HttpPeer).baseUrl}`);
+
+// ── PDIM exec helper ──────────────────────────────────────────────────────────
+
+async function pdimExec(cfg: PdimPeer, cmd: string, args: unknown[]): Promise<unknown> {
+  const res = await fetch(cfg.execUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${cfg.token}`,
+    },
+    body: JSON.stringify({ cmd, args }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`PDIM exec HTTP ${res.status}`);
+  const json = await res.json() as any;
+  return json.result ?? json;
+}
+
+// ── PDIM-based RPC ────────────────────────────────────────────────────────────
+// Commands are pushed as JSON objects to the `maxcore:rpc:in` list.
+// MaxCore pops them, executes, and writes the result to `maxcore:rpc:out:<reqId>`.
+
+async function pdimRpc(
+  cfg: PdimPeer,
+  action: string,
+  payload: Record<string, unknown> = {},
+  timeoutMs = TIMEOUT_MS
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const reqId = crypto.randomUUID();
+  const ts    = Date.now();
+  const job   = JSON.stringify({ action, reqId, ts, ...payload });
+  try {
+    await pdimExec(cfg, "LPUSH", ["maxcore:rpc:in", job]);
+    // Wait for MaxCore to write its response
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const raw = await pdimExec(cfg, "GET", [`maxcore:rpc:out:${reqId}`]) as string | null;
+      if (raw) {
+        try { await pdimExec(cfg, "DEL", [`maxcore:rpc:out:${reqId}`]); } catch {}
+        const parsed = JSON.parse(raw) as any;
+        return { ok: parsed.ok !== false, status: parsed.status ?? 200, data: parsed.data ?? parsed };
+      }
+      await new Promise(r => setTimeout(r, 500));
+    }
+    // No response within timeout — command was queued but not yet acknowledged
+    return { ok: true, status: 202, data: { queued: true, action, reqId, detail: "Command queued — MaxCore will process it on next cycle" } };
+  } catch (err: any) {
+    logger.error(`[MaxCore] PDIM RPC error for ${action}: ${err.message}`);
+    return { ok: false, status: 503, data: { error: String(err.message) } };
+  }
+}
+
+// ── HTTP-based peer ───────────────────────────────────────────────────────────
+
+async function httpPeer(
+  method: string,
+  p: string,
+  body?: unknown,
+  timeoutMs = TIMEOUT_MS
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const cfg = PEER_CFG as HttpPeer;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (MBS_KEY) headers["Authorization"] = `Bearer ${MBS_KEY}`;
+    const opts: RequestInit = { method, signal: controller.signal, headers };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(`${cfg.baseUrl}${p}`, opts);
+    const data = await res.json().catch(() => null);
+    return { ok: res.ok, status: res.status, data };
+  } catch (err: any) {
+    const offline = err.name === "AbortError" || err.code === "ECONNREFUSED";
+    return { ok: false, status: offline ? 503 : 500, data: { error: offline ? "MaxCore machine is offline or unreachable" : String(err) } };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ── Unified peer() ────────────────────────────────────────────────────────────
+
+async function peer(
+  method: string,
+  p: string,
+  body?: unknown,
+  timeoutMs = TIMEOUT_MS
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  if (PEER_CFG.type === "pdim") {
+    // Convert REST-style calls to PDIM RPC actions
+    const action = `${method.toUpperCase()}:${p}`;
+    return pdimRpc(PEER_CFG, action, body ? { body } : {}, timeoutMs);
+  }
+  return httpPeer(method, p, body, timeoutMs);
+}
+
+function send(res: Response, result: { ok: boolean; status: number; data: unknown }) {
+  res.status(result.ok ? 200 : result.status).json(result.data);
+}
+
+// ── Auth guard ────────────────────────────────────────────────────────────────
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
@@ -21,42 +150,6 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
 
 router.use(requireAdmin);
 
-async function peer(
-  method: string,
-  path: string,
-  body?: unknown,
-  timeoutMs = TIMEOUT_MS
-): Promise<{ ok: boolean; status: number; data: unknown }> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (MBS_KEY) headers["Authorization"] = `Bearer ${MBS_KEY}`;
-    const opts: RequestInit = {
-      method,
-      signal: controller.signal,
-      headers,
-    };
-    if (body !== undefined) opts.body = JSON.stringify(body);
-    const res = await fetch(`${PEER}${path}`, opts);
-    const data = await res.json().catch(() => null);
-    return { ok: res.ok, status: res.status, data };
-  } catch (err: any) {
-    const offline = err.name === "AbortError" || err.code === "ECONNREFUSED";
-    return {
-      ok: false,
-      status: offline ? 503 : 500,
-      data: { error: offline ? "MaxCore machine is offline or unreachable" : String(err) },
-    };
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function send(res: Response, result: { ok: boolean; status: number; data: unknown }) {
-  res.status(result.ok ? 200 : result.status).json(result.data);
-}
-
 // ── Status & diagnostics ──────────────────────────────────────────────────────
 
 router.get("/status", async (_req, res) => {
@@ -69,6 +162,14 @@ router.get("/status", async (_req, res) => {
 });
 
 router.get("/health", async (_req, res) => {
+  if (PEER_CFG.type === "pdim") {
+    try {
+      const pong = await pdimExec(PEER_CFG, "PING", []);
+      return res.json({ ok: true, mode: "pdim", ping: pong });
+    } catch (err: any) {
+      return res.status(503).json({ ok: false, error: String(err.message) });
+    }
+  }
   send(res, await peer("GET", "/health"));
 });
 
@@ -99,6 +200,11 @@ router.post("/train/stop", async (_req, res) => {
 
 router.post("/train/trigger-session", async (_req, res) => {
   logger.info("[MaxCore] Remote trigger-session triggered");
+  if (PEER_CFG.type === "pdim") {
+    const r = await pdimRpc(PEER_CFG, "trigger-session", { source: "maxbooster", ts: Date.now() }, TIMEOUT_MS);
+    logger.info(`[MaxCore] trigger-session queued — reqId embedded in response`);
+    return send(res, r);
+  }
   send(res, await peer("POST", "/control/trigger-session"));
 });
 
@@ -151,16 +257,13 @@ router.post("/restart", async (_req, res) => {
 router.post("/shutdown", async (req, res) => {
   const { confirm } = req.body || {};
   if (confirm !== "SHUTDOWN") {
-    return res
-      .status(400)
-      .json({ error: 'Send { "confirm": "SHUTDOWN" } to confirm this action' });
+    return res.status(400).json({ error: 'Send { "confirm": "SHUTDOWN" } to confirm this action' });
   }
   logger.warn("[MaxCore] Remote SHUTDOWN triggered by admin");
   send(res, await peer("POST", "/control/shutdown", undefined, 5_000));
 });
 
 // ── Downloader supervisor control ─────────────────────────────────────────────
-// These write/remove the stop-flag file that run_downloader.py watches.
 
 const ROOT_DIR      = path.resolve(process.cwd());
 const CTRL_DIR      = path.join(ROOT_DIR, "control");
@@ -174,7 +277,7 @@ function ensureCtrl() {
 router.get("/downloader/status", (_req, res) => {
   ensureCtrl();
   const stopped = fs.existsSync(DL_STOP_FLAG);
-  res.json({ stopped, flag: DL_STOP_FLAG });
+  res.json({ stopped, flag: DL_STOP_FLAG, peerMode: PEER_CFG.type });
 });
 
 router.post("/downloader/stop", (req, res) => {
@@ -188,11 +291,23 @@ router.post("/downloader/stop", (req, res) => {
   res.json({ ok: true, detail: "Downloader will stop after current dataset completes" });
 });
 
-router.post("/downloader/start", (_req, res) => {
+router.post("/downloader/start", async (_req, res) => {
   ensureCtrl();
   try { fs.unlinkSync(DL_STOP_FLAG); } catch {}
   logger.info("[MaxCore] Dataset Downloader stop flag cleared — supervisor will restart");
-  res.json({ ok: true, detail: "Stop flag removed. Supervisor will restart the downloader on its next loop (within 5 s)" });
+
+  // If PDIM peer: also push a start command to the MaxCore command bus
+  if (PEER_CFG.type === "pdim") {
+    try {
+      const job = JSON.stringify({ action: "downloader:start", ts: Date.now(), source: "maxbooster" });
+      await pdimExec(PEER_CFG, "LPUSH", ["maxcore:rpc:in", job]);
+      logger.info("[MaxCore] downloader:start pushed to MaxCore PDIM command bus");
+    } catch (err: any) {
+      logger.warn(`[MaxCore] Could not push to PDIM command bus: ${err.message}`);
+    }
+  }
+
+  res.json({ ok: true, detail: "Stop flag removed + start command queued on MaxCore PDIM bus" });
 });
 
 router.post("/maxcore/stop", (req, res) => {
