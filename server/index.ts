@@ -607,9 +607,9 @@ app.use((req, res, next) => {
         logger.info('[PyAI] Service already running on port 9878 — skipping launch');
         return;
       }
-      const python3Bin = (() => {
+      const python3Bin = await (async () => {
+        const { execSync } = await import('child_process');
         const candidates = ['python3', 'python3.11', 'python3.12', 'python'];
-        const { execSync } = require('child_process') as typeof import('child_process');
         for (const c of candidates) {
           try { execSync(`which ${c}`, { stdio: 'ignore' }); return c; } catch {}
         }

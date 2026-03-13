@@ -29,7 +29,8 @@ import os from 'os';
 import { fileURLToPath } from 'url';
 import { logger } from '../logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
+const __metaUrl = (import.meta as any)?.url as string | undefined;
+const __filename = __metaUrl ? fileURLToPath(__metaUrl) : path.resolve(process.argv[1] ?? '');
 const __dirname = path.dirname(__filename);
 
 const SYNTH_SCRIPT = path.join(__dirname, 'diffusion', 'synthesizer.py');

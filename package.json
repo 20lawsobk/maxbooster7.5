@@ -14,7 +14,7 @@
     "dev": "bash -c './boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
     "security-fix": "npx tsx script/security-fix.ts",
     "build": "npx tsx script/security-fix.ts && npx tsx script/build.ts",
-    "build:deploy": "./node_modules/.bin/tsx script/build.ts",
+    "build:deploy": "npx tsx script/build.ts",
     "deploy": "npx tsx scripts/deploy.ts",
     "start": "bash -c 'if [ -f ./boosterstate/target/debug/boosterstate ]; then ./boosterstate/target/debug/boosterstate & sleep 1; fi && UV_THREADPOOL_SIZE=8 TF_NUM_INTEROP_THREADS=2 TF_NUM_INTRAOP_THREADS=2 NODE_ENV=production node --max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE:-4096} dist/cluster.cjs'",
     "postinstall": "rm -f node_modules/@tensorflow/tfjs-node/deps/lib/libtensorflow.so.2 node_modules/@tensorflow/tfjs-node/deps/lib/libtensorflow_framework.so.2",
@@ -314,7 +314,18 @@
     "glob": "^11.0.2",
     "esbuild": ">=0.25.12",
     "fast-xml-parser": "^5.3.6",
-    "micromatch": ">=4.0.8"
+    "micromatch": ">=0.7.4",
+    "base-store": ">=0.7.4",
+    "data-store": ">=0.7.4",
+    "expand-object": ">=0.7.4",
+    "git-repo-name": ">=0.7.4",
+    "gulp-eslint": ">=0.7.4",
+    "gulp-util": ">=0.7.4",
+    "lodash.template": ">=0.7.4",
+    "parse-git-config": ">=0.7.4",
+    "project-name": ">=0.7.4",
+    "remote-origin-url": ">=0.7.4",
+    "update": ">=0.7.4"
   },
   "engines": {
     "node": ">=22"

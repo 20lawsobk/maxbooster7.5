@@ -4,9 +4,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
-const __filename = fileURLToPath(import.meta.url);
+// CJS-safe: import.meta.url is undefined when bundled to CJS by esbuild.
+// Fall back to process.argv[1] (the entry file path) for __dirname resolution.
+const __metaUrl = (import.meta as any)?.url as string | undefined;
+const __filename = __metaUrl ? fileURLToPath(__metaUrl) : path.resolve(process.argv[1] ?? '');
 const __dirname = path.dirname(__filename);
-const require = createRequire(import.meta.url);
+const require = createRequire(__metaUrl ?? ('file://' + __filename));
 
 // Clustering requires either:
 //   1. REPLIT_DEPLOYMENT is set (actual Autoscale deployment), OR

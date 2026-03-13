@@ -64,3 +64,20 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 -   **Version Control**: GitHub.
 -   **Search APIs**: Exa, Tavily.
+
+## Production Setup (Replit)
+
+-   **Workflow command**: `npm run build:deploy && npm run start`
+    -   `build:deploy` = `npx tsx script/build.ts` (skips `security-fix.ts` to avoid broken npm overrides)
+    -   `start` = production Node.js cluster from `dist/cluster.cjs`
+-   **CJS bundle compatibility**: Files using `import.meta.url` must use the pattern:
+    ```ts
+    const __metaUrl = (import.meta as any)?.url as string | undefined;
+    const __filename = __metaUrl ? fileURLToPath(__metaUrl) : path.resolve(process.argv[1] ?? '');
+    ```
+    Applied to: `server/cluster.ts`, `server/startup-probes.ts`, `server/services/diffusionBackgroundTrainer.ts`, `server/services/diffusionVideoService.ts`
+-   **Redis**: External Redis at `redis-16715.c50329.us-east-2-mz.ec2.cloud.rlrcp.com:16715` (user: `default`); configured via `REDIS_URL` env var
+-   **Storage**: `STORAGE_PROVIDER=replit`; `REPLIT_BUCKET_ID` set in env; HybridStorageService probes sidecar at `http://127.0.0.1:1106`
+-   **Do NOT run** `npm run build` (it triggers `security-fix.ts` which adds non-existent npm override versions). Use `npm run build:deploy` instead.
+-   **Fabric routes**: Gracefully skipped if pocket-dimension fabric dependencies fail to initialize (non-fatal warning)
+-   **Python AI**: `[PyAI] python3 not found in PATH` is a non-fatal warning; Python AI features degrade gracefully
