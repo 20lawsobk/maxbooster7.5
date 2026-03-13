@@ -607,7 +607,19 @@ app.use((req, res, next) => {
         logger.info('[PyAI] Service already running on port 9878 — skipping launch');
         return;
       }
-      proc = spawn('python3', [aiServerPath], {
+      const python3Bin = (() => {
+        const candidates = ['python3', 'python3.11', 'python3.12', 'python'];
+        const { execSync } = require('child_process') as typeof import('child_process');
+        for (const c of candidates) {
+          try { execSync(`which ${c}`, { stdio: 'ignore' }); return c; } catch {}
+        }
+        return null;
+      })();
+      if (!python3Bin) {
+        logger.warn('[PyAI] python3 not found in PATH — skipping AI service launch');
+        return;
+      }
+      proc = spawn(python3Bin, [aiServerPath], {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: { ...process.env, AI_SERVICE_PORT: '9878' },
       });
@@ -615,6 +627,9 @@ app.use((req, res, next) => {
       proc.stderr?.on('data', (d: Buffer) => {
         const msg = d.toString().trim();
         if (msg && !msg.includes('INFO') && !msg.includes('started server')) logger.warn(`[PyAI] ${msg}`);
+      });
+      proc.on('error', (err: NodeJS.ErrnoException) => {
+        logger.warn(`[PyAI] Failed to start process: ${err.message} — AI service unavailable`);
       });
       proc.on('exit', (code, signal) => {
         if (signal === 'SIGTERM' || signal === 'SIGKILL') return;

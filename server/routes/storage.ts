@@ -6,7 +6,6 @@ import { hybridStorageService } from '../services/hybridStorageService.js';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import path from 'path';
-import fs from 'fs/promises';
 import { db } from '../db.js';
 import { userStorageFiles } from '../../shared/schema.js';
 import { eq, and, isNull, lt, isNotNull, sql } from 'drizzle-orm';
@@ -117,6 +116,7 @@ interface ChunkInfo {
   mimeType: string;
   totalChunks: number;
   uploadedChunks: Set<number>;
+  chunkBuffers: Map<number, Buffer>;
   category: string;
   userId: string;
   createdAt: number;
@@ -128,20 +128,17 @@ setInterval(() => {
   const now = Date.now();
   for (const [fileId, info] of chunkUploads.entries()) {
     if (now - info.createdAt > CHUNK_TTL) {
-      chunkUploads.delete(fileId);
-      cleanupChunks(fileId).catch(err => 
-        logger.error(`Failed to cleanup expired chunks for ${fileId}:`, err)
-      );
+      cleanupChunks(fileId);
     }
   }
 }, 60 * 60 * 1000);
 
-async function cleanupChunks(fileId: string): Promise<void> {
-  const tempDir = path.join(process.cwd(), 'uploads', 'temp', fileId);
-  try {
-    await fs.rm(tempDir, { recursive: true, force: true });
-  } catch {
+function cleanupChunks(fileId: string): void {
+  const info = chunkUploads.get(fileId);
+  if (info) {
+    info.chunkBuffers.clear();
   }
+  chunkUploads.delete(fileId);
 }
 
 const storage = multer.memoryStorage();
@@ -265,6 +262,7 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
         mimeType,
         totalChunks: totalChunksNum,
         uploadedChunks: new Set(),
+        chunkBuffers: new Map(),
         category,
         userId,
         createdAt: Date.now(),
@@ -274,12 +272,7 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
       return res.status(403).json({ error: 'Upload session belongs to a different user' });
     }
 
-    const tempDir = path.join(process.cwd(), 'uploads', 'temp', fileId);
-    await fs.mkdir(tempDir, { recursive: true });
-    
-    const chunkPath = path.join(tempDir, `chunk_${chunkIdx}`);
-    await fs.writeFile(chunkPath, req.file.buffer);
-    
+    chunkInfo.chunkBuffers.set(chunkIdx, req.file.buffer);
     chunkInfo.uploadedChunks.add(chunkIdx);
 
     logger.info(`Chunk ${chunkIdx + 1}/${totalChunksNum} uploaded for file ${fileId}`);
@@ -287,8 +280,9 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
     if (chunkInfo.uploadedChunks.size === totalChunksNum) {
       const chunks: Buffer[] = [];
       for (let i = 0; i < totalChunksNum; i++) {
-        const chunkData = await fs.readFile(path.join(tempDir, `chunk_${i}`));
-        chunks.push(chunkData);
+        const chunk = chunkInfo.chunkBuffers.get(i);
+        if (!chunk) throw new Error(`Missing chunk ${i} for file ${fileId}`);
+        chunks.push(chunk);
       }
       const completeFile = Buffer.concat(chunks);
 
@@ -299,8 +293,7 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
         mimeType
       );
 
-      await cleanupChunks(fileId);
-      chunkUploads.delete(fileId);
+      cleanupChunks(fileId);
 
       logger.info(`Chunked upload complete: ${key} by user ${userId}`);
 
@@ -361,8 +354,7 @@ router.delete('/upload/chunk/:fileId', requireAuth, async (req: Request, res: Re
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    await cleanupChunks(fileId);
-    chunkUploads.delete(fileId);
+    cleanupChunks(fileId);
 
     logger.info(`Chunked upload cancelled: ${fileId} by user ${userId}`);
 
