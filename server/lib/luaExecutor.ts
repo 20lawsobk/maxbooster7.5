@@ -71,6 +71,30 @@ function _releaseWorkerSlot(): void {
   }
 }
 
+/**
+ * Emergency semaphore reset — called by chainErrorAutoFixer when the
+ * LuaExecutor gets stuck (active count drifts above the cap due to worker
+ * threads that terminated without releasing their slot).
+ *
+ * Returns the number of slots that were force-released.
+ */
+export function resetLuaExecutorSemaphore(): number {
+  const stuckSlots = Math.max(0, _activeWorkers - _waitQueue.length);
+  // Drain all queued waiters first — they'll increment _activeWorkers themselves
+  while (_waitQueue.length > 0) {
+    const next = _waitQueue.shift()!;
+    next();
+  }
+  // Then zero out the counter entirely so fresh callers get clean slots
+  _activeWorkers = 0;
+  return stuckSlots + _waitQueue.length;
+}
+
+/** Snapshot of the LuaExecutor semaphore — used by the chain error fixer health check. */
+export function getLuaExecutorStats(): { active: number; queued: number; max: number } {
+  return { active: _activeWorkers, queued: _waitQueue.length, max: MAX_CONCURRENT_WORKERS };
+}
+
 // process.cwd() always resolves to the project root regardless of CJS/ESM build format
 const _projectRoot = process.cwd();
 const _wasmoonUrl  = `file://${_projectRoot}/node_modules/wasmoon/dist/index.js`;

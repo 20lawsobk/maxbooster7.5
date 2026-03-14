@@ -916,4 +916,37 @@ adminRouter.patch('/financial-config/label-settings/:key', async (req, res) => {
   }
 });
 
+// ─── Chain Error Auto-Fixer ───────────────────────────────────────────────────
+
+adminRouter.get('/chain-fixer/status', async (_req, res) => {
+  try {
+    const { chainErrorAutoFixer } = await import('../services/chainErrorAutoFixer.js');
+    res.json(chainErrorAutoFixer.getStatus());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.post('/chain-fixer/reset/:patternId', async (req, res) => {
+  try {
+    const { chainErrorAutoFixer } = await import('../services/chainErrorAutoFixer.js');
+    const ok = chainErrorAutoFixer.resetPattern(req.params.patternId);
+    res.json({ success: ok });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.post('/chain-fixer/force-check', async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'message is required' });
+    const { chainErrorAutoFixer } = await import('../services/chainErrorAutoFixer.js');
+    chainErrorAutoFixer.forceCheck(message);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default adminRouter;

@@ -248,6 +248,15 @@ app.use((req, res, next) => {
     logger.warn('⚠️ Database log transport not initialized:', error instanceof Error ? error.message : String(error));
   }
 
+  // Start chain error auto-fixer — must run early so it catches errors from
+  // autonomous systems, BullMQ workers, and PDIM during their own startup
+  try {
+    const { chainErrorAutoFixer } = await import('./services/chainErrorAutoFixer.js');
+    chainErrorAutoFixer.start();
+  } catch (e: any) {
+    logger.warn(`[ChainFixer] Failed to start: ${e.message}`);
+  }
+
   // ========================================
   // SESSION STORE INITIALIZATION (PRODUCTION-READY)
   // ========================================

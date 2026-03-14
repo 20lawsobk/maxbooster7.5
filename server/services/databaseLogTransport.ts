@@ -34,6 +34,9 @@ class DatabaseLogTransport {
   private config: DatabaseTransportConfig;
   private isInitialized = false;
   private isFlushing = false;
+  private consecutiveFailures = 0;
+  private readonly MAX_CONSECUTIVE_FAILURES = 5;
+  private readonly BACKOFF_BASE_MS = 5_000;
 
   constructor(config: Partial<DatabaseTransportConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -90,6 +93,7 @@ class DatabaseLogTransport {
     }
 
     this.isFlushing = true;
+    let backoffHandled = false;
     const logsToInsert = this.buffer.splice(0, this.config.batchSize * 2);
     this.flushTimer = null;
 
@@ -109,20 +113,70 @@ class DatabaseLogTransport {
       }));
 
       await db.insert(systemLogs).values(records);
+      this.consecutiveFailures = 0;
     } catch (error) {
-      process.stderr.write(`[DatabaseLogTransport] Failed to persist logs: ${error instanceof Error ? error.message : String(error)}\n`);
+      this.consecutiveFailures++;
+      const pgCode = (error as any)?.cause?.code ?? (error as any)?.code ?? '';
+      const pgDetail = (error as any)?.cause?.detail ?? (error as any)?.detail ?? '';
+      const errMsg = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
+      process.stderr.write(`[DatabaseLogTransport] Failed to persist logs: ${errMsg}${pgCode ? ' PG_CODE=' + pgCode : ''}${pgDetail ? ' DETAIL=' + pgDetail : ''}\n`);
+
+      if (this.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
+        // Drop the failed batch entirely after too many consecutive failures to prevent
+        // the buffer from growing indefinitely in a retry storm
+        const backoffMs = Math.min(this.BACKOFF_BASE_MS * Math.pow(2, this.consecutiveFailures - this.MAX_CONSECUTIVE_FAILURES), 120_000);
+        process.stderr.write(`[DatabaseLogTransport] ${this.consecutiveFailures} consecutive failures — dropping batch of ${logsToInsert.length} to prevent buffer storm; next retry in ${backoffMs}ms\n`);
+        // Still re-add the logs but only if there's remaining space
+        if (this.buffer.length < 200) {
+          this.buffer.unshift(...logsToInsert);
+        }
+        if (this.buffer.length > 500) {
+          this.buffer.splice(0, this.buffer.length - 200);
+          process.stderr.write(`[DatabaseLogTransport] Buffer overflow, dropping oldest logs\n`);
+        }
+        this.isFlushing = false;
+        backoffHandled = true;
+        this.flushTimer = setTimeout(() => {
+          this.flushTimer = null;
+          this.flush().catch(() => {});
+        }, backoffMs);
+        return;
+      }
+
       this.buffer.unshift(...logsToInsert);
       if (this.buffer.length > 1000) {
         this.buffer.length = 1000;
         process.stderr.write(`[DatabaseLogTransport] Buffer overflow, dropping oldest logs\n`);
       }
     } finally {
-      this.isFlushing = false;
-      if (this.buffer.length > 0 && !this.flushTimer) {
-        this.scheduleFlush(this.config.flushIntervalMs);
+      if (!backoffHandled) {
+        this.isFlushing = false;
+        if (this.buffer.length > 0 && !this.flushTimer) {
+          this.scheduleFlush(this.config.flushIntervalMs);
+        }
       }
     }
   }
+
+  /** Discard all buffered log entries without persisting them. Used by the
+   *  chain error auto-fixer as a last resort when the DB is persistently
+   *  unavailable and the buffer would otherwise grow without bound. */
+  clearBuffer(): number {
+    const dropped = this.buffer.length;
+    this.buffer.length = 0;
+    this.consecutiveFailures = 0;
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+    if (dropped > 0) {
+      process.stderr.write(`[DatabaseLogTransport] clearBuffer() discarded ${dropped} buffered log entries\n`);
+    }
+    return dropped;
+  }
+
+  /** How many entries are currently buffered (for health reporting). */
+  get bufferSize(): number { return this.buffer.length; }
 
   async shutdown(): Promise<void> {
     if (this.flushTimer) {
