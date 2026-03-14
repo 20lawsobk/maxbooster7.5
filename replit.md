@@ -12,13 +12,28 @@ I prefer iterative development, with clear communication before significant chan
 
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design.
 
+### Triangle Architecture
+
+Max Booster operates on a three-point data flow:
+1. **Max Booster → PDIM**: Application pushes all data (AI model weights, session state, queue jobs, object blobs, cache, pub/sub) exclusively to PDIM.
+2. **MaxCore training server (`secure-ai-forge.replit.app`) ← PDIM**: MaxCore pulls training data from PDIM to train AI models.
+3. **Max Booster AI models ← MaxCore**: Max Booster pulls trained model weights from MaxCore for inference.
+
+### PDIM — Unified Storage Container
+
+**PDIM (`pocketdimensionstorage.replit.app`) is the ONLY storage backend.** It is a single unified system that simultaneously acts as:
+- **Redis-compatible layer**: BullMQ job queues, Lua script execution via wasmoon LuaExecutor, pub/sub, key expiry, sorted sets — all Redis-protocol operations go through PDIM.
+- **Pocket Dimension object storage**: Persistent key-value blobs, AI model weight files, application data, cold storage, per-user pockets — all with level-9 Gzip compression and SHA-256 content-addressed deduplication.
+
+There is **no separate Redis server** and **no separate object storage**. PDIM is both, accessed via a single HTTP exec endpoint: `https://pocketdimensionstorage.replit.app/api/redis/instances/e50d64e610d37dd52ce85711/exec` using `{ cmd, args }` JSON payloads with bearer-token auth.
+
 **Key Architectural Decisions:**
 
 -   **Pocket Dimension Storage Bubbles**: All major storage paths route through dedicated Pocket Dimension pockets (level-9 Gzip, SHA-256 content-addressed deduplication, 4MB chunking). This includes `ai-model-weights`, `offline-mode-cache`, `application-storage`, `hybrid-cold-storage`, and per-user pockets.
--   **Hybrid Storage System**: A three-tier approach for data storage: Replit Object Storage (hot tier), Pocket Dimension (primary storage), and BoosterState (Rust WAL store for metadata, sessions, and queues).
+-   **Hybrid Storage System**: Routes entirely through PDIM as the sole backend. `HybridStorageService` provides a tiered API but all writes and reads ultimately land in PDIM. Replit Object Storage and BoosterState are NOT used.
 -   **AI Model Fine-Tuning**: All core AI/ML models are in-house, specifically fine-tuned for music artist use cases (e.g., Viral Scoring, Timing Optimization, Algorithm Intelligence) using industry-specific data and public datasets. No external AI APIs are used.
 -   **Microservices-like Structure**: Services are logically separated within the monorepo.
--   **Scalability**: Designed for Replit Autoscale with Redis for shared state.
+-   **Scalability**: Designed for Replit Autoscale with PDIM as the shared-state backend (queues, sessions, cache — all routed through PDIM's Redis-compatible layer).
 -   **Robust Authentication**: Implements session fixation prevention, JWTs with refresh, and session heartbeat.
 -   **Comprehensive Workflow Automations**: 21 automation templates across five career phases, managed by `musicWorkflowAutomationService.ts`.
 -   **Advertisement and Autopilot Systems**: Exclusively use custom in-house AI models and connected social profiles, avoiding traditional ad platform integrations.
@@ -53,8 +68,7 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 -   **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 -   **Backend Frameworks**: Express.js, Node.js, tsx.
 -   **Database**: PostgreSQL (via Neon serverless), Drizzle ORM.
--   **Caching/Queuing/Sessions**: Redis.
--   **Object Storage**: Replit Object Storage, Pocket Dimension.
+-   **Storage / Queuing / Cache (unified)**: PDIM — Pocket Dimension (`pocketdimensionstorage.replit.app`). Acts as Redis-compatible queue/cache layer (BullMQ, Lua, pub/sub) AND persistent object storage simultaneously. This is the ONLY storage backend — no separate Redis server, no Replit Object Storage.
 -   **Machine Learning**: `@tensorflow/tfjs-node`.
 -   **Payment Processing**: Stripe.
 -   **Email Delivery**: SendGrid.
@@ -67,8 +81,9 @@ The Max Booster application uses a monorepo structure, separating concerns into 
 
 ## Production Setup (Replit)
 
--   **Workflow command**: `npm run build:deploy && npm run start`
-    -   `build:deploy` = `npx tsx script/build.ts` (skips `security-fix.ts` to avoid broken npm overrides)
+-   **Workflow command**: `npm run build && npm run start`
+    -   `build` = standard Vite + esbuild bundle (runs `security-fix.ts` — ensure override versions are valid before running)
+    -   `build:prod` = `build` + `npm prune --production --omit=dev` — strips 800MB+ of devDeps for deployment image size
     -   `start` = production Node.js cluster from `dist/cluster.cjs`
 -   **CJS bundle compatibility**: Files using `import.meta.url` must use the pattern:
     ```ts
@@ -76,8 +91,8 @@ The Max Booster application uses a monorepo structure, separating concerns into 
     const __filename = __metaUrl ? fileURLToPath(__metaUrl) : path.resolve(process.argv[1] ?? '');
     ```
     Applied to: `server/cluster.ts`, `server/startup-probes.ts`, `server/services/diffusionBackgroundTrainer.ts`, `server/services/diffusionVideoService.ts`
--   **Redis**: External Redis at `redis-16715.c50329.us-east-2-mz.ec2.cloud.rlrcp.com:16715` (user: `default`); configured via `REDIS_URL` env var
--   **Storage**: `STORAGE_PROVIDER=replit`; `REPLIT_BUCKET_ID` set in env; HybridStorageService probes sidecar at `http://127.0.0.1:1106`
--   **Do NOT run** `npm run build` (it triggers `security-fix.ts` which adds non-existent npm override versions). Use `npm run build:deploy` instead.
+-   **Storage (all tiers)**: PDIM is the sole backend — exec endpoint `https://pocketdimensionstorage.replit.app/api/redis/instances/e50d64e610d37dd52ce85711/exec`; bearer token in `PDIM_BEARER_TOKEN` env secret; HTTP URL in `PDIM_HTTP_EXEC_URL`. No external Redis server, no Replit Object Storage bucket.
+-   **Deployment builds**: Use `npm run build:prod` (build + prune devDeps) for deployment to stay under the 8 GiB image limit. `security-fix.ts` is patched to skip direct/devDependencies and to validate override versions against npm before applying them.
+-   **Chain Error Auto-Fixer** (`server/services/chainErrorAutoFixer.ts`): Started early in `server/index.ts`; hooks into the structured logger transport to intercept error/warn messages in real time, runs a 15s health check loop, and applies 10 named fix patterns (BullMQ stalled.forEach, null.then repeatable job registration, DatabaseLogTransport overflow, PocketFabric init, LuaExecutor semaphore deadlock, PDIM circuit open, slow-query sustained, worker thread error, memory pressure, autonomous system crash). Admin API: `GET /api/admin/chain-fixer/status`, `POST /api/admin/chain-fixer/reset/:patternId`, `POST /api/admin/chain-fixer/force-check`.
 -   **Fabric routes**: Gracefully skipped if pocket-dimension fabric dependencies fail to initialize (non-fatal warning)
 -   **Python AI**: `[PyAI] python3 not found in PATH` is a non-fatal warning; Python AI features degrade gracefully
