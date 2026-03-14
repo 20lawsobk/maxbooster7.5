@@ -200,12 +200,24 @@ router.post("/train/stop", async (_req, res) => {
 
 router.post("/train/trigger-session", async (_req, res) => {
   logger.info("[MaxCore] Remote trigger-session triggered");
-  if (PEER_CFG.type === "pdim") {
-    const r = await pdimRpc(PEER_CFG, "trigger-session", { source: "maxbooster", ts: Date.now() }, TIMEOUT_MS);
-    logger.info(`[MaxCore] trigger-session queued — reqId embedded in response`);
-    return send(res, r);
+  const ts  = Date.now();
+  const job = {
+    id:      `sess-${ts}`,
+    action:  "start-7tb-download",
+    source:  "maxbooster",
+    api_key: MBS_KEY,
+    bytes:   7_696_581_394_432,
+    ts,
+  };
+  try {
+    await mainPdimPush("mbs:training:session", job);
+    await mainPdimPush("mbs:downloads", job);
+    logger.info("[MaxCore] trigger-session pushed directly to main PDIM");
+    return res.json({ ok: true, detail: "Session pushed directly to PDIM", keys: ["mbs:training:session", "mbs:downloads"] });
+  } catch (err: any) {
+    logger.error(`[MaxCore] trigger-session PDIM push failed: ${err.message}`);
+    return res.status(500).json({ ok: false, error: err.message });
   }
-  send(res, await peer("POST", "/control/trigger-session"));
 });
 
 router.post("/train/set-phase", async (req, res) => {
@@ -263,6 +275,29 @@ router.post("/shutdown", async (req, res) => {
   send(res, await peer("POST", "/control/shutdown", undefined, 5_000));
 });
 
+// ── Main PDIM direct push helper ──────────────────────────────────────────────
+// Pushes download/training jobs directly to the main PDIM instance so that
+// the MaxCore training server can pull them on its own schedule.
+
+const MAIN_PDIM_EXEC  = process.env.PDIM_HTTP_EXEC_URL || "";
+const MAIN_PDIM_TOKEN = process.env.PDIM_BEARER_TOKEN   || "";
+
+async function mainPdimPush(key: string, payload: Record<string, unknown>): Promise<void> {
+  if (!MAIN_PDIM_EXEC || !MAIN_PDIM_TOKEN) {
+    throw new Error("PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN not configured");
+  }
+  const res = await fetch(MAIN_PDIM_EXEC, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${MAIN_PDIM_TOKEN}`,
+    },
+    body: JSON.stringify({ cmd: "RPUSH", args: [key, JSON.stringify(payload)] }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`Main PDIM push HTTP ${res.status}`);
+}
+
 // ── Downloader supervisor control ─────────────────────────────────────────────
 
 const ROOT_DIR      = path.resolve(process.cwd());
@@ -294,20 +329,27 @@ router.post("/downloader/stop", (req, res) => {
 router.post("/downloader/start", async (_req, res) => {
   ensureCtrl();
   try { fs.unlinkSync(DL_STOP_FLAG); } catch {}
-  logger.info("[MaxCore] Dataset Downloader stop flag cleared — supervisor will restart");
+  logger.info("[MaxCore] Dataset Downloader stop flag cleared");
 
-  // If PDIM peer: also push a start command to the MaxCore command bus
-  if (PEER_CFG.type === "pdim") {
-    try {
-      const job = JSON.stringify({ action: "downloader:start", ts: Date.now(), source: "maxbooster" });
-      await pdimExec(PEER_CFG, "LPUSH", ["maxcore:rpc:in", job]);
-      logger.info("[MaxCore] downloader:start pushed to MaxCore PDIM command bus");
-    } catch (err: any) {
-      logger.warn(`[MaxCore] Could not push to PDIM command bus: ${err.message}`);
-    }
+  const ts  = Date.now();
+  const job = {
+    id:      `dl-${ts}`,
+    action:  "downloader:start",
+    source:  "maxbooster",
+    api_key: MBS_KEY,
+    bytes:   7_696_581_394_432,
+    ts,
+  };
+
+  try {
+    await mainPdimPush("mbs:downloads", job);
+    await mainPdimPush("mbs:training:session", { ...job, action: "start-7tb-download" });
+    logger.info("[MaxCore] downloader:start pushed directly to main PDIM (mbs:downloads, mbs:training:session)");
+    res.json({ ok: true, detail: "Download job pushed directly to PDIM", keys: ["mbs:downloads", "mbs:training:session"] });
+  } catch (err: any) {
+    logger.error(`[MaxCore] Failed to push to main PDIM: ${err.message}`);
+    res.status(500).json({ ok: false, error: err.message });
   }
-
-  res.json({ ok: true, detail: "Stop flag removed + start command queued on MaxCore PDIM bus" });
 });
 
 router.post("/maxcore/stop", (req, res) => {
