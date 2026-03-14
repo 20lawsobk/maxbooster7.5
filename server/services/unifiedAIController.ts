@@ -1,6 +1,6 @@
 /**
  * Unified AI Services Controller for Max Booster
- * 
+ *
  * Integrates and coordinates all custom AI services:
  * - Content Generation (NLP)
  * - Sentiment Analysis
@@ -9,8 +9,11 @@
  * - Social Autopilot
  * - Time Series Forecasting
  * - Model Registry Management
- * 
- * 100% in-house AI - no external API dependencies
+ *
+ * Inference priority:
+ *   1. MaxCore training server (AI_SERVER_URL / AI_SERVER_KEY) — trained weights
+ *   2. Python AI model (pythonAIService)
+ *   3. In-house JS models (ContentGenerator, SentimentAnalyzer, etc.)
  */
 
 import { logger } from '../logger.js';
@@ -118,7 +121,60 @@ export interface UnifiedAIResult<T> {
 }
 
 // ============================================================================
-// UNIFIED AI CONTROLLER
+// MAXCORE AI CLIENT — calls the trained model server (Priority 1)
+// ============================================================================
+
+const MC_AI_URL = process.env.AI_SERVER_URL || '';
+const MC_AI_KEY = process.env.AI_SERVER_KEY || '';
+
+class MaxCoreAIClient {
+  private static _available: boolean | null = null;
+  private static _lastCheck = 0;
+  private static readonly CHECK_TTL = 30_000;
+
+  static async isAvailable(): Promise<boolean> {
+    if (!MC_AI_URL || !MC_AI_KEY) return false;
+    const now = Date.now();
+    if (MaxCoreAIClient._available !== null && now - MaxCoreAIClient._lastCheck < MaxCoreAIClient.CHECK_TTL) {
+      return MaxCoreAIClient._available;
+    }
+    try {
+      const r = await fetch(`${MC_AI_URL}/health`, {
+        headers: { 'X-API-Key': MC_AI_KEY },
+        signal: AbortSignal.timeout(4000),
+      });
+      MaxCoreAIClient._available = r.ok;
+    } catch {
+      MaxCoreAIClient._available = false;
+    }
+    MaxCoreAIClient._lastCheck = Date.now();
+    return MaxCoreAIClient._available;
+  }
+
+  static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
+    if (!MC_AI_URL || !MC_AI_KEY) return null;
+    try {
+      const r = await fetch(`${MC_AI_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': MC_AI_KEY },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!r.ok) return null;
+      return await r.json() as T;
+    } catch (e: any) {
+      logger.warn(`[MaxCoreAI] ${endpoint} failed: ${e.message}`);
+      return null;
+    }
+  }
+}
+
+if (MC_AI_URL && MC_AI_KEY) {
+  logger.info(`[MaxCoreAI] Configured — ${MC_AI_URL}`);
+} else {
+  logger.warn('[MaxCoreAI] AI_SERVER_URL / AI_SERVER_KEY not set — MaxCore inference disabled');
+}
+
 // ============================================================================
 
 export class UnifiedAIController {
@@ -232,6 +288,40 @@ export class UnifiedAIController {
       const mappedPlatform = options.platform && platformAliases[options.platform]
         ? platformAliases[options.platform]
         : (options.platform || 'instagram');
+
+      // Priority 1: MaxCore trained model server
+      if (await MaxCoreAIClient.isAvailable()) {
+        try {
+          const mc = await MaxCoreAIClient.infer<any>('/generate/content', {
+            platform: mappedPlatform,
+            topic: options.topic || options.genre || 'new music',
+            tone: options.tone || 'energetic',
+            genre: options.genre,
+          });
+          if (mc?.caption || mc?.hook) {
+            const caption = mc.caption || `${mc.hook}\n\n${mc.body || ''}\n\n${mc.cta || ''}`.trim();
+            return {
+              success: true,
+              data: {
+                caption,
+                hashtags: mc.hashtags || [],
+                tone: options.tone || 'energetic',
+                toneMatch: mc.confidence || 0.95,
+                platform: mappedPlatform,
+                charCount: caption.length,
+                hook: mc.hook,
+                body: mc.body,
+                cta: mc.cta,
+              } as CaptionResult,
+              processingTimeMs: Date.now() - startTime,
+              source: 'MaxCoreAI',
+              confidence: mc.confidence || 0.95,
+            };
+          }
+        } catch (mcErr) {
+          logger.warn('[UnifiedAI] MaxCore content generation failed, falling through:', mcErr);
+        }
+      }
 
       if (await pythonAIService.isAvailable()) {
         try {
@@ -373,18 +463,35 @@ export class UnifiedAIController {
     await this.ensureInitialized();
 
     try {
+      // Priority 1: MaxCore
+      if (await MaxCoreAIClient.isAvailable()) {
+        try {
+          const mc = await MaxCoreAIClient.infer<any>('/analyze/sentiment', {
+            text: options.text,
+            includeEmotions: options.includeEmotions,
+            includeToxicity: options.includeToxicity,
+          });
+          if (mc?.sentiment || mc?.label) {
+            return {
+              success: true,
+              data: mc as FullAnalysisResult,
+              processingTimeMs: Date.now() - startTime,
+              source: 'MaxCoreAI',
+              confidence: mc.confidence || 0.92,
+            };
+          }
+        } catch (mcErr) {
+          logger.warn('[UnifiedAI] MaxCore sentiment failed, falling through:', mcErr);
+        }
+      }
+
       let result: FullAnalysisResult | SentimentResult;
-      
       if (options.includeEmotions || options.includeToxicity || options.includeAspects) {
         result = this.sentimentAnalyzer.analyze(options.text);
       } else {
         result = this.sentimentAnalyzer.analyzeSentiment(options.text);
       }
-
-      const confidence = 'overallConfidence' in result 
-        ? result.overallConfidence 
-        : result.confidence;
-      
+      const confidence = 'overallConfidence' in result ? result.overallConfidence : result.confidence;
       return {
         success: true,
         data: result,
@@ -494,6 +601,30 @@ export class UnifiedAIController {
     await this.ensureInitialized();
 
     try {
+      // Priority 1: MaxCore
+      if (await MaxCoreAIClient.isAvailable()) {
+        try {
+          const mc = await MaxCoreAIClient.infer<any>('/optimize/ad', {
+            action: options.action,
+            campaign: options.campaign,
+            campaigns: options.campaigns,
+            totalBudget: options.totalBudget,
+            forecastPeriod: options.forecastPeriod,
+          });
+          if (mc && (mc.score !== undefined || mc.allocations || mc.predictedCTR !== undefined || mc.expectedROI !== undefined)) {
+            return {
+              success: true,
+              data: mc,
+              processingTimeMs: Date.now() - startTime,
+              source: 'MaxCoreAI',
+              confidence: mc.confidence || 0.9,
+            };
+          }
+        } catch (mcErr) {
+          logger.warn('[UnifiedAI] MaxCore ad optimization failed, falling through:', mcErr);
+        }
+      }
+
       let result: CampaignScore | BudgetOptimizationResult | CreativePrediction | ROIForecast;
 
       switch (options.action) {
@@ -571,6 +702,29 @@ export class UnifiedAIController {
     await this.ensureInitialized();
 
     try {
+      // Priority 1: MaxCore
+      if (await MaxCoreAIClient.isAvailable()) {
+        try {
+          const mc = await MaxCoreAIClient.infer<any>('/predict/engagement', {
+            platform: options.platform,
+            action: options.action,
+            content: options.content,
+            postsPerWeek: options.postsPerWeek,
+          });
+          if (mc && (mc.bestTime || mc.viralScore !== undefined || mc.schedule || mc.contentType)) {
+            return {
+              success: true,
+              data: mc,
+              processingTimeMs: Date.now() - startTime,
+              source: 'MaxCoreAI',
+              confidence: mc.confidence || 0.9,
+            };
+          }
+        } catch (mcErr) {
+          logger.warn('[UnifiedAI] MaxCore engagement prediction failed, falling through:', mcErr);
+        }
+      }
+
       let result: BestTimeResult | ContentTypeRecommendation | ViralPotentialScore | ScheduleOptimization;
 
       switch (options.action) {
