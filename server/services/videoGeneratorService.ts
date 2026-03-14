@@ -27,6 +27,7 @@
  */
 
 import { execFile, execFileSync, spawn } from 'child_process';
+import { PYTHON } from './pythonPath.js';
 import { promisify } from 'util';
 import { mkdirSync, existsSync, unlinkSync } from 'fs';
 import os from 'os';
@@ -458,7 +459,7 @@ async function renderWithPython(
   logger.debug('[VideoGen] vf filter string:', vf);
 
   return new Promise<void>((resolve, reject) => {
-    const python = spawn('python3', [FRAME_GENERATOR_PATH, pythonCfg]);
+    const python = spawn(PYTHON, [FRAME_GENERATOR_PATH, pythonCfg]);
     const ffmpeg = spawn(FFMPEG, [
       '-y',
       '-f', 'rawvideo', '-pix_fmt', 'rgb24',

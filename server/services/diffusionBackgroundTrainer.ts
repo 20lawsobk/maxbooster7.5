@@ -23,6 +23,7 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
+import { PYTHON } from './pythonPath.js';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -129,7 +130,7 @@ function _runSession(tier: 'quick' | 'medium' | 'deep'): Promise<boolean> {
     _saveStatus();
 
     const args = [SYNTH_SCRIPT, '--train-only', '--tier', tier];
-    _proc = spawn('python3', args, {
+    _proc = spawn(PYTHON, args, {
       stdio:  ['ignore', 'pipe', 'pipe'],
       detached: false,
     });

@@ -7,6 +7,7 @@
  */
 
 import { spawn } from 'child_process';
+import { PYTHON } from './pythonPath.js';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -91,7 +92,7 @@ export function trainDiffusionModel(opts: {
     if (opts.nSamples) args.push('--samples', String(opts.nSamples));
     if (opts.nEpochs)  args.push('--epochs',  String(opts.nEpochs));
 
-    const proc = spawn('python3', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const proc = spawn(PYTHON, args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
     proc.stdout.on('data', (d) => {
       const line = d.toString().trim();
@@ -150,7 +151,7 @@ export function generateDiffusionFrames(
     if (forceRetrain) args.push('--train');
 
     const t0 = Date.now();
-    const proc = spawn('python3', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const proc = spawn(PYTHON, args, { stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
 
