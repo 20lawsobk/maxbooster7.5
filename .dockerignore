@@ -41,11 +41,6 @@ boosterstate/target
 maxbooster7.5/
 maxbooster_veo_music/
 
-# Source directories — not needed at runtime since dist/ contains pre-built output
-client/src
-server
-script
-
 # Development and CI files
 *.md
 !replit.md
