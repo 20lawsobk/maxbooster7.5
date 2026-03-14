@@ -323,8 +323,11 @@ export class PdimRedisClient extends EventEmitter {
   // ── Sorted set blocking commands (polyfilled — PDIM has no blocking support) ─
   /**
    * BZPOPMIN — PDIM doesn't support blocking commands.
-   * Poll with ZPOPMIN every 200ms until a result arrives or timeout expires.
-   * timeout=0 is capped at 5s to avoid infinite loops.
+   * Poll with ZPOPMIN every 500ms (+0–100ms jitter) until a result arrives or
+   * timeout expires.  timeout=0 is capped at 5s to avoid infinite loops.
+   *
+   * 500ms base (vs the old 200ms) cuts PDIM request rate by ~60% and avoids
+   * the thundering-herd 429 bursts when multiple workers poll simultaneously.
    */
   async bzpopmin(key: string, timeout: number): Promise<[string, string, string] | null> {
     const deadline = Date.now() + (timeout > 0 ? timeout * 1000 : 5000);
@@ -333,7 +336,8 @@ export class PdimRedisClient extends EventEmitter {
       if (Array.isArray(result) && result.length >= 2) {
         return [key, result[0], result[1]];
       }
-      await new Promise(r => setTimeout(r, 200));
+      // 500ms base + up to 100ms random jitter — spreads concurrent worker polls
+      await new Promise(r => setTimeout(r, 500 + Math.random() * 100));
     }
     return null;
   }

@@ -37,6 +37,8 @@ export function createAutonomousWorker(): Worker {
       concurrency: 1,
       drainDelay: 5000,
       runRetryDelay: 15000,
+      stalledInterval: 30000,
+      maxStalledCount: 2,
       removeOnComplete: { count: 10 },
       removeOnFail: { count: 50 },
     },

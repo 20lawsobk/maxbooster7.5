@@ -120,6 +120,8 @@ export function startRetentionWorker(): Worker {
       runRetryDelay: 15000,
       autorun: false,
       drainDelay: 5000,
+      stalledInterval: 30000,
+      maxStalledCount: 2,
       limiter: {
         max: Math.min(WORKER_CONCURRENCY, 2),
         duration: 1_000,

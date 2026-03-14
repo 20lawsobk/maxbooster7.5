@@ -36,9 +36,9 @@ class DatabaseLogTransport {
   private isFlushing = false;
   private consecutiveFailures = 0;
   private disabled = false;
-  private readonly MAX_CONSECUTIVE_FAILURES = 5;
-  private readonly PERMANENT_DISABLE_THRESHOLD = 50;
-  private readonly BACKOFF_BASE_MS = 5_000;
+  private readonly MAX_CONSECUTIVE_FAILURES = 3;
+  private readonly PERMANENT_DISABLE_THRESHOLD = 10;
+  private readonly BACKOFF_BASE_MS = 10_000;
 
   constructor(config: Partial<DatabaseTransportConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -122,7 +122,15 @@ class DatabaseLogTransport {
     } catch (error) {
       this.consecutiveFailures++;
 
-      if (this.consecutiveFailures >= this.PERMANENT_DISABLE_THRESHOLD) {
+      const pgCode = (error as any)?.cause?.code ?? (error as any)?.code ?? '';
+
+      // 53100 = too_many_connections — permanently disable immediately so we
+      // don't pile more connection attempts onto an already-saturated pool.
+      const isTooManyConnections = pgCode === '53100' ||
+        String((error as any)?.message ?? '').includes('too many connections') ||
+        String((error as any)?.message ?? '').includes('53100');
+
+      if (isTooManyConnections || this.consecutiveFailures >= this.PERMANENT_DISABLE_THRESHOLD) {
         this.disabled = true;
         this.buffer.length = 0;
         if (this.flushTimer) {
@@ -131,13 +139,11 @@ class DatabaseLogTransport {
         }
         this.isFlushing = false;
         process.stderr.write(
-          `[DatabaseLogTransport] Permanently disabled after ${this.consecutiveFailures} consecutive failures. ` +
+          `[DatabaseLogTransport] Permanently disabled — ${isTooManyConnections ? 'PG_CODE=53100 (too many connections)' : `${this.consecutiveFailures} consecutive failures`}. ` +
           `All further log persistence suppressed. Restart the process to re-enable.\n`
         );
         return;
       }
-
-      const pgCode = (error as any)?.cause?.code ?? (error as any)?.code ?? '';
       const pgDetail = (error as any)?.cause?.detail ?? (error as any)?.detail ?? '';
       const errMsg = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
       process.stderr.write(`[DatabaseLogTransport] Failed to persist logs: ${errMsg}${pgCode ? ' PG_CODE=' + pgCode : ''}${pgDetail ? ' DETAIL=' + pgDetail : ''}\n`);
