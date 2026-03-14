@@ -99,6 +99,7 @@ export function PreferenceLearner({
       });
       return response.json();
     },
+    onError: () => {},
   });
 
   const applyInsightMutation = useMutation({

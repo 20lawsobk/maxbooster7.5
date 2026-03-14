@@ -35,7 +35,9 @@ class DatabaseLogTransport {
   private isInitialized = false;
   private isFlushing = false;
   private consecutiveFailures = 0;
+  private disabled = false;
   private readonly MAX_CONSECUTIVE_FAILURES = 5;
+  private readonly PERMANENT_DISABLE_THRESHOLD = 50;
   private readonly BACKOFF_BASE_MS = 5_000;
 
   constructor(config: Partial<DatabaseTransportConfig> = {}) {
@@ -67,6 +69,9 @@ class DatabaseLogTransport {
   }
 
   async transport(entry: LogEntry): Promise<void> {
+    if (this.disabled) {
+      return;
+    }
     if (!this.shouldPersist(entry.level)) {
       return;
     }
@@ -116,6 +121,22 @@ class DatabaseLogTransport {
       this.consecutiveFailures = 0;
     } catch (error) {
       this.consecutiveFailures++;
+
+      if (this.consecutiveFailures >= this.PERMANENT_DISABLE_THRESHOLD) {
+        this.disabled = true;
+        this.buffer.length = 0;
+        if (this.flushTimer) {
+          clearTimeout(this.flushTimer);
+          this.flushTimer = null;
+        }
+        this.isFlushing = false;
+        process.stderr.write(
+          `[DatabaseLogTransport] Permanently disabled after ${this.consecutiveFailures} consecutive failures. ` +
+          `All further log persistence suppressed. Restart the process to re-enable.\n`
+        );
+        return;
+      }
+
       const pgCode = (error as any)?.cause?.code ?? (error as any)?.code ?? '';
       const pgDetail = (error as any)?.cause?.detail ?? (error as any)?.detail ?? '';
       const errMsg = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);

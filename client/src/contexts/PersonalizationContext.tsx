@@ -296,6 +296,7 @@ export function PersonalizationProvider({ children }: PersonalizationProviderPro
       const response = await apiRequest('POST', '/api/personalization/track-batch', { interactions: events });
       return response.json();
     },
+    onError: () => {},
   });
 
   const trackFeatureMutation = useMutation({
@@ -306,6 +307,7 @@ export function PersonalizationProvider({ children }: PersonalizationProviderPro
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/personalization/feature-usage'] });
     },
+    onError: () => {},
   });
 
   const trackWidgetViewMutation = useMutation({
@@ -313,6 +315,7 @@ export function PersonalizationProvider({ children }: PersonalizationProviderPro
       const response = await apiRequest('POST', '/api/personalization/track-widget-view', { widgetId, duration });
       return response.json();
     },
+    onError: () => {},
   });
 
   const applyInsightMutation = useMutation({

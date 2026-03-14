@@ -162,6 +162,7 @@ export function SmartDefaultsProvider({ children, userId }: SmartDefaultsProvide
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/personalization/behavior-analysis'] });
     },
+    onError: () => {},
   });
 
   const applyDefaultsMutation = useMutation({

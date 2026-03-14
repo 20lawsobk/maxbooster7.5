@@ -586,7 +586,19 @@ export const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: (error: Error, _variables, _context, mutation) => {
       if (mutation.options.onError) return;
-      const message = error.message || 'Something went wrong. Please try again.';
+      const apiError = error as ApiError & { userMessage?: string };
+      const mutationKey = mutation.options.mutationKey;
+      console.error('[MutationCache] Unhandled mutation error:', {
+        status: apiError.status,
+        code: apiError.code,
+        message: error.message,
+        userMessage: apiError.userMessage,
+        mutationKey,
+      });
+      const message =
+        apiError.userMessage ||
+        error.message ||
+        'Something went wrong. Please try again.';
       toast({
         title: 'Error',
         description: message,
