@@ -43,8 +43,17 @@ export class PdimRedisClient extends EventEmitter {
 
   constructor(execUrl?: string, bearerToken?: string) {
     super();
-    this.execUrl = execUrl || process.env.PDIM_HTTP_EXEC_URL || '';
-    this.bearerToken = bearerToken || process.env.PDIM_BEARER_TOKEN || '';
+    // PDIM_EXEC_URL / PDIM_EXEC_TOKEN are non-secret env vars that take
+    // precedence over the legacy PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN
+    // secrets (which may point to a transient Replit dev workspace URL).
+    this.execUrl = execUrl
+      || process.env.PDIM_EXEC_URL
+      || process.env.PDIM_HTTP_EXEC_URL
+      || '';
+    this.bearerToken = bearerToken
+      || process.env.PDIM_EXEC_TOKEN
+      || process.env.PDIM_BEARER_TOKEN
+      || '';
 
     if (!this.execUrl) {
       throw new Error('PDIM_HTTP_EXEC_URL is required for PdimRedisClient');

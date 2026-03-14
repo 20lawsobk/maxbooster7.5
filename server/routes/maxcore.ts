@@ -279,8 +279,8 @@ router.post("/shutdown", async (req, res) => {
 // Pushes download/training jobs directly to the main PDIM instance so that
 // the MaxCore training server can pull them on its own schedule.
 
-const MAIN_PDIM_EXEC  = process.env.PDIM_HTTP_EXEC_URL || "";
-const MAIN_PDIM_TOKEN = process.env.PDIM_BEARER_TOKEN   || "";
+const MAIN_PDIM_EXEC  = process.env.PDIM_EXEC_URL  || process.env.PDIM_HTTP_EXEC_URL  || "";
+const MAIN_PDIM_TOKEN = process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN  || "";
 
 async function mainPdimPush(key: string, payload: Record<string, unknown>): Promise<void> {
   if (!MAIN_PDIM_EXEC || !MAIN_PDIM_TOKEN) {
