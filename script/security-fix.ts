@@ -420,12 +420,21 @@ function fixNpmVulnerabilities() {
 
     // Parse vulnerable packages from audit output
     const auditData = JSON.parse(run("npm audit --json", 20_000).out || "{}");
+    const directDeps = new Set([
+      ...Object.keys(pkg.dependencies || {}),
+      ...Object.keys(pkg.devDependencies || {}),
+    ]);
     const vulnPkgs: Record<string, string> = {};
     for (const [name, vuln] of Object.entries(auditData?.vulnerabilities || {})) {
       const v = vuln as any;
-      if (v?.fixAvailable?.version) {
-        vulnPkgs[name] = `>=${v.fixAvailable.version}`;
-      }
+      if (!v?.fixAvailable?.version) continue;
+      // Skip direct dependencies — npm does not allow overriding them
+      if (directDeps.has(name)) continue;
+      const fixVer = v.fixAvailable.version as string;
+      // Validate the fix version exists on npm before adding override
+      const check = run(`npm view ${name}@${fixVer} version`, 10_000);
+      if (!check.ok || !check.out.trim()) continue;
+      vulnPkgs[name] = `>=${fixVer}`;
     }
 
     if (Object.keys(vulnPkgs).length > 0) {
