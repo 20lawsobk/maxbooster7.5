@@ -1,11 +1,41 @@
 import type { AdCreative } from '@shared/schema';
+import { getRedisClient } from '../lib/redisConnectionFactory.js';
+import { logger } from '../logger.js';
 
 /**
  * Advertisement Content Normalization Service
- * Transforms raw content into platform-specific variants optimized for organic reach
- * Uses connected social media profiles as distribution channels (Personal Ad Network)
+ * Transforms raw content into platform-specific variants optimized for organic reach.
+ * Uses connected social media profiles as distribution channels (Personal Ad Network).
+ * Pulls trained ad patterns, peak windows, and top hooks/CTAs from PDIM
+ * (written by Max Booster's advertising engine and enriched by MaxCore training).
  */
 export class AdvertisingNormalizationService {
+  private async getPdimAdData(artistId: string): Promise<{
+    patterns: Record<string, any>;
+    peaks: any[];
+    globalPeaks: any[];
+  }> {
+    const fallback = { patterns: {}, peaks: [], globalPeaks: [] };
+    try {
+      const redis = await getRedisClient();
+      if (!redis) return fallback;
+
+      const [patternRaw, peaksRaw, globalRaw] = await Promise.all([
+        redis.get(`mb:ads:${artistId}:patterns`).catch(() => null),
+        redis.lrange(`mb:ads:${artistId}:peaks`, 0, -1).catch(() => []),
+        redis.lrange('mb:ads:global:peaks', 0, -1).catch(() => []),
+      ]);
+
+      return {
+        patterns: patternRaw ? JSON.parse(patternRaw) : {},
+        peaks: (peaksRaw || []).map((r: string) => { try { return JSON.parse(r); } catch { return null; } }).filter(Boolean),
+        globalPeaks: (globalRaw || []).map((r: string) => { try { return JSON.parse(r); } catch { return null; } }).filter(Boolean),
+      };
+    } catch (e: any) {
+      logger.warn(`[AdvertisingNorm] PDIM ad data fetch failed: ${e.message}`);
+      return fallback;
+    }
+  }
   // Platform content requirements for optimal organic performance
   private platformLimits = {
     facebook: {
@@ -47,11 +77,13 @@ export class AdvertisingNormalizationService {
   };
 
   /**
-   * Normalize content for all selected platforms
-   * Creates platform-specific variants optimized for organic virality
+   * Normalize content for all selected platforms.
+   * Creates platform-specific variants optimized for organic virality.
+   * Enriches CTAs, hooks, and timing with trained data from PDIM.
    */
-  async normalizeContent(creative: AdCreative, platforms: string[]): Promise<Record<string, any>> {
+  async normalizeContent(creative: AdCreative, platforms: string[], artistId = 'artist-001'): Promise<Record<string, any>> {
     const variants: Record<string, any> = {};
+    const pdim = await this.getPdimAdData(artistId);
 
     for (const platform of platforms) {
       const limits = this.platformLimits[platform as keyof typeof this.platformLimits];
@@ -69,10 +101,10 @@ export class AdvertisingNormalizationService {
           platform
         ),
         mediaUrls: creative.assetUrls || [],
-        aspectRatio: limits.imageRatio || limits.videoRatio,
-        callToAction: this.generateCTA(platform),
-        optimalPostTime: this.calculateOptimalPostTime(platform),
-        engagementHooks: this.generateEngagementHooks(creative.rawContent || '', platform),
+        aspectRatio: limits.imageRatio || (limits as any).videoRatio,
+        callToAction: this.generateCTA(platform, pdim.patterns),
+        optimalPostTime: this.calculateOptimalPostTime(platform, pdim.peaks, pdim.globalPeaks),
+        engagementHooks: this.generateEngagementHooks(creative.rawContent || '', platform, pdim.patterns),
       };
     }
 
@@ -165,10 +197,15 @@ export class AdvertisingNormalizationService {
   }
 
   /**
-   * Generate platform-specific call-to-action
+   * Generate platform-specific call-to-action.
+   * Uses top_ctas learned from PDIM ad patterns when available.
    */
-  private generateCTA(platform: string): string {
-    const ctas = {
+  private generateCTA(platform: string, patterns: Record<string, any> = {}): string {
+    const platformKey = Object.keys(patterns).find(k => k.startsWith(platform));
+    if (platformKey && patterns[platformKey]?.top_ctas?.length) {
+      return patterns[platformKey].top_ctas[0];
+    }
+    const ctas: Record<string, string> = {
       instagram: 'Link in bio to listen 🎵',
       tiktok: 'Full track in bio! 🔥',
       twitter: 'Stream now 🎶',
@@ -176,16 +213,22 @@ export class AdvertisingNormalizationService {
       linkedin: 'Available on all major streaming platforms',
       youtube: 'Watch the full video!',
     };
-
-    return ctas[platform as keyof typeof ctas] || 'Check it out!';
+    return ctas[platform] || 'Check it out!';
   }
 
   /**
-   * Calculate optimal posting time for maximum organic reach
+   * Calculate optimal posting time.
+   * Prefers artist-specific peak windows from PDIM, falls back to global peaks,
+   * then to research-backed defaults.
    */
-  private calculateOptimalPostTime(platform: string): string {
-    // Based on engagement research
-    const optimalTimes = {
+  private calculateOptimalPostTime(platform: string, peaks: any[] = [], globalPeaks: any[] = []): string {
+    const artistPeak = peaks.find(p => p?.platform === platform || p?.platforms?.includes(platform));
+    if (artistPeak?.window) return artistPeak.window;
+
+    const globalPeak = globalPeaks.find(p => p?.platform === platform || p?.platforms?.includes(platform));
+    if (globalPeak?.window) return globalPeak.window;
+
+    const optimalTimes: Record<string, string> = {
       instagram: '11:00 AM - 1:00 PM weekdays',
       tiktok: '6:00 PM - 10:00 PM daily',
       twitter: '12:00 PM - 3:00 PM weekdays',
@@ -193,37 +236,32 @@ export class AdvertisingNormalizationService {
       linkedin: '7:30 AM - 8:30 AM weekdays',
       youtube: '2:00 PM - 4:00 PM weekends',
     };
-
-    return optimalTimes[platform as keyof typeof optimalTimes] || '12:00 PM weekdays';
+    return optimalTimes[platform] || '12:00 PM weekdays';
   }
 
   /**
-   * Generate engagement hooks to maximize organic interactions
+   * Generate engagement hooks.
+   * Prepends trained top_hooks from PDIM ad patterns before generic defaults.
    */
-  private generateEngagementHooks(content: string, platform: string): string[] {
+  private generateEngagementHooks(content: string, platform: string, patterns: Record<string, any> = {}): string[] {
     const hooks: string[] = [];
 
-    // Question hooks (drive comments)
+    const platformKey = Object.keys(patterns).find(k => k.startsWith(platform));
+    if (platformKey && patterns[platformKey]?.top_hooks?.length) {
+      hooks.push(...patterns[platformKey].top_hooks.slice(0, 2));
+    }
+
     if (!content.includes('?')) {
       hooks.push('What do you think of this track? 💭');
     }
-
-    // Emoji engagement
-    if (!new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'u').test(content)) {
+    if (!new RegExp('[\\\u{1F300}-\\\u{1F9FF}]', 'u').test(content)) {
       hooks.push('React with 🔥 if you love this!');
     }
-
-    // Tag engagement
     hooks.push('Tag someone who needs to hear this!');
+    if (platform === 'tiktok') hooks.push('Duet this! 🎤');
+    else if (platform === 'instagram') hooks.push('Save this for later! 📌');
 
-    // Platform-specific hooks
-    if (platform === 'tiktok') {
-      hooks.push('Duet this! 🎤');
-    } else if (platform === 'instagram') {
-      hooks.push('Save this for later! 📌');
-    }
-
-    return hooks;
+    return [...new Set(hooks)];
   }
 
   // Content safety checks

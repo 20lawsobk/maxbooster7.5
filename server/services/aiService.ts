@@ -128,104 +128,69 @@ export class AIService {
         return;
       }
 
+      // Seed defaults only when MaxCore has not yet written trained data for a key.
+      // This preserves any trained/enriched values MaxCore has already pushed to PDIM.
+      const seedIfMissing = async (key: string, value: object) => {
+        try {
+          const existing = await redis.get(key);
+          if (!existing) {
+            await redis.set(key, JSON.stringify(value));
+            logger.info(`[AIService] Seeded default for ${key}`);
+          } else {
+            logger.info(`[AIService] Using MaxCore-trained data for ${key}`);
+          }
+        } catch (e: any) {
+          logger.warn(`[AIService] Could not seed ${key}: ${e.message}`);
+        }
+      };
+
       await Promise.all([
-        redis.setEx(
-          `${this.CONTENT_STRUCTURES_PREFIX}twitter`,
-          this.REDIS_TTL,
-          JSON.stringify({
-            maxLength: 280,
-            optimalLength: 120,
-            structures: {
-              professional: [
-                '🎵 {context} • {trackTitle} showcases {artisticElement} • {hashtags}',
-              ],
-              casual: ['vibes check: {emotion} • {trackTitle} is {feeling} • {hashtags}'],
-              energetic: ['🔥 {intensity} energy • {trackTitle} bringing the {vibe} • {hashtags}'],
-              creative: [
-                '✨ {artistic} in the studio • {trackTitle} = {creative_process} • {hashtags}',
-              ],
-              promotional: ['🎧 LISTEN NOW • {trackTitle} by {artist} • {value_prop} • {hashtags}'],
-            },
-          })
-        ),
-        redis.setEx(
-          `${this.CONTENT_STRUCTURES_PREFIX}instagram`,
-          this.REDIS_TTL,
-          JSON.stringify({
-            maxLength: 2200,
-            optimalLength: 150,
-            structures: {
-              professional: [
-                'Behind the artistry ✨\n\n{detailed_context}\n\n{trackTitle} represents {artistic_vision}.\n\n{hashtags}',
-              ],
-              casual: [
-                'Studio life captured 🎵\n\n{casual_story}\n\n{trackTitle} hits different. {personal_touch}\n\n{hashtags}',
-              ],
-              energetic: [
-                'ENERGY OVERLOAD 🔥\n\n{high_energy_story}\n\n{trackTitle} is pure {intensity}! {excitement}\n\n{hashtags}',
-              ],
-              creative: [
-                'Art in motion 🎨\n\n{creative_journey}\n\n{trackTitle} born from {inspiration}. {artistic_detail}\n\n{hashtags}',
-              ],
-              promotional: [
-                'NEW MUSIC ALERT 🚨\n\n{value_proposition}\n\n{trackTitle} by {artist} • {release_info}\n\n{hashtags}',
-              ],
-            },
-          })
-        ),
-        redis.setEx(
-          `${this.GENRE_PROFILES_PREFIX}electronic`,
-          this.REDIS_TTL,
-          JSON.stringify({
-            bpmRange: [120, 140],
-            keyPreferences: ['Fm', 'Am', 'Dm', 'Cm'],
-            energyRange: [0.7, 0.95],
-            danceabilityRange: [0.8, 0.98],
-            instrumentalness: 0.85,
-            acousticness: 0.15,
-            valence: [0.4, 0.8],
-          })
-        ),
-        redis.setEx(
-          `${this.GENRE_PROFILES_PREFIX}hip-hop`,
-          this.REDIS_TTL,
-          JSON.stringify({
-            bpmRange: [70, 100],
-            keyPreferences: ['Fm', 'Cm', 'Gm', 'Dm'],
-            energyRange: [0.6, 0.9],
-            danceabilityRange: [0.7, 0.95],
-            instrumentalness: 0.3,
-            acousticness: 0.2,
-            valence: [0.3, 0.7],
-          })
-        ),
-        redis.setEx(
-          `${this.GENRE_PROFILES_PREFIX}pop`,
-          this.REDIS_TTL,
-          JSON.stringify({
-            bpmRange: [100, 130],
-            keyPreferences: ['C', 'G', 'Am', 'F'],
-            energyRange: [0.6, 0.9],
-            danceabilityRange: [0.6, 0.9],
-            instrumentalness: 0.1,
-            acousticness: 0.25,
-            valence: [0.5, 0.9],
-          })
-        ),
-        redis.setEx(
-          `${this.AUDIO_PATTERNS_PREFIX}spectral_analysis`,
-          this.REDIS_TTL,
-          JSON.stringify({
-            low_freq: { range: [20, 250], characteristics: ['bass', 'sub-bass', 'kick'] },
-            low_mid: { range: [250, 500], characteristics: ['bass_presence', 'warmth'] },
-            mid: { range: [500, 2000], characteristics: ['vocals', 'snare', 'clarity'] },
-            high_mid: { range: [2000, 4000], characteristics: ['presence', 'definition'] },
-            high: { range: [4000, 20000], characteristics: ['air', 'brightness', 'cymbals'] },
-          })
-        ),
+        seedIfMissing(`${this.CONTENT_STRUCTURES_PREFIX}twitter`, {
+          maxLength: 280,
+          optimalLength: 120,
+          structures: {
+            professional: ['🎵 {context} • {trackTitle} showcases {artisticElement} • {hashtags}'],
+            casual: ['vibes check: {emotion} • {trackTitle} is {feeling} • {hashtags}'],
+            energetic: ['🔥 {intensity} energy • {trackTitle} bringing the {vibe} • {hashtags}'],
+            creative: ['✨ {artistic} in the studio • {trackTitle} = {creative_process} • {hashtags}'],
+            promotional: ['🎧 LISTEN NOW • {trackTitle} by {artist} • {value_prop} • {hashtags}'],
+          },
+        }),
+        seedIfMissing(`${this.CONTENT_STRUCTURES_PREFIX}instagram`, {
+          maxLength: 2200,
+          optimalLength: 150,
+          structures: {
+            professional: ['Behind the artistry ✨\n\n{detailed_context}\n\n{trackTitle} represents {artistic_vision}.\n\n{hashtags}'],
+            casual: ['Studio life captured 🎵\n\n{casual_story}\n\n{trackTitle} hits different. {personal_touch}\n\n{hashtags}'],
+            energetic: ['ENERGY OVERLOAD 🔥\n\n{high_energy_story}\n\n{trackTitle} is pure {intensity}! {excitement}\n\n{hashtags}'],
+            creative: ['Art in motion 🎨\n\n{creative_journey}\n\n{trackTitle} born from {inspiration}. {artistic_detail}\n\n{hashtags}'],
+            promotional: ['NEW MUSIC ALERT 🚨\n\n{value_proposition}\n\n{trackTitle} by {artist} • {release_info}\n\n{hashtags}'],
+          },
+        }),
+        seedIfMissing(`${this.GENRE_PROFILES_PREFIX}electronic`, {
+          bpmRange: [120, 140], keyPreferences: ['Fm', 'Am', 'Dm', 'Cm'],
+          energyRange: [0.7, 0.95], danceabilityRange: [0.8, 0.98],
+          instrumentalness: 0.85, acousticness: 0.15, valence: [0.4, 0.8],
+        }),
+        seedIfMissing(`${this.GENRE_PROFILES_PREFIX}hip-hop`, {
+          bpmRange: [70, 100], keyPreferences: ['Fm', 'Cm', 'Gm', 'Dm'],
+          energyRange: [0.6, 0.9], danceabilityRange: [0.7, 0.95],
+          instrumentalness: 0.3, acousticness: 0.2, valence: [0.3, 0.7],
+        }),
+        seedIfMissing(`${this.GENRE_PROFILES_PREFIX}pop`, {
+          bpmRange: [100, 130], keyPreferences: ['C', 'G', 'Am', 'F'],
+          energyRange: [0.6, 0.9], danceabilityRange: [0.6, 0.9],
+          instrumentalness: 0.1, acousticness: 0.25, valence: [0.5, 0.9],
+        }),
+        seedIfMissing(`${this.AUDIO_PATTERNS_PREFIX}spectral_analysis`, {
+          low_freq: { range: [20, 250],   characteristics: ['bass', 'sub-bass', 'kick'] },
+          low_mid:  { range: [250, 500],  characteristics: ['bass_presence', 'warmth'] },
+          mid:      { range: [500, 2000], characteristics: ['vocals', 'snare', 'clarity'] },
+          high_mid: { range: [2000, 4000],characteristics: ['presence', 'definition'] },
+          high:     { range: [4000, 20000], characteristics: ['air', 'brightness', 'cymbals'] },
+        }),
       ]);
     } catch (error: unknown) {
-      // Silently handle Redis initialization errors in development (graceful degradation)
       if (process.env.NODE_ENV !== 'development') {
         logger.error('Failed to initialize AI service data in Redis:', error);
       }

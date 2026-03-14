@@ -4,6 +4,29 @@ import { requireAuth } from '../middleware/auth.js';
 import { autopilotLearningService } from '../services/autopilotLearningService.js';
 import { hyperLearningEngine } from '../services/hyperLearningEngine.js';
 import { logger } from '../logger.js';
+import { getRedisClient } from '../lib/redisConnectionFactory.js';
+
+async function getPdimArtistLearningData(artistId: string) {
+  try {
+    const redis = await getRedisClient();
+    if (!redis) return null;
+    const [patternRaw, peaksRaw, runsRaw, statsRaw] = await Promise.all([
+      redis.get(`mb:ads:${artistId}:patterns`).catch(() => null),
+      redis.lrange(`mb:ads:${artistId}:peaks`, 0, -1).catch(() => []),
+      redis.lrange(`mb:ads:${artistId}:runs`, 0, -1).catch(() => []),
+      redis.hgetall(`mb:ads:${artistId}:stats`).catch(() => null),
+    ]);
+    return {
+      patterns: patternRaw ? JSON.parse(patternRaw) : null,
+      peaks: (peaksRaw || []).map((r: string) => { try { return JSON.parse(r); } catch { return null; } }).filter(Boolean),
+      runs: (runsRaw || []).map((r: string) => { try { return JSON.parse(r); } catch { return null; } }).filter(Boolean),
+      stats: statsRaw || null,
+    };
+  } catch (e: any) {
+    logger.warn(`[AutopilotLearning] PDIM artist data fetch failed: ${e.message}`);
+    return null;
+  }
+}
 
 const router = Router();
 
@@ -21,11 +44,12 @@ router.get('/status', requireAuth, async (req, res) => {
     const hyperStatus = hyperLearningEngine.getStatus();
     const metrics = hyperLearningEngine.getMetrics();
 
-    const [insights, recommendations, performance, platformStats] = await Promise.all([
+    const [insights, recommendations, performance, platformStats, pdimData] = await Promise.all([
       autopilotLearningService.getLearningInsights(userId),
       autopilotLearningService.getRecommendations(userId),
       autopilotLearningService.getPerformanceHistory(userId, { limit: 1 }),
       autopilotLearningService.getPlatformStatistics(userId),
+      getPdimArtistLearningData('artist-001'),
     ]);
 
     res.json({
@@ -60,6 +84,16 @@ router.get('/status', requireAuth, async (req, res) => {
           avgEngagement: p.avgEngagement,
         })),
       },
+      adLearning: pdimData ? {
+        source: 'pdim',
+        platformsLearned: Object.keys(pdimData.patterns || {}),
+        peakWindows: pdimData.peaks.length,
+        runsRecorded: pdimData.runs.length,
+        topCtas: Object.values(pdimData.patterns || {}).flatMap((p: any) => p.top_ctas || []).slice(0, 5),
+        topHooks: Object.values(pdimData.patterns || {}).flatMap((p: any) => p.top_hooks || []).slice(0, 5),
+        avgRoas: Object.values(pdimData.patterns || {}).map((p: any) => p.avg_roas).filter(Boolean),
+        stats: pdimData.stats,
+      } : null,
       capabilities: [
         'performance_tracking',
         'pattern_detection',
@@ -69,6 +103,7 @@ router.get('/status', requireAuth, async (req, res) => {
         'micro_pattern_analysis',
         'cross_platform_synthesis',
         'predictive_modeling',
+        'pdim_ad_pattern_learning',
       ],
     });
   } catch (error) {
