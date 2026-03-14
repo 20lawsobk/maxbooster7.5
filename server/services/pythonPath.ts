@@ -4,16 +4,16 @@ import fs from 'fs';
 
 const CWD = process.cwd();
 
-function probe(p: string): string | null {
+function probe(p: string): boolean {
   try {
     execFileSync(p, ['--version'], { timeout: 3000, stdio: 'ignore' });
-    return p;
+    return true;
   } catch {
-    return null;
+    return false;
   }
 }
 
-function resolvePython(): string {
+function resolvePython(): string | null {
   const candidates = [
     path.join(CWD, '.venv', 'bin', 'python3'),
     path.join(CWD, '.venv', 'bin', 'python'),
@@ -27,10 +27,20 @@ function resolvePython(): string {
     if (probe(c)) return c;
   }
 
-  return 'python3';
+  return null;
 }
 
-export const PYTHON = resolvePython();
+const resolved = resolvePython();
+
+export const PYTHON: string = resolved ?? 'python3';
+export const PYTHON_AVAILABLE: boolean = resolved !== null;
+
+if (!PYTHON_AVAILABLE) {
+  process.stderr.write(
+    '[Python] python3 not found in PATH — video/audio analysis features will be unavailable. ' +
+    'Install Python 3.11 and run: python3 -m venv .venv && .venv/bin/pip install numpy Pillow\n'
+  );
+}
 
 export function ensureVenv(): void {
   const venvPy = path.join(CWD, '.venv', 'bin', 'python3');

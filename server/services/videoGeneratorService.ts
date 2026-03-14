@@ -27,7 +27,7 @@
  */
 
 import { execFile, execFileSync, spawn } from 'child_process';
-import { PYTHON } from './pythonPath.js';
+import { PYTHON, PYTHON_AVAILABLE } from './pythonPath.js';
 import { promisify } from 'util';
 import { mkdirSync, existsSync, unlinkSync } from 'fs';
 import os from 'os';
@@ -455,6 +455,13 @@ async function renderWithPython(
     ? `scale=${width}:${height}:flags=lanczos,`
     : '';
   const vf = `${scaleFilter}format=yuv420p,${textVfParts.join(',')}`;
+
+  if (!PYTHON_AVAILABLE) {
+    return Promise.reject(new Error(
+      'Video render failed: Python 3 is not installed on this server. ' +
+      'The Cinematic AI Video Studio requires Python with numpy and Pillow.'
+    ));
+  }
 
   logger.debug('[VideoGen] vf filter string:', vf);
 

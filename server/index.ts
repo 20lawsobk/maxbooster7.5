@@ -2,9 +2,6 @@
 import "./lib/consoleErrorFilter.ts";
 // Mandatory observability — must load before anything else can throw
 import "./instrument.ts";
-// Ensure Python venv exists with required packages (non-blocking when venv is already present)
-import { ensureVenv } from "./services/pythonPath.ts";
-ensureVenv();
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
