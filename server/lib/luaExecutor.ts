@@ -141,18 +141,25 @@ function syncRedisCall(cmd, args) {
   const len    = Atomics.load(lenBuf, 0);
   const raw    = Buffer.from(new Uint8Array(sab, SAB_HEADER_BYTES, len)).toString('utf8');
   if (status === 2) throw new Error(raw); // propagates as Lua error
-  // Reviver: convert every JSON null to false.
-  // wasmoon checks if JS values are Promises by accessing .then — calling
-  // null.then throws "Cannot read properties of null".  Lua false is the
-  // conventional Redis nil substitute and is correctly falsy in if-guards.
-  return JSON.parse(raw, (_k, v) => v === null ? false : v);
+  // Reviver: convert every JSON null to undefined.
+  // wasmoon dispatches on typeof before probing .then:
+  //   'undefined' → lua_pushnil  (no .then probe — safe, maps to Lua nil)
+  //   'object'    → .then probe  (null.then throws TypeError)
+  // Lua nil is the correct nil substitute: passes "~= nil" guards as false.
+  // Lua false would pass "~= nil" (false ~= nil is TRUE) causing BullMQ to
+  // treat optional args (parentKey, repeatJobKey …) as real values → -5 error.
+  return JSON.parse(raw, (_k, v) => v === null ? undefined : v);
 }
 
-// Recursively replace every null/undefined with false so that wasmoon never
-// probes null.then when Lua accesses a property returned from a JS object.
-// Arrays can contain null at optional/nil positions (e.g. BullMQ job args).
+// Recursively replace every null with undefined so that wasmoon maps the
+// value to Lua nil.  wasmoon dispatches on typeof:
+//   typeof null      === 'object'    → Promise probe → null.then throws
+//   typeof undefined === 'undefined' → lua_pushnil   (safe, no .then probe)
+// Lua nil is required (not false) because BullMQ Lua uses "if x ~= nil" guards
+// for optional args (parentKey, repeatJobKey, …).  false ~= nil is TRUE in Lua,
+// so false triggers those guards as if a real value were present.
 function _replaceNulls(v) {
-  if (v === null || v === undefined) return false;
+  if (v === null || v === undefined) return undefined;
   if (Array.isArray(v)) return v.map(_replaceNulls);
   if (typeof v === 'object') {
     const out = {};
@@ -165,22 +172,22 @@ function _replaceNulls(v) {
 function makeCmsgpack() {
   return {
     unpack(data) {
-      // Always return false (not null) for missing/empty values.
-      // wasmoon probes JS return values for Promise-ness by reading .then;
-      // null.then throws TypeError which kills the Lua script.  Lua false
-      // is the conventional nil substitute and is safely falsy in if-guards.
-      if (data === null || data === undefined) return false;
-      // Pre-decoded JS object passed from main thread (Buffer ARGV) → strip nulls.
-      // The decoded array may contain null at optional/nil positions (e.g. args[5]
-      // for parentKey); wasmoon probes each element for .then, so we must replace.
+      // Return undefined (Lua nil) for missing/empty values.
+      // wasmoon typeof-dispatches before probing .then:
+      //   typeof undefined === 'undefined' → lua_pushnil (safe)
+      //   typeof null      === 'object'    → .then probe → TypeError
+      if (data === null || data === undefined) return undefined;
+      // Pre-decoded JS object/array from main thread — strip every null to
+      // undefined so wasmoon maps them to Lua nil.  Lua nil (not false) is
+      // required for "if x ~= nil" guards in BullMQ Lua scripts.
       if (typeof data === 'object') return _replaceNulls(data);
       // Binary string (from Redis or unmodified ARGV) → decode with msgpackr
       if (typeof data === 'string') {
-        if (data === '') return false; // empty string → no data
+        if (data === '') return undefined; // empty string → no data
         try { return _replaceNulls(_unpack.unpack(Buffer.from(data, 'binary'))); }
-        catch { return false; }
+        catch { return undefined; }
       }
-      return false;
+      return undefined;
     },
     pack(data) {
       return _pack.pack(data).toString('binary');
@@ -201,16 +208,16 @@ try {
       // XADD (Redis Streams) is not supported by PDIM — silently drop it.
       // BullMQ uses XADD only for optional event listeners; dropping it is
       // safe and prevents every queue.add() from failing with an error.
-      if (String(cmd).toUpperCase() === 'XADD') return false;
+      if (String(cmd).toUpperCase() === 'XADD') return undefined;
       const r = syncRedisCall(String(cmd), args.map(a => (a == null ? '' : String(a))));
-      return r === null ? false : r; // Redis nil → Lua false
+      return r === null ? undefined : r; // Redis nil → Lua nil
     },
     pcall(...all) {
       const [cmd, ...args] = all;
-      if (String(cmd).toUpperCase() === 'XADD') return false;
+      if (String(cmd).toUpperCase() === 'XADD') return undefined;
       try {
         const r = syncRedisCall(String(cmd), args.map(a => (a == null ? '' : String(a))));
-        return r === null ? false : r;
+        return r === null ? undefined : r; // Redis nil → Lua nil
       } catch(e) {
         return { err: e.message };
       }
@@ -222,9 +229,9 @@ try {
     decode(s) {
       try {
         const v = JSON.parse(s);
-        // null would cause wasmoon to probe .then and throw TypeError
-        return v === null ? false : v;
-      } catch { return false; }
+        // null → undefined (Lua nil) to avoid wasmoon .then probe on null
+        return v === null ? undefined : v;
+      } catch { return undefined; }
     },
     encode(v) { return JSON.stringify(v); }
   });
