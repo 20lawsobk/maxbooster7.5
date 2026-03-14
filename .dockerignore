@@ -12,54 +12,11 @@ __pycache__
 .replit
 
 # All npm packages — excluded entirely to keep the deployment layer small.
-# The build command (npm install && npm run build) installs them fresh in the
-# deployment container, so they are available at both build-time and runtime.
+# The build command (npm install && npm run build:prod) installs them fresh in the
+# deployment container, then prunes devDependencies after the build.
 node_modules/
 
-# Large desktop/mobile app binary artifacts (not needed for Cloud Run)
-electron/
-electron-out/
-
-# Rust build artifacts (347MB)
-boosterstate/target
-boosterstate/src
-boosterstate/Cargo.lock
-boosterstate/Cargo.toml
-
-# Old/legacy project copies (64MB)
-maxbooster7.5/
-maxbooster_veo_music/
-
-# Development files
-*.md
-!replit.md
-.env
-.env.*
-*.log
-logs/
-.DS_Store
-
-# Screenshots, videos, and large media assets
-client/public/screenshots
-client/public/videos
-
-# Generated content (36MB - regenerated at runtime)
-public/generated-content/
-
-# Development tooling
-scripts/
-.agents/
-attached_assets/
-
-# Test files only
-*.test.*
-*.spec.*
-
-# Capacitor / mobile configs (not needed in deployment container)
-capacitor.config.ts
-capacitor.config.json
-
-# Electron / Desktop / Mobile
+# Large desktop/mobile app binary artifacts (not needed in web server deployment)
 electron/
 electron-out/
 out/
@@ -69,7 +26,51 @@ dist-portable/
 android/
 ios/
 
-# AI model training data
+# Rust binary and all build artifacts (400MB+ when built)
+boosterstate/
+
+# Old/legacy project copies
+maxbooster7.5/
+maxbooster_veo_music/
+
+# Development and CI files
+*.md
+!replit.md
+.env
+.env.*
+*.log
+logs/
+.DS_Store
+.nvmrc
+
+# TypeScript build info cache
+*.tsbuildinfo
+
+# Test output and coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+*.test.*
+*.spec.*
+
+# Screenshots, videos, and large media assets not needed at runtime
+client/public/screenshots
+client/public/videos
+
+# Generated content (regenerated at runtime via PDIM)
+public/generated-content/
+
+# Development tooling and agent config
+scripts/
+.agents/
+attached_assets/
+
+# Capacitor / mobile configs (not needed in deployment container)
+capacitor.config.ts
+capacitor.config.json
+
+# AI model training data (managed by MaxCore, not deployed here)
 ai_model/
 training/
 
@@ -84,7 +85,7 @@ uploads/
 docs/
 tests/
 
-# Static assets source (already copied into dist/public by Vite)
+# Static assets source (already compiled into dist/public by Vite pre-build)
 assets/
 
 # Misc
@@ -92,3 +93,4 @@ assets/
 cookies.txt
 .audit-wal/
 .capsule-temp/
+storybook-static/
