@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { MaxCoreAIClient } from './unifiedAIController.js';
 import { users, analytics, projects, posts, orders, sessions } from '@shared/schema';
 import { sql, gte, lte, desc, and, count, sum, avg, eq } from 'drizzle-orm';
 

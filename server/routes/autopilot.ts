@@ -5,6 +5,7 @@ import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 import { aiModelManager } from '../services/aiModelManager.js';
 import { promotionalToolsService } from '../services/promotionalToolsService.js';
+import { MaxCoreAIClient } from '../services/unifiedAIController.js';
 
 const router = Router();
 

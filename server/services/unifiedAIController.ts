@@ -127,7 +127,7 @@ export interface UnifiedAIResult<T> {
 const MC_AI_URL = process.env.AI_SERVER_URL || '';
 const MC_AI_KEY = process.env.AI_SERVER_KEY || '';
 
-class MaxCoreAIClient {
+export class MaxCoreAIClient {
   private static _available: boolean | null = null;
   private static _lastCheck = 0;
   private static readonly CHECK_TTL = 30_000;

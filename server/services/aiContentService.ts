@@ -1,4 +1,5 @@
 import { aiService } from './aiService';
+import { MaxCoreAIClient } from './unifiedAIController.js';
 import { db } from '../db';
 import { nanoid } from 'nanoid';
 import {
