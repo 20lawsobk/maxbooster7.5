@@ -370,4 +370,107 @@ router.post("/maxcore/start", (_req, res) => {
   res.json({ ok: true, detail: "Stop flag removed. Supervisor will restart MaxCore on its next loop" });
 });
 
+// ── Push ALL AI generation jobs to PDIM ───────────────────────────────────────
+// Enqueues every Max Booster AI job type so MaxCore can consume them all.
+
+router.post("/ai-jobs/push-all", async (_req, res) => {
+  const ts  = Date.now();
+  const src = "maxbooster";
+  const key = MBS_KEY;
+
+  const jobs: Array<{ key: string; payload: Record<string, unknown> }> = [
+    // ── Content generation (ai.ts) ─────────────────────────────────────────
+    { key: "mbs:ai:content:generate",        payload: { action: "content.generate",        type: "social_post", platform: "all", ts } },
+    { key: "mbs:ai:content:sentiment",       payload: { action: "content.sentiment",        ts } },
+    { key: "mbs:ai:content:recommendations", payload: { action: "content.recommendations",  ts } },
+    { key: "mbs:ai:content:ad-optimize",     payload: { action: "content.ad_optimize",      ts } },
+    { key: "mbs:ai:content:engagement",      payload: { action: "content.predict_engagement", ts } },
+    { key: "mbs:ai:content:forecast",        payload: { action: "content.metric_forecast",  ts } },
+    { key: "mbs:ai:content:hashtags",        payload: { action: "content.hashtags",         ts } },
+    { key: "mbs:ai:content:toxicity",        payload: { action: "content.toxicity",         ts } },
+    { key: "mbs:ai:content:emotions",        payload: { action: "content.emotions",         ts } },
+    { key: "mbs:ai:content:trends",          payload: { action: "content.trends",           platforms: ["instagram","tiktok","twitter","youtube"], ts } },
+    { key: "mbs:ai:content:adapt",           payload: { action: "content.adapt",            ts } },
+
+    // ── Studio / audio generation (studioGeneration.ts) ───────────────────
+    { key: "mbs:ai:studio:text-to-audio",    payload: { action: "studio.generate_from_text",      genre: "any", ts } },
+    { key: "mbs:ai:studio:ref-to-audio",     payload: { action: "studio.generate_from_reference", ts } },
+    { key: "mbs:ai:studio:stems",            payload: { action: "studio.stems",                   ts } },
+    { key: "mbs:ai:studio:midi",             payload: { action: "studio.midi",                    ts } },
+    { key: "mbs:ai:studio:warping",          payload: { action: "studio.warping",                 ts } },
+    { key: "mbs:ai:studio:comping",          payload: { action: "studio.comping",                 ts } },
+    { key: "mbs:ai:studio:plugins",          payload: { action: "studio.plugins",                 ts } },
+
+    // ── Audio analysis (audioAnalysis.ts) ─────────────────────────────────
+    { key: "mbs:ai:audio:metadata",          payload: { action: "audio.analyze_metadata",  ts } },
+    { key: "mbs:ai:audio:loudness",          payload: { action: "audio.analyze_loudness",  ts } },
+    { key: "mbs:ai:audio:waveform",          payload: { action: "audio.generate_waveform", ts } },
+    { key: "mbs:ai:audio:distribution",      payload: { action: "audio.validate_distribution", ts } },
+
+    // ── Social AI (socialAI.ts) ────────────────────────────────────────────
+    { key: "mbs:ai:social:chatbot",          payload: { action: "social.chatbot_respond",   ts } },
+    { key: "mbs:ai:social:chatbot-train",    payload: { action: "social.chatbot_train",     ts } },
+    { key: "mbs:ai:social:mentions",         payload: { action: "social.listening_mentions", ts } },
+    { key: "mbs:ai:social:sentiment",        payload: { action: "social.listening_sentiment", ts } },
+    { key: "mbs:ai:social:trends",           payload: { action: "social.listening_trends",  ts } },
+    { key: "mbs:ai:social:brand-health",     payload: { action: "social.brand_health",      ts } },
+    { key: "mbs:ai:social:share-of-voice",   payload: { action: "social.share_of_voice",    ts } },
+
+    // ── Autopilot AI (autopilot.ts / autopilot-learning.ts) ───────────────
+    { key: "mbs:ai:autopilot:social-model",  payload: { action: "autopilot.social_model",   ts } },
+    { key: "mbs:ai:autopilot:ad-model",      payload: { action: "autopilot.ad_model",       ts } },
+    { key: "mbs:ai:autopilot:recommend",     payload: { action: "autopilot.recommend",      ts } },
+    { key: "mbs:ai:autopilot:insights",      payload: { action: "autopilot.generate_insights", ts } },
+    { key: "mbs:ai:autopilot:patterns",      payload: { action: "autopilot.patterns",       ts } },
+    { key: "mbs:ai:autopilot:optimal-times", payload: { action: "autopilot.optimal_times",  platforms: ["instagram","tiktok","twitter","youtube","spotify"], ts } },
+
+    // ── Content analysis (content-analysis.ts) ────────────────────────────
+    { key: "mbs:ai:analysis:image",          payload: { action: "analysis.image",   ts } },
+    { key: "mbs:ai:analysis:video",          payload: { action: "analysis.video",   ts } },
+    { key: "mbs:ai:analysis:audio",          payload: { action: "analysis.audio",   ts } },
+    { key: "mbs:ai:analysis:text",           payload: { action: "analysis.text",    ts } },
+    { key: "mbs:ai:analysis:website",        payload: { action: "analysis.website", ts } },
+    { key: "mbs:ai:analysis:batch",          payload: { action: "analysis.batch",   ts } },
+
+    // ── Career coach / songwriting / assistant ─────────────────────────────
+    { key: "mbs:ai:career:coach",            payload: { action: "career.coach",       ts } },
+    { key: "mbs:ai:songwriting:generate",    payload: { action: "songwriting.generate", ts } },
+    { key: "mbs:ai:assistant:respond",       payload: { action: "assistant.respond",  ts } },
+
+    // ── Music videos / distribution / sync licensing ───────────────────────
+    { key: "mbs:ai:music-video:generate",    payload: { action: "music_video.generate", ts } },
+    { key: "mbs:ai:sync:analyze",            payload: { action: "sync.license_analyze", ts } },
+    { key: "mbs:ai:distribution:optimize",   payload: { action: "distribution.optimize", ts } },
+
+    // ── Training & dataset (training.ts) ──────────────────────────────────
+    { key: "mbs:training:session",           payload: { action: "start-7tb-download", source: src, api_key: key, bytes: 7_696_581_394_432, ts } },
+    { key: "mbs:downloads",                  payload: { action: "downloader:start",   source: src, api_key: key, bytes: 7_696_581_394_432, ts } },
+    { key: "mbs:ai:training:weights",        payload: { action: "training.push_weights", source: src, api_key: key, ts } },
+    { key: "mbs:ai:training:datasets",       payload: { action: "training.sync_datasets", ts } },
+  ];
+
+  const results: Array<{ key: string; ok: boolean; error?: string }> = [];
+  let pushed = 0;
+  let failed = 0;
+
+  for (const { key: k, payload } of jobs) {
+    try {
+      await mainPdimPush(k, { id: `${k.replace(/:/g,"-")}-${ts}`, source: src, api_key: key, ...payload });
+      results.push({ key: k, ok: true });
+      pushed++;
+    } catch (err: any) {
+      results.push({ key: k, ok: false, error: err.message });
+      failed++;
+      logger.error(`[MaxCore] ai-jobs/push-all failed for ${k}: ${err.message}`);
+    }
+  }
+
+  logger.info(`[MaxCore] ai-jobs/push-all complete — pushed: ${pushed}, failed: ${failed}`);
+  res.json({
+    ok: failed === 0,
+    summary: { total: jobs.length, pushed, failed },
+    results,
+  });
+});
+
 export default router;
