@@ -33,7 +33,10 @@ const _msgUnpacker = new Unpackr({ useRecords: false });
  *
  * MAX_WAIT_MS: maximum time a caller will wait for a slot before giving up.
  */
-const MAX_CONCURRENT_WORKERS = 6;
+// Lowered from 6 → 3: fewer concurrent wasmoon Workers means less PDIM
+// HTTP concurrency, which keeps us well below PDIM's rate-limit even during
+// cluster startup when all N workers initialise simultaneously.
+const MAX_CONCURRENT_WORKERS = 3;
 const MAX_WAIT_MS = 30_000;
 // How long to sleep before rejecting when the circuit is OPEN.
 // BullMQ uses onlyEmitError:true so our rejection is swallowed and treated as
@@ -42,30 +45,44 @@ const MAX_WAIT_MS = 30_000;
 const CIRCUIT_OPEN_BACKOFF_MS = 5_000;
 
 let _activeWorkers = 0;
-const _waitQueue: Array<() => void> = [];
+
+// Each queued waiter stores its resolve fn and timeout handle separately.
+// This lets _releaseWorkerSlot hand the slot to the next waiter WITHOUT
+// calling _activeWorkers++ (the slot is *transferred*, not newly created).
+// The previous design stored a combined resolver = () => { _activeWorkers++; resolve(); }
+// and called it from _releaseWorkerSlot without decrementing first, causing
+// _activeWorkers to drift above MAX_CONCURRENT_WORKERS by +1 per handoff.
+interface _Waiter { resolve: () => void; timer: ReturnType<typeof setTimeout>; }
+const _waitQueue: _Waiter[] = [];
 
 async function _acquireWorkerSlot(): Promise<void> {
   if (_activeWorkers < MAX_CONCURRENT_WORKERS) {
     _activeWorkers++;
     return;
   }
-  // Queue the caller until a slot frees up.
+  // Queue the caller until a slot frees up — transfer increments the count.
   return new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      const idx = _waitQueue.indexOf(resolver);
-      if (idx !== -1) _waitQueue.splice(idx, 1);
-      reject(new Error('[LuaExecutor] Timeout waiting for worker slot (30s)'));
-    }, MAX_WAIT_MS);
-    const resolver = () => { clearTimeout(timer); _activeWorkers++; resolve(); };
-    _waitQueue.push(resolver);
+    const entry: _Waiter = {
+      resolve,
+      timer: setTimeout(() => {
+        const idx = _waitQueue.indexOf(entry);
+        if (idx !== -1) _waitQueue.splice(idx, 1);
+        reject(new Error('[LuaExecutor] Timeout waiting for worker slot (30s)'));
+      }, MAX_WAIT_MS),
+    };
+    _waitQueue.push(entry);
   });
 }
 
 function _releaseWorkerSlot(): void {
   if (_waitQueue.length > 0) {
-    // Hand the slot directly to the next waiter — activeWorkers stays the same.
-    const next = _waitQueue.shift()!;
-    next();
+    // Transfer the slot to the next waiter.  _activeWorkers stays the same:
+    // the releasing worker relinquishes its slot and the waiter takes it over.
+    // We must NOT call _activeWorkers++ here (old bug: resolver did that,
+    // causing count to grow by 1 on every queue handoff).
+    const { resolve, timer } = _waitQueue.shift()!;
+    clearTimeout(timer);
+    resolve();
   } else {
     if (_activeWorkers > 0) _activeWorkers--;
   }
@@ -80,14 +97,16 @@ function _releaseWorkerSlot(): void {
  */
 export function resetLuaExecutorSemaphore(): number {
   const stuckSlots = Math.max(0, _activeWorkers - _waitQueue.length);
-  // Drain all queued waiters first — they'll increment _activeWorkers themselves
+  // Drain all queued waiters — resolve their promises so they can proceed.
+  // Don't call _activeWorkers++ here; we zero the counter on the next line.
   while (_waitQueue.length > 0) {
-    const next = _waitQueue.shift()!;
-    next();
+    const { resolve, timer } = _waitQueue.shift()!;
+    clearTimeout(timer);
+    resolve();
   }
-  // Then zero out the counter entirely so fresh callers get clean slots
+  // Zero out the counter entirely so fresh callers start from a clean slate.
   _activeWorkers = 0;
-  return stuckSlots + _waitQueue.length;
+  return stuckSlots;
 }
 
 /** Snapshot of the LuaExecutor semaphore — used by the chain error fixer health check. */
@@ -129,18 +148,39 @@ function syncRedisCall(cmd, args) {
   return JSON.parse(raw, (_k, v) => v === null ? false : v);
 }
 
+// Recursively replace every null/undefined with false so that wasmoon never
+// probes null.then when Lua accesses a property returned from a JS object.
+// Arrays can contain null at optional/nil positions (e.g. BullMQ job args).
+function _replaceNulls(v) {
+  if (v === null || v === undefined) return false;
+  if (Array.isArray(v)) return v.map(_replaceNulls);
+  if (typeof v === 'object') {
+    const out = {};
+    for (const k of Object.keys(v)) out[k] = _replaceNulls(v[k]);
+    return out;
+  }
+  return v;
+}
+
 function makeCmsgpack() {
   return {
     unpack(data) {
-      if (data === null || data === undefined) return null;
-      // Pre-decoded JS object passed from main thread (Buffer ARGV) → identity
-      if (typeof data === 'object') return data;
+      // Always return false (not null) for missing/empty values.
+      // wasmoon probes JS return values for Promise-ness by reading .then;
+      // null.then throws TypeError which kills the Lua script.  Lua false
+      // is the conventional nil substitute and is safely falsy in if-guards.
+      if (data === null || data === undefined) return false;
+      // Pre-decoded JS object passed from main thread (Buffer ARGV) → strip nulls.
+      // The decoded array may contain null at optional/nil positions (e.g. args[5]
+      // for parentKey); wasmoon probes each element for .then, so we must replace.
+      if (typeof data === 'object') return _replaceNulls(data);
       // Binary string (from Redis or unmodified ARGV) → decode with msgpackr
       if (typeof data === 'string') {
-        try { return _unpack.unpack(Buffer.from(data, 'binary')); }
-        catch { return null; }
+        if (data === '') return false; // empty string → no data
+        try { return _replaceNulls(_unpack.unpack(Buffer.from(data, 'binary'))); }
+        catch { return false; }
       }
-      return null;
+      return false;
     },
     pack(data) {
       return _pack.pack(data).toString('binary');
@@ -158,11 +198,16 @@ try {
   engine.global.set('redis', {
     call(...all) {
       const [cmd, ...args] = all;
+      // XADD (Redis Streams) is not supported by PDIM — silently drop it.
+      // BullMQ uses XADD only for optional event listeners; dropping it is
+      // safe and prevents every queue.add() from failing with an error.
+      if (String(cmd).toUpperCase() === 'XADD') return false;
       const r = syncRedisCall(String(cmd), args.map(a => (a == null ? '' : String(a))));
       return r === null ? false : r; // Redis nil → Lua false
     },
     pcall(...all) {
       const [cmd, ...args] = all;
+      if (String(cmd).toUpperCase() === 'XADD') return false;
       try {
         const r = syncRedisCall(String(cmd), args.map(a => (a == null ? '' : String(a))));
         return r === null ? false : r;
@@ -174,7 +219,13 @@ try {
 
   engine.global.set('cmsgpack', makeCmsgpack());
   engine.global.set('cjson', {
-    decode(s) { try { return JSON.parse(s); } catch { return null; } },
+    decode(s) {
+      try {
+        const v = JSON.parse(s);
+        // null would cause wasmoon to probe .then and throw TypeError
+        return v === null ? false : v;
+      } catch { return false; }
+    },
     encode(v) { return JSON.stringify(v); }
   });
 
@@ -308,6 +359,16 @@ export async function execLuaViaPdim(
     worker.on('error', (err) => {
       clearTimeout(tmout);
       settle(() => reject(err));
+    });
+
+    // Guard against worker threads that exit without sending a message
+    // (e.g. WASM crash, OOM inside the worker, or unhandled exception that
+    // bypasses the try/catch).  Without this handler _activeWorkers never
+    // decrements, drifting above MAX_CONCURRENT_WORKERS and permanently
+    // congesting the semaphore (observed: active=7 with cap=6).
+    worker.on('exit', (code) => {
+      clearTimeout(tmout);
+      settle(() => reject(new Error(`[LuaExecutor] worker exited unexpectedly (code=${code})`)));
     });
   });
 }

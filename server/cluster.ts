@@ -74,8 +74,13 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     (isAutoscale ? ' [Autoscale replica]' : '')
   );
 
+  // Stagger worker startup by 800 ms per worker.
+  // Without a stagger all N workers immediately race to connect to PDIM
+  // (session-store ping, distributed-cache connect, BullMQ bzpopmin) which
+  // saturates PDIM's rate-limit and triggers cascading 429s before any
+  // worker has finished initialising.
   for (let i = 0; i < workerCount; i++) {
-    cluster.fork();
+    setTimeout(() => cluster.fork(), i * 800);
   }
 
   // Crash-loop protection: track restart times to detect and back off runaway crashes.

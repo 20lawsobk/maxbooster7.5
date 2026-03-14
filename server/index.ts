@@ -288,11 +288,11 @@ app.use((req, res, next) => {
   app.use(session(sessionConfig));
   logger.info('✅ Session store initialized (FallbackSessionStore: Redis/PDIM → PG)');
 
-  // Connect distributed cache to Redis (non-fatal if PDIM is down)
-  await distributedCache.connect().catch((e: any) => {
-    logger.warn(`⚠️ Distributed cache connect failed (non-fatal): ${e.message}`);
-  });
-  
+  // distributedCache.connect() is deferred to the setImmediate block below.
+  // Keeping it here would stall route registration for up to ~20 s if PDIM is
+  // rate-limiting at startup (3 retries × 5 s connectTimeout + back-off delays).
+  // The cache falls back to in-memory until the deferred connect succeeds.
+
   // Export session store for WebSocket authentication
   (global as any).__activeSessionStore = activeSessionStore;
 
@@ -564,6 +564,15 @@ app.use((req, res, next) => {
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
         logger.info('🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)');
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
+
+        // 0-pre. Distributed cache — deferred so PDIM rate-limit retries don't
+        // stall route registration.  Falls back to in-memory until connected.
+        try {
+          await distributedCache.connect();
+          logger.info('✅ [DistributedCache] Connected (deferred)');
+        } catch (e: any) {
+          logger.warn(`⚠️ Distributed cache connect failed (non-fatal, in-memory fallback active): ${e.message}`);
+        }
 
         // 0a. Stripe products — network call, not needed before first payment request
         try {
