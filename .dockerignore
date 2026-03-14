@@ -1,9 +1,16 @@
 # Version control
 .git
+.github
 .github/
+
+# IDEs and editors
+.vscode
+.idea
 
 # Caches and runtime environments
 .cache
+node_modules/.cache
+.next
 .pythonlibs
 .venv
 __pycache__
@@ -12,8 +19,8 @@ __pycache__
 .replit
 
 # All npm packages — excluded entirely to keep the deployment layer small.
-# The build command (npm install && npm run build:prod) installs them fresh in the
-# deployment container, then prunes devDependencies after the build.
+# The build command installs only production dependencies fresh in the
+# deployment container. Pre-built dist/ artifacts skip the compile step.
 node_modules/
 
 # Large desktop/mobile app binary artifacts (not needed in web server deployment)
@@ -28,17 +35,27 @@ ios/
 
 # Rust binary and all build artifacts (400MB+ when built)
 boosterstate/
+boosterstate/target
 
 # Old/legacy project copies
 maxbooster7.5/
 maxbooster_veo_music/
 
+# Source directories — not needed at runtime since dist/ contains pre-built output
+client/src
+server
+script
+
 # Development and CI files
 *.md
 !replit.md
+README.md
 .env
 .env.*
+.env.local
+.env.*.local
 *.log
+npm-debug.log*
 logs/
 .DS_Store
 .nvmrc
@@ -46,13 +63,24 @@ logs/
 # TypeScript build info cache
 *.tsbuildinfo
 
-# Test output and coverage
+# Tests and test output
+test
+tests
+__tests__
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
 coverage/
 .nyc_output/
 playwright-report/
 test-results/
 *.test.*
 *.spec.*
+
+# Documentation
+docs
+README.md
 
 # Screenshots, videos, and large media assets not needed at runtime
 client/public/screenshots
@@ -80,10 +108,6 @@ boosterstate-data/
 pocket-dimensions/
 data/
 uploads/
-
-# Documentation and tests
-docs/
-tests/
 
 # Static assets source (already compiled into dist/public by Vite pre-build)
 assets/
