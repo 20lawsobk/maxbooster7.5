@@ -325,7 +325,12 @@
     "parse-git-config": ">=0.7.4",
     "project-name": ">=0.7.4",
     "remote-origin-url": ">=0.7.4",
-    "update": ">=0.7.4"
+    "update": ">=0.7.4",
+    "@capacitor/cli": ">=2.5.0",
+    "electron": ">=0.4.1",
+    "extract-zip": ">=0.4.1",
+    "native-run": ">=2.5.0",
+    "yauzl": ">=0.4.1"
   },
   "engines": {
     "node": ">=22"
