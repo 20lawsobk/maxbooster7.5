@@ -33,8 +33,7 @@ dist-portable/
 android/
 ios/
 
-# Rust binary and all build artifacts (400MB+ when built)
-boosterstate/
+# Rust build artifacts only — source stays so cargo can build during deploy
 boosterstate/target
 
 # Old/legacy project copies
