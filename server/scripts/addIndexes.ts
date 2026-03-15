@@ -45,6 +45,31 @@ const indexes: { name: string; ddl: string }[] = [
 
   // artist_profiles — queried by user_id for profile management
   { name: 'idx_artist_profiles_user_id', ddl: 'CREATE INDEX IF NOT EXISTS idx_artist_profiles_user_id ON artist_profiles(user_id)' },
+
+  // social_accounts — frequently queried by user_id (1700ms slow query detected)
+  { name: 'idx_social_accounts_user_id', ddl: 'CREATE INDEX IF NOT EXISTS idx_social_accounts_user_id ON social_accounts(user_id)' },
+  { name: 'idx_social_accounts_platform', ddl: 'CREATE INDEX IF NOT EXISTS idx_social_accounts_platform ON social_accounts(platform)' },
+
+  // autopilot_learning_data — date range queries on created_at (370ms slow queries)
+  { name: 'idx_autopilot_learning_created_at', ddl: 'CREATE INDEX IF NOT EXISTS idx_autopilot_learning_created_at ON autopilot_learning_data(created_at)' },
+  { name: 'idx_autopilot_learning_user_id', ddl: 'CREATE INDEX IF NOT EXISTS idx_autopilot_learning_user_id ON autopilot_learning_data(user_id)' },
+  { name: 'idx_autopilot_learning_platform', ddl: 'CREATE INDEX IF NOT EXISTS idx_autopilot_learning_platform ON autopilot_learning_data(platform)' },
+
+  // achievements — queried by name (1239ms slow query on seeding)
+  { name: 'idx_achievements_name', ddl: 'CREATE INDEX IF NOT EXISTS idx_achievements_name ON achievements(name)' },
+
+  // user_achievements — queried by user_id for profile/gamification
+  { name: 'idx_user_achievements_user_id', ddl: 'CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id)' },
+
+  // system_settings — scanned on every startup
+  { name: 'idx_system_settings_key', ddl: 'CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(key)' },
+
+  // studio_projects — queried by user_id (used in startup churn analysis)
+  { name: 'idx_studio_projects_user_id', ddl: 'CREATE INDEX IF NOT EXISTS idx_studio_projects_user_id ON studio_projects(user_id)' },
+  { name: 'idx_studio_projects_created_at', ddl: 'CREATE INDEX IF NOT EXISTS idx_studio_projects_created_at ON studio_projects(created_at)' },
+
+  // distribution_releases — queried by user_id for distribution flow
+  { name: 'idx_distribution_releases_user_id', ddl: 'CREATE INDEX IF NOT EXISTS idx_distribution_releases_user_id ON distribution_releases(user_id)' },
 ];
 
 async function run() {

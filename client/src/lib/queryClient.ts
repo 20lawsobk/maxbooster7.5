@@ -21,7 +21,7 @@
  *   mutation that doesn't provide its own onError handler.
  */
 
-import { QueryClient, QueryFunction, MutationCache } from '@tanstack/react-query';
+import { QueryClient, QueryCache, QueryFunction, MutationCache } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { errorService, captureException } from './errorService';
 
@@ -583,6 +583,22 @@ function shouldRetry(error: unknown): boolean {
 }
 
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error: Error, query) => {
+      if ((query.options as any)?.meta?.silentError) return;
+      const apiError = error as ApiError & { userMessage?: string; status?: number };
+      if (apiError.status === 401 || apiError.status === 403) return;
+      const message =
+        apiError.userMessage ||
+        error.message ||
+        'Failed to load data. Please refresh or try again.';
+      toast({
+        title: 'Data Load Error',
+        description: message,
+        variant: 'destructive',
+      });
+    },
+  }),
   mutationCache: new MutationCache({
     onError: (error: Error, _variables, _context, mutation) => {
       if (mutation.options.onError) return;

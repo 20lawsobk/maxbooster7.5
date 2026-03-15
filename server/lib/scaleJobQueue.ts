@@ -38,10 +38,10 @@ const WORKER_CONCURRENCY = parseInt(process.env.BULLMQ_CONCURRENCY ?? '5', 10);
  * Completed jobs kept for 24 h (observability). Failed kept for 7 d (100 most recent) so they can be retried.
  */
 const JOB_DEFAULTS = {
-  removeOnComplete: { age: 86_400 },
-  removeOnFail: { count: 100 },
-  attempts: 3,
-  backoff: { type: 'exponential' as const, delay: 5_000 },
+  removeOnComplete: true,
+  removeOnFail: { count: 10 },
+  attempts: 2,
+  backoff: { type: 'exponential' as const, delay: 10_000 },
 };
 
 let _queue: Queue | null = null;
@@ -63,10 +63,15 @@ export function startRetentionWorker(): Worker {
   const worker = new Worker(
     RETENTION_QUEUE,
     async (job: Job) => {
-      logger.info(`[Worker] Processing job ${job.name} id=${job.id}`);
+      const jobName = job.name ?? (job.data?.type as string | undefined);
+      if (!jobName) {
+        logger.warn(`[Worker] Skipping stale/unnamed job id=${job.id} — likely leftover from prior session`);
+        return;
+      }
+      logger.info(`[Worker] Processing job ${jobName} id=${job.id}`);
 
       try {
-        switch (job.name) {
+        switch (jobName) {
           case 'health-score-batch': {
             const { cursor = 0, batchSize = 100 } = job.data;
             const nextCursor = await customerHealthScoreService.batchComputePaged(cursor, batchSize);
@@ -107,24 +112,24 @@ export function startRetentionWorker(): Worker {
           }
 
           default:
-            logger.warn(`[Worker] Unknown job name: ${job.name}`);
+            logger.warn(`[Worker] Unknown job name: ${jobName}`);
         }
       } catch (err) {
-        logger.error(`[Worker] Job ${job.name} failed:`, err);
+        logger.error(`[Worker] Job ${jobName} failed:`, err);
         throw err;
       }
     },
     {
       connection,
-      concurrency: Math.min(WORKER_CONCURRENCY, 2),
-      runRetryDelay: 15000,
+      concurrency: 1,
+      runRetryDelay: 30000,
       autorun: false,
-      drainDelay: 5000,
-      stalledInterval: 30000,
-      maxStalledCount: 2,
+      drainDelay: 30000,
+      stalledInterval: 60000,
+      maxStalledCount: 1,
       limiter: {
-        max: Math.min(WORKER_CONCURRENCY, 2),
-        duration: 1_000,
+        max: 1,
+        duration: 5_000,
       },
     }
   );

@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { achievements } from "../../shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, count, inArray } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 const defaultAchievements = [
@@ -154,24 +154,33 @@ export async function seedAchievements() {
   logger.info("Seeding achievements...");
   
   try {
-    for (const achievement of defaultAchievements) {
-      const existing = await db
-        .select()
-        .from(achievements)
-        .where(eq(achievements.name, achievement.name))
-        .limit(1);
-      
-      if (existing.length === 0) {
-        await db.insert(achievements).values({
-          ...achievement,
-          isActive: true,
-        });
-        logger.info(`Created achievement: ${achievement.name}`);
-      } else {
-        logger.info(`Achievement already exists: ${achievement.name}`);
-      }
+    const names = defaultAchievements.map(a => a.name);
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(achievements)
+      .where(inArray(achievements.name, names));
+
+    if (Number(total) >= names.length) {
+      logger.info("Achievements already seeded, skipping...");
+      logger.info("Achievement seeding complete!");
+      return;
     }
-    
+
+    const existing = await db
+      .select({ name: achievements.name })
+      .from(achievements)
+      .where(inArray(achievements.name, names));
+    const existingNames = new Set(existing.map(r => r.name));
+
+    const toInsert = defaultAchievements
+      .filter(a => !existingNames.has(a.name))
+      .map(a => ({ ...a, isActive: true }));
+
+    if (toInsert.length > 0) {
+      await db.insert(achievements).values(toInsert);
+      logger.info(`Created ${toInsert.length} achievement(s)`);
+    }
+
     logger.info("Achievement seeding complete!");
   } catch (error) {
     logger.error("Error seeding achievements:", error);

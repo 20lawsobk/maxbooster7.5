@@ -1,6 +1,7 @@
 import { logger } from '../logger.js';
 import type { Redis } from 'ioredis';
 import { applyIoredisCompatShim } from '../lib/redisCompat.js';
+import { isPdimConfigured, getPdimClient } from '../lib/pdimClient.js';
 
 interface CacheConfig {
   defaultTTL: number;
@@ -121,6 +122,14 @@ export class DistributedCache {
     }
 
     try {
+      // PDIM is the sole Redis backend when configured — use it directly
+      if (isPdimConfigured()) {
+        this.redis = getPdimClient() as any;
+        this._redisReady = true;
+        logger.info('✅ [DistributedCache] Connected (PDIM)');
+        return;
+      }
+
       const { default: Redis } = await import('ioredis');
       this.redis = new Redis(url, {
         maxRetriesPerRequest: 1,

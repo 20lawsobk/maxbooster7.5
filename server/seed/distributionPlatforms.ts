@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { dspProviders } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql, count } from 'drizzle-orm';
 import { logger } from '../logger.js';
 
 export const DISTRIBUTION_PLATFORMS = [
@@ -1456,28 +1456,35 @@ export async function seedDistributionPlatforms() {
   logger.info('🌱 Seeding distribution platforms...');
 
   try {
-    for (const platform of DISTRIBUTION_PLATFORMS) {
-      const [existing] = await db
-        .select()
-        .from(dspProviders)
-        .where(eq(dspProviders.slug, platform.slug))
-        .limit(1);
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(dspProviders);
 
-      if (!existing) {
-        await db.insert(dspProviders).values({
-          name: platform.name,
-          slug: platform.slug,
-          isActive: platform.isActive,
-          metadata: platform.metadata,
-        });
-        logger.info(`  ✅ Added platform: ${platform.name}`);
-      } else {
-        await db.update(dspProviders)
-          .set({ metadata: platform.metadata, isActive: platform.isActive })
-          .where(eq(dspProviders.slug, platform.slug));
-        logger.info(`  🔄 Updated platform: ${platform.name}`);
-      }
+    if (Number(total) >= DISTRIBUTION_PLATFORMS.length) {
+      logger.info(
+        `✅ Distribution platform seeding complete! ${DISTRIBUTION_PLATFORMS.length} platforms available.`
+      );
+      return;
     }
+
+    const values = DISTRIBUTION_PLATFORMS.map(p => ({
+      name: p.name,
+      slug: p.slug,
+      isActive: p.isActive,
+      metadata: p.metadata,
+    }));
+
+    await db
+      .insert(dspProviders)
+      .values(values)
+      .onConflictDoUpdate({
+        target: dspProviders.slug,
+        set: {
+          name: sql`excluded.name`,
+          isActive: sql`excluded.is_active`,
+          metadata: sql`excluded.metadata`,
+        },
+      });
 
     logger.info(
       `✅ Distribution platform seeding complete! ${DISTRIBUTION_PLATFORMS.length} platforms available.`

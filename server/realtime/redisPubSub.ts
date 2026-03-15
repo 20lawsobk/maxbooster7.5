@@ -1,11 +1,12 @@
 import Redis from 'ioredis';
 import { logger } from '../logger.js';
+import { isPdimConfigured, getPdimClient } from '../lib/pdimClient.js';
 
 const CHANNEL_USER = 'ws:user:notify';
 const CHANNEL_BROADCAST = 'ws:broadcast';
 
-let publisher: Redis | null = null;
-let subscriber: Redis | null = null;
+let publisher: any | null = null;
+let subscriber: any | null = null;
 let _ready = false;
 
 type UserNotifyHandler = (userId: string, notification: object) => void;
@@ -23,6 +24,34 @@ export function registerHandlers(
 }
 
 export async function initRedisPubSub(): Promise<void> {
+  // PDIM is the sole backend — use it for pub/sub directly (no ioredis socket)
+  if (isPdimConfigured()) {
+    try {
+      publisher  = getPdimClient();
+      subscriber = getPdimClient().duplicate();
+      // PDIM subscribe is HTTP-polled; register message handler if supported
+      subscriber.on?.('message', (channel: string, message: string) => {
+        try {
+          const payload = JSON.parse(message);
+          if (channel === CHANNEL_USER && onUserNotify) {
+            onUserNotify(payload.userId, payload.notification);
+          } else if (channel === CHANNEL_BROADCAST && onBroadcast) {
+            onBroadcast(payload.notification);
+          }
+        } catch {
+          // ignore malformed messages
+        }
+      });
+      await subscriber.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
+      _ready = true;
+      logger.info('✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance');
+    } catch (err: any) {
+      logger.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${err.message}`);
+      _ready = !!publisher;
+    }
+    return;
+  }
+
   const url = process.env.REDIS_URL;
   if (!url) {
     logger.warn('[WS PubSub] REDIS_URL not set — cross-instance broadcasting disabled');
@@ -90,8 +119,8 @@ export async function publishBroadcast(notification: object): Promise<void> {
 }
 
 export async function closePubSub(): Promise<void> {
-  if (subscriber) await subscriber.quit();
-  if (publisher) await publisher.quit();
+  try { if (subscriber?.quit) await subscriber.quit(); } catch { /* ignore */ }
+  try { if (publisher?.quit) await publisher.quit(); } catch { /* ignore */ }
   subscriber = null;
   publisher = null;
   _ready = false;

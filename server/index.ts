@@ -241,7 +241,7 @@ app.use((req, res, next) => {
     initializeDatabaseLogTransport({
       minLevel: 'warn',
       batchSize: 10,
-      flushIntervalMs: 5000,
+      flushIntervalMs: 30000,
     });
     logger.info('✅ Database log transport initialized');
   } catch (error) {
