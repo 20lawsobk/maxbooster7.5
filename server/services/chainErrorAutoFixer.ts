@@ -215,23 +215,56 @@ class ChainErrorAutoFixer extends EventEmitter {
     });
 
     // 7. Slow query sustained (3+ occurrences in window — DB under pressure)
+    // NOTE: autoFix deliberately does NOT call distributedCache.flush() here.
+    // These slow queries are on autopilot_learning_data with no indexes (DB at
+    // 512MB Neon limit — can't add indexes).  A cache flush would send a
+    // FLUSHDB command to PDIM at the exact same moment HyperLearning cycle
+    // ends and BullMQ pollers resume — triggering the synchronized 429 burst
+    // that this fixer exists to prevent.  Logging only is the correct response.
     this.addPattern({
       id: 'sustained_slow_queries',
       name: 'Sustained slow database queries',
-      description: 'Database query latency repeatedly exceeding 100ms; potential connection pool saturation',
+      description: 'Database query latency exceeding 300ms — expected under Neon connection-limit with no additional indexes available',
       matchers: [/Slow query detected \(\d{3,}ms\)/i],
       levels: ['warn'],
       severity: 'low',
       category: 'database',
       cooldownMs: 300_000,
-      maxAttempts: 10,
+      maxAttempts: 100,
+      autoFix: async () => {
+        // Intentionally no PDIM/cache interaction — see comment above.
+        logger.info('[ChainFixer] Slow query pattern acknowledged (autopilot_learning_data, no indexes available) — no corrective action');
+      },
+    });
+
+    // 7b. PDIM 429 rate-limit burst — acknowledge + suppress repeat noise
+    // exec() already applies an exponential backoff when 429 is received and
+    // logs only the first occurrence per window.  This pattern provides a
+    // ChainFixer-level acknowledgement, resets the LuaExecutor semaphore
+    // (often stuck when 429s cascade through Lua script redis.call()s), and
+    // suppresses subsequent ChainFixer triggers until the next cooldown window.
+    this.addPattern({
+      id: 'pdim_rate_limit_429',
+      name: 'PDIM HTTP 429 rate-limit burst',
+      description: 'PDIM returned 429 — global rate-limit backoff applied automatically; LuaExecutor semaphore reset to clear any stuck slots',
+      matchers: [/PDIM HTTP 429/i, /exec error.*429/i],
+      levels: ['error', 'warn'],
+      severity: 'medium',
+      category: 'storage',
+      cooldownMs: 60_000,
+      maxAttempts: 50,
       autoFix: async () => {
         try {
-          const { distributedCache } = await import('../infrastructure/distributedCache.js');
-          await distributedCache.flush();
-          logger.info('[ChainFixer] Distributed cache flushed to reduce DB read pressure');
+          const { resetLuaExecutorSemaphore, getLuaExecutorStats } = await import('../lib/luaExecutor.js');
+          const stats = getLuaExecutorStats();
+          if (stats.active > 0 || stats.queued > 0) {
+            const released = resetLuaExecutorSemaphore();
+            logger.info(`[ChainFixer] 429 detected — LuaExecutor semaphore reset: active=${stats.active} queued=${stats.queued} released=${released}`);
+          } else {
+            logger.info('[ChainFixer] 429 detected — global backoff already active; LuaExecutor semaphore clean');
+          }
         } catch {
-          logger.info('[ChainFixer] Slow query pattern detected — cache flush skipped; monitoring continues');
+          logger.info('[ChainFixer] 429 detected — global rate-limit backoff will resolve automatically');
         }
       },
     });

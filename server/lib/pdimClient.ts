@@ -20,16 +20,94 @@ import {
   cbHalfOpenFailed,
 } from './pdimCircuitBreaker.js';
 
-// ── Module-level ZPOPMIN serializer ───────────────────────────────────────────
-// Limits all ZPOPMIN calls (across every PdimRedisClient instance in the
-// process) to a single in-flight request at a time with a minimum 400ms gap
-// between completions.  This is the only reliable way to prevent the thundering-
-// herd 429 bursts that occur when 6+ BullMQ worker pollers fire simultaneously.
+// ── Adaptive PDIM Rate Limiter (AIMD) ────────────────────────────────────────
+// "Fluid like water: easy to contain but expands freely when userbase expands."
 //
-// Why module-level and not class-level: there are 6 PdimRedisClient instances
-// sharing the same PDIM endpoint.  A per-instance lock would let all 6 fire
-// concurrently.  A module-level serializer collapses them into a single ordered
-// queue regardless of how many instances exist.
+// Uses AIMD — the same Additive Increase / Multiplicative Decrease algorithm
+// as TCP congestion control — applied to the inter-request gap:
+//
+//   Success  → gap -= STEP  (additive decrease: throughput ramps up gradually)
+//   HTTP 429 → gap *= MULT  (multiplicative increase: immediate hard back-off)
+//   Demand   → STEP × 3    (when callers are queued, ramp-up accelerates 3×)
+//
+// This makes the rate limiter self-tuning:
+//   • At rest (1–2 callers): gap drifts toward floor — maximum efficiency
+//   • Under load (many callers queued): gap falls 3× faster — serves demand
+//   • After a 429: gap jumps to 2.5× — backs off faster than a single retry cycle
+//   • Sustained 429s: gap compounds (500 → 1250 → 3125 → ...) up to CEIL
+//   • After recovery: gap ramps smoothly back down to floor
+//
+// All PDIM HTTP requests, from every code path (direct calls, LuaExecutor
+// redis.call(), BZPOPMIN polling), are serialized through this single chain.
+// At most ONE request is in-flight at any time, with an adaptive gap between
+// completions.  There is no static global concurrency cap — the chain itself
+// guarantees sequential execution.
+
+// ── AIMD parameters ──────────────────────────────────────────────────────────
+const _PDIM_GAP_FLOOR_MS  = 100;   // minimum gap: ~10 req/sec ceiling
+const _PDIM_GAP_CEIL_MS   = 15_000; // maximum gap: 1 req/15s (sustained 429s)
+const _PDIM_GAP_INIT_MS   = 500;   // conservative start; adapts within seconds
+const _PDIM_STEP_MS       = 10;    // ms removed from gap per success (additive)
+const _PDIM_MULT_429      = 2.5;   // gap multiplier on each 429 (multiplicative)
+const _PDIM_DEMAND_THRESH = 3;     // queue depth above which STEP is tripled
+const _PDIM_DEMAND_MULT   = 3;     // demand ramp-up speed multiplier
+
+// ── AIMD state (module-level, shared across all PdimRedisClient instances) ───
+let _pdimGapMs      = _PDIM_GAP_INIT_MS;
+let _pdimQueueDepth = 0;    // callers waiting in the chain (not yet executing)
+let _pdimGlobalChain: Promise<unknown> = Promise.resolve();
+
+/** On each successful PDIM response: shrink the gap (faster throughput). */
+function _pdimAdaptSuccess(): void {
+  const step = _pdimQueueDepth >= _PDIM_DEMAND_THRESH
+    ? _PDIM_STEP_MS * _PDIM_DEMAND_MULT   // demand-boosted: ramp up 3× faster
+    : _PDIM_STEP_MS;
+  _pdimGapMs = Math.max(_PDIM_GAP_FLOOR_MS, _pdimGapMs - step);
+}
+
+/** On each 429 response: multiply the gap (back off hard) and return new gap
+ *  so exec() can set the static rate-limit deadline to the same value. */
+function _pdimAdapt429(): number {
+  _pdimGapMs = Math.min(_PDIM_GAP_CEIL_MS, _pdimGapMs * _PDIM_MULT_429);
+  return _pdimGapMs;
+}
+
+/** Expose live state for diagnostics (ChainFixer, health endpoints). */
+export function getPdimAdaptiveGapMs():  number { return _pdimGapMs; }
+export function getPdimQueueDepth():     number { return _pdimQueueDepth; }
+
+function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
+  _pdimQueueDepth++;
+  const next = _pdimGlobalChain.then(async () => {
+    _pdimQueueDepth = Math.max(0, _pdimQueueDepth - 1);
+    const result = await fn();
+    // Adaptive gap fires AFTER the request completes — next caller must wait
+    // this long before it starts.  Gap is read at completion time so it
+    // reflects any 429-driven adjustment made by the just-completed request.
+    if (_pdimGapMs > 0) await new Promise(r => setTimeout(r, _pdimGapMs));
+    return result;
+  }).catch(async (err: unknown) => {
+    _pdimQueueDepth = Math.max(0, _pdimQueueDepth - 1);
+    // Enforce gap on error too — including 429.  _pdimGapMs has already been
+    // updated by _pdimAdapt429() inside exec() before the throw reaches here,
+    // so subsequent callers naturally wait the new (larger) gap.
+    if (_pdimGapMs > 0) await new Promise(r => setTimeout(r, _pdimGapMs));
+    throw err;
+  });
+  // Suppress unhandled rejection on the chain tail — each caller handles its own.
+  _pdimGlobalChain = next.catch(() => {});
+  return next;
+}
+
+// ── Module-level ZPOPMIN serializer ───────────────────────────────────────────
+// Secondary layer specifically for BZPOPMIN polling: ensures at most 1 ZPOPMIN
+// is queued into the global AIMD chain at a time, with a 400ms enforced gap
+// between ZPOPMIN completions.  This prevents the BullMQ worker thundering-herd
+// where 6+ pollers all enqueue ZPOPMIN simultaneously, starving Lua callbacks.
+//
+// Combined with the global AIMD chain above, the effective behaviour is:
+//   ZPOPMIN: 1 at a time, max 1 every 400ms (ZPOPMIN gap) + current AIMD gap
+//   Everything else: queues behind ZPOPMIN, served at the current AIMD gap
 let _zpopminChain: Promise<unknown> = Promise.resolve();
 const ZPOPMIN_MIN_GAP_MS = 400; // max ~2.5 ZPOPMIN calls/sec across all instances
 
@@ -94,110 +172,123 @@ export class PdimRedisClient extends EventEmitter {
     });
   }
 
-  // Static 429 rate-limit backoff — shared across ALL PdimRedisClient instances
-  // so that when any one instance is rate-limited, every other instance also
-  // backs off.  This prevents the thundering-herd where 6 clients each hit 429
-  // independently and keep retrying without coordination.
+  // Static rate-limit deadline — shared across ALL PdimRedisClient instances.
+  // Updated by exec() on each 429 to mirror the current AIMD gap, providing a
+  // secondary hold that keeps any caller from firing during the backoff window.
+  // Reset to 0 on each success so the AIMD gap alone governs steady-state pacing.
   private static _rateLimitedUntil = 0;
-  private static _rateLimitBackoffMs = 2000; // starts at 2s, doubles on repeat 429s
 
   private async exec(command: (string | number | null)[]): Promise<any> {
     const [cmd, ...rawArgs] = command;
     // The PDIM server validates all args as strings — coerce numbers/nulls
     const args = rawArgs.map(a => (a === null ? '' : String(a)));
 
-    // Circuit breaker: fail-fast when PDIM is known to be unreachable
+    // Circuit breaker: fail-fast BEFORE joining the global queue so we don't
+    // waste a queue slot on a request we know will fail.
     if (!cbAllowRequest()) {
       throw new Error(`[PDIM] Circuit OPEN — ${cmd} rejected (backing off until PDIM recovers)`);
     }
 
-    // Rate-limit backoff: if any instance was 429'd, pause ALL callers
-    // (static field — shared across every PdimRedisClient instance).
-    const rlWait = PdimRedisClient._rateLimitedUntil - Date.now();
-    if (rlWait > 0) {
-      await new Promise(r => setTimeout(r, rlWait));
-    }
+    // Enqueue through the global serializer.  All PDIM HTTP requests from ALL
+    // code paths (direct calls, LuaExecutor redis.call, bzpopmin) pass through
+    // this single chain, executed one at a time with a 150ms gap between them.
+    return _enqueueExec(async () => {
+      // Rate-limit backoff is evaluated INSIDE the chain (at execution time, not
+      // enqueue time).  This is critical: if all callers evaluated it at enqueue
+      // time, they'd all clear the check simultaneously and still burst PDIM.
+      // Inside the chain they are serialized — only ONE caller wakes from the
+      // backoff wait at a time, preventing the burst.
+      const rlWait = PdimRedisClient._rateLimitedUntil - Date.now();
+      if (rlWait > 0) {
+        await new Promise(r => setTimeout(r, rlWait));
+      }
 
-    let _counted = false; // prevent double-counting in the catch block
-    try {
-      const res = await fetch(this.execUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.bearerToken}`,
-        },
-        body: JSON.stringify({ cmd, args }),
-        signal: AbortSignal.timeout(5000),
-      });
+      let _counted = false; // prevent double-counting in the catch block
+      try {
+        const res = await fetch(this.execUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.bearerToken}`,
+          },
+          body: JSON.stringify({ cmd, args }),
+          signal: AbortSignal.timeout(5000),
+        });
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        if (res.status === 429) {
-          // Rate limited — back off ALL instances for _rateLimitBackoffMs,
-          // then double the backoff (capped at 30s) for the next 429.
-          PdimRedisClient._rateLimitedUntil = Date.now() + PdimRedisClient._rateLimitBackoffMs;
-          PdimRedisClient._rateLimitBackoffMs = Math.min(PdimRedisClient._rateLimitBackoffMs * 2, 30_000);
-          const errMsg = `PDIM HTTP 429: Too many requests`;
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          if (res.status === 429) {
+            // AIMD multiplicative increase: gap jumps to gap × 2.5.
+            // _enqueueExec reads _pdimGapMs AFTER the throw, so the next caller
+            // in the chain automatically waits the new (larger) gap before firing.
+            // The static _rateLimitedUntil mirrors the new gap so that even if a
+            // caller somehow got through, the per-fn() rate-limit check holds it.
+            const newGap = _pdimAdapt429();
+            PdimRedisClient._rateLimitedUntil = Date.now() + newGap;
+            const errMsg = `PDIM HTTP 429: Too many requests (gap→${newGap}ms)`;
+            logger.error(`[PDIM] exec error [${cmd}]: PDIM HTTP 429: Too many requests`);
+            _counted = true;
+            throw new Error(errMsg);
+          }
+          // Only trip the circuit breaker on 5xx server errors or when PDIM is
+          // completely unreachable.  4xx errors are client-side mistakes (bad
+          // arguments, unsupported command, etc.) — they don't indicate an outage.
+          if (res.status >= 500) {
+            cbRecord503();
+            _counted = true;
+          }
+          const errMsg = `PDIM HTTP ${res.status}: ${text.slice(0, 120)}`;
           logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
           throw new Error(errMsg);
         }
-        // Reset backoff on any successful-ish response.
-        PdimRedisClient._rateLimitBackoffMs = 2000;
-        // Only trip the circuit breaker on 5xx server errors or when PDIM is
-        // completely unreachable.  4xx errors are client-side mistakes (bad
-        // arguments, unsupported command, etc.) — they don't indicate an outage.
-        if (res.status >= 500) {
+
+        // Successful response — reset static rate-limit deadline and let the
+        // AIMD gap shrink additively toward the floor.
+        PdimRedisClient._rateLimitedUntil = 0;
+        _pdimAdaptSuccess();
+
+        // Detect when PDIM returns non-JSON (e.g. Replit's "app not running" HTML page).
+        // Treat this as a 503-equivalent — trip the circuit breaker.
+        const contentType = res.headers.get('content-type') ?? '';
+        if (!contentType.includes('application/json')) {
+          const body = await res.text().catch(() => '(unreadable)');
           cbRecord503();
           _counted = true;
-        }
-        const errMsg = `PDIM HTTP ${res.status}: ${text.slice(0, 120)}`;
-        logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
-        throw new Error(errMsg);
-      }
-
-      // Successful response — reset 429 backoff across all instances
-      PdimRedisClient._rateLimitBackoffMs = 2000;
-
-      // Detect when PDIM returns non-JSON (e.g. Replit's "app not running" HTML page).
-      // Treat this as a 503-equivalent — trip the circuit breaker.
-      const contentType = res.headers.get('content-type') ?? '';
-      if (!contentType.includes('application/json')) {
-        const body = await res.text().catch(() => '(unreadable)');
-        cbRecord503();
-        _counted = true;
-        const errMsg = `PDIM returned non-JSON (${contentType.split(';')[0].trim() || 'unknown type'}): ${body.slice(0, 80)}`;
-        logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
-        throw new Error(errMsg);
-      }
-
-      const data = await res.json();
-      cbRecordSuccess(); // a successful response resets the counter + closes circuit
-
-      if (data !== null && typeof data === 'object') {
-        if ('result' in data) return data.result;
-        if ('error' in data) {
-          const errMsg = String(data.error);
-          // Unsupported commands: return safe defaults instead of crashing
-          if (errMsg.startsWith('ERR unknown command')) {
-            logger.warn(`[PDIM] Unsupported command [${cmd}] — returning null`);
-            return null;
-          }
+          const errMsg = `PDIM returned non-JSON (${contentType.split(';')[0].trim() || 'unknown type'}): ${body.slice(0, 80)}`;
+          logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
           throw new Error(errMsg);
         }
+
+        const data = await res.json();
+        cbRecordSuccess(); // a successful response resets the counter + closes circuit
+
+        if (data !== null && typeof data === 'object') {
+          if ('result' in data) return data.result;
+          if ('error' in data) {
+            const errMsg = String(data.error);
+            // Unsupported commands: return safe defaults instead of crashing
+            if (errMsg.startsWith('ERR unknown command')) {
+              logger.warn(`[PDIM] Unsupported command [${cmd}] — returning null`);
+              return null;
+            }
+            throw new Error(errMsg);
+          }
+        }
+        return data;
+      } catch (err: any) {
+        // Network-level failures (ECONNREFUSED, timeout, HALF_OPEN failure) also count
+        if (!_counted && err.name !== 'AbortError' && !err.message.startsWith('[PDIM] Circuit')) {
+          cbRecord503();
+        }
+        if (!_counted) {
+          // Only log errors we haven't already logged inline
+          logger.error(`[PDIM] exec error [${cmd}]: ${err.message.slice(0, 200)}`);
+        }
+        cbHalfOpenFailed(); // release HALF_OPEN probe slot so next interval can retry
+        throw err;
       }
-      return data;
-    } catch (err: any) {
-      // Network-level failures (ECONNREFUSED, timeout, HALF_OPEN failure) also count
-      if (!_counted && err.name !== 'AbortError' && !err.message.startsWith('[PDIM] Circuit')) {
-        cbRecord503();
-      }
-      if (!_counted) {
-        // Only log errors we haven't already logged inline
-        logger.error(`[PDIM] exec error [${cmd}]: ${err.message.slice(0, 200)}`);
-      }
-      cbHalfOpenFailed(); // release HALF_OPEN probe slot so next interval can retry
-      throw err;
-    }
+      // Note: no finally/_freePdimSlot needed — _enqueueExec handles the chain gap
+    });
   }
 
   pipeline() {

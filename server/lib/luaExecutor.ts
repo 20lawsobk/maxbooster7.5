@@ -312,12 +312,16 @@ export async function execLuaViaPdim(
       workerData: { script, keys, argv },
     });
 
+    // 25s timeout: gives the AIMD global PDIM chain enough time to drain
+    // boot-time queued requests (~14s) plus the script's own redis.call()s.
+    // With the adaptive limiter at 500ms initial gap, early Lua workers may
+    // wait up to 14s in queue before their first redis.call() fires.
     const tmout = setTimeout(() => {
       settle(() => {
         worker.terminate();
-        reject(new Error('[LuaExecutor] script timeout (10s)'));
+        reject(new Error('[LuaExecutor] script timeout (25s)'));
       });
-    }, 10000);
+    }, 25000);
 
     worker.on('message', async (msg: any) => {
       if (msg.type === 'redis') {
