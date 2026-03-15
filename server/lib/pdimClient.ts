@@ -20,6 +20,34 @@ import {
   cbHalfOpenFailed,
 } from './pdimCircuitBreaker.js';
 
+// ── Module-level ZPOPMIN serializer ───────────────────────────────────────────
+// Limits all ZPOPMIN calls (across every PdimRedisClient instance in the
+// process) to a single in-flight request at a time with a minimum 400ms gap
+// between completions.  This is the only reliable way to prevent the thundering-
+// herd 429 bursts that occur when 6+ BullMQ worker pollers fire simultaneously.
+//
+// Why module-level and not class-level: there are 6 PdimRedisClient instances
+// sharing the same PDIM endpoint.  A per-instance lock would let all 6 fire
+// concurrently.  A module-level serializer collapses them into a single ordered
+// queue regardless of how many instances exist.
+let _zpopminChain: Promise<unknown> = Promise.resolve();
+const ZPOPMIN_MIN_GAP_MS = 400; // max ~2.5 ZPOPMIN calls/sec across all instances
+
+function _serializedZpopmin(fn: () => Promise<unknown>): Promise<unknown> {
+  const next = _zpopminChain.then(async () => {
+    const result = await fn();
+    // Enforce a minimum gap before the next caller is allowed to proceed.
+    await new Promise(r => setTimeout(r, ZPOPMIN_MIN_GAP_MS));
+    return result;
+  }).catch(async (err) => {
+    // Even on error, enforce the gap so a burst of rejections doesn't skip waits.
+    await new Promise(r => setTimeout(r, ZPOPMIN_MIN_GAP_MS));
+    throw err;
+  });
+  _zpopminChain = next.catch(() => {}); // prevent unhandled rejection on chain
+  return next;
+}
+
 export class PdimRedisClient extends EventEmitter {
   public status: string = 'ready';
   private execUrl: string;
@@ -66,10 +94,12 @@ export class PdimRedisClient extends EventEmitter {
     });
   }
 
-  // Global 429 rate-limit backoff — shared across all exec() callers so that
-  // a burst from any command backs off the entire client until PDIM recovers.
-  private _rateLimitedUntil = 0;
-  private _rateLimitBackoffMs = 2000; // starts at 2s, doubles on repeat 429s
+  // Static 429 rate-limit backoff — shared across ALL PdimRedisClient instances
+  // so that when any one instance is rate-limited, every other instance also
+  // backs off.  This prevents the thundering-herd where 6 clients each hit 429
+  // independently and keep retrying without coordination.
+  private static _rateLimitedUntil = 0;
+  private static _rateLimitBackoffMs = 2000; // starts at 2s, doubles on repeat 429s
 
   private async exec(command: (string | number | null)[]): Promise<any> {
     const [cmd, ...rawArgs] = command;
@@ -81,10 +111,9 @@ export class PdimRedisClient extends EventEmitter {
       throw new Error(`[PDIM] Circuit OPEN — ${cmd} rejected (backing off until PDIM recovers)`);
     }
 
-    // Rate-limit backoff: if a previous call was 429'd, pause all callers
-    // until the backoff window expires.  This prevents the burst of N concurrent
-    // pollers all retrying immediately after a 429 and producing another burst.
-    const rlWait = this._rateLimitedUntil - Date.now();
+    // Rate-limit backoff: if any instance was 429'd, pause ALL callers
+    // (static field — shared across every PdimRedisClient instance).
+    const rlWait = PdimRedisClient._rateLimitedUntil - Date.now();
     if (rlWait > 0) {
       await new Promise(r => setTimeout(r, rlWait));
     }
@@ -104,17 +133,16 @@ export class PdimRedisClient extends EventEmitter {
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         if (res.status === 429) {
-          // Rate limited — back off all exec() callers for _rateLimitBackoffMs,
+          // Rate limited — back off ALL instances for _rateLimitBackoffMs,
           // then double the backoff (capped at 30s) for the next 429.
-          this._rateLimitedUntil = Date.now() + this._rateLimitBackoffMs;
-          this._rateLimitBackoffMs = Math.min(this._rateLimitBackoffMs * 2, 30_000);
+          PdimRedisClient._rateLimitedUntil = Date.now() + PdimRedisClient._rateLimitBackoffMs;
+          PdimRedisClient._rateLimitBackoffMs = Math.min(PdimRedisClient._rateLimitBackoffMs * 2, 30_000);
           const errMsg = `PDIM HTTP 429: Too many requests`;
           logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
           throw new Error(errMsg);
         }
-        // Reset backoff on any successful-ish response (non-429 means we're
-        // no longer rate-limited, even if the response was an error).
-        this._rateLimitBackoffMs = 2000;
+        // Reset backoff on any successful-ish response.
+        PdimRedisClient._rateLimitBackoffMs = 2000;
         // Only trip the circuit breaker on 5xx server errors or when PDIM is
         // completely unreachable.  4xx errors are client-side mistakes (bad
         // arguments, unsupported command, etc.) — they don't indicate an outage.
@@ -127,8 +155,8 @@ export class PdimRedisClient extends EventEmitter {
         throw new Error(errMsg);
       }
 
-      // Successful response — reset 429 backoff
-      this._rateLimitBackoffMs = 2000;
+      // Successful response — reset 429 backoff across all instances
+      PdimRedisClient._rateLimitBackoffMs = 2000;
 
       // Detect when PDIM returns non-JSON (e.g. Replit's "app not running" HTML page).
       // Treat this as a 503-equivalent — trip the circuit breaker.
@@ -365,14 +393,23 @@ export class PdimRedisClient extends EventEmitter {
    */
   async bzpopmin(key: string, timeout: number): Promise<[string, string, string] | null> {
     const deadline = Date.now() + (timeout > 0 ? timeout * 1000 : 5000);
+    // Route every ZPOPMIN through the module-level serializer so only one fires
+    // at a time across all 6+ PdimRedisClient instances, with a 400ms enforced
+    // gap between completions.  The serializer also absorbs random stagger
+    // naturally: callers queue up and drain one at a time instead of bursting.
     while (Date.now() < deadline) {
-      const result = await this.exec(['ZPOPMIN', key, '1']).catch(() => null);
-      if (Array.isArray(result) && result.length >= 2) {
-        return [key, result[0], result[1]];
+      let result: unknown = null;
+      try {
+        result = await _serializedZpopmin(() => this.exec(['ZPOPMIN', key, '1']));
+      } catch {
+        result = null;
       }
-      // 2000ms base + up to 800ms random jitter — keeps total concurrent poll
-      // rate well below PDIM's rate limit even with 10+ simultaneous workers.
-      await new Promise(r => setTimeout(r, 2000 + Math.random() * 800));
+      if (Array.isArray(result) && result.length >= 2) {
+        return [key, result[0] as string, result[1] as string];
+      }
+      // 1500ms additional wait after the serializer's 400ms gap completes,
+      // giving a ~1900ms effective poll interval per caller when the queue drains.
+      await new Promise(r => setTimeout(r, 1500 + Math.random() * 500));
     }
     return null;
   }
