@@ -66,6 +66,11 @@ export class PdimRedisClient extends EventEmitter {
     });
   }
 
+  // Global 429 rate-limit backoff — shared across all exec() callers so that
+  // a burst from any command backs off the entire client until PDIM recovers.
+  private _rateLimitedUntil = 0;
+  private _rateLimitBackoffMs = 2000; // starts at 2s, doubles on repeat 429s
+
   private async exec(command: (string | number | null)[]): Promise<any> {
     const [cmd, ...rawArgs] = command;
     // The PDIM server validates all args as strings — coerce numbers/nulls
@@ -74,6 +79,14 @@ export class PdimRedisClient extends EventEmitter {
     // Circuit breaker: fail-fast when PDIM is known to be unreachable
     if (!cbAllowRequest()) {
       throw new Error(`[PDIM] Circuit OPEN — ${cmd} rejected (backing off until PDIM recovers)`);
+    }
+
+    // Rate-limit backoff: if a previous call was 429'd, pause all callers
+    // until the backoff window expires.  This prevents the burst of N concurrent
+    // pollers all retrying immediately after a 429 and producing another burst.
+    const rlWait = this._rateLimitedUntil - Date.now();
+    if (rlWait > 0) {
+      await new Promise(r => setTimeout(r, rlWait));
     }
 
     let _counted = false; // prevent double-counting in the catch block
@@ -90,6 +103,18 @@ export class PdimRedisClient extends EventEmitter {
 
       if (!res.ok) {
         const text = await res.text().catch(() => '');
+        if (res.status === 429) {
+          // Rate limited — back off all exec() callers for _rateLimitBackoffMs,
+          // then double the backoff (capped at 30s) for the next 429.
+          this._rateLimitedUntil = Date.now() + this._rateLimitBackoffMs;
+          this._rateLimitBackoffMs = Math.min(this._rateLimitBackoffMs * 2, 30_000);
+          const errMsg = `PDIM HTTP 429: Too many requests`;
+          logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+          throw new Error(errMsg);
+        }
+        // Reset backoff on any successful-ish response (non-429 means we're
+        // no longer rate-limited, even if the response was an error).
+        this._rateLimitBackoffMs = 2000;
         // Only trip the circuit breaker on 5xx server errors or when PDIM is
         // completely unreachable.  4xx errors are client-side mistakes (bad
         // arguments, unsupported command, etc.) — they don't indicate an outage.
@@ -101,6 +126,9 @@ export class PdimRedisClient extends EventEmitter {
         logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
         throw new Error(errMsg);
       }
+
+      // Successful response — reset 429 backoff
+      this._rateLimitBackoffMs = 2000;
 
       // Detect when PDIM returns non-JSON (e.g. Replit's "app not running" HTML page).
       // Treat this as a 503-equivalent — trip the circuit breaker.
@@ -323,11 +351,17 @@ export class PdimRedisClient extends EventEmitter {
   // ── Sorted set blocking commands (polyfilled — PDIM has no blocking support) ─
   /**
    * BZPOPMIN — PDIM doesn't support blocking commands.
-   * Poll with ZPOPMIN every 500ms (+0–100ms jitter) until a result arrives or
+   * Poll with ZPOPMIN every 2000ms (+0–800ms jitter) until a result arrives or
    * timeout expires.  timeout=0 is capped at 5s to avoid infinite loops.
    *
-   * 500ms base (vs the old 200ms) cuts PDIM request rate by ~60% and avoids
-   * the thundering-herd 429 bursts when multiple workers poll simultaneously.
+   * 2000ms base (vs the old 500ms) cuts PDIM request rate by ~75% vs prior
+   * implementation.  800ms jitter range spreads concurrent worker polls across
+   * a wide enough window that simultaneous bursts can no longer align and
+   * overwhelm PDIM's per-minute rate limit.
+   *
+   * The global 429 backoff in exec() provides a second safety layer: if a
+   * burst still triggers a 429, all exec() callers pause for at least 2s
+   * (doubling on each repeat) before the next attempt.
    */
   async bzpopmin(key: string, timeout: number): Promise<[string, string, string] | null> {
     const deadline = Date.now() + (timeout > 0 ? timeout * 1000 : 5000);
@@ -336,8 +370,9 @@ export class PdimRedisClient extends EventEmitter {
       if (Array.isArray(result) && result.length >= 2) {
         return [key, result[0], result[1]];
       }
-      // 500ms base + up to 100ms random jitter — spreads concurrent worker polls
-      await new Promise(r => setTimeout(r, 500 + Math.random() * 100));
+      // 2000ms base + up to 800ms random jitter — keeps total concurrent poll
+      // rate well below PDIM's rate limit even with 10+ simultaneous workers.
+      await new Promise(r => setTimeout(r, 2000 + Math.random() * 800));
     }
     return null;
   }
