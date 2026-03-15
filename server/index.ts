@@ -19,6 +19,7 @@ import { originValidation } from "./middleware/requestValidation.ts";
 import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.ts";
 import path from "path";
 import crypto from "crypto";
+import fs from "fs";
 
 // MANDATORY safety imports - these MUST load successfully
 import {
@@ -227,6 +228,39 @@ app.use((req, res, next) => {
     }
   });
 
+  next();
+});
+
+// ── Boot-time SPA fallback ────────────────────────────────────────────────────
+// The server starts accepting connections immediately (early listen) for health
+// checks, but Vite / serveStatic is the last thing registered — about 10-11 s
+// after boot.  During that window, any browser request to GET / (or any non-API
+// route) falls through with no handler and returns 404.
+//
+// This middleware fires BEFORE all API routes.  It serves dist/index.html for
+// non-API GET requests during the startup window only.  Once Vite or
+// serveStatic registers its own catch-all (_spaHandlerReady = true), this
+// middleware calls next() immediately and is completely transparent.
+//
+// Why not call setupVite earlier?  setupVite awaits createViteServer() which
+// itself performs heavy I/O; calling it before route registration would stall
+// all API route setup.  This shim is the minimal-footprint alternative.
+// ─────────────────────────────────────────────────────────────────────────────
+let _spaHandlerReady = false;
+const _spaFallbackIndexPath = path.resolve(process.cwd(), 'dist', 'public', 'index.html');
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Once the real SPA handler is wired, this middleware is a no-op.
+  if (_spaHandlerReady) return next();
+  // API routes must never receive an HTML shell — let them fall through to
+  // the registered handler (or the /api 404 guard that comes later).
+  if (req.originalUrl.startsWith('/api/') || req.method !== 'GET') return next();
+  // Serve the pre-built SPA shell if it exists.  In development this is the
+  // last production build; in production it is the freshly built dist/.
+  if (fs.existsSync(_spaFallbackIndexPath)) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('X-Boot-Fallback', '1');
+    return res.sendFile(_spaFallbackIndexPath);
+  }
   next();
 });
 
@@ -554,6 +588,9 @@ app.use((req, res, next) => {
     const { setupVite } = await import("./vite.js");
     await setupVite(httpServer, app);
   }
+  // Real SPA handler is now registered — disable the boot-time fallback shim.
+  _spaHandlerReady = true;
+  logger.info('✅ [SPA] Vite/static handler ready — boot fallback deactivated');
 
   // Python AI microservice replaced by MaxCore (https://secure-ai-forge.replit.app)
 

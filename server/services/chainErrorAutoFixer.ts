@@ -70,6 +70,10 @@ class ChainErrorAutoFixer extends EventEmitter {
   private readonly MAX_HISTORY = 100;
   private healthCheckTimer: NodeJS.Timeout | null = null;
   private started = false;
+  // Heap warning cooldown — GC still fires every 15 s to keep memory contained,
+  // but the WARN log is suppressed to once per 5 min so it doesn't flood.
+  private _lastHeapWarnMs = 0;
+  private readonly _HEAP_WARN_COOLDOWN_MS = 5 * 60 * 1000;
 
   constructor() {
     super();
@@ -419,12 +423,32 @@ class ChainErrorAutoFixer extends EventEmitter {
       }
     } catch { /* lua executor may not be loaded yet */ }
 
-    // Check memory
+    // Check memory — GC every 15 s when heap > 90% to keep memory contained.
+    // WARN log is rate-limited to once per 5 min so it doesn't flood; a second
+    // measurement taken immediately after GC shows whether it was effective.
     const mem = process.memoryUsage();
     const heapPct = mem.heapUsed / mem.heapTotal;
     if (heapPct > 0.90) {
-      logger.warn(`[ChainFixer] Health check: heap at ${Math.round(heapPct * 100)}% — triggering GC`);
       if (typeof global.gc === 'function') global.gc();
+      const now = Date.now();
+      if (now - this._lastHeapWarnMs >= this._HEAP_WARN_COOLDOWN_MS) {
+        this._lastHeapWarnMs = now;
+        // Re-sample after GC to reflect current state
+        const memAfter = process.memoryUsage();
+        const pctAfter = memAfter.heapUsed / memAfter.heapTotal;
+        const rssMB = Math.round(memAfter.rss / 1024 / 1024);
+        if (pctAfter > 0.90) {
+          logger.warn(
+            `[ChainFixer] Heap sustained at ${Math.round(pctAfter * 100)}% after GC ` +
+            `(was ${Math.round(heapPct * 100)}%, RSS ${rssMB} MB) — process under memory pressure`
+          );
+        } else {
+          logger.info(
+            `[ChainFixer] GC effective: heap ${Math.round(heapPct * 100)}% → ${Math.round(pctAfter * 100)}% ` +
+            `(RSS ${rssMB} MB)`
+          );
+        }
+      }
     }
   }
 

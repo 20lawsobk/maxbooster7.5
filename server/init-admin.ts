@@ -49,7 +49,8 @@ export async function initializeAdmin() {
     logger.info('🔐 Checking for admin account...');
     
     // Check by email using direct DB query to avoid any caching/case issues
-    const [existingAdmin] = await db.select().from(users).where(eq(users.email, adminEmail));
+    // LIMIT 1 lets the query planner stop at first match — avoids full-table scan cost
+    const [existingAdmin] = await db.select().from(users).where(eq(users.email, adminEmail)).limit(1);
     let admin = existingAdmin;
     let isNewAdmin = false;
     

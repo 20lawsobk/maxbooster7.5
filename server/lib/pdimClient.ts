@@ -44,24 +44,49 @@ import {
 // guarantees sequential execution.
 
 // ── AIMD parameters ──────────────────────────────────────────────────────────
-const _PDIM_GAP_FLOOR_MS  = 100;   // minimum gap: ~10 req/sec ceiling
-const _PDIM_GAP_CEIL_MS   = 15_000; // maximum gap: 1 req/15s (sustained 429s)
-const _PDIM_GAP_INIT_MS   = 500;   // conservative start; adapts within seconds
-const _PDIM_STEP_MS       = 10;    // ms removed from gap per success (additive)
-const _PDIM_MULT_429      = 2.5;   // gap multiplier on each 429 (multiplicative)
-const _PDIM_DEMAND_THRESH = 3;     // queue depth above which STEP is tripled
-const _PDIM_DEMAND_MULT   = 3;     // demand ramp-up speed multiplier
+//
+// "Fluid as water": stable and conservative at rest, expands freely under
+// genuine userbase demand, hard back-off when PDIM signals its limit.
+//
+//   IDLE  (queue 0–1) : step = 1 ms   — gap barely drifts; system stays quiet
+//   LIGHT (queue 2–4) : step = 8 ms   — gentle expansion for moderate activity
+//   BUSY  (queue 5–9) : step = 30 ms  — rapid expansion for real user load
+//   PEAK  (queue 10+) : step = 100 ms — instant expansion; PDIM 429s set ceiling
+//
+// The hardcoded floor is 100 ms (absolute minimum for a single PDIM call).
+// In practice the AIMD self-stabilises well above that floor: the first 429
+// multiplies gap × 2.5 and the system finds its own equilibrium through
+// successive 429 ↔ success cycles — PDIM's rate limit is the real ceiling.
+//
+const _PDIM_GAP_FLOOR_MS  = 400;   // minimum operational gap (ms).
+                                    // LuaExecutor hard-limit: 25 s timeout per script.
+                                    // BullMQ scripts issue ~35 redis.call() each → floor must
+                                    // satisfy: 35 × floor < 25 000 ms → floor < 714 ms. 400 ms
+                                    // keeps scripts at ~14 s and leaves PDIM headroom.
+                                    // Natural 429s from PDIM act as the true throughput ceiling.
+const _PDIM_GAP_CEIL_MS   = 15_000; // maximum gap after sustained 429 cascade
+const _PDIM_GAP_INIT_MS   = 600;   // conservative start — stays here at idle (1 ms/step drift)
+const _PDIM_MULT_429      = 2.5;   // multiplicative back-off on each 429
 
 // ── AIMD state (module-level, shared across all PdimRedisClient instances) ───
 let _pdimGapMs      = _PDIM_GAP_INIT_MS;
 let _pdimQueueDepth = 0;    // callers waiting in the chain (not yet executing)
 let _pdimGlobalChain: Promise<unknown> = Promise.resolve();
 
-/** On each successful PDIM response: shrink the gap (faster throughput). */
+/** On each successful PDIM response: shrink the gap proportionally to demand.
+ *
+ * The step is queue-depth-proportional — "fluid" expansion:
+ *   idle  (0–1) : 1 ms  — gap barely moves; conserves PDIM quota at rest
+ *   light (2–4) : 8 ms  — gentle ramp for background/internal traffic
+ *   busy  (5–9) : 30 ms — fast ramp for real user sessions
+ *   peak  (10+) : 100 ms — instant drop to PDIM's natural ceiling
+ *
+ * The real operational floor is set by PDIM's own 429 responses via
+ * _pdimAdapt429() — not by the constant _PDIM_GAP_FLOOR_MS.
+ */
 function _pdimAdaptSuccess(): void {
-  const step = _pdimQueueDepth >= _PDIM_DEMAND_THRESH
-    ? _PDIM_STEP_MS * _PDIM_DEMAND_MULT   // demand-boosted: ramp up 3× faster
-    : _PDIM_STEP_MS;
+  const q = _pdimQueueDepth;
+  const step = q >= 10 ? 100 : q >= 5 ? 30 : q >= 2 ? 8 : 1;
   _pdimGapMs = Math.max(_PDIM_GAP_FLOOR_MS, _pdimGapMs - step);
 }
 

@@ -5,6 +5,32 @@ import { logger } from '../logger.js';
 import { autopilotLearningService } from './autopilotLearningService.js';
 import { EventEmitter } from 'events';
 
+// ── Process-level TTL cache for HyperLearning DB aggregates ─────────────────
+// Each HyperLearning cycle fires 5+ aggregate queries on autopilot_learning_data
+// (300-400ms each, full sequential scans — no indexes due to DB storage cap).
+// This cache stores results in process memory for one 5-minute window, so each
+// distinct query hits the DB exactly once per cycle rather than on every call.
+// Zero PDIM overhead — fully in-process, no network I/O.
+const _HL_BUCKET_MS = 5 * 60 * 1000; // 5-minute bucket matches cycle interval
+const _hlCache = new Map<string, { value: unknown; expiresAt: number }>();
+function _hlGet<T>(key: string): T | undefined {
+  const e = _hlCache.get(key);
+  if (!e) return undefined;
+  if (Date.now() > e.expiresAt) { _hlCache.delete(key); return undefined; }
+  return e.value as T;
+}
+function _hlSet(key: string, value: unknown): void {
+  // Fixed 6-minute TTL: covers 1 full 5-minute cycle plus a 60s buffer.
+  // Key is NOT bucketed by wall-clock — same key across successive cycles so
+  // cycle 2 reads what cycle 1 cached regardless of alignment.
+  _hlCache.set(key, { value, expiresAt: Date.now() + 6 * 60 * 1000 });
+}
+function _hlKey(id: string): string {
+  // No wall-clock bucket in the key — TTL alone controls expiry.
+  return `hl_${id}`;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Learning capacity configuration
 // Baseline: average human = 1x
 // Owner learning rate: associates degree (24 months) completed in 1 month = 24x average human
@@ -275,12 +301,21 @@ class HyperLearningEngine extends EventEmitter {
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-      const allData = await db
-        .select()
-        .from(autopilotLearningData)
-        .where(gte(autopilotLearningData.createdAt, ninetyDaysAgo))
-        .orderBy(desc(autopilotLearningData.engagementRate))
-        .limit(10000);
+      const _microKey = _hlKey('micro_all_90d');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let allData: any[] | undefined = _hlGet<any[]>(_microKey);
+      if (!allData) {
+        allData = await db
+          .select()
+          .from(autopilotLearningData)
+          .where(gte(autopilotLearningData.createdAt, ninetyDaysAgo))
+          .orderBy(desc(autopilotLearningData.engagementRate))
+          .limit(10000);
+        _hlSet(_microKey, allData);
+        logger.info(`[HyperLearning] micro_all_90d: ${allData.length} rows fetched from DB (cached for next cycle)`);
+      } else {
+        logger.info(`[HyperLearning] micro_all_90d: ${allData.length} rows served from process cache`);
+      }
 
       if (allData.length < 50) return patterns;
 
@@ -1126,19 +1161,28 @@ class HyperLearningEngine extends EventEmitter {
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-      const platformData = await db
-        .select({
-          platform: autopilotLearningData.platform,
-          avgEngagement: avg(autopilotLearningData.engagementRate),
-          totalPosts: count(),
-          avgImpressions: avg(autopilotLearningData.impressions),
-          avgLikes: avg(autopilotLearningData.likes),
-          avgComments: avg(autopilotLearningData.comments),
-          avgShares: avg(autopilotLearningData.shares),
-        })
-        .from(autopilotLearningData)
-        .where(gte(autopilotLearningData.createdAt, ninetyDaysAgo))
-        .groupBy(autopilotLearningData.platform);
+      const _crossKey = _hlKey('cross_platform_90d');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let platformData: any[] | undefined = _hlGet<any[]>(_crossKey);
+      if (!platformData) {
+        platformData = await db
+          .select({
+            platform: autopilotLearningData.platform,
+            avgEngagement: avg(autopilotLearningData.engagementRate),
+            totalPosts: count(),
+            avgImpressions: avg(autopilotLearningData.impressions),
+            avgLikes: avg(autopilotLearningData.likes),
+            avgComments: avg(autopilotLearningData.comments),
+            avgShares: avg(autopilotLearningData.shares),
+          })
+          .from(autopilotLearningData)
+          .where(gte(autopilotLearningData.createdAt, ninetyDaysAgo))
+          .groupBy(autopilotLearningData.platform);
+        _hlSet(_crossKey, platformData);
+        logger.info(`[HyperLearning] cross_platform_90d: ${platformData.length} rows fetched from DB (cached for next cycle)`);
+      } else {
+        logger.info(`[HyperLearning] cross_platform_90d: ${platformData.length} rows served from process cache`);
+      }
 
       if (platformData.length < 2) {
         return { synthesisCount: 0, model: null };
@@ -1496,16 +1540,25 @@ class HyperLearningEngine extends EventEmitter {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const engagementVelocity = await db
-        .select({
-          dayOfWeek: autopilotLearningData.postingDayOfWeek,
-          hour: autopilotLearningData.postingHour,
-          avgEngagement: avg(autopilotLearningData.engagementRate),
-          avgImpressions: avg(autopilotLearningData.impressions),
-        })
-        .from(autopilotLearningData)
-        .where(gte(autopilotLearningData.createdAt, thirtyDaysAgo))
-        .groupBy(autopilotLearningData.postingDayOfWeek, autopilotLearningData.postingHour);
+      const _behavKey = _hlKey('behavioral_velocity_30d');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let engagementVelocity: any[] | undefined = _hlGet<any[]>(_behavKey);
+      if (!engagementVelocity) {
+        engagementVelocity = await db
+          .select({
+            dayOfWeek: autopilotLearningData.postingDayOfWeek,
+            hour: autopilotLearningData.postingHour,
+            avgEngagement: avg(autopilotLearningData.engagementRate),
+            avgImpressions: avg(autopilotLearningData.impressions),
+          })
+          .from(autopilotLearningData)
+          .where(gte(autopilotLearningData.createdAt, thirtyDaysAgo))
+          .groupBy(autopilotLearningData.postingDayOfWeek, autopilotLearningData.postingHour);
+        _hlSet(_behavKey, engagementVelocity);
+        logger.info(`[HyperLearning] behavioral_velocity_30d: ${engagementVelocity.length} rows fetched from DB (cached for next cycle)`);
+      } else {
+        logger.info(`[HyperLearning] behavioral_velocity_30d: ${engagementVelocity.length} rows served from process cache`);
+      }
 
       return { patternsFound: engagementVelocity.length };
 
