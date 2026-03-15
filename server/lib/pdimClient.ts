@@ -11,6 +11,7 @@
  */
 
 import { EventEmitter } from 'events';
+import os from 'os';
 import { logger } from '../logger.js';
 import { execLuaViaPdim } from './luaExecutor.js';
 import {
@@ -43,17 +44,39 @@ import {
 // completions.  There is no static global concurrency cap — the chain itself
 // guarantees sequential execution.
 
-// ── Cluster-size detection ────────────────────────────────────────────────────
+// ── Auto multiplier ───────────────────────────────────────────────────────────
 // Target scale: 90 million long-term concurrent users.
 //
-// In Autoscale deployment the cluster primary passes PDIM_CLUSTER_WORKERS to
-// every forked worker via cluster.fork({ PDIM_CLUSTER_WORKERS: N }).
-// All N workers in a replica share the SAME PDIM Redis instance, so each
-// worker must consume only 1/N of PDIM's per-instance throughput budget.
-// Across multiple replicas the AIMD's 429 back-off acts as the cross-replica
-// ceiling — water finding its own level at every layer of the stack.
+// The PDIM chain is shared by every concurrent code path in this process.
+// More CPU cores → more concurrent microtask paths competing for the chain
+// simultaneously.  More cluster workers → more OS-level processes sharing the
+// same PDIM instance.  Both dimensions drive up the number of callers and must
+// be reflected in the initial gap so the system boots conservatively.
 //
-const _clusterWorkers = Math.max(1, parseInt(process.env.PDIM_CLUSTER_WORKERS ?? '1', 10));
+// Formula:  autoMultiplier = clusterWorkers × ceil(cpuCores / 2)
+//
+//   VM Reserve, 4 cores, 1 worker : 1 × ceil(4/2) = 1 × 2 = 2
+//     → AIMD init = 1 200 ms, ZPOPMIN gap = 800 ms
+//   VM Reserve, 8 cores, 1 worker : 1 × ceil(8/2) = 1 × 4 = 4
+//     → AIMD init = 2 400 ms, ZPOPMIN gap = 1 600 ms
+//   Autoscale,  4 cores, 6 workers: 6 × 2 = 12
+//     → AIMD init = 7 200 ms, ZPOPMIN gap = 4 800 ms
+//
+// Under real user load the demand step (100 ms/success at queue depth ≥ 10)
+// contracts the gap from init to the 400 ms floor in seconds — the water
+// expands when the valve opens.  At rest the gap drifts up gently (1 ms/step)
+// so the system stays quiet without burning PDIM quota.
+//
+const _clusterWorkers  = Math.max(1, parseInt(process.env.PDIM_CLUSTER_WORKERS ?? '1', 10));
+const _cpuCores        = Math.max(1, os.cpus().length);
+const _autoMultiplier  = _clusterWorkers * Math.max(1, Math.ceil(_cpuCores / 2));
+
+logger.info(
+  `[PDIM] Auto multiplier: ${_autoMultiplier} ` +
+  `(clusterWorkers=${_clusterWorkers} × ceil(cpuCores=${_cpuCores}/2)=` +
+  `${Math.max(1, Math.ceil(_cpuCores / 2))}) — ` +
+  `AIMD init=600ms (fixed, LuaExecutor-safe), ZPOPMIN gap=${400 * _autoMultiplier}ms`,
+);
 
 // ── AIMD parameters ──────────────────────────────────────────────────────────
 //
@@ -65,18 +88,27 @@ const _clusterWorkers = Math.max(1, parseInt(process.env.PDIM_CLUSTER_WORKERS ??
 //   BUSY  (queue 5–9) : step = 30 ms  — rapid expansion for real user load
 //   PEAK  (queue 10+) : step = 100 ms — instant expansion; PDIM 429s set ceiling
 //
-// FLOOR: 400 ms — LuaExecutor timeout guard (35 redis.call() × 400 ms = 14 s,
-//        safely under the 25 s script timeout).  Natural 429s define the real ceiling.
+// FLOOR: 400 ms — LuaExecutor timeout guard.
+//        BullMQ Lua scripts issue ~35 redis.call() each; those calls are all
+//        serialised through the PDIM chain, so a single script takes:
+//          35 × gap_ms milliseconds to complete.
+//        The LuaExecutor hard-kills scripts at 25 s → gap must stay ≤ 714 ms.
+//          35 × 400 ms = 14 000 ms  — 11 s of headroom.  Safe.
+//          35 × 600 ms = 21 000 ms  — 4 s of headroom.   Safe (init value).
+//          35 × 800 ms = 28 000 ms  — EXCEEDS 25 s.      UNSAFE.
+//        The _autoMultiplier MUST NOT be applied to FLOOR or INIT because
+//        doing so would push Lua scripts past the 25 s timeout.
+//        The multiplier is applied only to the ZPOPMIN secondary gap — those
+//        are single-command calls, not wrapped in multi-call Lua scripts.
 //
-// INIT:  600 ms × _clusterWorkers — at boot each worker is maximally conservative.
-//        6-worker Autoscale replica → init = 3 600 ms/worker → 10 req/min each →
-//        60 req/min total, safely within PDIM's ~100 req/min limit.
-//        Under real user load the demand step contracts the gap to floor in seconds.
+// INIT:  600 ms — fixed at the LuaExecutor-safe ceiling.  The AIMD demand step
+//        (100 ms/success at queue depth ≥ 10) contracts the gap to FLOOR in
+//        seconds under real load.  At rest it drifts upward only 1 ms/step.
 //
-const _PDIM_GAP_FLOOR_MS  = 400;                        // per-worker floor (ms)
-const _PDIM_GAP_CEIL_MS   = 15_000;                     // ceiling after 429 cascade
-const _PDIM_GAP_INIT_MS   = 600 * _clusterWorkers;      // cluster-aware start
-const _PDIM_MULT_429      = 2.5;                        // multiplicative back-off on 429
+const _PDIM_GAP_FLOOR_MS  = 400;    // per-worker floor — LuaExecutor constraint
+const _PDIM_GAP_CEIL_MS   = 15_000; // ceiling after sustained 429 cascade
+const _PDIM_GAP_INIT_MS   = 600;    // fixed — must satisfy 35×init < 25 000 ms
+const _PDIM_MULT_429      = 2.5;    // multiplicative back-off on each 429
 
 // ── AIMD state (module-level, shared across all PdimRedisClient instances) ───
 let _pdimGapMs      = _PDIM_GAP_INIT_MS;
@@ -144,12 +176,12 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
 //   ZPOPMIN: 1 at a time, max 1 every 400ms (ZPOPMIN gap) + current AIMD gap
 //   Everything else: queues behind ZPOPMIN, served at the current AIMD gap
 let _zpopminChain: Promise<unknown> = Promise.resolve();
-// Scale the ZPOPMIN secondary gap by cluster size so N in-replica workers don't
-// collectively overrun PDIM's per-instance budget with polling alone.
-// Single process: 400 ms → 2.5 polls/sec per process (no peer pressure).
-// 6-worker cluster: 400 × 6 = 2 400 ms → 0.4 polls/sec per worker →
-//   2.4 polls/sec total — leaves 60% of PDIM quota for non-ZPOPMIN calls.
-const ZPOPMIN_MIN_GAP_MS = 400 * _clusterWorkers;
+// Scale the ZPOPMIN secondary gap by the same auto multiplier so both CPU-core
+// concurrency and cluster-worker count are reflected in the polling cadence.
+// VM Reserve 4-core (mult=2): 400 × 2 = 800 ms → 1.25 polls/sec max
+// VM Reserve 8-core (mult=4): 400 × 4 = 1 600 ms → 0.6 polls/sec max
+// Autoscale 6-worker 4-core (mult=12): 400 × 12 = 4 800 ms → 0.2 polls/sec per worker
+const ZPOPMIN_MIN_GAP_MS = 400 * _autoMultiplier;
 
 function _serializedZpopmin(fn: () => Promise<unknown>): Promise<unknown> {
   const next = _zpopminChain.then(async () => {
