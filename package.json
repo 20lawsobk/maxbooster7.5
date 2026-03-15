@@ -109,6 +109,7 @@
     "@aws-sdk/client-s3": "^3.990.0",
     "@aws-sdk/s3-request-presigner": "^3.990.0",
     "@neondatabase/serverless": "^1.0.2",
+    "@replit/object-storage": "^1.0.0",
     "@sendgrid/mail": "^8.1.6",
     "@sentry/node": "^10.40.0",
     "@sentry/profiling-node": "^10.40.0",

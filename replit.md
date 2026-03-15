@@ -81,9 +81,11 @@ There is **no separate Redis server** and **no separate object storage**. PDIM i
 
 ## Production Setup (Replit)
 
--   **Workflow command**: `npm run build && npm run start`
-    -   `build` = standard Vite + esbuild bundle (runs `security-fix.ts` — ensure override versions are valid before running)
-    -   `build:prod` = `build` + `npm prune --production --omit=dev` — strips 800MB+ of devDeps for deployment image size
+-   **Dev Workflow command**: `bash -c './boosterstate/target/release/boosterstate & sleep 2 && NODE_ENV=development npx tsx server/index.ts'`
+    -   Starts BoosterState Rust sidecar (fast KV on port 9877) first, then the dev server
+    -   BoosterState release binary is pre-built at `./boosterstate/target/release/boosterstate`
+-   **Production deployment**: Build: `cd boosterstate && cargo build --release && cd .. && npm run build:deploy`; Run: `./boosterstate/target/release/boosterstate & sleep 2 && npm run start`
+    -   `build:deploy` = Vite + esbuild bundle
     -   `start` = production Node.js cluster from `dist/cluster.cjs`
 -   **CJS bundle compatibility**: Files using `import.meta.url` must use the pattern:
     ```ts

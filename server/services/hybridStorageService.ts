@@ -23,6 +23,7 @@ import { pocketManager, PocketDimension } from '../pocket-dimension/index.js';
 import { createHash } from 'crypto';
 import { logger } from '../logger.js';
 import { getPdimClient } from '../lib/pdimClient.js';
+import { Client as ReplitObjectStorageClient } from '@replit/object-storage';
 
 const COLD_TIER_THRESHOLD_DAYS = 30;
 const COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -138,21 +139,39 @@ export class HybridStorageService {
     if (this.initialized) return;
 
     try {
-      // PDIM is the only storage backend. Replit Object Storage is disabled.
-      this.replitClient = null;
-      logger.info('[HybridStorage] PDIM is the sole storage backend — Replit Object Storage disabled');
+      // Hot Tier: Replit Object Storage (REPLIT_BUCKET_ID)
+      const bucketId = process.env.REPLIT_BUCKET_ID;
+      if (bucketId) {
+        try {
+          this.replitClient = new ReplitObjectStorageClient({ bucketId });
+          logger.info(`[HybridStorage] Replit Object Storage hot tier enabled (bucket: ${bucketId})`);
+        } catch (e: any) {
+          logger.warn(`[HybridStorage] Replit Object Storage unavailable: ${e.message} — using cold tier only`);
+          this.replitClient = null;
+        }
+      } else {
+        logger.warn('[HybridStorage] REPLIT_BUCKET_ID not set — Replit hot tier disabled, using cold tier only');
+        this.replitClient = null;
+      }
 
-      this.coldPocket = await pocketManager.openPocket('hybrid-cold-storage', {
-        compressionLevel: 9,
-        enableDeduplication: true,
-        enableVersioning: true,
-        chunkSize: 1024 * 1024,
-      });
+      // Cold Tier: Pocket Dimension custom storage
+      try {
+        this.coldPocket = await pocketManager.openPocket('hybrid-cold-storage', {
+          compressionLevel: 9,
+          enableDeduplication: true,
+          enableVersioning: true,
+          chunkSize: 1024 * 1024,
+        });
+        logger.info('[HybridStorage] Pocket Dimension cold tier initialized');
+      } catch (e: any) {
+        logger.warn(`[HybridStorage] Pocket Dimension unavailable: ${e.message} — cold tier degraded`);
+        this.coldPocket = null;
+      }
 
       await this.loadIndex();
       this.initialized = true;
 
-      logger.info('[HybridStorage] Hybrid storage service initialized');
+      logger.info('[HybridStorage] Hybrid storage service initialized (Replit Object Storage + Pocket Dimension)');
     } catch (error) {
       logger.error('[HybridStorage] Failed to initialize:', error);
       throw error;
@@ -476,7 +495,9 @@ export class HybridStorageService {
     if (!result.ok) {
       throw new Error(`Replit storage read failed for key "${key}": ${result.error}`);
     }
-    return Buffer.from(result.value);
+    // downloadAsBytes returns [Buffer, Metadata] via GCS — take the first element
+    const buf = Array.isArray(result.value) ? result.value[0] : result.value;
+    return Buffer.isBuffer(buf) ? buf : Buffer.from(buf as any);
   }
 
   async delete(userId: string, key: string): Promise<boolean> {
