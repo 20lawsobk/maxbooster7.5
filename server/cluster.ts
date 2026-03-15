@@ -79,8 +79,13 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // (session-store ping, distributed-cache connect, BullMQ bzpopmin) which
   // saturates PDIM's rate-limit and triggers cascading 429s before any
   // worker has finished initialising.
+  //
+  // PDIM_CLUSTER_WORKERS is passed to every forked worker so the AIMD
+  // rate-limiter and ZPOPMIN gap scale their per-worker budgets correctly.
+  // At 90M-user scale each worker must only consume 1/N of PDIM's
+  // throughput quota — PDIM's own 429 responses are the global ceiling.
   for (let i = 0; i < workerCount; i++) {
-    setTimeout(() => cluster.fork(), i * 800);
+    setTimeout(() => cluster.fork({ PDIM_CLUSTER_WORKERS: String(workerCount) }), i * 800);
   }
 
   // Crash-loop protection: track restart times to detect and back off runaway crashes.

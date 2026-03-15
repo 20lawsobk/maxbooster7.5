@@ -72,7 +72,7 @@ export const autoClusterManager = new AutoClusterManager(
   {
     ...DEFAULT_RULES,
     minNodes: 3,
-    maxNodes: 20,
+    maxNodes: 500,
     utilizationHighWatermark: 0.70,
     utilizationPerNodeHighWatermark: 0.80,
     cooldownMs: 10 * 60 * 1000,

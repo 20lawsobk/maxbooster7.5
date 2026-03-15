@@ -43,6 +43,18 @@ import {
 // completions.  There is no static global concurrency cap — the chain itself
 // guarantees sequential execution.
 
+// ── Cluster-size detection ────────────────────────────────────────────────────
+// Target scale: 90 million long-term concurrent users.
+//
+// In Autoscale deployment the cluster primary passes PDIM_CLUSTER_WORKERS to
+// every forked worker via cluster.fork({ PDIM_CLUSTER_WORKERS: N }).
+// All N workers in a replica share the SAME PDIM Redis instance, so each
+// worker must consume only 1/N of PDIM's per-instance throughput budget.
+// Across multiple replicas the AIMD's 429 back-off acts as the cross-replica
+// ceiling — water finding its own level at every layer of the stack.
+//
+const _clusterWorkers = Math.max(1, parseInt(process.env.PDIM_CLUSTER_WORKERS ?? '1', 10));
+
 // ── AIMD parameters ──────────────────────────────────────────────────────────
 //
 // "Fluid as water": stable and conservative at rest, expands freely under
@@ -53,20 +65,18 @@ import {
 //   BUSY  (queue 5–9) : step = 30 ms  — rapid expansion for real user load
 //   PEAK  (queue 10+) : step = 100 ms — instant expansion; PDIM 429s set ceiling
 //
-// The hardcoded floor is 100 ms (absolute minimum for a single PDIM call).
-// In practice the AIMD self-stabilises well above that floor: the first 429
-// multiplies gap × 2.5 and the system finds its own equilibrium through
-// successive 429 ↔ success cycles — PDIM's rate limit is the real ceiling.
+// FLOOR: 400 ms — LuaExecutor timeout guard (35 redis.call() × 400 ms = 14 s,
+//        safely under the 25 s script timeout).  Natural 429s define the real ceiling.
 //
-const _PDIM_GAP_FLOOR_MS  = 400;   // minimum operational gap (ms).
-                                    // LuaExecutor hard-limit: 25 s timeout per script.
-                                    // BullMQ scripts issue ~35 redis.call() each → floor must
-                                    // satisfy: 35 × floor < 25 000 ms → floor < 714 ms. 400 ms
-                                    // keeps scripts at ~14 s and leaves PDIM headroom.
-                                    // Natural 429s from PDIM act as the true throughput ceiling.
-const _PDIM_GAP_CEIL_MS   = 15_000; // maximum gap after sustained 429 cascade
-const _PDIM_GAP_INIT_MS   = 600;   // conservative start — stays here at idle (1 ms/step drift)
-const _PDIM_MULT_429      = 2.5;   // multiplicative back-off on each 429
+// INIT:  600 ms × _clusterWorkers — at boot each worker is maximally conservative.
+//        6-worker Autoscale replica → init = 3 600 ms/worker → 10 req/min each →
+//        60 req/min total, safely within PDIM's ~100 req/min limit.
+//        Under real user load the demand step contracts the gap to floor in seconds.
+//
+const _PDIM_GAP_FLOOR_MS  = 400;                        // per-worker floor (ms)
+const _PDIM_GAP_CEIL_MS   = 15_000;                     // ceiling after 429 cascade
+const _PDIM_GAP_INIT_MS   = 600 * _clusterWorkers;      // cluster-aware start
+const _PDIM_MULT_429      = 2.5;                        // multiplicative back-off on 429
 
 // ── AIMD state (module-level, shared across all PdimRedisClient instances) ───
 let _pdimGapMs      = _PDIM_GAP_INIT_MS;
@@ -134,7 +144,12 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
 //   ZPOPMIN: 1 at a time, max 1 every 400ms (ZPOPMIN gap) + current AIMD gap
 //   Everything else: queues behind ZPOPMIN, served at the current AIMD gap
 let _zpopminChain: Promise<unknown> = Promise.resolve();
-const ZPOPMIN_MIN_GAP_MS = 400; // max ~2.5 ZPOPMIN calls/sec across all instances
+// Scale the ZPOPMIN secondary gap by cluster size so N in-replica workers don't
+// collectively overrun PDIM's per-instance budget with polling alone.
+// Single process: 400 ms → 2.5 polls/sec per process (no peer pressure).
+// 6-worker cluster: 400 × 6 = 2 400 ms → 0.4 polls/sec per worker →
+//   2.4 polls/sec total — leaves 60% of PDIM quota for non-ZPOPMIN calls.
+const ZPOPMIN_MIN_GAP_MS = 400 * _clusterWorkers;
 
 function _serializedZpopmin(fn: () => Promise<unknown>): Promise<unknown> {
   const next = _zpopminChain.then(async () => {

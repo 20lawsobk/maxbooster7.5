@@ -22,9 +22,14 @@ export interface ClusterRules {
   emaAlpha: number;
 }
 
+// Storage scale for 90 million users:
+//   90M users × 10 MB average stored data = ~900 TB
+//   Each PDIM node capacity: 100 GB  →  need ~9 000 nodes for full scale
+//   In practice, hot data is cached and cold data is tiered; cap at 500 nodes
+//   so the cluster can grow automatically without operator intervention.
 export const DEFAULT_RULES: ClusterRules = {
   minNodes: 3,
-  maxNodes: 20,
+  maxNodes: 500,
   utilizationHighWatermark: 0.70,
   utilizationLowWatermark: 0.40,
   utilizationPerNodeHighWatermark: 0.80,
