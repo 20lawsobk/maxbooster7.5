@@ -54,8 +54,12 @@ cookies.txt
 .capsule-temp/
 data/
 
-# Rust build artifacts — do NOT track binaries (too large for deployment image)
-boosterstate/target/
+# Rust build artifacts — ignore all intermediate objects but keep the
+# pre-built release binary so deployments skip the 10-20 minute cargo compile.
+boosterstate/target/**
+!boosterstate/target/
+!boosterstate/target/release/
+!boosterstate/target/release/boosterstate
 
 # Screenshots and videos (large media assets)
 client/public/screenshots/

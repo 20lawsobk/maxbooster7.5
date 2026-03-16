@@ -12,23 +12,27 @@ rm -rf node_modules/@tensorflow/tfjs-node/deps/ 2>/dev/null || true
 rm -f  node_modules/@tensorflow/tfjs-node/binding/tfjs_binding.node 2>/dev/null || true
 echo "   TF native binaries removed."
 
-echo "==> Building Rust sidecar..."
-cargo build --release --manifest-path boosterstate/Cargo.toml
-
-echo "==> Extracting Rust release binary and removing entire Rust source tree..."
-# Move the release binary to a stable top-level path, then delete the Rust
-# source tree and the full target/ directory (hundreds of MB of build artifacts).
 RUST_BIN=./boosterstate/target/release/boosterstate
-if [ -f "$RUST_BIN" ]; then
-  cp "$RUST_BIN" /tmp/boosterstate-release
-  rm -rf boosterstate/
-  mkdir -p boosterstate/target/release
-  mv /tmp/boosterstate-release boosterstate/target/release/boosterstate
-  chmod +x boosterstate/target/release/boosterstate
-  echo "   Rust binary preserved at: boosterstate/target/release/boosterstate ($(du -sh boosterstate/target/release/boosterstate | cut -f1))"
+
+echo "==> Rust sidecar..."
+if [ -f "$RUST_BIN" ] && [ -s "$RUST_BIN" ]; then
+  echo "   Pre-built binary found — skipping cargo compile (saves ~15 min)."
+  echo "   Binary: $(du -sh "$RUST_BIN" | cut -f1)"
 else
-  echo "   WARNING: Rust binary not found at $RUST_BIN"
+  echo "   No pre-built binary — running cargo build --release..."
+  cargo build --release --manifest-path boosterstate/Cargo.toml
+  echo "   Rust binary built: $(du -sh "$RUST_BIN" | cut -f1)"
 fi
+
+echo "==> Extracting Rust binary and removing Rust source tree..."
+# Preserve only the release binary; delete the entire source + target tree to
+# reclaim disk space (hundreds of MB of .rlib / .rmeta / incremental objects).
+cp "$RUST_BIN" /tmp/boosterstate-release
+rm -rf boosterstate/
+mkdir -p boosterstate/target/release
+mv /tmp/boosterstate-release boosterstate/target/release/boosterstate
+chmod +x boosterstate/target/release/boosterstate
+echo "   Rust source tree removed. Binary at: boosterstate/target/release/boosterstate"
 
 echo "==> Clearing any pre-built frontend assets to force a fresh Vite build..."
 rm -rf dist/public
