@@ -212,7 +212,7 @@ async function triggerGitHubWorkflows() {
 async function main() {
   await buildAll();
 
-  if (process.env.REPLIT_DEPLOYMENT === '1') {
+  if (!!process.env.REPLIT_DEPLOYMENT) {
     await triggerGitHubWorkflows();
 
     // Clean up unnecessary files to reduce deployment image size
