@@ -3591,6 +3591,7 @@ export async function registerRoutes(
     { default: shortcutsRouter },
     { default: undoRouter },
     { default: batchRouter },
+    { default: distributionRouter },
   ] = await Promise.all([
     import("./routes/admin.ts"),
     import("./routes/paid.ts"),
@@ -3602,8 +3603,10 @@ export async function registerRoutes(
     import("./routes/shortcuts.ts"),
     import("./routes/undo.ts"),
     import("./routes/batch.ts"),
+    import("./routes/distribution.ts"),
   ]);
   app.use("/api/admin", adminRouter);
+  app.use("/api/distribution", distributionRouter);
   const { default: trainingRouter } = await import("./routes/training.js");
   app.use("/api/training", trainingRouter);
 
@@ -3670,7 +3673,6 @@ export async function registerRoutes(
     { path: "/api/achievements", name: "achievements", loader: () => import("./routes/achievements") },
     { path: "/api/onboarding", name: "onboarding", loader: () => import("./routes/onboarding") },
     { path: "/api/personalization", name: "personalization", loader: () => import("./routes/personalization") },
-    { path: "/api/distribution", name: "distribution", loader: () => import("./routes/distribution") },
     { path: "/api/countdowns", name: "releaseCountdown", loader: () => import("./routes/releaseCountdown") },
     { path: "/api/storefront", name: "storefront", loader: () => import("./routes/storefront") },
     { path: "/api/dns", name: "dns", loader: () => import("./routes/dns") },
