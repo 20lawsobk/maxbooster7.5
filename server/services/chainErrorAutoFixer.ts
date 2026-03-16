@@ -84,6 +84,32 @@ class ChainErrorAutoFixer extends EventEmitter {
 
   private registerPatterns(): void {
 
+    // 0. BullMQ "Missing lock for job" — self-healing lock race during moveToFinished
+    // This fires when the LuaExecutor round-trip is slow enough to expire the job
+    // lock before moveToFinished can run.  BullMQ re-queues the job automatically,
+    // so no manual fix is needed — only suppress further error-level logging.
+    this.addPattern({
+      id: 'bullmq_missing_lock',
+      name: 'BullMQ Missing lock (moveToFinished race)',
+      description: 'Job lock expires during slow LuaExecutor moveToFinished; BullMQ self-heals by re-queuing',
+      matchers: [/Missing lock for job \d+/i, /Missing lock.*moveToFinished/i],
+      levels: ['error'],
+      severity: 'low',
+      category: 'queue',
+      cooldownMs: 10_000,
+      maxAttempts: 100,
+      autoFix: async () => {
+        // No repair needed — just reset the LuaExecutor semaphore slot to
+        // ensure future jobs can acquire locks promptly.
+        const { resetLuaExecutorSemaphore } = await import('../lib/luaExecutor.js');
+        resetLuaExecutorSemaphore();
+        logger.info('[ChainFixer] BullMQ lock race acknowledged — LuaExecutor semaphore slot cleared');
+      },
+      escalate: async (attempts) => {
+        logger.warn(`[ChainFixer] bullmq_missing_lock: ${attempts} occurrences — consider increasing lockDuration or reducing LuaExecutor concurrency`);
+      },
+    });
+
     // 1. BullMQ stalled.forEach — LuaExecutor returns non-array from PDIM
     this.addPattern({
       id: 'bullmq_stalled_foreach',

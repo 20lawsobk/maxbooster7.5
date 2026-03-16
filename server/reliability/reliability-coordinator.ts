@@ -384,6 +384,11 @@ class ReliabilityCoordinator extends EventEmitter {
     this.totalRequests++;
     if (responseTime) {
       this.responseTimes.push(responseTime);
+      // Cap at 1 000 entries at push-time so getMetrics() always sees a
+      // bounded array even when called infrequently or not at all.
+      if (this.responseTimes.length > 1000) {
+        this.responseTimes = this.responseTimes.slice(-1000);
+      }
     }
   }
 

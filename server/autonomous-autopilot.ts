@@ -598,7 +598,9 @@ export class AutonomousAutopilot extends EventEmitter {
       if (analytics) {
         // Persist analytics via external API if available (optional)
 
-        // Add to performance history for learning
+        // Add to performance history for learning (capped to prevent unbounded growth
+        // across long-running autopilot sessions — 200 entries is ample for meaningful
+        // trend analysis and learning while keeping memory bounded).
         this.contentPerformanceHistory.push({
           contentId,
           postId,
@@ -607,6 +609,9 @@ export class AutonomousAutopilot extends EventEmitter {
           analytics,
           analyzed: true,
         });
+        if (this.contentPerformanceHistory.length > 200) {
+          this.contentPerformanceHistory.shift();
+        }
 
         // Autonomous learning from performance
         await this.learnFromPerformance(analytics, platform);

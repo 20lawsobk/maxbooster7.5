@@ -42,7 +42,7 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
         setIsInitialized(true);
         await loadStats();
       } catch (error) {
-        logger.error('[OfflineProvider] Failed to initialize:', error);
+        logger.info('[OfflineProvider] Offline features unavailable (IndexedDB not accessible in this environment):', error);
       }
     };
     init();
@@ -55,7 +55,7 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
       setFailedActions(stats.failed);
       setConflictCount(stats.conflict);
     } catch (error) {
-      logger.error('[OfflineProvider] Failed to load stats:', error);
+      logger.info('[OfflineProvider] Failed to load offline stats:', error);
     }
   }, []);
 

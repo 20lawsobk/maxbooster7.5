@@ -85,7 +85,7 @@ class OfflineCache {
       this.isInitialized = true;
       this.startCleanupTimer();
     } catch (error) {
-      logger.error('[OfflineCache] Failed to initialize IndexedDB:', error);
+      logger.info('[OfflineCache] IndexedDB unavailable — offline cache disabled for this session', error);
       throw error;
     }
   }

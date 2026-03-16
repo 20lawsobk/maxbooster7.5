@@ -93,7 +93,7 @@ class OfflineQueue {
       });
       this.isInitialized = true;
     } catch (error) {
-      logger.error('[OfflineQueue] Failed to initialize IndexedDB:', error);
+      logger.info('[OfflineQueue] IndexedDB unavailable — offline action queue disabled for this session', error);
       throw error;
     }
   }

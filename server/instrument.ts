@@ -12,6 +12,11 @@ import { logger } from './logger.js';
 const isProduction = process.env.NODE_ENV === 'production';
 const dsn = process.env.SENTRY_DSN;
 
+// Many subsystems (circuit breakers, workers, reliability monitors) each attach
+// listeners to the global process object.  Raise the cap to silence the Node.js
+// MaxListeners warning that would otherwise fire at > 10 listeners.
+process.setMaxListeners(50);
+
 Sentry.init({
   dsn: isProduction ? dsn : undefined,
   tracesSampleRate: isProduction ? 0.2 : 0,

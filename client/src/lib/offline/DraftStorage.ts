@@ -83,7 +83,7 @@ class DraftStorage {
       this.isInitialized = true;
       this.startCleanupTimer();
     } catch (error) {
-      logger.error('[DraftStorage] Failed to initialize IndexedDB:', error);
+      logger.info('[DraftStorage] IndexedDB unavailable — drafts will not persist across reloads', error);
       throw error;
     }
   }
