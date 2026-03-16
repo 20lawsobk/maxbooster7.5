@@ -212,7 +212,7 @@ async function triggerGitHubWorkflows() {
 async function main() {
   await buildAll();
 
-  if (!!process.env.REPLIT_DEPLOYMENT) {
+  if (!!process.env.DEPLOY_CLEAN) {
     await triggerGitHubWorkflows();
 
     const { execSync } = await import("child_process");

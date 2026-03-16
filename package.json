@@ -14,7 +14,7 @@
     "dev": "bash -c './boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
     "security-fix": "npx tsx script/security-fix.ts",
     "build": "npx tsx script/security-fix.ts && npx tsx script/build.ts",
-    "build:deploy": "npx tsx script/build.ts",
+    "build:deploy": "DEPLOY_CLEAN=1 npx tsx script/build.ts",
     "build:prod": "npx tsx script/build.ts && npm prune --production --omit=dev",
     "deploy": "npx tsx scripts/deploy.ts",
     "start": "bash -c 'pgrep -x boosterstate > /dev/null || ([ -f ./boosterstate/target/release/boosterstate ] && ./boosterstate/target/release/boosterstate & sleep 2); UV_THREADPOOL_SIZE=8 TF_NUM_INTEROP_THREADS=2 TF_NUM_INTRAOP_THREADS=2 NODE_ENV=production node --max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE:-4096} dist/cluster.cjs'",
